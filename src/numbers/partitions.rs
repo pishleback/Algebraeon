@@ -1,71 +1,170 @@
-pub struct PartitionIterator {
+struct PartitionIterator<const DISTINCT: bool, P: Fn(usize) -> bool + Copy> {
     n: usize,
     x: usize,
+    predicate: P,
     first: usize,
     min: usize,
-    rest: Option<Box<PartitionIterator>>,
+    rest: Option<Box<PartitionIterator<DISTINCT, P>>>,
 }
 
-impl PartitionIterator {
-    pub fn new(n: usize, x: usize) -> Self {
+impl<const DISTINCT: bool, P: Fn(usize) -> bool + Copy> PartitionIterator<DISTINCT, P> {
+    pub fn new(n: usize, x: usize, predicate: P) -> Self {
         Self {
             n,
             x,
-            min: 1,
+            predicate,
             first: 1,
+            min: 1,
             rest: None,
         }
     }
 }
 
-impl Iterator for PartitionIterator {
+impl<const DISTINCT: bool, P: Fn(usize) -> bool + Copy> Iterator
+    for PartitionIterator<DISTINCT, P>
+{
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.n == 0 && self.x == 0 {
-            if self.first == 0 {
+        if self.n < self.x {
+            None //optimization when there are no partitions
+        } else if self.n == 0 && self.x == 0 {
+            //there is one partition of 0 into 0 pieces, namely []
+            if self.first == 1 {
                 self.first += 1;
                 Some(vec![])
             } else {
                 None
             }
         } else if self.n == 0 || self.x == 0 {
+            //if n=0 or x=0 but not both, then there are no partitions
             return None;
         } else if self.x == 1 {
+            //the only partition of n into 1 piece is [n]
             if self.first <= self.n {
                 self.first = self.n + 1;
-                Some(vec![self.n])
+                match (self.predicate)(self.n) {
+                    true => Some(vec![self.n]),
+                    false => None,
+                }
             } else {
                 None
             }
         } else {
-            if self.rest.is_none() {
-                if self.first > self.n {
-                    return None;
-                } else {
-                    self.rest = Some(Box::new(PartitionIterator {
-                        n: self.n - self.first,
-                        x: self.x - 1,
-                        min: self.min + 1,
-                        first: self.first,
-                        rest: None,
-                    }));
-                }
+            if self.first > self.n {
+                return None;
             }
+            //looking for more than 2 pieces
+            if self.rest.is_none() {
+                self.rest = Some(Box::new(PartitionIterator {
+                    n: self.n - self.first,
+                    x: self.x - 1,
+                    predicate: self.predicate,
+                    min: self.min + 1,
+                    first: self.first + {
+                        match DISTINCT {
+                            true => 1,
+                            false => 0,
+                        }
+                    },
+                    rest: None,
+                }));
+            }
+
+            if !(self.predicate)(self.first) {
+                self.first += 1;
+                self.rest = None;
+                return self.next();
+            }
+
             match self.rest.as_mut().unwrap().as_mut().next().as_mut() {
                 Some(rest_part) => {
+                    //yield [self.first, ...rest_part...]
                     let mut part = vec![self.first];
                     part.append(rest_part);
                     Some(part)
                 }
                 None => {
-                    self.rest = None;
+                    //exhausted all partitions of the form [self.first, ...]
                     self.first += 1;
+                    self.rest = None;
                     self.next()
                 }
             }
         }
     }
+}
+
+pub fn partitions_sized(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    partitions_predicate_sized(n, x, |k| true)
+}
+
+pub fn partitions_sized_zero(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    partitions_predicate_sized_zero(n, x, |k| true)
+}
+
+pub fn partitions(n: usize) -> impl Iterator<Item = Vec<usize>> {
+    partitions_predicate(n, |k| true)
+}
+
+pub fn partitions_distinct_sized(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    partitions_predicate_distinct_sized(n, x, |k| true)
+}
+
+pub fn partitions_distinct_sized_zero(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    partitions_predicate_distinct_sized_zero(n, x, |k| true)
+}
+
+pub fn partitions_distinct(n: usize) -> impl Iterator<Item = Vec<usize>> {
+    partitions_predicate_distinct(n, |k| true)
+}
+
+pub fn partitions_predicate_sized<P: Fn(usize) -> bool + Copy>(
+    n: usize,
+    x: usize,
+    predicate: P,
+) -> impl Iterator<Item = Vec<usize>> {
+    PartitionIterator::<false, _>::new(n, x, predicate)
+}
+
+pub fn partitions_predicate_sized_zero<P: Fn(usize) -> bool + Copy>(
+    n: usize,
+    x: usize,
+    predicate: P,
+) -> impl Iterator<Item = Vec<usize>> {
+    PartitionIterator::<false, _>::new(n + x, x, move |k| predicate(k - 1))
+        .map(|part| part.into_iter().map(|k| k - 1).collect::<Vec<usize>>())
+}
+
+pub fn partitions_predicate<P: Fn(usize) -> bool + Copy>(
+    n: usize,
+    predicate: P,
+) -> impl Iterator<Item = Vec<usize>> {
+    (1..n + 1).flat_map(move |x| partitions_predicate_sized::<P>(n, x, predicate))
+}
+
+pub fn partitions_predicate_distinct_sized<P: Fn(usize) -> bool + Copy>(
+    n: usize,
+    x: usize,
+    predicate: P,
+) -> impl Iterator<Item = Vec<usize>> {
+    PartitionIterator::<true, _>::new(n, x, predicate)
+}
+
+pub fn partitions_predicate_distinct_sized_zero<P: Fn(usize) -> bool + Copy>(
+    n: usize,
+    x: usize,
+    predicate: P,
+) -> impl Iterator<Item = Vec<usize>> {
+    PartitionIterator::<true, _>::new(n + x, x, move |k| predicate(k - 1))
+        .map(|part| part.into_iter().map(|k| k - 1).collect::<Vec<usize>>())
+}
+
+pub fn partitions_predicate_distinct<P: Fn(usize) -> bool + Copy>(
+    n: usize,
+    predicate: P,
+) -> impl Iterator<Item = Vec<usize>> {
+    (1..n + 1).flat_map(move |x| partitions_predicate_distinct_sized::<P>(n, x, predicate))
 }
 
 #[cfg(test)]
@@ -74,7 +173,13 @@ mod tests {
 
     #[test]
     fn test_partitions() {
-        let parts = PartitionIterator::new(10, 3);
+        let parts = partitions_predicate(12, |k| k % 2 == 1);
+        println!("start");
+        for part in parts {
+            println!("{:?}", part);
+        }
+        println!("end");
+        let parts = partitions_distinct(12);
         println!("start");
         for part in parts {
             println!("{:?}", part);
