@@ -1,7 +1,16 @@
 
+use std::collections::BTreeSet;
+use std::collections::HashSet;
+
+use super::partition::*;
+use super::normal_subgroup::*;
+use super::subset::*;
+use super::group::*;
+use std::hash::Hash;
+
 #[derive(Clone)]
 pub struct Subgroup<'a> {
-    subset: Subset<'a>,
+    pub subset: Subset<'a>,
 }
 
 impl<'a> PartialEq for Subgroup<'a> {
@@ -19,7 +28,7 @@ impl<'a> Hash for Subgroup<'a> {
 }
 
 impl<'a> Subgroup<'a> {
-    fn check_state(&self) -> Result<(), &'static str> {
+    pub fn check_state(&self) -> Result<(), &'static str> {
         match self.subset.check_state() {
             Ok(_) => {}
             Err(msg) => {
@@ -140,7 +149,7 @@ impl<'a> Subgroup<'a> {
 #[cfg(test)]
 mod subgroup_tests {
     use super::*;
-    use super::super::permutations::*;
+    use super::super::super::permutations::*;
     
     #[test]
     fn subgroup_counts() {

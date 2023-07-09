@@ -1,11 +1,16 @@
+use std::collections::{BTreeSet, HashSet};
+
+use super::group::*;
+use super::subset::*;
+
 #[derive(Clone, Debug)]
-struct PartitionState {
-    classes: Vec<BTreeSet<usize>>, //vector of conjugacy classes
-    lookup: Vec<usize>,            //for each element, the index of its conjugacy class
+pub struct PartitionState {
+    pub classes: Vec<BTreeSet<usize>>, //vector of conjugacy classes
+    pub lookup: Vec<usize>,            //for each element, the index of its conjugacy class
 }
 
 impl PartitionState {
-    fn check_state(&self, group: &Group) -> Result<(), &'static str> {
+    pub fn check_state(&self, group: &Group) -> Result<(), &'static str> {
         //is a partition
         let mut accounted_elems: HashSet<usize> = HashSet::new();
         for class in &self.classes {
@@ -40,8 +45,8 @@ impl PartitionState {
 }
 
 pub struct Partition<'a> {
-    group: &'a Group,
-    state: PartitionState,
+    pub group: &'a Group,
+    pub state: PartitionState,
     // is_left_cosets: Option<bool>,
     // is_right_cosets: Option<bool>,
 }
@@ -120,7 +125,7 @@ impl<'a> Partition<'a> {
         self.is_left_cosets() && self.is_right_cosets()
     }
 
-    fn from_subsets(group: &'a Group, subsets: Vec<BTreeSet<usize>>) -> Result<Self, ()> {
+    pub fn from_subsets(group: &'a Group, subsets: Vec<BTreeSet<usize>>) -> Result<Self, ()> {
         let classes = subsets;
         let mut lookup = vec![0; group.size()];
         for (class_idx, class) in classes.iter().enumerate() {
@@ -146,11 +151,11 @@ impl<'a> Partition<'a> {
 }
 
 pub struct Congruence<'a> {
-    partition: Partition<'a>,
+    pub partition: Partition<'a>,
 }
 
 impl<'a> Congruence<'a> {
-    fn check_state(&self) -> Result<(), &'static str> {
+    pub fn check_state(&self) -> Result<(), &'static str> {
         match self.partition.check_state() {
             Ok(()) => {}
             Err(msg) => {
@@ -203,8 +208,8 @@ impl<'a> Congruence<'a> {
 
 #[cfg(test)]
 mod partition_tests {
+    use super::super::super::permutations::*;
     use super::*;
-    use super::super::permutations::*;
 
     #[test]
     fn partition_check_bad_state() {

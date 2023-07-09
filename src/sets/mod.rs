@@ -1,3 +1,5 @@
 mod function;
 mod set;
-mod twelvefold;
+mod sequence;
+mod subset;
+mod partition;

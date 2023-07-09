@@ -1,11 +1,23 @@
+use super::todd_coxeter;
+use super::normal_subgroup::*;
+use super::partition::*;
+use super::subgroup::*;
+use super::subset::*;
+use rayon::prelude::*;
+use std::collections::BTreeSet;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::fmt::Debug;
+use std::hash::Hash;
+
 pub struct Group {
-    n: usize,
-    ident: usize,
-    inv: Vec<usize>,
-    mul: Vec<Vec<usize>>,
-    conjugacy_classes: Option<PartitionState>,
-    is_abelian: Option<bool>,
-    is_simple: Option<bool>,
+    pub n: usize,
+    pub ident: usize,
+    pub inv: Vec<usize>,
+    pub mul: Vec<Vec<usize>>,
+    pub conjugacy_classes: Option<PartitionState>,
+    pub is_abelian: Option<bool>,
+    pub is_simple: Option<bool>,
 }
 
 impl Group {
@@ -229,8 +241,12 @@ impl Group {
 
     pub fn is_abelian(&self) -> bool {
         match &self.is_abelian {
-            Some(flag) => {return *flag;},
-            None => {return self.compute_is_abelian();},
+            Some(flag) => {
+                return *flag;
+            }
+            None => {
+                return self.compute_is_abelian();
+            }
         }
     }
 
@@ -352,7 +368,6 @@ impl Group {
     }
 }
 
-
 pub fn direct_product_structure(group_one: &Group, group_two: &Group) -> Group {
     let m = group_one.n;
     let n = group_two.n;
@@ -431,7 +446,7 @@ pub fn quaternion_group_structure() -> Group {
 
 #[cfg(test)]
 mod group_tests {
-    use super::super::permutations::*;
+    use super::super::super::permutations::*;
     use super::*;
 
     #[test]

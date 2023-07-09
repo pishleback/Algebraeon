@@ -1,3 +1,9 @@
+use super::group::*;
+use super::homomorphism::*;
+use std::collections::BTreeMap;
+use std::fmt::Debug;
+use std::hash::Hash;
+
 #[derive(Debug, Eq, PartialEq, Hash, PartialOrd, Ord, Clone)]
 pub enum IsoRep {
     Trivial,
@@ -96,7 +102,10 @@ impl IsoRep {
             k_fact *= k;
         }
         if n == k_fact {
-            match find_isomorphism(group, &super::permutations::symmetric_group_structure(k).0) {
+            match find_isomorphism(
+                group,
+                &super::super::permutations::symmetric_group_structure(k).0,
+            ) {
                 Some(_f) => {
                     return Self::Symmetric(k);
                 }
@@ -114,7 +123,7 @@ impl IsoRep {
         if n == half_k_fact {
             match find_isomorphism(
                 group,
-                &super::permutations::alternating_group_structure(k).0,
+                &super::super::permutations::alternating_group_structure(k).0,
             ) {
                 Some(_f) => {
                     return Self::Alternating(k);
@@ -142,8 +151,10 @@ impl IsoRep {
             Self::Cyclic(n) => Ok(cyclic_group_structure(*n)),
             Self::Dihedral(n) => Ok(dihedral_group_structure(*n)),
             Self::Quaternion => Ok(quaternion_group_structure()),
-            Self::Alternating(n) => Ok(super::permutations::alternating_group_structure(*n).0),
-            Self::Symmetric(n) => Ok(super::permutations::symmetric_group_structure(*n).0),
+            Self::Alternating(n) => {
+                Ok(super::super::permutations::alternating_group_structure(*n).0)
+            }
+            Self::Symmetric(n) => Ok(super::super::permutations::symmetric_group_structure(*n).0),
             Self::DirectProduct(factors) => {
                 let mut factors_list = vec![];
                 for (factor, power) in factors.iter() {

@@ -1,6 +1,13 @@
+use std::collections::BTreeSet;
+
+use super::normal_subgroup::*;
+use super::subgroup::*;
+use super::group::*;
+use std::hash::Hash;
+
 pub struct Subset<'a> {
-    group: &'a Group,
-    elems: BTreeSet<usize>,
+    pub group: &'a Group,
+    pub elems: BTreeSet<usize>,
 }
 
 impl<'a> IntoIterator for Subset<'a> {
@@ -36,7 +43,7 @@ impl<'a> Clone for Subset<'a> {
 }
 
 impl<'a> Subset<'a> {
-    fn check_state(&self) -> Result<(), &'static str> {
+    pub fn check_state(&self) -> Result<(), &'static str> {
         for x in &self.elems {
             if !(*x < self.group.n) {
                 return Err("invalid subset element");
@@ -177,7 +184,7 @@ impl<'a> Subset<'a> {
 
 #[cfg(test)]
 mod subset_tests {
-    use super::super::permutations::*;
+    use super::super::super::permutations::*;
     use super::*;
 
     #[test]

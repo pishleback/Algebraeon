@@ -1,7 +1,10 @@
-
+use super::group::*;
+use super::partition::*;
+use super::subgroup::*;
+use super::subset::*;
 
 pub struct NormalSubgroup<'a> {
-    subgroup: Subgroup<'a>,
+    pub subgroup: Subgroup<'a>,
 }
 
 impl<'a> NormalSubgroup<'a> {
@@ -39,11 +42,10 @@ impl<'a> NormalSubgroup<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod normal_subgroup_tests {
+    use super::super::super::permutations::*;
     use super::*;
-    use super::super::permutations::*;
 
     #[test]
     fn normal_subgroup_state() {
@@ -90,7 +92,6 @@ mod normal_subgroup_tests {
         }
     }
 
-
     #[test]
     fn normal_subgroup_cosets() {
         let (grp, _perms, elems) = symmetric_group_structure(3);
@@ -117,7 +118,6 @@ mod normal_subgroup_tests {
         assert!(cosets.partition == left_cosets);
         assert!(cosets.partition == right_cosets);
     }
-
 
     #[test]
     fn normal_subgroup_quotient() {

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use super::groups::Group;
-use super::permutations::Permutation;
+use super::group::Group;
+use super::super::permutations::Permutation;
 
 #[derive(Clone, Copy)]
 enum Neighbor {

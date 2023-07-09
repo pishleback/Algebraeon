@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use super::groups::group::*;
 use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -141,15 +142,11 @@ pub fn all_perms(k: usize) -> Vec<Permutation> {
 
 pub fn alternating_group_structure(
     n: usize,
-) -> (
-    super::groups::Group,
-    Vec<Permutation>,
-    HashMap<Permutation, usize>,
-) {
+) -> (Group, Vec<Permutation>, HashMap<Permutation, usize>) {
     use super::permutations::*;
     let alt_perms: Vec<Permutation> = all_perms(n).into_iter().filter(|p| p.sign()).collect();
     (
-        super::groups::Group::from_model_unchecked(
+        Group::from_model_unchecked(
             alt_perms.clone(),
             || Permutation::new_ident(n),
             |x: Permutation| x.invert(),
@@ -169,14 +166,10 @@ pub fn alternating_group_structure(
 
 pub fn symmetric_group_structure(
     n: usize,
-) -> (
-    super::groups::Group,
-    Vec<Permutation>,
-    HashMap<Permutation, usize>,
-) {
+) -> (Group, Vec<Permutation>, HashMap<Permutation, usize>) {
     let perms: Vec<Permutation> = all_perms(n);
     (
-        super::groups::Group::from_model_unchecked(
+        Group::from_model_unchecked(
             perms.clone(),
             || Permutation::new_ident(n),
             |x: Permutation| x.invert(),
@@ -194,7 +187,7 @@ pub fn symmetric_group_structure(
     )
 }
 
-#[cfg(test)] 
+#[cfg(test)]
 mod tests {
     use super::*;
 

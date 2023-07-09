@@ -1,4 +1,9 @@
 
+use std::collections::{HashSet, BTreeSet};
+
+use super::homomorphism::*;
+use super::group::*;
+
 pub struct GeneratingSet<'a> {
     group: &'a Group,
     gens: Vec<usize>,       //subset of group which generates it
@@ -33,6 +38,10 @@ impl<'a> GeneratingSet<'a> {
 
     pub fn size(&self) -> usize {
         self.gens.len()
+    }
+
+    pub fn gens(&self) -> &Vec<usize> {
+        &self.gens
     }
 
     pub fn generated_homomorphism<'b>(
@@ -169,7 +178,7 @@ impl Group {
 #[cfg(test)]
 mod generating_set_tests {
     use super::*;
-    use super::super::permutations::*;
+    use super::super::super::permutations::*;
 
     #[test]
     fn test_generating_set() {
@@ -181,7 +190,7 @@ mod generating_set_tests {
         let g_set = grp.generating_set();
         g_set.check_state().unwrap();
 
-        let (grp, _perms, _elems) = super::super::permutations::symmetric_group_structure(4);
+        let (grp, _perms, _elems) = super::super::super::permutations::symmetric_group_structure(4);
         let g_set = grp.generating_set();
         g_set.check_state().unwrap();
 

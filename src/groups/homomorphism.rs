@@ -1,8 +1,15 @@
+use std::borrow::Borrow;
+use std::collections::BTreeSet;
+use std::collections::HashMap;
+
+use super::generating_set::*;
+use super::group::*;
+
 #[derive(Clone)]
 pub struct Homomorphism<DomainT: Borrow<Group> + Clone, RangeT: Borrow<Group> + Clone> {
-    domain: DomainT,
-    range: RangeT,
-    func: Vec<usize>, //func : domain -> range    y = funx[x]
+    pub domain: DomainT,
+    pub range: RangeT,
+    pub func: Vec<usize>, //func : domain -> range    y = funx[x]
 }
 
 impl<DomainT: Borrow<Group> + Clone, RangeT: Borrow<Group> + Clone> Homomorphism<DomainT, RangeT> {
@@ -185,12 +192,12 @@ pub fn find_isomorphism<'a, 'b>(
         range_elem_profiles: &HashMap<ElementProfile, Vec<usize>>,
     ) -> Result<GenInfo<'c>, ()> {
         let domain_gen_set = domain.generating_set();
-        let domain_gens: Vec<usize> = domain_gen_set.gens.clone();
+        let domain_gens = domain_gen_set.gens();
 
         //TODO: compute a smaller subset of possible image points
         //e.g. each gen can only map to something of the same order
         let mut gen_image_options: Vec<Vec<usize>> = vec![];
-        for gen in &domain_gens {
+        for gen in domain_gens {
             match range_elem_profiles.get(&domain_elem_profiles[*gen]) {
                 Some(r_elems) => gen_image_options.push(r_elems.clone()),
                 None => {
@@ -208,7 +215,7 @@ pub fn find_isomorphism<'a, 'b>(
         }
 
         Ok(GenInfo {
-            gen_list: domain_gens,
+            gen_list: domain_gens.clone(),
             gen_set: domain_gen_set,
             image_options: gen_image_options,
             quant_to_check: num_to_check,
@@ -293,8 +300,9 @@ pub fn find_isomorphism<'a, 'b>(
 
 #[cfg(test)]
 mod homomorphism_tests {
-    use super::super::permutations::*;
     use super::*;
+    use super::super::super::permutations::*;
+    use super::super::todd_coxeter;
 
     #[test]
     fn homomorphism_state() {
