@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use super::groups::group::*;
+use super::super::groups::group::Group;
 use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]

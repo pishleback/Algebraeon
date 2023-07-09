@@ -7,9 +7,9 @@ use super::group::*;
 
 #[derive(Clone)]
 pub struct Homomorphism<DomainT: Borrow<Group> + Clone, RangeT: Borrow<Group> + Clone> {
-    pub domain: DomainT,
-    pub range: RangeT,
-    pub func: Vec<usize>, //func : domain -> range    y = funx[x]
+    domain: DomainT,
+    range: RangeT,
+    func: Vec<usize>, //func : domain -> range    y = funx[x]
 }
 
 impl<DomainT: Borrow<Group> + Clone, RangeT: Borrow<Group> + Clone> Homomorphism<DomainT, RangeT> {
@@ -28,8 +28,8 @@ impl<DomainT: Borrow<Group> + Clone, RangeT: Borrow<Group> + Clone> Homomorphism
         //is homomorphism
         for x in self.domain.borrow().elems() {
             for y in self.domain.borrow().elems() {
-                if self.func[self.domain.borrow().mul[x][y]]
-                    != self.range.borrow().mul[self.func[x]][self.func[y]]
+                if self.func[self.domain.borrow().mul(x, y)]
+                    != self.range.borrow().mul(self.func[x], self.func[y])
                 {
                     return Err("homomorphism does not respect composition");
                 }
@@ -37,6 +37,14 @@ impl<DomainT: Borrow<Group> + Clone, RangeT: Borrow<Group> + Clone> Homomorphism
         }
 
         Ok(())
+    }
+
+    pub fn new_unchecked(domain: DomainT, range: RangeT, func: Vec<usize>) -> Self {
+        Self {
+            domain,
+            range,
+            func,
+        }
     }
 
     pub fn to_isomorphism(self) -> Option<Isomorphism<DomainT, RangeT>> {
@@ -142,7 +150,7 @@ pub fn find_isomorphism<'a, 'b>(
     #[derive(Debug, PartialEq, Eq, Hash)]
     struct ElementProfile {
         order: usize,
-        mul_order: BTreeSet<usize> //helped a lot when comparing non-isomorphic groups of order 144
+        mul_order: BTreeSet<usize>, //helped a lot when comparing non-isomorphic groups of order 144
     }
 
     impl ElementProfile {
@@ -150,7 +158,10 @@ pub fn find_isomorphism<'a, 'b>(
             debug_assert!(x < group.size());
             ElementProfile {
                 order: group.order(x).unwrap(),
-                mul_order : group.elems().map(|y| group.order(group.mul[x][y]).unwrap()).collect(),
+                mul_order: group
+                    .elems()
+                    .map(|y| group.order(group.mul(x, y)).unwrap())
+                    .collect(),
             }
         }
     }
@@ -300,9 +311,9 @@ pub fn find_isomorphism<'a, 'b>(
 
 #[cfg(test)]
 mod homomorphism_tests {
-    use super::*;
-    use super::super::super::permutations::*;
+    use super::super::super::sets::permutations::*;
     use super::super::todd_coxeter;
+    use super::*;
 
     #[test]
     fn homomorphism_state() {

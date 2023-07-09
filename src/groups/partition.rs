@@ -5,8 +5,8 @@ use super::subset::*;
 
 #[derive(Clone, Debug)]
 pub struct PartitionState {
-    pub classes: Vec<BTreeSet<usize>>, //vector of conjugacy classes
-    pub lookup: Vec<usize>,            //for each element, the index of its conjugacy class
+    classes: Vec<BTreeSet<usize>>, //vector of conjugacy classes
+    lookup: Vec<usize>,            //for each element, the index of its conjugacy class
 }
 
 impl PartitionState {
@@ -24,12 +24,12 @@ impl PartitionState {
                 accounted_elems.insert(*x);
             }
         }
-        if accounted_elems.len() != group.n {
+        if accounted_elems.len() != group.size() {
             return Err("partition is missing some elements");
         }
 
         //lookup is correct
-        if !(self.lookup.len() == group.n) {
+        if !(self.lookup.len() == group.size()) {
             return Err("partition lookup has the wrong length");
         }
         for (elem, class_idx) in self.lookup.iter().enumerate() {
@@ -41,6 +41,14 @@ impl PartitionState {
             }
         }
         Ok(())
+    }
+
+    pub fn new_unchecked(classes: Vec<BTreeSet<usize>>, lookup: Vec<usize>) -> Self {
+        Self { classes, lookup }
+    }
+
+    pub fn project(&self, x: usize) -> &BTreeSet<usize> {
+        &self.classes[self.lookup[x]]
     }
 }
 
@@ -100,10 +108,10 @@ impl<'a> Partition<'a> {
     }
 
     pub fn is_left_cosets(&self) -> bool {
-        let ident_class = Subset {
-            group: self.group,
-            elems: self.state.classes[self.state.lookup[self.group.ident]].clone(),
-        };
+        let ident_class = Subset::new_unchecked(
+            self.group,
+            self.state.classes[self.state.lookup[self.group.ident()]].clone(),
+        );
         match ident_class.to_subgroup() {
             Some(ident_subgroup) => &ident_subgroup.left_cosets() == self,
             None => false,
@@ -111,10 +119,10 @@ impl<'a> Partition<'a> {
     }
 
     pub fn is_right_cosets(&self) -> bool {
-        let ident_class = Subset {
-            group: self.group,
-            elems: self.state.classes[self.state.lookup[self.group.ident]].clone(),
-        };
+        let ident_class = Subset::new_unchecked(
+            self.group,
+            self.state.classes[self.state.lookup[self.group.ident()]].clone(),
+        );
         match ident_class.to_subgroup() {
             Some(ident_subgroup) => &ident_subgroup.right_cosets() == self,
             None => false,
@@ -177,38 +185,41 @@ impl<'a> Congruence<'a> {
 
     pub fn quotient_group(&self) -> Group {
         let n = self.size();
-        Group {
+
+        Group::new_unchecked(
             n,
-            ident: self.partition.state.lookup[self.partition.group.ident],
-            inv: {
+            self.partition.state.lookup[self.partition.group.ident()],
+            {
                 let mut inv = vec![0; n];
                 for i in 0..n {
-                    inv[i] = self.partition.state.lookup[self.partition.group.inv
-                        [*self.partition.state.classes[i].iter().next().unwrap()]];
+                    inv[i] = self.partition.state.lookup[self
+                        .partition
+                        .group
+                        .inv(*self.partition.state.classes[i].iter().next().unwrap())];
                 }
                 inv
             },
-            mul: {
+            {
                 let mut mul = vec![vec![0; n]; n];
                 for i in 0..n {
                     for j in 0..n {
-                        mul[i][j] = self.partition.state.lookup[self.partition.group.mul
-                            [*self.partition.state.classes[i].iter().next().unwrap()]
-                            [*self.partition.state.classes[j].iter().next().unwrap()]];
+                        mul[i][j] = self.partition.state.lookup[self.partition.group.mul(
+                            *self.partition.state.classes[i].iter().next().unwrap(),
+                            *self.partition.state.classes[j].iter().next().unwrap(),
+                        )];
                     }
                 }
                 mul
             },
-            conjugacy_classes: None,
-            is_abelian: None,
-            is_simple: None,
-        }
+            None,
+            None,
+        )
     }
 }
 
 #[cfg(test)]
 mod partition_tests {
-    use super::super::super::permutations::*;
+    use super::super::super::sets::permutations::*;
     use super::*;
 
     #[test]

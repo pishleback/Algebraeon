@@ -1,10 +1,9 @@
 use super::group::*;
 use super::partition::*;
 use super::subgroup::*;
-use super::subset::*;
 
 pub struct NormalSubgroup<'a> {
-    pub subgroup: Subgroup<'a>,
+    subgroup: Subgroup<'a>,
 }
 
 impl<'a> NormalSubgroup<'a> {
@@ -17,10 +16,14 @@ impl<'a> NormalSubgroup<'a> {
         }
 
         if !(self.subgroup.is_normal_subgroup()) {
-            return Err("normal subgroup is not normal");
+            return Err("normal subgroup is not norpppmal");
         }
 
         Ok(())
+    }
+
+    pub fn new_unchecked(subgroup: Subgroup<'a>) -> Self {
+        Self { subgroup }
     }
 
     pub fn size(&self) -> usize {
@@ -29,6 +32,10 @@ impl<'a> NormalSubgroup<'a> {
 
     pub fn subgroup(&self) -> &Subgroup<'a> {
         &self.subgroup
+    }
+
+    pub fn to_subgroup(self) -> Subgroup<'a> {
+        self.subgroup
     }
 
     pub fn cosets(&self) -> Congruence {
@@ -44,7 +51,8 @@ impl<'a> NormalSubgroup<'a> {
 
 #[cfg(test)]
 mod normal_subgroup_tests {
-    use super::super::super::permutations::*;
+    use super::super::super::sets::permutations::*;
+    use super::super::subset::*;
     use super::*;
 
     #[test]
@@ -97,16 +105,16 @@ mod normal_subgroup_tests {
         let (grp, _perms, elems) = symmetric_group_structure(3);
         let nsg = NormalSubgroup {
             subgroup: Subgroup {
-                subset: Subset {
-                    group: &grp,
-                    elems: vec![
+                subset: Subset::new_unchecked(
+                    &grp,
+                    vec![
                         elems[&Permutation::new(vec![0, 1, 2]).unwrap()],
                         elems[&Permutation::new(vec![1, 2, 0]).unwrap()],
                         elems[&Permutation::new(vec![2, 0, 1]).unwrap()],
                     ]
                     .into_iter()
                     .collect(),
-                },
+                ),
             },
         };
         nsg.check_state().unwrap();

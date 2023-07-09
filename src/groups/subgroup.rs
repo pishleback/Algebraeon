@@ -1,11 +1,10 @@
-
 use std::collections::BTreeSet;
 use std::collections::HashSet;
 
-use super::partition::*;
-use super::normal_subgroup::*;
-use super::subset::*;
 use super::group::*;
+use super::normal_subgroup::*;
+use super::partition::*;
+use super::subset::*;
 use std::hash::Hash;
 
 #[derive(Clone)]
@@ -48,42 +47,41 @@ impl<'a> Subgroup<'a> {
     }
 
     pub fn to_group(&self) -> Group {
-        let sg_elems: Vec<usize> = self.subset.elems.clone().into_iter().collect();
+        let sg_elems: Vec<usize> = self.subset.elems().clone().into_iter().collect();
         let k = sg_elems.len();
-        let mut group_to_subgroup: Vec<Option<usize>> = vec![None; self.subset.group.size()];
+        let mut group_to_subgroup: Vec<Option<usize>> = vec![None; self.subset.group().size()];
         for (i, x) in sg_elems.iter().enumerate() {
             group_to_subgroup[*x] = Some(i);
         }
         //TODO: add a test that this group has valid structure
-        Group {
-            n: self.size(),
-            ident: group_to_subgroup[self.subset.group.ident].unwrap(),
-            inv: (0..k)
-                .map(|x| group_to_subgroup[self.subset.group.inv[sg_elems[x]]].unwrap())
+        Group::new_unchecked(
+            self.size(),
+            group_to_subgroup[self.subset.group().ident()].unwrap(),
+            (0..k)
+                .map(|x| group_to_subgroup[self.subset.group().inv(sg_elems[x])].unwrap())
                 .collect(),
-            mul: (0..k)
+            (0..k)
                 .map(|x| {
                     (0..k)
                         .map(|y| {
-                            group_to_subgroup[self.subset.group.mul[sg_elems[x]][sg_elems[y]]]
+                            group_to_subgroup[self.subset.group().mul(sg_elems[x], sg_elems[y])]
                                 .unwrap()
                         })
                         .collect()
                 })
                 .collect(),
-            conjugacy_classes: None,
-            is_abelian: None,
-            is_simple: None,
-        }
+            None,
+            None,
+        )
     }
 
     pub fn left_cosets(&self) -> Partition {
         let mut cosets: Vec<BTreeSet<usize>> = vec![];
-        let mut coset_lookup = vec![0; self.subset.group.size()];
-        let mut missing: HashSet<usize> = self.subset.group.elems().collect();
+        let mut coset_lookup = vec![0; self.subset.group().size()];
+        let mut missing: HashSet<usize> = self.subset.group().elems().collect();
         while missing.len() > 0 {
             let g = missing.iter().next().unwrap();
-            let coset = self.subset.left_mul(*g).unwrap().elems;
+            let coset = self.subset.left_mul(*g).unwrap().elems().clone();
             for h in &coset {
                 missing.remove(h);
                 coset_lookup[*h] = cosets.len();
@@ -91,21 +89,18 @@ impl<'a> Subgroup<'a> {
             cosets.push(coset);
         }
         Partition {
-            group: self.subset.group,
-            state: PartitionState {
-                classes: cosets,
-                lookup: coset_lookup,
-            },
+            group: self.subset.group(),
+            state: PartitionState::new_unchecked(cosets, coset_lookup),
         }
     }
 
     pub fn right_cosets(&self) -> Partition {
         let mut cosets: Vec<BTreeSet<usize>> = vec![];
-        let mut coset_lookup = vec![0; self.subset.group.size()];
-        let mut missing: HashSet<usize> = self.subset.group.elems().collect();
+        let mut coset_lookup = vec![0; self.subset.group().size()];
+        let mut missing: HashSet<usize> = self.subset.group().elems().collect();
         while missing.len() > 0 {
             let g = missing.iter().next().unwrap();
-            let coset = self.subset.right_mul(*g).unwrap().elems;
+            let coset = self.subset.right_mul(*g).unwrap().elems().clone();
             for h in &coset {
                 missing.remove(h);
                 coset_lookup[*h] = cosets.len();
@@ -113,19 +108,19 @@ impl<'a> Subgroup<'a> {
             cosets.push(coset);
         }
         Partition {
-            group: self.subset.group,
-            state: PartitionState {
-                classes: cosets,
-                lookup: coset_lookup,
-            },
+            group: self.subset.group(),
+            state: PartitionState::new_unchecked(cosets, coset_lookup),
         }
     }
 
     pub fn is_normal_subgroup(&self) -> bool {
-        for x in &self.subset.elems {
-            for g in self.subset.group.elems() {
-                if !self.subset.elems.contains(
-                    &self.subset.group.mul[self.subset.group.mul[g][*x]][self.subset.group.inv[g]],
+        for x in self.subset.elems() {
+            for g in self.subset.group().elems() {
+                if !self.subset.elems().contains(
+                    &self
+                        .subset
+                        .group()
+                        .mul(self.subset.group().mul(g, *x), self.subset.group().inv(g)),
                 )
                 //gxg^{-1}
                 {
@@ -138,9 +133,7 @@ impl<'a> Subgroup<'a> {
 
     pub fn to_normal_subgroup(&self) -> Option<NormalSubgroup> {
         match self.is_normal_subgroup() {
-            true => Some(NormalSubgroup {
-                subgroup: self.clone(),
-            }),
+            true => Some(NormalSubgroup::new_unchecked(self.clone())),
             false => None,
         }
     }
@@ -148,9 +141,9 @@ impl<'a> Subgroup<'a> {
 
 #[cfg(test)]
 mod subgroup_tests {
+    use super::super::super::sets::permutations::*;
     use super::*;
-    use super::super::super::permutations::*;
-    
+
     #[test]
     fn subgroup_counts() {
         for (grp, num_sgs) in vec![
@@ -188,20 +181,19 @@ mod subgroup_tests {
         }
     }
 
-
     #[test]
     fn subgroup_left_cosets() {
         let (grp, _perms, elems) = symmetric_group_structure(3);
         let sg = Subgroup {
-            subset: Subset {
-                group: &grp,
-                elems: vec![
+            subset: Subset::new_unchecked(
+                &grp,
+                vec![
                     elems[&Permutation::new(vec![0, 1, 2]).unwrap()],
                     elems[&Permutation::new(vec![1, 0, 2]).unwrap()],
                 ]
                 .into_iter()
                 .collect(),
-            },
+            ),
         };
         sg.check_state().unwrap();
         let cosets = sg.left_cosets();
@@ -240,15 +232,15 @@ mod subgroup_tests {
     fn subgroup_right_cosets() {
         let (grp, _perms, elems) = symmetric_group_structure(3);
         let sg = Subgroup {
-            subset: Subset {
-                group: &grp,
-                elems: vec![
+            subset: Subset::new_unchecked(
+                &grp,
+                vec![
                     elems[&Permutation::new(vec![0, 1, 2]).unwrap()],
                     elems[&Permutation::new(vec![1, 0, 2]).unwrap()],
                 ]
                 .into_iter()
                 .collect(),
-            },
+            ),
         };
         sg.check_state().unwrap();
         let cosets = sg.right_cosets();

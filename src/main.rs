@@ -3,7 +3,7 @@ use std::{collections::{HashSet}};
 
 mod sets;
 mod groups;
-mod permutations;
+mod numbers;
 
 fn main() {
     // let (grp_g, _perms, _elems) = enumerated_groups::symmetric_group_structure(6);

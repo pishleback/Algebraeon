@@ -1,8 +1,7 @@
+use std::collections::{BTreeSet, HashSet};
 
-use std::collections::{HashSet, BTreeSet};
-
-use super::homomorphism::*;
 use super::group::*;
+use super::homomorphism::*;
 
 pub struct GeneratingSet<'a> {
     group: &'a Group,
@@ -71,20 +70,19 @@ impl<'a> GeneratingSet<'a> {
         //only need to check for all x and for all generators y
         for x in self.group.elems() {
             for g in &self.gens {
-                if func[self.group.mul[x][*g]] != range_group.mul[func[x]][func[*g]] {
+                if func[self.group.mul(x, *g)] != range_group.mul(func[x], func[*g]) {
                     return Ok(None);
                 }
             }
         }
 
-        Ok(Some(Homomorphism {
-            domain: self.group,
-            range: range_group,
-            func: func,
-        }))
+        Ok(Some(Homomorphism::new_unchecked(
+            self.group,
+            range_group,
+            func,
+        )))
     }
 }
-
 
 impl Group {
     fn try_find_generating_set(&self, max_size: Option<usize>) -> Result<GeneratingSet, ()> {
@@ -92,14 +90,14 @@ impl Group {
         for x in self.elems() {
             missing.insert(x);
         }
-        missing.remove(&self.ident);
+        missing.remove(&self.ident());
 
         let mut sg = BTreeSet::new();
-        sg.insert(self.ident);
-        let mut gen_words = vec![vec![]; self.n];
-        gen_words[self.ident] = vec![];
+        sg.insert(self.ident());
+        let mut gen_words = vec![vec![]; self.size()];
+        gen_words[self.ident()] = vec![];
         let mut gens = vec![];
-        while sg.len() < self.n {
+        while sg.len() < self.size() {
             //if we are going to need more gens than max_size allows, then give up
             match max_size {
                 Some(max_size_val) => {
@@ -118,7 +116,7 @@ impl Group {
             let mut y;
             let mut boundary: Vec<usize> = vec![];
             for s in sg.clone() {
-                y = self.mul[s][new_g];
+                y = self.mul(s, new_g);
                 if !sg.contains(&y) {
                     sg.insert(y);
                     missing.remove(&y);
@@ -131,7 +129,7 @@ impl Group {
             while boundary.len() > 0 {
                 for x in &boundary {
                     for (g_idx, g) in gens.iter().enumerate() {
-                        y = self.mul[*x][*g];
+                        y = self.mul(*x, *g);
                         if !sg.contains(&y) {
                             sg.insert(y);
                             missing.remove(&y);
@@ -177,8 +175,8 @@ impl Group {
 
 #[cfg(test)]
 mod generating_set_tests {
+    use super::super::super::sets::permutations::*;
     use super::*;
-    use super::super::super::permutations::*;
 
     #[test]
     fn test_generating_set() {
@@ -190,7 +188,7 @@ mod generating_set_tests {
         let g_set = grp.generating_set();
         g_set.check_state().unwrap();
 
-        let (grp, _perms, _elems) = super::super::super::permutations::symmetric_group_structure(4);
+        let (grp, _perms, _elems) = symmetric_group_structure(4);
         let g_set = grp.generating_set();
         g_set.check_state().unwrap();
 

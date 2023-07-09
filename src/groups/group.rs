@@ -1,8 +1,8 @@
-use super::todd_coxeter;
 use super::normal_subgroup::*;
 use super::partition::*;
 use super::subgroup::*;
 use super::subset::*;
+use super::todd_coxeter;
 use rayon::prelude::*;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
@@ -11,13 +11,13 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 pub struct Group {
-    pub n: usize,
-    pub ident: usize,
-    pub inv: Vec<usize>,
-    pub mul: Vec<Vec<usize>>,
-    pub conjugacy_classes: Option<PartitionState>,
-    pub is_abelian: Option<bool>,
-    pub is_simple: Option<bool>,
+    n: usize,
+    ident: usize,
+    inv: Vec<usize>,
+    mul: Vec<Vec<usize>>,
+    conjugacy_classes: Option<PartitionState>,
+    is_abelian: Option<bool>,
+    is_simple: Option<bool>,
 }
 
 impl Group {
@@ -143,6 +143,18 @@ impl Group {
         }
     }
 
+    pub fn mul(&self, x: usize, y: usize) -> usize {
+        self.mul[x][y]
+    }
+
+    pub fn inv(&self, x: usize) -> usize {
+        self.inv[x]
+    }
+
+    pub fn ident(&self) -> usize {
+        self.ident
+    }
+
     pub fn from_model<T: PartialEq + Eq + Hash + Clone + Debug>(
         elems: Vec<T>,
         ident: impl Fn() -> T,
@@ -266,7 +278,7 @@ impl Group {
             }
             classes.push(class);
         }
-        PartitionState { classes, lookup }
+        PartitionState::new_unchecked(classes, lookup)
     }
 
     pub fn cache_conjugacy_classes(&mut self) {
@@ -279,10 +291,7 @@ impl Group {
         }
         self.cache_conjugacy_classes();
         match &self.conjugacy_classes {
-            Some(conj_state) => Ok(Subset {
-                group: self,
-                elems: conj_state.classes[conj_state.lookup[x]].clone(),
-            }),
+            Some(conj_state) => Ok(Subset::new_unchecked(self, conj_state.project(x).clone())),
             None => panic!(),
         }
     }
@@ -304,13 +313,10 @@ impl Group {
         let mut distinguished_gens = vec![];
         let mut subgroups: HashMap<Subgroup, Subset> = HashMap::new();
         for x in self.elems() {
-            let singleton_x_subset = Subset {
-                group: &self,
-                elems: BTreeSet::from_iter(vec![x]),
-            };
+            let singleton_x_subset = Subset::new_unchecked(&self, BTreeSet::from_iter(vec![x]));
             let cyclic_sg = match only_normal {
                 false => singleton_x_subset.generated_subgroup().unwrap(),
-                true => singleton_x_subset.normal_closure().unwrap().subgroup,
+                true => singleton_x_subset.normal_closure().unwrap().to_subgroup(),
             };
             if !subgroups.contains_key(&cyclic_sg) {
                 subgroups.insert(cyclic_sg, singleton_x_subset.clone());
@@ -334,7 +340,7 @@ impl Group {
                         new_gens.add_elem(*dgen).unwrap();
                         let new_sg = match only_normal {
                             false => new_gens.generated_subgroup().unwrap(),
-                            true => new_gens.normal_closure().unwrap().subgroup,
+                            true => new_gens.normal_closure().unwrap().to_subgroup(),
                         };
                         return (new_sg, new_gens);
                     })
@@ -363,7 +369,7 @@ impl Group {
     pub fn normal_subgroups(&self) -> Vec<(NormalSubgroup, Subset)> {
         self.subgroups_impl(true)
             .into_iter()
-            .map(|(subgroup, gens)| (NormalSubgroup { subgroup }, gens))
+            .map(|(subgroup, gens)| (NormalSubgroup::new_unchecked(subgroup), gens))
             .collect()
     }
 }
@@ -446,7 +452,7 @@ pub fn quaternion_group_structure() -> Group {
 
 #[cfg(test)]
 mod group_tests {
-    use super::super::super::permutations::*;
+    use super::super::super::sets::permutations::*;
     use super::*;
 
     #[test]
