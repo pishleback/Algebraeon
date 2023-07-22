@@ -62,6 +62,8 @@ impl Permutation {
         self.0.len()
     }
 
+    //true = even sign
+    //false = odd sign
     pub fn sign(&self) -> bool {
         let mut s = true;
         for i in 0..self.0.len() {

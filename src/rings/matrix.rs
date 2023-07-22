@@ -265,13 +265,22 @@ impl<R: ComRing> Matrix<R> {
     }
 
     pub fn det_naive(&self) -> Result<R, MatOppErr> {
-        if self.dim1 != self.dim2 {
+        let n = self.dim1;
+        if n != self.dim2 {
             Err(MatOppErr::NotSquare)
         } else {
-
-            print!("{:?}", self);
-
-            Ok(R::one())
+            let mut det = R::zero();
+            for perm in super::super::sets::permutations::all_perms(n) {
+                let mut prod = R::one();
+                for k in 0..n {
+                    prod.mul_mut(self.at(k, perm.call(k).unwrap()).unwrap());
+                }
+                if !perm.sign() {
+                    prod.neg_mut();
+                }
+                det.add_mut(&prod);
+            }
+            Ok(det)
         }
     }
 }
