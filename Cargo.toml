@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 rayon="1.7.0"
 itertools="0.11.0"
+malachite-base = "0.3.2"
+malachite-nz = "0.3.2"
+malachite-q = "0.3.2"
