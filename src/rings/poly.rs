@@ -2,7 +2,7 @@
 
 use malachite_nz::natural::Natural;
 
-use super::rings::*;
+use super::ring::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Polynomial<R: ComRing> {

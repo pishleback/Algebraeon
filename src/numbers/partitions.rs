@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 struct PartitionIterator<P: Fn(usize) -> bool + Copy> {
     n: usize,
     x: usize,
@@ -127,7 +129,7 @@ mod tests {
             println!("{:?}", part);
         }
         println!("end");
-        let parts = partitions(12, |k| true);
+        let parts = partitions(12, |_k| true);
         println!("start");
         for part in parts {
             println!("{:?}", part);

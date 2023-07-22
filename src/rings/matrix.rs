@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use super::rings::*;
+use super::ring::*;
 
 #[derive(Debug)]
 pub enum MatOppErr {
