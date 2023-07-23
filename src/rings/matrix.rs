@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
-use super::ring::*;
+use itertools::Itertools;
+
+use super::{poly::*, ring::*};
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -135,6 +137,34 @@ impl<R: ComRing> Matrix<R> {
             elems,
         }
     }
+
+    pub fn diag(diag: &Vec<R>) -> Self {
+        let n = diag.len();
+        let mut elems = Vec::with_capacity(n * n);
+        for r in 0..n {
+            for c in 0..n {
+                match r == c {
+                    true => elems.push(diag[r].clone()),
+                    false => elems.push(R::zero()),
+                }
+            }
+        }
+        Self {
+            dim1: n,
+            dim2: n,
+            transpose: false,
+            elems,
+        }
+    }
+
+    pub fn apply_map<S: ComRing>(&self, f: Box<dyn Fn(&R) -> S>) -> Matrix<S> {
+        Matrix {
+            dim1: self.dim1,
+            dim2: self.dim2,
+            transpose: self.transpose,
+            elems: self.elems.iter().map(|x| f(x)).collect(),
+        }
+    }
 }
 
 impl<R: ComRing + std::fmt::Display> Matrix<R> {
@@ -193,16 +223,8 @@ impl<R: ComRing> Matrix<R> {
         } else {
             let rows = self.rows();
             let cols = self.cols();
-            println!();
             for c in 0..cols {
                 for r in 0..rows {
-                    println!(
-                        "{} {} {:?} {:?}",
-                        r,
-                        c,
-                        self.at(r, c),
-                        other.rc_to_idx(r, c)
-                    );
                     self.at_mut(r, c).unwrap().add_mut(other.at(r, c).unwrap())
                 }
             }
@@ -230,6 +252,20 @@ impl<R: ComRing> Matrix<R> {
             Ok(()) => Ok(new_a),
             Err(e) => Err(e),
         }
+    }
+
+    pub fn neg_mut(&mut self) {
+        for r in 0..self.rows() {
+            for c in 0..self.cols() {
+                let neg_elem = self.at(r, c).unwrap().neg_ref();
+                *self.at_mut(r, c).unwrap() = neg_elem;
+            }
+        }
+    }
+
+    pub fn neg(mut self) -> Self {
+        self.neg_mut();
+        self
     }
 
     // pub fn mul(a: Self, b: Self) -> Result<Self, MatOppErr> {
@@ -286,7 +322,7 @@ impl<R: ComRing> Matrix<R> {
 }
 
 #[derive(Debug)]
-enum ElementaryRowOppPID<R: GCDDomain> {
+enum ElementaryOppType<R: ComRing> {
     //swap distinct rows
     Swap(usize, usize),
     //multiply a row by a unit
@@ -314,25 +350,30 @@ enum ElementaryRowOppPID<R: GCDDomain> {
     },
 }
 
-impl<R: GCDDomain> ElementaryRowOppPID<R> {
+struct ElementaryOpp<R: ComRing> {
+    transpose: bool, //false = row opp, true = column opp
+    opp: ElementaryOppType<R>,
+}
+
+impl<R: GCDDomain> ElementaryOpp<R> {
     fn check_invariants(&self) -> Result<(), &'static str> {
-        match self {
-            ElementaryRowOppPID::Swap(i, j) => {
+        match &self.opp {
+            ElementaryOppType::Swap(i, j) => {
                 if i == j {
                     return Err("can only swap distinct rows");
                 }
             }
-            ElementaryRowOppPID::AddRowMul { i, j, x: _x } => {
+            ElementaryOppType::AddRowMul { i, j, x: _x } => {
                 if i == j {
                     return Err("can only add a multiple of a row to a distinct row");
                 }
             }
-            ElementaryRowOppPID::UnitMul { row: _row, unit } => {
+            ElementaryOppType::UnitMul { row: _row, unit } => {
                 if !unit.clone().is_unit() {
                     return Err("can only multiply a row by a unit");
                 }
             }
-            ElementaryRowOppPID::TwoInv { i, j, a, b, c, d } => {
+            ElementaryOppType::TwoInv { i, j, a, b, c, d } => {
                 if i == j {
                     return Err("rows must be distinct");
                 }
@@ -350,12 +391,29 @@ impl<R: GCDDomain> ElementaryRowOppPID<R> {
         Ok(())
     }
 
+    fn new_row_opp(opp: ElementaryOppType<R>) -> Self {
+        Self {
+            transpose: false,
+            opp,
+        }
+    }
+
+    fn new_col_opp(opp: ElementaryOppType<R>) -> Self {
+        Self {
+            transpose: true,
+            opp,
+        }
+    }
+
     fn apply(&self, m: &mut Matrix<R>) {
         debug_assert!(self.check_invariants().is_ok());
-        match self {
+        if self.transpose {
+            m.transpose_mut();
+        }
+        match &self.opp {
             // /0 1\
             // \1 0/
-            ElementaryRowOppPID::Swap(i, j) => {
+            ElementaryOppType::Swap(i, j) => {
                 for col in 0..m.cols() {
                     let tmp = m.at(*i, col).unwrap().clone();
                     *m.at_mut(*i, col).unwrap() = m.at(*j, col).unwrap().clone();
@@ -364,7 +422,7 @@ impl<R: GCDDomain> ElementaryRowOppPID<R> {
             }
             // /1 x\
             // \0 1/
-            ElementaryRowOppPID::AddRowMul { i, j, x } => {
+            ElementaryOppType::AddRowMul { i, j, x } => {
                 for col in 0..m.cols() {
                     let offset = R::mul_refs(m.at(*j, col).unwrap(), x);
                     m.at_mut(*i, col).unwrap().add_mut(&offset)
@@ -372,14 +430,14 @@ impl<R: GCDDomain> ElementaryRowOppPID<R> {
             }
             // /u 0\
             // \0 1/
-            ElementaryRowOppPID::UnitMul { row, unit } => {
+            ElementaryOppType::UnitMul { row, unit } => {
                 for col in 0..m.cols() {
                     m.at_mut(*row, col).unwrap().mul_mut(unit)
                 }
             }
             // /a b\
             // \c d/
-            ElementaryRowOppPID::TwoInv { i, j, a, b, c, d } => {
+            ElementaryOppType::TwoInv { i, j, a, b, c, d } => {
                 for col in 0..m.cols() {
                     // tmp = c*row(i) + d*row(j)
                     let tmp = R::add(
@@ -395,11 +453,14 @@ impl<R: GCDDomain> ElementaryRowOppPID<R> {
                     *m.at_mut(*j, col).unwrap() = tmp;
                 }
             }
+        };
+        if self.transpose {
+            m.transpose_mut();
         }
     }
 }
 
-impl<R: GCDDomain + std::fmt::Display> Matrix<R> {
+impl<R: GCDDomain> Matrix<R> {
     //TODO: replace with over a pid
     //if A:=self return (H, U, pivots) such that
     //H is in row hermite normal form
@@ -433,7 +494,7 @@ impl<R: GCDDomain + std::fmt::Display> Matrix<R> {
                     // perform the following row opps on self
                     // / x  -b/d \
                     // \ y   a/d /
-                    let row_opp = ElementaryRowOppPID::TwoInv {
+                    let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::TwoInv {
                         i: pr,
                         j: r,
                         a: x,
@@ -441,7 +502,7 @@ impl<R: GCDDomain + std::fmt::Display> Matrix<R> {
                         //TODO: compute b/d and a/d at the same time d is computed?
                         c: R::div(b.clone(), d.clone()).unwrap().neg(),
                         d: R::div(a.clone(), d.clone()).unwrap(),
-                    };
+                    });
                     //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
                     row_opp.apply(&mut self);
                     row_opp.apply(&mut u);
@@ -449,10 +510,10 @@ impl<R: GCDDomain + std::fmt::Display> Matrix<R> {
             } else {
                 //explicitly put the pivot into fav assoc form
                 let (unit, _assoc) = self.at(pr, pc).unwrap().factor_fav_assoc_ref().unwrap();
-                let row_opp = ElementaryRowOppPID::UnitMul {
+                let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::UnitMul {
                     row: pr,
                     unit: unit.inv().unwrap(),
-                };
+                });
                 //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
                 row_opp.apply(&mut self);
                 row_opp.apply(&mut u);
@@ -473,12 +534,151 @@ impl<R: GCDDomain + std::fmt::Display> Matrix<R> {
         (rh.transpose(), ru.transpose(), pivs)
     }
 
-    pub fn smith_algorithm(&self) -> (Self, Self, Self) {
-        todo!();
+    //return (u, s, v, k) such that self = usv and s is in smith normal form and u, v are invertible and k is the number of non-zero elements in the diagonal of s
+    pub fn smith_algorithm(mut self) -> (Self, Self, Self, usize) {
+        let mut u = Self::ident(self.rows());
+        let mut v = Self::ident(self.cols());
+
+        let mut n = 0;
+        while n < self.rows() && n < self.cols() {
+            let mut first = true;
+            let mut all_divisible;
+            'reduce_loop: loop {
+                //replace the first row (a0, a1, ..., ak) with (gcd, 0, ..., 0). Might mess up the first column in the process
+                all_divisible = true;
+                for c in n + 1..self.cols() {
+                    let a = self.at(n, n).unwrap();
+                    let b = self.at(n, c).unwrap();
+                    let maybe_q = R::div_refs(b, a);
+                    if maybe_q.is_ok() {
+                        //b is a multiple of a
+                        //replace (a, b) with (a, 0) by subtracting a multiple of a from b
+                        let q = maybe_q.unwrap();
+                        let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::AddRowMul {
+                            i: c,
+                            j: n,
+                            x: q.neg(),
+                        });
+                        col_opp.apply(&mut self);
+                        col_opp.apply(&mut v);
+                    } else {
+                        all_divisible = false;
+                        //b is not a multiple of a
+                        //replace (a, b) with (gcd, 0)
+                        let (d, x, y) = R::xgcd(a.clone(), b.clone());
+                        debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), d);
+                        let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::TwoInv {
+                            i: n,
+                            j: c,
+                            a: x,
+                            b: y,
+                            c: R::div(b.clone(), d.clone()).unwrap().neg(),
+                            d: R::div(a.clone(), d.clone()).unwrap(),
+                        });
+                        col_opp.apply(&mut self);
+                        col_opp.apply(&mut v);
+                    }
+                }
+                if all_divisible && !first {
+                    break 'reduce_loop;
+                }
+                first = false;
+
+                //replace the first column (a0, a1, ..., ak) with (gcd, 0, ..., 0). Might mess up the first row in the process
+                all_divisible = true;
+                for r in n + 1..self.rows() {
+                    let a = self.at(n, n).unwrap();
+                    let b = self.at(r, n).unwrap();
+                    let maybe_q = R::div_refs(b, a);
+                    if maybe_q.is_ok() {
+                        //b is a multiple of a
+                        //replace (a, b) with (a, 0) by subtracting a multiple of a from b
+                        let q = maybe_q.unwrap();
+                        let col_opp = ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
+                            i: r,
+                            j: n,
+                            x: q.neg(),
+                        });
+                        col_opp.apply(&mut self);
+                        col_opp.apply(&mut u);
+                    } else {
+                        all_divisible = false;
+                        //b is not a multiple of a
+                        //replace (a, b) with (gcd, 0)
+                        let (d, x, y) = R::xgcd(a.clone(), b.clone());
+                        debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), d);
+                        let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::TwoInv {
+                            i: n,
+                            j: r,
+                            a: x,
+                            b: y,
+                            c: R::div(b.clone(), d.clone()).unwrap().neg(),
+                            d: R::div(a.clone(), d.clone()).unwrap(),
+                        });
+                        row_opp.apply(&mut self);
+                        row_opp.apply(&mut u);
+                    }
+                }
+                if all_divisible {
+                    break 'reduce_loop;
+                }
+            }
+            //now the first row and the first column are all zero except for the top left element
+            //some more fiddling is needed now to make the top left element the gcd of everything else
+            for r in n + 1..self.rows() {
+                //row(n) = row(n) + row(r)
+                let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
+                    i: n,
+                    j: r,
+                    x: R::one(),
+                });
+                row_opp.apply(&mut self);
+                row_opp.apply(&mut u);
+                //row(n) goes from (g, a1, a2, ..., an) to (gcd, 0, 0, ..., 0)
+                for c in n + 1..self.cols() {
+                    let a = self.at(n, n).unwrap();
+                    let b = self.at(n, c).unwrap();
+                    //b is not a multiple of a
+                    //replace (a, b) with (gcd, 0)
+                    let (g, x, y) = R::xgcd(a.clone(), b.clone());
+                    debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), g);
+                    let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::TwoInv {
+                        i: n,
+                        j: c,
+                        a: x,
+                        b: y,
+                        c: R::div(b.clone(), g.clone()).unwrap().neg(),
+                        d: R::div(a.clone(), g.clone()).unwrap(),
+                    });
+                    col_opp.apply(&mut self);
+                    col_opp.apply(&mut v);
+                }
+                //fix the first column
+                for fix_r in n + 1..self.cols() {
+                    let a = self.at(n, n).unwrap();
+                    let b = self.at(fix_r, n).unwrap();
+                    let q = R::div_refs(b, a).unwrap();
+                    let col_opp = ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
+                        i: fix_r,
+                        j: n,
+                        x: q.neg(),
+                    });
+                    col_opp.apply(&mut self);
+                    col_opp.apply(&mut u);
+                }
+            }
+            if self.at(n, n).unwrap() == &R::zero() {
+                //the bottom right submatrix is all zero
+                break;
+            }
+            n += 1;
+        }
+
+        (u, self, v, n)
     }
 }
 
-impl<R: EuclideanDomain + FavoriteAssociate + std::fmt::Display> Matrix<R> {
+impl<R: EuclideanDomain + FavoriteAssociate> Matrix<R> {
     //if A:=self return (H, U, pivots) such that
     //H is in row reduced hermite normal form
     //U is invertible
@@ -494,11 +694,11 @@ impl<R: EuclideanDomain + FavoriteAssociate + std::fmt::Display> Matrix<R> {
                 let b = h.at(pr, *pc).unwrap();
                 //a = b*q + r
                 let q = R::quo_refs(a, b).unwrap();
-                let row_opp = ElementaryRowOppPID::AddRowMul {
+                let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
                     i: r,
                     j: pr,
                     x: q.neg(),
-                };
+                });
                 row_opp.apply(&mut h);
                 row_opp.apply(&mut u);
             }
@@ -513,9 +713,54 @@ impl<R: EuclideanDomain + FavoriteAssociate + std::fmt::Display> Matrix<R> {
     }
 }
 
+impl<F: Field + std::fmt::Display> Matrix<F> {
+    pub fn presentation_matrix(self) -> Result<Matrix<Polynomial<F>>, MatOppErr> {
+        let n = self.rows();
+        if n != self.cols() {
+            Err(MatOppErr::NotSquare)
+        } else {
+            Ok(Matrix::add(
+                self.apply_map(Box::new(|x| Polynomial::from(x.clone()))),
+                Matrix::diag(&(0..n).map(|_i| Polynomial::var()).collect()).neg(),
+            )
+            .unwrap())
+        }
+    }
+
+    pub fn minimal_polynomial(self) -> Result<Polynomial<F>, MatOppErr> {
+        match self.presentation_matrix() {
+            Ok(pres_mat) => {
+                let (_u, s, _v, k) = pres_mat.smith_algorithm();
+                s.pprint();
+                debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
+                Ok(s.at(k - 1, k - 1).unwrap().clone())
+            }
+            Err(MatOppErr::NotSquare) => Err(MatOppErr::NotSquare),
+            Err(_) => panic!(),
+        }
+    }
+
+    pub fn characteristic_polynomial(self) -> Result<Polynomial<F>, MatOppErr> {
+        match self.presentation_matrix() {
+            Ok(pres_mat) => {
+                let (_u, s, _v, k) = pres_mat.smith_algorithm();
+                debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
+                let mut char_poly = Polynomial::one();
+                for i in 0..k {
+                    char_poly.mul_mut(s.at(i, i).unwrap())
+                }
+                Ok(char_poly)
+            }
+            Err(MatOppErr::NotSquare) => Err(MatOppErr::NotSquare),
+            Err(_) => panic!(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use malachite_nz::integer::Integer;
+    use malachite_q::Rational;
 
     use super::*;
 
@@ -1021,12 +1266,112 @@ mod tests {
     }
 
     #[test]
-    fn reduced_hermite_algorithm() {
-        // let m: Matrix<Integer> = Matrix::from_rows(vec![
-        //     vec![Integer::from(1), Integer::from(3), Integer::from(2)],
-        //     vec![Integer::from(-3), Integer::from(-1), Integer::from(-3)],
-        //     vec![Integer::from(2), Integer::from(3), Integer::from(1)],
-        // ]);
-        // assert_eq!(m.det_naive().unwrap(), Integer::from(-15));
+    fn smith_algorithm() {
+        let a = Matrix::from_rows(vec![
+            vec![Integer::from(2), Integer::from(4), Integer::from(4)],
+            vec![Integer::from(-6), Integer::from(6), Integer::from(12)],
+            vec![Integer::from(10), Integer::from(4), Integer::from(16)],
+        ]);
+        let (u, s, v, k) = a.clone().smith_algorithm();
+        assert_eq!(
+            s,
+            Matrix::mul_refs(&Matrix::mul_refs(&u, &a).unwrap(), &v).unwrap()
+        );
+        assert_eq!(k, 3);
+        assert_eq!(
+            s,
+            Matrix::from_rows(vec![
+                vec![Integer::from(2), Integer::from(0), Integer::from(0)],
+                vec![Integer::from(0), Integer::from(2), Integer::from(0)],
+                vec![Integer::from(0), Integer::from(0), Integer::from(156)]
+            ])
+        );
+
+        let a = Matrix::from_rows(vec![
+            vec![
+                Integer::from(-6),
+                Integer::from(111),
+                Integer::from(-36),
+                Integer::from(6),
+            ],
+            vec![
+                Integer::from(5),
+                Integer::from(-672),
+                Integer::from(210),
+                Integer::from(74),
+            ],
+            vec![
+                Integer::from(0),
+                Integer::from(-255),
+                Integer::from(81),
+                Integer::from(24),
+            ],
+            vec![
+                Integer::from(-7),
+                Integer::from(255),
+                Integer::from(-81),
+                Integer::from(-10),
+            ],
+        ]);
+        let (u, s, v, k) = a.clone().smith_algorithm();
+        assert_eq!(
+            s,
+            Matrix::mul_refs(&Matrix::mul_refs(&u, &a).unwrap(), &v).unwrap()
+        );
+        assert_eq!(k, 3);
+        assert_eq!(
+            s,
+            Matrix::from_rows(vec![
+                vec![
+                    Integer::from(1),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0)
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(3),
+                    Integer::from(0),
+                    Integer::from(0)
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(21),
+                    Integer::from(0)
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0)
+                ]
+            ])
+        );
+
+        let a = Matrix::from_rows(vec![
+            vec![Rational::from(0), Rational::from(0), Rational::from(0)],
+            vec![Rational::from(0), Rational::from(0), Rational::from(1)],
+            vec![Rational::from(0), Rational::from(0), Rational::from(0)],
+        ]);
+        let min_p = a.clone().minimal_polynomial().unwrap();
+        let char_p = a.clone().characteristic_polynomial().unwrap();
+        assert_eq!(
+            min_p,
+            Polynomial::new(vec![
+                Rational::from(0),
+                Rational::from(0),
+                Rational::from(-1)
+            ])
+        );
+        assert_eq!(
+            char_p,
+            Polynomial::new(vec![
+                Rational::from(0),
+                Rational::from(0),
+                Rational::from(0),
+                Rational::from(-1)
+            ])
+        );
     }
 }

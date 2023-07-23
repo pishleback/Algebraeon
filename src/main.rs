@@ -5,11 +5,10 @@ use malachite_q::Rational;
 
 use crate::rings::matrix::Matrix;
 
-
-mod sets;
 mod groups;
 mod numbers;
 mod rings;
+mod sets;
 
 fn main() {
     // let (grp_g, _perms, _elems) = enumerated_groups::symmetric_group_structure(6);
@@ -42,51 +41,26 @@ fn main() {
     //     ],
     // );
 
-    // let iso = groups::iso_rep::IsoRep::Symmetric(5);// * groups::IsoRep::Dihedral(3);
-    // println!("{:?} ", iso);
-    // let grp = iso.to_group().unwrap();
+    let iso = groups::iso_rep::IsoRep::Symmetric(5);// * groups::IsoRep::Dihedral(3);
+    println!("{:?} ", iso);
+    let grp = iso.to_group().unwrap();
 
-    // println!("");
+    println!("");
 
-    // let mut isom_classes = HashSet::new();
-    // for (sg, _gens) in grp.subgroups() {
-    //     let isom_class = groups::iso_rep::IsoRep::from_group(&sg.to_group());
-    //     isom_classes.insert(isom_class);
-    // }
-    // for isom_class in isom_classes {
-    //     print!("{} ", isom_class.to_string());
-    // }
+    let mut isom_classes = HashSet::new();
+    for (sg, _gens) in grp.subgroups() {
+        let isom_class = groups::iso_rep::IsoRep::from_group(&sg.to_group());
+        isom_classes.insert(isom_class);
+    }
+    for isom_class in isom_classes {
+        print!("{} ", isom_class.to_string());
+    }
 
-    // println!("");
+    println!("");
 
     let a = Matrix::from_rows(vec![
-        vec![
-            Integer::from(2),
-            Integer::from(3),
-            Integer::from(6),
-            Integer::from(2),
-        ],
-        vec![
-            Integer::from(5),
-            Integer::from(6),
-            Integer::from(1),
-            Integer::from(6),
-        ],
-        vec![
-            Integer::from(8),
-            Integer::from(3),
-            Integer::from(1),
-            Integer::from(1),
-        ],
+        vec![Integer::from(2), Integer::from(4), Integer::from(4)],
+        vec![Integer::from(-6), Integer::from(6), Integer::from(12)],
+        vec![Integer::from(10), Integer::from(4), Integer::from(16)],
     ]);
-
-    let (h, u, pivs) = a.clone().row_reduced_hermite_algorithm();
-
-    a.pprint();
-    println!();
-    h.pprint();
-    println!();
-    u.pprint();
-    println!();
-    println!("{:?}", pivs);
 }

@@ -65,6 +65,14 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug {
         Self::div(a.clone(), b.clone())
     }
 
+    fn divisible(a : Self, b : Self) -> bool {
+        match Self::div(a, b) {
+            Ok(_q) => true,
+            Err(RingOppErr::NotDivisible) => false,
+            Err(RingOppErr::DivideByZero) => false,
+        }
+    }
+
     fn sum(elems: Vec<Self>) -> Self {
         let mut ans = Self::zero();
         for elem in elems {
@@ -240,6 +248,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> GCDDomain for R {
         // g = u*g_ass
         // g = xa+by
         // xa+by=u*g_ass
+        debug_assert!(unit.clone().is_unit());
         (ass_x, R::div_rref(pa, &unit).unwrap(), R::div(pb, unit).unwrap())
     }
 }
