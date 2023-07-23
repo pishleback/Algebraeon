@@ -124,18 +124,47 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug {
             // Err(_) => panic!(),
         }
     }
+
+    fn inv(self) -> Result<Self, RingOppErr> {
+        Self::div(Self::one(), self)
+    }
+
+    fn inv_ref(a: &Self) -> Result<Self, RingOppErr> {
+        Self::div_rref(Self::one(), a)
+    }
 }
 
 pub trait IntegralDomain: ComRing {
     //promise that mul(a, b) == 0 implies a == 0 or b == 0
 }
 
-pub trait PrincipalIdealDomain: ComRing {
+pub trait FavoriteAssociate: IntegralDomain {
+    //for each self=x, a deterministic representative y for the associate class of x
+    //if x=self, return (u, y) such that x=u*y
+    //return None iff self=0
+    fn factor_fav_assoc(self) -> Option<(Self, Self)>;
+    fn factor_fav_assoc_ref(&self) -> Option<(Self, Self)> {
+        self.clone().factor_fav_assoc()
+    }
+}
+
+pub trait GCDDomain: ComRing + FavoriteAssociate {
+    //any gcds should be the standard associate representative
     fn gcd(x: Self, y: Self) -> Self;
+    fn gcd_list(elems : &Vec<Self>) -> Self {
+        let mut ans = Self::zero();
+        for x in elems {
+            ans = Self::gcd(ans, x.clone());
+        }
+        ans
+    }
     fn xgcd(x: Self, y: Self) -> (Self, Self, Self);
 }
 
-pub trait EuclideanDomain: PrincipalIdealDomain {
+// pub trait PrincipalIdealDomain: GCDDomain {
+// }
+
+pub trait EuclideanDomain : IntegralDomain {
     //should return None for 0, and Some(norm) for everything else
     fn norm(&self) -> Option<Natural>;
     fn quorem(a: Self, b: Self) -> Result<(Self, Self), RingOppErr>;
@@ -182,14 +211,15 @@ pub trait EuclideanDomain: PrincipalIdealDomain {
     }
 }
 
-impl<R: EuclideanDomain> PrincipalIdealDomain for R {
+impl<R: EuclideanDomain + FavoriteAssociate> GCDDomain for R {
     fn gcd(mut x: Self, mut y: Self) -> Self {
         //Euclidean algorithm
         while y != Self::zero() {
             let r = Self::rem_rref(x, &y).unwrap();
             (x, y) = (y, r)
-        }
-        x
+        };
+        let (_unit, assoc) = x.factor_fav_assoc().unwrap();
+        assoc
     }
 
     fn xgcd(mut x: Self, mut y: Self) -> (Self, Self, Self) {
@@ -206,20 +236,30 @@ impl<R: EuclideanDomain> PrincipalIdealDomain for R {
             (b, pb) = (new_b, b);
             (x, y) = (y, r);
         }
-        return (x, pa, pb);
+        let (unit, ass_x) = x.factor_fav_assoc().unwrap();
+        // g = u*g_ass
+        // g = xa+by
+        // xa+by=u*g_ass
+        (ass_x, R::div_rref(pa, &unit).unwrap(), R::div(pb, unit).unwrap())
     }
 }
+
+// impl<R: EuclideanDomain> PrincipalIdealDomain for R {
+
+// }
 
 pub trait Field: IntegralDomain {
     //promise that a/b always works, except unless b=0.
     //in other words, a/b must not return not divisible
+}
 
-    fn inv(a: Self) -> Result<Self, RingOppErr> {
-        Self::div(Self::one(), a)
-    }
-
-    fn inv_ref(a: &Self) -> Result<Self, RingOppErr> {
-        Self::div_rref(Self::one(), a)
+impl<F: Field> FavoriteAssociate for F {
+    fn factor_fav_assoc(self) -> Option<(Self, Self)> {
+        if self == Self::zero() {
+            None
+        } else {
+            Some((self, Self::one()))
+        }
     }
 }
 
@@ -543,6 +583,42 @@ impl<R: ComRing> std::ops::Add<&Ergonomic<R>> for i32 {
 
     fn add(self, other: &Ergonomic<R>) -> Self::Output {
         Ergonomic::new(R::from_int(&Integer::from(self))) + other
+    }
+}
+
+//val - i32
+impl<R: ComRing> std::ops::Sub<i32> for Ergonomic<R> {
+    type Output = Ergonomic<R>;
+
+    fn sub(self, other: i32) -> Self::Output {
+        self - Ergonomic::new(R::from_int(&Integer::from(other)))
+    }
+}
+
+//ref - i32
+impl<R: ComRing> std::ops::Sub<i32> for &Ergonomic<R> {
+    type Output = Ergonomic<R>;
+
+    fn sub(self, other: i32) -> Self::Output {
+        self - Ergonomic::new(R::from_int(&Integer::from(other)))
+    }
+}
+
+//i32 - val
+impl<R: ComRing> std::ops::Sub<Ergonomic<R>> for i32 {
+    type Output = Ergonomic<R>;
+
+    fn sub(self, other: Ergonomic<R>) -> Self::Output {
+        Ergonomic::new(R::from_int(&Integer::from(self))) - other
+    }
+}
+
+//i32 - ref
+impl<R: ComRing> std::ops::Sub<&Ergonomic<R>> for i32 {
+    type Output = Ergonomic<R>;
+
+    fn sub(self, other: &Ergonomic<R>) -> Self::Output {
+        Ergonomic::new(R::from_int(&Integer::from(self))) - other
     }
 }
 

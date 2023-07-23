@@ -193,6 +193,44 @@ impl<R: ComRing> ComRing for Polynomial<R> {
 
 impl<R: IntegralDomain> IntegralDomain for Polynomial<R> {}
 
+impl<R: GCDDomain> Polynomial<R> {
+    fn factor_primitive(mut self) -> Option<(R, Self)> {
+        if self == Self::zero() {
+            None
+        } else {
+            let g = R::gcd_list(&self.coeffs);
+            for i in 0..self.coeffs.len() {
+                self.coeffs[i] = R::div_refs(&self.coeffs[i], &g).unwrap()
+            }
+
+            Some((g, self))
+        }
+    }
+}
+
+impl<R: FavoriteAssociate> FavoriteAssociate for Polynomial<R> {
+    fn factor_fav_assoc(mut self) -> Option<(Self, Self)> {
+        if self == Self::zero() {
+            None
+        } else {
+            // let g = R::gcd_list(&self.coeffs);
+            // for i in 0..self.coeffs.len() {
+            //     self.coeffs[i] = R::div_refs(&self.coeffs[i], &g).unwrap()
+            // }
+
+            let (u, _c) = self.coeffs[self.coeffs.len() - 1]
+                .clone()
+                .factor_fav_assoc()
+                .unwrap();
+            for i in 0..self.coeffs.len() {
+                self.coeffs[i] = R::div_refs(&self.coeffs[i], &u).unwrap()
+            }
+
+            Some((Self::from(u), self))
+        }
+    }
+}
+
 impl<R: Field> EuclideanDomain for Polynomial<R> {
     fn norm(&self) -> Option<Natural> {
         if self == &Self::zero() {
@@ -354,5 +392,16 @@ mod tests {
         println!("gcd({:?} , {:?}) = {:?}", x, y, g);
         Polynomial::<Rational>::div_refs(&g, &b.elem()).unwrap();
         Polynomial::<Rational>::div_refs(&b.elem(), &g).unwrap();
+    }
+
+    #[test]
+    fn integer_primitive_and_assoc() {
+        let x = &Ergonomic::new(Polynomial::<Integer>::var());
+        let p1 = (-2 - 4 * x.pow(2)).elem();
+        let (g, p2) = p1.factor_primitive().unwrap();
+        assert_eq!(g, Integer::from(2));
+        let (u, p3) = p2.factor_fav_assoc().unwrap();
+        assert_eq!(u.coeffs[0], Integer::from(-1));
+        assert_eq!(Ergonomic::new(p3), 1 + 2 * x.pow(2));
     }
 }

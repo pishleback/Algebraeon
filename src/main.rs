@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use malachite_nz::integer::Integer;
+use malachite_q::Rational;
 
 use crate::rings::matrix::Matrix;
 
@@ -58,7 +59,7 @@ fn main() {
 
     // println!("");
 
-    let a: Matrix<Integer> = Matrix::from_rows(vec![
+    let a = Matrix::from_rows(vec![
         vec![
             Integer::from(2),
             Integer::from(3),
@@ -79,7 +80,7 @@ fn main() {
         ],
     ]);
 
-    let (h, u, pivs) = a.clone().row_hermite_algorithm();
+    let (h, u, pivs) = a.clone().row_reduced_hermite_algorithm();
 
     a.pprint();
     println!();
@@ -88,6 +89,4 @@ fn main() {
     u.pprint();
     println!();
     println!("{:?}", pivs);
-
-    panic!();
 }

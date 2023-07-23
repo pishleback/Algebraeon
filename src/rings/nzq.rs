@@ -96,7 +96,20 @@ impl ComRing for Integer {
         }
     }
 }
+
 impl IntegralDomain for Integer {}
+
+impl FavoriteAssociate for Integer {
+    fn factor_fav_assoc(self) -> Option<(Self, Self)> {
+        if self == 0 {
+            None
+        } else if self < 0 {
+            Some((Integer::from(-1), self.neg()))
+        } else {
+            Some((Integer::from(1), self))
+        }
+    }
+}
 
 impl EuclideanDomain for Integer {
     fn norm(&self) -> Option<Natural> {

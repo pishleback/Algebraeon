@@ -286,13 +286,19 @@ impl<R: ComRing> Matrix<R> {
 }
 
 #[derive(Debug)]
-enum ElementaryRowOppPID<R: PrincipalIdealDomain> {
+enum ElementaryRowOppPID<R: GCDDomain> {
     //swap distinct rows
     Swap(usize, usize),
     //multiply a row by a unit
     UnitMul {
         row: usize,
         unit: R,
+    },
+    //row(i) -> row(i) + x*row(j)
+    AddRowMul {
+        i: usize,
+        j: usize,
+        x: R,
     },
     //apply invertible row operations to two rows
     // /a b\
@@ -308,12 +314,17 @@ enum ElementaryRowOppPID<R: PrincipalIdealDomain> {
     },
 }
 
-impl<R: PrincipalIdealDomain> ElementaryRowOppPID<R> {
+impl<R: GCDDomain> ElementaryRowOppPID<R> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         match self {
             ElementaryRowOppPID::Swap(i, j) => {
                 if i == j {
                     return Err("can only swap distinct rows");
+                }
+            }
+            ElementaryRowOppPID::AddRowMul { i, j, x: _x } => {
+                if i == j {
+                    return Err("can only add a multiple of a row to a distinct row");
                 }
             }
             ElementaryRowOppPID::UnitMul { row: _row, unit } => {
@@ -342,6 +353,8 @@ impl<R: PrincipalIdealDomain> ElementaryRowOppPID<R> {
     fn apply(&self, m: &mut Matrix<R>) {
         debug_assert!(self.check_invariants().is_ok());
         match self {
+            // /0 1\
+            // \1 0/
             ElementaryRowOppPID::Swap(i, j) => {
                 for col in 0..m.cols() {
                     let tmp = m.at(*i, col).unwrap().clone();
@@ -349,11 +362,23 @@ impl<R: PrincipalIdealDomain> ElementaryRowOppPID<R> {
                     *m.at_mut(*j, col).unwrap() = tmp;
                 }
             }
+            // /1 x\
+            // \0 1/
+            ElementaryRowOppPID::AddRowMul { i, j, x } => {
+                for col in 0..m.cols() {
+                    let offset = R::mul_refs(m.at(*j, col).unwrap(), x);
+                    m.at_mut(*i, col).unwrap().add_mut(&offset)
+                }
+            }
+            // /u 0\
+            // \0 1/
             ElementaryRowOppPID::UnitMul { row, unit } => {
                 for col in 0..m.cols() {
                     m.at_mut(*row, col).unwrap().mul_mut(unit)
                 }
             }
+            // /a b\
+            // \c d/
             ElementaryRowOppPID::TwoInv { i, j, a, b, c, d } => {
                 for col in 0..m.cols() {
                     // tmp = c*row(i) + d*row(j)
@@ -374,7 +399,7 @@ impl<R: PrincipalIdealDomain> ElementaryRowOppPID<R> {
     }
 }
 
-impl<R: PrincipalIdealDomain> Matrix<R> {
+impl<R: GCDDomain + std::fmt::Display> Matrix<R> {
     //TODO: replace with over a pid
     //if A:=self return (H, U, pivots) such that
     //H is in row hermite normal form
@@ -395,26 +420,44 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
                     break 'pivot_loop;
                 }
             }
+            debug_assert_ne!(self.at(pr, pc).unwrap(), &R::zero());
             pivs.push(pc);
-            for r in pr + 1..self.rows() {
-                let a = self.at(pr, pc).unwrap();
-                let b = self.at(r, pc).unwrap();
-                let (d, x, y) = R::xgcd(a.clone(), b.clone());
-                // perform the following row opps on self
-                // / x  -b/d \
-                // \ y   a/d /
-                let row_opp = ElementaryRowOppPID::TwoInv {
-                    i: pr,
-                    j: r,
-                    a: x,
-                    b: y,
-                    //TODO: compute b/d and a/d at the same time d is computed?
-                    c: R::div(b.clone(), d.clone()).unwrap().neg(),
-                    d: R::div(a.clone(), d.clone()).unwrap(),
+
+            if pr + 1 < self.rows() {
+                //reduce everything below the pivot to zero
+                for r in pr + 1..self.rows() {
+                    let a = self.at(pr, pc).unwrap();
+                    let b = self.at(r, pc).unwrap();
+                    let (d, x, y) = R::xgcd(a.clone(), b.clone());
+                    debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), d);
+                    // perform the following row opps on self
+                    // / x  -b/d \
+                    // \ y   a/d /
+                    let row_opp = ElementaryRowOppPID::TwoInv {
+                        i: pr,
+                        j: r,
+                        a: x,
+                        b: y,
+                        //TODO: compute b/d and a/d at the same time d is computed?
+                        c: R::div(b.clone(), d.clone()).unwrap().neg(),
+                        d: R::div(a.clone(), d.clone()).unwrap(),
+                    };
+                    //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
+                    row_opp.apply(&mut self);
+                    row_opp.apply(&mut u);
+                }
+            } else {
+                //explicitly put the pivot into fav assoc form
+                let (unit, _assoc) = self.at(pr, pc).unwrap().factor_fav_assoc_ref().unwrap();
+                let row_opp = ElementaryRowOppPID::UnitMul {
+                    row: pr,
+                    unit: unit.inv().unwrap(),
                 };
+                //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
                 row_opp.apply(&mut self);
                 row_opp.apply(&mut u);
             }
+
             //should have eliminated everything below the pivot
             for r in pr + 1..self.rows() {
                 debug_assert_eq!(self.at(r, pc).unwrap(), &R::zero());
@@ -435,18 +478,38 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
     }
 }
 
-impl<R: EuclideanDomain> Matrix<R> {
+impl<R: EuclideanDomain + FavoriteAssociate + std::fmt::Display> Matrix<R> {
     //if A:=self return (H, U, pivots) such that
     //H is in row reduced hermite normal form
     //U is invertible
     //H=UA
     //pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
     pub fn row_reduced_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
-        todo!();
+        let (mut h, mut u, pivs) = self.row_hermite_algorithm();
+
+        for (pr, pc) in pivs.iter().enumerate().rev() {
+            for r in 0..pr {
+                //reduce h[r, pc] so that it has norm less than h[pr, pc]
+                let a = h.at(r, *pc).unwrap();
+                let b = h.at(pr, *pc).unwrap();
+                //a = b*q + r
+                let q = R::quo_refs(a, b).unwrap();
+                let row_opp = ElementaryRowOppPID::AddRowMul {
+                    i: r,
+                    j: pr,
+                    x: q.neg(),
+                };
+                row_opp.apply(&mut h);
+                row_opp.apply(&mut u);
+            }
+        }
+
+        (h, u, pivs)
     }
 
     pub fn col_reduced_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
-        todo!();
+        let (rh, ru, pivs) = self.transpose().row_reduced_hermite_algorithm();
+        (rh.transpose(), ru.transpose(), pivs)
     }
 }
 
@@ -850,9 +913,9 @@ mod tests {
             ]),
         ] {
             println!();
-            println!("hermite row algorithm for");
+            println!("hermite reduced row algorithm for");
             a.pprint();
-            let (h, u, pivs) = a.clone().row_hermite_algorithm();
+            let (h, u, pivs) = a.clone().row_reduced_hermite_algorithm();
             println!("H =");
             h.pprint();
             println!("pivs = {:?}", pivs);
@@ -861,28 +924,99 @@ mod tests {
             assert_eq!(h, Matrix::<Integer>::mul_refs(&u, &a).unwrap());
             for (pr, pc) in pivs.iter().enumerate() {
                 assert!(h.at(pr, *pc).unwrap() != &Integer::zero());
-                for r in pr + 1..h.rows() {
-                    assert_eq!(h.at(r, *pc).unwrap(), &Integer::zero());
+                for r in 0..h.rows() {
+                    if r > pr {
+                        assert_eq!(h.at(r, *pc).unwrap(), &Integer::zero());
+                    } else if r == pr {
+                        let (_unit, assoc) =
+                            h.at(r, *pc).unwrap().clone().factor_fav_assoc().unwrap();
+                        assert_eq!(&assoc, h.at(r, *pc).unwrap());
+                    } else {
+                        assert!(h.at(r, *pc).unwrap().norm() < h.at(pr, *pc).unwrap().norm());
+                    }
                 }
             }
 
             println!();
-            println!("hermite col algorithm for");
+            println!("hermite reduced col algorithm for");
             a.pprint();
-            let (h, u, pivs) = a.clone().col_hermite_algorithm();            
+            let (h, u, pivs) = a.clone().col_reduced_hermite_algorithm();
             println!("H =");
             h.pprint();
             println!("pivs = {:?}", pivs);
             println!("U =");
             u.pprint();
-            
+
             assert_eq!(h, Matrix::<Integer>::mul_refs(&a, &u).unwrap());
             for (pc, pr) in pivs.iter().enumerate() {
                 assert!(h.at(*pr, pc).unwrap() != &Integer::zero());
-                for c in pc + 1..h.cols() {
-                    assert_eq!(h.at(*pr, c).unwrap(), &Integer::zero());
+                for c in 0..h.cols() {
+                    if c > pc {
+                        assert_eq!(h.at(*pr, c).unwrap(), &Integer::zero());
+                    } else if c == pc {
+                        let (_unit, assoc) =
+                            h.at(*pr, c).unwrap().clone().factor_fav_assoc().unwrap();
+                        assert_eq!(&assoc, h.at(*pr, c).unwrap());
+                    } else {
+                        assert!(h.at(*pr, c).unwrap().norm() < h.at(*pr, pc).unwrap().norm());
+                    }
                 }
             }
+
+            //integer reduced hermite normal form is unique, so we can fully check an example
+            let a = Matrix::from_rows(vec![
+                vec![
+                    Integer::from(2),
+                    Integer::from(3),
+                    Integer::from(6),
+                    Integer::from(2),
+                ],
+                vec![
+                    Integer::from(5),
+                    Integer::from(6),
+                    Integer::from(1),
+                    Integer::from(6),
+                ],
+                vec![
+                    Integer::from(8),
+                    Integer::from(3),
+                    Integer::from(1),
+                    Integer::from(1),
+                ],
+            ]);
+
+            let expected_h = Matrix::from_rows(vec![
+                vec![
+                    Integer::from(1),
+                    Integer::from(0),
+                    Integer::from(50),
+                    Integer::from(-11),
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(3),
+                    Integer::from(28),
+                    Integer::from(-2),
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(61),
+                    Integer::from(-13),
+                ],
+            ]);
+
+            let expected_u = Matrix::from_rows(vec![
+                vec![Integer::from(9), Integer::from(-5), Integer::from(1)],
+                vec![Integer::from(5), Integer::from(-2), Integer::from(0)],
+                vec![Integer::from(11), Integer::from(-6), Integer::from(1)],
+            ]);
+
+            let (h, u, pivs) = a.clone().row_reduced_hermite_algorithm();
+
+            assert_eq!(h, expected_h);
+            assert_eq!(u, expected_u);
+            assert_eq!(pivs, vec![0, 1, 2]);
         }
     }
 
