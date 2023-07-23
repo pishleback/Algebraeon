@@ -11,6 +11,20 @@ pub struct Polynomial<R: ComRing> {
     coeffs: Vec<R>,
 }
 
+impl<R: ComRing + std::fmt::Display> std::fmt::Display for Polynomial<R> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[").unwrap();
+        for (k, c) in self.coeffs.iter().enumerate() {
+            if k != 0 {
+                write!(f, ", ").unwrap();
+            }
+            write!(f, "{}", c).unwrap();
+        }
+        write!(f, "]").unwrap();
+        Ok(())
+    }
+}
+
 impl<R: ComRing> Polynomial<R> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         match self.coeffs.len() {
@@ -36,6 +50,12 @@ impl<R: ComRing> Polynomial<R> {
                 }
             }
         }
+    }
+
+    pub fn new(coeffs: Vec<R>) -> Self {
+        let mut p = Self { coeffs };
+        p.reduce();
+        p
     }
 
     pub fn var() -> Self {
@@ -160,7 +180,9 @@ impl<R: ComRing> ComRing for Polynomial<R> {
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
         let m = a.coeffs.len();
         let n = b.coeffs.len();
-        if m < n {
+        if m == 0 {
+            Ok(Self::zero())
+        } else if m < n {
             Err(RingOppErr::NotDivisible)
         } else if n == 0 {
             Err(RingOppErr::DivideByZero)
@@ -171,7 +193,7 @@ impl<R: ComRing> ComRing for Polynomial<R> {
             };
             for i in (0..k).rev() {
                 //a[i+n-1] = q[i] * b[n-1]
-                match R::div_refs(&a.coeffs[i + n - 1], &b.coeffs[n - 1]) {
+                match R::div_refs(&a.coeff(i + n - 1), &b.coeff(n - 1)) {
                     Ok(qc) => {
                         //a -= qc*x^i*b
                         a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
@@ -360,6 +382,26 @@ mod tests {
         match Polynomial::<Integer>::div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
             Err(RingOppErr::DivideByZero) => {}
+            Err(_) => panic!(),
+        }
+
+        let a = 0 * x;
+        let b = (x - x) + 5;
+        match Polynomial::<Integer>::div(a.elem(), b.elem()) {
+            Ok(c) => {
+                assert_eq!(c, Polynomial::zero())
+            }
+            Err(RingOppErr::DivideByZero) => panic!(),
+            Err(_) => panic!(),
+        }
+
+        let a = 3087 * x - 8805 * x.pow(2) + 607 * x.pow(3) + x.pow(4);
+        let b = (x - x) + 1;
+        match Polynomial::<Integer>::div(a.elem(), b.elem()) {
+            Ok(c) => {
+                assert_eq!(c, a.elem())
+            }
+            Err(RingOppErr::DivideByZero) => panic!(),
             Err(_) => panic!(),
         }
     }
