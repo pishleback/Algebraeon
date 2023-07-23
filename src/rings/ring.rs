@@ -115,13 +115,27 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug {
             ans
         }
     }
+
+    fn is_unit(self) -> bool {
+        match Self::div(Self::one(), self) {
+            Ok(_inv) => true,
+            Err(RingOppErr::DivideByZero) => false,
+            Err(RingOppErr::NotDivisible) => false,
+            // Err(_) => panic!(),
+        }
+    }
 }
 
 pub trait IntegralDomain: ComRing {
     //promise that mul(a, b) == 0 implies a == 0 or b == 0
 }
 
-pub trait ED: IntegralDomain {
+pub trait PrincipalIdealDomain: ComRing {
+    fn gcd(x: Self, y: Self) -> Self;
+    fn xgcd(x: Self, y: Self) -> (Self, Self, Self);
+}
+
+pub trait EuclideanDomain: PrincipalIdealDomain {
     //should return None for 0, and Some(norm) for everything else
     fn norm(&self) -> Option<Natural>;
     fn quorem(a: Self, b: Self) -> Result<(Self, Self), RingOppErr>;
@@ -166,7 +180,9 @@ pub trait ED: IntegralDomain {
     fn rem_refs(a: &Self, b: &Self) -> Result<Self, RingOppErr> {
         Self::rem(a.clone(), b.clone())
     }
+}
 
+impl<R: EuclideanDomain> PrincipalIdealDomain for R {
     fn gcd(mut x: Self, mut y: Self) -> Self {
         //Euclidean algorithm
         while y != Self::zero() {
@@ -207,7 +223,7 @@ pub trait Field: IntegralDomain {
     }
 }
 
-impl<F: Field> ED for F {
+impl<F: Field> EuclideanDomain for F {
     fn norm(&self) -> Option<Natural> {
         if self == &Self::zero() {
             None

@@ -285,8 +285,167 @@ impl<R: ComRing> Matrix<R> {
     }
 }
 
-impl<R: ED> Matrix<R> {
-    pub fn row_hermite_algorithm(&self) -> (Self, Self) {
+#[derive(Debug)]
+enum ElementaryRowOppPID<R: PrincipalIdealDomain> {
+    //swap distinct rows
+    Swap(usize, usize),
+    //multiply a row by a unit
+    UnitMul {
+        row: usize,
+        unit: R,
+    },
+    //apply invertible row operations to two rows
+    // /a b\
+    // \c d/
+    //such that ad-bc is a unit
+    TwoInv {
+        i: usize,
+        j: usize,
+        a: R,
+        b: R,
+        c: R,
+        d: R,
+    },
+}
+
+impl<R: PrincipalIdealDomain> ElementaryRowOppPID<R> {
+    fn check_invariants(&self) -> Result<(), &'static str> {
+        match self {
+            ElementaryRowOppPID::Swap(i, j) => {
+                if i == j {
+                    return Err("can only swap distinct rows");
+                }
+            }
+            ElementaryRowOppPID::UnitMul { row: _row, unit } => {
+                if !unit.clone().is_unit() {
+                    return Err("can only multiply a row by a unit");
+                }
+            }
+            ElementaryRowOppPID::TwoInv { i, j, a, b, c, d } => {
+                if i == j {
+                    return Err("rows must be distinct");
+                }
+                let m = Matrix {
+                    dim1: 2,
+                    dim2: 2,
+                    transpose: false,
+                    elems: vec![a.clone(), b.clone(), c.clone(), d.clone()],
+                };
+                if !m.det_naive().unwrap().is_unit() {
+                    return Err("can only apply an invertible row opperation to two rows");
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn apply(&self, m: &mut Matrix<R>) {
+        debug_assert!(self.check_invariants().is_ok());
+        match self {
+            ElementaryRowOppPID::Swap(i, j) => {
+                for col in 0..m.cols() {
+                    let tmp = m.at(*i, col).unwrap().clone();
+                    *m.at_mut(*i, col).unwrap() = m.at(*j, col).unwrap().clone();
+                    *m.at_mut(*j, col).unwrap() = tmp;
+                }
+            }
+            ElementaryRowOppPID::UnitMul { row, unit } => {
+                for col in 0..m.cols() {
+                    m.at_mut(*row, col).unwrap().mul_mut(unit)
+                }
+            }
+            ElementaryRowOppPID::TwoInv { i, j, a, b, c, d } => {
+                for col in 0..m.cols() {
+                    // tmp = c*row(i) + d*row(j)
+                    let tmp = R::add(
+                        R::mul_refs(c, m.at(*i, col).unwrap()),
+                        R::mul_refs(d, m.at(*j, col).unwrap()),
+                    );
+                    // row(i) = a*row(i) + b*row(j)
+                    *m.at_mut(*i, col).unwrap() = R::add(
+                        R::mul_refs(a, m.at(*i, col).unwrap()),
+                        R::mul_refs(b, m.at(*j, col).unwrap()),
+                    );
+                    // row(j) = tmp
+                    *m.at_mut(*j, col).unwrap() = tmp;
+                }
+            }
+        }
+    }
+}
+
+impl<R: PrincipalIdealDomain> Matrix<R> {
+    //TODO: replace with over a pid
+    //if A:=self return (H, U, pivots) such that
+    //H is in row hermite normal form
+    //U is invertible
+    //H=UA
+    //pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
+    pub fn row_hermite_algorithm(mut self) -> (Self, Self, Vec<usize>) {
+        //build up U by applying row opps to the identity as we go
+        let mut u = Self::ident(self.rows());
+        let mut pivs = vec![];
+
+        let (mut pr, mut pc) = (0, 0);
+        'pivot_loop: while pr < self.rows() {
+            //find the next pivot row
+            while self.at(pr, pc).unwrap() == &R::zero() {
+                pc += 1;
+                if pc == self.cols() {
+                    break 'pivot_loop;
+                }
+            }
+            pivs.push(pc);
+            for r in pr + 1..self.rows() {
+                let a = self.at(pr, pc).unwrap();
+                let b = self.at(r, pc).unwrap();
+                let (d, x, y) = R::xgcd(a.clone(), b.clone());
+                // perform the following row opps on self
+                // / x  -b/d \
+                // \ y   a/d /
+                let row_opp = ElementaryRowOppPID::TwoInv {
+                    i: pr,
+                    j: r,
+                    a: x,
+                    b: y,
+                    //TODO: compute b/d and a/d at the same time d is computed?
+                    c: R::div(b.clone(), d.clone()).unwrap().neg(),
+                    d: R::div(a.clone(), d.clone()).unwrap(),
+                };
+                row_opp.apply(&mut self);
+                row_opp.apply(&mut u);
+            }
+            //should have eliminated everything below the pivot
+            for r in pr + 1..self.rows() {
+                debug_assert_eq!(self.at(r, pc).unwrap(), &R::zero());
+            }
+            pr += 1;
+        }
+
+        (self, u, pivs)
+    }
+
+    pub fn col_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
+        let (rh, ru, pivs) = self.transpose().row_hermite_algorithm();
+        (rh.transpose(), ru.transpose(), pivs)
+    }
+
+    pub fn smith_algorithm(&self) -> (Self, Self, Self) {
+        todo!();
+    }
+}
+
+impl<R: EuclideanDomain> Matrix<R> {
+    //if A:=self return (H, U, pivots) such that
+    //H is in row reduced hermite normal form
+    //U is invertible
+    //H=UA
+    //pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
+    pub fn row_reduced_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
+        todo!();
+    }
+
+    pub fn col_reduced_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
         todo!();
     }
 }
@@ -623,5 +782,117 @@ mod tests {
             vec![Integer::from(2), Integer::from(3), Integer::from(1)],
         ]);
         assert_eq!(m.det_naive().unwrap(), Integer::from(-15));
+    }
+
+    #[test]
+    fn hermite_algorithm() {
+        for a in vec![
+            Matrix::from_rows(vec![
+                vec![
+                    Integer::from(2),
+                    Integer::from(3),
+                    Integer::from(6),
+                    Integer::from(2),
+                ],
+                vec![
+                    Integer::from(5),
+                    Integer::from(6),
+                    Integer::from(1),
+                    Integer::from(6),
+                ],
+                vec![
+                    Integer::from(8),
+                    Integer::from(3),
+                    Integer::from(1),
+                    Integer::from(1),
+                ],
+            ]),
+            Matrix::from_rows(vec![
+                vec![
+                    Integer::from(2),
+                    Integer::from(3),
+                    Integer::from(6),
+                    Integer::from(2),
+                ],
+                vec![
+                    Integer::from(5),
+                    Integer::from(6),
+                    Integer::from(1),
+                    Integer::from(6),
+                ],
+                vec![
+                    Integer::from(8),
+                    Integer::from(3),
+                    Integer::from(1),
+                    Integer::from(1),
+                ],
+            ])
+            .transpose(),
+            Matrix::from_rows(vec![
+                vec![
+                    Integer::from(2),
+                    Integer::from(3),
+                    Integer::from(5),
+                    Integer::from(2),
+                ],
+                vec![
+                    Integer::from(5),
+                    Integer::from(6),
+                    Integer::from(11),
+                    Integer::from(6),
+                ],
+                vec![
+                    Integer::from(8),
+                    Integer::from(3),
+                    Integer::from(11),
+                    Integer::from(1),
+                ],
+            ]),
+        ] {
+            println!();
+            println!("hermite row algorithm for");
+            a.pprint();
+            let (h, u, pivs) = a.clone().row_hermite_algorithm();
+            println!("H =");
+            h.pprint();
+            println!("pivs = {:?}", pivs);
+            println!("U =");
+            u.pprint();
+            assert_eq!(h, Matrix::<Integer>::mul_refs(&u, &a).unwrap());
+            for (pr, pc) in pivs.iter().enumerate() {
+                assert!(h.at(pr, *pc).unwrap() != &Integer::zero());
+                for r in pr + 1..h.rows() {
+                    assert_eq!(h.at(r, *pc).unwrap(), &Integer::zero());
+                }
+            }
+
+            println!();
+            println!("hermite col algorithm for");
+            a.pprint();
+            let (h, u, pivs) = a.clone().col_hermite_algorithm();            
+            println!("H =");
+            h.pprint();
+            println!("pivs = {:?}", pivs);
+            println!("U =");
+            u.pprint();
+            
+            assert_eq!(h, Matrix::<Integer>::mul_refs(&a, &u).unwrap());
+            for (pc, pr) in pivs.iter().enumerate() {
+                assert!(h.at(*pr, pc).unwrap() != &Integer::zero());
+                for c in pc + 1..h.cols() {
+                    assert_eq!(h.at(*pr, c).unwrap(), &Integer::zero());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn reduced_hermite_algorithm() {
+        // let m: Matrix<Integer> = Matrix::from_rows(vec![
+        //     vec![Integer::from(1), Integer::from(3), Integer::from(2)],
+        //     vec![Integer::from(-3), Integer::from(-1), Integer::from(-3)],
+        //     vec![Integer::from(2), Integer::from(3), Integer::from(1)],
+        // ]);
+        // assert_eq!(m.det_naive().unwrap(), Integer::from(-15));
     }
 }

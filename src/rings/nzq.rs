@@ -45,7 +45,7 @@ impl ComRing for Integer {
     }
 
     fn div(a: Self, b: Self) -> Result<Self, RingOppErr> {
-        match <Self as ED>::quorem(a, b) {
+        match <Self as EuclideanDomain>::quorem(a, b) {
             Ok((q, r)) => {
                 if r == Self::zero() {
                     Ok(q)
@@ -58,7 +58,7 @@ impl ComRing for Integer {
     }
 
     fn div_lref(a: &Self, b: Self) -> Result<Self, RingOppErr> {
-        match <Self as ED>::quorem_lref(a, b) {
+        match <Self as EuclideanDomain>::quorem_lref(a, b) {
             Ok((q, r)) => {
                 if r == Self::zero() {
                     Ok(q)
@@ -71,7 +71,7 @@ impl ComRing for Integer {
     }
 
     fn div_rref(a: Self, b: &Self) -> Result<Self, RingOppErr> {
-        match <Self as ED>::quorem_rref(a, b) {
+        match <Self as EuclideanDomain>::quorem_rref(a, b) {
             Ok((q, r)) => {
                 if r == Self::zero() {
                     Ok(q)
@@ -84,7 +84,7 @@ impl ComRing for Integer {
     }
 
     fn div_refs(a: &Self, b: &Self) -> Result<Self, RingOppErr> {
-        match <Self as ED>::quorem_refs(a, b) {
+        match <Self as EuclideanDomain>::quorem_refs(a, b) {
             Ok((q, r)) => {
                 if r == Self::zero() {
                     Ok(q)
@@ -97,7 +97,8 @@ impl ComRing for Integer {
     }
 }
 impl IntegralDomain for Integer {}
-impl ED for Integer {
+
+impl EuclideanDomain for Integer {
     fn norm(&self) -> Option<Natural> {
         if self == &Integer::from(0) {
             None

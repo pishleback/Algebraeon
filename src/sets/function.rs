@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use super::set::*;
-use std::{collections::HashSet};
+use std::collections::HashSet;
 
 #[derive(Clone, Debug)]
 pub struct Function<DomainT: SetT, RangeT: SetT> {

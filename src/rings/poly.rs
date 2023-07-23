@@ -193,7 +193,7 @@ impl<R: ComRing> ComRing for Polynomial<R> {
 
 impl<R: IntegralDomain> IntegralDomain for Polynomial<R> {}
 
-impl<R: Field> ED for Polynomial<R> {
+impl<R: Field> EuclideanDomain for Polynomial<R> {
     fn norm(&self) -> Option<Natural> {
         if self == &Self::zero() {
             None
