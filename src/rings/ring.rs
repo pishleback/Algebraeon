@@ -147,11 +147,12 @@ pub trait IntegralDomain: ComRing {
 }
 
 pub trait FavoriteAssociate: IntegralDomain {
-    //for each self=x, a deterministic representative y for the associate class of x
-    //if x=self, return (u, y) such that x=u*y
-    //return None iff self=0
-    fn factor_fav_assoc(self) -> Option<(Self, Self)>;
-    fn factor_fav_assoc_ref(&self) -> Option<(Self, Self)> {
+    //For associate class of elements, choose a unique representative
+    //write self=unit*assoc and return (unit, assoc)
+    //0 is required to return (1, 0)
+
+    fn factor_fav_assoc(self) -> (Self, Self);
+    fn factor_fav_assoc_ref(&self) -> (Self, Self) {
         self.clone().factor_fav_assoc()
     }
 }
@@ -226,7 +227,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> GCDDomain for R {
             let r = Self::rem_rref(x, &y).unwrap();
             (x, y) = (y, r)
         };
-        let (_unit, assoc) = x.factor_fav_assoc().unwrap();
+        let (_unit, assoc) = x.factor_fav_assoc();
         assoc
     }
 
@@ -244,7 +245,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> GCDDomain for R {
             (b, pb) = (new_b, b);
             (x, y) = (y, r);
         }
-        let (unit, ass_x) = x.factor_fav_assoc().unwrap();
+        let (unit, ass_x) = x.factor_fav_assoc();
         // g = u*g_ass
         // g = xa+by
         // xa+by=u*g_ass
@@ -263,12 +264,8 @@ pub trait Field: IntegralDomain {
 }
 
 impl<F: Field> FavoriteAssociate for F {
-    fn factor_fav_assoc(self) -> Option<(Self, Self)> {
-        if self == Self::zero() {
-            None
-        } else {
-            Some((self, Self::one()))
-        }
+    fn factor_fav_assoc(self) -> (Self, Self) {
+        (self, Self::one())
     }
 }
 

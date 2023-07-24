@@ -192,11 +192,29 @@ impl<R: ComRing + std::fmt::Display> Matrix<R> {
             }
         }
         for r in 0..self.rows() {
+            if self.rows() == 1 {
+                print!("( ");
+            } else if r == 0 {
+                print!("/ ");
+            } else if r == self.rows() - 1 {
+                print!("\\ ");
+            } else {
+                print!("| ");
+            }
             for c in 0..self.cols() {
                 if c != 0 {
                     print!("    ");
                 }
                 print!("{}", str_rows[r][c]);
+            }
+            if self.rows() == 1 {
+                print!(" )");
+            } else if r == 0 {
+                print!(" \\");
+            } else if r == self.rows() - 1 {
+                print!(" /");
+            } else {
+                print!(" |");
             }
             print!("\n");
         }
@@ -475,13 +493,19 @@ impl<R: GCDDomain> Matrix<R> {
         let (mut pr, mut pc) = (0, 0);
         'pivot_loop: while pr < self.rows() {
             //find the next pivot row
-            while self.at(pr, pc).unwrap() == &R::zero() {
+            //the next pivot row is the next row with a non-zero element below the previous pivot
+            'next_pivot_loop: loop {
+                for r in pr..self.rows() {
+                    if self.at(r, pc).unwrap() != &R::zero() {
+                        break 'next_pivot_loop;
+                    }
+                }
+
                 pc += 1;
                 if pc == self.cols() {
                     break 'pivot_loop;
                 }
             }
-            debug_assert_ne!(self.at(pr, pc).unwrap(), &R::zero());
             pivs.push(pc);
 
             if pr + 1 < self.rows() {
@@ -509,7 +533,7 @@ impl<R: GCDDomain> Matrix<R> {
                 }
             } else {
                 //explicitly put the pivot into fav assoc form
-                let (unit, _assoc) = self.at(pr, pc).unwrap().factor_fav_assoc_ref().unwrap();
+                let (unit, _assoc) = self.at(pr, pc).unwrap().factor_fav_assoc_ref();
                 let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::UnitMul {
                     row: pr,
                     unit: unit.inv().unwrap(),
@@ -541,6 +565,15 @@ impl<R: GCDDomain> Matrix<R> {
 
         let mut n = 0;
         while n < self.rows() && n < self.cols() {
+            //turn (n, n) into its favorite associate
+            let (unit, _assoc) = self.at(n, n).unwrap().factor_fav_assoc_ref();
+            let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::UnitMul {
+                row: n,
+                unit: unit.inv().unwrap(),
+            });
+            row_opp.apply(&mut self);
+            row_opp.apply(&mut u);
+
             let mut first = true;
             let mut all_divisible;
             'reduce_loop: loop {
@@ -654,7 +687,7 @@ impl<R: GCDDomain> Matrix<R> {
                     col_opp.apply(&mut v);
                 }
                 //fix the first column
-                for fix_r in n + 1..self.cols() {
+                for fix_r in n + 1..self.rows() {
                     let a = self.at(n, n).unwrap();
                     let b = self.at(fix_r, n).unwrap();
                     let q = R::div_refs(b, a).unwrap();
@@ -667,6 +700,7 @@ impl<R: GCDDomain> Matrix<R> {
                     col_opp.apply(&mut u);
                 }
             }
+
             if self.at(n, n).unwrap() == &R::zero() {
                 //the bottom right submatrix is all zero
                 break;
@@ -687,7 +721,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> Matrix<R> {
     pub fn row_reduced_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
         let (mut h, mut u, pivs) = self.row_hermite_algorithm();
 
-        for (pr, pc) in pivs.iter().enumerate().rev() {
+        for (pr, pc) in pivs.iter().enumerate() {
             for r in 0..pr {
                 //reduce h[r, pc] so that it has norm less than h[pr, pc]
                 let a = h.at(r, *pc).unwrap();
@@ -713,7 +747,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> Matrix<R> {
     }
 }
 
-impl<F: Field + std::fmt::Display> Matrix<F> {
+impl<F: Field> Matrix<F> {
     pub fn presentation_matrix(self) -> Result<Matrix<Polynomial<F>>, MatOppErr> {
         let n = self.rows();
         if n != self.cols() {
@@ -731,7 +765,6 @@ impl<F: Field + std::fmt::Display> Matrix<F> {
         match self.presentation_matrix() {
             Ok(pres_mat) => {
                 let (_u, s, _v, k) = pres_mat.smith_algorithm();
-                s.pprint();
                 debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
                 Ok(s.at(k - 1, k - 1).unwrap().clone())
             }
@@ -1156,6 +1189,11 @@ mod tests {
                     Integer::from(1),
                 ],
             ]),
+            Matrix::from_rows(vec![
+                vec![Integer::from(0), Integer::from(4), Integer::from(4)],
+                vec![Integer::from(1), Integer::from(6), Integer::from(12)],
+                vec![Integer::from(1), Integer::from(4), Integer::from(16)],
+            ]),
         ] {
             println!();
             println!("hermite reduced row algorithm for");
@@ -1167,6 +1205,24 @@ mod tests {
             println!("U =");
             u.pprint();
             assert_eq!(h, Matrix::<Integer>::mul_refs(&u, &a).unwrap());
+
+            //trace the boundary of zeros and check that everything under is zero
+            let mut rz = 0;
+            for cz in 0..h.cols() {
+                match pivs.get(rz) {
+                    Some(cp) => {
+                        if cp == &cz {
+                            rz += 1;
+                        }
+                    }
+                    None => {}
+                }
+                for r in rz..h.rows() {
+                    assert_eq!(h.at(r, cz).unwrap(), &Integer::zero());
+                }
+            }
+
+            //check pivot columns
             for (pr, pc) in pivs.iter().enumerate() {
                 assert!(h.at(pr, *pc).unwrap() != &Integer::zero());
                 for r in 0..h.rows() {
@@ -1174,7 +1230,7 @@ mod tests {
                         assert_eq!(h.at(r, *pc).unwrap(), &Integer::zero());
                     } else if r == pr {
                         let (_unit, assoc) =
-                            h.at(r, *pc).unwrap().clone().factor_fav_assoc().unwrap();
+                            h.at(r, *pc).unwrap().clone().factor_fav_assoc();
                         assert_eq!(&assoc, h.at(r, *pc).unwrap());
                     } else {
                         assert!(h.at(r, *pc).unwrap().norm() < h.at(pr, *pc).unwrap().norm());
@@ -1192,6 +1248,23 @@ mod tests {
             println!("U =");
             u.pprint();
 
+            //trace the boundary of zeros and check that everything to the right is zero
+            let mut cz = 0;
+            for rz in 0..h.rows() {
+                match pivs.get(cz) {
+                    Some(rp) => {
+                        if rp == &rz {
+                            cz += 1;
+                        }
+                    }
+                    None => {}
+                }
+                for c in cz..h.cols() {
+                    assert_eq!(h.at(rz, c).unwrap(), &Integer::zero());
+                }
+            }
+
+            //check the pivot rows
             assert_eq!(h, Matrix::<Integer>::mul_refs(&a, &u).unwrap());
             for (pc, pr) in pivs.iter().enumerate() {
                 assert!(h.at(*pr, pc).unwrap() != &Integer::zero());
@@ -1200,7 +1273,7 @@ mod tests {
                         assert_eq!(h.at(*pr, c).unwrap(), &Integer::zero());
                     } else if c == pc {
                         let (_unit, assoc) =
-                            h.at(*pr, c).unwrap().clone().factor_fav_assoc().unwrap();
+                            h.at(*pr, c).unwrap().clone().factor_fav_assoc();
                         assert_eq!(&assoc, h.at(*pr, c).unwrap());
                     } else {
                         assert!(h.at(*pr, c).unwrap().norm() < h.at(*pr, pc).unwrap().norm());
@@ -1267,111 +1340,131 @@ mod tests {
 
     #[test]
     fn smith_algorithm() {
-        let a = Matrix::from_rows(vec![
-            vec![Integer::from(2), Integer::from(4), Integer::from(4)],
-            vec![Integer::from(-6), Integer::from(6), Integer::from(12)],
-            vec![Integer::from(10), Integer::from(4), Integer::from(16)],
-        ]);
-        let (u, s, v, k) = a.clone().smith_algorithm();
-        assert_eq!(
-            s,
-            Matrix::mul_refs(&Matrix::mul_refs(&u, &a).unwrap(), &v).unwrap()
-        );
-        assert_eq!(k, 3);
-        assert_eq!(
-            s,
-            Matrix::from_rows(vec![
-                vec![Integer::from(2), Integer::from(0), Integer::from(0)],
-                vec![Integer::from(0), Integer::from(2), Integer::from(0)],
-                vec![Integer::from(0), Integer::from(0), Integer::from(156)]
-            ])
-        );
+        {
+            let a = Matrix::from_rows(vec![
+                vec![Integer::from(2), Integer::from(4), Integer::from(4)],
+                vec![Integer::from(-6), Integer::from(6), Integer::from(12)],
+                vec![Integer::from(10), Integer::from(4), Integer::from(16)],
+            ]);
+            let (u, s, v, k) = a.clone().smith_algorithm();
+            assert_eq!(
+                s,
+                Matrix::mul_refs(&Matrix::mul_refs(&u, &a).unwrap(), &v).unwrap()
+            );
+            assert_eq!(k, 3);
+            assert_eq!(
+                s,
+                Matrix::from_rows(vec![
+                    vec![Integer::from(2), Integer::from(0), Integer::from(0)],
+                    vec![Integer::from(0), Integer::from(2), Integer::from(0)],
+                    vec![Integer::from(0), Integer::from(0), Integer::from(156)]
+                ])
+            );
 
-        let a = Matrix::from_rows(vec![
-            vec![
-                Integer::from(-6),
-                Integer::from(111),
-                Integer::from(-36),
-                Integer::from(6),
-            ],
-            vec![
-                Integer::from(5),
-                Integer::from(-672),
-                Integer::from(210),
-                Integer::from(74),
-            ],
-            vec![
-                Integer::from(0),
-                Integer::from(-255),
-                Integer::from(81),
-                Integer::from(24),
-            ],
-            vec![
-                Integer::from(-7),
-                Integer::from(255),
-                Integer::from(-81),
-                Integer::from(-10),
-            ],
-        ]);
-        let (u, s, v, k) = a.clone().smith_algorithm();
-        assert_eq!(
-            s,
-            Matrix::mul_refs(&Matrix::mul_refs(&u, &a).unwrap(), &v).unwrap()
-        );
-        assert_eq!(k, 3);
-        assert_eq!(
-            s,
-            Matrix::from_rows(vec![
+            let a = Matrix::from_rows(vec![
                 vec![
-                    Integer::from(1),
-                    Integer::from(0),
-                    Integer::from(0),
-                    Integer::from(0)
+                    Integer::from(-6),
+                    Integer::from(111),
+                    Integer::from(-36),
+                    Integer::from(6),
+                ],
+                vec![
+                    Integer::from(5),
+                    Integer::from(-672),
+                    Integer::from(210),
+                    Integer::from(74),
                 ],
                 vec![
                     Integer::from(0),
-                    Integer::from(3),
-                    Integer::from(0),
-                    Integer::from(0)
+                    Integer::from(-255),
+                    Integer::from(81),
+                    Integer::from(24),
                 ],
                 vec![
-                    Integer::from(0),
-                    Integer::from(0),
-                    Integer::from(21),
-                    Integer::from(0)
+                    Integer::from(-7),
+                    Integer::from(255),
+                    Integer::from(-81),
+                    Integer::from(-10),
                 ],
-                vec![
-                    Integer::from(0),
-                    Integer::from(0),
-                    Integer::from(0),
-                    Integer::from(0)
-                ]
-            ])
-        );
+            ]);
+            let (u, s, v, k) = a.clone().smith_algorithm();
+            assert_eq!(
+                s,
+                Matrix::mul_refs(&Matrix::mul_refs(&u, &a).unwrap(), &v).unwrap()
+            );
+            assert_eq!(k, 3);
+            assert_eq!(
+                s,
+                Matrix::from_rows(vec![
+                    vec![
+                        Integer::from(1),
+                        Integer::from(0),
+                        Integer::from(0),
+                        Integer::from(0)
+                    ],
+                    vec![
+                        Integer::from(0),
+                        Integer::from(3),
+                        Integer::from(0),
+                        Integer::from(0)
+                    ],
+                    vec![
+                        Integer::from(0),
+                        Integer::from(0),
+                        Integer::from(21),
+                        Integer::from(0)
+                    ],
+                    vec![
+                        Integer::from(0),
+                        Integer::from(0),
+                        Integer::from(0),
+                        Integer::from(0)
+                    ]
+                ])
+            );
+        }
 
-        let a = Matrix::from_rows(vec![
-            vec![Rational::from(0), Rational::from(0), Rational::from(0)],
-            vec![Rational::from(0), Rational::from(0), Rational::from(1)],
-            vec![Rational::from(0), Rational::from(0), Rational::from(0)],
-        ]);
-        let min_p = a.clone().minimal_polynomial().unwrap();
-        let char_p = a.clone().characteristic_polynomial().unwrap();
-        assert_eq!(
-            min_p,
-            Polynomial::new(vec![
-                Rational::from(0),
-                Rational::from(0),
-                Rational::from(-1)
-            ])
-        );
-        assert_eq!(
-            char_p,
-            Polynomial::new(vec![
-                Rational::from(0),
-                Rational::from(0),
-                Rational::from(0),
-                Rational::from(-1)
-            ])
-        );
+        {
+            let a = Matrix::from_rows(vec![
+                vec![Integer::from(0), Integer::from(4), Integer::from(4)],
+                vec![Integer::from(1), Integer::from(4), Integer::from(16)],
+            ]);
+            let (u, s, v, k) = a.smith_algorithm();
+
+            assert_eq!(
+                s,
+                Matrix::from_rows(vec![
+                    vec![Integer::from(1), Integer::from(0), Integer::from(0),],
+                    vec![Integer::from(0), Integer::from(4), Integer::from(0)],
+                ])
+            );
+        }
+
+        {
+            let a = Matrix::from_rows(vec![
+                vec![Rational::from(0), Rational::from(0), Rational::from(0)],
+                vec![Rational::from(0), Rational::from(0), Rational::from(1)],
+                vec![Rational::from(0), Rational::from(0), Rational::from(0)],
+            ]);
+            let min_p = a.clone().minimal_polynomial().unwrap();
+            let char_p = a.clone().characteristic_polynomial().unwrap();
+            assert_eq!(
+                min_p,
+                Polynomial::new(vec![
+                    Rational::from(0),
+                    Rational::from(0),
+                    Rational::from(1)
+                ])
+            );
+            assert_eq!(
+                char_p,
+                Polynomial::new(vec![
+                    Rational::from(0),
+                    Rational::from(0),
+                    Rational::from(0),
+                    Rational::from(1)
+                ])
+            );
+        }
     }
 }

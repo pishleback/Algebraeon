@@ -41,26 +41,34 @@ fn main() {
     //     ],
     // );
 
-    let iso = groups::iso_rep::IsoRep::Symmetric(5);// * groups::IsoRep::Dihedral(3);
-    println!("{:?} ", iso);
-    let grp = iso.to_group().unwrap();
+    // let iso = groups::iso_rep::IsoRep::Symmetric(5);// * groups::IsoRep::Dihedral(3);
+    // println!("{:?} ", iso);
+    // let grp = iso.to_group().unwrap();
 
-    println!("");
+    // println!("");
 
-    let mut isom_classes = HashSet::new();
-    for (sg, _gens) in grp.subgroups() {
-        let isom_class = groups::iso_rep::IsoRep::from_group(&sg.to_group());
-        isom_classes.insert(isom_class);
-    }
-    for isom_class in isom_classes {
-        print!("{} ", isom_class.to_string());
-    }
+    // let mut isom_classes = HashSet::new();
+    // for (sg, _gens) in grp.subgroups() {
+    //     let isom_class = groups::iso_rep::IsoRep::from_group(&sg.to_group());
+    //     isom_classes.insert(isom_class);
+    // }
+    // for isom_class in isom_classes {
+    //     print!("{} ", isom_class.to_string());
+    // }
 
-    println!("");
+    // println!("");
 
     let a = Matrix::from_rows(vec![
-        vec![Integer::from(2), Integer::from(4), Integer::from(4)],
-        vec![Integer::from(-6), Integer::from(6), Integer::from(12)],
-        vec![Integer::from(10), Integer::from(4), Integer::from(16)],
+        vec![Integer::from(-2), Integer::from(0), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(-6), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(0), Integer::from(-120)],
     ]);
+
+    a.pprint();
+
+    let (u, s, v, k) = a.smith_algorithm();
+
+    u.pprint();
+    s.pprint();
+    v.pprint();
 }

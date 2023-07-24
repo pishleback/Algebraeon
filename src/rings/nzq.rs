@@ -100,13 +100,13 @@ impl ComRing for Integer {
 impl IntegralDomain for Integer {}
 
 impl FavoriteAssociate for Integer {
-    fn factor_fav_assoc(self) -> Option<(Self, Self)> {
+    fn factor_fav_assoc(self) -> (Self, Self) {
         if self == 0 {
-            None
+            (Self::one(), Self::zero())
         } else if self < 0 {
-            Some((Integer::from(-1), self.neg()))
+            (Integer::from(-1), self.neg())
         } else {
-            Some((Integer::from(1), self))
+            (Integer::from(1), self)
         }
     }
 }

@@ -231,24 +231,17 @@ impl<R: GCDDomain> Polynomial<R> {
 }
 
 impl<R: FavoriteAssociate> FavoriteAssociate for Polynomial<R> {
-    fn factor_fav_assoc(mut self) -> Option<(Self, Self)> {
+    fn factor_fav_assoc(mut self) -> (Self, Self) {
         if self == Self::zero() {
-            None
+            (Self::one(), Self::zero())
         } else {
-            // let g = R::gcd_list(&self.coeffs);
-            // for i in 0..self.coeffs.len() {
-            //     self.coeffs[i] = R::div_refs(&self.coeffs[i], &g).unwrap()
-            // }
-
             let (u, _c) = self.coeffs[self.coeffs.len() - 1]
                 .clone()
-                .factor_fav_assoc()
-                .unwrap();
+                .factor_fav_assoc();
             for i in 0..self.coeffs.len() {
                 self.coeffs[i] = R::div_refs(&self.coeffs[i], &u).unwrap()
             }
-
-            Some((Self::from(u), self))
+            (Self::from(u), self)
         }
     }
 }
@@ -442,7 +435,7 @@ mod tests {
         let p1 = (-2 - 4 * x.pow(2)).elem();
         let (g, p2) = p1.factor_primitive().unwrap();
         assert_eq!(g, Integer::from(2));
-        let (u, p3) = p2.factor_fav_assoc().unwrap();
+        let (u, p3) = p2.factor_fav_assoc();
         assert_eq!(u.coeffs[0], Integer::from(-1));
         assert_eq!(Ergonomic::new(p3), 1 + 2 * x.pow(2));
     }
