@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use itertools::Itertools;
 use malachite_base::num::{
     arithmetic::traits::{DivRem, UnsignedAbs},
     logic::traits::BitIterable,
@@ -65,7 +66,7 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug {
         Self::div(a.clone(), b.clone())
     }
 
-    fn divisible(a : Self, b : Self) -> bool {
+    fn divisible(a: Self, b: Self) -> bool {
         match Self::div(a, b) {
             Ok(_q) => true,
             Err(RingOppErr::NotDivisible) => false,
@@ -157,10 +158,10 @@ pub trait FavoriteAssociate: IntegralDomain {
     }
 }
 
-pub trait GCDDomain: ComRing + FavoriteAssociate {
+pub trait PrincipalIdealDomain: ComRing + FavoriteAssociate {
     //any gcds should be the standard associate representative
     fn gcd(x: Self, y: Self) -> Self;
-    fn gcd_list(elems : &Vec<Self>) -> Self {
+    fn gcd_list(elems: Vec<&Self>) -> Self {
         let mut ans = Self::zero();
         for x in elems {
             ans = Self::gcd(ans, x.clone());
@@ -168,12 +169,49 @@ pub trait GCDDomain: ComRing + FavoriteAssociate {
         ans
     }
     fn xgcd(x: Self, y: Self) -> (Self, Self, Self);
+    fn xgcd_list(elems: Vec<&Self>) -> (Self, Vec<Self>) {
+        match elems.len() {
+            0 => (Self::zero(), vec![]),
+            1 => (elems[0].clone(), vec![Self::one()]),
+            2 => {
+                let (g, x, y) = Self::xgcd(elems[0].clone(), elems[1].clone());
+                (g, vec![x, y])
+            }
+            n => {
+                let k = n / 2;
+                let (g1, coeffs1) = Self::xgcd_list((0..k).map(|i| elems[i]).collect());
+                let (g2, coeffs2) = Self::xgcd_list((k..n).map(|i| elems[i]).collect());
+                let (g, x, y) = Self::xgcd(g1, g2);
+                let mut coeffs = vec![];
+                for c in coeffs1 {
+                    coeffs.push(Self::mul_refs(&x, &c));
+                }
+                for c in coeffs2 {
+                    coeffs.push(Self::mul_refs(&y, &c));
+                }
+                (g, coeffs)
+            }
+        }
+
+        // if all(elem == 0 for elem in elems):
+        //     return cls.int(0), [cls.int(0) for elem in elems]
+        // elems = list(elems)
+        // assert len(elems) >= 1
+        // if len(elems) == 1:
+        //     return elems[0], [cls.int(1)]
+        // elif len(elems) == 2:
+        //     g, x, y = cls.xgcd(elems[0], elems[1])
+        //     return g, [x, y]
+        // else:
+        //     n = len(elems) // 2
+        //     g1, coeffs1 = cls.xgcd_list(elems[:n])
+        //     g2, coeffs2 = cls.xgcd_list(elems[n:])
+        //     g, x, y = cls.xgcd(g1, g2)
+        //     return g, [x * c for c in coeffs1] + [y * c for c in coeffs2]
+    }
 }
 
-// pub trait PrincipalIdealDomain: GCDDomain {
-// }
-
-pub trait EuclideanDomain : IntegralDomain {
+pub trait EuclideanDomain: IntegralDomain {
     //should return None for 0, and Some(norm) for everything else
     fn norm(&self) -> Option<Natural>;
     fn quorem(a: Self, b: Self) -> Result<(Self, Self), RingOppErr>;
@@ -220,13 +258,13 @@ pub trait EuclideanDomain : IntegralDomain {
     }
 }
 
-impl<R: EuclideanDomain + FavoriteAssociate> GCDDomain for R {
+impl<R: EuclideanDomain + FavoriteAssociate> PrincipalIdealDomain for R {
     fn gcd(mut x: Self, mut y: Self) -> Self {
         //Euclidean algorithm
         while y != Self::zero() {
             let r = Self::rem_rref(x, &y).unwrap();
             (x, y) = (y, r)
-        };
+        }
         let (_unit, assoc) = x.factor_fav_assoc();
         assoc
     }
@@ -250,7 +288,11 @@ impl<R: EuclideanDomain + FavoriteAssociate> GCDDomain for R {
         // g = xa+by
         // xa+by=u*g_ass
         debug_assert!(unit.clone().is_unit());
-        (ass_x, R::div_rref(pa, &unit).unwrap(), R::div(pb, unit).unwrap())
+        (
+            ass_x,
+            R::div_rref(pa, &unit).unwrap(),
+            R::div(pb, unit).unwrap(),
+        )
     }
 }
 

@@ -215,12 +215,12 @@ impl<R: ComRing> ComRing for Polynomial<R> {
 
 impl<R: IntegralDomain> IntegralDomain for Polynomial<R> {}
 
-impl<R: GCDDomain> Polynomial<R> {
+impl<R: PrincipalIdealDomain> Polynomial<R> {
     fn factor_primitive(mut self) -> Option<(R, Self)> {
         if self == Self::zero() {
             None
         } else {
-            let g = R::gcd_list(&self.coeffs);
+            let g = R::gcd_list(self.coeffs.iter().collect());
             for i in 0..self.coeffs.len() {
                 self.coeffs[i] = R::div_refs(&self.coeffs[i], &g).unwrap()
             }

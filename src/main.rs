@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
+use rings::lattice::LinearLattice;
 
 use crate::rings::matrix::Matrix;
 
@@ -58,17 +59,42 @@ fn main() {
 
     // println!("");
 
-    let a = Matrix::from_rows(vec![
-        vec![Integer::from(-2), Integer::from(0), Integer::from(0)],
-        vec![Integer::from(0), Integer::from(-6), Integer::from(0)],
-        vec![Integer::from(0), Integer::from(0), Integer::from(-120)],
+    // let a = Matrix::from_rows(vec![
+    //     vec![Integer::from(-2), Integer::from(0), Integer::from(0)],
+    //     vec![Integer::from(0), Integer::from(-6), Integer::from(0)],
+    //     vec![Integer::from(0), Integer::from(0), Integer::from(-120)],
+    // ]);
+
+    // a.pprint();
+
+    // let (u, s, v, k) = a.smith_algorithm();
+
+    // u.pprint();
+    // s.pprint();
+    // v.pprint();
+
+    let mat = Matrix::from_rows(vec![
+        vec![Integer::from(2), Integer::from(1), Integer::from(2), Integer::from(2)],
+        vec![Integer::from(2), Integer::from(2), Integer::from(1), Integer::from(2)],
+        vec![Integer::from(2), Integer::from(2), Integer::from(2), Integer::from(1)],
     ]);
 
-    a.pprint();
+    let y = Matrix::from_rows(vec![
+        vec![Integer::from(1)],
+        vec![Integer::from(1)],
+        vec![Integer::from(1)],
+    ]);
 
-    let (u, s, v, k) = a.smith_algorithm();
+    mat.pprint();
 
-    u.pprint();
-    s.pprint();
-    v.pprint();
+    let x = mat.col_solve(&y).unwrap();
+    x.pprint();
+
+    Matrix::mul_refs(&mat, &x).unwrap().pprint();
+
+    // mat.pprint();
+
+    // let lattice = mat.col_span();
+
+    // lattice.pprint();
 }

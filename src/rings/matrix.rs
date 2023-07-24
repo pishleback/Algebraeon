@@ -2,7 +2,7 @@
 
 use itertools::Itertools;
 
-use super::{poly::*, ring::*};
+use super::{lattice::LinearLattice, poly::*, ring::*};
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -40,42 +40,40 @@ impl<R: ComRing> PartialEq for Matrix<R> {
     }
 }
 
+pub fn join_rows<R: ComRing>(cols: usize, mats: Vec<&Matrix<R>>) -> Matrix<R> {
+    let mut rows = 0;
+    for mat in &mats {
+        assert_eq!(cols, mat.cols());
+        rows += mat.rows();
+    }
+    let mut joined = Matrix::zero(rows, cols);
+    let mut row_offset = 0;
+    for mat in &mats {
+        for r in 0..mat.rows() {
+            for c in 0..cols {
+                *joined.at_mut(row_offset + r, c).unwrap() = mat.at(r, c).unwrap().clone();
+            }
+        }
+        row_offset += mat.rows();
+    }
+    joined
+}
+
+pub fn join_cols<R: ComRing>(rows: usize, mats: Vec<&Matrix<R>>) -> Matrix<R> {
+    let mut t_mats = vec![];
+    for mat in mats {
+        t_mats.push(mat.clone().transpose());
+    }
+    let joined = join_rows(rows, t_mats.iter().collect());
+    joined.transpose()
+}
+
 impl<R: ComRing> Matrix<R> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         if self.elems.len() != self.dim1 * self.dim2 {
             return Err("matrix entries has the wrong length");
         }
         Ok(())
-    }
-
-    pub fn from_rows(rows_elems: Vec<Vec<R>>) -> Self {
-        let rows = rows_elems.len();
-        assert!(rows >= 1);
-        let cols = rows_elems[0].len();
-        for r in 1..rows {
-            assert_eq!(rows_elems[r].len(), cols);
-        }
-        let mut mat = Self::zero(rows, cols);
-        for r in 0..rows {
-            for c in 0..cols {
-                *mat.at_mut(r, c).unwrap() = rows_elems[r][c].clone()
-            }
-        }
-        mat
-    }
-
-    pub fn rows(&self) -> usize {
-        match self.transpose {
-            false => self.dim1,
-            true => self.dim2,
-        }
-    }
-
-    pub fn cols(&self) -> usize {
-        match self.transpose {
-            false => self.dim2,
-            true => self.dim1,
-        }
     }
 
     fn rc_to_idx(&self, r: usize, c: usize) -> usize {
@@ -104,6 +102,40 @@ impl<R: ComRing> Matrix<R> {
         } else {
             let idx = self.rc_to_idx(r, c);
             Ok(&mut self.elems[idx])
+        }
+    }
+
+    pub fn from_rows(rows_elems: Vec<Vec<R>>) -> Self {
+        let rows = rows_elems.len();
+        assert!(rows >= 1);
+        let cols = rows_elems[0].len();
+        for r in 1..rows {
+            assert_eq!(rows_elems[r].len(), cols);
+        }
+        let mut mat = Self::zero(rows, cols);
+        for r in 0..rows {
+            for c in 0..cols {
+                *mat.at_mut(r, c).unwrap() = rows_elems[r][c].clone()
+            }
+        }
+        mat
+    }
+
+    pub fn from_cols(cols_elems: Vec<Vec<R>>) -> Self {
+        Self::from_rows(cols_elems).transpose()
+    }
+
+    pub fn rows(&self) -> usize {
+        match self.transpose {
+            false => self.dim1,
+            true => self.dim2,
+        }
+    }
+
+    pub fn cols(&self) -> usize {
+        match self.transpose {
+            false => self.dim2,
+            true => self.dim1,
         }
     }
 
@@ -163,6 +195,21 @@ impl<R: ComRing> Matrix<R> {
             dim2: self.dim2,
             transpose: self.transpose,
             elems: self.elems.iter().map(|x| f(x)).collect(),
+        }
+    }
+
+    pub fn submatrix(&self, rows: Vec<usize>, cols: Vec<usize>) -> Self {
+        let mut elems = vec![];
+        for r in &rows {
+            for c in &cols {
+                elems.push(self.at(*r, *c).unwrap().clone());
+            }
+        }
+        Matrix {
+            dim1: rows.len(),
+            dim2: cols.len(),
+            transpose: false,
+            elems,
         }
     }
 }
@@ -373,7 +420,7 @@ struct ElementaryOpp<R: ComRing> {
     opp: ElementaryOppType<R>,
 }
 
-impl<R: GCDDomain> ElementaryOpp<R> {
+impl<R: PrincipalIdealDomain> ElementaryOpp<R> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         match &self.opp {
             ElementaryOppType::Swap(i, j) => {
@@ -478,7 +525,74 @@ impl<R: GCDDomain> ElementaryOpp<R> {
     }
 }
 
-impl<R: GCDDomain> Matrix<R> {
+impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
+    pub fn row_span(&self) -> LinearLattice<R> {
+        LinearLattice::from_span(
+            (0..self.rows())
+                .map(|r| self.submatrix(vec![r], (0..self.cols()).collect()))
+                .collect(),
+        )
+    }
+
+    pub fn col_span(&self) -> LinearLattice<R> {
+        LinearLattice::from_span(
+            (0..self.cols())
+                .map(|c| self.submatrix((0..self.rows()).collect(), vec![c]))
+                .collect(),
+        )
+    }
+
+    pub fn row_kernel(self) -> LinearLattice<R> {
+        let (_h, u, pivs) = self.row_hermite_algorithm();
+        LinearLattice::from_span(
+            (pivs.len()..u.rows())
+                .into_iter()
+                .map(|r| u.submatrix(vec![r], (0..u.cols()).collect()))
+                .collect(),
+        )
+    }
+
+    pub fn col_kernel(self) -> LinearLattice<R> {
+        let (_h, u, pivs) = self.col_hermite_algorithm();
+        LinearLattice::from_span(
+            (pivs.len()..u.cols())
+                .into_iter()
+                .map(|c| u.submatrix((0..u.rows()).collect(), vec![c]))
+                .collect(),
+        )
+    }
+
+    pub fn col_solve(&self, y: &Matrix<R>) -> Option<Matrix<R>> {
+        assert_eq!(self.rows(), y.rows());
+        //the kernel of ext_mat is related to the solution
+        let ext_mat = join_cols(self.rows(), vec![y, self]);
+        //we are looking for a point in the column kernel where the first coordinate is 1
+        let col_ker = ext_mat.col_kernel();
+
+        let first_coords: Vec<&R> = (0..col_ker.rank())
+            .map(|basis_num| col_ker.basis_matrix_element(basis_num, 0, 0))
+            .collect();
+
+        let (g, taps) = R::xgcd_list(first_coords);
+        if g.clone().is_unit() {
+            debug_assert_eq!(g, R::one());
+        }
+        if g == R::one() {
+            //there is a solution
+            //compute the sum of the pointwise product taps * col_ker.basis
+            let mut ext_ans = Matrix::zero(self.cols() + 1, 1);
+            for basis_num in 0..col_ker.rank() {
+                ext_ans.add_mut(&col_ker.basis_matrix(basis_num)).unwrap();
+            }
+            debug_assert_eq!(ext_ans.at(0, 0).unwrap(), &R::one());
+            let x = ext_ans.submatrix((1..ext_ans.rows()).collect(), vec![0]).neg();
+            debug_assert_eq!(&Self::mul_refs(self, &x).unwrap(), y);
+            Some(x)
+        } else {
+            None //there is no solution
+        }
+    }
+
     //TODO: replace with over a pid
     //if A:=self return (H, U, pivots) such that
     //H is in row hermite normal form
@@ -556,6 +670,11 @@ impl<R: GCDDomain> Matrix<R> {
     pub fn col_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
         let (rh, ru, pivs) = self.transpose().row_hermite_algorithm();
         (rh.transpose(), ru.transpose(), pivs)
+    }
+
+    pub fn rank(self) -> usize {
+        let (_h, _u, pivs) = self.row_hermite_algorithm();
+        pivs.len()
     }
 
     //return (u, s, v, k) such that self = usv and s is in smith normal form and u, v are invertible and k is the number of non-zero elements in the diagonal of s
@@ -712,7 +831,7 @@ impl<R: GCDDomain> Matrix<R> {
     }
 }
 
-impl<R: EuclideanDomain + FavoriteAssociate> Matrix<R> {
+impl<R: EuclideanDomain + FavoriteAssociate + std::fmt::Display> Matrix<R> {
     //if A:=self return (H, U, pivots) such that
     //H is in row reduced hermite normal form
     //U is invertible
@@ -747,7 +866,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> Matrix<R> {
     }
 }
 
-impl<F: Field> Matrix<F> {
+impl<F: Field + std::fmt::Display> Matrix<F> {
     pub fn presentation_matrix(self) -> Result<Matrix<Polynomial<F>>, MatOppErr> {
         let n = self.rows();
         if n != self.cols() {
@@ -1229,8 +1348,7 @@ mod tests {
                     if r > pr {
                         assert_eq!(h.at(r, *pc).unwrap(), &Integer::zero());
                     } else if r == pr {
-                        let (_unit, assoc) =
-                            h.at(r, *pc).unwrap().clone().factor_fav_assoc();
+                        let (_unit, assoc) = h.at(r, *pc).unwrap().clone().factor_fav_assoc();
                         assert_eq!(&assoc, h.at(r, *pc).unwrap());
                     } else {
                         assert!(h.at(r, *pc).unwrap().norm() < h.at(pr, *pc).unwrap().norm());
@@ -1272,8 +1390,7 @@ mod tests {
                     if c > pc {
                         assert_eq!(h.at(*pr, c).unwrap(), &Integer::zero());
                     } else if c == pc {
-                        let (_unit, assoc) =
-                            h.at(*pr, c).unwrap().clone().factor_fav_assoc();
+                        let (_unit, assoc) = h.at(*pr, c).unwrap().clone().factor_fav_assoc();
                         assert_eq!(&assoc, h.at(*pr, c).unwrap());
                     } else {
                         assert!(h.at(*pr, c).unwrap().norm() < h.at(*pr, pc).unwrap().norm());
@@ -1466,5 +1583,20 @@ mod tests {
                 ])
             );
         }
+    }
+
+    #[test]
+    fn span_and_kernel_rank() {
+        let mat = Matrix::from_rows(vec![
+            vec![Integer::from(1), Integer::from(1), Integer::from(1)],
+            vec![Integer::from(1), Integer::from(2), Integer::from(1)],
+            vec![Integer::from(1), Integer::from(1), Integer::from(1)],
+            vec![Integer::from(1), Integer::from(1), Integer::from(1)],
+        ]);
+
+        assert_eq!(mat.clone().row_span().rank(), 2);
+        assert_eq!(mat.clone().col_span().rank(), 2);
+        assert_eq!(mat.clone().row_kernel().rank(), 2);
+        assert_eq!(mat.clone().col_kernel().rank(), 1);
     }
 }
