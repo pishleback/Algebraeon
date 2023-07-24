@@ -562,8 +562,16 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
         )
     }
 
+    pub fn row_solve(&self, y: &Matrix<R>) -> Option<Matrix<R>> {
+        match self.transpose_ref().col_solve(&y.transpose_ref()) {
+            Some(x) => Some(x.transpose()),
+            None => None,
+        }
+    }
+
     pub fn col_solve(&self, y: &Matrix<R>) -> Option<Matrix<R>> {
-        assert_eq!(self.rows(), y.rows());
+        assert_eq!(y.rows(), self.rows());
+        assert_eq!(y.cols(), 1);
         //the kernel of ext_mat is related to the solution
         let ext_mat = join_cols(self.rows(), vec![y, self]);
         //we are looking for a point in the column kernel where the first coordinate is 1
@@ -585,7 +593,9 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
                 ext_ans.add_mut(&col_ker.basis_matrix(basis_num)).unwrap();
             }
             debug_assert_eq!(ext_ans.at(0, 0).unwrap(), &R::one());
-            let x = ext_ans.submatrix((1..ext_ans.rows()).collect(), vec![0]).neg();
+            let x = ext_ans
+                .submatrix((1..ext_ans.rows()).collect(), vec![0])
+                .neg();
             debug_assert_eq!(&Self::mul_refs(self, &x).unwrap(), y);
             Some(x)
         } else {

@@ -74,9 +74,9 @@ fn main() {
     // v.pprint();
 
     let mat = Matrix::from_rows(vec![
-        vec![Integer::from(2), Integer::from(1), Integer::from(2), Integer::from(2)],
-        vec![Integer::from(2), Integer::from(2), Integer::from(1), Integer::from(2)],
-        vec![Integer::from(2), Integer::from(2), Integer::from(2), Integer::from(1)],
+        vec![Integer::from(1), Integer::from(0), Integer::from(0), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(1), Integer::from(0), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(0), Integer::from(3), Integer::from(5)],
     ]);
 
     let y = Matrix::from_rows(vec![
