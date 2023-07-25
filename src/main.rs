@@ -1,8 +1,6 @@
-use std::collections::HashSet;
 
 use malachite_nz::integer::Integer;
-use malachite_q::Rational;
-use rings::lattice::LinearLattice;
+use rings::lattice::*;
 
 use crate::rings::matrix::Matrix;
 
@@ -73,28 +71,81 @@ fn main() {
     // s.pprint();
     // v.pprint();
 
-    let mat = Matrix::from_rows(vec![
-        vec![Integer::from(1), Integer::from(0), Integer::from(0), Integer::from(0)],
-        vec![Integer::from(0), Integer::from(1), Integer::from(0), Integer::from(0)],
-        vec![Integer::from(0), Integer::from(0), Integer::from(3), Integer::from(5)],
+    let lat1 = AffineLattice::from_offset_and_linear_lattice(
+        1,
+        3,
+        Matrix::from_rows(vec![vec![
+            Integer::from(0),
+            Integer::from(0),
+            Integer::from(0),
+        ]]),
+        LinearLattice::from_span(
+            1,
+            3,
+            vec![
+                Matrix::from_rows(vec![vec![
+                    Integer::from(0),
+                    Integer::from(2),
+                    Integer::from(0),
+                ]]),
+                Matrix::from_rows(vec![vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(2),
+                ]]),
+            ],
+        ),
+    );
+
+    let lat2 = AffineLattice::from_offset_and_linear_lattice(
+        1,
+        3,
+        Matrix::from_rows(vec![vec![
+            Integer::from(0),
+            Integer::from(0),
+            Integer::from(0),
+        ]]),
+        LinearLattice::from_span(
+            1,
+            3,
+            vec![
+                Matrix::from_rows(vec![vec![
+                    Integer::from(2),
+                    Integer::from(0),
+                    Integer::from(0),
+                ]]),
+                Matrix::from_rows(vec![vec![
+                    Integer::from(0),
+                    Integer::from(2),
+                    Integer::from(0),
+                ]]),
+            ],
+        ),
+    );
+
+    lat1.pprint();
+    lat2.pprint();
+
+    // let lat3 = AffineLattice::sum(vec![lat1, lat2]);
+    // lat3.pprint();
+
+    let a = Matrix::from_rows(vec![
+        vec![Integer::from(1), Integer::from(0), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(1), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(0), Integer::from(0)],
     ]);
 
-    let y = Matrix::from_rows(vec![
-        vec![Integer::from(1)],
-        vec![Integer::from(1)],
-        vec![Integer::from(1)],
+    let b = Matrix::from_rows(vec![
+        vec![Integer::from(0), Integer::from(0), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(1), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(0), Integer::from(1)],
     ]);
 
-    mat.pprint();
+    let c = Matrix::from_rows(vec![
+        vec![Integer::from(0), Integer::from(0), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(1), Integer::from(0)],
+        vec![Integer::from(0), Integer::from(0), Integer::from(0)],
+    ]);
 
-    let x = mat.col_solve(&y).unwrap();
-    x.pprint();
-
-    Matrix::mul_refs(&mat, &x).unwrap().pprint();
-
-    // mat.pprint();
-
-    // let lattice = mat.col_span();
-
-    // lattice.pprint();
+    assert_eq!(LinearLattice::intersect_pair(3, 1, a.col_span(), b.col_span()), c.col_span());
 }

@@ -1,6 +1,5 @@
 use std::fmt::Debug;
 
-use itertools::Itertools;
 use malachite_base::num::{
     arithmetic::traits::{DivRem, UnsignedAbs},
     logic::traits::BitIterable,
@@ -172,7 +171,10 @@ pub trait PrincipalIdealDomain: ComRing + FavoriteAssociate {
     fn xgcd_list(elems: Vec<&Self>) -> (Self, Vec<Self>) {
         match elems.len() {
             0 => (Self::zero(), vec![]),
-            1 => (elems[0].clone(), vec![Self::one()]),
+            1 => {
+                let (unit, assoc) = elems[0].factor_fav_assoc_ref();
+                (assoc, vec![unit])
+            }
             2 => {
                 let (g, x, y) = Self::xgcd(elems[0].clone(), elems[1].clone());
                 (g, vec![x, y])
