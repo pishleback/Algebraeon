@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use itertools::Itertools;
+use std::borrow::Borrow;
 
-use super::{lattice::LinearLattice, poly::*, ring::*};
+use super::{lattice::*, poly::*, ring::*};
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -40,29 +40,29 @@ impl<R: ComRing> PartialEq for Matrix<R> {
     }
 }
 
-pub fn join_rows<R: ComRing>(cols: usize, mats: Vec<&Matrix<R>>) -> Matrix<R> {
+pub fn join_rows<R: ComRing, MatT: Borrow<Matrix<R>>>(cols: usize, mats: Vec<MatT>) -> Matrix<R> {
     let mut rows = 0;
     for mat in &mats {
-        assert_eq!(cols, mat.cols());
-        rows += mat.rows();
+        assert_eq!(cols, mat.borrow().cols());
+        rows += mat.borrow().rows();
     }
     let mut joined = Matrix::zero(rows, cols);
     let mut row_offset = 0;
     for mat in &mats {
-        for r in 0..mat.rows() {
+        for r in 0..mat.borrow().rows() {
             for c in 0..cols {
-                *joined.at_mut(row_offset + r, c).unwrap() = mat.at(r, c).unwrap().clone();
+                *joined.at_mut(row_offset + r, c).unwrap() = mat.borrow().at(r, c).unwrap().clone();
             }
         }
-        row_offset += mat.rows();
+        row_offset += mat.borrow().rows();
     }
     joined
 }
 
-pub fn join_cols<R: ComRing>(rows: usize, mats: Vec<&Matrix<R>>) -> Matrix<R> {
+pub fn join_cols<R: ComRing, MatT: Borrow<Matrix<R>>>(rows: usize, mats: Vec<MatT>) -> Matrix<R> {
     let mut t_mats = vec![];
     for mat in mats {
-        t_mats.push(mat.clone().transpose());
+        t_mats.push(mat.borrow().clone().transpose());
     }
     let joined = join_rows(rows, t_mats.iter().collect());
     joined.transpose()
@@ -365,6 +365,19 @@ impl<R: ComRing> Matrix<R> {
         Ok(s)
     }
 
+    pub fn mul_scalar(mut self, scalar: &R) -> Matrix<R> {
+        for r in 0..self.rows() {
+            for c in 0..self.cols() {
+                self.at_mut(r, c).unwrap().mul_mut(scalar);
+            }
+        }
+        self
+    }
+
+    pub fn mul_scalar_ref(&self, scalar: &R) -> Matrix<R> {
+        self.clone().mul_scalar(scalar)
+    }
+
     pub fn det_naive(&self) -> Result<R, MatOppErr> {
         let n = self.dim1;
         if n != self.dim2 {
@@ -528,6 +541,8 @@ impl<R: PrincipalIdealDomain> ElementaryOpp<R> {
 impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
     pub fn row_span(&self) -> LinearLattice<R> {
         LinearLattice::from_span(
+            1,
+            self.cols(),
             (0..self.rows())
                 .map(|r| self.submatrix(vec![r], (0..self.cols()).collect()))
                 .collect(),
@@ -536,6 +551,8 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
 
     pub fn col_span(&self) -> LinearLattice<R> {
         LinearLattice::from_span(
+            self.rows(),
+            1,
             (0..self.cols())
                 .map(|c| self.submatrix((0..self.rows()).collect(), vec![c]))
                 .collect(),
@@ -544,7 +561,9 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
 
     pub fn row_kernel(self) -> LinearLattice<R> {
         let (_h, u, pivs) = self.row_hermite_algorithm();
-        LinearLattice::from_span(
+        LinearLattice::from_basis(
+            1,
+            u.cols(),
             (pivs.len()..u.rows())
                 .into_iter()
                 .map(|r| u.submatrix(vec![r], (0..u.cols()).collect()))
@@ -554,7 +573,9 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
 
     pub fn col_kernel(self) -> LinearLattice<R> {
         let (_h, u, pivs) = self.col_hermite_algorithm();
-        LinearLattice::from_span(
+        LinearLattice::from_basis(
+            u.rows(),
+            1,
             (pivs.len()..u.cols())
                 .into_iter()
                 .map(|c| u.submatrix((0..u.rows()).collect(), vec![c]))
@@ -562,18 +583,18 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
         )
     }
 
-    pub fn row_solve(&self, y: &Matrix<R>) -> Option<Matrix<R>> {
-        match self.transpose_ref().col_solve(&y.transpose_ref()) {
+    pub fn row_solve<VecT: Borrow<Matrix<R>>>(&self, y: VecT) -> Option<Matrix<R>> {
+        match self.transpose_ref().col_solve(&y.borrow().transpose_ref()) {
             Some(x) => Some(x.transpose()),
             None => None,
         }
     }
 
-    pub fn col_solve(&self, y: &Matrix<R>) -> Option<Matrix<R>> {
-        assert_eq!(y.rows(), self.rows());
-        assert_eq!(y.cols(), 1);
+    pub fn col_solve<VecT: Borrow<Matrix<R>>>(&self, y: VecT) -> Option<Matrix<R>> {
+        assert_eq!(y.borrow().rows(), self.rows());
+        assert_eq!(y.borrow().cols(), 1);
         //the kernel of ext_mat is related to the solution
-        let ext_mat = join_cols(self.rows(), vec![y, self]);
+        let ext_mat = join_cols(self.rows(), vec![y.borrow(), self]);
         //we are looking for a point in the column kernel where the first coordinate is 1
         let col_ker = ext_mat.col_kernel();
 
@@ -587,19 +608,49 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
         }
         if g == R::one() {
             //there is a solution
-            //compute the sum of the pointwise product taps * col_ker.basis
+            //it is given by -(sum(taps * col_ker.basis)) with the first coordinate (equal to 1) removed
             let mut ext_ans = Matrix::zero(self.cols() + 1, 1);
             for basis_num in 0..col_ker.rank() {
-                ext_ans.add_mut(&col_ker.basis_matrix(basis_num)).unwrap();
+                ext_ans
+                    .add_mut(
+                        &col_ker
+                            .basis_matrix(basis_num)
+                            .mul_scalar_ref(&taps[basis_num]),
+                    )
+                    .unwrap();
             }
             debug_assert_eq!(ext_ans.at(0, 0).unwrap(), &R::one());
             let x = ext_ans
                 .submatrix((1..ext_ans.rows()).collect(), vec![0])
                 .neg();
-            debug_assert_eq!(&Self::mul_refs(self, &x).unwrap(), y);
+            debug_assert_eq!(&Self::mul_refs(self, &x).unwrap(), y.borrow());
             Some(x)
         } else {
             None //there is no solution
+        }
+    }
+
+    pub fn row_solution_lattice<VecT: Borrow<Matrix<R>>>(&self, y: VecT) -> AffineLattice<R> {
+        match self.row_solve(y) {
+            Some(x) => AffineLattice::from_offset_and_linear_lattice(
+                1,
+                self.rows(),
+                x,
+                self.clone().row_kernel(),
+            ),
+            None => AffineLattice::empty(1, self.rows()),
+        }
+    }
+
+    pub fn col_solution_lattice<VecT: Borrow<Matrix<R>>>(&self, y: VecT) -> AffineLattice<R> {
+        match self.col_solve(y) {
+            Some(x) => AffineLattice::from_offset_and_linear_lattice(
+                self.cols(),
+                1,
+                x,
+                self.clone().col_kernel(),
+            ),
+            None => AffineLattice::empty(self.cols(), 1),
         }
     }
 
@@ -637,23 +688,26 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
                 for r in pr + 1..self.rows() {
                     let a = self.at(pr, pc).unwrap();
                     let b = self.at(r, pc).unwrap();
-                    let (d, x, y) = R::xgcd(a.clone(), b.clone());
-                    debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), d);
-                    // perform the following row opps on self
-                    // / x  -b/d \
-                    // \ y   a/d /
-                    let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::TwoInv {
-                        i: pr,
-                        j: r,
-                        a: x,
-                        b: y,
-                        //TODO: compute b/d and a/d at the same time d is computed?
-                        c: R::div(b.clone(), d.clone()).unwrap().neg(),
-                        d: R::div(a.clone(), d.clone()).unwrap(),
-                    });
-                    //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
-                    row_opp.apply(&mut self);
-                    row_opp.apply(&mut u);
+                    //if a=0 and b=0 there is nothing to do. The reduction step would fail because d=0 and we divide by d, so just skip it in this case
+                    if a != &R::zero() || b != &R::zero() {
+                        let (d, x, y) = R::xgcd(a.clone(), b.clone());
+                        debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), d);
+                        // perform the following row opps on self
+                        // / x  -b/d \
+                        // \ y   a/d /
+                        let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::TwoInv {
+                            i: pr,
+                            j: r,
+                            a: x,
+                            b: y,
+                            //TODO: compute b/d and a/d at the same time d is computed?
+                            c: R::div(b.clone(), d.clone()).unwrap().neg(),
+                            d: R::div(a.clone(), d.clone()).unwrap(),
+                        });
+                        //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
+                        row_opp.apply(&mut self);
+                        row_opp.apply(&mut u);
+                    }
                 }
             } else {
                 //explicitly put the pivot into fav assoc form
@@ -693,7 +747,47 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
         let mut v = Self::ident(self.cols());
 
         let mut n = 0;
-        while n < self.rows() && n < self.cols() {
+        'inductive_loop: while n < self.rows() && n < self.cols() {
+            //search for a non-zero element to make the new starting point for (n, n)
+            //having a non-zero element is necessary later in the algorithm
+            'search_for_nonzero_element: {
+                if self.at(n, n).unwrap() == &R::zero() {
+                    //search the first row to start with
+                    for c in n + 1..self.cols() {
+                        if self.at(n, c).unwrap() != &R::zero() {
+                            //swap column n and column c
+                            let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::Swap(n, c));
+                            col_opp.apply(&mut self);
+                            col_opp.apply(&mut v);
+
+                            break 'search_for_nonzero_element;
+                        }
+                    }
+                    //search all the rows below row n
+                    for r in n + 1..self.rows() {
+                        for c in n..self.cols() {
+                            if self.at(r, c).unwrap() != &R::zero() {
+                                //swap column n and column c
+                                let col_opp =
+                                    ElementaryOpp::new_col_opp(ElementaryOppType::Swap(n, c));
+                                col_opp.apply(&mut self);
+                                col_opp.apply(&mut v);
+
+                                //swap row n and row r
+                                let row_opp =
+                                    ElementaryOpp::new_col_opp(ElementaryOppType::Swap(n, r));
+                                row_opp.apply(&mut self);
+                                row_opp.apply(&mut u);
+
+                                break 'search_for_nonzero_element;
+                            }
+                        }
+                    }
+                    //everything remaining is zero. The algorithm can terminate here
+                    break 'inductive_loop;
+                }
+            }
+
             //turn (n, n) into its favorite associate
             let (unit, _assoc) = self.at(n, n).unwrap().factor_fav_assoc_ref();
             let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::UnitMul {
@@ -705,44 +799,53 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
 
             let mut first = true;
             let mut all_divisible;
-            'reduce_loop: loop {
+            'zero_first_row_and_column_loop: loop {
                 //replace the first row (a0, a1, ..., ak) with (gcd, 0, ..., 0). Might mess up the first column in the process
                 all_divisible = true;
                 for c in n + 1..self.cols() {
                     let a = self.at(n, n).unwrap();
                     let b = self.at(n, c).unwrap();
-                    let maybe_q = R::div_refs(b, a);
-                    if maybe_q.is_ok() {
-                        //b is a multiple of a
-                        //replace (a, b) with (a, 0) by subtracting a multiple of a from b
-                        let q = maybe_q.unwrap();
-                        let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::AddRowMul {
-                            i: c,
-                            j: n,
-                            x: q.neg(),
-                        });
-                        col_opp.apply(&mut self);
-                        col_opp.apply(&mut v);
-                    } else {
-                        all_divisible = false;
-                        //b is not a multiple of a
-                        //replace (a, b) with (gcd, 0)
-                        let (d, x, y) = R::xgcd(a.clone(), b.clone());
-                        debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), d);
-                        let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::TwoInv {
-                            i: n,
-                            j: c,
-                            a: x,
-                            b: y,
-                            c: R::div(b.clone(), d.clone()).unwrap().neg(),
-                            d: R::div(a.clone(), d.clone()).unwrap(),
-                        });
-                        col_opp.apply(&mut self);
-                        col_opp.apply(&mut v);
+                    match R::div_refs(b, a) {
+                        Ok(q) => {
+                            //b is a multiple of a
+                            //replace (a, b) with (a, 0) by subtracting a multiple of a from b
+                            let col_opp =
+                                ElementaryOpp::new_col_opp(ElementaryOppType::AddRowMul {
+                                    i: c,
+                                    j: n,
+                                    x: q.neg(),
+                                });
+                            col_opp.apply(&mut self);
+                            col_opp.apply(&mut v);
+                        }
+                        Err(RingOppErr::NotDivisible) => {
+                            all_divisible = false;
+                            //b is not a multiple of a
+                            //replace (a, b) with (gcd, 0)
+                            let (d, x, y) = R::xgcd(a.clone(), b.clone());
+                            debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), d);
+                            let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::TwoInv {
+                                i: n,
+                                j: c,
+                                a: x,
+                                b: y,
+                                c: R::div(b.clone(), d.clone()).unwrap().neg(),
+                                d: R::div(a.clone(), d.clone()).unwrap(),
+                            });
+                            col_opp.apply(&mut self);
+                            col_opp.apply(&mut v);
+                        }
+                        Err(RingOppErr::DivideByZero) => {
+                            //swap a and b
+                            //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
+                            let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::Swap(n, c));
+                            col_opp.apply(&mut self);
+                            col_opp.apply(&mut v);
+                        }
                     }
                 }
                 if all_divisible && !first {
-                    break 'reduce_loop;
+                    break 'zero_first_row_and_column_loop;
                 }
                 first = false;
 
@@ -751,42 +854,52 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
                 for r in n + 1..self.rows() {
                     let a = self.at(n, n).unwrap();
                     let b = self.at(r, n).unwrap();
-                    let maybe_q = R::div_refs(b, a);
-                    if maybe_q.is_ok() {
-                        //b is a multiple of a
-                        //replace (a, b) with (a, 0) by subtracting a multiple of a from b
-                        let q = maybe_q.unwrap();
-                        let col_opp = ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
-                            i: r,
-                            j: n,
-                            x: q.neg(),
-                        });
-                        col_opp.apply(&mut self);
-                        col_opp.apply(&mut u);
-                    } else {
-                        all_divisible = false;
-                        //b is not a multiple of a
-                        //replace (a, b) with (gcd, 0)
-                        let (d, x, y) = R::xgcd(a.clone(), b.clone());
-                        debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), d);
-                        let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::TwoInv {
-                            i: n,
-                            j: r,
-                            a: x,
-                            b: y,
-                            c: R::div(b.clone(), d.clone()).unwrap().neg(),
-                            d: R::div(a.clone(), d.clone()).unwrap(),
-                        });
-                        row_opp.apply(&mut self);
-                        row_opp.apply(&mut u);
+                    match R::div_refs(b, a) {
+                        Ok(q) => {
+                            //b is a multiple of a
+                            //replace (a, b) with (a, 0) by subtracting a multiple of a from b
+                            let col_opp =
+                                ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
+                                    i: r,
+                                    j: n,
+                                    x: q.neg(),
+                                });
+                            col_opp.apply(&mut self);
+                            col_opp.apply(&mut u);
+                        }
+                        Err(RingOppErr::NotDivisible) => {
+                            all_divisible = false;
+                            //b is not a multiple of a
+                            //replace (a, b) with (gcd, 0)
+                            let (d, x, y) = R::xgcd(a.clone(), b.clone());
+                            debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), d);
+                            let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::TwoInv {
+                                i: n,
+                                j: r,
+                                a: x,
+                                b: y,
+                                c: R::div(b.clone(), d.clone()).unwrap().neg(),
+                                d: R::div(a.clone(), d.clone()).unwrap(),
+                            });
+                            row_opp.apply(&mut self);
+                            row_opp.apply(&mut u);
+                        }
+                        Err(RingOppErr::DivideByZero) => {
+                            //swap a and b
+                            //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
+                            let col_opp = ElementaryOpp::new_row_opp(ElementaryOppType::Swap(n, r));
+                            col_opp.apply(&mut self);
+                            col_opp.apply(&mut u);
+                        }
                     }
                 }
                 if all_divisible {
-                    break 'reduce_loop;
+                    break 'zero_first_row_and_column_loop;
                 }
             }
-            //now the first row and the first column are all zero except for the top left element
-            //some more fiddling is needed now to make the top left element the gcd of everything else
+            //now the first row and the first column are all zero except the top left element at (n, n) which is non-zero
+            debug_assert_ne!(self.at(n, n).unwrap(), &R::zero());
+            //some more fiddling is needed now to make the top left element divides everything else
             for r in n + 1..self.rows() {
                 //row(n) = row(n) + row(r)
                 let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
@@ -796,12 +909,14 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
                 });
                 row_opp.apply(&mut self);
                 row_opp.apply(&mut u);
+
                 //row(n) goes from (g, a1, a2, ..., an) to (gcd, 0, 0, ..., 0)
                 for c in n + 1..self.cols() {
                     let a = self.at(n, n).unwrap();
                     let b = self.at(n, c).unwrap();
-                    //b is not a multiple of a
-                    //replace (a, b) with (gcd, 0)
+                    //if a=0 and b=0 then there is nothing to do and the following step would fail when dividing by g=0
+                    //b might not be a multiple of a
+                    //replace (a, b) with (gcd, 0) to fix this
                     let (g, x, y) = R::xgcd(a.clone(), b.clone());
                     debug_assert_eq!(R::add(R::mul_refs(&x, a), R::mul_refs(&y, b)), g);
                     let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::TwoInv {
@@ -815,6 +930,7 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
                     col_opp.apply(&mut self);
                     col_opp.apply(&mut v);
                 }
+
                 //fix the first column
                 for fix_r in n + 1..self.rows() {
                     let a = self.at(n, n).unwrap();
@@ -832,7 +948,7 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
 
             if self.at(n, n).unwrap() == &R::zero() {
                 //the bottom right submatrix is all zero
-                break;
+                break 'inductive_loop;
             }
             n += 1;
         }
@@ -927,7 +1043,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn invariant() {
+    fn invariants() {
         let m: Matrix<Integer> = Matrix {
             dim1: 3,
             dim2: 4,
@@ -1407,7 +1523,9 @@ mod tests {
                     }
                 }
             }
+        }
 
+        {
             //integer reduced hermite normal form is unique, so we can fully check an example
             let a = Matrix::from_rows(vec![
                 vec![
@@ -1455,6 +1573,69 @@ mod tests {
                 vec![Integer::from(9), Integer::from(-5), Integer::from(1)],
                 vec![Integer::from(5), Integer::from(-2), Integer::from(0)],
                 vec![Integer::from(11), Integer::from(-6), Integer::from(1)],
+            ]);
+
+            let (h, u, pivs) = a.clone().row_reduced_hermite_algorithm();
+
+            assert_eq!(h, expected_h);
+            assert_eq!(u, expected_u);
+            assert_eq!(pivs, vec![0, 1, 2]);
+        }
+
+        {
+            //this one used to cause a dividion by zero error when replacing (a, b) with (gcd, 0) when (a, b) = (0, 0)
+            let a = Matrix::from_rows(vec![
+                vec![Integer::from(1), Integer::from(0), Integer::from(0)],
+                vec![Integer::from(0), Integer::from(1), Integer::from(0)],
+                vec![Integer::from(0), Integer::from(0), Integer::from(0)],
+                vec![Integer::from(0), Integer::from(0), Integer::from(0)],
+                vec![Integer::from(0), Integer::from(0), Integer::from(1)],
+            ]);
+
+            let expected_h = Matrix::from_rows(vec![
+                vec![Integer::from(1), Integer::from(0), Integer::from(0)],
+                vec![Integer::from(0), Integer::from(1), Integer::from(0)],
+                vec![Integer::from(0), Integer::from(0), Integer::from(1)],
+                vec![Integer::from(0), Integer::from(0), Integer::from(0)],
+                vec![Integer::from(0), Integer::from(0), Integer::from(0)],
+            ]);
+
+            let expected_u = Matrix::from_rows(vec![
+                vec![
+                    Integer::from(1),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(1),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(1),
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(1),
+                    Integer::from(0),
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(-1),
+                    Integer::from(0),
+                    Integer::from(0),
+                ],
             ]);
 
             let (h, u, pivs) = a.clone().row_reduced_hermite_algorithm();
@@ -1552,11 +1733,45 @@ mod tests {
         }
 
         {
+            //used to cause a divide by zero
+            let a = Matrix::from_rows(vec![
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(1),
+                ],
+            ]);
+            let (_u, _s, _v, k) = a.clone().smith_algorithm();
+            assert_eq!(k, 1);
+        }
+    }
+    #[test]
+    fn min_and_char_polys() {
+        {
             let a = Matrix::from_rows(vec![
                 vec![Integer::from(0), Integer::from(4), Integer::from(4)],
                 vec![Integer::from(1), Integer::from(4), Integer::from(16)],
             ]);
-            let (u, s, v, k) = a.smith_algorithm();
+            let (_u, s, _v, _k) = a.smith_algorithm();
 
             assert_eq!(
                 s,
@@ -1608,5 +1823,43 @@ mod tests {
         assert_eq!(mat.clone().col_span().rank(), 2);
         assert_eq!(mat.clone().row_kernel().rank(), 2);
         assert_eq!(mat.clone().col_kernel().rank(), 1);
+    }
+
+    #[test]
+    fn span_and_kernel_points() {
+        let mat = Matrix::from_rows(vec![
+            vec![
+                Integer::from(1),
+                Integer::from(1),
+                Integer::from(0),
+                Integer::from(0),
+            ],
+            vec![
+                Integer::from(1),
+                Integer::from(1),
+                Integer::from(0),
+                Integer::from(0),
+            ],
+            vec![
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(3),
+                Integer::from(5),
+            ],
+        ]);
+
+        println!("matrix");
+        mat.pprint();
+
+        let k = mat.col_kernel();
+        println!("kernel");
+        k.pprint();
+
+        assert!(k.contains_point(Matrix::from_rows(vec![
+            vec![Integer::from(-1)],
+            vec![Integer::from(1)],
+            vec![Integer::from(5)],
+            vec![Integer::from(-3)]
+        ])));
     }
 }
