@@ -46,55 +46,55 @@ impl ComRing for Integer {
         a * b
     }
 
-    fn div(a: Self, b: Self) -> Result<Self, RingOppErr> {
+    fn div(a: Self, b: Self) -> Result<Self, RingDivisionError> {
         match <Self as EuclideanDomain>::quorem(a, b) {
-            Ok((q, r)) => {
+            Some((q, r)) => {
                 if r == Self::zero() {
                     Ok(q)
                 } else {
-                    Err(RingOppErr::NotDivisible)
+                    Err(RingDivisionError::NotDivisible)
                 }
             }
-            Err(e) => Err(e),
+            None => Err(RingDivisionError::DivideByZero),
         }
     }
 
-    fn div_lref(a: &Self, b: Self) -> Result<Self, RingOppErr> {
+    fn div_lref(a: &Self, b: Self) -> Result<Self, RingDivisionError> {
         match <Self as EuclideanDomain>::quorem_lref(a, b) {
-            Ok((q, r)) => {
+            Some((q, r)) => {
                 if r == Self::zero() {
                     Ok(q)
                 } else {
-                    Err(RingOppErr::NotDivisible)
+                    Err(RingDivisionError::NotDivisible)
                 }
             }
-            Err(e) => Err(e),
+            None => Err(RingDivisionError::DivideByZero),
         }
     }
 
-    fn div_rref(a: Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn div_rref(a: Self, b: &Self) -> Result<Self, RingDivisionError> {
         match <Self as EuclideanDomain>::quorem_rref(a, b) {
-            Ok((q, r)) => {
+            Some((q, r)) => {
                 if r == Self::zero() {
                     Ok(q)
                 } else {
-                    Err(RingOppErr::NotDivisible)
+                    Err(RingDivisionError::NotDivisible)
                 }
             }
-            Err(e) => Err(e),
+            None => Err(RingDivisionError::DivideByZero),
         }
     }
 
-    fn div_refs(a: &Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn div_refs(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
         match <Self as EuclideanDomain>::quorem_refs(a, b) {
-            Ok((q, r)) => {
+            Some((q, r)) => {
                 if r == Self::zero() {
                     Ok(q)
                 } else {
-                    Err(RingOppErr::NotDivisible)
+                    Err(RingDivisionError::NotDivisible)
                 }
             }
-            Err(e) => Err(e),
+            None => Err(RingDivisionError::DivideByZero),
         }
     }
 }
@@ -173,11 +173,11 @@ impl EuclideanDomain for Integer {
         }
     }
 
-    fn quorem(a: Self, b: Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem(a: Self, b: Self) -> Option<(Self, Self)> {
         if b == Integer::from(0) {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok(a.div_mod(b.clone()))
+            Some(a.div_mod(b.clone()))
         }
     }
 }
@@ -226,9 +226,9 @@ impl ComRing for Rational {
         a * b
     }
 
-    fn div(a: Self, b: Self) -> Result<Self, RingOppErr> {
+    fn div(a: Self, b: Self) -> Result<Self, RingDivisionError> {
         if b == Rational::from(0) {
-            Err(RingOppErr::DivideByZero)
+            Err(RingDivisionError::DivideByZero)
         } else {
             Ok(a / b)
         }
@@ -277,8 +277,8 @@ mod tests {
             match c {
                 Ok(_) => panic!(),
                 Err(e) => match e {
-                    RingOppErr::DivideByZero => panic!(),
-                    RingOppErr::NotDivisible => {}
+                    RingDivisionError::DivideByZero => panic!(),
+                    RingDivisionError::NotDivisible => {}
                 },
             }
         }

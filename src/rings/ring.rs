@@ -7,7 +7,7 @@ use malachite_base::num::{
 use malachite_nz::{integer::Integer, natural::Natural};
 
 #[derive(Debug)]
-pub enum RingOppErr {
+pub enum RingDivisionError {
     DivideByZero,
     NotDivisible,
 }
@@ -54,22 +54,22 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug + ToString {
         new_a
     }
 
-    fn div(a: Self, b: Self) -> Result<Self, RingOppErr>;
-    fn div_lref(a: &Self, b: Self) -> Result<Self, RingOppErr> {
+    fn div(a: Self, b: Self) -> Result<Self, RingDivisionError>;
+    fn div_lref(a: &Self, b: Self) -> Result<Self, RingDivisionError> {
         Self::div(a.clone(), b)
     }
-    fn div_rref(a: Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn div_rref(a: Self, b: &Self) -> Result<Self, RingDivisionError> {
         Self::div(a, b.clone())
     }
-    fn div_refs(a: &Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn div_refs(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
         Self::div(a.clone(), b.clone())
     }
 
     fn divisible(a: Self, b: Self) -> bool {
         match Self::div(a, b) {
             Ok(_q) => true,
-            Err(RingOppErr::NotDivisible) => false,
-            Err(RingOppErr::DivideByZero) => false,
+            Err(RingDivisionError::NotDivisible) => false,
+            Err(RingDivisionError::DivideByZero) => false,
         }
     }
 
@@ -127,17 +127,17 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug + ToString {
     fn is_unit(self) -> bool {
         match Self::div(Self::one(), self) {
             Ok(_inv) => true,
-            Err(RingOppErr::DivideByZero) => false,
-            Err(RingOppErr::NotDivisible) => false,
+            Err(RingDivisionError::DivideByZero) => false,
+            Err(RingDivisionError::NotDivisible) => false,
             // Err(_) => panic!(),
         }
     }
 
-    fn inv(self) -> Result<Self, RingOppErr> {
+    fn inv(self) -> Result<Self, RingDivisionError> {
         Self::div(Self::one(), self)
     }
 
-    fn inv_ref(a: &Self) -> Result<Self, RingOppErr> {
+    fn inv_ref(a: &Self) -> Result<Self, RingDivisionError> {
         Self::div_rref(Self::one(), a)
     }
 }
@@ -361,46 +361,46 @@ pub trait PrincipalIdealDomain: ComRing + FavoriteAssociate {
 pub trait EuclideanDomain: IntegralDomain {
     //should return None for 0, and Some(norm) for everything else
     fn norm(&self) -> Option<Natural>;
-    fn quorem(a: Self, b: Self) -> Result<(Self, Self), RingOppErr>;
-    fn quorem_lref(a: &Self, b: Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem(a: Self, b: Self) -> Option<(Self, Self)>;
+    fn quorem_lref(a: &Self, b: Self) -> Option<(Self, Self)> {
         Self::quorem(a.clone(), b)
     }
-    fn quorem_rref(a: Self, b: &Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem_rref(a: Self, b: &Self) -> Option<(Self, Self)> {
         Self::quorem(a, b.clone())
     }
-    fn quorem_refs(a: &Self, b: &Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem_refs(a: &Self, b: &Self) -> Option<(Self, Self)> {
         Self::quorem(a.clone(), b.clone())
     }
 
-    fn quo(a: Self, b: Self) -> Result<Self, RingOppErr> {
+    fn quo(a: Self, b: Self) -> Option<Self> {
         match Self::quorem(a, b) {
-            Ok((q, _r)) => Ok(q),
-            Err(e) => Err(e),
+            Some((q, _r)) => Some(q),
+            None => None,
         }
     }
-    fn quo_lref(a: &Self, b: Self) -> Result<Self, RingOppErr> {
+    fn quo_lref(a: &Self, b: Self) -> Option<Self> {
         Self::quo(a.clone(), b)
     }
-    fn quo_rref(a: Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn quo_rref(a: Self, b: &Self) -> Option<Self> {
         Self::quo(a, b.clone())
     }
-    fn quo_refs(a: &Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn quo_refs(a: &Self, b: &Self) -> Option<Self> {
         Self::quo(a.clone(), b.clone())
     }
 
-    fn rem(a: Self, b: Self) -> Result<Self, RingOppErr> {
+    fn rem(a: Self, b: Self) -> Option<Self> {
         match Self::quorem(a, b) {
-            Ok((_q, r)) => Ok(r),
-            Err(e) => Err(e),
+            Some((_q, r)) => Some(r),
+            None => None,
         }
     }
-    fn rem_lref(a: &Self, b: Self) -> Result<Self, RingOppErr> {
+    fn rem_lref(a: &Self, b: Self) -> Option<Self> {
         Self::rem(a.clone(), b)
     }
-    fn rem_rref(a: Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn rem_rref(a: Self, b: &Self) -> Option<Self> {
         Self::rem(a, b.clone())
     }
-    fn rem_refs(a: &Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn rem_refs(a: &Self, b: &Self) -> Option<Self> {
         Self::rem(a.clone(), b.clone())
     }
 }
@@ -467,99 +467,99 @@ impl<F: Field> EuclideanDomain for F {
         }
     }
 
-    fn quorem(a: Self, b: Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem(a: Self, b: Self) -> Option<(Self, Self)> {
         if b == Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok((Self::div(a, b).unwrap(), Self::zero()))
+            Some((Self::div(a, b).unwrap(), Self::zero()))
         }
     }
 
-    fn quorem_lref(a: &Self, b: Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem_lref(a: &Self, b: Self) -> Option<(Self, Self)> {
         if b == Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok((Self::div_lref(a, b).unwrap(), Self::zero()))
+            Some((Self::div_lref(a, b).unwrap(), Self::zero()))
         }
     }
 
-    fn quorem_rref(a: Self, b: &Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem_rref(a: Self, b: &Self) -> Option<(Self, Self)> {
         if b == &Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok((Self::div_rref(a, b).unwrap(), Self::zero()))
+            Some((Self::div_rref(a, b).unwrap(), Self::zero()))
         }
     }
 
-    fn quorem_refs(a: &Self, b: &Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem_refs(a: &Self, b: &Self) -> Option<(Self, Self)> {
         if b == &Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok((Self::div_refs(a, b).unwrap(), Self::zero()))
+            Some((Self::div_refs(a, b).unwrap(), Self::zero()))
         }
     }
 
-    fn quo(a: Self, b: Self) -> Result<Self, RingOppErr> {
+    fn quo(a: Self, b: Self) -> Option<Self> {
         if b == Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok(Self::div(a, b).unwrap())
+            Some(Self::div(a, b).unwrap())
         }
     }
 
-    fn quo_lref(a: &Self, b: Self) -> Result<Self, RingOppErr> {
+    fn quo_lref(a: &Self, b: Self) -> Option<Self> {
         if b == Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok(Self::div_lref(a, b).unwrap())
+            Some(Self::div_lref(a, b).unwrap())
         }
     }
 
-    fn quo_rref(a: Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn quo_rref(a: Self, b: &Self) -> Option<Self> {
         if b == &Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok(Self::div_rref(a, b).unwrap())
+            Some(Self::div_rref(a, b).unwrap())
         }
     }
 
-    fn quo_refs(a: &Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn quo_refs(a: &Self, b: &Self) -> Option<Self> {
         if b == &Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok(Self::div_refs(a, b).unwrap())
+            Some(Self::div_refs(a, b).unwrap())
         }
     }
 
-    fn rem(_a: Self, b: Self) -> Result<Self, RingOppErr> {
+    fn rem(_a: Self, b: Self) -> Option<Self> {
         if b == Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok(Self::zero())
+            Some(Self::zero())
         }
     }
 
-    fn rem_lref(_a: &Self, b: Self) -> Result<Self, RingOppErr> {
+    fn rem_lref(_a: &Self, b: Self) -> Option<Self> {
         if b == Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok(Self::zero())
+            Some(Self::zero())
         }
     }
 
-    fn rem_rref(_a: Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn rem_rref(_a: Self, b: &Self) -> Option<Self> {
         if b == &Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok(Self::zero())
+            Some(Self::zero())
         }
     }
 
-    fn rem_refs(_a: &Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn rem_refs(_a: &Self, b: &Self) -> Option<Self> {
         if b == &Self::zero() {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
-            Ok(Self::zero())
+            Some(Self::zero())
         }
     }
 }

@@ -818,7 +818,7 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
                             col_opp.apply(&mut self);
                             col_opp.apply(&mut v);
                         }
-                        Err(RingOppErr::NotDivisible) => {
+                        Err(RingDivisionError::NotDivisible) => {
                             all_divisible = false;
                             //b is not a multiple of a
                             //replace (a, b) with (gcd, 0)
@@ -835,7 +835,7 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
                             col_opp.apply(&mut self);
                             col_opp.apply(&mut v);
                         }
-                        Err(RingOppErr::DivideByZero) => {
+                        Err(RingDivisionError::DivideByZero) => {
                             //swap a and b
                             //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
                             let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::Swap(n, c));
@@ -867,7 +867,7 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
                             col_opp.apply(&mut self);
                             col_opp.apply(&mut u);
                         }
-                        Err(RingOppErr::NotDivisible) => {
+                        Err(RingDivisionError::NotDivisible) => {
                             all_divisible = false;
                             //b is not a multiple of a
                             //replace (a, b) with (gcd, 0)
@@ -884,7 +884,7 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
                             row_opp.apply(&mut self);
                             row_opp.apply(&mut u);
                         }
-                        Err(RingOppErr::DivideByZero) => {
+                        Err(RingDivisionError::DivideByZero) => {
                             //swap a and b
                             //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
                             let col_opp = ElementaryOpp::new_row_opp(ElementaryOppType::Swap(n, r));

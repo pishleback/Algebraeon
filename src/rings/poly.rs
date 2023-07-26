@@ -189,15 +189,15 @@ impl<R: ComRing> ComRing for Polynomial<R> {
         self.clone_from(&Self::mul_refs(self, x));
     }
 
-    fn div(a: Self, b: Self) -> Result<Self, RingOppErr> {
+    fn div(a: Self, b: Self) -> Result<Self, RingDivisionError> {
         Self::div_rref(a, &b)
     }
 
-    fn div_lref(a: &Self, b: Self) -> Result<Self, RingOppErr> {
+    fn div_lref(a: &Self, b: Self) -> Result<Self, RingDivisionError> {
         Self::div_refs(a, &b)
     }
 
-    fn div_refs(a: &Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn div_refs(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
         let q_res = Self::div_rref(a.clone(), b);
         match &q_res {
             Ok(q) => debug_assert_eq!(&Self::mul_refs(q, b), a),
@@ -206,7 +206,7 @@ impl<R: ComRing> ComRing for Polynomial<R> {
         q_res
     }
 
-    fn div_rref(mut a: Self, b: &Self) -> Result<Self, RingOppErr> {
+    fn div_rref(mut a: Self, b: &Self) -> Result<Self, RingDivisionError> {
         //try to find q such that q*b == a
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
@@ -215,9 +215,9 @@ impl<R: ComRing> ComRing for Polynomial<R> {
         if m == 0 {
             Ok(Self::zero())
         } else if m < n {
-            Err(RingOppErr::NotDivisible)
+            Err(RingDivisionError::NotDivisible)
         } else if n == 0 {
-            Err(RingOppErr::DivideByZero)
+            Err(RingDivisionError::DivideByZero)
         } else {
             let k = m - n + 1;
             let mut q = Self {
@@ -231,14 +231,14 @@ impl<R: ComRing> ComRing for Polynomial<R> {
                         a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
                         q.coeffs[i] = qc;
                     }
-                    Err(RingOppErr::NotDivisible) => {
-                        return Err(RingOppErr::NotDivisible);
+                    Err(RingDivisionError::NotDivisible) => {
+                        return Err(RingDivisionError::NotDivisible);
                     }
                     Err(_) => panic!(),
                 }
             }
             if a != Self::zero() {
-                return Err(RingOppErr::NotDivisible);
+                return Err(RingDivisionError::NotDivisible);
             }
             Ok(q)
         }
@@ -384,33 +384,33 @@ impl<F: Field> EuclideanDomain for Polynomial<F> {
         }
     }
 
-    fn quorem(a: Self, b: Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem(a: Self, b: Self) -> Option<(Self, Self)> {
         Self::quorem_rref(a, &b)
     }
 
-    fn quorem_lref(a: &Self, b: Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem_lref(a: &Self, b: Self) -> Option<(Self, Self)> {
         Self::quorem_refs(a, &b)
     }
 
-    fn quorem_refs(a: &Self, b: &Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem_refs(a: &Self, b: &Self) -> Option<(Self, Self)> {
         let res = Self::quorem_rref(a.clone(), b);
         match &res {
-            Ok((q, r)) => debug_assert_eq!(&Self::add_ref(Self::mul_refs(q, b), r), a),
-            Err(_) => {}
+            Some((q, r)) => debug_assert_eq!(&Self::add_ref(Self::mul_refs(q, b), r), a),
+            None => {}
         };
         res
     }
 
-    fn quorem_rref(mut a: Self, b: &Self) -> Result<(Self, Self), RingOppErr> {
+    fn quorem_rref(mut a: Self, b: &Self) -> Option<(Self, Self)> {
         //try to find q such that q*b == a
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
         let m = a.coeffs.len();
         let n = b.coeffs.len();
         if m < n {
-            Ok((Self::zero(), a))
+            Some((Self::zero(), a))
         } else if n == 0 {
-            Err(RingOppErr::DivideByZero)
+            None
         } else {
             let k = m - n + 1;
             let mut q = Self {
@@ -427,7 +427,7 @@ impl<F: Field> EuclideanDomain for Polynomial<F> {
                     Err(_) => panic!(),
                 }
             }
-            Ok((q, a))
+            Some((q, a))
         }
     }
 }
@@ -488,7 +488,7 @@ mod tests {
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) + 1;
         match Polynomial::<Integer>::div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
-            Err(RingOppErr::NotDivisible) => {}
+            Err(RingDivisionError::NotDivisible) => {}
             Err(_) => panic!(),
         }
 
@@ -496,7 +496,7 @@ mod tests {
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         match Polynomial::<Integer>::div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
-            Err(RingOppErr::NotDivisible) => {}
+            Err(RingDivisionError::NotDivisible) => {}
             Err(_) => panic!(),
         }
 
@@ -504,7 +504,7 @@ mod tests {
         let b = 0 * x;
         match Polynomial::<Integer>::div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
-            Err(RingOppErr::DivideByZero) => {}
+            Err(RingDivisionError::DivideByZero) => {}
             Err(_) => panic!(),
         }
 
@@ -514,7 +514,7 @@ mod tests {
             Ok(c) => {
                 assert_eq!(c, Polynomial::zero())
             }
-            Err(RingOppErr::DivideByZero) => panic!(),
+            Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
         }
 
@@ -524,7 +524,7 @@ mod tests {
             Ok(c) => {
                 assert_eq!(c, a.elem())
             }
-            Err(RingOppErr::DivideByZero) => panic!(),
+            Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
         }
     }
