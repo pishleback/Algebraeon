@@ -286,22 +286,32 @@ impl<R: FiniteUnits> FiniteUnits for Polynomial<R> {
     }
 }
 
-impl<R: PrincipalIdealDomain> Polynomial<R> {
-    //find a polynomial of degree no more than the passed degree
-    pub fn interpolate(degree: usize, points: Vec<(R, R)>) -> Option<Self> {
-        /*
-        e.g. finding a degree 2 polynomial f(x)=a+bx+cx^2 such that
-        f(1)=3
-        f(2)=1
-        f(3)=-2
-        is the same as solving the linear system for a, b, c
-        / 1 1 1 \ / a \   / 3  \
-        | 1 2 4 | | b | = | 1  |
-        \ 1 3 9 / \ c /   \ -2 /
-         */
-        todo!();
-    }
+pub trait InterpolatePolynomialOver<R: ComRing> {
+    fn interpolate(degree: usize, points: Vec<(R, R)>) -> Option<Polynomial<R>>;
 }
+
+// impl<R: IntegralDomain> InterpolatePolynomialOver<R> for Polynomial<R> {
+//     fn interpolate(degree: usize, points: Vec<(R, R)>) -> Option<Self> {
+//         todo!();
+//     }
+// }
+
+// impl<R: PrincipalIdealDomain> InterpolatePolynomialOver<R> for Polynomial<R> {
+//     //find a polynomial of degree no more than the passed degree
+//     fn interpolate(degree: usize, points: Vec<(R, R)>) -> Option<Self> {
+//         /*
+//         e.g. finding a degree 2 polynomial f(x)=a+bx+cx^2 such that
+//         f(1)=3
+//         f(2)=1
+//         f(3)=-2
+//         is the same as solving the linear system for a, b, c
+//         / 1 1 1 \ / a \   / 3  \
+//         | 1 2 4 | | b | = | 1  |
+//         \ 1 3 9 / \ c /   \ -2 /
+//          */
+//         todo!();
+//     }
+// }
 
 impl<R: ComRing + Hash> Hash for Polynomial<R> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -309,71 +319,67 @@ impl<R: ComRing + Hash> Hash for Polynomial<R> {
     }
 }
 
-impl<R: UniqueFactorizationDomain> UniqueFactorizationDomain for Polynomial<R> {}
-
-//Kronecker's method for factoring polynomials over infinite ufds with finitely many units (eg the integers)
-pub struct KroneckerFactorizer();
-impl<R: UniqueFactorizationDomain + FavoriteAssociate + Hash + InfiniteRing + FiniteUnits>
-    UniqueFactorizer<Polynomial<R>> for KroneckerFactorizer
-{
-    fn factor(&mut self, a: &Polynomial<R>) -> Option<UniqueFactorization<Polynomial<R>>> {
-        /*
-        Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
-        Assume it has a proper factor g(x). wlog g(x) has degree <= 2
-        g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
-        f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
-        g(0) divides 2, g(1) divides 6, g(-1) divides 2
-        there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
-        infact there are 4*8*4=128 possible tripples
-        however, only 64 need to be checked as the other half are their negatives
-        more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
-         */
-
-        println!("{}", a.to_string());
-        todo!()
-    }
-}
-
-pub struct FractionFieldPolynomialFactorizer<
-    F: FieldOfFractions + Hash,
-    RingPolyFactorizerT: UniqueFactorizer<Polynomial<F::R>>,
-> where
-    F::R: UniqueFactorizationDomain + FavoriteAssociate + Hash,
-{
-    _f: PhantomData<F>,
-    ring_poly_factorizer: RingPolyFactorizerT,
-}
-
-impl<F: FieldOfFractions + Hash, RingPolyFactorizerT: UniqueFactorizer<Polynomial<F::R>>>
-    FractionFieldPolynomialFactorizer<F, RingPolyFactorizerT>
+pub trait FactorPolynomialOver: UniqueFactorizationDomain
 where
-    F::R: UniqueFactorizationDomain + FavoriteAssociate + Hash,
+    Polynomial<Self>: UniqueFactorizationDomain,
 {
-    pub fn new(ring_poly_factorizer: RingPolyFactorizerT) -> Self {
-        Self {
-            _f: PhantomData,
-            ring_poly_factorizer,
-        }
+    fn factor_polynomial(poly: &Polynomial<Self>) -> Option<UniqueFactorization<Polynomial<Self>>>;
+}
+
+impl<R: FactorPolynomialOver> UniqueFactorizationDomain for Polynomial<R> {
+    fn factor(&self) -> Option<UniqueFactorization<Polynomial<R>>> {
+        R::factor_polynomial(self)
     }
 }
 
-impl<F: FieldOfFractions + Hash, RingPolyFactorizerT: UniqueFactorizer<Polynomial<F::R>>>
-    UniqueFactorizer<Polynomial<F>> for FractionFieldPolynomialFactorizer<F, RingPolyFactorizerT>
-where
-    F::R: UniqueFactorizationDomain + FavoriteAssociate + Hash,
-{
-    fn factor(&mut self, a: &Polynomial<F>) -> Option<UniqueFactorization<Polynomial<F>>> {
-        // F::R::one();
-        println!(
-            "{:?}",
-            self.ring_poly_factorizer
-                .factor(&Polynomial::from(F::R::from_int(
-                    &malachite_nz::integer::Integer::from(12)
-                )))
-        );
-        todo!()
-    }
-}
+// impl<R: UniqueFactorizationDomain + Hash>
+//     UniqueFactorizationDomain for Polynomial<R>
+// {
+//     default fn factor(&self) -> Option<UniqueFactorization<Polynomial<R>>> {
+//         todo!();
+//     }
+// }
+
+// impl<R: UniqueFactorizationDomain + FiniteUnits + CharacteristicZero + Hash>
+//     UniqueFactorizationDomain for Polynomial<R>
+// {
+//     default fn factor(&self) -> Option<UniqueFactorization<Polynomial<R>>> {
+//         /*
+//         Kronecker's method for factoring polynomials over infinite ufds with finitely many units (eg the integers)
+//         Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
+//         Assume it has a proper factor g(x). wlog g(x) has degree <= 2
+//         g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
+//         f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
+//         g(0) divides 2, g(1) divides 6, g(-1) divides 2
+//         there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
+//         infact there are 4*8*4=128 possible tripples
+//         however, only 64 need to be checked as the other half are their negatives
+//         more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
+//          */
+//         match self.degree() {
+//             None => None,
+//             Some(self_degree) => {
+//                 println!("factor poly {}", self.to_string());
+//                 let factor_degree = self_degree / 2;
+//                 println!("factor degree {}", factor_degree);
+//                 let mut points = vec![];
+//                 let mut elem_gen = R::generate_distinct_elements();
+//                 for _i in 0..factor_degree {
+//                     points.push(elem_gen.next().unwrap());
+//                 }
+//                 println!("{:?}", points);
+//                 todo!()
+//             }
+//         }
+//     }
+// }
+
+// impl<F: FieldOfFractions + Hash> UniqueFactorizationDomain for Polynomial<F> {
+//     fn factor(&self) -> Option<UniqueFactorization<Polynomial<F>>> {
+//         println!("factor poly field {}", self.to_string());
+//         todo!()
+//     }
+// }
 
 impl<F: Field> EuclideanDomain for Polynomial<F> {
     fn norm(&self) -> Option<Natural> {

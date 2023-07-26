@@ -203,19 +203,14 @@ pub trait FavoriteAssociate: IntegralDomain {
         self == &a
     }
 }
-
-pub trait UniqueFactorizationDomain: IntegralDomain {
+pub trait UniqueFactorizationDomain: FavoriteAssociate + Hash {
     //unique factorizations exist
-}
-
-pub trait UniquelyFactorable: UniqueFactorizationDomain + FavoriteAssociate + Hash {
-    //UFD with an explicit factorizer
-    fn make_factorizer() -> Box<dyn UniqueFactorizer<Self>>;
-    fn factor(&self) -> Option<UniqueFactorization<Self>> {
-        Self::make_factorizer().factor(self)
-    }
+    fn factor(&self) -> Option<UniqueFactorization<Self>>;
     fn is_irreducible(&self) -> Option<bool> {
-        Self::make_factorizer().is_irreducible(self)
+        match self.factor() {
+            Some(fs) => Some(fs.is_irreducible()),
+            None => None,
+        }
     }
 }
 
@@ -227,10 +222,7 @@ pub struct UniqueFactorization<R: UniqueFactorizationDomain + FavoriteAssociate 
 }
 
 impl<R: UniqueFactorizationDomain + FavoriteAssociate + Hash> UniqueFactorization<R> {
-    pub fn check_invariants(
-        &self,
-        factorizer: &mut impl UniqueFactorizer<R>,
-    ) -> Result<(), &'static str> {
+    pub fn check_invariants(&self) -> Result<(), &'static str> {
         if !self.unit.clone().is_unit() {
             return Err("unit must be a unit");
         }
@@ -242,7 +234,7 @@ impl<R: UniqueFactorizationDomain + FavoriteAssociate + Hash> UniqueFactorizatio
             if !p.is_fav_assoc() {
                 return Err("prime factor must be their fav assoc");
             }
-            match factorizer.is_irreducible(p) {
+            match p.is_irreducible() {
                 Some(is_irr) => {
                     if !is_irr {
                         return Err("prime factor must not be irreducible");
@@ -447,7 +439,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> PrincipalIdealDomain for R {
 
 // }
 
-pub trait Field: IntegralDomain + UniqueFactorizationDomain {
+pub trait Field: IntegralDomain {
     //promise that a/b always works, except unless b=0.
     //in other words, a/b must not return not divisible
 }
@@ -564,6 +556,20 @@ impl<F: Field> EuclideanDomain for F {
     }
 }
 
+impl<F: Field + Hash> UniqueFactorizationDomain for F {
+    fn factor(&self) -> Option<UniqueFactorization<Self>> {
+        if self == &Self::zero() {
+            None
+        } else {
+            Some(UniqueFactorization::new_unchecked(
+                self.clone(),
+                self.clone(),
+                HashMap::new(),
+            ))
+        }
+    }
+}
+
 pub trait FieldOfFractions: Field {
     type R: IntegralDomain;
 }
@@ -575,8 +581,6 @@ mod tests {
 
     #[test]
     fn factorization_invariants() {
-        let mut naive_integer_factorizer = NaiveIntegerFactorizer();
-
         let f = UniqueFactorization {
             elem: Integer::from(-12),
             unit: Integer::from(-1),
@@ -585,20 +589,14 @@ mod tests {
                 (Integer::from(3), Natural::from(1u8)),
             ]),
         };
-        assert_eq!(
-            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
-            true
-        );
+        assert_eq!(f.check_invariants().is_ok(), true);
 
         let f = UniqueFactorization {
             elem: Integer::from(1),
             unit: Integer::from(1),
             factors: HashMap::from([]),
         };
-        assert_eq!(
-            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
-            true
-        );
+        assert_eq!(f.check_invariants().is_ok(), true);
 
         let f = UniqueFactorization {
             elem: Integer::from(-12),
@@ -610,7 +608,7 @@ mod tests {
             ]),
         };
         assert_eq!(
-            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            f.check_invariants().is_ok(),
             false,
             "can't have a power of zero"
         );
@@ -623,11 +621,7 @@ mod tests {
                 (Integer::from(3), Natural::from(1u8)),
             ]),
         };
-        assert_eq!(
-            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
-            false,
-            "product is incorrect"
-        );
+        assert_eq!(f.check_invariants().is_ok(), false, "product is incorrect");
 
         let f = UniqueFactorization {
             elem: Integer::from(12),
@@ -637,22 +631,14 @@ mod tests {
                 (Integer::from(3), Natural::from(1u8)),
             ]),
         };
-        assert_eq!(
-            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
-            false,
-            "unit is wrong"
-        );
+        assert_eq!(f.check_invariants().is_ok(), false, "unit is wrong");
 
         let f = UniqueFactorization {
             elem: Integer::from(12),
             unit: Integer::from(3),
             factors: HashMap::from([(Integer::from(2), Natural::from(2u8))]),
         };
-        assert_eq!(
-            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
-            false,
-            "unit should be a unit"
-        );
+        assert_eq!(f.check_invariants().is_ok(), false, "unit should be a unit");
 
         let f = UniqueFactorization {
             elem: Integer::from(0),
@@ -663,7 +649,7 @@ mod tests {
             ]),
         };
         assert_eq!(
-            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            f.check_invariants().is_ok(),
             false,
             "prime factors must not be zero"
         );
@@ -677,7 +663,7 @@ mod tests {
             ]),
         };
         assert_eq!(
-            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            f.check_invariants().is_ok(),
             false,
             "prime factors must be prime"
         );
@@ -691,7 +677,7 @@ mod tests {
             ]),
         };
         assert_eq!(
-            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            f.check_invariants().is_ok(),
             false,
             "prime factors must be fav assoc"
         );

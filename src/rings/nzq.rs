@@ -121,17 +121,13 @@ impl FavoriteAssociate for Integer {
     }
 }
 
-impl UniqueFactorizationDomain for Integer {}
-
-pub struct NaiveIntegerFactorizer();
-
-impl UniqueFactorizer<Integer> for NaiveIntegerFactorizer {
-    fn factor(&mut self, a: &Integer) -> Option<UniqueFactorization<Integer>> {
-        if a == &0 {
+impl UniqueFactorizationDomain for Integer {
+    fn factor(&self) -> Option<UniqueFactorization<Integer>> {
+        if self == &0 {
             None
         } else {
             let unit;
-            if a < &0 {
+            if self < &0 {
                 unit = Integer::from(-1);
             } else {
                 unit = Integer::from(1);
@@ -153,9 +149,9 @@ impl UniqueFactorizer<Integer> for NaiveIntegerFactorizer {
             }
 
             Some(UniqueFactorization::new_unchecked(
-                a.clone(),
+                self.clone(),
                 unit,
-                factor_nat(a.unsigned_abs())
+                factor_nat(self.unsigned_abs())
                     .into_iter()
                     .map(|(p, k)| (Integer::from(p), k))
                     .collect(),
@@ -235,8 +231,6 @@ impl ComRing for Rational {
     }
 }
 impl IntegralDomain for Rational {}
-
-impl UniqueFactorizationDomain for Rational {}
 
 impl Field for Rational {
     // fn inv(a: Self) -> Result<Self, OppErr> {
