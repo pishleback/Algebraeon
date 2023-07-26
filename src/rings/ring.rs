@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 use malachite_base::num::{
     arithmetic::traits::{DivRem, UnsignedAbs},
@@ -142,6 +142,49 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug {
     }
 }
 
+pub trait InfiniteRing: ComRing {
+    //generate an infinite sequence of distinct elements
+    fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>>;
+}
+
+pub trait CharacteristicZero: ComRing {
+    //promise that the integers are distinct in the ring
+}
+
+impl<R: CharacteristicZero> InfiniteRing for R {
+    fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>> {
+        struct IntegerIterator {
+            next: Integer,
+        }
+
+        impl Iterator for IntegerIterator {
+            type Item = Integer;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                let next = self.next.clone();
+                if 0 < next {
+                    self.next.neg_mut()
+                } else {
+                    self.next.neg_mut();
+                    self.next.add_mut(&Integer::one());
+                }
+                Some(next)
+            }
+        }
+        Box::new(
+            IntegerIterator {
+                next: Integer::from(0),
+            }
+            .map(|n| R::from_int(&n)),
+        )
+    }
+}
+
+pub trait FiniteUnits: ComRing {
+    //a commutative ring with finitely many units
+    fn all_units() -> Vec<Self>;
+}
+
 pub trait IntegralDomain: ComRing {
     //promise that mul(a, b) == 0 implies a == 0 or b == 0
 }
@@ -154,6 +197,99 @@ pub trait FavoriteAssociate: IntegralDomain {
     fn factor_fav_assoc(self) -> (Self, Self);
     fn factor_fav_assoc_ref(&self) -> (Self, Self) {
         self.clone().factor_fav_assoc()
+    }
+    fn is_fav_assoc(&self) -> bool {
+        let (_u, a) = self.clone().factor_fav_assoc();
+        self == &a
+    }
+}
+
+pub trait UniqueFactorizationDomain {
+    //unique factorizations exist
+}
+
+#[derive(Debug)]
+pub struct UniqueFactorization<R: UniqueFactorizationDomain + FavoriteAssociate + Hash> {
+    elem: R,
+    unit: R,
+    factors: HashMap<R, Natural>,
+}
+
+impl<R: UniqueFactorizationDomain + FavoriteAssociate + Hash> UniqueFactorization<R> {
+    pub fn check_invariants(
+        &self,
+        factorizer: &mut impl UniqueFactorizer<R = R>,
+    ) -> Result<(), &'static str> {
+        if !self.unit.clone().is_unit() {
+            return Err("unit must be a unit");
+        }
+        let mut prod = self.unit.clone();
+        for (p, k) in &self.factors {
+            if k == &0 {
+                return Err("prime powers must not be zero");
+            }
+            if !p.is_fav_assoc() {
+                return Err("prime factor must be their fav assoc");
+            }
+            match factorizer.is_irreducible(p) {
+                Some(is_irr) => {
+                    if !is_irr {
+                        return Err("prime factor must not be irreducible");
+                    }
+                    let mut i = Natural::from(0u8);
+                    while &i < k {
+                        prod.mul_mut(p);
+                        i += Natural::from(1u8);
+                    }
+                }
+                None => {
+                    return Err("prime factor must not be zero");
+                }
+            }
+        }
+        if self.elem != prod {
+            return Err("product is incorrect");
+        }
+        Ok(())
+    }
+
+    pub fn new_unchecked(elem: R, unit: R, factors: HashMap<R, Natural>) -> Self {
+        Self {
+            elem,
+            unit,
+            factors,
+        }
+    }
+
+    pub fn unit(&self) -> &R {
+        &self.unit
+    }
+
+    pub fn factors(&self) -> &HashMap<R, Natural> {
+        &self.factors
+    }
+
+    pub fn is_irreducible(&self) -> bool {
+        if self.factors.len() == 1 {
+            let (_p, k) = self.factors.iter().next().unwrap();
+            if k == &1 {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+pub trait UniqueFactorizer: Sized {
+    type R: UniqueFactorizationDomain + FavoriteAssociate + Hash;
+
+    //factor the non-zero elements
+    fn factor(&mut self, a: &Self::R) -> Option<UniqueFactorization<Self::R>>;
+    fn is_irreducible(&mut self, a: &Self::R) -> Option<bool> {
+        match self.factor(a) {
+            Some(f) => Some(f.is_irreducible()),
+            None => None,
+        }
     }
 }
 
@@ -419,291 +555,136 @@ impl<F: Field> EuclideanDomain for F {
     }
 }
 
-pub trait FieldOfFractions<R: IntegralDomain>: Field + From<R> {}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Ergonomic<R: ComRing> {
-    elem: R,
+pub trait FieldOfFractions: Field {
+    type R: IntegralDomain;
 }
 
-impl<R: ComRing> Ergonomic<R> {
-    pub fn new(elem: R) -> Self {
-        Self { elem }
-    }
+#[cfg(test)]
+mod tests {
+    use super::super::nzq::*;
+    use super::*;
 
-    pub fn pow(&self, n: usize) -> Self {
-        Self {
-            elem: self.elem.pow(&Natural::from(n)),
-        }
-    }
+    #[test]
+    fn factorization_invariants() {
+        let mut naive_integer_factorizer = NaiveIntegerFactorizer();
 
-    pub fn to_elem(self) -> R {
-        self.elem
-    }
+        let f = UniqueFactorization {
+            elem: Integer::from(-12),
+            unit: Integer::from(-1),
+            factors: HashMap::from([
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        };
+        assert_eq!(
+            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            true
+        );
 
-    pub fn elem(&self) -> R {
-        self.elem.clone()
-    }
-}
+        let f = UniqueFactorization {
+            elem: Integer::from(1),
+            unit: Integer::from(1),
+            factors: HashMap::from([]),
+        };
+        assert_eq!(
+            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            true
+        );
 
-//val + val
-impl<R: ComRing> std::ops::Add for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+        let f = UniqueFactorization {
+            elem: Integer::from(-12),
+            unit: Integer::from(-1),
+            factors: HashMap::from([
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+                (Integer::from(5), Natural::from(0u8)),
+            ]),
+        };
+        assert_eq!(
+            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            false,
+            "can't have a power of zero"
+        );
 
-    fn add(self, other: Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::add(self.elem, other.elem),
-        }
-    }
-}
+        let f = UniqueFactorization {
+            elem: Integer::from(-13),
+            unit: Integer::from(-1),
+            factors: HashMap::from([
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        };
+        assert_eq!(
+            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            false,
+            "product is incorrect"
+        );
 
-//ref + ref
-impl<R: ComRing> std::ops::Add for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+        let f = UniqueFactorization {
+            elem: Integer::from(12),
+            unit: Integer::from(-1),
+            factors: HashMap::from([
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        };
+        assert_eq!(
+            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            false,
+            "unit is wrong"
+        );
 
-    fn add(self, other: &Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::add_refs(&self.elem, &other.elem),
-        }
-    }
-}
+        let f = UniqueFactorization {
+            elem: Integer::from(12),
+            unit: Integer::from(3),
+            factors: HashMap::from([(Integer::from(2), Natural::from(2u8))]),
+        };
+        assert_eq!(
+            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            false,
+            "unit should be a unit"
+        );
 
-//val + ref
-impl<R: ComRing> std::ops::Add<&Ergonomic<R>> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+        let f = UniqueFactorization {
+            elem: Integer::from(0),
+            unit: Integer::from(1),
+            factors: HashMap::from([
+                (Integer::from(0), Natural::from(1u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        };
+        assert_eq!(
+            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            false,
+            "prime factors must not be zero"
+        );
 
-    fn add(self, other: &Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::add_ref(self.elem, &other.elem),
-        }
-    }
-}
+        let f = UniqueFactorization {
+            elem: Integer::from(-12),
+            unit: Integer::from(-1),
+            factors: HashMap::from([
+                (Integer::from(4), Natural::from(1u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        };
+        assert_eq!(
+            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            false,
+            "prime factors must be prime"
+        );
 
-//ref + val
-impl<R: ComRing> std::ops::Add<Ergonomic<R>> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn add(self, other: Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::add_ref(other.elem, &self.elem),
-        }
-    }
-}
-
-//val - val
-impl<R: ComRing> std::ops::Sub for Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn sub(self, other: Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::add(self.elem, other.elem.neg()),
-        }
-    }
-}
-
-//ref - ref
-impl<R: ComRing> std::ops::Sub for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn sub(self, other: &Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::add_refs(&self.elem, &other.elem.neg_ref()),
-        }
-    }
-}
-
-//val - ref
-impl<R: ComRing> std::ops::Sub<&Ergonomic<R>> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn sub(self, other: &Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::add_ref(self.elem, &other.elem.neg_ref()),
-        }
-    }
-}
-
-//ref - val
-impl<R: ComRing> std::ops::Sub<Ergonomic<R>> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn sub(self, other: Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::add_ref(other.elem.neg(), &self.elem),
-        }
-    }
-}
-
-//-val
-impl<R: ComRing> std::ops::Neg for Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn neg(self) -> Self::Output {
-        Self::Output {
-            elem: self.elem.neg(),
-        }
-    }
-}
-
-//-ref
-impl<R: ComRing> std::ops::Neg for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn neg(self) -> Self::Output {
-        Self::Output {
-            elem: self.elem.neg_ref(),
-        }
-    }
-}
-
-//val * val
-impl<R: ComRing> std::ops::Mul for Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn mul(self, other: Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::mul(self.elem, other.elem),
-        }
-    }
-}
-
-//ref * ref
-impl<R: ComRing> std::ops::Mul for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn mul(self, other: &Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::mul_refs(&self.elem, &other.elem),
-        }
-    }
-}
-
-//val * ref
-impl<R: ComRing> std::ops::Mul<&Ergonomic<R>> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn mul(self, other: &Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::mul_ref(self.elem, &other.elem),
-        }
-    }
-}
-
-//ref * val
-impl<R: ComRing> std::ops::Mul<Ergonomic<R>> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn mul(self, other: Ergonomic<R>) -> Self::Output {
-        Self::Output {
-            elem: R::mul_ref(other.elem, &self.elem),
-        }
-    }
-}
-
-//val + i32
-impl<R: ComRing> std::ops::Add<i32> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn add(self, other: i32) -> Self::Output {
-        self + Ergonomic::new(R::from_int(&Integer::from(other)))
-    }
-}
-
-//ref + i32
-impl<R: ComRing> std::ops::Add<i32> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn add(self, other: i32) -> Self::Output {
-        self + Ergonomic::new(R::from_int(&Integer::from(other)))
-    }
-}
-
-//i32 + val
-impl<R: ComRing> std::ops::Add<Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
-
-    fn add(self, other: Ergonomic<R>) -> Self::Output {
-        Ergonomic::new(R::from_int(&Integer::from(self))) + other
-    }
-}
-
-//i32 + ref
-impl<R: ComRing> std::ops::Add<&Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
-
-    fn add(self, other: &Ergonomic<R>) -> Self::Output {
-        Ergonomic::new(R::from_int(&Integer::from(self))) + other
-    }
-}
-
-//val - i32
-impl<R: ComRing> std::ops::Sub<i32> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn sub(self, other: i32) -> Self::Output {
-        self - Ergonomic::new(R::from_int(&Integer::from(other)))
-    }
-}
-
-//ref - i32
-impl<R: ComRing> std::ops::Sub<i32> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn sub(self, other: i32) -> Self::Output {
-        self - Ergonomic::new(R::from_int(&Integer::from(other)))
-    }
-}
-
-//i32 - val
-impl<R: ComRing> std::ops::Sub<Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
-
-    fn sub(self, other: Ergonomic<R>) -> Self::Output {
-        Ergonomic::new(R::from_int(&Integer::from(self))) - other
-    }
-}
-
-//i32 - ref
-impl<R: ComRing> std::ops::Sub<&Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
-
-    fn sub(self, other: &Ergonomic<R>) -> Self::Output {
-        Ergonomic::new(R::from_int(&Integer::from(self))) - other
-    }
-}
-
-//val * i32
-impl<R: ComRing> std::ops::Mul<i32> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn mul(self, other: i32) -> Self::Output {
-        self * Ergonomic::new(R::from_int(&Integer::from(other)))
-    }
-}
-
-//ref * i32
-impl<R: ComRing> std::ops::Mul<i32> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
-
-    fn mul(self, other: i32) -> Self::Output {
-        self * Ergonomic::new(R::from_int(&Integer::from(other)))
-    }
-}
-
-//i32 * val
-impl<R: ComRing> std::ops::Mul<Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
-
-    fn mul(self, other: Ergonomic<R>) -> Self::Output {
-        Ergonomic::new(R::from_int(&Integer::from(self))) * other
-    }
-}
-
-//i32 * ref
-impl<R: ComRing> std::ops::Mul<&Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
-
-    fn mul(self, other: &Ergonomic<R>) -> Self::Output {
-        Ergonomic::new(R::from_int(&Integer::from(self))) * other
+        let f = UniqueFactorization {
+            elem: Integer::from(-12),
+            unit: Integer::from(-1),
+            factors: HashMap::from([
+                (Integer::from(-2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        };
+        assert_eq!(
+            f.check_invariants(&mut naive_integer_factorizer).is_ok(),
+            false,
+            "prime factors must be fav assoc"
+        );
     }
 }

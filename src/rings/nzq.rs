@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::ring::*;
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
 use malachite_nz::{integer::Integer, natural::Natural};
@@ -97,6 +99,14 @@ impl ComRing for Integer {
     }
 }
 
+impl CharacteristicZero for Integer {}
+
+impl FiniteUnits for Integer {
+    fn all_units() -> Vec<Self> {
+        vec![Self::from(1), Self::from(-1)]
+    }
+}
+
 impl IntegralDomain for Integer {}
 
 impl FavoriteAssociate for Integer {
@@ -107,6 +117,50 @@ impl FavoriteAssociate for Integer {
             (Integer::from(-1), self.neg())
         } else {
             (Integer::from(1), self)
+        }
+    }
+}
+
+impl UniqueFactorizationDomain for Integer {}
+
+pub struct NaiveIntegerFactorizer();
+
+impl UniqueFactorizer for NaiveIntegerFactorizer {
+    type R = Integer;
+    fn factor(&mut self, a: &Integer) -> Option<UniqueFactorization<Self::R>> {
+        if a == &0 {
+            None
+        } else {
+            let unit;
+            if a < &0 {
+                unit = Integer::from(-1);
+            } else {
+                unit = Integer::from(1);
+            }
+
+            fn factor_nat(mut n: Natural) -> HashMap<Natural, Natural> {
+                //TODO: more efficient implementations
+                assert_ne!(n, 0);
+                let mut fs = HashMap::new();
+                let mut p = Natural::from(2u8);
+                while n > 1 && p <= n {
+                    while &n % &p == 0 {
+                        *fs.entry(p.clone()).or_insert(Natural::from(0u8)) += Natural::from(1u8);
+                        n /= &p;
+                    }
+                    p += Natural::from(1u8);
+                }
+                fs
+            }
+
+            Some(UniqueFactorization::new_unchecked(
+                a.clone(),
+                unit,
+                factor_nat(a.unsigned_abs())
+                    .into_iter()
+                    .map(|(p, k)| (Integer::from(p), k))
+                    .collect(),
+            ))
         }
     }
 }
@@ -192,7 +246,9 @@ impl Field for Rational {
     // }
 }
 
-impl FieldOfFractions<Integer> for Rational {}
+impl FieldOfFractions for Rational {
+    type R = Integer;
+}
 
 #[cfg(test)]
 mod tests {

@@ -214,7 +214,7 @@ impl<R: ComRing> Matrix<R> {
     }
 }
 
-impl<R: ComRing + std::fmt::Display> Matrix<R> {
+impl<R: ComRing + ToString> Matrix<R> {
     pub fn pprint(&self) {
         let mut str_rows = vec![];
         for r in 0..self.rows() {
@@ -538,7 +538,7 @@ impl<R: PrincipalIdealDomain> ElementaryOpp<R> {
     }
 }
 
-impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
+impl<R: PrincipalIdealDomain + ToString> Matrix<R> {
     pub fn row_span(&self) -> LinearLattice<R> {
         LinearLattice::from_span(
             1,
@@ -957,7 +957,7 @@ impl<R: PrincipalIdealDomain + std::fmt::Display> Matrix<R> {
     }
 }
 
-impl<R: EuclideanDomain + FavoriteAssociate + std::fmt::Display> Matrix<R> {
+impl<R: EuclideanDomain + FavoriteAssociate + ToString> Matrix<R> {
     //if A:=self return (H, U, pivots) such that
     //H is in row reduced hermite normal form
     //U is invertible
@@ -992,7 +992,7 @@ impl<R: EuclideanDomain + FavoriteAssociate + std::fmt::Display> Matrix<R> {
     }
 }
 
-impl<F: Field + std::fmt::Display> Matrix<F> {
+impl<F: Field + ToString> Matrix<F> {
     pub fn presentation_matrix(self) -> Result<Matrix<Polynomial<F>>, MatOppErr> {
         let n = self.rows();
         if n != self.cols() {

@@ -2,6 +2,8 @@
 
 use malachite_nz::natural::Natural;
 
+use std::hash::Hash;
+
 use super::ring::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -11,17 +13,34 @@ pub struct Polynomial<R: ComRing> {
     coeffs: Vec<R>,
 }
 
-impl<R: ComRing + std::fmt::Display> std::fmt::Display for Polynomial<R> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[").unwrap();
-        for (k, c) in self.coeffs.iter().enumerate() {
-            if k != 0 {
-                write!(f, ", ").unwrap();
+impl<R: ComRing + ToString> ToString for Polynomial<R> {
+    fn to_string(&self) -> String {
+        if self == &Self::zero() {
+            String::from("0")
+        } else {
+            let mut s = String::new();
+            let mut first = true;
+            for (k, c) in self.coeffs.iter().enumerate() {
+                if c != &R::zero() {
+                    if !first {
+                        s += "+";
+                    }
+                    s += "(";
+                    s += &c.to_string();
+                    s += ")";
+                    if k == 0 {
+                    } else if k == 1 {
+                        s += "λ";
+                    } else {
+                        s += "λ";
+                        s += "^";
+                        s += &k.to_string();
+                    }
+                    first = false;
+                }
             }
-            write!(f, "{}", c).unwrap();
+            s
         }
-        write!(f, "]").unwrap();
-        Ok(())
     }
 }
 
@@ -246,7 +265,59 @@ impl<R: FavoriteAssociate> FavoriteAssociate for Polynomial<R> {
     }
 }
 
-impl<R: Field> EuclideanDomain for Polynomial<R> {
+impl<R: PrincipalIdealDomain> Polynomial<R> {
+    //find a polynomial of degree no more than the passed degree
+    pub fn interpolate(degree: usize, points: Vec<(R, R)>) -> Option<Self> {
+        /*
+        e.g. finding a degree 2 polynomial f(x)=a+bx+cx^2 such that
+        f(1)=3
+        f(2)=1
+        f(3)=-2
+        is the same as solving the linear system for a, b, c
+        / 1 1 1 \ / a \   / 3  \
+        | 1 2 4 | | b | = | 1  |
+        \ 1 3 9 / \ c /   \ -2 /
+         */
+        todo!();
+    }
+}
+
+impl<R: ComRing + Hash> Hash for Polynomial<R> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.coeffs.hash(state);
+    }
+}
+
+// //Kronecker's method for factoring polynomials over infinite ufds with finitely many units (eg the integers)
+// impl<R: UniqueFactorizationDomain + InfiniteRing + FiniteUnits + ToString> UniqueFactorizationDomain
+//     for Polynomial<R>
+// {
+//     fn factor(&self) -> Option<UniqueFactorization<Self>> {
+//         /*
+//         Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
+//         Assume it has a proper factor g(x). wlog g(x) has degree <= 2
+//         g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
+//         f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
+//         g(0) divides 2, g(1) divides 6, g(-1) divides 2
+//         there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
+//         infact there are 4*8*4=128 possible tripples
+//         however, only 64 need to be checked as the other half are their negatives
+//         more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
+//          */
+//         todo!()
+//     }
+// }
+
+// impl<F: FieldOfFractions + Hash> UniqueFactorizationDomain for Polynomial<F>
+// where
+//     F::R: UniqueFactorizationDomain + InfiniteRing + FiniteUnits + ToString,
+// {
+//     fn factor(&self) -> Option<UniqueFactorization<Self>> {
+//         todo!()
+//     }
+// }
+
+impl<F: Field> EuclideanDomain for Polynomial<F> {
     fn norm(&self) -> Option<Natural> {
         if self == &Self::zero() {
             None
@@ -285,11 +356,11 @@ impl<R: Field> EuclideanDomain for Polynomial<R> {
         } else {
             let k = m - n + 1;
             let mut q = Self {
-                coeffs: (0..k).map(|_i| R::zero()).collect(),
+                coeffs: (0..k).map(|_i| F::zero()).collect(),
             };
             for i in (0..k).rev() {
                 //a[i+n-1] = q[i] * b[n-1]
-                match R::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
+                match F::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
                     Ok(qc) => {
                         //a -= qc*x^i*b
                         a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
@@ -307,6 +378,7 @@ impl<R: Field> EuclideanDomain for Polynomial<R> {
 mod tests {
     use core::panic;
 
+    use super::super::ergonomic::*;
     use super::*;
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;

@@ -1,7 +1,11 @@
-use malachite_nz::integer::Integer;
-use rings::lattice::*;
+use std::str::FromStr;
 
-use crate::rings::matrix::Matrix;
+use malachite_nz::integer::Integer;
+use malachite_q::Rational;
+use rings::ring::*;
+use rings::nzq::*;
+use rings::poly::*;
+use rings::ergonomic::*;
 
 mod groups;
 mod numbers;
@@ -70,42 +74,62 @@ fn main() {
     // s.pprint();
     // v.pprint();
 
-    let alat1 = AffineLattice::from_offset_and_linear_lattice(
-        2,
-        1,
-        Matrix::from_rows(vec![vec![Integer::from(3)], vec![Integer::from(2)]]),
-        LinearLattice::from_span(
-            2,
-            1,
-            vec![
-                Matrix::from_rows(vec![vec![Integer::from(5)], vec![Integer::from(0)]]),
-                Matrix::from_rows(vec![vec![Integer::from(0)], vec![Integer::from(5)]]),
-            ],
-        ),
-    );
+    // let alat1 = AffineLattice::from_offset_and_linear_lattice(
+    //     2,
+    //     1,
+    //     Matrix::from_rows(vec![vec![Integer::from(3)], vec![Integer::from(2)]]),
+    //     LinearLattice::from_span(
+    //         2,
+    //         1,
+    //         vec![
+    //             Matrix::from_rows(vec![vec![Integer::from(5)], vec![Integer::from(0)]]),
+    //             Matrix::from_rows(vec![vec![Integer::from(0)], vec![Integer::from(5)]]),
+    //         ],
+    //     ),
+    // );
 
-    let alat2 = AffineLattice::from_offset_and_linear_lattice(
-        2,
-        1,
-        Matrix::from_rows(vec![vec![Integer::from(1)], vec![Integer::from(1)]]),
-        LinearLattice::from_span(
-            2,
-            1,
-            vec![
-                Matrix::from_rows(vec![vec![Integer::from(7)], vec![Integer::from(0)]]),
-                Matrix::from_rows(vec![vec![Integer::from(0)], vec![Integer::from(7)]]),
-            ],
-        ),
-    );
+    // let alat2 = AffineLattice::from_offset_and_linear_lattice(
+    //     2,
+    //     1,
+    //     Matrix::from_rows(vec![vec![Integer::from(1)], vec![Integer::from(1)]]),
+    //     LinearLattice::from_span(
+    //         2,
+    //         1,
+    //         vec![
+    //             Matrix::from_rows(vec![vec![Integer::from(7)], vec![Integer::from(0)]]),
+    //             Matrix::from_rows(vec![vec![Integer::from(0)], vec![Integer::from(7)]]),
+    //         ],
+    //     ),
+    // );
 
-    alat1.check_invariants().unwrap();
-    alat2.check_invariants().unwrap();
+    // alat1.check_invariants().unwrap();
+    // alat2.check_invariants().unwrap();
 
-    alat1.pprint();
-    println!();
-    alat2.pprint();
+    // alat1.pprint();
+    // println!();
+    // alat2.pprint();
 
-    let alat3 = AffineLattice::intersect_pair(2, 1, alat1, alat2);
-    println!();
-    alat3.pprint();
+    // let alat3 = AffineLattice::intersect_pair(2, 1, alat1, alat2);
+    // println!();
+    // alat3.pprint();
+
+    // let f = Integer::from_str("168").unwrap().factor();
+    // f.clone().unwrap().check_invariants().unwrap();
+    // println!("{:?}", f);
+
+
+
+    // let a = Integer::from(120);
+    // println!("{:?}", a.factor());
+
+
+
+    // let x = &Ergonomic::new(Polynomial::<Rational>::var());
+    // let a = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).elem();
+
+    // let fs = a.factor().unwrap();
+    // println!("{}", fs.unit().to_string());
+    // for (p, k) in fs.factors() {
+    //     println!("{} ^ {}", p.to_string(), k.to_string());
+    // }
 }
