@@ -125,9 +125,8 @@ impl UniqueFactorizationDomain for Integer {}
 
 pub struct NaiveIntegerFactorizer();
 
-impl UniqueFactorizer for NaiveIntegerFactorizer {
-    type R = Integer;
-    fn factor(&mut self, a: &Integer) -> Option<UniqueFactorization<Self::R>> {
+impl UniqueFactorizer<Integer> for NaiveIntegerFactorizer {
+    fn factor(&mut self, a: &Integer) -> Option<UniqueFactorization<Integer>> {
         if a == &0 {
             None
         } else {
@@ -236,6 +235,9 @@ impl ComRing for Rational {
     }
 }
 impl IntegralDomain for Rational {}
+
+impl UniqueFactorizationDomain for Rational {}
+
 impl Field for Rational {
     // fn inv(a: Self) -> Result<Self, OppErr> {
     //     if a.numerator_ref() == &Natural::from(0u8) {

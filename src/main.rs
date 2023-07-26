@@ -2,10 +2,10 @@ use std::str::FromStr;
 
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
-use rings::ring::*;
+use rings::ergonomic::*;
 use rings::nzq::*;
 use rings::poly::*;
-use rings::ergonomic::*;
+use rings::ring::*;
 
 mod groups;
 mod numbers;
@@ -118,18 +118,33 @@ fn main() {
     // println!("{:?}", f);
 
 
+    impl UniquelyFactorable for Integer {
+        fn make_factorizer() -> Box<dyn UniqueFactorizer<Self>> {
+            Box::new(NaiveIntegerFactorizer())
+        }
+    }
 
     // let a = Integer::from(120);
     // println!("{:?}", a.factor());
 
+    impl UniquelyFactorable for Polynomial<Integer> {
+        fn make_factorizer() -> Box<dyn UniqueFactorizer<Self>> {
+            Box::new(KroneckerFactorizer())
+        }
+    }
 
+    impl UniquelyFactorable for Polynomial<Rational> {
+        fn make_factorizer() -> Box<dyn UniqueFactorizer<Self>> {
+            Box::new(FractionFieldPolynomialFactorizer::new(KroneckerFactorizer()))
+        }
+    }
 
-    // let x = &Ergonomic::new(Polynomial::<Rational>::var());
-    // let a = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).elem();
+    let x = &Ergonomic::new(Polynomial::<Integer>::var());
+    let a = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).elem();
 
-    // let fs = a.factor().unwrap();
-    // println!("{}", fs.unit().to_string());
-    // for (p, k) in fs.factors() {
-    //     println!("{} ^ {}", p.to_string(), k.to_string());
-    // }
+    let fs = a.factor().unwrap();
+    println!("{}", fs.unit().to_string());
+    for (p, k) in fs.factors() {
+        println!("{} ^ {}", p.to_string(), k.to_string());
+    }
 }

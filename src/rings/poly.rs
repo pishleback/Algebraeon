@@ -2,7 +2,7 @@
 
 use malachite_nz::natural::Natural;
 
-use std::hash::Hash;
+use std::{hash::Hash, marker::PhantomData};
 
 use super::ring::*;
 
@@ -115,6 +115,19 @@ impl<R: ComRing> Polynomial<R> {
             self.coeffs[i].clone()
         } else {
             R::zero()
+        }
+    }
+
+    //zero -> None
+    //const -> 0
+    //linear -> 1
+    //quadratic -> 2
+    //etc.
+    pub fn degree(&self) -> Option<usize> {
+        if self.coeffs.len() == 0 {
+            None
+        } else {
+            Some(self.coeffs.len() - 1)
         }
     }
 }
@@ -265,6 +278,14 @@ impl<R: FavoriteAssociate> FavoriteAssociate for Polynomial<R> {
     }
 }
 
+impl<R: CharacteristicZero> CharacteristicZero for Polynomial<R> {}
+
+impl<R: FiniteUnits> FiniteUnits for Polynomial<R> {
+    fn all_units() -> Vec<Self> {
+        R::all_units().into_iter().map(|u| Self::from(u)).collect()
+    }
+}
+
 impl<R: PrincipalIdealDomain> Polynomial<R> {
     //find a polynomial of degree no more than the passed degree
     pub fn interpolate(degree: usize, points: Vec<(R, R)>) -> Option<Self> {
@@ -288,34 +309,71 @@ impl<R: ComRing + Hash> Hash for Polynomial<R> {
     }
 }
 
-// //Kronecker's method for factoring polynomials over infinite ufds with finitely many units (eg the integers)
-// impl<R: UniqueFactorizationDomain + InfiniteRing + FiniteUnits + ToString> UniqueFactorizationDomain
-//     for Polynomial<R>
-// {
-//     fn factor(&self) -> Option<UniqueFactorization<Self>> {
-//         /*
-//         Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
-//         Assume it has a proper factor g(x). wlog g(x) has degree <= 2
-//         g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
-//         f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
-//         g(0) divides 2, g(1) divides 6, g(-1) divides 2
-//         there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
-//         infact there are 4*8*4=128 possible tripples
-//         however, only 64 need to be checked as the other half are their negatives
-//         more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
-//          */
-//         todo!()
-//     }
-// }
+impl<R: UniqueFactorizationDomain> UniqueFactorizationDomain for Polynomial<R> {}
 
-// impl<F: FieldOfFractions + Hash> UniqueFactorizationDomain for Polynomial<F>
-// where
-//     F::R: UniqueFactorizationDomain + InfiniteRing + FiniteUnits + ToString,
-// {
-//     fn factor(&self) -> Option<UniqueFactorization<Self>> {
-//         todo!()
-//     }
-// }
+//Kronecker's method for factoring polynomials over infinite ufds with finitely many units (eg the integers)
+pub struct KroneckerFactorizer();
+impl<R: UniqueFactorizationDomain + FavoriteAssociate + Hash + InfiniteRing + FiniteUnits>
+    UniqueFactorizer<Polynomial<R>> for KroneckerFactorizer
+{
+    fn factor(&mut self, a: &Polynomial<R>) -> Option<UniqueFactorization<Polynomial<R>>> {
+        /*
+        Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
+        Assume it has a proper factor g(x). wlog g(x) has degree <= 2
+        g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
+        f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
+        g(0) divides 2, g(1) divides 6, g(-1) divides 2
+        there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
+        infact there are 4*8*4=128 possible tripples
+        however, only 64 need to be checked as the other half are their negatives
+        more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
+         */
+
+        println!("{}", a.to_string());
+        todo!()
+    }
+}
+
+pub struct FractionFieldPolynomialFactorizer<
+    F: FieldOfFractions + Hash,
+    RingPolyFactorizerT: UniqueFactorizer<Polynomial<F::R>>,
+> where
+    F::R: UniqueFactorizationDomain + FavoriteAssociate + Hash,
+{
+    _f: PhantomData<F>,
+    ring_poly_factorizer: RingPolyFactorizerT,
+}
+
+impl<F: FieldOfFractions + Hash, RingPolyFactorizerT: UniqueFactorizer<Polynomial<F::R>>>
+    FractionFieldPolynomialFactorizer<F, RingPolyFactorizerT>
+where
+    F::R: UniqueFactorizationDomain + FavoriteAssociate + Hash,
+{
+    pub fn new(ring_poly_factorizer: RingPolyFactorizerT) -> Self {
+        Self {
+            _f: PhantomData,
+            ring_poly_factorizer,
+        }
+    }
+}
+
+impl<F: FieldOfFractions + Hash, RingPolyFactorizerT: UniqueFactorizer<Polynomial<F::R>>>
+    UniqueFactorizer<Polynomial<F>> for FractionFieldPolynomialFactorizer<F, RingPolyFactorizerT>
+where
+    F::R: UniqueFactorizationDomain + FavoriteAssociate + Hash,
+{
+    fn factor(&mut self, a: &Polynomial<F>) -> Option<UniqueFactorization<Polynomial<F>>> {
+        // F::R::one();
+        println!(
+            "{:?}",
+            self.ring_poly_factorizer
+                .factor(&Polynomial::from(F::R::from_int(
+                    &malachite_nz::integer::Integer::from(12)
+                )))
+        );
+        todo!()
+    }
+}
 
 impl<F: Field> EuclideanDomain for Polynomial<F> {
     fn norm(&self) -> Option<Natural> {

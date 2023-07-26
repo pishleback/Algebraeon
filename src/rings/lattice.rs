@@ -6,7 +6,7 @@ use super::matrix::*;
 use super::ring::*;
 
 //return a metamatrix whose rows are a basis for the joint row span of all the passed metamatricies
-fn metamatrix_row_sum<R: PrincipalIdealDomain + ToString, MetaMatT: Borrow<Matrix<R>>>(
+fn metamatrix_row_sum<R: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<R>>>(
     cols: usize,
     metamats: Vec<MetaMatT>,
 ) -> Matrix<R> {
@@ -20,7 +20,7 @@ fn metamatrix_row_sum<R: PrincipalIdealDomain + ToString, MetaMatT: Borrow<Matri
 
 //return a metamatrix whose rows are a basis for the intersection of the row spans of the passed metamatricies
 fn metamatrix_row_intersection<
-    R: PrincipalIdealDomain + ToString,
+    R: PrincipalIdealDomain,
     MetaMatT: Borrow<Matrix<R>>,
 >(
     cols: usize,
@@ -92,7 +92,7 @@ fn idx_to_rc(rows: usize, cols: usize, idx: usize) -> (usize, usize) {
     (idx / cols, idx % cols)
 }
 
-fn mats_to_rows<R: PrincipalIdealDomain + ToString, MatT: Borrow<Matrix<R>>>(
+fn mats_to_rows<R: PrincipalIdealDomain, MatT: Borrow<Matrix<R>>>(
     rows: usize,
     cols: usize,
     mats: Vec<MatT>,
@@ -114,7 +114,7 @@ fn mats_to_rows<R: PrincipalIdealDomain + ToString, MatT: Borrow<Matrix<R>>>(
     mats_as_rows
 }
 
-impl<R: PrincipalIdealDomain + ToString> LinearLattice<R> {
+impl<R: PrincipalIdealDomain> LinearLattice<R> {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
         if self.rows * self.cols != self.metamatrix.cols() {
             return Err("the number of colnums of the meta_matrix should be rows*cols");
@@ -281,14 +281,14 @@ impl<R: PrincipalIdealDomain + ToString> LinearLattice<R> {
     }
 }
 
-impl<R: PrincipalIdealDomain + ToString> PartialEq for LinearLattice<R> {
+impl<R: PrincipalIdealDomain> PartialEq for LinearLattice<R> {
     fn eq(&self, other: &Self) -> bool {
         self.contains_sublattice(other) && other.contains_sublattice(self)
     }
 }
-impl<R: PrincipalIdealDomain + ToString> Eq for LinearLattice<R> {}
+impl<R: PrincipalIdealDomain> Eq for LinearLattice<R> {}
 
-impl<R: PrincipalIdealDomain + ToString> LinearLattice<R> {
+impl<R: PrincipalIdealDomain> LinearLattice<R> {
     pub fn pprint(&self) {
         println!("Start Linear Lattice");
         for r in 0..self.metamatrix.rows() {
@@ -314,7 +314,7 @@ pub struct AffineLattice<R: PrincipalIdealDomain> {
     elems: AffineLatticeElements<R>,
 }
 
-impl<R: PrincipalIdealDomain + ToString> AffineLattice<R> {
+impl<R: PrincipalIdealDomain> AffineLattice<R> {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
         match &self.elems {
             AffineLatticeElements::Empty() => {}
@@ -515,7 +515,7 @@ impl<R: PrincipalIdealDomain + ToString> AffineLattice<R> {
                     // 0 0 0 c *
                     //if a=1 then the rest of the top row is the offset and the bottom right submatrix is the basis of the linear lattice
 
-                    fn offset_linlat_to_metamat<R: PrincipalIdealDomain + ToString>(
+                    fn offset_linlat_to_metamat<R: PrincipalIdealDomain>(
                         rows: usize,
                         cols: usize,
                         offset: &Matrix<R>,
@@ -596,14 +596,14 @@ impl<R: PrincipalIdealDomain + ToString> AffineLattice<R> {
     }
 }
 
-impl<R: PrincipalIdealDomain + ToString> PartialEq for AffineLattice<R> {
+impl<R: PrincipalIdealDomain> PartialEq for AffineLattice<R> {
     fn eq(&self, other: &Self) -> bool {
         self.contains_sublattice(other) && other.contains_sublattice(self)
     }
 }
-impl<R: PrincipalIdealDomain + ToString> Eq for AffineLattice<R> {}
+impl<R: PrincipalIdealDomain> Eq for AffineLattice<R> {}
 
-impl<R: PrincipalIdealDomain + ToString> AffineLattice<R> {
+impl<R: PrincipalIdealDomain> AffineLattice<R> {
     pub fn pprint(&self) {
         println!("Start Affine Lattice");
         match &self.elems {

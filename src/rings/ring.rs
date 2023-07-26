@@ -12,7 +12,7 @@ pub enum RingOppErr {
     NotDivisible,
 }
 
-pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug {
+pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug + ToString {
     fn zero() -> Self;
     fn one() -> Self;
     fn neg_mut(&mut self);
@@ -204,8 +204,19 @@ pub trait FavoriteAssociate: IntegralDomain {
     }
 }
 
-pub trait UniqueFactorizationDomain {
+pub trait UniqueFactorizationDomain: IntegralDomain {
     //unique factorizations exist
+}
+
+pub trait UniquelyFactorable: UniqueFactorizationDomain + FavoriteAssociate + Hash {
+    //UFD with an explicit factorizer
+    fn make_factorizer() -> Box<dyn UniqueFactorizer<Self>>;
+    fn factor(&self) -> Option<UniqueFactorization<Self>> {
+        Self::make_factorizer().factor(self)
+    }
+    fn is_irreducible(&self) -> Option<bool> {
+        Self::make_factorizer().is_irreducible(self)
+    }
 }
 
 #[derive(Debug)]
@@ -218,7 +229,7 @@ pub struct UniqueFactorization<R: UniqueFactorizationDomain + FavoriteAssociate 
 impl<R: UniqueFactorizationDomain + FavoriteAssociate + Hash> UniqueFactorization<R> {
     pub fn check_invariants(
         &self,
-        factorizer: &mut impl UniqueFactorizer<R = R>,
+        factorizer: &mut impl UniqueFactorizer<R>,
     ) -> Result<(), &'static str> {
         if !self.unit.clone().is_unit() {
             return Err("unit must be a unit");
@@ -280,12 +291,10 @@ impl<R: UniqueFactorizationDomain + FavoriteAssociate + Hash> UniqueFactorizatio
     }
 }
 
-pub trait UniqueFactorizer: Sized {
-    type R: UniqueFactorizationDomain + FavoriteAssociate + Hash;
-
+pub trait UniqueFactorizer<R: UniqueFactorizationDomain + FavoriteAssociate + Hash> {
     //factor the non-zero elements
-    fn factor(&mut self, a: &Self::R) -> Option<UniqueFactorization<Self::R>>;
-    fn is_irreducible(&mut self, a: &Self::R) -> Option<bool> {
+    fn factor(&mut self, a: &R) -> Option<UniqueFactorization<R>>;
+    fn is_irreducible(&mut self, a: &R) -> Option<bool> {
         match self.factor(a) {
             Some(f) => Some(f.is_irreducible()),
             None => None,
@@ -438,7 +447,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> PrincipalIdealDomain for R {
 
 // }
 
-pub trait Field: IntegralDomain {
+pub trait Field: IntegralDomain + UniqueFactorizationDomain {
     //promise that a/b always works, except unless b=0.
     //in other words, a/b must not return not divisible
 }
