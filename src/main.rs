@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use malachite_nz::integer::Integer;
+use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 use rings::ergonomic::*;
 use rings::nzq::*;
@@ -13,15 +14,19 @@ mod rings;
 mod sets;
 
 fn main() {
-    let a = Integer::from(120);
-    println!("{:?}", a.factor());
+    // let f = interpolate_by_lagrange_basis::<Rational>(&vec![
+    //     (Rational::from(1), Rational::from(2)),
+    //     (Rational::from(2), Rational::from(1)),
+    //     (Rational::from(3), Rational::from(4)),
+    // ])
+    // .unwrap();
+    // println!("{}", f.to_string());
 
-    // let x = &Ergonomic::new(Polynomial::<Integer>::var());
-    // let a = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).elem();
+    let x = &Ergonomic::new(Polynomial::<Integer>::var());
+    let a = ((1 + 2 * x).pow(10)).elem();
 
-    // let fs = a.factor().unwrap();
-    // println!("{}", fs.unit().to_string());
-    // for (p, k) in fs.factors() {
-    //     println!("{} ^ {}", p.to_string(), k.to_string());
-    // }
+    let fs = factor_by_kroneckers_method(&a);
+    for d in fs.divisors().unwrap() {
+        println!("{}", d.to_string());
+    }
 }
