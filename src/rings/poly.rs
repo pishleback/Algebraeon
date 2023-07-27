@@ -192,57 +192,56 @@ impl<R: ComRing> From<&R> for Polynomial<R> {
     }
 }
 
-impl<R: ComRing> Polynomial<R> {
-    fn poly_quorem(a: Self, b: Self) -> Result<(Self, Self), RingDivisionError> {
-        Self::poly_quorem_rref(a, &b)
-    }
+impl<R: EuclideanDomain> Polynomial<R> {
+    //pseudo division here
 
-    fn poly_quorem_lref(a: &Self, b: Self) -> Result<(Self, Self), RingDivisionError> {
-        Self::poly_quorem_refs(a, &b)
-    }
 
-    fn poly_quorem_refs(a: &Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
-        let res = Self::poly_quorem_rref(a.clone(), b);
-        match &res {
-            Ok((q, r)) => debug_assert_eq!(&Self::add_ref(Self::mul_refs(q, b), r), a),
-            Err(_) => {}
-        };
-        res
-    }
+    // fn poly_quorem(a: Self, b: Self) -> Option<(Self, Self)> {
+    //     Self::poly_quorem_rref(a, &b)
+    // }
 
-    fn poly_quorem_rref(mut a: Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
-        //try to find q such that q*b == a
-        // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
-        // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
-        let m = a.coeffs.len();
-        let n = b.coeffs.len();
+    // fn poly_quorem_lref(a: &Self, b: Self) -> Option<(Self, Self)> {
+    //     Self::poly_quorem_refs(a, &b)
+    // }
 
-        if n == 0 {
-            Err(RingDivisionError::DivideByZero)
-        } else if m < n {
-            Ok((Self::zero(), a))
-        } else {
-            let k = m - n + 1;
-            let mut q = Self {
-                coeffs: (0..k).map(|_i| R::zero()).collect(),
-            };
-            for i in (0..k).rev() {
-                //a[i+n-1] = q[i] * b[n-1]
-                match R::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
-                    Ok(qc) => {
-                        //a -= qc*x^i*b
-                        a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
-                        q.coeffs[i] = qc;
-                    }
-                    Err(RingDivisionError::NotDivisible) => {
-                        return Err(RingDivisionError::NotDivisible);
-                    }
-                    Err(RingDivisionError::DivideByZero) => panic!(),
-                }
-            }
-            Ok((q, a))
-        }
-    }
+    // fn poly_quorem_refs(a: &Self, b: &Self) -> Option<(Self, Self)> {
+    //     let res = Self::poly_quorem_rref(a.clone(), b);
+    //     match &res {
+    //         Some((q, r)) => debug_assert_eq!(&Self::add_ref(Self::mul_refs(q, b), r), a),
+    //         None => {}
+    //     };
+    //     res
+    // }
+
+    // fn poly_quorem_rref(mut a: Self, b: &Self) -> Option<(Self, Self)> {
+    //     //try to find q such that q*b == a
+    //     // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
+    //     // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
+    //     let m = a.coeffs.len();
+    //     let n = b.coeffs.len();
+    //     if n == 0 {
+    //         None
+    //     } else if m < n {
+    //         Some((Self::zero(), a))
+    //     } else {
+    //         let k = m - n + 1;
+    //         let mut q = Self {
+    //             coeffs: (0..k).map(|_i| R::zero()).collect(),
+    //         };
+    //         for i in (0..k).rev() {
+    //             //a[i+n-1] = q[i] * b[n-1]
+    //             match R::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
+    //                 Ok(qc) => {
+    //                     //a -= qc*x^i*b
+    //                     a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
+    //                     q.coeffs[i] = qc;
+    //                 }
+    //                 Err(_) => panic!(),
+    //             }
+    //         }
+    //         Some((q, a))
+    //     }
+    // }
 }
 
 impl<R: ComRing> ComRing for Polynomial<R> {
@@ -293,58 +292,57 @@ impl<R: ComRing> ComRing for Polynomial<R> {
     }
 
     fn div(a: Self, b: Self) -> Result<Self, RingDivisionError> {
-        match Self::poly_quorem(a, b) {
-            Ok((q, r)) => {
-                if r == Polynomial::zero() {
-                    Ok(q)
-                } else {
-                    Err(RingDivisionError::NotDivisible)
-                }
-            }
-            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
-        }
+        Self::div_rref(a, &b)
     }
 
     fn div_lref(a: &Self, b: Self) -> Result<Self, RingDivisionError> {
-        match Self::poly_quorem_lref(a, b) {
-            Ok((q, r)) => {
-                if r == Polynomial::zero() {
-                    Ok(q)
-                } else {
-                    Err(RingDivisionError::NotDivisible)
-                }
-            }
-            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
-        }
-    }
-
-    fn div_rref(a: Self, b: &Self) -> Result<Self, RingDivisionError> {
-        match Self::poly_quorem_rref(a, b) {
-            Ok((q, r)) => {
-                if r == Polynomial::zero() {
-                    Ok(q)
-                } else {
-                    Err(RingDivisionError::NotDivisible)
-                }
-            }
-            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
-        }
+        Self::div_refs(a, &b)
     }
 
     fn div_refs(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
-        match Self::poly_quorem_refs(a, b) {
-            Ok((q, r)) => {
-                if r == Polynomial::zero() {
-                    Ok(q)
-                } else {
-                    Err(RingDivisionError::NotDivisible)
+        let q_res = Self::div_rref(a.clone(), b);
+        match &q_res {
+            Ok(q) => debug_assert_eq!(&Self::mul_refs(q, b), a),
+            Err(_) => {}
+        };
+        q_res
+    }
+
+    fn div_rref(mut a: Self, b: &Self) -> Result<Self, RingDivisionError> {
+        //try to find q such that q*b == a
+        // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
+        // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
+        let m = a.coeffs.len();
+        let n = b.coeffs.len();
+        if n == 0 {
+            Err(RingDivisionError::DivideByZero)
+        } else if m == 0 {
+            Ok(Self::zero())
+        } else if m < n {
+            Err(RingDivisionError::NotDivisible)
+        } else {
+            let k = m - n + 1;
+            let mut q = Self {
+                coeffs: (0..k).map(|_i| R::zero()).collect(),
+            };
+            for i in (0..k).rev() {
+                //a[i+n-1] = q[i] * b[n-1]
+                match R::div_refs(&a.coeff(i + n - 1), &b.coeff(n - 1)) {
+                    Ok(qc) => {
+                        //a -= qc*x^i*b
+                        a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
+                        q.coeffs[i] = qc;
+                    }
+                    Err(RingDivisionError::NotDivisible) => {
+                        return Err(RingDivisionError::NotDivisible);
+                    }
+                    Err(_) => panic!(),
                 }
             }
-            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
+            if a != Self::zero() {
+                return Err(RingDivisionError::NotDivisible);
+            }
+            Ok(q)
         }
     }
 }
@@ -944,12 +942,7 @@ mod tests {
         let y = &b * &c;
         let g = Polynomial::<Rational>::gcd(x.elem(), y.elem());
 
-        println!(
-            "gcd({} , {}) = {}",
-            x.elem().to_string(),
-            y.elem().to_string(),
-            g.to_string()
-        );
+        println!("gcd({:?} , {:?}) = {:?}", x, y, g);
         Polynomial::<Rational>::div_refs(&g, &b.elem()).unwrap();
         Polynomial::<Rational>::div_refs(&b.elem(), &g).unwrap();
     }
