@@ -300,11 +300,27 @@ impl<R: UniqueFactorizationDomain> ToString for Factored<R> {
 }
 
 impl<R: UniqueFactorizationDomain> Factored<R> {
+    pub fn one() -> Self {
+        Self {
+            elem: R::one(),
+            unit: R::one(),
+            factors: HashMap::new(),
+        }
+    }
+
     pub fn new_unchecked(elem: R, unit: R, factors: HashMap<R, Natural>) -> Self {
         Self {
             elem,
             unit,
             factors,
+        }
+    }
+
+    pub fn new_unit_unchecked(unit: R) -> Self {
+        Self {
+            elem: unit.clone(),
+            unit,
+            factors: HashMap::new(),
         }
     }
 
