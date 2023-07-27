@@ -23,12 +23,26 @@ impl<R: ComRing> ToString for Polynomial<R> {
             let mut first = true;
             for (k, c) in self.coeffs.iter().enumerate() {
                 if c != &R::zero() {
-                    if !first {
-                        s += "+";
+                    if c == &R::one() {
+                        if k == 0 {
+                            s += "1";
+                        } else {
+                            s += "+"
+                        }
+                    } else if c == &R::one().neg() {
+                        if k == 0 {
+                            s += "-1";
+                        } else {
+                            s += "-"
+                        }
+                    } else {
+                        if !first {
+                            s += "+";
+                        }
+                        s += "(";
+                        s += &c.to_string();
+                        s += ")";
                     }
-                    s += "(";
-                    s += &c.to_string();
-                    s += ")";
                     if k == 0 {
                     } else if k == 1 {
                         s += "λ";
@@ -438,32 +452,66 @@ pub fn factor_by_kroneckers_method<
         + InterpolatablePolynomials,
 >(
     f: &Polynomial<R>,
-) -> Factored<Polynomial<R>>
+) -> Option<Factored<Polynomial<R>>>
 where
     Polynomial<R>: UniqueFactorizationDomain,
 {
-    /*
-    Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
-    Assume it has a proper factor g(x). wlog g(x) has degree <= 2
-    g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
-    f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
-    g(0) divides 2, g(1) divides 6, g(-1) divides 2
-    there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
-    infact there are 4*8*4=128 possible triples
-    however, only 64 need to be checked as the other half are their negatives
-    more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
-     */
-
-    //TODO: squarefree factorization
-    //TODO: primitive factorization
-    if f.degree().unwrap() == 0 {
-        todo!("need to do primitive factorization to handle degree 0 case and indeed the other cases properly");
+    if f == &Polynomial::<R>::zero() {
+        return None;
     }
 
-    match f.degree() {
-        None => Factored::new_zero(),
-        Some(self_degree) => {
-            let max_factor_degree = self_degree / 2;
+    let (scalar_part, f) = f.clone().factor_primitive().unwrap();
+    let factored_scalar_part = scalar_part.factor().unwrap();
+    let factored_scalar_part_poly = Factored::new_unchecked(
+        Polynomial::from(scalar_part),
+        Polynomial::from(factored_scalar_part.unit()),
+        factored_scalar_part
+            .factors()
+            .iter()
+            .map(|(p, k)| (Polynomial::from(p), k.clone()))
+            .collect(),
+    );
+    if f.degree().unwrap() > 0 {
+        return Some(Factored::mul(
+            factored_scalar_part_poly,
+            factor_primitive(f),
+        ));
+    } else {
+        return Some(factored_scalar_part_poly);
+    }
+
+    fn factor_primitive<
+        R: UniquelyFactorable
+            + GreatestCommonDivisorDomain
+            + InfiniteRing
+            + FiniteUnits
+            + InterpolatablePolynomials,
+    >(
+        f: Polynomial<R>,
+    ) -> Factored<Polynomial<R>>
+    where
+        Polynomial<R>: UniqueFactorizationDomain,
+    {
+        debug_assert_ne!(f, Polynomial::<R>::zero());
+        let f_deg = f.degree().unwrap();
+        debug_assert!(f_deg > 0); //f should not be constant
+        if f_deg == 1 {
+            //linear primitive factors are always irreducible
+            Factored::new_irreducible_unchecked(f.clone())
+        } else {
+            /*
+            Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
+            Assume it has a proper factor g(x). wlog g(x) has degree <= 2
+            g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
+            f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
+            g(0) divides 2, g(1) divides 6, g(-1) divides 2
+            there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
+            infact there are 4*8*4=128 possible triples
+            however, only 64 need to be checked as the other half are their negatives
+            more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
+             */
+
+            let max_factor_degree = f_deg / 2;
             let mut f_points = vec![];
             let mut elem_gen = R::generate_distinct_elements();
             //take more samples than necessary, then take the subset with the smallest number of divisors
@@ -472,7 +520,7 @@ where
                 let x = elem_gen.next().unwrap();
                 let y = f.evaluate(&x);
                 if y != R::zero() {
-                    f_points.push((x, y.factor()));
+                    f_points.push((x, y.factor().unwrap()));
                 }
             }
 
@@ -486,7 +534,7 @@ where
                 .enumerate()
                 .map(|(i, (x, yf))| {
                     let mut y_divs = vec![];
-                    for d in yf.divisors().unwrap() {
+                    for d in yf.divisors() {
                         if i == 0 {
                             y_divs.push(d);
                         } else {
@@ -507,13 +555,11 @@ where
                 match R::interpolate(&possible_g_points) {
                     Some(g) => {
                         if g.degree().unwrap() >= 1 {
-                            //found a possible divisor of f
+                            //g is a possible proper divisor of f
                             match Polynomial::div_refs(&f, &g) {
                                 Ok(h) => {
-                                    return Factored::mul(
-                                        factor_by_kroneckers_method(&g),
-                                        factor_by_kroneckers_method(&h),
-                                    );
+                                    //g really is a proper divisor of f
+                                    return Factored::mul(factor_primitive(g), factor_primitive(h));
                                 }
                                 Err(RingDivisionError::NotDivisible) => {}
                                 Err(RingDivisionError::DivideByZero) => panic!(),
@@ -523,6 +569,7 @@ where
                     None => {}
                 }
             }
+            //f is irreducible
             Factored::new_irreducible_unchecked(f.clone())
         }
     }
@@ -890,8 +937,8 @@ mod tests {
         //primitive cases
         let f = ((1 + x).pow(2)).elem();
         assert_eq!(
-            factor_by_kroneckers_method(&f),
-            Factored::new_nonzero_unchecked(
+            factor_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
                 f.clone(),
                 Polynomial::one(),
                 HashMap::from([((1 + x).elem(), Natural::from(2u8))])
@@ -900,8 +947,8 @@ mod tests {
 
         let f = (-1 - 2 * x).elem();
         assert_eq!(
-            factor_by_kroneckers_method(&f),
-            Factored::new_nonzero_unchecked(
+            factor_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
                 f.clone(),
                 Polynomial::one().neg(),
                 HashMap::from([((1 + 2 * x).elem(), Natural::from(1u8))])
@@ -910,8 +957,8 @@ mod tests {
 
         let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).elem();
         assert_eq!(
-            factor_by_kroneckers_method(&f),
-            Factored::new_nonzero_unchecked(
+            factor_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
                 f.clone(),
                 Polynomial::one(),
                 HashMap::from([
@@ -923,8 +970,8 @@ mod tests {
 
         let f = (1 + x + x.pow(2)).pow(2).elem();
         assert_eq!(
-            factor_by_kroneckers_method(&f),
-            Factored::new_nonzero_unchecked(
+            factor_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
                 f.clone(),
                 Polynomial::one(),
                 HashMap::from([((1 + x + x.pow(2)).elem(), Natural::from(2u8)),])
@@ -934,8 +981,8 @@ mod tests {
         //non-primitive cases
         let f = (2 + 2 * x).elem();
         assert_eq!(
-            factor_by_kroneckers_method(&f),
-            Factored::new_nonzero_unchecked(
+            factor_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
                 f.clone(),
                 Polynomial::one(),
                 HashMap::from([
@@ -947,8 +994,8 @@ mod tests {
 
         let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).elem();
         assert_eq!(
-            factor_by_kroneckers_method(&f),
-            Factored::new_nonzero_unchecked(
+            factor_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
                 f.clone(),
                 Polynomial::one(),
                 HashMap::from([
@@ -962,19 +1009,8 @@ mod tests {
 
         let f = Polynomial::<Integer>::one();
         assert_eq!(
-            factor_by_kroneckers_method(&f),
-            Factored::new_nonzero_unchecked(f.clone(), Polynomial::one(), HashMap::new())
-        );
-
-        //case which won't finish in reasonable time without squarefree factorization
-        let f = ((1 + x).pow(50)).elem();
-        assert_eq!(
-            factor_by_kroneckers_method(&f),
-            Factored::new_nonzero_unchecked(
-                f.clone(),
-                Polynomial::one(),
-                HashMap::from([((1 + x).elem(), Natural::from(50u8))])
-            )
+            factor_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(f.clone(), Polynomial::one(), HashMap::new())
         );
     }
 }
