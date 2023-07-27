@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
 use std::{collections::HashMap, hash::Hash, marker::PhantomData};
@@ -156,6 +157,17 @@ impl<R: ComRing> Polynomial<R> {
         }
         y
     }
+
+    pub fn derivative(mut self) -> Self {
+        if self.coeffs.len() > 0 {
+            for i in 0..self.coeffs.len() - 1 {
+                self.coeffs[i] = self.coeffs[i + 1].clone();
+                self.coeffs[i].mul_mut(&R::from_int(&Integer::from(i + 1)));
+            }
+            self.coeffs.pop();
+        }
+        self
+    }
 }
 
 impl<R: ComRing> From<R> for Polynomial<R> {
@@ -176,6 +188,59 @@ impl<R: ComRing> From<&R> for Polynomial<R> {
             Self {
                 coeffs: vec![x.clone()],
             }
+        }
+    }
+}
+
+impl<R: ComRing> Polynomial<R> {
+    fn poly_quorem(a: Self, b: Self) -> Result<(Self, Self), RingDivisionError> {
+        Self::poly_quorem_rref(a, &b)
+    }
+
+    fn poly_quorem_lref(a: &Self, b: Self) -> Result<(Self, Self), RingDivisionError> {
+        Self::poly_quorem_refs(a, &b)
+    }
+
+    fn poly_quorem_refs(a: &Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
+        let res = Self::poly_quorem_rref(a.clone(), b);
+        match &res {
+            Ok((q, r)) => debug_assert_eq!(&Self::add_ref(Self::mul_refs(q, b), r), a),
+            Err(_) => {}
+        };
+        res
+    }
+
+    fn poly_quorem_rref(mut a: Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
+        //try to find q such that q*b == a
+        // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
+        // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
+        let m = a.coeffs.len();
+        let n = b.coeffs.len();
+
+        if n == 0 {
+            Err(RingDivisionError::DivideByZero)
+        } else if m < n {
+            Ok((Self::zero(), a))
+        } else {
+            let k = m - n + 1;
+            let mut q = Self {
+                coeffs: (0..k).map(|_i| R::zero()).collect(),
+            };
+            for i in (0..k).rev() {
+                //a[i+n-1] = q[i] * b[n-1]
+                match R::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
+                    Ok(qc) => {
+                        //a -= qc*x^i*b
+                        a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
+                        q.coeffs[i] = qc;
+                    }
+                    Err(RingDivisionError::NotDivisible) => {
+                        return Err(RingDivisionError::NotDivisible);
+                    }
+                    Err(RingDivisionError::DivideByZero) => panic!(),
+                }
+            }
+            Ok((q, a))
         }
     }
 }
@@ -228,57 +293,58 @@ impl<R: ComRing> ComRing for Polynomial<R> {
     }
 
     fn div(a: Self, b: Self) -> Result<Self, RingDivisionError> {
-        Self::div_rref(a, &b)
+        match Self::poly_quorem(a, b) {
+            Ok((q, r)) => {
+                if r == Polynomial::zero() {
+                    Ok(q)
+                } else {
+                    Err(RingDivisionError::NotDivisible)
+                }
+            }
+            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
+        }
     }
 
     fn div_lref(a: &Self, b: Self) -> Result<Self, RingDivisionError> {
-        Self::div_refs(a, &b)
+        match Self::poly_quorem_lref(a, b) {
+            Ok((q, r)) => {
+                if r == Polynomial::zero() {
+                    Ok(q)
+                } else {
+                    Err(RingDivisionError::NotDivisible)
+                }
+            }
+            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
+        }
+    }
+
+    fn div_rref(a: Self, b: &Self) -> Result<Self, RingDivisionError> {
+        match Self::poly_quorem_rref(a, b) {
+            Ok((q, r)) => {
+                if r == Polynomial::zero() {
+                    Ok(q)
+                } else {
+                    Err(RingDivisionError::NotDivisible)
+                }
+            }
+            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
+        }
     }
 
     fn div_refs(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
-        let q_res = Self::div_rref(a.clone(), b);
-        match &q_res {
-            Ok(q) => debug_assert_eq!(&Self::mul_refs(q, b), a),
-            Err(_) => {}
-        };
-        q_res
-    }
-
-    fn div_rref(mut a: Self, b: &Self) -> Result<Self, RingDivisionError> {
-        //try to find q such that q*b == a
-        // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
-        // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
-        let m = a.coeffs.len();
-        let n = b.coeffs.len();
-        if n == 0 {
-            Err(RingDivisionError::DivideByZero)
-        } else if m == 0 {
-            Ok(Self::zero())
-        } else if m < n {
-            Err(RingDivisionError::NotDivisible)
-        } else {
-            let k = m - n + 1;
-            let mut q = Self {
-                coeffs: (0..k).map(|_i| R::zero()).collect(),
-            };
-            for i in (0..k).rev() {
-                //a[i+n-1] = q[i] * b[n-1]
-                match R::div_refs(&a.coeff(i + n - 1), &b.coeff(n - 1)) {
-                    Ok(qc) => {
-                        //a -= qc*x^i*b
-                        a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
-                        q.coeffs[i] = qc;
-                    }
-                    Err(RingDivisionError::NotDivisible) => {
-                        return Err(RingDivisionError::NotDivisible);
-                    }
-                    Err(_) => panic!(),
+        match Self::poly_quorem_refs(a, b) {
+            Ok((q, r)) => {
+                if r == Polynomial::zero() {
+                    Ok(q)
+                } else {
+                    Err(RingDivisionError::NotDivisible)
                 }
             }
-            if a != Self::zero() {
-                return Err(RingDivisionError::NotDivisible);
-            }
-            Ok(q)
+            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
         }
     }
 }
@@ -444,6 +510,68 @@ pub fn interpolate_by_linear_system<R: PrincipalIdealDomain>(
     }
 }
 
+fn factor_primitive_linear_part<
+    R: UniquelyFactorable + GreatestCommonDivisorDomain + FiniteUnits,
+>(
+    mut f: Polynomial<R>,
+) -> (Factored<Polynomial<R>>, Polynomial<R>) {
+    //f should be a primitive polynomial over R
+    //linear factor (a+bx) of c0 + c1*x + c2*x^2 + ... + cn*x^n
+    //must be such that a divides c0 and b divides cn
+    //so just factor c0 and cn and check all divisors
+
+    let mut linear_factors = Factored::one();
+    'seek_linear_factor: while f.degree().unwrap() > 0 {
+        let c0 = f.coeff(0);
+        if c0 == R::zero() {
+            //linear factor of x
+            f = Polynomial::div(f, Polynomial::var()).unwrap();
+            linear_factors = Factored::mul(
+                linear_factors,
+                Factored::new_irreducible_unchecked(Polynomial::var()),
+            );
+            continue 'seek_linear_factor;
+        } else {
+            //look for linear factors of the form (a+bx)
+            let c0fs = f.coeff(0).factor().unwrap();
+            let cnfs = f.coeff(f.degree().unwrap()).factor().unwrap();
+            for a_assoc in c0fs.divisors() {
+                for u in R::all_units() {
+                    let a = R::mul_ref(u, &a_assoc);
+                    for b in cnfs.divisors() {
+                        //a ranges over all divisors of c0
+                        //b ranges over all divisors factors of cn up to associates
+                        //try the linear factor (a+bx)
+                        let lin = Polynomial::new(vec![a.clone(), b]);
+                        match Polynomial::div_refs(&f, &lin) {
+                            Ok(new_f) => {
+                                f = new_f;
+                                linear_factors = Factored::mul(
+                                    linear_factors,
+                                    Factored::new_irreducible_unchecked(lin),
+                                );
+                                continue 'seek_linear_factor;
+                            }
+                            Err(RingDivisionError::NotDivisible) => {}
+                            Err(RingDivisionError::DivideByZero) => panic!(),
+                        }
+                    }
+                }
+            }
+        }
+
+        break;
+    }
+    (linear_factors, f)
+}
+
+pub fn squarefree_part_by_yuns<R: ComRing>(f: &Polynomial<R>) -> Polynomial<R>
+where
+    Polynomial<R>: GreatestCommonDivisorDomain,
+{
+    todo!();
+}
+
 pub fn factor_by_kroneckers_method<
     R: UniquelyFactorable
         + GreatestCommonDivisorDomain
@@ -471,14 +599,11 @@ where
             .map(|(p, k)| (Polynomial::from(p), k.clone()))
             .collect(),
     );
-    if f.degree().unwrap() > 0 {
-        return Some(Factored::mul(
-            factored_scalar_part_poly,
-            factor_primitive(f),
-        ));
-    } else {
-        return Some(factored_scalar_part_poly);
-    }
+    let (linear_factors, f) = factor_primitive_linear_part(f);
+    return Some(Factored::mul(
+        linear_factors,
+        Factored::mul(factored_scalar_part_poly, factor_primitive(f)),
+    ));
 
     fn factor_primitive<
         R: UniquelyFactorable
@@ -494,8 +619,10 @@ where
     {
         debug_assert_ne!(f, Polynomial::<R>::zero());
         let f_deg = f.degree().unwrap();
-        debug_assert!(f_deg > 0); //f should not be constant
-        if f_deg == 1 {
+        if f_deg == 0 {
+            debug_assert!(f.coeff(0).is_unit());
+            Factored::new_unit_unchecked(f)
+        } else if f_deg == 1 {
             //linear primitive factors are always irreducible
             Factored::new_irreducible_unchecked(f.clone())
         } else {
@@ -536,8 +663,10 @@ where
                     let mut y_divs = vec![];
                     for d in yf.divisors() {
                         if i == 0 {
+                            //take divisors up to associates for one, because we only care about g up to associates
                             y_divs.push(d);
                         } else {
+                            //take _all_ divisors for the rest
                             for u in R::all_units() {
                                 y_divs.push(R::mul_ref(u, &d));
                             }
@@ -667,10 +796,11 @@ impl<F: Field> EuclideanDomain for Polynomial<F> {
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
         let m = a.coeffs.len();
         let n = b.coeffs.len();
-        if m < n {
-            Some((Self::zero(), a))
-        } else if n == 0 {
+
+        if n == 0 {
             None
+        } else if m < n {
+            Some((Self::zero(), a))
         } else {
             let k = m - n + 1;
             let mut q = Self {
@@ -814,7 +944,12 @@ mod tests {
         let y = &b * &c;
         let g = Polynomial::<Rational>::gcd(x.elem(), y.elem());
 
-        println!("gcd({:?} , {:?}) = {:?}", x, y, g);
+        println!(
+            "gcd({} , {}) = {}",
+            x.elem().to_string(),
+            y.elem().to_string(),
+            g.to_string()
+        );
         Polynomial::<Rational>::div_refs(&g, &b.elem()).unwrap();
         Polynomial::<Rational>::div_refs(&b.elem(), &g).unwrap();
     }
@@ -1013,4 +1148,28 @@ mod tests {
             Factored::new_unchecked(f.clone(), Polynomial::one(), HashMap::new())
         );
     }
+
+    #[test]
+    fn test_derivative() {
+        let x = &Ergonomic::new(Polynomial::<Integer>::var());
+        let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3)).elem();
+        let g = (3 - 2 * x + 21 * x.pow(2)).elem();
+        assert_eq!(f.derivative(), g);
+
+        let f = Polynomial::<Integer>::zero();
+        let g = Polynomial::<Integer>::zero();
+        assert_eq!(f.derivative(), g);
+
+        let f = Polynomial::<Integer>::one();
+        let g = Polynomial::<Integer>::zero();
+        assert_eq!(f.derivative(), g);
+    }
+
+    // #[test]
+    // fn test_squarefree_part_by_yuns() {
+    //     let x = &Ergonomic::new(Polynomial::<Integer>::var());
+    //     let f = ((x + 1).pow(3) * (2 * x + 3).pow(2)).elem();
+    //     let g = ((x + 1) * (2 * x + 3)).elem();
+    //     assert_eq!(squarefree_part_by_yuns(&f), g);
+    // }
 }
