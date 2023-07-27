@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::ring::*;
+use super::{poly::*, ring::*};
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
@@ -121,10 +121,12 @@ impl FavoriteAssociate for Integer {
     }
 }
 
-impl UniqueFactorizationDomain for Integer {
-    fn factor(&self) -> Option<UniqueFactorization<Integer>> {
+impl UniqueFactorizationDomain for Integer {}
+
+impl UniquelyFactorable for Integer {
+    fn factor(&self) -> Factored<Integer> {
         if self == &0 {
-            None
+            Factored::new_zero()
         } else {
             let unit;
             if self < &0 {
@@ -148,14 +150,14 @@ impl UniqueFactorizationDomain for Integer {
                 fs
             }
 
-            Some(UniqueFactorization::new_unchecked(
+            Factored::new_nonzero_unchecked(
                 self.clone(),
                 unit,
                 factor_nat(self.unsigned_abs())
                     .into_iter()
                     .map(|(p, k)| (Integer::from(p), k))
                     .collect(),
-            ))
+            )
         }
     }
 }
@@ -175,6 +177,12 @@ impl EuclideanDomain for Integer {
         } else {
             Some(a.div_mod(b.clone()))
         }
+    }
+}
+
+impl InterpolatablePolynomials for Integer {
+    fn interpolate(points: &Vec<(Self, Self)>) -> Option<Polynomial<Self>> {
+        interpolate_by_lagrange_basis(points)
     }
 }
 
