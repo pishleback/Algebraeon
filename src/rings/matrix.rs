@@ -603,6 +603,7 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
             .collect();
 
         let (g, taps) = R::xgcd_list(first_coords);
+
         if g.clone().is_unit() {
             debug_assert_eq!(g, R::one());
         }
@@ -670,6 +671,10 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
             //find the next pivot row
             //the next pivot row is the next row with a non-zero element below the previous pivot
             'next_pivot_loop: loop {
+                if pc == self.cols() {
+                    break 'pivot_loop;
+                }
+
                 for r in pr..self.rows() {
                     if self.at(r, pc).unwrap() != &R::zero() {
                         break 'next_pivot_loop;
@@ -677,9 +682,6 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
                 }
 
                 pc += 1;
-                if pc == self.cols() {
-                    break 'pivot_loop;
-                }
             }
             pivs.push(pc);
 
