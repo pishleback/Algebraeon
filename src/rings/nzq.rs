@@ -124,9 +124,9 @@ impl FavoriteAssociate for Integer {
 impl UniqueFactorizationDomain for Integer {}
 
 impl UniquelyFactorable for Integer {
-    fn factor(&self) -> Factored<Integer> {
+    fn factor(&self) -> Option<Factored<Integer>> {
         if self == &0 {
-            Factored::new_zero()
+            None
         } else {
             let unit;
             if self < &0 {
@@ -150,14 +150,14 @@ impl UniquelyFactorable for Integer {
                 fs
             }
 
-            Factored::new_nonzero_unchecked(
+            Some(Factored::new_unchecked(
                 self.clone(),
                 unit,
                 factor_nat(self.unsigned_abs())
                     .into_iter()
                     .map(|(p, k)| (Integer::from(p), k))
                     .collect(),
-            )
+            ))
         }
     }
 }
