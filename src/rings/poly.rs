@@ -3,7 +3,7 @@
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use std::{collections::HashMap, hash::Hash, marker::PhantomData};
+use std::hash::Hash;
 
 use super::matrix::*;
 use super::ring::*;
@@ -158,6 +158,10 @@ impl<R: ComRing> Polynomial<R> {
         y
     }
 
+    pub fn apply_map<S: ComRing>(&self, f: impl Fn(&R) -> S) -> Polynomial<S> {
+        Polynomial::new(self.coeffs.iter().map(f).collect())
+    }
+
     pub fn derivative(mut self) -> Self {
         if self.coeffs.len() > 0 {
             for i in 0..self.coeffs.len() - 1 {
@@ -190,58 +194,6 @@ impl<R: ComRing> From<&R> for Polynomial<R> {
             }
         }
     }
-}
-
-impl<R: EuclideanDomain> Polynomial<R> {
-    //pseudo division here
-
-
-    // fn poly_quorem(a: Self, b: Self) -> Option<(Self, Self)> {
-    //     Self::poly_quorem_rref(a, &b)
-    // }
-
-    // fn poly_quorem_lref(a: &Self, b: Self) -> Option<(Self, Self)> {
-    //     Self::poly_quorem_refs(a, &b)
-    // }
-
-    // fn poly_quorem_refs(a: &Self, b: &Self) -> Option<(Self, Self)> {
-    //     let res = Self::poly_quorem_rref(a.clone(), b);
-    //     match &res {
-    //         Some((q, r)) => debug_assert_eq!(&Self::add_ref(Self::mul_refs(q, b), r), a),
-    //         None => {}
-    //     };
-    //     res
-    // }
-
-    // fn poly_quorem_rref(mut a: Self, b: &Self) -> Option<(Self, Self)> {
-    //     //try to find q such that q*b == a
-    //     // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
-    //     // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
-    //     let m = a.coeffs.len();
-    //     let n = b.coeffs.len();
-    //     if n == 0 {
-    //         None
-    //     } else if m < n {
-    //         Some((Self::zero(), a))
-    //     } else {
-    //         let k = m - n + 1;
-    //         let mut q = Self {
-    //             coeffs: (0..k).map(|_i| R::zero()).collect(),
-    //         };
-    //         for i in (0..k).rev() {
-    //             //a[i+n-1] = q[i] * b[n-1]
-    //             match R::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
-    //                 Ok(qc) => {
-    //                     //a -= qc*x^i*b
-    //                     a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
-    //                     q.coeffs[i] = qc;
-    //                 }
-    //                 Err(_) => panic!(),
-    //             }
-    //         }
-    //         Some((q, a))
-    //     }
-    // }
 }
 
 impl<R: ComRing> ComRing for Polynomial<R> {
@@ -398,6 +350,64 @@ impl<R: IntegralDomain + FiniteUnits> FiniteUnits for Polynomial<R> {
 
 pub trait InterpolatablePolynomials: ComRing {
     fn interpolate(points: &Vec<(Self, Self)>) -> Option<Polynomial<Self>>;
+}
+
+impl<F: Field> EuclideanDomain for Polynomial<F> {
+    fn norm(&self) -> Option<Natural> {
+        if self == &Self::zero() {
+            None
+        } else {
+            Some(Natural::from(self.coeffs.len() - 1))
+        }
+    }
+
+    fn quorem(a: Self, b: Self) -> Option<(Self, Self)> {
+        Self::quorem_rref(a, &b)
+    }
+
+    fn quorem_lref(a: &Self, b: Self) -> Option<(Self, Self)> {
+        Self::quorem_refs(a, &b)
+    }
+
+    fn quorem_refs(a: &Self, b: &Self) -> Option<(Self, Self)> {
+        let res = Self::quorem_rref(a.clone(), b);
+        match &res {
+            Some((q, r)) => debug_assert_eq!(&Self::add_ref(Self::mul_refs(q, b), r), a),
+            None => {}
+        };
+        res
+    }
+
+    fn quorem_rref(mut a: Self, b: &Self) -> Option<(Self, Self)> {
+        //try to find q such that q*b == a
+        // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
+        // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
+        let m = a.coeffs.len();
+        let n = b.coeffs.len();
+
+        if n == 0 {
+            None
+        } else if m < n {
+            Some((Self::zero(), a))
+        } else {
+            let k = m - n + 1;
+            let mut q = Self {
+                coeffs: (0..k).map(|_i| F::zero()).collect(),
+            };
+            for i in (0..k).rev() {
+                //a[i+n-1] = q[i] * b[n-1]
+                match F::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
+                    Ok(qc) => {
+                        //a -= qc*x^i*b
+                        a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
+                        q.coeffs[i] = qc;
+                    }
+                    Err(_) => panic!(),
+                }
+            }
+            Some((q, a))
+        }
+    }
 }
 
 pub fn interpolate_by_lagrange_basis<R: IntegralDomain>(
@@ -563,12 +573,14 @@ fn factor_primitive_linear_part<
     (linear_factors, f)
 }
 
-pub fn squarefree_part_by_yuns<R: ComRing>(f: &Polynomial<R>) -> Polynomial<R>
-where
-    Polynomial<R>: GreatestCommonDivisorDomain,
-{
-    todo!();
-}
+// pub fn squarefree_part_by_yuns<R: ComRing>(f: &Polynomial<R>) -> Polynomial<R>
+// where
+//     Polynomial<R>: GreatestCommonDivisorDomain,
+// {
+//     todo!();
+//     //need fast gcd over the integers
+//     //need pseudo-remainder sequences
+// }
 
 pub fn factor_by_kroneckers_method<
     R: UniquelyFactorable
@@ -702,16 +714,16 @@ where
     }
 }
 
-pub fn factor_over_field_of_fractions<F: FieldOfFractions>(
-    poly: &Polynomial<F>,
-    factor_over_base_ring: Box<dyn Fn(Polynomial<F::R>) -> Factored<Polynomial<F::R>>>,
-) -> Factored<Polynomial<F>>
-where
-    Polynomial<F>: UniqueFactorizationDomain,
-    Polynomial<F::R>: UniqueFactorizationDomain,
-{
-    todo!();
-}
+// pub fn factor_over_field_of_fractions<F: FieldOfFractions>(
+//     poly: &Polynomial<F>,
+//     factor_over_base_ring: Box<dyn Fn(Polynomial<F::R>) -> Factored<Polynomial<F::R>>>,
+// ) -> Factored<Polynomial<F>>
+// where
+//     Polynomial<F>: UniqueFactorizationDomain,
+//     Polynomial<F::R>: UniqueFactorizationDomain,
+// {
+//     todo!();
+// }
 
 // impl<R: UniqueFactorizationDomain + Hash>
 //     UniqueFactorizationDomain for Polynomial<R>
@@ -762,67 +774,97 @@ where
 //     }
 // }
 
-impl<F: Field> EuclideanDomain for Polynomial<F> {
-    fn norm(&self) -> Option<Natural> {
-        if self == &Self::zero() {
-            None
-        } else {
-            Some(Natural::from(self.coeffs.len() - 1))
+pub fn subsylvester_matrix<R: ComRing>(
+    f_deg: usize,
+    g_deg: usize,
+    f: &Polynomial<R>,
+    g: &Polynomial<R>,
+    k: usize,
+) -> Matrix<R> {
+    match f.degree() {
+        Some(d) => assert!(d <= f_deg),
+        None => {}
+    }
+    match g.degree() {
+        Some(d) => assert!(d <= g_deg),
+        None => {}
+    }
+    assert!(k <= f_deg);
+    assert!(k <= g_deg);
+
+    let mut smat = Matrix::zero(f_deg + g_deg - k, f_deg + g_deg - 2 * k);
+    for j in 0..g_deg - k {
+        for i in 0..f_deg + 1 {
+            *smat.at_mut(j + i, j).unwrap() = f.coeff(f_deg - i);
         }
     }
-
-    fn quorem(a: Self, b: Self) -> Option<(Self, Self)> {
-        Self::quorem_rref(a, &b)
-    }
-
-    fn quorem_lref(a: &Self, b: Self) -> Option<(Self, Self)> {
-        Self::quorem_refs(a, &b)
-    }
-
-    fn quorem_refs(a: &Self, b: &Self) -> Option<(Self, Self)> {
-        let res = Self::quorem_rref(a.clone(), b);
-        match &res {
-            Some((q, r)) => debug_assert_eq!(&Self::add_ref(Self::mul_refs(q, b), r), a),
-            None => {}
-        };
-        res
-    }
-
-    fn quorem_rref(mut a: Self, b: &Self) -> Option<(Self, Self)> {
-        //try to find q such that q*b == a
-        // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
-        // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
-        let m = a.coeffs.len();
-        let n = b.coeffs.len();
-
-        if n == 0 {
-            None
-        } else if m < n {
-            Some((Self::zero(), a))
-        } else {
-            let k = m - n + 1;
-            let mut q = Self {
-                coeffs: (0..k).map(|_i| F::zero()).collect(),
-            };
-            for i in (0..k).rev() {
-                //a[i+n-1] = q[i] * b[n-1]
-                match F::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
-                    Ok(qc) => {
-                        //a -= qc*x^i*b
-                        a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
-                        q.coeffs[i] = qc;
-                    }
-                    Err(_) => panic!(),
-                }
-            }
-            Some((q, a))
+    for i in 0..f_deg - k {
+        for j in 0..g_deg + 1 {
+            *smat.at_mut(j + i, g_deg - k + i).unwrap() = g.coeff(g_deg - j);
         }
     }
+    smat
+}
+
+pub fn sylvester_matrix<R: ComRing>(
+    f_deg: usize,
+    g_deg: usize,
+    f: &Polynomial<R>,
+    g: &Polynomial<R>,
+) -> Matrix<R> {
+    subsylvester_matrix(f_deg, g_deg, f, g, 0)
+}
+
+pub fn resultant_naive<R: ComRing>(
+    f_deg: usize,
+    g_deg: usize,
+    f: &Polynomial<R>,
+    g: &Polynomial<R>,
+) -> R {
+    sylvester_matrix(f_deg, g_deg, f, g).det_naive().unwrap()
+}
+
+//determinant of this is the subresultant polynomial
+pub fn subresultant_matrix<R: ComRing>(
+    f_deg: usize,
+    g_deg: usize,
+    f: &Polynomial<R>,
+    g: &Polynomial<R>,
+    k: usize,
+) -> Matrix<Polynomial<R>> {
+    assert!(k <= f_deg);
+    assert!(k <= g_deg);
+    let tmat = subsylvester_matrix(f_deg, g_deg, f, g, k).apply_map(|a| Polynomial::from(a));
+    let mut vmat = Matrix::<Polynomial<R>>::zero(f_deg + g_deg - 2 * k, f_deg + g_deg - k);
+    for i in 0..f_deg + g_deg - 2 * k - 1 {
+        *vmat.at_mut(i, i).unwrap() = Polynomial::one();
+    }
+    for i in 0..k + 1 {
+        *vmat
+            .at_mut(f_deg + g_deg - 2 * k - 1, f_deg + g_deg - 2 * k - 1 + i)
+            .unwrap() = Polynomial::var_pow(k - i);
+    }
+    let prod_mat = Matrix::mul_refs(&vmat, &tmat).unwrap();
+    prod_mat
+}
+
+//bad way to compute subresultant polynomials
+pub fn subresultant_naive<R: ComRing>(
+    f_deg: usize,
+    g_deg: usize,
+    f: &Polynomial<R>,
+    g: &Polynomial<R>,
+    k: usize,
+) -> Polynomial<R> {
+    subresultant_matrix(f_deg, g_deg, f, g, k)
+        .det_naive()
+        .unwrap()
 }
 
 #[cfg(test)]
 mod tests {
     use core::panic;
+    use std::collections::HashMap;
 
     use super::super::ergonomic::*;
     use super::*;
@@ -1156,6 +1198,112 @@ mod tests {
         let f = Polynomial::<Integer>::one();
         let g = Polynomial::<Integer>::zero();
         assert_eq!(f.derivative(), g);
+    }
+
+    #[test]
+    fn test_sylvester_matrix() {
+        let f = Polynomial::new(vec![
+            Integer::from(1),
+            Integer::from(2),
+            Integer::from(3),
+            Integer::from(4),
+        ]);
+        let g = Polynomial::new(vec![Integer::from(5), Integer::from(6), Integer::from(7)]);
+        assert_eq!(
+            sylvester_matrix(3, 2, &f, &g),
+            Matrix::from_rows(vec![
+                vec![
+                    Integer::from(4),
+                    Integer::from(0),
+                    Integer::from(7),
+                    Integer::from(0),
+                    Integer::from(0)
+                ],
+                vec![
+                    Integer::from(3),
+                    Integer::from(4),
+                    Integer::from(6),
+                    Integer::from(7),
+                    Integer::from(0)
+                ],
+                vec![
+                    Integer::from(2),
+                    Integer::from(3),
+                    Integer::from(5),
+                    Integer::from(6),
+                    Integer::from(7)
+                ],
+                vec![
+                    Integer::from(1),
+                    Integer::from(2),
+                    Integer::from(0),
+                    Integer::from(5),
+                    Integer::from(6)
+                ],
+                vec![
+                    Integer::from(0),
+                    Integer::from(1),
+                    Integer::from(0),
+                    Integer::from(0),
+                    Integer::from(5)
+                ]
+            ])
+        );
+        assert_eq!(
+            subsylvester_matrix(3, 2, &f, &g, 1),
+            Matrix::from_rows(vec![
+                vec![Integer::from(4), Integer::from(7), Integer::from(0)],
+                vec![Integer::from(3), Integer::from(6), Integer::from(7)],
+                vec![Integer::from(2), Integer::from(5), Integer::from(6)],
+                vec![Integer::from(1), Integer::from(0), Integer::from(5)],
+            ])
+        );
+
+        let f = Polynomial::new(vec![Integer::from(1)]);
+        let g = Polynomial::new(vec![Integer::from(2)]);
+        let mat = sylvester_matrix(0, 0, &f, &g);
+        assert_eq!(mat, Matrix::zero(0, 0));
+
+        let f = Polynomial::new(vec![Integer::from(1)]);
+        let g = Polynomial::new(vec![Integer::from(2), Integer::from(3)]);
+        let mat = sylvester_matrix(0, 1, &f, &g);
+        assert_eq!(mat, Matrix::from_rows(vec![vec![Integer::from(1)],]));
+    }
+
+    #[test]
+    fn test_resultant() {
+        //naive algorithm (naive det of sylvester matrix)
+        let f = Polynomial::new(vec![
+            Integer::from(1),
+            Integer::from(2),
+            Integer::from(3),
+            Integer::from(4),
+        ]);
+        let g = Polynomial::new(vec![Integer::from(5), Integer::from(6), Integer::from(7)]);
+        assert_eq!(resultant_naive(3, 2, &f, &g), Integer::from(832));
+
+        let f = Polynomial::new(vec![
+            Integer::from(1),
+            Integer::from(2),
+            Integer::from(3),
+            Integer::from(4),
+        ]);
+        let g = Polynomial::new(vec![Integer::from(5), Integer::from(6), Integer::from(7)]);
+        assert_eq!(resultant_naive(4, 3, &f, &g), Integer::from(0));
+
+        //subresultant
+        let f = Polynomial::new(vec![
+            Integer::from(1),
+            Integer::from(2),
+            Integer::from(3),
+            Integer::from(4),
+        ]);
+        let g = Polynomial::new(vec![Integer::from(5), Integer::from(6), Integer::from(7)]);
+        let subres = subresultant_naive(3, 2, &f, &g, 1);
+        assert_eq!(
+            subres,
+            Polynomial::new(vec![Integer::from(64), Integer::from(-24)])
+        );
     }
 
     // #[test]
