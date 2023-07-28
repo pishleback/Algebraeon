@@ -189,7 +189,7 @@ impl<R: ComRing> Matrix<R> {
         }
     }
 
-    pub fn apply_map<S: ComRing>(&self, f: Box<dyn Fn(&R) -> S>) -> Matrix<S> {
+    pub fn apply_map<S: ComRing>(&self, f: impl Fn(&R) -> S) -> Matrix<S> {
         Matrix {
             dim1: self.dim1,
             dim2: self.dim2,
@@ -483,6 +483,26 @@ impl<R: PrincipalIdealDomain> ElementaryOpp<R> {
         }
     }
 
+    fn det(&self) -> R {
+        match &self.opp {
+            ElementaryOppType::Swap(_i, _j) => R::one().neg(),
+            ElementaryOppType::UnitMul { row: _row, unit } => unit.clone(),
+            ElementaryOppType::AddRowMul {
+                i: _i,
+                j: _j,
+                x: _x,
+            } => R::one(),
+            ElementaryOppType::TwoInv {
+                i: _i,
+                j: _j,
+                a,
+                b,
+                c,
+                d,
+            } => R::add(R::mul_refs(a, d), R::mul_refs(b, c).neg()),
+        }
+    }
+
     fn apply(&self, m: &mut Matrix<R>) {
         debug_assert!(self.check_invariants().is_ok());
         if self.transpose {
@@ -560,7 +580,7 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
     }
 
     pub fn row_kernel(self) -> LinearLattice<R> {
-        let (_h, u, pivs) = self.row_hermite_algorithm();
+        let (_h, u, _u_det, pivs) = self.row_hermite_algorithm();
         LinearLattice::from_basis(
             1,
             u.cols(),
@@ -656,14 +676,16 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
     }
 
     //TODO: replace with over a pid
-    //if A:=self return (H, U, pivots) such that
+    //if A:=self return (H, U, u_det, pivots) such that
     //H is in row hermite normal form
     //U is invertible
     //H=UA
+    //u det is the determinant of u. It is a unit
     //pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
-    pub fn row_hermite_algorithm(mut self) -> (Self, Self, Vec<usize>) {
+    pub fn row_hermite_algorithm(mut self) -> (Self, Self, R, Vec<usize>) {
         //build up U by applying row opps to the identity as we go
         let mut u = Self::ident(self.rows());
+        let mut u_det = R::one();
         let mut pivs = vec![];
 
         let (mut pr, mut pc) = (0, 0);
@@ -709,6 +731,7 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
                         //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
                         row_opp.apply(&mut self);
                         row_opp.apply(&mut u);
+                        u_det.mul_mut(&row_opp.det());
                     }
                 }
             } else {
@@ -721,6 +744,7 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
                 //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
                 row_opp.apply(&mut self);
                 row_opp.apply(&mut u);
+                u_det.mul_mut(&row_opp.det());
             }
 
             //should have eliminated everything below the pivot
@@ -730,16 +754,35 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
             pr += 1;
         }
 
-        (self, u, pivs)
+        if self.rows() <= 4 {
+            debug_assert_eq!(u.det_naive().unwrap(), u_det);
+        }
+
+        (self, u, u_det, pivs)
     }
 
     pub fn col_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
-        let (rh, ru, pivs) = self.transpose().row_hermite_algorithm();
+        let (rh, ru, _u_det, pivs) = self.transpose().row_hermite_algorithm();
         (rh.transpose(), ru.transpose(), pivs)
     }
 
+    pub fn det(self) -> Result<R, MatOppErr> {
+        let n = self.rows();
+        if n != self.cols() {
+            Err(MatOppErr::NotSquare)
+        } else {
+            let (h, u, u_det, pivs) = self.row_hermite_algorithm();
+            //h = u * self, we know det(u), and h is upper triangular
+            let mut h_det = R::one();
+            for i in 0..n {
+                h_det.mul_mut(h.at(i, i).unwrap());
+            }
+            Ok(R::div(h_det, u_det).unwrap())
+        }
+    }
+
     pub fn rank(self) -> usize {
-        let (_h, _u, pivs) = self.row_hermite_algorithm();
+        let (_h, _u, _u_det, pivs) = self.row_hermite_algorithm();
         pivs.len()
     }
 
@@ -966,7 +1009,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> Matrix<R> {
     //H=UA
     //pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
     pub fn row_reduced_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
-        let (mut h, mut u, pivs) = self.row_hermite_algorithm();
+        let (mut h, mut u, _u_det, pivs) = self.row_hermite_algorithm();
 
         for (pr, pc) in pivs.iter().enumerate() {
             for r in 0..pr {
@@ -1001,7 +1044,7 @@ impl<F: Field> Matrix<F> {
             Err(MatOppErr::NotSquare)
         } else {
             Ok(Matrix::add(
-                self.apply_map(Box::new(|x| Polynomial::from(x.clone()))),
+                self.apply_map(|x| Polynomial::from(x.clone())),
                 Matrix::diag(&(0..n).map(|_i| Polynomial::var()).collect()).neg(),
             )
             .unwrap())
