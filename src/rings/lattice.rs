@@ -14,15 +14,12 @@ fn metamatrix_row_sum<R: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<R>>>(
         assert_eq!(metamat.borrow().cols(), cols);
     }
     let joined_metamat = join_rows(cols, metamats);
-    let (h, _u, pivs) = joined_metamat.row_hermite_algorithm();
+    let (h, _u, _u_det, pivs) = joined_metamat.row_hermite_algorithm();
     h.submatrix((0..pivs.len()).collect(), (0..cols).collect()) //return the top non-zero and linearly independent rows from h
 }
 
 //return a metamatrix whose rows are a basis for the intersection of the row spans of the passed metamatricies
-fn metamatrix_row_intersection<
-    R: PrincipalIdealDomain,
-    MetaMatT: Borrow<Matrix<R>>,
->(
+fn metamatrix_row_intersection<R: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<R>>>(
     cols: usize,
     mut metamat1: MetaMatT,
     mut metamat2: MetaMatT,
@@ -135,7 +132,7 @@ impl<R: PrincipalIdealDomain> LinearLattice<R> {
 
     pub fn from_span<MatT: Borrow<Matrix<R>>>(rows: usize, cols: usize, mats: Vec<MatT>) -> Self {
         let spanning_meta_matrix = mats_to_rows(rows, cols, mats);
-        let (h, _u, pivs) = spanning_meta_matrix.row_hermite_algorithm();
+        let (h, _u, _u_det, pivs) = spanning_meta_matrix.row_hermite_algorithm();
         let metamatrix = h.submatrix((0..pivs.len()).collect(), (0..rows * cols).collect());
         let lattice = Self {
             metamatrix,
@@ -548,7 +545,7 @@ impl<R: PrincipalIdealDomain> AffineLattice<R> {
                         //the hyperlattice is just the origin, so the coresponding affine lattice - the intersection with the plane (1, *, ..., *) - is empty.
                         AffineLattice::empty(rows, cols)
                     } else {
-                        let (int_metamat_h, _u, pivs) = int_metamat.row_hermite_algorithm();
+                        let (int_metamat_h, _u, _u_det, pivs) = int_metamat.row_hermite_algorithm();
                         int_metamat_h.pprint();
                         if int_metamat_h.at(0, 0).unwrap().clone().is_unit() {
                             debug_assert_eq!(int_metamat_h.at(0, 0).unwrap(), &R::one());
