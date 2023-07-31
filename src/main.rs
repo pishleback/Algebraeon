@@ -21,8 +21,8 @@ fn main() {
     // ])
     // .unwrap();
     // println!("{}", f.to_string());
-
     let x = &Ergonomic::new(Polynomial::<Rational>::var());
+
     let f = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();
     let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
 
@@ -62,7 +62,7 @@ fn main() {
     println!(
         "subres2 = {}",
         subresultant_matrix(8, 6, &f, &g, 2)
-        .apply_map(|x| x.apply_map(|y| Rational::from(y)))
+            .apply_map(|x| x.apply_map(|y| Rational::from(y)))
             .det()
             .unwrap()
             .to_string()
@@ -70,7 +70,7 @@ fn main() {
     println!(
         "subres1 = {}",
         subresultant_matrix(8, 6, &f, &g, 1)
-        .apply_map(|x| x.apply_map(|y| Rational::from(y)))
+            .apply_map(|x| x.apply_map(|y| Rational::from(y)))
             .det()
             .unwrap()
             .to_string()
@@ -78,9 +78,15 @@ fn main() {
     println!(
         "subres0 = {}",
         subresultant_matrix(8, 6, &f, &g, 0)
-        .apply_map(|x| x.apply_map(|y| Rational::from(y)))
+            .apply_map(|x| x.apply_map(|y| Rational::from(y)))
             .det()
             .unwrap()
             .to_string()
     );
+
+    let f = (x+7).elem();
+    let g = ((x + 3).pow(3)).elem();
+
+    let res = Polynomial::pseudo_gcd(f, g);
+    println!("{}", res.to_string());
 }
