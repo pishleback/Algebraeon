@@ -15,7 +15,7 @@ impl<R: ComRing> Ergonomic<R> {
 
     pub fn pow(&self, n: usize) -> Self {
         Self {
-            elem: self.elem.pow(&Natural::from(n)),
+            elem: self.elem.nat_pow(&Natural::from(n)),
         }
     }
 

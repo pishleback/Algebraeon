@@ -327,7 +327,7 @@ impl<R: IntegralDomain> Polynomial<R> {
             Some(Err("Should have deg(a) >= deg(b) for pseudo remainder"))
         } else {
             a.mul_mut(&Polynomial::from(
-                b.coeff(n - 1).pow(&Natural::from(m - n + 1)),
+                b.coeff(n - 1).nat_pow(&Natural::from(m - n + 1)),
             ));
 
             let k = m - n + 1;
@@ -349,14 +349,14 @@ impl<R: IntegralDomain> Polynomial<R> {
         }
     }
 
-    //efficiently compute the gcd of a and b up to scalar multipication
-    //using pseudo remainder subresultant sequence
+    //efficiently compute the gcd of a and b up to scalar multipication using pseudo remainder subresultant sequence
+    //the returned polynomial should the smallest non-zero subresultant polynomial
     //https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Trivial_pseudo-remainder_sequence
     pub fn pseudo_gcd(mut a: Polynomial<R>, mut b: Polynomial<R>) -> Polynomial<R> {
         match a.degree() {
             None => b,
             Some(mut a_deg) => match b.degree() {
-                None => Polynomial::zero(),
+                None => a,
                 Some(mut b_deg) => {
                     if a_deg < b_deg {
                         (a, b) = (b, a);
@@ -385,22 +385,20 @@ impl<R: IntegralDomain> Polynomial<R> {
                             break;
                         }
 
-                        println!("gamma={}", gamma.to_string());
-                        println!("psi={}", psi.to_string());
-
                         if d == 0 {
+                            //can only happen in the first loop
                             debug_assert_eq!(psi, R::one().neg());
                             psi = R::one();
                         } else {
                             psi = R::div(
-                                gamma.neg_ref().pow(&Natural::from(d)),
-                                psi.pow(&Natural::from(d - 1)),
+                                gamma.neg_ref().nat_pow(&Natural::from(d)),
+                                psi.nat_pow(&Natural::from(d - 1)),
                             )
                             .unwrap();
                         }
                         beta = R::mul(
                             gamma.neg(),
-                            psi.pow(&Natural::from(a.degree().unwrap() - b.degree().unwrap())),
+                            psi.nat_pow(&Natural::from(a.degree().unwrap() - b.degree().unwrap())),
                         );
                     }
                     a
@@ -682,13 +680,16 @@ fn factor_primitive_linear_part<
     (linear_factors, f)
 }
 
-// pub fn squarefree_part_by_yuns<R: ComRing>(f: &Polynomial<R>) -> Polynomial<R>
+//do we want to take the primitive pseudo gcd for this?
+// pub fn squarefree_part_by_yuns<R: IntegralDomain + CharacteristicZero>(
+//     f: &Polynomial<R>,
+// ) -> Polynomial<R>
 // where
 //     Polynomial<R>: GreatestCommonDivisorDomain,
 // {
-//     todo!();
-//     //need fast gcd over the integers
-//     //need pseudo-remainder sequences
+//     assert_ne!(f, &Polynomial::zero());
+//     let g = Polynomial::pseudo_gcd(f.clone(), f.clone().derivative());
+//     Polynomial::div(f.clone(), g).unwrap()
 // }
 
 pub fn factor_by_kroneckers_method<
@@ -1404,6 +1405,34 @@ mod tests {
         assert_eq!(
             subres,
             Polynomial::new(vec![Integer::from(64), Integer::from(-24)])
+        );
+    }
+
+    #[test]
+    fn test_pseudo_gcd() {
+        let x = &Ergonomic::new(Polynomial::<Integer>::var());
+
+        let f =
+            (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();
+        let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
+        assert_eq!(
+            Polynomial::pseudo_gcd(f, g),
+            Polynomial::from(Integer::from(260708))
+        );
+
+        let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
+        let g =
+            (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();
+        assert_eq!(
+            Polynomial::pseudo_gcd(f, g),
+            Polynomial::from(Integer::from(260708))
+        );
+
+        let f = ((x + 2).pow(2) * (2 * x - 3).pow(2)).elem();
+        let g = ((3 * x - 1) * (2 * x - 3).pow(2)).elem();
+        assert_eq!(
+            Polynomial::pseudo_gcd(f, g),
+            (7056 - 9408 * x + 3136 * x.pow(2)).elem()
         );
     }
 

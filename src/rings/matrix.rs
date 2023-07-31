@@ -40,6 +40,8 @@ impl<R: ComRing> PartialEq for Matrix<R> {
     }
 }
 
+impl<R: ComRing> Eq for Matrix<R> {}
+
 pub fn join_rows<R: ComRing, MatT: Borrow<Matrix<R>>>(cols: usize, mats: Vec<MatT>) -> Matrix<R> {
     let mut rows = 0;
     for mat in &mats {

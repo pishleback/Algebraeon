@@ -91,7 +91,7 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug + ToString {
         ans
     }
 
-    fn pow(&self, n: &Natural) -> Self {
+    fn nat_pow(&self, n: &Natural) -> Self {
         if *n == 0 {
             Self::one()
         } else if *n == 1 {
@@ -99,7 +99,23 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Debug + ToString {
         } else {
             debug_assert!(*n >= 2);
             let (q, r) = n.div_rem(Natural::from(2u8));
-            Self::mul(self.pow(&q), self.pow(&(&q + r)))
+            Self::mul(self.nat_pow(&q), self.nat_pow(&(&q + r)))
+        }
+    }
+
+    fn int_pow(&self, n: &Integer) -> Option<Self> {
+        if *n == 0 {
+            Some(Self::one())
+        } else if self == &Self::zero() {
+            Some(Self::zero())
+        } else if *n > 0 {
+            Some(self.nat_pow(&n.unsigned_abs()))
+        } else {
+            match self.clone().inv() {
+                Ok(self_inv) => Some(self_inv.nat_pow(&(-n).unsigned_abs())),
+                Err(RingDivisionError::NotDivisible) => None,
+                Err(RingDivisionError::DivideByZero) => panic!(),
+            }
         }
     }
 
