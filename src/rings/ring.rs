@@ -390,7 +390,7 @@ impl<R: UniqueFactorizationDomain> Factored<R> {
 
     pub fn count_divisors(&self) -> Option<Natural> {
         let mut count = Natural::from(1u8);
-        for (p, k) in &self.factors {
+        for (_p, k) in &self.factors {
             count *= k + Natural::from(1u8);
         }
         Some(count)
