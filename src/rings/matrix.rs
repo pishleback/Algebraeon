@@ -771,7 +771,7 @@ impl<R: PrincipalIdealDomain> Matrix<R> {
         if n != self.cols() {
             Err(MatOppErr::NotSquare)
         } else {
-            let (h, u, u_det, pivs) = self.row_hermite_algorithm();
+            let (h, _u, u_det, _pivs) = self.row_hermite_algorithm();
             //h = u * self, we know det(u), and h is upper triangular
             let mut h_det = R::one();
             for i in 0..n {
