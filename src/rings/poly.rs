@@ -264,6 +264,7 @@ impl<R: ComRing> ComRing for Polynomial<R> {
         //try to find q such that q*b == a
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
+
         let m = a.coeffs.len();
         let n = b.coeffs.len();
         if n == 0 {
@@ -300,6 +301,114 @@ impl<R: ComRing> ComRing for Polynomial<R> {
 }
 
 impl<R: IntegralDomain> IntegralDomain for Polynomial<R> {}
+
+impl<R: IntegralDomain> Polynomial<R> {
+    pub fn pseudorem(a: Self, b: Self) -> Option<Result<Self, &'static str>> {
+        Self::pseudorem_rref(a, &b)
+    }
+
+    pub fn pseudorem_lref(a: &Self, b: Self) -> Option<Result<Self, &'static str>> {
+        Self::pseudorem_refs(a, &b)
+    }
+
+    pub fn pseudorem_refs(a: &Self, b: &Self) -> Option<Result<Self, &'static str>> {
+        Self::pseudorem_rref(a.clone(), b)
+    }
+
+    //None if b = 0
+    //error if deg(a) < deg(b)
+    pub fn pseudorem_rref(mut a: Self, b: &Self) -> Option<Result<Self, &'static str>> {
+        let m = a.coeffs.len();
+        let n = b.coeffs.len();
+
+        if n == 0 {
+            None
+        } else if m < n {
+            Some(Err("Should have deg(a) >= deg(b) for pseudo remainder"))
+        } else {
+            a.mul_mut(&Polynomial::from(
+                b.coeff(n - 1).pow(&Natural::from(m - n + 1)),
+            ));
+
+            let k = m - n + 1;
+            let mut q = Self {
+                coeffs: (0..k).map(|_i| R::zero()).collect(),
+            };
+            for i in (0..k).rev() {
+                //a[i+n-1] = q[i] * b[n-1]
+                match R::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
+                    Ok(qc) => {
+                        //a -= qc*x^i*b
+                        a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
+                        q.coeffs[i] = qc;
+                    }
+                    Err(_) => panic!(),
+                }
+            }
+            Some(Ok(a))
+        }
+    }
+
+    //efficiently compute the gcd of a and b up to scalar multipication
+    //using pseudo remainder subresultant sequence
+    //https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Trivial_pseudo-remainder_sequence
+    pub fn pseudo_gcd(mut a: Polynomial<R>, mut b: Polynomial<R>) -> Polynomial<R> {
+        match a.degree() {
+            None => b,
+            Some(mut a_deg) => match b.degree() {
+                None => Polynomial::zero(),
+                Some(mut b_deg) => {
+                    if a_deg < b_deg {
+                        (a, b) = (b, a);
+                        (a_deg, b_deg) = (b_deg, a_deg);
+                    }
+                    let mut beta = {
+                        if (a_deg - b_deg) % 2 == 0 {
+                            R::from_int(&Integer::from(-1))
+                        } else {
+                            R::from_int(&Integer::from(1))
+                        }
+                    };
+                    let mut psi = R::from_int(&Integer::from(-1));
+                    loop {
+                        let d = a.degree().unwrap() - b.degree().unwrap();
+                        let gamma = b.coeff(b.degree().unwrap());
+
+                        let r = Polynomial::div(
+                            Polynomial::pseudorem_rref(a, &b).unwrap().unwrap(),
+                            Polynomial::from(beta),
+                        )
+                        .unwrap();
+                        (a, b) = (b, r);
+
+                        if b == Polynomial::zero() {
+                            break;
+                        }
+
+                        println!("gamma={}", gamma.to_string());
+                        println!("psi={}", psi.to_string());
+
+                        if d == 0 {
+                            debug_assert_eq!(psi, R::one().neg());
+                            psi = R::one();
+                        } else {
+                            psi = R::div(
+                                gamma.neg_ref().pow(&Natural::from(d)),
+                                psi.pow(&Natural::from(d - 1)),
+                            )
+                            .unwrap();
+                        }
+                        beta = R::mul(
+                            gamma.neg(),
+                            psi.pow(&Natural::from(a.degree().unwrap() - b.degree().unwrap())),
+                        );
+                    }
+                    a
+                }
+            },
+        }
+    }
+}
 
 impl<R: UniqueFactorizationDomain> UniqueFactorizationDomain for Polynomial<R> {}
 
@@ -714,66 +823,6 @@ where
     }
 }
 
-// pub fn factor_over_field_of_fractions<F: FieldOfFractions>(
-//     poly: &Polynomial<F>,
-//     factor_over_base_ring: Box<dyn Fn(Polynomial<F::R>) -> Factored<Polynomial<F::R>>>,
-// ) -> Factored<Polynomial<F>>
-// where
-//     Polynomial<F>: UniqueFactorizationDomain,
-//     Polynomial<F::R>: UniqueFactorizationDomain,
-// {
-//     todo!();
-// }
-
-// impl<R: UniqueFactorizationDomain + Hash>
-//     UniqueFactorizationDomain for Polynomial<R>
-// {
-//     default fn factor(&self) -> Option<UniqueFactorization<Polynomial<R>>> {
-//         todo!();
-//     }
-// }
-
-// impl<R: UniqueFactorizationDomain + FiniteUnits + CharacteristicZero + Hash>
-//     UniqueFactorizationDomain for Polynomial<R>
-// {
-//     default fn factor(&self) -> Option<UniqueFactorization<Polynomial<R>>> {
-//         /*
-//         Kronecker's method for factoring polynomials over infinite ufds with finitely many units (eg the integers)
-//         Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
-//         Assume it has a proper factor g(x). wlog g(x) has degree <= 2
-//         g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
-//         f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
-//         g(0) divides 2, g(1) divides 6, g(-1) divides 2
-//         there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
-//         infact there are 4*8*4=128 possible tripples
-//         however, only 64 need to be checked as the other half are their negatives
-//         more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
-//          */
-//         match self.degree() {
-//             None => None,
-//             Some(self_degree) => {
-//                 println!("factor poly {}", self.to_string());
-//                 let factor_degree = self_degree / 2;
-//                 println!("factor degree {}", factor_degree);
-//                 let mut points = vec![];
-//                 let mut elem_gen = R::generate_distinct_elements();
-//                 for _i in 0..factor_degree {
-//                     points.push(elem_gen.next().unwrap());
-//                 }
-//                 println!("{:?}", points);
-//                 todo!()
-//             }
-//         }
-//     }
-// }
-
-// impl<F: FieldOfFractions + Hash> UniqueFactorizationDomain for Polynomial<F> {
-//     fn factor(&self) -> Option<UniqueFactorization<Polynomial<F>>> {
-//         println!("factor poly field {}", self.to_string());
-//         todo!()
-//     }
-// }
-
 pub fn subsylvester_matrix<R: ComRing>(
     f_deg: usize,
     g_deg: usize,
@@ -987,6 +1036,58 @@ mod tests {
         println!("gcd({:?} , {:?}) = {:?}", x, y, g);
         Polynomial::<Rational>::div_refs(&g, &b.elem()).unwrap();
         Polynomial::<Rational>::div_refs(&b.elem(), &g).unwrap();
+    }
+
+    #[test]
+    fn test_pseudo_remainder() {
+        let x = &Ergonomic::new(Polynomial::<Integer>::var());
+        {
+            let f = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
+                .elem();
+            let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
+
+            println!("f = {}", f.to_string());
+            println!("g = {}", g.to_string());
+
+            let r1 = Polynomial::<Integer>::pseudorem_refs(&f, &g)
+                .unwrap()
+                .unwrap();
+            println!("r1 = {}", r1.to_string());
+            assert_eq!(r1, (-15 * x.pow(4) + 3 * x.pow(2) - 9).elem());
+
+            let r2 = Polynomial::<Integer>::pseudorem_refs(&g, &r1)
+                .unwrap()
+                .unwrap();
+            println!("r2 = {}", r2.to_string());
+            assert_eq!(r2, (15795 * x.pow(2) + 30375 * x - 59535).elem());
+        }
+        println!();
+        {
+            let f = (4 * x.pow(3) + 2 * x - 7).elem();
+            let g = Polynomial::zero();
+
+            println!("f = {}", f.to_string());
+            println!("g = {}", g.to_string());
+
+            if let None = Polynomial::<Integer>::pseudorem_refs(&f, &g) {
+            } else {
+                assert!(false);
+            }
+        }
+        println!();
+        {
+            let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
+            let g = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
+                .elem();
+
+            println!("f = {}", f.to_string());
+            println!("g = {}", g.to_string());
+
+            if let Err(_msg) = Polynomial::<Integer>::pseudorem_refs(&f, &g).unwrap() {
+            } else {
+                assert!(false);
+            }
+        }
     }
 
     #[test]
