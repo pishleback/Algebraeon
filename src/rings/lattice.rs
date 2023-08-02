@@ -180,7 +180,7 @@ impl<R: PrincipalIdealDomain> LinearLattice<R> {
         mat
     }
 
-    pub fn basis_matrix_element(&self, basis_num: usize, r: usize, c: usize) -> &R {
+    pub fn basis_matrix_element(&self, basis_num: usize, r: usize, c: usize) -> &R::ElemT {
         self.metamatrix
             .at(basis_num, rc_to_idx(self.rows, self.cols, r, c))
             .unwrap()
@@ -547,7 +547,7 @@ impl<R: PrincipalIdealDomain> AffineLattice<R> {
                     } else {
                         let (int_metamat_h, _u, _u_det, pivs) = int_metamat.row_hermite_algorithm();
                         int_metamat_h.pprint();
-                        if int_metamat_h.at(0, 0).unwrap().clone().is_unit() {
+                        if R::is_unit(int_metamat_h.at(0, 0).unwrap().clone()) {
                             debug_assert_eq!(int_metamat_h.at(0, 0).unwrap(), &R::one());
                         }
                         if int_metamat_h.at(0, 0).unwrap() == &R::one() {
@@ -620,10 +620,11 @@ mod tests {
     use malachite_nz::integer::Integer;
 
     use super::*;
+    use super::super::nzq::*;
 
     #[test]
     fn linear_lattice_invariant() {
-        let lattice = LinearLattice {
+        let lattice = LinearLattice::<ZZ> {
             metamatrix: Matrix::from_rows(vec![
                 vec![
                     Integer::from(0),
@@ -643,7 +644,7 @@ mod tests {
         };
         lattice.check_invariants().unwrap();
 
-        let lattice = LinearLattice {
+        let lattice = LinearLattice::<ZZ> {
             metamatrix: Matrix::from_rows(vec![
                 vec![Integer::from(0), Integer::from(3), Integer::from(0)],
                 vec![Integer::from(2), Integer::from(0), Integer::from(1)],
@@ -653,7 +654,7 @@ mod tests {
         };
         assert!(lattice.check_invariants().is_err());
 
-        let lattice = LinearLattice {
+        let lattice = LinearLattice::<ZZ> {
             metamatrix: Matrix::from_rows(vec![
                 vec![
                     Integer::from(6),
@@ -693,7 +694,7 @@ mod tests {
 
     #[test]
     fn containment() {
-        let lattice = LinearLattice::from_span(
+        let lattice = LinearLattice::<ZZ>::from_span(
             2,
             2,
             vec![
@@ -737,11 +738,11 @@ mod tests {
                 2,
                 3,
                 vec![
-                    &Matrix::from_rows(vec![
+                    &Matrix::<ZZ>::from_rows(vec![
                         vec![Integer::from(0), Integer::from(2), Integer::from(0)],
                         vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                     ]),
-                    &Matrix::from_rows(vec![
+                    &Matrix::<ZZ>::from_rows(vec![
                         vec![Integer::from(0), Integer::from(4), Integer::from(0)],
                         vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                     ]),
@@ -768,7 +769,7 @@ mod tests {
     fn linear_lattice_sum_and_intersection() {
         {
             //standard basis sum and intersection
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<ZZ>::from_rows(vec![
                 vec![Integer::from(1), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(0)],
@@ -810,7 +811,7 @@ mod tests {
 
         {
             //sum and intersection as gcd and lcm
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<ZZ>::from_rows(vec![
                 vec![Integer::from(3), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(5), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(7)],
@@ -852,7 +853,7 @@ mod tests {
 
         {
             //triple intersection
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<ZZ>::from_rows(vec![
                 vec![
                     Integer::from(1),
                     Integer::from(0),
@@ -970,7 +971,7 @@ mod tests {
 
         {
             //complex example
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<ZZ>::from_rows(vec![
                 vec![Integer::from(3), Integer::from(9), Integer::from(27)],
                 vec![Integer::from(-4), Integer::from(6), Integer::from(-100)],
                 vec![Integer::from(2), Integer::from(8), Integer::from(7)],
@@ -1025,7 +1026,7 @@ mod tests {
 
     #[test]
     fn affine_lattice_invariants() {
-        let afflat = AffineLattice::<Integer> {
+        let afflat = AffineLattice::<ZZ> {
             rows: 2,
             cols: 2,
             elems: AffineLatticeElements::Empty(),
@@ -1040,7 +1041,7 @@ mod tests {
                     2,
                     2,
                     vec![
-                        Matrix::from_rows(vec![
+                        Matrix::<ZZ>::from_rows(vec![
                             vec![Integer::from(1), Integer::from(0)],
                             vec![Integer::from(0), Integer::from(1)],
                         ]),
@@ -1060,7 +1061,7 @@ mod tests {
     }
 
     fn affine_lattice_sum_and_intersection() {
-        let a1 = Matrix::from_rows(vec![
+        let a1 = Matrix::<ZZ>::from_rows(vec![
             vec![Integer::from(3), Integer::from(1), Integer::from(0)],
             vec![Integer::from(3), Integer::from(1), Integer::from(0)],
             vec![Integer::from(3), Integer::from(1), Integer::from(1)],

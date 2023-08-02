@@ -5,25 +5,25 @@ use super::ring::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Ergonomic<R: ComRing> {
-    elem: R,
+    elem: R::ElemT,
 }
 
 impl<R: ComRing> Ergonomic<R> {
-    pub fn new(elem: R) -> Self {
+    pub fn new(elem: R::ElemT) -> Self {
         Self { elem }
     }
 
     pub fn pow(&self, n: usize) -> Self {
         Self {
-            elem: self.elem.nat_pow(&Natural::from(n)),
+            elem: R::nat_pow(&self.elem, &Natural::from(n)),
         }
     }
 
-    pub fn to_elem(self) -> R {
+    pub fn to_elem(self) -> R::ElemT {
         self.elem
     }
 
-    pub fn elem(&self) -> R {
+    pub fn elem(&self) -> R::ElemT {
         self.elem.clone()
     }
 }
@@ -78,7 +78,7 @@ impl<R: ComRing> std::ops::Sub for Ergonomic<R> {
 
     fn sub(self, other: Ergonomic<R>) -> Self::Output {
         Self::Output {
-            elem: R::add(self.elem, other.elem.neg()),
+            elem: R::add(self.elem, R::neg(other.elem)),
         }
     }
 }
@@ -89,7 +89,7 @@ impl<R: ComRing> std::ops::Sub for &Ergonomic<R> {
 
     fn sub(self, other: &Ergonomic<R>) -> Self::Output {
         Self::Output {
-            elem: R::add_refs(&self.elem, &other.elem.neg_ref()),
+            elem: R::add_refs(&self.elem, &R::neg_ref(&other.elem)),
         }
     }
 }
@@ -100,7 +100,7 @@ impl<R: ComRing> std::ops::Sub<&Ergonomic<R>> for Ergonomic<R> {
 
     fn sub(self, other: &Ergonomic<R>) -> Self::Output {
         Self::Output {
-            elem: R::add_ref(self.elem, &other.elem.neg_ref()),
+            elem: R::add_ref(self.elem, &R::neg_ref(&other.elem)),
         }
     }
 }
@@ -111,7 +111,7 @@ impl<R: ComRing> std::ops::Sub<Ergonomic<R>> for &Ergonomic<R> {
 
     fn sub(self, other: Ergonomic<R>) -> Self::Output {
         Self::Output {
-            elem: R::add_ref(other.elem.neg(), &self.elem),
+            elem: R::add_ref(R::neg(other.elem), &self.elem),
         }
     }
 }
@@ -122,7 +122,7 @@ impl<R: ComRing> std::ops::Neg for Ergonomic<R> {
 
     fn neg(self) -> Self::Output {
         Self::Output {
-            elem: self.elem.neg(),
+            elem: R::neg(self.elem),
         }
     }
 }
@@ -133,7 +133,7 @@ impl<R: ComRing> std::ops::Neg for &Ergonomic<R> {
 
     fn neg(self) -> Self::Output {
         Self::Output {
-            elem: self.elem.neg_ref(),
+            elem: R::neg_ref(&self.elem),
         }
     }
 }
