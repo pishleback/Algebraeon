@@ -13,6 +13,18 @@ mod numbers;
 mod rings;
 mod sets;
 
+struct AA;
+
+impl AA {
+    fn flub(&self) -> bool {
+        false
+    }
+
+    fn sus() -> bool {
+        true
+    }
+}
+
 fn main() {
     // let f = interpolate_by_lagrange_basis::<Rational>(&vec![
     //     (Rational::from(1), Rational::from(2)),

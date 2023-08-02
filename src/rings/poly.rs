@@ -417,7 +417,7 @@ impl<R: IntegralDomain> Polynomial<R> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PolynomialRing<R: ComRing> {
-    _phantom_element: std::marker::PhantomData<R>,
+    ring: R,
 }
 
 impl<R: ComRing> ComRing for PolynomialRing<R> {
@@ -964,30 +964,30 @@ mod tests {
 
     #[test]
     fn invariant_reduction() {
-        let mut unreduced = Polynomial::<ZZ> {
-            coeffs: vec![ZZ::zero(), ZZ::one(), ZZ::zero(), ZZ::zero()],
+        let mut unreduced = Polynomial::<IntegerRing> {
+            coeffs: vec![IntegerRing::zero(), IntegerRing::one(), IntegerRing::zero(), IntegerRing::zero()],
         };
-        let reduced = Polynomial::<ZZ> {
-            coeffs: vec![ZZ::zero(), ZZ::one()],
+        let reduced = Polynomial::<IntegerRing> {
+            coeffs: vec![IntegerRing::zero(), IntegerRing::one()],
         };
         unreduced.reduce();
         assert_eq!(unreduced, reduced);
 
-        let mut unreduced = Polynomial::<ZZ> {
-            coeffs: vec![ZZ::zero(), ZZ::zero(), ZZ::zero(), ZZ::zero()],
+        let mut unreduced = Polynomial::<IntegerRing> {
+            coeffs: vec![IntegerRing::zero(), IntegerRing::zero(), IntegerRing::zero(), IntegerRing::zero()],
         };
-        let reduced = Polynomial::<ZZ> { coeffs: vec![] };
+        let reduced = Polynomial::<IntegerRing> { coeffs: vec![] };
         unreduced.reduce();
         assert_eq!(unreduced, reduced);
     }
 
     #[test]
     fn divisibility() {
-        let x = &Ergonomic::<PolynomialRing<ZZ>>::new(Polynomial::<ZZ>::var());
+        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
-        match Polynomial::<ZZ>::div(a.elem(), b.elem()) {
+        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
             Ok(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
                 assert_eq!(a, b * Ergonomic::new(c))
@@ -997,7 +997,7 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) + 1;
-        match Polynomial::<ZZ>::div(a.elem(), b.elem()) {
+        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
             Err(_) => panic!(),
@@ -1005,7 +1005,7 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
-        match Polynomial::<ZZ>::div(a.elem(), b.elem()) {
+        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
             Err(_) => panic!(),
@@ -1013,7 +1013,7 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = 0 * x;
-        match Polynomial::<ZZ>::div(a.elem(), b.elem()) {
+        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::DivideByZero) => {}
             Err(_) => panic!(),
@@ -1021,7 +1021,7 @@ mod tests {
 
         let a = 0 * x;
         let b = (x - x) + 5;
-        match Polynomial::<ZZ>::div(a.elem(), b.elem()) {
+        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
             Ok(c) => {
                 assert_eq!(c, Polynomial::zero())
             }
@@ -1031,7 +1031,7 @@ mod tests {
 
         let a = 3087 * x - 8805 * x.pow(2) + 607 * x.pow(3) + x.pow(4);
         let b = (x - x) + 1;
-        match Polynomial::<ZZ>::div(a.elem(), b.elem()) {
+        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
             Ok(c) => {
                 assert_eq!(c, a.elem())
             }
@@ -1042,18 +1042,18 @@ mod tests {
 
     #[test]
     fn euclidean() {
-        let x = &Ergonomic::<PolynomialRing<QQ>>::new(Polynomial::<QQ>::var());
+        let x = &Ergonomic::<PolynomialRing<RationalField>>::new(Polynomial::<RationalField>::var());
 
         let a = 1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5);
         let b = 1 + x + 3 * x.pow(2) + 2 * x.pow(3);
-        let (q, r) = PolynomialRing::<QQ>::quorem_refs(&a.elem(), &b.elem()).unwrap();
+        let (q, r) = PolynomialRing::<RationalField>::quorem_refs(&a.elem(), &b.elem()).unwrap();
         let (q, r) = (Ergonomic::new(q), Ergonomic::new(r));
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
 
         let a = 3 * x;
         let b = 2 * x;
-        let (q, r) = PolynomialRing::<QQ>::quorem_refs(&a.elem(), &b.elem()).unwrap();
+        let (q, r) = PolynomialRing::<RationalField>::quorem_refs(&a.elem(), &b.elem()).unwrap();
         let (q, r) = (Ergonomic::new(q), Ergonomic::new(r));
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
@@ -1063,16 +1063,16 @@ mod tests {
         let c = 1 + x + x.pow(2);
         let x = &a * &b;
         let y = &b * &c;
-        let g = PolynomialRing::<QQ>::gcd(x.elem(), y.elem());
+        let g = PolynomialRing::<RationalField>::gcd(x.elem(), y.elem());
 
         println!("gcd({:?} , {:?}) = {:?}", x, y, g);
-        PolynomialRing::<QQ>::div_refs(&g, &b.elem()).unwrap();
-        PolynomialRing::<QQ>::div_refs(&b.elem(), &g).unwrap();
+        PolynomialRing::<RationalField>::div_refs(&g, &b.elem()).unwrap();
+        PolynomialRing::<RationalField>::div_refs(&b.elem(), &g).unwrap();
     }
 
     #[test]
     fn test_pseudo_remainder() {
-        let x = &Ergonomic::<PolynomialRing<ZZ>>::new(Polynomial::<ZZ>::var());
+        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
         {
             let f = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
                 .elem();
@@ -1081,11 +1081,11 @@ mod tests {
             println!("f = {}", f.to_string());
             println!("g = {}", g.to_string());
 
-            let r1 = Polynomial::<ZZ>::pseudorem_refs(&f, &g).unwrap().unwrap();
+            let r1 = Polynomial::<IntegerRing>::pseudorem_refs(&f, &g).unwrap().unwrap();
             println!("r1 = {}", r1.to_string());
             assert_eq!(r1, (-15 * x.pow(4) + 3 * x.pow(2) - 9).elem());
 
-            let r2 = Polynomial::<ZZ>::pseudorem_refs(&g, &r1).unwrap().unwrap();
+            let r2 = Polynomial::<IntegerRing>::pseudorem_refs(&g, &r1).unwrap().unwrap();
             println!("r2 = {}", r2.to_string());
             assert_eq!(r2, (15795 * x.pow(2) + 30375 * x - 59535).elem());
         }
@@ -1097,7 +1097,7 @@ mod tests {
             println!("f = {}", f.to_string());
             println!("g = {}", g.to_string());
 
-            if let None = Polynomial::<ZZ>::pseudorem_refs(&f, &g) {
+            if let None = Polynomial::<IntegerRing>::pseudorem_refs(&f, &g) {
             } else {
                 assert!(false);
             }
@@ -1111,7 +1111,7 @@ mod tests {
             println!("f = {}", f.to_string());
             println!("g = {}", g.to_string());
 
-            if let Err(_msg) = Polynomial::<ZZ>::pseudorem_refs(&f, &g).unwrap() {
+            if let Err(_msg) = Polynomial::<IntegerRing>::pseudorem_refs(&f, &g).unwrap() {
             } else {
                 assert!(false);
             }
@@ -1120,7 +1120,7 @@ mod tests {
 
     #[test]
     fn integer_primitive_and_assoc() {
-        let x = &Ergonomic::<PolynomialRing<ZZ>>::new(Polynomial::<ZZ>::var());
+        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
         let p1 = (-2 - 4 * x.pow(2)).elem();
         let (g, p2) = p1.factor_primitive().unwrap();
         assert_eq!(g, Integer::from(2));
@@ -1131,11 +1131,11 @@ mod tests {
 
     #[test]
     fn test_evaluate() {
-        let x = &Ergonomic::<PolynomialRing<ZZ>>::new(Polynomial::<ZZ>::var());
+        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
         let f = (1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5)).elem();
         assert_eq!(f.evaluate(&Integer::from(3)), Integer::from(868));
 
-        let f = Polynomial::<ZZ>::zero();
+        let f = Polynomial::<IntegerRing>::zero();
         assert_eq!(f.evaluate(&Integer::from(3)), Integer::from(0));
     }
 
@@ -1315,17 +1315,17 @@ mod tests {
 
     #[test]
     fn test_derivative() {
-        let x = &Ergonomic::<PolynomialRing<ZZ>>::new(Polynomial::<ZZ>::var());
+        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
         let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3)).elem();
         let g = (3 - 2 * x + 21 * x.pow(2)).elem();
         assert_eq!(f.derivative(), g);
 
-        let f = Polynomial::<ZZ>::zero();
-        let g = Polynomial::<ZZ>::zero();
+        let f = Polynomial::<IntegerRing>::zero();
+        let g = Polynomial::<IntegerRing>::zero();
         assert_eq!(f.derivative(), g);
 
-        let f = Polynomial::<ZZ>::one();
-        let g = Polynomial::<ZZ>::zero();
+        let f = Polynomial::<IntegerRing>::one();
+        let g = Polynomial::<IntegerRing>::zero();
         assert_eq!(f.derivative(), g);
     }
 
@@ -1437,7 +1437,7 @@ mod tests {
 
     #[test]
     fn test_pseudo_gcd() {
-        let x = &Ergonomic::<PolynomialRing<ZZ>>::new(Polynomial::<ZZ>::var());
+        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
 
         let f =
             (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();

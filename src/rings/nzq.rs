@@ -6,55 +6,56 @@ use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ZZ {}
+pub struct IntegerRing;
+pub const ZZ : IntegerRing = IntegerRing;
 
-impl ComRing for ZZ {
+impl ComRing for IntegerRing {
     type ElemT = Integer;
 
-    fn zero() -> Self::ElemT {
+    fn zero(&self) -> Self::ElemT {
         Self::ElemT::from(0)
     }
-    fn one() -> Self::ElemT {
+    fn one(&self) -> Self::ElemT {
         Self::ElemT::from(1)
     }
 
-    fn neg_mut(elem: &mut Self::ElemT) {
+    fn neg_mut(&self, elem: &mut Self::ElemT) {
         *elem *= Self::ElemT::from(-1)
     }
-    fn neg(elem: Self::ElemT) -> Self::ElemT {
+    fn neg(&self, elem: Self::ElemT) -> Self::ElemT {
         -elem
     }
 
-    fn add_mut(elem: &mut Self::ElemT, x: &Self::ElemT) {
+    fn add_mut(&self, elem: &mut Self::ElemT, x: &Self::ElemT) {
         *elem += x;
     }
-    fn add(a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
+    fn add(&self, a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
         a + b
     }
-    fn add_ref(a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn add_ref(&self, a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a + b
     }
-    fn add_refs(a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn add_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a + b
     }
 
-    fn mul_mut(elem: &mut Self::ElemT, x: &Self::ElemT) {
+    fn mul_mut(&self, elem: &mut Self::ElemT, x: &Self::ElemT) {
         *elem *= x;
     }
-    fn mul(a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
+    fn mul(&self, a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
         a * b
     }
-    fn mul_ref(a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn mul_ref(&self, a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a * b
     }
-    fn mul_refs(a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn mul_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a * b
     }
 
-    fn div(a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        match <Self as EuclideanDomain>::quorem(a, b) {
+    fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        match self.quorem(a, b) {
             Some((q, r)) => {
-                if r == Self::zero() {
+                if r == self.zero() {
                     Ok(q)
                 } else {
                     Err(RingDivisionError::NotDivisible)
@@ -64,10 +65,10 @@ impl ComRing for ZZ {
         }
     }
 
-    fn div_lref(a: &Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        match <Self as EuclideanDomain>::quorem_lref(a, b) {
+    fn div_lref(&self, a: &Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        match self.quorem_lref(a, b) {
             Some((q, r)) => {
-                if r == Self::zero() {
+                if r == self.zero() {
                     Ok(q)
                 } else {
                     Err(RingDivisionError::NotDivisible)
@@ -77,10 +78,10 @@ impl ComRing for ZZ {
         }
     }
 
-    fn div_rref(a: Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        match <Self as EuclideanDomain>::quorem_rref(a, b) {
+    fn div_rref(&self, a: Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        match self.quorem_rref(a, b) {
             Some((q, r)) => {
-                if r == Self::zero() {
+                if r == self.zero() {
                     Ok(q)
                 } else {
                     Err(RingDivisionError::NotDivisible)
@@ -90,10 +91,10 @@ impl ComRing for ZZ {
         }
     }
 
-    fn div_refs(a: &Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        match <Self as EuclideanDomain>::quorem_refs(a, b) {
+    fn div_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        match self.quorem_refs(a, b) {
             Some((q, r)) => {
-                if r == Self::zero() {
+                if r == self.zero() {
                     Ok(q)
                 } else {
                     Err(RingDivisionError::NotDivisible)
@@ -104,32 +105,32 @@ impl ComRing for ZZ {
     }
 }
 
-impl CharacteristicZero for ZZ {}
+impl CharacteristicZero for IntegerRing {}
 
-impl FiniteUnits for ZZ {
-    fn all_units() -> Vec<Self::ElemT> {
+impl FiniteUnits for IntegerRing {
+    fn all_units(&self) -> Vec<Self::ElemT> {
         vec![Self::ElemT::from(1), Self::ElemT::from(-1)]
     }
 }
 
-impl IntegralDomain for ZZ {}
+impl IntegralDomain for IntegerRing {}
 
-impl FavoriteAssociate for ZZ {
-    fn factor_fav_assoc(elem: Self::ElemT) -> (Self::ElemT, Self::ElemT) {
+impl FavoriteAssociate for IntegerRing {
+    fn factor_fav_assoc(&self, elem: Self::ElemT) -> (Self::ElemT, Self::ElemT) {
         if elem == 0 {
-            (Self::one(), Self::zero())
+            (self.one(), self.zero())
         } else if elem < 0 {
-            (Integer::from(-1), Self::neg(elem))
+            (Integer::from(-1), self.neg(elem))
         } else {
             (Integer::from(1), elem)
         }
     }
 }
 
-impl UniqueFactorizationDomain for ZZ {}
+impl UniqueFactorizationDomain for IntegerRing {}
 
-impl UniquelyFactorable for ZZ {
-    fn factor(elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
+impl UniquelyFactorable for IntegerRing {
+    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
         if elem == &0 {
             None
         } else {
@@ -167,8 +168,8 @@ impl UniquelyFactorable for ZZ {
     }
 }
 
-impl EuclideanDomain for ZZ {
-    fn norm(elem: &Self::ElemT) -> Option<Natural> {
+impl EuclideanDomain for IntegerRing {
+    fn norm(&self, elem: &Self::ElemT) -> Option<Natural> {
         if elem == &Integer::from(0) {
             None
         } else {
@@ -176,7 +177,7 @@ impl EuclideanDomain for ZZ {
         }
     }
 
-    fn quorem(a: Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+    fn quorem(&self, a: Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
         if b == Integer::from(0) {
             None
         } else {
@@ -192,55 +193,56 @@ impl EuclideanDomain for ZZ {
 // }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct QQ {}
+pub struct RationalField;
+pub const QQ : RationalField = RationalField;
 
-impl ComRing for QQ {
+impl ComRing for RationalField {
     type ElemT = Rational;
 
-    fn zero() -> Self::ElemT {
+    fn zero(&self,) -> Self::ElemT {
         Self::ElemT::from(0)
     }
-    fn one() -> Self::ElemT {
+    fn one(&self,) -> Self::ElemT {
         Self::ElemT::from(1)
     }
 
-    fn neg_mut(elem: &mut Self::ElemT) {
+    fn neg_mut(&self,elem: &mut Self::ElemT) {
         *elem *= Self::ElemT::from(-1);
     }
-    fn neg_ref(elem: &Self::ElemT) -> Self::ElemT {
+    fn neg_ref(&self,elem: &Self::ElemT) -> Self::ElemT {
         -elem
     }
-    fn neg(elem: Self::ElemT) -> Self::ElemT {
+    fn neg(&self,elem: Self::ElemT) -> Self::ElemT {
         -elem
     }
 
-    fn add_mut(elem: &mut Self::ElemT, x: &Self::ElemT) {
+    fn add_mut(&self,elem: &mut Self::ElemT, x: &Self::ElemT) {
         *elem += x;
     }
-    fn add(a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
+    fn add(&self,a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
         a + b
     }
-    fn add_ref(a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn add_ref(&self,a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a + b
     }
-    fn add_refs(a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn add_refs(&self,a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a + b
     }
 
-    fn mul_mut(elem: &mut Self::ElemT, x: &Self::ElemT) {
+    fn mul_mut(&self,elem: &mut Self::ElemT, x: &Self::ElemT) {
         *elem *= x;
     }
-    fn mul(a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
+    fn mul(&self,a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
         a * b
     }
-    fn mul_ref(a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn mul_ref(&self,a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a * b
     }
-    fn mul_refs(a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn mul_refs(&self,a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a * b
     }
 
-    fn div(a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+    fn div(&self,a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
         if b == Rational::from(0) {
             Err(RingDivisionError::DivideByZero)
         } else {
@@ -248,9 +250,9 @@ impl ComRing for QQ {
         }
     }
 }
-impl IntegralDomain for QQ {}
+impl IntegralDomain for RationalField {}
 
-impl Field for QQ {
+impl Field for RationalField {
     // fn inv(a: Self) -> Result<Self, OppErr> {
     //     if a.numerator_ref() == &Natural::from(0u8) {
     //         Err(OppErr::DivideByZero)
@@ -260,8 +262,8 @@ impl Field for QQ {
     // }
 }
 
-impl FieldOfFractions for QQ {
-    type R = ZZ;
+impl FieldOfFractions for RationalField {
+    type R = IntegerRing;
 }
 
 // #[derive(Debug, Clone)]
@@ -452,7 +454,7 @@ mod tests {
         {
             let a = Integer::from(18);
             let b = Integer::from(6);
-            let c = ZZ::div(a, b);
+            let c = ZZ.div(a, b);
             match c {
                 Ok(_) => {}
                 Err(_e) => panic!(),
@@ -463,7 +465,7 @@ mod tests {
         {
             let a = Integer::from(18);
             let b = Integer::from(7);
-            let c = ZZ::div(a, b);
+            let c = ZZ.div(a, b);
             match c {
                 Ok(_) => panic!(),
                 Err(e) => match e {
@@ -477,8 +479,8 @@ mod tests {
         {
             let a = Integer::from(18);
             let b = Integer::from(7);
-            let (q, r) = ZZ::quorem_refs(&a, &b).unwrap();
-            assert!(ZZ::norm(&r) < ZZ::norm(&b));
+            let (q, r) = ZZ.quorem_refs(&a, &b).unwrap();
+            assert!(ZZ.norm(&r) < ZZ.norm(&b));
             assert_eq!(a, b * q + r);
         }
 
@@ -486,7 +488,7 @@ mod tests {
         {
             let a = Integer::from(31);
             let b = Integer::from(57);
-            let (g, x, y) = ZZ::xgcd(a.clone(), b.clone());
+            let (g, x, y) = ZZ.xgcd(a.clone(), b.clone());
             assert_eq!(x * a + y * b, g);
         }
     }

@@ -18,136 +18,136 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Hash + Debug {
     //todo: remove sized here
     type ElemT: Sized + Clone + PartialEq + Eq + Hash + Debug + ToString;
 
-    fn zero() -> Self::ElemT;
-    fn one() -> Self::ElemT;
+    fn zero(&self) -> Self::ElemT;
+    fn one(&self) -> Self::ElemT;
 
-    fn neg_mut(elem: &mut Self::ElemT);
-    fn neg_ref(elem: &Self::ElemT) -> Self::ElemT {
-        Self::neg(elem.clone())
+    fn neg_mut(&self, elem: &mut Self::ElemT);
+    fn neg_ref(&self, elem: &Self::ElemT) -> Self::ElemT {
+        self.neg(elem.clone())
     }
-    fn neg(mut elem: Self::ElemT) -> Self::ElemT {
-        Self::neg_mut(&mut elem);
+    fn neg(&self, mut elem: Self::ElemT) -> Self::ElemT {
+        self.neg_mut(&mut elem);
         elem
     }
 
-    fn add_mut(elem: &mut Self::ElemT, offset: &Self::ElemT);
-    fn add(mut a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
-        Self::add_mut(&mut a, &b);
+    fn add_mut(&self, elem: &mut Self::ElemT, offset: &Self::ElemT);
+    fn add(&self, mut a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
+        self.add_mut(&mut a, &b);
         a
     }
-    fn add_ref(mut a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
-        Self::add_mut(&mut a, b);
+    fn add_ref(&self, mut a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+        self.add_mut(&mut a, b);
         a
     }
-    fn add_refs(a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn add_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         let mut new_a = a.clone();
-        Self::add_mut(&mut new_a, b);
+        self.add_mut(&mut new_a, b);
         new_a
     }
 
-    fn mul_mut(elem: &mut Self::ElemT, mul: &Self::ElemT);
-    fn mul(mut a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
-        Self::mul_mut(&mut a, &b);
+    fn mul_mut(&self, elem: &mut Self::ElemT, mul: &Self::ElemT);
+    fn mul(&self, mut a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
+        self.mul_mut(&mut a, &b);
         a
     }
-    fn mul_ref(mut a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
-        Self::mul_mut(&mut a, b);
+    fn mul_ref(&self, mut a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+        self.mul_mut(&mut a, b);
         a
     }
-    fn mul_refs(a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn mul_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         let mut new_a = a.clone();
-        Self::mul_mut(&mut new_a, b);
+        self.mul_mut(&mut new_a, b);
         new_a
     }
 
-    fn div(a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError>;
-    fn div_lref(a: &Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        Self::div(a.clone(), b)
+    fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError>;
+    fn div_lref(&self, a: &Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        self.div(a.clone(), b)
     }
-    fn div_rref(a: Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        Self::div(a, b.clone())
+    fn div_rref(&self, a: Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        self.div(a, b.clone())
     }
-    fn div_refs(a: &Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        Self::div(a.clone(), b.clone())
+    fn div_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        self.div(a.clone(), b.clone())
     }
 
-    fn divisible(a: Self::ElemT, b: Self::ElemT) -> bool {
-        match Self::div(a, b) {
+    fn divisible(&self, a: Self::ElemT, b: Self::ElemT) -> bool {
+        match self.div(a, b) {
             Ok(_q) => true,
             Err(RingDivisionError::NotDivisible) => false,
             Err(RingDivisionError::DivideByZero) => false,
         }
     }
 
-    fn sum(elems: Vec<Self::ElemT>) -> Self::ElemT {
-        let mut ans = Self::zero();
+    fn sum(&self, elems: Vec<Self::ElemT>) -> Self::ElemT {
+        let mut ans = self.zero();
         for elem in elems {
-            ans = Self::add(ans, elem);
+            ans = self.add(ans, elem);
         }
         ans
     }
 
-    fn product(elems: Vec<Self::ElemT>) -> Self::ElemT {
-        let mut ans = Self::one();
+    fn product(&self, elems: Vec<Self::ElemT>) -> Self::ElemT {
+        let mut ans = self.one();
         for elem in elems {
-            ans = Self::mul(ans, elem);
+            ans = self.mul(ans, elem);
         }
         ans
     }
 
-    fn nat_pow(elem: &Self::ElemT, n: &Natural) -> Self::ElemT {
+    fn nat_pow(&self, elem: &Self::ElemT, n: &Natural) -> Self::ElemT {
         if *n == 0 {
-            Self::one()
+            self.one()
         } else if *n == 1 {
             elem.clone()
         } else {
             debug_assert!(*n >= 2);
             let (q, r) = n.div_rem(Natural::from(2u8));
-            Self::mul(Self::nat_pow(elem, &q), Self::nat_pow(elem, &(&q + r)))
+            self.mul(self.nat_pow(elem, &q), self.nat_pow(elem, &(&q + r)))
         }
     }
 
-    fn int_pow(elem: &Self::ElemT, n: &Integer) -> Option<Self::ElemT> {
+    fn int_pow(&self, elem: &Self::ElemT, n: &Integer) -> Option<Self::ElemT> {
         if *n == 0 {
-            Some(Self::one())
-        } else if elem == &Self::zero() {
-            Some(Self::zero())
+            Some(self.one())
+        } else if elem == &self.zero() {
+            Some(self.zero())
         } else if *n > 0 {
-            Some(Self::nat_pow(elem, &n.unsigned_abs()))
+            Some(self.nat_pow(elem, &n.unsigned_abs()))
         } else {
-            match Self::inv(elem.clone()) {
-                Ok(elem_inv) => Some(Self::nat_pow(&elem_inv, &(-n).unsigned_abs())),
+            match self.inv(elem.clone()) {
+                Ok(elem_inv) => Some(self.nat_pow(&elem_inv, &(-n).unsigned_abs())),
                 Err(RingDivisionError::NotDivisible) => None,
                 Err(RingDivisionError::DivideByZero) => panic!(),
             }
         }
     }
 
-    fn from_int(x: &Integer) -> Self::ElemT {
+    fn from_int(&self, x: &Integer) -> Self::ElemT {
         if *x < 0 {
-            Self::neg(Self::from_int(&-x))
+            self.neg(self.from_int(&-x))
         } else if *x == 0 {
-            Self::zero()
+            self.zero()
         } else if *x == 1 {
-            Self::one()
+            self.one()
         } else {
-            let two = Self::add(Self::one(), Self::one());
+            let two = self.add(self.one(), self.one());
             debug_assert!(*x >= 2);
             let bits: Vec<bool> = x.unsigned_abs().bits().collect();
-            let mut ans = Self::zero();
-            let mut v = Self::one();
+            let mut ans = self.zero();
+            let mut v = self.one();
             for i in 0..bits.len() {
                 if bits[i] {
-                    Self::add_mut(&mut ans, &v);
+                    self.add_mut(&mut ans, &v);
                 }
-                Self::mul_mut(&mut v, &two);
+                self.mul_mut(&mut v, &two);
             }
             ans
         }
     }
 
-    fn is_unit(elem: Self::ElemT) -> bool {
-        match Self::div(Self::one(), elem) {
+    fn is_unit(&self, elem: Self::ElemT) -> bool {
+        match self.div(self.one(), elem) {
             Ok(_inv) => true,
             Err(RingDivisionError::DivideByZero) => false,
             Err(RingDivisionError::NotDivisible) => false,
@@ -155,18 +155,18 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Hash + Debug {
         }
     }
 
-    fn inv(elem: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        Self::div(Self::one(), elem)
+    fn inv(&self, elem: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        self.div(self.one(), elem)
     }
 
-    fn inv_ref(a: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        Self::div_rref(Self::one(), a)
+    fn inv_ref(&self, a: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        self.div_rref(self.one(), a)
     }
 }
 
 pub trait InfiniteRing: ComRing {
     //generate an infinite sequence of distinct elements
-    fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self::ElemT>>;
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::ElemT>>;
 }
 
 pub trait CharacteristicZero: ComRing {
@@ -174,7 +174,7 @@ pub trait CharacteristicZero: ComRing {
 }
 
 impl<R: CharacteristicZero> InfiniteRing for R {
-    fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self::ElemT>> {
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::ElemT>> {
         struct IntegerIterator {
             next: Integer,
         }
@@ -196,14 +196,14 @@ impl<R: CharacteristicZero> InfiniteRing for R {
             IntegerIterator {
                 next: Integer::from(0),
             }
-            .map(|n| R::from_int(&n)),
+            .map(|n| self.from_int(&n)),
         )
     }
 }
 
 pub trait FiniteUnits: ComRing {
     //a commutative ring with finitely many units
-    fn all_units() -> Vec<Self::ElemT>;
+    fn all_units(&self) -> Vec<Self::ElemT>;
 }
 
 pub trait IntegralDomain: ComRing {
@@ -217,23 +217,23 @@ pub trait FavoriteAssociate: IntegralDomain {
 
     //it happens that usually the product of favorite associates is another favorite associate. Should this be a requirement?
 
-    fn factor_fav_assoc(elem: Self::ElemT) -> (Self::ElemT, Self::ElemT);
-    fn factor_fav_assoc_ref(elem: &Self::ElemT) -> (Self::ElemT, Self::ElemT) {
-        Self::factor_fav_assoc(elem.clone())
+    fn factor_fav_assoc(&self, elem: Self::ElemT) -> (Self::ElemT, Self::ElemT);
+    fn factor_fav_assoc_ref(&self, elem: &Self::ElemT) -> (Self::ElemT, Self::ElemT) {
+        self.factor_fav_assoc(elem.clone())
     }
-    fn is_fav_assoc(elem: &Self::ElemT) -> bool {
-        let (_u, a) = Self::factor_fav_assoc(elem.clone());
+    fn is_fav_assoc(&self, elem: &Self::ElemT) -> bool {
+        let (_u, a) = self.factor_fav_assoc(elem.clone());
         elem == &a
     }
 }
 
 pub trait GreatestCommonDivisorDomain: FavoriteAssociate {
     //any gcds should be the standard associate representative
-    fn gcd(x: Self::ElemT, y: Self::ElemT) -> Self::ElemT;
-    fn gcd_list(elems: Vec<&Self::ElemT>) -> Self::ElemT {
-        let mut ans = Self::zero();
+    fn gcd(&self, x: Self::ElemT, y: Self::ElemT) -> Self::ElemT;
+    fn gcd_list(&self, elems: Vec<&Self::ElemT>) -> Self::ElemT {
+        let mut ans = self.zero();
         for x in elems {
-            ans = Self::gcd(ans, x.clone());
+            ans = self.gcd(ans, x.clone());
         }
         ans
     }
@@ -245,25 +245,25 @@ pub trait UniqueFactorizationDomain: FavoriteAssociate {
 
 pub trait UniquelyFactorable: UniqueFactorizationDomain {
     //a UFD with an explicit algorithm to compute unique factorizations
-    fn factor(elem: &Self::ElemT) -> Option<Factored<Self::ElemT>>;
+    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>>;
 
-    fn is_irreducible(elem: &Self::ElemT) -> Option<bool> {
-        match Self::factor(elem) {
+    fn is_irreducible(&self, elem: &Self::ElemT) -> Option<bool> {
+        match self.factor(elem) {
             None => None,
             Some(factored) => Some(factored.is_irreducible()),
         }
     }
 
-    fn one_factored() -> Factored<Self::ElemT> {
+    fn one_factored(&self) -> Factored<Self::ElemT> {
         Factored {
-            elem: Self::one(),
-            unit: Self::one(),
+            elem: self.one(),
+            unit: self.one(),
             factors: HashMap::new(),
         }
     }
 
-    fn irreducible_factored_unchecked(elem: Self::ElemT) -> Factored<Self::ElemT> {
-        let (unit, assoc) = Self::factor_fav_assoc(elem);
+    fn irreducible_factored_unchecked(&self, elem: Self::ElemT) -> Factored<Self::ElemT> {
+        let (unit, assoc) = self.factor_fav_assoc(elem);
         Factored {
             elem: assoc.clone(),
             unit,
@@ -271,8 +271,8 @@ pub trait UniquelyFactorable: UniqueFactorizationDomain {
         }
     }
 
-    fn check_invariants(f: Factored<Self::ElemT>) -> Result<(), &'static str> {
-        if !Self::is_unit(f.unit.clone()) {
+    fn check_invariants(&self, f: Factored<Self::ElemT>) -> Result<(), &'static str> {
+        if !self.is_unit(f.unit.clone()) {
             return Err("unit must be a unit");
         }
         let mut prod = f.unit.clone();
@@ -280,19 +280,19 @@ pub trait UniquelyFactorable: UniqueFactorizationDomain {
             if k == &0 {
                 return Err("prime powers must not be zero");
             }
-            if p == &Self::zero() {
+            if p == &self.zero() {
                 return Err("prime factor must not be zero");
             }
-            if !Self::is_fav_assoc(p) {
+            if !self.is_fav_assoc(p) {
                 return Err("prime factor must be their fav assoc");
             }
-            if !Self::is_irreducible(p).unwrap() {
+            if !self.is_irreducible(p).unwrap() {
                 return Err("prime factor must not be reducible");
             }
 
             let mut i = Natural::from(0u8);
             while &i < k {
-                Self::mul_mut(&mut prod, p);
+                self.mul_mut(&mut prod, p);
                 i += Natural::from(1u8);
             }
         }
@@ -417,29 +417,29 @@ impl<ElemT: PartialEq + Eq + Hash + Clone> Factored<ElemT> {
 
 pub trait PrincipalIdealDomain: GreatestCommonDivisorDomain {
     //any gcds should be the standard associate representative
-    fn xgcd(x: Self::ElemT, y: Self::ElemT) -> (Self::ElemT, Self::ElemT, Self::ElemT);
-    fn xgcd_list(elems: Vec<&Self::ElemT>) -> (Self::ElemT, Vec<Self::ElemT>) {
+    fn xgcd(&self, x: Self::ElemT, y: Self::ElemT) -> (Self::ElemT, Self::ElemT, Self::ElemT);
+    fn xgcd_list(&self, elems: Vec<&Self::ElemT>) -> (Self::ElemT, Vec<Self::ElemT>) {
         match elems.len() {
-            0 => (Self::zero(), vec![]),
+            0 => (self.zero(), vec![]),
             1 => {
-                let (unit, assoc) = Self::factor_fav_assoc_ref(elems[0]);
-                (assoc, vec![Self::inv(unit).unwrap()])
+                let (unit, assoc) = self.factor_fav_assoc_ref(elems[0]);
+                (assoc, vec![self.inv(unit).unwrap()])
             }
             2 => {
-                let (g, x, y) = Self::xgcd(elems[0].clone(), elems[1].clone());
+                let (g, x, y) = self.xgcd(elems[0].clone(), elems[1].clone());
                 (g, vec![x, y])
             }
             n => {
                 let k = n / 2;
-                let (g1, coeffs1) = Self::xgcd_list((0..k).map(|i| elems[i]).collect());
-                let (g2, coeffs2) = Self::xgcd_list((k..n).map(|i| elems[i]).collect());
-                let (g, x, y) = Self::xgcd(g1, g2);
+                let (g1, coeffs1) = self.xgcd_list((0..k).map(|i| elems[i]).collect());
+                let (g2, coeffs2) = self.xgcd_list((k..n).map(|i| elems[i]).collect());
+                let (g, x, y) = self.xgcd(g1, g2);
                 let mut coeffs = vec![];
                 for c in coeffs1 {
-                    coeffs.push(Self::mul_refs(&x, &c));
+                    coeffs.push(self.mul_refs(&x, &c));
                 }
                 for c in coeffs2 {
-                    coeffs.push(Self::mul_refs(&y, &c));
+                    coeffs.push(self.mul_refs(&y, &c));
                 }
                 (g, coeffs)
             }
@@ -465,87 +465,87 @@ pub trait PrincipalIdealDomain: GreatestCommonDivisorDomain {
 
 pub trait EuclideanDomain: IntegralDomain {
     //should return None for 0, and Some(norm) for everything else
-    fn norm(elem: &Self::ElemT) -> Option<Natural>;
-    fn quorem(a: Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)>;
-    fn quorem_lref(a: &Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        Self::quorem(a.clone(), b)
+    fn norm(&self, elem: &Self::ElemT) -> Option<Natural>;
+    fn quorem(&self, a: Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)>;
+    fn quorem_lref(&self, a: &Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        self.quorem(a.clone(), b)
     }
-    fn quorem_rref(a: Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        Self::quorem(a, b.clone())
+    fn quorem_rref(&self, a: Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        self.quorem(a, b.clone())
     }
-    fn quorem_refs(a: &Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        Self::quorem(a.clone(), b.clone())
+    fn quorem_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        self.quorem(a.clone(), b.clone())
     }
 
-    fn quo(a: Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
-        match Self::quorem(a, b) {
+    fn quo(&self, a: Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
+        match self.quorem(a, b) {
             Some((q, _r)) => Some(q),
             None => None,
         }
     }
-    fn quo_lref(a: &Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
-        Self::quo(a.clone(), b)
+    fn quo_lref(&self, a: &Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
+        self.quo(a.clone(), b)
     }
-    fn quo_rref(a: Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
-        Self::quo(a, b.clone())
+    fn quo_rref(&self, a: Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
+        self.quo(a, b.clone())
     }
-    fn quo_refs(a: &Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
-        Self::quo(a.clone(), b.clone())
+    fn quo_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
+        self.quo(a.clone(), b.clone())
     }
 
-    fn rem(a: Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
-        match Self::quorem(a, b) {
+    fn rem(&self, a: Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
+        match self.quorem(a, b) {
             Some((_q, r)) => Some(r),
             None => None,
         }
     }
-    fn rem_lref(a: &Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
-        Self::rem(a.clone(), b)
+    fn rem_lref(&self, a: &Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
+        self.rem(a.clone(), b)
     }
-    fn rem_rref(a: Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
-        Self::rem(a, b.clone())
+    fn rem_rref(&self, a: Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
+        self.rem(a, b.clone())
     }
-    fn rem_refs(a: &Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
-        Self::rem(a.clone(), b.clone())
+    fn rem_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
+        self.rem(a.clone(), b.clone())
     }
 }
 
 impl<R: EuclideanDomain + FavoriteAssociate> GreatestCommonDivisorDomain for R {
-    fn gcd(mut x: Self::ElemT, mut y: Self::ElemT) -> Self::ElemT {
+    fn gcd(&self, mut x: Self::ElemT, mut y: Self::ElemT) -> Self::ElemT {
         //Euclidean algorithm
-        while y != Self::zero() {
-            let r = Self::rem_rref(x, &y).unwrap();
+        while y != self.zero() {
+            let r = self.rem_rref(x, &y).unwrap();
             (x, y) = (y, r)
         }
-        let (_unit, assoc) = Self::factor_fav_assoc(x);
+        let (_unit, assoc) = self.factor_fav_assoc(x);
         assoc
     }
 }
 
 impl<R: EuclideanDomain + FavoriteAssociate> PrincipalIdealDomain for R {
-    fn xgcd(mut x: Self::ElemT, mut y: Self::ElemT) -> (Self::ElemT, Self::ElemT, Self::ElemT) {
-        let mut pa = Self::one();
-        let mut a = Self::zero();
-        let mut pb = Self::zero();
-        let mut b = Self::one();
+    fn xgcd(&self, mut x: Self::ElemT, mut y: Self::ElemT) -> (Self::ElemT, Self::ElemT, Self::ElemT) {
+        let mut pa = self.one();
+        let mut a = self.zero();
+        let mut pb = self.zero();
+        let mut b = self.one();
 
-        while y != Self::zero() {
-            let (q, r) = Self::quorem_rref(x, &y).unwrap();
-            let new_a = Self::add(pa, Self::neg(Self::mul_refs(&q, &a)));
+        while y != self.zero() {
+            let (q, r) = self.quorem_rref(x, &y).unwrap();
+            let new_a = self.add(pa, self.neg(self.mul_refs(&q, &a)));
             (a, pa) = (new_a, a);
-            let new_b = Self::add(pb, Self::neg(Self::mul_ref(q, &b)));
+            let new_b = self.add(pb, self.neg(self.mul_ref(q, &b)));
             (b, pb) = (new_b, b);
             (x, y) = (y, r);
         }
-        let (unit, ass_x) = Self::factor_fav_assoc(x);
+        let (unit, ass_x) = self.factor_fav_assoc(x);
         // g = u*g_ass
         // g = xa+by
         // xa+by=u*g_ass
-        debug_assert!(Self::is_unit(unit.clone()));
+        debug_assert!(self.is_unit(unit.clone()));
         (
             ass_x,
-            R::div_rref(pa, &unit).unwrap(),
-            R::div(pb, unit).unwrap(),
+            self.div_rref(pa, &unit).unwrap(),
+            self.div(pb, unit).unwrap(),
         )
     }
 }
@@ -556,113 +556,113 @@ pub trait Field: IntegralDomain {
 }
 
 impl<F: Field> FavoriteAssociate for F {
-    fn factor_fav_assoc(elem: Self::ElemT) -> (Self::ElemT, Self::ElemT) {
-        (elem, Self::one())
+    fn factor_fav_assoc(&self, elem: Self::ElemT) -> (Self::ElemT, Self::ElemT) {
+        (elem, self.one())
     }
 }
 
 impl<F: Field> EuclideanDomain for F {
-    fn norm(elem: &Self::ElemT) -> Option<Natural> {
-        if elem == &Self::zero() {
+    fn norm(&self, elem: &Self::ElemT) -> Option<Natural> {
+        if elem == &self.zero() {
             None
         } else {
             Some(Natural::from(1u8))
         }
     }
 
-    fn quorem(a: Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        if b == Self::zero() {
+    fn quorem(&self, a: Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        if b == self.zero() {
             None
         } else {
-            Some((Self::div(a, b).unwrap(), Self::zero()))
+            Some((self.div(a, b).unwrap(), self.zero()))
         }
     }
 
-    fn quorem_lref(a: &Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        if b == Self::zero() {
+    fn quorem_lref(&self, a: &Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        if b == self.zero() {
             None
         } else {
-            Some((Self::div_lref(a, b).unwrap(), Self::zero()))
+            Some((self.div_lref(a, b).unwrap(), self.zero()))
         }
     }
 
-    fn quorem_rref(a: Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        if b == &Self::zero() {
+    fn quorem_rref(&self, a: Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        if b == &self.zero() {
             None
         } else {
-            Some((Self::div_rref(a, b).unwrap(), Self::zero()))
+            Some((self.div_rref(a, b).unwrap(), self.zero()))
         }
     }
 
-    fn quorem_refs(a: &Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        if b == &Self::zero() {
+    fn quorem_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        if b == &self.zero() {
             None
         } else {
-            Some((Self::div_refs(a, b).unwrap(), Self::zero()))
+            Some((self.div_refs(a, b).unwrap(), self.zero()))
         }
     }
 
-    fn quo(a: Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
-        if b == Self::zero() {
+    fn quo(&self, a: Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
+        if b == self.zero() {
             None
         } else {
-            Some(Self::div(a, b).unwrap())
+            Some(self.div(a, b).unwrap())
         }
     }
 
-    fn quo_lref(a: &Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
-        if b == Self::zero() {
+    fn quo_lref(&self, a: &Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
+        if b == self.zero() {
             None
         } else {
-            Some(Self::div_lref(a, b).unwrap())
+            Some(self.div_lref(a, b).unwrap())
         }
     }
 
-    fn quo_rref(a: Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
-        if b == &Self::zero() {
+    fn quo_rref(&self, a: Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
+        if b == &self.zero() {
             None
         } else {
-            Some(Self::div_rref(a, b).unwrap())
+            Some(self.div_rref(a, b).unwrap())
         }
     }
 
-    fn quo_refs(a: &Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
-        if b == &Self::zero() {
+    fn quo_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
+        if b == &self.zero() {
             None
         } else {
-            Some(Self::div_refs(a, b).unwrap())
+            Some(self.div_refs(a, b).unwrap())
         }
     }
 
-    fn rem(_a: Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
-        if b == Self::zero() {
+    fn rem(&self, _a: Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
+        if b == self.zero() {
             None
         } else {
-            Some(Self::zero())
+            Some(self.zero())
         }
     }
 
-    fn rem_lref(_a: &Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
-        if b == Self::zero() {
+    fn rem_lref(&self, _a: &Self::ElemT, b: Self::ElemT) -> Option<Self::ElemT> {
+        if b == self.zero() {
             None
         } else {
-            Some(Self::zero())
+            Some(self.zero())
         }
     }
 
-    fn rem_rref(_a: Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
-        if b == &Self::zero() {
+    fn rem_rref(&self, _a: Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
+        if b == &self.zero() {
             None
         } else {
-            Some(Self::zero())
+            Some(self.zero())
         }
     }
 
-    fn rem_refs(_a: &Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
-        if b == &Self::zero() {
+    fn rem_refs(&self, _a: &Self::ElemT, b: &Self::ElemT) -> Option<Self::ElemT> {
+        if b == &self.zero() {
             None
         } else {
-            Some(Self::zero())
+            Some(self.zero())
         }
     }
 }
@@ -673,8 +673,8 @@ impl<F: Field + Hash> UniquelyFactorable for F
 where
     Self::ElemT: Hash,
 {
-    fn factor(elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
-        if elem == &Self::zero() {
+    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
+        if elem == &self.zero() {
             None
         } else {
             Some(Factored::new_unchecked(
@@ -800,8 +800,8 @@ mod tests {
     fn test_xgcd_list() {
         use malachite_q::Rational;
         let a = Rational::from(7);
-        let (g, taps) = QQ::xgcd_list(vec![&a]);
-        assert_eq!(g, QQ::one());
+        let (g, taps) = QQ.xgcd_list(vec![&a]);
+        assert_eq!(g, QQ.one());
         assert_eq!(taps.len(), 1);
         assert_eq!(g, &taps[0] * a);
     }

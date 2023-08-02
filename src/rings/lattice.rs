@@ -13,7 +13,7 @@ fn metamatrix_row_sum<R: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<R>>>(
     for metamat in &metamats {
         assert_eq!(metamat.borrow().cols(), cols);
     }
-    let joined_metamat = join_rows(cols, metamats);
+    let joined_metamat = Matrix::join_rows(cols, metamats);
     let (h, _u, _u_det, pivs) = joined_metamat.row_hermite_algorithm();
     h.submatrix((0..pivs.len()).collect(), (0..cols).collect()) //return the top non-zero and linearly independent rows from h
 }
@@ -23,7 +23,7 @@ fn metamatrix_row_intersection<R: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<
     cols: usize,
     mut metamat1: MetaMatT,
     mut metamat2: MetaMatT,
-) -> Matrix<R> {
+) -> MatrixStructure<R> {
     assert_eq!(metamat1.borrow().cols(), cols);
     assert_eq!(metamat2.borrow().cols(), cols);
     //metamats should have linearly independent rows
@@ -51,7 +51,7 @@ fn metamatrix_row_intersection<R: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<
         cols,
         (0..row_ker.rank())
             .map(|i| {
-                Matrix::mul_refs(
+                MatrixStructure::mul_refs(
                     &row_ker
                         .basis_matrix(i)
                         .submatrix(vec![0], (0..metamat1.borrow().rows()).collect()),
@@ -67,7 +67,7 @@ fn metamatrix_row_intersection<R: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<
 pub struct LinearLattice<R: PrincipalIdealDomain> {
     //matrix whose rows are a basis of the linear lattice
     //NOT necessarily in row hermite normal form
-    metamatrix: Matrix<R>,
+    metamatrix: MatrixStructure<R>,
     //each row represents a matrix of this shape
     rows: usize,
     cols: usize,
@@ -89,16 +89,16 @@ fn idx_to_rc(rows: usize, cols: usize, idx: usize) -> (usize, usize) {
     (idx / cols, idx % cols)
 }
 
-fn mats_to_rows<R: PrincipalIdealDomain, MatT: Borrow<Matrix<R>>>(
+fn mats_to_rows<R: PrincipalIdealDomain, MatT: Borrow<MatrixStructure<R>>>(
     rows: usize,
     cols: usize,
     mats: Vec<MatT>,
-) -> Matrix<R> {
+) -> MatrixStructure<R> {
     for mat in &mats {
         assert_eq!(mat.borrow().rows(), rows);
         assert_eq!(mat.borrow().cols(), cols);
     }
-    let mut mats_as_rows: Matrix<R> = Matrix::zero(mats.len(), rows * cols);
+    let mut mats_as_rows: MatrixStructure<R> = MatrixStructure::zero(mats.len(), rows * cols);
     for (r, mat) in mats.into_iter().enumerate() {
         for mr in 0..rows {
             for mc in 0..cols {
@@ -158,12 +158,12 @@ impl<R: PrincipalIdealDomain> LinearLattice<R> {
         self.metamatrix.rows()
     }
 
-    fn basis_row(&self, basis_num: usize) -> Matrix<R> {
+    fn basis_row(&self, basis_num: usize) -> Matrix<R::ElemT> {
         self.metamatrix
             .submatrix(vec![basis_num], (0..self.metamatrix.cols()).collect())
     }
 
-    pub fn basis_matrix(&self, r: usize) -> Matrix<R> {
+    pub fn basis_matrix(&self, r: usize) -> Matrix<R::ElemT> {
         if self.rank() <= r {
             panic!();
         }
@@ -186,14 +186,14 @@ impl<R: PrincipalIdealDomain> LinearLattice<R> {
             .unwrap()
     }
 
-    fn contains_row<MatT: Borrow<Matrix<R>>>(&self, mat_as_row: MatT) -> bool {
+    fn contains_row<MatT: Borrow<MatrixStructure<R>>>(&self, mat_as_row: MatT) -> bool {
         match self.metamatrix.row_solve(mat_as_row) {
             Some(_taps) => true,
             None => false,
         }
     }
 
-    pub fn contains_point<MatT: Borrow<Matrix<R>>>(&self, mat: MatT) -> bool {
+    pub fn contains_point<MatT: Borrow<MatrixStructure<R>>>(&self, mat: MatT) -> bool {
         self.contains_row(mats_to_rows(self.rows, self.cols, vec![mat]))
     }
 
@@ -241,7 +241,7 @@ impl<R: PrincipalIdealDomain> LinearLattice<R> {
             Self {
                 rows,
                 cols,
-                metamatrix: Matrix::ident(rows * cols),
+                metamatrix: MatrixStructure::ident(rows * cols),
             }
         } else if lats.len() == 1 {
             lats[0].borrow().clone()
@@ -299,7 +299,7 @@ impl<R: PrincipalIdealDomain> LinearLattice<R> {
 enum AffineLatticeElements<R: PrincipalIdealDomain> {
     Empty(),
     NonEmpty {
-        offset: Matrix<R>,        //offset.rows == 1 and offset.cols == self.cols
+        offset: MatrixStructure<R>,        //offset.rows == 1 and offset.cols == self.cols
         linlat: LinearLattice<R>, //linlat.rows == self.rows and linlat.cols == self.cols
     },
 }
@@ -384,11 +384,11 @@ impl<R: PrincipalIdealDomain> AffineLattice<R> {
         afflat
     }
 
-    pub fn contains_point<MatT: Borrow<Matrix<R>>>(&self, mat: MatT) -> bool {
+    pub fn contains_point<MatT: Borrow<MatrixStructure<R>>>(&self, mat: MatT) -> bool {
         match &self.elems {
             AffineLatticeElements::Empty() => false,
             AffineLatticeElements::NonEmpty { offset, linlat } => {
-                linlat.contains_point(Matrix::add_ref(offset.clone().neg(), mat.borrow()).unwrap())
+                linlat.contains_point(MatrixStructure::add_ref(offset.clone().neg(), mat.borrow()).unwrap())
             }
         }
     }
@@ -408,7 +408,7 @@ impl<R: PrincipalIdealDomain> AffineLattice<R> {
                 } => {
                     for bn in 0..other_linlat.borrow().rank() {
                         if !self.contains_point(
-                            Matrix::add_ref(other_linlat.borrow().basis_matrix(bn), other_offset)
+                            MatrixStructure::add_ref(other_linlat.borrow().basis_matrix(bn), other_offset)
                                 .unwrap(),
                         ) {
                             return false;
@@ -421,7 +421,7 @@ impl<R: PrincipalIdealDomain> AffineLattice<R> {
     }
 
     pub fn sum<LatT: Borrow<AffineLattice<R>>>(rows: usize, cols: usize, lats: Vec<LatT>) -> Self {
-        let mut sum_offset = Matrix::zero(rows, cols);
+        let mut sum_offset = MatrixStructure::zero(rows, cols);
         let mut sum_linlats = vec![];
         for lat in &lats {
             assert_eq!(lat.borrow().rows(), rows);
@@ -465,11 +465,11 @@ impl<R: PrincipalIdealDomain> AffineLattice<R> {
                 rows,
                 cols,
                 elems: AffineLatticeElements::NonEmpty {
-                    offset: Matrix::zero(rows, cols),
+                    offset: MatrixStructure::zero(rows, cols),
                     linlat: LinearLattice {
                         rows,
                         cols,
-                        metamatrix: Matrix::ident(rows * cols),
+                        metamatrix: MatrixStructure::ident(rows * cols),
                     },
                 },
             }
@@ -515,10 +515,10 @@ impl<R: PrincipalIdealDomain> AffineLattice<R> {
                     fn offset_linlat_to_metamat<R: PrincipalIdealDomain>(
                         rows: usize,
                         cols: usize,
-                        offset: &Matrix<R>,
+                        offset: &MatrixStructure<R>,
                         linlat: &LinearLattice<R>,
-                    ) -> Matrix<R> {
-                        let mut metamat = Matrix::zero(1 + linlat.rank(), 1 + rows * cols);
+                    ) -> MatrixStructure<R> {
+                        let mut metamat = MatrixStructure::zero(1 + linlat.rank(), 1 + rows * cols);
                         *metamat.at_mut(0, 0).unwrap() = R::one();
                         for idx in 0..rows * cols {
                             let (r, c) = idx_to_rc(rows, cols, idx);
@@ -534,9 +534,9 @@ impl<R: PrincipalIdealDomain> AffineLattice<R> {
                         }
                         metamat
                     }
-                    let metamat1: Matrix<R> =
+                    let metamat1: MatrixStructure<R> =
                         offset_linlat_to_metamat(rows, cols, offset1, linlat1);
-                    let metamat2: Matrix<R> =
+                    let metamat2: MatrixStructure<R> =
                         offset_linlat_to_metamat(rows, cols, offset2, linlat2);
                     let int_metamat =
                         metamatrix_row_intersection(1 + rows * cols, metamat1, metamat2);
@@ -551,19 +551,19 @@ impl<R: PrincipalIdealDomain> AffineLattice<R> {
                             debug_assert_eq!(int_metamat_h.at(0, 0).unwrap(), &R::one());
                         }
                         if int_metamat_h.at(0, 0).unwrap() == &R::one() {
-                            let mut int_offset = Matrix::zero(rows, cols);
+                            let mut int_offset = MatrixStructure::zero(rows, cols);
                             for idx in 0..rows * cols {
                                 let (r, c) = idx_to_rc(rows, cols, idx);
                                 *int_offset.at_mut(r, c).unwrap() =
                                     int_metamat_h.at(0, 1 + idx).unwrap().clone();
                             }
-                            let int_basis_mats: Vec<Matrix<R>> = (0..pivs.len() - 1)
+                            let int_basis_mats: Vec<MatrixStructure<R>> = (0..pivs.len() - 1)
                                 .map(|bn| {
                                     debug_assert_eq!(
                                         int_metamat_h.at(1 + bn, 0).unwrap(),
                                         &R::zero()
                                     );
-                                    let mut basis_mat = Matrix::zero(rows, cols);
+                                    let mut basis_mat = MatrixStructure::zero(rows, cols);
                                     for idx in 0..rows * cols {
                                         let (r, c) = idx_to_rc(rows, cols, idx);
                                         *basis_mat.at_mut(r, c).unwrap() =
@@ -624,8 +624,8 @@ mod tests {
 
     #[test]
     fn linear_lattice_invariant() {
-        let lattice = LinearLattice::<ZZ> {
-            metamatrix: Matrix::from_rows(vec![
+        let lattice = LinearLattice::<IntegerRing> {
+            metamatrix: MatrixStructure::from_rows(vec![
                 vec![
                     Integer::from(0),
                     Integer::from(3),
@@ -644,8 +644,8 @@ mod tests {
         };
         lattice.check_invariants().unwrap();
 
-        let lattice = LinearLattice::<ZZ> {
-            metamatrix: Matrix::from_rows(vec![
+        let lattice = LinearLattice::<IntegerRing> {
+            metamatrix: MatrixStructure::from_rows(vec![
                 vec![Integer::from(0), Integer::from(3), Integer::from(0)],
                 vec![Integer::from(2), Integer::from(0), Integer::from(1)],
             ]),
@@ -654,8 +654,8 @@ mod tests {
         };
         assert!(lattice.check_invariants().is_err());
 
-        let lattice = LinearLattice::<ZZ> {
-            metamatrix: Matrix::from_rows(vec![
+        let lattice = LinearLattice::<IntegerRing> {
+            metamatrix: MatrixStructure::from_rows(vec![
                 vec![
                     Integer::from(6),
                     Integer::from(0),
@@ -694,15 +694,15 @@ mod tests {
 
     #[test]
     fn containment() {
-        let lattice = LinearLattice::<ZZ>::from_span(
+        let lattice = LinearLattice::<IntegerRing>::from_span(
             2,
             2,
             vec![
-                &Matrix::from_rows(vec![
+                &MatrixStructure::from_rows(vec![
                     vec![Integer::from(0), Integer::from(3)],
                     vec![Integer::from(0), Integer::from(0)],
                 ]),
-                &Matrix::from_rows(vec![
+                &MatrixStructure::from_rows(vec![
                     vec![Integer::from(2), Integer::from(0)],
                     vec![Integer::from(0), Integer::from(1)],
                 ]),
@@ -711,7 +711,7 @@ mod tests {
 
         assert_eq!(
             true,
-            lattice.contains_point(&Matrix::from_rows(vec![
+            lattice.contains_point(&MatrixStructure::from_rows(vec![
                 vec![Integer::from(2), Integer::from(3)],
                 vec![Integer::from(0), Integer::from(1)],
             ]))
@@ -719,7 +719,7 @@ mod tests {
 
         assert_eq!(
             false,
-            lattice.contains_point(&Matrix::from_rows(vec![
+            lattice.contains_point(&MatrixStructure::from_rows(vec![
                 vec![Integer::from(2), Integer::from(4)],
                 vec![Integer::from(0), Integer::from(1)],
             ]))
@@ -727,7 +727,7 @@ mod tests {
 
         assert_eq!(
             false,
-            lattice.contains_point(&Matrix::from_rows(vec![
+            lattice.contains_point(&MatrixStructure::from_rows(vec![
                 vec![Integer::from(2), Integer::from(3)],
                 vec![Integer::from(1), Integer::from(1)],
             ]))
@@ -738,11 +738,11 @@ mod tests {
                 2,
                 3,
                 vec![
-                    &Matrix::<ZZ>::from_rows(vec![
+                    &MatrixStructure::<IntegerRing>::from_rows(vec![
                         vec![Integer::from(0), Integer::from(2), Integer::from(0)],
                         vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                     ]),
-                    &Matrix::<ZZ>::from_rows(vec![
+                    &MatrixStructure::<IntegerRing>::from_rows(vec![
                         vec![Integer::from(0), Integer::from(4), Integer::from(0)],
                         vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                     ]),
@@ -752,11 +752,11 @@ mod tests {
                 2,
                 3,
                 vec![
-                    &Matrix::from_rows(vec![
+                    &MatrixStructure::from_rows(vec![
                         vec![Integer::from(0), Integer::from(1), Integer::from(0)],
                         vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                     ]),
-                    &Matrix::from_rows(vec![
+                    &MatrixStructure::from_rows(vec![
                         vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                         vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                     ]),
@@ -769,25 +769,25 @@ mod tests {
     fn linear_lattice_sum_and_intersection() {
         {
             //standard basis sum and intersection
-            let a = Matrix::<ZZ>::from_rows(vec![
+            let a = MatrixStructure::<IntegerRing>::from_rows(vec![
                 vec![Integer::from(1), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(0)],
             ]);
 
-            let b = Matrix::from_rows(vec![
+            let b = MatrixStructure::from_rows(vec![
                 vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(1)],
             ]);
 
-            let c = Matrix::from_rows(vec![
+            let c = MatrixStructure::from_rows(vec![
                 vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(0)],
             ]);
 
-            let d = Matrix::from_rows(vec![
+            let d = MatrixStructure::from_rows(vec![
                 vec![Integer::from(1), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(1)],
@@ -811,25 +811,25 @@ mod tests {
 
         {
             //sum and intersection as gcd and lcm
-            let a = Matrix::<ZZ>::from_rows(vec![
+            let a = MatrixStructure::<IntegerRing>::from_rows(vec![
                 vec![Integer::from(3), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(5), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(7)],
             ]);
 
-            let b = Matrix::from_rows(vec![
+            let b = MatrixStructure::from_rows(vec![
                 vec![Integer::from(2), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(4), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(14)],
             ]);
 
-            let c = Matrix::from_rows(vec![
+            let c = MatrixStructure::from_rows(vec![
                 vec![Integer::from(6), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(20), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(14)],
             ]);
 
-            let d = Matrix::from_rows(vec![
+            let d = MatrixStructure::from_rows(vec![
                 vec![Integer::from(1), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(7)],
@@ -853,7 +853,7 @@ mod tests {
 
         {
             //triple intersection
-            let a = Matrix::<ZZ>::from_rows(vec![
+            let a = MatrixStructure::<IntegerRing>::from_rows(vec![
                 vec![
                     Integer::from(1),
                     Integer::from(0),
@@ -880,7 +880,7 @@ mod tests {
                 ],
             ]);
 
-            let b = Matrix::from_rows(vec![
+            let b = MatrixStructure::from_rows(vec![
                 vec![
                     Integer::from(1),
                     Integer::from(0),
@@ -907,7 +907,7 @@ mod tests {
                 ],
             ]);
 
-            let c = Matrix::from_rows(vec![
+            let c = MatrixStructure::from_rows(vec![
                 vec![
                     Integer::from(1),
                     Integer::from(0),
@@ -939,7 +939,7 @@ mod tests {
 
             assert_eq!(
                 int,
-                Matrix::from_rows(vec![
+                MatrixStructure::from_rows(vec![
                     vec![
                         Integer::from(1),
                         Integer::from(0),
@@ -971,19 +971,19 @@ mod tests {
 
         {
             //complex example
-            let a = Matrix::<ZZ>::from_rows(vec![
+            let a = MatrixStructure::<IntegerRing>::from_rows(vec![
                 vec![Integer::from(3), Integer::from(9), Integer::from(27)],
                 vec![Integer::from(-4), Integer::from(6), Integer::from(-100)],
                 vec![Integer::from(2), Integer::from(8), Integer::from(7)],
             ]);
 
-            let b = Matrix::from_rows(vec![
+            let b = MatrixStructure::from_rows(vec![
                 vec![Integer::from(12), Integer::from(-1), Integer::from(18)],
                 vec![Integer::from(-5), Integer::from(12), Integer::from(-24)],
                 vec![Integer::from(1), Integer::from(2), Integer::from(14)],
             ]);
 
-            let c = Matrix::from_rows(vec![
+            let c = MatrixStructure::from_rows(vec![
                 vec![
                     Integer::from(21),
                     Integer::from(3852),
@@ -1001,7 +1001,7 @@ mod tests {
                 ],
             ]);
 
-            let d = Matrix::from_rows(vec![
+            let d = MatrixStructure::from_rows(vec![
                 vec![Integer::from(1), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(-12), Integer::from(1), Integer::from(0)],
                 vec![Integer::from(-2), Integer::from(325), Integer::from(1)],
@@ -1026,7 +1026,7 @@ mod tests {
 
     #[test]
     fn affine_lattice_invariants() {
-        let afflat = AffineLattice::<ZZ> {
+        let afflat = AffineLattice::<IntegerRing> {
             rows: 2,
             cols: 2,
             elems: AffineLatticeElements::Empty(),
@@ -1041,17 +1041,17 @@ mod tests {
                     2,
                     2,
                     vec![
-                        Matrix::<ZZ>::from_rows(vec![
+                        MatrixStructure::<IntegerRing>::from_rows(vec![
                             vec![Integer::from(1), Integer::from(0)],
                             vec![Integer::from(0), Integer::from(1)],
                         ]),
-                        Matrix::from_rows(vec![
+                        MatrixStructure::from_rows(vec![
                             vec![Integer::from(0), Integer::from(1)],
                             vec![Integer::from(1), Integer::from(0)],
                         ]),
                     ],
                 ),
-                offset: Matrix::from_rows(vec![
+                offset: MatrixStructure::from_rows(vec![
                     vec![Integer::from(1), Integer::from(0)],
                     vec![Integer::from(0), Integer::from(0)],
                 ]),
@@ -1061,25 +1061,25 @@ mod tests {
     }
 
     fn affine_lattice_sum_and_intersection() {
-        let a1 = Matrix::<ZZ>::from_rows(vec![
+        let a1 = MatrixStructure::<IntegerRing>::from_rows(vec![
             vec![Integer::from(3), Integer::from(1), Integer::from(0)],
             vec![Integer::from(3), Integer::from(1), Integer::from(0)],
             vec![Integer::from(3), Integer::from(1), Integer::from(1)],
         ]);
 
-        let y1 = Matrix::from_rows(vec![
+        let y1 = MatrixStructure::from_rows(vec![
             vec![Integer::from(1)],
             vec![Integer::from(1)],
             vec![Integer::from(1)],
         ]);
 
-        let a2 = Matrix::from_rows(vec![
+        let a2 = MatrixStructure::from_rows(vec![
             vec![Integer::from(3), Integer::from(5), Integer::from(0)],
             vec![Integer::from(3), Integer::from(5), Integer::from(0)],
             vec![Integer::from(0), Integer::from(0), Integer::from(1)],
         ]);
 
-        let y2 = Matrix::from_rows(vec![
+        let y2 = MatrixStructure::from_rows(vec![
             vec![Integer::from(1)],
             vec![Integer::from(1)],
             vec![Integer::from(1)],
@@ -1099,7 +1099,7 @@ mod tests {
         let expected_alat3 = AffineLattice::from_offset_and_linear_lattice(
             3,
             1,
-            Matrix::from_rows(vec![
+            MatrixStructure::from_rows(vec![
                 vec![Integer::from(2)],
                 vec![Integer::from(0)],
                 vec![Integer::from(1)],
@@ -1108,12 +1108,12 @@ mod tests {
                 3,
                 1,
                 vec![
-                    Matrix::from_rows(vec![
+                    MatrixStructure::from_rows(vec![
                         vec![Integer::from(1)],
                         vec![Integer::from(-3)],
                         vec![Integer::from(0)],
                     ]),
-                    Matrix::from_rows(vec![
+                    MatrixStructure::from_rows(vec![
                         vec![Integer::from(5)],
                         vec![Integer::from(-3)],
                         vec![Integer::from(0)],
