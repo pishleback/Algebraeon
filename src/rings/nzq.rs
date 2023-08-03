@@ -7,10 +7,14 @@ use malachite_q::Rational;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IntegerRing;
-pub const ZZ : IntegerRing = IntegerRing;
+pub const ZZ: IntegerRing = IntegerRing;
 
 impl ComRing for IntegerRing {
     type ElemT = Integer;
+
+    fn to_string(&self, elem: &Self::ElemT) -> String {
+        elem.to_string()
+    }
 
     fn zero(&self) -> Self::ElemT {
         Self::ElemT::from(0)
@@ -194,55 +198,59 @@ impl EuclideanDomain for IntegerRing {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RationalField;
-pub const QQ : RationalField = RationalField;
+pub const QQ: RationalField = RationalField;
 
 impl ComRing for RationalField {
     type ElemT = Rational;
 
-    fn zero(&self,) -> Self::ElemT {
+    fn to_string(&self, elem: &Self::ElemT) -> String {
+        elem.to_string()
+    }
+
+    fn zero(&self) -> Self::ElemT {
         Self::ElemT::from(0)
     }
-    fn one(&self,) -> Self::ElemT {
+    fn one(&self) -> Self::ElemT {
         Self::ElemT::from(1)
     }
 
-    fn neg_mut(&self,elem: &mut Self::ElemT) {
+    fn neg_mut(&self, elem: &mut Self::ElemT) {
         *elem *= Self::ElemT::from(-1);
     }
-    fn neg_ref(&self,elem: &Self::ElemT) -> Self::ElemT {
+    fn neg_ref(&self, elem: &Self::ElemT) -> Self::ElemT {
         -elem
     }
-    fn neg(&self,elem: Self::ElemT) -> Self::ElemT {
+    fn neg(&self, elem: Self::ElemT) -> Self::ElemT {
         -elem
     }
 
-    fn add_mut(&self,elem: &mut Self::ElemT, x: &Self::ElemT) {
+    fn add_mut(&self, elem: &mut Self::ElemT, x: &Self::ElemT) {
         *elem += x;
     }
-    fn add(&self,a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
+    fn add(&self, a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
         a + b
     }
-    fn add_ref(&self,a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn add_ref(&self, a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a + b
     }
-    fn add_refs(&self,a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn add_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a + b
     }
 
-    fn mul_mut(&self,elem: &mut Self::ElemT, x: &Self::ElemT) {
+    fn mul_mut(&self, elem: &mut Self::ElemT, x: &Self::ElemT) {
         *elem *= x;
     }
-    fn mul(&self,a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
+    fn mul(&self, a: Self::ElemT, b: Self::ElemT) -> Self::ElemT {
         a * b
     }
-    fn mul_ref(&self,a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn mul_ref(&self, a: Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a * b
     }
-    fn mul_refs(&self,a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
+    fn mul_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         a * b
     }
 
-    fn div(&self,a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+    fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
         if b == Rational::from(0) {
             Err(RingDivisionError::DivideByZero)
         } else {

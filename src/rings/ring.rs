@@ -16,7 +16,9 @@ pub enum RingDivisionError {
 
 pub trait ComRing: Sized + Clone + PartialEq + Eq + Hash + Debug {
     //todo: remove sized here
-    type ElemT: Sized + Clone + PartialEq + Eq + Hash + Debug + ToString;
+    type ElemT: Sized + Clone + PartialEq + Eq + Hash + Debug;
+
+    fn to_string(&self, elem : &Self::ElemT) -> String;
 
     fn zero(&self) -> Self::ElemT;
     fn one(&self) -> Self::ElemT;

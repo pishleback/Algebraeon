@@ -1164,27 +1164,32 @@ impl<F: Field> MatrixStructure<F> {
     pub fn presentation_matrix(
         &self,
         m: Matrix<F::ElemT>,
-    ) -> Result<Matrix<Polynomial<F>>, MatOppErr> {
+    ) -> Result<Matrix<Polynomial<F::ElemT>>, MatOppErr> {
         let n = m.rows();
         if n != m.cols() {
             Err(MatOppErr::NotSquare)
         } else {
-            let poly_mat_struct = MatrixStructure {
-                ring: PolynomialRing { ring: self.ring },
-            };
+            let poly_ring = PolynomialRing { ring: self.ring };
+            let poly_mat_struct = MatrixStructure { ring: poly_ring };
             Ok(poly_mat_struct
                 .add(
-                    m.apply_map(|x| Polynomial::constant(x.clone())),
-                    self.neg(self.diag(&(0..n).map(|_i| Polynomial::var()).collect())),
+                    m.apply_map(|x| poly_ring.constant(x.clone())),
+                    poly_mat_struct
+                        .neg(poly_mat_struct.diag(&(0..n).map(|_i| poly_ring.var()).collect())),
                 )
                 .unwrap())
         }
     }
 
-    pub fn minimal_polynomial(&self, m: Matrix<F::ElemT>) -> Result<Polynomial<F>, MatOppErr> {
+    pub fn minimal_polynomial(
+        &self,
+        m: Matrix<F::ElemT>,
+    ) -> Result<Polynomial<F::ElemT>, MatOppErr> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
-                let (_u, s, _v, k) = self.smith_algorithm(pres_mat);
+                let poly_ring = PolynomialRing { ring: self.ring };
+                let poly_mat_struct = MatrixStructure { ring: poly_ring };
+                let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
                 debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
                 Ok(s.at(k - 1, k - 1).unwrap().clone())
             }
@@ -1196,14 +1201,16 @@ impl<F: Field> MatrixStructure<F> {
     pub fn characteristic_polynomial(
         &self,
         m: Matrix<F::ElemT>,
-    ) -> Result<Polynomial<F>, MatOppErr> {
+    ) -> Result<Polynomial<F::ElemT>, MatOppErr> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
-                let (_u, s, _v, k) = self.smith_algorithm(pres_mat);
+                let poly_ring = PolynomialRing { ring: self.ring };
+                let poly_mat_struct = MatrixStructure { ring: poly_ring };
+                let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
                 debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
-                let mut char_poly = Polynomial::one();
+                let mut char_poly = poly_ring.one();
                 for i in 0..k {
-                    char_poly.mul_mut(s.at(i, i).unwrap())
+                    poly_ring.mul_mut(&mut char_poly, s.at(i, i).unwrap())
                 }
                 Ok(char_poly)
             }
@@ -1223,7 +1230,6 @@ mod tests {
 
     const ZZ_MAT: MatrixStructure<IntegerRing> = MatrixStructure { ring: ZZ };
     const QQ_MAT: MatrixStructure<RationalField> = MatrixStructure { ring: QQ };
-
 
     #[test]
     fn invariants() {
@@ -1883,7 +1889,9 @@ mod tests {
             let (u, s, v, k) = ZZ_MAT.smith_algorithm(a.clone());
             assert_eq!(
                 s,
-                ZZ_MAT.mul_refs(&ZZ_MAT.mul_refs(&u, &a).unwrap(), &v).unwrap()
+                ZZ_MAT
+                    .mul_refs(&ZZ_MAT.mul_refs(&u, &a).unwrap(), &v)
+                    .unwrap()
             );
             assert_eq!(k, 3);
             assert_eq!(

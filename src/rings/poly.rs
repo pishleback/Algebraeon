@@ -9,28 +9,47 @@ use super::matrix::*;
 use super::ring::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Polynomial<R: ComRing> {
+pub struct Polynomial<ElemT: Clone + PartialEq + Eq + Hash> {
     //vec![c0, c1, c2, c3, ..., cn] represents the polynomial c0 + c1*x + c2*x^2 + c3*x^3 + ... + cn * x^n
     //if non-empty, the last item must not be zero
-    coeffs: Vec<R::ElemT>,
+    coeffs: Vec<ElemT>,
 }
 
-impl<R: ComRing> ToString for Polynomial<R> {
-    fn to_string(&self) -> String {
-        if self.coeffs.len() == 0 {
+impl<ElemT: Clone + PartialEq + Eq + Hash> Polynomial<ElemT> {
+    pub fn apply_map<NewElemT: Clone + PartialEq + Eq + Hash>(
+        &self,
+        poly: &Polynomial<ElemT>,
+        f: impl Fn(&ElemT) -> NewElemT,
+    ) -> Polynomial<NewElemT> {
+        Polynomial {
+            coeffs: poly.coeffs.iter().map(f).collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PolynomialRing<R: ComRing> {
+    ring: R,
+}
+
+impl<R: ComRing> ComRing for PolynomialRing<R> {
+    type ElemT = Polynomial<R::ElemT>;
+
+    fn to_string(&self, poly: &Self::ElemT) -> String {
+        if poly.coeffs.len() == 0 {
             String::from("0")
         } else {
             let mut s = String::new();
             let mut first = true;
-            for (k, c) in self.coeffs.iter().enumerate() {
-                if c != &R::zero() {
-                    if c == &R::one() {
+            for (k, c) in poly.coeffs.iter().enumerate() {
+                if c != &self.ring.zero() {
+                    if c == &self.ring.one() {
                         if k == 0 {
                             s += "1";
                         } else {
                             s += "+"
                         }
-                    } else if c == &R::neg(R::one()) {
+                    } else if c == &self.ring.neg(self.ring.one()) {
                         if k == 0 {
                             s += "-1";
                         } else {
@@ -41,7 +60,7 @@ impl<R: ComRing> ToString for Polynomial<R> {
                             s += "+";
                         }
                         s += "(";
-                        s += &c.to_string();
+                        s += &self.ring.to_string(c);
                         s += ")";
                     }
                     if k == 0 {
@@ -58,170 +77,87 @@ impl<R: ComRing> ToString for Polynomial<R> {
             s
         }
     }
-}
 
-impl<R: ComRing> Polynomial<R> {
-    fn check_invariants(&self) -> Result<(), &'static str> {
-        match self.coeffs.len() {
-            0 => {}
-            n => {
-                if self.coeffs[n - 1] == R::zero() {
-                    return Err("polynomial coefficients must not end with a zero");
-                }
-            }
-        };
-        Ok(())
+    fn zero(&self) -> Polynomial<R::ElemT> {
+        Polynomial { coeffs: vec![] }
     }
 
-    fn reduce(&mut self) {
-        loop {
-            if self.coeffs.len() == 0 {
-                return;
-            } else {
-                if self.coeffs[self.coeffs.len() - 1] == R::zero() {
-                    self.coeffs.pop();
-                } else {
-                    return;
-                }
-            }
+    fn one(&self) -> Polynomial<R::ElemT> {
+        Polynomial {
+            coeffs: vec![self.ring.one()],
         }
     }
 
-    pub fn apply_map<S: ComRing>(&self, f: impl Fn(&R::ElemT) -> S::ElemT) -> Polynomial<S> {
-        Polynomial::new(self.coeffs.iter().map(f).collect())
-    }
-
-    //making new polynomials
-    pub fn zero() -> Self {
-        Self { coeffs: vec![] }
-    }
-
-    pub fn one() -> Self {
-        Self {
-            coeffs: vec![R::one()],
+    fn neg_mut(&self, mut poly: &mut Polynomial<R::ElemT>) {
+        for coeff in &mut poly.coeffs {
+            self.ring.neg_mut(coeff);
         }
     }
 
-    pub fn new(coeffs: Vec<R::ElemT>) -> Self {
-        let mut p = Self { coeffs };
-        p.reduce();
-        p
+    fn neg_ref(&self, poly: &Polynomial<R::ElemT>) -> Self::ElemT {
+        self.neg(poly.clone())
     }
 
-    pub fn constant(x: R::ElemT) -> Self {
-        if x == R::zero() {
-            Self { coeffs: vec![] }
-        } else {
-            Self { coeffs: vec![x] }
-        }
+    fn neg(&self, mut poly: Self::ElemT) -> Self::ElemT {
+        self.neg_mut(&mut poly);
+        poly
     }
 
-    pub fn constant_var_pow(x: R::ElemT, n: usize) -> Self {
-        Self {
-            coeffs: (0..n + 1)
-                .map(|i| if i < n { R::zero() } else { x.clone() })
-                .collect(),
-        }
-    }
-
-    pub fn var() -> Self {
-        Self {
-            coeffs: vec![R::zero(), R::one()],
-        }
-    }
-
-    pub fn var_pow(n: usize) -> Self {
-        Self {
-            coeffs: (0..n + 1)
-                .map(|i| if i < n { R::zero() } else { R::one() })
-                .collect(),
-        }
-    }
-
-    //operations
-
-    pub fn neg_mut(&mut self) {
-        for coeff in &mut self.coeffs {
-            R::neg_mut(coeff);
-        }
-    }
-
-    pub fn neg_ref(&self) -> Self {
-        Self::neg(self.clone())
-    }
-
-    pub fn neg(mut self) -> Self {
-        Self::neg_mut(&mut self);
-        self
-    }
-
-    pub fn add_mut(&mut self, x: &Self) {
+    fn add_mut(&self, mut poly: &mut Self::ElemT, x: &Self::ElemT) {
         for i in 0..x.coeffs.len() {
-            if i < self.coeffs.len() {
-                R::add_mut(&mut self.coeffs[i], &x.coeffs[i]);
+            if i < poly.coeffs.len() {
+                self.ring.add_mut(&mut poly.coeffs[i], &x.coeffs[i]);
             } else {
-                self.coeffs.push(x.coeffs[i].clone());
+                poly.coeffs.push(x.coeffs[i].clone());
             }
         }
-        self.reduce();
+        self.reduce(&mut poly);
     }
 
-    pub fn mul_refs(a: &Self, b: &Self) -> Self {
+    fn mul_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
         let mut coeffs = Vec::with_capacity(a.coeffs.len() + b.coeffs.len());
         for _k in 0..a.coeffs.len() + b.coeffs.len() {
-            coeffs.push(R::zero());
+            coeffs.push(self.ring.zero());
         }
         for i in 0..a.coeffs.len() {
             for j in 0..b.coeffs.len() {
-                R::add_mut(&mut coeffs[i + j], &R::mul_refs(&a.coeffs[i], &b.coeffs[j]));
+                self.ring.add_mut(
+                    &mut coeffs[i + j],
+                    &self.ring.mul_refs(&a.coeffs[i], &b.coeffs[j]),
+                );
             }
         }
-        let mut ans = Self { coeffs };
-        ans.reduce(); //TODO: dont have to do this over an integral domain
+        let mut ans = Self::ElemT { coeffs };
+        self.reduce(&mut ans); //TODO: dont have to do this over an integral domain
         ans
     }
 
-    pub fn mul_mut(&mut self, x: &Self) {
-        self.clone_from(&Self::mul_refs(self, x));
+    fn mul_mut(&self, poly: &mut Self::ElemT, x: &Self::ElemT) {
+        poly.clone_from(&self.mul_refs(poly, x));
     }
 
-    pub fn mul_var_pow(&self, n: usize) -> Self {
-        let mut coeffs = vec![];
-        for _i in 0..n {
-            coeffs.push(R::zero());
-        }
-        for c in &self.coeffs {
-            coeffs.push(c.clone());
-        }
-        Self { coeffs }
+    fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        self.div_rref(a, &b)
     }
 
-    pub fn mul_scalar(&self, x: &R::ElemT) -> Self {
-        let mut ans = Self {
-            coeffs: self.coeffs.iter().map(|c| R::mul_refs(c, x)).collect(),
-        };
-        ans.reduce();
-        ans
+    fn div_lref(&self, a: &Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        self.div_refs(a, &b)
     }
 
-    fn div(a: Self, b: Self) -> Result<Self, RingDivisionError> {
-        Self::div_rref(a, &b)
-    }
-
-    fn div_lref(a: &Self, b: Self) -> Result<Self, RingDivisionError> {
-        Self::div_refs(a, &b)
-    }
-
-    fn div_refs(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
-        let q_res = Self::div_rref(a.clone(), b);
+    fn div_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        let q_res = self.div_rref(a.clone(), b);
         match &q_res {
-            Ok(q) => debug_assert_eq!(&Self::mul_refs(q, b), a),
+            Ok(q) => debug_assert_eq!(&self.mul_refs(q, b), a),
             Err(_) => {}
         };
         q_res
     }
 
-    fn div_rref(mut a: Self, b: &Self) -> Result<Self, RingDivisionError> {
+    fn div_rref(
+        &self,
+        mut a: Self::ElemT,
+        b: &Self::ElemT,
+    ) -> Result<Self::ElemT, RingDivisionError> {
         //try to find q such that q*b == a
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
@@ -231,20 +167,26 @@ impl<R: ComRing> Polynomial<R> {
         if n == 0 {
             Err(RingDivisionError::DivideByZero)
         } else if m == 0 {
-            Ok(Self::zero())
+            Ok(self.zero())
         } else if m < n {
             Err(RingDivisionError::NotDivisible)
         } else {
             let k = m - n + 1;
-            let mut q = Self {
-                coeffs: (0..k).map(|_i| R::zero()).collect(),
+            let mut q = Self::ElemT {
+                coeffs: (0..k).map(|_i| self.ring.zero()).collect(),
             };
             for i in (0..k).rev() {
                 //a[i+n-1] = q[i] * b[n-1]
-                match R::div_refs(&a.coeff(i + n - 1), &b.coeff(n - 1)) {
+                match self
+                    .ring
+                    .div_refs(&self.coeff(&a, i + n - 1), &self.coeff(b, n - 1))
+                {
                     Ok(qc) => {
                         //a -= qc*x^i*b
-                        Self::add_mut(&mut a, &Self::neg(b.mul_scalar(&qc).mul_var_pow(i)));
+                        self.add_mut(
+                            &mut a,
+                            &self.neg(self.mul_var_pow(&self.mul_scalar(&b, &qc), i)),
+                        );
                         q.coeffs[i] = qc;
                     }
                     Err(RingDivisionError::NotDivisible) => {
@@ -253,19 +195,112 @@ impl<R: ComRing> Polynomial<R> {
                     Err(_) => panic!(),
                 }
             }
-            if a != Self::zero() {
+            if a != self.zero() {
                 return Err(RingDivisionError::NotDivisible);
             }
             Ok(q)
         }
     }
+}
+
+impl<R: ComRing> PolynomialRing<R> {
+    fn check_invariants(&self, poly: Polynomial<R::ElemT>) -> Result<(), &'static str> {
+        match poly.coeffs.len() {
+            0 => {}
+            n => {
+                if poly.coeffs[n - 1] == self.ring.zero() {
+                    return Err("polynomial coefficients must not end with a zero");
+                }
+            }
+        };
+        Ok(())
+    }
+
+    fn reduce(&self, poly: &mut Polynomial<R::ElemT>) {
+        loop {
+            if poly.coeffs.len() == 0 {
+                return;
+            } else {
+                if poly.coeffs[poly.coeffs.len() - 1] == self.ring.zero() {
+                    poly.coeffs.pop();
+                } else {
+                    return;
+                }
+            }
+        }
+    }
+
+    pub fn new(&self, coeffs: Vec<R::ElemT>) -> Polynomial<R::ElemT> {
+        let mut p = Polynomial { coeffs };
+        self.reduce(&mut p);
+        p
+    }
+
+    pub fn constant(&self, x: R::ElemT) -> Polynomial<R::ElemT> {
+        if x == self.ring.zero() {
+            Polynomial { coeffs: vec![] }
+        } else {
+            Polynomial { coeffs: vec![x] }
+        }
+    }
+
+    pub fn constant_var_pow(&self, x: R::ElemT, n: usize) -> Polynomial<R::ElemT> {
+        Polynomial {
+            coeffs: (0..n + 1)
+                .map(|i| if i < n { self.ring.zero() } else { x.clone() })
+                .collect(),
+        }
+    }
+
+    pub fn var(&self) -> Polynomial<R::ElemT> {
+        Polynomial {
+            coeffs: vec![self.ring.zero(), self.ring.one()],
+        }
+    }
+
+    pub fn var_pow(&self, n: usize) -> Polynomial<R::ElemT> {
+        Polynomial {
+            coeffs: (0..n + 1)
+                .map(|i| {
+                    if i < n {
+                        self.ring.zero()
+                    } else {
+                        self.ring.one()
+                    }
+                })
+                .collect(),
+        }
+    }
+
+    pub fn mul_var_pow(&self, poly: &Polynomial<R::ElemT>, n: usize) -> Polynomial<R::ElemT> {
+        let mut coeffs = vec![];
+        for _i in 0..n {
+            coeffs.push(self.ring.zero());
+        }
+        for c in &poly.coeffs {
+            coeffs.push(c.clone());
+        }
+        Polynomial { coeffs }
+    }
+
+    pub fn mul_scalar(&self, poly: &Polynomial<R::ElemT>, x: &R::ElemT) -> Polynomial<R::ElemT> {
+        let mut ans = Polynomial {
+            coeffs: poly
+                .coeffs
+                .iter()
+                .map(|c| self.ring.mul_refs(c, x))
+                .collect(),
+        };
+        self.reduce(&mut ans);
+        ans
+    }
 
     //getting stuff
-    pub fn coeff(&self, i: usize) -> R::ElemT {
-        if i < self.coeffs.len() {
-            self.coeffs[i].clone()
+    pub fn coeff(&self, poly: &Polynomial<R::ElemT>, i: usize) -> R::ElemT {
+        if i < poly.coeffs.len() {
+            poly.coeffs[i].clone()
         } else {
-            R::zero()
+            self.ring.zero()
         }
     }
 
@@ -274,53 +309,72 @@ impl<R: ComRing> Polynomial<R> {
     //linear -> 1
     //quadratic -> 2
     //etc.
-    pub fn degree(&self) -> Option<usize> {
-        if self.coeffs.len() == 0 {
+    pub fn degree(&self, poly: &Polynomial<R::ElemT>) -> Option<usize> {
+        if poly.coeffs.len() == 0 {
             None
         } else {
-            Some(self.coeffs.len() - 1)
+            Some(poly.coeffs.len() - 1)
         }
     }
 
-    pub fn evaluate(&self, x: &R::ElemT) -> R::ElemT {
+    pub fn evaluate(&self, poly: &Polynomial<R::ElemT>, x: &R::ElemT) -> R::ElemT {
         // f(x) = a + bx + cx^2 + dx^3
         // evaluate as f(x) = a + x(b + x(c + x(d)))
-        let mut y = R::zero();
-        for c in self.coeffs.iter().rev() {
-            R::mul_mut(&mut y, x);
-            R::add_mut(&mut y, c)
+        let mut y = self.ring.zero();
+        for c in poly.coeffs.iter().rev() {
+            self.ring.mul_mut(&mut y, x);
+            self.ring.add_mut(&mut y, c)
         }
         y
     }
 
-    pub fn derivative(mut self) -> Self {
-        if self.coeffs.len() > 0 {
-            for i in 0..self.coeffs.len() - 1 {
-                self.coeffs[i] = self.coeffs[i + 1].clone();
-                R::mul_mut(&mut self.coeffs[i], &R::from_int(&Integer::from(i + 1)));
+    pub fn derivative(&self, mut poly: Polynomial<R::ElemT>) -> Polynomial<R::ElemT> {
+        if poly.coeffs.len() > 0 {
+            for i in 0..poly.coeffs.len() - 1 {
+                poly.coeffs[i] = poly.coeffs[i + 1].clone();
+                self.ring.mul_mut(
+                    &mut poly.coeffs[i],
+                    &self.ring.from_int(&Integer::from(i + 1)),
+                );
             }
-            self.coeffs.pop();
+            poly.coeffs.pop();
         }
-        self
+        poly
     }
 }
 
-impl<R: IntegralDomain> Polynomial<R> {
-    pub fn pseudorem(a: Self, b: Self) -> Option<Result<Self, &'static str>> {
-        Self::pseudorem_rref(a, &b)
+impl<R: IntegralDomain> PolynomialRing<R> {
+    pub fn pseudorem(
+        &self,
+        a: Polynomial<R::ElemT>,
+        b: Polynomial<R::ElemT>,
+    ) -> Option<Result<Polynomial<R::ElemT>, &'static str>> {
+        self.pseudorem_rref(a, &b)
     }
 
-    pub fn pseudorem_lref(a: &Self, b: Self) -> Option<Result<Self, &'static str>> {
-        Self::pseudorem_refs(a, &b)
+    pub fn pseudorem_lref(
+        &self,
+        a: &Polynomial<R::ElemT>,
+        b: Polynomial<R::ElemT>,
+    ) -> Option<Result<Polynomial<R::ElemT>, &'static str>> {
+        self.pseudorem_refs(a, &b)
     }
 
-    pub fn pseudorem_refs(a: &Self, b: &Self) -> Option<Result<Self, &'static str>> {
-        Self::pseudorem_rref(a.clone(), b)
+    pub fn pseudorem_refs(
+        &self,
+        a: &Polynomial<R::ElemT>,
+        b: &Polynomial<R::ElemT>,
+    ) -> Option<Result<Polynomial<R::ElemT>, &'static str>> {
+        self.pseudorem_rref(a.clone(), b)
     }
 
     //None if b = 0
     //error if deg(a) < deg(b)
-    pub fn pseudorem_rref(mut a: Self, b: &Self) -> Option<Result<Self, &'static str>> {
+    pub fn pseudorem_rref(
+        &self,
+        mut a: Polynomial<R::ElemT>,
+        b: &Polynomial<R::ElemT>,
+    ) -> Option<Result<Polynomial<R::ElemT>, &'static str>> {
         let m = a.coeffs.len();
         let n = b.coeffs.len();
 
@@ -329,21 +383,30 @@ impl<R: IntegralDomain> Polynomial<R> {
         } else if m < n {
             Some(Err("Should have deg(a) >= deg(b) for pseudo remainder"))
         } else {
-            a.mul_mut(&Polynomial::constant(R::nat_pow(
-                &b.coeff(n - 1),
-                &Natural::from(m - n + 1),
-            )));
+            self.mul_mut(
+                &mut a,
+                &self.constant(
+                    self.ring
+                        .nat_pow(&self.coeff(b, n - 1), &Natural::from(m - n + 1)),
+                ),
+            );
 
             let k = m - n + 1;
-            let mut q = Self {
-                coeffs: (0..k).map(|_i| R::zero()).collect(),
+            let mut q = Polynomial {
+                coeffs: (0..k).map(|_i| self.ring.zero()).collect(),
             };
             for i in (0..k).rev() {
                 //a[i+n-1] = q[i] * b[n-1]
-                match R::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
+                match self
+                    .ring
+                    .div_rref(self.coeff(&a, i + n - 1), &b.coeffs[n - 1])
+                {
                     Ok(qc) => {
                         //a -= qc*x^i*b
-                        a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
+                        self.add_mut(
+                            &mut a,
+                            &self.neg(self.mul_var_pow(&self.mul_scalar(&b, &qc), i)),
+                        );
                         q.coeffs[i] = qc;
                     }
                     Err(_) => panic!(),
@@ -356,10 +419,14 @@ impl<R: IntegralDomain> Polynomial<R> {
     //efficiently compute the gcd of a and b up to scalar multipication using pseudo remainder subresultant sequence
     //the returned polynomial should the smallest non-zero subresultant polynomial
     //https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Trivial_pseudo-remainder_sequence
-    pub fn pseudo_gcd(mut a: Polynomial<R>, mut b: Polynomial<R>) -> Polynomial<R> {
-        match a.degree() {
+    pub fn pseudo_gcd(
+        &self,
+        mut a: Polynomial<R::ElemT>,
+        mut b: Polynomial<R::ElemT>,
+    ) -> Polynomial<R::ElemT> {
+        match self.degree(&a) {
             None => b,
-            Some(mut a_deg) => match b.degree() {
+            Some(mut a_deg) => match self.degree(&b) {
                 None => a,
                 Some(mut b_deg) => {
                     if a_deg < b_deg {
@@ -368,43 +435,47 @@ impl<R: IntegralDomain> Polynomial<R> {
                     }
                     let mut beta = {
                         if (a_deg - b_deg) % 2 == 0 {
-                            R::from_int(&Integer::from(-1))
+                            self.ring.from_int(&Integer::from(-1))
                         } else {
-                            R::from_int(&Integer::from(1))
+                            self.ring.from_int(&Integer::from(1))
                         }
                     };
-                    let mut psi = R::from_int(&Integer::from(-1));
+                    let mut psi = self.ring.from_int(&Integer::from(-1));
                     loop {
-                        let d = a.degree().unwrap() - b.degree().unwrap();
-                        let gamma = b.coeff(b.degree().unwrap());
+                        let d = self.degree(&a).unwrap() - self.degree(&b).unwrap();
+                        let gamma = self.coeff(&b, self.degree(&b).unwrap());
 
-                        let r = Polynomial::div(
-                            Polynomial::pseudorem_rref(a, &b).unwrap().unwrap(),
-                            Polynomial::constant(beta),
-                        )
-                        .unwrap();
+                        let r = self
+                            .div(
+                                self.pseudorem_rref(a, &b).unwrap().unwrap(),
+                                self.constant(beta),
+                            )
+                            .unwrap();
                         (a, b) = (b, r);
 
-                        if b == Polynomial::zero() {
+                        if b == self.zero() {
                             break;
                         }
 
                         if d == 0 {
                             //can only happen in the first loop
-                            debug_assert_eq!(psi, R::neg(R::one()));
-                            psi = R::one();
+                            debug_assert_eq!(psi, self.ring.neg(self.ring.one()));
+                            psi = self.ring.one();
                         } else {
-                            psi = R::div(
-                                R::nat_pow(&R::neg_ref(&gamma), &Natural::from(d)),
-                                R::nat_pow(&psi, &Natural::from(d - 1)),
-                            )
-                            .unwrap();
+                            psi = self
+                                .ring
+                                .div(
+                                    self.ring
+                                        .nat_pow(&self.ring.neg_ref(&gamma), &Natural::from(d)),
+                                    self.ring.nat_pow(&psi, &Natural::from(d - 1)),
+                                )
+                                .unwrap();
                         }
-                        beta = R::mul(
-                            R::neg(gamma),
-                            R::nat_pow(
+                        beta = self.ring.mul(
+                            self.ring.neg(gamma),
+                            self.ring.nat_pow(
                                 &psi,
-                                &Natural::from(a.degree().unwrap() - b.degree().unwrap()),
+                                &Natural::from(self.degree(&a).unwrap() - self.degree(&b).unwrap()),
                             ),
                         );
                     }
@@ -415,84 +486,43 @@ impl<R: IntegralDomain> Polynomial<R> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct PolynomialRing<R: ComRing> {
-    ring: R,
-}
-
-impl<R: ComRing> ComRing for PolynomialRing<R> {
-    type ElemT = Polynomial<R>;
-
-    fn zero() -> Self::ElemT {
-        Self::ElemT::zero()
-    }
-
-    fn one() -> Self::ElemT {
-        Self::ElemT::one()
-    }
-
-    fn neg_mut(elem: &mut Self::ElemT) {
-        elem.neg_mut();
-    }
-
-    fn add_mut(elem: &mut Self::ElemT, x: &Self::ElemT) {
-        elem.add_mut(x);
-    }
-
-    fn mul_refs(a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
-        Self::ElemT::mul_refs(a, b)
-    }
-
-    fn mul_mut(elem: &mut Self::ElemT, x: &Self::ElemT) {
-        Self::ElemT::mul_mut(elem, x);
-    }
-
-    fn div(a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        Self::ElemT::div(a, b)
-    }
-
-    fn div_lref(a: &Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        Self::ElemT::div_lref(a, b)
-    }
-
-    fn div_refs(a: &Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        Self::ElemT::div_refs(a, b)
-    }
-
-    fn div_rref(mut a: Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        Self::ElemT::div_rref(a, b)
-    }
-}
-
 impl<R: IntegralDomain> IntegralDomain for PolynomialRing<R> {}
 
 impl<R: UniqueFactorizationDomain> UniqueFactorizationDomain for PolynomialRing<R> {}
 
-impl<R: GreatestCommonDivisorDomain> Polynomial<R> {
-    fn factor_primitive(mut self) -> Option<(R::ElemT, Self)> {
-        if self == Self::zero() {
+impl<R: GreatestCommonDivisorDomain> PolynomialRing<R> {
+    fn factor_primitive(
+        &self,
+        mut poly: Polynomial<R::ElemT>,
+    ) -> Option<(R::ElemT, Polynomial<R::ElemT>)> {
+        if poly == self.zero() {
             None
         } else {
-            let g = R::gcd_list(self.coeffs.iter().collect());
-            for i in 0..self.coeffs.len() {
-                self.coeffs[i] = R::div_refs(&self.coeffs[i], &g).unwrap()
+            let g = self.ring.gcd_list(poly.coeffs.iter().collect());
+            for i in 0..poly.coeffs.len() {
+                poly.coeffs[i] = self.ring.div_refs(&poly.coeffs[i], &g).unwrap()
             }
 
-            Some((g, self))
+            Some((g, poly))
         }
     }
 }
 
 impl<R: FavoriteAssociate + IntegralDomain> FavoriteAssociate for PolynomialRing<R> {
-    fn factor_fav_assoc(mut elem: Self::ElemT) -> (Self::ElemT, Self::ElemT) {
-        if elem == Self::ElemT::zero() {
-            (Self::one(), Self::zero())
+    fn factor_fav_assoc(
+        &self,
+        mut elem: Polynomial<R::ElemT>,
+    ) -> (Polynomial<R::ElemT>, Polynomial<R::ElemT>) {
+        if elem == self.zero() {
+            (self.one(), self.zero())
         } else {
-            let (u, _c) = R::factor_fav_assoc(elem.coeffs[elem.coeffs.len() - 1].clone());
+            let (u, _c) = self
+                .ring
+                .factor_fav_assoc(elem.coeffs[elem.coeffs.len() - 1].clone());
             for i in 0..elem.coeffs.len() {
-                elem.coeffs[i] = R::div_refs(&elem.coeffs[i], &u).unwrap()
+                elem.coeffs[i] = self.ring.div_refs(&elem.coeffs[i], &u).unwrap()
             }
-            (Self::ElemT::constant(u), elem)
+            (self.constant(u), elem)
         }
     }
 }
@@ -500,10 +530,11 @@ impl<R: FavoriteAssociate + IntegralDomain> FavoriteAssociate for PolynomialRing
 impl<R: CharacteristicZero> CharacteristicZero for PolynomialRing<R> {}
 
 impl<R: IntegralDomain + FiniteUnits> FiniteUnits for PolynomialRing<R> {
-    fn all_units() -> Vec<Self::ElemT> {
-        R::all_units()
+    fn all_units(&self) -> Vec<Polynomial<R::ElemT>> {
+        self.ring
+            .all_units()
             .into_iter()
-            .map(|u| Self::ElemT::constant(u))
+            .map(|u| self.constant(u))
             .collect()
     }
 }
@@ -513,32 +544,36 @@ impl<R: IntegralDomain + FiniteUnits> FiniteUnits for PolynomialRing<R> {
 // }
 
 impl<F: Field> EuclideanDomain for PolynomialRing<F> {
-    fn norm(elem: &Self::ElemT) -> Option<Natural> {
-        if elem == &Self::ElemT::zero() {
+    fn norm(&self, elem: &Self::ElemT) -> Option<Natural> {
+        if elem == &self.zero() {
             None
         } else {
             Some(Natural::from(elem.coeffs.len() - 1))
         }
     }
 
-    fn quorem(a: Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        Self::quorem_rref(a, &b)
+    fn quorem(&self, a: Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        self.quorem_rref(a, &b)
     }
 
-    fn quorem_lref(a: &Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        Self::quorem_refs(a, &b)
+    fn quorem_lref(&self, a: &Self::ElemT, b: Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        self.quorem_refs(a, &b)
     }
 
-    fn quorem_refs(a: &Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        let res = Self::quorem_rref(a.clone(), b);
+    fn quorem_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+        let res = self.quorem_rref(a.clone(), b);
         match &res {
-            Some((q, r)) => debug_assert_eq!(&Self::add_ref(Self::mul_refs(q, b), r), a),
+            Some((q, r)) => debug_assert_eq!(&self.add_ref(self.mul_refs(q, b), r), a),
             None => {}
         };
         res
     }
 
-    fn quorem_rref(mut a: Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
+    fn quorem_rref(
+        &self,
+        mut a: Self::ElemT,
+        b: &Self::ElemT,
+    ) -> Option<(Self::ElemT, Self::ElemT)> {
         //try to find q such that q*b == a
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
@@ -548,18 +583,24 @@ impl<F: Field> EuclideanDomain for PolynomialRing<F> {
         if n == 0 {
             None
         } else if m < n {
-            Some((Self::zero(), a))
+            Some((self.zero(), a))
         } else {
             let k = m - n + 1;
             let mut q = Self::ElemT {
-                coeffs: (0..k).map(|_i| F::zero()).collect(),
+                coeffs: (0..k).map(|_i| self.ring.zero()).collect(),
             };
             for i in (0..k).rev() {
                 //a[i+n-1] = q[i] * b[n-1]
-                match F::div_rref(a.coeff(i + n - 1), &b.coeffs[n - 1]) {
+                match self
+                    .ring
+                    .div_rref(self.coeff(&a, i + n - 1), &b.coeffs[n - 1])
+                {
                     Ok(qc) => {
                         //a -= qc*x^i*b
-                        a.add_mut(&b.mul_scalar(&qc).mul_var_pow(i).neg());
+                        self.add_mut(
+                            &mut a,
+                            &self.neg(self.mul_var_pow(&self.mul_scalar(b, &qc), i)),
+                        );
                         q.coeffs[i] = qc;
                     }
                     Err(_) => panic!(),
@@ -591,7 +632,6 @@ impl<F: Field> EuclideanDomain for PolynomialRing<F> {
 //                   / (x1-x2)(x1-x3)(x2-x3)
 
 //          */
-
 //         let mut numerator = Polynomial::zero();
 //         for i in 0..points.len() {
 //             let (_xi, yi) = &points[i];
@@ -653,7 +693,6 @@ impl<F: Field> EuclideanDomain for PolynomialRing<F> {
 //         | 1 2 4 | | b | = | 1  |
 //         \ 1 3 9 / \ c /   \ -2 /
 //         */
-
 //         let n = points.len();
 //         let mut mat = Matrix::zero(n, n);
 //         for r in 0..n {
@@ -769,7 +808,6 @@ impl<F: Field> EuclideanDomain for PolynomialRing<F> {
 //             however, only 64 need to be checked as the other half are their negatives
 //             more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
 //              */
-
 //             let max_factor_degree = f_deg / 2;
 //             let mut f_points = vec![];
 //             let mut elem_gen = R::generate_distinct_elements();
@@ -962,42 +1000,55 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
+    const ZZ_POLY: PolynomialRing<IntegerRing> = PolynomialRing { ring: ZZ };
+    const QQ_POLY: PolynomialRing<RationalField> = PolynomialRing { ring: QQ };
+
     #[test]
     fn invariant_reduction() {
-        let mut unreduced = Polynomial::<IntegerRing> {
-            coeffs: vec![IntegerRing::zero(), IntegerRing::one(), IntegerRing::zero(), IntegerRing::zero()],
+        let mut unreduced = Polynomial {
+            coeffs: vec![
+                Integer::from(0),
+                Integer::from(1),
+                Integer::from(0),
+                Integer::from(0),
+            ],
         };
-        let reduced = Polynomial::<IntegerRing> {
-            coeffs: vec![IntegerRing::zero(), IntegerRing::one()],
+        let reduced = Polynomial {
+            coeffs: vec![Integer::from(0), Integer::from(1)],
         };
-        unreduced.reduce();
+        ZZ_POLY.reduce(&mut unreduced);
         assert_eq!(unreduced, reduced);
 
-        let mut unreduced = Polynomial::<IntegerRing> {
-            coeffs: vec![IntegerRing::zero(), IntegerRing::zero(), IntegerRing::zero(), IntegerRing::zero()],
+        let mut unreduced = Polynomial {
+            coeffs: vec![
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+            ],
         };
-        let reduced = Polynomial::<IntegerRing> { coeffs: vec![] };
-        unreduced.reduce();
+        let reduced = Polynomial::<Integer> { coeffs: vec![] };
+        ZZ_POLY.reduce(&mut unreduced);
         assert_eq!(unreduced, reduced);
     }
 
     #[test]
     fn divisibility() {
-        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
+        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
-        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
+        match ZZ_POLY.div(a.elem(), b.elem()) {
             Ok(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
-                assert_eq!(a, b * Ergonomic::new(c))
+                assert_eq!(a, b * Ergonomic::new(ZZ_POLY, c))
             }
             Err(_) => panic!(),
         }
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) + 1;
-        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
+        match ZZ_POLY.div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
             Err(_) => panic!(),
@@ -1005,7 +1056,7 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
-        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
+        match ZZ_POLY.div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
             Err(_) => panic!(),
@@ -1013,7 +1064,7 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = 0 * x;
-        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
+        match ZZ_POLY.div(a.elem(), b.elem()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::DivideByZero) => {}
             Err(_) => panic!(),
@@ -1021,9 +1072,9 @@ mod tests {
 
         let a = 0 * x;
         let b = (x - x) + 5;
-        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
+        match ZZ_POLY.div(a.elem(), b.elem()) {
             Ok(c) => {
-                assert_eq!(c, Polynomial::zero())
+                assert_eq!(c, ZZ_POLY.zero())
             }
             Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
@@ -1031,7 +1082,7 @@ mod tests {
 
         let a = 3087 * x - 8805 * x.pow(2) + 607 * x.pow(3) + x.pow(4);
         let b = (x - x) + 1;
-        match Polynomial::<IntegerRing>::div(a.elem(), b.elem()) {
+        match ZZ_POLY.div(a.elem(), b.elem()) {
             Ok(c) => {
                 assert_eq!(c, a.elem())
             }
@@ -1042,19 +1093,19 @@ mod tests {
 
     #[test]
     fn euclidean() {
-        let x = &Ergonomic::<PolynomialRing<RationalField>>::new(Polynomial::<RationalField>::var());
+        let x = &Ergonomic::new(QQ_POLY, QQ_POLY.var());
 
         let a = 1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5);
         let b = 1 + x + 3 * x.pow(2) + 2 * x.pow(3);
-        let (q, r) = PolynomialRing::<RationalField>::quorem_refs(&a.elem(), &b.elem()).unwrap();
-        let (q, r) = (Ergonomic::new(q), Ergonomic::new(r));
+        let (q, r) = QQ_POLY.quorem_refs(&a.elem(), &b.elem()).unwrap();
+        let (q, r) = (Ergonomic::new(QQ_POLY, q), Ergonomic::new(QQ_POLY, r));
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
 
         let a = 3 * x;
         let b = 2 * x;
-        let (q, r) = PolynomialRing::<RationalField>::quorem_refs(&a.elem(), &b.elem()).unwrap();
-        let (q, r) = (Ergonomic::new(q), Ergonomic::new(r));
+        let (q, r) = QQ_POLY.quorem_refs(&a.elem(), &b.elem()).unwrap();
+        let (q, r) = (Ergonomic::new(QQ_POLY, q), Ergonomic::new(QQ_POLY, r));
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
 
@@ -1063,41 +1114,41 @@ mod tests {
         let c = 1 + x + x.pow(2);
         let x = &a * &b;
         let y = &b * &c;
-        let g = PolynomialRing::<RationalField>::gcd(x.elem(), y.elem());
+        let g = QQ_POLY.gcd(x.elem(), y.elem());
 
         println!("gcd({:?} , {:?}) = {:?}", x, y, g);
-        PolynomialRing::<RationalField>::div_refs(&g, &b.elem()).unwrap();
-        PolynomialRing::<RationalField>::div_refs(&b.elem(), &g).unwrap();
+        QQ_POLY.div_refs(&g, &b.elem()).unwrap();
+        QQ_POLY.div_refs(&b.elem(), &g).unwrap();
     }
 
     #[test]
     fn test_pseudo_remainder() {
-        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
+        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
         {
             let f = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
                 .elem();
             let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
 
-            println!("f = {}", f.to_string());
-            println!("g = {}", g.to_string());
+            println!("f = {}", ZZ_POLY.to_string(&f));
+            println!("g = {}", ZZ_POLY.to_string(&g));
 
-            let r1 = Polynomial::<IntegerRing>::pseudorem_refs(&f, &g).unwrap().unwrap();
-            println!("r1 = {}", r1.to_string());
+            let r1 = ZZ_POLY.pseudorem_refs(&f, &g).unwrap().unwrap();
+            println!("r1 = {}", ZZ_POLY.to_string(&r1));
             assert_eq!(r1, (-15 * x.pow(4) + 3 * x.pow(2) - 9).elem());
 
-            let r2 = Polynomial::<IntegerRing>::pseudorem_refs(&g, &r1).unwrap().unwrap();
-            println!("r2 = {}", r2.to_string());
+            let r2 = ZZ_POLY.pseudorem_refs(&g, &r1).unwrap().unwrap();
+            println!("r2 = {}", ZZ_POLY.to_string(&r2));
             assert_eq!(r2, (15795 * x.pow(2) + 30375 * x - 59535).elem());
         }
         println!();
         {
             let f = (4 * x.pow(3) + 2 * x - 7).elem();
-            let g = Polynomial::zero();
+            let g = ZZ_POLY.zero();
 
-            println!("f = {}", f.to_string());
-            println!("g = {}", g.to_string());
+            println!("f = {}", ZZ_POLY.to_string(&f));
+            println!("g = {}", ZZ_POLY.to_string(&g));
 
-            if let None = Polynomial::<IntegerRing>::pseudorem_refs(&f, &g) {
+            if let None = ZZ_POLY.pseudorem_refs(&f, &g) {
             } else {
                 assert!(false);
             }
@@ -1108,10 +1159,10 @@ mod tests {
             let g = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
                 .elem();
 
-            println!("f = {}", f.to_string());
-            println!("g = {}", g.to_string());
+            println!("f = {}", ZZ_POLY.to_string(&f));
+            println!("g = {}", ZZ_POLY.to_string(&g));
 
-            if let Err(_msg) = Polynomial::<IntegerRing>::pseudorem_refs(&f, &g).unwrap() {
+            if let Err(_msg) = ZZ_POLY.pseudorem_refs(&f, &g).unwrap() {
             } else {
                 assert!(false);
             }
@@ -1120,23 +1171,23 @@ mod tests {
 
     #[test]
     fn integer_primitive_and_assoc() {
-        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
+        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
         let p1 = (-2 - 4 * x.pow(2)).elem();
-        let (g, p2) = p1.factor_primitive().unwrap();
+        let (g, p2) = ZZ_POLY.factor_primitive(p1).unwrap();
         assert_eq!(g, Integer::from(2));
-        let (u, p3) = PolynomialRing::factor_fav_assoc(p2);
+        let (u, p3) = ZZ_POLY.factor_fav_assoc(p2);
         assert_eq!(u.coeffs[0], Integer::from(-1));
-        assert_eq!(Ergonomic::new(p3), 1 + 2 * x.pow(2));
+        assert_eq!(Ergonomic::new(ZZ_POLY, p3), 1 + 2 * x.pow(2));
     }
 
     #[test]
     fn test_evaluate() {
-        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
+        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
         let f = (1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5)).elem();
-        assert_eq!(f.evaluate(&Integer::from(3)), Integer::from(868));
+        assert_eq!(ZZ_POLY.evaluate(&f, &Integer::from(3)), Integer::from(868));
 
-        let f = Polynomial::<IntegerRing>::zero();
-        assert_eq!(f.evaluate(&Integer::from(3)), Integer::from(0));
+        let f = ZZ_POLY.zero();
+        assert_eq!(ZZ_POLY.evaluate(&f, &Integer::from(3)), Integer::from(0));
     }
 
     // #[test]
@@ -1315,18 +1366,18 @@ mod tests {
 
     #[test]
     fn test_derivative() {
-        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
+        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
         let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3)).elem();
         let g = (3 - 2 * x + 21 * x.pow(2)).elem();
-        assert_eq!(f.derivative(), g);
+        assert_eq!(ZZ_POLY.derivative(f), g);
 
-        let f = Polynomial::<IntegerRing>::zero();
-        let g = Polynomial::<IntegerRing>::zero();
-        assert_eq!(f.derivative(), g);
+        let f = ZZ_POLY.zero();
+        let g = ZZ_POLY.zero();
+        assert_eq!(ZZ_POLY.derivative(f), g);
 
-        let f = Polynomial::<IntegerRing>::one();
-        let g = Polynomial::<IntegerRing>::zero();
-        assert_eq!(f.derivative(), g);
+        let f = ZZ_POLY.one();
+        let g = ZZ_POLY.zero();
+        assert_eq!(ZZ_POLY.derivative(f), g);
     }
 
     // #[test]
@@ -1437,28 +1488,28 @@ mod tests {
 
     #[test]
     fn test_pseudo_gcd() {
-        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(Polynomial::<IntegerRing>::var());
+        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
 
         let f =
             (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();
         let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
         assert_eq!(
-            Polynomial::pseudo_gcd(f, g),
-            Polynomial::constant(Integer::from(260708))
+            ZZ_POLY.pseudo_gcd(f, g),
+            ZZ_POLY.constant(Integer::from(260708))
         );
 
         let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
         let g =
             (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();
         assert_eq!(
-            Polynomial::pseudo_gcd(f, g),
-            Polynomial::constant(Integer::from(260708))
+            ZZ_POLY.pseudo_gcd(f, g),
+            ZZ_POLY.constant(Integer::from(260708))
         );
 
         let f = ((x + 2).pow(2) * (2 * x - 3).pow(2)).elem();
         let g = ((3 * x - 1) * (2 * x - 3).pow(2)).elem();
         assert_eq!(
-            Polynomial::pseudo_gcd(f, g),
+            ZZ_POLY.pseudo_gcd(f, g),
             (7056 - 9408 * x + 3136 * x.pow(2)).elem()
         );
     }
