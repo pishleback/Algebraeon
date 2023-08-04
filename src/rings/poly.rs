@@ -5,7 +5,6 @@ use malachite_nz::natural::Natural;
 
 use std::hash::Hash;
 
-use super::matrix::*;
 use super::nzq::*;
 use super::ring::*;
 
@@ -98,7 +97,7 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
         }
     }
 
-    fn neg_mut(&self, mut poly: &mut Polynomial<R::ElemT>) {
+    fn neg_mut(&self, poly: &mut Polynomial<R::ElemT>) {
         for coeff in &mut poly.coeffs {
             self.ring.neg_mut(coeff);
         }
@@ -1002,13 +1001,11 @@ impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
 #[cfg(test)]
 mod tests {
     use core::panic;
-    use std::collections::HashMap;
 
     use super::super::ergonomic::*;
     use super::super::nzq::*;
     use super::*;
     use malachite_nz::integer::Integer;
-    use malachite_q::Rational;
 
     const ZZ_POLY: PolynomialRing<IntegerRing> = PolynomialRing { ring: &ZZ };
     const QQ_POLY: PolynomialRing<RationalField> = PolynomialRing { ring: &QQ };

@@ -728,7 +728,6 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
 mod tests {
     use malachite_nz::integer::Integer;
 
-    use super::super::nzq::*;
     use super::*;
 
     #[test]

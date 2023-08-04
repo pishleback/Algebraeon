@@ -223,7 +223,7 @@ impl<'a, R: ComRing> MatrixStructure<'a, R> {
         for r in 0..mat.rows() {
             str_rows.push(vec![]);
             for c in 0..mat.cols() {
-                &str_rows[r].push(self.ring.to_string(mat.at(r, c).unwrap()));
+                str_rows[r].push(self.ring.to_string(mat.at(r, c).unwrap()));
             }
         }
         let cols_widths: Vec<usize> = (0..mat.cols())
@@ -271,7 +271,7 @@ impl<'a, R: ComRing> MatrixStructure<'a, R> {
     }
 
     pub fn zero(&self, rows: usize, cols: usize) -> Matrix<R::ElemT> {
-        Matrix::construct(rows, cols, |r, c| self.ring.zero())
+        Matrix::construct(rows, cols, |_r, _c| self.ring.zero())
     }
 
     pub fn ident(&self, n: usize) -> Matrix<R::ElemT> {

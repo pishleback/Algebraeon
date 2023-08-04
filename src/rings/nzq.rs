@@ -1,6 +1,5 @@
-use std::collections::HashMap;
 
-use super::{poly::*, ring::*};
+use super::ring::*;
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
