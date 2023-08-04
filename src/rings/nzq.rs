@@ -131,46 +131,46 @@ impl FavoriteAssociate for IntegerRing {
     }
 }
 
-impl UniqueFactorizationDomain for IntegerRing {}
+// impl UniqueFactorizationDomain for IntegerRing {}
 
-impl UniquelyFactorable for IntegerRing {
-    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
-        if elem == &0 {
-            None
-        } else {
-            let unit;
-            if elem < &0 {
-                unit = Integer::from(-1);
-            } else {
-                unit = Integer::from(1);
-            }
+// impl UniquelyFactorable for IntegerRing {
+//     fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
+//         if elem == &0 {
+//             None
+//         } else {
+//             let unit;
+//             if elem < &0 {
+//                 unit = Integer::from(-1);
+//             } else {
+//                 unit = Integer::from(1);
+//             }
 
-            fn factor_nat(mut n: Natural) -> HashMap<Natural, Natural> {
-                //TODO: more efficient implementations
-                assert_ne!(n, 0);
-                let mut fs = HashMap::new();
-                let mut p = Natural::from(2u8);
-                while n > 1 && p <= n {
-                    while &n % &p == 0 {
-                        *fs.entry(p.clone()).or_insert(Natural::from(0u8)) += Natural::from(1u8);
-                        n /= &p;
-                    }
-                    p += Natural::from(1u8);
-                }
-                fs
-            }
+//             fn factor_nat(mut n: Natural) -> HashMap<Natural, Natural> {
+//                 //TODO: more efficient implementations
+//                 assert_ne!(n, 0);
+//                 let mut fs = HashMap::new();
+//                 let mut p = Natural::from(2u8);
+//                 while n > 1 && p <= n {
+//                     while &n % &p == 0 {
+//                         *fs.entry(p.clone()).or_insert(Natural::from(0u8)) += Natural::from(1u8);
+//                         n /= &p;
+//                     }
+//                     p += Natural::from(1u8);
+//                 }
+//                 fs
+//             }
 
-            Some(Factored::new_unchecked(
-                elem.clone(),
-                unit,
-                factor_nat(elem.unsigned_abs())
-                    .into_iter()
-                    .map(|(p, k)| (Integer::from(p), k))
-                    .collect(),
-            ))
-        }
-    }
-}
+//             Some(Factored::new_unchecked(
+//                 elem.clone(),
+//                 unit,
+//                 factor_nat(elem.unsigned_abs())
+//                     .into_iter()
+//                     .map(|(p, k)| (Integer::from(p), k))
+//                     .collect(),
+//             ))
+//         }
+//     }
+// }
 
 impl EuclideanDomain for IntegerRing {
     fn norm(&self, elem: &Self::ElemT) -> Option<Natural> {

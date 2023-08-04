@@ -3,13 +3,13 @@ use malachite_nz::{integer::Integer, natural::Natural};
 use super::ring::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Ergonomic<R: ComRing> {
-    ring: R,
+pub struct Ergonomic<'a, R: ComRing> {
+    ring: &'a R,
     elem: R::ElemT,
 }
 
-impl<R: ComRing> Ergonomic<R> {
-    pub fn new(ring: R, elem: R::ElemT) -> Self {
+impl<'a, R: ComRing> Ergonomic<'a, R> {
+    pub fn new(ring: &'a R, elem: R::ElemT) -> Self {
         Self { ring, elem }
     }
 
@@ -30,8 +30,8 @@ impl<R: ComRing> Ergonomic<R> {
 }
 
 //val + val
-impl<R: ComRing> std::ops::Add for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Add for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn add(self, other: Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -42,8 +42,8 @@ impl<R: ComRing> std::ops::Add for Ergonomic<R> {
 }
 
 //ref + ref
-impl<R: ComRing> std::ops::Add for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Add for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn add(self, other: &Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -54,8 +54,8 @@ impl<R: ComRing> std::ops::Add for &Ergonomic<R> {
 }
 
 //val + ref
-impl<R: ComRing> std::ops::Add<&Ergonomic<R>> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Add<&Ergonomic<'a, R>> for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn add(self, other: &Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -66,8 +66,8 @@ impl<R: ComRing> std::ops::Add<&Ergonomic<R>> for Ergonomic<R> {
 }
 
 //ref + val
-impl<R: ComRing> std::ops::Add<Ergonomic<R>> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Add<Ergonomic<'a, R>> for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn add(self, other: Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -78,10 +78,10 @@ impl<R: ComRing> std::ops::Add<Ergonomic<R>> for &Ergonomic<R> {
 }
 
 //val - val
-impl<R: ComRing> std::ops::Sub for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Sub for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
-    fn sub(self, other: Ergonomic<R>) -> Self::Output {
+    fn sub(self, other: Ergonomic<'a, R>) -> Self::Output {
         Self::Output {
             ring: self.ring,
             elem: self.ring.add(self.elem, self.ring.neg(other.elem)),
@@ -90,8 +90,8 @@ impl<R: ComRing> std::ops::Sub for Ergonomic<R> {
 }
 
 //ref - ref
-impl<R: ComRing> std::ops::Sub for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Sub for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn sub(self, other: &Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -104,8 +104,8 @@ impl<R: ComRing> std::ops::Sub for &Ergonomic<R> {
 }
 
 //val - ref
-impl<R: ComRing> std::ops::Sub<&Ergonomic<R>> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Sub<&Ergonomic<'a, R>> for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn sub(self, other: &Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -118,8 +118,8 @@ impl<R: ComRing> std::ops::Sub<&Ergonomic<R>> for Ergonomic<R> {
 }
 
 //ref - val
-impl<R: ComRing> std::ops::Sub<Ergonomic<R>> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Sub<Ergonomic<'a, R>> for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn sub(self, other: Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -130,8 +130,8 @@ impl<R: ComRing> std::ops::Sub<Ergonomic<R>> for &Ergonomic<R> {
 }
 
 //-val
-impl<R: ComRing> std::ops::Neg for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Neg for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn neg(self) -> Self::Output {
         Self::Output {
@@ -142,8 +142,8 @@ impl<R: ComRing> std::ops::Neg for Ergonomic<R> {
 }
 
 //-ref
-impl<R: ComRing> std::ops::Neg for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Neg for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn neg(self) -> Self::Output {
         Self::Output {
@@ -154,10 +154,10 @@ impl<R: ComRing> std::ops::Neg for &Ergonomic<R> {
 }
 
 //val * val
-impl<R: ComRing> std::ops::Mul for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Mul for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
-    fn mul(self, other: Ergonomic<R>) -> Self::Output {
+    fn mul(self, other: Ergonomic<'a, R>) -> Self::Output {
         Self::Output {
             ring: self.ring,
             elem: self.ring.mul(self.elem, other.elem),
@@ -166,8 +166,8 @@ impl<R: ComRing> std::ops::Mul for Ergonomic<R> {
 }
 
 //ref * ref
-impl<R: ComRing> std::ops::Mul for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Mul for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn mul(self, other: &Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -178,8 +178,8 @@ impl<R: ComRing> std::ops::Mul for &Ergonomic<R> {
 }
 
 //val * ref
-impl<R: ComRing> std::ops::Mul<&Ergonomic<R>> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Mul<&Ergonomic<'a, R>> for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn mul(self, other: &Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -190,8 +190,8 @@ impl<R: ComRing> std::ops::Mul<&Ergonomic<R>> for Ergonomic<R> {
 }
 
 //ref * val
-impl<R: ComRing> std::ops::Mul<Ergonomic<R>> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Mul<Ergonomic<'a, R>> for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn mul(self, other: Ergonomic<R>) -> Self::Output {
         Self::Output {
@@ -202,17 +202,17 @@ impl<R: ComRing> std::ops::Mul<Ergonomic<R>> for &Ergonomic<R> {
 }
 
 //val + i32
-impl<R: ComRing> std::ops::Add<i32> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Add<i32> for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn add(self, other: i32) -> Self::Output {
-        self + Ergonomic::new(self.ring, self.ring.from_int(&Integer::from(other)))
+        &self + Ergonomic::new(self.ring, self.ring.from_int(&Integer::from(other)))
     }
 }
 
 //ref + i32
-impl<R: ComRing> std::ops::Add<i32> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Add<i32> for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn add(self, other: i32) -> Self::Output {
         self + Ergonomic::new(self.ring, self.ring.from_int(&Integer::from(other)))
@@ -220,35 +220,35 @@ impl<R: ComRing> std::ops::Add<i32> for &Ergonomic<R> {
 }
 
 //i32 + val
-impl<R: ComRing> std::ops::Add<Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Add<Ergonomic<'a, R>> for i32 {
+    type Output = Ergonomic<'a, R>;
 
-    fn add(self, other: Ergonomic<R>) -> Self::Output {
+    fn add(self, other: Ergonomic<'a, R>) -> Self::Output {
         Ergonomic::new(other.ring, other.ring.from_int(&Integer::from(self))) + other
     }
 }
 
 //i32 + ref
-impl<R: ComRing> std::ops::Add<&Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Add<&Ergonomic<'a, R>> for i32 {
+    type Output = Ergonomic<'a, R>;
 
-    fn add(self, other: &Ergonomic<R>) -> Self::Output {
+    fn add(self, other: &Ergonomic<'a, R>) -> Self::Output {
         Ergonomic::new(other.ring, other.ring.from_int(&Integer::from(self))) + other
     }
 }
 
 //val - i32
-impl<R: ComRing> std::ops::Sub<i32> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Sub<i32> for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn sub(self, other: i32) -> Self::Output {
-        self - Ergonomic::new(self.ring, self.ring.from_int(&Integer::from(other)))
+        &self - Ergonomic::new(self.ring, self.ring.from_int(&Integer::from(other)))
     }
 }
 
 //ref - i32
-impl<R: ComRing> std::ops::Sub<i32> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Sub<i32> for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn sub(self, other: i32) -> Self::Output {
         self - Ergonomic::new(self.ring, self.ring.from_int(&Integer::from(other)))
@@ -256,35 +256,35 @@ impl<R: ComRing> std::ops::Sub<i32> for &Ergonomic<R> {
 }
 
 //i32 - val
-impl<R: ComRing> std::ops::Sub<Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Sub<Ergonomic<'a, R>> for i32 {
+    type Output = Ergonomic<'a, R>;
 
-    fn sub(self, other: Ergonomic<R>) -> Self::Output {
+    fn sub(self, other: Ergonomic<'a, R>) -> Self::Output {
         Ergonomic::new(other.ring, other.ring.from_int(&Integer::from(self))) - other
     }
 }
 
 //i32 - ref
-impl<R: ComRing> std::ops::Sub<&Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Sub<&Ergonomic<'a, R>> for i32 {
+    type Output = Ergonomic<'a, R>;
 
-    fn sub(self, other: &Ergonomic<R>) -> Self::Output {
+    fn sub(self, other: &Ergonomic<'a, R>) -> Self::Output {
         Ergonomic::new(other.ring, other.ring.from_int(&Integer::from(self))) - other
     }
 }
 
 //val * i32
-impl<R: ComRing> std::ops::Mul<i32> for Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Mul<i32> for Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn mul(self, other: i32) -> Self::Output {
-        self * Ergonomic::new(self.ring, self.ring.from_int(&Integer::from(other)))
+        &self * Ergonomic::new(self.ring, self.ring.from_int(&Integer::from(other)))
     }
 }
 
 //ref * i32
-impl<R: ComRing> std::ops::Mul<i32> for &Ergonomic<R> {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Mul<i32> for &Ergonomic<'a, R> {
+    type Output = Ergonomic<'a, R>;
 
     fn mul(self, other: i32) -> Self::Output {
         self * Ergonomic::new(self.ring, self.ring.from_int(&Integer::from(other)))
@@ -292,19 +292,19 @@ impl<R: ComRing> std::ops::Mul<i32> for &Ergonomic<R> {
 }
 
 //i32 * val
-impl<R: ComRing> std::ops::Mul<Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Mul<Ergonomic<'a, R>> for i32 {
+    type Output = Ergonomic<'a, R>;
 
-    fn mul(self, other: Ergonomic<R>) -> Self::Output {
+    fn mul(self, other: Ergonomic<'a, R>) -> Self::Output {
         Ergonomic::new(other.ring, other.ring.from_int(&Integer::from(self))) * other
     }
 }
 
 //i32 * ref
-impl<R: ComRing> std::ops::Mul<&Ergonomic<R>> for i32 {
-    type Output = Ergonomic<R>;
+impl<'a, R: ComRing> std::ops::Mul<&Ergonomic<'a, R>> for i32 {
+    type Output = Ergonomic<'a, R>;
 
-    fn mul(self, other: &Ergonomic<R>) -> Self::Output {
+    fn mul(self, other: &Ergonomic<'a, R>) -> Self::Output {
         Ergonomic::new(other.ring, other.ring.from_int(&Integer::from(self))) * other
     }
 }

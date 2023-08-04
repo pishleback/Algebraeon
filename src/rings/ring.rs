@@ -168,7 +168,7 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Hash + Debug {
 
 pub trait InfiniteRing: ComRing {
     //generate an infinite sequence of distinct elements
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::ElemT>>;
+    fn generate_distinct_elements<'a>(&'a self) -> Box<dyn Iterator<Item = Self::ElemT> + 'a>;
 }
 
 pub trait CharacteristicZero: ComRing {
@@ -176,7 +176,7 @@ pub trait CharacteristicZero: ComRing {
 }
 
 impl<R: CharacteristicZero> InfiniteRing for R {
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::ElemT>> {
+    fn generate_distinct_elements<'a>(&'a self) -> Box<dyn Iterator<Item = Self::ElemT> + 'a> {
         struct IntegerIterator {
             next: Integer,
         }
@@ -194,6 +194,7 @@ impl<R: CharacteristicZero> InfiniteRing for R {
                 Some(next)
             }
         }
+
         Box::new(
             IntegerIterator {
                 next: Integer::from(0),
@@ -241,135 +242,135 @@ pub trait GreatestCommonDivisorDomain: FavoriteAssociate {
     }
 }
 
-pub trait UniqueFactorizationDomain: FavoriteAssociate {
-    //unique factorizations exist
-}
+// pub trait UniqueFactorizationDomain: FavoriteAssociate {
+//     //unique factorizations exist
+// }
 
-pub trait UniquelyFactorable: UniqueFactorizationDomain {
-    //a UFD with an explicit algorithm to compute unique factorizations
-    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>>;
+// pub trait UniquelyFactorable: UniqueFactorizationDomain {
+//     //a UFD with an explicit algorithm to compute unique factorizations
+//     fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>>;
 
-    fn is_irreducible(&self, elem: &Self::ElemT) -> Option<bool> {
-        match self.factor(elem) {
-            None => None,
-            Some(factored) => Some(factored.is_irreducible()),
-        }
-    }
+//     fn is_irreducible(&self, elem: &Self::ElemT) -> Option<bool> {
+//         match self.factor(elem) {
+//             None => None,
+//             Some(factored) => Some(factored.is_irreducible()),
+//         }
+//     }
 
-    fn one_factored(&self) -> Factored<Self::ElemT> {
-        Factored {
-            elem: self.one(),
-            unit: self.one(),
-            factors: HashMap::new(),
-        }
-    }
+//     fn one_factored(&self) -> Factored<Self::ElemT> {
+//         Factored {
+//             elem: self.one(),
+//             unit: self.one(),
+//             factors: HashMap::new(),
+//         }
+//     }
 
-    fn irreducible_factored_unchecked(&self, elem: Self::ElemT) -> Factored<Self::ElemT> {
-        let (unit, assoc) = self.factor_fav_assoc(elem);
-        Factored {
-            elem: assoc.clone(),
-            unit,
-            factors: HashMap::from([(assoc, Natural::from(1u8))]),
-        }
-    }
+//     fn irreducible_factored_unchecked(&self, elem: Self::ElemT) -> Factored<Self::ElemT> {
+//         let (unit, assoc) = self.factor_fav_assoc(elem);
+//         Factored {
+//             elem: assoc.clone(),
+//             unit,
+//             factors: HashMap::from([(assoc, Natural::from(1u8))]),
+//         }
+//     }
 
-    fn check_invariants(&self, f: Factored<Self::ElemT>) -> Result<(), &'static str> {
-        if !self.is_unit(f.unit.clone()) {
-            return Err("unit must be a unit");
-        }
-        let mut prod = f.unit.clone();
-        for (p, k) in &f.factors {
-            if k == &0 {
-                return Err("prime powers must not be zero");
-            }
-            if p == &self.zero() {
-                return Err("prime factor must not be zero");
-            }
-            if !self.is_fav_assoc(p) {
-                return Err("prime factor must be their fav assoc");
-            }
-            if !self.is_irreducible(p).unwrap() {
-                return Err("prime factor must not be reducible");
-            }
+//     fn check_invariants(&self, f: Factored<Self::ElemT>) -> Result<(), &'static str> {
+//         if !self.is_unit(f.unit.clone()) {
+//             return Err("unit must be a unit");
+//         }
+//         let mut prod = f.unit.clone();
+//         for (p, k) in &f.factors {
+//             if k == &0 {
+//                 return Err("prime powers must not be zero");
+//             }
+//             if p == &self.zero() {
+//                 return Err("prime factor must not be zero");
+//             }
+//             if !self.is_fav_assoc(p) {
+//                 return Err("prime factor must be their fav assoc");
+//             }
+//             if !self.is_irreducible(p).unwrap() {
+//                 return Err("prime factor must not be reducible");
+//             }
 
-            let mut i = Natural::from(0u8);
-            while &i < k {
-                self.mul_mut(&mut prod, p);
-                i += Natural::from(1u8);
-            }
-        }
-        if f.elem != prod {
-            return Err("product is incorrect");
-        }
-        Ok(())
-    }
-}
+//             let mut i = Natural::from(0u8);
+//             while &i < k {
+//                 self.mul_mut(&mut prod, p);
+//                 i += Natural::from(1u8);
+//             }
+//         }
+//         if f.elem != prod {
+//             return Err("product is incorrect");
+//         }
+//         Ok(())
+//     }
+// }
 
-#[derive(Debug)]
-pub struct Factored<ElemT: PartialEq + Eq + Hash + Clone> {
-    elem: ElemT,
-    unit: ElemT,
-    factors: HashMap<ElemT, Natural>,
-}
+// #[derive(Debug)]
+// pub struct Factored<ElemT: PartialEq + Eq + Hash + Clone> {
+//     elem: ElemT,
+//     unit: ElemT,
+//     factors: HashMap<ElemT, Natural>,
+// }
 
-impl<ElemT: PartialEq + Eq + Hash + Clone> PartialEq for Factored<ElemT> {
-    fn eq(&self, other: &Self) -> bool {
-        self.unit == other.unit && self.factors == other.factors
-    }
-}
+// impl<ElemT: PartialEq + Eq + Hash + Clone> PartialEq for Factored<ElemT> {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.unit == other.unit && self.factors == other.factors
+//     }
+// }
 
-impl<ElemT: PartialEq + Eq + Hash + Clone> Eq for Factored<ElemT> {}
+// impl<ElemT: PartialEq + Eq + Hash + Clone> Eq for Factored<ElemT> {}
 
-impl<ElemT: PartialEq + Eq + Hash + Clone + ToString> ToString for Factored<ElemT> {
-    fn to_string(&self) -> String {
-        let mut s = self.unit.to_string();
-        for (f, k) in &self.factors {
-            s += " * (";
-            s += &f.to_string();
-            s += ")";
-            if k != &Natural::from(1u8) {
-                s += "^";
-                s += &k.to_string();
-            }
-        }
-        s
-    }
-}
+// impl<ElemT: PartialEq + Eq + Hash + Clone> ToString for Factored<ElemT> {
+//     fn to_string(&self) -> String {
+//         let mut s = self.unit.to_string();
+//         for (f, k) in &self.factors {
+//             s += " * (";
+//             s += &f.to_string();
+//             s += ")";
+//             if k != &Natural::from(1u8) {
+//                 s += "^";
+//                 s += &k.to_string();
+//             }
+//         }
+//         s
+//     }
+// }
 
-impl<ElemT: PartialEq + Eq + Hash + Clone> Factored<ElemT> {
-    pub fn new_unchecked(elem: ElemT, unit: ElemT, factors: HashMap<ElemT, Natural>) -> Self {
-        Self {
-            elem,
-            unit,
-            factors,
-        }
-    }
+// impl<ElemT: PartialEq + Eq + Hash + Clone> Factored<ElemT> {
+//     pub fn new_unchecked(elem: ElemT, unit: ElemT, factors: HashMap<ElemT, Natural>) -> Self {
+//         Self {
+//             elem,
+//             unit,
+//             factors,
+//         }
+//     }
 
-    pub fn new_unit_unchecked(unit: ElemT) -> Self {
-        Self {
-            elem: unit.clone(),
-            unit,
-            factors: HashMap::new(),
-        }
-    }
+//     pub fn new_unit_unchecked(unit: ElemT) -> Self {
+//         Self {
+//             elem: unit.clone(),
+//             unit,
+//             factors: HashMap::new(),
+//         }
+//     }
 
-    pub fn unit(&self) -> &ElemT {
-        &self.unit
-    }
+//     pub fn unit(&self) -> &ElemT {
+//         &self.unit
+//     }
 
-    pub fn factors(&self) -> &HashMap<ElemT, Natural> {
-        &self.factors
-    }
+//     pub fn factors(&self) -> &HashMap<ElemT, Natural> {
+//         &self.factors
+//     }
 
-    pub fn is_irreducible(&self) -> bool {
-        if self.factors.len() == 1 {
-            let (_p, k) = self.factors.iter().next().unwrap();
-            if k == &1 {
-                return true;
-            }
-        }
-        false
-    }
+//     pub fn is_irreducible(&self) -> bool {
+//         if self.factors.len() == 1 {
+//             let (_p, k) = self.factors.iter().next().unwrap();
+//             if k == &1 {
+//                 return true;
+//             }
+//         }
+//         false
+//     }
 
     // pub fn mul(a: Self, b: Self) -> Self {
     //     let mut mul_factors = a.factors;
@@ -408,14 +409,14 @@ impl<ElemT: PartialEq + Eq + Hash + Clone> Factored<ElemT> {
     //     }
     // }
 
-    pub fn count_divisors(&self) -> Option<Natural> {
-        let mut count = Natural::from(1u8);
-        for (_p, k) in &self.factors {
-            count *= k + Natural::from(1u8);
-        }
-        Some(count)
-    }
-}
+//     pub fn count_divisors(&self) -> Option<Natural> {
+//         let mut count = Natural::from(1u8);
+//         for (_p, k) in &self.factors {
+//             count *= k + Natural::from(1u8);
+//         }
+//         Some(count)
+//     }
+// }
 
 pub trait PrincipalIdealDomain: GreatestCommonDivisorDomain {
     //any gcds should be the standard associate representative
@@ -669,24 +670,24 @@ impl<F: Field> EuclideanDomain for F {
     }
 }
 
-impl<F: Field + Hash> UniqueFactorizationDomain for F {}
+// impl<F: Field + Hash> UniqueFactorizationDomain for F {}
 
-impl<F: Field + Hash> UniquelyFactorable for F
-where
-    Self::ElemT: Hash,
-{
-    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
-        if elem == &self.zero() {
-            None
-        } else {
-            Some(Factored::new_unchecked(
-                elem.clone(),
-                elem.clone(),
-                HashMap::new(),
-            ))
-        }
-    }
-}
+// impl<F: Field + Hash> UniquelyFactorable for F
+// where
+//     Self::ElemT: Hash,
+// {
+//     fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
+//         if elem == &self.zero() {
+//             None
+//         } else {
+//             Some(Factored::new_unchecked(
+//                 elem.clone(),
+//                 elem.clone(),
+//                 HashMap::new(),
+//             ))
+//         }
+//     }
+// }
 
 pub trait FieldOfFractions: Field {
     type R: IntegralDomain;

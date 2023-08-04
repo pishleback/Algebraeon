@@ -6,7 +6,11 @@ use malachite_nz::natural::Natural;
 use std::hash::Hash;
 
 use super::matrix::*;
+use super::nzq::*;
 use super::ring::*;
+
+pub const ZZ_POLY: PolynomialRing<IntegerRing> = PolynomialRing { ring: &ZZ };
+pub const QQ_POLY: PolynomialRing<RationalField> = PolynomialRing { ring: &QQ };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Polynomial<ElemT: Clone + PartialEq + Eq + Hash> {
@@ -28,11 +32,17 @@ impl<ElemT: Clone + PartialEq + Eq + Hash> Polynomial<ElemT> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct PolynomialRing<R: ComRing> {
-    ring: R,
+pub struct PolynomialRing<'a, R: ComRing> {
+    ring: &'a R,
 }
 
-impl<R: ComRing> ComRing for PolynomialRing<R> {
+impl<'a, R: ComRing> PolynomialRing<'a, R> {
+    pub fn new(ring: &'a R) -> Self {
+        Self { ring }
+    }
+}
+
+impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
     type ElemT = Polynomial<R::ElemT>;
 
     fn to_string(&self, poly: &Self::ElemT) -> String {
@@ -203,7 +213,7 @@ impl<R: ComRing> ComRing for PolynomialRing<R> {
     }
 }
 
-impl<R: ComRing> PolynomialRing<R> {
+impl<'a, R: ComRing> PolynomialRing<'a, R> {
     fn check_invariants(&self, poly: Polynomial<R::ElemT>) -> Result<(), &'static str> {
         match poly.coeffs.len() {
             0 => {}
@@ -230,7 +240,7 @@ impl<R: ComRing> PolynomialRing<R> {
         }
     }
 
-    pub fn new(&self, coeffs: Vec<R::ElemT>) -> Polynomial<R::ElemT> {
+    pub fn from_coeffs(&self, coeffs: Vec<R::ElemT>) -> Polynomial<R::ElemT> {
         let mut p = Polynomial { coeffs };
         self.reduce(&mut p);
         p
@@ -343,7 +353,7 @@ impl<R: ComRing> PolynomialRing<R> {
     }
 }
 
-impl<R: IntegralDomain> PolynomialRing<R> {
+impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
     pub fn pseudorem(
         &self,
         a: Polynomial<R::ElemT>,
@@ -486,11 +496,11 @@ impl<R: IntegralDomain> PolynomialRing<R> {
     }
 }
 
-impl<R: IntegralDomain> IntegralDomain for PolynomialRing<R> {}
+impl<'a, R: IntegralDomain> IntegralDomain for PolynomialRing<'a, R> {}
 
-impl<R: UniqueFactorizationDomain> UniqueFactorizationDomain for PolynomialRing<R> {}
+// impl<R: UniqueFactorizationDomain> UniqueFactorizationDomain for PolynomialRing<R> {}
 
-impl<R: GreatestCommonDivisorDomain> PolynomialRing<R> {
+impl<'a, R: GreatestCommonDivisorDomain> PolynomialRing<'a, R> {
     fn factor_primitive(
         &self,
         mut poly: Polynomial<R::ElemT>,
@@ -508,7 +518,7 @@ impl<R: GreatestCommonDivisorDomain> PolynomialRing<R> {
     }
 }
 
-impl<R: FavoriteAssociate + IntegralDomain> FavoriteAssociate for PolynomialRing<R> {
+impl<'a, R: FavoriteAssociate + IntegralDomain> FavoriteAssociate for PolynomialRing<'a, R> {
     fn factor_fav_assoc(
         &self,
         mut elem: Polynomial<R::ElemT>,
@@ -527,9 +537,9 @@ impl<R: FavoriteAssociate + IntegralDomain> FavoriteAssociate for PolynomialRing
     }
 }
 
-impl<R: CharacteristicZero> CharacteristicZero for PolynomialRing<R> {}
+impl<'a, R: CharacteristicZero> CharacteristicZero for PolynomialRing<'a, R> {}
 
-impl<R: IntegralDomain + FiniteUnits> FiniteUnits for PolynomialRing<R> {
+impl<'a, R: IntegralDomain + FiniteUnits> FiniteUnits for PolynomialRing<'a, R> {
     fn all_units(&self) -> Vec<Polynomial<R::ElemT>> {
         self.ring
             .all_units()
@@ -543,7 +553,7 @@ impl<R: IntegralDomain + FiniteUnits> FiniteUnits for PolynomialRing<R> {
 //     fn interpolate(points: &Vec<(Self::ElemT, Self::ElemT)>) -> Option<Polynomial<Self>>;
 // }
 
-impl<F: Field> EuclideanDomain for PolynomialRing<F> {
+impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
     fn norm(&self, elem: &Self::ElemT) -> Option<Natural> {
         if elem == &self.zero() {
             None
@@ -1000,8 +1010,8 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    const ZZ_POLY: PolynomialRing<IntegerRing> = PolynomialRing { ring: ZZ };
-    const QQ_POLY: PolynomialRing<RationalField> = PolynomialRing { ring: QQ };
+    const ZZ_POLY: PolynomialRing<IntegerRing> = PolynomialRing { ring: &ZZ };
+    const QQ_POLY: PolynomialRing<RationalField> = PolynomialRing { ring: &QQ };
 
     #[test]
     fn invariant_reduction() {
@@ -1034,14 +1044,14 @@ mod tests {
 
     #[test]
     fn divisibility() {
-        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
+        let x = &Ergonomic::new(&ZZ_POLY, ZZ_POLY.var());
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         match ZZ_POLY.div(a.elem(), b.elem()) {
             Ok(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
-                assert_eq!(a, b * Ergonomic::new(ZZ_POLY, c))
+                assert_eq!(a, b * Ergonomic::new(&ZZ_POLY, c))
             }
             Err(_) => panic!(),
         }
@@ -1093,19 +1103,19 @@ mod tests {
 
     #[test]
     fn euclidean() {
-        let x = &Ergonomic::new(QQ_POLY, QQ_POLY.var());
+        let x = &Ergonomic::new(&QQ_POLY, QQ_POLY.var());
 
         let a = 1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5);
         let b = 1 + x + 3 * x.pow(2) + 2 * x.pow(3);
         let (q, r) = QQ_POLY.quorem_refs(&a.elem(), &b.elem()).unwrap();
-        let (q, r) = (Ergonomic::new(QQ_POLY, q), Ergonomic::new(QQ_POLY, r));
+        let (q, r) = (Ergonomic::new(&QQ_POLY, q), Ergonomic::new(&QQ_POLY, r));
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
 
         let a = 3 * x;
         let b = 2 * x;
         let (q, r) = QQ_POLY.quorem_refs(&a.elem(), &b.elem()).unwrap();
-        let (q, r) = (Ergonomic::new(QQ_POLY, q), Ergonomic::new(QQ_POLY, r));
+        let (q, r) = (Ergonomic::new(&QQ_POLY, q), Ergonomic::new(&QQ_POLY, r));
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
 
@@ -1123,7 +1133,7 @@ mod tests {
 
     #[test]
     fn test_pseudo_remainder() {
-        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
+        let x = &Ergonomic::new(&ZZ_POLY, ZZ_POLY.var());
         {
             let f = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
                 .elem();
@@ -1171,18 +1181,18 @@ mod tests {
 
     #[test]
     fn integer_primitive_and_assoc() {
-        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
+        let x = &Ergonomic::new(&ZZ_POLY, ZZ_POLY.var());
         let p1 = (-2 - 4 * x.pow(2)).elem();
         let (g, p2) = ZZ_POLY.factor_primitive(p1).unwrap();
         assert_eq!(g, Integer::from(2));
         let (u, p3) = ZZ_POLY.factor_fav_assoc(p2);
         assert_eq!(u.coeffs[0], Integer::from(-1));
-        assert_eq!(Ergonomic::new(ZZ_POLY, p3), 1 + 2 * x.pow(2));
+        assert_eq!(Ergonomic::new(&ZZ_POLY, p3), 1 + 2 * x.pow(2));
     }
 
     #[test]
     fn test_evaluate() {
-        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
+        let x = &Ergonomic::new(&ZZ_POLY, ZZ_POLY.var());
         let f = (1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5)).elem();
         assert_eq!(ZZ_POLY.evaluate(&f, &Integer::from(3)), Integer::from(868));
 
@@ -1366,7 +1376,7 @@ mod tests {
 
     #[test]
     fn test_derivative() {
-        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
+        let x = &Ergonomic::new(&ZZ_POLY, ZZ_POLY.var());
         let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3)).elem();
         let g = (3 - 2 * x + 21 * x.pow(2)).elem();
         assert_eq!(ZZ_POLY.derivative(f), g);
@@ -1488,7 +1498,7 @@ mod tests {
 
     #[test]
     fn test_pseudo_gcd() {
-        let x = &Ergonomic::new(ZZ_POLY, ZZ_POLY.var());
+        let x = &Ergonomic::new(&ZZ_POLY, ZZ_POLY.var());
 
         let f =
             (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();

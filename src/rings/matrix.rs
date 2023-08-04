@@ -2,7 +2,10 @@
 
 use std::borrow::Borrow;
 
-use super::{lattice::*, poly::*, ring::*};
+use super::{lattice::*, nzq::*, poly::*, ring::*};
+
+pub const ZZ_MAT: MatrixStructure<IntegerRing> = MatrixStructure { ring: &ZZ };
+pub const QQ_MAT: MatrixStructure<RationalField> = MatrixStructure { ring: &QQ };
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -154,22 +157,21 @@ impl<ElemT: Clone> Matrix<ElemT> {
             assert_eq!(cols, mat.borrow().cols());
             rows += mat.borrow().rows();
         }
-        let mut joined = Matrix::construct(rows, cols, |r, c| {
-            //todo use a lass cursed method
+        Matrix::construct(rows, cols, |r, c| {
+            //todo use a less cursed method
             let mut row_offset = 0;
             for mat in &mats {
                 for mr in 0..mat.borrow().rows() {
                     for mc in 0..cols {
-                        if r == mr && c == mc {
-                            return mat.borrow().at(r, c).unwrap().clone();
+                        if r == row_offset + mr && c == mc {
+                            return mat.borrow().at(mr, mc).unwrap().clone();
                         }
                     }
                 }
                 row_offset += mat.borrow().rows();
             }
             panic!();
-        });
-        joined
+        })
     }
 
     pub fn join_cols<MatT: Borrow<Matrix<ElemT>>>(rows: usize, mats: Vec<MatT>) -> Matrix<ElemT> {
@@ -179,60 +181,6 @@ impl<ElemT: Clone> Matrix<ElemT> {
         }
         let joined = Self::join_rows(rows, t_mats.iter().collect());
         joined.transpose()
-    }
-}
-
-impl<ElemT: Clone + ToString> Matrix<ElemT> {
-    pub fn pprint(&self) {
-        let mut str_rows = vec![];
-        for r in 0..self.rows() {
-            str_rows.push(vec![]);
-            for c in 0..self.cols() {
-                str_rows[r].push(self.at(r, c).unwrap().to_string());
-            }
-        }
-        let cols_widths: Vec<usize> = (0..self.cols())
-            .map(|c| {
-                (0..self.rows())
-                    .map(|r| str_rows[r][c].len())
-                    .fold(0usize, |a, b| a.max(b))
-            })
-            .collect();
-
-        for r in 0..self.rows() {
-            for c in 0..self.cols() {
-                while str_rows[r][c].len() < cols_widths[c] {
-                    str_rows[r][c].push(' ');
-                }
-            }
-        }
-        for r in 0..self.rows() {
-            if self.rows() == 1 {
-                print!("( ");
-            } else if r == 0 {
-                print!("/ ");
-            } else if r == self.rows() - 1 {
-                print!("\\ ");
-            } else {
-                print!("| ");
-            }
-            for c in 0..self.cols() {
-                if c != 0 {
-                    print!("    ");
-                }
-                print!("{}", str_rows[r][c]);
-            }
-            if self.rows() == 1 {
-                print!(" )");
-            } else if r == 0 {
-                print!(" \\");
-            } else if r == self.rows() - 1 {
-                print!(" /");
-            } else {
-                print!(" |");
-            }
-            print!("\n");
-        }
     }
 }
 
@@ -259,11 +207,69 @@ impl<ElemT: Clone + PartialEq> PartialEq for Matrix<ElemT> {
 
 impl<ElemT: ComRing + PartialEq + Eq> Eq for Matrix<ElemT> {}
 
-pub struct MatrixStructure<R: ComRing> {
-    ring: R,
+pub struct MatrixStructure<'a, R: ComRing> {
+    ring: &'a R,
 }
 
-impl<R: ComRing> MatrixStructure<R> {
+impl<'a, R: ComRing> MatrixStructure<'a, R> {
+    pub fn new(ring: &'a R) -> Self {
+        Self { ring }
+    }
+}
+
+impl<'a, R: ComRing> MatrixStructure<'a, R> {
+    pub fn pprint(&self, mat: &Matrix<R::ElemT>) {
+        let mut str_rows = vec![];
+        for r in 0..mat.rows() {
+            str_rows.push(vec![]);
+            for c in 0..mat.cols() {
+                &str_rows[r].push(self.ring.to_string(mat.at(r, c).unwrap()));
+            }
+        }
+        let cols_widths: Vec<usize> = (0..mat.cols())
+            .map(|c| {
+                (0..mat.rows())
+                    .map(|r| str_rows[r][c].len())
+                    .fold(0usize, |a, b| a.max(b))
+            })
+            .collect();
+
+        for r in 0..mat.rows() {
+            for c in 0..mat.cols() {
+                while str_rows[r][c].len() < cols_widths[c] {
+                    str_rows[r][c].push(' ');
+                }
+            }
+        }
+        for r in 0..mat.rows() {
+            if mat.rows() == 1 {
+                print!("( ");
+            } else if r == 0 {
+                print!("/ ");
+            } else if r == mat.rows() - 1 {
+                print!("\\ ");
+            } else {
+                print!("| ");
+            }
+            for c in 0..mat.cols() {
+                if c != 0 {
+                    print!("    ");
+                }
+                print!("{}", str_rows[r][c]);
+            }
+            if mat.rows() == 1 {
+                print!(" )");
+            } else if r == 0 {
+                print!(" \\");
+            } else if r == mat.rows() - 1 {
+                print!(" /");
+            } else {
+                print!(" |");
+            }
+            print!("\n");
+        }
+    }
+
     pub fn zero(&self, rows: usize, cols: usize) -> Matrix<R::ElemT> {
         Matrix::construct(rows, cols, |r, c| self.ring.zero())
     }
@@ -289,7 +295,7 @@ impl<R: ComRing> MatrixStructure<R> {
     }
 }
 
-impl<R: ComRing> MatrixStructure<R> {
+impl<'a, R: ComRing> MatrixStructure<'a, R> {
     pub fn add_mut(&self, a: &mut Matrix<R::ElemT>, b: &Matrix<R::ElemT>) -> Result<(), MatOppErr> {
         if a.rows() != b.rows() || a.cols() != b.cols() {
             Err(MatOppErr::DimMissmatch)
@@ -455,13 +461,13 @@ enum ElementaryOppType<R: ComRing> {
     },
 }
 
-struct ElementaryOpp<R: ComRing> {
-    ring: R,
+struct ElementaryOpp<'a, R: ComRing> {
+    ring: &'a R,
     transpose: bool, //false = row opp, true = column opp
     opp: ElementaryOppType<R>,
 }
 
-impl<R: PrincipalIdealDomain> ElementaryOpp<R> {
+impl<'a, R: PrincipalIdealDomain> ElementaryOpp<'a, R> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         match &self.opp {
             ElementaryOppType::Swap(i, j) => {
@@ -500,7 +506,7 @@ impl<R: PrincipalIdealDomain> ElementaryOpp<R> {
         Ok(())
     }
 
-    fn new_row_opp(ring: R, opp: ElementaryOppType<R>) -> Self {
+    fn new_row_opp(ring: &'a R, opp: ElementaryOppType<R>) -> Self {
         Self {
             ring,
             transpose: false,
@@ -508,7 +514,7 @@ impl<R: PrincipalIdealDomain> ElementaryOpp<R> {
         }
     }
 
-    fn new_col_opp(ring: R, opp: ElementaryOppType<R>) -> Self {
+    fn new_col_opp(ring: &'a R, opp: ElementaryOppType<R>) -> Self {
         Self {
             ring,
             transpose: true,
@@ -594,9 +600,9 @@ impl<R: PrincipalIdealDomain> ElementaryOpp<R> {
     }
 }
 
-impl<R: PrincipalIdealDomain> MatrixStructure<R> {
-    pub fn row_span(&self, a: Matrix<R::ElemT>) -> LinearLattice<R> {
-        LinearLattice::from_span(
+impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
+    pub fn row_span(&self, a: Matrix<R::ElemT>) -> LinearLattice<R::ElemT> {
+        LinearLatticeStructure::new(self.ring).from_span(
             1,
             a.cols(),
             (0..a.rows())
@@ -605,8 +611,8 @@ impl<R: PrincipalIdealDomain> MatrixStructure<R> {
         )
     }
 
-    pub fn col_span(&self, a: Matrix<R::ElemT>) -> LinearLattice<R> {
-        LinearLattice::from_span(
+    pub fn col_span(&self, a: Matrix<R::ElemT>) -> LinearLattice<R::ElemT> {
+        LinearLatticeStructure::new(self.ring).from_span(
             a.rows(),
             1,
             (0..a.cols())
@@ -615,9 +621,9 @@ impl<R: PrincipalIdealDomain> MatrixStructure<R> {
         )
     }
 
-    pub fn row_kernel(&self, a: Matrix<R::ElemT>) -> LinearLattice<R> {
+    pub fn row_kernel(&self, a: Matrix<R::ElemT>) -> LinearLattice<R::ElemT> {
         let (_h, u, _u_det, pivs) = self.row_hermite_algorithm(a);
-        LinearLattice::from_basis(
+        LinearLatticeStructure::new(self.ring).from_basis(
             1,
             u.cols(),
             (pivs.len()..u.rows())
@@ -627,9 +633,9 @@ impl<R: PrincipalIdealDomain> MatrixStructure<R> {
         )
     }
 
-    pub fn col_kernel(&self, a: Matrix<R::ElemT>) -> LinearLattice<R> {
+    pub fn col_kernel(&self, a: Matrix<R::ElemT>) -> LinearLattice<R::ElemT> {
         let (_h, u, _u_det, pivs) = self.col_hermite_algorithm(a);
-        LinearLattice::from_basis(
+        LinearLatticeStructure::new(self.ring).from_basis(
             u.rows(),
             1,
             (pivs.len()..u.cols())
@@ -662,8 +668,12 @@ impl<R: PrincipalIdealDomain> MatrixStructure<R> {
         //we are looking for a point in the column kernel where the first coordinate is 1
         let col_ker = self.col_kernel(ext_mat);
 
-        let first_coords: Vec<&R::ElemT> = (0..col_ker.rank())
-            .map(|basis_num| col_ker.basis_matrix_element(basis_num, 0, 0))
+        let first_coords: Vec<&R::ElemT> = (0..LinearLatticeStructure::new(self.ring)
+            .rank(&col_ker))
+            .map(|basis_num| {
+                LinearLatticeStructure::new(self.ring)
+                    .basis_matrix_element(&col_ker, basis_num, 0, 0)
+            })
             .collect();
 
         let (g, taps) = self.ring.xgcd_list(first_coords);
@@ -675,10 +685,13 @@ impl<R: PrincipalIdealDomain> MatrixStructure<R> {
             //there is a solution
             //it is given by -(sum(taps * col_ker.basis)) with the first coordinate (equal to 1) removed
             let mut ext_ans = self.zero(m.cols() + 1, 1);
-            for basis_num in 0..col_ker.rank() {
+            for basis_num in 0..LinearLatticeStructure::new(self.ring).rank(&col_ker) {
                 self.add_mut(
                     &mut ext_ans,
-                    &self.mul_scalar_ref(&col_ker.basis_matrix(basis_num), &taps[basis_num]),
+                    &self.mul_scalar_ref(
+                        &LinearLatticeStructure::new(self.ring).basis_matrix(&col_ker, basis_num),
+                        &taps[basis_num],
+                    ),
                 )
                 .unwrap();
             }
@@ -695,15 +708,15 @@ impl<R: PrincipalIdealDomain> MatrixStructure<R> {
         &self,
         m: &Matrix<R::ElemT>,
         y: VecT,
-    ) -> AffineLattice<R> {
+    ) -> AffineLattice<R::ElemT> {
         match self.row_solve(m, y) {
-            Some(x) => AffineLattice::from_offset_and_linear_lattice(
+            Some(x) => AffineLatticeStructure::new(self.ring).from_offset_and_linear_lattice(
                 1,
                 m.rows(),
                 x,
-                self.row_kernel(self.clone()),
+                self.row_kernel(m.clone()),
             ),
-            None => AffineLattice::empty(1, m.rows()),
+            None => AffineLatticeStructure::new(self.ring).empty(1, m.rows()),
         }
     }
 
@@ -711,15 +724,15 @@ impl<R: PrincipalIdealDomain> MatrixStructure<R> {
         &self,
         m: &Matrix<R::ElemT>,
         y: VecT,
-    ) -> AffineLattice<R> {
+    ) -> AffineLattice<R::ElemT> {
         match self.col_solve(m, y) {
-            Some(x) => AffineLattice::from_offset_and_linear_lattice(
+            Some(x) => AffineLatticeStructure::new(self.ring).from_offset_and_linear_lattice(
                 m.cols(),
                 1,
                 x,
-                self.col_kernel(self.clone()),
+                self.col_kernel(m.clone()),
             ),
-            None => AffineLattice::empty(m.cols(), 1),
+            None => AffineLatticeStructure::new(self.ring).empty(m.cols(), 1),
         }
     }
 
@@ -735,7 +748,7 @@ impl<R: PrincipalIdealDomain> MatrixStructure<R> {
         mut m: Matrix<R::ElemT>,
     ) -> (Matrix<R::ElemT>, Matrix<R::ElemT>, R::ElemT, Vec<usize>) {
         //build up U by applying row opps to the identity as we go
-        let mut u = self.ident(a.rows());
+        let mut u = self.ident(m.rows());
         let mut u_det = self.ring.one();
         let mut pivs = vec![];
 
@@ -1116,7 +1129,7 @@ impl<R: PrincipalIdealDomain> MatrixStructure<R> {
     }
 }
 
-impl<R: EuclideanDomain + FavoriteAssociate> MatrixStructure<R> {
+impl<'a, R: EuclideanDomain + FavoriteAssociate> MatrixStructure<'a, R> {
     //if A:=self return (H, U, pivots) such that
     //H is in row reduced hermite normal form
     //U is invertible
@@ -1160,7 +1173,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> MatrixStructure<R> {
     }
 }
 
-impl<F: Field> MatrixStructure<F> {
+impl<'a, F: Field> MatrixStructure<'a, F> {
     pub fn presentation_matrix(
         &self,
         m: Matrix<F::ElemT>,
@@ -1169,8 +1182,8 @@ impl<F: Field> MatrixStructure<F> {
         if n != m.cols() {
             Err(MatOppErr::NotSquare)
         } else {
-            let poly_ring = PolynomialRing { ring: self.ring };
-            let poly_mat_struct = MatrixStructure { ring: poly_ring };
+            let poly_ring = PolynomialRing::new(self.ring);
+            let poly_mat_struct = MatrixStructure { ring: &poly_ring };
             Ok(poly_mat_struct
                 .add(
                     m.apply_map(|x| poly_ring.constant(x.clone())),
@@ -1187,8 +1200,8 @@ impl<F: Field> MatrixStructure<F> {
     ) -> Result<Polynomial<F::ElemT>, MatOppErr> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
-                let poly_ring = PolynomialRing { ring: self.ring };
-                let poly_mat_struct = MatrixStructure { ring: poly_ring };
+                let poly_ring = PolynomialRing::new(self.ring);
+                let poly_mat_struct = MatrixStructure::new(&poly_ring);
                 let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
                 debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
                 Ok(s.at(k - 1, k - 1).unwrap().clone())
@@ -1204,8 +1217,8 @@ impl<F: Field> MatrixStructure<F> {
     ) -> Result<Polynomial<F::ElemT>, MatOppErr> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
-                let poly_ring = PolynomialRing { ring: self.ring };
-                let poly_mat_struct = MatrixStructure { ring: poly_ring };
+                let poly_ring = PolynomialRing::new(self.ring);
+                let poly_mat_struct = MatrixStructure::new(&poly_ring);
                 let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
                 debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
                 let mut char_poly = poly_ring.one();
@@ -1228,8 +1241,43 @@ mod tests {
     use super::super::nzq::*;
     use super::*;
 
-    const ZZ_MAT: MatrixStructure<IntegerRing> = MatrixStructure { ring: ZZ };
-    const QQ_MAT: MatrixStructure<RationalField> = MatrixStructure { ring: QQ };
+    #[test]
+    fn test_join_rows() {
+        let top = Matrix::from_rows(vec![vec![
+            Integer::from(1),
+            Integer::from(2),
+            Integer::from(3),
+        ],
+        vec![
+            Integer::from(4),
+            Integer::from(5),
+            Integer::from(6),
+        ]]);
+        let bot = Matrix::from_rows(vec![vec![
+            Integer::from(7),
+            Integer::from(8),
+            Integer::from(9),
+        ]]);
+
+        let both = Matrix::from_rows(vec![
+            vec![Integer::from(1), Integer::from(2), Integer::from(3)],
+            vec![Integer::from(4), Integer::from(5), Integer::from(6)],
+            vec![Integer::from(7), Integer::from(8), Integer::from(9)],
+        ]);
+
+        println!("top");
+        ZZ_MAT.pprint(&top);
+        println!("bot");
+        ZZ_MAT.pprint(&bot);
+        println!("both");
+        ZZ_MAT.pprint(&both);
+
+        let ans = Matrix::join_rows(3, vec![top, bot]);
+        println!("ans");
+        ZZ_MAT.pprint(&ans);
+
+        assert_eq!(ans, both);
+    }
 
     #[test]
     fn invariants() {
@@ -1631,13 +1679,13 @@ mod tests {
         ] {
             println!();
             println!("hermite reduced row algorithm for");
-            a.pprint();
+            ZZ_MAT.pprint(&a);
             let (h, u, pivs) = ZZ_MAT.row_reduced_hermite_algorithm(a.clone());
             println!("H =");
-            h.pprint();
+            ZZ_MAT.pprint(&h);
             println!("pivs = {:?}", pivs);
             println!("U =");
-            u.pprint();
+            ZZ_MAT.pprint(&u);
             assert_eq!(h, ZZ_MAT.mul_refs(&u, &a).unwrap());
 
             //trace the boundary of zeros and check that everything under is zero
@@ -1673,13 +1721,13 @@ mod tests {
 
             println!();
             println!("hermite reduced col algorithm for");
-            a.pprint();
+            ZZ_MAT.pprint(&a);
             let (h, u, pivs) = ZZ_MAT.col_reduced_hermite_algorithm(a.clone());
             println!("H =");
-            h.pprint();
+            ZZ_MAT.pprint(&h);
             println!("pivs = {:?}", pivs);
             println!("U =");
-            u.pprint();
+            ZZ_MAT.pprint(&u);
 
             //trace the boundary of zeros and check that everything to the right is zero
             let mut cz = 0;
@@ -1985,7 +2033,7 @@ mod tests {
             let char_p = QQ_MAT.characteristic_polynomial(a.clone()).unwrap();
             assert_eq!(
                 min_p,
-                Polynomial::new(vec![
+                QQ_POLY.from_coeffs(vec![
                     Rational::from(0),
                     Rational::from(0),
                     Rational::from(1)
@@ -1993,7 +2041,7 @@ mod tests {
             );
             assert_eq!(
                 char_p,
-                Polynomial::new(vec![
+                QQ_POLY.from_coeffs(vec![
                     Rational::from(0),
                     Rational::from(0),
                     Rational::from(0),
@@ -2012,10 +2060,10 @@ mod tests {
             vec![Integer::from(1), Integer::from(1), Integer::from(1)],
         ]);
 
-        assert_eq!(ZZ_MAT.row_span(mat.clone()).rank(), 2);
-        assert_eq!(ZZ_MAT.col_span(mat.clone()).rank(), 2);
-        assert_eq!(ZZ_MAT.row_kernel(mat.clone()).rank(), 2);
-        assert_eq!(ZZ_MAT.col_kernel(mat.clone()).rank(), 1);
+        assert_eq!(ZZ_LINLAT.rank(&ZZ_MAT.row_span(mat.clone())), 2);
+        assert_eq!(ZZ_LINLAT.rank(&ZZ_MAT.col_span(mat.clone())), 2);
+        assert_eq!(ZZ_LINLAT.rank(&ZZ_MAT.row_kernel(mat.clone())), 2);
+        assert_eq!(ZZ_LINLAT.rank(&ZZ_MAT.col_kernel(mat.clone())), 1);
     }
 
     #[test]
@@ -2042,17 +2090,20 @@ mod tests {
         ]);
 
         println!("matrix");
-        mat.pprint();
+        ZZ_MAT.pprint(&mat);
 
         let k = ZZ_MAT.col_kernel(mat);
         println!("kernel");
-        k.pprint();
+        ZZ_LINLAT.pprint(&k);
 
-        assert!(k.contains_point(Matrix::from_rows(vec![
-            vec![Integer::from(-1)],
-            vec![Integer::from(1)],
-            vec![Integer::from(5)],
-            vec![Integer::from(-3)]
-        ])));
+        assert!(ZZ_LINLAT.contains_point(
+            &k,
+            Matrix::from_rows(vec![
+                vec![Integer::from(-1)],
+                vec![Integer::from(1)],
+                vec![Integer::from(5)],
+                vec![Integer::from(-3)]
+            ])
+        ));
     }
 }
