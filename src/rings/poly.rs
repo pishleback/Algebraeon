@@ -3,8 +3,10 @@
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
+use std::collections::HashMap;
 use std::hash::Hash;
 
+use super::matrix::MatrixStructure;
 use super::nzq::*;
 use super::ring::*;
 
@@ -428,7 +430,7 @@ impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
     //efficiently compute the gcd of a and b up to scalar multipication using pseudo remainder subresultant sequence
     //the returned polynomial should the smallest non-zero subresultant polynomial
     //https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Trivial_pseudo-remainder_sequence
-    pub fn pseudo_gcd(
+    pub fn subresultant_gcd(
         &self,
         mut a: Polynomial<R::ElemT>,
         mut b: Polynomial<R::ElemT>,
@@ -620,296 +622,356 @@ impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
     }
 }
 
-// impl<R: IntegralDomain> Polynomial<R> {
-//     pub fn interpolate_by_lagrange_basis(
-//         points: &Vec<(R::ElemT, R::ElemT)>,
-//     ) -> Option<Self> {
-//         /*
-//         points should be a list of pairs (xi, yi) where the xi are distinct
+impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
+    pub fn interpolate_by_lagrange_basis(
+        &self,
+        points: &Vec<(R::ElemT, R::ElemT)>,
+    ) -> Option<Polynomial<R::ElemT>> {
+        /*
+        points should be a list of pairs (xi, yi) where the xi are distinct
 
-//         find f such that f(x1) = y1, f(x2) = y2, f(x3) = y3
-//         find f1(x), f2(x), f3(x) such that fi(xi)=1 and fi(xj)=0 if i!=j
+        find f such that f(x1) = y1, f(x2) = y2, f(x3) = y3
+        find f1(x), f2(x), f3(x) such that fi(xi)=1 and fi(xj)=0 if i!=j
 
-//             (x-x2) (x-x3)         (x-x1) (x-x3)         (x-x1) (x-x2)
-//         f1= --------------    f2= --------------    f3= --------------
-//             (x1-x2)(x1-x3)        (x2-x1)(x2-x3)        (x3-x1)(x3-x2)
+            (x-x2) (x-x3)         (x-x1) (x-x3)         (x-x1) (x-x2)
+        f1= --------------    f2= --------------    f3= --------------
+            (x1-x2)(x1-x3)        (x2-x1)(x2-x3)        (x3-x1)(x3-x2)
 
-//         so f(x) = y1f1(x) + y2f2(x) + y3f3(x)
-//                 = (   y1 (x-x2)(x-x3) (x2-x3)
-//                     + y2 (x1-x)(x-x3) (x1-x3)
-//                     + y3 (x1-x)(x2-x) (x1-x2) )
-//                   / (x1-x2)(x1-x3)(x2-x3)
+        so f(x) = y1f1(x) + y2f2(x) + y3f3(x)
+                = (   y1 (x-x2)(x-x3) (x2-x3)
+                    + y2 (x1-x)(x-x3) (x1-x3)
+                    + y3 (x1-x)(x2-x) (x1-x2) )
+                  / (x1-x2)(x1-x3)(x2-x3)
 
-//          */
-//         let mut numerator = Polynomial::zero();
-//         for i in 0..points.len() {
-//             let (_xi, yi) = &points[i];
-//             let mut term = Polynomial::constant(*yi);
+         */
+        let mut numerator = self.zero();
+        for i in 0..points.len() {
+            let (_xi, yi) = &points[i];
+            let mut term = self.constant(yi.clone());
 
-//             for j in i + 1..points.len() {
-//                 // (x - xj) for j<i
-//                 let (xj, _yj) = &points[j];
-//                 term.mul_mut(&Polynomial::new(vec![R::neg_ref(xj), R::one()]));
-//             }
-//             for j in 0..i {
-//                 // (xj - x) for i<j
-//                 let (xj, _yj) = &points[j];
-//                 term.mul_mut(&Polynomial::new(vec![xj.clone(), R::neg(R::one())]));
-//             }
+            for j in i + 1..points.len() {
+                // (x - xj) for j<i
+                let (xj, _yj) = &points[j];
+                self.mul_mut(
+                    &mut term,
+                    &self.from_coeffs(vec![self.ring.neg_ref(xj), self.ring.one()]),
+                );
+            }
+            for j in 0..i {
+                // (xj - x) for i<j
+                let (xj, _yj) = &points[j];
+                self.mul_mut(
+                    &mut term,
+                    &self.from_coeffs(vec![xj.clone(), self.ring.neg(self.ring.one())]),
+                );
+            }
 
-//             for j in 0..points.len() {
-//                 for k in j + 1..points.len() {
-//                     if i != j && i != k {
-//                         let (xj, _yj) = &points[j];
-//                         let (xk, _yk) = &points[k];
-//                         term.mul_mut(&Polynomial::constant(R::add_ref(R::neg_ref(xk), xj)));
-//                     }
-//                 }
-//             }
-//             numerator.add_mut(&term);
-//         }
+            for j in 0..points.len() {
+                for k in j + 1..points.len() {
+                    if i != j && i != k {
+                        let (xj, _yj) = &points[j];
+                        let (xk, _yk) = &points[k];
+                        self.mul_mut(
+                            &mut term,
+                            &self.constant(self.ring.add_ref(self.ring.neg_ref(xk), xj)),
+                        );
+                    }
+                }
+            }
+            self.add_mut(&mut numerator, &term);
+        }
 
-//         let mut denominator = Polynomial::one();
-//         for i in 0..points.len() {
-//             let (xi, _yi) = &points[i];
-//             for j in i + 1..points.len() {
-//                 let (xj, _yj) = &points[j];
-//                 denominator.mul_mut(&Polynomial::constant(R::add_ref(R::neg_ref(xj), xi)));
-//             }
-//         }
+        let mut denominator = self.one();
+        for i in 0..points.len() {
+            let (xi, _yi) = &points[i];
+            for j in i + 1..points.len() {
+                let (xj, _yj) = &points[j];
+                self.mul_mut(
+                    &mut denominator,
+                    &self.constant(self.ring.add_ref(self.ring.neg_ref(xj), xi)),
+                );
+            }
+        }
 
-//         match Polynomial::div(numerator, denominator) {
-//             Ok(interp_poly) => Some(interp_poly),
-//             Err(RingDivisionError::NotDivisible) => None,
-//             Err(RingDivisionError::DivideByZero) => {
-//                 panic!("are the input points distinct?")
-//             }
-//         }
-//     }
-// }
+        match self.div(numerator, denominator) {
+            Ok(interp_poly) => Some(interp_poly),
+            Err(RingDivisionError::NotDivisible) => {
+                //no such polynomial exists
+                None
+            }
+            Err(RingDivisionError::DivideByZero) => {
+                panic!("are the input points distinct?");
+            }
+        }
+    }
+}
 
-// impl<R: PrincipalIdealDomain> Polynomial<R> {
-//     pub fn interpolate_by_linear_system(
-//         points: &Vec<(R::ElemT, R::ElemT)>,
-//     ) -> Option<Self> {
-//         /*
-//         e.g. finding a degree 2 polynomial f(x)=a+bx+cx^2 such that
-//         f(1)=3
-//         f(2)=1
-//         f(3)=-2
-//         is the same as solving the linear system for a, b, c
-//         / 1 1 1 \ / a \   / 3  \
-//         | 1 2 4 | | b | = | 1  |
-//         \ 1 3 9 / \ c /   \ -2 /
-//         */
-//         let n = points.len();
-//         let mut mat = Matrix::zero(n, n);
-//         for r in 0..n {
-//             let (x, _y) = &points[r];
-//             let mut x_pow = R::one();
-//             for c in 0..n {
-//                 *mat.at_mut(r, c).unwrap() = x_pow.clone();
-//                 x_pow.mul_mut(x);
-//             }
-//         }
+impl<'a, R: PrincipalIdealDomain> PolynomialRing<'a, R> {
+    pub fn interpolate_by_linear_system(
+        &self,
+        points: &Vec<(R::ElemT, R::ElemT)>,
+    ) -> Option<Polynomial<R::ElemT>> {
+        /*
+        e.g. finding a degree 2 polynomial f(x)=a+bx+cx^2 such that
+        f(1)=3
+        f(2)=1
+        f(3)=-2
+        is the same as solving the linear system for a, b, c
+        / 1 1 1 \ / a \   / 3  \
+        | 1 2 4 | | b | = | 1  |
+        \ 1 3 9 / \ c /   \ -2 /
+        */
+        let n = points.len();
+        let mut mat = MatrixStructure::new(self.ring).zero(n, n);
+        for r in 0..n {
+            let (x, _y) = &points[r];
+            let mut x_pow = self.ring.one();
+            for c in 0..n {
+                *mat.at_mut(r, c).unwrap() = x_pow.clone();
+                self.ring.mul_mut(&mut x_pow, x);
+            }
+        }
 
-//         let mut output_vec = Matrix::zero(n, 1);
-//         for r in 0..n {
-//             let (_x, y) = &points[r];
-//             *output_vec.at_mut(r, 0).unwrap() = y.clone();
-//         }
+        let mut output_vec = MatrixStructure::new(self.ring).zero(n, 1);
+        for r in 0..n {
+            let (_x, y) = &points[r];
+            *output_vec.at_mut(r, 0).unwrap() = y.clone();
+        }
 
-//         match mat.col_solve(output_vec) {
-//             Some(coeff_vec) => Some(Polynomial::new(
-//                 (0..n)
-//                     .map(|i| coeff_vec.at(i, 0).unwrap().clone())
-//                     .collect(),
-//             )),
-//             None => None,
-//         }
-//     }
-// }
+        match MatrixStructure::new(self.ring).col_solve(&mat, output_vec) {
+            Some(coeff_vec) => Some(
+                self.from_coeffs(
+                    (0..n)
+                        .map(|i| coeff_vec.at(i, 0).unwrap().clone())
+                        .collect(),
+                ),
+            ),
+            None => None,
+        }
+    }
+}
 
-// impl<R: UniquelyFactorable + GreatestCommonDivisorDomain + FiniteUnits> Polynomial<R> {
-//     fn factor_primitive_linear_part(
-//         mut f: Polynomial<R>,
-//     ) -> (Factored<PolynomialRing<R>>, Polynomial<R>) {
-//         //f should be a primitive polynomial over R
-//         //linear factor (a+bx) of c0 + c1*x + c2*x^2 + ... + cn*x^n
-//         //must be such that a divides c0 and b divides cn
-//         //so just factor c0 and cn and check all divisors
+impl<'a, R: UniqueFactorizationDomain + GreatestCommonDivisorDomain + FiniteUnits>
+    PolynomialRing<'a, R>
+{
+    fn factor_primitive_linear_part(
+        &self,
+        mut f: Polynomial<R::ElemT>,
+    ) -> (Factored<Polynomial<R::ElemT>>, Polynomial<R::ElemT>) {
+        //f should be a primitive polynomial over R
+        //linear factor (a+bx) of c0 + c1*x + c2*x^2 + ... + cn*x^n
+        //must be such that a divides c0 and b divides cn
+        //so just factor c0 and cn and check all divisors
 
-//         let mut linear_factors = Factored::one();
-//         'seek_linear_factor: while f.degree().unwrap() > 0 {
-//             let c0 = f.coeff(0);
-//             if c0 == R::zero() {
-//                 //linear factor of x
-//                 f = Polynomial::div(f, Polynomial::var()).unwrap();
-//                 linear_factors = Factored::mul(
-//                     linear_factors,
-//                     Factored::new_irreducible_unchecked(Polynomial::var()),
-//                 );
-//                 continue 'seek_linear_factor;
-//             } else {
-//                 //look for linear factors of the form (a+bx)
-//                 let c0fs = R::factor(&f.coeff(0)).unwrap();
-//                 let cnfs = R::factor(&f.coeff(f.degree().unwrap())).unwrap();
-//                 for a_assoc in c0fs.divisors() {
-//                     for u in R::all_units() {
-//                         let a = R::mul_ref(u, &a_assoc);
-//                         for b in cnfs.divisors() {
-//                             //a ranges over all divisors of c0
-//                             //b ranges over all divisors factors of cn up to associates
-//                             //try the linear factor (a+bx)
-//                             let lin = Polynomial::new(vec![a.clone(), b]);
-//                             match Polynomial::div_refs(&f, &lin) {
-//                                 Ok(new_f) => {
-//                                     f = new_f;
-//                                     linear_factors = Factored::mul(
-//                                         linear_factors,
-//                                         Factored::new_irreducible_unchecked(lin),
-//                                     );
-//                                     continue 'seek_linear_factor;
-//                                 }
-//                                 Err(RingDivisionError::NotDivisible) => {}
-//                                 Err(RingDivisionError::DivideByZero) => panic!(),
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
+        let mut linear_factors = Factored::new_unchecked(self.one(), HashMap::new());
+        'seek_linear_factor: while self.degree(&f).unwrap() > 0 {
+            let c0 = self.coeff(&f, 0);
+            if c0 == self.ring.zero() {
+                //linear factor of x
+                f = self.div(f, self.var()).unwrap();
+                linear_factors = Factored::mul(
+                    self,
+                    linear_factors,
+                    Factored::factored_irreducible_unchecked(self, self.var()),
+                );
+                continue 'seek_linear_factor;
+            } else {
+                //look for linear factors of the form (a+bx)
+                let c0fs = self.ring.factor(&self.coeff(&f, 0)).unwrap();
+                let cnfs = self
+                    .ring
+                    .factor(&self.coeff(&f, self.degree(&f).unwrap()))
+                    .unwrap();
+                for a_assoc in self.ring.divisors(&c0fs) {
+                    for u in self.ring.all_units() {
+                        let a = self.ring.mul_ref(u, &a_assoc);
+                        for b in self.ring.divisors(&cnfs) {
+                            //a ranges over all divisors of c0
+                            //b ranges over all divisors factors of cn up to associates
+                            //try the linear factor (a+bx)
+                            let lin = self.from_coeffs(vec![a.clone(), b]);
+                            match self.div_refs(&f, &lin) {
+                                Ok(new_f) => {
+                                    f = new_f;
+                                    linear_factors = Factored::mul(
+                                        self,
+                                        linear_factors,
+                                        Factored::factored_irreducible_unchecked(self, lin),
+                                    );
+                                    continue 'seek_linear_factor;
+                                }
+                                Err(RingDivisionError::NotDivisible) => {}
+                                Err(RingDivisionError::DivideByZero) => panic!(),
+                            }
+                        }
+                    }
+                }
+            }
 
-//             break;
-//         }
-//         (linear_factors, f)
-//     }
-// }
+            break;
+        }
+        (linear_factors, f)
+    }
+}
 
-// impl<
-//         R: UniquelyFactorable
-//             + GreatestCommonDivisorDomain
-//             + InfiniteRing
-//             + FiniteUnits
-//             + InterpolatablePolynomials,
-//     > Polynomial<R>
-// {
-//     fn factorize_primitive_polynomial(f: Self) -> Factored<PolynomialRing<R>>
-//     where
-//         PolynomialRing<R>: UniqueFactorizationDomain,
-//     {
-//         debug_assert_ne!(f, Self::zero());
-//         let f_deg = f.degree().unwrap();
-//         if f_deg == 0 {
-//             debug_assert!(R::is_unit(f.coeff(0)));
-//             Factored::new_unit_unchecked(f)
-//         } else if f_deg == 1 {
-//             //linear primitive factors are always irreducible
-//             Factored::new_irreducible_unchecked(f.clone())
-//         } else {
-//             /*
-//             Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
-//             Assume it has a proper factor g(x). wlog g(x) has degree <= 2
-//             g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
-//             f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
-//             g(0) divides 2, g(1) divides 6, g(-1) divides 2
-//             there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
-//             infact there are 4*8*4=128 possible triples
-//             however, only 64 need to be checked as the other half are their negatives
-//             more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
-//              */
-//             let max_factor_degree = f_deg / 2;
-//             let mut f_points = vec![];
-//             let mut elem_gen = R::generate_distinct_elements();
-//             //take more samples than necessary, then take the subset with the smallest number of divisors
-//             while f_points.len() < 3 * (max_factor_degree + 1) {
-//                 //loop terminates because polynomial over integral domain has finitely many roots
-//                 let x = elem_gen.next().unwrap();
-//                 let y = f.evaluate(&x);
-//                 if y != R::zero() {
-//                     f_points.push((x, R::factor(&y).unwrap()));
-//                 }
-//             }
+impl<
+        'a,
+        R: UniqueFactorizationDomain + GreatestCommonDivisorDomain + InfiniteRing + FiniteUnits,
+    > PolynomialRing<'a, R>
+{
+    fn factorize_primitive_polynomial_by_kroneckers_method(
+        &self,
+        f: Polynomial<R::ElemT>,
+    ) -> Factored<Polynomial<R::ElemT>> {
+        debug_assert_ne!(f, self.zero());
+        let f_deg = self.degree(&f).unwrap();
+        if f_deg == 0 {
+            debug_assert!(self.ring.is_unit(self.coeff(&f, 0)));
+            Factored::factored_unit_unchecked(self, f)
+        } else if f_deg == 1 {
+            //linear primitive factors are always irreducible
+            Factored::factored_irreducible_unchecked(self, f.clone())
+        } else {
+            /*
+            Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
+            Assume it has a proper factor g(x). wlog g(x) has degree <= 2
+            g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
+            f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
+            g(0) divides 2, g(1) divides 6, g(-1) divides 2
+            there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
+            infact there are 4*8*4=128 possible triples
+            however, only 64 need to be checked as the other half are their negatives
+            more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
+             */
+            let max_factor_degree = f_deg / 2;
+            let mut f_points = vec![];
+            let mut elem_gen = self.ring.generate_distinct_elements();
+            //take more samples than necessary, then take the subset with the smallest number of divisors
+            while f_points.len() < 3 * (max_factor_degree + 1) {
+                //loop terminates because polynomial over integral domain has finitely many roots
+                let x = elem_gen.next().unwrap();
+                let y = self.evaluate(&f, &x);
+                if y != self.ring.zero() {
+                    f_points.push((x, self.ring.factor(&y).unwrap()));
+                }
+            }
 
-//             //compute all factors of each y value. choose the y with the most divisors to only factor up to units
-//             f_points.sort_by_cached_key(|(_x, yf)| yf.count_divisors());
-//             let _ = f_points.split_off(max_factor_degree + 1);
-//             //possible_g_points is (x, possible_y_values)
-//             let all_possible_g_points: Vec<(R::ElemT, Vec<R::ElemT>)> = f_points
-//                 .into_iter()
-//                 .rev()
-//                 .enumerate()
-//                 .map(|(i, (x, yf))| {
-//                     let mut y_divs = vec![];
-//                     for d in yf.divisors() {
-//                         if i == 0 {
-//                             //take divisors up to associates for one, because we only care about g up to associates
-//                             y_divs.push(d);
-//                         } else {
-//                             //take _all_ divisors for the rest
-//                             for u in R::all_units() {
-//                                 y_divs.push(R::mul_ref(u, &d));
-//                             }
-//                         }
-//                     }
-//                     (x, y_divs)
-//                 })
-//                 .collect();
+            //compute all factors of each y value. choose the y with the most divisors to only factor up to units
+            f_points.sort_by_cached_key(|(_x, yf)| self.ring.count_divisors(yf));
+            let _ = f_points.split_off(max_factor_degree + 1);
+            //possible_g_points is (x, possible_y_values)
+            let all_possible_g_points: Vec<(R::ElemT, Vec<R::ElemT>)> = f_points
+                .into_iter()
+                .rev()
+                .enumerate()
+                .map(|(i, (x, yf))| {
+                    let mut y_divs = vec![];
+                    for d in self.ring.divisors(&yf) {
+                        if i == 0 {
+                            //take divisors up to associates for one, because we only care about g up to associates
+                            y_divs.push(d);
+                        } else {
+                            //take _all_ divisors for the rest
+                            for u in self.ring.all_units() {
+                                y_divs.push(self.ring.mul_ref(u, &d));
+                            }
+                        }
+                    }
+                    (x, y_divs)
+                })
+                .collect();
 
-//             for possible_g_points in itertools::Itertools::multi_cartesian_product(
-//                 all_possible_g_points
-//                     .into_iter()
-//                     .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
-//             ) {
-//                 match R::interpolate(&possible_g_points) {
-//                     Some(g) => {
-//                         if g.degree().unwrap() >= 1 {
-//                             //g is a possible proper divisor of f
-//                             match Polynomial::div_refs(&f, &g) {
-//                                 Ok(h) => {
-//                                     //g really is a proper divisor of f
-//                                     return Factored::mul(Self::factorize_primitive_polynomial(g), Self::factorize_primitive_polynomial(h));
-//                                 }
-//                                 Err(RingDivisionError::NotDivisible) => {}
-//                                 Err(RingDivisionError::DivideByZero) => panic!(),
-//                             }
-//                         }
-//                     }
-//                     None => {}
-//                 }
-//             }
-//             //f is irreducible
-//             Factored::new_irreducible_unchecked(f.clone())
-//         }
-//     }
+            for possible_g_points in itertools::Itertools::multi_cartesian_product(
+                all_possible_g_points
+                    .into_iter()
+                    .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
+            ) {
+                match self.interpolate_by_lagrange_basis(&possible_g_points) {
+                    Some(g) => {
+                        if self.degree(&g).unwrap() >= 1 {
+                            //g is a possible proper divisor of f
+                            match self.div_refs(&f, &g) {
+                                Ok(h) => {
+                                    //g really is a proper divisor of f
+                                    return Factored::mul(
+                                        self,
+                                        self.factorize_primitive_polynomial_by_kroneckers_method(g),
+                                        self.factorize_primitive_polynomial_by_kroneckers_method(h),
+                                    );
+                                }
+                                Err(RingDivisionError::NotDivisible) => {}
+                                Err(RingDivisionError::DivideByZero) => panic!(),
+                            }
+                        }
+                    }
+                    None => {}
+                }
+            }
+            //f is irreducible
+            Factored::factored_irreducible_unchecked(self, f.clone())
+        }
+    }
 
-//     pub fn factor_by_kroneckers_method(
-//         f: Self,
-//     ) -> Option<Factored<PolynomialRing<R>>>
-//     where
-//         PolynomialRing<R>: UniqueFactorizationDomain,
-//     {
-//         if f == &Self::zero() {
-//             return None;
-//         }
+    pub fn factorize_by_kroneckers_method(
+        &self,
+        f: &Polynomial<R::ElemT>,
+    ) -> Option<Factored<Polynomial<R::ElemT>>> {
+        if f == &self.zero() {
+            return None;
+        }
 
-//         let (scalar_part, f) = f.clone().factor_primitive().unwrap();
-//         let factored_scalar_part = R::factor(&scalar_part).unwrap();
-//         let factored_scalar_part_poly = Factored::new_unchecked(
-//             Polynomial::constant(scalar_part),
-//             Polynomial::constant(*factored_scalar_part.unit()),
-//             factored_scalar_part
-//                 .factors()
-//                 .iter()
-//                 .map(|(p, k)| (Polynomial::constant(*p), k.clone()))
-//                 .collect(),
-//         );
-//         let (linear_factors, f) = Self::factor_primitive_linear_part(f);
-//         return Some(Factored::mul(
-//             linear_factors,
-//             Factored::mul(factored_scalar_part_poly, Self::factor_primitive(f)),
-//         ));
-//     }
-// }
+        let (scalar_part, f) = self.factor_primitive(f.clone()).unwrap();
+        let factored_scalar_part = self.ring.factor(&scalar_part).unwrap();
+        let factored_scalar_part_poly = Factored::new_unchecked(
+            self.constant(factored_scalar_part.unit().clone()),
+            factored_scalar_part
+                .factors()
+                .iter()
+                .map(|(p, k)| (self.constant(p.clone()), k.clone()))
+                .collect(),
+        );
+        let (linear_factors, f) = self.factor_primitive_linear_part(f);
+
+        let g = self.subresultant_gcd(f.clone(), self.derivative(f.clone()));
+        let (_s, g) = self.factor_primitive(g).unwrap();
+        let f_sqfree = self.div_refs(&f, &g).unwrap();
+        let f_sqfree_factors = self.factorize_primitive_polynomial_by_kroneckers_method(f_sqfree);
+
+        let mut f = f;
+        let mut f_factors = Factored::new_unchecked(self.one(), HashMap::new());
+        for (sqfree_factor, k) in f_sqfree_factors.factors() {
+            debug_assert_eq!(k, &Natural::from(1u8)); //the factorization should be squarefree
+            loop {
+                match self.div_refs(&f, sqfree_factor) {
+                    Ok(new_f) => {
+                        f = new_f;
+                        f_factors = Factored::mul(
+                            self,
+                            f_factors,
+                            Factored::new_unchecked(
+                                self.one(),
+                                HashMap::from([(sqfree_factor.clone(), Natural::from(1u8))]),
+                            ),
+                        )
+                    }
+                    Err(RingDivisionError::NotDivisible) => {
+                        break;
+                    }
+                    Err(RingDivisionError::DivideByZero) => panic!(),
+                }
+            }
+        }
+        debug_assert_eq!(self.degree(&f).unwrap(), 0);
+        debug_assert!(self.is_unit(f.clone()));
+        f_factors = Factored::mul(self, f_factors, Factored::factored_unit_unchecked(self, f));
+
+        return Some(Factored::mul(
+            self,
+            Factored::mul(self, linear_factors, factored_scalar_part_poly),
+            f_factors,
+        ));
+    }
+}
 
 // pub fn subsylvester_matrix<R: ComRing>(
 //     f_deg: usize,
@@ -917,7 +979,7 @@ impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
 //     f: &Polynomial<R>,
 //     g: &Polynomial<R>,
 //     k: usize,
-// ) -> Matrix<R> {
+// ) -> Matrix<R::ElemT> {
 //     match f.degree() {
 //         Some(d) => assert!(d <= f_deg),
 //         None => {}
@@ -1006,6 +1068,7 @@ mod tests {
     use super::super::nzq::*;
     use super::*;
     use malachite_nz::integer::Integer;
+    use malachite_q::Rational;
 
     const ZZ_POLY: PolynomialRing<IntegerRing> = PolynomialRing { ring: &ZZ };
     const QQ_POLY: PolynomialRing<RationalField> = PolynomialRing { ring: &QQ };
@@ -1197,179 +1260,179 @@ mod tests {
         assert_eq!(ZZ_POLY.evaluate(&f, &Integer::from(3)), Integer::from(0));
     }
 
-    // #[test]
-    // fn test_interpolate_by_lagrange_basis() {
-    //     for points in vec![
-    //         vec![
-    //             (Rational::from(-2), Rational::from(-5)),
-    //             (Rational::from(7), Rational::from(4)),
-    //             (Rational::from(-1), Rational::from(-3)),
-    //             (Rational::from(4), Rational::from(1)),
-    //         ],
-    //         vec![(Rational::from(0), Rational::from(0))],
-    //         vec![(Rational::from(0), Rational::from(1))],
-    //         vec![],
-    //         vec![
-    //             (Rational::from(0), Rational::from(0)),
-    //             (Rational::from(1), Rational::from(1)),
-    //             (Rational::from(2), Rational::from(2)),
-    //         ],
-    //     ] {
-    //         let f = interpolate_by_lagrange_basis::<QQ>(&points).unwrap();
-    //         for (inp, out) in &points {
-    //             assert_eq!(&f.evaluate(&inp), out);
-    //         }
-    //     }
+    #[test]
+    fn test_interpolate_by_lagrange_basis() {
+        for points in vec![
+            vec![
+                (Rational::from(-2), Rational::from(-5)),
+                (Rational::from(7), Rational::from(4)),
+                (Rational::from(-1), Rational::from(-3)),
+                (Rational::from(4), Rational::from(1)),
+            ],
+            vec![(Rational::from(0), Rational::from(0))],
+            vec![(Rational::from(0), Rational::from(1))],
+            vec![],
+            vec![
+                (Rational::from(0), Rational::from(0)),
+                (Rational::from(1), Rational::from(1)),
+                (Rational::from(2), Rational::from(2)),
+            ],
+        ] {
+            let f = QQ_POLY.interpolate_by_lagrange_basis(&points).unwrap();
+            for (inp, out) in &points {
+                assert_eq!(&QQ_POLY.evaluate(&f, &inp), out);
+            }
+        }
 
-    //     //f(x)=2x
-    //     match interpolate_by_lagrange_basis::<ZZ>(&vec![
-    //         (Integer::from(0), Integer::from(0)),
-    //         (Integer::from(1), Integer::from(2)),
-    //     ]) {
-    //         Some(f) => {
-    //             assert_eq!(f, Polynomial::new(vec![Integer::from(0), Integer::from(2)]))
-    //         }
-    //         None => panic!(),
-    //     }
+        //f(x)=2x
+        match ZZ_POLY.interpolate_by_lagrange_basis(&vec![
+            (Integer::from(0), Integer::from(0)),
+            (Integer::from(1), Integer::from(2)),
+        ]) {
+            Some(f) => {
+                assert_eq!(
+                    f,
+                    ZZ_POLY.from_coeffs(vec![Integer::from(0), Integer::from(2)])
+                )
+            }
+            None => panic!(),
+        }
 
-    //     //f(x)=1/2x does not have integer coefficients
-    //     match interpolate_by_lagrange_basis::<ZZ>(&vec![
-    //         (Integer::from(0), Integer::from(0)),
-    //         (Integer::from(2), Integer::from(1)),
-    //     ]) {
-    //         Some(_f) => panic!(),
-    //         None => {}
-    //     }
-    // }
+        //f(x)=1/2x does not have integer coefficients
+        match ZZ_POLY.interpolate_by_lagrange_basis(&vec![
+            (Integer::from(0), Integer::from(0)),
+            (Integer::from(2), Integer::from(1)),
+        ]) {
+            Some(_f) => panic!(),
+            None => {}
+        }
+    }
 
-    // #[test]
-    // fn test_interpolate_by_linear_system() {
-    //     for points in vec![
-    //         vec![
-    //             (Rational::from(-2), Rational::from(-5)),
-    //             (Rational::from(7), Rational::from(4)),
-    //             (Rational::from(-1), Rational::from(-3)),
-    //             (Rational::from(4), Rational::from(1)),
-    //         ],
-    //         vec![(Rational::from(0), Rational::from(0))],
-    //         vec![(Rational::from(0), Rational::from(1))],
-    //         vec![],
-    //         vec![
-    //             (Rational::from(0), Rational::from(0)),
-    //             (Rational::from(1), Rational::from(1)),
-    //             (Rational::from(2), Rational::from(2)),
-    //         ],
-    //     ] {
-    //         let f = interpolate_by_linear_system::<QQ>(&points).unwrap();
-    //         for (inp, out) in &points {
-    //             assert_eq!(&f.evaluate(&inp), out);
-    //         }
-    //     }
+    #[test]
+    fn test_interpolate_by_linear_system() {
+        for points in vec![
+            vec![
+                (Rational::from(-2), Rational::from(-5)),
+                (Rational::from(7), Rational::from(4)),
+                (Rational::from(-1), Rational::from(-3)),
+                (Rational::from(4), Rational::from(1)),
+            ],
+            vec![(Rational::from(0), Rational::from(0))],
+            vec![(Rational::from(0), Rational::from(1))],
+            vec![],
+            vec![
+                (Rational::from(0), Rational::from(0)),
+                (Rational::from(1), Rational::from(1)),
+                (Rational::from(2), Rational::from(2)),
+            ],
+        ] {
+            let f = QQ_POLY.interpolate_by_linear_system(&points).unwrap();
+            for (inp, out) in &points {
+                assert_eq!(&QQ_POLY.evaluate(&f, &inp), out);
+            }
+        }
 
-    //     //f(x)=2x
-    //     match interpolate_by_linear_system::<ZZ>(&vec![
-    //         (Integer::from(0), Integer::from(0)),
-    //         (Integer::from(1), Integer::from(2)),
-    //     ]) {
-    //         Some(f) => {
-    //             assert_eq!(f, Polynomial::new(vec![Integer::from(0), Integer::from(2)]))
-    //         }
-    //         None => panic!(),
-    //     }
+        //f(x)=2x
+        match ZZ_POLY.interpolate_by_linear_system(&vec![
+            (Integer::from(0), Integer::from(0)),
+            (Integer::from(1), Integer::from(2)),
+        ]) {
+            Some(f) => {
+                assert_eq!(
+                    f,
+                    ZZ_POLY.from_coeffs(vec![Integer::from(0), Integer::from(2)])
+                )
+            }
+            None => panic!(),
+        }
 
-    //     //f(x)=1/2x does not have integer coefficients
-    //     match interpolate_by_linear_system::<ZZ>(&vec![
-    //         (Integer::from(0), Integer::from(0)),
-    //         (Integer::from(2), Integer::from(1)),
-    //     ]) {
-    //         Some(_f) => panic!(),
-    //         None => {}
-    //     }
-    // }
+        //f(x)=1/2x does not have integer coefficients
+        match ZZ_POLY.interpolate_by_linear_system(&vec![
+            (Integer::from(0), Integer::from(0)),
+            (Integer::from(2), Integer::from(1)),
+        ]) {
+            Some(_f) => panic!(),
+            None => {}
+        }
+    }
 
-    // #[test]
-    // fn test_factor_by_kroneckers_method_over_integers() {
-    //     let x = &Ergonomic::<PolynomialRing<ZZ>>::new(Polynomial::<ZZ>::var());
+    #[test]
+    fn test_factor_by_kroneckers_method_over_integers() {
+        let x = &Ergonomic::<PolynomialRing<IntegerRing>>::new(&ZZ_POLY, ZZ_POLY.var());
 
-    //     //primitive cases
-    //     let f = ((1 + x).pow(2)).elem();
-    //     assert_eq!(
-    //         factor_by_kroneckers_method::<ZZ>(&f).unwrap(),
-    //         Factored::new_unchecked(
-    //             f.clone(),
-    //             Polynomial::one(),
-    //             HashMap::from([((1 + x).elem(), Natural::from(2u8))])
-    //         )
-    //     );
+        //primitive cases
+        let f = ((1 + x).pow(2)).elem();
+        assert_eq!(
+            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
+                ZZ_POLY.one(),
+                HashMap::from([((1 + x).elem(), Natural::from(2u8))])
+            )
+        );
 
-    //     let f = (-1 - 2 * x).elem();
-    //     assert_eq!(
-    //         factor_by_kroneckers_method(&f).unwrap(),
-    //         Factored::new_unchecked(
-    //             f.clone(),
-    //             Polynomial::one().neg(),
-    //             HashMap::from([((1 + 2 * x).elem(), Natural::from(1u8))])
-    //         )
-    //     );
+        let f = (-1 - 2 * x).elem();
+        assert_eq!(
+            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
+                ZZ_POLY.neg(ZZ_POLY.one()),
+                HashMap::from([((1 + 2 * x).elem(), Natural::from(1u8))])
+            )
+        );
 
-    //     let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).elem();
-    //     assert_eq!(
-    //         factor_by_kroneckers_method(&f).unwrap(),
-    //         Factored::new_unchecked(
-    //             f.clone(),
-    //             Polynomial::one(),
-    //             HashMap::from([
-    //                 ((1 + x + x.pow(2)).elem(), Natural::from(1u8)),
-    //                 ((2 - x + x.pow(3)).elem(), Natural::from(1u8))
-    //             ])
-    //         )
-    //     );
+        let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).elem();
+        assert_eq!(
+            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
+                ZZ_POLY.one(),
+                HashMap::from([
+                    ((1 + x + x.pow(2)).elem(), Natural::from(1u8)),
+                    ((2 - x + x.pow(3)).elem(), Natural::from(1u8))
+                ])
+            )
+        );
 
-    //     let f = (1 + x + x.pow(2)).pow(2).elem();
-    //     assert_eq!(
-    //         factor_by_kroneckers_method(&f).unwrap(),
-    //         Factored::new_unchecked(
-    //             f.clone(),
-    //             Polynomial::one(),
-    //             HashMap::from([((1 + x + x.pow(2)).elem(), Natural::from(2u8)),])
-    //         )
-    //     );
+        let f = (1 + x + x.pow(2)).pow(2).elem();
+        assert_eq!(
+            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
+                ZZ_POLY.one(),
+                HashMap::from([((1 + x + x.pow(2)).elem(), Natural::from(2u8)),])
+            )
+        );
 
-    //     //non-primitive cases
-    //     let f = (2 + 2 * x).elem();
-    //     assert_eq!(
-    //         factor_by_kroneckers_method(&f).unwrap(),
-    //         Factored::new_unchecked(
-    //             f.clone(),
-    //             Polynomial::one(),
-    //             HashMap::from([
-    //                 (Polynomial::from_int(&Integer::from(2)), Natural::from(1u8)),
-    //                 ((1 + x).elem(), Natural::from(1u8))
-    //             ])
-    //         )
-    //     );
+        //non-primitive cases
+        let f = (2 + 2 * x).elem();
+        assert_eq!(
+            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
+                ZZ_POLY.one(),
+                HashMap::from([
+                    (ZZ_POLY.from_int(&Integer::from(2)), Natural::from(1u8)),
+                    ((1 + x).elem(), Natural::from(1u8))
+                ])
+            )
+        );
 
-    //     let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).elem();
-    //     assert_eq!(
-    //         factor_by_kroneckers_method(&f).unwrap(),
-    //         Factored::new_unchecked(
-    //             f.clone(),
-    //             Polynomial::one(),
-    //             HashMap::from([
-    //                 (Polynomial::from_int(&Integer::from(2)), Natural::from(2u8)),
-    //                 (Polynomial::from_int(&Integer::from(3)), Natural::from(1u8)),
-    //                 ((2 + 3 * x).elem(), Natural::from(1u8)),
-    //                 ((x - 1).elem(), Natural::from(2u8))
-    //             ])
-    //         )
-    //     );
+        let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).elem();
+        assert_eq!(
+            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(
+                ZZ_POLY.one(),
+                HashMap::from([
+                    (ZZ_POLY.from_int(&Integer::from(2)), Natural::from(2u8)),
+                    (ZZ_POLY.from_int(&Integer::from(3)), Natural::from(1u8)),
+                    ((2 + 3 * x).elem(), Natural::from(1u8)),
+                    ((x - 1).elem(), Natural::from(2u8))
+                ])
+            )
+        );
 
-    //     let f = Polynomial::<Integer>::one();
-    //     assert_eq!(
-    //         factor_by_kroneckers_method(&f).unwrap(),
-    //         Factored::new_unchecked(f.clone(), Polynomial::one(), HashMap::new())
-    //     );
-    // }
+        let f = ZZ_POLY.one();
+        assert_eq!(
+            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            Factored::new_unchecked(ZZ_POLY.one(), HashMap::new())
+        );
+    }
 
     #[test]
     fn test_derivative() {
@@ -1478,30 +1541,30 @@ mod tests {
     //     let g = Polynomial::<ZZ>::new(vec![Integer::from(5), Integer::from(6), Integer::from(7)]);
     //     assert_eq!(resultant_naive(4, 3, &f, &g), Integer::from(0));
 
-    //     //subresultant
-    //     let f = Polynomial::new(vec![
-    //         Integer::from(1),
-    //         Integer::from(2),
-    //         Integer::from(3),
-    //         Integer::from(4),
-    //     ]);
-    //     let g = Polynomial::<ZZ>::new(vec![Integer::from(5), Integer::from(6), Integer::from(7)]);
-    //     let subres = subresultant_naive(3, 2, &f, &g, 1);
-    //     assert_eq!(
-    //         subres,
-    //         Polynomial::new(vec![Integer::from(64), Integer::from(-24)])
-    //     );
+    // //subresultant
+    // let f = Polynomial::new(vec![
+    //     Integer::from(1),
+    //     Integer::from(2),
+    //     Integer::from(3),
+    //     Integer::from(4),
+    // ]);
+    // let g = Polynomial::<ZZ>::new(vec![Integer::from(5), Integer::from(6), Integer::from(7)]);
+    // let subres = subresultant_naive(3, 2, &f, &g, 1);
+    // assert_eq!(
+    //     subres,
+    //     Polynomial::new(vec![Integer::from(64), Integer::from(-24)])
+    // );
     // }
 
     #[test]
-    fn test_pseudo_gcd() {
+    fn test_subresultant_gcd() {
         let x = &Ergonomic::new(&ZZ_POLY, ZZ_POLY.var());
 
         let f =
             (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();
         let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
         assert_eq!(
-            ZZ_POLY.pseudo_gcd(f, g),
+            ZZ_POLY.subresultant_gcd(f, g),
             ZZ_POLY.constant(Integer::from(260708))
         );
 
@@ -1509,14 +1572,14 @@ mod tests {
         let g =
             (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();
         assert_eq!(
-            ZZ_POLY.pseudo_gcd(f, g),
+            ZZ_POLY.subresultant_gcd(f, g),
             ZZ_POLY.constant(Integer::from(260708))
         );
 
         let f = ((x + 2).pow(2) * (2 * x - 3).pow(2)).elem();
         let g = ((3 * x - 1) * (2 * x - 3).pow(2)).elem();
         assert_eq!(
-            ZZ_POLY.pseudo_gcd(f, g),
+            ZZ_POLY.subresultant_gcd(f, g),
             (7056 - 9408 * x + 3136 * x.pow(2)).elem()
         );
     }

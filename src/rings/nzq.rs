@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 
 use super::ring::*;
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
@@ -130,46 +131,43 @@ impl FavoriteAssociate for IntegerRing {
     }
 }
 
-// impl UniqueFactorizationDomain for IntegerRing {}
+impl UniqueFactorizationDomain for IntegerRing {
+    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
+        if elem == &0 {
+            None
+        } else {
+            let unit;
+            if elem < &0 {
+                unit = Integer::from(-1);
+            } else {
+                unit = Integer::from(1);
+            }
 
-// impl UniquelyFactorable for IntegerRing {
-//     fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
-//         if elem == &0 {
-//             None
-//         } else {
-//             let unit;
-//             if elem < &0 {
-//                 unit = Integer::from(-1);
-//             } else {
-//                 unit = Integer::from(1);
-//             }
+            fn factor_nat(mut n: Natural) -> HashMap<Natural, Natural> {
+                //TODO: more efficient implementations
+                assert_ne!(n, 0);
+                let mut fs = HashMap::new();
+                let mut p = Natural::from(2u8);
+                while n > 1 && p <= n {
+                    while &n % &p == 0 {
+                        *fs.entry(p.clone()).or_insert(Natural::from(0u8)) += Natural::from(1u8);
+                        n /= &p;
+                    }
+                    p += Natural::from(1u8);
+                }
+                fs
+            }
 
-//             fn factor_nat(mut n: Natural) -> HashMap<Natural, Natural> {
-//                 //TODO: more efficient implementations
-//                 assert_ne!(n, 0);
-//                 let mut fs = HashMap::new();
-//                 let mut p = Natural::from(2u8);
-//                 while n > 1 && p <= n {
-//                     while &n % &p == 0 {
-//                         *fs.entry(p.clone()).or_insert(Natural::from(0u8)) += Natural::from(1u8);
-//                         n /= &p;
-//                     }
-//                     p += Natural::from(1u8);
-//                 }
-//                 fs
-//             }
-
-//             Some(Factored::new_unchecked(
-//                 elem.clone(),
-//                 unit,
-//                 factor_nat(elem.unsigned_abs())
-//                     .into_iter()
-//                     .map(|(p, k)| (Integer::from(p), k))
-//                     .collect(),
-//             ))
-//         }
-//     }
-// }
+            Some(Factored::new_unchecked(
+                unit,
+                factor_nat(elem.unsigned_abs())
+                    .into_iter()
+                    .map(|(p, k)| (Integer::from(p), k))
+                    .collect(),
+            ))
+        }
+    }
+}
 
 impl EuclideanDomain for IntegerRing {
     fn norm(&self, elem: &Self::ElemT) -> Option<Natural> {
@@ -259,197 +257,11 @@ impl ComRing for RationalField {
 }
 impl IntegralDomain for RationalField {}
 
-impl Field for RationalField {
-    // fn inv(a: Self) -> Result<Self, OppErr> {
-    //     if a.numerator_ref() == &Natural::from(0u8) {
-    //         Err(OppErr::DivideByZero)
-    //     } else {
-    //         Ok(a.reciprocal())
-    //     }
-    // }
-}
+impl Field for RationalField {}
 
 impl FieldOfFractions for RationalField {
     type R = IntegerRing;
 }
-
-// #[derive(Debug, Clone)]
-// struct ModularRing {
-//     a: Integer,
-//     n: Natural,
-// }
-
-// impl ToString for ModularRing {
-//     fn to_string(&self) -> String {
-//         self.a.to_string()
-//     }
-// }
-
-// impl PartialEq for ModularRing {
-//     fn eq(&self, other: &Self) -> bool {
-//         if self.n != other.n {
-//             panic!()
-//         }
-//         self.a == other.a
-//     }
-// }
-
-// impl Eq for ModularRing {
-
-// }
-
-// impl ComRing for ModularRing {
-//     fn zero() -> Self {
-//         Self {a : Integer::zero(), n}
-//     }
-//     fn one() -> Self;
-//     fn neg_mut(&mut self);
-//     fn neg_ref(&self) -> Self {
-//         self.clone().neg()
-//     }
-//     fn neg(mut self) -> Self {
-//         self.neg_mut();
-//         self
-//     }
-
-//     fn add_mut(&mut self, x: &Self);
-//     fn add(mut a: Self, b: Self) -> Self {
-//         a.add_mut(&b);
-//         a
-//     }
-//     fn add_ref(mut a: Self, b: &Self) -> Self {
-//         a.add_mut(b);
-//         a
-//     }
-//     fn add_refs(a: &Self, b: &Self) -> Self {
-//         let mut new_a = a.clone();
-//         new_a.add_mut(b);
-//         new_a
-//     }
-
-//     fn mul_mut(&mut self, x: &Self);
-//     fn mul(mut a: Self, b: Self) -> Self {
-//         a.mul_mut(&b);
-//         a
-//     }
-//     fn mul_ref(mut a: Self, b: &Self) -> Self {
-//         a.mul_mut(b);
-//         a
-//     }
-//     fn mul_refs(a: &Self, b: &Self) -> Self {
-//         let mut new_a = a.clone();
-//         new_a.mul_mut(b);
-//         new_a
-//     }
-
-//     fn div(a: Self, b: Self) -> Result<Self, RingDivisionError>;
-//     fn div_lref(a: &Self, b: Self) -> Result<Self, RingDivisionError> {
-//         Self::div(a.clone(), b)
-//     }
-//     fn div_rref(a: Self, b: &Self) -> Result<Self, RingDivisionError> {
-//         Self::div(a, b.clone())
-//     }
-//     fn div_refs(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
-//         Self::div(a.clone(), b.clone())
-//     }
-
-//     fn divisible(a: Self, b: Self) -> bool {
-//         match Self::div(a, b) {
-//             Ok(_q) => true,
-//             Err(RingDivisionError::NotDivisible) => false,
-//             Err(RingDivisionError::DivideByZero) => false,
-//         }
-//     }
-
-//     fn sum(elems: Vec<Self>) -> Self {
-//         let mut ans = Self::zero();
-//         for elem in elems {
-//             ans = Self::add(ans, elem);
-//         }
-//         ans
-//     }
-
-//     fn product(elems: Vec<Self>) -> Self {
-//         let mut ans = Self::one();
-//         for elem in elems {
-//             ans = Self::mul(ans, elem);
-//         }
-//         ans
-//     }
-
-//     fn nat_pow(&self, n: &Natural) -> Self {
-//         if *n == 0 {
-//             Self::one()
-//         } else if *n == 1 {
-//             self.clone()
-//         } else {
-//             debug_assert!(*n >= 2);
-//             let (q, r) = n.div_rem(Natural::from(2u8));
-//             Self::mul(self.nat_pow(&q), self.nat_pow(&(&q + r)))
-//         }
-//     }
-
-//     fn int_pow(&self, n: &Integer) -> Option<Self> {
-//         if *n == 0 {
-//             Some(Self::one())
-//         } else if self == &Self::zero() {
-//             Some(Self::zero())
-//         } else if *n > 0 {
-//             Some(self.nat_pow(&n.unsigned_abs()))
-//         } else {
-//             match self.clone().inv() {
-//                 Ok(self_inv) => Some(self_inv.nat_pow(&(-n).unsigned_abs())),
-//                 Err(RingDivisionError::NotDivisible) => None,
-//                 Err(RingDivisionError::DivideByZero) => panic!(),
-//             }
-//         }
-//     }
-
-//     fn from_int(x: &Integer) -> Self {
-//         if *x < 0 {
-//             Self::from_int(&-x).neg()
-//         } else if *x == 0 {
-//             Self::zero()
-//         } else if *x == 1 {
-//             Self::one()
-//         } else {
-//             let two = Self::add(Self::one(), Self::one());
-//             debug_assert!(*x >= 2);
-//             let bits: Vec<bool> = x.unsigned_abs().bits().collect();
-//             let mut ans = Self::zero();
-//             let mut v = Self::one();
-//             for i in 0..bits.len() {
-//                 if bits[i] {
-//                     ans.add_mut(&v);
-//                 }
-//                 v.mul_mut(&two);
-//             }
-//             ans
-//         }
-//     }
-
-//     fn is_unit(self) -> bool {
-//         match Self::div(Self::one(), self) {
-//             Ok(_inv) => true,
-//             Err(RingDivisionError::DivideByZero) => false,
-//             Err(RingDivisionError::NotDivisible) => false,
-//             // Err(_) => panic!(),
-//         }
-//     }
-
-//     fn inv(self) -> Result<Self, RingDivisionError> {
-//         Self::div(Self::one(), self)
-//     }
-
-//     fn inv_ref(a: &Self) -> Result<Self, RingDivisionError> {
-//         Self::div_rref(Self::one(), a)
-//     }
-// }
-
-// struct ModularField {
-//     a: Integer,
-//     p: Natural,
-// }
 
 #[cfg(test)]
 mod tests {
@@ -499,4 +311,7 @@ mod tests {
             assert_eq!(x * a + y * b, g);
         }
     }
+
+    #[test]
+    fn test_factor_int() {}
 }

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::{fmt::Debug, hash::Hash};
+use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 use malachite_base::num::{
     arithmetic::traits::{DivRem, UnsignedAbs},
@@ -18,7 +18,7 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Hash + Debug {
     //todo: remove sized here
     type ElemT: Sized + Clone + PartialEq + Eq + Hash + Debug;
 
-    fn to_string(&self, elem : &Self::ElemT) -> String;
+    fn to_string(&self, elem: &Self::ElemT) -> String;
 
     fn zero(&self) -> Self::ElemT;
     fn one(&self) -> Self::ElemT;
@@ -185,11 +185,11 @@ impl<R: CharacteristicZero> InfiniteRing for R {
             type Item = Integer;
 
             fn next(&mut self) -> Option<Self::Item> {
-                let mut next = self.next.clone();
+                let next = self.next.clone();
                 if 0 < next {
-                    next = -next;
+                    self.next = -self.next.clone();
                 } else {
-                    next = Integer::from(1) - next;
+                    self.next = Integer::from(1) - self.next.clone();
                 }
                 Some(next)
             }
@@ -242,181 +242,169 @@ pub trait GreatestCommonDivisorDomain: FavoriteAssociate {
     }
 }
 
-// pub trait UniqueFactorizationDomain: FavoriteAssociate {
-//     //unique factorizations exist
-// }
+#[derive(Debug)]
+pub struct Factored<ElemT: Clone + PartialEq + Eq + Hash> {
+    unit: ElemT,
+    factors: HashMap<ElemT, Natural>,
+}
 
-// pub trait UniquelyFactorable: UniqueFactorizationDomain {
-//     //a UFD with an explicit algorithm to compute unique factorizations
-//     fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>>;
+impl<ElemT: Clone + PartialEq + Eq + Hash> Factored<ElemT> {
+    pub fn new_unchecked(unit: ElemT, factors: HashMap<ElemT, Natural>) -> Self {
+        Self { unit, factors }
+    }
 
-//     fn is_irreducible(&self, elem: &Self::ElemT) -> Option<bool> {
-//         match self.factor(elem) {
-//             None => None,
-//             Some(factored) => Some(factored.is_irreducible()),
-//         }
-//     }
+    pub fn unit(&self) -> &ElemT {
+        &self.unit
+    }
 
-//     fn one_factored(&self) -> Factored<Self::ElemT> {
-//         Factored {
-//             elem: self.one(),
-//             unit: self.one(),
-//             factors: HashMap::new(),
-//         }
-//     }
+    pub fn factors(&self) -> &HashMap<ElemT, Natural> {
+        &self.factors
+    }
 
-//     fn irreducible_factored_unchecked(&self, elem: Self::ElemT) -> Factored<Self::ElemT> {
-//         let (unit, assoc) = self.factor_fav_assoc(elem);
-//         Factored {
-//             elem: assoc.clone(),
-//             unit,
-//             factors: HashMap::from([(assoc, Natural::from(1u8))]),
-//         }
-//     }
+    pub fn is_irreducible(&self) -> bool {
+        if self.factors.len() == 1 {
+            let (_p, k) = self.factors.iter().next().unwrap();
+            if k == &1 {
+                return true;
+            }
+        }
+        false
+    }
 
-//     fn check_invariants(&self, f: Factored<Self::ElemT>) -> Result<(), &'static str> {
-//         if !self.is_unit(f.unit.clone()) {
-//             return Err("unit must be a unit");
-//         }
-//         let mut prod = f.unit.clone();
-//         for (p, k) in &f.factors {
-//             if k == &0 {
-//                 return Err("prime powers must not be zero");
-//             }
-//             if p == &self.zero() {
-//                 return Err("prime factor must not be zero");
-//             }
-//             if !self.is_fav_assoc(p) {
-//                 return Err("prime factor must be their fav assoc");
-//             }
-//             if !self.is_irreducible(p).unwrap() {
-//                 return Err("prime factor must not be reducible");
-//             }
+    pub fn mul<Ring: ComRing<ElemT = ElemT>>(
+        ring: &Ring,
+        a: Factored<ElemT>,
+        b: Factored<ElemT>,
+    ) -> Factored<ElemT> {
+        let mut mul_factors = a.factors;
+        for (p, k) in b.factors {
+            *mul_factors.entry(p.clone()).or_insert(Natural::from(0u8)) += k;
+        }
+        Factored::new_unchecked(ring.mul(a.unit, b.unit), mul_factors)
+    }
 
-//             let mut i = Natural::from(0u8);
-//             while &i < k {
-//                 self.mul_mut(&mut prod, p);
-//                 i += Natural::from(1u8);
-//             }
-//         }
-//         if f.elem != prod {
-//             return Err("product is incorrect");
-//         }
-//         Ok(())
-//     }
-// }
+    pub fn factored_one<Ring: ComRing<ElemT = ElemT>>(ring: &Ring) -> Self {
+        Factored {
+            unit: ring.one(),
+            factors: HashMap::new(),
+        }
+    }
 
-// #[derive(Debug)]
-// pub struct Factored<ElemT: PartialEq + Eq + Hash + Clone> {
-//     elem: ElemT,
-//     unit: ElemT,
-//     factors: HashMap<ElemT, Natural>,
-// }
+    pub fn factored_irreducible_unchecked<Ring: FavoriteAssociate<ElemT = ElemT>>(
+        ring: &Ring,
+        elem: ElemT,
+    ) -> Self {
+        let (unit, assoc) = ring.factor_fav_assoc(elem);
+        Factored {
+            unit,
+            factors: HashMap::from([(assoc, Natural::from(1u8))]),
+        }
+    }
 
-// impl<ElemT: PartialEq + Eq + Hash + Clone> PartialEq for Factored<ElemT> {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.unit == other.unit && self.factors == other.factors
-//     }
-// }
+    pub fn factored_unit_unchecked<Ring: ComRing<ElemT = ElemT>>(_ring: &Ring, unit: ElemT) -> Self {
+        Factored {
+            unit,
+            factors: HashMap::new(),
+        }
+    }
 
-// impl<ElemT: PartialEq + Eq + Hash + Clone> Eq for Factored<ElemT> {}
+    pub fn to_string<Ring: ComRing<ElemT = ElemT>>(&self, ring: &Ring) -> String {
+        let mut s = ring.to_string(&self.unit);
+        for (f, k) in &self.factors {
+            s += " * (";
+            s += &ring.to_string(f);
+            s += ")";
+            if k != &Natural::from(1u8) {
+                s += "^";
+                s += &k.to_string();
+            }
+        }
+        s
+    }
+}
 
-// impl<ElemT: PartialEq + Eq + Hash + Clone> ToString for Factored<ElemT> {
-//     fn to_string(&self) -> String {
-//         let mut s = self.unit.to_string();
-//         for (f, k) in &self.factors {
-//             s += " * (";
-//             s += &f.to_string();
-//             s += ")";
-//             if k != &Natural::from(1u8) {
-//                 s += "^";
-//                 s += &k.to_string();
-//             }
-//         }
-//         s
-//     }
-// }
+impl<ElemT: Clone + PartialEq + Eq + Hash> PartialEq for Factored<ElemT> {
+    fn eq(&self, other: &Self) -> bool {
+        self.unit == other.unit && self.factors == other.factors
+    }
+}
 
-// impl<ElemT: PartialEq + Eq + Hash + Clone> Factored<ElemT> {
-//     pub fn new_unchecked(elem: ElemT, unit: ElemT, factors: HashMap<ElemT, Natural>) -> Self {
-//         Self {
-//             elem,
-//             unit,
-//             factors,
-//         }
-//     }
+impl<ElemT: Clone + PartialEq + Eq + Hash> Eq for Factored<ElemT> {}
 
-//     pub fn new_unit_unchecked(unit: ElemT) -> Self {
-//         Self {
-//             elem: unit.clone(),
-//             unit,
-//             factors: HashMap::new(),
-//         }
-//     }
+pub trait UniqueFactorizationDomain: FavoriteAssociate {
+    //a UFD with an explicit algorithm to compute unique factorizations
+    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>>;
 
-//     pub fn unit(&self) -> &ElemT {
-//         &self.unit
-//     }
+    fn is_irreducible(&self, elem: &Self::ElemT) -> Option<bool> {
+        match self.factor(elem) {
+            None => None,
+            Some(factored) => Some(factored.is_irreducible()),
+        }
+    }
 
-//     pub fn factors(&self) -> &HashMap<ElemT, Natural> {
-//         &self.factors
-//     }
+    fn check_factored_invariants(&self, f: Factored<Self::ElemT>) -> Result<(), &'static str> {
+        if !self.is_unit(f.unit.clone()) {
+            return Err("unit must be a unit");
+        }
+        for (p, k) in &f.factors {
+            if k == &0 {
+                return Err("prime powers must not be zero");
+            }
+            if p == &self.zero() {
+                return Err("prime factor must not be zero");
+            }
+            if !self.is_fav_assoc(p) {
+                return Err("prime factor must be their fav assoc");
+            }
+            if !self.is_irreducible(p).unwrap() {
+                return Err("prime factor must not be reducible");
+            }
 
-//     pub fn is_irreducible(&self) -> bool {
-//         if self.factors.len() == 1 {
-//             let (_p, k) = self.factors.iter().next().unwrap();
-//             if k == &1 {
-//                 return true;
-//             }
-//         }
-//         false
-//     }
+            let mut i = Natural::from(0u8);
+            while &i < k {
+                i += Natural::from(1u8);
+            }
+        }
+        Ok(())
+    }
 
-    // pub fn mul(a: Self, b: Self) -> Self {
-    //     let mut mul_factors = a.factors;
-    //     for (p, k) in b.factors {
-    //         *mul_factors.entry(p.clone()).or_insert(Natural::from(0u8)) += k;
-    //     }
-    //     Self::new_unchecked(R::mul(a.elem, b.elem), R::mul(a.unit, b.unit), mul_factors)
-    // }
+    fn divisors<'a>(
+        &'a self,
+        factored: &Factored<Self::ElemT>,
+    ) -> Box<dyn Iterator<Item = Self::ElemT> + 'a> {
+        if factored.factors.len() == 0 {
+            Box::new(vec![self.one()].into_iter())
+        } else {
+            let mut factor_powers = vec![];
+            for (p, k) in &factored.factors {
+                let j = factor_powers.len();
+                factor_powers.push(vec![]);
+                let mut p_pow = self.one();
+                let mut i = Natural::from(0u8);
+                while &i <= k {
+                    factor_powers[j].push(p_pow.clone());
+                    p_pow = self.mul_ref(p_pow, &p);
+                    i += Natural::from(1u8);
+                }
+            }
 
-    // pub fn divisors<'a>(&self) -> Box<dyn Iterator<Item = R::ElemT> + 'a>
-    // where
-    //     R: 'a,
-    // {
-    //     if self.factors.len() == 0 {
-    //         Box::new(vec![R::one()].into_iter())
-    //     } else {
-    //         let mut factor_powers = vec![];
-    //         for (p, k) in &self.factors {
-    //             let j = factor_powers.len();
-    //             factor_powers.push(vec![]);
-    //             let mut p_pow = R::one();
-    //             let mut i = Natural::from(0u8);
-    //             while &i <= k {
-    //                 factor_powers[j].push(p_pow.clone());
-    //                 p_pow = R::mul_ref(p_pow, &p);
-    //                 i += Natural::from(1u8);
-    //             }
-    //         }
+            Box::new(
+                itertools::Itertools::multi_cartesian_product(
+                    factor_powers.into_iter().map(|p_pows| p_pows.into_iter()),
+                )
+                .map(|prime_power_factors| self.product(prime_power_factors).clone()),
+            )
+        }
+    }
 
-    //         Box::new(
-    //             itertools::Itertools::multi_cartesian_product(
-    //                 factor_powers.into_iter().map(|p_pows| p_pows.into_iter()),
-    //             )
-    //             .map(|prime_power_factors| R::product(prime_power_factors).clone()),
-    //         )
-    //     }
-    // }
-
-//     pub fn count_divisors(&self) -> Option<Natural> {
-//         let mut count = Natural::from(1u8);
-//         for (_p, k) in &self.factors {
-//             count *= k + Natural::from(1u8);
-//         }
-//         Some(count)
-//     }
-// }
+    fn count_divisors(&self, factored: &Factored<Self::ElemT>) -> Option<Natural> {
+        let mut count = Natural::from(1u8);
+        for (_p, k) in &factored.factors {
+            count *= k + Natural::from(1u8);
+        }
+        Some(count)
+    }
+}
 
 pub trait PrincipalIdealDomain: GreatestCommonDivisorDomain {
     //any gcds should be the standard associate representative
@@ -526,7 +514,11 @@ impl<R: EuclideanDomain + FavoriteAssociate> GreatestCommonDivisorDomain for R {
 }
 
 impl<R: EuclideanDomain + FavoriteAssociate> PrincipalIdealDomain for R {
-    fn xgcd(&self, mut x: Self::ElemT, mut y: Self::ElemT) -> (Self::ElemT, Self::ElemT, Self::ElemT) {
+    fn xgcd(
+        &self,
+        mut x: Self::ElemT,
+        mut y: Self::ElemT,
+    ) -> (Self::ElemT, Self::ElemT, Self::ElemT) {
         let mut pa = self.one();
         let mut a = self.zero();
         let mut pb = self.zero();
@@ -670,24 +662,18 @@ impl<F: Field> EuclideanDomain for F {
     }
 }
 
-// impl<F: Field + Hash> UniqueFactorizationDomain for F {}
-
-// impl<F: Field + Hash> UniquelyFactorable for F
-// where
-//     Self::ElemT: Hash,
-// {
-//     fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
-//         if elem == &self.zero() {
-//             None
-//         } else {
-//             Some(Factored::new_unchecked(
-//                 elem.clone(),
-//                 elem.clone(),
-//                 HashMap::new(),
-//             ))
-//         }
-//     }
-// }
+impl<F: Field + Hash> UniqueFactorizationDomain for F
+where
+    Self::ElemT: Hash,
+{
+    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
+        if elem == &self.zero() {
+            None
+        } else {
+            Some(Factored::new_unchecked(elem.clone(), HashMap::new()))
+        }
+    }
+}
 
 pub trait FieldOfFractions: Field {
     type R: IntegralDomain;
@@ -698,106 +684,83 @@ mod tests {
     use super::super::nzq::*;
     use super::*;
 
-    // #[test]
-    // fn factorization_invariants() {
-    //     let f = Factored::<ZZ>::new_unchecked(
-    //         Integer::from(-12),
-    //         Integer::from(-1),
-    //         HashMap::from([
-    //             (Integer::from(2), Natural::from(2u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ]),
-    //     );
-    //     f.check_invariants().unwrap();
+    #[test]
+    fn factorization_invariants() {
+        let f = Factored::new_unchecked(
+            Integer::from(-1),
+            HashMap::from([
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        );
+        ZZ.check_factored_invariants(f).unwrap();
 
-    //     let f =
-    //         Factored::<ZZ>::new_unchecked(Integer::from(1), Integer::from(1), HashMap::from([]));
-    //     f.check_invariants().unwrap();
+        let f = Factored::new_unchecked(Integer::from(1), HashMap::from([]));
+        ZZ.check_factored_invariants(f).unwrap();
 
-    //     let f = Factored::<ZZ>::new_unchecked(
-    //         Integer::from(-12),
-    //         Integer::from(-1),
-    //         HashMap::from([
-    //             (Integer::from(2), Natural::from(2u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //             (Integer::from(5), Natural::from(0u8)),
-    //         ]),
-    //     );
-    //     assert_eq!(
-    //         f.check_invariants().is_ok(),
-    //         false,
-    //         "can't have a power of zero"
-    //     );
+        let f = Factored::new_unchecked(
+            Integer::from(-1),
+            HashMap::from([
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+                (Integer::from(5), Natural::from(0u8)),
+            ]),
+        );
+        assert_eq!(
+            ZZ.check_factored_invariants(f).is_ok(),
+            false,
+            "can't have a power of zero"
+        );
 
-    //     let f = Factored::<ZZ>::new_unchecked(
-    //         Integer::from(-13),
-    //         Integer::from(-1),
-    //         HashMap::from([
-    //             (Integer::from(2), Natural::from(2u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ]),
-    //     );
-    //     assert_eq!(f.check_invariants().is_ok(), false, "product is incorrect");
+        let f = Factored::new_unchecked(
+            Integer::from(3),
+            HashMap::from([(Integer::from(2), Natural::from(2u8))]),
+        );
+        assert_eq!(
+            ZZ.check_factored_invariants(f).is_ok(),
+            false,
+            "unit should be a unit"
+        );
 
-    //     let f = Factored::<ZZ>::new_unchecked(
-    //         Integer::from(12),
-    //         Integer::from(-1),
-    //         HashMap::from([
-    //             (Integer::from(2), Natural::from(2u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ]),
-    //     );
-    //     assert_eq!(f.check_invariants().is_ok(), false, "unit is wrong");
+        let f = Factored::new_unchecked(
+            Integer::from(1),
+            HashMap::from([
+                (Integer::from(0), Natural::from(1u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        );
+        assert_eq!(
+            ZZ.check_factored_invariants(f).is_ok(),
+            false,
+            "prime factors must not be zero"
+        );
 
-    //     let f = Factored::<ZZ>::new_unchecked(
-    //         Integer::from(12),
-    //         Integer::from(3),
-    //         HashMap::from([(Integer::from(2), Natural::from(2u8))]),
-    //     );
-    //     assert_eq!(f.check_invariants().is_ok(), false, "unit should be a unit");
+        let f = Factored::new_unchecked(
+            Integer::from(-1),
+            HashMap::from([
+                (Integer::from(4), Natural::from(1u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        );
+        assert_eq!(
+            ZZ.check_factored_invariants(f).is_ok(),
+            false,
+            "prime factors must be prime"
+        );
 
-    //     let f = Factored::<ZZ>::new_unchecked(
-    //         Integer::from(0),
-    //         Integer::from(1),
-    //         HashMap::from([
-    //             (Integer::from(0), Natural::from(1u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ]),
-    //     );
-    //     assert_eq!(
-    //         f.check_invariants().is_ok(),
-    //         false,
-    //         "prime factors must not be zero"
-    //     );
-
-    //     let f = Factored::<ZZ>::new_unchecked(
-    //         Integer::from(-12),
-    //         Integer::from(-1),
-    //         HashMap::from([
-    //             (Integer::from(4), Natural::from(1u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ]),
-    //     );
-    //     assert_eq!(
-    //         f.check_invariants().is_ok(),
-    //         false,
-    //         "prime factors must be prime"
-    //     );
-
-    //     let f = Factored::<ZZ>::new_unchecked(
-    //         Integer::from(-12),
-    //         Integer::from(-1),
-    //         HashMap::from([
-    //             (Integer::from(-2), Natural::from(2u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ]),
-    //     );
-    //     assert_eq!(
-    //         f.check_invariants().is_ok(),
-    //         false,
-    //         "prime factors must be fav assoc"
-    //     );
-    // }
+        let f = Factored::new_unchecked(
+            Integer::from(-1),
+            HashMap::from([
+                (Integer::from(-2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ]),
+        );
+        assert_eq!(
+            ZZ.check_factored_invariants(f).is_ok(),
+            false,
+            "prime factors must be fav assoc"
+        );
+    }
 
     #[test]
     fn test_xgcd_list() {
