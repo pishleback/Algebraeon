@@ -6,7 +6,7 @@ use malachite_nz::natural::Natural;
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use super::matrix::MatrixStructure;
+use super::matrix::*;
 use super::nzq::*;
 use super::ring::*;
 
@@ -517,6 +517,18 @@ impl<'a, R: GreatestCommonDivisorDomain> PolynomialRing<'a, R> {
             Some((g, poly))
         }
     }
+
+    fn primitive_squarefree_part(&self, f: Polynomial<R::ElemT>) -> Option<Polynomial<R::ElemT>> {
+        if f == self.zero() {
+            None
+        } else {
+            let g = self.subresultant_gcd(f.clone(), self.derivative(f.clone()));
+            let (_c, g_prim) = self.factor_primitive(g).unwrap();
+            let (_c, f_prim) = self.factor_primitive(f).unwrap();
+            let f_prim_sqfree = self.div(f_prim, g_prim).unwrap();
+            Some(f_prim_sqfree)
+        }
+    }
 }
 
 impl<'a, R: FavoriteAssociate + IntegralDomain> FavoriteAssociate for PolynomialRing<'a, R> {
@@ -932,9 +944,7 @@ impl<
         );
         let (linear_factors, f) = self.factor_primitive_linear_part(f);
 
-        let g = self.subresultant_gcd(f.clone(), self.derivative(f.clone()));
-        let (_s, g) = self.factor_primitive(g).unwrap();
-        let f_sqfree = self.div_refs(&f, &g).unwrap();
+        let f_sqfree = self.primitive_squarefree_part(f.clone()).unwrap();
         let f_sqfree_factors = self.factorize_primitive_polynomial_by_kroneckers_method(f_sqfree);
 
         let mut f = f;
@@ -1065,13 +1075,9 @@ mod tests {
     use core::panic;
 
     use super::super::ergonomic::*;
-    use super::super::nzq::*;
     use super::*;
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
-
-    const ZZ_POLY: PolynomialRing<IntegerRing> = PolynomialRing { ring: &ZZ };
-    const QQ_POLY: PolynomialRing<RationalField> = PolynomialRing { ring: &QQ };
 
     #[test]
     fn invariant_reduction() {
