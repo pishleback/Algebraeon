@@ -81,6 +81,14 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Hash + Debug {
         }
     }
 
+    fn are_associate(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
+        if a == &self.zero() && b == &self.zero() {
+            true
+        } else {
+            self.div_refs(a, b).is_ok() && self.div_refs(b, a).is_ok()
+        }
+    }
+
     fn sum(&self, elems: Vec<Self::ElemT>) -> Self::ElemT {
         let mut ans = self.zero();
         for elem in elems {
@@ -301,7 +309,10 @@ impl<ElemT: Clone + PartialEq + Eq + Hash> Factored<ElemT> {
         }
     }
 
-    pub fn factored_unit_unchecked<Ring: ComRing<ElemT = ElemT>>(_ring: &Ring, unit: ElemT) -> Self {
+    pub fn factored_unit_unchecked<Ring: ComRing<ElemT = ElemT>>(
+        _ring: &Ring,
+        unit: ElemT,
+    ) -> Self {
         Factored {
             unit,
             factors: HashMap::new(),
