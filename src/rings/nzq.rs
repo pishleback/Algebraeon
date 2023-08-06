@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::ring::*;
+use super::{poly::PolynomialRing, ring::*};
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
@@ -184,6 +184,13 @@ impl EuclideanDomain for IntegerRing {
         } else {
             Some(a.div_mod(b.clone()))
         }
+    }
+}
+
+impl<'a> UniqueFactorizationDomain for PolynomialRing<'a, IntegerRing> {
+    fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
+        //TODO: use a more efficient algorithm: reduce mod large prime and lift, knapsack alg using LLL to pick factor subsets efficiently
+        self.factorize_by_kroneckers_method(elem)
     }
 }
 
