@@ -268,6 +268,26 @@ impl Field for RationalField {}
 
 impl FieldOfFractions for RationalField {
     type R = IntegerRing;
+
+    fn base_ring(&self) -> &Self::R {
+        &ZZ
+    }
+
+    fn numerator(&self, elem: &Self::ElemT) -> <Self::R as ComRing>::ElemT {
+        if elem >= &0 {
+            Integer::from(elem.numerator_ref())
+        } else {
+            -Integer::from(elem.numerator_ref())
+        }
+    }
+
+    fn denominator(&self, elem: &Self::ElemT) -> <Self::R as ComRing>::ElemT {
+        Integer::from(elem.denominator_ref())
+    }
+
+    fn from_base_ring(&self, elem : <Self::R as ComRing>::ElemT) -> Self::ElemT {
+        Rational::from(elem)
+    }
 }
 
 #[cfg(test)]
@@ -317,6 +337,14 @@ mod tests {
             let (g, x, y) = ZZ.xgcd(a.clone(), b.clone());
             assert_eq!(x * a + y * b, g);
         }
+    }
+
+    #[test]
+    fn test_rational_numerator_and_denominator() {
+        let x = Rational::from_signeds(-22, 7);
+        let (n, d) = (QQ.numerator(&x), QQ.denominator(&x));
+        assert_eq!(n, Integer::from(-22));
+        assert_eq!(d, Integer::from(7));
     }
 
     #[test]
