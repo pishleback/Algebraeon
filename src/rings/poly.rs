@@ -23,13 +23,21 @@ pub struct Polynomial<ElemT: Clone + PartialEq + Eq + Hash> {
 impl<ElemT: Clone + PartialEq + Eq + Hash> Polynomial<ElemT> {
     pub fn apply_map<NewElemT: Clone + PartialEq + Eq + Hash>(
         &self,
-        poly: &Polynomial<ElemT>,
         f: impl Fn(&ElemT) -> NewElemT,
     ) -> Polynomial<NewElemT> {
         Polynomial {
-            coeffs: poly.coeffs.iter().map(f).collect(),
+            coeffs: self.coeffs.iter().map(f).collect(),
         }
     }
+
+    // pub fn apply_map_with_powers<NewElemT: Clone + PartialEq + Eq + Hash>(
+    //     &self,
+    //     f: impl Fn((usize, &ElemT)) -> NewElemT,
+    // ) -> Polynomial<NewElemT> {
+    //     Polynomial {
+    //         coeffs: self.coeffs.iter().enumerate().map(f).collect(),
+    //     }
+    // }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -172,7 +180,7 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
         //try to find q such that q*b == a
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
-
+        
         let m = a.coeffs.len();
         let n = b.coeffs.len();
         if n == 0 {
@@ -328,6 +336,16 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         }
     }
 
+    pub fn as_constant(&self, poly: &Polynomial<R::ElemT>) -> Option<R::ElemT> {
+        if poly.coeffs.len() == 0 {
+            Some(self.ring.zero())
+        } else if poly.coeffs.len() == 1 {
+            Some(poly.coeffs[0].clone())
+        } else {
+            None
+        }
+    }
+
     pub fn evaluate(&self, poly: &Polynomial<R::ElemT>, x: &R::ElemT) -> R::ElemT {
         // f(x) = a + bx + cx^2 + dx^3
         // evaluate as f(x) = a + x(b + x(c + x(d)))
@@ -455,7 +473,6 @@ impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
                     loop {
                         let d = self.degree(&a).unwrap() - self.degree(&b).unwrap();
                         let gamma = self.coeff(&b, self.degree(&b).unwrap());
-
                         let r = self
                             .div(
                                 self.pseudorem_rref(a, &b).unwrap().unwrap(),
@@ -495,6 +512,14 @@ impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
             },
         }
     }
+
+    pub fn resultant(&self, a: Polynomial<R::ElemT>, b: Polynomial<R::ElemT>) -> R::ElemT {
+        let subresultant_gcd = self.subresultant_gcd(a, b);
+        match self.as_constant(&subresultant_gcd) {
+            Some(res) => res,
+            None => self.ring.zero(),
+        }
+    }
 }
 
 impl<'a, R: IntegralDomain> IntegralDomain for PolynomialRing<'a, R> {}
@@ -513,12 +538,13 @@ impl<'a, R: GreatestCommonDivisorDomain> PolynomialRing<'a, R> {
             for i in 0..poly.coeffs.len() {
                 poly.coeffs[i] = self.ring.div_refs(&poly.coeffs[i], &g).unwrap()
             }
-
             Some((g, poly))
         }
     }
+}
 
-    fn primitive_squarefree_part(&self, f: Polynomial<R::ElemT>) -> Option<Polynomial<R::ElemT>> {
+impl<'a, R: GreatestCommonDivisorDomain + CharacteristicZero> PolynomialRing<'a, R> {
+    pub fn primitive_squarefree_part(&self, f: Polynomial<R::ElemT>) -> Option<Polynomial<R::ElemT>> {
         if f == self.zero() {
             None
         } else {
@@ -828,7 +854,7 @@ impl<'a, R: UniqueFactorizationDomain + GreatestCommonDivisorDomain + FiniteUnit
 
 impl<
         'a,
-        R: UniqueFactorizationDomain + GreatestCommonDivisorDomain + InfiniteRing + FiniteUnits,
+        R: UniqueFactorizationDomain + GreatestCommonDivisorDomain + CharacteristicZero + FiniteUnits,
     > PolynomialRing<'a, R>
 {
     fn factorize_primitive_polynomial_by_kroneckers_method(
@@ -983,7 +1009,7 @@ impl<
     }
 }
 
-// pub fn subsylvester_matrix<R: ComRing>(
+// fn subsylvester_matrix<R: ComRing>(
 //     f_deg: usize,
 //     g_deg: usize,
 //     f: &Polynomial<R>,
