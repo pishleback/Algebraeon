@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::{collections::HashMap, fmt::Debug, hash::Hash};
+use std::{collections::HashMap, fmt::Debug, hash::Hash, borrow::Borrow};
 
 use malachite_base::num::{
     arithmetic::traits::{DivRem, UnsignedAbs},
@@ -241,10 +241,26 @@ pub trait FavoriteAssociate: IntegralDomain {
 pub trait GreatestCommonDivisorDomain: FavoriteAssociate {
     //any gcds should be the standard associate representative
     fn gcd(&self, x: Self::ElemT, y: Self::ElemT) -> Self::ElemT;
-    fn gcd_list(&self, elems: Vec<&Self::ElemT>) -> Self::ElemT {
+    fn gcd_list<BorrowElemT : Borrow<Self::ElemT>>(&self, elems: Vec<BorrowElemT>) -> Self::ElemT {
         let mut ans = self.zero();
         for x in elems {
-            ans = self.gcd(ans, x.clone());
+            ans = self.gcd(ans, x.borrow().clone());
+        }
+        ans
+    }
+    fn lcm(&self, x: Self::ElemT, y: Self::ElemT) -> Self::ElemT {
+        if x == self.zero() && y == self.zero() {
+            self.zero()
+        } else {
+            let g = self.gcd(x.clone(), y.clone());
+            self.div(self.mul(x, y), g).unwrap()
+        }
+    }
+
+    fn lcm_list<BorrowElemT : Borrow<Self::ElemT>>(&self, elems: Vec<BorrowElemT>) -> Self::ElemT {
+        let mut ans = self.one();
+        for x in elems {
+            ans = self.lcm(ans, x.borrow().clone());
         }
         ans
     }
@@ -688,6 +704,18 @@ where
 
 pub trait FieldOfFractions: Field {
     type R: IntegralDomain;
+
+    fn base_ring(&self) -> &Self::R;
+    fn from_base_ring(&self, elem : <Self::R as ComRing>::ElemT) -> Self::ElemT;
+    fn numerator(&self, elem: &Self::ElemT) -> <Self::R as ComRing>::ElemT;
+    fn denominator(&self, elem: &Self::ElemT) -> <Self::R as ComRing>::ElemT;
+    fn as_base_ring(&self, elem : Self::ElemT) -> Option<<Self::R as ComRing>::ElemT> {
+        if self.denominator(&elem) == self.base_ring().one() {
+            Some(self.numerator(&elem))
+        } else {
+            None
+        }
+    }
 }
 
 #[cfg(test)]
