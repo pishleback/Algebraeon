@@ -90,7 +90,10 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
     }
 
     //Collins and Akritas algorithm %https://en.wikipedia.org/wiki/Real-root_isolation
-    fn collin_akritas(&self, poly: &Polynomial<Integer>) -> Vec<(Natural, usize, bool)> {
+    fn isolate_real_roots_by_collin_akritas(
+        &self,
+        poly: &Polynomial<Integer>,
+    ) -> Vec<(Natural, usize, bool)> {
         //input: p(x), a square-free polynomial, such that p(0) p(1) ≠ 0, for which the roots in the interval [0, 1] are searched
         //output: a list of triples (c, k, h) representing isolating intervals of the form [c/2^k, (c+h)/2^k]
         debug_assert_ne!(self.evaluate(poly, &self.ring().zero()), self.ring().zero());
@@ -139,14 +142,16 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
     }
 
     //isolate all real roots of the irreducible poly in the open interval (a, b)
-    pub fn isolate_real_roots(
+    fn real_roots_irreducible(
         &self,
-        poly: Polynomial<Integer>,
-        mut a: Option<Rational>,
-        mut b: Option<Rational>,
+        poly: &Polynomial<Integer>,
+        a: &Option<Rational>,
+        b: &Option<Rational>,
     ) -> Vec<RealAlgebraicNumber> {
-        assert_ne!(poly, self.zero());
+        assert_ne!(poly, &self.zero());
         debug_assert!(self.is_irreducible(&poly).unwrap());
+
+        let (mut a, mut b) = (a.clone(), b.clone());
 
         let d = ZZ_POLY.degree(&poly).unwrap();
         if d == 0 {
@@ -155,7 +160,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         } else if d == 1 {
             //poly = a+bx
             //root = -a/b
-            let root = Rational::from(self.coeff(&poly, 0)) / Rational::from(self.coeff(&poly, 1));
+            let root = -Rational::from(self.coeff(&poly, 0)) / Rational::from(self.coeff(&poly, 1));
             if a.is_some() {
                 if !(a.unwrap() < root) {
                     return vec![];
@@ -203,31 +208,76 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
             ));
 
             let mut roots = vec![];
-            for (c, k, h) in self.collin_akritas(&trans_poly) {
+            for (c, k, h) in self.isolate_real_roots_by_collin_akritas(&trans_poly) {
                 assert!(h); //should not isolate any rational roots since poly is irreducible with degree >= 2
                 let d = Natural::from(1u8) << k;
-                roots.push(RealAlgebraicNumber::Real(RealAlgebraicRoot {
-                    a: (&b - &a) * Rational::from_naturals(c.clone(), d.clone()) + &a,
-                    b: (&b - &a) * Rational::from_naturals(&c + Natural::from(1u8), d.clone()) + &a,
-                    poly: poly.clone(),
-                }));
+                roots.push(RealAlgebraicNumber::Real(
+                    RealAlgebraicRoot::new_wide_bounds(
+                        poly.clone(),
+                        (&b - &a) * Rational::from_naturals(c.clone(), d.clone()) + &a,
+                        (&b - &a) * Rational::from_naturals(&c + Natural::from(1u8), d.clone())
+                            + &a,
+                    ),
+                ));
             }
             roots
         }
     }
+
+    //get the real roots with multiplicity of poly
+    pub fn real_roots(
+        &self,
+        poly: &Polynomial<Integer>,
+        a: &Option<Rational>,
+        b: &Option<Rational>,
+    ) -> Vec<RealAlgebraicNumber> {
+        assert_ne!(poly, &self.zero());
+        let factors = self.factor(&poly).unwrap();
+        let mut roots = vec![];
+        for (factor, k) in factors.factors() {
+            for root in self.real_roots_irreducible(factor, a, b) {
+                let mut i = Natural::from(0u8);
+                while &i < k {
+                    roots.push(root.clone());
+                    i += Natural::from(1u8);
+                }
+            }
+        }
+        roots
+    }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Hash)]
 pub struct RealAlgebraicRoot {
-    a: Rational,               //lower bound
-    b: Rational,               //upper bound
     poly: Polynomial<Integer>, //a primitive irreducible polynomial of degree >= 2 with a unique real root between a and b
+    //an arbitrarily small interval containing the root. May be mutated
+    tight_a: Rational, //tight lower bound
+    tight_b: Rational, //tight upper bound
+    //a heuristically large interval containing the root. Should not shrink
+    wide_a: Rational, //wide lower bound
+    wide_b: Rational, //wide upper bound
+    //false : decreasing i.e. poly(a) > poly(b), true : increasing i.e. poly(a) < poly(b)
+    dir: bool,
 }
 
 impl RealAlgebraicRoot {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
-        if self.b <= self.a {
-            return Err("a should be strictly less than b");
+        if !(self.tight_a < self.tight_b) {
+            return Err("tight a should be strictly less than b");
+        }
+        if !(self.wide_a < self.wide_b) {
+            return Err("wide a should be strictly less than b");
+        }
+        if self.poly
+            != ZZ_POLY
+                .factor_fav_assoc(
+                    ZZ_POLY
+                        .primitive_squarefree_part(self.poly.clone())
+                        .unwrap(),
+                )
+                .1
+        {
+            return Err("poly should be primitive and favoriate associate");
         }
         match ZZ_POLY.is_irreducible(&self.poly) {
             Some(is_irr) => {
@@ -242,26 +292,164 @@ impl RealAlgebraicRoot {
         if ZZ_POLY.degree(&self.poly).unwrap() < 2 {
             return Err("poly should have degree at least 2");
         }
+        let at_a = self.evaluate(&self.tight_a);
+        let at_b = self.evaluate(&self.tight_b);
+        assert_ne!(at_a, Rational::from(0));
+        assert_ne!(at_b, Rational::from(0));
+        let sign_a = &at_a > &Rational::from(0);
+        let sign_b = &at_b > &Rational::from(0);
+        if sign_a == sign_b {
+            return Err("sign at a and b should be different");
+        }
+        if self.dir != (sign_a == false) {
+            return Err("dir is incorrect");
+        }
         Ok(())
+    }
+
+    fn new_wide_bounds(poly: Polynomial<Integer>, wide_a: Rational, wide_b: Rational) -> Self {
+        let dir = QQ_POLY.evaluate(
+            &ZZ_POLY.apply_map(&QQ, &poly, |x| Rational::from(x)),
+            &wide_a,
+        ) < Rational::from(0);
+        let x = Self {
+            poly,
+            tight_a: wide_a.clone(),
+            tight_b: wide_b.clone(),
+            wide_a,
+            wide_b,
+            dir,
+        };
+        debug_assert!(x.check_invariants().is_ok());
+        x
+    }
+
+    fn evaluate(&self, val: &Rational) -> Rational {
+        QQ_POLY.evaluate(
+            &ZZ_POLY.apply_map(&QQ, &self.poly, |x| Rational::from(x)),
+            &val,
+        )
+    }
+
+    pub fn accuracy(&self) -> Rational {
+        &self.tight_b - &self.tight_a
+    }
+
+    pub fn refine(&mut self) {
+        let m = (&self.tight_a + &self.tight_b) / Rational::from(2);
+        let m_sign = self.evaluate(&m) > Rational::from(0);
+        match self.dir == m_sign {
+            true => {
+                self.tight_b = m;
+            }
+            false => {
+                self.tight_a = m;
+            }
+        }
+    }
+
+    pub fn refine_to_accuracy(&mut self, accuracy: &Rational) {
+        while &self.accuracy() > accuracy {
+            self.refine();
+        }
+    }
+
+    pub fn cmp_mut(&mut self, other: &mut Self) -> std::cmp::Ordering {
+        let eq_poly = self.poly == other.poly; //polys should be irreducible primitive fav-assoc so this is valid
+        loop {
+            //test for equality: if the tight bounds on one are within the wide bounds of the other
+            if eq_poly {
+                if other.wide_a <= self.tight_a && self.tight_b <= other.wide_b {
+                    return std::cmp::Ordering::Equal;
+                }
+                if self.wide_a <= other.tight_a && other.tight_b <= self.wide_b {
+                    return std::cmp::Ordering::Equal;
+                }
+            }
+
+            //test for inequality: if the tight bounds are disjoint
+            if self.tight_b <= other.tight_a {
+                return std::cmp::Ordering::Less;
+            }
+            if other.tight_b <= self.tight_a {
+                return std::cmp::Ordering::Greater;
+            }
+
+            //refine
+            self.refine();
+            other.refine();
+        }
+    }
+
+    pub fn cmp_rat_mut(&mut self, other: &Rational) -> std::cmp::Ordering {
+        loop {
+            //test for inequality: other is outside the tight bounds
+            if &self.tight_b <= other {
+                return std::cmp::Ordering::Less;
+            }
+            if other <= &self.tight_a {
+                return std::cmp::Ordering::Greater;
+            }
+
+            //refine
+            self.refine();
+        }
+    }
+}
+
+impl ToString for RealAlgebraicRoot {
+    fn to_string(&self) -> String {
+        let m = (&self.tight_a + &self.tight_b) / Rational::from(2);
+
+        fn rat_to_string(a: Rational) -> String {
+            let neg = a < Rational::from(0);
+            let (mant, exp): (f64, _) = a
+                .sci_mantissa_and_exponent_with_rounding(
+                    malachite_base::rounding_modes::RoundingMode::Nearest,
+                )
+                .unwrap();
+            let mut b = (2.0 as f64).powf(exp as f64) * mant;
+            if neg {
+                b = -b;
+            }
+            b.to_string()
+        }
+
+        "≈".to_owned()
+            + rat_to_string(m).as_str()
+            + "±"
+            + rat_to_string(self.accuracy() / Rational::from(2)).as_str()
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ComplexAlgebraicRoot {
-    a: Rational,               //lower bound for the real part
-    b: Rational,               //upper bound for the real part
-    c: Rational,               //lower bound for the imaginary part
-    d: Rational,               //upper bound for the imaginary part
+    tight_a: Rational, //tight lower bound for the real part
+    tight_b: Rational, //tight upper bound for the real part
+    tight_c: Rational, //tight lower bound for the imaginary part
+    tight_d: Rational, //tight upper bound for the imaginary part
+
+    wide_a: Rational, //wide lower bound for the real part
+    wide_b: Rational, //wide upper bound for the real part
+    wide_c: Rational, //wide lower bound for the imaginary part
+    wide_d: Rational, //wide upper bound for the imaginary part
+
     poly: Polynomial<Integer>, //a primitive irreducible polynomial of degree >= 2 with a unique non-real complex root in the box defined by (a, b, c, d)
 }
 
 impl ComplexAlgebraicRoot {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
-        if self.b <= self.a {
-            return Err("a should be strictly less than b");
+        if !(self.tight_a < self.tight_b) {
+            return Err("tight a should be strictly less than b");
         }
-        if self.d <= self.c {
-            return Err("c should be strictly less than d");
+        if !(self.tight_c < self.tight_d) {
+            return Err("tight c should be strictly less than d");
+        }
+        if !(self.wide_a < self.wide_b) {
+            return Err("wide a should be strictly less than b");
+        }
+        if !(self.wide_c < self.wide_d) {
+            return Err("wide c should be strictly less than d");
         }
         match ZZ_POLY.is_irreducible(&self.poly) {
             Some(is_irr) => {
@@ -280,10 +468,64 @@ impl ComplexAlgebraicRoot {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Hash)]
 pub enum RealAlgebraicNumber {
     Rational(Rational),
     Real(RealAlgebraicRoot),
+}
+
+impl RealAlgebraicNumber {
+    pub fn check_invariants(&self) -> Result<(), &'static str> {
+        match self {
+            RealAlgebraicNumber::Rational(x) => {}
+            RealAlgebraicNumber::Real(x) => match x.check_invariants() {
+                Ok(()) => {}
+                Err(e) => {
+                    return Err(e);
+                }
+            },
+        }
+        Ok(())
+    }
+
+    pub fn cmp_mut(&mut self, other: &mut Self) -> std::cmp::Ordering {
+        {
+            match self {
+                RealAlgebraicNumber::Rational(self_rep) => match other {
+                    RealAlgebraicNumber::Rational(other_rep) => self_rep.cmp(&other_rep),
+                    RealAlgebraicNumber::Real(other_rep) => {
+                        other_rep.cmp_rat_mut(self_rep).reverse()
+                    }
+                },
+                RealAlgebraicNumber::Real(self_rep) => match other {
+                    RealAlgebraicNumber::Rational(other_rep) => {
+                        self_rep.cmp_rat_mut(other_rep)
+                    }
+                    RealAlgebraicNumber::Real(other_rep) => self_rep.cmp_mut(other_rep),
+                },
+            }
+        }
+    }
+}
+
+impl PartialEq for RealAlgebraicNumber {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other).is_eq()
+    }
+}
+
+impl Eq for RealAlgebraicNumber {}
+
+impl PartialOrd for RealAlgebraicNumber {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.clone().cmp_mut(&mut other.clone()))
+    }
+}
+
+impl Ord for RealAlgebraicNumber {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -301,7 +543,7 @@ impl ComRing for RealAlgebraicField {
     fn to_string(&self, elem: &Self::ElemT) -> String {
         match elem {
             RealAlgebraicNumber::Rational(a) => a.to_string(),
-            RealAlgebraicNumber::Real(a) => todo!(),
+            RealAlgebraicNumber::Real(a) => a.to_string(),
         }
     }
 
@@ -512,11 +754,11 @@ mod tests {
     }
 
     #[test]
-    fn test_real_root_count() {
+    fn test_real_root_irreducible_count() {
         assert_eq!(
             ZZ_POLY
-                .isolate_real_roots(
-                    ZZ_POLY.from_coeffs(vec![
+                .real_roots_irreducible(
+                    &ZZ_POLY.from_coeffs(vec![
                         Integer::from(3),
                         Integer::from(-3),
                         Integer::from(0),
@@ -524,16 +766,16 @@ mod tests {
                         Integer::from(0),
                         Integer::from(1)
                     ]),
-                    None,
-                    None
+                    &None,
+                    &None
                 )
                 .len(),
             1
         );
         assert_eq!(
             ZZ_POLY
-                .isolate_real_roots(
-                    ZZ_POLY.from_coeffs(vec![
+                .real_roots_irreducible(
+                    &ZZ_POLY.from_coeffs(vec![
                         Integer::from(1),
                         Integer::from(-3),
                         Integer::from(0),
@@ -541,8 +783,8 @@ mod tests {
                         Integer::from(0),
                         Integer::from(1)
                     ]),
-                    None,
-                    None
+                    &None,
+                    &None
                 )
                 .len(),
             3
