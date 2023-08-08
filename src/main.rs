@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use malachite_base::num::conversion::traits::IntegerMantissaAndExponent;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
@@ -16,22 +17,18 @@ mod rings;
 mod sets;
 
 fn main() {
-
-    // for (c, k, h) in ZZ_POLY.collin_akritas(f) {
-    //     println!("c={} k={} h={}", c, k, h);
-    //     let h = {
-    //         if h {
-    //             Natural::from(1u8)
-    //         } else {
-    //             Natural::from(0u8)
-    //         }
-    //     };
-    //     println!(
-    //         "{}/{} {}/{}",
-    //         c.clone(),
-    //         Natural::from(1u8) << k,
-    //         c + h,
-    //         Natural::from(1u8) << k
-    //     );
-    // }
+    let f = ZZ_POLY.from_coeffs(vec![
+        Integer::from(-1),
+        Integer::from(0),
+        Integer::from(0),
+        Integer::from(1),
+    ]);
+    let n = ZZ_POLY.count_complex_roots(
+        &f,
+        &Rational::from(-2),
+        &Rational::from(2),
+        &Rational::from(-2),
+        &Rational::from(2),
+    );
+    println!("{:?}", n);
 }
