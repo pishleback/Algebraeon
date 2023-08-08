@@ -70,6 +70,10 @@ fn root_prod_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomia
     }
 }
 
+fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Rational {
+    QQ_POLY.evaluate(&ZZ_POLY.apply_map(&QQ, poly, |x| Rational::from(x)), &val)
+}
+
 impl<'a> PolynomialRing<'a, IntegerRing> {
     fn sign_variations(&self, poly: &Polynomial<Integer>) -> usize {
         //https://en.wikipedia.org/wiki/Descartes'_rule_of_signs
@@ -145,13 +149,11 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
     fn real_roots_irreducible(
         &self,
         poly: &Polynomial<Integer>,
-        a: &Option<Rational>,
-        b: &Option<Rational>,
+        opt_a: Option<&Rational>,
+        opt_b: Option<&Rational>,
     ) -> Vec<RealAlgebraicNumber> {
         assert_ne!(poly, &self.zero());
         debug_assert!(self.is_irreducible(&poly).unwrap());
-
-        let (mut a, mut b) = (a.clone(), b.clone());
 
         let d = ZZ_POLY.degree(&poly).unwrap();
         if d == 0 {
@@ -161,20 +163,20 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
             //poly = a+bx
             //root = -a/b
             let root = -Rational::from(self.coeff(&poly, 0)) / Rational::from(self.coeff(&poly, 1));
-            if a.is_some() {
-                if !(a.unwrap() < root) {
+            if opt_a.is_some() {
+                if !(opt_a.unwrap() < &root) {
                     return vec![];
                 }
             }
-            if b.is_some() {
-                if !(root < b.unwrap()) {
+            if opt_b.is_some() {
+                if !(&root < opt_b.unwrap()) {
                     return vec![];
                 }
             }
             vec![RealAlgebraicNumber::Rational(root)]
         } else {
-            //compute a bound M on the absolute value of any root
-            if a.is_none() || b.is_none() {
+            if opt_a.is_none() || opt_b.is_none() {
+                //compute a bound M on the absolute value of any root
                 //m = (Cauchy's bound + 1) https://captainblack.wordpress.com/2009/03/08/cauchys-upper-bound-for-the-roots-of-a-polynomial/
                 let m = Rational::from(2)
                     + Rational::from_integers(
@@ -186,14 +188,23 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                         ),
                         ZZ_POLY.coeff(&poly, d),
                     );
-                if a.is_none() {
-                    a = Some(-m.clone());
-                }
-                if b.is_none() {
-                    b = Some(m.clone());
-                }
+
+                return match opt_a {
+                    Some(a_val) => match opt_b {
+                        Some(_b_val) => panic!(),
+                        None => self.real_roots_irreducible(poly, Some(a_val), Some(&m)),
+                    },
+                    None => match opt_b {
+                        Some(b_val) => self.real_roots_irreducible(poly, Some(&-m), Some(b_val)),
+                        None => {
+                            let neg_m = -m.clone();
+                            self.real_roots_irreducible(poly, Some(&neg_m), Some(&m))
+                        }
+                    },
+                };
             }
-            let (a, b) = (a.unwrap(), b.unwrap());
+            let (a, b) = (opt_a.unwrap(), opt_b.unwrap());
+
             assert!(a < b);
 
             //there are not roots A < r < B if A >= B
@@ -214,9 +225,8 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                 roots.push(RealAlgebraicNumber::Real(
                     RealAlgebraicRoot::new_wide_bounds(
                         poly.clone(),
-                        (&b - &a) * Rational::from_naturals(c.clone(), d.clone()) + &a,
-                        (&b - &a) * Rational::from_naturals(&c + Natural::from(1u8), d.clone())
-                            + &a,
+                        (b - a) * Rational::from_naturals(c.clone(), d.clone()) + a,
+                        (b - a) * Rational::from_naturals(&c + Natural::from(1u8), d.clone()) + a,
                     ),
                 ));
             }
@@ -228,8 +238,8 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
     pub fn real_roots(
         &self,
         poly: &Polynomial<Integer>,
-        a: &Option<Rational>,
-        b: &Option<Rational>,
+        a: Option<&Rational>,
+        b: Option<&Rational>,
     ) -> Vec<RealAlgebraicNumber> {
         assert_ne!(poly, &self.zero());
         let factors = self.factor(&poly).unwrap();
@@ -244,6 +254,319 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
             }
         }
         roots
+    }
+
+    fn at_fixed_re_or_im_impl<const RE_OR_IM: bool>(
+        &self,
+        poly: &Polynomial<Integer>,
+        a: &Rational,
+    ) -> (Polynomial<Integer>, Polynomial<Integer>) {
+        //find real and imag polys of
+        //poly(a + xi) if RE_OR_IM = false
+        //poly(x + ai) if RE_OR_IM = true
+        //up to rational multiples (its the roots we care about)
+        match self.degree(&poly) {
+            Some(n) => {
+                let (a_numer, a_denom) = (QQ.numerator(a), QQ.denominator(a));
+                //multiply everything by a_d^n so that everything is integers
+
+                //compute 1, a, a^2, a^3, ..., a^n (after multiplying everything by a_d)
+                // a_d^n(a_n/a_d)^k = a_n^k a_d^{n-k}
+                let mut a_numer_pow = vec![Integer::from(1)];
+                let mut a_denom_pow = vec![Integer::from(1)];
+                for k in 1..n + 1 {
+                    a_numer_pow.push(&a_numer * &a_numer_pow[k - 1]);
+                    a_denom_pow.push(&a_denom * &a_denom_pow[k - 1]);
+                }
+                let mut a_pow = vec![];
+                for k in 0..n + 1 {
+                    a_pow.push(&a_numer_pow[k] * &a_denom_pow[n - k]);
+                }
+
+                let mut re = Vec::with_capacity(n + 1);
+                let mut im = Vec::with_capacity(n + 1);
+                for _ in 0..n + 1 {
+                    re.push(Integer::from(0));
+                    im.push(Integer::from(0));
+                }
+                let mut n_choose = vec![Integer::from(1)];
+                for n in 0..n + 1 {
+                    if n == 0 {
+                        debug_assert_eq!(n_choose, vec![Integer::from(1)]);
+                    } else if n == 1 {
+                        debug_assert_eq!(n_choose, vec![Integer::from(1), Integer::from(1)]);
+                    } else if n == 2 {
+                        debug_assert_eq!(
+                            n_choose,
+                            vec![Integer::from(1), Integer::from(2), Integer::from(1)]
+                        );
+                    } else if n == 3 {
+                        debug_assert_eq!(
+                            n_choose,
+                            vec![
+                                Integer::from(1),
+                                Integer::from(3),
+                                Integer::from(3),
+                                Integer::from(1)
+                            ]
+                        );
+                    }
+
+                    //if fixed real add
+                    //(a + xi)^n = \sum_{k=0,1,...,n} \binom{n}{k} a^{n-k} (xi)^k
+                    //           = \sum_{k=0,1,...,n} \binom{n}{k} a^{n-k} x^k i^k
+                    //           = \sum_{k=0,1,...,n} {
+                    //               k = 0 mod 4        + \binom{n}{k} a^{n-k} x^k
+                    //               k = 1 mod 4        + \binom{n}{k} a^{n-k} x^k i
+                    //               k = 2 mod 4        - \binom{n}{k} a^{n-k} x^k
+                    //               k = 3 mod 4        - \binom{n}{k} a^{n-k} x^k i
+                    //                                }
+                    //
+                    //if fixed imag add
+                    //(a + xi)^n = \sum_{k=0,1,...,n} \binom{n}{k} a^{n-k} (xi)^k
+                    //           = \sum_{k=0,1,...,n} \binom{n}{k} a^{n-k} x^k i^k
+                    //           = \sum_{k=0,1,...,n} {
+                    //               k = 0 mod 4        + \binom{n}{k} a^{n-k} x^k
+                    //               k = 1 mod 4        + \binom{n}{k} a^{n-k} x^k i
+                    //               k = 2 mod 4        - \binom{n}{k} a^{n-k} x^k
+                    //               k = 3 mod 4        - \binom{n}{k} a^{n-k} x^k i
+                    //
+                    if self.coeff(&poly, n) != Integer::from(0) {
+                        let mut k = 0;
+                        loop {
+                            //k = 0 mod 4
+                            re[{
+                                match RE_OR_IM {
+                                    false => k,
+                                    true => n - k,
+                                }
+                            }] += self.coeff(&poly, n)
+                                * &n_choose[k]
+                                * &a_pow[{
+                                    match RE_OR_IM {
+                                        false => n - k,
+                                        true => k,
+                                    }
+                                }];
+                            if k == n {
+                                break;
+                            }
+                            k += 1;
+                            //k = 1 mod 4
+                            im[{
+                                match RE_OR_IM {
+                                    false => k,
+                                    true => n - k,
+                                }
+                            }] += self.coeff(&poly, n)
+                                * &n_choose[k]
+                                * &a_pow[{
+                                    match RE_OR_IM {
+                                        false => n - k,
+                                        true => k,
+                                    }
+                                }];
+                            if k == n {
+                                break;
+                            }
+                            k += 1;
+                            //k = 2 mod 4
+                            re[{
+                                match RE_OR_IM {
+                                    false => k,
+                                    true => n - k,
+                                }
+                            }] -= self.coeff(&poly, n)
+                                * &n_choose[k]
+                                * &a_pow[{
+                                    match RE_OR_IM {
+                                        false => n - k,
+                                        true => k,
+                                    }
+                                }];
+                            if k == n {
+                                break;
+                            }
+                            k += 1;
+                            //k = 3 mod 4
+                            im[{
+                                match RE_OR_IM {
+                                    false => k,
+                                    true => n - k,
+                                }
+                            }] -= self.coeff(&poly, n)
+                                * &n_choose[k]
+                                * &a_pow[{
+                                    match RE_OR_IM {
+                                        false => n - k,
+                                        true => k,
+                                    }
+                                }];
+                            if k == n {
+                                break;
+                            }
+                            k += 1;
+                        }
+                    }
+                    //update n choose k
+                    //e.g. for n=3 do
+                    //[1, 3, 3, 1]
+                    //[1, 3, 3, 1, 1]
+                    //[1, 3, 3, 4, 1]
+                    //[1, 3, 6, 4, 1]
+                    //[1, 4, 6, 4, 1]
+                    n_choose.push(Integer::from(1));
+                    for i in (1..n + 1).rev() {
+                        n_choose[i] = &n_choose[i] + &n_choose[i - 1];
+                    }
+                }
+                (ZZ_POLY.from_coeffs(re), ZZ_POLY.from_coeffs(im))
+            }
+            None => (self.zero(), self.zero()),
+        }
+    }
+
+    fn at_fixed_re(
+        &self,
+        poly: &Polynomial<Integer>,
+        a: &Rational,
+    ) -> (Polynomial<Integer>, Polynomial<Integer>) {
+        self.at_fixed_re_or_im_impl::<false>(poly, a)
+    }
+
+    fn at_fixed_im(
+        &self,
+        poly: &Polynomial<Integer>,
+        a: &Rational,
+    ) -> (Polynomial<Integer>, Polynomial<Integer>) {
+        self.at_fixed_re_or_im_impl::<true>(poly, a)
+    }
+
+    //count how many complex roots are in the box a < re < b, c < im < d
+    //or return None if there is a root on the boundary
+    pub fn count_complex_roots(
+        &self,
+        poly: &Polynomial<Integer>,
+        a: &Rational,
+        b: &Rational,
+        c: &Rational,
+        d: &Rational,
+    ) -> Option<usize> {
+        assert!(a < b);
+        assert!(c < d);
+
+        //the idea is to compute the winding number of the path around the boundary of the box
+        //this is done by computing where the value of the polynomial crosses the real and imaginary axes as the input traces the path
+        //the crossing points and their order is done using the exact total ordering of real polynomial roots
+        let (a_vert_re, a_vert_im) = self.at_fixed_re(poly, a);
+        let (b_vert_re, b_vert_im) = self.at_fixed_re(poly, b);
+        let (c_horz_re, c_horz_im) = self.at_fixed_im(poly, c);
+        let (d_horz_re, d_horz_im) = self.at_fixed_im(poly, d);
+
+        //evaluate the real and imaginary parts at the verticies of the box
+        let t1r = evaluate_at_rational(&a_vert_re, c);
+        debug_assert_eq!(t1r, evaluate_at_rational(&c_horz_re, a));
+        let t2r = evaluate_at_rational(&a_vert_re, d);
+        debug_assert_eq!(t2r, evaluate_at_rational(&d_horz_re, a));
+        let t3r = evaluate_at_rational(&b_vert_re, c);
+        debug_assert_eq!(t3r, evaluate_at_rational(&c_horz_re, b));
+        let t4r = evaluate_at_rational(&b_vert_re, d);
+        debug_assert_eq!(t4r, evaluate_at_rational(&d_horz_re, b));
+
+        let t1i = evaluate_at_rational(&a_vert_im, c);
+        debug_assert_eq!(t1i, evaluate_at_rational(&c_horz_im, a));
+        let t2i = evaluate_at_rational(&a_vert_im, d);
+        debug_assert_eq!(t2i, evaluate_at_rational(&d_horz_im, a));
+        let t3i = evaluate_at_rational(&b_vert_im, c);
+        debug_assert_eq!(t3i, evaluate_at_rational(&c_horz_im, b));
+        let t4i = evaluate_at_rational(&b_vert_im, d);
+        debug_assert_eq!(t4i, evaluate_at_rational(&d_horz_im, b));
+
+        //if the polynomial has a root at any vertix then we must give up
+        for (tr, ti) in vec![(t1r, t1i), (t2r, t2i), (t3r, t3i), (t4r, t4i)] {
+            if tr == Rational::from(0) && ti == Rational::from(0) {
+                return None;
+            }
+        }
+
+        //trace an anticlockwise path around the box and create a list of crossings which encode what happens to the value of the polynomial
+        #[derive(Debug)]
+        enum Crossing {
+            PosRe,
+            PosIm,
+            NegRe,
+            NegIm,
+        }
+
+        fn crossings<const REVERSE: bool>(
+            re: &Polynomial<Integer>,
+            im: &Polynomial<Integer>,
+            s: &Rational,
+            t: &Rational,
+        ) -> Option<Vec<Crossing>> {
+            //because if the real and imaginary part are both constant at 0 then poly has infinitely many complex zeros which is not possible
+            debug_assert_ne!((re, im), (&ZZ_POLY.zero(), &ZZ_POLY.zero()));
+            if re == &ZZ_POLY.zero() {
+                //the image is doing a path confied to the imaginary axis
+                let roots_im = ZZ_POLY.real_roots(im, Some(s), Some(t));
+                if roots_im.len() == 0 {
+                    //the image stays once side of the real axis
+                    let val = evaluate_at_rational(im, s);
+                    debug_assert_eq!(val, evaluate_at_rational(im, t));
+                    if val > 0 {
+                        Some(vec![Crossing::PosIm]) //this whole line segment is a positive imaginary crossing
+                    } else {
+                        Some(vec![Crossing::NegIm]) //this whole line segment is a negative imaginary crossing
+                    }
+                } else {
+                    //the image crosses the real axis and hence passes through 0
+                    None
+                }
+            } else if im == &ZZ_POLY.zero() {
+                //the image is doing a path confied to the real axis
+                let roots_re = ZZ_POLY.real_roots(re, Some(s), Some(t));
+                if roots_re.len() == 0 {
+                    //the image stays one side of the imaginary axis
+                    let val = evaluate_at_rational(re, s);
+                    debug_assert_eq!(val, evaluate_at_rational(re, t));
+                    if val > 0 {
+                        Some(vec![Crossing::PosRe]) //this whole line segment is a positive real crossing
+                    } else {
+                        Some(vec![Crossing::NegRe]) //this whole line segment is a negative real crossing
+                    }
+                } else {
+                    //the image crosses the imaginary axis and hence passes through 0
+                    None
+                }
+            } else {
+                println!("{:?} {:?} {:?} {:?}", re, im, s, t);
+                todo!()
+            }
+        }
+
+        let mut winding = vec![];
+        for mut cr in vec![
+            crossings::<false>(&a_vert_re, &a_vert_im, c, d),
+            crossings::<false>(&d_horz_re, &d_horz_im, a, b),
+            crossings::<true>(&b_vert_re, &b_vert_im, c, d),
+            crossings::<true>(&c_horz_re, &c_horz_im, a, b),
+        ] {
+            match cr {
+                Some(mut w) => winding.append(&mut w),
+                None => {
+                    return None;
+                }
+            }
+        }
+
+        println!("winding = {:?}", winding);
+
+        //compute the winding number = number of roots
+        if winding.len() == 0 {
+            Some(0)
+        } else {
+            todo!();
+        }
     }
 }
 
@@ -325,10 +648,7 @@ impl RealAlgebraicRoot {
     }
 
     fn evaluate(&self, val: &Rational) -> Rational {
-        QQ_POLY.evaluate(
-            &ZZ_POLY.apply_map(&QQ, &self.poly, |x| Rational::from(x)),
-            &val,
-        )
+        evaluate_at_rational(&self.poly, val)
     }
 
     pub fn accuracy(&self) -> Rational {
@@ -498,9 +818,7 @@ impl RealAlgebraicNumber {
                     }
                 },
                 RealAlgebraicNumber::Real(self_rep) => match other {
-                    RealAlgebraicNumber::Rational(other_rep) => {
-                        self_rep.cmp_rat_mut(other_rep)
-                    }
+                    RealAlgebraicNumber::Rational(other_rep) => self_rep.cmp_rat_mut(other_rep),
                     RealAlgebraicNumber::Real(other_rep) => self_rep.cmp_mut(other_rep),
                 },
             }
@@ -766,8 +1084,8 @@ mod tests {
                         Integer::from(0),
                         Integer::from(1)
                     ]),
-                    &None,
-                    &None
+                    None,
+                    None
                 )
                 .len(),
             1
@@ -783,11 +1101,164 @@ mod tests {
                         Integer::from(0),
                         Integer::from(1)
                     ]),
-                    &None,
-                    &None
+                    None,
+                    None
                 )
                 .len(),
             3
+        );
+    }
+
+    #[test]
+    fn test_real_algebraic_ordering() {
+        let mut all_roots = vec![];
+        for f in vec![
+            ZZ_POLY.from_coeffs(vec![
+                Integer::from(-2),
+                Integer::from(-4),
+                Integer::from(-2),
+            ]),
+            ZZ_POLY.from_coeffs(vec![Integer::from(6), Integer::from(0), Integer::from(-3)]),
+            ZZ_POLY.from_coeffs(vec![Integer::from(1), Integer::from(-3), Integer::from(1)]),
+            ZZ_POLY.from_coeffs(vec![
+                Integer::from(2),
+                Integer::from(-3),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(1),
+            ]),
+            ZZ_POLY.from_coeffs(vec![
+                Integer::from(1),
+                Integer::from(-3),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(1),
+            ]),
+            ZZ_POLY.from_coeffs(vec![
+                Integer::from(-1),
+                Integer::from(12),
+                Integer::from(-4),
+                Integer::from(-15),
+                Integer::from(5),
+                Integer::from(3),
+                Integer::from(-1),
+            ]),
+        ] {
+            for root in ZZ_POLY.real_roots(&f, None, None) {
+                all_roots.push(root.clone());
+            }
+        }
+
+        all_roots.sort();
+
+        for mut root in &mut all_roots {
+            root.check_invariants().unwrap();
+            match &mut root {
+                RealAlgebraicNumber::Rational(a) => {}
+                RealAlgebraicNumber::Real(a) => {
+                    a.refine_to_accuracy(&Rational::from_signeds(1, i64::MAX))
+                }
+            }
+            println!("    {} {:?}", QQ_BAR_REAL.to_string(&root), root);
+        }
+
+        let mut all_roots_sorted_by_lower_tight_bound = all_roots.clone();
+        all_roots_sorted_by_lower_tight_bound.sort_by_key(|root| match root {
+            RealAlgebraicNumber::Rational(a) => a.clone(),
+            RealAlgebraicNumber::Real(r) => r.tight_a.clone(),
+        });
+        assert_eq!(all_roots, all_roots_sorted_by_lower_tight_bound);
+    }
+
+    #[test]
+    fn test_at_fixed_re_and_im() {
+        let f = ZZ_POLY.from_coeffs(vec![
+            Integer::from(-1),
+            Integer::from(3),
+            Integer::from(0),
+            Integer::from(1),
+        ]);
+
+        println!("f = {}", ZZ_POLY.to_string(&f));
+
+        let (vert_re_f, vert_im_f) = ZZ_POLY.at_fixed_re(&f, &Rational::from(2));
+        println!("re = {}", ZZ_POLY.to_string(&vert_re_f));
+        println!("im = {}", ZZ_POLY.to_string(&vert_im_f));
+        // f(z) = z^3 + 3z - 1
+        // f(2 + xi) = (2 + xi)^3 + 3(2 + xi) - 1
+        //           = 8 + 12xi - 6x^2 - x^3i + 6 + 3xi - 1
+        //           = 13 + 15ix - 6x^2 - ix^3
+        debug_assert_eq!(
+            vert_re_f,
+            ZZ_POLY.from_coeffs(vec![Integer::from(13), Integer::from(0), Integer::from(-6)])
+        );
+        debug_assert_eq!(
+            vert_im_f,
+            ZZ_POLY.from_coeffs(vec![
+                Integer::from(0),
+                Integer::from(15),
+                Integer::from(0),
+                Integer::from(-1)
+            ])
+        );
+
+        let (vert_re_f, vert_im_f) = ZZ_POLY.at_fixed_re(&f, &Rational::from_signeds(1, 2));
+        println!("re = {}", ZZ_POLY.to_string(&vert_re_f));
+        println!("im = {}", ZZ_POLY.to_string(&vert_im_f));
+        // f(z) = z^3 + 3z - 1
+        // f(1/2 + xi) = 5 + 30ix - 12x^2 - 8ix^3
+        debug_assert_eq!(
+            vert_re_f,
+            ZZ_POLY.from_coeffs(vec![Integer::from(5), Integer::from(0), Integer::from(-12)])
+        );
+        debug_assert_eq!(
+            vert_im_f,
+            ZZ_POLY.from_coeffs(vec![
+                Integer::from(0),
+                Integer::from(30),
+                Integer::from(0),
+                Integer::from(-8)
+            ])
+        );
+
+        let (vert_re_f, vert_im_f) = ZZ_POLY.at_fixed_im(&f, &Rational::from(2));
+        println!("re = {}", ZZ_POLY.to_string(&vert_re_f));
+        println!("im = {}", ZZ_POLY.to_string(&vert_im_f));
+        // f(z) = z^3 + 3z - 1
+        // f(x + 2i) = -1 -2i -9x + 6ix^2 + x^3
+        debug_assert_eq!(
+            vert_re_f,
+            ZZ_POLY.from_coeffs(vec![
+                Integer::from(-1),
+                Integer::from(-9),
+                Integer::from(0),
+                Integer::from(1)
+            ])
+        );
+        debug_assert_eq!(
+            vert_im_f,
+            ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(6),])
+        );
+
+        let (vert_re_f, vert_im_f) = ZZ_POLY.at_fixed_im(&f, &Rational::from_signeds(1, 2));
+        println!("re = {}", ZZ_POLY.to_string(&vert_re_f));
+        println!("im = {}", ZZ_POLY.to_string(&vert_im_f));
+        // f(z) = z^3 + 3z - 1
+        // f(x + 1/2i) = -8 +11i + 18x + 12ix^2 + 8x^3
+        debug_assert_eq!(
+            vert_re_f,
+            ZZ_POLY.from_coeffs(vec![
+                Integer::from(-8),
+                Integer::from(18),
+                Integer::from(0),
+                Integer::from(8)
+            ])
+        );
+        debug_assert_eq!(
+            vert_im_f,
+            ZZ_POLY.from_coeffs(vec![Integer::from(11), Integer::from(0), Integer::from(12),])
         );
     }
 }
