@@ -571,15 +571,15 @@ impl<'a, R: GreatestCommonDivisorDomain + CharacteristicZero> PolynomialRing<'a,
     pub fn primitive_squarefree_part(
         &self,
         f: Polynomial<R::ElemT>,
-    ) -> Option<Polynomial<R::ElemT>> {
+    ) -> Polynomial<R::ElemT> {
         if f == self.zero() {
-            None
+            f
         } else {
             let g = self.subresultant_gcd(f.clone(), self.derivative(f.clone()));
             let (_c, g_prim) = self.factor_primitive(g).unwrap();
             let (_c, f_prim) = self.factor_primitive(f).unwrap();
             let f_prim_sqfree = self.div(f_prim, g_prim).unwrap();
-            Some(f_prim_sqfree)
+            f_prim_sqfree
         }
     }
 }
@@ -997,7 +997,7 @@ impl<
         );
         let (linear_factors, f) = self.factor_primitive_linear_part(f);
 
-        let f_sqfree = self.primitive_squarefree_part(f.clone()).unwrap();
+        let f_sqfree = self.primitive_squarefree_part(f.clone());
         let f_sqfree_factors = self.factorize_primitive_polynomial_by_kroneckers_method(f_sqfree);
 
         let mut f = f;
