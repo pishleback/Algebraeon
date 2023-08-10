@@ -95,13 +95,6 @@ impl SquarefreePolyRealRoots {
             return Err("poly should be squarefree");
         }
 
-        //check leading coefficient
-        if ZZ_POLY.coeff(&self.poly_sqfr, ZZ_POLY.degree(&self.poly_sqfr).unwrap())
-            <= Rational::from(0)
-        {
-            return Err("poly should have positive leading coefficient");
-        }
-
         //check the isolating intervals
         for i in 0..self.intervals.len() - 1 {
             let int1 = &self.intervals[i];
@@ -189,21 +182,93 @@ impl SquarefreePolyRealRoots {
         Ok(())
     }
 
-    fn to_real_roots(&self) -> Vec<RealAlgebraicNumber> {
+    fn to_real_roots(self) -> Vec<RealAlgebraicNumber> {
         debug_assert!(ZZ_POLY.is_irreducible(&self.poly_sqfr).unwrap());
         let deg = ZZ_POLY.degree(&self.poly_sqfr).unwrap();
         if deg == 0 {
             vec![]
         } else if deg == 1 {
             debug_assert_eq!(self.intervals.len(), 1);
-            match &self.intervals[0] {
-                SquarefreePolyRealRootInterval::Rational(a) => vec![RealAlgebraicNumber::Rational(a.clone())],
-                SquarefreePolyRealRootInterval::Real(_, _, _) => panic!(),
+            match self.intervals.into_iter().next().unwrap() {
+                SquarefreePolyRealRootInterval::Rational(a) => {
+                    vec![RealAlgebraicNumber::Rational(a)]
+                }
+                SquarefreePolyRealRootInterval::Real(_, _, _) => {
+                    // panic!("degree 1 polynomial should have had rational root found exactly");
+                    vec![RealAlgebraicNumber::Rational(-Rational::from_integers(
+                        ZZ_POLY.coeff(&self.poly_sqfr, 0),
+                        ZZ_POLY.coeff(&self.poly_sqfr, 1),
+                    ))]
+                }
             }
         } else {
-            todo!();
+            let mut roots = vec![];
+            for (idx, interval) in self.intervals.iter().enumerate() {
+                roots.push({
+                    match interval {
+                        SquarefreePolyRealRootInterval::Rational(a) => {
+                            RealAlgebraicNumber::Rational(a.clone())
+                        }
+                        SquarefreePolyRealRootInterval::Real(tight_a, tight_b, dir) => {
+                            let wide_a = {
+                                if idx == 0 {
+                                    None
+                                } else {
+                                    Some({
+                                        match &self.intervals[idx - 1] {
+                                            SquarefreePolyRealRootInterval::Rational(a) => {
+                                                a.clone()
+                                            }
+                                            SquarefreePolyRealRootInterval::Real(_, prev_b, _) => {
+                                                prev_b.clone()
+                                            }
+                                        }
+                                    })
+                                }
+                            };
+                            let wide_b = {
+                                if idx == self.intervals.len() - 1 {
+                                    None
+                                } else {
+                                    Some({
+                                        match &self.intervals[idx + 1] {
+                                            SquarefreePolyRealRootInterval::Rational(a) => {
+                                                a.clone()
+                                            }
+                                            SquarefreePolyRealRootInterval::Real(prev_a, _, _) => {
+                                                prev_a.clone()
+                                            }
+                                        }
+                                    })
+                                }
+                            };
+                            if wide_a.is_some() && wide_b.is_some() {
+                                debug_assert!(wide_a.clone().unwrap() < wide_b.clone().unwrap());
+                            }
+                            RealAlgebraicNumber::Real(RealAlgebraicRoot {
+                                poly: self.poly_sqfr.clone(),
+                                tight_a: tight_a.clone(),
+                                tight_b: tight_b.clone(),
+                                wide_a,
+                                wide_b,
+                                dir: *dir,
+                            })
+                        }
+                    }
+                });
+            }
+            roots
         }
     }
+
+    //separate the isolating intervals of the roots in roots1 and roots2
+    //return Err if a root in roots1 and a root in roots2 are equal and thus cant be separated
+    fn separate(roots1: &mut Self, roots2: &mut Self) -> Result<(), ()> {
+        println!("{:?}", roots1);
+        println!("{:?}", roots2);
+        todo!();
+    }
+
 }
 
 impl<'a> PolynomialRing<'a, IntegerRing> {
@@ -392,10 +457,12 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                     intervals.push(SquarefreePolyRealRootInterval::Rational(interval_a));
                 }
             }
-            SquarefreePolyRealRoots {
+            let roots = SquarefreePolyRealRoots {
                 poly_sqfr: poly,
                 intervals,
-            }
+            };
+            debug_assert!(roots.check_invariants().is_ok());
+            roots
         }
     }
 
@@ -409,86 +476,86 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         assert_ne!(poly, &self.zero());
         debug_assert!(self.is_irreducible(&poly).unwrap());
 
-        // self.real_roots_squarefree(poly.clone(), opt_a, opt_b)
-        //     .to_real_roots()
+        self.real_roots_squarefree(poly.clone(), opt_a, opt_b)
+            .to_real_roots()
 
-        let d = ZZ_POLY.degree(&poly).unwrap();
-        if d == 0 {
-            //constant polynomial has no roots
-            vec![]
-        } else if d == 1 {
-            //poly = a+bx
-            //root = -a/b
-            let root = -Rational::from(self.coeff(&poly, 0)) / Rational::from(self.coeff(&poly, 1));
-            if opt_a.is_some() {
-                if !(opt_a.unwrap() < &root) {
-                    return vec![];
-                }
-            }
-            if opt_b.is_some() {
-                if !(&root < opt_b.unwrap()) {
-                    return vec![];
-                }
-            }
-            vec![RealAlgebraicNumber::Rational(root)]
-        } else {
-            if opt_a.is_none() || opt_b.is_none() {
-                //compute a bound M on the absolute value of any root
-                //m = (Cauchy's bound + 1) https://captainblack.wordpress.com/2009/03/08/cauchys-upper-bound-for-the-roots-of-a-polynomial/
-                let m = Rational::from(2)
-                    + Rational::from_integers(
-                        Integer::from(
-                            itertools::max(
-                                (0..d).map(|i| ZZ_POLY.coeff(&poly, i).unsigned_abs_ref().clone()),
-                            )
-                            .unwrap(),
-                        ),
-                        ZZ_POLY.coeff(&poly, d),
-                    );
+        // let d = ZZ_POLY.degree(&poly).unwrap();
+        // if d == 0 {
+        //     //constant polynomial has no roots
+        //     vec![]
+        // } else if d == 1 {
+        //     //poly = a+bx
+        //     //root = -a/b
+        //     let root = -Rational::from(self.coeff(&poly, 0)) / Rational::from(self.coeff(&poly, 1));
+        //     if opt_a.is_some() {
+        //         if !(opt_a.unwrap() < &root) {
+        //             return vec![];
+        //         }
+        //     }
+        //     if opt_b.is_some() {
+        //         if !(&root < opt_b.unwrap()) {
+        //             return vec![];
+        //         }
+        //     }
+        //     vec![RealAlgebraicNumber::Rational(root)]
+        // } else {
+        //     if opt_a.is_none() || opt_b.is_none() {
+        //         //compute a bound M on the absolute value of any root
+        //         //m = (Cauchy's bound + 1) https://captainblack.wordpress.com/2009/03/08/cauchys-upper-bound-for-the-roots-of-a-polynomial/
+        //         let m = Rational::from(2)
+        //             + Rational::from_integers(
+        //                 Integer::from(
+        //                     itertools::max(
+        //                         (0..d).map(|i| ZZ_POLY.coeff(&poly, i).unsigned_abs_ref().clone()),
+        //                     )
+        //                     .unwrap(),
+        //                 ),
+        //                 ZZ_POLY.coeff(&poly, d),
+        //             );
 
-                return match opt_a {
-                    Some(a_val) => match opt_b {
-                        Some(_b_val) => panic!(),
-                        None => self.real_roots_irreducible(poly, Some(a_val), Some(&m)),
-                    },
-                    None => match opt_b {
-                        Some(b_val) => self.real_roots_irreducible(poly, Some(&-m), Some(b_val)),
-                        None => {
-                            let neg_m = -m.clone();
-                            self.real_roots_irreducible(poly, Some(&neg_m), Some(&m))
-                        }
-                    },
-                };
-            }
-            let (a, b) = (opt_a.unwrap(), opt_b.unwrap());
+        //         return match opt_a {
+        //             Some(a_val) => match opt_b {
+        //                 Some(_b_val) => panic!(),
+        //                 None => self.real_roots_irreducible(poly, Some(a_val), Some(&m)),
+        //             },
+        //             None => match opt_b {
+        //                 Some(b_val) => self.real_roots_irreducible(poly, Some(&-m), Some(b_val)),
+        //                 None => {
+        //                     let neg_m = -m.clone();
+        //                     self.real_roots_irreducible(poly, Some(&neg_m), Some(&m))
+        //                 }
+        //             },
+        //         };
+        //     }
+        //     let (a, b) = (opt_a.unwrap(), opt_b.unwrap());
 
-            assert!(a < b);
+        //     assert!(a < b);
 
-            //there are no roots A < r < B if A >= B
-            if a >= b {
-                return vec![];
-            }
+        //     //there are no roots A < r < B if A >= B
+        //     if a >= b {
+        //         return vec![];
+        //     }
 
-            //apply a transformation to p so that its roots in (a, b) are moved to roots in (0, 1)
-            let (_, trans_poly) = QQ_POLY.factor_primitive_fof(&QQ_POLY.compose(
-                &ZZ_POLY.apply_map(&QQ, &poly, |c| Rational::from(c)),
-                &QQ_POLY.from_coeffs(vec![a.clone(), b.clone() - a.clone()]),
-            ));
+        //     //apply a transformation to p so that its roots in (a, b) are moved to roots in (0, 1)
+        //     let (_, trans_poly) = QQ_POLY.factor_primitive_fof(&QQ_POLY.compose(
+        //         &ZZ_POLY.apply_map(&QQ, &poly, |c| Rational::from(c)),
+        //         &QQ_POLY.from_coeffs(vec![a.clone(), b.clone() - a.clone()]),
+        //     ));
 
-            let mut roots = vec![];
-            for (c, k, h) in self.isolate_real_roots_by_collin_akritas(&trans_poly) {
-                assert!(h); //should not isolate any rational roots since poly is irreducible with degree >= 2
-                let d = Natural::from(1u8) << k;
-                roots.push(RealAlgebraicNumber::Real(
-                    RealAlgebraicRoot::new_wide_bounds(
-                        poly.clone(),
-                        (b - a) * Rational::from_naturals(c.clone(), d.clone()) + a,
-                        (b - a) * Rational::from_naturals(&c + Natural::from(1u8), d.clone()) + a,
-                    ),
-                ));
-            }
-            roots
-        }
+        //     let mut roots = vec![];
+        //     for (c, k, h) in self.isolate_real_roots_by_collin_akritas(&trans_poly) {
+        //         assert!(h); //should not isolate any rational roots since poly is irreducible with degree >= 2
+        //         let d = Natural::from(1u8) << k;
+        //         roots.push(RealAlgebraicNumber::Real(
+        //             RealAlgebraicRoot::new_wide_bounds(
+        //                 poly.clone(),
+        //                 (b - a) * Rational::from_naturals(c.clone(), d.clone()) + a,
+        //                 (b - a) * Rational::from_naturals(&c + Natural::from(1u8), d.clone()) + a,
+        //             ),
+        //         ));
+        //     }
+        //     roots
+        // }
     }
 
     //get the real roots with multiplicity of poly
@@ -909,8 +976,19 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                 //    if a real root equals an imaginary root then there is a root on the boundary
                 //for each root of one type, compute the sign of the other part when evaluated at the root
 
-                println!("{:?} {:?} {:?} {:?}", re, im, s, t);
-                todo!()
+                let mut re_roots = ZZ_POLY.real_roots_squarefree(re_sqfr.clone(), Some(s), Some(t));
+                let mut im_roots = ZZ_POLY.real_roots_squarefree(im_sqfr.clone(), Some(s), Some(t));
+
+                debug_assert!(re_roots.check_invariants().is_ok());
+                debug_assert!(im_roots.check_invariants().is_ok());
+
+                match SquarefreePolyRealRoots::separate(&mut re_roots, &mut im_roots) {
+                    Ok(()) => {
+                        println!("{:?} {:?} {:?} {:?}", re, im, s, t);
+                        todo!()
+                    }
+                    Err(()) => None,
+                }
             }
         }
 
@@ -986,8 +1064,10 @@ impl RealAlgebraicRoot {
         if !(self.tight_a < self.tight_b) {
             return Err("tight a should be strictly less than b");
         }
-        if !(self.wide_a < self.wide_b) {
-            return Err("wide a should be strictly less than b");
+        if self.wide_a.is_some() && self.wide_b.is_some() {
+            if !(self.wide_a.clone().unwrap() < self.wide_b.clone().unwrap()) {
+                return Err("wide a should be strictly less than b");
+            }
         }
         if self.poly
             != ZZ_POLY
