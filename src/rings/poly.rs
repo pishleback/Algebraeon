@@ -551,7 +551,7 @@ impl<'a, R: IntegralDomain> IntegralDomain for PolynomialRing<'a, R> {}
 // impl<R: UniqueFactorizationDomain> UniqueFactorizationDomain for PolynomialRing<R> {}
 
 impl<'a, R: GreatestCommonDivisorDomain> PolynomialRing<'a, R> {
-    fn factor_primitive(
+    pub fn factor_primitive(
         &self,
         mut poly: Polynomial<R::ElemT>,
     ) -> Option<(R::ElemT, Polynomial<R::ElemT>)> {
