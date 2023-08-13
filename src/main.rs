@@ -21,14 +21,15 @@ fn main() {
         Integer::from(-1),
         Integer::from(0),
         Integer::from(0),
+        Integer::from(0),
         Integer::from(1),
     ]);
     let n = ZZ_POLY.count_complex_roots(
         &f,
         &Rational::from(-2),
         &Rational::from(2),
-        &Rational::from(-2),
-        &Rational::from(2),
+        &Rational::from(-1),
+        &Rational::from(1),
     );
     println!("{:?}", n);
 }
