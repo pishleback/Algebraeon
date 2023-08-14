@@ -1,12 +1,12 @@
 #![allow(dead_code)]
 
-use malachite_q::Rational;
-use super::root_tools::*;
 use super::ring::*;
+use super::root_tools::*;
+use malachite_base::num::arithmetic::traits::NegAssign;
+use malachite_q::Rational;
 
 pub const QQ_BAR_REAL: RealAlgebraicField = RealAlgebraicField {};
 pub const QQ_BAR: ComplexAlgebraicField = ComplexAlgebraicField {};
-
 
 #[derive(Debug, Clone, Hash)]
 pub enum RealAlgebraicNumber {
@@ -94,7 +94,10 @@ impl ComRing for RealAlgebraicField {
     }
 
     fn neg_mut(&self, elem: &mut Self::ElemT) {
-        todo!()
+        match elem {
+            RealAlgebraicNumber::Rational(a) => a.neg_assign(),
+            RealAlgebraicNumber::Real(root) => root.neg_mut(),
+        }
     }
 
     fn add_mut(&self, elem: &mut Self::ElemT, offset: &Self::ElemT) {
@@ -156,9 +159,35 @@ impl IntegralDomain for ComplexAlgebraicField {}
 
 impl Field for ComplexAlgebraicField {}
 
-
 #[cfg(test)]
 mod tests {
+    use malachite_nz::integer::Integer;
+
     use super::super::poly::*;
     use super::*;
+
+    #[test]
+    fn test_real_neg() {
+        let f = ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(1)]);
+        let roots = ZZ_POLY.all_real_roots(&f);
+
+        assert_eq!(roots.len(), 2);
+        let a = &roots[0];
+        let b = &roots[1];
+
+        let a_neg = QQ_BAR_REAL.neg_ref(a);
+        let b_neg = QQ_BAR_REAL.neg_ref(b);
+
+        a_neg.check_invariants().unwrap();
+        b_neg.check_invariants().unwrap();
+
+        println!("a = {}", QQ_BAR_REAL.to_string(a));
+        println!("b = {}", QQ_BAR_REAL.to_string(b));
+        println!("a_neg = {}", QQ_BAR_REAL.to_string(&a_neg));
+        println!("b_neg = {}", QQ_BAR_REAL.to_string(&b_neg));
+
+        assert_ne!(a, b);
+        assert_eq!(a, &b_neg);
+        assert_eq!(b, &a_neg);
+    }
 }

@@ -1,16 +1,16 @@
 #![allow(dead_code)]
 
+use malachite_base::num::arithmetic::traits::NegAssign;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 
+use super::algebraic::*;
 use super::multipoly::*;
 use super::nzq::*;
 use super::poly::*;
 use super::ring::ComRing;
 use super::ring::*;
-use super::algebraic::*;
-
 
 fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let zz_poly_of_multi_poly = PolynomialRing::new(&ZZ_MULTIPOLY);
@@ -71,6 +71,30 @@ enum LowerBound {
     Finite(Rational),
 }
 
+#[derive(Debug, Clone)]
+enum UpperBound {
+    Inf,
+    Finite(Rational),
+}
+
+impl LowerBound {
+    pub fn neg(self) -> UpperBound {
+        match self {
+            LowerBound::Inf => UpperBound::Inf,
+            LowerBound::Finite(a) => UpperBound::Finite(QQ.neg(a)),
+        }
+    }
+}
+
+impl UpperBound {
+    pub fn neg(self) -> LowerBound {
+        match self {
+            UpperBound::Inf => LowerBound::Inf,
+            UpperBound::Finite(a) => LowerBound::Finite(QQ.neg(a)),
+        }
+    }
+}
+
 impl std::hash::Hash for LowerBound {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
@@ -80,12 +104,6 @@ impl std::hash::Hash for LowerBound {
             }
         }
     }
-}
-
-#[derive(Debug, Clone)]
-enum UpperBound {
-    Inf,
-    Finite(Rational),
 }
 
 impl std::hash::Hash for UpperBound {
@@ -847,10 +865,8 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                             evaluate_at_rational(&poly, &shrunk_inerval_b),
                             Rational::from(0)
                         );
-                        while (evaluate_at_rational(&poly, &shrunk_inerval_a)
-                            > Rational::from(0))
-                            == (evaluate_at_rational(&poly, &shrunk_inerval_b)
-                                > Rational::from(0))
+                        while (evaluate_at_rational(&poly, &shrunk_inerval_a) > Rational::from(0))
+                            == (evaluate_at_rational(&poly, &shrunk_inerval_b) > Rational::from(0))
                         {
                             shrunk_inerval_a =
                                 (&interval_a + &shrunk_inerval_a) / Rational::from(2);
@@ -861,16 +877,9 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                         interval_b = shrunk_inerval_b;
                     }
 
-                    let sign_b =
-                        evaluate_at_rational(&poly, &interval_b) > Rational::from(0);
-                    debug_assert_ne!(
-                        evaluate_at_rational(&poly, &interval_a),
-                        Rational::from(0)
-                    );
-                    debug_assert_ne!(
-                        evaluate_at_rational(&poly, &interval_b),
-                        Rational::from(0)
-                    );
+                    let sign_b = evaluate_at_rational(&poly, &interval_b) > Rational::from(0);
+                    debug_assert_ne!(evaluate_at_rational(&poly, &interval_a), Rational::from(0));
+                    debug_assert_ne!(evaluate_at_rational(&poly, &interval_b), Rational::from(0));
                     debug_assert_ne!(
                         evaluate_at_rational(&poly, &interval_a) > Rational::from(0),
                         sign_b
@@ -934,6 +943,10 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
             }
         }
         roots
+    }
+
+    pub fn all_real_roots(&self, poly: &Polynomial<Integer>) -> Vec<RealAlgebraicNumber> {
+        self.real_roots(poly, None, None, false, false)
     }
 
     fn at_fixed_re_or_im_impl<const RE_OR_IM: bool>(
@@ -1675,6 +1688,13 @@ impl RealAlgebraicRoot {
             //refine
             self.refine();
         }
+    }
+
+    pub fn neg_mut(&mut self) {
+        self.poly = ZZ_POLY.compose(&self.poly, &ZZ_POLY.from_coeffs(vec![ZZ.zero(), ZZ.one()]));
+        (self.tight_a, self.tight_b) = (-self.tight_b.clone(), -self.tight_a.clone());
+        (self.wide_a, self.wide_b) = (self.wide_b.clone().neg(), self.wide_a.clone().neg());
+        self.dir = !self.dir;
     }
 }
 
