@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::f32::consts::E;
+
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
@@ -353,18 +355,23 @@ impl SquarefreePolyRealRoots {
         if deg == 0 {
             vec![]
         } else if deg == 1 {
-            debug_assert_eq!(self.intervals.len(), 1);
-            match self.intervals.into_iter().next().unwrap() {
-                SquarefreePolyRealRootInterval::Rational(a) => {
-                    vec![RealAlgebraicNumber::Rational(a)]
+            if self.intervals.len() == 0 {
+                vec![]
+            } else if self.intervals.len() == 1 {
+                match self.intervals.into_iter().next().unwrap() {
+                    SquarefreePolyRealRootInterval::Rational(a) => {
+                        vec![RealAlgebraicNumber::Rational(a)]
+                    }
+                    SquarefreePolyRealRootInterval::Real(_, _, _) => {
+                        // panic!("degree 1 polynomial should have had rational root found exactly");
+                        vec![RealAlgebraicNumber::Rational(-Rational::from_integers(
+                            ZZ_POLY.coeff(&self.poly_sqfr, 0),
+                            ZZ_POLY.coeff(&self.poly_sqfr, 1),
+                        ))]
+                    }
                 }
-                SquarefreePolyRealRootInterval::Real(_, _, _) => {
-                    // panic!("degree 1 polynomial should have had rational root found exactly");
-                    vec![RealAlgebraicNumber::Rational(-Rational::from_integers(
-                        ZZ_POLY.coeff(&self.poly_sqfr, 0),
-                        ZZ_POLY.coeff(&self.poly_sqfr, 1),
-                    ))]
-                }
+            } else {
+                panic!();
             }
         } else {
             let mut roots = vec![];
@@ -665,12 +672,14 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         isol
     }
 
-    //isolate all real roots of a squarefree (no repeated roots) polynomial
+    //isolate all real roots of a squarefree (no repeated roots) polynomial between a and b
     fn real_roots_squarefree(
         &self,
         poly: Polynomial<Integer>,
         opt_a: Option<&Rational>,
         opt_b: Option<&Rational>,
+        include_a: bool,
+        include_b: bool,
     ) -> SquarefreePolyRealRoots {
         assert_ne!(poly, self.zero());
         //poly should be squarefree
@@ -679,6 +688,13 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                 .unwrap(),
             self.degree(&poly).unwrap()
         );
+
+        match (opt_a, opt_b) {
+            (Some(a), Some(b)) => {
+                assert!(a < b);
+            }
+            _ => {}
+        }
 
         let d = ZZ_POLY.degree(&poly).unwrap();
         if d == 0 {
@@ -691,27 +707,35 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
             //poly = a+bx
             //root = -a/b
             let root = -Rational::from(self.coeff(&poly, 0)) / Rational::from(self.coeff(&poly, 1));
-            if opt_a.is_some() {
-                assert_ne!(opt_a.unwrap(), &root);
-                if !(opt_a.unwrap() < &root) {
-                    return SquarefreePolyRealRoots {
-                        poly_sqfr: poly,
-                        intervals: vec![],
-                    };
+
+            if {
+                match opt_a {
+                    Some(a) => match a.cmp(&root) {
+                        std::cmp::Ordering::Less => true,
+                        std::cmp::Ordering::Equal => include_a,
+                        std::cmp::Ordering::Greater => false,
+                    },
+                    None => true,
                 }
-            }
-            if opt_b.is_some() {
-                assert_ne!(opt_b.unwrap(), &root);
-                if !(&root < opt_b.unwrap()) {
-                    return SquarefreePolyRealRoots {
-                        poly_sqfr: poly,
-                        intervals: vec![],
-                    };
+            } && {
+                match opt_b {
+                    Some(b) => match b.cmp(&root) {
+                        std::cmp::Ordering::Greater => true,
+                        std::cmp::Ordering::Equal => include_b,
+                        std::cmp::Ordering::Less => false,
+                    },
+                    None => true,
                 }
-            }
-            SquarefreePolyRealRoots {
-                poly_sqfr: poly,
-                intervals: vec![SquarefreePolyRealRootInterval::Rational(root)],
+            } {
+                SquarefreePolyRealRoots {
+                    poly_sqfr: poly,
+                    intervals: vec![SquarefreePolyRealRootInterval::Rational(root)],
+                }
+            } else {
+                SquarefreePolyRealRoots {
+                    poly_sqfr: poly,
+                    intervals: vec![],
+                }
             }
         } else {
             if opt_a.is_none() || opt_b.is_none() {
@@ -731,39 +755,80 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                 return match opt_a {
                     Some(a_val) => match opt_b {
                         Some(_b_val) => panic!(),
-                        None => self.real_roots_squarefree(poly, Some(a_val), Some(&m)),
+                        None => self.real_roots_squarefree(
+                            poly,
+                            Some(a_val),
+                            Some(&m),
+                            include_a,
+                            include_b,
+                        ),
                     },
                     None => match opt_b {
-                        Some(b_val) => self.real_roots_squarefree(poly, Some(&-m), Some(b_val)),
+                        Some(b_val) => self.real_roots_squarefree(
+                            poly,
+                            Some(&-m),
+                            Some(b_val),
+                            include_a,
+                            include_b,
+                        ),
                         None => {
                             let neg_m = -m.clone();
-                            self.real_roots_squarefree(poly, Some(&neg_m), Some(&m))
+                            self.real_roots_squarefree(
+                                poly,
+                                Some(&neg_m),
+                                Some(&m),
+                                include_a,
+                                include_b,
+                            )
                         }
                     },
                 };
             }
             let (a, b) = (opt_a.unwrap(), opt_b.unwrap());
-            assert!(a < b);
+            debug_assert!(a < b);
 
-            //there are no roots A < r < B if A >= B
-            if a >= b {
-                return SquarefreePolyRealRoots {
-                    poly_sqfr: poly,
-                    intervals: vec![],
-                };
+            //deal with end roots
+            let mut poly_no_endroots = poly.clone();
+            let mut intervals = vec![];
+            if evaluate_at_rational(&poly, a) == Rational::from(0) {
+                poly_no_endroots = self
+                    .div(
+                        poly_no_endroots,
+                        ZZ_POLY.from_coeffs(vec![-QQ.numerator(a), QQ.denominator(a)]),
+                    )
+                    .unwrap();
+                if include_a {
+                    intervals.push(SquarefreePolyRealRootInterval::Rational(a.clone()));
+                }
+            }
+            let mut do_add_b = false;
+            if evaluate_at_rational(&poly, b) == Rational::from(0) {
+                poly_no_endroots = self
+                    .div(
+                        poly_no_endroots,
+                        ZZ_POLY.from_coeffs(vec![-QQ.numerator(b), QQ.denominator(b)]),
+                    )
+                    .unwrap();
+                if include_b {
+                    do_add_b = true;
+                }
             }
 
-            //condition for collin_akritas. might need to handle this case
-            assert_ne!(evaluate_at_rational(&poly, a), Rational::from(0));
-            assert_ne!(evaluate_at_rational(&poly, b), Rational::from(0));
+            debug_assert_ne!(
+                evaluate_at_rational(&poly_no_endroots, a),
+                Rational::from(0)
+            );
+            debug_assert_ne!(
+                evaluate_at_rational(&poly_no_endroots, b),
+                Rational::from(0)
+            );
 
             //apply a transformation to p so that its roots in (a, b) are moved to roots in (0, 1)
             let (_, trans_poly) = QQ_POLY.factor_primitive_fof(&QQ_POLY.compose(
-                &ZZ_POLY.apply_map(&QQ, &poly, |c| Rational::from(c)),
+                &ZZ_POLY.apply_map(&QQ, &poly_no_endroots, |c| Rational::from(c)),
                 &QQ_POLY.from_coeffs(vec![a.clone(), b.clone() - a.clone()]),
             ));
 
-            let mut intervals = vec![];
             for (c, k, h) in self.isolate_real_roots_by_collin_akritas(&trans_poly) {
                 let d = Natural::from(1u8) << k;
                 let mut interval_a = (b - a) * Rational::from_naturals(c.clone(), d.clone()) + a;
@@ -787,8 +852,10 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                             evaluate_at_rational(&poly, &shrunk_inerval_b),
                             Rational::from(0)
                         );
-                        while (evaluate_at_rational(&poly, &shrunk_inerval_a) > Rational::from(0))
-                            == (evaluate_at_rational(&poly, &shrunk_inerval_b) > Rational::from(0))
+                        while (evaluate_at_rational(&poly, &shrunk_inerval_a)
+                            > Rational::from(0))
+                            == (evaluate_at_rational(&poly, &shrunk_inerval_b)
+                                > Rational::from(0))
                         {
                             shrunk_inerval_a =
                                 (&interval_a + &shrunk_inerval_a) / Rational::from(2);
@@ -799,9 +866,16 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                         interval_b = shrunk_inerval_b;
                     }
 
-                    let sign_b = evaluate_at_rational(&poly, &interval_b) > Rational::from(0);
-                    debug_assert_ne!(evaluate_at_rational(&poly, &interval_a), Rational::from(0));
-                    debug_assert_ne!(evaluate_at_rational(&poly, &interval_b), Rational::from(0));
+                    let sign_b =
+                        evaluate_at_rational(&poly, &interval_b) > Rational::from(0);
+                    debug_assert_ne!(
+                        evaluate_at_rational(&poly, &interval_a),
+                        Rational::from(0)
+                    );
+                    debug_assert_ne!(
+                        evaluate_at_rational(&poly, &interval_b),
+                        Rational::from(0)
+                    );
                     debug_assert_ne!(
                         evaluate_at_rational(&poly, &interval_a) > Rational::from(0),
                         sign_b
@@ -813,10 +887,16 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                     intervals.push(SquarefreePolyRealRootInterval::Rational(interval_a));
                 }
             }
+
+            if do_add_b {
+                intervals.push(SquarefreePolyRealRootInterval::Rational(b.clone()));
+            }
+
             let roots = SquarefreePolyRealRoots {
                 poly_sqfr: poly,
                 intervals,
             };
+            roots.check_invariants().unwrap();
             debug_assert!(roots.check_invariants().is_ok());
             roots
         }
@@ -828,11 +908,13 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         poly: &Polynomial<Integer>,
         opt_a: Option<&Rational>,
         opt_b: Option<&Rational>,
+        include_a: bool,
+        include_b: bool,
     ) -> Vec<RealAlgebraicNumber> {
         assert_ne!(poly, &self.zero());
         debug_assert!(self.is_irreducible(&poly).unwrap());
 
-        self.real_roots_squarefree(poly.clone(), opt_a, opt_b)
+        self.real_roots_squarefree(poly.clone(), opt_a, opt_b, include_a, include_b)
             .to_real_roots()
     }
 
@@ -842,12 +924,14 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         poly: &Polynomial<Integer>,
         a: Option<&Rational>,
         b: Option<&Rational>,
+        include_a: bool,
+        include_b: bool,
     ) -> Vec<RealAlgebraicNumber> {
         assert_ne!(poly, &self.zero());
         let factors = self.factor(&poly).unwrap();
         let mut roots = vec![];
         for (factor, k) in factors.factors() {
-            for root in self.real_roots_irreducible(factor, a, b) {
+            for root in self.real_roots_irreducible(factor, a, b, include_a, include_b) {
                 let mut i = Natural::from(0u8);
                 while &i < k {
                     roots.push(root.clone());
@@ -1109,56 +1193,6 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         let d_horz_re_sqfr = self.primitive_squarefree_part(d_horz_re.clone());
         let d_horz_im_sqfr = self.primitive_squarefree_part(d_horz_im.clone());
 
-        // //evaluate the real and imaginary parts at the verticies of the box
-        // let z1r = evaluate_at_rational(&a_vert_re_sqfr, c) == Rational::from(0);
-        // debug_assert_eq!(
-        //     z1r,
-        //     evaluate_at_rational(&c_horz_re_sqfr, a) == Rational::from(0)
-        // );
-        // let z2r = evaluate_at_rational(&a_vert_re_sqfr, d) == Rational::from(0);
-        // debug_assert_eq!(
-        //     z2r,
-        //     evaluate_at_rational(&d_horz_re_sqfr, a) == Rational::from(0)
-        // );
-        // let z3r = evaluate_at_rational(&b_vert_re_sqfr, c) == Rational::from(0);
-        // debug_assert_eq!(
-        //     z3r,
-        //     evaluate_at_rational(&c_horz_re_sqfr, b) == Rational::from(0)
-        // );
-        // let z4r = evaluate_at_rational(&b_vert_re_sqfr, d) == Rational::from(0);
-        // debug_assert_eq!(
-        //     z4r,
-        //     evaluate_at_rational(&d_horz_re_sqfr, b) == Rational::from(0)
-        // );
-
-        // let z1i = evaluate_at_rational(&a_vert_im_sqfr, c) == Rational::from(0);
-        // debug_assert_eq!(
-        //     z1i,
-        //     evaluate_at_rational(&c_horz_im_sqfr, a) == Rational::from(0)
-        // );
-        // let z2i = evaluate_at_rational(&a_vert_im_sqfr, d) == Rational::from(0);
-        // debug_assert_eq!(
-        //     z2i,
-        //     evaluate_at_rational(&d_horz_im_sqfr, a) == Rational::from(0)
-        // );
-        // let z3i = evaluate_at_rational(&b_vert_im_sqfr, c) == Rational::from(0);
-        // debug_assert_eq!(
-        //     z3i,
-        //     evaluate_at_rational(&c_horz_im_sqfr, b) == Rational::from(0)
-        // );
-        // let z4i = evaluate_at_rational(&b_vert_im_sqfr, d) == Rational::from(0);
-        // debug_assert_eq!(
-        //     z4i,
-        //     evaluate_at_rational(&d_horz_im_sqfr, b) == Rational::from(0)
-        // );
-
-        // //if the polynomial has a root at any vertix then we must give up
-        // for (zr, zi) in vec![(z1r, z1i), (z2r, z2i), (z3r, z3i), (z4r, z4i)] {
-        //     if zr && zi {
-        //         return None;
-        //     }
-        // }
-
         //trace an anticlockwise path around the box and create a list of crossings which encode what happens to the value of the polynomial
         #[derive(Debug)]
         enum Crossing {
@@ -1182,7 +1216,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
             debug_assert_ne!((&re_sqfr, &im_sqfr), (&ZZ_POLY.zero(), &ZZ_POLY.zero()));
             if &re_sqfr == &ZZ_POLY.zero() {
                 //the image is doing a path confied to the imaginary axis
-                let roots_im = ZZ_POLY.real_roots(im, Some(s), Some(t));
+                let roots_im = ZZ_POLY.real_roots(im, Some(s), Some(t), REVERSE, !REVERSE);
                 if roots_im.len() == 0 {
                     //the image stays once side of the real axis
                     let val = evaluate_at_rational(im, s);
@@ -1198,7 +1232,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                 }
             } else if &im_sqfr == &ZZ_POLY.zero() {
                 //the image is doing a path confied to the real axis
-                let roots_re = ZZ_POLY.real_roots(re, Some(s), Some(t));
+                let roots_re = ZZ_POLY.real_roots(re, Some(s), Some(t), REVERSE, !REVERSE);
                 if roots_re.len() == 0 {
                     //the image stays one side of the imaginary axis
                     let val = evaluate_at_rational(re, s);
@@ -1285,8 +1319,20 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                         .unwrap();
                 }
 
-                let mut re_roots = ZZ_POLY.real_roots_squarefree(re_sqfr.clone(), Some(s), Some(t));
-                let mut im_roots = ZZ_POLY.real_roots_squarefree(im_sqfr.clone(), Some(s), Some(t));
+                let mut re_roots = ZZ_POLY.real_roots_squarefree(
+                    re_sqfr.clone(),
+                    Some(s),
+                    Some(t),
+                    REVERSE,
+                    !REVERSE,
+                );
+                let mut im_roots = ZZ_POLY.real_roots_squarefree(
+                    im_sqfr.clone(),
+                    Some(s),
+                    Some(t),
+                    REVERSE,
+                    !REVERSE,
+                );
 
                 debug_assert!(re_roots.check_invariants().is_ok());
                 debug_assert!(im_roots.check_invariants().is_ok());
@@ -2031,13 +2077,13 @@ mod tests {
         let f = ZZ_POLY.primitive_squarefree_part(f);
         //f is a squarefree polynomial with lots of roots
         println!("f = {:?}", f);
-        let intervals = ZZ_POLY.real_roots_squarefree(f, None, None);
+        let intervals = ZZ_POLY.real_roots_squarefree(f, None, None, false, false);
         println!("intervals = {:?}", &intervals);
         intervals.check_invariants().unwrap();
 
         let f = ZZ_POLY.from_coeffs(vec![Integer::from(1), Integer::from(-3), Integer::from(1)]);
         println!("f = {:?}", f);
-        let mut intervals = ZZ_POLY.real_roots_squarefree(f, None, None);
+        let mut intervals = ZZ_POLY.real_roots_squarefree(f, None, None, false, false);
         intervals.check_invariants().unwrap();
         intervals.clone().to_real_roots();
         for root in intervals.clone().to_real_roots() {
@@ -2052,6 +2098,65 @@ mod tests {
             println!("root = {:?}", root);
             root.check_invariants().unwrap();
         }
+
+        let f = ZZ_POLY.product(vec![
+            ZZ_POLY.from_coeffs(vec![Integer::from(-1), Integer::from(1)]),
+            ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(1)]),
+            ZZ_POLY.from_coeffs(vec![Integer::from(-3), Integer::from(1)]),
+            ZZ_POLY.from_coeffs(vec![Integer::from(-4), Integer::from(1)]),
+        ]);
+        assert_eq!(
+            ZZ_POLY
+                .real_roots_squarefree(
+                    f.clone(),
+                    Some(&Rational::from(1)),
+                    Some(&Rational::from(4)),
+                    false,
+                    false
+                )
+                .intervals
+                .len(),
+            2
+        );
+        assert_eq!(
+            ZZ_POLY
+                .real_roots_squarefree(
+                    f.clone(),
+                    Some(&Rational::from(1)),
+                    Some(&Rational::from(4)),
+                    true,
+                    false
+                )
+                .intervals
+                .len(),
+            3
+        );
+        assert_eq!(
+            ZZ_POLY
+                .real_roots_squarefree(
+                    f.clone(),
+                    Some(&Rational::from(1)),
+                    Some(&Rational::from(4)),
+                    false,
+                    true
+                )
+                .intervals
+                .len(),
+            3
+        );
+        assert_eq!(
+            ZZ_POLY
+                .real_roots_squarefree(
+                    f.clone(),
+                    Some(&Rational::from(1)),
+                    Some(&Rational::from(4)),
+                    true,
+                    true
+                )
+                .intervals
+                .len(),
+            4
+        );
     }
 
     #[test]
@@ -2068,7 +2173,9 @@ mod tests {
                         Integer::from(1)
                     ]),
                     None,
-                    None
+                    None,
+                    false,
+                    false
                 )
                 .len(),
             1
@@ -2085,7 +2192,9 @@ mod tests {
                         Integer::from(1)
                     ]),
                     None,
-                    None
+                    None,
+                    false,
+                    false
                 )
                 .len(),
             3
@@ -2129,7 +2238,7 @@ mod tests {
                 Integer::from(-1),
             ]),
         ] {
-            for root in ZZ_POLY.real_roots(&f, None, None) {
+            for root in ZZ_POLY.real_roots(&f, None, None, false, false) {
                 all_roots.push(root.clone());
             }
         }
@@ -2241,7 +2350,7 @@ mod tests {
         );
         debug_assert_eq!(
             vert_im_f,
-            ZZ_POLY.from_coeffs(vec![Integer::from(11), Integer::from(0), Integer::from(12),])
+            ZZ_POLY.from_coeffs(vec![Integer::from(11), Integer::from(0), Integer::from(12)])
         );
     }
 
@@ -2295,5 +2404,54 @@ mod tests {
                 assert_eq!(n.unwrap(), k);
             }
         }
+
+        //other test cases
+        assert_eq!(
+            Some(1),
+            ZZ_POLY.count_complex_roots(
+                &ZZ_POLY.from_coeffs(vec![
+                    Integer::from(2),
+                    Integer::from(-8),
+                    Integer::from(1),
+                    Integer::from(-4),
+                    Integer::from(0),
+                    Integer::from(1),
+                ]),
+                &Rational::from(-1),
+                &Rational::from(1),
+                &Rational::from(1),
+                &Rational::from(2),
+            )
+        );
+
+        assert_eq!(
+            Some(3),
+            ZZ_POLY.count_complex_roots(
+                &ZZ_POLY.from_coeffs(vec![
+                    Integer::from(2),
+                    Integer::from(-8),
+                    Integer::from(1),
+                    Integer::from(-4),
+                    Integer::from(0),
+                    Integer::from(1),
+                ]),
+                &Rational::from(-3),
+                &Rational::from(3),
+                &Rational::from(-1),
+                &Rational::from(1),
+            )
+        );
+
+        //polynomial with roots 2+3i, 2-3i and counting box with 2+3i as a vertex
+        assert_eq!(
+            None,
+            ZZ_POLY.count_complex_roots(
+                &ZZ_POLY.from_coeffs(vec![Integer::from(13), Integer::from(-4), Integer::from(1),]),
+                &Rational::from(2),
+                &Rational::from(3),
+                &Rational::from(3),
+                &Rational::from(4),
+            )
+        );
     }
 }
