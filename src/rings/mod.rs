@@ -5,4 +5,5 @@ pub mod poly;
 pub mod multipoly;
 pub mod matrix;
 pub mod lattice;
+pub mod root_tools;
 pub mod algebraic;
