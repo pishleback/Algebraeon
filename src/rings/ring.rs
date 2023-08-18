@@ -114,9 +114,9 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Hash + Debug {
         } else {
             debug_assert!(*n >= 2);
             let bits: Vec<_> = n.bits().collect();
-            let mut pows = vec![self.one()];
+            let mut pows = vec![elem.clone()];
             while pows.len() < bits.len() {
-                pows.push(self.mul_refs(&pows.last().unwrap(), elem));
+                pows.push(self.mul_refs(&pows.last().unwrap(), &pows.last().unwrap()));
             }
             let count = bits.len();
             debug_assert_eq!(count, pows.len());
