@@ -16,22 +16,33 @@ mod numbers;
 mod rings;
 mod sets;
 
-fn main() {
+fn todo() {
+    // let s = NaturalPrimeGenerator::new();
+    // for p in s {
+    //     println!("{}", p);
+    // }
+
+    // let x = Integer::from(10000);
+    // let f = ZZ.factor(&x);
+    // println!("{:?}", f);
+
     let f = ZZ_POLY.from_coeffs(vec![
-        Integer::from(-2),
+        Integer::from(1),
+        Integer::from(0),
+        Integer::from(0),
+        Integer::from(0),
         Integer::from(0),
         Integer::from(1),
     ]);
-    let roots = ZZ_POLY.all_real_roots(&f);
+    let roots = ZZ_POLY.all_complex_roots(&f);
 
-    let a = &roots[0];
-    let b = &roots[1];
+    let a = QQ_BAR.sum(roots);
 
-    println!("a = {}", QQ_BAR_REAL.to_string(a));
-    println!("b = {}", QQ_BAR_REAL.to_string(b));
+    println!("{:?}", a);
+}
 
-    let c = QQ_BAR_REAL.mul(a.clone(), b.clone());
+fn main() {
+    let mod5: EuclideanQuotient<true, _> = EuclideanQuotient::new_field(ZZ, Integer::from(31));
 
-    println!("c = {}", QQ_BAR_REAL.to_string(&c));
-    println!("{:?}", c);
+    println!("{:?}", ZZ.nat_pow(&Integer::from(2), &Natural::from_str("100").unwrap()));
 }
