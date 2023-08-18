@@ -565,6 +565,14 @@ impl<'a, R: GreatestCommonDivisorDomain> PolynomialRing<'a, R> {
             Some((g, poly))
         }
     }
+
+    pub fn primitive_part(&self,
+        poly: Polynomial<R::ElemT>,) -> Option<Polynomial<R::ElemT>> {
+        match self.factor_primitive(poly) {
+            Some((unit, prim)) => Some(prim),
+            None => None,
+        }
+    }
 }
 
 impl<'a, R: GreatestCommonDivisorDomain + CharacteristicZero> PolynomialRing<'a, R> {
@@ -951,6 +959,7 @@ impl<
                     .into_iter()
                     .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
             ) {
+                println!("{:?}", possible_g_points);
                 match self.interpolate_by_lagrange_basis(&possible_g_points) {
                     Some(g) => {
                         if self.degree(&g).unwrap() >= 1 {
