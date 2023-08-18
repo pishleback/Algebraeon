@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 
+use std::borrow::BorrowMut;
+
+use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::NegAssign;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
@@ -65,6 +68,60 @@ fn root_prod_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomia
 
 fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Rational {
     QQ_POLY.evaluate(&ZZ_POLY.apply_map(&QQ, poly, |x| Rational::from(x)), &val)
+}
+
+fn bisect_box(
+    poly: &Polynomial<Integer>,
+    n: usize,
+    a: &Rational,
+    b: &Rational,
+    c: &Rational,
+    d: &Rational,
+) -> (
+    (usize, Rational, Rational, Rational, Rational),
+    (usize, Rational, Rational, Rational, Rational),
+) {
+    let pgen = NaturalPrimeGenerator::new();
+    for y in pgen {
+        let mut x = Natural::from(1u8);
+        while x < y {
+            {
+                let f = Rational::from_naturals_ref(&x, &y);
+
+                let ba = b - a;
+                let dc = d - c;
+
+                let ((a1, b1, c1, d1), (a2, b2, c2, d2)) = {
+                    if ba >= dc {
+                        let m = a + f * ba;
+                        (
+                            (a.clone(), m.clone(), c.clone(), d.clone()),
+                            (m, b.clone(), c.clone(), d.clone()),
+                        )
+                    } else {
+                        let m = c + f * dc;
+                        (
+                            (a.clone(), b.clone(), c.clone(), m.clone()),
+                            (a.clone(), b.clone(), m, d.clone()),
+                        )
+                    }
+                };
+
+                match (
+                    ZZ_POLY.count_complex_roots(poly, &a1, &b1, &c1, &d1),
+                    ZZ_POLY.count_complex_roots(poly, &a2, &b2, &c2, &d2),
+                ) {
+                    (Some(n1), Some(n2)) => {
+                        debug_assert_eq!(n1 + n2, n);
+                        return ((n1, a1, b1, c1, d1), (n2, a2, b2, c2, d2));
+                    }
+                    _ => {}
+                }
+                x += Natural::from(1u8);
+            }
+        }
+    }
+    panic!();
 }
 
 #[derive(Debug, Clone)]
@@ -503,13 +560,13 @@ impl SquarefreePolyRealRoots {
                     SquarefreePolyRealRootInterval::Rational(x2),
                 ) => match x1.cmp(x2) {
                     std::cmp::Ordering::Less => {
-                        all_roots.push((Interleave::Second, idx1));
+                        all_roots.push((Interleave::First, idx1));
                         idx1 += 1;
                         continue;
                     }
                     std::cmp::Ordering::Equal => panic!(),
                     std::cmp::Ordering::Greater => {
-                        all_roots.push((Interleave::First, idx2));
+                        all_roots.push((Interleave::Second, idx2));
                         idx2 += 1;
                         continue;
                     }
@@ -1163,39 +1220,61 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         let (c_horz_re, c_horz_im) = self.at_fixed_im(poly, c);
         let (d_horz_re, d_horz_im) = self.at_fixed_im(poly, d);
 
-        //checks
-        debug_assert_eq!(
-            evaluate_at_rational(&a_vert_re, c),
-            evaluate_at_rational(&c_horz_re, a)
-        );
-        debug_assert_eq!(
-            evaluate_at_rational(&a_vert_re, d),
-            evaluate_at_rational(&d_horz_re, a)
-        );
-        debug_assert_eq!(
-            evaluate_at_rational(&b_vert_re, c),
-            evaluate_at_rational(&c_horz_re, b)
-        );
-        debug_assert_eq!(
-            evaluate_at_rational(&b_vert_re, d),
-            evaluate_at_rational(&d_horz_re, b)
-        );
-        debug_assert_eq!(
-            evaluate_at_rational(&a_vert_im, c),
-            evaluate_at_rational(&c_horz_im, a)
-        );
-        debug_assert_eq!(
-            evaluate_at_rational(&a_vert_im, d),
-            evaluate_at_rational(&d_horz_im, a)
-        );
-        debug_assert_eq!(
-            evaluate_at_rational(&b_vert_im, c),
-            evaluate_at_rational(&c_horz_im, b)
-        );
-        debug_assert_eq!(
-            evaluate_at_rational(&b_vert_im, d),
-            evaluate_at_rational(&d_horz_im, b)
-        );
+        // println!("poly = {} abcd = {} {} {} {}", ZZ_POLY.to_string(&poly), a, b, c, d);
+        // println!(
+        //     "a_vert_re = {}, a_vert_im = {}",
+        //     ZZ_POLY.to_string(&a_vert_re),
+        //     ZZ_POLY.to_string(&a_vert_im)
+        // );
+        // println!(
+        //     "b_vert_re = {}, b_vert_im = {}",
+        //     ZZ_POLY.to_string(&b_vert_re),
+        //     ZZ_POLY.to_string(&b_vert_im)
+        // );
+        // println!(
+        //     "c_horz_re = {}, c_horz_im = {}",
+        //     ZZ_POLY.to_string(&c_horz_re),
+        //     ZZ_POLY.to_string(&c_horz_im)
+        // );
+        // println!(
+        //     "d_horz_re = {}, d_horz_im = {}",
+        //     ZZ_POLY.to_string(&d_horz_re),
+        //     ZZ_POLY.to_string(&d_horz_im)
+        // );
+
+        // //checks will fail - the real and imaginary parts are only up to scalar multiples
+        // debug_assert_eq!(
+        //     evaluate_at_rational(&a_vert_re, c),
+        //     evaluate_at_rational(&c_horz_re, a)
+        // );
+        // debug_assert_eq!(
+        //     evaluate_at_rational(&a_vert_re, d),
+        //     evaluate_at_rational(&d_horz_re, a)
+        // );
+        // debug_assert_eq!(
+        //     evaluate_at_rational(&b_vert_re, c),
+        //     evaluate_at_rational(&c_horz_re, b)
+        // );
+        // debug_assert_eq!(
+        //     evaluate_at_rational(&b_vert_re, d),
+        //     evaluate_at_rational(&d_horz_re, b)
+        // );
+        // debug_assert_eq!(
+        //     evaluate_at_rational(&a_vert_im, c),
+        //     evaluate_at_rational(&c_horz_im, a)
+        // );
+        // debug_assert_eq!(
+        //     evaluate_at_rational(&a_vert_im, d),
+        //     evaluate_at_rational(&d_horz_im, a)
+        // );
+        // debug_assert_eq!(
+        //     evaluate_at_rational(&b_vert_im, c),
+        //     evaluate_at_rational(&c_horz_im, b)
+        // );
+        // debug_assert_eq!(
+        //     evaluate_at_rational(&b_vert_im, d),
+        //     evaluate_at_rational(&d_horz_im, b)
+        // );
 
         //compute squarefree versions for when only care about the roots without multiplicity
         let a_vert_re_sqfr = self.primitive_squarefree_part(a_vert_re.clone());
@@ -1224,6 +1303,14 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
             s: &Rational,
             t: &Rational,
         ) -> Option<Vec<Crossing>> {
+            // println!(
+            //     "REVERSE={} re={}, re_sqfr={}, im={}, im_sqfr={}",
+            //     REVERSE,
+            //     ZZ_POLY.to_string(&re),
+            //     ZZ_POLY.to_string(&re_sqfr),
+            //     ZZ_POLY.to_string(&im),
+            //     ZZ_POLY.to_string(&im_sqfr)
+            // );
             debug_assert_eq!(re == &ZZ_POLY.zero(), &re_sqfr == &ZZ_POLY.zero());
             debug_assert_eq!(im == &ZZ_POLY.zero(), &im_sqfr == &ZZ_POLY.zero());
             //because if the real and imaginary part are both constant at 0 then poly has infinitely many complex zeros which is not possible
@@ -1278,11 +1365,11 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                     }
                 };
                 match (
-                    Rational::from(0).cmp(&evaluate_at_rational(re, v)),
-                    Rational::from(0).cmp(&evaluate_at_rational(im, v)),
+                    evaluate_at_rational(re, v).cmp(&Rational::from(0)),
+                    evaluate_at_rational(im, v).cmp(&Rational::from(0)),
                 ) {
                     (std::cmp::Ordering::Equal, std::cmp::Ordering::Equal) => {
-                        //the polynomial is zero at one of the verticies
+                        //the polynomial is zero at vertex v
                         return None;
                     }
                     (std::cmp::Ordering::Equal, std::cmp::Ordering::Less) => {
@@ -1308,6 +1395,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                         )
                         .unwrap();
                 }
+
                 if evaluate_at_rational(&re_sqfr, t) == Rational::from(0) {
                     re_sqfr = ZZ_POLY
                         .div(
@@ -1316,6 +1404,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                         )
                         .unwrap();
                 }
+
                 if evaluate_at_rational(&im_sqfr, s) == Rational::from(0) {
                     im_sqfr = ZZ_POLY
                         .div(
@@ -1332,6 +1421,10 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                         )
                         .unwrap();
                 }
+                debug_assert_ne!(evaluate_at_rational(&re_sqfr, s), Rational::from(0));
+                debug_assert_ne!(evaluate_at_rational(&re_sqfr, t), Rational::from(0));
+                debug_assert_ne!(evaluate_at_rational(&im_sqfr, s), Rational::from(0));
+                debug_assert_ne!(evaluate_at_rational(&im_sqfr, t), Rational::from(0));
 
                 let mut re_roots = ZZ_POLY.real_roots_squarefree(
                     re_sqfr.clone(),
@@ -1348,6 +1441,9 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                     !REVERSE,
                 );
 
+                // println!("re_roots = {:?}", re_roots);
+                // println!("im_roots = {:?}", im_roots);
+
                 debug_assert!(re_roots.check_invariants().is_ok());
                 debug_assert!(im_roots.check_invariants().is_ok());
 
@@ -1362,6 +1458,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                                 true => all_roots.into_iter().rev().collect(),
                             }
                         } {
+                            // println!("interleave = {:?} root_idx = {:?}", interleave, root_idx);
                             match interleave {
                                 Interleave::First => {
                                     //a real root
@@ -1373,12 +1470,12 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
-                                                        crossings.push(Crossing::PosIm);
+                                                        crossings.push(Crossing::NegIm);
                                                         break;
                                                     }
                                                     std::cmp::Ordering::Equal => panic!(),
                                                     std::cmp::Ordering::Greater => {
-                                                        crossings.push(Crossing::NegIm);
+                                                        crossings.push(Crossing::PosIm);
                                                         break;
                                                     }
                                                 }
@@ -1388,14 +1485,14 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
-                                                        crossings.push(Crossing::PosIm);
+                                                        crossings.push(Crossing::NegIm);
                                                         break;
                                                     }
                                                     std::cmp::Ordering::Equal => {
                                                         //need to refine
                                                     }
                                                     std::cmp::Ordering::Greater => {
-                                                        crossings.push(Crossing::NegIm);
+                                                        crossings.push(Crossing::PosIm);
                                                         break;
                                                     }
                                                 }
@@ -1403,14 +1500,14 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
-                                                        crossings.push(Crossing::PosIm);
+                                                        crossings.push(Crossing::NegIm);
                                                         break;
                                                     }
                                                     std::cmp::Ordering::Equal => {
                                                         //need to refine
                                                     }
                                                     std::cmp::Ordering::Greater => {
-                                                        crossings.push(Crossing::NegIm);
+                                                        crossings.push(Crossing::PosIm);
                                                         break;
                                                     }
                                                 }
@@ -1429,12 +1526,12 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
-                                                        crossings.push(Crossing::PosRe);
+                                                        crossings.push(Crossing::NegRe);
                                                         break;
                                                     }
                                                     std::cmp::Ordering::Equal => panic!(),
                                                     std::cmp::Ordering::Greater => {
-                                                        crossings.push(Crossing::NegRe);
+                                                        crossings.push(Crossing::PosRe);
                                                         break;
                                                     }
                                                 }
@@ -1444,14 +1541,14 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
-                                                        crossings.push(Crossing::PosRe);
+                                                        crossings.push(Crossing::NegRe);
                                                         break;
                                                     }
                                                     std::cmp::Ordering::Equal => {
                                                         //need to refine
                                                     }
                                                     std::cmp::Ordering::Greater => {
-                                                        crossings.push(Crossing::NegRe);
+                                                        crossings.push(Crossing::PosRe);
                                                         break;
                                                     }
                                                 }
@@ -1459,14 +1556,14 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
-                                                        crossings.push(Crossing::PosRe);
+                                                        crossings.push(Crossing::NegRe);
                                                         break;
                                                     }
                                                     std::cmp::Ordering::Equal => {
                                                         //need to refine
                                                     }
                                                     std::cmp::Ordering::Greater => {
-                                                        crossings.push(Crossing::NegRe);
+                                                        crossings.push(Crossing::PosRe);
                                                         break;
                                                     }
                                                 }
@@ -1497,6 +1594,11 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
 
         */
 
+        // println!("c = {:?}", crossings::<false>(&c_horz_re, c_horz_re_sqfr.clone(), &c_horz_im, c_horz_im_sqfr.clone(), a, b));
+        // println!("b = {:?}", crossings::<false>(&b_vert_re, b_vert_re_sqfr.clone(), &b_vert_im, b_vert_im_sqfr.clone(), c, d));
+        // println!("d = {:?}", crossings::<true>(&d_horz_re, d_horz_re_sqfr.clone(), &d_horz_im, d_horz_im_sqfr.clone(), a, b));
+        // println!("a = {:?}", crossings::<true>(&a_vert_re, a_vert_re_sqfr.clone(), &a_vert_im, a_vert_im_sqfr.clone(), c, d));
+
         let mut winding = vec![];
         for cr in vec![
             crossings::<false>(&c_horz_re, c_horz_re_sqfr, &c_horz_im, c_horz_im_sqfr, a, b),
@@ -1511,6 +1613,8 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                 }
             }
         }
+
+        // println!("winding = {:?}", winding);
 
         //compute the winding number = number of roots
         if winding.len() <= 0 {
@@ -1552,6 +1656,110 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                 _ => panic!("invalid remainder modulo four"),
             }
         }
+    }
+
+    pub fn all_complex_roots_irreducible(
+        &self,
+        poly: &Polynomial<Integer>,
+    ) -> Vec<ComplexAlgebraicNumber> {
+        debug_assert_ne!(poly, &self.zero());
+        debug_assert!(ZZ_POLY.is_irreducible(poly).unwrap());
+        let deg = ZZ_POLY.degree(poly).unwrap();
+
+        let mut all_roots = vec![];
+        for real_root in ZZ_POLY.all_real_roots(poly) {
+            all_roots.push(ComplexAlgebraicNumber::Real(real_root));
+        }
+        let num_real_roots = all_roots.len();
+
+        debug_assert!(num_real_roots <= deg);
+        if num_real_roots == deg {
+            return all_roots;
+        }
+
+        //search the upper half plane for the complete roots with positive imaginary part
+        debug_assert_eq!((deg - num_real_roots) % 2, 0);
+        let target_uhp_num = (deg - num_real_roots) / 2;
+
+        let mut a = Rational::from(-1);
+        let mut b = Rational::from(1);
+        let mut c = Rational::from_signeds(1, 2);
+        let mut d = Rational::from(2);
+
+        loop {
+            match self.count_complex_roots(poly, &a, &b, &c, &d) {
+                Some(n) => {
+                    debug_assert!(n <= target_uhp_num);
+                    if n == target_uhp_num {
+                        break;
+                    }
+                }
+                None => {
+                    //boundary root
+                }
+            }
+            a *= Rational::from(2);
+            b *= Rational::from(2);
+            c *= Rational::from_signeds(1, 2);
+            d *= Rational::from(2);
+        }
+
+        fn bisect(
+            poly: &Polynomial<Integer>,
+            n: usize,
+            a: &Rational,
+            b: &Rational,
+            c: &Rational,
+            d: &Rational,
+        ) -> Vec<ComplexAlgebraicRoot> {
+            debug_assert!(a < b);
+            debug_assert!(c < d);
+            debug_assert_eq!(
+                ZZ_POLY.count_complex_roots(poly, &a, &b, &c, &d).unwrap(),
+                n
+            );
+            if n == 0 {
+                vec![]
+            } else if n == 1 {
+                vec![ComplexAlgebraicRoot {
+                    poly: poly.clone(),
+                    tight_a: a.clone(),
+                    tight_b: b.clone(),
+                    tight_c: c.clone(),
+                    tight_d: d.clone(),
+                }]
+            } else {
+                let ((n1, a1, b1, c1, d1), (n2, a2, b2, c2, d2)) = bisect_box(poly, n, a, b, c, d);
+
+                let mut roots = bisect(poly, n1, &a1, &b1, &c1, &d1);
+                roots.append(&mut bisect(poly, n2, &a2, &b2, &c2, &d2));
+                return roots;
+            }
+        }
+
+        for complex_root in bisect(poly, target_uhp_num, &a, &b, &c, &d) {
+            all_roots.push(ComplexAlgebraicNumber::Complex(complex_root.clone().conj()));
+            all_roots.push(ComplexAlgebraicNumber::Complex(complex_root));
+        }
+
+        debug_assert_eq!(all_roots.len(), deg);
+        all_roots
+    }
+
+    pub fn all_complex_roots(&self, poly: &Polynomial<Integer>) -> Vec<ComplexAlgebraicNumber> {
+        assert_ne!(poly, &self.zero());
+        let factors = self.factor(&poly).unwrap();
+        let mut roots = vec![];
+        for (factor, k) in factors.factors() {
+            for root in self.all_complex_roots_irreducible(factor) {
+                let mut i = Natural::from(0u8);
+                while &i < k {
+                    roots.push(root.clone());
+                    i += Natural::from(1u8);
+                }
+            }
+        }
+        roots
     }
 }
 
@@ -1698,10 +1906,20 @@ impl RealAlgebraicRoot {
     }
 
     pub fn neg_mut(&mut self) {
-        self.poly = ZZ_POLY.compose(&self.poly, &ZZ_POLY.from_coeffs(vec![ZZ.zero(), ZZ.one()]));
+        let (unit, fav_assoc) = ZZ_POLY.factor_fav_assoc(ZZ_POLY.compose(
+            &self.poly,
+            &ZZ_POLY.from_coeffs(vec![Integer::from(0), Integer::from(-1)]),
+        ));
+        if unit == ZZ_POLY.one() {
+            self.poly = fav_assoc;
+            self.dir = !self.dir;
+        } else if unit == ZZ_POLY.neg(ZZ_POLY.one()) {
+            self.poly = fav_assoc;
+        } else {
+            panic!();
+        }
         (self.tight_a, self.tight_b) = (-self.tight_b.clone(), -self.tight_a.clone());
         (self.wide_a, self.wide_b) = (self.wide_b.clone().neg(), self.wide_a.clone().neg());
-        self.dir = !self.dir;
     }
 }
 
@@ -1737,11 +1955,6 @@ pub struct ComplexAlgebraicRoot {
     tight_c: Rational, //tight lower bound for the imaginary part
     tight_d: Rational, //tight upper bound for the imaginary part
 
-    wide_a: Rational, //wide lower bound for the real part
-    wide_b: Rational, //wide upper bound for the real part
-    wide_c: Rational, //wide lower bound for the imaginary part
-    wide_d: Rational, //wide upper bound for the imaginary part
-
     poly: Polynomial<Integer>, //a primitive irreducible polynomial of degree >= 2 with a unique non-real complex root in the box defined by (a, b, c, d)
 }
 
@@ -1753,12 +1966,12 @@ impl ComplexAlgebraicRoot {
         if !(self.tight_c < self.tight_d) {
             return Err("tight c should be strictly less than d");
         }
-        if !(self.wide_a < self.wide_b) {
-            return Err("wide a should be strictly less than b");
-        }
-        if !(self.wide_c < self.wide_d) {
-            return Err("wide c should be strictly less than d");
-        }
+        // if !(self.wide_a < self.wide_b) {
+        //     return Err("wide a should be strictly less than b");
+        // }
+        // if !(self.wide_c < self.wide_d) {
+        //     return Err("wide c should be strictly less than d");
+        // }
         match ZZ_POLY.is_irreducible(&self.poly) {
             Some(is_irr) => {
                 if !is_irr {
@@ -1772,7 +1985,68 @@ impl ComplexAlgebraicRoot {
         if ZZ_POLY.degree(&self.poly).unwrap() < 2 {
             return Err("poly should have degree at least 2");
         }
+        match ZZ_POLY.count_complex_roots(
+            &self.poly,
+            &self.tight_a,
+            &self.tight_b,
+            &self.tight_c,
+            &self.tight_d,
+        ) {
+            Some(1) => {
+            }
+            Some(_) => {
+                return Err("should contain exactly 1 root with none on the boundary");
+            }
+            None => {
+                return Err("should contain exactly 1 root with none on the boundary");
+            }
+        }
         Ok(())
+    }
+
+    fn conj(mut self) -> Self {
+        (self.tight_c, self.tight_d) = (-self.tight_d, -self.tight_c);
+        self
+    }
+
+    pub fn neg_mut(&mut self) {
+        self.poly = ZZ_POLY.fav_assoc(ZZ_POLY.compose(
+            &self.poly,
+            &ZZ_POLY.from_coeffs(vec![Integer::from(0), Integer::from(-1)]),
+        ));
+        (self.tight_a, self.tight_b) = (-self.tight_b.clone(), -self.tight_a.clone());
+        (self.tight_c, self.tight_d) = (-self.tight_d.clone(), -self.tight_c.clone());
+    }
+
+    pub fn refine(&mut self) {
+        let ((n1, a1, b1, c1, d1), (n2, a2, b2, c2, d2)) = bisect_box(
+            &self.poly,
+            1,
+            &self.tight_a,
+            &self.tight_b,
+            &self.tight_c,
+            &self.tight_d,
+        );
+
+        match (n1, n2) {
+            (1, 0) => {
+                self.tight_a = a1;
+                self.tight_b = b1;
+                self.tight_c = c1;
+                self.tight_d = d1;
+            }
+            (0, 1) => {
+                self.tight_a = a2;
+                self.tight_b = b2;
+                self.tight_c = c2;
+                self.tight_d = d2;
+            }
+            _ => {
+                panic!();
+            }
+        }
+
+        debug_assert!(self.check_invariants().is_ok());
     }
 }
 
@@ -1840,6 +2114,26 @@ pub enum ComplexAlgebraicNumber {
     Complex(ComplexAlgebraicRoot),
 }
 
+impl ComplexAlgebraicNumber {
+    pub fn check_invariants(&self) -> Result<(), &'static str> {
+        match self {
+            ComplexAlgebraicNumber::Real(x) => match x.check_invariants() {
+                Ok(()) => {}
+                Err(e) => {
+                    return Err(e);
+                }
+            },
+            ComplexAlgebraicNumber::Complex(x) => match x.check_invariants() {
+                Ok(()) => {}
+                Err(e) => {
+                    return Err(e);
+                }
+            },
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RealAlgebraicField {}
 
@@ -1888,10 +2182,15 @@ impl ComRing for RealAlgebraicField {
                     elem.wide_b = UpperBound::Finite(b + &rat);
                 }
             }
-            elem.poly = ZZ_POLY.compose(
-                &elem.poly,
-                &ZZ_POLY.from_coeffs(vec![-QQ.denominator(&rat), QQ.numerator(&rat)]),
-            );
+
+            //compose with x - n/d = dx - n
+            elem.poly = ZZ_POLY
+                .primitive_part(ZZ_POLY.compose(
+                    &elem.poly,
+                    &ZZ_POLY.from_coeffs(vec![-QQ.numerator(&rat), QQ.denominator(&rat)]),
+                ))
+                .unwrap();
+
             debug_assert!(elem.check_invariants().is_ok());
             elem
         }
@@ -1938,7 +2237,7 @@ impl ComRing for RealAlgebraicField {
                                 &ans_tight_a < x && x < &ans_tight_b
                             }
                             SquarefreePolyRealRootInterval::Real(ta, tb, _dir) => {
-                                !(ta < &ans_tight_b && &ans_tight_a < tb)
+                                ta < &ans_tight_b && &ans_tight_a < tb
                             }
                         })
                         .collect();
@@ -2084,7 +2383,7 @@ impl ComRing for RealAlgebraicField {
                                 &ans_tight_a < x && x < &ans_tight_b
                             }
                             SquarefreePolyRealRootInterval::Real(ta, tb, _dir) => {
-                                !(ta < &ans_tight_b && &ans_tight_a < tb)
+                                ta < &ans_tight_b && &ans_tight_a < tb
                             }
                         })
                         .collect();
@@ -2110,7 +2409,72 @@ impl ComRing for RealAlgebraicField {
     }
 
     fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        todo!()
+        match self.inv(b) {
+            Ok(b_inv) => Ok(self.mul(a, b_inv)),
+            Err(err) => Err(err),
+        }
+    }
+
+    fn inv(&self, mut elem: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        match elem.cmp_mut(&mut self.zero()) {
+            std::cmp::Ordering::Less => match self.inv(self.neg(elem)) {
+                Ok(neg_elem_inv) => Ok(self.neg(neg_elem_inv)),
+                Err(err) => Err(err),
+            },
+            std::cmp::Ordering::Equal => Err(RingDivisionError::DivideByZero),
+            std::cmp::Ordering::Greater => match elem {
+                RealAlgebraicNumber::Rational(x) => {
+                    Ok(RealAlgebraicNumber::Rational(QQ.inv(x).unwrap()))
+                }
+                RealAlgebraicNumber::Real(mut root) => {
+                    debug_assert!(root.tight_a >= Rational::from(0));
+                    while root.tight_a == Rational::from(0) {
+                        root.refine();
+                    }
+                    debug_assert!(Rational::from(0) < root.tight_a);
+                    (root.tight_a, root.tight_b) =
+                        (QQ.inv(root.tight_b).unwrap(), QQ.inv(root.tight_a).unwrap());
+                    (root.wide_a, root.wide_b) = (
+                        {
+                            match root.wide_b {
+                                UpperBound::Inf => LowerBound::Finite(Rational::from(0)),
+                                UpperBound::Finite(x) => match QQ.inv(x) {
+                                    Ok(x_inv) => LowerBound::Finite(x_inv),
+                                    Err(RingDivisionError::DivideByZero) => panic!("wide upper bound of strictly positive root should be strictly positive i.e. non-zero"),
+                                    Err(_) => panic!()
+                                },
+                            }
+                        },
+                        {
+                            match root.wide_a {
+                                LowerBound::Inf => UpperBound::Inf,
+                                LowerBound::Finite(x) => match x.cmp(&Rational::from(0)) {
+                                    std::cmp::Ordering::Less => UpperBound::Inf,
+                                    std::cmp::Ordering::Equal => UpperBound::Inf,
+                                    std::cmp::Ordering::Greater => {
+                                        UpperBound::Finite(QQ.inv(x).unwrap())
+                                    }
+                                },
+                            }
+                        },
+                    );
+                    let (unit, fav_assoc) = ZZ_POLY.factor_fav_assoc(
+                        ZZ_POLY.from_coeffs(root.poly.coeffs().into_iter().rev().collect()),
+                    );
+                    if unit == ZZ_POLY.one() {
+                        root.poly = fav_assoc;
+                        root.dir = !root.dir;
+                    } else if unit == ZZ_POLY.neg(ZZ_POLY.one()) {
+                        root.poly = fav_assoc;
+                    } else {
+                        panic!();
+                    }
+                    let ans = RealAlgebraicNumber::Real(root);
+                    debug_assert!(ans.check_invariants().is_ok());
+                    Ok(ans)
+                }
+            },
+        }
     }
 }
 
@@ -2140,11 +2504,157 @@ impl ComRing for ComplexAlgebraicField {
     }
 
     fn neg_mut(&self, elem: &mut Self::ElemT) {
-        todo!()
+        match elem {
+            ComplexAlgebraicNumber::Real(root) => QQ_BAR_REAL.neg_mut(root),
+            ComplexAlgebraicNumber::Complex(root) => {
+                root.neg_mut();
+            }
+        }
     }
 
     fn add_mut(&self, elem: &mut Self::ElemT, offset: &Self::ElemT) {
-        todo!()
+        *elem = self.add(elem.clone(), offset.clone());
+    }
+
+    fn add(&self, alg1: Self::ElemT, alg2: Self::ElemT) -> Self::ElemT {
+        fn add_real(
+            mut cpx: ComplexAlgebraicRoot,
+            real: RealAlgebraicNumber,
+        ) -> ComplexAlgebraicRoot {
+            match real {
+                RealAlgebraicNumber::Rational(rat) => {
+                    cpx.tight_a += &rat;
+                    cpx.tight_b += &rat;
+                    //compose with x - n/d = dx - n
+                    cpx.poly = ZZ_POLY
+                        .primitive_part(ZZ_POLY.compose(
+                            &cpx.poly,
+                            &ZZ_POLY.from_coeffs(vec![-QQ.numerator(&rat), QQ.denominator(&rat)]),
+                        ))
+                        .unwrap();
+
+                    debug_assert!(cpx.check_invariants().is_ok());
+                    cpx
+                }
+                RealAlgebraicNumber::Real(mut real) => {
+                    let mut roots: Vec<_> = ZZ_POLY
+                        .all_complex_roots(
+                            &ZZ_POLY
+                                .primitive_squarefree_part(root_sum_poly(&cpx.poly, &real.poly)),
+                        )
+                        .into_iter()
+                        .filter(|alg| match alg {
+                            ComplexAlgebraicNumber::Real(_) => false,
+                            ComplexAlgebraicNumber::Complex(_) => true,
+                        })
+                        .map(|alg| match alg {
+                            ComplexAlgebraicNumber::Real(_) => panic!(),
+                            ComplexAlgebraicNumber::Complex(cpx) => cpx,
+                        })
+                        .collect();
+
+                    let mut possible: std::collections::HashSet<_> = (0..roots.len()).collect();
+
+                    while possible.len() > 1 {
+                        let ans_tight_a = &cpx.tight_a + &real.tight_a;
+                        let ans_tight_b = &cpx.tight_b + &real.tight_b;
+                        let ans_tight_c = cpx.tight_c.clone();
+                        let ans_tight_d = cpx.tight_d.clone();
+                        //filter out roots which dont overlap with the known range for the sum root
+
+                        possible = possible
+                            .into_iter()
+                            .filter(|i| {
+                                let possible_cpx_root = &roots[*i];
+                                &possible_cpx_root.tight_a < &ans_tight_b
+                                    && &ans_tight_a < &possible_cpx_root.tight_b
+                                    && &possible_cpx_root.tight_c < &ans_tight_d
+                                    && &ans_tight_c < &possible_cpx_root.tight_d
+                            })
+                            .collect();
+
+                        cpx.refine();
+                        real.refine();
+                        for i in &possible {
+                            roots[*i].refine();
+                        }
+                    }
+                    assert_eq!(possible.len(), 1);
+                    let i = possible.into_iter().next().unwrap();
+                    roots.into_iter().nth(i).unwrap()
+                }
+            }
+        }
+
+        match (alg1, alg2) {
+            (ComplexAlgebraicNumber::Real(real1), ComplexAlgebraicNumber::Real(real2)) => {
+                ComplexAlgebraicNumber::Real(QQ_BAR_REAL.add(real1, real2))
+            }
+            (ComplexAlgebraicNumber::Real(real1), ComplexAlgebraicNumber::Complex(cpx2)) => {
+                ComplexAlgebraicNumber::Complex(add_real(cpx2, real1))
+            }
+            (ComplexAlgebraicNumber::Complex(cpx1), ComplexAlgebraicNumber::Real(real2)) => {
+                ComplexAlgebraicNumber::Complex(add_real(cpx1, real2))
+            }
+            (
+                ComplexAlgebraicNumber::Complex(mut cpx1),
+                ComplexAlgebraicNumber::Complex(mut cpx2),
+            ) => {
+                let mut roots = ZZ_POLY.all_complex_roots(&root_sum_poly(&cpx1.poly, &cpx2.poly));
+                let mut possible: std::collections::HashSet<_> = (0..roots.len()).collect();
+
+                while possible.len() > 1 {
+                    let ans_tight_a = &cpx1.tight_a + &cpx2.tight_a;
+                    let ans_tight_b = &cpx1.tight_b + &cpx2.tight_b;
+                    let ans_tight_c = &cpx1.tight_c + &cpx2.tight_c;
+                    let ans_tight_d = &cpx1.tight_d + &cpx2.tight_d;
+                    //filter out roots which dont overlap with the known range for the sum root
+
+                    possible = possible
+                        .into_iter()
+                        .filter(|i| match &roots[*i] {
+                            ComplexAlgebraicNumber::Real(real) => match real {
+                                RealAlgebraicNumber::Rational(rat) => {
+                                    &ans_tight_a < rat
+                                        && rat < &ans_tight_b
+                                        && &ans_tight_c < &Rational::from(0)
+                                        && &Rational::from(0) < &ans_tight_d
+                                }
+                                RealAlgebraicNumber::Real(real) => {
+                                    &real.tight_a < &ans_tight_b
+                                        && &ans_tight_a < &real.tight_b
+                                        && &ans_tight_c < &Rational::from(0)
+                                        && &Rational::from(0) < &ans_tight_d
+                                }
+                            },
+                            ComplexAlgebraicNumber::Complex(cpx) => {
+                                &cpx.tight_a < &ans_tight_b
+                                    && &ans_tight_a < &cpx.tight_b
+                                    && &cpx.tight_c < &ans_tight_d
+                                    && &ans_tight_c < &cpx.tight_d
+                            }
+                        })
+                        .collect();
+
+                    cpx1.refine();
+                    cpx2.refine();
+                    for i in &possible {
+                        match &mut roots[*i] {
+                            ComplexAlgebraicNumber::Real(real) => match real {
+                                RealAlgebraicNumber::Rational(_rat) => {}
+                                RealAlgebraicNumber::Real(real) => real.refine(),
+                            },
+                            ComplexAlgebraicNumber::Complex(cpx) => {
+                                cpx.refine();
+                            }
+                        }
+                    }
+                }
+                assert_eq!(possible.len(), 1);
+                let i = possible.into_iter().next().unwrap();
+                roots.into_iter().nth(i).unwrap()
+            }
+        }
     }
 
     fn mul_mut(&self, elem: &mut Self::ElemT, mul: &Self::ElemT) {
@@ -2710,45 +3220,165 @@ mod tests {
                 &Rational::from(4),
             )
         );
+
+        //x^2-x+1
+        let f = ZZ_POLY.from_coeffs(vec![Integer::from(1), Integer::from(-1), Integer::from(1)]);
+        let n = ZZ_POLY
+            .count_complex_roots(
+                &f,
+                &Rational::from(-1),
+                &Rational::from(1),
+                &Rational::from(-1),
+                &Rational::from(1),
+            )
+            .unwrap();
+        assert_eq!(n, 2);
     }
 
     #[test]
     fn test_real_neg() {
-        let f = ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(1)]);
-        let roots = ZZ_POLY.all_real_roots(&f);
+        {
+            let f =
+                ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(1)]);
+            let roots = ZZ_POLY.all_real_roots(&f);
 
-        assert_eq!(roots.len(), 2);
-        let a = &roots[0];
-        let b = &roots[1];
+            assert_eq!(roots.len(), 2);
+            let a = &roots[0];
+            let b = &roots[1];
 
-        let a_neg = QQ_BAR_REAL.neg_ref(a);
-        let b_neg = QQ_BAR_REAL.neg_ref(b);
+            let a_neg = QQ_BAR_REAL.neg_ref(a);
+            let b_neg = QQ_BAR_REAL.neg_ref(b);
 
-        a_neg.check_invariants().unwrap();
-        b_neg.check_invariants().unwrap();
+            a_neg.check_invariants().unwrap();
+            b_neg.check_invariants().unwrap();
 
-        println!("a = {}", QQ_BAR_REAL.to_string(a));
-        println!("b = {}", QQ_BAR_REAL.to_string(b));
-        println!("a_neg = {}", QQ_BAR_REAL.to_string(&a_neg));
-        println!("b_neg = {}", QQ_BAR_REAL.to_string(&b_neg));
+            println!("a = {}", QQ_BAR_REAL.to_string(a));
+            println!("b = {}", QQ_BAR_REAL.to_string(b));
+            println!("a_neg = {}", QQ_BAR_REAL.to_string(&a_neg));
+            println!("b_neg = {}", QQ_BAR_REAL.to_string(&b_neg));
 
-        assert_ne!(a, b);
-        assert_eq!(a, &b_neg);
-        assert_eq!(b, &a_neg);
+            assert_ne!(a, b);
+            assert_eq!(a, &b_neg);
+            assert_eq!(b, &a_neg);
+        }
+        {
+            let f = ZZ_POLY.from_coeffs(vec![
+                Integer::from(-1),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(3),
+                Integer::from(1),
+            ]);
+            let roots = ZZ_POLY.all_real_roots(&f);
+
+            assert_eq!(roots.len(), 3);
+            for root in roots {
+                QQ_BAR_REAL.neg(root).check_invariants().unwrap();
+            }
+        }
+        {
+            //example where f(g(x)) is not primitive even though f and g are
+            let f =
+                ZZ_POLY.from_coeffs(vec![Integer::from(-4), Integer::from(-1), Integer::from(1)]);
+            let roots = ZZ_POLY.all_real_roots(&f);
+            for root in roots {
+                let root2 = QQ_BAR_REAL.add(
+                    root,
+                    QQ_BAR_REAL.from_rat(&Rational::from_signeds(1, 2)).unwrap(),
+                );
+                root2.check_invariants().unwrap();
+            }
+        }
     }
 
     #[test]
     fn test_real_add() {
+        let f = ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(3)]);
+        let roots = ZZ_POLY.all_real_roots(&f);
+        let a = QQ_BAR_REAL.sum(roots);
+        assert_eq!(a, QQ_BAR_REAL.zero());
+
+        let f = ZZ_POLY.from_coeffs(vec![
+            Integer::from(-7),
+            Integer::from(0),
+            Integer::from(100),
+        ]);
+        let roots = ZZ_POLY.all_real_roots(&f);
+        let a = QQ_BAR_REAL.sum(roots);
+        assert_eq!(a, QQ_BAR_REAL.zero());
+
+        let f = ZZ_POLY.from_coeffs(vec![
+            Integer::from(-100),
+            Integer::from(0),
+            Integer::from(7),
+        ]);
+        let roots = ZZ_POLY.all_real_roots(&f);
+        let a = QQ_BAR_REAL.sum(roots);
+        assert_eq!(a, QQ_BAR_REAL.zero());
+    }
+
+    #[test]
+    fn test_real_mul() {
+        let f = ZZ_POLY.from_coeffs(vec![
+            Integer::from(-100),
+            Integer::from(0),
+            Integer::from(7),
+        ]);
+        // (x-a)(x-b) = x^2 - 100/7
+        // so ab=-100/7
+        let roots = ZZ_POLY.all_real_roots(&f);
+        let a = QQ_BAR_REAL.product(roots);
+        assert_eq!(
+            a,
+            QQ_BAR_REAL
+                .from_rat(&Rational::from_signeds(-100, 7))
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn test_all_complex_roots() {
         let f = ZZ_POLY.from_coeffs(vec![
             Integer::from(-1),
-            Integer::from(0),
+            Integer::from(-1),
             Integer::from(0),
             Integer::from(0),
             Integer::from(0),
             Integer::from(1),
         ]);
-        let roots = ZZ_POLY.all_real_roots(&f);
-        let a = QQ_BAR_REAL.sum(roots);
-        assert_eq!(a, QQ_BAR_REAL.zero());
+        let roots = ZZ_POLY.all_complex_roots(&f);
+        assert_eq!(roots.len(), ZZ_POLY.degree(&f).unwrap());
+        for root in &roots {
+            root.check_invariants().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_complex_add() {
+        // let f = ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(3)]);
+        // let roots = ZZ_POLY.all_real_roots(&f);
+        // let a = QQ_BAR_REAL.sum(roots);
+        // assert_eq!(a, QQ_BAR_REAL.zero());
+
+        // let f = ZZ_POLY.from_coeffs(vec![
+        //     Integer::from(-7),
+        //     Integer::from(0),
+        //     Integer::from(100),
+        // ]);
+        // let roots = ZZ_POLY.all_real_roots(&f);
+        // let a = QQ_BAR_REAL.sum(roots);
+        // assert_eq!(a, QQ_BAR_REAL.zero());
+
+        // let f = ZZ_POLY.from_coeffs(vec![
+        //     Integer::from(-100),
+        //     Integer::from(0),
+        //     Integer::from(7),
+        // ]);
+        // let roots = ZZ_POLY.all_real_roots(&f);
+        // let a = QQ_BAR_REAL.sum(roots);
+        // assert_eq!(a, QQ_BAR_REAL.zero());
     }
 }
