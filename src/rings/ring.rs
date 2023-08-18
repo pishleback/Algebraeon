@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 
-use std::{collections::HashMap, fmt::Debug, hash::Hash, borrow::Borrow};
+use std::{borrow::Borrow, collections::HashMap, fmt::Debug, hash::Hash};
 
 use malachite_base::num::{
     arithmetic::traits::{DivRem, UnsignedAbs},
     logic::traits::BitIterable,
 };
 use malachite_nz::{integer::Integer, natural::Natural};
+use malachite_q::Rational;
 
 #[derive(Debug)]
 pub enum RingDivisionError {
@@ -112,12 +113,25 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Hash + Debug {
             elem.clone()
         } else {
             debug_assert!(*n >= 2);
-            let (q, r) = n.div_rem(Natural::from(2u8));
-            self.mul(self.nat_pow(elem, &q), self.nat_pow(elem, &(&q + r)))
+            let bits: Vec<_> = n.bits().collect();
+            let mut pows = vec![self.one()];
+            while pows.len() < bits.len() {
+                pows.push(self.mul_refs(&pows.last().unwrap(), elem));
+            }
+            let count = bits.len();
+            debug_assert_eq!(count, pows.len());
+            let mut ans = self.one();
+            for i in 0..count {
+                if bits[i] {
+                    self.mul_mut(&mut ans, &pows[i]);
+                }
+            }
+            ans
         }
     }
 
     fn int_pow(&self, elem: &Self::ElemT, n: &Integer) -> Option<Self::ElemT> {
+        println!("{:?} {:?}", elem, n);
         if *n == 0 {
             Some(self.one())
         } else if elem == &self.zero() {
@@ -154,6 +168,13 @@ pub trait ComRing: Sized + Clone + PartialEq + Eq + Hash + Debug {
             }
             ans
         }
+    }
+
+    fn from_rat(&self, x: &Rational) -> Result<Self::ElemT, RingDivisionError> {
+        self.div(
+            self.from_int(&super::nzq::QQ.numerator(x)),
+            self.from_int(&super::nzq::QQ.denominator(x)),
+        )
     }
 
     fn is_unit(&self, elem: Self::ElemT) -> bool {
@@ -229,6 +250,9 @@ pub trait FavoriteAssociate: IntegralDomain {
     //it happens that usually the product of favorite associates is another favorite associate. Should this be a requirement?
 
     fn factor_fav_assoc(&self, elem: Self::ElemT) -> (Self::ElemT, Self::ElemT);
+    fn fav_assoc(&self, elem: Self::ElemT) -> Self::ElemT {
+        self.factor_fav_assoc(elem).1
+    }
     fn factor_fav_assoc_ref(&self, elem: &Self::ElemT) -> (Self::ElemT, Self::ElemT) {
         self.factor_fav_assoc(elem.clone())
     }
@@ -241,7 +265,7 @@ pub trait FavoriteAssociate: IntegralDomain {
 pub trait GreatestCommonDivisorDomain: FavoriteAssociate {
     //any gcds should be the standard associate representative
     fn gcd(&self, x: Self::ElemT, y: Self::ElemT) -> Self::ElemT;
-    fn gcd_list<BorrowElemT : Borrow<Self::ElemT>>(&self, elems: Vec<BorrowElemT>) -> Self::ElemT {
+    fn gcd_list<BorrowElemT: Borrow<Self::ElemT>>(&self, elems: Vec<BorrowElemT>) -> Self::ElemT {
         let mut ans = self.zero();
         for x in elems {
             ans = self.gcd(ans, x.borrow().clone());
@@ -257,7 +281,7 @@ pub trait GreatestCommonDivisorDomain: FavoriteAssociate {
         }
     }
 
-    fn lcm_list<BorrowElemT : Borrow<Self::ElemT>>(&self, elems: Vec<BorrowElemT>) -> Self::ElemT {
+    fn lcm_list<BorrowElemT: Borrow<Self::ElemT>>(&self, elems: Vec<BorrowElemT>) -> Self::ElemT {
         let mut ans = self.one();
         for x in elems {
             ans = self.lcm(ans, x.borrow().clone());
@@ -572,6 +596,90 @@ impl<R: EuclideanDomain + FavoriteAssociate> PrincipalIdealDomain for R {
     }
 }
 
+trait QuotientRing {
+    type Ring: ComRing;
+}
+
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
+pub struct EuclideanQuotient<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain>
+{
+    ed: ED,
+    n: ED::ElemT,
+}
+
+impl<ED: EuclideanDomain + UniqueFactorizationDomain> EuclideanQuotient<false, ED> {
+    pub fn new_ring(ed: ED, n: ED::ElemT) -> Self {
+        Self { ed, n }
+    }
+}
+impl<ED: EuclideanDomain + UniqueFactorizationDomain> EuclideanQuotient<true, ED> {
+    pub fn new_field(ed: ED, n: ED::ElemT) -> Self {
+        Self { ed, n }
+    }
+}
+
+impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain>
+    EuclideanQuotient<IS_FIELD, ED>
+{
+    pub fn check_invariants(&self) -> Result<(), &'static str> {
+        if self.n == self.ed.zero() {
+            return Err("cant quotient by zero");
+        }
+
+        if IS_FIELD {
+            if !self.ed.is_irreducible(&self.n).unwrap() {
+                return Err("marked as field but element is not irreducible");
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> ComRing
+    for EuclideanQuotient<IS_FIELD, ED>
+{
+    type ElemT = ED::ElemT;
+
+    fn to_string(&self, elem: &Self::ElemT) -> String {
+        self.ed.to_string(elem)
+    }
+
+    fn zero(&self) -> Self::ElemT {
+        self.ed.zero()
+    }
+
+    fn one(&self) -> Self::ElemT {
+        self.ed.one()
+    }
+
+    fn neg_mut(&self, elem: &mut Self::ElemT) {
+        *elem = self.ed.rem_rref(self.ed.neg_ref(elem), &self.n).unwrap();
+    }
+
+    fn add_mut(&self, elem: &mut Self::ElemT, offset: &Self::ElemT) {
+        *elem = self
+            .ed
+            .rem_rref(self.ed.add_refs(elem, offset), &self.n)
+            .unwrap();
+    }
+
+    fn mul_mut(&self, elem: &mut Self::ElemT, mul: &Self::ElemT) {
+        *elem = self
+            .ed
+            .rem_rref(self.ed.mul_refs(elem, mul), &self.n)
+            .unwrap();
+    }
+
+    fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+        todo!();
+    }
+}
+
+//IdealQuotient
+//PrimeQuotient
+//MaximalQuotient
+
 pub trait Field: IntegralDomain {
     //promise that a/b always works, except unless b=0.
     //in other words, a/b must not return not divisible
@@ -706,10 +814,10 @@ pub trait FieldOfFractions: Field {
     type R: IntegralDomain;
 
     fn base_ring(&self) -> &Self::R;
-    fn from_base_ring(&self, elem : <Self::R as ComRing>::ElemT) -> Self::ElemT;
+    fn from_base_ring(&self, elem: <Self::R as ComRing>::ElemT) -> Self::ElemT;
     fn numerator(&self, elem: &Self::ElemT) -> <Self::R as ComRing>::ElemT;
     fn denominator(&self, elem: &Self::ElemT) -> <Self::R as ComRing>::ElemT;
-    fn as_base_ring(&self, elem : Self::ElemT) -> Option<<Self::R as ComRing>::ElemT> {
+    fn as_base_ring(&self, elem: Self::ElemT) -> Option<<Self::R as ComRing>::ElemT> {
         if self.denominator(&elem) == self.base_ring().one() {
             Some(self.numerator(&elem))
         } else {
