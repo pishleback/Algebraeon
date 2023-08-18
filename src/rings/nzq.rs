@@ -131,6 +131,40 @@ impl FavoriteAssociate for IntegerRing {
     }
 }
 
+pub struct NaturalPrimeGenerator {
+    n: Natural,
+    primes: Vec<Natural>,
+}
+
+impl NaturalPrimeGenerator {
+    pub fn new() -> Self {
+        Self {
+            n: Natural::from(2u8),
+            primes: vec![],
+        }
+    }
+}
+
+impl Iterator for NaturalPrimeGenerator {
+    type Item = Natural;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        'next_loop: loop {
+            //todo: only check primes up to sqrt n
+            for p in &self.primes {
+                if &self.n % p == 0 {
+                    self.n += Natural::from(1u8);
+                    continue 'next_loop;
+                }
+            }
+            let next_p = self.n.clone();
+            self.n += Natural::from(1u8);
+            self.primes.push(next_p.clone());
+            return Some(next_p);
+        }
+    }
+}
+
 impl UniqueFactorizationDomain for IntegerRing {
     fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
         if elem == &0 {
@@ -285,7 +319,7 @@ impl FieldOfFractions for RationalField {
         Integer::from(elem.denominator_ref())
     }
 
-    fn from_base_ring(&self, elem : <Self::R as ComRing>::ElemT) -> Self::ElemT {
+    fn from_base_ring(&self, elem: <Self::R as ComRing>::ElemT) -> Self::ElemT {
         Rational::from(elem)
     }
 }
@@ -345,6 +379,26 @@ mod tests {
         let (n, d) = (QQ.numerator(&x), QQ.denominator(&x));
         assert_eq!(n, Integer::from(-22));
         assert_eq!(d, Integer::from(7));
+
+        let x = Rational::from_signeds(22, -7);
+        let (n, d) = (QQ.numerator(&x), QQ.denominator(&x));
+        assert_eq!(n, Integer::from(-22));
+        assert_eq!(d, Integer::from(7));
+
+        let x = Rational::from_signeds(22, 7);
+        let (n, d) = (QQ.numerator(&x), QQ.denominator(&x));
+        assert_eq!(n, Integer::from(22));
+        assert_eq!(d, Integer::from(7));
+
+        let x = Rational::from_signeds(-22, -7);
+        let (n, d) = (QQ.numerator(&x), QQ.denominator(&x));
+        assert_eq!(n, Integer::from(22));
+        assert_eq!(d, Integer::from(7));
+
+        let x = Rational::from_signeds(0, 1);
+        let (n, d) = (QQ.numerator(&x), QQ.denominator(&x));
+        assert_eq!(n, Integer::from(0));
+        assert_eq!(d, Integer::from(1));
     }
 
     #[test]
