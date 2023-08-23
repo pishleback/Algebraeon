@@ -44,5 +44,5 @@ fn todo() {
 fn main() {
     let mod5: EuclideanQuotient<true, _> = EuclideanQuotient::new_field(ZZ, Integer::from(31));
 
-    println!("{:?}", ZZ.nat_pow(&Integer::from(2), &Natural::from_str("100").unwrap()));
+    println!("{:?}", ZZ.nat_pow(&Integer::from(2), &Natural::from_str("1000").unwrap()));
 }

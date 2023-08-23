@@ -2,11 +2,25 @@ use malachite_nz::{integer::Integer, natural::Natural};
 
 use super::ring::*;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Ergonomic<'a, R: ComRing> {
     ring: &'a R,
     elem: R::ElemT,
 }
+
+impl<'a, R: ComRing> PartialEq for Ergonomic<'a, R> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.ring == other.ring {
+            let ans = self.ring.equal(&self.elem, &other.elem);
+            debug_assert_eq!(ans, other.ring.equal(&self.elem, &other.elem));
+            ans
+        } else {
+            false
+        }
+    }
+}
+
+impl<'a, R: ComRing> Eq for Ergonomic<'a, R> {}
 
 impl<'a, R: ComRing> Ergonomic<'a, R> {
     pub fn new(ring: &'a R, elem: R::ElemT) -> Self {

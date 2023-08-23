@@ -13,20 +13,20 @@ use super::ring::*;
 pub const ZZ_POLY: PolynomialRing<IntegerRing> = PolynomialRing { ring: &ZZ };
 pub const QQ_POLY: PolynomialRing<RationalField> = PolynomialRing { ring: &QQ };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Polynomial<ElemT: Clone + PartialEq + Eq + Hash> {
+#[derive(Debug, Clone)]
+pub struct Polynomial<ElemT: Clone> {
     //vec![c0, c1, c2, c3, ..., cn] represents the polynomial c0 + c1*x + c2*x^2 + c3*x^3 + ... + cn * x^n
     //if non-empty, the last item must not be zero
     coeffs: Vec<ElemT>,
 }
 
-impl<ElemT: Clone + PartialEq + Eq + Hash> Polynomial<ElemT> {
+impl<ElemT: Clone> Polynomial<ElemT> {
     pub fn coeffs(&self) -> Vec<ElemT> {
         self.coeffs.clone()
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PolynomialRing<'a, R: ComRing> {
     ring: &'a R,
 }
@@ -47,14 +47,14 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
             let mut s = String::new();
             let mut first = true;
             for (k, c) in poly.coeffs.iter().enumerate() {
-                if c != &self.ring.zero() {
-                    if c == &self.ring.one() {
+                if !self.ring.equal(c, &self.ring.zero()) {
+                    if self.ring.equal(c, &self.ring.one()) {
                         if k == 0 {
                             s += "1";
                         } else {
                             s += "+"
                         }
-                    } else if c == &self.ring.neg(self.ring.one()) {
+                    } else if self.ring.equal(c, &self.ring.neg(self.ring.one())) {
                         if k == 0 {
                             s += "-1";
                         } else {
@@ -80,6 +80,15 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
                 }
             }
             s
+        }
+    }
+
+    fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
+        let n = a.coeffs.len();
+        if n != b.coeffs.len() {
+            false
+        } else {
+            (0..n).all(|i| self.ring.equal(&a.coeffs[i], &b.coeffs[i]))
         }
     }
 
@@ -152,7 +161,7 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
     fn div_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
         let q_res = self.div_rref(a.clone(), b);
         match &q_res {
-            Ok(q) => debug_assert_eq!(&self.mul_refs(q, b), a),
+            Ok(q) => debug_assert!(self.equal(&self.mul_refs(q, b), a)),
             Err(_) => {}
         };
         q_res
@@ -200,7 +209,7 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
                     Err(_) => panic!(),
                 }
             }
-            if a != self.zero() {
+            if !self.equal(&a, &self.zero()) {
                 return Err(RingDivisionError::NotDivisible);
             }
             Ok(q)
@@ -217,7 +226,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         match poly.coeffs.len() {
             0 => {}
             n => {
-                if poly.coeffs[n - 1] == self.ring.zero() {
+                if self.ring.equal(&poly.coeffs[n - 1], &self.ring.zero()) {
                     return Err("polynomial coefficients must not end with a zero");
                 }
             }
@@ -230,7 +239,10 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
             if poly.coeffs.len() == 0 {
                 return;
             } else {
-                if poly.coeffs[poly.coeffs.len() - 1] == self.ring.zero() {
+                if self
+                    .ring
+                    .equal(&poly.coeffs[poly.coeffs.len() - 1], &self.ring.zero())
+                {
                     poly.coeffs.pop();
                 } else {
                     return;
@@ -280,7 +292,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
     }
 
     pub fn constant(&self, x: R::ElemT) -> Polynomial<R::ElemT> {
-        if x == self.ring.zero() {
+        if self.ring.equal(&x, &self.ring.zero()) {
             Polynomial { coeffs: vec![] }
         } else {
             Polynomial { coeffs: vec![x] }
@@ -505,13 +517,13 @@ impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
                             .unwrap();
                         (a, b) = (b, r);
 
-                        if b == self.zero() {
+                        if self.equal(&b, &self.zero()) {
                             break;
                         }
 
                         if d == 0 {
                             //can only happen in the first loop
-                            debug_assert_eq!(psi, self.ring.neg(self.ring.one()));
+                            debug_assert!(self.ring.equal(&psi, &self.ring.neg(self.ring.one())));
                             psi = self.ring.one();
                         } else {
                             psi = self
@@ -555,7 +567,7 @@ impl<'a, R: GreatestCommonDivisorDomain> PolynomialRing<'a, R> {
         &self,
         mut poly: Polynomial<R::ElemT>,
     ) -> Option<(R::ElemT, Polynomial<R::ElemT>)> {
-        if poly == self.zero() {
+        if self.equal(&poly, &self.zero()) {
             None
         } else {
             let g = self.ring.gcd_list(poly.coeffs.iter().collect());
@@ -566,8 +578,7 @@ impl<'a, R: GreatestCommonDivisorDomain> PolynomialRing<'a, R> {
         }
     }
 
-    pub fn primitive_part(&self,
-        poly: Polynomial<R::ElemT>,) -> Option<Polynomial<R::ElemT>> {
+    pub fn primitive_part(&self, poly: Polynomial<R::ElemT>) -> Option<Polynomial<R::ElemT>> {
         match self.factor_primitive(poly) {
             Some((unit, prim)) => Some(prim),
             None => None,
@@ -576,11 +587,8 @@ impl<'a, R: GreatestCommonDivisorDomain> PolynomialRing<'a, R> {
 }
 
 impl<'a, R: GreatestCommonDivisorDomain + CharacteristicZero> PolynomialRing<'a, R> {
-    pub fn primitive_squarefree_part(
-        &self,
-        f: Polynomial<R::ElemT>,
-    ) -> Polynomial<R::ElemT> {
-        if f == self.zero() {
+    pub fn primitive_squarefree_part(&self, f: Polynomial<R::ElemT>) -> Polynomial<R::ElemT> {
+        if self.equal(&f, &self.zero()) {
             f
         } else {
             let g = self.subresultant_gcd(f.clone(), self.derivative(f.clone()));
@@ -597,7 +605,7 @@ impl<'a, R: FavoriteAssociate + IntegralDomain> FavoriteAssociate for Polynomial
         &self,
         mut elem: Polynomial<R::ElemT>,
     ) -> (Polynomial<R::ElemT>, Polynomial<R::ElemT>) {
-        if elem == self.zero() {
+        if self.equal(&elem, &self.zero()) {
             (self.one(), self.zero())
         } else {
             let (u, _c) = self
@@ -629,7 +637,7 @@ impl<'a, R: IntegralDomain + FiniteUnits> FiniteUnits for PolynomialRing<'a, R> 
 
 impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
     fn norm(&self, elem: &Self::ElemT) -> Option<Natural> {
-        if elem == &self.zero() {
+        if self.equal(elem, &self.zero()) {
             None
         } else {
             Some(Natural::from(elem.coeffs.len() - 1))
@@ -647,7 +655,7 @@ impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
     fn quorem_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
         let res = self.quorem_rref(a.clone(), b);
         match &res {
-            Some((q, r)) => debug_assert_eq!(&self.add_ref(self.mul_refs(q, b), r), a),
+            Some((q, r)) => debug_assert!(self.equal(&self.add_ref(self.mul_refs(q, b), r), a)),
             None => {}
         };
         res
@@ -836,10 +844,10 @@ impl<'a, R: UniqueFactorizationDomain + GreatestCommonDivisorDomain + FiniteUnit
         //must be such that a divides c0 and b divides cn
         //so just factor c0 and cn and check all divisors
 
-        let mut linear_factors = Factored::new_unchecked(self.one(), HashMap::new());
+        let mut linear_factors = Factored::new_unchecked(self.one(), vec![]);
         'seek_linear_factor: while self.degree(&f).unwrap() > 0 {
             let c0 = self.coeff(&f, 0);
-            if c0 == self.ring.zero() {
+            if self.ring.equal(&c0, &self.ring.zero()) {
                 //linear factor of x
                 f = self.div(f, self.var()).unwrap();
                 linear_factors = Factored::mul(
@@ -896,7 +904,7 @@ impl<
         &self,
         f: Polynomial<R::ElemT>,
     ) -> Factored<Polynomial<R::ElemT>> {
-        debug_assert_ne!(f, self.zero());
+        debug_assert!(!self.equal(&f, &self.zero()));
         let f_deg = self.degree(&f).unwrap();
         if f_deg == 0 {
             debug_assert!(self.ring.is_unit(self.coeff(&f, 0)));
@@ -924,7 +932,7 @@ impl<
                 //loop terminates because polynomial over integral domain has finitely many roots
                 let x = elem_gen.next().unwrap();
                 let y = self.evaluate(&f, &x);
-                if y != self.ring.zero() {
+                if !self.ring.equal(&y, &self.ring.zero()) {
                     f_points.push((x, self.ring.factor(&y).unwrap()));
                 }
             }
@@ -990,12 +998,18 @@ impl<
         &self,
         f: &Polynomial<R::ElemT>,
     ) -> Option<Factored<Polynomial<R::ElemT>>> {
-        if f == &self.zero() {
+        if self.equal(f, &self.zero()) {
             return None;
         }
 
+        println!();
+        println!("factorize_by_kroneckers_method");
+        println!("f = {:?}", f);
         let (scalar_part, f) = self.factor_primitive(f.clone()).unwrap();
+        println!("scalar_part = {:?}", scalar_part);
+        println!("primitive_part = {:?}", f);
         let factored_scalar_part = self.ring.factor(&scalar_part).unwrap();
+        println!("factored_scalar_part = {:?}", factored_scalar_part);
         let factored_scalar_part_poly = Factored::new_unchecked(
             self.constant(factored_scalar_part.unit().clone()),
             factored_scalar_part
@@ -1010,7 +1024,7 @@ impl<
         let f_sqfree_factors = self.factorize_primitive_polynomial_by_kroneckers_method(f_sqfree);
 
         let mut f = f;
-        let mut f_factors = Factored::new_unchecked(self.one(), HashMap::new());
+        let mut f_factors = Factored::new_unchecked(self.one(), vec![]);
         for (sqfree_factor, k) in f_sqfree_factors.factors() {
             debug_assert_eq!(k, &Natural::from(1u8)); //the factorization should be squarefree
             loop {
@@ -1022,7 +1036,7 @@ impl<
                             f_factors,
                             Factored::new_unchecked(
                                 self.one(),
-                                HashMap::from([(sqfree_factor.clone(), Natural::from(1u8))]),
+                                vec![(sqfree_factor.clone(), Natural::from(1u8))],
                             ),
                         )
                     }
@@ -1188,7 +1202,7 @@ mod tests {
             coeffs: vec![Integer::from(0), Integer::from(1)],
         };
         ZZ_POLY.reduce(&mut unreduced);
-        assert_eq!(unreduced, reduced);
+        assert!(ZZ_POLY.equal(&unreduced, &reduced));
 
         let mut unreduced = Polynomial {
             coeffs: vec![
@@ -1200,7 +1214,7 @@ mod tests {
         };
         let reduced = Polynomial::<Integer> { coeffs: vec![] };
         ZZ_POLY.reduce(&mut unreduced);
-        assert_eq!(unreduced, reduced);
+        assert!(ZZ_POLY.equal(&unreduced, &reduced));
     }
 
     #[test]
@@ -1245,7 +1259,7 @@ mod tests {
         let b = (x - x) + 5;
         match ZZ_POLY.div(a.elem(), b.elem()) {
             Ok(c) => {
-                assert_eq!(c, ZZ_POLY.zero())
+                assert!(ZZ_POLY.equal(&c, &ZZ_POLY.zero()))
             }
             Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
@@ -1255,7 +1269,7 @@ mod tests {
         let b = (x - x) + 1;
         match ZZ_POLY.div(a.elem(), b.elem()) {
             Ok(c) => {
-                assert_eq!(c, a.elem())
+                assert!(ZZ_POLY.equal(&c, &a.elem()))
             }
             Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
@@ -1305,11 +1319,11 @@ mod tests {
 
             let r1 = ZZ_POLY.pseudorem_refs(&f, &g).unwrap().unwrap();
             println!("r1 = {}", ZZ_POLY.to_string(&r1));
-            assert_eq!(r1, (-15 * x.pow(4) + 3 * x.pow(2) - 9).elem());
+            assert!(ZZ_POLY.equal(&r1, &(-15 * x.pow(4) + 3 * x.pow(2) - 9).elem()));
 
             let r2 = ZZ_POLY.pseudorem_refs(&g, &r1).unwrap().unwrap();
             println!("r2 = {}", ZZ_POLY.to_string(&r2));
-            assert_eq!(r2, (15795 * x.pow(2) + 30375 * x - 59535).elem());
+            assert!(ZZ_POLY.equal(&r2, &(15795 * x.pow(2) + 30375 * x - 59535).elem()));
         }
         println!();
         {
@@ -1391,10 +1405,10 @@ mod tests {
             (Integer::from(1), Integer::from(2)),
         ]) {
             Some(f) => {
-                assert_eq!(
-                    f,
-                    ZZ_POLY.from_coeffs(vec![Integer::from(0), Integer::from(2)])
-                )
+                assert!(ZZ_POLY.equal(
+                    &f,
+                    &ZZ_POLY.from_coeffs(vec![Integer::from(0), Integer::from(2)])
+                ))
             }
             None => panic!(),
         }
@@ -1439,10 +1453,10 @@ mod tests {
             (Integer::from(1), Integer::from(2)),
         ]) {
             Some(f) => {
-                assert_eq!(
-                    f,
-                    ZZ_POLY.from_coeffs(vec![Integer::from(0), Integer::from(2)])
-                )
+                assert!(ZZ_POLY.equal(
+                    &f,
+                    &ZZ_POLY.from_coeffs(vec![Integer::from(0), Integer::from(2)])
+                ))
             }
             None => panic!(),
         }
@@ -1463,76 +1477,79 @@ mod tests {
 
         //primitive cases
         let f = ((1 + x).pow(2)).elem();
-        assert_eq!(
-            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
-            Factored::new_unchecked(
-                ZZ_POLY.one(),
-                HashMap::from([((1 + x).elem(), Natural::from(2u8))])
-            )
-        );
+        assert!(Factored::equal(
+            &ZZ_POLY,
+            &ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            &Factored::new_unchecked(ZZ_POLY.one(), vec![((1 + x).elem(), Natural::from(2u8))])
+        ));
 
         let f = (-1 - 2 * x).elem();
-        assert_eq!(
-            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
-            Factored::new_unchecked(
-                ZZ_POLY.neg(ZZ_POLY.one()),
-                HashMap::from([((1 + 2 * x).elem(), Natural::from(1u8))])
-            )
+        let fs1 = ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap();
+        let fs2 = &Factored::new_unchecked(
+            ZZ_POLY.neg(ZZ_POLY.one()),
+            vec![((1 + 2 * x).elem(), Natural::from(1u8))],
         );
+        println!("fs1={:?} fs2={:?}", fs1, fs2);
+        assert!(Factored::equal(&ZZ_POLY, &fs1, &fs2));
 
         let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).elem();
-        assert_eq!(
-            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
-            Factored::new_unchecked(
+        assert!(Factored::equal(
+            &ZZ_POLY,
+            &ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            &Factored::new_unchecked(
                 ZZ_POLY.one(),
-                HashMap::from([
+                vec![
                     ((1 + x + x.pow(2)).elem(), Natural::from(1u8)),
                     ((2 - x + x.pow(3)).elem(), Natural::from(1u8))
-                ])
+                ]
             )
-        );
+        ));
 
         let f = (1 + x + x.pow(2)).pow(2).elem();
-        assert_eq!(
-            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
-            Factored::new_unchecked(
+        assert!(Factored::equal(
+            &ZZ_POLY,
+            &ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            &Factored::new_unchecked(
                 ZZ_POLY.one(),
-                HashMap::from([((1 + x + x.pow(2)).elem(), Natural::from(2u8)),])
+                vec![((1 + x + x.pow(2)).elem(), Natural::from(2u8))]
             )
-        );
+        ));
 
         //non-primitive cases
         let f = (2 + 2 * x).elem();
-        assert_eq!(
-            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
-            Factored::new_unchecked(
+        assert!(Factored::equal(
+            &ZZ_POLY,
+            &ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            &Factored::new_unchecked(
                 ZZ_POLY.one(),
-                HashMap::from([
+                vec![
                     (ZZ_POLY.from_int(&Integer::from(2)), Natural::from(1u8)),
                     ((1 + x).elem(), Natural::from(1u8))
-                ])
+                ]
             )
-        );
+        ));
 
         let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).elem();
-        assert_eq!(
-            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
-            Factored::new_unchecked(
+        assert!(Factored::equal(
+            &ZZ_POLY,
+            &ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            &Factored::new_unchecked(
                 ZZ_POLY.one(),
-                HashMap::from([
+                vec![
                     (ZZ_POLY.from_int(&Integer::from(2)), Natural::from(2u8)),
                     (ZZ_POLY.from_int(&Integer::from(3)), Natural::from(1u8)),
                     ((2 + 3 * x).elem(), Natural::from(1u8)),
                     ((x - 1).elem(), Natural::from(2u8))
-                ])
+                ]
             )
-        );
+        ));
 
         let f = ZZ_POLY.one();
-        assert_eq!(
-            ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
-            Factored::new_unchecked(ZZ_POLY.one(), HashMap::new())
-        );
+        assert!(Factored::equal(
+            &ZZ_POLY,
+            &ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            &Factored::new_unchecked(ZZ_POLY.one(), vec![])
+        ));
     }
 
     #[test]
@@ -1540,15 +1557,15 @@ mod tests {
         let x = &Ergonomic::new(&ZZ_POLY, ZZ_POLY.var());
         let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3)).elem();
         let g = (3 - 2 * x + 21 * x.pow(2)).elem();
-        assert_eq!(ZZ_POLY.derivative(f), g);
+        assert!(ZZ_POLY.equal(&ZZ_POLY.derivative(f), &g));
 
         let f = ZZ_POLY.zero();
         let g = ZZ_POLY.zero();
-        assert_eq!(ZZ_POLY.derivative(f), g);
+        assert!(ZZ_POLY.equal(&ZZ_POLY.derivative(f), &g));
 
         let f = ZZ_POLY.one();
         let g = ZZ_POLY.zero();
-        assert_eq!(ZZ_POLY.derivative(f), g);
+        assert!(ZZ_POLY.equal(&ZZ_POLY.derivative(f), &g));
     }
 
     // #[test]
@@ -1664,25 +1681,25 @@ mod tests {
         let f =
             (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();
         let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
-        assert_eq!(
-            ZZ_POLY.subresultant_gcd(f, g),
-            ZZ_POLY.constant(Integer::from(260708))
-        );
+        assert!(ZZ_POLY.equal(
+            &ZZ_POLY.subresultant_gcd(f, g),
+            &ZZ_POLY.constant(Integer::from(260708))
+        ));
 
         let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).elem();
         let g =
             (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5).elem();
-        assert_eq!(
-            ZZ_POLY.subresultant_gcd(f, g),
-            ZZ_POLY.constant(Integer::from(260708))
-        );
+        assert!(ZZ_POLY.equal(
+            &ZZ_POLY.subresultant_gcd(f, g),
+            &ZZ_POLY.constant(Integer::from(260708))
+        ));
 
         let f = ((x + 2).pow(2) * (2 * x - 3).pow(2)).elem();
         let g = ((3 * x - 1) * (2 * x - 3).pow(2)).elem();
-        assert_eq!(
-            ZZ_POLY.subresultant_gcd(f, g),
-            (7056 - 9408 * x + 3136 * x.pow(2)).elem()
-        );
+        assert!(ZZ_POLY.equal(
+            &ZZ_POLY.subresultant_gcd(f, g),
+            &(7056 - 9408 * x + 3136 * x.pow(2)).elem()
+        ));
     }
 
     // #[test]
@@ -1713,10 +1730,10 @@ mod tests {
         ] {
             let (mul, ans) = QQ_POLY.factor_primitive_fof(&f);
             assert!(ZZ_POLY.are_associate(&ans, &exp));
-            assert_eq!(
-                QQ_POLY.mul_scalar(&ZZ_POLY.apply_map(&QQ, &ans, |c| Rational::from(c)), &mul),
-                f
-            );
+            assert!(QQ_POLY.equal(
+                &QQ_POLY.mul_scalar(&ZZ_POLY.apply_map(&QQ, &ans, |c| Rational::from(c)), &mul),
+                &f
+            ));
         }
     }
 }

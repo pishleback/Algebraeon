@@ -37,7 +37,7 @@ impl Variable {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct VariablePower {
     var: Variable,
     pow: usize,
@@ -215,31 +215,31 @@ impl Monomial {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct Term<ElemT: Clone + PartialEq + Eq> {
+#[derive(Debug, Clone)]
+pub struct Term<ElemT: Clone> {
     coeff: ElemT,
     monomial: Monomial,
 }
 
-impl<ElemT: Clone + PartialEq + Eq> Term<ElemT> {
+impl<ElemT: Clone> Term<ElemT> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         self.monomial.check_invariants()
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct MultiPolynomial<ElemT: Clone + PartialEq + Eq> {
+#[derive(Debug, Clone)]
+pub struct MultiPolynomial<ElemT: Clone> {
     terms: Vec<Term<ElemT>>, //sorted by monomial ordering
 }
 
-impl<ElemT: Clone + PartialEq + Eq> MultiPolynomial<ElemT> {
+impl<ElemT: Clone> MultiPolynomial<ElemT> {
     fn new(mut terms: Vec<Term<ElemT>>) -> Self {
         terms.sort_by(|t1, t2| Monomial::lexicographic_order(&t1.monomial, &t2.monomial));
         Self { terms }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MultiPolynomialRing<'a, R: ComRing> {
     ring: &'a R,
 }
@@ -264,6 +264,19 @@ impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
                 ans += term.monomial.to_string().as_str();
             }
             ans
+        }
+    }
+
+    fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
+        let n = a.terms.len();
+
+        if n != b.terms.len() {
+            false
+        } else {
+            (0..n).all(|i| {
+                self.ring.equal(&a.terms[i].coeff, &b.terms[i].coeff)
+                    && a.terms[i].monomial == b.terms[i].monomial
+            })
         }
     }
 
@@ -319,7 +332,7 @@ impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
         MultiPolynomial::new(
             elem.terms
                 .into_iter()
-                .filter(|term| term.coeff != self.ring.zero())
+                .filter(|term| !self.ring.equal(&term.coeff, &self.ring.zero()))
                 .collect(),
         ) //sort the coeffs
     }
@@ -349,7 +362,7 @@ impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
         MultiPolynomial::new(
             terms
                 .into_iter()
-                .filter(|(_monomial, coeff)| coeff != &self.ring.zero())
+                .filter(|(_monomial, coeff)| !self.ring.equal(coeff, &self.ring.zero()))
                 .map(|(monomial, coeff)| Term { coeff, monomial })
                 .collect(),
         )
@@ -402,15 +415,18 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
                     return Err(e);
                 }
             }
-            if term.coeff == self.ring.zero() {
+            if self.ring.equal(&term.coeff, &self.ring.zero()) {
                 return Err("coeff should not be zero");
             }
         }
-        let mut ordered_terms = poly.terms.clone();
-        ordered_terms.sort_by(|t1, t2| Monomial::lexicographic_order(&t1.monomial, &t2.monomial));
-        if poly.terms != ordered_terms {
+
+        if !(0..poly.terms.len() - 1).all(|i| {
+            Monomial::lexicographic_order(&poly.terms[i].monomial, &poly.terms[i + 1].monomial)
+                .is_le()
+        }) {
             return Err("terms are not sorted");
         }
+
         Ok(())
     }
 
@@ -432,7 +448,7 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
     }
 
     pub fn constant(&self, c: R::ElemT) -> MultiPolynomial<R::ElemT> {
-        if c == self.ring.zero() {
+        if self.ring.equal(&c, &self.ring.zero()) {
             self.zero()
         } else {
             MultiPolynomial {
@@ -492,7 +508,7 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
         poly: &MultiPolynomial<R::ElemT>,
         v: &Variable,
     ) -> MultiPolynomial<R::ElemT> {
-        if poly == &self.zero() {
+        if self.equal(poly, &self.zero()) {
             self.zero()
         } else {
             let d = self.degree(poly).unwrap();
@@ -638,7 +654,7 @@ mod tests {
         let g = ZZ_MULTIPOLY.sum(vec![x.clone(), ZZ_MULTIPOLY.neg(y.clone())]);
         match ZZ_MULTIPOLY.div_refs(&f, &g) {
             Ok(h) => {
-                assert_eq!(f, ZZ_MULTIPOLY.mul_refs(&g, &h));
+                assert!(ZZ_MULTIPOLY.equal(&f, &ZZ_MULTIPOLY.mul_refs(&g, &h)));
             }
             Err(RingDivisionError::NotDivisible) => panic!(),
             Err(RingDivisionError::DivideByZero) => panic!(),

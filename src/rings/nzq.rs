@@ -5,7 +5,7 @@ use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IntegerRing;
 pub const ZZ: IntegerRing = IntegerRing;
 
@@ -14,6 +14,10 @@ impl ComRing for IntegerRing {
 
     fn to_string(&self, elem: &Self::ElemT) -> String {
         elem.to_string()
+    }
+
+    fn equal(&self, a : &Self::ElemT, b : &Self::ElemT) -> bool {
+        a == b
     }
 
     fn zero(&self) -> Self::ElemT {
@@ -234,7 +238,7 @@ impl<'a> UniqueFactorizationDomain for PolynomialRing<'a, IntegerRing> {
 //     }
 // }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RationalField;
 pub const QQ: RationalField = RationalField;
 
@@ -243,6 +247,10 @@ impl ComRing for RationalField {
 
     fn to_string(&self, elem: &Self::ElemT) -> String {
         elem.to_string()
+    }
+
+    fn equal(&self, a : &Self::ElemT, b : &Self::ElemT) -> bool {
+        a == b
     }
 
     fn zero(&self) -> Self::ElemT {

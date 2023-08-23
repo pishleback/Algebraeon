@@ -3,8 +3,8 @@
 use std::borrow::Borrow;
 
 use super::matrix::*;
-use super::ring::*;
 use super::nzq::*;
+use super::ring::*;
 
 pub const ZZ_LINLAT: LinearLatticeStructure<IntegerRing> = LinearLatticeStructure { ring: &ZZ };
 pub const QQ_LINLAT: LinearLatticeStructure<RationalField> = LinearLatticeStructure { ring: &QQ };
@@ -84,7 +84,7 @@ fn metamatrix_row_intersection<'a, R: PrincipalIdealDomain, MetaMatT: Borrow<Mat
 }
 
 #[derive(Debug, Clone)]
-pub struct LinearLattice<ElemT: Clone + PartialEq + Eq> {
+pub struct LinearLattice<ElemT: Clone> {
     //matrix whose rows are a basis of the linear lattice
     //NOT necessarily in row hermite normal form
     metamatrix: Matrix<ElemT>,
@@ -93,7 +93,7 @@ pub struct LinearLattice<ElemT: Clone + PartialEq + Eq> {
     cols: usize,
 }
 
-impl<ElemT: Clone + PartialEq + Eq> LinearLattice<ElemT> {
+impl<ElemT: Clone> LinearLattice<ElemT> {
     pub fn rows(&self) -> usize {
         self.rows
     }
@@ -353,7 +353,7 @@ impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
 }
 
 #[derive(Debug, Clone)]
-enum AffineLatticeElements<ElemT: Clone + PartialEq + Eq> {
+enum AffineLatticeElements<ElemT: Clone> {
     Empty(),
     NonEmpty {
         offset: Matrix<ElemT>,        //offset.rows == 1 and offset.cols == self.cols
@@ -362,7 +362,7 @@ enum AffineLatticeElements<ElemT: Clone + PartialEq + Eq> {
 }
 
 #[derive(Debug, Clone)]
-pub struct AffineLattice<ElemT: Clone + PartialEq + Eq> {
+pub struct AffineLattice<ElemT: Clone> {
     rows: usize,
     cols: usize,
     elems: AffineLatticeElements<ElemT>,
@@ -659,9 +659,14 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
                             MatrixStructure::new(self.ring).row_hermite_algorithm(int_metamat);
                         MatrixStructure::new(self.ring).pprint(&int_metamat_h);
                         if self.ring.is_unit(int_metamat_h.at(0, 0).unwrap().clone()) {
-                            debug_assert_eq!(int_metamat_h.at(0, 0).unwrap(), &self.ring.one());
+                            debug_assert!(self
+                                .ring
+                                .equal(int_metamat_h.at(0, 0).unwrap(), &self.ring.one()));
                         }
-                        if int_metamat_h.at(0, 0).unwrap() == &self.ring.one() {
+                        if self
+                            .ring
+                            .equal(int_metamat_h.at(0, 0).unwrap(), &self.ring.one())
+                        {
                             let mut int_offset = MatrixStructure::new(self.ring).zero(rows, cols);
                             for idx in 0..rows * cols {
                                 let (r, c) = idx_to_rc(rows, cols, idx);
@@ -670,10 +675,10 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
                             }
                             let int_basis_mats = (0..pivs.len() - 1)
                                 .map(|bn| {
-                                    debug_assert_eq!(
+                                    debug_assert!(self.ring.equal(
                                         int_metamat_h.at(1 + bn, 0).unwrap(),
                                         &self.ring.zero()
-                                    );
+                                    ));
                                     let mut basis_mat =
                                         MatrixStructure::new(self.ring).zero(rows, cols);
                                     for idx in 0..rows * cols {

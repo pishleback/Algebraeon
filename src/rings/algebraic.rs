@@ -1,8 +1,5 @@
 #![allow(dead_code)]
 
-use std::borrow::BorrowMut;
-
-use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::NegAssign;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
@@ -753,7 +750,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         include_a: bool,
         include_b: bool,
     ) -> SquarefreePolyRealRoots {
-        assert_ne!(poly, self.zero());
+        assert!(!ZZ_POLY.equal(&poly, &self.zero()));
         //poly should be squarefree
         debug_assert_eq!(
             self.degree(&self.primitive_squarefree_part(poly.clone()))
@@ -978,7 +975,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         include_a: bool,
         include_b: bool,
     ) -> Vec<RealAlgebraicNumber> {
-        assert_ne!(poly, &self.zero());
+        assert!(!self.equal(poly, &self.zero()));
         debug_assert!(self.is_irreducible(&poly).unwrap());
 
         self.real_roots_squarefree(poly.clone(), opt_a, opt_b, include_a, include_b)
@@ -994,7 +991,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         include_a: bool,
         include_b: bool,
     ) -> Vec<RealAlgebraicNumber> {
-        assert_ne!(poly, &self.zero());
+        assert!(!self.equal(poly, &self.zero()));
         let factors = self.factor(&poly).unwrap();
         let mut roots = vec![];
         for (factor, k) in factors.factors() {
@@ -1311,11 +1308,20 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
             //     ZZ_POLY.to_string(&im),
             //     ZZ_POLY.to_string(&im_sqfr)
             // );
-            debug_assert_eq!(re == &ZZ_POLY.zero(), &re_sqfr == &ZZ_POLY.zero());
-            debug_assert_eq!(im == &ZZ_POLY.zero(), &im_sqfr == &ZZ_POLY.zero());
+            debug_assert_eq!(
+                ZZ_POLY.equal(re, &ZZ_POLY.zero()),
+                ZZ_POLY.equal(&re_sqfr, &ZZ_POLY.zero())
+            );
+            debug_assert_eq!(
+                ZZ_POLY.equal(im, &ZZ_POLY.zero()),
+                ZZ_POLY.equal(&im_sqfr, &ZZ_POLY.zero())
+            );
             //because if the real and imaginary part are both constant at 0 then poly has infinitely many complex zeros which is not possible
-            debug_assert_ne!((&re_sqfr, &im_sqfr), (&ZZ_POLY.zero(), &ZZ_POLY.zero()));
-            if &re_sqfr == &ZZ_POLY.zero() {
+            debug_assert!(
+                !ZZ_POLY.equal(&re_sqfr, &ZZ_POLY.zero())
+                    || !ZZ_POLY.equal(&im_sqfr, &ZZ_POLY.zero())
+            );
+            if ZZ_POLY.equal(&re_sqfr, &ZZ_POLY.zero()) {
                 //the image is doing a path confied to the imaginary axis
                 let roots_im = ZZ_POLY.real_roots(im, Some(s), Some(t), REVERSE, !REVERSE);
                 if roots_im.len() == 0 {
@@ -1331,7 +1337,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                     //the image crosses the real axis and hence passes through 0
                     None
                 }
-            } else if &im_sqfr == &ZZ_POLY.zero() {
+            } else if ZZ_POLY.equal(&im_sqfr, &ZZ_POLY.zero()) {
                 //the image is doing a path confied to the real axis
                 let roots_re = ZZ_POLY.real_roots(re, Some(s), Some(t), REVERSE, !REVERSE);
                 if roots_re.len() == 0 {
@@ -1662,7 +1668,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
         &self,
         poly: &Polynomial<Integer>,
     ) -> Vec<ComplexAlgebraicNumber> {
-        debug_assert_ne!(poly, &self.zero());
+        debug_assert!(!ZZ_POLY.equal(poly, &self.zero()));
         debug_assert!(ZZ_POLY.is_irreducible(poly).unwrap());
         let deg = ZZ_POLY.degree(poly).unwrap();
 
@@ -1747,7 +1753,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
     }
 
     pub fn all_complex_roots(&self, poly: &Polynomial<Integer>) -> Vec<ComplexAlgebraicNumber> {
-        assert_ne!(poly, &self.zero());
+        assert!(!ZZ_POLY.equal(poly, &self.zero()));
         let factors = self.factor(&poly).unwrap();
         let mut roots = vec![];
         for (factor, k) in factors.factors() {
@@ -1763,7 +1769,7 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
     }
 }
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone)]
 pub struct RealAlgebraicRoot {
     poly: Polynomial<Integer>, //a primitive irreducible polynomial of degree >= 2 with a unique real root between a and b
     //an arbitrarily small interval containing the root. May be mutated
@@ -1784,11 +1790,12 @@ impl RealAlgebraicRoot {
         if !(self.wide_a.clone() < self.wide_b.clone()) {
             return Err("wide a should be strictly less than b");
         }
-        if self.poly
-            != ZZ_POLY
+        if !ZZ_POLY.equal(
+            &self.poly,
+            &ZZ_POLY
                 .factor_fav_assoc(ZZ_POLY.primitive_squarefree_part(self.poly.clone()))
-                .1
-        {
+                .1,
+        ) {
             return Err("poly should be primitive and favoriate associate");
         }
         match ZZ_POLY.is_irreducible(&self.poly) {
@@ -1864,7 +1871,7 @@ impl RealAlgebraicRoot {
     }
 
     pub fn cmp_mut(&mut self, other: &mut Self) -> std::cmp::Ordering {
-        let polys_are_eq = self.poly == other.poly; //polys should be irreducible primitive fav-assoc so this is valid
+        let polys_are_eq = ZZ_POLY.equal(&self.poly, &other.poly); //polys should be irreducible primitive fav-assoc so this is valid
         loop {
             //test for equality: if the tight bounds on one are within the wide bounds of the other
             if polys_are_eq {
@@ -1910,10 +1917,10 @@ impl RealAlgebraicRoot {
             &self.poly,
             &ZZ_POLY.from_coeffs(vec![Integer::from(0), Integer::from(-1)]),
         ));
-        if unit == ZZ_POLY.one() {
+        if ZZ_POLY.equal(&unit, &ZZ_POLY.one()) {
             self.poly = fav_assoc;
             self.dir = !self.dir;
-        } else if unit == ZZ_POLY.neg(ZZ_POLY.one()) {
+        } else if ZZ_POLY.equal(&unit, &ZZ_POLY.neg(ZZ_POLY.one())) {
             self.poly = fav_assoc;
         } else {
             panic!();
@@ -1948,7 +1955,7 @@ impl ToString for RealAlgebraicRoot {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct ComplexAlgebraicRoot {
     tight_a: Rational, //tight lower bound for the real part
     tight_b: Rational, //tight upper bound for the real part
@@ -1992,8 +1999,7 @@ impl ComplexAlgebraicRoot {
             &self.tight_c,
             &self.tight_d,
         ) {
-            Some(1) => {
-            }
+            Some(1) => {}
             Some(_) => {
                 return Err("should contain exactly 1 root with none on the boundary");
             }
@@ -2050,7 +2056,7 @@ impl ComplexAlgebraicRoot {
     }
 }
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone)]
 pub enum RealAlgebraicNumber {
     Rational(Rational),
     Real(RealAlgebraicRoot),
@@ -2108,7 +2114,8 @@ impl Ord for RealAlgebraicNumber {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
+// #[derive(Debug, Clone, PartialEq, Eq)] //todo: this
 pub enum ComplexAlgebraicNumber {
     Real(RealAlgebraicNumber),
     Complex(ComplexAlgebraicRoot),
@@ -2134,7 +2141,7 @@ impl ComplexAlgebraicNumber {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RealAlgebraicField {}
 
 impl ComRing for RealAlgebraicField {
@@ -2145,6 +2152,10 @@ impl ComRing for RealAlgebraicField {
             RealAlgebraicNumber::Rational(a) => a.to_string(),
             RealAlgebraicNumber::Real(a) => a.to_string(),
         }
+    }
+
+    fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
+        a == b
     }
 
     fn zero(&self) -> Self::ElemT {
@@ -2461,10 +2472,10 @@ impl ComRing for RealAlgebraicField {
                     let (unit, fav_assoc) = ZZ_POLY.factor_fav_assoc(
                         ZZ_POLY.from_coeffs(root.poly.coeffs().into_iter().rev().collect()),
                     );
-                    if unit == ZZ_POLY.one() {
+                    if ZZ_POLY.equal(&unit, &ZZ_POLY.one()) {
                         root.poly = fav_assoc;
                         root.dir = !root.dir;
-                    } else if unit == ZZ_POLY.neg(ZZ_POLY.one()) {
+                    } else if ZZ_POLY.equal(&unit, &ZZ_POLY.neg(ZZ_POLY.one())) {
                         root.poly = fav_assoc;
                     } else {
                         panic!();
@@ -2482,7 +2493,7 @@ impl IntegralDomain for RealAlgebraicField {}
 
 impl Field for RealAlgebraicField {}
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComplexAlgebraicField {}
 
 impl ComRing for ComplexAlgebraicField {
@@ -2493,6 +2504,11 @@ impl ComRing for ComplexAlgebraicField {
             ComplexAlgebraicNumber::Real(a) => RealAlgebraicField {}.to_string(a),
             ComplexAlgebraicNumber::Complex(a) => todo!(),
         }
+    }
+
+    fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
+        todo!()
+        // a == b //impl eq for complex roots
     }
 
     fn zero(&self) -> Self::ElemT {
@@ -3049,76 +3065,76 @@ mod tests {
         // f(2 + xi) = (2 + xi)^3 + 3(2 + xi) - 1
         //           = 8 + 12xi - 6x^2 - x^3i + 6 + 3xi - 1
         //           = 13 + 15ix - 6x^2 - ix^3
-        debug_assert_eq!(
-            vert_re_f,
-            ZZ_POLY.from_coeffs(vec![Integer::from(13), Integer::from(0), Integer::from(-6)])
-        );
-        debug_assert_eq!(
-            vert_im_f,
-            ZZ_POLY.from_coeffs(vec![
+        debug_assert!(ZZ_POLY.equal(
+            &vert_re_f,
+            &ZZ_POLY.from_coeffs(vec![Integer::from(13), Integer::from(0), Integer::from(-6)])
+        ));
+        debug_assert!(ZZ_POLY.equal(
+            &vert_im_f,
+            &ZZ_POLY.from_coeffs(vec![
                 Integer::from(0),
                 Integer::from(15),
                 Integer::from(0),
                 Integer::from(-1)
             ])
-        );
+        ));
 
         let (vert_re_f, vert_im_f) = ZZ_POLY.at_fixed_re(&f, &Rational::from_signeds(1, 2));
         println!("re = {}", ZZ_POLY.to_string(&vert_re_f));
         println!("im = {}", ZZ_POLY.to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
         // f(1/2 + xi) = 5 + 30ix - 12x^2 - 8ix^3
-        debug_assert_eq!(
-            vert_re_f,
-            ZZ_POLY.from_coeffs(vec![Integer::from(5), Integer::from(0), Integer::from(-12)])
-        );
-        debug_assert_eq!(
-            vert_im_f,
-            ZZ_POLY.from_coeffs(vec![
+        debug_assert!(ZZ_POLY.equal(
+            &vert_re_f,
+            &ZZ_POLY.from_coeffs(vec![Integer::from(5), Integer::from(0), Integer::from(-12)])
+        ));
+        debug_assert!(ZZ_POLY.equal(
+            &vert_im_f,
+            &ZZ_POLY.from_coeffs(vec![
                 Integer::from(0),
                 Integer::from(30),
                 Integer::from(0),
                 Integer::from(-8)
             ])
-        );
+        ));
 
         let (vert_re_f, vert_im_f) = ZZ_POLY.at_fixed_im(&f, &Rational::from(2));
         println!("re = {}", ZZ_POLY.to_string(&vert_re_f));
         println!("im = {}", ZZ_POLY.to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
         // f(x + 2i) = -1 -2i -9x + 6ix^2 + x^3
-        debug_assert_eq!(
-            vert_re_f,
-            ZZ_POLY.from_coeffs(vec![
+        debug_assert!(ZZ_POLY.equal(
+            &vert_re_f,
+            &ZZ_POLY.from_coeffs(vec![
                 Integer::from(-1),
                 Integer::from(-9),
                 Integer::from(0),
                 Integer::from(1)
             ])
-        );
-        debug_assert_eq!(
-            vert_im_f,
-            ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(6),])
-        );
+        ));
+        debug_assert!(ZZ_POLY.equal(
+            &vert_im_f,
+            &ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(6),])
+        ));
 
         let (vert_re_f, vert_im_f) = ZZ_POLY.at_fixed_im(&f, &Rational::from_signeds(1, 2));
         println!("re = {}", ZZ_POLY.to_string(&vert_re_f));
         println!("im = {}", ZZ_POLY.to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
         // f(x + 1/2i) = -8 +11i + 18x + 12ix^2 + 8x^3
-        debug_assert_eq!(
-            vert_re_f,
-            ZZ_POLY.from_coeffs(vec![
+        debug_assert!(ZZ_POLY.equal(
+            &vert_re_f,
+            &ZZ_POLY.from_coeffs(vec![
                 Integer::from(-8),
                 Integer::from(18),
                 Integer::from(0),
                 Integer::from(8)
             ])
-        );
-        debug_assert_eq!(
-            vert_im_f,
-            ZZ_POLY.from_coeffs(vec![Integer::from(11), Integer::from(0), Integer::from(12)])
-        );
+        ));
+        debug_assert!(ZZ_POLY.equal(
+            &vert_im_f,
+            &ZZ_POLY.from_coeffs(vec![Integer::from(11), Integer::from(0), Integer::from(12)])
+        ));
     }
 
     #[test]

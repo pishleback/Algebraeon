@@ -293,9 +293,26 @@ impl<'a, R: ComRing> MatrixStructure<'a, R> {
             }
         })
     }
-}
 
-impl<'a, R: ComRing> MatrixStructure<'a, R> {
+    pub fn equal(&self, a: &Matrix<R::ElemT>, b: &Matrix<R::ElemT>) -> bool {
+        let rows = a.rows();
+        let cols = a.cols();
+        if rows != b.rows() {
+            false
+        } else if cols != b.cols() {
+            false
+        } else {
+            for c in 0..cols {
+                for r in 0..rows {
+                    if !self.ring.equal(a.at(r, c).unwrap(), b.at(r, c).unwrap()) {
+                        return false;
+                    }
+                }
+            }
+            true
+        }
+    }
+
     pub fn add_mut(&self, a: &mut Matrix<R::ElemT>, b: &Matrix<R::ElemT>) -> Result<(), MatOppErr> {
         if a.rows() != b.rows() || a.cols() != b.cols() {
             Err(MatOppErr::DimMissmatch)
@@ -679,9 +696,9 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
         let (g, taps) = self.ring.xgcd_list(first_coords);
 
         if self.ring.is_unit(g.clone()) {
-            debug_assert_eq!(g, self.ring.one());
+            debug_assert!(self.ring.equal(&g, &self.ring.one()));
         }
-        if g == self.ring.one() {
+        if self.ring.equal(&g, &self.ring.one()) {
             //there is a solution
             //it is given by -(sum(taps * col_ker.basis)) with the first coordinate (equal to 1) removed
             let mut ext_ans = self.zero(m.cols() + 1, 1);
@@ -695,9 +712,9 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                 )
                 .unwrap();
             }
-            debug_assert_eq!(ext_ans.at(0, 0).unwrap(), &self.ring.one());
+            debug_assert!(self.ring.equal(ext_ans.at(0, 0).unwrap(), &self.ring.one()));
             let x = self.neg(ext_ans.submatrix((1..ext_ans.rows()).collect(), vec![0]));
-            debug_assert_eq!(&self.mul_refs(m, &x).unwrap(), y.borrow());
+            debug_assert!(self.equal(&self.mul_refs(m, &x).unwrap(), y.borrow()));
             Some(x)
         } else {
             None //there is no solution
@@ -762,7 +779,7 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                 }
 
                 for r in pr..m.rows() {
-                    if m.at(r, pc).unwrap() != &self.ring.zero() {
+                    if !self.ring.equal(m.at(r, pc).unwrap(), &self.ring.zero()) {
                         break 'next_pivot_loop;
                     }
                 }
@@ -777,13 +794,16 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                     let a = m.at(pr, pc).unwrap();
                     let b = m.at(r, pc).unwrap();
                     //if a=0 and b=0 there is nothing to do. The reduction step would fail because d=0 and we divide by d, so just skip it in this case
-                    if a != &self.ring.zero() || b != &self.ring.zero() {
+                    if !self.ring.equal(a, &self.ring.zero())
+                        || !self.ring.equal(b, &self.ring.zero())
+                    {
                         let (d, x, y) = self.ring.xgcd(a.clone(), b.clone());
-                        debug_assert_eq!(
-                            self.ring
+                        debug_assert!(self.ring.equal(
+                            &self
+                                .ring
                                 .add(self.ring.mul_refs(&x, a), self.ring.mul_refs(&y, b)),
-                            d
-                        );
+                            &d
+                        ));
                         // perform the following row opps on self
                         // / x  -b/d \
                         // \ y   a/d /
@@ -823,13 +843,13 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
 
             //should have eliminated everything below the pivot
             for r in pr + 1..m.rows() {
-                debug_assert_eq!(m.at(r, pc).unwrap(), &self.ring.zero());
+                debug_assert!(self.ring.equal(m.at(r, pc).unwrap(), &self.ring.zero()));
             }
             pr += 1;
         }
 
         if m.rows() <= 4 {
-            debug_assert_eq!(self.det_naive(&u).unwrap(), u_det);
+            debug_assert!(self.ring.equal(&self.det_naive(&u).unwrap(), &u_det));
         }
 
         (m, u, u_det, pivs)
@@ -876,10 +896,10 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
             //search for a non-zero element to make the new starting point for (n, n)
             //having a non-zero element is necessary later in the algorithm
             'search_for_nonzero_element: {
-                if m.at(n, n).unwrap() == &self.ring.zero() {
+                if self.ring.equal(m.at(n, n).unwrap(), &self.ring.zero()) {
                     //search the first row to start with
                     for c in n + 1..m.cols() {
-                        if m.at(n, c).unwrap() != &self.ring.zero() {
+                        if !self.ring.equal(m.at(n, c).unwrap(), &self.ring.zero()) {
                             //swap column n and column c
                             let col_opp = ElementaryOpp::new_col_opp(
                                 self.ring,
@@ -894,7 +914,7 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                     //search all the rows below row n
                     for r in n + 1..m.rows() {
                         for c in n..m.cols() {
-                            if m.at(r, c).unwrap() != &self.ring.zero() {
+                            if !self.ring.equal(m.at(r, c).unwrap(), &self.ring.zero()) {
                                 //swap column n and column c
                                 let col_opp = ElementaryOpp::new_col_opp(
                                     self.ring,
@@ -960,11 +980,12 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                             //b is not a multiple of a
                             //replace (a, b) with (gcd, 0)
                             let (d, x, y) = self.ring.xgcd(a.clone(), b.clone());
-                            debug_assert_eq!(
-                                self.ring
+                            debug_assert!(self.ring.equal(
+                                &self
+                                    .ring
                                     .add(self.ring.mul_refs(&x, a), self.ring.mul_refs(&y, b)),
-                                d
-                            );
+                                &d
+                            ));
                             let col_opp = ElementaryOpp::new_col_opp(
                                 self.ring,
                                 ElementaryOppType::TwoInv {
@@ -1021,11 +1042,12 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                             //b is not a multiple of a
                             //replace (a, b) with (gcd, 0)
                             let (d, x, y) = self.ring.xgcd(a.clone(), b.clone());
-                            debug_assert_eq!(
-                                self.ring
+                            debug_assert!(self.ring.equal(
+                                &self
+                                    .ring
                                     .add(self.ring.mul_refs(&x, a), self.ring.mul_refs(&y, b)),
-                                d
-                            );
+                                &d
+                            ));
                             let row_opp = ElementaryOpp::new_row_opp(
                                 self.ring,
                                 ElementaryOppType::TwoInv {
@@ -1057,7 +1079,7 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                 }
             }
             //now the first row and the first column are all zero except the top left element at (n, n) which is non-zero
-            debug_assert_ne!(m.at(n, n).unwrap(), &self.ring.zero());
+            debug_assert!(!self.ring.equal(m.at(n, n).unwrap(), &self.ring.zero()));
             //some more fiddling is needed now to make the top left element divides everything else
             for r in n + 1..m.rows() {
                 //row(n) = row(n) + row(r)
@@ -1080,11 +1102,12 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                     //b might not be a multiple of a
                     //replace (a, b) with (gcd, 0) to fix this
                     let (g, x, y) = self.ring.xgcd(a.clone(), b.clone());
-                    debug_assert_eq!(
-                        self.ring
+                    debug_assert!(self.ring.equal(
+                        &self
+                            .ring
                             .add(self.ring.mul_refs(&x, a), self.ring.mul_refs(&y, b)),
-                        g
-                    );
+                        &g
+                    ));
                     let col_opp = ElementaryOpp::new_col_opp(
                         self.ring,
                         ElementaryOppType::TwoInv {
@@ -1118,7 +1141,7 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                 }
             }
 
-            if m.at(n, n).unwrap() == &self.ring.zero() {
+            if self.ring.equal(m.at(n, n).unwrap(), &self.ring.zero()) {
                 //the bottom right submatrix is all zero
                 break 'inductive_loop;
             }
@@ -1243,16 +1266,10 @@ mod tests {
 
     #[test]
     fn test_join_rows() {
-        let top = Matrix::from_rows(vec![vec![
-            Integer::from(1),
-            Integer::from(2),
-            Integer::from(3),
-        ],
-        vec![
-            Integer::from(4),
-            Integer::from(5),
-            Integer::from(6),
-        ]]);
+        let top = Matrix::from_rows(vec![
+            vec![Integer::from(1), Integer::from(2), Integer::from(3)],
+            vec![Integer::from(4), Integer::from(5), Integer::from(6)],
+        ]);
         let bot = Matrix::from_rows(vec![vec![
             Integer::from(7),
             Integer::from(8),
@@ -2031,23 +2048,23 @@ mod tests {
             ]);
             let min_p = QQ_MAT.minimal_polynomial(a.clone()).unwrap();
             let char_p = QQ_MAT.characteristic_polynomial(a.clone()).unwrap();
-            assert_eq!(
-                min_p,
-                QQ_POLY.from_coeffs(vec![
+            assert!(QQ_POLY.equal(
+                &min_p,
+                &QQ_POLY.from_coeffs(vec![
                     Rational::from(0),
                     Rational::from(0),
                     Rational::from(1)
                 ])
-            );
-            assert_eq!(
-                char_p,
-                QQ_POLY.from_coeffs(vec![
+            ));
+            assert!(QQ_POLY.equal(
+                &char_p,
+                &QQ_POLY.from_coeffs(vec![
                     Rational::from(0),
                     Rational::from(0),
                     Rational::from(0),
                     Rational::from(1)
                 ])
-            );
+            ));
         }
     }
 
