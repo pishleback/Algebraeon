@@ -502,7 +502,7 @@ pub trait UniqueFactorizationDomain: FavoriteAssociate {
 
 pub trait PrincipalIdealDomain: GreatestCommonDivisorDomain {
     //any gcds should be the standard associate representative
-    fn xgcd(&self, x: Self::ElemT, y: Self::ElemT) -> (Self::ElemT, Self::ElemT, Self::ElemT);
+    fn xgcd(&self, a: Self::ElemT, b: Self::ElemT) -> (Self::ElemT, Self::ElemT, Self::ElemT); //(g, x, y) s.t. g = ax + by
     fn xgcd_list(&self, elems: Vec<&Self::ElemT>) -> (Self::ElemT, Vec<Self::ElemT>) {
         match elems.len() {
             0 => (self.zero(), vec![]),
@@ -612,7 +612,8 @@ impl<R: EuclideanDomain + FavoriteAssociate> PrincipalIdealDomain for R {
         &self,
         mut x: Self::ElemT,
         mut y: Self::ElemT,
-    ) -> (Self::ElemT, Self::ElemT, Self::ElemT) {
+    ) -> (Self::ElemT, Self::ElemT, Self::ElemT) //return (g, a, b)
+    {
         let mut pa = self.one();
         let mut a = self.zero();
         let mut pb = self.zero();
@@ -676,7 +677,7 @@ impl<ED: EuclideanDomain + UniqueFactorizationDomain> EuclideanQuotient<false, E
 }
 
 impl<ED: EuclideanDomain + UniqueFactorizationDomain> EuclideanQuotient<true, ED> {
-    pub fn new_field(ed: ED, n: ED::ElemT) -> Self {
+    pub fn new_field_unchecked(ed: ED, n: ED::ElemT) -> Self {
         Self { ed, n }
     }
 }
@@ -745,7 +746,19 @@ impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> ComR
     }
 
     fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        todo!();
+        if self.equal(&b, &self.zero()) {
+            Err(RingDivisionError::DivideByZero)
+        } else {
+            let (g, _x, y) = self.ed.xgcd(self.n.clone(), b);
+            //g = xn + yb  so   g = yb mod n
+            //if z = a/g works then
+            //zyb = a mod n
+            match self.ed.div(a, g) {
+                Ok(z) => Ok(self.mul(z, y)),
+                Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+                Err(RingDivisionError::DivideByZero) => panic!(),
+            }
+        }
     }
 }
 
