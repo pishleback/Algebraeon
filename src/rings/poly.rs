@@ -54,12 +54,12 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
                         } else {
                             s += "+"
                         }
-                    } else if self.ring.equal(c, &self.ring.neg(self.ring.one())) {
-                        if k == 0 {
-                            s += "-1";
-                        } else {
-                            s += "-"
-                        }
+                    // } else if self.ring.equal(c, &self.ring.neg(self.ring.one())) {
+                    //     if k == 0 {
+                    //         s += "-1";
+                    //     } else {
+                    //         s += "-"
+                    //     }
                     } else {
                         if !first {
                             s += "+";
