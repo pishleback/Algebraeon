@@ -42,18 +42,28 @@ fn todo() {
 }
 
 fn main() {
-    let modn = EuclideanQuotient::new_ring(ZZ, Integer::from(100));
+    let modn = EuclideanQuotient::new_field_unchecked(ZZ, Integer::from(5));
 
-    println!("{:?}", modn.div_refs(&Integer::from(75), &Integer::from(85)));
+    println!("{:?}", modn.all_units());
 
     let poly_modn = PolynomialRing::new(&modn);
 
     let f = poly_modn.from_coeffs(vec![Integer::from(-2), Integer::from(3), Integer::from(4)]);
     let g = poly_modn.from_coeffs(vec![Integer::from(1), Integer::from(4), Integer::from(6)]);
+    let h = poly_modn.from_coeffs(vec![
+        Integer::from(1),
+        Integer::from(4),
+        Integer::from(6),
+        Integer::from(1),
+    ]);
 
     println!("f = {}", poly_modn.to_string(&f));
     println!("g = {}", poly_modn.to_string(&g));
-
-    let h = poly_modn.add_refs(&f, &g);
     println!("h = {}", poly_modn.to_string(&h));
+
+    let k = poly_modn.product(vec![f, g, h]);
+    println!("k = {}", poly_modn.to_string(&k));
+
+    let fs = poly_modn.factorize_by_trying_all_factors(k);
+    println!("{:?}", fs);
 }

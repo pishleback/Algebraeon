@@ -16,7 +16,7 @@ impl ComRing for IntegerRing {
         elem.to_string()
     }
 
-    fn equal(&self, a : &Self::ElemT, b : &Self::ElemT) -> bool {
+    fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
         a == b
     }
 
@@ -249,7 +249,7 @@ impl ComRing for RationalField {
         elem.to_string()
     }
 
-    fn equal(&self, a : &Self::ElemT, b : &Self::ElemT) -> bool {
+    fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
         a == b
     }
 
@@ -329,6 +329,18 @@ impl FieldOfFractions for RationalField {
 
     fn from_base_ring(&self, elem: <Self::R as ComRing>::ElemT) -> Self::ElemT {
         Rational::from(elem)
+    }
+}
+
+impl FiniteUnits for EuclideanQuotient<true, IntegerRing> {
+    fn all_units(&self) -> Vec<Self::ElemT> {
+        let mut units = vec![];
+        let mut u = self.one();
+        while u < self.get_n() {
+            units.push(u.clone());
+            u += self.one();
+        }
+        units
     }
 }
 

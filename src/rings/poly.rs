@@ -92,23 +92,23 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
         }
     }
 
-    fn zero(&self) -> Polynomial<R::ElemT> {
+    fn zero(&self) -> <Self as ComRing>::ElemT {
         Polynomial { coeffs: vec![] }
     }
 
-    fn one(&self) -> Polynomial<R::ElemT> {
+    fn one(&self) -> <Self as ComRing>::ElemT {
         Polynomial {
             coeffs: vec![self.ring.one()],
         }
     }
 
-    fn neg_mut(&self, poly: &mut Polynomial<R::ElemT>) {
+    fn neg_mut(&self, poly: &mut <Self as ComRing>::ElemT) {
         for coeff in &mut poly.coeffs {
             self.ring.neg_mut(coeff);
         }
     }
 
-    fn neg_ref(&self, poly: &Polynomial<R::ElemT>) -> Self::ElemT {
+    fn neg_ref(&self, poly: &<Self as ComRing>::ElemT) -> Self::ElemT {
         self.neg(poly.clone())
     }
 
@@ -222,7 +222,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         self.ring
     }
 
-    fn check_invariants(&self, poly: Polynomial<R::ElemT>) -> Result<(), &'static str> {
+    fn check_invariants(&self, poly: <Self as ComRing>::ElemT) -> Result<(), &'static str> {
         match poly.coeffs.len() {
             0 => {}
             n => {
@@ -234,7 +234,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         Ok(())
     }
 
-    fn reduce(&self, poly: &mut Polynomial<R::ElemT>) {
+    fn reduce(&self, poly: &mut <Self as ComRing>::ElemT) {
         loop {
             if poly.coeffs.len() == 0 {
                 return;
@@ -254,7 +254,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
     pub fn apply_map<S: ComRing>(
         &self,
         new_ring: &S,
-        poly: &Polynomial<R::ElemT>,
+        poly: &<Self as ComRing>::ElemT,
         f: impl Fn(&R::ElemT) -> S::ElemT,
     ) -> Polynomial<S::ElemT> {
         PolynomialRing::new(new_ring).from_coeffs(poly.coeffs.iter().map(f).collect())
@@ -263,7 +263,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
     pub fn apply_map_with_powers<S: ComRing>(
         &self,
         new_ring: &S,
-        poly: &Polynomial<R::ElemT>,
+        poly: &<Self as ComRing>::ElemT,
         f: impl Fn((usize, &R::ElemT)) -> S::ElemT,
     ) -> Polynomial<S::ElemT> {
         PolynomialRing::new(new_ring).from_coeffs(poly.coeffs.iter().enumerate().map(f).collect())
@@ -272,26 +272,26 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
     //find p(q(x))
     pub fn compose(
         &self,
-        p: &Polynomial<R::ElemT>,
-        q: &Polynomial<R::ElemT>,
-    ) -> Polynomial<R::ElemT> {
+        p: &<Self as ComRing>::ElemT,
+        q: &<Self as ComRing>::ElemT,
+    ) -> <Self as ComRing>::ElemT {
         let pp_ring = PolynomialRing::new(self);
         pp_ring.evaluate(&self.apply_map(self, p, |c| self.constant(c.clone())), q)
     }
 
     //if n = deg(p)
     //return x^n * p(1/x)
-    pub fn reversed(&self, poly: &Polynomial<R::ElemT>) -> Polynomial<R::ElemT> {
+    pub fn reversed(&self, poly: &<Self as ComRing>::ElemT) -> <Self as ComRing>::ElemT {
         self.from_coeffs(poly.coeffs.clone().into_iter().rev().collect())
     }
 
-    pub fn from_coeffs(&self, coeffs: Vec<R::ElemT>) -> Polynomial<R::ElemT> {
+    pub fn from_coeffs(&self, coeffs: Vec<R::ElemT>) -> <Self as ComRing>::ElemT {
         let mut p = Polynomial { coeffs };
         self.reduce(&mut p);
         p
     }
 
-    pub fn constant(&self, x: R::ElemT) -> Polynomial<R::ElemT> {
+    pub fn constant(&self, x: R::ElemT) -> <Self as ComRing>::ElemT {
         if self.ring.equal(&x, &self.ring.zero()) {
             Polynomial { coeffs: vec![] }
         } else {
@@ -299,7 +299,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         }
     }
 
-    pub fn constant_var_pow(&self, x: R::ElemT, n: usize) -> Polynomial<R::ElemT> {
+    pub fn constant_var_pow(&self, x: R::ElemT, n: usize) -> <Self as ComRing>::ElemT {
         Polynomial {
             coeffs: (0..n + 1)
                 .map(|i| if i < n { self.ring.zero() } else { x.clone() })
@@ -307,13 +307,13 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         }
     }
 
-    pub fn var(&self) -> Polynomial<R::ElemT> {
+    pub fn var(&self) -> <Self as ComRing>::ElemT {
         Polynomial {
             coeffs: vec![self.ring.zero(), self.ring.one()],
         }
     }
 
-    pub fn var_pow(&self, n: usize) -> Polynomial<R::ElemT> {
+    pub fn var_pow(&self, n: usize) -> <Self as ComRing>::ElemT {
         Polynomial {
             coeffs: (0..n + 1)
                 .map(|i| {
@@ -327,7 +327,11 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         }
     }
 
-    pub fn mul_var_pow(&self, poly: &Polynomial<R::ElemT>, n: usize) -> Polynomial<R::ElemT> {
+    pub fn mul_var_pow(
+        &self,
+        poly: &<Self as ComRing>::ElemT,
+        n: usize,
+    ) -> <Self as ComRing>::ElemT {
         let mut coeffs = vec![];
         for _i in 0..n {
             coeffs.push(self.ring.zero());
@@ -338,7 +342,11 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         Polynomial { coeffs }
     }
 
-    pub fn mul_scalar(&self, poly: &Polynomial<R::ElemT>, x: &R::ElemT) -> Polynomial<R::ElemT> {
+    pub fn mul_scalar(
+        &self,
+        poly: &<Self as ComRing>::ElemT,
+        x: &R::ElemT,
+    ) -> <Self as ComRing>::ElemT {
         let mut ans = Polynomial {
             coeffs: poly
                 .coeffs
@@ -351,7 +359,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
     }
 
     //getting stuff
-    pub fn coeff(&self, poly: &Polynomial<R::ElemT>, i: usize) -> R::ElemT {
+    pub fn coeff(&self, poly: &<Self as ComRing>::ElemT, i: usize) -> R::ElemT {
         if i < poly.coeffs.len() {
             poly.coeffs[i].clone()
         } else {
@@ -364,7 +372,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
     //linear -> 1
     //quadratic -> 2
     //etc.
-    pub fn degree(&self, poly: &Polynomial<R::ElemT>) -> Option<usize> {
+    pub fn degree(&self, poly: &<Self as ComRing>::ElemT) -> Option<usize> {
         if poly.coeffs.len() == 0 {
             None
         } else {
@@ -372,7 +380,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         }
     }
 
-    pub fn as_constant(&self, poly: &Polynomial<R::ElemT>) -> Option<R::ElemT> {
+    pub fn as_constant(&self, poly: &<Self as ComRing>::ElemT) -> Option<R::ElemT> {
         if poly.coeffs.len() == 0 {
             Some(self.ring.zero())
         } else if poly.coeffs.len() == 1 {
@@ -382,7 +390,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         }
     }
 
-    pub fn evaluate(&self, poly: &Polynomial<R::ElemT>, x: &R::ElemT) -> R::ElemT {
+    pub fn evaluate(&self, poly: &<Self as ComRing>::ElemT, x: &R::ElemT) -> R::ElemT {
         // f(x) = a + bx + cx^2 + dx^3
         // evaluate as f(x) = a + x(b + x(c + x(d)))
         let mut y = self.ring.zero();
@@ -393,7 +401,7 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
         y
     }
 
-    pub fn derivative(&self, mut poly: Polynomial<R::ElemT>) -> Polynomial<R::ElemT> {
+    pub fn derivative(&self, mut poly: <Self as ComRing>::ElemT) -> <Self as ComRing>::ElemT {
         if poly.coeffs.len() > 0 {
             for i in 0..poly.coeffs.len() - 1 {
                 poly.coeffs[i] = poly.coeffs[i + 1].clone();
@@ -411,25 +419,25 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
 impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
     pub fn pseudorem(
         &self,
-        a: Polynomial<R::ElemT>,
-        b: Polynomial<R::ElemT>,
-    ) -> Option<Result<Polynomial<R::ElemT>, &'static str>> {
+        a: <Self as ComRing>::ElemT,
+        b: <Self as ComRing>::ElemT,
+    ) -> Option<Result<<Self as ComRing>::ElemT, &'static str>> {
         self.pseudorem_rref(a, &b)
     }
 
     pub fn pseudorem_lref(
         &self,
-        a: &Polynomial<R::ElemT>,
-        b: Polynomial<R::ElemT>,
-    ) -> Option<Result<Polynomial<R::ElemT>, &'static str>> {
+        a: &<Self as ComRing>::ElemT,
+        b: <Self as ComRing>::ElemT,
+    ) -> Option<Result<<Self as ComRing>::ElemT, &'static str>> {
         self.pseudorem_refs(a, &b)
     }
 
     pub fn pseudorem_refs(
         &self,
-        a: &Polynomial<R::ElemT>,
-        b: &Polynomial<R::ElemT>,
-    ) -> Option<Result<Polynomial<R::ElemT>, &'static str>> {
+        a: &<Self as ComRing>::ElemT,
+        b: &<Self as ComRing>::ElemT,
+    ) -> Option<Result<<Self as ComRing>::ElemT, &'static str>> {
         self.pseudorem_rref(a.clone(), b)
     }
 
@@ -437,9 +445,9 @@ impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
     //error if deg(a) < deg(b)
     pub fn pseudorem_rref(
         &self,
-        mut a: Polynomial<R::ElemT>,
-        b: &Polynomial<R::ElemT>,
-    ) -> Option<Result<Polynomial<R::ElemT>, &'static str>> {
+        mut a: <Self as ComRing>::ElemT,
+        b: &<Self as ComRing>::ElemT,
+    ) -> Option<Result<<Self as ComRing>::ElemT, &'static str>> {
         let m = a.coeffs.len();
         let n = b.coeffs.len();
 
@@ -832,6 +840,43 @@ impl<'a, R: PrincipalIdealDomain> PolynomialRing<'a, R> {
     }
 }
 
+//TODO: make this works for any rings, not just poly rings
+fn full_factor_using_partial_factor<'a, R: ComRing>(
+    poly_ring: &PolynomialRing<'a, R>,
+    f: <PolynomialRing<'a, R> as ComRing>::ElemT,
+    partial_factor: &impl Fn(
+        <PolynomialRing<'a, R> as ComRing>::ElemT,
+    ) -> Option<(
+        <PolynomialRing<'a, R> as ComRing>::ElemT,
+        <PolynomialRing<'a, R> as ComRing>::ElemT,
+    )>,
+) -> Factored<<PolynomialRing<'a, R> as ComRing>::ElemT>
+where
+    PolynomialRing<'a, R>: FavoriteAssociate,
+{
+    debug_assert!(!poly_ring.equal(&f, &poly_ring.zero()));
+    let f_deg = poly_ring.degree(&f).unwrap();
+    if f_deg == 0 {
+        debug_assert!(poly_ring.ring.is_unit(poly_ring.coeff(&f, 0)));
+        Factored::factored_unit_unchecked(poly_ring, f)
+    } else if f_deg == 1 {
+        //linear primitive factors are always irreducible
+        Factored::factored_irreducible_unchecked(poly_ring, f.clone())
+    } else {
+        match partial_factor(f.clone()) {
+            Some((g, h)) => Factored::mul(
+                poly_ring,
+                full_factor_using_partial_factor(poly_ring, g, partial_factor),
+                full_factor_using_partial_factor(poly_ring, h, partial_factor),
+            ),
+            None => {
+                //f is irreducible
+                Factored::factored_irreducible_unchecked(poly_ring, f)
+            }
+        }
+    }
+}
+
 impl<'a, R: UniqueFactorizationDomain + GreatestCommonDivisorDomain + FiniteUnits>
     PolynomialRing<'a, R>
 {
@@ -1056,6 +1101,39 @@ impl<
             Factored::mul(self, linear_factors, factored_scalar_part_poly),
             f_factors,
         ));
+    }
+}
+
+impl<'a, R: Field + FiniteUnits> PolynomialRing<'a, R> {
+    pub fn factorize_by_trying_all_factors(
+        &self,
+        f: Polynomial<R::ElemT>,
+    ) -> Factored<Polynomial<R::ElemT>> {
+        debug_assert!(!self.equal(&f, &self.zero()));
+        let f_deg = self.degree(&f).unwrap();
+        if f_deg == 0 {
+            debug_assert!(self.ring.is_unit(self.coeff(&f, 0)));
+            Factored::factored_unit_unchecked(self, f)
+        } else if f_deg == 1 {
+            //linear primitive factors are always irreducible
+            Factored::factored_irreducible_unchecked(self, f.clone())
+        } else {
+            let max_factor_degree = f_deg / 2;
+            for d in 0..max_factor_degree {
+                for mut coeffs in
+                    itertools::Itertools::multi_cartesian_product((0..d + 1).into_iter().map(|d| {
+                        let mut all_elems = vec![self.ring().zero()];
+                        all_elems.append(&mut self.ring.all_units());
+                        all_elems
+                    }))
+                {
+                    coeffs.push(self.ring().one());
+                    let g = self.from_coeffs(coeffs);
+                    println!("{}", self.to_string(&g));
+                }
+            }
+            todo!();
+        }
     }
 }
 
