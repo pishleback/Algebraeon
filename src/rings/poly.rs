@@ -159,12 +159,7 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
     }
 
     fn div_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-        let q_res = self.div_rref(a.clone(), b);
-        match &q_res {
-            Ok(q) => debug_assert!(self.equal(&self.mul_refs(q, b), a)),
-            Err(_) => {}
-        };
-        q_res
+        self.div_rref(a.clone(), b)
     }
 
     fn div_rref(
@@ -172,47 +167,16 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
         mut a: Self::ElemT,
         b: &Self::ElemT,
     ) -> Result<Self::ElemT, RingDivisionError> {
-        //try to find q such that q*b == a
-        // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
-        // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
-
-        let m = a.coeffs.len();
-        let n = b.coeffs.len();
-        if n == 0 {
-            Err(RingDivisionError::DivideByZero)
-        } else if m == 0 {
-            Ok(self.zero())
-        } else if m < n {
-            Err(RingDivisionError::NotDivisible)
-        } else {
-            let k = m - n + 1;
-            let mut q = Self::ElemT {
-                coeffs: (0..k).map(|_i| self.ring.zero()).collect(),
-            };
-            for i in (0..k).rev() {
-                //a[i+n-1] = q[i] * b[n-1]
-                match self
-                    .ring
-                    .div_refs(&self.coeff(&a, i + n - 1), &self.coeff(b, n - 1))
-                {
-                    Ok(qc) => {
-                        //a -= qc*x^i*b
-                        self.add_mut(
-                            &mut a,
-                            &self.neg(self.mul_var_pow(&self.mul_scalar(&b, &qc), i)),
-                        );
-                        q.coeffs[i] = qc;
-                    }
-                    Err(RingDivisionError::NotDivisible) => {
-                        return Err(RingDivisionError::NotDivisible);
-                    }
-                    Err(_) => panic!(),
+        match self.try_quorem_rref(a, b) {
+            Ok((q, r)) => {
+                if self.equal(&r, &self.zero()) {
+                    Ok(q)
+                } else {
+                    Err(RingDivisionError::NotDivisible)
                 }
             }
-            if !self.equal(&a, &self.zero()) {
-                return Err(RingDivisionError::NotDivisible);
-            }
-            Ok(q)
+            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
         }
     }
 }
@@ -248,6 +212,72 @@ impl<'a, R: ComRing> PolynomialRing<'a, R> {
                     return;
                 }
             }
+        }
+    }
+
+    fn try_quorem(
+        &self,
+        a: <Self as ComRing>::ElemT,
+        b: <Self as ComRing>::ElemT,
+    ) -> Result<(<Self as ComRing>::ElemT, <Self as ComRing>::ElemT), RingDivisionError> {
+        self.try_quorem_rref(a, &b)
+    }
+
+    fn try_quorem_lref(
+        &self,
+        a: &<Self as ComRing>::ElemT,
+        b: <Self as ComRing>::ElemT,
+    ) -> Result<(<Self as ComRing>::ElemT, <Self as ComRing>::ElemT), RingDivisionError> {
+        self.try_quorem_refs(a, &b)
+    }
+
+    fn try_quorem_refs(
+        &self,
+        a: &<Self as ComRing>::ElemT,
+        b: &<Self as ComRing>::ElemT,
+    ) -> Result<(<Self as ComRing>::ElemT, <Self as ComRing>::ElemT), RingDivisionError> {
+        self.try_quorem_rref(a.clone(), b)
+    }
+
+    fn try_quorem_rref(
+        &self,
+        mut a: <Self as ComRing>::ElemT,
+        b: &<Self as ComRing>::ElemT,
+    ) -> Result<(<Self as ComRing>::ElemT, <Self as ComRing>::ElemT), RingDivisionError> {
+        //try to find q such that q*b == a
+        // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
+        // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
+
+        let m = a.coeffs.len();
+        let n = b.coeffs.len();
+        if n == 0 {
+            Err(RingDivisionError::DivideByZero)
+        } else if m < n {
+            Ok((self.zero(), a))
+        } else {
+            let k = m - n + 1;
+            let mut q_coeffs: Vec<_> = (0..k).map(|_i| self.ring.zero()).collect();
+            for i in (0..k).rev() {
+                //a[i+n-1] = q[i] * b[n-1]
+                match self
+                    .ring
+                    .div_refs(&self.coeff(&a, i + n - 1), &self.coeff(b, n - 1))
+                {
+                    Ok(qc) => {
+                        //a -= qc*x^i*b
+                        self.add_mut(
+                            &mut a,
+                            &self.neg(self.mul_var_pow(&self.mul_scalar(&b, &qc), i)),
+                        );
+                        q_coeffs[i] = qc;
+                    }
+                    Err(RingDivisionError::NotDivisible) => {
+                        return Err(RingDivisionError::NotDivisible);
+                    }
+                    Err(RingDivisionError::DivideByZero) => panic!(),
+                }
+            }
+            Ok((self.from_coeffs(q_coeffs), a))
         }
     }
 
@@ -464,28 +494,10 @@ impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
                 ),
             );
 
-            let k = m - n + 1;
-            let mut q = Polynomial {
-                coeffs: (0..k).map(|_i| self.ring.zero()).collect(),
-            };
-            for i in (0..k).rev() {
-                //a[i+n-1] = q[i] * b[n-1]
-                match self
-                    .ring
-                    .div_rref(self.coeff(&a, i + n - 1), &b.coeffs[n - 1])
-                {
-                    Ok(qc) => {
-                        //a -= qc*x^i*b
-                        self.add_mut(
-                            &mut a,
-                            &self.neg(self.mul_var_pow(&self.mul_scalar(&b, &qc), i)),
-                        );
-                        q.coeffs[i] = qc;
-                    }
-                    Err(_) => panic!(),
-                }
+            match self.try_quorem_rref(a, b) {
+                Ok((q, r)) => Some(Ok(r)),
+                Err(_) => panic!(),
             }
-            Some(Ok(a))
         }
     }
 
@@ -661,12 +673,7 @@ impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
     }
 
     fn quorem_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
-        let res = self.quorem_rref(a.clone(), b);
-        match &res {
-            Some((q, r)) => debug_assert!(self.equal(&self.add_ref(self.mul_refs(q, b), r), a)),
-            None => {}
-        };
-        res
+        self.quorem_rref(a.clone(), b)
     }
 
     fn quorem_rref(
@@ -674,39 +681,10 @@ impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
         mut a: Self::ElemT,
         b: &Self::ElemT,
     ) -> Option<(Self::ElemT, Self::ElemT)> {
-        //try to find q such that q*b == a
-        // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
-        // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
-        let m = a.coeffs.len();
-        let n = b.coeffs.len();
-
-        if n == 0 {
-            None
-        } else if m < n {
-            Some((self.zero(), a))
-        } else {
-            let k = m - n + 1;
-            let mut q = Self::ElemT {
-                coeffs: (0..k).map(|_i| self.ring.zero()).collect(),
-            };
-            for i in (0..k).rev() {
-                //a[i+n-1] = q[i] * b[n-1]
-                match self
-                    .ring
-                    .div_rref(self.coeff(&a, i + n - 1), &b.coeffs[n - 1])
-                {
-                    Ok(qc) => {
-                        //a -= qc*x^i*b
-                        self.add_mut(
-                            &mut a,
-                            &self.neg(self.mul_var_pow(&self.mul_scalar(b, &qc), i)),
-                        );
-                        q.coeffs[i] = qc;
-                    }
-                    Err(_) => panic!(),
-                }
-            }
-            Some((q, a))
+        match self.try_quorem_rref(a, b) {
+            Ok((q, r)) => Some((q, r)),
+            Err(RingDivisionError::NotDivisible) => panic!(),
+            Err(RingDivisionError::DivideByZero) => None,
         }
     }
 }
@@ -1283,14 +1261,14 @@ fn hensel_quadratic_lift<const IS_FIELD: bool, R: EuclideanDomain + UniqueFactor
     // let e = new_poly_ring.add(f, new_poly_ring.neg(new_poly_ring.mul(g, h))); //(f - g*h)
     // let q, r = (s*e).quo_rem(h)  // Division of se by h in Z/m^2.
     // g_, h_ = g + t*e + q*g, h + r
-    
+
     // //Lifting the Bezout coefficients.
     // b = s*g_ + t*h_ - 1
     // c, d = (s*b).quo_rem(h_)  // Division of sb by h_ in Z/m^2.
     // s_, t_ = s - d, t - t*b - c*g_
-    
+
     // // Return the polynomials as embedded in Z[x].
-    // return [g_.change_ring(ZZ), h_.change_ring(ZZ), 
+    // return [g_.change_ring(ZZ), h_.change_ring(ZZ),
     //         s_.change_ring(ZZ), t_.change_ring(ZZ)]
 
     todo!();
