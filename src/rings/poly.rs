@@ -840,43 +840,6 @@ impl<'a, R: PrincipalIdealDomain> PolynomialRing<'a, R> {
     }
 }
 
-//TODO: make this works for any rings, not just poly rings
-fn full_factor_using_partial_factor<'a, R: ComRing>(
-    poly_ring: &PolynomialRing<'a, R>,
-    f: <PolynomialRing<'a, R> as ComRing>::ElemT,
-    partial_factor: &impl Fn(
-        <PolynomialRing<'a, R> as ComRing>::ElemT,
-    ) -> Option<(
-        <PolynomialRing<'a, R> as ComRing>::ElemT,
-        <PolynomialRing<'a, R> as ComRing>::ElemT,
-    )>,
-) -> Factored<<PolynomialRing<'a, R> as ComRing>::ElemT>
-where
-    PolynomialRing<'a, R>: FavoriteAssociate,
-{
-    debug_assert!(!poly_ring.equal(&f, &poly_ring.zero()));
-    let f_deg = poly_ring.degree(&f).unwrap();
-    if f_deg == 0 {
-        debug_assert!(poly_ring.ring.is_unit(poly_ring.coeff(&f, 0)));
-        Factored::factored_unit_unchecked(poly_ring, f)
-    } else if f_deg == 1 {
-        //linear primitive factors are always irreducible
-        Factored::factored_irreducible_unchecked(poly_ring, f.clone())
-    } else {
-        match partial_factor(f.clone()) {
-            Some((g, h)) => Factored::mul(
-                poly_ring,
-                full_factor_using_partial_factor(poly_ring, g, partial_factor),
-                full_factor_using_partial_factor(poly_ring, h, partial_factor),
-            ),
-            None => {
-                //f is irreducible
-                Factored::factored_irreducible_unchecked(poly_ring, f)
-            }
-        }
-    }
-}
-
 impl<'a, R: UniqueFactorizationDomain + GreatestCommonDivisorDomain + FiniteUnits>
     PolynomialRing<'a, R>
 {
@@ -950,14 +913,16 @@ impl<
         f: Polynomial<R::ElemT>,
     ) -> Factored<Polynomial<R::ElemT>> {
         debug_assert!(!self.equal(&f, &self.zero()));
-        let f_deg = self.degree(&f).unwrap();
-        if f_deg == 0 {
-            debug_assert!(self.ring.is_unit(self.coeff(&f, 0)));
-            Factored::factored_unit_unchecked(self, f)
-        } else if f_deg == 1 {
-            //linear primitive factors are always irreducible
-            Factored::factored_irreducible_unchecked(self, f.clone())
-        } else {
+        fn partial_factor<
+            'a,
+            R: UniqueFactorizationDomain
+                + GreatestCommonDivisorDomain
+                + CharacteristicZero
+                + FiniteUnits,
+        >(
+            poly_ring: &PolynomialRing<'a, R>,
+            f: Polynomial<R::ElemT>,
+        ) -> Option<(Polynomial<R::ElemT>, Polynomial<R::ElemT>)> {
             /*
             Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
             Assume it has a proper factor g(x). wlog g(x) has degree <= 2
@@ -969,74 +934,77 @@ impl<
             however, only 64 need to be checked as the other half are their negatives
             more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
              */
-            let max_factor_degree = f_deg / 2;
-            let mut f_points = vec![];
-            let mut elem_gen = self.ring.generate_distinct_elements();
-            //take more samples than necessary, then take the subset with the smallest number of divisors
-            while f_points.len() < 3 * (max_factor_degree + 1) {
-                //loop terminates because polynomial over integral domain has finitely many roots
-                let x = elem_gen.next().unwrap();
-                let y = self.evaluate(&f, &x);
-                if !self.ring.equal(&y, &self.ring.zero()) {
-                    f_points.push((x, self.ring.factor(&y).unwrap()));
-                }
-            }
-
-            //compute all factors of each y value. choose the y with the most divisors to only factor up to units
-            f_points.sort_by_cached_key(|(_x, yf)| self.ring.count_divisors(yf));
-            let _ = f_points.split_off(max_factor_degree + 1);
-            //possible_g_points is (x, possible_y_values)
-            let all_possible_g_points: Vec<(R::ElemT, Vec<R::ElemT>)> = f_points
-                .into_iter()
-                .rev()
-                .enumerate()
-                .map(|(i, (x, yf))| {
-                    let mut y_divs = vec![];
-                    for d in self.ring.divisors(&yf) {
-                        if i == 0 {
-                            //take divisors up to associates for one, because we only care about g up to associates
-                            y_divs.push(d);
-                        } else {
-                            //take _all_ divisors for the rest
-                            for u in self.ring.all_units() {
-                                y_divs.push(self.ring.mul_ref(u, &d));
-                            }
-                        }
+            let f_deg = poly_ring.degree(&f).unwrap();
+            if f_deg == 1 {
+                //linear factor is irreducible
+                None
+            } else {
+                let max_factor_degree = f_deg / 2;
+                let mut f_points = vec![];
+                let mut elem_gen = poly_ring.ring.generate_distinct_elements();
+                //take more samples than necessary, then take the subset with the smallest number of divisors
+                while f_points.len() < 3 * (max_factor_degree + 1) {
+                    //loop terminates because polynomial over integral domain has finitely many roots
+                    let x = elem_gen.next().unwrap();
+                    let y = poly_ring.evaluate(&f, &x);
+                    if !poly_ring.ring.equal(&y, &poly_ring.ring.zero()) {
+                        f_points.push((x, poly_ring.ring.factor(&y).unwrap()));
                     }
-                    (x, y_divs)
-                })
-                .collect();
+                }
 
-            for possible_g_points in itertools::Itertools::multi_cartesian_product(
-                all_possible_g_points
+                //compute all factors of each y value. choose the y with the most divisors to only factor up to units
+                f_points.sort_by_cached_key(|(_x, yf)| poly_ring.ring.count_divisors(yf));
+                let _ = f_points.split_off(max_factor_degree + 1);
+                //possible_g_points is (x, possible_y_values)
+                let all_possible_g_points: Vec<(R::ElemT, Vec<R::ElemT>)> = f_points
                     .into_iter()
-                    .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
-            ) {
-                println!("{:?}", possible_g_points);
-                match self.interpolate_by_lagrange_basis(&possible_g_points) {
-                    Some(g) => {
-                        if self.degree(&g).unwrap() >= 1 {
-                            //g is a possible proper divisor of f
-                            match self.div_refs(&f, &g) {
-                                Ok(h) => {
-                                    //g really is a proper divisor of f
-                                    return Factored::mul(
-                                        self,
-                                        self.factorize_primitive_polynomial_by_kroneckers_method(g),
-                                        self.factorize_primitive_polynomial_by_kroneckers_method(h),
-                                    );
+                    .rev()
+                    .enumerate()
+                    .map(|(i, (x, yf))| {
+                        let mut y_divs = vec![];
+                        for d in poly_ring.ring.divisors(&yf) {
+                            if i == 0 {
+                                //take divisors up to associates for one, because we only care about g up to associates
+                                y_divs.push(d);
+                            } else {
+                                //take _all_ divisors for the rest
+                                for u in poly_ring.ring.all_units() {
+                                    y_divs.push(poly_ring.ring.mul_ref(u, &d));
                                 }
-                                Err(RingDivisionError::NotDivisible) => {}
-                                Err(RingDivisionError::DivideByZero) => panic!(),
                             }
                         }
+                        (x, y_divs)
+                    })
+                    .collect();
+
+                for possible_g_points in itertools::Itertools::multi_cartesian_product(
+                    all_possible_g_points
+                        .into_iter()
+                        .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
+                ) {
+                    // println!("{:?}", possible_g_points);
+                    match poly_ring.interpolate_by_lagrange_basis(&possible_g_points) {
+                        Some(g) => {
+                            if poly_ring.degree(&g).unwrap() >= 1 {
+                                //g is a possible proper divisor of f
+                                match poly_ring.div_refs(&f, &g) {
+                                    Ok(h) => {
+                                        //g really is a proper divisor of f
+                                        return Some((g, h));
+                                    }
+                                    Err(RingDivisionError::NotDivisible) => {}
+                                    Err(RingDivisionError::DivideByZero) => panic!(),
+                                }
+                            }
+                        }
+                        None => {}
                     }
-                    None => {}
                 }
+                //f is irreducible
+                None
             }
-            //f is irreducible
-            Factored::factored_irreducible_unchecked(self, f.clone())
         }
+        full_factor_using_partial_factor(self, f, &partial_factor::<R>)
     }
 
     pub fn factorize_by_kroneckers_method(
@@ -1047,14 +1015,14 @@ impl<
             return None;
         }
 
-        println!();
-        println!("factorize_by_kroneckers_method");
-        println!("f = {:?}", f);
+        // println!();
+        // println!("factorize_by_kroneckers_method");
+        // println!("f = {:?}", f);
         let (scalar_part, f) = self.factor_primitive(f.clone()).unwrap();
-        println!("scalar_part = {:?}", scalar_part);
-        println!("primitive_part = {:?}", f);
+        // println!("scalar_part = {:?}", scalar_part);
+        // println!("primitive_part = {:?}", f);
         let factored_scalar_part = self.ring.factor(&scalar_part).unwrap();
-        println!("factored_scalar_part = {:?}", factored_scalar_part);
+        // println!("factored_scalar_part = {:?}", factored_scalar_part);
         let factored_scalar_part_poly = Factored::new_unchecked(
             self.constant(factored_scalar_part.unit().clone()),
             factored_scalar_part
@@ -1110,30 +1078,35 @@ impl<'a, R: Field + FiniteUnits> PolynomialRing<'a, R> {
         f: Polynomial<R::ElemT>,
     ) -> Factored<Polynomial<R::ElemT>> {
         debug_assert!(!self.equal(&f, &self.zero()));
-        let f_deg = self.degree(&f).unwrap();
-        if f_deg == 0 {
-            debug_assert!(self.ring.is_unit(self.coeff(&f, 0)));
-            Factored::factored_unit_unchecked(self, f)
-        } else if f_deg == 1 {
-            //linear primitive factors are always irreducible
-            Factored::factored_irreducible_unchecked(self, f.clone())
-        } else {
+        fn partial_factor<'a, R: Field + FiniteUnits>(
+            poly_ring: &PolynomialRing<'a, R>,
+            f: Polynomial<R::ElemT>,
+        ) -> Option<(Polynomial<R::ElemT>, Polynomial<R::ElemT>)> {
+            let f_deg = poly_ring.degree(&f).unwrap();
             let max_factor_degree = f_deg / 2;
             for d in 0..max_factor_degree {
                 for mut coeffs in
                     itertools::Itertools::multi_cartesian_product((0..d + 1).into_iter().map(|d| {
-                        let mut all_elems = vec![self.ring().zero()];
-                        all_elems.append(&mut self.ring.all_units());
+                        let mut all_elems = vec![poly_ring.ring().zero()];
+                        all_elems.append(&mut poly_ring.ring.all_units());
                         all_elems
                     }))
                 {
-                    coeffs.push(self.ring().one());
-                    let g = self.from_coeffs(coeffs);
-                    println!("{}", self.to_string(&g));
+                    coeffs.push(poly_ring.ring().one());
+                    let g = poly_ring.from_coeffs(coeffs);
+                    // println!("{}", self.to_string(&g));
+                    match poly_ring.div_refs(&f, &g) {
+                        Ok(h) => {
+                            return Some((g, h));
+                        }
+                        Err(RingDivisionError::NotDivisible) => {}
+                        Err(RingDivisionError::DivideByZero) => panic!(),
+                    }
                 }
             }
-            todo!();
+            None
         }
+        full_factor_using_partial_factor(self, f, &partial_factor::<R>)
     }
 }
 
@@ -1256,6 +1229,86 @@ where
 //         .det_naive()
 //         .unwrap()
 // }
+
+fn hensel_quadratic_lift<const IS_FIELD: bool, R: EuclideanDomain + UniqueFactorizationDomain>(
+    ring: R,
+    old_ring: EuclideanQuotient<IS_FIELD, R>,
+    f: Polynomial<R::ElemT>,
+    g: Polynomial<R::ElemT>,
+    h: Polynomial<R::ElemT>,
+    s: Polynomial<R::ElemT>,
+    t: Polynomial<R::ElemT>,
+) -> (
+    Polynomial<R::ElemT>,
+    Polynomial<R::ElemT>,
+    Polynomial<R::ElemT>,
+    Polynomial<R::ElemT>,
+) {
+    /*
+       Lifts a factorization f=gh (mod m) and Bezout coefficients (s, t) for (g, h) in Z/m, (g, h)
+       being coprime modulo m, to a factorization f=g*h* (mod m^2) and Bezout coefficients (s*,t*).
+
+       Input: polynomials f, g, h, s, t in Z[x] and a natural number m such that
+              f = gh (mod m) and sg + th = 1 (mod m). We also assume that lc(f)
+              is invertible modulo m, h is monic and deg(s) < deg(h) and
+              deg(t) < deg(g).
+
+       Output: a list [g*, h*, s*, t*] of polynomials  in Z[x] such that
+               f = g*h* (mod m^2) and s*h* + t*h* = 1 (mod m^2). We also have
+               g* = g (mod m), h* = h (mod m), s* = s (mod m) and
+               t* = t (mod m), with g*, h*, s*, t* also satisfying the
+               inequalities on the degrees.
+    */
+    let old_poly_ring = PolynomialRing::new(&old_ring);
+
+    let new_ring = EuclideanQuotient::new_ring(
+        ring.clone(),
+        ring.mul_refs(&old_ring.get_n(), &old_ring.get_n()),
+    );
+    let new_poly_ring = PolynomialRing::new(&new_ring);
+
+    // f = g*h
+    debug_assert!(old_poly_ring.equal(&f, &old_poly_ring.mul_refs(&g, &h)));
+
+    // g*s + h*t = 1
+    debug_assert!(old_poly_ring.equal(
+        &old_poly_ring.one(),
+        &old_poly_ring.add(
+            old_poly_ring.mul_refs(&g, &s),
+            old_poly_ring.mul_refs(&h, &t)
+        )
+    ));
+
+    // // Lifting the factorization.
+    // let e = new_poly_ring.add(f, new_poly_ring.neg(new_poly_ring.mul(g, h))); //(f - g*h)
+    // let q, r = (s*e).quo_rem(h)  // Division of se by h in Z/m^2.
+    // g_, h_ = g + t*e + q*g, h + r
+    
+    // //Lifting the Bezout coefficients.
+    // b = s*g_ + t*h_ - 1
+    // c, d = (s*b).quo_rem(h_)  // Division of sb by h_ in Z/m^2.
+    // s_, t_ = s - d, t - t*b - c*g_
+    
+    // // Return the polynomials as embedded in Z[x].
+    // return [g_.change_ring(ZZ), h_.change_ring(ZZ), 
+    //         s_.change_ring(ZZ), t_.change_ring(ZZ)]
+
+    todo!();
+}
+
+impl PartialEq for Polynomial<Integer> {
+    fn eq(&self, other: &Self) -> bool {
+        self.coeffs == other.coeffs
+    }
+}
+
+impl Eq for Polynomial<Integer> {}
+
+impl Hash for Polynomial<Integer> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.coeffs.hash(state);
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -1627,6 +1680,19 @@ mod tests {
             &ZZ_POLY,
             &ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
             &Factored::new_unchecked(ZZ_POLY.one(), vec![])
+        ));
+
+        let f = ((x.pow(4) + x + 1) * (x.pow(3) + x + 1)).elem();
+        assert!(Factored::equal(
+            &ZZ_POLY,
+            &ZZ_POLY.factorize_by_kroneckers_method(&f).unwrap(),
+            &Factored::new_unchecked(
+                ZZ_POLY.one(),
+                vec![
+                    ((x.pow(4) + x + 1).elem(), Natural::from(1u8)),
+                    ((x.pow(3) + x + 1).elem(), Natural::from(1u8))
+                ]
+            )
         ));
     }
 
