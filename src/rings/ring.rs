@@ -1,6 +1,11 @@
 #![allow(dead_code)]
 
-use std::{borrow::Borrow, collections::HashMap, fmt::Debug, hash::Hash};
+use std::{
+    borrow::Borrow,
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+    hash::Hash,
+};
 
 use malachite_base::num::{
     arithmetic::traits::{DivRem, UnsignedAbs},
@@ -344,8 +349,19 @@ impl<ElemT: Clone + Debug> Factored<ElemT> {
         ring: &Ring,
         a: &Factored<ElemT>,
         b: &Factored<ElemT>,
-    ) -> bool {
-        ring.equal(&a.expand(ring), &b.expand(ring))
+    ) -> bool
+    where
+        ElemT: PartialEq + Eq + Hash,
+    {
+        ring.equal(a.unit(), b.unit())
+            && a.factors()
+                .iter()
+                .map(|(x, k)| (x, k))
+                .collect::<HashMap<_, _>>()
+                == b.factors()
+                    .iter()
+                    .map(|(x, k)| (x, k))
+                    .collect::<HashMap<_, _>>()
     }
 
     pub fn unit(&self) -> &ElemT {
@@ -440,6 +456,44 @@ impl<ElemT: Clone + Debug> Factored<ElemT> {
             }
         }
         s
+    }
+}
+
+pub fn full_factor_using_partial_factor<R: ComRing>(
+    ring: &R,
+    elem: R::ElemT,
+    partial_factor: &impl Fn(&R, R::ElemT) -> Option<(R::ElemT, R::ElemT)>,
+) -> Factored<R::ElemT>
+where
+    R: FavoriteAssociate,
+{
+    pub fn full_factor_using_partial_factor_no_unit<R: ComRing>(
+        ring: &R,
+        elem: R::ElemT,
+        partial_factor: &impl Fn(&R, R::ElemT) -> Option<(R::ElemT, R::ElemT)>,
+    ) -> Factored<R::ElemT>
+    where
+        R: FavoriteAssociate,
+    {
+        debug_assert!(!ring.equal(&elem, &ring.zero()));
+        debug_assert!(!ring.is_unit(elem.clone()));
+        match partial_factor(ring, elem.clone()) {
+            Some((g, h)) => Factored::mul(
+                ring,
+                full_factor_using_partial_factor(ring, g, partial_factor),
+                full_factor_using_partial_factor(ring, h, partial_factor),
+            ),
+            None => {
+                //f is irreducible
+                Factored::factored_irreducible_unchecked(ring, elem)
+            }
+        }
+    }
+
+    if ring.is_unit(elem.clone()) {
+        Factored::factored_unit_unchecked(ring, elem)
+    } else {
+        full_factor_using_partial_factor_no_unit(ring, elem, partial_factor)
     }
 }
 
@@ -929,6 +983,7 @@ impl<ED: EuclideanDomain + UniqueFactorizationDomain> Field for EuclideanQuotien
 //IdealQuotient
 //PrimeQuotient
 //MaximalQuotient
+
 
 #[cfg(test)]
 mod tests {
