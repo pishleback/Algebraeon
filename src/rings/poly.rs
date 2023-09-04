@@ -1222,6 +1222,8 @@ fn hensel_quadratic_lift<const IS_FIELD: bool, R: EuclideanDomain + UniqueFactor
     Polynomial<R::ElemT>,
     Polynomial<R::ElemT>,
 ) {
+    //https://github.com/JeffreyDF/LLL_factorization/blob/master/factorization.py
+
     /*
        Lifts a factorization f=gh (mod m) and Bezout coefficients (s, t) for (g, h) in Z/m, (g, h)
        being coprime modulo m, to a factorization f=g*h* (mod m^2) and Bezout coefficients (s*,t*).
@@ -1245,6 +1247,15 @@ fn hensel_quadratic_lift<const IS_FIELD: bool, R: EuclideanDomain + UniqueFactor
     );
     let new_poly_ring = PolynomialRing::new(&new_ring);
 
+    //check that g has invertible leading coefficient
+    debug_assert!(old_ring.is_unit(old_poly_ring.coeff(&h, old_poly_ring.degree(&h).unwrap())));
+
+    //check that h is monic
+    debug_assert!(old_ring.equal(
+        &old_poly_ring.coeff(&h, old_poly_ring.degree(&h).unwrap()),
+        &old_ring.one()
+    ));
+
     // f = g*h
     debug_assert!(old_poly_ring.equal(&f, &old_poly_ring.mul_refs(&g, &h)));
 
@@ -1257,21 +1268,79 @@ fn hensel_quadratic_lift<const IS_FIELD: bool, R: EuclideanDomain + UniqueFactor
         )
     ));
 
-    // // Lifting the factorization.
-    // let e = new_poly_ring.add(f, new_poly_ring.neg(new_poly_ring.mul(g, h))); //(f - g*h)
-    // let q, r = (s*e).quo_rem(h)  // Division of se by h in Z/m^2.
-    // g_, h_ = g + t*e + q*g, h + r
+    // Lifting the factorization:
 
-    // //Lifting the Bezout coefficients.
-    // b = s*g_ + t*h_ - 1
-    // c, d = (s*b).quo_rem(h_)  // Division of sb by h_ in Z/m^2.
-    // s_, t_ = s - d, t - t*b - c*g_
+    // (f - g*h)
+    let e = new_poly_ring.add(f, new_poly_ring.neg(new_poly_ring.mul_refs(&g, &h)));
+    // Division of se by h in Z/m^2. Doesnt fail because h is monic
+    let (q, r) = new_poly_ring
+        .try_quorem_rref(new_poly_ring.mul_refs(&s, &e), &h)
+        .unwrap();
+    let (g_, h_) = (
+        new_poly_ring.sum(vec![
+            &g.clone(),
+            &new_poly_ring.mul_ref(e, &t),
+            &new_poly_ring.mul_ref(q, &g),
+        ]),
+        new_poly_ring.add(h, r),
+    );
 
-    // // Return the polynomials as embedded in Z[x].
-    // return [g_.change_ring(ZZ), h_.change_ring(ZZ),
-    //         s_.change_ring(ZZ), t_.change_ring(ZZ)]
+    //Lifting the Bezout coefficients:
+    let b = new_poly_ring.sum(vec![
+        &new_poly_ring.mul_refs(&g_, &s),
+        &new_poly_ring.mul_refs(&h_, &t),
+        &new_poly_ring.neg(new_poly_ring.one()),
+    ]);
+    let (c, d) = new_poly_ring
+        .try_quorem_rref(new_poly_ring.mul_refs(&b, &s), &h_)
+        .unwrap();
+    let (s_, t_) = (
+        new_poly_ring.add(s, new_poly_ring.neg(d)),
+        new_poly_ring.sum(vec![
+            &t.clone(),
+            &new_poly_ring.neg(new_poly_ring.mul(t, b)),
+            &new_poly_ring.neg(new_poly_ring.mul(c, g)),
+        ]),
+    );
 
-    todo!();
+    // Return the polynomials as embedded in Z[x].
+    (g_, h_, s_, t_)
+}
+
+impl<'a> PolynomialRing<'a, IntegerRing> {
+    pub fn factorize_by_hensel_lifting(
+        &self,
+        f: Polynomial<Integer>,
+    ) -> Factored<Polynomial<Integer>> {
+        debug_assert!(!self.equal(&f, &self.zero()));
+
+        println!("{:?}", ZZ_POLY.factorize_by_kroneckers_method(&f));
+
+        let pgen = NaturalPrimeGenerator::new();
+        for p in pgen {
+            let modp = EuclideanQuotient::new_field_unchecked(ZZ, Integer::from(&p));
+            let poly_modp = PolynomialRing::new(&modp);
+            let gs = poly_modp.factorize_by_trying_all_factors(f.clone());
+
+            if gs.factors().iter().all(|(_g, k)| k == &Natural::from(1u8)) {
+                let gs: Vec<_> = gs.factors().iter().map(|(g, _k)| g).collect();
+                println!("{:?}", p);
+                for g in gs.into_iter() {
+                    println!();
+                    let h = poly_modp.div_refs(&f, g).unwrap();
+                    println!("gh = {}    {}", poly_modp.to_string(g), poly_modp.to_string(&h));
+
+                    let (u, s, t) = poly_modp.xgcd(g.clone(), h);
+                    debug_assert!(poly_modp.equal(&u, &poly_modp.one()));
+
+                    println!("st = {}    {}", poly_modp.to_string(&s), poly_modp.to_string(&t));
+                }
+
+                todo!();
+            }
+        }
+        panic!()
+    }
 }
 
 impl PartialEq for Polynomial<Integer> {
