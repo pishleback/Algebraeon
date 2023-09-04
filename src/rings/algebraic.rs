@@ -2688,6 +2688,8 @@ impl Field for ComplexAlgebraicField {}
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+
     use super::super::poly::*;
     use super::*;
 
@@ -2824,14 +2826,14 @@ mod tests {
     #[test]
     fn test_squarefree_polynomial_real_root_isolation() {
         let f = ZZ_POLY.product(vec![
-            ZZ_POLY.from_coeffs(vec![
+            &ZZ_POLY.from_coeffs(vec![
                 Integer::from(-2),
                 Integer::from(-4),
                 Integer::from(-2),
             ]),
-            ZZ_POLY.from_coeffs(vec![Integer::from(6), Integer::from(0), Integer::from(-3)]),
-            ZZ_POLY.from_coeffs(vec![Integer::from(1), Integer::from(-3), Integer::from(1)]),
-            ZZ_POLY.from_coeffs(vec![
+            &ZZ_POLY.from_coeffs(vec![Integer::from(6), Integer::from(0), Integer::from(-3)]),
+            &ZZ_POLY.from_coeffs(vec![Integer::from(1), Integer::from(-3), Integer::from(1)]),
+            &ZZ_POLY.from_coeffs(vec![
                 Integer::from(2),
                 Integer::from(-3),
                 Integer::from(0),
@@ -2839,7 +2841,7 @@ mod tests {
                 Integer::from(0),
                 Integer::from(1),
             ]),
-            ZZ_POLY.from_coeffs(vec![
+            &ZZ_POLY.from_coeffs(vec![
                 Integer::from(1),
                 Integer::from(-3),
                 Integer::from(0),
@@ -2847,7 +2849,7 @@ mod tests {
                 Integer::from(0),
                 Integer::from(1),
             ]),
-            ZZ_POLY.from_coeffs(vec![
+            &ZZ_POLY.from_coeffs(vec![
                 Integer::from(-1),
                 Integer::from(12),
                 Integer::from(-4),
@@ -2883,10 +2885,10 @@ mod tests {
         }
 
         let f = ZZ_POLY.product(vec![
-            ZZ_POLY.from_coeffs(vec![Integer::from(-1), Integer::from(1)]),
-            ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(1)]),
-            ZZ_POLY.from_coeffs(vec![Integer::from(-3), Integer::from(1)]),
-            ZZ_POLY.from_coeffs(vec![Integer::from(-4), Integer::from(1)]),
+            &ZZ_POLY.from_coeffs(vec![Integer::from(-1), Integer::from(1)]),
+            &ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(1)]),
+            &ZZ_POLY.from_coeffs(vec![Integer::from(-3), Integer::from(1)]),
+            &ZZ_POLY.from_coeffs(vec![Integer::from(-4), Integer::from(1)]),
         ]);
         assert_eq!(
             ZZ_POLY
@@ -3314,7 +3316,7 @@ mod tests {
     fn test_real_add() {
         let f = ZZ_POLY.from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(3)]);
         let roots = ZZ_POLY.all_real_roots(&f);
-        let a = QQ_BAR_REAL.sum(roots);
+        let a = QQ_BAR_REAL.sum(roots.iter().collect());
         assert_eq!(a, QQ_BAR_REAL.zero());
 
         let f = ZZ_POLY.from_coeffs(vec![
@@ -3323,7 +3325,7 @@ mod tests {
             Integer::from(100),
         ]);
         let roots = ZZ_POLY.all_real_roots(&f);
-        let a = QQ_BAR_REAL.sum(roots);
+        let a = QQ_BAR_REAL.sum(roots.iter().collect());
         assert_eq!(a, QQ_BAR_REAL.zero());
 
         let f = ZZ_POLY.from_coeffs(vec![
@@ -3332,7 +3334,7 @@ mod tests {
             Integer::from(7),
         ]);
         let roots = ZZ_POLY.all_real_roots(&f);
-        let a = QQ_BAR_REAL.sum(roots);
+        let a = QQ_BAR_REAL.sum(roots.iter().collect());
         assert_eq!(a, QQ_BAR_REAL.zero());
     }
 
@@ -3346,7 +3348,7 @@ mod tests {
         // (x-a)(x-b) = x^2 - 100/7
         // so ab=-100/7
         let roots = ZZ_POLY.all_real_roots(&f);
-        let a = QQ_BAR_REAL.product(roots);
+        let a = QQ_BAR_REAL.product(roots.iter().collect());
         assert_eq!(
             a,
             QQ_BAR_REAL
