@@ -629,14 +629,14 @@ mod tests {
     #[test]
     fn test_reduction() {
         let x = ZZ_MULTIPOLY.var(Variable::new(String::from("x")));
-        let f = ZZ_MULTIPOLY.sum(vec![x.clone(), ZZ_MULTIPOLY.neg(x.clone())]);
+        let f = ZZ_MULTIPOLY.sum(vec![&x, &ZZ_MULTIPOLY.neg(x.clone())]);
         assert_eq!(f.terms.len(), 0);
 
         let x = ZZ_MULTIPOLY.var(Variable::new(String::from("x")));
         let y = ZZ_MULTIPOLY.var(Variable::new(String::from("y")));
         let f = ZZ_MULTIPOLY.product(vec![
-            ZZ_MULTIPOLY.sum(vec![x.clone(), y.clone()]),
-            ZZ_MULTIPOLY.sum(vec![x.clone(), ZZ_MULTIPOLY.neg(y.clone())]),
+            &ZZ_MULTIPOLY.sum(vec![&x, &y]),
+            &ZZ_MULTIPOLY.sum(vec![&x, &ZZ_MULTIPOLY.neg_ref(&y)]),
         ]);
         println!("{}", ZZ_MULTIPOLY.to_string(&f));
         assert_eq!(f.terms.len(), 2);
@@ -648,10 +648,10 @@ mod tests {
         let y = ZZ_MULTIPOLY.var(Variable::new(String::from("y")));
 
         let f = ZZ_MULTIPOLY.sum(vec![
-            ZZ_MULTIPOLY.product(vec![x.clone(), x.clone()]),
-            ZZ_MULTIPOLY.neg(ZZ_MULTIPOLY.product(vec![y.clone(), y.clone()])),
+            &ZZ_MULTIPOLY.product(vec![&x, &x]),
+            &ZZ_MULTIPOLY.neg(ZZ_MULTIPOLY.product(vec![&y, &y])),
         ]);
-        let g = ZZ_MULTIPOLY.sum(vec![x.clone(), ZZ_MULTIPOLY.neg(y.clone())]);
+        let g = ZZ_MULTIPOLY.sum(vec![&x, &ZZ_MULTIPOLY.neg_ref(&y)]);
         match ZZ_MULTIPOLY.div_refs(&f, &g) {
             Ok(h) => {
                 assert!(ZZ_MULTIPOLY.equal(&f, &ZZ_MULTIPOLY.mul_refs(&g, &h)));
@@ -661,8 +661,8 @@ mod tests {
         }
 
         let f = ZZ_MULTIPOLY.sum(vec![
-            ZZ_MULTIPOLY.product(vec![x.clone(), x.clone()]),
-            ZZ_MULTIPOLY.neg(ZZ_MULTIPOLY.product(vec![y.clone(), y.clone()])),
+            &ZZ_MULTIPOLY.product(vec![&x, &x]),
+            &ZZ_MULTIPOLY.neg(ZZ_MULTIPOLY.product(vec![&y, &y])),
         ]);
         let g = ZZ_MULTIPOLY.sum(vec![]);
         match ZZ_MULTIPOLY.div_refs(&f, &g) {
@@ -672,10 +672,10 @@ mod tests {
         }
 
         let f = ZZ_MULTIPOLY.sum(vec![
-            ZZ_MULTIPOLY.product(vec![x.clone(), x.clone()]),
-            ZZ_MULTIPOLY.neg(ZZ_MULTIPOLY.product(vec![y.clone(), y.clone()])),
+            &ZZ_MULTIPOLY.product(vec![&x, &x]),
+            &ZZ_MULTIPOLY.neg(ZZ_MULTIPOLY.product(vec![&y, &y])),
         ]);
-        let g = ZZ_MULTIPOLY.sum(vec![x.clone()]);
+        let g = ZZ_MULTIPOLY.sum(vec![&x]);
         match ZZ_MULTIPOLY.div_refs(&f, &g) {
             Ok(_) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
