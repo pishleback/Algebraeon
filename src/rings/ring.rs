@@ -97,18 +97,18 @@ pub trait ComRing: Sized + Clone + Debug + PartialEq + Eq {
         }
     }
 
-    fn sum(&self, elems: Vec<Self::ElemT>) -> Self::ElemT {
+    fn sum(&self, elems: Vec<&Self::ElemT>) -> Self::ElemT {
         let mut ans = self.zero();
         for elem in elems {
-            ans = self.add(ans, elem);
+            ans = self.add_ref(ans, elem);
         }
         ans
     }
 
-    fn product(&self, elems: Vec<Self::ElemT>) -> Self::ElemT {
+    fn product(&self, elems: Vec<&Self::ElemT>) -> Self::ElemT {
         let mut ans = self.one();
         for elem in elems {
-            ans = self.mul(ans, elem);
+            ans = self.mul_ref(ans, elem);
         }
         ans
     }
@@ -540,7 +540,7 @@ pub trait UniqueFactorizationDomain: FavoriteAssociate {
                 itertools::Itertools::multi_cartesian_product(
                     factor_powers.into_iter().map(|p_pows| p_pows.into_iter()),
                 )
-                .map(|prime_power_factors| self.product(prime_power_factors).clone()),
+                .map(|prime_power_factors| self.product(prime_power_factors.iter().collect()).clone()),
             )
         }
     }
