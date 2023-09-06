@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use geometry::*;
 use malachite_base::num::conversion::traits::IntegerMantissaAndExponent;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
@@ -11,10 +12,72 @@ use rings::nzq::*;
 use rings::poly::*;
 use rings::ring::*;
 
+mod geometry;
 mod groups;
 mod numbers;
 mod rings;
 mod sets;
+
+fn main() {
+    let s = Simplex::new(
+        3,
+        vec![
+            Point::new(vec![
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("1").unwrap(),
+            ]),
+            Point::new(vec![
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("-1").unwrap(),
+            ]),
+            // Point::new(vec![
+            //     Rational::from_str("1").unwrap(),
+            //     Rational::from_str("2").unwrap(),
+            //     Rational::from_str("0").unwrap(),
+            // ]),
+            Point::new(vec![
+                Rational::from_str("2").unwrap(),
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("0").unwrap(),
+            ]),
+        ],
+    );
+
+    let h = OrientedHyperplane::new(
+        3,
+        Point::new(vec![
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("0").unwrap(),
+            Rational::from_str("0").unwrap(),
+        ]),
+        vec![
+            Point::new(vec![
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("0").unwrap(),
+            ]),
+            Point::new(vec![
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("1").unwrap(),
+            ]),
+        ],
+    );
+
+    println!("{:?}", s.check());
+    println!("{:?}", h.check());
+
+    let (a, b, c) = cut_simplex(&h, &s);
+
+    println!("{:?}", a);
+    println!("{:?}", b);
+    println!("{:?}", c);
+    println!("{:?}", a.check());
+    println!("{:?}", b.check());
+    println!("{:?}", c.check());
+}
 
 fn todo() {
     // let s = NaturalPrimeGenerator::new();
@@ -41,7 +104,7 @@ fn todo() {
     println!("{:?}", a);
 }
 
-fn main() {
+fn main2() {
     // (x+11)*(x-222)*(x-3333)*(x^2+x+1)*(x+67)
 
     let f = ZZ_POLY.product(vec![
