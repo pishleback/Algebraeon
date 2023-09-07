@@ -19,82 +19,99 @@ mod rings;
 mod sets;
 
 fn main() {
-    let s = Simplex::new(
-        3,
+    let a = Simplex::new(
+        2,
         vec![
             Point::new(vec![
                 Rational::from_str("0").unwrap(),
                 Rational::from_str("0").unwrap(),
+            ]),
+            Point::new(vec![
+                Rational::from_str("2").unwrap(),
+                Rational::from_str("0").unwrap(),
+            ]),
+            Point::new(vec![
                 Rational::from_str("1").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("-1").unwrap(),
-            ]),
-            Point::new(vec![
                 Rational::from_str("2").unwrap(),
-                Rational::from_str("2").unwrap(),
-                Rational::from_str("0").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("2").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
             ]),
         ],
     );
 
-    let h = OrientedHyperplane::new(
-        3,
+    let b = Simplex::new(
+        2,
+        vec![
+            Point::new(vec![
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("1").unwrap(),
+            ]),
+            Point::new(vec![
+                Rational::from_str("2").unwrap(),
+                Rational::from_str("1").unwrap(),
+            ]),
+            Point::new(vec![
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("-1").unwrap(),
+            ]),
+        ],
+    );
+
+    let a = Shape::simplex(a);
+
+    let c = intersect_shape_simplex(&b, &a);
+
+    println!("{:?}", c);
+
+    for s in c.simplices() {
+        println!("{:?} {:?}", s.n(), s);
+    }
+
+    /*
+    let points = vec![
+        Point::new(vec![
+            Rational::from_str("0").unwrap(),
+            Rational::from_str("0").unwrap(),
+            Rational::from_str("0").unwrap(),
+        ]),
         Point::new(vec![
             Rational::from_str("1").unwrap(),
             Rational::from_str("0").unwrap(),
             Rational::from_str("0").unwrap(),
         ]),
-        vec![
-            Point::new(vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-            ]),
-        ],
-    );
+        Point::new(vec![
+            Rational::from_str("0").unwrap(),
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("0").unwrap(),
+        ]),
+        Point::new(vec![
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("0").unwrap(),
+        ]),
+        Point::new(vec![
+            Rational::from_str("0").unwrap(),
+            Rational::from_str("0").unwrap(),
+            Rational::from_str("1").unwrap(),
+        ]),
+        Point::new(vec![
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("0").unwrap(),
+            Rational::from_str("1").unwrap(),
+        ]),
+        Point::new(vec![
+            Rational::from_str("0").unwrap(),
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("1").unwrap(),
+        ]),
+        Point::new(vec![
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("1").unwrap(),
+        ]),
+    ];
 
-    println!("{:?}", s.check());
-    println!("{:?}", h.check());
-
-    let (a, b, c) = cut_simplex(&h, &s);
-    println!("{:?}", a.check());
-    println!("{:?}", b.check());
-    println!("{:?}", c.check());
-
-    println!("a cell dims");
-    for s in a.simplices() {
-        print!(" {} ", s.n() - 1);
-    }
-    println!();
-
-    println!("b cell dims");
-    for s in b.simplices() {
-        print!(" {} ", s.n() - 1);
-    }
-    println!();
-
-    println!("c cell dims");
-    for s in c.simplices() {
-        print!(" {} ", s.n() - 1);
-    }
-    println!();
-
-    // println!("{:?}", a);
-    // println!("{:?}", b);
-    // println!("{:?}", c);
+    let b = quickhull_boundary(3, points);
+    println!("{:?}", b);
+    */
 }
 
 fn todo() {
