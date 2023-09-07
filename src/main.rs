@@ -32,11 +32,11 @@ fn main() {
                 Rational::from_str("0").unwrap(),
                 Rational::from_str("-1").unwrap(),
             ]),
-            // Point::new(vec![
-            //     Rational::from_str("1").unwrap(),
-            //     Rational::from_str("2").unwrap(),
-            //     Rational::from_str("0").unwrap(),
-            // ]),
+            Point::new(vec![
+                Rational::from_str("2").unwrap(),
+                Rational::from_str("2").unwrap(),
+                Rational::from_str("0").unwrap(),
+            ]),
             Point::new(vec![
                 Rational::from_str("2").unwrap(),
                 Rational::from_str("1").unwrap(),
@@ -70,13 +70,31 @@ fn main() {
     println!("{:?}", h.check());
 
     let (a, b, c) = cut_simplex(&h, &s);
-
-    println!("{:?}", a);
-    println!("{:?}", b);
-    println!("{:?}", c);
     println!("{:?}", a.check());
     println!("{:?}", b.check());
     println!("{:?}", c.check());
+
+    println!("a cell dims");
+    for s in a.simplices() {
+        print!(" {} ", s.n() - 1);
+    }
+    println!();
+
+    println!("b cell dims");
+    for s in b.simplices() {
+        print!(" {} ", s.n() - 1);
+    }
+    println!();
+
+    println!("c cell dims");
+    for s in c.simplices() {
+        print!(" {} ", s.n() - 1);
+    }
+    println!();
+
+    // println!("{:?}", a);
+    // println!("{:?}", b);
+    // println!("{:?}", c);
 }
 
 fn todo() {
