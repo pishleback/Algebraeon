@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
+use malachite_nz::integer::logic::or;
 use malachite_q::Rational;
 use rayon::prelude::IndexedParallelIterator;
 
@@ -243,20 +244,62 @@ impl Simplex {
         self.points.binary_search(pt).is_ok()
     }
 
-    pub fn facets(&self) -> Vec<Simplex> {
-        let mut facets = vec![];
-        for i in 0..self.n() {
-            let facet = Simplex {
-                dim: self.dim,
-                points: (0..self.n())
-                    .filter(|j| &i != j)
-                    .map(|j| self.points[j].clone())
-                    .collect(),
-            };
-            debug_assert!(facet.check().is_ok());
-            facets.push(facet);
+    pub fn facet(&self, k: usize) -> Simplex {
+        assert!(k <= self.n());
+        let facet = Simplex {
+            dim: self.dim,
+            points: (0..self.n())
+                .filter(|i| i != &k)
+                .map(|i| self.points[i].clone())
+                .collect(),
+        };
+        debug_assert!(facet.check().is_ok());
+        facet
+    }
+
+    pub fn oriented_facet(&self, k: usize) -> OrientedSimplex {
+        assert!(k <= self.n());
+        let oriented_facet = OrientedSimplex::new(self.facet(k));
+        match oriented_facet.sign_point(&self.points[k]) {
+            std::cmp::Ordering::Less => oriented_facet,
+            std::cmp::Ordering::Equal => panic!(),
+            std::cmp::Ordering::Greater => oriented_facet.flipped(),
         }
-        facets
+    }
+
+    pub fn facets(&self) -> Vec<Simplex> {
+        (0..self.n()).map(|k| self.facet(k)).collect()
+    }
+
+    pub fn oriented_facets(&self) -> Vec<OrientedSimplex> {
+        (0..self.n()).map(|k| self.oriented_facet(k)).collect()
+    }
+
+    pub fn ridges(&self) -> Vec<Simplex> {
+        let mut ridges = vec![];
+        for i in 0..self.n() {
+            for j in i + 1..self.n() {
+                let ridge = Simplex {
+                    dim: self.dim,
+                    points: (0..self.n())
+                        .filter(|k| (k != &i) && (k != &j))
+                        .map(|k| self.points[k].clone())
+                        .collect(),
+                };
+                debug_assert!(ridge.check().is_ok());
+                ridges.push(ridge);
+            }
+        }
+        ridges
+    }
+
+    pub fn as_convex_hull(&self) -> ConvexHull {
+        ConvexHull {
+            dim: self.dim,
+            points: self.points.clone(),
+            facets: self.oriented_facets().into_iter().collect(),
+            ridges: self.ridges().into_iter().collect(),
+        }
     }
 
     pub fn boundary(&self) -> Shape {
@@ -301,82 +344,80 @@ impl Simplex {
             )
         }
     }
-
-    // pub fn oriented_hyperplanes(&self) -> Vec<OrientedHyperplane> {
-    //     //one OrientedHyperplane for each facet such that
-    //     //the intersection of the positive sides is the interior of the simplex
-    //     todo!()
-    // }
 }
 
 #[derive(Debug, Clone)]
-pub struct OrientedHyperplane {
-    dim: usize,
-    root: Point,
-    vecs: Vec<Point>,
+pub struct OrientedSimplex {
+    simplex: Simplex,
+    flip: bool,
 }
 
-impl OrientedHyperplane {
+impl OrientedSimplex {
     pub fn check(&self) -> Result<(), &'static str> {
-        if self.dim == 0 {
+        self.simplex.check()?;
+
+        if self.simplex.dim == 0 {
             return Err("Can't have a hyperplane in zero dimensional space");
         }
 
-        if self.root.dim() != self.dim {
-            return Err("Hyperplane should live in the same dimension as its root point");
-        }
-
-        for p in &self.vecs {
-            if p.dim() != self.dim {
-                return Err("Hyperplane should live in the same dimension as its vecs");
-            }
-        }
-
-        if self.vecs.len() != self.dim - 1 {
-            return Err("Hyperplane should have dimension one less than the space it lives in");
-        }
-
-        let dim = self.vecs.iter().map(|v| v.dim()).max().unwrap();
-        let mat = Matrix::construct(dim, self.vecs.len(), |r, c| self.vecs[c].get_coord(r));
-        if QQ_MAT.rank(mat) != self.vecs.len() {
-            return Err("Hyperplane is degenerate");
+        if self.simplex.n() != self.simplex.dim {
+            return Err(
+                "OrientedSimplex should have dimension one less than the space it lives in",
+            );
         }
 
         Ok(())
     }
 
-    pub fn new(dim: usize, root: Point, vecs: Vec<Point>) -> Self {
-        debug_assert_ne!(dim, 0);
-        let ans = Self { dim, root, vecs };
+    pub fn new(simplex: Simplex) -> Self {
+        assert_eq!(simplex.dim, simplex.n());
+        debug_assert_ne!(simplex.dim, 0);
+        let ans = Self {
+            simplex,
+            flip: false,
+        };
         ans.check().unwrap();
         ans
     }
 
-    fn det_point(&self, point: &Point) -> Rational {
-        self.det_vector(&(point - &self.root))
+    pub fn dim(&self) -> usize {
+        self.simplex.dim
     }
 
-    fn det_vector(&self, vec: &Vector) -> Rational {
-        //vector relative to self.root
-        assert_eq!(self.vecs.len() + 1, self.dim);
+    pub fn flipped(self) -> Self {
+        Self {
+            simplex: self.simplex,
+            flip: !self.flip,
+        }
+    }
 
-        let mat = Matrix::construct(self.dim, self.dim, |r, c| {
-            if c == self.dim - 1 {
+    pub fn det_point(&self, point: &Point) -> Rational {
+        self.det_vector(&(point - &self.simplex.points[0]))
+    }
+
+    pub fn det_vector(&self, vec: &Vector) -> Rational {
+        //vector relative to self.root
+        let mat = Matrix::construct(self.simplex.dim, self.simplex.dim, |r, c| {
+            if c == self.simplex.dim - 1 {
                 vec.get_coord(r)
             } else {
-                self.vecs[c].get_coord(r)
+                (&self.simplex.points[c + 1] - &self.simplex.points[0]).get_coord(r)
             }
         });
-        QQ_MAT.det(mat).unwrap()
+        let d = QQ_MAT.det(mat).unwrap();
+        match self.flip {
+            false => d,
+            true => -d,
+        }
     }
 
-    fn sign_point(&self, point: &Point) -> std::cmp::Ordering {
+    pub fn sign_point(&self, point: &Point) -> std::cmp::Ordering {
         self.det_point(point).cmp(&Rational::from(0))
     }
 
-    pub fn rank(&self) -> usize {
-        self.vecs.len()
-    }
+    // pub fn rank(&self) -> usize {
+    //     self.vecs.len()
+    // }
 }
 
 //disjoint union of simplices
@@ -386,7 +427,7 @@ pub struct Shape {
     simplices: Vec<Simplex>,
 }
 
-fn shape_union(dim: usize, shapes: Vec<Shape>) -> Shape {
+pub fn shape_union(dim: usize, shapes: Vec<Shape>) -> Shape {
     let mut simplices = vec![];
     for mut shape in shapes {
         assert_eq!(shape.dim, dim);
@@ -457,7 +498,7 @@ impl Shape {
     }
 }
 
-fn interior_of_convex_hollow_shell(n: usize, shape: &Shape) -> Shape {
+fn interior_of_convex_shell(n: usize, shape: &Shape) -> Shape {
     debug_assert!(shape.is_complete());
     //n=1: shape is the shell of a line
     //n=2: shape is the shell of a polygon
@@ -576,10 +617,9 @@ fn interior_of_convex_hollow_shell(n: usize, shape: &Shape) -> Shape {
     }
 }
 
-pub fn cut_simplex(plane: &OrientedHyperplane, simplex: &Simplex) -> (Shape, Shape, Shape) {
-    let dim = plane.dim;
+pub fn cut_simplex(plane: &OrientedSimplex, simplex: &Simplex) -> (Shape, Shape, Shape) {
+    let dim = plane.dim();
     assert_eq!(dim, simplex.dim);
-    assert_eq!(dim, plane.rank() + 1);
     debug_assert!(simplex.n() <= dim + 1);
 
     match simplex.n() {
@@ -648,7 +688,7 @@ pub fn cut_simplex(plane: &OrientedHyperplane, simplex: &Simplex) -> (Shape, Sha
             debug_assert!(n >= 3);
             let (open_left, hollow_middle, open_right) = cut_shape(&plane, &simplex.boundary());
 
-            let interior_middle = interior_of_convex_hollow_shell(n - 2, &hollow_middle);
+            let interior_middle = interior_of_convex_shell(n - 2, &hollow_middle);
             let hollow_left = shape_union(
                 dim,
                 vec![
@@ -665,17 +705,16 @@ pub fn cut_simplex(plane: &OrientedHyperplane, simplex: &Simplex) -> (Shape, Sha
                     interior_middle.clone(),
                 ],
             );
-            let interior_left = interior_of_convex_hollow_shell(n - 1, &hollow_left);
-            let interior_right = interior_of_convex_hollow_shell(n - 1, &hollow_right);
+            let interior_left = interior_of_convex_shell(n - 1, &hollow_left);
+            let interior_right = interior_of_convex_shell(n - 1, &hollow_right);
             (interior_left, interior_middle, interior_right)
         }
     }
 }
 
-pub fn cut_shape(plane: &OrientedHyperplane, shape: &Shape) -> (Shape, Shape, Shape) {
-    let dim = plane.dim;
+pub fn cut_shape(plane: &OrientedSimplex, shape: &Shape) -> (Shape, Shape, Shape) {
+    let dim = plane.dim();
     assert_eq!(dim, shape.dim);
-    assert_eq!(dim, plane.rank() + 1);
 
     let (mut left, mut middle, mut right) =
         (Shape::empty(dim), Shape::empty(dim), Shape::empty(dim));
@@ -688,13 +727,138 @@ pub fn cut_shape(plane: &OrientedHyperplane, shape: &Shape) -> (Shape, Shape, Sh
     (left, middle, right)
 }
 
+pub fn intersect_shape_simplex(simplex: &Simplex, shape: &Shape) -> Shape {
+    assert!(simplex.n() >= 1);
+    let (a, b, c) = cut_shape(&simplex.oriented_facet(0), shape);
+    let mut shape = c;
+    for k in 1..simplex.n() {
+        let (a, b, c) = cut_shape(&simplex.oriented_facet(k), &shape);
+        shape = c;
+    }
+    shape
+}
+
+#[derive(Debug, Clone)]
+struct ConvexHull {
+    //dim = 2: polygon
+    //dim = 3: solid
+    //dim = 4: ...
+    dim: usize,
+    points: Vec<Point>,
+    facets: Vec<OrientedSimplex>, //each facet has [dim] verticies
+    ridges: Vec<Simplex>,         //each ridge has [dim-1] verticies
+}
+
+impl ConvexHull {
+    pub fn check(&self) -> Result<(), &'static str> {
+        let points_hashset: HashSet<_> = self.points.iter().collect();
+
+        for point in &self.points {
+            if point.dim() != self.dim {
+                return Err("Convex hull dim should match each point dim");
+            }
+        }
+
+        for facet in &self.facets {
+            facet.check()?;
+            if facet.simplex.dim != self.dim {
+                return Err("Convex hull dim should match each facet dim");
+            }
+            if facet.simplex.n() != self.dim {
+                return Err("Convex hull dim should match each facet vertex count");
+            }
+            for ridge in facet.simplex.facets() {
+                if !self.ridges.contains(&ridge) {
+                    return Err("Convex hull: Every facet of a facet should be in the ridge list");
+                }
+            }
+            for pt in &facet.simplex.points {
+                if !points_hashset.contains(pt) {
+                    return Err("Convex hull: Every point of a facet should be in the point list");
+                }
+            }
+        }
+
+        for point in &self.points {
+            let mut some_equal = false;
+            for facet in &self.facets {
+                match facet.sign_point(point) {
+                    std::cmp::Ordering::Less => {}
+                    std::cmp::Ordering::Equal => {
+                        some_equal = true;
+                    }
+                    std::cmp::Ordering::Greater => {
+                        return Err(
+                            "Convex hull points should all have non-positive sign wrt each facet",
+                        );
+                    }
+                }
+            }
+            if !some_equal {
+                return Err("Convex hull every point should belong to some facet");
+            }
+        }
+
+        for ridge in &self.ridges {
+            ridge.check()?;
+            if ridge.dim != self.dim {
+                return Err("Convex hull dim should match each ridge dim");
+            }
+            if ridge.n() != self.dim - 1 {
+                return Err("Convex hull dim should be one greater than each ridge vertex count");
+            }
+            for pt in &ridge.points {
+                if !points_hashset.contains(pt) {
+                    return Err("Convex hull: Every point of a ridge should be in the point list");
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
 pub fn quickhull_boundary(dim: usize, points: Vec<Point>) -> Option<Shape> {
-    //implement https://en.wikipedia.org/wiki/Quickhull
     //return None if the convex hull is flat
     for point in &points {
         assert_eq!(point.dim(), dim);
     }
-    todo!()
+
+    if points.len() == 0 {
+        Some(Shape::empty(dim))
+    } else {
+        let (first, rest) = points.split_first().unwrap();
+
+        let mat = Matrix::construct(dim, rest.len(), |r, c| {
+            rest[c].get_coord(r) - first.get_coord(r)
+        });
+        let (_h, _u, _u_det, pivs) = QQ_MAT.row_hermite_algorithm(mat);
+
+        debug_assert!(pivs.len() <= dim);
+        if pivs.len() < dim {
+            //the points all lie in a proper affine subspace
+            None
+        } else {
+            debug_assert_eq!(pivs.len(), dim);
+
+            let mut starting_simplex_points = vec![first];
+            starting_simplex_points.append(&mut pivs.into_iter().map(|i| &rest[i]).collect());
+
+            let hull = Simplex::new(
+                dim,
+                starting_simplex_points
+                    .into_iter()
+                    .map(|p| p.clone())
+                    .collect(),
+            )
+            .as_convex_hull();
+            debug_assert!(hull.check().is_ok());
+
+            //TODO: finish implementing https://en.wikipedia.org/wiki/Quickhull
+
+            todo!()
+        }
+    }
 }
 
 pub fn quickhull_interior(dim: usize, points: Vec<Point>) -> Shape {
@@ -722,5 +886,85 @@ mod geometry_tests {
     use super::*;
 
     #[test]
-    fn test_something() {}
+    fn test_cut_simplex() {
+        let s = Simplex::new(
+            3,
+            vec![
+                Point::new(vec![
+                    Rational::from_str("0").unwrap(),
+                    Rational::from_str("0").unwrap(),
+                    Rational::from_str("1").unwrap(),
+                ]),
+                Point::new(vec![
+                    Rational::from_str("0").unwrap(),
+                    Rational::from_str("0").unwrap(),
+                    Rational::from_str("-1").unwrap(),
+                ]),
+                Point::new(vec![
+                    Rational::from_str("1").unwrap(),
+                    Rational::from_str("2").unwrap(),
+                    Rational::from_str("0").unwrap(),
+                ]),
+                Point::new(vec![
+                    Rational::from_str("2").unwrap(),
+                    Rational::from_str("1").unwrap(),
+                    Rational::from_str("0").unwrap(),
+                ]),
+            ],
+        );
+
+        let h = OrientedSimplex::new(Simplex::new(
+            3,
+            vec![
+                Point::new(vec![
+                    Rational::from_str("1").unwrap(),
+                    Rational::from_str("0").unwrap(),
+                    Rational::from_str("0").unwrap(),
+                ]),
+                Point::new(vec![
+                    Rational::from_str("1").unwrap(),
+                    Rational::from_str("1").unwrap(),
+                    Rational::from_str("0").unwrap(),
+                ]),
+                Point::new(vec![
+                    Rational::from_str("1").unwrap(),
+                    Rational::from_str("0").unwrap(),
+                    Rational::from_str("1").unwrap(),
+                ]),
+            ],
+        ));
+
+        s.check().unwrap();
+        h.check().unwrap();
+        let (a, b, c) = cut_simplex(&h, &s);
+        a.check().unwrap();
+        b.check().unwrap();
+        c.check().unwrap();
+        println!(
+            "{:?}",
+            a.clone()
+                .simplices()
+                .iter()
+                .map(|s| s.n())
+                .collect::<Vec<_>>()
+        );
+        println!(
+            "{:?}",
+            b.clone()
+                .simplices()
+                .iter()
+                .map(|s| s.n())
+                .collect::<Vec<_>>()
+        );
+        println!(
+            "{:?}",
+            c.clone()
+                .simplices()
+                .iter()
+                .map(|s| s.n())
+                .collect::<Vec<_>>()
+        );
+        let d = shape_union(3, vec![a, b, c]);
+        d.check().unwrap();
+    }
 }
