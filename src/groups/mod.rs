@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 pub mod iso_rep;
 pub mod generating_set;
 pub mod partition;

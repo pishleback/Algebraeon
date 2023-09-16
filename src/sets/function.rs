@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::set::*;
 use std::collections::HashSet;
 

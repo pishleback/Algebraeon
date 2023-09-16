@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::collections::{BTreeSet, HashSet};
 use std::rc::Rc;
 

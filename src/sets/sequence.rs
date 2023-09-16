@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::function::*;
 use super::set::*;
 

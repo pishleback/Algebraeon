@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::borrow::Borrow;
 
 use super::{lattice::*, nzq::*, poly::*, ring::*};

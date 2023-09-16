@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::super::groups::group::Group;
 use std::collections::HashMap;
 

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::borrow::Borrow;
 
 use super::matrix::*;
@@ -391,8 +389,8 @@ impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
                         extended_basis
                             .iter()
                             .enumerate()
-                            .filter(|(j, b)| *j != i)
-                            .map(|(j, b)| b)
+                            .filter(|(j, _b)| *j != i)
+                            .map(|(_j, b)| b)
                             .collect(),
                     ),
                 )

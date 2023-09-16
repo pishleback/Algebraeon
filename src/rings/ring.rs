@@ -1,16 +1,6 @@
-#![allow(dead_code)]
+use std::{borrow::Borrow, collections::HashMap, fmt::Debug, hash::Hash};
 
-use std::{
-    borrow::Borrow,
-    collections::{HashMap, HashSet},
-    fmt::Debug,
-    hash::Hash,
-};
-
-use malachite_base::num::{
-    arithmetic::traits::{DivRem, UnsignedAbs},
-    logic::traits::BitIterable,
-};
+use malachite_base::num::{arithmetic::traits::UnsignedAbs, logic::traits::BitIterable};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
@@ -540,7 +530,9 @@ pub trait UniqueFactorizationDomain: FavoriteAssociate {
                 itertools::Itertools::multi_cartesian_product(
                     factor_powers.into_iter().map(|p_pows| p_pows.into_iter()),
                 )
-                .map(|prime_power_factors| self.product(prime_power_factors.iter().collect()).clone()),
+                .map(|prime_power_factors| {
+                    self.product(prime_power_factors.iter().collect()).clone()
+                }),
             )
         }
     }
@@ -983,7 +975,6 @@ impl<ED: EuclideanDomain + UniqueFactorizationDomain> Field for EuclideanQuotien
 //IdealQuotient
 //PrimeQuotient
 //MaximalQuotient
-
 
 #[cfg(test)]
 mod tests {

@@ -1,3 +1,8 @@
+#![allow(dead_code)]
+
+#[macro_use]
+extern crate glium;
+
 use std::str::FromStr;
 
 use geometry::*;
@@ -11,14 +16,20 @@ use rings::multipoly::*;
 use rings::nzq::*;
 use rings::poly::*;
 use rings::ring::*;
+use drawing::Canvas;
+
 
 mod geometry;
 mod groups;
 mod numbers;
 mod rings;
 mod sets;
+mod drawing;
 
 fn main() {
+    let canvas = drawing::canvas2d::Canvas::new();
+    canvas.run();
+
     /*
     let a = Simplex::new(
         2,

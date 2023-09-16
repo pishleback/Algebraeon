@@ -1,17 +1,12 @@
+#[allow(dead_code)]
+
 use std::collections::{HashMap, HashSet};
-use std::ops::Div;
 
 use itertools::Itertools;
-use malachite_base::num::arithmetic::traits::AbsAssign;
-use malachite_nz::integer::logic::or;
-use malachite_nz::natural::Natural;
-use malachite_q::arithmetic::simplest_rational_in_interval;
 use malachite_q::Rational;
-use rayon::prelude::IndexedParallelIterator;
 
 use super::rings::lattice::*;
 use super::rings::matrix::*;
-use crate::rings::nzq::{factorial, QQ};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Point {
@@ -142,7 +137,7 @@ impl Vector {
     }
 
     pub fn as_matrix(&self) -> Matrix<Rational> {
-        Matrix::construct(self.coords.len(), 1, |r, c| self.coords[r].clone())
+        Matrix::construct(self.coords.len(), 1, |r, _c| self.coords[r].clone())
     }
 
     pub fn from_matrix(mat: &Matrix<Rational>) -> Self {
@@ -173,7 +168,7 @@ impl Point {
     }
 
     pub fn as_matrix(&self) -> Matrix<Rational> {
-        Matrix::construct(self.coords.len(), 1, |r, c| self.coords[r].clone())
+        Matrix::construct(self.coords.len(), 1, |r,_c| self.coords[r].clone())
     }
 
     pub fn from_matrix(mat: &Matrix<Rational>) -> Self {

@@ -1,9 +1,6 @@
-#![allow(dead_code)]
-
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use std::collections::HashMap;
 use std::hash::Hash;
 
 use super::matrix::*;
@@ -164,7 +161,7 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
 
     fn div_rref(
         &self,
-        mut a: Self::ElemT,
+        a: Self::ElemT,
         b: &Self::ElemT,
     ) -> Result<Self::ElemT, RingDivisionError> {
         match self.try_quorem_rref(a, b) {
@@ -495,7 +492,7 @@ impl<'a, R: IntegralDomain> PolynomialRing<'a, R> {
             );
 
             match self.try_quorem_rref(a, b) {
-                Ok((q, r)) => Some(Ok(r)),
+                Ok((_q, r)) => Some(Ok(r)),
                 Err(_) => panic!(),
             }
         }
@@ -600,7 +597,7 @@ impl<'a, R: GreatestCommonDivisorDomain> PolynomialRing<'a, R> {
 
     pub fn primitive_part(&self, poly: Polynomial<R::ElemT>) -> Option<Polynomial<R::ElemT>> {
         match self.factor_primitive(poly) {
-            Some((unit, prim)) => Some(prim),
+            Some((_unit, prim)) => Some(prim),
             None => None,
         }
     }
@@ -678,7 +675,7 @@ impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
 
     fn quorem_rref(
         &self,
-        mut a: Self::ElemT,
+        a: Self::ElemT,
         b: &Self::ElemT,
     ) -> Option<(Self::ElemT, Self::ElemT)> {
         match self.try_quorem_rref(a, b) {
@@ -1064,7 +1061,7 @@ impl<'a, R: Field + FiniteUnits> PolynomialRing<'a, R> {
             let max_factor_degree = f_deg / 2;
             for d in 0..max_factor_degree {
                 for mut coeffs in
-                    itertools::Itertools::multi_cartesian_product((0..d + 1).into_iter().map(|d| {
+                    itertools::Itertools::multi_cartesian_product((0..d + 1).into_iter().map(|_d| {
                         let mut all_elems = vec![poly_ring.ring().zero()];
                         all_elems.append(&mut poly_ring.ring.all_units());
                         all_elems

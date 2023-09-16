@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use malachite_base::num::arithmetic::traits::NegAssign;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
@@ -2502,11 +2500,11 @@ impl ComRing for ComplexAlgebraicField {
     fn to_string(&self, elem: &Self::ElemT) -> String {
         match elem {
             ComplexAlgebraicNumber::Real(a) => RealAlgebraicField {}.to_string(a),
-            ComplexAlgebraicNumber::Complex(a) => todo!(),
+            ComplexAlgebraicNumber::Complex(_a) => todo!(),
         }
     }
 
-    fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
+    fn equal(&self, _a: &Self::ElemT, _b: &Self::ElemT) -> bool {
         todo!()
         // a == b //impl eq for complex roots
     }
@@ -2673,11 +2671,11 @@ impl ComRing for ComplexAlgebraicField {
         }
     }
 
-    fn mul_mut(&self, elem: &mut Self::ElemT, mul: &Self::ElemT) {
+    fn mul_mut(&self, _elem: &mut Self::ElemT, _mul: &Self::ElemT) {
         todo!()
     }
 
-    fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+    fn div(&self, _a: Self::ElemT, _b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
         todo!()
     }
 }
@@ -2688,8 +2686,6 @@ impl Field for ComplexAlgebraicField {}
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
-
     use super::super::poly::*;
     use super::*;
 

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::group::Group;
 use super::super::sets::permutations::Permutation;
 

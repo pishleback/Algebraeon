@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 struct PartitionIterator<P: Fn(usize) -> bool + Copy> {
     n: usize,
     x: usize,
