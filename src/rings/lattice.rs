@@ -340,6 +340,65 @@ impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
         debug_assert!(self.check_invariants(&intersection_lattice).is_ok());
         intersection_lattice
     }
+
+    pub fn as_hyperplane_intersection(
+        &self,
+        lat: &LinearLattice<R::ElemT>,
+    ) -> Vec<LinearLattice<R::ElemT>> {
+        //extend the basis of lat to a full basis
+        let mut extended_basis = vec![];
+        let (rows, cols) = (lat.rows, lat.cols);
+        let mut extended_lat = lat.clone();
+        for i in 0..rows {
+            for j in 0..cols {
+                let v = Matrix::construct(rows, cols, |r, c| {
+                    if i == r && j == c {
+                        self.ring.one()
+                    } else {
+                        self.ring.zero()
+                    }
+                });
+                let new_extended_lat = self.sum_pair(
+                    rows,
+                    cols,
+                    &extended_lat,
+                    &self.from_basis(rows, cols, vec![v.clone()]),
+                );
+
+                debug_assert!(
+                    self.rank(&new_extended_lat) == self.rank(&extended_lat)
+                        || self.rank(&new_extended_lat) == self.rank(&extended_lat) + 1
+                );
+
+                if self.rank(&new_extended_lat) == self.rank(&extended_lat) + 1 {
+                    extended_lat = new_extended_lat;
+                    extended_basis.push(v);
+                }
+            }
+        }
+        debug_assert_eq!(self.rank(&extended_lat), rows * cols);
+
+        //now there is one hyperplane for each subset of extended_basis which omits one element
+        (0..extended_basis.len())
+            .map(|i| {
+                self.sum_pair(
+                    rows,
+                    cols,
+                    lat,
+                    &self.from_basis(
+                        rows,
+                        cols,
+                        extended_basis
+                            .iter()
+                            .enumerate()
+                            .filter(|(j, b)| *j != i)
+                            .map(|(j, b)| b)
+                            .collect(),
+                    ),
+                )
+            })
+            .collect()
+    }
 }
 
 impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
@@ -353,7 +412,7 @@ impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
 }
 
 #[derive(Debug, Clone)]
-enum AffineLatticeElements<ElemT: Clone> {
+pub enum AffineLatticeElements<ElemT: Clone> {
     Empty(),
     NonEmpty {
         offset: Matrix<ElemT>,        //offset.rows == 1 and offset.cols == self.cols
@@ -366,6 +425,12 @@ pub struct AffineLattice<ElemT: Clone> {
     rows: usize,
     cols: usize,
     elems: AffineLatticeElements<ElemT>,
+}
+
+impl<ElemT: Clone> AffineLattice<ElemT> {
+    pub fn elems(&self) -> &AffineLatticeElements<ElemT> {
+        &self.elems
+    }
 }
 
 pub struct AffineLatticeStructure<'a, R: PrincipalIdealDomain> {
