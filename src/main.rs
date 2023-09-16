@@ -19,6 +19,7 @@ mod rings;
 mod sets;
 
 fn main() {
+    /*
     let a = Simplex::new(
         2,
         vec![
@@ -64,6 +65,7 @@ fn main() {
     for s in c.simplices() {
         println!("{:?} {:?}", s.n(), s);
     }
+    */
 
     /*
     let points = vec![
@@ -73,6 +75,11 @@ fn main() {
             Rational::from_str("0").unwrap(),
         ]),
         Point::new(vec![
+            Rational::from_str("1/2").unwrap(),
+            Rational::from_str("1/3").unwrap(),
+            Rational::from_str("1/2").unwrap(),
+        ]),
+        Point::new(vec![
             Rational::from_str("1").unwrap(),
             Rational::from_str("0").unwrap(),
             Rational::from_str("0").unwrap(),
@@ -106,12 +113,74 @@ fn main() {
             Rational::from_str("1").unwrap(),
             Rational::from_str("1").unwrap(),
             Rational::from_str("1").unwrap(),
+        ]),
+        Point::new(vec![
+            Rational::from_str("1/3").unwrap(),
+            Rational::from_str("1/4").unwrap(),
+            Rational::from_str("1/5").unwrap(),
+        ]),
+        Point::new(vec![
+            Rational::from_str("2/3").unwrap(),
+            Rational::from_str("3/4").unwrap(),
+            Rational::from_str("4/5").unwrap(),
+        ]),
+        Point::new(vec![
+            Rational::from_str("1/2").unwrap(),
+            Rational::from_str("1/2").unwrap(),
+            Rational::from_str("2").unwrap(),
         ]),
     ];
 
-    let b = quickhull_boundary(3, points);
+    let b = convexhull_boundary(3, points);
     println!("{:?}", b);
     */
+
+    let a = Simplex::new(
+        3,
+        vec![
+            Point::new(vec![
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("-1").unwrap(),
+            ]),
+            Point::new(vec![
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("1").unwrap(),
+            ]),
+            Point::new(vec![
+                Rational::from_str("2").unwrap(),
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("0").unwrap(),
+            ]),
+        ],
+    );
+
+    let b = Simplex::new(
+        3,
+        vec![
+            Point::new(vec![
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("-1").unwrap(),
+                Rational::from_str("0").unwrap(),
+            ]),
+            Point::new(vec![
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("0").unwrap(),
+            ]),
+            Point::new(vec![
+                Rational::from_str("3").unwrap(),
+                Rational::from_str("0").unwrap(),
+                Rational::from_str("0").unwrap(),
+            ]),
+        ],
+    );
+
+    let (c, d) = cut_simplex_by_simplex(&a, &b);
+
+    println!("{:?}", c);
+    println!("{:?}", d);
 }
 
 fn todo() {
