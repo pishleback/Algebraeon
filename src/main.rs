@@ -5,32 +5,70 @@ extern crate glium;
 
 use std::str::FromStr;
 
+use drawing::canvas2d::*;
+use drawing::Canvas;
 use geometry::*;
+use itertools::Itertools;
 use malachite_base::num::conversion::traits::IntegerMantissaAndExponent;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
+use rand::Rng;
 use rings::algebraic::*;
 use rings::ergonomic::*;
 use rings::multipoly::*;
 use rings::nzq::*;
 use rings::poly::*;
 use rings::ring::*;
-use drawing::Canvas;
 
-
+mod drawing;
 mod geometry;
 mod groups;
 mod numbers;
 mod rings;
 mod sets;
-mod drawing;
 
 fn main() {
-    let canvas = drawing::canvas2d::Canvas::new();
-    canvas.run();
+    // let canvas = drawing::canvas2d::Canvas::new();
+    // canvas.run();
 
-    /*
+    fn make_shape() -> Shape {
+        let mut rng = rand::thread_rng();
+
+        let points = (0..64)
+            .map(|i| {
+                Point::new(vec![
+                    Rational::from_sci_string_simplest(
+                        rng.gen_range(0.0..10.0).to_string().as_str(),
+                    )
+                    .unwrap(),
+                    Rational::from_sci_string_simplest(
+                        rng.gen_range(0.0..10.0).to_string().as_str(),
+                    )
+                    .unwrap(),
+                ])
+            })
+            .collect_vec();
+
+        let shape = convexhull_interior(2, points.clone());
+        let pts_shape = Shape::new(
+            2,
+            points
+                .iter()
+                .map(|p| Simplex::new(2, vec![p.clone()]))
+                .collect(),
+        );
+
+        let shape = shape_union(2, vec![shape, pts_shape]);
+        shape
+    }
+
+    let a = make_shape();
+
+    a.view2d();
+
+    return;
+
     let a = Simplex::new(
         2,
         vec![
@@ -69,14 +107,15 @@ fn main() {
 
     let a = Shape::simplex(a);
 
-    let c = intersect_shape_simplex(&b, &a);
+    let c = intersect_shape_full_simplex(&b, &a);
 
     println!("{:?}", c);
 
-    for s in c.simplices() {
+    for s in c.clone().simplices() {
         println!("{:?} {:?}", s.n(), s);
     }
-    */
+
+    c.view2d();
 
     /*
     let points = vec![
@@ -146,6 +185,7 @@ fn main() {
     println!("{:?}", b);
     */
 
+    /*
     let a = Simplex::new(
         3,
         vec![
@@ -192,6 +232,8 @@ fn main() {
 
     println!("{:?}", c);
     println!("{:?}", d);
+
+    */
 }
 
 fn todo() {

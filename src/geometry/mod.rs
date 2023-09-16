@@ -1,5 +1,4 @@
 #[allow(dead_code)]
-
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
@@ -168,7 +167,7 @@ impl Point {
     }
 
     pub fn as_matrix(&self) -> Matrix<Rational> {
-        Matrix::construct(self.coords.len(), 1, |r,_c| self.coords[r].clone())
+        Matrix::construct(self.coords.len(), 1, |r, _c| self.coords[r].clone())
     }
 
     pub fn from_matrix(mat: &Matrix<Rational>) -> Self {
@@ -255,6 +254,10 @@ impl Simplex {
 
     pub fn n(&self) -> usize {
         self.points.len()
+    }
+
+    pub fn points(&self) -> Vec<Point> {
+        self.points.clone()
     }
 
     pub fn has_vertex(&self, pt: &Point) -> bool {
@@ -539,6 +542,16 @@ impl Shape {
         Ok(())
     }
 
+    pub fn new(dim: usize, simplices: Vec<Simplex>) -> Self {
+        let ans = Self { dim, simplices };
+        debug_assert!(ans.check().is_ok());
+        ans
+    }
+
+    pub fn dim(&self) -> usize {
+        self.dim
+    }
+
     pub fn empty(dim: usize) -> Self {
         Self {
             dim,
@@ -569,6 +582,23 @@ impl Shape {
             }
         }
         true
+    }
+
+    fn completion(self) -> Shape {
+        //does not always produce a valid shape
+        let mut all_simplices = HashSet::new();
+        for s in self.simplices {
+            for b in s.boundary().simplices() {
+                all_simplices.insert(b);
+            }
+            all_simplices.insert(s);
+        }
+        let ans = Shape {
+            dim: self.dim,
+            simplices: all_simplices.into_iter().collect(),
+        };
+        debug_assert!(ans.check().is_ok());
+        ans
     }
 
     pub fn boundary(&self) -> Shape {
@@ -909,16 +939,16 @@ pub fn cut_shape_by_simplex(cut_simplex: &Simplex, shape: &Shape) -> (Shape, Sha
     (inside, outside)
 }
 
-// pub fn intersect_shape_simplex(simplex: &Simplex, shape: &Shape) -> Shape {
-//     assert!(simplex.n() >= 1);
-//     let (a, b, c) = cut_shape_by_plane(&simplex.oriented_facet(0), shape);
-//     let mut shape = c;
-//     for k in 1..simplex.n() {
-//         let (a, b, c) = cut_shape_by_plane(&simplex.oriented_facet(k), &shape);
-//         shape = c;
-//     }
-//     shape
-// }
+pub fn intersect_shape_full_simplex(simplex: &Simplex, shape: &Shape) -> Shape {
+    assert!(simplex.n() >= 1);
+    let (_a, _b, c) = cut_shape_by_plane(&simplex.oriented_facet(0), shape);
+    let mut shape = c;
+    for k in 1..simplex.n() {
+        let (_a, _b, c) = cut_shape_by_plane(&simplex.oriented_facet(k), &shape);
+        shape = c;
+    }
+    shape
+}
 
 /*
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1236,11 +1266,17 @@ pub fn convexhull_boundary(dim: usize, points: Vec<Point>) -> Option<Shape> {
                 }
             }
 
-            for f in facets {
-                println!("{:?}", f);
-            }
+            // for f in facets {
+            //     println!("{:?}", f);
+            // }
 
-            todo!()
+            Some(
+                Shape {
+                    dim,
+                    simplices: facets.into_iter().map(|facet| facet.simplex).collect(),
+                }
+                .completion(),
+            )
         }
     }
 }
@@ -1249,9 +1285,10 @@ pub fn convexhull_interior(dim: usize, points: Vec<Point>) -> Shape {
     for point in &points {
         assert_eq!(point.dim(), dim);
     }
-    //use quickhull_boundary and find its interior with interior_of_convex_hollow_shell
-    //if quickhull_boundary is None, then the interior is empty
-    todo!()
+    match convexhull_boundary(dim, points) {
+        Some(shell) => interior_of_convex_shell(&shell),
+        None => Shape::empty(dim),
+    }
 }
 
 pub fn convexhull_complete(dim: usize, points: Vec<Point>) -> Shape {

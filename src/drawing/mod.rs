@@ -90,8 +90,3 @@ pub trait Canvas {
         });
     }
 }
-
-fn main() {
-    let canvas = canvas2d::Canvas::new();
-    canvas.run();
-}

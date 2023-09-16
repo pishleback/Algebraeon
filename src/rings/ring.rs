@@ -976,6 +976,22 @@ impl<ED: EuclideanDomain + UniqueFactorizationDomain> Field for EuclideanQuotien
 //PrimeQuotient
 //MaximalQuotient
 
+pub trait Real: ComRing {
+    fn as_f64(&self, x: Self::ElemT) -> f64;
+    fn as_f32(&self, x: Self::ElemT) -> f32 {
+        self.as_f64(x) as f32
+    }
+}
+
+impl<F: FieldOfFractions> Real for F
+where
+    F::R: Real,
+{
+    fn as_f64(&self, x: Self::ElemT) -> f64 {
+        self.base_ring().as_f64(self.numerator(&x)) / self.base_ring().as_f64(self.denominator(&x))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::nzq::*;

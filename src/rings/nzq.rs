@@ -1,5 +1,4 @@
 #[allow(dead_code)]
-
 use std::collections::HashMap;
 
 use super::{poly::PolynomialRing, ring::*};
@@ -189,6 +188,21 @@ impl EuclideanDomain for IntegerRing {
             None
         } else {
             Some(a.div_mod(b.clone()))
+        }
+    }
+}
+
+impl Real for IntegerRing {
+    fn as_f64(&self, x: Self::ElemT) -> f64 {
+        if x < 0 {
+            -self.as_f64(-x)
+        } else {
+            let limbs = x.into_twos_complement_limbs_asc();
+            let mut flt = 0.0;
+            for (i, k) in limbs.into_iter().enumerate() {
+                flt += (k as f64) * (2.0 as f64).powf(i as f64 * 64.0);
+            }
+            flt
         }
     }
 }
