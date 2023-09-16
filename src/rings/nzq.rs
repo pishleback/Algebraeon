@@ -135,40 +135,6 @@ impl FavoriteAssociate for IntegerRing {
     }
 }
 
-pub struct NaturalPrimeGenerator {
-    n: Natural,
-    primes: Vec<Natural>,
-}
-
-impl NaturalPrimeGenerator {
-    pub fn new() -> Self {
-        Self {
-            n: Natural::from(2u8),
-            primes: vec![],
-        }
-    }
-}
-
-impl Iterator for NaturalPrimeGenerator {
-    type Item = Natural;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        'next_loop: loop {
-            //todo: only check primes up to sqrt n
-            for p in &self.primes {
-                if &self.n % p == 0 {
-                    self.n += Natural::from(1u8);
-                    continue 'next_loop;
-                }
-            }
-            let next_p = self.n.clone();
-            self.n += Natural::from(1u8);
-            self.primes.push(next_p.clone());
-            return Some(next_p);
-        }
-    }
-}
-
 impl UniqueFactorizationDomain for IntegerRing {
     fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
         if elem == &0 {
@@ -344,6 +310,50 @@ impl FiniteUnits for EuclideanQuotient<true, IntegerRing> {
     }
 }
 
+pub struct NaturalPrimeGenerator {
+    n: Natural,
+    primes: Vec<Natural>,
+}
+
+impl NaturalPrimeGenerator {
+    pub fn new() -> Self {
+        Self {
+            n: Natural::from(2u8),
+            primes: vec![],
+        }
+    }
+}
+
+impl Iterator for NaturalPrimeGenerator {
+    type Item = Natural;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        'next_loop: loop {
+            //todo: only check primes up to sqrt n
+            for p in &self.primes {
+                if &self.n % p == 0 {
+                    self.n += Natural::from(1u8);
+                    continue 'next_loop;
+                }
+            }
+            let next_p = self.n.clone();
+            self.n += Natural::from(1u8);
+            self.primes.push(next_p.clone());
+            return Some(next_p);
+        }
+    }
+}
+
+pub fn factorial(n: Natural) -> Natural {
+    let mut k = Natural::from(1u8);
+    let mut i = Natural::from(1u8);
+    while i <= n {
+        k *= &i;
+        i += Natural::from(1u8);
+    }
+    k
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -421,6 +431,17 @@ mod tests {
         assert_eq!(d, Integer::from(1));
     }
 
+    // #[test]
+    // fn test_factor_int() {}
+
     #[test]
-    fn test_factor_int() {}
+    fn test_factorial() {
+        debug_assert_eq!(factorial(Natural::from(0u8)), Natural::from(1u8));
+        debug_assert_eq!(factorial(Natural::from(1u8)), Natural::from(1u8));
+        debug_assert_eq!(factorial(Natural::from(2u8)), Natural::from(2u8));
+        debug_assert_eq!(factorial(Natural::from(3u8)), Natural::from(6u8));
+        debug_assert_eq!(factorial(Natural::from(4u8)), Natural::from(24u8));
+        debug_assert_eq!(factorial(Natural::from(5u8)), Natural::from(120u8));
+        debug_assert_eq!(factorial(Natural::from(6u8)), Natural::from(720u16));
+    }
 }
