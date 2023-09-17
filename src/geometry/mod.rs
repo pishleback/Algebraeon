@@ -178,6 +178,10 @@ impl Point {
                 .collect(),
         )
     }
+
+    fn transform(self, f: &dyn Fn(Point) -> Point) -> Self {
+        f(self)
+    }
 }
 
 impl PartialOrd for Point {
@@ -258,6 +262,18 @@ impl Simplex {
 
     pub fn points(&self) -> Vec<Point> {
         self.points.clone()
+    }
+
+    fn transform(self, new_dim: usize, f: &dyn Fn(Point) -> Point) -> Self {
+        let new_points = self
+            .points
+            .into_iter()
+            .map(|p| p.transform(f))
+            .collect_vec();
+        for pt in new_points.iter() {
+            debug_assert_eq!(pt.dim(), new_dim);
+        }
+        Self::new(new_dim, new_points)
     }
 
     pub fn has_vertex(&self, pt: &Point) -> bool {
@@ -566,6 +582,16 @@ impl Shape {
         }
     }
 
+    fn transform(self, new_dim: usize, f: &dyn Fn(Point) -> Point) -> Self {
+        Self::new(
+            new_dim,
+            self.simplices
+                .into_iter()
+                .map(|s| s.transform(new_dim, f))
+                .collect(),
+        )
+    }
+
     pub fn simplices(self) -> Vec<Simplex> {
         self.simplices
     }
@@ -618,6 +644,26 @@ impl Shape {
         };
         debug_assert!(shape.check().is_ok());
         shape
+    }
+
+    fn simplify(self) -> Self {
+        todo!()
+    }
+
+    pub fn intersect(&self, other: &Self) -> Self {
+        todo!()
+    }
+
+    pub fn union(&self, other: &Self) -> Self {
+        todo!()
+    }
+
+    pub fn symmetric_difference(&self, other: &Self) -> Self {
+        todo!()
+    }
+
+    pub fn subtract(&self, other: &Self) -> Self {
+        todo!()
     }
 }
 
@@ -860,13 +906,12 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
     assert_eq!(dim, simplex.dim);
 
     //cut in some hyperplanes to restrict to the affine subspace of cut_simplex
-    println!("{:?}", cut_simplex);
-    println!("{:?}", simplex);
-
     match cut_simplex.affine_span().elems() {
         AffineLatticeElements::Empty() => panic!(),
         AffineLatticeElements::NonEmpty { offset, linlat } => {
+            let flat_dim = QQ_LINLAT.rank(linlat);
             let offset_pt = Point::from_matrix(offset);
+            let offset_vec = Vector::from_matrix(offset);
 
             let linhyperplanes = QQ_LINLAT.as_hyperplane_intersection(linlat);
 
@@ -892,36 +937,59 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
 
                 let (inside_left, inside_mid, inside_right) =
                     cut_shape_by_plane(&cut_plane, &inside);
-                let (outside_left, outside_mid, outside_right) =
-                    cut_shape_by_plane(&cut_plane, &outside);
+                // let (outside_left, outside_mid, outside_right) =
+                //     cut_shape_by_plane(&cut_plane, &outside);
 
                 inside = inside_mid;
-                outside = shape_union(
-                    dim,
-                    vec![
-                        inside_left,
-                        inside_right,
-                        outside_left,
-                        outside_mid,
-                        outside_right,
-                    ],
-                );
+                outside = shape_union(dim, vec![inside_left, inside_right, outside]);
             }
 
             //restrict to the span of cut_simplex and intersect in there using the facets as oriented hyperplanes in the subspace
-
             let mat = Matrix::join_cols(
                 dim,
-                (0..QQ_LINLAT.rank(linlat))
+                (0..flat_dim)
                     .map(|i| QQ_LINLAT.basis_matrix(linlat, i))
                     .collect(),
             );
 
-            QQ_MAT.pprint(&mat);
+            //apply so that cut simplex has full rank in the affine subspace
+            // mat(pt - offset)
+            //apply to put back into this space
+            // (mat(!Ǝ)=x) + offset
 
-            println!("{:?}", outside);
+            let flat_transform = &|pt: Point| {
+                Point::from_matrix(
+                    &QQ_MAT
+                        .col_solve(&mat, &(&pt - &offset_vec).as_matrix())
+                        .unwrap(),
+                )
+            };
+            let flat_cut_simplex = cut_simplex.clone().transform(flat_dim, flat_transform);
+            let mut flat_inside = inside.transform(flat_dim, flat_transform);
+            let mut flat_outside = Shape::empty(flat_dim);
+            for k in 0..flat_cut_simplex.n() {
+                let (flat_inside_out, flat_inside_bdry, flat_inside_in) =
+                    cut_shape_by_plane(&flat_cut_simplex.oriented_facet(k), &flat_inside);
+                // let (flat_outside_out, flat_outside_bdry, flat_outside_in) =
+                //     cut_shape_by_plane(&simplex.oriented_facet(k), &flat_outside);
 
-            todo!()
+                flat_inside = flat_inside_in;
+                flat_outside = shape_union(
+                    flat_dim,
+                    vec![flat_inside_out, flat_inside_bdry, flat_outside],
+                );
+            }
+
+            let unflat_transform = &|pt: Point| {
+                &Point::from_matrix(&QQ_MAT.mul_refs(&mat, &pt.as_matrix()).unwrap()) + &offset_vec
+            };
+            let unflat_inside = flat_inside.transform(dim, unflat_transform);
+            let unflat_outside = flat_outside.transform(dim, unflat_transform);
+
+            (
+                unflat_inside,
+                shape_union(dim, vec![unflat_outside, outside]),
+            )
         }
     }
 }
@@ -939,16 +1007,16 @@ pub fn cut_shape_by_simplex(cut_simplex: &Simplex, shape: &Shape) -> (Shape, Sha
     (inside, outside)
 }
 
-pub fn intersect_shape_full_simplex(simplex: &Simplex, shape: &Shape) -> Shape {
-    assert!(simplex.n() >= 1);
-    let (_a, _b, c) = cut_shape_by_plane(&simplex.oriented_facet(0), shape);
-    let mut shape = c;
-    for k in 1..simplex.n() {
-        let (_a, _b, c) = cut_shape_by_plane(&simplex.oriented_facet(k), &shape);
-        shape = c;
-    }
-    shape
-}
+// pub fn intersect_shape_full_simplex(simplex: &Simplex, shape: &Shape) -> Shape {
+//     assert!(simplex.n() >= 1);
+//     let (_a, _b, c) = cut_shape_by_plane(&simplex.oriented_facet(0), shape);
+//     let mut shape = c;
+//     for k in 1..simplex.n() {
+//         let (_a, _b, c) = cut_shape_by_plane(&simplex.oriented_facet(k), &shape);
+//         shape = c;
+//     }
+//     shape
+// }
 
 /*
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1225,50 +1293,34 @@ pub fn convexhull_boundary(dim: usize, points: Vec<Point>) -> Option<Shape> {
             let middle_point = starting_simplex.middle();
 
             let mut facets: HashSet<_> = starting_simplex.oriented_facets().into_iter().collect();
-            let mut outer_points = (0..points.len()).collect_vec();
-            loop {
-                outer_points = outer_points
-                    .into_iter()
-                    .filter(|ptidx| facets.iter().any(|f| f.sign_point(&points[*ptidx]).is_gt()))
-                    .collect();
-                match outer_points.pop() {
-                    Some(ptidx) => {
-                        let visible = facets
-                            .iter()
-                            .filter(|f| f.sign_point(&points[ptidx]).is_gt())
-                            .map(|f| f.clone())
-                            .collect_vec();
+            for pt in points.iter() {
+                let visible = facets
+                    .iter()
+                    .filter(|f| f.sign_point(pt).is_gt())
+                    .map(|f| f.clone())
+                    .collect_vec();
 
-                        let mut horizon = HashSet::new();
-                        for v in visible {
-                            for b in v.simplex.facets() {
-                                if horizon.contains(&b) {
-                                    horizon.remove(&b);
-                                } else {
-                                    horizon.insert(b);
-                                }
-                            }
-                            facets.remove(&v);
-                        }
-
-                        for h in horizon {
-                            let mut new_facet_points = h.points;
-                            new_facet_points.push(points[ptidx].clone());
-                            let new_facet =
-                                OrientedSimplex::from_points(dim, new_facet_points, &middle_point);
-                            new_facet.check().unwrap();
-                            facets.insert(new_facet);
+                let mut horizon = HashSet::new();
+                for v in visible {
+                    for b in v.simplex.facets() {
+                        if horizon.contains(&b) {
+                            horizon.remove(&b);
+                        } else {
+                            horizon.insert(b);
                         }
                     }
-                    None => {
-                        break;
-                    }
+                    facets.remove(&v);
+                }
+
+                for h in horizon {
+                    let mut new_facet_points = h.points;
+                    new_facet_points.push(pt.clone());
+                    let new_facet =
+                        OrientedSimplex::from_points(dim, new_facet_points, &middle_point);
+                    new_facet.check().unwrap();
+                    facets.insert(new_facet);
                 }
             }
-
-            // for f in facets {
-            //     println!("{:?}", f);
-            // }
 
             Some(
                 Shape {
