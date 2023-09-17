@@ -32,10 +32,12 @@ fn main() {
     // let canvas = drawing::canvas2d::Canvas::new();
     // canvas.run();
 
+    
+
     fn make_shape() -> Shape {
         let mut rng = rand::thread_rng();
 
-        let points = (0..12)
+        let points = (0..6)
             .map(|i| {
                 Point::new(vec![
                     Rational::from_sci_string_simplest(
@@ -50,7 +52,7 @@ fn main() {
             })
             .collect_vec();
 
-        let shape = convexhull_interior(2, points.clone());
+        let shape = convexhull(2, points.clone());
         let pts_shape = Shape::new(
             2,
             points
@@ -59,19 +61,20 @@ fn main() {
                 .collect(),
         );
 
-        let shape = shape_union(2, vec![shape, pts_shape]);
         shape
     }
 
     let a = make_shape();
     let b = make_shape();
+    let c = a.union(&b);
 
-    a.view2d();
+    let mut canvas = drawing::canvas2d::Shape2dCanvas::new();
+    canvas.draw_shape(&a, (1.0, 0.0, 0.0));
+    canvas.draw_shape(&b, (0.0, 1.0, 0.0));
+    canvas.draw_shape(&c, (1.0, 1.0, 0.0));
+    canvas.run();
 
     return;
-
-
-    
 
     /*
 
@@ -130,70 +133,22 @@ fn main() {
         Point::new(vec![
             Rational::from_str("0").unwrap(),
             Rational::from_str("0").unwrap(),
-            Rational::from_str("0").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("1/2").unwrap(),
-            Rational::from_str("1/3").unwrap(),
-            Rational::from_str("1/2").unwrap(),
         ]),
         Point::new(vec![
             Rational::from_str("1").unwrap(),
-            Rational::from_str("0").unwrap(),
             Rational::from_str("0").unwrap(),
         ]),
         Point::new(vec![
             Rational::from_str("0").unwrap(),
             Rational::from_str("1").unwrap(),
-            Rational::from_str("0").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("0").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("0").unwrap(),
-            Rational::from_str("0").unwrap(),
-            Rational::from_str("1").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("0").unwrap(),
-            Rational::from_str("1").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("0").unwrap(),
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("1/3").unwrap(),
-            Rational::from_str("1/4").unwrap(),
-            Rational::from_str("1/5").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("2/3").unwrap(),
-            Rational::from_str("3/4").unwrap(),
-            Rational::from_str("4/5").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("1/2").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-            Rational::from_str("2").unwrap(),
         ]),
     ];
 
-    let b = convexhull_boundary(3, points);
-    println!("{:?}", b);
+    let b = convexhull(2, points);
+    b.view2d();
+
     */
 
-    
     /*
     let a = Simplex::new(
         3,
@@ -243,8 +198,6 @@ fn main() {
     println!("{:?}", d);
 
     */
-
-    
 }
 
 fn todo() {

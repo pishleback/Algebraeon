@@ -1,8 +1,7 @@
 use glium::{glutin::event::Event, Display, Program, Surface, VertexBuffer};
-use malachite_q::Rational;
 
 use crate::{
-    geometry::{Point, Shape, Simplex},
+    geometry::Shape,
     rings::{nzq::QQ, ring::Real},
 };
 
@@ -306,7 +305,7 @@ impl Shape2dCanvas {
                         void main() {
                             float side = sqrt(display_size.x * display_size.y);
 
-                            vec2 axis = 12.0 * vec2(1.0, 0.0) / (2.0 * camera_scale * side);
+                            vec2 axis = 18.0 * vec2(1.0, 0.0) / (2.0 * camera_scale * side);
 
                             v_colour = g_colour[0];
 
@@ -454,7 +453,7 @@ impl Shape2dCanvas {
                                 2 * (position - camera_center) * camera_scale * side / display_size,
                                 0.0,
                                 1.0);
-                            v_colour = vec4(colour, 1.0);
+                            v_colour = vec4(colour, 0.3);
                         }
                     "#,
                     r#"
@@ -530,7 +529,7 @@ impl Shape2dCanvas {
                             QQ.as_f32(points[0].get_coord(0)),
                             QQ.as_f32(points[0].get_coord(1)),
                         ],
-                        colour: [0.5 * colour.0, 0.5 * colour.1, 0.5 * colour.2],
+                        colour: [colour.0, colour.1, colour.2],
                     });
 
                     self.triangle_verts.push(Vertex {
@@ -538,14 +537,14 @@ impl Shape2dCanvas {
                             QQ.as_f32(points[1].get_coord(0)),
                             QQ.as_f32(points[1].get_coord(1)),
                         ],
-                        colour: [0.5 * colour.0, 0.5 * colour.1, 0.5 * colour.2],
+                        colour: [colour.0, colour.1, colour.2],
                     });
                     self.triangle_verts.push(Vertex {
                         position: [
                             QQ.as_f32(points[2].get_coord(0)),
                             QQ.as_f32(points[2].get_coord(1)),
                         ],
-                        colour: [0.5 * colour.0, 0.5 * colour.1, 0.5 * colour.2],
+                        colour: [colour.0, colour.1, colour.2],
                     });
                     self.triangles_vertex_buffer = None;
                 }
@@ -575,7 +574,10 @@ impl super::Canvas for Shape2dCanvas {
                     camera_center : (self.camera.center.0 as f32, self.camera.center.1 as f32),
                     display_size : (state.display_size.0 as f32, state.display_size.1 as f32)
                 },
-                &Default::default(),
+                &glium::DrawParameters {
+                    blend: glium::Blend::alpha_blending(),
+                    ..Default::default()
+                },
             )
             .unwrap();
 
@@ -592,6 +594,7 @@ impl super::Canvas for Shape2dCanvas {
                 &Default::default(),
             )
             .unwrap();
+
         target
             .draw(
                 self.points_vertex_buffer.as_ref().unwrap(),
@@ -605,6 +608,7 @@ impl super::Canvas for Shape2dCanvas {
                 &Default::default(),
             )
             .unwrap();
+
         target.finish().unwrap();
     }
 
@@ -619,10 +623,6 @@ impl super::Canvas for Shape2dCanvas {
                             state.mouse_pos,
                             (1.1 as f64).powf(*y as f64),
                         );
-                        let pos = self
-                            .camera
-                            .pixel_to_pos(state.display_size, state.mouse_pos);
-                        let px_again = self.camera.pos_to_pixel(state.display_size, pos);
                     }
                     _ => {}
                 },
@@ -641,7 +641,7 @@ impl Shape {
 
         use super::Canvas;
         let mut canvas = Shape2dCanvas::new();
-        canvas.draw_shape(self, (1.0, 1.0, 0.0));
+        canvas.draw_shape(self, (1.0, 1.0, 1.0));
         canvas.run()
     }
 }
