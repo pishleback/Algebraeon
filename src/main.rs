@@ -35,7 +35,7 @@ fn main() {
     fn make_shape() -> Shape {
         let mut rng = rand::thread_rng();
 
-        let points = (0..64)
+        let points = (0..12)
             .map(|i| {
                 Point::new(vec![
                     Rational::from_sci_string_simplest(
@@ -64,10 +64,16 @@ fn main() {
     }
 
     let a = make_shape();
+    let b = make_shape();
 
     a.view2d();
 
     return;
+
+
+    
+
+    /*
 
     let a = Simplex::new(
         2,
@@ -116,6 +122,8 @@ fn main() {
     }
 
     c.view2d();
+
+    */
 
     /*
     let points = vec![
@@ -185,6 +193,7 @@ fn main() {
     println!("{:?}", b);
     */
 
+    
     /*
     let a = Simplex::new(
         3,
@@ -234,6 +243,8 @@ fn main() {
     println!("{:?}", d);
 
     */
+
+    
 }
 
 fn todo() {
