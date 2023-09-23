@@ -2,7 +2,11 @@
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
+use malachite_q::arithmetic::simplest_rational_in_interval;
 use malachite_q::Rational;
+
+use crate::rings::nzq::QQ;
+use crate::rings::ring::Real;
 
 use super::rings::lattice::*;
 use super::rings::matrix::*;
@@ -146,6 +150,20 @@ impl Vector {
                 .map(|r| mat.at(r, 0).unwrap().clone())
                 .collect(),
         )
+    }
+
+    pub fn dot(&self, other: &Self) -> Rational {
+        let dim = self.dim();
+        assert_eq!(dim, other.dim());
+        let mut ans = Rational::from(0);
+        for i in 0..dim {
+            ans += &self.coords[i] * &other.coords[i];
+        }
+        ans
+    }
+
+    pub fn length_sq(&self) -> Rational {
+        self.dot(self)
     }
 }
 
@@ -493,6 +511,25 @@ impl Simplex {
         Point { coords }
     }
 
+    pub fn orthogonal_project(&self, point: &Point) -> Point {
+        assert_ne!(self.n(), 0);
+        let root = &self.points[0];
+        let vecs = (1..self.n()).map(|i| &self.points[i] - root).collect_vec();
+        let pt_vec = point - root;
+
+        let mut proj = root.clone();
+        for vec in vecs {
+            proj = &proj + &(&vec * &(pt_vec.dot(&vec) / vec.length_sq()));
+        }
+
+        proj
+    }
+
+    pub fn orthogonal_distance_sq(&self, point: &Point) -> Rational {
+        let proj = self.orthogonal_project(point);
+        (point - &proj).length_sq()
+    }
+
     // pub fn measure(&self) -> Rational {
     //not gooood need to check that its full rank
     //     if self.n() == 0 {
@@ -677,6 +714,16 @@ impl Shape {
         self.simplices
     }
 
+    fn points(&self) -> Vec<Point> {
+        let mut all_points = vec![];
+        for s in &self.simplices {
+            for p in &s.points {
+                all_points.push(p.clone());
+            }
+        }
+        all_points
+    }
+
     pub fn is_complete(&self) -> bool {
         let all_simplices: HashSet<_> = self.simplices.iter().collect();
         for s in &self.simplices {
@@ -736,98 +783,219 @@ impl Shape {
     fn simplify(&self) -> Self {
         return self.clone();
 
-        //connected decomposition (TODO!)
-        //convex decomposition for each connected component
-
         let dim = self.dim;
-        let mut points = HashSet::new();
-        for simplex in &self.simplices {
-            for point in &simplex.points {
-                points.insert(point);
+
+        let mut simps: HashSet<_> = self.simplices.clone().into_iter().collect();
+
+        loop {
+            println!("sus {}", simps.len());
+            let shape = Shape::new(dim, simps.clone().into_iter().collect());
+
+            //not sure if this works so well when its not connected, so might want to work out connected component decomposition at some point.
+            let hull = convexhull_interior(dim, shape.points().into_iter().collect()).0;
+            let diff = hull.subtract_nosimp(&shape);
+
+            let pts1: HashSet<_> = hull.points().into_iter().collect();
+            let pts2: HashSet<_> = diff.points().into_iter().collect();
+            let pts = pts1.intersection(&pts2).into_iter().collect_vec();
+            match pts.into_iter().next() {
+                Some(pt) => {
+                    let pt = pt.clone();
+                    simps = simps
+                        .into_iter()
+                        .filter(|s| {
+                            !s.points
+                                .clone()
+                                .into_iter()
+                                .collect::<HashSet<_>>()
+                                .contains(&pt)
+                        })
+                        .collect();
+                }
+                None => {
+                    let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
+                    canvas.draw_shape(self, (1.0, 1.0, 0.0));
+                    canvas.draw_shape(&shape, (1.0, 0.0, 0.0));
+                    crate::drawing::Canvas::run(canvas);
+                    break;
+                }
             }
-        }
-        let hull = convexhull(dim, points.clone().into_iter().map(|p| p.clone()).collect());
-        let remaining = hull.subtract_nosimp(&self);
-        if remaining.is_empty() {
-            todo!("we are convex");
-        } else {
-            let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
-            canvas.draw_shape(self, (1.0, 1.0, 0.0));
-            canvas.draw_shape(&hull.subtract_nosimp(&self), (0.0, 1.0, 0.0));
-            crate::drawing::Canvas::run(canvas);
         }
 
         return self.clone();
 
-        let dim = self.dim;
-        let mut ans = self.clone();
+        // return self.clone();
 
-        'main_loop: loop {
-            for simplex in &ans.simplices {
-                println!("pp");
+        // let dim = self.dim;
+        // if self.is_empty() {
+        //     return self.clone();
+        // } else {
+        //     let mut all_pts = HashSet::new();
+        //     for s in &self.simplices {
+        //         for p in &s.points {
+        //             all_pts.insert(p.clone());
+        //         }
+        //     }
 
-                let mut local_simplices = vec![simplex.clone()];
-                let mut other_simplices: HashSet<&Simplex> = ans.simplices.iter().collect();
-                other_simplices.remove(simplex);
+        //     let pt = {
+        //         if all_pts.len() == 1 {
+        //             all_pts.iter().next().unwrap().clone()
+        //         } else {
+        //             let tmp_all_pts = all_pts.iter().collect_vec();
+        //             let mut pt_pairs = vec![];
+        //             for i in 0..tmp_all_pts.len() {
+        //                 for j in i + 1..tmp_all_pts.len() {
+        //                     pt_pairs.push((tmp_all_pts[i], tmp_all_pts[j]));
+        //                 }
+        //             }
+        //             pt_pairs
+        //                 .into_iter()
+        //                 .max_by_key(|(p1, p2)| (*p1 - *p2).length_sq())
+        //                 .unwrap()
+        //                 .0
+        //                 .clone()
+        //         }
+        //     };
 
-                let mut done = false;
-                while !done {
-                    done = true;
-                    let local_convexhull = {
-                        let mut points = HashSet::new();
-                        for s in &local_simplices {
-                            for p in s.points() {
-                                points.insert(p.clone());
-                            }
-                        }
-                        convexhull(dim, points.into_iter().collect())
-                    };
+        //     println!("{:?}", pt);
 
-                    for s in other_simplices.clone() {
-                        let (inner, outer) = cut_shape_by_simplex(s, &local_convexhull);
-                        if !inner.is_empty() {
-                            other_simplices.remove(s);
-                            local_simplices.push(s.clone());
-                            done = false;
-                        }
-                    }
+        //     let mut other_pts = all_pts.clone();
+        //     other_pts.remove(&pt);
+        //     let mut new_simplex = Simplex::new(dim, vec![pt]);
 
-                    //now local shape is a subshape of ans
-                    //and every convex subshape appears as some local shape in this loop
-                    //note that a particular local shape may not be convex
-                    let local_shape =
-                        Shape::new(dim, local_simplices.iter().map(|s| (*s).clone()).collect());
+        //     loop {
+        //         if dim + 1 == new_simplex.n() {
+        //             //all larger simplices are degenerate
+        //             break;
+        //         }
 
-                    if local_convexhull.simplices.len() < local_shape.simplices.len() {
-                        if local_shape.equal(&local_convexhull) {
-                            ans = shape_union(
-                                dim,
-                                vec![
-                                    Shape::new(
-                                        dim,
-                                        other_simplices.iter().map(|s| (*s).clone()).collect(),
-                                    ),
-                                    local_convexhull,
-                                ],
-                            );
-                            println!("simp {}", ans.simplices.len());
-                            continue 'main_loop;
-                        }
-                    }
-                }
+        //         println!("more pp");
+        //         let next_simplex_opt = other_pts
+        //             .iter()
+        //             .map(|p| {
+        //                 (p.clone(), {
+        //                     println!("pp");
+        //                     let mut new_new_points = new_simplex.points.clone();
+        //                     new_new_points.push(p.clone());
+        //                     new_new_points
+        //                 })
+        //             })
+        //             .filter(|(p, pts)| new_simplex.orthogonal_distance_sq(p) != Rational::from(0)) //is the new simplex non-degenerate
+        //             .map(|(p, pts)| (p, Simplex::new(dim, pts)))
+        //             .filter(|(p, s)| Shape::simplex(s.clone()).subtract_nosimp(self).is_empty())
+        //             .max_by_key(|(p, s)| new_simplex.orthogonal_distance_sq(p));
 
-                // let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
-                // canvas.draw_shape(&ans, (1.0, 1.0, 0.0));
-                // canvas.draw_shape(&local_shape, (0.0, 1.0, 0.0));
-                // canvas.draw_shape(
-                //     &local_convexhull.symmetric_difference_nosimp(&local_shape),
-                //     (0.0, 0.0, 1.0),
-                // );
-                // crate::drawing::Canvas::run(canvas);
-            }
-            break;
-        }
-        ans
+        //         match next_simplex_opt {
+        //             Some((p, next_simplex)) => {
+        //                 other_pts.remove(&p);
+        //                 new_simplex = next_simplex;
+        //             }
+        //             None => {
+        //                 break;
+        //             }
+        //         }
+        //     }
+
+        //     let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
+        //     canvas.draw_shape(&self, (1.0, 1.0, 0.0));
+        //     canvas.draw_shape(&Shape::simplex(new_simplex), (1.0, 0.0, 0.0));
+        //     crate::drawing::Canvas::run(canvas);
+        // }
+
+        // panic!();
+
+        // //connected decomposition (TODO!)
+        // //convex decomposition for each connected component
+
+        // let dim = self.dim;
+        // let mut points = HashSet::new();
+        // for simplex in &self.simplices {
+        //     for point in &simplex.points {
+        //         points.insert(point);
+        //     }
+        // }
+        // let hull = convexhull(dim, points.clone().into_iter().map(|p| p.clone()).collect());
+        // let remaining = hull.subtract_nosimp(&self);
+        // if remaining.is_empty() {
+        //     todo!("we are convex");
+        // } else {
+        //     let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
+        //     canvas.draw_shape(self, (1.0, 1.0, 0.0));
+        //     canvas.draw_shape(&hull.subtract_nosimp(&self), (0.0, 1.0, 0.0));
+        //     crate::drawing::Canvas::run(canvas);
+        // }
+
+        // return self.clone();
+
+        // let dim = self.dim;
+        // let mut ans = self.clone();
+
+        // 'main_loop: loop {
+        //     for simplex in &ans.simplices {
+        //         println!("pp");
+
+        //         let mut local_simplices = vec![simplex.clone()];
+        //         let mut other_simplices: HashSet<&Simplex> = ans.simplices.iter().collect();
+        //         other_simplices.remove(simplex);
+
+        //         let mut done = false;
+        //         while !done {
+        //             done = true;
+        //             let local_convexhull = {
+        //                 let mut points = HashSet::new();
+        //                 for s in &local_simplices {
+        //                     for p in s.points() {
+        //                         points.insert(p.clone());
+        //                     }
+        //                 }
+        //                 convexhull(dim, points.into_iter().collect())
+        //             };
+
+        //             for s in other_simplices.clone() {
+        //                 let (inner, outer) = cut_shape_by_simplex(s, &local_convexhull);
+        //                 if !inner.is_empty() {
+        //                     other_simplices.remove(s);
+        //                     local_simplices.push(s.clone());
+        //                     done = false;
+        //                 }
+        //             }
+
+        //             //now local shape is a subshape of ans
+        //             //and every convex subshape appears as some local shape in this loop
+        //             //note that a particular local shape may not be convex
+        //             let local_shape =
+        //                 Shape::new(dim, local_simplices.iter().map(|s| (*s).clone()).collect());
+
+        //             if local_convexhull.simplices.len() < local_shape.simplices.len() {
+        //                 if local_shape.equal(&local_convexhull) {
+        //                     ans = shape_union(
+        //                         dim,
+        //                         vec![
+        //                             Shape::new(
+        //                                 dim,
+        //                                 other_simplices.iter().map(|s| (*s).clone()).collect(),
+        //                             ),
+        //                             local_convexhull,
+        //                         ],
+        //                     );
+        //                     println!("simp {}", ans.simplices.len());
+        //                     continue 'main_loop;
+        //                 }
+        //             }
+        //         }
+
+        //         // let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
+        //         // canvas.draw_shape(&ans, (1.0, 1.0, 0.0));
+        //         // canvas.draw_shape(&local_shape, (0.0, 1.0, 0.0));
+        //         // canvas.draw_shape(
+        //         //     &local_convexhull.symmetric_difference_nosimp(&local_shape),
+        //         //     (0.0, 0.0, 1.0),
+        //         // );
+        //         // crate::drawing::Canvas::run(canvas);
+        //     }
+        //     break;
+        // }
+        // ans
     }
 
     fn intersect_nosimp(&self, other: &Self) -> Self {
@@ -853,6 +1021,7 @@ impl Shape {
                 self.symmetric_difference_nosimp(other),
             ],
         )
+        // shape_union(dim, vec![self.subtract_nosimp(other), other.clone()])
     }
 
     fn subtract_nosimp(&self, other: &Self) -> Self {
