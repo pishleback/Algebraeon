@@ -555,12 +555,12 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
                     offset: _self_offset,
                     linlat: _self_linlat,
                 } => {
-                    for bn in 0..linlat_struct.rank(other_linlat.borrow()) {
+                    for bn in 0..linlat_struct.rank(other_linlat) {
                         if !self.contains_point(
                             lat,
                             mat_struct
                                 .add_ref(
-                                    linlat_struct.basis_matrix(other_linlat.borrow(), bn),
+                                    linlat_struct.basis_matrix(other_linlat, bn),
                                     other_offset,
                                 )
                                 .unwrap(),

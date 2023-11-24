@@ -700,6 +700,10 @@ impl Shape {
         }
     }
 
+    pub fn simplices(self) -> Vec<Simplex> {
+        self.simplices
+    }
+
     fn transform(self, new_dim: usize, f: &dyn Fn(Point) -> Point) -> Self {
         Self::new(
             new_dim,
@@ -708,10 +712,6 @@ impl Shape {
                 .map(|s| s.transform(new_dim, f))
                 .collect(),
         )
-    }
-
-    pub fn simplices(self) -> Vec<Simplex> {
-        self.simplices
     }
 
     fn points(&self) -> Vec<Point> {
@@ -1552,6 +1552,53 @@ pub fn convexhull(dim: usize, points: Vec<Point>) -> Shape {
     let interior = interior_of_convex_shell(&shell);
     shape_union(dim, vec![shell, interior])
 }
+
+
+struct PartialSimplicialComplex {
+    dim : usize,
+    simplices : Vec<Simplex>
+}
+
+impl PartialSimplicialComplex {
+    pub fn check(&self) -> Result<(), &'static str> {
+        Shape::new(self.dim, self.simplices.clone()).check()?;
+        //TODO: check that every face of a simplex is a simplex
+        Ok(())
+    }
+
+    pub fn new(dim: usize, simplices: Vec<Simplex>) -> Self {
+        let ans = Self { dim, simplices };
+        debug_assert!(ans.check().is_ok());
+        ans
+    }
+
+    pub fn dim(&self) -> usize {
+        self.dim
+    }
+
+    pub fn empty(dim: usize) -> Self {
+        Self {
+            dim,
+            simplices: vec![],
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.simplices.is_empty()
+    }
+
+    pub fn simplex(simplex: Simplex) -> Self {
+        Self {
+            dim: simplex.dim,
+            simplices: vec![simplex],
+        }
+    }
+
+    pub fn simplices(self) -> Vec<Simplex> {
+        self.simplices
+    }
+}
+
 
 #[cfg(test)]
 mod geometry_tests {

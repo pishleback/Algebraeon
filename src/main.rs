@@ -37,7 +37,7 @@ fn main() {
     fn make_shape() -> Shape {
         let mut rng = rand::thread_rng();
 
-        let points = (0..6)
+        let points = (0..12)
             .map(|i| {
                 Point::new(vec![
                     Rational::from_sci_string_simplest(
