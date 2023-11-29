@@ -20,9 +20,7 @@ impl<P: Fn(usize) -> bool + Copy> PartitionIterator<P> {
     }
 }
 
-impl<P: Fn(usize) -> bool + Copy> Iterator
-    for PartitionIterator<P>
-{
+impl<P: Fn(usize) -> bool + Copy> Iterator for PartitionIterator<P> {
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -89,7 +87,6 @@ impl<P: Fn(usize) -> bool + Copy> Iterator
         }
     }
 }
-
 
 pub fn partitions_sized<P: Fn(usize) -> bool + Copy>(
     n: usize,

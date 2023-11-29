@@ -552,6 +552,18 @@ impl Shape2dCanvas {
             }
         }
     }
+
+    // pub fn draw_partial_simplicial_complex(
+    //     &mut self,
+    //     psc: &PartialSimplicialComplex,
+    //     colour: (f32, f32, f32),
+    // ) {
+    //     self.draw_shape(&psc.clone().as_shape(), colour)
+    // }
+
+    // pub fn draw_simplicial_complex(&mut self, sc: &SimplicialComplex, colour: (f32, f32, f32)) {
+    //     self.draw_shape(&sc.clone().as_shape(), colour)
+    // }
 }
 
 impl super::Canvas for Shape2dCanvas {

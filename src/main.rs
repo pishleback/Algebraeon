@@ -32,8 +32,6 @@ fn main() {
     // let canvas = drawing::canvas2d::Canvas::new();
     // canvas.run();
 
-    
-
     fn make_shape() -> Shape {
         let mut rng = rand::thread_rng();
 
@@ -72,6 +70,8 @@ fn main() {
     canvas.draw_shape(&a, (1.0, 0.0, 0.0));
     canvas.draw_shape(&b, (0.0, 1.0, 0.0));
     canvas.draw_shape(&c, (1.0, 1.0, 0.0));
+
+    // canvas.draw_partial_simplicial_complex(&c.as_partial_simplicial_complex(), (1.0, 1.0, 0.0));
     canvas.run();
 
     return;

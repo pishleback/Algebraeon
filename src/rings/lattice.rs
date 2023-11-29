@@ -559,10 +559,7 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
                         if !self.contains_point(
                             lat,
                             mat_struct
-                                .add_ref(
-                                    linlat_struct.basis_matrix(other_linlat, bn),
-                                    other_offset,
-                                )
+                                .add_ref(linlat_struct.basis_matrix(other_linlat, bn), other_offset)
                                 .unwrap(),
                         ) {
                             return false;

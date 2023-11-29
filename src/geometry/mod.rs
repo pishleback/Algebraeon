@@ -30,7 +30,6 @@ impl std::ops::Neg for Vector {
         }
     }
 }
-
 impl std::ops::Mul<&Vector> for &Rational {
     type Output = Vector;
 
@@ -40,7 +39,6 @@ impl std::ops::Mul<&Vector> for &Rational {
         }
     }
 }
-
 impl std::ops::Mul<&Rational> for &Vector {
     type Output = Vector;
 
@@ -50,7 +48,6 @@ impl std::ops::Mul<&Rational> for &Vector {
         }
     }
 }
-
 impl std::ops::Neg for &Vector {
     type Output = Vector;
 
@@ -58,7 +55,6 @@ impl std::ops::Neg for &Vector {
         -self.clone()
     }
 }
-
 impl std::ops::Add<&Vector> for &Vector {
     type Output = Vector;
     fn add(self, other: &Vector) -> Self::Output {
@@ -72,7 +68,6 @@ impl std::ops::Add<&Vector> for &Vector {
         }
     }
 }
-
 impl std::ops::Add<&Vector> for &Point {
     type Output = Point;
     fn add(self, other: &Vector) -> Self::Output {
@@ -86,7 +81,6 @@ impl std::ops::Add<&Vector> for &Point {
         }
     }
 }
-
 impl std::ops::Sub<&Vector> for &Point {
     type Output = Point;
     fn sub(self, other: &Vector) -> Self::Output {
@@ -100,14 +94,12 @@ impl std::ops::Sub<&Vector> for &Point {
         }
     }
 }
-
 impl std::ops::Sub<&Vector> for &Vector {
     type Output = Vector;
     fn sub(self, other: &Vector) -> Self::Output {
         self + &(-other)
     }
 }
-
 impl std::ops::Sub<&Point> for &Point {
     type Output = Vector;
     fn sub(self, other: &Point) -> Self::Output {
@@ -197,6 +189,7 @@ impl Point {
         )
     }
 
+    #[deprecated]
     fn transform(self, f: &dyn Fn(Point) -> Point) -> Self {
         f(self)
     }
@@ -250,6 +243,99 @@ fn are_points_nondegenerage(dim: usize, points: &Vec<Point>) -> bool {
     true
 }
 
+struct AffineSubspace {
+    dim: usize,         //the dimension of the ambient space
+    origin: Point,      //the origin of the affine subspace in the ambient space
+    basis: Vec<Vector>, //a basis for the affine subspace relative to the origin
+}
+
+impl AffineSubspace {
+    pub fn check(&self) -> Result<(), &'static str> {
+        if self.dim != self.origin.dim() {
+            return Err("origin of affine subspace should live in the ambient space");
+        }
+        for v in &self.basis {
+            if self.dim != self.origin.dim() {
+                return Err("basis vector of affine subspace should live in the ambient space");
+            }
+        }
+
+        if self.basis.len() != QQ_MAT.rank(self.basis_matrix()) {
+            return Err("affine subspace vectors should be linearly independent");
+        }
+
+        Ok(())
+    }
+
+    fn basis_matrix(&self) -> Matrix<Rational> {
+        Matrix::construct(self.dim, self.basis.len(), |i, j| {
+            self.basis[j].get_coord(i)
+        })
+    }
+
+    pub fn affine_span(&self) -> AffineLattice<Rational> {
+        QQ_AFFLAT.from_offset_and_linear_lattice(
+            self.dim,
+            1,
+            self.origin.as_matrix(),
+            QQ_LINLAT.from_basis(
+                self.dim,
+                1,
+                (0..self.basis.len())
+                    .map(|i| (&self.basis[i]).as_matrix())
+                    .collect(),
+            ),
+        )
+    }
+
+    pub fn dim(&self) -> usize {
+        self.dim
+    }
+
+    pub fn rank(&self) -> usize {
+        self.basis.len()
+    }
+
+    pub fn point_image(&self, p: &Point) -> Point {
+        assert_eq!(p.dim(), self.rank());
+        &self.origin
+            + &Vector::from_matrix(
+                &QQ_MAT
+                    .mul_refs(&self.basis_matrix(), &p.as_matrix())
+                    .unwrap(),
+            )
+    }
+
+    pub fn simplex_image(&self, s: &Simplex) -> Simplex {
+        Simplex::new(
+            self.dim(),
+            s.points().iter().map(|p| self.point_image(p)).collect(),
+        )
+    }
+
+    pub fn point_preimage(&self, p: &Point) -> Option<Point> {
+        assert_eq!(p.dim(), self.dim());
+
+        match QQ_MAT.col_solve(&self.basis_matrix(), &(p - &self.origin).as_matrix()) {
+            Some(sol) => Some(Point::from_matrix(&sol)),
+            None => None,
+        }
+    }
+
+    pub fn simplex_preimage(&self, s: &Simplex) -> Option<Simplex> {
+        let mut new_points = vec![];
+        for p in &s.points() {
+            match self.point_preimage(p) {
+                Some(q) => new_points.push(q),
+                None => {
+                    return None;
+                }
+            }
+        }
+        Some(Simplex::new(self.dim(), new_points))
+    }
+}
+
 struct Interval {
     start: Rational,
     end: Rational,
@@ -292,81 +378,129 @@ impl Box {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Simplex {
     dim: usize,
-    points: Vec<Point>, //ordered
+    vertices: Vec<Point>, //ordered
 }
 
 impl Simplex {
     pub fn check(&self) -> Result<(), &'static str> {
-        let mut sorted_points = self.points.clone();
-        sorted_points.sort();
-        if self.points != sorted_points {
-            return Err("Simplex points are not sorted");
+        let mut sorted_vertices = self.vertices.clone();
+        sorted_vertices.sort();
+        if self.vertices != sorted_vertices {
+            return Err("Simplex vertices are not sorted");
         }
 
-        for p in &self.points {
+        if self.vertices.is_empty() {
+            return Err("Simplex should have at least one vertex");
+        }
+
+        for p in &self.vertices {
             if p.dim() != self.dim {
-                return Err("Simplex should live in the same dimension as its points");
+                return Err("Simplex should live in the same dimension as its vertices");
             }
         }
 
-        if !are_points_nondegenerage(self.dim, &self.points) {
+        if !are_points_nondegenerage(self.dim, &self.vertices) {
             return Err("Simplex is degenerate");
         }
 
         Ok(())
     }
 
-    pub fn new(dim: usize, mut points: Vec<Point>) -> Self {
-        points.sort();
-        let ans = Self { dim, points };
+    pub fn new(dim: usize, mut vertices: Vec<Point>) -> Self {
+        vertices.sort();
+        let ans = Self { dim, vertices };
         ans.check().unwrap();
         ans
     }
 
-    pub fn try_new(dim: usize, mut points: Vec<Point>) -> Option<Self> {
-        if are_points_nondegenerage(dim, &points) {
-            points.sort();
-            Some(Self { dim, points })
+    pub fn try_new(dim: usize, mut vertices: Vec<Point>) -> Option<Self> {
+        if are_points_nondegenerage(dim, &vertices) {
+            vertices.sort();
+            Some(Self { dim, vertices })
         } else {
             None
         }
     }
 
     pub fn n(&self) -> usize {
-        self.points.len()
+        self.vertices.len()
+    }
+
+    pub fn rank(&self) -> usize {
+        self.vertices.len() - 1
+    }
+
+    pub fn dim(&self) -> usize {
+        self.dim
     }
 
     pub fn points(&self) -> Vec<Point> {
-        self.points.clone()
+        self.vertices.clone()
     }
 
     fn bounding_box(&self) -> Box {
-        Box::bounding_box(self.dim, &self.points)
+        Box::bounding_box(self.dim, &self.vertices)
     }
 
+    #[deprecated]
     fn transform(self, new_dim: usize, f: &dyn Fn(Point) -> Point) -> Self {
-        let new_points = self
-            .points
+        let new_vertices = self
+            .vertices
             .into_iter()
             .map(|p| p.transform(f))
             .collect_vec();
-        for pt in new_points.iter() {
+        for pt in new_vertices.iter() {
             debug_assert_eq!(pt.dim(), new_dim);
         }
-        Self::new(new_dim, new_points)
+        Self::new(new_dim, new_vertices)
     }
 
     pub fn has_vertex(&self, pt: &Point) -> bool {
-        self.points.binary_search(pt).is_ok()
+        self.vertices.binary_search(pt).is_ok()
+    }
+
+    pub fn skeleton(&self, k: usize) -> Vec<Simplex> {
+        let mut parts = vec![];
+        for skeleton_piece_index in (0..self.vertices.len()).combinations(k + 1) {
+            let part = Simplex {
+                dim: self.dim,
+                vertices: skeleton_piece_index
+                    .into_iter()
+                    .map(|i| self.vertices[i].clone())
+                    .collect(),
+            };
+            parts.push(part);
+        }
+        return parts;
+    }
+
+    pub fn vertices(&self) -> Vec<Simplex> {
+        self.skeleton(0)
+    }
+
+    pub fn edges(&self) -> Vec<Simplex> {
+        self.skeleton(1)
+    }
+
+    pub fn faces(&self) -> Vec<Simplex> {
+        self.skeleton(2)
+    }
+
+    pub fn ridges(&self) -> Vec<Simplex> {
+        self.skeleton(self.rank() - 2)
+    }
+
+    pub fn facets(&self) -> Vec<Simplex> {
+        self.skeleton(self.rank() - 1)
     }
 
     pub fn facet(&self, k: usize) -> Simplex {
         assert!(k <= self.n());
         let facet = Simplex {
             dim: self.dim,
-            points: (0..self.n())
+            vertices: (0..self.n())
                 .filter(|i| i != &k)
-                .map(|i| self.points[i].clone())
+                .map(|i| self.vertices[i].clone())
                 .collect(),
         };
         debug_assert!(facet.check().is_ok());
@@ -374,82 +508,20 @@ impl Simplex {
     }
 
     fn oriented_facet(&self, k: usize) -> OrientedSimplex {
-        //oriented facets have positive side on the outside
+        //return the oriented facet of self with positive side on the outside and negative side on the inside
+        assert_eq!(self.dim, self.rank());
         assert!(k <= self.n());
         let oriented_facet = OrientedSimplex::new(self.facet(k));
-        match oriented_facet.sign_point(&self.points[k]) {
+        match oriented_facet.sign_point(&self.vertices[k]) {
             std::cmp::Ordering::Less => oriented_facet,
             std::cmp::Ordering::Equal => panic!(),
             std::cmp::Ordering::Greater => oriented_facet.flipped(),
         }
     }
 
-    pub fn facets(&self) -> Vec<Simplex> {
-        (0..self.n()).map(|k| self.facet(k)).collect()
-    }
-
     fn oriented_facets(&self) -> Vec<OrientedSimplex> {
         (0..self.n()).map(|k| self.oriented_facet(k)).collect()
     }
-
-    pub fn ridges(&self) -> Vec<Simplex> {
-        let mut ridges = vec![];
-        for i in 0..self.n() {
-            for j in i + 1..self.n() {
-                let ridge = Simplex {
-                    dim: self.dim,
-                    points: (0..self.n())
-                        .filter(|k| (k != &i) && (k != &j))
-                        .map(|k| self.points[k].clone())
-                        .collect(),
-                };
-                debug_assert!(ridge.check().is_ok());
-                ridges.push(ridge);
-            }
-        }
-        ridges
-    }
-
-    pub fn edges(&self) -> Vec<Simplex> {
-        let mut edges = vec![];
-        for i in 0..self.n() {
-            for j in i + 1..self.n() {
-                let edge = Simplex {
-                    dim: self.dim,
-                    points: vec![self.points[i].clone(), self.points[j].clone()],
-                };
-                debug_assert!(edge.check().is_ok());
-                edges.push(edge);
-            }
-        }
-        edges
-    }
-
-    // pub fn boundary_as_mesh(&self) -> Option<Mesh> {
-    //     if self.n() == 0 {
-    //         None
-    //     } else {
-    //         Some(Mesh {
-    //             dim: self.dim,
-    //             rank: self.n() - 1,
-    //             simplices: HashMap::from([(
-    //                 self.clone(),
-    //                 (0..self.n())
-    //                     .map(|_facet_idx| MeshAdjacency::Boundary)
-    //                     .collect(),
-    //             )]),
-    //         })
-    //     }
-    // }
-
-    // pub fn as_convex_hull(&self) -> ConvexHull {
-    //     ConvexHull {
-    //         dim: self.dim,
-    //         points: self.points.clone(),
-    //         facets: self.oriented_facets().into_iter().collect(),
-    //         ridges: self.ridges().into_iter().collect(),
-    //     }
-    // }
 
     pub fn boundary(&self) -> Shape {
         let n = self.n();
@@ -464,7 +536,10 @@ impl Simplex {
             }
             let b = Simplex {
                 dim: self.dim,
-                points: subset.into_iter().map(|i| self.points[i].clone()).collect(),
+                vertices: subset
+                    .into_iter()
+                    .map(|i| self.vertices[i].clone())
+                    .collect(),
             };
             debug_assert!(b.check().is_ok());
             parts.push(b);
@@ -475,34 +550,43 @@ impl Simplex {
         }
     }
 
+    #[deprecated(note = "use affine_subspace instead")]
     pub fn affine_span(&self) -> AffineLattice<Rational> {
-        if self.points.len() == 0 {
+        if self.vertices.len() == 0 {
             QQ_AFFLAT.empty(self.dim, 1)
         } else {
             QQ_AFFLAT.from_offset_and_linear_lattice(
                 self.dim,
                 1,
-                self.points[0].as_matrix(),
+                self.vertices[0].as_matrix(),
                 QQ_LINLAT.from_basis(
                     self.dim,
                     1,
-                    (1..self.points.len())
-                        .map(|i| (&self.points[i] - &self.points[0]).as_matrix())
+                    (1..self.vertices.len())
+                        .map(|i| (&self.vertices[i] - &self.vertices[0]).as_matrix())
                         .collect(),
                 ),
             )
         }
     }
 
-    pub fn middle(&self) -> Point {
-        let mut coords = (0..self.dim).map(|_i| Rational::from(0)).collect_vec();
+    fn affine_subspace(&self) -> AffineSubspace {
+        AffineSubspace {
+            dim: self.dim,
+            origin: self.vertices[0].clone(),
+            basis: (1..self.vertices.len())
+                .map(|i| &self.vertices[i] - &self.vertices[0])
+                .collect(),
+        }
+    }
 
-        for pt in &self.points {
+    pub fn centroid(&self) -> Point {
+        let mut coords = (0..self.dim).map(|_i| Rational::from(0)).collect_vec();
+        for pt in &self.vertices {
             for i in 0..self.dim {
                 coords[i] += pt.get_coord(i);
             }
         }
-
         coords = coords
             .into_iter()
             .map(|c| c / Rational::from(self.n()))
@@ -511,45 +595,32 @@ impl Simplex {
         Point { coords }
     }
 
-    pub fn orthogonal_project(&self, point: &Point) -> Point {
-        assert_ne!(self.n(), 0);
-        let root = &self.points[0];
-        let vecs = (1..self.n()).map(|i| &self.points[i] - root).collect_vec();
-        let pt_vec = point - root;
+    // pub fn orthogonal_project(&self, point: &Point) -> Point {
+    //     assert_ne!(self.n(), 0);
+    //     let root = &self.vertices[0];
+    //     let vecs = (1..self.n())
+    //         .map(|i| &self.vertices[i] - root)
+    //         .collect_vec();
+    //     let pt_vec = point - root;
 
-        let mut proj = root.clone();
-        for vec in vecs {
-            proj = &proj + &(&vec * &(pt_vec.dot(&vec) / vec.length_sq()));
-        }
-
-        proj
-    }
-
-    pub fn orthogonal_distance_sq(&self, point: &Point) -> Rational {
-        let proj = self.orthogonal_project(point);
-        (point - &proj).length_sq()
-    }
-
-    // pub fn measure(&self) -> Rational {
-    //not gooood need to check that its full rank
-    //     if self.n() == 0 {
-    //         Rational::from(0)
-    //     } else {
-    //         let mat = Matrix::construct(self.n() - 1, self.n() - 1, |r, c| {
-    //             (&self.points[c + 1] - &self.points[0]).get_coord(r)
-    //         });
-    //         let mut vol = QQ_MAT.det(mat).unwrap();
-    //         vol.abs_assign();
-    //         vol = vol.div(Rational::from(factorial(Natural::from(self.n() - 1))));
-    //         vol
+    //     let mut proj = root.clone();
+    //     for vec in vecs {
+    //         proj = &proj + &(&vec * &(pt_vec.dot(&vec) / vec.length_sq()));
     //     }
+
+    //     proj
+    // }
+
+    // pub fn orthogonal_distance_sq(&self, point: &Point) -> Rational {
+    //     let proj = self.orthogonal_project(point);
+    //     (point - &proj).length_sq()
     // }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct OrientedSimplex {
-    simplex: Simplex,
-    flip: bool,
+    simplex: Simplex, //every simplex has a natural orientation induced by the ordering of the points of the space
+    flip: bool,       //whether the orientation is the natural one or its opposite
 }
 
 impl OrientedSimplex {
@@ -611,7 +682,7 @@ impl OrientedSimplex {
     }
 
     pub fn det_point(&self, point: &Point) -> Rational {
-        self.det_vector(&(point - &self.simplex.points[0]))
+        self.det_vector(&(point - &self.simplex.vertices[0]))
     }
 
     pub fn det_vector(&self, vec: &Vector) -> Rational {
@@ -620,7 +691,7 @@ impl OrientedSimplex {
             if c == self.simplex.dim - 1 {
                 vec.get_coord(r)
             } else {
-                (&self.simplex.points[c + 1] - &self.simplex.points[0]).get_coord(r)
+                (&self.simplex.vertices[c + 1] - &self.simplex.vertices[0]).get_coord(r)
             }
         });
         let d = QQ_MAT.det(mat).unwrap();
@@ -646,7 +717,7 @@ pub struct Shape {
     simplices: Vec<Simplex>,
 }
 
-pub fn shape_union(dim: usize, shapes: Vec<Shape>) -> Shape {
+pub fn shape_disjoint_union(dim: usize, shapes: Vec<Shape>) -> Shape {
     let mut simplices = vec![];
     for mut shape in shapes {
         assert_eq!(shape.dim, dim);
@@ -662,9 +733,6 @@ impl Shape {
         for simplex in &self.simplices {
             if simplex.dim != self.dim {
                 return Err("Simplex dim does not match shape dim");
-            }
-            if simplex.n() == 0 {
-                return Err("Shape contains empty simplex");
             }
             simplex.check()?;
         }
@@ -704,6 +772,7 @@ impl Shape {
         self.simplices
     }
 
+    #[deprecated]
     fn transform(self, new_dim: usize, f: &dyn Fn(Point) -> Point) -> Self {
         Self::new(
             new_dim,
@@ -717,7 +786,7 @@ impl Shape {
     fn points(&self) -> Vec<Point> {
         let mut all_points = vec![];
         for s in &self.simplices {
-            for p in &s.points {
+            for p in &s.vertices {
                 all_points.push(p.clone());
             }
         }
@@ -781,221 +850,7 @@ impl Shape {
     }
 
     fn simplify(&self) -> Self {
-        return self.clone();
-
-        let dim = self.dim;
-
-        let mut simps: HashSet<_> = self.simplices.clone().into_iter().collect();
-
-        loop {
-            println!("sus {}", simps.len());
-            let shape = Shape::new(dim, simps.clone().into_iter().collect());
-
-            //not sure if this works so well when its not connected, so might want to work out connected component decomposition at some point.
-            let hull = convexhull_interior(dim, shape.points().into_iter().collect()).0;
-            let diff = hull.subtract_nosimp(&shape);
-
-            let pts1: HashSet<_> = hull.points().into_iter().collect();
-            let pts2: HashSet<_> = diff.points().into_iter().collect();
-            let pts = pts1.intersection(&pts2).into_iter().collect_vec();
-            match pts.into_iter().next() {
-                Some(pt) => {
-                    let pt = pt.clone();
-                    simps = simps
-                        .into_iter()
-                        .filter(|s| {
-                            !s.points
-                                .clone()
-                                .into_iter()
-                                .collect::<HashSet<_>>()
-                                .contains(&pt)
-                        })
-                        .collect();
-                }
-                None => {
-                    let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
-                    canvas.draw_shape(self, (1.0, 1.0, 0.0));
-                    canvas.draw_shape(&shape, (1.0, 0.0, 0.0));
-                    crate::drawing::Canvas::run(canvas);
-                    break;
-                }
-            }
-        }
-
-        return self.clone();
-
-        // return self.clone();
-
-        // let dim = self.dim;
-        // if self.is_empty() {
-        //     return self.clone();
-        // } else {
-        //     let mut all_pts = HashSet::new();
-        //     for s in &self.simplices {
-        //         for p in &s.points {
-        //             all_pts.insert(p.clone());
-        //         }
-        //     }
-
-        //     let pt = {
-        //         if all_pts.len() == 1 {
-        //             all_pts.iter().next().unwrap().clone()
-        //         } else {
-        //             let tmp_all_pts = all_pts.iter().collect_vec();
-        //             let mut pt_pairs = vec![];
-        //             for i in 0..tmp_all_pts.len() {
-        //                 for j in i + 1..tmp_all_pts.len() {
-        //                     pt_pairs.push((tmp_all_pts[i], tmp_all_pts[j]));
-        //                 }
-        //             }
-        //             pt_pairs
-        //                 .into_iter()
-        //                 .max_by_key(|(p1, p2)| (*p1 - *p2).length_sq())
-        //                 .unwrap()
-        //                 .0
-        //                 .clone()
-        //         }
-        //     };
-
-        //     println!("{:?}", pt);
-
-        //     let mut other_pts = all_pts.clone();
-        //     other_pts.remove(&pt);
-        //     let mut new_simplex = Simplex::new(dim, vec![pt]);
-
-        //     loop {
-        //         if dim + 1 == new_simplex.n() {
-        //             //all larger simplices are degenerate
-        //             break;
-        //         }
-
-        //         println!("more pp");
-        //         let next_simplex_opt = other_pts
-        //             .iter()
-        //             .map(|p| {
-        //                 (p.clone(), {
-        //                     println!("pp");
-        //                     let mut new_new_points = new_simplex.points.clone();
-        //                     new_new_points.push(p.clone());
-        //                     new_new_points
-        //                 })
-        //             })
-        //             .filter(|(p, pts)| new_simplex.orthogonal_distance_sq(p) != Rational::from(0)) //is the new simplex non-degenerate
-        //             .map(|(p, pts)| (p, Simplex::new(dim, pts)))
-        //             .filter(|(p, s)| Shape::simplex(s.clone()).subtract_nosimp(self).is_empty())
-        //             .max_by_key(|(p, s)| new_simplex.orthogonal_distance_sq(p));
-
-        //         match next_simplex_opt {
-        //             Some((p, next_simplex)) => {
-        //                 other_pts.remove(&p);
-        //                 new_simplex = next_simplex;
-        //             }
-        //             None => {
-        //                 break;
-        //             }
-        //         }
-        //     }
-
-        //     let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
-        //     canvas.draw_shape(&self, (1.0, 1.0, 0.0));
-        //     canvas.draw_shape(&Shape::simplex(new_simplex), (1.0, 0.0, 0.0));
-        //     crate::drawing::Canvas::run(canvas);
-        // }
-
-        // panic!();
-
-        // //connected decomposition (TODO!)
-        // //convex decomposition for each connected component
-
-        // let dim = self.dim;
-        // let mut points = HashSet::new();
-        // for simplex in &self.simplices {
-        //     for point in &simplex.points {
-        //         points.insert(point);
-        //     }
-        // }
-        // let hull = convexhull(dim, points.clone().into_iter().map(|p| p.clone()).collect());
-        // let remaining = hull.subtract_nosimp(&self);
-        // if remaining.is_empty() {
-        //     todo!("we are convex");
-        // } else {
-        //     let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
-        //     canvas.draw_shape(self, (1.0, 1.0, 0.0));
-        //     canvas.draw_shape(&hull.subtract_nosimp(&self), (0.0, 1.0, 0.0));
-        //     crate::drawing::Canvas::run(canvas);
-        // }
-
-        // return self.clone();
-
-        // let dim = self.dim;
-        // let mut ans = self.clone();
-
-        // 'main_loop: loop {
-        //     for simplex in &ans.simplices {
-        //         println!("pp");
-
-        //         let mut local_simplices = vec![simplex.clone()];
-        //         let mut other_simplices: HashSet<&Simplex> = ans.simplices.iter().collect();
-        //         other_simplices.remove(simplex);
-
-        //         let mut done = false;
-        //         while !done {
-        //             done = true;
-        //             let local_convexhull = {
-        //                 let mut points = HashSet::new();
-        //                 for s in &local_simplices {
-        //                     for p in s.points() {
-        //                         points.insert(p.clone());
-        //                     }
-        //                 }
-        //                 convexhull(dim, points.into_iter().collect())
-        //             };
-
-        //             for s in other_simplices.clone() {
-        //                 let (inner, outer) = cut_shape_by_simplex(s, &local_convexhull);
-        //                 if !inner.is_empty() {
-        //                     other_simplices.remove(s);
-        //                     local_simplices.push(s.clone());
-        //                     done = false;
-        //                 }
-        //             }
-
-        //             //now local shape is a subshape of ans
-        //             //and every convex subshape appears as some local shape in this loop
-        //             //note that a particular local shape may not be convex
-        //             let local_shape =
-        //                 Shape::new(dim, local_simplices.iter().map(|s| (*s).clone()).collect());
-
-        //             if local_convexhull.simplices.len() < local_shape.simplices.len() {
-        //                 if local_shape.equal(&local_convexhull) {
-        //                     ans = shape_union(
-        //                         dim,
-        //                         vec![
-        //                             Shape::new(
-        //                                 dim,
-        //                                 other_simplices.iter().map(|s| (*s).clone()).collect(),
-        //                             ),
-        //                             local_convexhull,
-        //                         ],
-        //                     );
-        //                     println!("simp {}", ans.simplices.len());
-        //                     continue 'main_loop;
-        //                 }
-        //             }
-        //         }
-
-        //         // let mut canvas = super::drawing::canvas2d::Shape2dCanvas::new();
-        //         // canvas.draw_shape(&ans, (1.0, 1.0, 0.0));
-        //         // canvas.draw_shape(&local_shape, (0.0, 1.0, 0.0));
-        //         // canvas.draw_shape(
-        //         //     &local_convexhull.symmetric_difference_nosimp(&local_shape),
-        //         //     (0.0, 0.0, 1.0),
-        //         // );
-        //         // crate::drawing::Canvas::run(canvas);
-        //     }
-        //     break;
-        // }
-        // ans
+        self.clone() //TODO
     }
 
     fn intersect_nosimp(&self, other: &Self) -> Self {
@@ -1008,13 +863,13 @@ impl Shape {
                 parts.push(inner);
             }
         }
-        shape_union(dim, parts)
+        shape_disjoint_union(dim, parts)
     }
 
     fn union_nosimp(&self, other: &Self) -> Self {
         let dim = self.dim;
         assert_eq!(dim, other.dim);
-        shape_union(
+        shape_disjoint_union(
             dim,
             vec![
                 self.intersect_nosimp(other),
@@ -1038,7 +893,7 @@ impl Shape {
     fn symmetric_difference_nosimp(&self, other: &Self) -> Self {
         let dim = self.dim;
         assert_eq!(dim, other.dim);
-        shape_union(
+        shape_disjoint_union(
             dim,
             vec![self.subtract_nosimp(other), other.subtract_nosimp(self)],
         )
@@ -1060,10 +915,6 @@ impl Shape {
 
 fn interior_of_convex_shell(shape: &Shape) -> Shape {
     debug_assert!(shape.is_complete());
-    //n=1: shape is the shell of a line
-    //n=2: shape is the shell of a polygon
-    //n=3: shape is the shell of a solid
-    //...
 
     //shape should be the full boundary of a convex polytope
 
@@ -1072,6 +923,11 @@ fn interior_of_convex_shell(shape: &Shape) -> Shape {
     }
 
     let n = shape.simplices.iter().map(|s| s.n()).max().unwrap();
+    //n=1: shape is the shell of a line i.e. two points
+    //n=2: shape is the shell of a polygon
+    //n=3: shape is the shell of a solid
+    //...
+
     if n == 1 {
         for s in &shape.simplices {
             debug_assert_eq!(s.n(), 1);
@@ -1084,8 +940,8 @@ fn interior_of_convex_shell(shape: &Shape) -> Shape {
             2 => Shape::simplex(Simplex::new(
                 shape.dim,
                 vec![
-                    shape.simplices[0].points[0].clone(),
-                    shape.simplices[1].points[0].clone(),
+                    shape.simplices[0].vertices[0].clone(),
+                    shape.simplices[1].vertices[0].clone(),
                 ],
             )), //pair of points has interior of a line
             _ => {
@@ -1110,7 +966,7 @@ fn interior_of_convex_shell(shape: &Shape) -> Shape {
             // println!("CUT SIMPLEX");
 
             //1) choose a base point
-            let root = &shape.simplices[0].points[0];
+            let root = &shape.simplices[0].vertices[0];
             // println!("root = {:?}", root);
             // for s in &shape.simplices {
             //     println!("shell: {:?}", s);
@@ -1128,7 +984,7 @@ fn interior_of_convex_shell(shape: &Shape) -> Shape {
             let mut point_degen = HashMap::new();
             for s in &shape.simplices {
                 if s.n() == 1 {
-                    let pt = &s.points[0];
+                    let pt = &s.vertices[0];
                     debug_assert!(!point_degen.contains_key(pt));
                     let adj_cells: HashSet<usize> = adj_cell_spans
                         .iter()
@@ -1143,7 +999,7 @@ fn interior_of_convex_shell(shape: &Shape) -> Shape {
             }
             //check that every vertex of every part of the shell is present - it should be since the shell is complete
             for s in &shape.simplices {
-                for p in &s.points {
+                for p in &s.vertices {
                     debug_assert!(point_degen.contains_key(p));
                 }
             }
@@ -1152,25 +1008,26 @@ fn interior_of_convex_shell(shape: &Shape) -> Shape {
             //4) for each shell simplex, if not all vertices lie in some adjacent face span, fill it in
             let mut interior = Shape::empty(shape.dim);
             for s in &shape.simplices {
-                debug_assert!(s.points.len() >= 1);
-                let mut common = point_degen[&s.points[0]].clone();
+                debug_assert!(s.vertices.len() >= 1);
+                let mut common = point_degen[&s.vertices[0]].clone();
                 common = common
                     .into_iter()
                     .filter(|idx| {
-                        (1..s.points.len())
-                            .map(|i| &s.points[i])
+                        (1..s.vertices.len())
+                            .map(|i| &s.vertices[i])
                             .all(|pt| point_degen[pt].contains(idx))
                     })
                     .collect();
                 if common.len() == 0 {
                     let filler = Simplex::new(shape.dim, {
                         let mut filler_pts = vec![root.clone()];
-                        filler_pts.append(&mut s.points.clone());
+                        filler_pts.append(&mut s.vertices.clone());
                         // println!("filler_pts = {:?}", filler_pts);
                         filler_pts
                     });
                     // println!("filler simplex: {:?}", filler);
-                    interior = shape_union(shape.dim, vec![interior, Shape::simplex(filler)]);
+                    interior =
+                        shape_disjoint_union(shape.dim, vec![interior, Shape::simplex(filler)]);
                 }
             }
             interior
@@ -1185,7 +1042,7 @@ fn cut_simplex_by_plane(cut_plane: &OrientedSimplex, simplex: &Simplex) -> (Shap
 
     match simplex.n() {
         0 => (Shape::empty(dim), Shape::empty(dim), Shape::empty(dim)),
-        1 => match cut_plane.sign_point(&simplex.points[0]) {
+        1 => match cut_plane.sign_point(&simplex.vertices[0]) {
             std::cmp::Ordering::Greater => (
                 Shape::simplex(simplex.clone()),
                 Shape::empty(dim),
@@ -1203,7 +1060,7 @@ fn cut_simplex_by_plane(cut_plane: &OrientedSimplex, simplex: &Simplex) -> (Shap
             ),
         },
         2 => {
-            let (p, q) = (&simplex.points[0], &simplex.points[1]);
+            let (p, q) = (&simplex.vertices[0], &simplex.vertices[1]);
             match (cut_plane.sign_point(p), cut_plane.sign_point(q)) {
                 (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater)
                 | (std::cmp::Ordering::Equal, std::cmp::Ordering::Greater)
@@ -1251,7 +1108,7 @@ fn cut_simplex_by_plane(cut_plane: &OrientedSimplex, simplex: &Simplex) -> (Shap
                 cut_shape_by_plane(&cut_plane, &simplex.boundary());
 
             let interior_middle = interior_of_convex_shell(&hollow_middle);
-            let hollow_left = shape_union(
+            let hollow_left = shape_disjoint_union(
                 dim,
                 vec![
                     open_left.clone(),
@@ -1259,7 +1116,7 @@ fn cut_simplex_by_plane(cut_plane: &OrientedSimplex, simplex: &Simplex) -> (Shap
                     interior_middle.clone(),
                 ],
             );
-            let hollow_right = shape_union(
+            let hollow_right = shape_disjoint_union(
                 dim,
                 vec![
                     open_right.clone(),
@@ -1281,9 +1138,9 @@ fn cut_shape_by_plane(cut_plane: &OrientedSimplex, shape: &Shape) -> (Shape, Sha
         (Shape::empty(dim), Shape::empty(dim), Shape::empty(dim));
     for simplex in &shape.simplices {
         let (s_left, s_middle, s_right) = cut_simplex_by_plane(&cut_plane, &simplex);
-        left = shape_union(dim, vec![left, s_left]);
-        middle = shape_union(dim, vec![middle, s_middle]);
-        right = shape_union(dim, vec![right, s_right]);
+        left = shape_disjoint_union(dim, vec![left, s_left]);
+        middle = shape_disjoint_union(dim, vec![middle, s_middle]);
+        right = shape_disjoint_union(dim, vec![right, s_right]);
     }
     (left, middle, right)
 }
@@ -1337,7 +1194,7 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
                 //     cut_shape_by_plane(&cut_plane, &outside);
 
                 inside = inside_mid;
-                outside = shape_union(dim, vec![inside_left, inside_right, outside]);
+                outside = shape_disjoint_union(dim, vec![inside_left, inside_right, outside]);
             }
 
             //restrict to the span of cut_simplex and intersect in there using the facets as oriented hyperplanes in the subspace
@@ -1371,7 +1228,7 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
                     //     cut_shape_by_plane(&simplex.oriented_facet(k), &flat_outside);
 
                     flat_inside = flat_inside_in;
-                    flat_outside = shape_union(
+                    flat_outside = shape_disjoint_union(
                         flat_dim,
                         vec![flat_inside_out, flat_inside_bdry, flat_outside],
                     );
@@ -1386,7 +1243,7 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
 
                 (inside, outside) = (
                     unflat_inside,
-                    shape_union(dim, vec![unflat_outside, outside]),
+                    shape_disjoint_union(dim, vec![unflat_outside, outside]),
                 );
             }
 
@@ -1408,8 +1265,8 @@ pub fn cut_shape_by_simplex(cut_simplex: &Simplex, shape: &Shape) -> (Shape, Sha
     let (mut inside, mut outside) = (Shape::empty(dim), Shape::empty(dim));
     for simplex in &shape.simplices {
         let (s_inside, s_outside) = cut_simplex_by_simplex(&cut_simplex, &simplex);
-        inside = shape_union(dim, vec![inside, s_inside]);
-        outside = shape_union(dim, vec![outside, s_outside]);
+        inside = shape_disjoint_union(dim, vec![inside, s_inside]);
+        outside = shape_disjoint_union(dim, vec![outside, s_outside]);
     }
     (inside, outside)
 }
@@ -1444,7 +1301,7 @@ pub fn convexhull_boundary(dim: usize, points: Vec<Point>) -> (Shape, usize) {
 
         debug_assert!(rank <= dim);
         if rank == dim {
-            let middle_point = starting_simplex.middle();
+            let middle_point = starting_simplex.centroid();
             let mut facets: HashSet<_> = starting_simplex.oriented_facets().into_iter().collect();
             for pt in points.iter() {
                 let visible = facets
@@ -1466,7 +1323,7 @@ pub fn convexhull_boundary(dim: usize, points: Vec<Point>) -> (Shape, usize) {
                 }
 
                 for h in horizon {
-                    let mut new_facet_points = h.points;
+                    let mut new_facet_points = h.vertices;
                     new_facet_points.push(pt.clone());
                     let new_facet =
                         OrientedSimplex::from_points(dim, new_facet_points, &middle_point);
@@ -1550,55 +1407,122 @@ pub fn convexhull(dim: usize, points: Vec<Point>) -> Shape {
     }
     let (shell, _rank) = convexhull_boundary(dim, points);
     let interior = interior_of_convex_shell(&shell);
-    shape_union(dim, vec![shell, interior])
+    shape_disjoint_union(dim, vec![shell, interior])
 }
 
-
-struct PartialSimplicialComplex {
-    dim : usize,
-    simplices : Vec<Simplex>
+struct ConvexSimplicialComplex {
+    dim: usize,  //the dimension of the space the convex simplicial complex lives in
+    rank: usize, //the dimension of the convex simplicial complex. <= dim
+    subspace: AffineSubspace, //an embedding of a vector space of dimension self.rank into the ambient space
+    boundary: Vec<OrientedSimplex>, //oriented simplexes in the subspace of rank self.rank-1 with positive side on the outside
+    interior: Vec<Simplex>,         //simplexes in the subspace which form the interior
 }
 
-impl PartialSimplicialComplex {
-    pub fn check(&self) -> Result<(), &'static str> {
-        Shape::new(self.dim, self.simplices.clone()).check()?;
-        //TODO: check that every face of a simplex is a simplex
-        Ok(())
-    }
+// #[derive(Debug, Clone)]
+// pub struct PartialSimplicialComplex {
+//     dim: usize,
+//     simplices: Vec<Simplex>,
+// }
 
-    pub fn new(dim: usize, simplices: Vec<Simplex>) -> Self {
-        let ans = Self { dim, simplices };
-        debug_assert!(ans.check().is_ok());
-        ans
-    }
+// impl PartialSimplicialComplex {
+//     pub fn as_shape(self) -> SimplexDisjointUnion {
+//         SimplexDisjointUnion {
+//             dim: self.dim,
+//             simplices: self.simplices,
+//         }
+//     }
 
-    pub fn dim(&self) -> usize {
-        self.dim
-    }
+//     pub fn check(&self) -> Result<(), &'static str> {
+//         self.clone().as_shape().check()?;
+//         //TODO: check that every face of a simplex is a simplex
+//         Ok(())
+//     }
 
-    pub fn empty(dim: usize) -> Self {
-        Self {
-            dim,
-            simplices: vec![],
-        }
-    }
+//     pub fn empty(dim: usize) -> Self {
+//         Self {
+//             dim,
+//             simplices: vec![],
+//         }
+//     }
 
-    pub fn is_empty(&self) -> bool {
-        self.simplices.is_empty()
-    }
+//     pub fn simplex(simplex: Simplex) -> Self {
+//         Self {
+//             dim: simplex.dim,
+//             simplices: vec![simplex],
+//         }
+//     }
 
-    pub fn simplex(simplex: Simplex) -> Self {
-        Self {
-            dim: simplex.dim,
-            simplices: vec![simplex],
-        }
-    }
+//     pub fn new(dim: usize, simplices: Vec<Simplex>) -> Self {
+//         let ans = Self { dim, simplices };
+//         debug_assert!(ans.check().is_ok());
+//         ans
+//     }
 
-    pub fn simplices(self) -> Vec<Simplex> {
-        self.simplices
-    }
-}
+//     pub fn dim(&self) -> usize {
+//         self.dim
+//     }
 
+//     pub fn is_empty(&self) -> bool {
+//         self.simplices.is_empty()
+//     }
+
+//     pub fn simplices(self) -> Vec<Simplex> {
+//         self.simplices
+//     }
+// }
+
+// #[derive(Debug, Clone)]
+// pub struct SimplicialComplex {
+//     dim: usize,
+//     simplices: Vec<Simplex>,
+// }
+
+// impl SimplicialComplex {
+//     pub fn as_shape(self) -> SimplexDisjointUnion {
+//         SimplexDisjointUnion {
+//             dim: self.dim,
+//             simplices: self.simplices,
+//         }
+//     }
+
+//     pub fn check(&self) -> Result<(), &'static str> {
+//         self.clone().as_shape().check()?;
+//         //TODO: check that every face of a simplex is a simplex
+//         Ok(())
+//     }
+
+//     pub fn empty(dim: usize) -> Self {
+//         Self {
+//             dim,
+//             simplices: vec![],
+//         }
+//     }
+
+//     pub fn simplex(simplex: Simplex) -> Self {
+//         Self {
+//             dim: simplex.dim,
+//             simplices: vec![simplex],
+//         }
+//     }
+
+//     pub fn new(dim: usize, simplices: Vec<Simplex>) -> Self {
+//         let ans = Self { dim, simplices };
+//         debug_assert!(ans.check().is_ok());
+//         ans
+//     }
+
+//     pub fn dim(&self) -> usize {
+//         self.dim
+//     }
+
+//     pub fn is_empty(&self) -> bool {
+//         self.simplices.is_empty()
+//     }
+
+//     pub fn simplices(self) -> Vec<Simplex> {
+//         self.simplices
+//     }
+// }
 
 #[cfg(test)]
 mod geometry_tests {
@@ -1685,7 +1609,7 @@ mod geometry_tests {
                 .map(|s| s.n())
                 .collect::<Vec<_>>()
         );
-        let d = shape_union(3, vec![a, b, c]);
+        let d = shape_disjoint_union(3, vec![a, b, c]);
         d.check().unwrap();
     }
 

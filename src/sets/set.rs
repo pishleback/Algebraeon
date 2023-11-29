@@ -1,7 +1,4 @@
-use std::{
-    borrow::Borrow,
-    rc::Rc,
-};
+use std::{borrow::Borrow, rc::Rc};
 
 use super::function::*;
 

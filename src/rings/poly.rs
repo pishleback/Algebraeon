@@ -159,11 +159,7 @@ impl<'a, R: ComRing> ComRing for PolynomialRing<'a, R> {
         self.div_rref(a.clone(), b)
     }
 
-    fn div_rref(
-        &self,
-        a: Self::ElemT,
-        b: &Self::ElemT,
-    ) -> Result<Self::ElemT, RingDivisionError> {
+    fn div_rref(&self, a: Self::ElemT, b: &Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
         match self.try_quorem_rref(a, b) {
             Ok((q, r)) => {
                 if self.equal(&r, &self.zero()) {
@@ -673,11 +669,7 @@ impl<'a, F: Field> EuclideanDomain for PolynomialRing<'a, F> {
         self.quorem_rref(a.clone(), b)
     }
 
-    fn quorem_rref(
-        &self,
-        a: Self::ElemT,
-        b: &Self::ElemT,
-    ) -> Option<(Self::ElemT, Self::ElemT)> {
+    fn quorem_rref(&self, a: Self::ElemT, b: &Self::ElemT) -> Option<(Self::ElemT, Self::ElemT)> {
         match self.try_quorem_rref(a, b) {
             Ok((q, r)) => Some((q, r)),
             Err(RingDivisionError::NotDivisible) => panic!(),
@@ -1060,13 +1052,13 @@ impl<'a, R: Field + FiniteUnits> PolynomialRing<'a, R> {
             let f_deg = poly_ring.degree(&f).unwrap();
             let max_factor_degree = f_deg / 2;
             for d in 0..max_factor_degree {
-                for mut coeffs in
-                    itertools::Itertools::multi_cartesian_product((0..d + 1).into_iter().map(|_d| {
+                for mut coeffs in itertools::Itertools::multi_cartesian_product(
+                    (0..d + 1).into_iter().map(|_d| {
                         let mut all_elems = vec![poly_ring.ring().zero()];
                         all_elems.append(&mut poly_ring.ring.all_units());
                         all_elems
-                    }))
-                {
+                    }),
+                ) {
                     coeffs.push(poly_ring.ring().one());
                     let g = poly_ring.from_coeffs(coeffs);
                     // println!("{}", self.to_string(&g));
@@ -1325,12 +1317,20 @@ impl<'a> PolynomialRing<'a, IntegerRing> {
                 for g in gs.into_iter() {
                     println!();
                     let h = poly_modp.div_refs(&f, g).unwrap();
-                    println!("gh = {}    {}", poly_modp.to_string(g), poly_modp.to_string(&h));
+                    println!(
+                        "gh = {}    {}",
+                        poly_modp.to_string(g),
+                        poly_modp.to_string(&h)
+                    );
 
                     let (u, s, t) = poly_modp.xgcd(g.clone(), h);
                     debug_assert!(poly_modp.equal(&u, &poly_modp.one()));
 
-                    println!("st = {}    {}", poly_modp.to_string(&s), poly_modp.to_string(&t));
+                    println!(
+                        "st = {}    {}",
+                        poly_modp.to_string(&s),
+                        poly_modp.to_string(&t)
+                    );
                 }
 
                 todo!();

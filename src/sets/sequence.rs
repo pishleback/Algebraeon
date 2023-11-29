@@ -140,10 +140,7 @@ mod tests {
         let set_n = Set::new(3);
         let set_x = Set::new(5);
         let seqs: Vec<Function<&Set, &Set>> = SequenceIterator::new(&set_n, &set_x).collect();
-        assert_eq!(
-            seqs.len(),
-            count_sequences(set_n.size(), set_x.size())
-        );
+        assert_eq!(seqs.len(), count_sequences(set_n.size(), set_x.size()));
         for f in seqs {
             f.check_state().unwrap();
         }

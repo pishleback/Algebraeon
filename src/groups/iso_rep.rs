@@ -154,7 +154,9 @@ impl IsoRep {
             Self::Alternating(n) => {
                 Ok(super::super::sets::permutations::alternating_group_structure(*n).0)
             }
-            Self::Symmetric(n) => Ok(super::super::sets::permutations::symmetric_group_structure(*n).0),
+            Self::Symmetric(n) => {
+                Ok(super::super::sets::permutations::symmetric_group_structure(*n).0)
+            }
             Self::DirectProduct(factors) => {
                 let mut factors_list = vec![];
                 for (factor, power) in factors.iter() {

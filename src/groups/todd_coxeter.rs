@@ -1,5 +1,5 @@
-use super::group::Group;
 use super::super::sets::permutations::Permutation;
+use super::group::Group;
 
 #[derive(Clone, Copy)]
 enum Neighbor {
