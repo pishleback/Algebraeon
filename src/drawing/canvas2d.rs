@@ -1,7 +1,7 @@
 use glium::{glutin::event::Event, Display, Program, Surface, VertexBuffer};
 
 use crate::{
-    geometry::Shape,
+    geometry::{Shape, Simplex},
     rings::{nzq::QQ, ring::Real},
 };
 
@@ -241,7 +241,7 @@ impl Shape2dCanvas {
         Self {
             camera: Camera {
                 center: (0.0, 0.0),
-                scale: 1.0,
+                scale: 1.0 / 6.0,
             },
             point_program: None,
             line_program: None,
@@ -489,67 +489,73 @@ impl Shape2dCanvas {
         }
     }
 
+    pub fn draw_simplex(&mut self, simplex: &Simplex, colour: (f32, f32, f32)) {
+        assert_eq!(simplex.dim(), 2);
+
+        let points = simplex.points();
+
+        match simplex.n() {
+            1 => {
+                self.point_verts.push(Vertex {
+                    position: [
+                        QQ.as_f32(points[0].get_coord(0)),
+                        QQ.as_f32(points[0].get_coord(1)),
+                    ],
+                    colour: [colour.0, colour.1, colour.2],
+                });
+                self.points_vertex_buffer = None;
+            }
+            2 => {
+                self.line_verts.push(Vertex {
+                    position: [
+                        QQ.as_f32(points[0].get_coord(0)),
+                        QQ.as_f32(points[0].get_coord(1)),
+                    ],
+                    colour: [colour.0, colour.1, colour.2],
+                });
+                self.line_verts.push(Vertex {
+                    position: [
+                        QQ.as_f32(points[1].get_coord(0)),
+                        QQ.as_f32(points[1].get_coord(1)),
+                    ],
+                    colour: [colour.0, colour.1, colour.2],
+                });
+                self.lines_vertex_buffer = None;
+            }
+            3 => {
+                self.triangle_verts.push(Vertex {
+                    position: [
+                        QQ.as_f32(points[0].get_coord(0)),
+                        QQ.as_f32(points[0].get_coord(1)),
+                    ],
+                    colour: [colour.0, colour.1, colour.2],
+                });
+
+                self.triangle_verts.push(Vertex {
+                    position: [
+                        QQ.as_f32(points[1].get_coord(0)),
+                        QQ.as_f32(points[1].get_coord(1)),
+                    ],
+                    colour: [colour.0, colour.1, colour.2],
+                });
+                self.triangle_verts.push(Vertex {
+                    position: [
+                        QQ.as_f32(points[2].get_coord(0)),
+                        QQ.as_f32(points[2].get_coord(1)),
+                    ],
+                    colour: [colour.0, colour.1, colour.2],
+                });
+                self.triangles_vertex_buffer = None;
+            }
+            _ => panic!(),
+        }
+    }
+
     pub fn draw_shape(&mut self, shape: &Shape, colour: (f32, f32, f32)) {
         assert_eq!(shape.dim(), 2);
 
         for simplex in shape.clone().simplices() {
-            let points = simplex.points();
-
-            match simplex.n() {
-                1 => {
-                    self.point_verts.push(Vertex {
-                        position: [
-                            QQ.as_f32(points[0].get_coord(0)),
-                            QQ.as_f32(points[0].get_coord(1)),
-                        ],
-                        colour: [colour.0, colour.1, colour.2],
-                    });
-                    self.points_vertex_buffer = None;
-                }
-                2 => {
-                    self.line_verts.push(Vertex {
-                        position: [
-                            QQ.as_f32(points[0].get_coord(0)),
-                            QQ.as_f32(points[0].get_coord(1)),
-                        ],
-                        colour: [colour.0, colour.1, colour.2],
-                    });
-                    self.line_verts.push(Vertex {
-                        position: [
-                            QQ.as_f32(points[1].get_coord(0)),
-                            QQ.as_f32(points[1].get_coord(1)),
-                        ],
-                        colour: [colour.0, colour.1, colour.2],
-                    });
-                    self.lines_vertex_buffer = None;
-                }
-                3 => {
-                    self.triangle_verts.push(Vertex {
-                        position: [
-                            QQ.as_f32(points[0].get_coord(0)),
-                            QQ.as_f32(points[0].get_coord(1)),
-                        ],
-                        colour: [colour.0, colour.1, colour.2],
-                    });
-
-                    self.triangle_verts.push(Vertex {
-                        position: [
-                            QQ.as_f32(points[1].get_coord(0)),
-                            QQ.as_f32(points[1].get_coord(1)),
-                        ],
-                        colour: [colour.0, colour.1, colour.2],
-                    });
-                    self.triangle_verts.push(Vertex {
-                        position: [
-                            QQ.as_f32(points[2].get_coord(0)),
-                            QQ.as_f32(points[2].get_coord(1)),
-                        ],
-                        colour: [colour.0, colour.1, colour.2],
-                    });
-                    self.triangles_vertex_buffer = None;
-                }
-                _ => panic!(),
-            }
+            self.draw_simplex(&simplex, colour);
         }
     }
 

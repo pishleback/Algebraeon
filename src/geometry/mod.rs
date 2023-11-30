@@ -1,9 +1,11 @@
+use core::panic;
 #[allow(dead_code)]
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 use malachite_q::arithmetic::simplest_rational_in_interval;
 use malachite_q::Rational;
+use rayon::iter::ParallelIterator;
 
 use crate::rings::nzq::QQ;
 use crate::rings::ring::Real;
@@ -131,6 +133,12 @@ impl Vector {
         }
     }
 
+    pub fn as_point(self) -> Point {
+        Point {
+            coords: self.coords,
+        }
+    }
+
     pub fn as_matrix(&self) -> Matrix<Rational> {
         Matrix::construct(self.coords.len(), 1, |r, _c| self.coords[r].clone())
     }
@@ -173,6 +181,12 @@ impl Point {
             self.coords[i].clone()
         } else {
             Rational::from(0)
+        }
+    }
+
+    pub fn as_vector(self) -> Vector {
+        Vector {
+            coords: self.coords,
         }
     }
 
@@ -243,6 +257,7 @@ fn are_points_nondegenerage(dim: usize, points: &Vec<Point>) -> bool {
     true
 }
 
+#[derive(Debug, Clone)]
 struct AffineSubspace {
     dim: usize,         //the dimension of the ambient space
     origin: Point,      //the origin of the affine subspace in the ambient space
@@ -271,6 +286,28 @@ impl AffineSubspace {
         Matrix::construct(self.dim, self.basis.len(), |i, j| {
             self.basis[j].get_coord(i)
         })
+    }
+
+    fn cannonical_subspace(k: usize, n: usize) -> Self {
+        // k <= n
+        // The cannonical embedding of A^k into A^n by taking the first k out of n coordinates
+        assert!(k <= n);
+        Self {
+            dim: n,
+            origin: Point {
+                coords: (0..n).map(|_i| Rational::from(0)).collect(),
+            },
+            basis: (0..k)
+                .map(|i| Vector {
+                    coords: (0..n)
+                        .map(|j| match i == j {
+                            true => Rational::from(1),
+                            false => Rational::from(0),
+                        })
+                        .collect(),
+                })
+                .collect(),
+        }
     }
 
     pub fn affine_span(&self) -> AffineLattice<Rational> {
@@ -334,6 +371,12 @@ impl AffineSubspace {
         }
         Some(Simplex::new(self.dim(), new_points))
     }
+
+    fn extend_basis(mut self, new_basis_vector: Vector) -> Self {
+        self.basis.push(new_basis_vector);
+        debug_assert!(self.check().is_ok());
+        self
+    }
 }
 
 struct Interval {
@@ -389,9 +432,9 @@ impl Simplex {
             return Err("Simplex vertices are not sorted");
         }
 
-        if self.vertices.is_empty() {
-            return Err("Simplex should have at least one vertex");
-        }
+        // if self.vertices.is_empty() {
+        //     return Err("Simplex should have at least one vertex");
+        // }
 
         for p in &self.vertices {
             if p.dim() != self.dim {
@@ -413,6 +456,24 @@ impl Simplex {
         ans
     }
 
+    pub fn new_standard_simplex(rank: usize) -> Self {
+        //the simplex whose verticies are 0 and the standard basis vectors
+        let mut vertices = vec![];
+        vertices.push(Point::new((0..rank).map(|_j| Rational::from(0)).collect()));
+        for i in 0..rank {
+            vertices.push(Point::new(
+                (0..rank)
+                    .map(|j| match i == j {
+                        true => Rational::from(1),
+                        false => Rational::from(0),
+                    })
+                    .collect(),
+            ));
+        }
+
+        Simplex::new(rank, vertices)
+    }
+
     pub fn try_new(dim: usize, mut vertices: Vec<Point>) -> Option<Self> {
         if are_points_nondegenerage(dim, &vertices) {
             vertices.sort();
@@ -426,8 +487,12 @@ impl Simplex {
         self.vertices.len()
     }
 
-    pub fn rank(&self) -> usize {
-        self.vertices.len() - 1
+    pub fn rank(&self) -> Option<usize> {
+        if self.vertices.is_empty() {
+            None
+        } else {
+            Some(self.vertices.len() - 1)
+        }
     }
 
     pub fn dim(&self) -> usize {
@@ -459,9 +524,9 @@ impl Simplex {
         self.vertices.binary_search(pt).is_ok()
     }
 
-    pub fn skeleton(&self, k: usize) -> Vec<Simplex> {
+    pub fn skeleton(&self, skel_rank: usize) -> Vec<Simplex> {
         let mut parts = vec![];
-        for skeleton_piece_index in (0..self.vertices.len()).combinations(k + 1) {
+        for skeleton_piece_index in (0..self.vertices.len()).combinations(skel_rank + 1) {
             let part = Simplex {
                 dim: self.dim,
                 vertices: skeleton_piece_index
@@ -487,11 +552,11 @@ impl Simplex {
     }
 
     pub fn ridges(&self) -> Vec<Simplex> {
-        self.skeleton(self.rank() - 2)
+        self.skeleton(self.n() - 3)
     }
 
     pub fn facets(&self) -> Vec<Simplex> {
-        self.skeleton(self.rank() - 1)
+        self.skeleton(self.n() - 2)
     }
 
     pub fn facet(&self, k: usize) -> Simplex {
@@ -509,7 +574,7 @@ impl Simplex {
 
     fn oriented_facet(&self, k: usize) -> OrientedSimplex {
         //return the oriented facet of self with positive side on the outside and negative side on the inside
-        assert_eq!(self.dim, self.rank());
+        assert_eq!(self.dim, self.rank().unwrap());
         assert!(k <= self.n());
         let oriented_facet = OrientedSimplex::new(self.facet(k));
         match oriented_facet.sign_point(&self.vertices[k]) {
@@ -571,6 +636,7 @@ impl Simplex {
     }
 
     fn affine_subspace(&self) -> AffineSubspace {
+        //the affine subspace coordinate system in which self is the standard simplex
         AffineSubspace {
             dim: self.dim,
             origin: self.vertices[0].clone(),
@@ -593,6 +659,13 @@ impl Simplex {
             .collect();
 
         Point { coords }
+    }
+
+    fn extend_by_point(mut self, point: Point) -> Self {
+        self.vertices.push(point);
+        self.vertices.sort();
+        debug_assert!(self.check().is_ok());
+        self
     }
 
     // pub fn orthogonal_project(&self, point: &Point) -> Point {
@@ -627,10 +700,6 @@ impl OrientedSimplex {
     pub fn check(&self) -> Result<(), &'static str> {
         self.simplex.check()?;
 
-        if self.simplex.dim == 0 {
-            return Err("Can't have a hyperplane in zero dimensional space");
-        }
-
         if self.simplex.n() != self.simplex.dim {
             return Err(
                 "OrientedSimplex should have dimension one less than the space it lives in",
@@ -651,15 +720,13 @@ impl OrientedSimplex {
         ans
     }
 
-    fn from_points(dim: usize, points: Vec<Point>, neg_pt: &Point) -> Self {
-        for point in &points {
-            debug_assert_eq!(dim, point.dim());
-        }
-        debug_assert_eq!(dim, neg_pt.dim());
-        debug_assert_eq!(dim, points.len());
+    fn as_simplex(self) -> Simplex {
+        self.simplex
+    }
 
+    fn from_simplex(simplex: Simplex, neg_pt: &Point) -> Self {
         let ans = Self {
-            simplex: Simplex::new(dim, points),
+            simplex: simplex,
             flip: false,
         };
 
@@ -668,6 +735,16 @@ impl OrientedSimplex {
             std::cmp::Ordering::Equal => panic!(),
             std::cmp::Ordering::Greater => ans.flipped(),
         }
+    }
+
+    fn from_points(dim: usize, points: Vec<Point>, neg_pt: &Point) -> Self {
+        for point in &points {
+            debug_assert_eq!(dim, point.dim());
+        }
+        debug_assert_eq!(dim, neg_pt.dim());
+        debug_assert_eq!(dim, points.len());
+
+        Self::from_simplex(Simplex::new(dim, points), neg_pt)
     }
 
     pub fn dim(&self) -> usize {
@@ -682,6 +759,7 @@ impl OrientedSimplex {
     }
 
     pub fn det_point(&self, point: &Point) -> Rational {
+        debug_assert_eq!(point.dim(), self.dim());
         self.det_vector(&(point - &self.simplex.vertices[0]))
     }
 
@@ -731,6 +809,10 @@ pub fn shape_disjoint_union(dim: usize, shapes: Vec<Shape>) -> Shape {
 impl Shape {
     pub fn check(&self) -> Result<(), &'static str> {
         for simplex in &self.simplices {
+            if !simplex.rank().is_some() {
+                return Err("simplex in a shape musn't be the empty simplex");
+            }
+
             if simplex.dim != self.dim {
                 return Err("Simplex dim does not match shape dim");
             }
@@ -1410,12 +1492,165 @@ pub fn convexhull(dim: usize, points: Vec<Point>) -> Shape {
     shape_disjoint_union(dim, vec![shell, interior])
 }
 
-struct ConvexSimplicialComplex {
-    dim: usize,  //the dimension of the space the convex simplicial complex lives in
-    rank: usize, //the dimension of the convex simplicial complex. <= dim
+#[derive(Debug, Clone)]
+pub struct ConvexSimplicialComplex {
     subspace: AffineSubspace, //an embedding of a vector space of dimension self.rank into the ambient space
     boundary: Vec<OrientedSimplex>, //oriented simplexes in the subspace of rank self.rank-1 with positive side on the outside
     interior: Vec<Simplex>,         //simplexes in the subspace which form the interior
+                                    //furthermore, the convex simplicial complex should contain the embedding of the standard simplex in the AffineSubspace
+}
+
+impl ConvexSimplicialComplex {
+    pub fn check(&self) -> Result<(), &'static str> {
+        for simplex in &self.boundary {
+            if simplex.dim() != self.subspace.rank() {
+                return Err("boundary simplexes should live in the subspace coordinates");
+            }
+        }
+
+        for simplex in &self.interior {
+            if simplex.dim() != self.subspace.rank() {
+                return Err("interior simplexes should live in the subspace coordinates");
+            }
+
+            for b in &self.boundary {
+                if !b.sign_point(&simplex.centroid()).is_le() {
+                    return Err("centroid of interior simplexes should be on the negative side of every boundary simplex");
+                }
+                if !b.sign_point(&self.subspace_interior_point()).is_le() {
+                    return Err("centroid should contain the embedding of the standard simplex in the subspace, in particular it should contain its centroid");
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn as_shape(&self) -> Shape {
+        let mut simplices = vec![];
+        for simplex in &self.boundary {
+            simplices.push(self.subspace.simplex_image(&simplex.clone().as_simplex()));
+        }
+        for simplex in &self.interior {
+            simplices.push(self.subspace.simplex_image(simplex));
+        }
+        Shape::new(self.dim(), simplices)
+    }
+
+    fn subspace_interior_point(&self) -> Point {
+        Simplex::new_standard_simplex(self.subspace.rank()).centroid()
+    }
+
+    fn interior_point(&self) -> Point {
+        self.subspace.point_image(&self.subspace_interior_point())
+    }
+
+    pub fn new_from_simplex(simplex: &Simplex) -> Self {
+        assert!(simplex.rank().is_some());
+        let subspace = simplex.affine_subspace();
+        let simplex_preimage = Simplex::new_standard_simplex(simplex.rank().unwrap());
+        let boundary = simplex_preimage.oriented_facets();
+        let interior = vec![simplex_preimage];
+
+        let ans = Self {
+            subspace,
+            boundary,
+            interior,
+        };
+
+        ans.check().unwrap();
+        debug_assert!(ans.check().is_ok());
+        ans
+    }
+
+    pub fn dim(&self) -> usize {
+        self.subspace.dim()
+    }
+
+    pub fn rank(&self) -> usize {
+        self.subspace.rank()
+    }
+
+    pub fn expand_by_point(&self, point: &Point) -> Self {
+        println!("self = {:?}", self);
+
+        match self.subspace.point_preimage(point) {
+            Some(point_preimage) => {
+                println!("flat case");
+                println!("{:?}", point_preimage);
+
+                todo!()
+            }
+            None => {
+                // subspace C extended_subspace C ambient_space
+
+                let extended_interior_point =
+                    Simplex::new_standard_simplex(self.subspace.rank() + 1).centroid();
+
+                let extended_subspace_into_ambient = self
+                    .subspace
+                    .clone()
+                    .extend_basis(point - &self.subspace.origin);
+
+                let point_extended_preimage = Point {
+                    coords: (0..self.subspace.rank() + 1)
+                        .map(|i| match i == self.subspace.rank() {
+                            true => Rational::from(1),
+                            false => Rational::from(0),
+                        })
+                        .collect(),
+                };
+
+                let subspace_into_extended_subspace = AffineSubspace::cannonical_subspace(
+                    self.subspace.rank(),
+                    self.subspace.rank() + 1,
+                );
+
+                println!("{:?}", extended_subspace_into_ambient);
+                println!("{:?}", subspace_into_extended_subspace);
+
+                println!("{:?}", point);
+                println!("{:?}", point_extended_preimage);
+
+                let mut extended_boundary = vec![];
+                let mut extended_interior = vec![];
+
+                for boundary_simplex in &self.boundary {
+                    // add its cone to the new boundary
+                    extended_boundary.push(OrientedSimplex::from_simplex(
+                        subspace_into_extended_subspace
+                            .simplex_image(&boundary_simplex.clone().as_simplex())
+                            .extend_by_point(point_extended_preimage.clone()),
+                        &extended_interior_point,
+                    ));
+                }
+
+                for interior_simplex in &self.interior {
+                    // add it to the new boundary
+                    extended_boundary.push(OrientedSimplex::from_simplex(
+                        subspace_into_extended_subspace.simplex_image(interior_simplex),
+                        &extended_interior_point,
+                    ));
+
+                    // add its cone to the new interior
+                    extended_interior.push(
+                        subspace_into_extended_subspace
+                            .simplex_image(interior_simplex)
+                            .extend_by_point(point_extended_preimage.clone()),
+                    );
+                }
+
+                let ans = Self {
+                    subspace: extended_subspace_into_ambient,
+                    boundary: extended_boundary,
+                    interior: extended_interior,
+                };
+
+                debug_assert!(ans.check().is_ok());
+                ans
+            }
+        }
+    }
 }
 
 // #[derive(Debug, Clone)]

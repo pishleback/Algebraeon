@@ -32,6 +32,44 @@ fn main() {
     // let canvas = drawing::canvas2d::Canvas::new();
     // canvas.run();
 
+    let p1 = Point::new(vec![
+        Rational::from_str("1").unwrap(),
+        Rational::from_str("1").unwrap(),
+    ]);
+
+    let p2 = Point::new(vec![
+        Rational::from_str("2").unwrap(),
+        Rational::from_str("3").unwrap(),
+    ]);
+
+    let p3 = Point::new(vec![
+        Rational::from_str("4").unwrap(),
+        Rational::from_str("2").unwrap(),
+    ]);
+
+    let p4 = Point::new(vec![
+        Rational::from_str("2").unwrap(),
+        Rational::from_str("4").unwrap(),
+    ]);
+
+    let a = Simplex::new(2, vec![p1.clone(), p2.clone()]);
+    let b = Simplex::new(2, vec![p4.clone()]);
+
+    let ch1 = ConvexSimplicialComplex::new_from_simplex(&a);
+    let ch2 = ch1.expand_by_point(&p4);
+
+    println!();
+    println!("ch1 = {:?}", ch1);
+    println!("ch2 = {:?}", ch2);
+
+    let mut canvas = drawing::canvas2d::Shape2dCanvas::new();
+
+    canvas.draw_shape(&ch2.as_shape(), (1.0, 0.0, 0.0));
+    canvas.draw_shape(&ch1.as_shape(), (0.0, 1.0, 0.0));
+    canvas.run();
+
+    return;
+
     fn make_shape() -> Shape {
         let mut rng = rand::thread_rng();
 
