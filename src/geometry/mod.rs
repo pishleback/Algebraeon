@@ -1,4 +1,5 @@
 use core::panic;
+use std::borrow::BorrowMut;
 #[allow(dead_code)]
 use std::collections::{HashMap, HashSet};
 
@@ -350,6 +351,16 @@ impl AffineSubspace {
         )
     }
 
+    pub fn shape_image(&self, s: &Shape) -> Shape {
+        Shape::new(
+            self.dim(),
+            s.simplices_ref()
+                .into_iter()
+                .map(|s| self.simplex_image(s))
+                .collect(),
+        )
+    }
+
     pub fn point_preimage(&self, p: &Point) -> Option<Point> {
         assert_eq!(p.dim(), self.dim());
 
@@ -370,6 +381,19 @@ impl AffineSubspace {
             }
         }
         Some(Simplex::new(self.dim(), new_points))
+    }
+
+    pub fn shape_preimage(&self, s: &Shape) -> Option<Shape> {
+        let mut new_simplices = vec![];
+        for a in s.simplices_ref() {
+            match self.simplex_preimage(a) {
+                Some(b) => new_simplices.push(b),
+                None => {
+                    return None;
+                }
+            }
+        }
+        Some(Shape::new(self.dim(), new_simplices))
     }
 
     fn extend_basis(mut self, new_basis_vector: Vector) -> Self {
@@ -524,9 +548,9 @@ impl Simplex {
         self.vertices.binary_search(pt).is_ok()
     }
 
-    pub fn skeleton(&self, skel_rank: usize) -> Vec<Simplex> {
+    pub fn skeleton(&self, skel_n: usize) -> Vec<Simplex> {
         let mut parts = vec![];
-        for skeleton_piece_index in (0..self.vertices.len()).combinations(skel_rank + 1) {
+        for skeleton_piece_index in (0..self.vertices.len()).combinations(skel_n) {
             let part = Simplex {
                 dim: self.dim,
                 vertices: skeleton_piece_index
@@ -552,11 +576,11 @@ impl Simplex {
     }
 
     pub fn ridges(&self) -> Vec<Simplex> {
-        self.skeleton(self.n() - 3)
+        self.skeleton(self.n() - 2)
     }
 
     pub fn facets(&self) -> Vec<Simplex> {
-        self.skeleton(self.n() - 2)
+        self.skeleton(self.n() - 1)
     }
 
     pub fn facet(&self, k: usize) -> Simplex {
@@ -577,18 +601,26 @@ impl Simplex {
         assert_eq!(self.dim, self.rank().unwrap());
         assert!(k <= self.n());
         let oriented_facet = OrientedSimplex::new(self.facet(k));
-        match oriented_facet.sign_point(&self.vertices[k]) {
-            std::cmp::Ordering::Less => oriented_facet,
-            std::cmp::Ordering::Equal => panic!(),
-            std::cmp::Ordering::Greater => oriented_facet.flipped(),
+        if self.dim() == 0 {
+            //self.dim == self.rank == k == 0
+            //in this case, we are looking for the oriented facet of a point which is the empty simplex
+            //both orientations of the empty simplex are the same and no points are on either side. the unique point has signed distance 0 from it but does not lie on it
+            oriented_facet
+        } else {
+            match oriented_facet.sign_point(&self.vertices[k]) {
+                std::cmp::Ordering::Less => oriented_facet,
+                std::cmp::Ordering::Equal => panic!(),
+                std::cmp::Ordering::Greater => oriented_facet.flipped(),
+            }
         }
     }
 
     fn oriented_facets(&self) -> Vec<OrientedSimplex> {
+        assert_eq!(self.dim, self.rank().unwrap());
         (0..self.n()).map(|k| self.oriented_facet(k)).collect()
     }
 
-    pub fn boundary(&self) -> Shape {
+    fn boundary_simplices(&self) -> Vec<Simplex> {
         let n = self.n();
         let total: u128 = 1 << n;
         let mut parts = vec![];
@@ -609,10 +641,27 @@ impl Simplex {
             debug_assert!(b.check().is_ok());
             parts.push(b);
         }
-        Shape {
+        parts
+    }
+
+    pub fn boundary(&self) -> SimplicialComplex {
+        let ans = SimplicialComplex {
+            dim: self.dim,
+            simplices: self.boundary_simplices(),
+        };
+        debug_assert!(ans.check().is_ok());
+        ans
+    }
+
+    pub fn as_simplicial_complex(&self) -> SimplicialComplex {
+        let mut parts = self.boundary_simplices();
+        parts.push(self.clone());
+        let ans = SimplicialComplex {
             dim: self.dim,
             simplices: parts,
-        }
+        };
+        debug_assert!(ans.check().is_ok());
+        ans
     }
 
     #[deprecated(note = "use affine_subspace instead")]
@@ -711,7 +760,6 @@ impl OrientedSimplex {
 
     pub fn new(simplex: Simplex) -> Self {
         assert_eq!(simplex.dim, simplex.n());
-        debug_assert_ne!(simplex.dim, 0);
         let ans = Self {
             simplex,
             flip: false,
@@ -725,10 +773,14 @@ impl OrientedSimplex {
     }
 
     fn from_simplex(simplex: Simplex, neg_pt: &Point) -> Self {
+        assert_eq!(simplex.n(), simplex.dim());
+
         let ans = Self {
             simplex: simplex,
             flip: false,
         };
+
+        debug_assert!(ans.check().is_ok());
 
         match ans.sign_point(&neg_pt) {
             std::cmp::Ordering::Less => ans,
@@ -760,7 +812,11 @@ impl OrientedSimplex {
 
     pub fn det_point(&self, point: &Point) -> Rational {
         debug_assert_eq!(point.dim(), self.dim());
-        self.det_vector(&(point - &self.simplex.vertices[0]))
+        if self.dim() == 0 {
+            Rational::from(0)
+        } else {
+            self.det_vector(&(point - &self.simplex.vertices[0]))
+        }
     }
 
     pub fn det_vector(&self, vec: &Vector) -> Rational {
@@ -852,6 +908,10 @@ impl Shape {
 
     pub fn simplices(self) -> Vec<Simplex> {
         self.simplices
+    }
+
+    pub fn simplices_ref(&self) -> Vec<&Simplex> {
+        self.simplices.iter().collect()
     }
 
     #[deprecated]
@@ -1187,7 +1247,7 @@ fn cut_simplex_by_plane(cut_plane: &OrientedSimplex, simplex: &Simplex) -> (Shap
         n => {
             debug_assert!(n >= 3);
             let (open_left, hollow_middle, open_right) =
-                cut_shape_by_plane(&cut_plane, &simplex.boundary());
+                cut_shape_by_plane(&cut_plane, &simplex.boundary().as_shape());
 
             let interior_middle = interior_of_convex_shell(&hollow_middle);
             let hollow_left = shape_disjoint_union(
@@ -1353,6 +1413,7 @@ pub fn cut_shape_by_simplex(cut_simplex: &Simplex, shape: &Shape) -> (Shape, Sha
     (inside, outside)
 }
 
+/*
 pub fn convexhull_boundary(dim: usize, points: Vec<Point>) -> (Shape, usize) {
     //return None if the convex hull is flat
     for point in &points {
@@ -1491,58 +1552,127 @@ pub fn convexhull(dim: usize, points: Vec<Point>) -> Shape {
     let interior = interior_of_convex_shell(&shell);
     shape_disjoint_union(dim, vec![shell, interior])
 }
+*/
 
 #[derive(Debug, Clone)]
-pub struct ConvexSimplicialComplex {
-    subspace: AffineSubspace, //an embedding of a vector space of dimension self.rank into the ambient space
-    boundary: Vec<OrientedSimplex>, //oriented simplexes in the subspace of rank self.rank-1 with positive side on the outside
-    interior: Vec<Simplex>,         //simplexes in the subspace which form the interior
-                                    //furthermore, the convex simplicial complex should contain the embedding of the standard simplex in the AffineSubspace
+enum ConvexSimplicialComplexCases {
+    NonEmpty {
+        subspace: AffineSubspace, //an embedding of a vector space of dimension self.rank into the ambient space
+        boundary: Vec<OrientedSimplex>, //oriented simplexes in the subspace of rank self.rank-1 with positive side on the outside
+        interior: SimplicialComplex,    //simplexes in the subspace which form the interior
+                                        //furthermore, the convex simplicial complex should contain the embedding of the standard simplex in the AffineSubspace
+    },
+    Empty {
+        dim: usize,
+    },
 }
+
+#[derive(Debug, Clone)]
+pub struct ConvexSimplicialComplex(ConvexSimplicialComplexCases);
 
 impl ConvexSimplicialComplex {
     pub fn check(&self) -> Result<(), &'static str> {
-        for simplex in &self.boundary {
-            if simplex.dim() != self.subspace.rank() {
-                return Err("boundary simplexes should live in the subspace coordinates");
-            }
-        }
+        match self {
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
+                subspace,
+                boundary,
+                interior,
+            }) => {
+                interior.check()?;
 
-        for simplex in &self.interior {
-            if simplex.dim() != self.subspace.rank() {
-                return Err("interior simplexes should live in the subspace coordinates");
-            }
+                if interior.dim() != subspace.rank() {
+                    return Err("interior simplexes should live in the subspace coordinates");
+                }
 
-            for b in &self.boundary {
-                if !b.sign_point(&simplex.centroid()).is_le() {
-                    return Err("centroid of interior simplexes should be on the negative side of every boundary simplex");
+                for simplex in boundary {
+                    if simplex.dim() != subspace.rank() {
+                        return Err("boundary simplexes should live in the subspace coordinates");
+                    }
                 }
-                if !b.sign_point(&self.subspace_interior_point()).is_le() {
-                    return Err("centroid should contain the embedding of the standard simplex in the subspace, in particular it should contain its centroid");
+
+                for simplex in interior.simplices_ref() {
+                    if simplex.dim() != subspace.rank() {
+                        return Err("interior simplexes should live in the subspace coordinates");
+                    }
+
+                    for b in boundary {
+                        if !b.sign_point(&simplex.centroid()).is_le() {
+                            return Err("centroid of interior simplexes should be on the negative side of every boundary simplex");
+                        }
+
+                        //not valid when subspace.rank() == 0
+                        if subspace.rank() >= 1 {
+                            if !b
+                                .sign_point(&self.subspace_interior_point().unwrap())
+                                .is_lt()
+                            {
+                                return Err("centroid of the standard simplex should be strictly inside each boundary when rank >= 1");
+                            }
+                        }
+                    }
                 }
             }
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::Empty { dim }) => {}
         }
 
         Ok(())
     }
 
-    pub fn as_shape(&self) -> Shape {
-        let mut simplices = vec![];
-        for simplex in &self.boundary {
-            simplices.push(self.subspace.simplex_image(&simplex.clone().as_simplex()));
+    #[deprecated(note = "for debug use only")]
+    pub fn interior_as_shape(&self) -> Shape {
+        match self {
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
+                subspace,
+                boundary,
+                interior,
+            }) => subspace.shape_image(&interior.clone().as_shape()),
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::Empty { dim }) => {
+                Shape::empty(*dim)
+            }
         }
-        for simplex in &self.interior {
-            simplices.push(self.subspace.simplex_image(simplex));
-        }
-        Shape::new(self.dim(), simplices)
     }
 
-    fn subspace_interior_point(&self) -> Point {
-        Simplex::new_standard_simplex(self.subspace.rank()).centroid()
+    #[deprecated(note = "for debug use only")]
+    pub fn boundary_as_shape(&self) -> Shape {
+        match self {
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
+                subspace,
+                boundary,
+                interior,
+            }) => subspace.shape_image(&Shape {
+                dim: subspace.rank(),
+                simplices: boundary.iter().map(|s| s.clone().as_simplex()).collect(),
+            }),
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::Empty { dim }) => {
+                Shape::empty(*dim)
+            }
+        }
     }
 
-    fn interior_point(&self) -> Point {
-        self.subspace.point_image(&self.subspace_interior_point())
+    fn subspace_interior_point(&self) -> Option<Point> {
+        match self {
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
+                subspace,
+                boundary,
+                interior,
+            }) => Some(Simplex::new_standard_simplex(subspace.rank()).centroid()),
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::Empty { dim }) => None,
+        }
+    }
+
+    fn interior_point(&self) -> Option<Point> {
+        match self {
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
+                subspace,
+                boundary,
+                interior,
+            }) => Some(subspace.point_image(&self.subspace_interior_point().unwrap())),
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::Empty { dim }) => None,
+        }
+    }
+
+    pub fn new_empty(dim: usize) -> Self {
+        Self(ConvexSimplicialComplexCases::Empty { dim })
     }
 
     pub fn new_from_simplex(simplex: &Simplex) -> Self {
@@ -1550,108 +1680,267 @@ impl ConvexSimplicialComplex {
         let subspace = simplex.affine_subspace();
         let simplex_preimage = Simplex::new_standard_simplex(simplex.rank().unwrap());
         let boundary = simplex_preimage.oriented_facets();
-        let interior = vec![simplex_preimage];
+        let interior = simplex_preimage.as_simplicial_complex();
 
-        let ans = Self {
+        let ans = Self(ConvexSimplicialComplexCases::NonEmpty {
             subspace,
             boundary,
             interior,
-        };
+        });
 
-        ans.check().unwrap();
         debug_assert!(ans.check().is_ok());
         ans
     }
 
     pub fn dim(&self) -> usize {
-        self.subspace.dim()
+        match self {
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
+                subspace,
+                boundary,
+                interior,
+            }) => subspace.dim(),
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::Empty { dim }) => *dim,
+        }
     }
 
-    pub fn rank(&self) -> usize {
-        self.subspace.rank()
+    pub fn rank(&self) -> Option<usize> {
+        match self {
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
+                subspace,
+                boundary,
+                interior,
+            }) => Some(subspace.rank()),
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::Empty { dim }) => None,
+        }
     }
 
-    pub fn expand_by_point(&self, point: &Point) -> Self {
-        println!("self = {:?}", self);
+    ///Return the convex hull of self and point by extending self.
+    pub fn extend_by_point(&self, point: &Point) -> Self {
+        match self {
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
+                subspace,
+                boundary,
+                interior,
+            }) => {
+                match subspace.point_preimage(point) {
+                    Some(point_preimage) => {
+                        //find which boundary simplices are visible from the point
+                        let mut visible_boundary = vec![];
+                        let mut obstructed_boundary = vec![];
+                        for b in boundary {
+                            match b.sign_point(&point_preimage).is_gt() {
+                                true => visible_boundary.push(b.clone()),
+                                false => obstructed_boundary.push(b.clone()),
+                            }
+                        }
 
-        match self.subspace.point_preimage(point) {
-            Some(point_preimage) => {
-                println!("flat case");
-                println!("{:?}", point_preimage);
+                        //find the facets of the visible_boundary which are at the horizon of what is visible
+                        let mut horizon = HashSet::new();
+                        for v in &visible_boundary {
+                            println!("v = {:?}", v);
+                            for b in v.simplex.facets() {
+                                if horizon.contains(&b) {
+                                    horizon.remove(&b);
+                                } else {
+                                    horizon.insert(b);
+                                }
+                            }
+                        }
 
-                todo!()
+                        let mut extended_boundary = vec![];
+                        let mut extended_interior = vec![];
+
+                        //compute the extended boundary
+                        extended_boundary.append(&mut obstructed_boundary);
+                        for h in horizon {
+                            extended_boundary.push(OrientedSimplex::from_simplex(
+                                h.extend_by_point(point_preimage.clone()),
+                                &self.subspace_interior_point().unwrap(),
+                            ));
+                        }
+
+                        //the current interior
+                        extended_interior.append(&mut interior.clone().simplices());
+
+                        //cone of the visible boundary
+                        let mut visible_boundary_completion = HashSet::new();
+                        for b in visible_boundary.iter().map(|b| b.clone().as_simplex()) {
+                            for bb in b.boundary_simplices() {
+                                visible_boundary_completion.insert(bb);
+                            }
+                            visible_boundary_completion.insert(b);
+                        }
+
+                        for b in visible_boundary_completion {
+                            extended_interior.push(b.extend_by_point(point_preimage.clone()));
+                        }
+
+                        //add the point to the new interior if it is not already inside
+                        if !visible_boundary.is_empty() {
+                            extended_interior.push(Simplex {
+                                dim: subspace.rank(),
+                                vertices: vec![point_preimage],
+                            });
+                        }
+
+                        let ans = Self(ConvexSimplicialComplexCases::NonEmpty {
+                            subspace: subspace.clone(),
+                            boundary: extended_boundary,
+                            interior: SimplicialComplex {
+                                dim: subspace.rank(),
+                                simplices: extended_interior,
+                            },
+                        });
+
+                        debug_assert!(ans.check().is_ok());
+
+                        ans
+                    }
+                    None => {
+                        // subspace C extended_subspace C ambient_space
+
+                        let extended_interior_point =
+                            Simplex::new_standard_simplex(subspace.rank() + 1).centroid();
+
+                        let extended_subspace_into_ambient =
+                            subspace.clone().extend_basis(point - &subspace.origin);
+
+                        let point_extended_preimage = Point {
+                            coords: (0..subspace.rank() + 1)
+                                .map(|i| match i == subspace.rank() {
+                                    true => Rational::from(1),
+                                    false => Rational::from(0),
+                                })
+                                .collect(),
+                        };
+
+                        let subspace_into_extended_subspace = AffineSubspace::cannonical_subspace(
+                            subspace.rank(),
+                            subspace.rank() + 1,
+                        );
+
+                        let mut extended_boundary = vec![];
+                        let mut extended_interior = vec![];
+
+                        for boundary_simplex in boundary {
+                            // add its cone to the new boundary
+                            extended_boundary.push(OrientedSimplex::from_simplex(
+                                subspace_into_extended_subspace
+                                    .simplex_image(&boundary_simplex.clone().as_simplex())
+                                    .extend_by_point(point_extended_preimage.clone()),
+                                &extended_interior_point,
+                            ));
+                        }
+
+                        for interior_simplex in interior.simplices_ref() {
+                            // add it to the new boundary if it is of maximal rank
+                            if interior_simplex.rank().unwrap() == subspace.rank() {
+                                extended_boundary.push(OrientedSimplex::from_simplex(
+                                    subspace_into_extended_subspace.simplex_image(interior_simplex),
+                                    &extended_interior_point,
+                                ));
+                            }
+
+                            // add itself to the new interior
+                            extended_interior.push(
+                                subspace_into_extended_subspace.simplex_image(interior_simplex),
+                            );
+
+                            // add its cone to the new interior
+                            extended_interior.push(
+                                subspace_into_extended_subspace
+                                    .simplex_image(interior_simplex)
+                                    .extend_by_point(point_extended_preimage.clone()),
+                            );
+                        }
+
+                        //add the point to the new interior
+                        extended_interior.push(Simplex {
+                            dim: subspace.rank() + 1,
+                            vertices: vec![point_extended_preimage],
+                        });
+
+                        let ans = Self(ConvexSimplicialComplexCases::NonEmpty {
+                            subspace: extended_subspace_into_ambient,
+                            boundary: extended_boundary,
+                            interior: SimplicialComplex {
+                                dim: subspace.rank() + 1,
+                                simplices: extended_interior,
+                            },
+                        });
+
+                        debug_assert!(ans.check().is_ok());
+                        ans
+                    }
+                }
             }
-            None => {
-                // subspace C extended_subspace C ambient_space
-
-                let extended_interior_point =
-                    Simplex::new_standard_simplex(self.subspace.rank() + 1).centroid();
-
-                let extended_subspace_into_ambient = self
-                    .subspace
-                    .clone()
-                    .extend_basis(point - &self.subspace.origin);
-
-                let point_extended_preimage = Point {
-                    coords: (0..self.subspace.rank() + 1)
-                        .map(|i| match i == self.subspace.rank() {
-                            true => Rational::from(1),
-                            false => Rational::from(0),
-                        })
-                        .collect(),
-                };
-
-                let subspace_into_extended_subspace = AffineSubspace::cannonical_subspace(
-                    self.subspace.rank(),
-                    self.subspace.rank() + 1,
-                );
-
-                println!("{:?}", extended_subspace_into_ambient);
-                println!("{:?}", subspace_into_extended_subspace);
-
-                println!("{:?}", point);
-                println!("{:?}", point_extended_preimage);
-
-                let mut extended_boundary = vec![];
-                let mut extended_interior = vec![];
-
-                for boundary_simplex in &self.boundary {
-                    // add its cone to the new boundary
-                    extended_boundary.push(OrientedSimplex::from_simplex(
-                        subspace_into_extended_subspace
-                            .simplex_image(&boundary_simplex.clone().as_simplex())
-                            .extend_by_point(point_extended_preimage.clone()),
-                        &extended_interior_point,
-                    ));
-                }
-
-                for interior_simplex in &self.interior {
-                    // add it to the new boundary
-                    extended_boundary.push(OrientedSimplex::from_simplex(
-                        subspace_into_extended_subspace.simplex_image(interior_simplex),
-                        &extended_interior_point,
-                    ));
-
-                    // add its cone to the new interior
-                    extended_interior.push(
-                        subspace_into_extended_subspace
-                            .simplex_image(interior_simplex)
-                            .extend_by_point(point_extended_preimage.clone()),
-                    );
-                }
-
-                let ans = Self {
-                    subspace: extended_subspace_into_ambient,
-                    boundary: extended_boundary,
-                    interior: extended_interior,
-                };
-
-                debug_assert!(ans.check().is_ok());
-                ans
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::Empty { dim }) => {
+                Self::new_from_simplex(&Simplex::new(*dim, vec![point.clone()]))
             }
         }
     }
 }
+
+pub fn convexhull(dim: usize, points: Vec<Point>) -> ConvexSimplicialComplex {
+    for point in &points {
+        assert_eq!(dim, point.dim());
+    }
+    let mut ch = ConvexSimplicialComplex::new_empty(dim);
+    for point in points {
+        ch = ch.extend_by_point(&point);
+    }
+    ch
+}
+
+// #[derive(Debug, Clone)]
+// pub enum ConvexSimplicialComplex {
+//     NonEmpty(NonemptyConvexSimplicialComplex),
+//     Empty { dim: usize },
+// }
+
+// impl ConvexSimplicialComplex {
+//     pub fn new_empty(dim: usize) -> Self {
+//         ConvexSimplicialComplex::Empty{dim}
+//     }
+
+//     pub fn dim(&self) -> usize {
+//         match self {
+//             ConvexSimplicialComplex::NonEmpty(necsc) => necsc.dim(),
+//             ConvexSimplicialComplex::Empty{dim} => *dim,
+//         }
+//     }
+
+//     pub fn extend_by_point(&self, point: &Point) -> Self {
+//         assert_eq!(self.dim(), point.dim());
+//         match self {
+//             ConvexSimplicialComplex::NonEmpty(necsc) => {
+//                 ConvexSimplicialComplex::NonEmpty(necsc.extend_by_point(point))
+//             }
+//             ConvexSimplicialComplex::Empty(dim) => ConvexSimplicialComplex::NonEmpty(
+//                 NonemptyConvexSimplicialComplex::new_from_simplex(&Simplex {
+//                     dim: *dim,
+//                     vertices: vec![point.clone()],
+//                 }),
+//             ),
+//         }
+//     }
+
+//     #[deprecated(note = "for debug use only")]
+//     pub fn interior_as_shape(&self) -> Shape {
+//         match self {
+//             ConvexSimplicialComplex::NonEmpty(nescs) => nescs.interior_as_shape(),
+//             ConvexSimplicialComplex::Empty(dim) => Shape::empty(*dim),
+//         }
+//     }
+
+//     #[deprecated(note = "for debug use only")]
+//     pub fn boundary_as_shape(&self) -> Shape {
+//         match self {
+//             ConvexSimplicialComplex::NonEmpty(nescs) => nescs.boundary_as_shape(),
+//             ConvexSimplicialComplex::Empty(dim) => Shape::empty(*dim),
+//         }
+//     }
+// }
 
 // #[derive(Debug, Clone)]
 // pub struct PartialSimplicialComplex {
@@ -1706,58 +1995,65 @@ impl ConvexSimplicialComplex {
 //     }
 // }
 
-// #[derive(Debug, Clone)]
-// pub struct SimplicialComplex {
-//     dim: usize,
-//     simplices: Vec<Simplex>,
-// }
+#[derive(Debug, Clone)]
+pub struct SimplicialComplex {
+    dim: usize,
+    simplices: Vec<Simplex>,
+}
 
-// impl SimplicialComplex {
-//     pub fn as_shape(self) -> SimplexDisjointUnion {
-//         SimplexDisjointUnion {
-//             dim: self.dim,
-//             simplices: self.simplices,
-//         }
-//     }
+impl SimplicialComplex {
+    pub fn as_shape(self) -> Shape {
+        Shape {
+            dim: self.dim,
+            simplices: self.simplices,
+        }
+    }
 
-//     pub fn check(&self) -> Result<(), &'static str> {
-//         self.clone().as_shape().check()?;
-//         //TODO: check that every face of a simplex is a simplex
-//         Ok(())
-//     }
+    pub fn check(&self) -> Result<(), &'static str> {
+        self.clone().as_shape().check()?; //simplices are disjoint
 
-//     pub fn empty(dim: usize) -> Self {
-//         Self {
-//             dim,
-//             simplices: vec![],
-//         }
-//     }
+        let simplices = self.simplices.iter().collect::<HashSet<_>>();
 
-//     pub fn simplex(simplex: Simplex) -> Self {
-//         Self {
-//             dim: simplex.dim,
-//             simplices: vec![simplex],
-//         }
-//     }
+        for simplex in &self.simplices {
+            for b in simplex.boundary().simplices_ref() {
+                if !simplices.contains(b) {
+                    return Err("simplicial complex is missing the boundary of some simplex");
+                }
+            }
+        }
 
-//     pub fn new(dim: usize, simplices: Vec<Simplex>) -> Self {
-//         let ans = Self { dim, simplices };
-//         debug_assert!(ans.check().is_ok());
-//         ans
-//     }
+        Ok(())
+    }
 
-//     pub fn dim(&self) -> usize {
-//         self.dim
-//     }
+    pub fn empty(dim: usize) -> Self {
+        Self {
+            dim,
+            simplices: vec![],
+        }
+    }
 
-//     pub fn is_empty(&self) -> bool {
-//         self.simplices.is_empty()
-//     }
+    pub fn new(dim: usize, simplices: Vec<Simplex>) -> Self {
+        let ans = Self { dim, simplices };
+        debug_assert!(ans.check().is_ok());
+        ans
+    }
 
-//     pub fn simplices(self) -> Vec<Simplex> {
-//         self.simplices
-//     }
-// }
+    pub fn dim(&self) -> usize {
+        self.dim
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.simplices.is_empty()
+    }
+
+    pub fn simplices(self) -> Vec<Simplex> {
+        self.simplices
+    }
+
+    pub fn simplices_ref(&self) -> Vec<&Simplex> {
+        self.simplices.iter().collect()
+    }
+}
 
 #[cfg(test)]
 mod geometry_tests {
@@ -1981,4 +2277,67 @@ mod geometry_tests {
 
     //     debug_assert!(a.boundary_as_mesh().unwrap().check().is_ok());
     // }
+
+    #[test]
+    fn test_convex_simplicial_complex_point_extension() {
+        let csc0 = ConvexSimplicialComplex::new_empty(2);
+        assert!(csc0.check().is_ok());
+        assert_eq!(csc0.rank(), None);
+
+        let csc1 = csc0.extend_by_point(&Point::new(vec![
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("1").unwrap(),
+        ]));
+        assert!(csc1.check().is_ok());
+        assert_eq!(csc1.rank(), Some(0));
+
+        let csc2 = csc1.extend_by_point(&Point::new(vec![
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("1").unwrap(),
+        ]));
+        assert!(csc2.check().is_ok());
+        assert_eq!(csc2.rank(), Some(0));
+
+        let csc3 = csc2.extend_by_point(&Point::new(vec![
+            Rational::from_str("2").unwrap(),
+            Rational::from_str("3").unwrap(),
+        ]));
+        assert!(csc3.check().is_ok());
+        assert_eq!(csc3.rank(), Some(1));
+
+        let csc4 = csc3.extend_by_point(&Point::new(vec![
+            Rational::from_str("4").unwrap(),
+            Rational::from_str("7").unwrap(),
+        ]));
+        assert!(csc4.check().is_ok());
+        assert_eq!(csc4.rank(), Some(1));
+
+        let csc5 = csc4.extend_by_point(&Point::new(vec![
+            Rational::from_str("3").unwrap(),
+            Rational::from_str("5").unwrap(),
+        ]));
+        assert!(csc5.check().is_ok());
+        assert_eq!(csc5.rank(), Some(1));
+
+        let csc6 = csc5.extend_by_point(&Point::new(vec![
+            Rational::from_str("0").unwrap(),
+            Rational::from_str("6").unwrap(),
+        ]));
+        assert!(csc6.check().is_ok());
+        assert_eq!(csc6.rank(), Some(2));
+
+        let csc7 = csc6.extend_by_point(&Point::new(vec![
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("0").unwrap(),
+        ]));
+        assert!(csc7.check().is_ok());
+        assert_eq!(csc7.rank(), Some(2));
+
+        let csc8 = csc7.extend_by_point(&Point::new(vec![
+            Rational::from_str("4").unwrap(),
+            Rational::from_str("1").unwrap(),
+        ]));
+        assert!(csc8.check().is_ok());
+        assert_eq!(csc8.rank(), Some(2));
+    }
 }

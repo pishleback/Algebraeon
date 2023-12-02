@@ -992,6 +992,14 @@ where
     }
 }
 
+pub trait DenseReal: Real {
+    fn from_f64_approx(&self, x: f64) -> Self::ElemT;
+    fn from_f32_approx(&self, x: f32) -> Self::ElemT {
+        self.from_f64_approx(x as f64)
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::super::nzq::*;

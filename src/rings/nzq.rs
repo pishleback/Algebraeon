@@ -207,6 +207,17 @@ impl Real for IntegerRing {
     }
 }
 
+impl DenseReal for RationalField {
+    fn from_f64_approx(&self, x: f64) -> Self::ElemT {
+        let mut x = Rational::from_sci_string_simplest(x.to_string().as_str()).unwrap();
+        malachite_q::arithmetic::traits::ApproximateAssign::approximate_assign(
+            &mut x,
+            &Natural::from(self.from_f64_approx_max_denom),
+        );
+        x
+    }
+}
+
 impl<'a> UniqueFactorizationDomain for PolynomialRing<'a, IntegerRing> {
     fn factor(&self, elem: &Self::ElemT) -> Option<Factored<Self::ElemT>> {
         //TODO: use a more efficient algorithm: reduce mod large prime and lift, knapsack alg using LLL to pick factor subsets efficiently
@@ -221,8 +232,12 @@ impl<'a> UniqueFactorizationDomain for PolynomialRing<'a, IntegerRing> {
 // }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RationalField;
-pub const QQ: RationalField = RationalField;
+pub struct RationalField {
+    from_f64_approx_max_denom: u128,
+}
+pub const QQ: RationalField = RationalField {
+    from_f64_approx_max_denom: 100,
+};
 
 impl ComRing for RationalField {
     type ElemT = Rational;

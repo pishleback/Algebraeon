@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, warnings, unused)]
 
 #[macro_use]
 extern crate glium;
@@ -21,221 +21,34 @@ use rings::nzq::*;
 use rings::poly::*;
 use rings::ring::*;
 
-mod drawing;
-mod geometry;
-mod groups;
-mod numbers;
-mod rings;
-mod sets;
+pub mod drawing;
+pub mod geometry;
+pub mod groups;
+pub mod numbers;
+pub mod rings;
+pub mod sets;
 
 fn main() {
-    // let canvas = drawing::canvas2d::Canvas::new();
-    // canvas.run();
-
-    let p1 = Point::new(vec![
-        Rational::from_str("1").unwrap(),
-        Rational::from_str("1").unwrap(),
-    ]);
-
-    let p2 = Point::new(vec![
-        Rational::from_str("2").unwrap(),
-        Rational::from_str("3").unwrap(),
-    ]);
-
-    let p3 = Point::new(vec![
-        Rational::from_str("4").unwrap(),
-        Rational::from_str("2").unwrap(),
-    ]);
-
-    let p4 = Point::new(vec![
-        Rational::from_str("2").unwrap(),
-        Rational::from_str("4").unwrap(),
-    ]);
-
-    let a = Simplex::new(2, vec![p1.clone(), p2.clone()]);
-    let b = Simplex::new(2, vec![p4.clone()]);
-
-    let ch1 = ConvexSimplicialComplex::new_from_simplex(&a);
-    let ch2 = ch1.expand_by_point(&p4);
-
-    println!();
-    println!("ch1 = {:?}", ch1);
-    println!("ch2 = {:?}", ch2);
-
-    let mut canvas = drawing::canvas2d::Shape2dCanvas::new();
-
-    canvas.draw_shape(&ch2.as_shape(), (1.0, 0.0, 0.0));
-    canvas.draw_shape(&ch1.as_shape(), (0.0, 1.0, 0.0));
-    canvas.run();
-
-    return;
-
-    fn make_shape() -> Shape {
+    fn random_point(dim: usize, rad: f64) -> Point {
         let mut rng = rand::thread_rng();
-
-        let points = (0..12)
-            .map(|i| {
-                Point::new(vec![
-                    Rational::from_sci_string_simplest(
-                        rng.gen_range(0.0..10.0).to_string().as_str(),
-                    )
-                    .unwrap(),
-                    Rational::from_sci_string_simplest(
-                        rng.gen_range(0.0..10.0).to_string().as_str(),
-                    )
-                    .unwrap(),
-                ])
-            })
-            .collect_vec();
-
-        let shape = convexhull(2, points.clone());
-        let pts_shape = Shape::new(
-            2,
-            points
-                .iter()
-                .map(|p| Simplex::new(2, vec![p.clone()]))
+        Point::new(
+            (0..dim)
+                .map(|_i| QQ.from_f64_approx(rng.gen_range(-rad..rad)))
                 .collect(),
-        );
-
-        shape
+        )
     }
 
-    let a = make_shape();
-    let b = make_shape();
-    let c = a.union(&b);
-
-    let mut canvas = drawing::canvas2d::Shape2dCanvas::new();
-    canvas.draw_shape(&a, (1.0, 0.0, 0.0));
-    canvas.draw_shape(&b, (0.0, 1.0, 0.0));
-    canvas.draw_shape(&c, (1.0, 1.0, 0.0));
-
-    // canvas.draw_partial_simplicial_complex(&c.as_partial_simplicial_complex(), (1.0, 1.0, 0.0));
-    canvas.run();
-
-    return;
-
-    /*
-
-    let a = Simplex::new(
-        2,
-        vec![
-            Point::new(vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("2").unwrap(),
-                Rational::from_str("0").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("2").unwrap(),
-            ]),
-        ],
-    );
-
-    let b = Simplex::new(
-        2,
-        vec![
-            Point::new(vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("2").unwrap(),
-                Rational::from_str("1").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("-1").unwrap(),
-            ]),
-        ],
-    );
-
-    let a = Shape::simplex(a);
-
-    let c = intersect_shape_full_simplex(&b, &a);
-
-    println!("{:?}", c);
-
-    for s in c.clone().simplices() {
-        println!("{:?} {:?}", s.n(), s);
-    }
-
-    c.view2d();
-
-    */
-
-    /*
-    let points = vec![
-        Point::new(vec![
-            Rational::from_str("0").unwrap(),
-            Rational::from_str("0").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("0").unwrap(),
-        ]),
-        Point::new(vec![
-            Rational::from_str("0").unwrap(),
-            Rational::from_str("1").unwrap(),
-        ]),
-    ];
-
-    let b = convexhull(2, points);
-    b.view2d();
-
-    */
-
-    /*
-    let a = Simplex::new(
+    let shape = convexhull(
         3,
-        vec![
-            Point::new(vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("-1").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("2").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-            ]),
-        ],
-    );
+        (0..100)
+            .map(|i| random_point(3, f64::sqrt((i + 1) as f64)))
+            .collect(),
+    )
+    .interior_as_shape();
 
-    let b = Simplex::new(
-        3,
-        vec![
-            Point::new(vec![
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("-1").unwrap(),
-                Rational::from_str("0").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
-            ]),
-            Point::new(vec![
-                Rational::from_str("3").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-            ]),
-        ],
-    );
-
-    let (c, d) = cut_simplex_by_simplex(&a, &b);
-
-    println!("{:?}", c);
-    println!("{:?}", d);
-
-    */
+    // let mut canvas = drawing::canvas2d::Shape2dCanvas::new();
+    // canvas.draw_shape(&shape, (1.0, 0.0, 0.0));
+    // canvas.run();
 }
 
 fn todo() {
