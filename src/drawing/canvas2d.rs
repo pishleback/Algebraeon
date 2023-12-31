@@ -66,7 +66,7 @@ impl Canvas {
     fn make_program(&mut self, display: &Display) {
         if self.program.is_none() {
             let vertex_shader_src = r#"
-                #version 460
+                #version 330
 
                 in vec2 position;
                 in vec4 colour;
@@ -91,7 +91,7 @@ impl Canvas {
             "#;
 
             let fragment_shader_src = r#"
-                #version 460
+                #version 330
 
                 in vec4 v_colour;
 
@@ -261,7 +261,7 @@ impl Shape2dCanvas {
                 glium::Program::from_source(
                     display,
                     r#"
-                        #version 460
+                        #version 330
 
                         in vec2 position;
                         in vec3 colour;
@@ -275,7 +275,7 @@ impl Shape2dCanvas {
                         }
                     "#,
                     r#"
-                        #version 460
+                        #version 330
 
                         in vec4 v_colour;
 
@@ -286,7 +286,7 @@ impl Shape2dCanvas {
                         }
                     "#,
                     Some(r#"
-                        #version 460
+                        #version 330
 
                         layout (points) in;
                         layout (triangle_strip, max_vertices = 36) out;
@@ -341,7 +341,7 @@ impl Shape2dCanvas {
                 glium::Program::from_source(
                     display,
                     r#"
-                        #version 460
+                        #version 330
 
                         in vec2 position;
                         in vec3 colour;
@@ -355,7 +355,7 @@ impl Shape2dCanvas {
                         }
                     "#,
                     r#"
-                        #version 460
+                        #version 330
 
                         in vec4 v_colour;
 
@@ -366,7 +366,7 @@ impl Shape2dCanvas {
                         }
                     "#,
                     Some(r#"
-                        #version 460
+                        #version 330
 
                         layout (lines) in;
                         layout (triangle_strip, max_vertices = 6) out;
@@ -435,7 +435,7 @@ impl Shape2dCanvas {
                 glium::Program::from_source(
                     display,
                     r#"
-                        #version 460
+                        #version 330
 
                         in vec2 position;
                         in vec3 colour;
@@ -457,7 +457,7 @@ impl Shape2dCanvas {
                         }
                     "#,
                     r#"
-                        #version 460
+                        #version 330
 
                         in vec4 v_colour;
 
