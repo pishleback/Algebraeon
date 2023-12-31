@@ -39,16 +39,26 @@ fn main() {
     }
 
     let shape = convexhull(
-        3,
-        (0..100)
-            .map(|i| random_point(3, f64::sqrt((i + 1) as f64)))
+        2,
+        (0..3600)
+            .map(|i| random_point(2, f64::sqrt((i + 1) as f64)))
             .collect(),
     )
-    .interior_as_shape();
+    .as_simplicial_complex();
 
-    // let mut canvas = drawing::canvas2d::Shape2dCanvas::new();
-    // canvas.draw_shape(&shape, (1.0, 0.0, 0.0));
-    // canvas.run();
+    // let shape = shape.simplify();
+
+    // let shape = shape.as_shape();
+
+    let (a, b) = shape.interior_and_boundary();
+
+    a.check().unwrap();
+    b.check().unwrap();
+
+    let mut canvas = drawing::canvas2d::Shape2dCanvas::new();
+    canvas.draw_shape(&a.as_shape(), (1.0, 0.0, 0.0));
+    canvas.draw_shape(&b.as_shape(), (0.0, 1.0, 0.0));
+    canvas.run();
 }
 
 fn todo() {
