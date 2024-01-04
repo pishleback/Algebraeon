@@ -127,6 +127,14 @@ impl<ElemT: Clone> Matrix<ElemT> {
         }
     }
 
+    pub fn get_row(&self, row: usize) -> Self {
+        self.submatrix(vec![row], (0..self.cols()).collect())
+    }
+
+    pub fn get_col(&self, col: usize) -> Self {
+        self.submatrix((0..self.rows()).collect(), vec![col])
+    }
+
     pub fn apply_map<NewElemT: Clone>(&self, f: impl Fn(&ElemT) -> NewElemT) -> Matrix<NewElemT> {
         Matrix {
             dim1: self.dim1,
@@ -634,6 +642,46 @@ impl<'a, R: PrincipalIdealDomain> MatrixStructure<'a, R> {
                 .map(|c| a.submatrix((0..a.rows()).collect(), vec![c]))
                 .collect(),
         )
+    }
+
+    pub fn row_affine_span(&self, a: Matrix<R::ElemT>) -> AffineLattice<R::ElemT> {
+        let affine_lattice_structure = AffineLatticeStructure::new(self.ring);
+        if a.rows() == 0 {
+            affine_lattice_structure.empty(1, a.cols())
+        } else {
+            let offset = a.get_row(0);
+
+            let b = Matrix::construct(a.rows() - 1, a.cols(), |r, c| {
+                self.ring.add_ref(
+                    self.ring.neg_ref(offset.at(0, c).unwrap()),
+                    a.at(r + 1, c).unwrap(),
+                )
+            });
+
+            let linlat = self.row_span(b);
+
+            affine_lattice_structure.from_offset_and_linear_lattice(1, a.cols(), offset, linlat)
+        }
+    }
+
+    pub fn col_affine_span(&self, a: Matrix<R::ElemT>) -> AffineLattice<R::ElemT> {
+        let affine_lattice_structure = AffineLatticeStructure::new(self.ring);
+        if a.cols() == 0 {
+            affine_lattice_structure.empty(a.rows(), 1)
+        } else {
+            let offset = a.get_col(0);
+
+            let b = Matrix::construct(a.rows(), a.cols() - 1, |r, c| {
+                self.ring.add_ref(
+                    self.ring.neg_ref(offset.at(r, 0).unwrap()),
+                    a.at(r, c + 1).unwrap(),
+                )
+            });
+
+            let linlat = self.col_span(b);
+
+            affine_lattice_structure.from_offset_and_linear_lattice(a.rows(), 1, offset, linlat)
+        }
     }
 
     pub fn row_kernel(&self, a: Matrix<R::ElemT>) -> LinearLattice<R::ElemT> {
@@ -2079,6 +2127,56 @@ mod tests {
         assert_eq!(ZZ_LINLAT.rank(&ZZ_MAT.col_span(mat.clone())), 2);
         assert_eq!(ZZ_LINLAT.rank(&ZZ_MAT.row_kernel(mat.clone())), 2);
         assert_eq!(ZZ_LINLAT.rank(&ZZ_MAT.col_kernel(mat.clone())), 1);
+    }
+
+    #[test]
+    fn affine_span() {
+        {
+            //row affine span
+            let lat1 = ZZ_MAT.row_affine_span(Matrix::from_rows(vec![
+                vec![Integer::from(1), Integer::from(1)],
+                vec![Integer::from(3), Integer::from(1)],
+                vec![Integer::from(2), Integer::from(3)],
+            ]));
+
+            let lat2 = ZZ_AFFLAT.from_offset_and_linear_lattice(
+                1,
+                2,
+                Matrix::from_rows(vec![vec![Integer::from(2), Integer::from(3)]]),
+                ZZ_MAT.row_span(Matrix::from_rows(vec![
+                    vec![Integer::from(1), Integer::from(2)],
+                    vec![Integer::from(-1), Integer::from(2)],
+                ])),
+            );
+
+            ZZ_AFFLAT.pprint(&lat1);
+            ZZ_AFFLAT.pprint(&lat2);
+
+            assert!(ZZ_AFFLAT.eq(&lat1, &lat2));
+        }
+
+        {
+            //column affine span
+            let lat1 = ZZ_MAT.col_affine_span(Matrix::from_rows(vec![
+                vec![Integer::from(1), Integer::from(3), Integer::from(2)],
+                vec![Integer::from(1), Integer::from(1), Integer::from(3)],
+            ]));
+
+            let lat2 = ZZ_AFFLAT.from_offset_and_linear_lattice(
+                2,
+                1,
+                Matrix::from_rows(vec![vec![Integer::from(2)], vec![Integer::from(3)]]),
+                ZZ_MAT.col_span(Matrix::from_rows(vec![
+                    vec![Integer::from(1), Integer::from(-1)],
+                    vec![Integer::from(2), Integer::from(2)],
+                ])),
+            );
+
+            ZZ_AFFLAT.pprint(&lat1);
+            ZZ_AFFLAT.pprint(&lat2);
+
+            assert!(ZZ_AFFLAT.eq(&lat1, &lat2));
+        }
     }
 
     #[test]
