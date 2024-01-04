@@ -1,9 +1,12 @@
 use core::panic;
 use std::borrow::BorrowMut;
+use std::boxed::Box;
 #[allow(dead_code)]
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
+use malachite_base::named;
+use malachite_base::num::arithmetic::traits::ModPowPrecomputed;
 use malachite_nz::natural::arithmetic::mul::poly_eval;
 use malachite_q::arithmetic::simplest_rational_in_interval;
 use malachite_q::Rational;
@@ -260,13 +263,13 @@ fn are_points_nondegenerage(dim: usize, points: &Vec<Point>) -> bool {
 }
 
 #[derive(Debug, Clone)]
-struct AffineSubspace {
+pub struct AffineSubspaceCoordinateSystem {
     dim: usize,         //the dimension of the ambient space
     origin: Point,      //the origin of the affine subspace in the ambient space
     basis: Vec<Vector>, //a basis for the affine subspace relative to the origin
 }
 
-impl AffineSubspace {
+impl AffineSubspaceCoordinateSystem {
     pub fn check(&self) -> Result<(), &'static str> {
         if self.dim != self.origin.dim() {
             return Err("origin of affine subspace should live in the ambient space");
@@ -282,6 +285,17 @@ impl AffineSubspace {
         }
 
         Ok(())
+    }
+
+    //a coordinate system for the affine span of the given points
+    pub fn span_of_points(dim: usize, mut points: Vec<&Point>) -> Option<Self> {
+        //put the points into the columns of a matrix
+        let mat = Matrix::join_cols(
+            dim,
+            points.into_iter().map(|point| point.as_matrix()).collect(),
+        );
+        let afflat = QQ_MAT.col_affine_span(mat);
+        Self::from_affine_lattice(afflat)
     }
 
     fn basis_matrix(&self) -> Matrix<Rational> {
@@ -312,7 +326,23 @@ impl AffineSubspace {
         }
     }
 
-    pub fn affine_span(&self) -> AffineLattice<Rational> {
+    pub fn from_affine_lattice(afflat: AffineLattice<Rational>) -> Option<Self> {
+        let dim = afflat.rows();
+        match QQ_AFFLAT.to_offset_and_linear_lattice(afflat) {
+            Some((offset, linlat)) => Some(Self {
+                dim,
+                origin: Point::from_matrix(&offset),
+                basis: QQ_LINLAT
+                    .basis_matrices(&linlat)
+                    .into_iter()
+                    .map(|v| Vector::from_matrix(&v))
+                    .collect(),
+            }),
+            None => None,
+        }
+    }
+
+    pub fn to_affine_lattice(&self) -> AffineLattice<Rational> {
         QQ_AFFLAT.from_offset_and_linear_lattice(
             self.dim,
             1,
@@ -391,7 +421,7 @@ impl AffineSubspace {
                 }
             }
         }
-        Some(Simplex::new(self.dim(), new_points))
+        Some(Simplex::new(self.rank(), new_points))
     }
 
     pub fn shape_preimage(&self, s: &Shape) -> Option<Shape> {
@@ -404,7 +434,7 @@ impl AffineSubspace {
                 }
             }
         }
-        Some(Shape::new(self.dim(), new_simplices))
+        Some(Shape::new(self.rank(), new_simplices))
     }
 
     pub fn simplicial_complex_preimage(&self, s: &SimplicialComplex) -> Option<SimplicialComplex> {
@@ -417,7 +447,7 @@ impl AffineSubspace {
                 }
             }
         }
-        Some(SimplicialComplex::new(self.dim(), new_simplices))
+        Some(SimplicialComplex::new(self.rank(), new_simplices))
     }
 
     fn extend_basis(mut self, new_basis_vector: Vector) -> Self {
@@ -439,11 +469,11 @@ impl Interval {
     }
 }
 
-struct Box {
+struct BoxRegion {
     intervals: Vec<Interval>,
 }
 
-impl Box {
+impl BoxRegion {
     fn bounding_box(dim: usize, points: &Vec<Point>) -> Self {
         debug_assert_ne!(points.len(), 0);
         for point in points {
@@ -504,6 +534,13 @@ impl Simplex {
         ans
     }
 
+    fn new_unsafe(dim: usize, mut vertices: Vec<Point>) -> Self {
+        vertices.sort();
+        let ans = Self { dim, vertices };
+        debug_assert!(ans.check().is_ok());
+        ans
+    }
+
     pub fn new_standard_simplex(rank: usize) -> Self {
         //the simplex whose verticies are 0 and the standard basis vectors
         let mut vertices = vec![];
@@ -551,8 +588,8 @@ impl Simplex {
         self.vertices.clone()
     }
 
-    fn bounding_box(&self) -> Box {
-        Box::bounding_box(self.dim, &self.vertices)
+    fn bounding_box(&self) -> BoxRegion {
+        BoxRegion::bounding_box(self.dim, &self.vertices)
     }
 
     #[deprecated]
@@ -702,9 +739,9 @@ impl Simplex {
         }
     }
 
-    fn affine_subspace(&self) -> AffineSubspace {
+    fn affine_subspace(&self) -> AffineSubspaceCoordinateSystem {
         //the affine subspace coordinate system in which self is the standard simplex
-        AffineSubspace {
+        AffineSubspaceCoordinateSystem {
             dim: self.dim,
             origin: self.vertices[0].clone(),
             basis: (1..self.vertices.len())
@@ -755,6 +792,19 @@ impl Simplex {
     //     let proj = self.orthogonal_project(point);
     //     (point - &proj).length_sq()
     // }
+}
+
+fn affine_span_of_simplices(
+    dim: usize,
+    simplices: Vec<&Simplex>,
+) -> Option<AffineSubspaceCoordinateSystem> {
+    let mut points = vec![];
+    for simplex in &simplices {
+        for point in simplex.points() {
+            points.push(point);
+        }
+    }
+    AffineSubspaceCoordinateSystem::span_of_points(dim, points.iter().collect())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -971,8 +1021,8 @@ impl Shape {
         //does not always produce a valid shape
         let mut all_simplices = HashSet::new();
         for s in self.simplices {
-            for b in s.boundary().simplices() {
-                all_simplices.insert(b);
+            for b in s.boundary().simplices_ref() {
+                all_simplices.insert(b.clone());
             }
             all_simplices.insert(s);
         }
@@ -1010,7 +1060,10 @@ impl Shape {
     }
 
     fn simplify(&self) -> Self {
-        self.clone() //TODO
+        // 1) turn self into a subcomplex of a simplicial complex
+        // 2) simplify
+        todo!()
+        // self.clone() //TODO
     }
 
     fn intersect_nosimp(&self, other: &Self) -> Self {
@@ -1572,10 +1625,18 @@ pub fn convexhull(dim: usize, points: Vec<Point>) -> Shape {
 }
 */
 
+#[derive(Debug, Clone, Copy)]
+pub enum ConvexSimplicialComplexPointResult {
+    Inside,            //point lies inside the convex hull
+    Boundary,          //point lies on the boundary of the convex hull
+    Outside,           //point lines in the plane of the convex hull but is outside
+    OutsideHyperplane, //point lies outside the plane of the convex hull
+}
+
 #[derive(Debug, Clone)]
 enum ConvexSimplicialComplexCases {
     NonEmpty {
-        subspace: AffineSubspace, //an embedding of a vector space of dimension self.rank into the ambient space
+        subspace: AffineSubspaceCoordinateSystem, //an embedding of a vector space of dimension self.rank into the ambient space
         boundary: Vec<OrientedSimplex>, //oriented simplexes in the subspace of rank self.rank-1 with positive side on the outside
         interior: Vec<Simplex>,         //simplexes in the subspace which form the interior
                                         //furthermore, the convex simplicial complex should contain the embedding of the standard simplex in the AffineSubspace
@@ -1739,6 +1800,36 @@ impl ConvexSimplicialComplex {
         }
     }
 
+    pub fn contains_point(&self, point: &Point) -> ConvexSimplicialComplexPointResult {
+        match self {
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
+                subspace,
+                boundary,
+                interior,
+            }) => match subspace.point_preimage(point) {
+                Some(point_preimage) => {
+                    let mut sign = std::cmp::Ordering::Less;
+                    for b in boundary {
+                        sign = std::cmp::Ordering::max(sign, b.sign_point(&point_preimage));
+                        if sign.is_gt() {
+                            //an optimization - we can skip checking the other faces if the point is found to be outside
+                            return ConvexSimplicialComplexPointResult::Outside;
+                        }
+                    }
+                    match sign {
+                        std::cmp::Ordering::Less => ConvexSimplicialComplexPointResult::Inside,
+                        std::cmp::Ordering::Equal => ConvexSimplicialComplexPointResult::Boundary,
+                        std::cmp::Ordering::Greater => ConvexSimplicialComplexPointResult::Outside,
+                    }
+                }
+                None => ConvexSimplicialComplexPointResult::OutsideHyperplane,
+            },
+            ConvexSimplicialComplex(ConvexSimplicialComplexCases::Empty { dim }) => {
+                ConvexSimplicialComplexPointResult::OutsideHyperplane
+            }
+        }
+    }
+
     ///Return the convex hull of self and point by extending self.
     pub fn extend_by_point(&self, point: &Point) -> Self {
         match self {
@@ -1835,10 +1926,11 @@ impl ConvexSimplicialComplex {
                                 .collect(),
                         };
 
-                        let subspace_into_extended_subspace = AffineSubspace::cannonical_subspace(
-                            subspace.rank(),
-                            subspace.rank() + 1,
-                        );
+                        let subspace_into_extended_subspace =
+                            AffineSubspaceCoordinateSystem::cannonical_subspace(
+                                subspace.rank(),
+                                subspace.rank() + 1,
+                            );
 
                         let mut extended_boundary = vec![];
                         let mut extended_interior = vec![];
@@ -1899,13 +1991,13 @@ impl ConvexSimplicialComplex {
     }
 }
 
-pub fn convexhull(dim: usize, points: Vec<Point>) -> ConvexSimplicialComplex {
+pub fn convex_hull(dim: usize, points: Vec<Point>) -> ConvexSimplicialComplex {
     for point in &points {
         assert_eq!(dim, point.dim());
     }
     let mut ch = ConvexSimplicialComplex::new_empty(dim);
     for point in points {
-        println!("{:?}", point);
+        // println!("{:?}", point);
         ch = ch.extend_by_point(&point);
     }
     ch
@@ -2015,69 +2107,52 @@ pub fn convexhull(dim: usize, points: Vec<Point>) -> ConvexSimplicialComplex {
 // }
 
 #[derive(Debug, Clone)]
+struct SimplicialComplexSimplexData {
+    boundary_of: HashSet<Simplex>,
+}
+
+#[derive(Debug, Clone)]
 pub struct SimplicialComplex {
     dim: usize,
-    simplices: Vec<Simplex>,
-    point_simplex_lookup: HashMap<Point, Vec<Simplex>>,
+    simplices_and_data: HashMap<Simplex, SimplicialComplexSimplexData>,
 }
 
 impl SimplicialComplex {
-    pub fn as_shape(self) -> Shape {
-        Shape {
-            dim: self.dim,
-            simplices: self.simplices,
-        }
-    }
-
     pub fn check(&self) -> Result<(), &'static str> {
         self.clone().as_shape().check()?; //simplices are disjoint
 
-        let simplices = self.simplices.iter().collect::<HashSet<_>>();
-        for simplex in &self.simplices {
+        for (simplex, data) in &self.simplices_and_data {
             for b in simplex.boundary().simplices_ref() {
-                if !simplices.contains(b) {
+                if !self.simplices_and_data.contains_key(b) {
                     return Err("simplicial complex is missing the boundary of some simplex");
                 }
             }
-        }
 
-        //check self.point_simplex_lookup
-        for (point, point_simplices) in &self.point_simplex_lookup {
-            if point.dim() != self.dim() {
-                return Err("point dim does not match self dim");
-            }
-
-            for simplex in point_simplices {
-                if !simplices.contains(simplex) {
+            for inv_b in &data.boundary_of {
+                if !self.simplices_and_data.contains_key(inv_b) {
                     return Err(
-                        "point simplex lookup contains a simplex which is not part of self",
+                        "inverse boundary contains a simplex not present in the simplicial complex",
                     );
                 }
 
-                if !simplex
-                    .points()
-                    .iter()
-                    .collect::<HashSet<_>>()
-                    .contains(point)
-                {
+                if !inv_b.boundary_simplices().iter().any(|b| simplex == b) {
                     return Err(
-                        "point simplex lookup result is a simplex not containing the point",
+                        "inverse boundary of simplex does not contain simplex in its boundary",
                     );
                 }
-            }
-        }
 
-        for simplex in &self.simplices {
-            for point in simplex.points() {
-                if !self
-                    .point_simplex_lookup
-                    .get(&point)
-                    .unwrap()
-                    .iter()
-                    .collect::<HashSet<_>>()
-                    .contains(simplex)
-                {
-                    return Err("point simplex lookup is missing a point of a simplex");
+                for (possible_b_inv, _) in &self.simplices_and_data {
+                    if possible_b_inv
+                        .boundary_simplices()
+                        .iter()
+                        .any(|b| simplex == b)
+                    {
+                        if !data.boundary_of.contains(possible_b_inv) {
+                            return Err(
+                                "inverse boundary of simplex is missing a simplex which contains simplex in its boundary",
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -2088,31 +2163,35 @@ impl SimplicialComplex {
     pub fn empty(dim: usize) -> Self {
         Self {
             dim,
-            simplices: vec![],
-            point_simplex_lookup: HashMap::new(),
+            simplices_and_data: HashMap::new(),
         }
     }
 
     pub fn new(dim: usize, simplices: Vec<Simplex>) -> Self {
-        let mut point_simplex_lookup: HashMap<_, Vec<_>> = HashMap::new();
+        let mut simplices_and_data = HashMap::new();
 
         for simplex in &simplices {
-            for point in simplex.points() {
-                if point_simplex_lookup.contains_key(&point) {
-                    point_simplex_lookup
-                        .get_mut(&point)
-                        .unwrap()
-                        .push(simplex.clone());
-                } else {
-                    point_simplex_lookup.insert(point, vec![simplex.clone()]);
-                }
+            simplices_and_data.insert(
+                simplex.clone(),
+                SimplicialComplexSimplexData {
+                    boundary_of: HashSet::new(),
+                },
+            );
+        }
+
+        for simplex in simplices {
+            for bdry in simplex.boundary_simplices() {
+                simplices_and_data
+                    .get_mut(&bdry)
+                    .unwrap()
+                    .boundary_of
+                    .insert(simplex.clone());
             }
         }
 
         let ans = Self {
             dim,
-            simplices,
-            point_simplex_lookup,
+            simplices_and_data,
         };
         debug_assert!(ans.check().is_ok());
         ans
@@ -2122,16 +2201,38 @@ impl SimplicialComplex {
         self.dim
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.simplices.is_empty()
-    }
-
     pub fn simplices(self) -> Vec<Simplex> {
-        self.simplices
+        self.simplices_and_data
+            .into_iter()
+            .map(|(k, v)| k)
+            .collect()
     }
 
     pub fn simplices_ref(&self) -> Vec<&Simplex> {
-        self.simplices.iter().collect()
+        self.simplices_and_data.iter().map(|(k, v)| k).collect()
+    }
+
+    pub fn as_shape(self) -> Shape {
+        Shape {
+            dim: self.dim,
+            simplices: self
+                .simplices_and_data
+                .into_iter()
+                .map(|(k, v)| k)
+                .collect(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.simplices_ref().is_empty()
+    }
+
+    pub fn point_boundary_of(&self, point: Point) -> &HashSet<Simplex> {
+        self.simplex_boundary_of(Simplex::new(point.dim(), vec![point]))
+    }
+
+    pub fn simplex_boundary_of(&self, simplex: Simplex) -> &HashSet<Simplex> {
+        &self.simplices_and_data.get(&simplex).unwrap().boundary_of
     }
 
     // fn subset(&self) -> SubSimplicialComplex {
@@ -2163,16 +2264,19 @@ impl SimplicialComplex {
 
         let n = self.dim();
 
-        let mut interior = HashSet::new();
-        let mut boundary = HashSet::new();
+        let mut interior: HashSet<&Simplex> = HashSet::new();
+        let mut boundary: HashSet<&Simplex> = HashSet::new();
 
-        let mut all = self.simplices.iter().collect_vec();
+        let mut all = self.simplices_ref();
         all.sort_by_key(|s| std::cmp::Reverse(s.rank().unwrap())); //so that we process largest rank first
         for simplex in all {
             let r = simplex.rank().unwrap();
             if r == n {
+                //rank n simplex is always part of the interior
                 interior.insert(simplex);
             } else if r == n - 1 {
+                //rank n-1 simplex is part of the boundary of at most 2 rank n simplices
+                //it is part of the boundary of the simplicial complex iff it is the boundary of exactly 2
                 match inverse_boundary_lookup.get(simplex).unwrap().len() {
                     0 | 1 => {
                         boundary.insert(simplex);
@@ -2185,6 +2289,7 @@ impl SimplicialComplex {
                     ),
                 }
             } else {
+                //rank < n-1 simplex is part of the interior iff it is part of the boundary of at least one simplex and every such simplex is part of the interior
                 debug_assert!(r < n - 1);
                 let bdry = inverse_boundary_lookup.get(simplex).unwrap();
                 if bdry.is_empty() {
@@ -2219,45 +2324,146 @@ impl SimplicialComplex {
         self.interior_and_boundary().1
     }
 
-    // pub fn simplify(mut self) -> Self {
-    //     println!("self = {:?}", self);
+    // #[deprecated]
+    // pub fn is_convex(&self) -> bool {
+    //     let flat_coordinate_system =
+    //         affine_span_of_simplices(self.dim(), self.simplices_ref().into_iter().collect())
+    //             .unwrap();
 
-    //     for simplex in &self.simplices {
-    //         println!("simplex = {:?}", simplex);
-    //     }
-
-    //     let mut all_points = HashSet::new();
-    //     for simplex in &self.simplices {
-    //         for point in simplex.points() {
-    //             all_points.insert(point);
+    //     let mut points = vec![];
+    //     for simplex in self.simplices_ref() {
+    //         for point in simplex.points().clone() {
+    //             points.push(point);
     //         }
     //     }
 
-    //     for center_point in all_points {
-    //         println!("center_point = {:?}", center_point);
+    //     let points_flatcoords = points
+    //         .iter()
+    //         .map(|point| flat_coordinate_system.point_image(point))
+    //         .collect_vec();
 
-    //         //compute all points adjacent to center_point
-    //         let mut adj_points = HashSet::new();
-    //         for simplex in &self.simplices {
-    //             if simplex.points().iter().any(|pt| pt == &center_point) {
-    //                 for adj_point in simplex.points() {
-    //                     adj_points.insert(adj_point);
-    //                 }
-    //             }
-    //         }
+    //     let convex_hull = convex_hull(self.dim(), points_flatcoords);
 
-    //         println!("adj_points = {:?}", adj_points);
-    //         let adj_points_convex_hull = convexhull(self.dim(), adj_points.into_iter().collect());
+    //     println!();
+    //     println!("convex_hull = {:?}", convex_hull);
 
-    //         println!("adj_points_convex_hull = {:?}", adj_points_convex_hull);
-    //     }
-
-    //     todo!();
-
-    //     self
+    //     todo!()
     // }
+
+    pub fn simplify(mut self) -> Self {
+        //go through each point
+        //compute its star
+        //enter the affine subspace spanned by its star
+        //compute its link as oriented simplices
+        //if point is part of the link then no simplification can be made, so more on
+        //check whether any point of the link is in the interior with respect to every boundary of the link
+        //if such a point exists, it can be used to fill in the star in a simpler way by fanning out
+
+        'main: while true {
+            for (simplex, data) in &self.simplices_and_data {
+                if simplex.rank().unwrap() == 0 {
+                    //loop through every point
+                    let point = simplex.points().pop().unwrap();
+
+                    //compute its star, link and nbd := star \sqcup link
+                    let star = &data.boundary_of;
+                    let mut nbd = HashSet::new();
+                    nbd.insert(simplex.clone());
+                    for s in star {
+                        nbd.insert(s.clone());
+                        for b in s.boundary_simplices() {
+                            nbd.insert(b);
+                        }
+                    }
+                    let nbd = nbd;
+                    let mut link = nbd.clone();
+                    for s in star {
+                        link.remove(s);
+                    }
+                    link.remove(simplex);
+                    let link = link;
+
+                    let nbdsc =
+                        SimplicialComplex::new(self.dim(), nbd.iter().map(|s| s.clone()).collect());
+
+                    //compute a coordinate system for the affine subspace spanned by the star/link/nbd of the point
+                    let nbd_coords =
+                        affine_span_of_simplices(self.dim(), nbd.iter().collect()).unwrap();
+
+                    let point_img = nbd_coords.point_preimage(&point).unwrap();
+                    let simplex_img = nbd_coords.simplex_preimage(&simplex).unwrap();
+                    simplex_img.check().unwrap();
+                    let star_img: HashSet<_> = star
+                        .iter()
+                        .map(|s| nbd_coords.simplex_preimage(s).unwrap())
+                        .collect();
+                    let link_img: HashSet<_> = link
+                        .iter()
+                        .map(|s| nbd_coords.simplex_preimage(s).unwrap())
+                        .collect();
+                    let nbdsc_img = nbd_coords.simplicial_complex_preimage(&nbdsc).unwrap();
+                    nbdsc_img.check().unwrap();
+
+                    //proceed only if the point is locally an interior point
+                    if nbdsc_img.interior().contains(&simplex_img) {
+                        //compute orientations for the full rank simplicies of the link
+                        let oriented_link_img = link_img
+                            .iter()
+                            .filter(|s| s.rank().unwrap() + 1 == nbd_coords.rank())
+                            .map(|s| OrientedSimplex::from_simplex(s.clone(), &point_img))
+                            .collect_vec();
+
+                        //search for a link point which is on the interior with respect to every oriented facet of the link boundary
+                        for link_point_img in link_img {
+                            if link_point_img.rank().unwrap() == 0 {
+                                let link_point_img = link_point_img.points().pop().unwrap();
+
+                                if oriented_link_img.iter().all(|link_facet_img| {
+                                    link_facet_img.sign_point(&link_point_img).is_le()
+                                }) {
+                                    //at this point we've found a point on the link which can be used as a replacement for point
+                                    let new_point =
+                                        nbd_coords.point_image(&link_point_img);
+                                    println!("new_point = {:?}", new_point);
+
+                                    let mut replacement_star_simplices = HashSet::new();
+                                    for s in self.simplices_ref() {
+                                        replacement_star_simplices.insert(s.clone());
+                                    }
+                                    replacement_star_simplices.remove(simplex);
+                                    for s in star {
+                                        replacement_star_simplices.remove(s);
+                                    }
+                                    for s in &link {
+                                        if !s.points().contains(&new_point) {
+                                            let mut i_points = s.points();
+                                            i_points.push(new_point.clone());
+                                            if are_points_nondegenerage(self.dim(), &i_points) {
+                                                let i = Simplex::new_unsafe(self.dim(), i_points);
+                                                replacement_star_simplices.insert(i);
+                                            }
+                                        }
+                                    }
+
+                                    self = Self::new(
+                                        self.dim(),
+                                        replacement_star_simplices.into_iter().collect(),
+                                    );
+
+                                    continue 'main;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+        }
+        self
+    }
 }
 
+#[derive(Debug, Clone)]
 pub struct SubSimplicialComplex<'a> {
     simplicial_complex: &'a SimplicialComplex,
     subset: HashSet<&'a Simplex>,
@@ -2290,6 +2496,10 @@ impl<'a> SubSimplicialComplex<'a> {
             self.dim(),
             self.subset.iter().map(|s| (*s).clone()).collect(),
         )
+    }
+
+    pub fn contains(&self, simplex: &Simplex) -> bool {
+        self.subset.contains(simplex)
     }
 }
 
