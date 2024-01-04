@@ -210,6 +210,12 @@ impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
         })
     }
 
+    pub fn basis_matrices(&self, lat: &LinearLattice<R::ElemT>) -> Vec<Matrix<R::ElemT>> {
+        (0..self.rank(lat))
+            .map(|r| self.basis_matrix(lat, r))
+            .collect()
+    }
+
     pub fn basis_matrix_element<'b>(
         &self,
         lat: &'b LinearLattice<R::ElemT>,
@@ -426,6 +432,14 @@ pub struct AffineLattice<ElemT: Clone> {
 }
 
 impl<ElemT: Clone> AffineLattice<ElemT> {
+    pub fn rows(&self) -> usize {
+        self.rows
+    }
+
+    pub fn cols(&self) -> usize {
+        self.cols
+    }
+
     pub fn elems(&self) -> &AffineLatticeElements<ElemT> {
         &self.elems
     }
@@ -494,6 +508,16 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
             rows,
             cols,
             elems: AffineLatticeElements::Empty(),
+        }
+    }
+
+    pub fn to_offset_and_linear_lattice(
+        &self,
+        lat: AffineLattice<R::ElemT>,
+    ) -> Option<(Matrix<R::ElemT>, LinearLattice<R::ElemT>)> {
+        match lat.elems {
+            AffineLatticeElements::Empty() => None,
+            AffineLatticeElements::NonEmpty { offset, linlat } => Some((offset, linlat)),
         }
     }
 
