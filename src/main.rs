@@ -38,22 +38,31 @@ fn main() {
         )
     }
 
-    let shape = convexhull(
+    let shape = convex_hull(
         2,
-        (0..3600)
+        (0..10)
             .map(|i| random_point(2, f64::sqrt((i + 1) as f64)))
             .collect(),
     )
     .as_simplicial_complex();
 
-    // let shape = shape.simplify();
+    // let shape = convex_hull(
+    //     2,
+    //     vec![
+    //         Point::new(vec![Rational::from(1), Rational::from(1)]),
+    //         Point::new(vec![Rational::from(0), Rational::from(0)]),
+    //         Point::new(vec![Rational::from(2), Rational::from(2)]),
+    //     ],
+    // )
+    // .as_simplicial_complex();
 
+    let a = shape;
+    let b = a.clone().simplify();
     // let shape = shape.as_shape();
 
-    let (a, b) = shape.interior_and_boundary();
-
-    a.check().unwrap();
-    b.check().unwrap();
+    // let (a, b) = shape.interior_and_boundary();
+    // a.check().unwrap();
+    // b.check().unwrap();
 
     let mut canvas = drawing::canvas2d::Shape2dCanvas::new();
     canvas.draw_shape(&a.as_shape(), (1.0, 0.0, 0.0));
