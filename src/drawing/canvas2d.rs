@@ -1,9 +1,6 @@
 use glium::{glutin::event::Event, Display, Program, Surface, VertexBuffer};
 
-use crate::{
-    geometry::{Shape, Simplex},
-    rings::{nzq::QQ, ring::Real},
-};
+use crate::{rings::{nzq::QQ, ring::Real}, geometry::{simplex::Simplex, shape::Shape}};
 
 #[derive(Debug)]
 struct Camera {

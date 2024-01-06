@@ -21,6 +21,10 @@ use rings::nzq::*;
 use rings::poly::*;
 use rings::ring::*;
 
+use crate::geometry::convex_simplicial_complex::*;
+use crate::geometry::vector::*;
+
+
 pub mod drawing;
 pub mod geometry;
 pub mod groups;
@@ -40,7 +44,7 @@ fn main() {
 
     let shape = convex_hull(
         2,
-        (0..10)
+        (0..24)
             .map(|i| random_point(2, f64::sqrt((i + 1) as f64)))
             .collect(),
     )
