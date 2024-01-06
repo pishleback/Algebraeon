@@ -386,7 +386,7 @@ pub fn convex_hull(dim: usize, points: Vec<Point>) -> ConvexSimplicialComplex {
 }
 
 #[cfg(test)]
-mod geometry_tests {
+mod tests {
     use std::str::FromStr;
 
     use super::*;

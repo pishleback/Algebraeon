@@ -29,7 +29,7 @@ impl Simplex {
             }
         }
 
-        if !are_points_nondegenerage(self.dim, &self.vertices) {
+        if !are_points_nondegenerage(self.dim, self.vertices.iter().collect()) {
             return Err("Simplex is degenerate");
         }
 
@@ -69,7 +69,7 @@ impl Simplex {
     }
 
     pub fn try_new(dim: usize, mut vertices: Vec<Point>) -> Option<Self> {
-        if are_points_nondegenerage(dim, &vertices) {
+        if are_points_nondegenerage(dim, vertices.iter().collect()) {
             vertices.sort();
             Some(Self { dim, vertices })
         } else {

@@ -757,7 +757,7 @@ pub fn convexhull(dim: usize, points: Vec<Point>) -> Shape {
 
 
 #[cfg(test)]
-mod geometry_tests {
+mod tests {
     use std::str::FromStr;
 
     use super::*;

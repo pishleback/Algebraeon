@@ -5,8 +5,8 @@ use itertools::Itertools;
 use crate::geometry::vector::are_points_nondegenerage;
 
 use super::{
-    affine_coordinate_system::affine_span_of_simplices, shape::Shape, simplex::Simplex,
-    vector::Point, oriented_simplex::OrientedSimplex,
+    affine_coordinate_system::affine_span_of_simplices, oriented_simplex::OrientedSimplex,
+    shape::Shape, simplex::Simplex, vector::Point,
 };
 
 #[derive(Debug, Clone)]
@@ -226,32 +226,6 @@ impl SimplicialComplex {
         self.interior_and_boundary().1
     }
 
-    // #[deprecated]
-    // pub fn is_convex(&self) -> bool {
-    //     let flat_coordinate_system =
-    //         affine_span_of_simplices(self.dim(), self.simplices_ref().into_iter().collect())
-    //             .unwrap();
-
-    //     let mut points = vec![];
-    //     for simplex in self.simplices_ref() {
-    //         for point in simplex.points().clone() {
-    //             points.push(point);
-    //         }
-    //     }
-
-    //     let points_flatcoords = points
-    //         .iter()
-    //         .map(|point| flat_coordinate_system.point_image(point))
-    //         .collect_vec();
-
-    //     let convex_hull = convex_hull(self.dim(), points_flatcoords);
-
-    //     println!();
-    //     println!("convex_hull = {:?}", convex_hull);
-
-    //     todo!()
-    // }
-
     pub fn simplify(mut self) -> Self {
         //go through each point
         //compute its star
@@ -339,7 +313,10 @@ impl SimplicialComplex {
                                         if !s.points().contains(&new_point) {
                                             let mut i_points = s.points();
                                             i_points.push(new_point.clone());
-                                            if are_points_nondegenerage(self.dim(), &i_points) {
+                                            if are_points_nondegenerage(
+                                                self.dim(),
+                                                i_points.iter().collect(),
+                                            ) {
                                                 let i = Simplex::new_unsafe(self.dim(), i_points);
                                                 replacement_star_simplices.insert(i);
                                             }

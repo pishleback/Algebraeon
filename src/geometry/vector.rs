@@ -14,7 +14,6 @@ pub struct Vector {
     coords: Vec<Rational>,
 }
 
-
 impl std::ops::Neg for Vector {
     type Output = Vector;
 
@@ -231,15 +230,15 @@ impl Ord for Point {
     }
 }
 
-pub fn are_points_nondegenerage(dim: usize, points: &Vec<Point>) -> bool {
-    for point in points {
+pub fn are_points_nondegenerage(dim: usize, points: Vec<&Point>) -> bool {
+    for point in &points {
         debug_assert_eq!(dim, point.dim());
     }
     if points.len() >= 1 {
         let root = points[0].clone();
         let mut vecs = vec![];
         for i in 1..points.len() {
-            vecs.push(&points[i] - &root);
+            vecs.push(points[i] - &root);
         }
         let mat = Matrix::construct(dim, vecs.len(), |r, c| vecs[c].get_coord(r));
         if QQ_MAT.rank(mat) != vecs.len() {
@@ -247,4 +246,87 @@ pub fn are_points_nondegenerage(dim: usize, points: &Vec<Point>) -> bool {
         }
     }
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::*;
+
+    #[test]
+    fn test_arithmetic() {
+        let a = Point::new(vec![
+            Rational::from(0),
+            Rational::from(2),
+            Rational::from(3),
+        ]);
+        let b = Point::new(vec![
+            Rational::from(2),
+            Rational::from(-4),
+            Rational::from(0),
+        ]);
+        let c = Point::new(vec![
+            Rational::from(2),
+            Rational::from(-2),
+            Rational::from(3),
+        ]);
+
+        let u = Vector::new(vec![
+            Rational::from(0),
+            Rational::from(2),
+            Rational::from(3),
+        ]);
+        let v = Vector::new(vec![
+            Rational::from(2),
+            Rational::from(-4),
+            Rational::from(0),
+        ]);
+        let w = Vector::new(vec![
+            Rational::from(2),
+            Rational::from(-2),
+            Rational::from(3),
+        ]);
+
+        assert_eq!(&u + &v, w);
+        assert_eq!(&a + &v, c);
+    }
+
+    fn test_degenerate() {
+        let a = Point::new(vec![
+            Rational::from(0),
+            Rational::from(2),
+            Rational::from(3),
+        ]);
+        let b = Point::new(vec![
+            Rational::from(2),
+            Rational::from(-4),
+            Rational::from(0),
+        ]);
+        let c = Point::new(vec![
+            Rational::from(2),
+            Rational::from(-2),
+            Rational::from(3),
+        ]);
+
+        assert!(are_points_nondegenerage(3, vec![&a, &b, &c]));
+
+        let a = Point::new(vec![
+            Rational::from(0),
+            Rational::from(2),
+            Rational::from(3),
+        ]);
+        let b = Point::new(vec![
+            Rational::from(0),
+            Rational::from(-2),
+            Rational::from(-3),
+        ]);
+        let c = Point::new(vec![
+            Rational::from(0),
+            Rational::from(4),
+            Rational::from(6),
+        ]);
+
+        assert!(!are_points_nondegenerage(3, vec![&a, &b, &c]));
+    }
 }
