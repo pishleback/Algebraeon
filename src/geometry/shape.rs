@@ -12,7 +12,6 @@ use crate::{
 
 use super::{
     oriented_simplex::OrientedSimplex, simplex::Simplex, simplicial_complex::SimplicialComplex,
-    vector::Point,
 };
 
 //disjoint union of simplices
@@ -86,7 +85,7 @@ impl Shape {
     }
 
     #[deprecated]
-    fn transform(self, new_dim: usize, f: &dyn Fn(Point) -> Point) -> Self {
+    fn transform(self, new_dim: usize, f: &dyn Fn(Vector) -> Vector) -> Self {
         Self::new(
             new_dim,
             self.simplices
@@ -96,7 +95,7 @@ impl Shape {
         )
     }
 
-    fn points(&self) -> Vec<Point> {
+    fn points(&self) -> Vec<Vector> {
         let mut all_points = vec![];
         for s in &self.simplices {
             for p in s.points().iter() {
@@ -508,7 +507,7 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
         AffineLatticeElements::Empty() => panic!(),
         AffineLatticeElements::NonEmpty { offset, linlat } => {
             let flat_dim = QQ_LINLAT.rank(&linlat);
-            let offset_pt = Point::from_matrix(&offset);
+            let offset_pt = Vector::from_matrix(&offset);
             let offset_vec = Vector::from_matrix(&offset);
 
             let linhyperplanes = QQ_LINLAT.as_hyperplane_intersection(&linlat);
@@ -553,8 +552,8 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
                 //apply to put back into this space
                 // (mat(!Ǝ)=x) + offset
 
-                let flat_transform = &|pt: Point| {
-                    Point::from_matrix(
+                let flat_transform = &|pt: Vector| {
+                    Vector::from_matrix(
                         &QQ_MAT
                             .col_solve(&mat, &(&pt - &offset_vec).as_matrix())
                             .unwrap(),
@@ -576,8 +575,8 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
                     );
                 }
 
-                let unflat_transform = &|pt: Point| {
-                    &Point::from_matrix(&QQ_MAT.mul_refs(&mat, &pt.as_matrix()).unwrap())
+                let unflat_transform = &|pt: Vector| {
+                    &Vector::from_matrix(&QQ_MAT.mul_refs(&mat, &pt.as_matrix()).unwrap())
                         + &offset_vec
                 };
                 let unflat_inside = flat_inside.transform(dim, unflat_transform);
@@ -754,8 +753,6 @@ pub fn convexhull(dim: usize, points: Vec<Point>) -> Shape {
 }
 */
 
-
-
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -767,22 +764,22 @@ mod tests {
         let s = Simplex::new(
             3,
             vec![
-                Point::new(vec![
+                Vector::new(vec![
                     Rational::from_str("0").unwrap(),
                     Rational::from_str("0").unwrap(),
                     Rational::from_str("1").unwrap(),
                 ]),
-                Point::new(vec![
+                Vector::new(vec![
                     Rational::from_str("0").unwrap(),
                     Rational::from_str("0").unwrap(),
                     Rational::from_str("-1").unwrap(),
                 ]),
-                Point::new(vec![
+                Vector::new(vec![
                     Rational::from_str("1").unwrap(),
                     Rational::from_str("2").unwrap(),
                     Rational::from_str("0").unwrap(),
                 ]),
-                Point::new(vec![
+                Vector::new(vec![
                     Rational::from_str("2").unwrap(),
                     Rational::from_str("1").unwrap(),
                     Rational::from_str("0").unwrap(),
@@ -793,17 +790,17 @@ mod tests {
         let h = OrientedSimplex::new(Simplex::new(
             3,
             vec![
-                Point::new(vec![
+                Vector::new(vec![
                     Rational::from_str("1").unwrap(),
                     Rational::from_str("0").unwrap(),
                     Rational::from_str("0").unwrap(),
                 ]),
-                Point::new(vec![
+                Vector::new(vec![
                     Rational::from_str("1").unwrap(),
                     Rational::from_str("1").unwrap(),
                     Rational::from_str("0").unwrap(),
                 ]),
-                Point::new(vec![
+                Vector::new(vec![
                     Rational::from_str("1").unwrap(),
                     Rational::from_str("0").unwrap(),
                     Rational::from_str("1").unwrap(),
@@ -853,32 +850,15 @@ mod tests {
                 Simplex::new(
                     2,
                     vec![
-                        Point::new(vec![
+                        Vector::new(vec![
                             Rational::from_str("0").unwrap(),
                             Rational::from_str("0").unwrap(),
                         ]),
-                        Point::new(vec![
+                        Vector::new(vec![
                             Rational::from_str("1").unwrap(),
                             Rational::from_str("0").unwrap(),
                         ]),
-                        Point::new(vec![
-                            Rational::from_str("0").unwrap(),
-                            Rational::from_str("1").unwrap(),
-                        ]),
-                    ],
-                ),
-                Simplex::new(
-                    2,
-                    vec![
-                        Point::new(vec![
-                            Rational::from_str("1").unwrap(),
-                            Rational::from_str("1").unwrap(),
-                        ]),
-                        Point::new(vec![
-                            Rational::from_str("1").unwrap(),
-                            Rational::from_str("0").unwrap(),
-                        ]),
-                        Point::new(vec![
+                        Vector::new(vec![
                             Rational::from_str("0").unwrap(),
                             Rational::from_str("1").unwrap(),
                         ]),
@@ -887,11 +867,28 @@ mod tests {
                 Simplex::new(
                     2,
                     vec![
-                        Point::new(vec![
+                        Vector::new(vec![
+                            Rational::from_str("1").unwrap(),
+                            Rational::from_str("1").unwrap(),
+                        ]),
+                        Vector::new(vec![
                             Rational::from_str("1").unwrap(),
                             Rational::from_str("0").unwrap(),
                         ]),
-                        Point::new(vec![
+                        Vector::new(vec![
+                            Rational::from_str("0").unwrap(),
+                            Rational::from_str("1").unwrap(),
+                        ]),
+                    ],
+                ),
+                Simplex::new(
+                    2,
+                    vec![
+                        Vector::new(vec![
+                            Rational::from_str("1").unwrap(),
+                            Rational::from_str("0").unwrap(),
+                        ]),
+                        Vector::new(vec![
                             Rational::from_str("0").unwrap(),
                             Rational::from_str("1").unwrap(),
                         ]),
@@ -906,32 +903,15 @@ mod tests {
                 Simplex::new(
                     2,
                     vec![
-                        Point::new(vec![
+                        Vector::new(vec![
                             Rational::from_str("1").unwrap(),
                             Rational::from_str("0").unwrap(),
                         ]),
-                        Point::new(vec![
+                        Vector::new(vec![
                             Rational::from_str("0").unwrap(),
                             Rational::from_str("0").unwrap(),
                         ]),
-                        Point::new(vec![
-                            Rational::from_str("1").unwrap(),
-                            Rational::from_str("1").unwrap(),
-                        ]),
-                    ],
-                ),
-                Simplex::new(
-                    2,
-                    vec![
-                        Point::new(vec![
-                            Rational::from_str("0").unwrap(),
-                            Rational::from_str("1").unwrap(),
-                        ]),
-                        Point::new(vec![
-                            Rational::from_str("0").unwrap(),
-                            Rational::from_str("0").unwrap(),
-                        ]),
-                        Point::new(vec![
+                        Vector::new(vec![
                             Rational::from_str("1").unwrap(),
                             Rational::from_str("1").unwrap(),
                         ]),
@@ -940,11 +920,28 @@ mod tests {
                 Simplex::new(
                     2,
                     vec![
-                        Point::new(vec![
+                        Vector::new(vec![
+                            Rational::from_str("0").unwrap(),
+                            Rational::from_str("1").unwrap(),
+                        ]),
+                        Vector::new(vec![
                             Rational::from_str("0").unwrap(),
                             Rational::from_str("0").unwrap(),
                         ]),
-                        Point::new(vec![
+                        Vector::new(vec![
+                            Rational::from_str("1").unwrap(),
+                            Rational::from_str("1").unwrap(),
+                        ]),
+                    ],
+                ),
+                Simplex::new(
+                    2,
+                    vec![
+                        Vector::new(vec![
+                            Rational::from_str("0").unwrap(),
+                            Rational::from_str("0").unwrap(),
+                        ]),
+                        Vector::new(vec![
                             Rational::from_str("1").unwrap(),
                             Rational::from_str("1").unwrap(),
                         ]),

@@ -3,13 +3,13 @@ use crate::{
     rings::matrix::{Matrix, QQ_MAT},
 };
 
-use super::{shape::Shape, simplex::Simplex, simplicial_complex::SimplicialComplex, vector::Point};
+use super::{shape::Shape, simplex::Simplex, simplicial_complex::SimplicialComplex};
 use malachite_q::Rational;
 
 #[derive(Debug, Clone)]
 pub struct AffineSubspaceCoordinateSystem {
     dim: usize,         //the dimension of the ambient space
-    origin: Point,      //the origin of the affine subspace in the ambient space
+    origin: Vector,      //the origin of the affine subspace in the ambient space
     basis: Vec<Vector>, //a basis for the affine subspace relative to the origin
 }
 
@@ -31,12 +31,12 @@ impl AffineSubspaceCoordinateSystem {
         Ok(())
     }
 
-    pub fn origin(&self) -> &Point {
+    pub fn origin(&self) -> &Vector {
         &self.origin
     }
 
     //a coordinate system for the affine span of the given points
-    pub fn span_of_points(dim: usize, mut points: Vec<&Point>) -> Option<Self> {
+    pub fn span_of_points(dim: usize, mut points: Vec<&Vector>) -> Option<Self> {
         //put the points into the columns of a matrix
         let mat = Matrix::join_cols(
             dim,
@@ -58,7 +58,7 @@ impl AffineSubspaceCoordinateSystem {
         assert!(k <= n);
         Self {
             dim: n,
-            origin: Point::new((0..n).map(|_i| Rational::from(0)).collect()),
+            origin: Vector::new((0..n).map(|_i| Rational::from(0)).collect()),
             basis: (0..k)
                 .map(|i| {
                     Vector::new(
@@ -81,7 +81,7 @@ impl AffineSubspaceCoordinateSystem {
         match crate::rings::lattice::QQ_AFFLAT.to_offset_and_linear_lattice(afflat) {
             Some((offset, linlat)) => Some(Self {
                 dim,
-                origin: Point::from_matrix(&offset),
+                origin: Vector::from_matrix(&offset),
                 basis: crate::rings::lattice::QQ_LINLAT
                     .basis_matrices(&linlat)
                     .into_iter()
@@ -115,7 +115,7 @@ impl AffineSubspaceCoordinateSystem {
         self.basis.len()
     }
 
-    pub fn point_image(&self, p: &Point) -> Point {
+    pub fn point_image(&self, p: &Vector) -> Vector {
         assert_eq!(p.dim(), self.rank());
         &self.origin
             + &Vector::from_matrix(
@@ -152,11 +152,11 @@ impl AffineSubspaceCoordinateSystem {
         )
     }
 
-    pub fn point_preimage(&self, p: &Point) -> Option<Point> {
+    pub fn point_preimage(&self, p: &Vector) -> Option<Vector> {
         assert_eq!(p.dim(), self.dim());
 
         match QQ_MAT.col_solve(&self.basis_matrix(), &(p - &self.origin).as_matrix()) {
-            Some(sol) => Some(Point::from_matrix(&sol)),
+            Some(sol) => Some(Vector::from_matrix(&sol)),
             None => None,
         }
     }

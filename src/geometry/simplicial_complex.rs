@@ -6,7 +6,7 @@ use crate::geometry::vector::are_points_nondegenerage;
 
 use super::{
     affine_coordinate_system::affine_span_of_simplices, oriented_simplex::OrientedSimplex,
-    shape::Shape, simplex::Simplex, vector::Point,
+    shape::Shape, simplex::Simplex, vector::Vector,
 };
 
 #[derive(Debug, Clone)]
@@ -129,7 +129,7 @@ impl SimplicialComplex {
         self.simplices_ref().is_empty()
     }
 
-    pub fn point_boundary_of(&self, point: Point) -> &HashSet<Simplex> {
+    pub fn point_boundary_of(&self, point: Vector) -> &HashSet<Simplex> {
         self.simplex_boundary_of(Simplex::new(point.dim(), vec![point]))
     }
 

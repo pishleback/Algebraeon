@@ -4,7 +4,7 @@ use crate::rings::matrix::{Matrix, QQ_MAT};
 
 use super::{
     simplex::Simplex,
-    vector::{Point, Vector},
+    vector::Vector,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -40,7 +40,7 @@ impl OrientedSimplex {
         self.simplex
     }
 
-    pub fn from_simplex(simplex: Simplex, neg_pt: &Point) -> Self {
+    pub fn from_simplex(simplex: Simplex, neg_pt: &Vector) -> Self {
         assert_eq!(simplex.n(), simplex.dim());
 
         let ans = Self {
@@ -57,7 +57,7 @@ impl OrientedSimplex {
         }
     }
 
-    fn from_points(dim: usize, points: Vec<Point>, neg_pt: &Point) -> Self {
+    fn from_points(dim: usize, points: Vec<Vector>, neg_pt: &Vector) -> Self {
         for point in &points {
             debug_assert_eq!(dim, point.dim());
         }
@@ -78,7 +78,7 @@ impl OrientedSimplex {
         }
     }
 
-    pub fn det_point(&self, point: &Point) -> Rational {
+    pub fn det_point(&self, point: &Vector) -> Rational {
         debug_assert_eq!(point.dim(), self.dim());
         if self.dim() == 0 {
             Rational::from(0)
@@ -105,7 +105,7 @@ impl OrientedSimplex {
         }
     }
 
-    pub fn sign_point(&self, point: &Point) -> std::cmp::Ordering {
+    pub fn sign_point(&self, point: &Vector) -> std::cmp::Ordering {
         self.det_point(point).cmp(&Rational::from(0))
     }
 

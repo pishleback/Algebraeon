@@ -1,6 +1,6 @@
 use malachite_q::Rational;
 
-use super::vector::Point;
+use super::vector::Vector;
 
 
 struct Interval {
@@ -20,7 +20,7 @@ pub struct BoxRegion {
 }
 
 impl BoxRegion {
-    pub fn bounding_box(dim: usize, points: &Vec<Point>) -> Self {
+    pub fn bounding_box(dim: usize, points: &Vec<Vector>) -> Self {
         debug_assert_ne!(points.len(), 0);
         for point in points {
             debug_assert_eq!(dim, point.dim());

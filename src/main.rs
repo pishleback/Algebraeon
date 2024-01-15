@@ -24,7 +24,6 @@ use rings::ring::*;
 use crate::geometry::convex_simplicial_complex::*;
 use crate::geometry::vector::*;
 
-
 pub mod drawing;
 pub mod geometry;
 pub mod groups;
@@ -33,9 +32,9 @@ pub mod rings;
 pub mod sets;
 
 fn main() {
-    fn random_point(dim: usize, rad: f64) -> Point {
+    fn random_point(dim: usize, rad: f64) -> Vector {
         let mut rng = rand::thread_rng();
-        Point::new(
+        Vector::new(
             (0..dim)
                 .map(|_i| QQ.from_f64_approx(rng.gen_range(-rad..rad)))
                 .collect(),

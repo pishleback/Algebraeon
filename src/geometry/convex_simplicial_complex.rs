@@ -6,7 +6,7 @@ use crate::geometry::simplex::Simplex;
 
 use super::{
     affine_coordinate_system::AffineSubspaceCoordinateSystem, oriented_simplex::OrientedSimplex,
-    shape::Shape, simplicial_complex::SimplicialComplex, vector::Point,
+    shape::Shape, simplicial_complex::SimplicialComplex, vector::Vector,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -119,7 +119,7 @@ impl ConvexSimplicialComplex {
         }
     }
 
-    fn subspace_interior_point(&self) -> Option<Point> {
+    fn subspace_interior_point(&self) -> Option<Vector> {
         match self {
             ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
                 subspace,
@@ -130,7 +130,7 @@ impl ConvexSimplicialComplex {
         }
     }
 
-    fn interior_point(&self) -> Option<Point> {
+    fn interior_point(&self) -> Option<Vector> {
         match self {
             ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
                 subspace,
@@ -184,7 +184,7 @@ impl ConvexSimplicialComplex {
         }
     }
 
-    pub fn contains_point(&self, point: &Point) -> ConvexSimplicialComplexPointResult {
+    pub fn contains_point(&self, point: &Vector) -> ConvexSimplicialComplexPointResult {
         match self {
             ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
                 subspace,
@@ -215,7 +215,7 @@ impl ConvexSimplicialComplex {
     }
 
     ///Return the convex hull of self and point by extending self.
-    pub fn extend_by_point(&self, point: &Point) -> Self {
+    pub fn extend_by_point(&self, point: &Vector) -> Self {
         match self {
             ConvexSimplicialComplex(ConvexSimplicialComplexCases::NonEmpty {
                 subspace,
@@ -299,7 +299,7 @@ impl ConvexSimplicialComplex {
                         let extended_subspace_into_ambient =
                             subspace.clone().extend_basis(point - subspace.origin());
 
-                        let point_extended_preimage = Point::new(
+                        let point_extended_preimage = Vector::new(
                             (0..subspace.rank() + 1)
                                 .map(|i| match i == subspace.rank() {
                                     true => Rational::from(1),
@@ -373,7 +373,7 @@ impl ConvexSimplicialComplex {
     }
 }
 
-pub fn convex_hull(dim: usize, points: Vec<Point>) -> ConvexSimplicialComplex {
+pub fn convex_hull(dim: usize, points: Vec<Vector>) -> ConvexSimplicialComplex {
     for point in &points {
         assert_eq!(dim, point.dim());
     }
@@ -396,56 +396,56 @@ mod tests {
         assert!(csc0.check().is_ok());
         assert_eq!(csc0.rank(), None);
 
-        let csc1 = csc0.extend_by_point(&Point::new(vec![
+        let csc1 = csc0.extend_by_point(&Vector::new(vec![
             Rational::from_str("1").unwrap(),
             Rational::from_str("1").unwrap(),
         ]));
         assert!(csc1.check().is_ok());
         assert_eq!(csc1.rank(), Some(0));
 
-        let csc2 = csc1.extend_by_point(&Point::new(vec![
+        let csc2 = csc1.extend_by_point(&Vector::new(vec![
             Rational::from_str("1").unwrap(),
             Rational::from_str("1").unwrap(),
         ]));
         assert!(csc2.check().is_ok());
         assert_eq!(csc2.rank(), Some(0));
 
-        let csc3 = csc2.extend_by_point(&Point::new(vec![
+        let csc3 = csc2.extend_by_point(&Vector::new(vec![
             Rational::from_str("2").unwrap(),
             Rational::from_str("3").unwrap(),
         ]));
         assert!(csc3.check().is_ok());
         assert_eq!(csc3.rank(), Some(1));
 
-        let csc4 = csc3.extend_by_point(&Point::new(vec![
+        let csc4 = csc3.extend_by_point(&Vector::new(vec![
             Rational::from_str("4").unwrap(),
             Rational::from_str("7").unwrap(),
         ]));
         assert!(csc4.check().is_ok());
         assert_eq!(csc4.rank(), Some(1));
 
-        let csc5 = csc4.extend_by_point(&Point::new(vec![
+        let csc5 = csc4.extend_by_point(&Vector::new(vec![
             Rational::from_str("3").unwrap(),
             Rational::from_str("5").unwrap(),
         ]));
         assert!(csc5.check().is_ok());
         assert_eq!(csc5.rank(), Some(1));
 
-        let csc6 = csc5.extend_by_point(&Point::new(vec![
+        let csc6 = csc5.extend_by_point(&Vector::new(vec![
             Rational::from_str("0").unwrap(),
             Rational::from_str("6").unwrap(),
         ]));
         assert!(csc6.check().is_ok());
         assert_eq!(csc6.rank(), Some(2));
 
-        let csc7 = csc6.extend_by_point(&Point::new(vec![
+        let csc7 = csc6.extend_by_point(&Vector::new(vec![
             Rational::from_str("1").unwrap(),
             Rational::from_str("0").unwrap(),
         ]));
         assert!(csc7.check().is_ok());
         assert_eq!(csc7.rank(), Some(2));
 
-        let csc8 = csc7.extend_by_point(&Point::new(vec![
+        let csc8 = csc7.extend_by_point(&Vector::new(vec![
             Rational::from_str("4").unwrap(),
             Rational::from_str("1").unwrap(),
         ]));

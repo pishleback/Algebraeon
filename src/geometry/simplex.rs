@@ -3,12 +3,18 @@ use malachite_q::Rational;
 
 use crate::rings::lattice::{AffineLattice, QQ_AFFLAT, QQ_LINLAT};
 
-use super::{affine_coordinate_system::AffineSubspaceCoordinateSystem, vector::{Point, are_points_nondegenerage}, box_region::BoxRegion, oriented_simplex::OrientedSimplex, simplicial_complex::SimplicialComplex};
+use super::{
+    affine_coordinate_system::AffineSubspaceCoordinateSystem,
+    box_region::BoxRegion,
+    oriented_simplex::OrientedSimplex,
+    simplicial_complex::SimplicialComplex,
+    vector::{are_points_nondegenerage, Vector},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Simplex {
     dim: usize,
-    vertices: Vec<Point>, //ordered
+    vertices: Vec<Vector>, //ordered
 }
 
 impl Simplex {
@@ -36,14 +42,14 @@ impl Simplex {
         Ok(())
     }
 
-    pub fn new(dim: usize, mut vertices: Vec<Point>) -> Self {
+    pub fn new(dim: usize, mut vertices: Vec<Vector>) -> Self {
         vertices.sort();
         let ans = Self { dim, vertices };
         ans.check().unwrap();
         ans
     }
 
-    pub fn new_unsafe(dim: usize, mut vertices: Vec<Point>) -> Self {
+    pub fn new_unsafe(dim: usize, mut vertices: Vec<Vector>) -> Self {
         vertices.sort();
         let ans = Self { dim, vertices };
         debug_assert!(ans.check().is_ok());
@@ -53,9 +59,9 @@ impl Simplex {
     pub fn new_standard_simplex(rank: usize) -> Self {
         //the simplex whose verticies are 0 and the standard basis vectors
         let mut vertices = vec![];
-        vertices.push(Point::new((0..rank).map(|_j| Rational::from(0)).collect()));
+        vertices.push(Vector::new((0..rank).map(|_j| Rational::from(0)).collect()));
         for i in 0..rank {
-            vertices.push(Point::new(
+            vertices.push(Vector::new(
                 (0..rank)
                     .map(|j| match i == j {
                         true => Rational::from(1),
@@ -68,7 +74,7 @@ impl Simplex {
         Simplex::new(rank, vertices)
     }
 
-    pub fn try_new(dim: usize, mut vertices: Vec<Point>) -> Option<Self> {
+    pub fn try_new(dim: usize, mut vertices: Vec<Vector>) -> Option<Self> {
         if are_points_nondegenerage(dim, vertices.iter().collect()) {
             vertices.sort();
             Some(Self { dim, vertices })
@@ -93,11 +99,11 @@ impl Simplex {
         self.dim
     }
 
-    pub fn points(&self) -> Vec<Point> {
+    pub fn points(&self) -> Vec<Vector> {
         self.vertices.clone()
     }
 
-    pub fn points_ref(&self) -> Vec<&Point> {
+    pub fn points_ref(&self) -> Vec<&Vector> {
         self.vertices.iter().collect()
     }
 
@@ -106,7 +112,7 @@ impl Simplex {
     }
 
     #[deprecated]
-    pub fn transform(self, new_dim: usize, f: &dyn Fn(Point) -> Point) -> Self {
+    pub fn transform(self, new_dim: usize, f: &dyn Fn(Vector) -> Vector) -> Self {
         let new_vertices = self
             .vertices
             .into_iter()
@@ -118,7 +124,7 @@ impl Simplex {
         Self::new(new_dim, new_vertices)
     }
 
-    pub fn has_vertex(&self, pt: &Point) -> bool {
+    pub fn has_vertex(&self, pt: &Vector) -> bool {
         self.vertices.binary_search(pt).is_ok()
     }
 
@@ -252,7 +258,7 @@ impl Simplex {
         }
     }
 
-    pub fn centroid(&self) -> Point {
+    pub fn centroid(&self) -> Vector {
         let mut coords = (0..self.dim).map(|_i| Rational::from(0)).collect_vec();
         for pt in &self.vertices {
             for i in 0..self.dim {
@@ -264,10 +270,10 @@ impl Simplex {
             .map(|c| c / Rational::from(self.n()))
             .collect();
 
-        Point::new(coords)
+        Vector::new(coords)
     }
 
-    pub fn extend_by_point(mut self, point: Point) -> Self {
+    pub fn extend_by_point(mut self, point: Vector) -> Self {
         self.vertices.push(point);
         self.vertices.sort();
         debug_assert!(self.check().is_ok());
