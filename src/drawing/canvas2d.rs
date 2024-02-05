@@ -1,6 +1,9 @@
-use glium::{glutin::event::Event, Display, Program, Surface, VertexBuffer};
+use glium::{backend::Facade, glutin::event::Event, Display, Program, Surface, VertexBuffer};
 
-use crate::{rings::{nzq::QQ, ring::Real}, geometry::{simplex::Simplex, shape::Shape}};
+use crate::{
+    geometry::{shape::Shape, simplex::Simplex},
+    rings::{nzq::QQ, ring::Real},
+};
 
 #[derive(Debug)]
 struct Camera {
@@ -50,16 +53,6 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn new() -> Self {
-        Self {
-            camera: Camera {
-                center: (0.0, 0.0),
-                scale: 1.0,
-            },
-            program: None,
-        }
-    }
-
     fn make_program(&mut self, display: &Display) {
         if self.program.is_none() {
             let vertex_shader_src = r#"
@@ -108,6 +101,16 @@ impl Canvas {
 }
 
 impl super::Canvas for Canvas {
+    fn new(facade: &impl Facade) -> Self {
+        Self {
+            camera: Camera {
+                center: (0.0, 0.0),
+                scale: 1.0,
+            },
+            program: None,
+        }
+    }
+
     fn tick(&mut self, _state: &super::State, _dt: f64) {}
 
     fn draw(&mut self, state: &super::State, display: &Display) {
@@ -234,24 +237,6 @@ pub struct Shape2dCanvas {
 }
 
 impl Shape2dCanvas {
-    pub fn new() -> Self {
-        Self {
-            camera: Camera {
-                center: (0.0, 0.0),
-                scale: 1.0 / 6.0,
-            },
-            point_program: None,
-            line_program: None,
-            triangle_program: None,
-            point_verts: vec![],
-            line_verts: vec![],
-            triangle_verts: vec![],
-            points_vertex_buffer: None,
-            lines_vertex_buffer: None,
-            triangles_vertex_buffer: None,
-        }
-    }
-
     fn make_program(&mut self, display: &Display) {
         if self.point_program.is_none() {
             self.point_program = Some(
@@ -570,6 +555,24 @@ impl Shape2dCanvas {
 }
 
 impl super::Canvas for Shape2dCanvas {
+    fn new(facade: &impl glium::backend::Facade) -> Self {
+        Self {
+            camera: Camera {
+                center: (0.0, 0.0),
+                scale: 1.0 / 6.0,
+            },
+            point_program: None,
+            line_program: None,
+            triangle_program: None,
+            point_verts: vec![],
+            line_verts: vec![],
+            triangle_verts: vec![],
+            points_vertex_buffer: None,
+            lines_vertex_buffer: None,
+            triangles_vertex_buffer: None,
+        }
+    }
+
     fn tick(&mut self, _state: &super::State, _dt: f64) {}
 
     fn draw(&mut self, state: &super::State, display: &Display) {
@@ -655,8 +658,8 @@ impl Shape {
         }
 
         use super::Canvas;
-        let mut canvas = Shape2dCanvas::new();
-        canvas.draw_shape(self, (1.0, 1.0, 1.0));
-        canvas.run()
+        let mut canvas = Shape2dCanvas::run(|canvas| {
+            canvas.draw_shape(self, (1.0, 1.0, 1.0));
+        });
     }
 }

@@ -1,4 +1,4 @@
-use glium::{glutin::event::Event, Display};
+use glium::{backend::Facade, glutin::event::Event, Display};
 use std::time::Instant;
 
 pub mod canvas2d;
@@ -10,10 +10,11 @@ pub struct State {
 }
 
 pub trait Canvas {
+    fn new(facade: &impl Facade) -> Self;
     fn tick(&mut self, state: &State, dt: f64);
-    fn draw(&mut self, state: &State, target: &Display);
+    fn draw(&mut self, state: &State, display: &Display);
     fn event(&mut self, state: &State, ev: &Event<'_, ()>);
-    fn run(mut self) -> !
+    fn run(init: impl FnOnce(&mut Self)) -> !
     where
         Self: Sized + 'static,
     {
@@ -37,6 +38,9 @@ pub trait Canvas {
         // 4. Build the Display with the given window and OpenGL context parameters and register the
         //    window with the events_loop.
         let display = glium::Display::new(wb, cb, &event_loop).unwrap();
+
+        let mut canvas = Self::new(&display);
+        init(&mut canvas);
 
         let mut state = State {
             mouse_pos: (0.0, 0.0),
@@ -70,13 +74,13 @@ pub trait Canvas {
                 },
                 _ => {}
             }
-            self.event(&state, &ev);
+            canvas.event(&state, &ev);
 
             //update
-            self.tick(&state, dt);
+            canvas.tick(&state, dt);
 
             //draw
-            self.draw(&state, &display);
+            canvas.draw(&state, &display);
 
             //control flow
             match stop {

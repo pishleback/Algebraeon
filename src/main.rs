@@ -67,10 +67,10 @@ fn main() {
     // a.check().unwrap();
     // b.check().unwrap();
 
-    let mut canvas = drawing::canvas2d::Shape2dCanvas::new();
-    canvas.draw_shape(&a.as_shape(), (1.0, 0.0, 0.0));
-    canvas.draw_shape(&b.as_shape(), (0.0, 1.0, 0.0));
-    canvas.run();
+    drawing::canvas2d::Shape2dCanvas::run(|canvas| {
+        canvas.draw_shape(&a.as_shape(), (1.0, 0.0, 0.0));
+        canvas.draw_shape(&b.as_shape(), (0.0, 1.0, 0.0));
+    });
 }
 
 fn todo() {

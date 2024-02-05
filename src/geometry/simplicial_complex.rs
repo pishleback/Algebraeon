@@ -317,7 +317,10 @@ impl SimplicialComplex {
                                                 self.dim(),
                                                 i_points.iter().collect(),
                                             ) {
-                                                let i = Simplex::new_unsafe(self.dim(), i_points);
+                                                let i = unsafe {
+                                                    //we just checked that i_points are non-degenerate
+                                                    Simplex::new_unchecked(self.dim(), i_points)
+                                                };
                                                 replacement_star_simplices.insert(i);
                                             }
                                         }
