@@ -7,9 +7,6 @@ use super::nzq::*;
 use super::poly::*;
 use super::ring::*;
 
-pub const ZZ_MULTIPOLY: MultiPolynomialRing<IntegerRing> = MultiPolynomialRing { ring: &ZZ };
-pub const QQ_MULTIPOLY: MultiPolynomialRing<RationalField> = MultiPolynomialRing { ring: &QQ };
-
 #[derive(Debug, Hash, Clone)]
 pub struct Variable {
     ident: usize,
@@ -226,38 +223,39 @@ impl<ElemT: Clone> Term<ElemT> {
 }
 
 #[derive(Debug, Clone)]
-pub struct MultiPolynomial<ElemT: Clone> {
-    terms: Vec<Term<ElemT>>, //sorted by monomial ordering
+pub struct MultiPolynomial<Ring: ComRing> {
+    terms: Vec<Term<Ring>>, //sorted by monomial ordering
 }
 
-impl<ElemT: Clone> MultiPolynomial<ElemT> {
-    fn new(mut terms: Vec<Term<ElemT>>) -> Self {
-        terms.sort_by(|t1, t2| Monomial::lexicographic_order(&t1.monomial, &t2.monomial));
-        Self { terms }
+impl<Ring: ComRing> PartialEq for MultiPolynomial<Ring> {
+    fn eq(&self, other: &Self) -> bool {
+        let n = self.terms.len();
+
+        if n != other.terms.len() {
+            false
+        } else {
+            (0..n).all(|i| {
+                self.terms[i].coeff == other.terms[i].coeff
+                    && self.terms[i].monomial == other.terms[i].monomial
+            })
+        }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct MultiPolynomialRing<'a, R: ComRing> {
-    ring: &'a R,
-}
+impl<Ring: ComRing> Eq for MultiPolynomial<Ring> {}
 
-impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {}
-
-impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
-    type ElemT = MultiPolynomial<R::ElemT>;
-
-    fn to_string(&self, elem: &Self::ElemT) -> String {
-        if elem.terms.len() == 0 {
+impl<Ring: ComRing> ComRing for MultiPolynomial<Ring> {
+    fn to_string(&self) -> String {
+        if self.terms.len() == 0 {
             String::from("0")
         } else {
             let mut ans = String::from("");
-            for (idx, term) in elem.terms.iter().enumerate() {
+            for (idx, term) in self.terms.iter().enumerate() {
                 if idx != 0 {
                     ans += "+";
                 }
                 ans += "(";
-                ans += self.ring.to_string(&term.coeff).as_str();
+                ans += Ring::to_string(&term.coeff).as_str();
                 ans += ")";
                 ans += term.monomial.to_string().as_str();
             }
@@ -265,47 +263,34 @@ impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
         }
     }
 
-    fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
-        let n = a.terms.len();
-
-        if n != b.terms.len() {
-            false
-        } else {
-            (0..n).all(|i| {
-                self.ring.equal(&a.terms[i].coeff, &b.terms[i].coeff)
-                    && a.terms[i].monomial == b.terms[i].monomial
-            })
-        }
-    }
-
-    fn zero(&self) -> Self::ElemT {
+    fn zero() -> Self {
         MultiPolynomial { terms: vec![] }
     }
 
-    fn one(&self) -> Self::ElemT {
+    fn one() -> Self {
         MultiPolynomial {
             terms: vec![Term {
-                coeff: self.ring.one(),
+                coeff: Ring::one(),
                 monomial: Monomial::one(),
             }],
         }
     }
 
-    fn neg_mut(&self, elem: &mut Self::ElemT) {
+    fn neg_mut(&mut self) {
         for Term {
             coeff,
             monomial: _monomial,
-        } in &mut elem.terms
+        } in &mut self.terms
         {
-            self.ring.neg_mut(coeff);
+            Ring::neg_mut(coeff);
         }
     }
 
-    fn add_mut(&self, elem: &mut Self::ElemT, offset: &Self::ElemT) {
-        elem.clone_from(&self.add(elem.clone(), offset.clone()))
+    fn add_mut(elem: &mut Self, offset: &Self) {
+        elem.clone_from(&Self::add(elem.clone(), offset.clone()))
     }
 
-    fn add(&self, mut elem: Self::ElemT, offset: Self::ElemT) -> Self::ElemT {
+    fn add(mut elem: Self, offset: Self) -> Self {
         let mut existing_monomials: HashMap<Monomial, usize> = HashMap::new(); //the index of each monomial
         for (
             idx,
@@ -319,7 +304,7 @@ impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
         }
         for Term { coeff, monomial } in offset.terms {
             if existing_monomials.contains_key(&monomial) {
-                self.ring.add_mut(
+                Ring::add_mut(
                     &mut elem.terms[*existing_monomials.get(&monomial).unwrap()].coeff,
                     &coeff,
                 );
@@ -330,17 +315,17 @@ impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
         MultiPolynomial::new(
             elem.terms
                 .into_iter()
-                .filter(|term| !self.ring.equal(&term.coeff, &self.ring.zero()))
+                .filter(|term| term.coeff != Ring::zero())
                 .collect(),
         ) //sort the coeffs
     }
 
-    fn mul_mut(&self, elem: &mut Self::ElemT, offset: &Self::ElemT) {
-        elem.clone_from(&self.mul_refs(&elem, &offset))
+    fn mul_mut(elem: &mut Self, offset: &Self) {
+        elem.clone_from(&Self::mul_refs(&elem, &offset))
     }
 
-    fn mul_refs(&self, a: &Self::ElemT, b: &Self::ElemT) -> Self::ElemT {
-        let mut terms: HashMap<Monomial, R::ElemT> = HashMap::new();
+    fn mul_refs(a: &Self, b: &Self) -> Self {
+        let mut terms: HashMap<Monomial, Ring> = HashMap::new();
         for Term {
             coeff: a_coeff,
             monomial: a_monomial,
@@ -352,24 +337,23 @@ impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
             } in &b.terms
             {
                 let mon = Monomial::mul(a_monomial, b_monomial);
-                let coeff = self.ring.mul_refs(a_coeff, b_coeff);
-                self.ring
-                    .add_mut(terms.entry(mon).or_insert(self.ring.zero()), &coeff);
+                let coeff = Ring::mul_refs(a_coeff, b_coeff);
+                Ring::add_mut(terms.entry(mon).or_insert(Ring::zero()), &coeff);
             }
         }
         MultiPolynomial::new(
             terms
                 .into_iter()
-                .filter(|(_monomial, coeff)| !self.ring.equal(coeff, &self.ring.zero()))
+                .filter(|(_monomial, coeff)| coeff != &Ring::zero())
                 .map(|(monomial, coeff)| Term { coeff, monomial })
                 .collect(),
         )
     }
 
-    fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
+    fn div(a: Self, b: Self) -> Result<Self, RingDivisionError> {
         let mut vars = HashSet::new();
-        vars.extend(self.free_vars(&a));
-        vars.extend(self.free_vars(&b));
+        vars.extend(a.free_vars());
+        vars.extend(b.free_vars());
         if vars.len() == 0 {
             //a and b are constants
             debug_assert!(a.terms.len() <= 1);
@@ -377,24 +361,22 @@ impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
             if b.terms.len() == 0 {
                 Err(RingDivisionError::DivideByZero)
             } else if a.terms.len() == 0 {
-                Ok(self.zero())
+                Ok(Self::zero())
             } else {
                 debug_assert!(a.terms.len() == 1);
                 debug_assert!(b.terms.len() == 1);
-                match self.ring.div_refs(&a.terms[0].coeff, &b.terms[0].coeff) {
-                    Ok(c) => Ok(self.constant(c)),
+                match Ring::div_refs(&a.terms[0].coeff, &b.terms[0].coeff) {
+                    Ok(c) => Ok(Self::constant(c)),
                     Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
                     Err(RingDivisionError::DivideByZero) => panic!(),
                 }
             }
         } else {
             let var = vars.iter().next().unwrap();
-            let a_poly = self.expand(&a, var);
-            let b_poly = self.expand(&b, var);
-            match PolynomialRing::new(self).div(a_poly, b_poly) {
-                Ok(c_poly) => {
-                    Ok(PolynomialRing::new(self).evaluate(&c_poly, &self.var(var.clone())))
-                }
+            let a_poly = a.expand(var);
+            let b_poly = b.expand(var);
+            match Polynomial::div(a_poly, b_poly) {
+                Ok(c_poly) => Ok(c_poly.evaluate(&Self::var(var.clone()))),
 
                 Err(e) => Err(e),
             }
@@ -402,10 +384,15 @@ impl<'a, R: ComRing> ComRing for MultiPolynomialRing<'a, R> {
     }
 }
 
-impl<'a, R: IntegralDomain> IntegralDomain for MultiPolynomialRing<'a, R> {}
+impl<Ring: IntegralDomain> IntegralDomain for MultiPolynomial<Ring> {}
 
-impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
-    fn check_invariants(&self, poly: MultiPolynomial<R::ElemT>) -> Result<(), &'static str> {
+impl<Ring: ComRing> MultiPolynomial<Ring> {
+    fn new(mut terms: Vec<Term<Ring>>) -> Self {
+        terms.sort_by(|t1, t2| Monomial::lexicographic_order(&t1.monomial, &t2.monomial));
+        Self { terms }
+    }
+
+    fn check_invariants(&self, poly: MultiPolynomial<Ring>) -> Result<(), &'static str> {
         for term in &poly.terms {
             match term.check_invariants() {
                 Ok(()) => {}
@@ -413,7 +400,7 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
                     return Err(e);
                 }
             }
-            if self.ring.equal(&term.coeff, &self.ring.zero()) {
+            if term.coeff == Ring::zero() {
                 return Err("coeff should not be zero");
             }
         }
@@ -428,26 +415,22 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
         Ok(())
     }
 
-    pub fn new(ring: &'a R) -> Self {
-        Self { ring }
-    }
-
-    pub fn var_pow(&self, v: Variable, k: usize) -> MultiPolynomial<R::ElemT> {
+    pub fn var_pow(v: Variable, k: usize) -> MultiPolynomial<Ring> {
         MultiPolynomial {
             terms: vec![Term {
-                coeff: self.ring.one(),
+                coeff: Ring::one(),
                 monomial: Monomial::new(vec![VariablePower { var: v, pow: k }]),
             }],
         }
     }
 
-    pub fn var(&self, v: Variable) -> MultiPolynomial<R::ElemT> {
-        self.var_pow(v, 1)
+    pub fn var(v: Variable) -> MultiPolynomial<Ring> {
+        Self::var_pow(v, 1)
     }
 
-    pub fn constant(&self, c: R::ElemT) -> MultiPolynomial<R::ElemT> {
-        if self.ring.equal(&c, &self.ring.zero()) {
-            self.zero()
+    pub fn constant(c: Ring) -> MultiPolynomial<Ring> {
+        if c == Ring::zero() {
+            Self::zero()
         } else {
             MultiPolynomial {
                 terms: vec![Term {
@@ -458,11 +441,11 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
         }
     }
 
-    pub fn as_constant(&self, poly: &MultiPolynomial<R::ElemT>) -> Option<R::ElemT> {
-        if poly.terms.len() == 0 {
-            Some(self.ring.zero())
-        } else if poly.terms.len() == 1 {
-            let Term { coeff, monomial } = &poly.terms[0];
+    pub fn as_constant(&self) -> Option<Ring> {
+        if self.terms.len() == 0 {
+            Some(Ring::zero())
+        } else if self.terms.len() == 1 {
+            let Term { coeff, monomial } = &self.terms[0];
             if monomial == &Monomial::one() {
                 Some(coeff.clone())
             } else {
@@ -473,15 +456,15 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
         }
     }
 
-    pub fn degree(&self, poly: &MultiPolynomial<R::ElemT>) -> Option<usize> {
-        if poly.terms.len() == 0 {
+    pub fn degree(&self) -> Option<usize> {
+        if self.terms.len() == 0 {
             None
         } else {
             let mut d = 0;
             for Term {
                 coeff: _coeff,
                 monomial,
-            } in &poly.terms
+            } in &self.terms
             {
                 d = std::cmp::max(d, monomial.degree())
             }
@@ -489,29 +472,25 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
         }
     }
 
-    pub fn term(&self, t: Term<R::ElemT>) -> MultiPolynomial<R::ElemT> {
+    pub fn term(t: Term<Ring>) -> MultiPolynomial<Ring> {
         MultiPolynomial { terms: vec![t] }
     }
 
-    pub fn free_vars(&self, a: &MultiPolynomial<R::ElemT>) -> HashSet<Variable> {
+    pub fn free_vars(&self) -> HashSet<Variable> {
         let mut vars = HashSet::new();
-        for term in &a.terms {
+        for term in &self.terms {
             vars.extend(term.monomial.free_vars());
         }
         vars
     }
 
-    pub fn homogenize(
-        &self,
-        poly: &MultiPolynomial<R::ElemT>,
-        v: &Variable,
-    ) -> MultiPolynomial<R::ElemT> {
-        if self.equal(poly, &self.zero()) {
-            self.zero()
+    pub fn homogenize(&self, v: &Variable) -> MultiPolynomial<Ring> {
+        if self == &Self::zero() {
+            Self::zero()
         } else {
-            let d = self.degree(poly).unwrap();
+            let d = self.degree().unwrap();
             let h = MultiPolynomial::new(
-                poly.terms
+                self.terms
                     .iter()
                     .map(|Term { coeff, monomial }| Term {
                         coeff: coeff.clone(),
@@ -524,18 +503,14 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
         }
     }
 
-    pub fn expand(
-        &self,
-        a: &MultiPolynomial<R::ElemT>,
-        v: &Variable,
-    ) -> Polynomial<MultiPolynomial<R::ElemT>> {
+    pub fn expand(&self, v: &Variable) -> Polynomial<MultiPolynomial<Ring>> {
         let mut coeffs = vec![];
-        for Term { coeff, monomial } in &a.terms {
+        for Term { coeff, monomial } in &self.terms {
             let k = monomial.get_var_pow(v);
             while coeffs.len() <= k {
-                coeffs.push(self.zero())
+                coeffs.push(Self::zero())
             }
-            self.add_mut(
+            Self::add_mut(
                 &mut coeffs[k],
                 &MultiPolynomial {
                     terms: vec![Term {
@@ -552,12 +527,14 @@ impl<'a, R: ComRing> MultiPolynomialRing<'a, R> {
                 },
             );
         }
-        PolynomialRing::new(self).from_coeffs(coeffs)
+        Polynomial::from_coeffs(coeffs)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use malachite_nz::integer::Integer;
+
     use super::*;
 
     #[test]
@@ -626,55 +603,55 @@ mod tests {
 
     #[test]
     fn test_reduction() {
-        let x = ZZ_MULTIPOLY.var(Variable::new(String::from("x")));
-        let f = ZZ_MULTIPOLY.sum(vec![&x, &ZZ_MULTIPOLY.neg(x.clone())]);
+        let x = MultiPolynomial::<Integer>::var(Variable::new(String::from("x")));
+        let f = MultiPolynomial::sum(vec![&x, &MultiPolynomial::neg(x.clone())]);
         assert_eq!(f.terms.len(), 0);
 
-        let x = ZZ_MULTIPOLY.var(Variable::new(String::from("x")));
-        let y = ZZ_MULTIPOLY.var(Variable::new(String::from("y")));
-        let f = ZZ_MULTIPOLY.product(vec![
-            &ZZ_MULTIPOLY.sum(vec![&x, &y]),
-            &ZZ_MULTIPOLY.sum(vec![&x, &ZZ_MULTIPOLY.neg_ref(&y)]),
+        let x = MultiPolynomial::<Integer>::var(Variable::new(String::from("x")));
+        let y = MultiPolynomial::<Integer>::var(Variable::new(String::from("y")));
+        let f = MultiPolynomial::product(vec![
+            &MultiPolynomial::sum(vec![&x, &y]),
+            &MultiPolynomial::sum(vec![&x, &MultiPolynomial::neg_ref(&y)]),
         ]);
-        println!("{}", ZZ_MULTIPOLY.to_string(&f));
+        println!("{}", f.to_string());
         assert_eq!(f.terms.len(), 2);
     }
 
     #[test]
     fn test_division() {
-        let x = ZZ_MULTIPOLY.var(Variable::new(String::from("x")));
-        let y = ZZ_MULTIPOLY.var(Variable::new(String::from("y")));
+        let x = MultiPolynomial::<Integer>::var(Variable::new(String::from("x")));
+        let y = MultiPolynomial::<Integer>::var(Variable::new(String::from("y")));
 
-        let f = ZZ_MULTIPOLY.sum(vec![
-            &ZZ_MULTIPOLY.product(vec![&x, &x]),
-            &ZZ_MULTIPOLY.neg(ZZ_MULTIPOLY.product(vec![&y, &y])),
+        let f = MultiPolynomial::sum(vec![
+            &MultiPolynomial::product(vec![&x, &x]),
+            &MultiPolynomial::neg(MultiPolynomial::product(vec![&y, &y])),
         ]);
-        let g = ZZ_MULTIPOLY.sum(vec![&x, &ZZ_MULTIPOLY.neg_ref(&y)]);
-        match ZZ_MULTIPOLY.div_refs(&f, &g) {
+        let g = MultiPolynomial::sum(vec![&x, &MultiPolynomial::neg_ref(&y)]);
+        match MultiPolynomial::div_refs(&f, &g) {
             Ok(h) => {
-                assert!(ZZ_MULTIPOLY.equal(&f, &ZZ_MULTIPOLY.mul_refs(&g, &h)));
+                assert_eq!(f, MultiPolynomial::mul_refs(&g, &h));
             }
             Err(RingDivisionError::NotDivisible) => panic!(),
             Err(RingDivisionError::DivideByZero) => panic!(),
         }
 
-        let f = ZZ_MULTIPOLY.sum(vec![
-            &ZZ_MULTIPOLY.product(vec![&x, &x]),
-            &ZZ_MULTIPOLY.neg(ZZ_MULTIPOLY.product(vec![&y, &y])),
+        let f = MultiPolynomial::sum(vec![
+            &MultiPolynomial::product(vec![&x, &x]),
+            &MultiPolynomial::neg(MultiPolynomial::product(vec![&y, &y])),
         ]);
-        let g = ZZ_MULTIPOLY.sum(vec![]);
-        match ZZ_MULTIPOLY.div_refs(&f, &g) {
+        let g = MultiPolynomial::sum(vec![]);
+        match MultiPolynomial::div_refs(&f, &g) {
             Ok(_) => panic!(),
             Err(RingDivisionError::NotDivisible) => panic!(),
             Err(RingDivisionError::DivideByZero) => {}
         }
 
-        let f = ZZ_MULTIPOLY.sum(vec![
-            &ZZ_MULTIPOLY.product(vec![&x, &x]),
-            &ZZ_MULTIPOLY.neg(ZZ_MULTIPOLY.product(vec![&y, &y])),
+        let f = MultiPolynomial::sum(vec![
+            &MultiPolynomial::product(vec![&x, &x]),
+            &MultiPolynomial::neg(MultiPolynomial::product(vec![&y, &y])),
         ]);
-        let g = ZZ_MULTIPOLY.sum(vec![&x]);
-        match ZZ_MULTIPOLY.div_refs(&f, &g) {
+        let g = MultiPolynomial::sum(vec![&x]);
+        match MultiPolynomial::div_refs(&f, &g) {
             Ok(_) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
             Err(RingDivisionError::DivideByZero) => panic!(),

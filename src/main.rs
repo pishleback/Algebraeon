@@ -14,7 +14,7 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 use rand::Rng;
-use rings::algebraic::*;
+// use rings::algebraic::*;
 use rings::ergonomic::*;
 use rings::multipoly::*;
 use rings::nzq::*;
@@ -93,7 +93,9 @@ fn todo() {
     // let f = ZZ.factor(&x);
     // println!("{:?}", f);
 
-    let f = ZZ_POLY.from_coeffs(vec![
+    
+    /*
+    let f = Polynomial::from_coeffs(vec![
         Integer::from(1),
         Integer::from(0),
         Integer::from(0),
@@ -101,11 +103,13 @@ fn todo() {
         Integer::from(0),
         Integer::from(1),
     ]);
-    let roots = ZZ_POLY.all_complex_roots(&f);
+    let roots = f.all_complex_roots(&f);
 
     let a = QQ_BAR.sum(roots.iter().collect());
 
     println!("{:?}", a);
+    */
+    
 }
 
 fn main() {

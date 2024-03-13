@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use malachite_q::Rational;
 
-use crate::rings::lattice::{AffineLattice, QQ_AFFLAT, QQ_LINLAT};
+use crate::rings::lattice::{AffineLattice, LinearLattice};
 
 use super::{
     affine_coordinate_system::AffineSubspaceCoordinateSystem,
@@ -241,13 +241,13 @@ impl Simplex {
     #[deprecated(note = "use affine_subspace instead")]
     pub fn affine_span(&self) -> AffineLattice<Rational> {
         if self.vertices.len() == 0 {
-            QQ_AFFLAT.empty(self.dim, 1)
+            AffineLattice::empty(self.dim, 1)
         } else {
-            QQ_AFFLAT.from_offset_and_linear_lattice(
+            AffineLattice::from_offset_and_linear_lattice(
                 self.dim,
                 1,
                 self.vertices[0].as_matrix(),
-                QQ_LINLAT.from_basis(
+                LinearLattice::from_basis(
                     self.dim,
                     1,
                     (1..self.vertices.len())

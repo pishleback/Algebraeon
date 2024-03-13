@@ -1,6 +1,6 @@
 use malachite_q::Rational;
 
-use crate::rings::matrix::{Matrix, QQ_MAT};
+use crate::rings::matrix::Matrix;
 
 //represent a vector in space
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -165,7 +165,7 @@ pub fn are_points_nondegenerage(dim: usize, points: Vec<&Vector>) -> bool {
             vecs.push(points[i] - &root);
         }
         let mat = Matrix::construct(dim, vecs.len(), |r, c| vecs[c].get_coord(r));
-        if QQ_MAT.rank(mat) != vecs.len() {
+        if mat.rank() != vecs.len() {
             return false;
         }
     }

@@ -1,6 +1,9 @@
 use crate::{
     geometry::vector::Vector,
-    rings::matrix::{Matrix, QQ_MAT},
+    rings::{
+        lattice::{AffineLattice, LinearLattice},
+        matrix::Matrix,
+    },
 };
 
 use super::{shape::Shape, simplex::Simplex, simplicial_complex::SimplicialComplex};
@@ -9,7 +12,7 @@ use malachite_q::Rational;
 #[derive(Debug, Clone)]
 pub struct AffineSubspaceCoordinateSystem {
     dim: usize,         //the dimension of the ambient space
-    origin: Vector,      //the origin of the affine subspace in the ambient space
+    origin: Vector,     //the origin of the affine subspace in the ambient space
     basis: Vec<Vector>, //a basis for the affine subspace relative to the origin
 }
 
@@ -24,7 +27,7 @@ impl AffineSubspaceCoordinateSystem {
             }
         }
 
-        if self.basis.len() != QQ_MAT.rank(self.basis_matrix()) {
+        if self.basis.len() != self.basis_matrix().rank() {
             return Err("affine subspace vectors should be linearly independent");
         }
 
@@ -42,7 +45,7 @@ impl AffineSubspaceCoordinateSystem {
             dim,
             points.into_iter().map(|point| point.as_matrix()).collect(),
         );
-        let afflat = QQ_MAT.col_affine_span(mat);
+        let afflat = mat.col_affine_span();
         Self::from_affine_lattice(afflat)
     }
 
@@ -78,12 +81,12 @@ impl AffineSubspaceCoordinateSystem {
         afflat: crate::rings::lattice::AffineLattice<Rational>,
     ) -> Option<Self> {
         let dim = afflat.rows();
-        match crate::rings::lattice::QQ_AFFLAT.to_offset_and_linear_lattice(afflat) {
+        match afflat.to_offset_and_linear_lattice() {
             Some((offset, linlat)) => Some(Self {
                 dim,
                 origin: Vector::from_matrix(&offset),
-                basis: crate::rings::lattice::QQ_LINLAT
-                    .basis_matrices(&linlat)
+                basis: linlat
+                    .basis_matrices()
                     .into_iter()
                     .map(|v| Vector::from_matrix(&v))
                     .collect(),
@@ -93,11 +96,11 @@ impl AffineSubspaceCoordinateSystem {
     }
 
     pub fn to_affine_lattice(&self) -> crate::rings::lattice::AffineLattice<Rational> {
-        crate::rings::lattice::QQ_AFFLAT.from_offset_and_linear_lattice(
+        AffineLattice::from_offset_and_linear_lattice(
             self.dim,
             1,
             self.origin.as_matrix(),
-            crate::rings::lattice::QQ_LINLAT.from_basis(
+            LinearLattice::from_basis(
                 self.dim,
                 1,
                 (0..self.basis.len())
@@ -118,11 +121,7 @@ impl AffineSubspaceCoordinateSystem {
     pub fn point_image(&self, p: &Vector) -> Vector {
         assert_eq!(p.dim(), self.rank());
         &self.origin
-            + &Vector::from_matrix(
-                &QQ_MAT
-                    .mul_refs(&self.basis_matrix(), &p.as_matrix())
-                    .unwrap(),
-            )
+            + &Vector::from_matrix(&Matrix::mul_refs(&self.basis_matrix(), &p.as_matrix()).unwrap())
     }
 
     pub fn simplex_image(&self, s: &Simplex) -> Simplex {
@@ -155,7 +154,10 @@ impl AffineSubspaceCoordinateSystem {
     pub fn point_preimage(&self, p: &Vector) -> Option<Vector> {
         assert_eq!(p.dim(), self.dim());
 
-        match QQ_MAT.col_solve(&self.basis_matrix(), &(p - &self.origin).as_matrix()) {
+        match self
+            .basis_matrix()
+            .col_solve(&(p - &self.origin).as_matrix())
+        {
             Some(sol) => Some(Vector::from_matrix(&sol)),
             None => None,
         }
@@ -214,7 +216,9 @@ impl Simplex {
             dim: self.dim(),
             origin: self.points().iter().nth(0).unwrap().clone(),
             basis: (1..self.points().len())
-                .map(|i| self.points().iter().nth(i).unwrap() - self.points().iter().nth(0).unwrap())
+                .map(|i| {
+                    self.points().iter().nth(i).unwrap() - self.points().iter().nth(0).unwrap()
+                })
                 .collect(),
         }
     }

@@ -1,6 +1,6 @@
 use malachite_q::Rational;
 
-use crate::rings::matrix::{Matrix, QQ_MAT};
+use crate::rings::matrix::Matrix;
 
 use super::{
     simplex::Simplex,
@@ -98,7 +98,7 @@ impl OrientedSimplex {
                 .get_coord(r)
             }
         });
-        let d = QQ_MAT.det(mat).unwrap();
+        let d = mat.det().unwrap();
         match self.flip {
             false => d,
             true => -d,

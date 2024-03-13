@@ -5,8 +5,8 @@ use malachite_q::Rational;
 use crate::{
     geometry::vector::Vector,
     rings::{
-        lattice::{AffineLatticeElements, QQ_AFFLAT, QQ_LINLAT},
-        matrix::{Matrix, QQ_MAT},
+        lattice::AffineLatticeElements,
+        matrix::Matrix,
     },
 };
 
@@ -331,7 +331,7 @@ fn interior_of_convex_shell(shape: &Shape) -> Shape {
                         .iter()
                         .enumerate()
                         .filter(|(_idx, adj_cell_span)| {
-                            QQ_AFFLAT.contains_point(adj_cell_span, pt.as_matrix())
+                            adj_cell_span.contains_point(pt.as_matrix())
                         })
                         .map(|(idx, _adj_cell_span)| idx)
                         .collect();
@@ -506,11 +506,11 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
     match cut_simplex.affine_span().elems() {
         AffineLatticeElements::Empty() => panic!(),
         AffineLatticeElements::NonEmpty { offset, linlat } => {
-            let flat_dim = QQ_LINLAT.rank(&linlat);
+            let flat_dim = linlat.rank();
             let offset_pt = Vector::from_matrix(&offset);
             let offset_vec = Vector::from_matrix(&offset);
 
-            let linhyperplanes = QQ_LINLAT.as_hyperplane_intersection(&linlat);
+            let linhyperplanes = linlat.as_hyperplane_intersection();
 
             let mut inside = Shape::simplex(simplex.clone());
             let mut outside = Shape::empty(dim);
@@ -522,7 +522,7 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
                 for c in 0..dim - 1 {
                     pts.push(
                         &offset_pt
-                            + &Vector::from_matrix(&QQ_LINLAT.basis_matrix(&linhyperplane, c)),
+                            + &Vector::from_matrix(&linhyperplane.basis_matrix(c)),
                     );
                 }
 
@@ -542,7 +542,7 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
             let mat = Matrix::join_cols(
                 dim,
                 (0..flat_dim)
-                    .map(|i| QQ_LINLAT.basis_matrix(&linlat, i))
+                    .map(|i| linlat.basis_matrix( i))
                     .collect(),
             );
 
@@ -554,8 +554,8 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
 
                 let flat_transform = &|pt: Vector| {
                     Vector::from_matrix(
-                        &QQ_MAT
-                            .col_solve(&mat, &(&pt - &offset_vec).as_matrix())
+                        &mat
+                            .col_solve(&(&pt - &offset_vec).as_matrix())
                             .unwrap(),
                     )
                 };
@@ -576,7 +576,7 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
                 }
 
                 let unflat_transform = &|pt: Vector| {
-                    &Vector::from_matrix(&QQ_MAT.mul_refs(&mat, &pt.as_matrix()).unwrap())
+                    &Vector::from_matrix(&Matrix::mul_refs(&mat, &pt.as_matrix()).unwrap())
                         + &offset_vec
                 };
                 let unflat_inside = flat_inside.transform(dim, unflat_transform);

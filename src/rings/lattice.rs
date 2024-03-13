@@ -4,58 +4,40 @@ use super::matrix::*;
 use super::nzq::*;
 use super::ring::*;
 
-pub const ZZ_LINLAT: LinearLatticeStructure<IntegerRing> = LinearLatticeStructure { ring: &ZZ };
-pub const QQ_LINLAT: LinearLatticeStructure<RationalField> = LinearLatticeStructure { ring: &QQ };
-pub const ZZ_AFFLAT: AffineLatticeStructure<IntegerRing> = AffineLatticeStructure { ring: &ZZ };
-pub const QQ_AFFLAT: AffineLatticeStructure<RationalField> = AffineLatticeStructure { ring: &QQ };
-
 //return a metamatrix whose rows are a basis for the joint row span of all the passed metamatricies
-fn metamatrix_row_sum<'a, R: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<R::ElemT>>>(
-    ring: &'a R,
+fn metamatrix_row_sum<Ring: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<Ring>>>(
     cols: usize,
     metamats: Vec<MetaMatT>,
-) -> Matrix<R::ElemT> {
-    let mat_struct = MatrixStructure::new(ring);
+) -> Matrix<Ring> {
     for metamat in &metamats {
         assert_eq!(metamat.borrow().cols(), cols);
     }
     let joined_metamat = Matrix::join_rows(cols, metamats);
-    let (h, _u, _u_det, pivs) = mat_struct.row_hermite_algorithm(joined_metamat);
+    let (h, _u, _u_det, pivs) = Matrix::row_hermite_algorithm(joined_metamat);
     h.submatrix((0..pivs.len()).collect(), (0..cols).collect()) //return the top non-zero and linearly independent rows from h
 }
 
 //return a metamatrix whose rows are a basis for the intersection of the row spans of the passed metamatricies
-fn metamatrix_row_intersection<'a, R: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<R::ElemT>>>(
-    ring: &'a R,
+fn metamatrix_row_intersection<Ring: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<Ring>>>(
     cols: usize,
     mut metamat1: MetaMatT,
     mut metamat2: MetaMatT,
-) -> Matrix<R::ElemT> {
-    let mat_struct = MatrixStructure::new(ring);
+) -> Matrix<Ring> {
     assert_eq!(metamat1.borrow().cols(), cols);
     assert_eq!(metamat2.borrow().cols(), cols);
     //metamats should have linearly independent rows
-    debug_assert_eq!(
-        mat_struct.rank(metamat1.borrow().clone()),
-        metamat1.borrow().rows()
-    );
-    debug_assert_eq!(
-        mat_struct.rank(metamat2.borrow().clone()),
-        metamat2.borrow().rows()
-    );
+    debug_assert_eq!(metamat1.borrow().clone().rank(), metamat1.borrow().rows());
+    debug_assert_eq!(metamat2.borrow().clone().rank(), metamat2.borrow().rows());
     if metamat1.borrow().rows() > metamat2.borrow().rows() {
         //optimize for when we take linear combinations of rows from metamat1 rather than metamat2 later
         (metamat1, metamat2) = (metamat2, metamat1);
     }
     let joined_metamat = Matrix::join_rows(
         cols,
-        vec![
-            metamat1.borrow(),
-            &mat_struct.neg(metamat2.borrow().clone()),
-        ],
+        vec![metamat1.borrow(), &Matrix::neg(metamat2.borrow().clone())],
     );
     //the row kernel of joined_metamat tells us about which linear combinations of rows of metamat1 are equal to which linear combinations of rows of metamat2
-    let row_ker = mat_struct.row_kernel(joined_metamat);
+    let row_ker = joined_metamat.row_kernel();
     //the rows in row_ker are in two halves
     //the first represents a linear combination of metamat1 rows
     //the second represents a linear combination of metamat2 rows
@@ -66,39 +48,27 @@ fn metamatrix_row_intersection<'a, R: PrincipalIdealDomain, MetaMatT: Borrow<Mat
     //    but metamat2 is linearly independent, so the whole linear combination is zero
     Matrix::join_rows(
         cols,
-        (0..LinearLatticeStructure::new(ring).rank(&row_ker))
+        (0..row_ker.rank())
             .map(|i| {
-                mat_struct
-                    .mul_refs(
-                        &LinearLatticeStructure::new(ring)
-                            .basis_matrix(&row_ker, i)
-                            .submatrix(vec![0], (0..metamat1.borrow().rows()).collect()),
-                        metamat1.borrow(),
-                    )
-                    .unwrap()
+                Matrix::mul_refs(
+                    &LinearLattice::basis_matrix(&row_ker, i)
+                        .submatrix(vec![0], (0..metamat1.borrow().rows()).collect()),
+                    metamat1.borrow(),
+                )
+                .unwrap()
             })
             .collect(),
     )
 }
 
 #[derive(Debug, Clone)]
-pub struct LinearLattice<ElemT: Clone> {
+pub struct LinearLattice<Ring: PrincipalIdealDomain> {
     //matrix whose rows are a basis of the linear lattice
     //NOT necessarily in row hermite normal form
-    metamatrix: Matrix<ElemT>,
+    metamatrix: Matrix<Ring>,
     //each row represents a matrix of this shape
     rows: usize,
     cols: usize,
-}
-
-impl<ElemT: Clone> LinearLattice<ElemT> {
-    pub fn rows(&self) -> usize {
-        self.rows
-    }
-
-    pub fn cols(&self) -> usize {
-        self.cols
-    }
 }
 
 //from matrix coords to meta row index
@@ -117,11 +87,11 @@ fn idx_to_rc(rows: usize, cols: usize, idx: usize) -> (usize, usize) {
     (idx / cols, idx % cols)
 }
 
-fn mats_to_rows<ElemT: Clone, MatT: Borrow<Matrix<ElemT>>>(
+fn mats_to_rows<Ring: ComRing, MatT: Borrow<Matrix<Ring>>>(
     rows: usize,
     cols: usize,
     mats: Vec<MatT>,
-) -> Matrix<ElemT> {
+) -> Matrix<Ring> {
     for mat in &mats {
         assert_eq!(mat.borrow().rows(), rows);
         assert_eq!(mat.borrow().cols(), cols);
@@ -132,146 +102,119 @@ fn mats_to_rows<ElemT: Clone, MatT: Borrow<Matrix<ElemT>>>(
     })
 }
 
-#[derive(Debug, Clone)]
-pub struct LinearLatticeStructure<'a, R: PrincipalIdealDomain> {
-    ring: &'a R,
-}
-
-impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
-    pub fn new(ring: &'a R) -> Self {
-        Self { ring }
+impl<Ring: PrincipalIdealDomain> LinearLattice<Ring> {
+    pub fn rows(&self) -> usize {
+        self.rows
     }
-}
 
-impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
-    pub fn check_invariants(&self, lat: &LinearLattice<R::ElemT>) -> Result<(), &'static str> {
-        if lat.rows * lat.cols != lat.metamatrix.cols() {
+    pub fn cols(&self) -> usize {
+        self.cols
+    }
+
+    pub fn check_invariants(&self) -> Result<(), &'static str> {
+        if self.rows * self.cols != self.metamatrix.cols() {
             return Err("the number of colnums of the meta_matrix should be rows*cols");
         }
-        if MatrixStructure::new(self.ring).rank(lat.metamatrix.clone()) != lat.metamatrix.rows() {
+        if self.metamatrix.clone().rank() != self.metamatrix.rows() {
             return Err("the rows of meta_matrix should be linearly independent");
         }
         Ok(())
     }
 
-    pub fn from_span<MatT: Borrow<Matrix<R::ElemT>>>(
-        &self,
+    pub fn from_span<MatT: Borrow<Matrix<Ring>>>(
         rows: usize,
         cols: usize,
         mats: Vec<MatT>,
-    ) -> LinearLattice<R::ElemT> {
+    ) -> LinearLattice<Ring> {
         let spanning_meta_matrix = mats_to_rows(rows, cols, mats);
-        let (h, _u, _u_det, pivs) =
-            MatrixStructure::new(self.ring).row_hermite_algorithm(spanning_meta_matrix);
+        let (h, _u, _u_det, pivs) = spanning_meta_matrix.row_hermite_algorithm();
         let metamatrix = h.submatrix((0..pivs.len()).collect(), (0..rows * cols).collect());
         let lattice = LinearLattice {
             metamatrix,
             rows,
             cols,
         };
-        debug_assert!(self.check_invariants(&lattice).is_ok());
+        debug_assert!(lattice.check_invariants().is_ok());
         lattice
     }
 
-    pub fn from_basis<MatT: Borrow<Matrix<R::ElemT>>>(
-        &self,
+    pub fn from_basis<MatT: Borrow<Matrix<Ring>>>(
         rows: usize,
         cols: usize,
         mats: Vec<MatT>,
-    ) -> LinearLattice<R::ElemT> {
+    ) -> Self {
         let metamatrix = mats_to_rows(rows, cols, mats);
         let lattice = LinearLattice {
             metamatrix: metamatrix,
             rows,
             cols,
         };
-        debug_assert!(self.check_invariants(&lattice).is_ok());
+        debug_assert!(lattice.check_invariants().is_ok());
         lattice
     }
 
-    pub fn rank(&self, lat: &LinearLattice<R::ElemT>) -> usize {
-        lat.metamatrix.rows()
+    pub fn rank(&self) -> usize {
+        self.metamatrix.rows()
     }
 
-    fn basis_row(&self, lat: &LinearLattice<R::ElemT>, basis_num: usize) -> Matrix<R::ElemT> {
-        lat.metamatrix
-            .submatrix(vec![basis_num], (0..lat.metamatrix.cols()).collect())
+    fn basis_row(&self, basis_num: usize) -> Matrix<Ring> {
+        self.metamatrix
+            .submatrix(vec![basis_num], (0..self.metamatrix.cols()).collect())
     }
 
-    pub fn basis_matrix(&self, lat: &LinearLattice<R::ElemT>, r: usize) -> Matrix<R::ElemT> {
-        if self.rank(lat) <= r {
+    pub fn basis_matrix(&self, r: usize) -> Matrix<Ring> {
+        if self.rank() <= r {
             panic!();
         }
-        Matrix::construct(lat.rows, lat.cols, |mr, mc| {
-            lat.metamatrix
-                .at(r, rc_to_idx(lat.rows, lat.cols, mr, mc))
+        Matrix::construct(self.rows, self.cols, |mr, mc| {
+            self.metamatrix
+                .at(r, rc_to_idx(self.rows, self.cols, mr, mc))
                 .unwrap()
                 .clone()
         })
     }
 
-    pub fn basis_matrices(&self, lat: &LinearLattice<R::ElemT>) -> Vec<Matrix<R::ElemT>> {
-        (0..self.rank(lat))
-            .map(|r| self.basis_matrix(lat, r))
-            .collect()
+    pub fn basis_matrices(&self) -> Vec<Matrix<Ring>> {
+        (0..self.rank()).map(|r| self.basis_matrix(r)).collect()
     }
 
-    pub fn basis_matrix_element<'b>(
-        &self,
-        lat: &'b LinearLattice<R::ElemT>,
-        basis_num: usize,
-        r: usize,
-        c: usize,
-    ) -> &'b R::ElemT {
-        lat.metamatrix
-            .at(basis_num, rc_to_idx(lat.rows, lat.cols, r, c))
+    pub fn basis_matrix_element<'b>(&'b self, basis_num: usize, r: usize, c: usize) -> &'b Ring {
+        self.metamatrix
+            .at(basis_num, rc_to_idx(self.rows, self.cols, r, c))
             .unwrap()
     }
 
-    fn contains_row<MatT: Borrow<Matrix<R::ElemT>>>(
-        &self,
-        lat: &LinearLattice<R::ElemT>,
-        mat_as_row: MatT,
-    ) -> bool {
-        match MatrixStructure::new(self.ring).row_solve(&lat.metamatrix, mat_as_row) {
+    fn contains_row<MatT: Borrow<Matrix<Ring>>>(&self, mat_as_row: MatT) -> bool {
+        match self.metamatrix.row_solve(mat_as_row) {
             Some(_taps) => true,
             None => false,
         }
     }
 
-    pub fn contains_point<MatT: Borrow<Matrix<R::ElemT>>>(
-        &self,
-        lat: &LinearLattice<R::ElemT>,
-        mat: MatT,
-    ) -> bool {
-        self.contains_row(lat, mats_to_rows(lat.rows, lat.cols, vec![mat]))
+    pub fn contains_point<MatT: Borrow<Matrix<Ring>>>(&self, mat: MatT) -> bool {
+        self.contains_row(mats_to_rows(self.rows, self.cols, vec![mat]))
     }
 
     //is lat a subset of self?
-    pub fn contains_sublattice<LatT: Borrow<LinearLattice<R::ElemT>>>(
-        &self,
-        lat: &LinearLattice<R::ElemT>,
-        sublat: LatT,
-    ) -> bool {
-        assert_eq!(lat.metamatrix.cols(), sublat.borrow().metamatrix.cols());
-        for basis_num in 0..self.rank(sublat.borrow()) {
-            if !self.contains_row(lat, self.basis_row(sublat.borrow(), basis_num)) {
+    pub fn contains_sublattice<LatT: Borrow<LinearLattice<Ring>>>(&self, sublat: LatT) -> bool {
+        assert_eq!(self.metamatrix.cols(), sublat.borrow().metamatrix.cols());
+        for basis_num in 0..sublat.borrow().rank() {
+            if !self.contains_row(sublat.borrow().basis_row(basis_num)) {
                 return false;
             }
         }
         true
     }
 
-    pub fn eq(&self, lat1: &LinearLattice<R::ElemT>, lat2: &LinearLattice<R::ElemT>) -> bool {
-        self.contains_sublattice(lat1, lat2) && self.contains_sublattice(lat2, lat1)
+    pub fn eq(lat1: &Self, lat2: &Self) -> bool {
+        lat1.contains_sublattice(lat2) && lat2.contains_sublattice(lat1)
     }
 
-    pub fn sum<LatT: Borrow<LinearLattice<R::ElemT>>>(
-        &self,
+    pub fn sum<LatT: Borrow<LinearLattice<Ring>>>(
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> LinearLattice<R::ElemT> {
+    ) -> Self {
         for lat in &lats {
             assert_eq!(lat.borrow().rows, rows);
             assert_eq!(lat.borrow().cols, cols);
@@ -280,53 +223,49 @@ impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
             rows,
             cols,
             metamatrix: metamatrix_row_sum(
-                self.ring,
                 rows * cols,
                 lats.iter().map(|lat| &lat.borrow().metamatrix).collect(),
             ),
         }
     }
 
-    pub fn sum_pair<LatT: Borrow<LinearLattice<R::ElemT>>>(
-        &self,
+    pub fn sum_pair<LatT: Borrow<LinearLattice<Ring>>>(
         rows: usize,
         cols: usize,
         lat1: LatT,
         lat2: LatT,
-    ) -> LinearLattice<R::ElemT> {
-        self.sum(rows, cols, vec![lat1, lat2])
+    ) -> Self {
+        Self::sum(rows, cols, vec![lat1, lat2])
     }
 
-    pub fn intersect<LatT: Borrow<LinearLattice<R::ElemT>>>(
-        &self,
+    pub fn intersect<LatT: Borrow<LinearLattice<Ring>>>(
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> LinearLattice<R::ElemT> {
+    ) -> Self {
         if lats.len() == 0 {
             LinearLattice {
                 rows,
                 cols,
-                metamatrix: MatrixStructure::new(self.ring).ident(rows * cols),
+                metamatrix: Matrix::ident(rows * cols),
             }
         } else if lats.len() == 1 {
             lats[0].borrow().clone()
         } else {
-            let mut int_lat = self.intersect_pair(rows, cols, lats[0].borrow(), lats[1].borrow());
+            let mut int_lat = Self::intersect_pair(rows, cols, lats[0].borrow(), lats[1].borrow());
             for i in 2..lats.len() {
-                int_lat = self.intersect_pair(rows, cols, &int_lat, lats[i].borrow());
+                int_lat = Self::intersect_pair(rows, cols, &int_lat, lats[i].borrow());
             }
             int_lat
         }
     }
 
-    pub fn intersect_pair<LatT: Borrow<LinearLattice<R::ElemT>>>(
-        &self,
+    pub fn intersect_pair<LatT: Borrow<LinearLattice<Ring>>>(
         rows: usize,
         cols: usize,
         lat1: LatT,
         lat2: LatT,
-    ) -> LinearLattice<R::ElemT> {
+    ) -> Self {
         assert_eq!(lat1.borrow().rows, rows);
         assert_eq!(lat1.borrow().cols, cols);
         assert_eq!(lat2.borrow().rows, rows);
@@ -335,61 +274,57 @@ impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
             rows,
             cols,
             metamatrix: metamatrix_row_intersection(
-                self.ring,
                 rows * cols,
                 &lat1.borrow().metamatrix,
                 &lat2.borrow().metamatrix,
             ),
         };
-        debug_assert!(self.check_invariants(&intersection_lattice).is_ok());
+        debug_assert!(intersection_lattice.check_invariants().is_ok());
         intersection_lattice
     }
 
-    pub fn as_hyperplane_intersection(
-        &self,
-        lat: &LinearLattice<R::ElemT>,
-    ) -> Vec<LinearLattice<R::ElemT>> {
+    pub fn as_hyperplane_intersection(&self) -> Vec<Self> {
         //extend the basis of lat to a full basis
         let mut extended_basis = vec![];
-        let (rows, cols) = (lat.rows, lat.cols);
-        let mut extended_lat = lat.clone();
+        let (rows, cols) = (self.rows, self.cols);
+        let mut extended_lat = self.clone();
         for i in 0..rows {
             for j in 0..cols {
                 let v = Matrix::construct(rows, cols, |r, c| {
                     if i == r && j == c {
-                        self.ring.one()
+                        Ring::one()
                     } else {
-                        self.ring.zero()
+                        Ring::zero()
                     }
                 });
-                let new_extended_lat = self.sum_pair(
+                let new_extended_lat = Self::sum_pair(
                     rows,
                     cols,
                     &extended_lat,
-                    &self.from_basis(rows, cols, vec![v.clone()]),
+                    &Self::from_basis(rows, cols, vec![v.clone()]),
                 );
 
                 debug_assert!(
-                    self.rank(&new_extended_lat) == self.rank(&extended_lat)
-                        || self.rank(&new_extended_lat) == self.rank(&extended_lat) + 1
+                    new_extended_lat.rank() == extended_lat.rank()
+                        || new_extended_lat.rank() == extended_lat.rank() + 1
                 );
 
-                if self.rank(&new_extended_lat) == self.rank(&extended_lat) + 1 {
+                if new_extended_lat.rank() == extended_lat.rank() + 1 {
                     extended_lat = new_extended_lat;
                     extended_basis.push(v);
                 }
             }
         }
-        debug_assert_eq!(self.rank(&extended_lat), rows * cols);
+        debug_assert_eq!(extended_lat.rank(), rows * cols);
 
         //now there is one hyperplane for each subset of extended_basis which omits one element
         (0..extended_basis.len())
             .map(|i| {
-                self.sum_pair(
+                Self::sum_pair(
                     rows,
                     cols,
-                    lat,
-                    &self.from_basis(
+                    self,
+                    &Self::from_basis(
                         rows,
                         cols,
                         extended_basis
@@ -405,33 +340,33 @@ impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
     }
 }
 
-impl<'a, R: PrincipalIdealDomain> LinearLatticeStructure<'a, R> {
-    pub fn pprint(&self, lat: &LinearLattice<R::ElemT>) {
+impl<R: PrincipalIdealDomain> LinearLattice<R> {
+    pub fn pprint(&self) {
         println!("Start Linear Lattice");
-        for r in 0..lat.metamatrix.rows() {
-            MatrixStructure::new(self.ring).pprint(&self.basis_matrix(lat, r));
+        for r in 0..self.metamatrix.rows() {
+            self.basis_matrix(r).pprint();
         }
         println!("End Linear Lattice");
     }
 }
 
 #[derive(Debug, Clone)]
-pub enum AffineLatticeElements<ElemT: Clone> {
+pub enum AffineLatticeElements<Ring: PrincipalIdealDomain> {
     Empty(),
     NonEmpty {
-        offset: Matrix<ElemT>,        //offset.rows == 1 and offset.cols == self.cols
-        linlat: LinearLattice<ElemT>, //linlat.rows == self.rows and linlat.cols == self.cols
+        offset: Matrix<Ring>,        //offset.rows == 1 and offset.cols == self.cols
+        linlat: LinearLattice<Ring>, //linlat.rows == self.rows and linlat.cols == self.cols
     },
 }
 
 #[derive(Debug, Clone)]
-pub struct AffineLattice<ElemT: Clone> {
+pub struct AffineLattice<Ring: PrincipalIdealDomain> {
     rows: usize,
     cols: usize,
-    elems: AffineLatticeElements<ElemT>,
+    elems: AffineLatticeElements<Ring>,
 }
 
-impl<ElemT: Clone> AffineLattice<ElemT> {
+impl<Ring: PrincipalIdealDomain> AffineLattice<Ring> {
     pub fn rows(&self) -> usize {
         self.rows
     }
@@ -440,70 +375,48 @@ impl<ElemT: Clone> AffineLattice<ElemT> {
         self.cols
     }
 
-    pub fn elems(&self) -> &AffineLatticeElements<ElemT> {
+    pub fn elems(&self) -> &AffineLatticeElements<Ring> {
         &self.elems
     }
-}
 
-pub struct AffineLatticeStructure<'a, R: PrincipalIdealDomain> {
-    ring: &'a R,
-}
-
-impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
-    pub fn new(ring: &'a R) -> Self {
-        Self { ring }
-    }
-}
-
-impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
-    pub fn check_invariants(&self, lat: &AffineLattice<R::ElemT>) -> Result<(), &'static str> {
-        match &lat.elems {
+    pub fn check_invariants(&self) -> Result<(), &'static str> {
+        match &self.elems {
             AffineLatticeElements::Empty() => {}
-            AffineLatticeElements::NonEmpty { offset, linlat } => {
-                match LinearLatticeStructure::new(self.ring).check_invariants(linlat) {
-                    Ok(()) => {
-                        if offset.rows() != lat.rows {
-                            return Err("offset rows doesnt match self rows");
-                        }
-                        if offset.cols() != lat.cols {
-                            return Err("offset columns doesnt match self columns");
-                        }
-                        if linlat.rows() != lat.rows {
-                            return Err("linlat rows doesnt match self rows");
-                        }
-                        if linlat.cols() != lat.cols {
-                            return Err("linlat columns doesnt match self columns");
-                        }
+            AffineLatticeElements::NonEmpty { offset, linlat } => match linlat.check_invariants() {
+                Ok(()) => {
+                    if offset.rows() != self.rows {
+                        return Err("offset rows doesnt match self rows");
                     }
-                    Err(msg) => {
-                        return Err(msg);
+                    if offset.cols() != self.cols {
+                        return Err("offset columns doesnt match self columns");
+                    }
+                    if linlat.rows() != self.rows {
+                        return Err("linlat rows doesnt match self rows");
+                    }
+                    if linlat.cols() != self.cols {
+                        return Err("linlat columns doesnt match self columns");
                     }
                 }
-            }
+                Err(msg) => {
+                    return Err(msg);
+                }
+            },
         }
         Ok(())
     }
 
-    pub fn rows(&self, lat: &AffineLattice<R::ElemT>) -> usize {
-        lat.rows
-    }
-
-    pub fn cols(&self, lat: &AffineLattice<R::ElemT>) -> usize {
-        lat.cols
-    }
-
-    pub fn rank(&self, lat: &AffineLattice<R::ElemT>) -> Option<usize> {
-        match &lat.elems {
+    pub fn rank(&self) -> Option<usize> {
+        match &self.elems {
             AffineLatticeElements::Empty() => None,
             AffineLatticeElements::NonEmpty {
                 offset: _offset,
 
                 linlat,
-            } => Some(LinearLatticeStructure::new(self.ring).rank(linlat)),
+            } => Some(linlat.rank()),
         }
     }
 
-    pub fn empty(&self, rows: usize, cols: usize) -> AffineLattice<R::ElemT> {
+    pub fn empty(rows: usize, cols: usize) -> Self {
         AffineLattice {
             rows,
             cols,
@@ -511,23 +424,19 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
         }
     }
 
-    pub fn to_offset_and_linear_lattice(
-        &self,
-        lat: AffineLattice<R::ElemT>,
-    ) -> Option<(Matrix<R::ElemT>, LinearLattice<R::ElemT>)> {
-        match lat.elems {
+    pub fn to_offset_and_linear_lattice(self) -> Option<(Matrix<Ring>, LinearLattice<Ring>)> {
+        match self.elems {
             AffineLatticeElements::Empty() => None,
             AffineLatticeElements::NonEmpty { offset, linlat } => Some((offset, linlat)),
         }
     }
 
     pub fn from_offset_and_linear_lattice(
-        &self,
         rows: usize,
         cols: usize,
-        offset: Matrix<R::ElemT>,
-        linlat: LinearLattice<R::ElemT>,
-    ) -> AffineLattice<R::ElemT> {
+        offset: Matrix<Ring>,
+        linlat: LinearLattice<Ring>,
+    ) -> AffineLattice<Ring> {
         assert_eq!(offset.rows(), rows);
         assert_eq!(offset.cols(), cols);
         assert_eq!(linlat.rows(), rows);
@@ -537,54 +446,35 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
             cols,
             elems: AffineLatticeElements::NonEmpty { offset, linlat },
         };
-        debug_assert!(self.check_invariants(&afflat).is_ok());
+        debug_assert!(afflat.check_invariants().is_ok());
         afflat
     }
 
-    pub fn contains_point<MatT: Borrow<Matrix<R::ElemT>>>(
-        &self,
-        lat: &AffineLattice<R::ElemT>,
-        mat: MatT,
-    ) -> bool {
-        let mat_struct = MatrixStructure::new(self.ring);
-        match &lat.elems {
+    pub fn contains_point<MatT: Borrow<Matrix<Ring>>>(&self, mat: MatT) -> bool {
+        match &self.elems {
             AffineLatticeElements::Empty() => false,
-            AffineLatticeElements::NonEmpty { offset, linlat } => {
-                LinearLatticeStructure::new(self.ring).contains_point(
-                    linlat,
-                    mat_struct
-                        .add_ref(mat_struct.neg(offset.clone()), mat.borrow())
-                        .unwrap(),
-                )
-            }
+            AffineLatticeElements::NonEmpty { offset, linlat } => linlat.contains_point(
+                Matrix::add_ref(Matrix::neg(offset.clone()), mat.borrow()).unwrap(),
+            ),
         }
     }
 
     //is other a subset of self?
-    pub fn contains_sublattice<LatT: Borrow<AffineLattice<R::ElemT>>>(
-        &self,
-        lat: &AffineLattice<R::ElemT>,
-        other: LatT,
-    ) -> bool {
-        let mat_struct = MatrixStructure::new(self.ring);
-        let linlat_struct = LinearLatticeStructure::new(self.ring);
+    pub fn contains_sublattice<LatT: Borrow<AffineLattice<Ring>>>(&self, other: LatT) -> bool {
         match &other.borrow().elems {
             AffineLatticeElements::Empty() => true,
             AffineLatticeElements::NonEmpty {
                 offset: other_offset,
                 linlat: other_linlat,
-            } => match &lat.elems {
+            } => match &self.elems {
                 AffineLatticeElements::Empty() => false,
                 AffineLatticeElements::NonEmpty {
                     offset: _self_offset,
                     linlat: _self_linlat,
                 } => {
-                    for bn in 0..linlat_struct.rank(other_linlat) {
+                    for bn in 0..other_linlat.rank() {
                         if !self.contains_point(
-                            lat,
-                            mat_struct
-                                .add_ref(linlat_struct.basis_matrix(other_linlat, bn), other_offset)
-                                .unwrap(),
+                            Matrix::add_ref(other_linlat.basis_matrix(bn), other_offset).unwrap(),
                         ) {
                             return false;
                         }
@@ -595,29 +485,26 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
         }
     }
 
-    pub fn eq(&self, lat1: &AffineLattice<R::ElemT>, lat2: &AffineLattice<R::ElemT>) -> bool {
-        self.contains_sublattice(lat1, lat2) && self.contains_sublattice(lat2, lat1)
+    pub fn eq(lat1: &AffineLattice<Ring>, lat2: &AffineLattice<Ring>) -> bool {
+        lat1.contains_sublattice(lat2) && lat2.contains_sublattice(lat1)
     }
 
-    pub fn sum<LatT: Borrow<AffineLattice<R::ElemT>>>(
-        &self,
+    pub fn sum<LatT: Borrow<AffineLattice<Ring>>>(
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> AffineLattice<R::ElemT> {
-        let mut sum_offset = MatrixStructure::new(self.ring).zero(rows, cols);
+    ) -> AffineLattice<Ring> {
+        let mut sum_offset = Matrix::zero(rows, cols);
         let mut sum_linlats = vec![];
         for lat in &lats {
-            assert_eq!(self.rows(lat.borrow()), rows);
-            assert_eq!(self.cols(lat.borrow()), cols);
+            assert_eq!(lat.borrow().rows(), rows);
+            assert_eq!(lat.borrow().cols(), cols);
             match &lat.borrow().elems {
                 AffineLatticeElements::Empty() => {
-                    return self.empty(rows, cols);
+                    return Self::empty(rows, cols);
                 }
                 AffineLatticeElements::NonEmpty { offset, linlat } => {
-                    MatrixStructure::new(self.ring)
-                        .add_mut(&mut sum_offset, offset)
-                        .unwrap();
+                    Matrix::add_mut(&mut sum_offset, offset).unwrap();
                     sum_linlats.push(linlat);
                 }
             }
@@ -627,98 +514,89 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
             cols: cols,
             elems: AffineLatticeElements::NonEmpty {
                 offset: sum_offset,
-                linlat: LinearLatticeStructure::new(self.ring).sum(rows, cols, sum_linlats),
+                linlat: LinearLattice::sum(rows, cols, sum_linlats),
             },
         }
     }
 
-    pub fn sum_pair<LatT: Borrow<AffineLattice<R::ElemT>>>(
-        &self,
+    pub fn sum_pair<LatT: Borrow<AffineLattice<Ring>>>(
         rows: usize,
         cols: usize,
         lat1: LatT,
         lat2: LatT,
-    ) -> AffineLattice<R::ElemT> {
-        self.sum(rows, cols, vec![lat1, lat2])
+    ) -> AffineLattice<Ring> {
+        Self::sum(rows, cols, vec![lat1, lat2])
     }
 
-    pub fn intersect<LatT: Borrow<AffineLattice<R::ElemT>>>(
-        &self,
+    pub fn intersect<LatT: Borrow<AffineLattice<Ring>>>(
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> AffineLattice<R::ElemT> {
+    ) -> AffineLattice<Ring> {
         if lats.len() == 0 {
             AffineLattice {
                 rows,
                 cols,
                 elems: AffineLatticeElements::NonEmpty {
-                    offset: MatrixStructure::new(self.ring).zero(rows, cols),
+                    offset: Matrix::zero(rows, cols),
                     linlat: LinearLattice {
                         rows,
                         cols,
-                        metamatrix: MatrixStructure::new(self.ring).ident(rows * cols),
+                        metamatrix: Matrix::ident(rows * cols),
                     },
                 },
             }
         } else if lats.len() == 1 {
             lats[0].borrow().clone()
         } else {
-            let mut int_lat = self.intersect_pair(rows, cols, lats[0].borrow(), lats[1].borrow());
+            let mut int_lat = Self::intersect_pair(rows, cols, lats[0].borrow(), lats[1].borrow());
             for i in 2..lats.len() {
-                int_lat = self.intersect_pair(rows, cols, &int_lat, lats[i].borrow());
+                int_lat = Self::intersect_pair(rows, cols, &int_lat, lats[i].borrow());
             }
             int_lat
         }
     }
 
     fn offset_linlat_to_metamat(
-        &self,
         rows: usize,
         cols: usize,
-        offset: &Matrix<R::ElemT>,
-        linlat: &LinearLattice<R::ElemT>,
-    ) -> Matrix<R::ElemT> {
-        let mut metamat = MatrixStructure::new(self.ring).zero(
-            1 + LinearLatticeStructure::new(self.ring).rank(linlat),
-            1 + rows * cols,
-        );
-        *metamat.at_mut(0, 0).unwrap() = self.ring.one();
+        offset: &Matrix<Ring>,
+        linlat: &LinearLattice<Ring>,
+    ) -> Matrix<Ring> {
+        let mut metamat = Matrix::zero(1 + linlat.rank(), 1 + rows * cols);
+        *metamat.at_mut(0, 0).unwrap() = Ring::one();
         for idx in 0..rows * cols {
             let (r, c) = idx_to_rc(rows, cols, idx);
             println!("rows={} cols={} r={} c={} idx={}", rows, cols, r, c, idx);
             *metamat.at_mut(0, 1 + idx).unwrap() = offset.at(r, c).unwrap().clone();
         }
-        for bn in 0..LinearLatticeStructure::new(self.ring).rank(linlat) {
+        for bn in 0..linlat.rank() {
             for idx in 0..rows * cols {
                 let (r, c) = idx_to_rc(rows, cols, idx);
                 *metamat.at_mut(0 + 1 + bn, 1 + idx).unwrap() =
-                    LinearLatticeStructure::new(self.ring)
-                        .basis_matrix_element(linlat, bn, r, c)
-                        .clone();
+                    linlat.basis_matrix_element(bn, r, c).clone();
             }
         }
         metamat
     }
 
-    pub fn intersect_pair<LatT: Borrow<AffineLattice<R::ElemT>>>(
-        &self,
+    pub fn intersect_pair<LatT: Borrow<AffineLattice<Ring>>>(
         rows: usize,
         cols: usize,
         lat1: LatT,
         lat2: LatT,
-    ) -> AffineLattice<R::ElemT> {
-        assert_eq!(self.rows(lat1.borrow()), rows);
-        assert_eq!(self.cols(lat1.borrow()), cols);
-        assert_eq!(self.rows(lat2.borrow()), rows);
-        assert_eq!(self.cols(lat2.borrow()), cols);
+    ) -> AffineLattice<Ring> {
+        assert_eq!(lat1.borrow().rows(), rows);
+        assert_eq!(lat1.borrow().cols(), cols);
+        assert_eq!(lat2.borrow().rows(), rows);
+        assert_eq!(lat2.borrow().cols(), cols);
         match &lat1.borrow().elems {
-            AffineLatticeElements::Empty() => self.empty(rows, cols),
+            AffineLatticeElements::Empty() => Self::empty(rows, cols),
             AffineLatticeElements::NonEmpty {
                 offset: offset1,
                 linlat: linlat1,
             } => match &lat2.borrow().elems {
-                AffineLatticeElements::Empty() => self.empty(rows, cols),
+                AffineLatticeElements::Empty() => Self::empty(rows, cols),
                 AffineLatticeElements::NonEmpty {
                     offset: offset2,
                     linlat: linlat2,
@@ -730,41 +608,34 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
                     // 0 0 0 c *
                     //if a=1 then the rest of the top row is the offset and the bottom right submatrix is the basis of the linear lattice
 
-                    let metamat1 = self.offset_linlat_to_metamat(rows, cols, offset1, linlat1);
-                    let metamat2 = self.offset_linlat_to_metamat(rows, cols, offset2, linlat2);
+                    let metamat1 = Self::offset_linlat_to_metamat(rows, cols, offset1, linlat1);
+                    let metamat2 = Self::offset_linlat_to_metamat(rows, cols, offset2, linlat2);
                     let int_metamat =
-                        metamatrix_row_intersection(self.ring, 1 + rows * cols, metamat1, metamat2);
+                        metamatrix_row_intersection(1 + rows * cols, metamat1, metamat2);
 
                     if int_metamat.rows() == 0 {
                         //the hyperlattice is just the origin, so the coresponding affine lattice - the intersection with the plane (1, *, ..., *) - is empty.
-                        self.empty(rows, cols)
+                        Self::empty(rows, cols)
                     } else {
-                        let (int_metamat_h, _u, _u_det, pivs) =
-                            MatrixStructure::new(self.ring).row_hermite_algorithm(int_metamat);
-                        MatrixStructure::new(self.ring).pprint(&int_metamat_h);
-                        if self.ring.is_unit(int_metamat_h.at(0, 0).unwrap().clone()) {
-                            debug_assert!(self
-                                .ring
-                                .equal(int_metamat_h.at(0, 0).unwrap(), &self.ring.one()));
+                        let (int_metamat_h, _u, _u_det, pivs) = int_metamat.row_hermite_algorithm();
+                        int_metamat_h.pprint();
+                        if Ring::is_unit(int_metamat_h.at(0, 0).unwrap().clone()) {
+                            debug_assert_eq!(int_metamat_h.at(0, 0).unwrap(), &Ring::one());
                         }
-                        if self
-                            .ring
-                            .equal(int_metamat_h.at(0, 0).unwrap(), &self.ring.one())
-                        {
-                            let mut int_offset = MatrixStructure::new(self.ring).zero(rows, cols);
+                        if int_metamat_h.at(0, 0).unwrap() == &Ring::one() {
+                            let mut int_offset = Matrix::zero(rows, cols);
                             for idx in 0..rows * cols {
                                 let (r, c) = idx_to_rc(rows, cols, idx);
                                 *int_offset.at_mut(r, c).unwrap() =
                                     int_metamat_h.at(0, 1 + idx).unwrap().clone();
                             }
-                            let int_basis_mats = (0..pivs.len() - 1)
+                            let int_basis_mats: Vec<Matrix<Ring>> = (0..pivs.len() - 1)
                                 .map(|bn| {
-                                    debug_assert!(self.ring.equal(
+                                    debug_assert_eq!(
                                         int_metamat_h.at(1 + bn, 0).unwrap(),
-                                        &self.ring.zero()
-                                    ));
-                                    let mut basis_mat =
-                                        MatrixStructure::new(self.ring).zero(rows, cols);
+                                        &Ring::zero()
+                                    );
+                                    let mut basis_mat = Matrix::zero(rows, cols);
                                     for idx in 0..rows * cols {
                                         let (r, c) = idx_to_rc(rows, cols, idx);
                                         *basis_mat.at_mut(r, c).unwrap() =
@@ -773,23 +644,19 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
                                     basis_mat
                                 })
                                 .collect();
-                            MatrixStructure::new(self.ring).pprint(&int_offset);
+                            int_offset.pprint();
                             for basis_mat in &int_basis_mats {
-                                MatrixStructure::new(self.ring).pprint(basis_mat);
+                                basis_mat.pprint();
                             }
-                            self.from_offset_and_linear_lattice(
+                            Self::from_offset_and_linear_lattice(
                                 rows,
                                 cols,
                                 int_offset,
-                                LinearLatticeStructure::new(self.ring).from_basis(
-                                    rows,
-                                    cols,
-                                    int_basis_mats,
-                                ),
+                                LinearLattice::from_basis(rows, cols, int_basis_mats),
                             )
                         } else {
                             //the hyperlattice does not intersect the plane (1, *, ..., *) because int_metamat_h(0, 0) is not a unit
-                            self.empty(rows, cols)
+                            Self::empty(rows, cols)
                         }
                     }
                 }
@@ -798,15 +665,15 @@ impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
     }
 }
 
-impl<'a, R: PrincipalIdealDomain> AffineLatticeStructure<'a, R> {
-    pub fn pprint(&self, lat: &AffineLattice<R::ElemT>) {
+impl<R: PrincipalIdealDomain> AffineLattice<R> {
+    pub fn pprint(&self) {
         println!("Start Affine Lattice");
-        match &lat.elems {
+        match &self.elems {
             AffineLatticeElements::Empty() => println!("Empty"),
             AffineLatticeElements::NonEmpty { offset, linlat } => {
                 println!("Offset");
-                MatrixStructure::new(self.ring).pprint(&offset);
-                LinearLatticeStructure::new(self.ring).pprint(&linlat);
+                offset.pprint();
+                linlat.pprint();
             }
         }
         println!("End Affine Lattice");
@@ -839,7 +706,7 @@ mod tests {
             rows: 2,
             cols: 2,
         };
-        ZZ_LINLAT.check_invariants(&lattice).unwrap();
+        lattice.check_invariants().unwrap();
 
         let lattice = LinearLattice {
             metamatrix: Matrix::from_rows(vec![
@@ -849,7 +716,7 @@ mod tests {
             rows: 2,
             cols: 2,
         };
-        assert!(ZZ_LINLAT.check_invariants(&lattice).is_err());
+        assert!(lattice.check_invariants().is_err());
 
         let lattice = LinearLattice {
             metamatrix: Matrix::from_rows(vec![
@@ -869,7 +736,7 @@ mod tests {
             rows: 2,
             cols: 2,
         };
-        assert!(ZZ_LINLAT.check_invariants(&lattice).is_err());
+        assert!(lattice.check_invariants().is_err());
     }
 
     #[test]
@@ -891,7 +758,7 @@ mod tests {
 
     #[test]
     fn containment() {
-        let lattice = ZZ_LINLAT.from_span(
+        let lattice = LinearLattice::from_span(
             2,
             2,
             vec![
@@ -908,39 +775,30 @@ mod tests {
 
         assert_eq!(
             true,
-            ZZ_LINLAT.contains_point(
-                &lattice,
-                &Matrix::from_rows(vec![
-                    vec![Integer::from(2), Integer::from(3)],
-                    vec![Integer::from(0), Integer::from(1)],
-                ])
-            )
+            lattice.contains_point(&Matrix::from_rows(vec![
+                vec![Integer::from(2), Integer::from(3)],
+                vec![Integer::from(0), Integer::from(1)],
+            ]))
         );
 
         assert_eq!(
             false,
-            ZZ_LINLAT.contains_point(
-                &lattice,
-                &Matrix::from_rows(vec![
-                    vec![Integer::from(2), Integer::from(4)],
-                    vec![Integer::from(0), Integer::from(1)],
-                ])
-            )
+            lattice.contains_point(&Matrix::from_rows(vec![
+                vec![Integer::from(2), Integer::from(4)],
+                vec![Integer::from(0), Integer::from(1)],
+            ]))
         );
 
         assert_eq!(
             false,
-            ZZ_LINLAT.contains_point(
-                &lattice,
-                &Matrix::from_rows(vec![
-                    vec![Integer::from(2), Integer::from(3)],
-                    vec![Integer::from(1), Integer::from(1)],
-                ])
-            )
+            lattice.contains_point(&Matrix::from_rows(vec![
+                vec![Integer::from(2), Integer::from(3)],
+                vec![Integer::from(1), Integer::from(1)],
+            ]))
         );
 
-        assert!(!ZZ_LINLAT.eq(
-            &ZZ_LINLAT.from_span(
+        assert!(!LinearLattice::eq(
+            &LinearLattice::from_span(
                 2,
                 3,
                 vec![
@@ -954,7 +812,7 @@ mod tests {
                     ]),
                 ],
             ),
-            &ZZ_LINLAT.from_span(
+            &LinearLattice::from_span(
                 2,
                 3,
                 vec![
@@ -1001,24 +859,19 @@ mod tests {
 
             println!();
             println!("a");
-            ZZ_MAT.pprint(&a);
+            a.pprint();
             println!("b");
-            ZZ_MAT.pprint(&b);
+            b.pprint();
             println!("a & b");
-            let int = ZZ_LINLAT.intersect_pair(
-                3,
-                1,
-                ZZ_MAT.col_span(a.clone()),
-                ZZ_MAT.col_span(b.clone()),
-            );
-            ZZ_LINLAT.pprint(&int);
+            let int =
+                LinearLattice::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            int.pprint();
             println!("a + b");
-            let sum =
-                ZZ_LINLAT.sum_pair(3, 1, ZZ_MAT.col_span(a.clone()), ZZ_MAT.col_span(b.clone()));
-            ZZ_LINLAT.pprint(&sum);
+            let sum = LinearLattice::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            sum.pprint();
 
-            assert!(ZZ_LINLAT.eq(&int, &ZZ_MAT.col_span(c)));
-            assert!(ZZ_LINLAT.eq(&sum, &ZZ_MAT.col_span(d)));
+            assert!(LinearLattice::eq(&int, &c.col_span()));
+            assert!(LinearLattice::eq(&sum, &d.col_span()));
         }
 
         {
@@ -1049,24 +902,19 @@ mod tests {
 
             println!();
             println!("a");
-            ZZ_MAT.pprint(&a);
+            a.pprint();
             println!("b");
-            ZZ_MAT.pprint(&b);
+            b.pprint();
             println!("a & b");
-            let int = ZZ_LINLAT.intersect_pair(
-                3,
-                1,
-                ZZ_MAT.col_span(a.clone()),
-                ZZ_MAT.col_span(b.clone()),
-            );
-            ZZ_LINLAT.pprint(&int);
+            let int =
+                LinearLattice::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            int.pprint();
             println!("a + b");
-            let sum =
-                ZZ_LINLAT.sum_pair(3, 1, ZZ_MAT.col_span(a.clone()), ZZ_MAT.col_span(b.clone()));
-            ZZ_LINLAT.pprint(&sum);
+            let sum = LinearLattice::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            sum.pprint();
 
-            assert!(ZZ_LINLAT.eq(&int, &ZZ_MAT.col_span(c)));
-            assert!(ZZ_LINLAT.eq(&sum, &ZZ_MAT.col_span(d)));
+            assert!(LinearLattice::eq(&int, &c.col_span()));
+            assert!(LinearLattice::eq(&sum, &d.col_span()));
         }
 
         {
@@ -1152,15 +1000,12 @@ mod tests {
                 ],
             ]);
 
-            let int = ZZ_LINLAT.intersect(
-                4,
-                1,
-                vec![ZZ_MAT.col_span(a), ZZ_MAT.col_span(b), ZZ_MAT.col_span(c)],
-            );
+            let int =
+                LinearLattice::intersect(4, 1, vec![a.col_span(), b.col_span(), c.col_span()]);
 
-            assert!(ZZ_LINLAT.eq(
+            assert!(LinearLattice::eq(
                 &int,
-                &ZZ_MAT.col_span(Matrix::from_rows(vec![
+                &Matrix::from_rows(vec![
                     vec![
                         Integer::from(1),
                         Integer::from(0),
@@ -1185,7 +1030,8 @@ mod tests {
                         Integer::from(0),
                         Integer::from(0)
                     ],
-                ]))
+                ])
+                .col_span()
             ));
         }
 
@@ -1229,41 +1075,36 @@ mod tests {
 
             println!();
             println!("a");
-            ZZ_MAT.pprint(&a);
+            a.pprint();
             println!("b");
-            ZZ_MAT.pprint(&b);
+            b.pprint();
             println!("a & b");
-            let int = ZZ_LINLAT.intersect_pair(
-                3,
-                1,
-                ZZ_MAT.col_span(a.clone()),
-                ZZ_MAT.col_span(b.clone()),
-            );
-            ZZ_LINLAT.pprint(&int);
+            let int =
+                LinearLattice::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            int.pprint();
             println!("a + b");
-            let sum =
-                ZZ_LINLAT.sum_pair(3, 1, ZZ_MAT.col_span(a.clone()), ZZ_MAT.col_span(b.clone()));
-            ZZ_LINLAT.pprint(&sum);
+            let sum = LinearLattice::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            sum.pprint();
 
-            assert!(ZZ_LINLAT.eq(&int, &ZZ_MAT.col_span(c)));
-            assert!(ZZ_LINLAT.eq(&sum, &ZZ_MAT.col_span(d)));
+            assert!(LinearLattice::eq(&int, &c.col_span()));
+            assert!(LinearLattice::eq(&sum, &d.col_span()));
         }
     }
 
     #[test]
     fn affine_lattice_invariants() {
-        let afflat = AffineLattice {
+        let afflat = AffineLattice::<Integer> {
             rows: 2,
             cols: 2,
             elems: AffineLatticeElements::Empty(),
         };
-        assert!(ZZ_AFFLAT.check_invariants(&afflat).is_ok());
+        assert!(afflat.check_invariants().is_ok());
 
         let afflat = AffineLattice {
             rows: 2,
             cols: 2,
             elems: AffineLatticeElements::NonEmpty {
-                linlat: ZZ_LINLAT.from_basis(
+                linlat: LinearLattice::from_basis(
                     2,
                     2,
                     vec![
@@ -1283,7 +1124,7 @@ mod tests {
                 ]),
             },
         };
-        assert!(ZZ_AFFLAT.check_invariants(&afflat).is_ok());
+        assert!(afflat.check_invariants().is_ok());
     }
 
     fn affine_lattice_sum_and_intersection() {
@@ -1311,18 +1152,18 @@ mod tests {
             vec![Integer::from(1)],
         ]);
 
-        let alat1 = ZZ_MAT.col_solution_lattice(&a1, y1);
-        let alat2 = ZZ_MAT.col_solution_lattice(&a2, y2);
+        let alat1 = a1.col_solution_lattice(y1);
+        let alat2 = a2.col_solution_lattice(y2);
 
-        ZZ_AFFLAT.pprint(&alat1);
+        alat1.pprint();
         println!();
-        ZZ_AFFLAT.pprint(&alat2);
+        alat2.pprint();
 
-        let alat3 = ZZ_AFFLAT.sum(3, 1, vec![alat1, alat2]);
+        let alat3 = AffineLattice::sum(3, 1, vec![alat1, alat2]);
         println!();
-        ZZ_AFFLAT.pprint(&alat3);
+        alat3.pprint();
 
-        let expected_alat3 = ZZ_AFFLAT.from_offset_and_linear_lattice(
+        let expected_alat3 = AffineLattice::from_offset_and_linear_lattice(
             3,
             1,
             Matrix::from_rows(vec![
@@ -1330,7 +1171,7 @@ mod tests {
                 vec![Integer::from(0)],
                 vec![Integer::from(1)],
             ]),
-            ZZ_LINLAT.from_span(
+            LinearLattice::from_span(
                 3,
                 1,
                 vec![
@@ -1348,6 +1189,6 @@ mod tests {
             ),
         );
 
-        assert!(ZZ_AFFLAT.eq(&alat3, &expected_alat3));
+        assert!(AffineLattice::eq(&alat3, &expected_alat3));
     }
 }
