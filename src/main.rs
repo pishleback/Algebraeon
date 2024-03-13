@@ -26,11 +26,13 @@ use crate::geometry::vector::*;
 
 pub mod drawing;
 pub mod geometry;
+pub mod finite_group_tables;
 pub mod groups;
 pub mod numbers;
 pub mod rings;
 pub mod sets;
 
+/*
 fn main() {
     fn random_point(dim: usize, rad: f64) -> Vector {
         let mut rng = rand::thread_rng();
@@ -71,7 +73,15 @@ fn main() {
         canvas.draw_shape(&a.as_shape(), (1.0, 0.0, 0.0));
         canvas.draw_shape(&b.as_shape(), (0.0, 1.0, 0.0));
     });
+
+
+    //where I left with the simplicial stuff:
+    //simplification of simplicial complex is done
+    //combining simplicial complexes is not done
+    //the plan is to recursively compare pairs of simplexes and refine them until every pair intersects trivially
 }
+*/
+
 
 fn todo() {
     // let s = NaturalPrimeGenerator::new();
@@ -98,57 +108,6 @@ fn todo() {
     println!("{:?}", a);
 }
 
-fn main2() {
-    // (x+11)*(x-222)*(x-3333)*(x^2+x+1)*(x+67)
-
-    let f = ZZ_POLY.product(vec![
-        &ZZ_POLY.from_coeffs(vec![Integer::from(11), Integer::from(1)]),
-        &ZZ_POLY.from_coeffs(vec![Integer::from(-222), Integer::from(1)]),
-        &ZZ_POLY.from_coeffs(vec![Integer::from(-3333), Integer::from(1)]),
-        &ZZ_POLY.from_coeffs(vec![Integer::from(1), Integer::from(1), Integer::from(1)]),
-        &ZZ_POLY.from_coeffs(vec![
-            Integer::from(-1),
-            Integer::from(-1),
-            Integer::from(0),
-            Integer::from(0),
-            Integer::from(0),
-            Integer::from(1),
-        ]),
-        &ZZ_POLY.from_coeffs(vec![Integer::from(67), Integer::from(1)]),
-        &ZZ_POLY.from_coeffs(vec![
-            Integer::from(1),
-            Integer::from(0),
-            Integer::from(0),
-            Integer::from(0),
-            Integer::from(1),
-        ]),
-    ]);
-    println!("{}", ZZ_POLY.to_string(&f));
-
-    let fs = ZZ_POLY.factorize_by_hensel_lifting(f);
-    println!("{:?}", fs);
-
-    // let modn = EuclideanQuotient::new_field_unchecked(ZZ, Integer::from(5));
-
-    // println!("{:?}", modn.all_units());
-
-    // let poly_modn = PolynomialRing::new(&modn);
-
-    // // let f = poly_modn.from_coeffs(vec![
-    // //     Integer::from(-1),
-    // //     Integer::from(1),
-    // //     Integer::from(0),
-    // //     Integer::from(0),
-    // //     Integer::from(0),
-    // //     Integer::from(0),
-    // //     Integer::from(0),
-    // //     Integer::from(0),
-    // //     Integer::from(1),
-    // // ]);
-
-    // // let fs = ZZ_POLY.factor(&f);
-    // // println!("{:?}", fs);
-
-    // let fs = poly_modn.factorize_by_trying_all_factors(f);
-    // println!("{:?}", fs);
+fn main() {
+    println!("run");
 }

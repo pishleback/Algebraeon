@@ -49,7 +49,7 @@ impl Simplex {
         ans
     }
 
-    pub unsafe fn new_unchecked(dim: usize, mut vertices: Vec<Vector>) -> Self {
+    pub fn new_unchecked(dim: usize, mut vertices: Vec<Vector>) -> Self {
         vertices.sort();
         let ans = Self { dim, vertices };
         debug_assert!(ans.check().is_ok());

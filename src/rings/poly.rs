@@ -1296,49 +1296,49 @@ fn hensel_quadratic_lift<const IS_FIELD: bool, R: EuclideanDomain + UniqueFactor
     (g_, h_, s_, t_)
 }
 
-impl<'a> PolynomialRing<'a, IntegerRing> {
-    pub fn factorize_by_hensel_lifting(
-        &self,
-        f: Polynomial<Integer>,
-    ) -> Factored<Polynomial<Integer>> {
-        debug_assert!(!self.equal(&f, &self.zero()));
+// impl<'a> PolynomialRing<'a, IntegerRing> {
+//     pub fn factorize_by_hensel_lifting(
+//         &self,
+//         f: Polynomial<Integer>,
+//     ) -> Factored<Polynomial<Integer>> {
+//         debug_assert!(!self.equal(&f, &self.zero()));
 
-        println!("{:?}", ZZ_POLY.factorize_by_kroneckers_method(&f));
+//         println!("{:?}", ZZ_POLY.factorize_by_kroneckers_method(&f));
 
-        let pgen = NaturalPrimeGenerator::new();
-        for p in pgen {
-            let modp = EuclideanQuotient::new_field_unchecked(ZZ, Integer::from(&p));
-            let poly_modp = PolynomialRing::new(&modp);
-            let gs = poly_modp.factorize_by_trying_all_factors(f.clone());
+//         let pgen = NaturalPrimeGenerator::new();
+//         for p in pgen {
+//             let modp = EuclideanQuotient::new_field_unchecked(ZZ, Integer::from(&p));
+//             let poly_modp = PolynomialRing::new(&modp);
+//             let gs = poly_modp.factorize_by_trying_all_factors(f.clone());
 
-            if gs.factors().iter().all(|(_g, k)| k == &Natural::from(1u8)) {
-                let gs: Vec<_> = gs.factors().iter().map(|(g, _k)| g).collect();
-                println!("{:?}", p);
-                for g in gs.into_iter() {
-                    println!();
-                    let h = poly_modp.div_refs(&f, g).unwrap();
-                    println!(
-                        "gh = {}    {}",
-                        poly_modp.to_string(g),
-                        poly_modp.to_string(&h)
-                    );
+//             if gs.factors().iter().all(|(_g, k)| k == &Natural::from(1u8)) {
+//                 let gs: Vec<_> = gs.factors().iter().map(|(g, _k)| g).collect();
+//                 println!("{:?}", p);
+//                 for g in gs.into_iter() {
+//                     println!();
+//                     let h = poly_modp.div_refs(&f, g).unwrap();
+//                     println!(
+//                         "gh = {}    {}",
+//                         poly_modp.to_string(g),
+//                         poly_modp.to_string(&h)
+//                     );
 
-                    let (u, s, t) = poly_modp.xgcd(g.clone(), h);
-                    debug_assert!(poly_modp.equal(&u, &poly_modp.one()));
+//                     let (u, s, t) = poly_modp.xgcd(g.clone(), h);
+//                     debug_assert!(poly_modp.equal(&u, &poly_modp.one()));
 
-                    println!(
-                        "st = {}    {}",
-                        poly_modp.to_string(&s),
-                        poly_modp.to_string(&t)
-                    );
-                }
+//                     println!(
+//                         "st = {}    {}",
+//                         poly_modp.to_string(&s),
+//                         poly_modp.to_string(&t)
+//                     );
+//                 }
 
-                todo!();
-            }
-        }
-        panic!()
-    }
-}
+//                 todo!();
+//             }
+//         }
+//         panic!()
+//     }
+// }
 
 impl PartialEq for Polynomial<Integer> {
     fn eq(&self, other: &Self) -> bool {

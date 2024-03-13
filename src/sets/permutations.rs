@@ -1,4 +1,4 @@
-use super::super::groups::group::Group;
+use super::super::finite_group_tables::group::Group;
 use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -152,7 +152,7 @@ pub fn alternating_group_structure(
             |x: Permutation| x.invert(),
             |x: Permutation, y: Permutation| x.compose(&y).unwrap(),
             Some(n <= 3),           //A0, A1, A2, A3 are abelian, the rest are not
-            Some(n == 3 || 5 <= n), //A3, A5, A6, A7, ... are simple
+            Some(n == 3 || 5 <= n), //A3, A5, A6, A7, ... are simple, the rest are not
         ),
         alt_perms.clone(),
         alt_perms

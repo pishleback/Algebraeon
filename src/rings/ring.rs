@@ -10,6 +10,11 @@ pub enum RingDivisionError {
     NotDivisible,
 }
 
+//todo: remove ElemT so that ComRing trait applies to instances of the type.
+//that does mean that we can no longer be generic over rings
+//the only time i can think this might be a problem is with stuff like quotient rings
+//the solution would be to not allow quotient rings as a type implementing a ComRing trait
+//instead just work in the parent ring and check for equivelence up there
 pub trait ComRing: Sized + Clone + Debug + PartialEq + Eq {
     //todo: remove sized here
     type ElemT: Sized + Clone + Debug;
