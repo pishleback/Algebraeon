@@ -1,6 +1,7 @@
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
+use std::fmt::Display;
 use std::hash::Hash;
 
 use super::matrix::*;
@@ -33,59 +34,45 @@ impl<Ring: ComRing> PartialEq for Polynomial<Ring> {
 
 impl<Ring: ComRing> Eq for Polynomial<Ring> {}
 
-impl<Ring: ComRing> ComRing for Polynomial<Ring> {
-    fn to_string(&self) -> String {
+impl<Ring: ComRing + Display> Display for Polynomial<Ring> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.coeffs.len() == 0 {
-            String::from("0")
+            write!(f, "0")
         } else {
-            let mut s = String::new();
             let mut first = true;
             for (k, c) in self.coeffs.iter().enumerate() {
                 if c != &Ring::zero() {
                     if c == &Ring::one() {
                         if k == 0 {
-                            s += "1";
+                            write!(f, "1");
                         } else {
-                            s += "+"
+                            write!(f, "+");
                         }
-                    // } else if Ring::equal(c, &Ring::neg(Ring::one())) {
-                    //     if k == 0 {
-                    //         s += "-1";
-                    //     } else {
-                    //         s += "-"
-                    //     }
                     } else {
                         if !first {
-                            s += "+";
+                            write!(f, "+");
                         }
-                        s += "(";
-                        s += &c.to_string();
-                        s += ")";
+                        write!(f, "(");
+                        write!(f, "{}", c);
+                        write!(f, ")");
                     }
                     if k == 0 {
                     } else if k == 1 {
-                        s += "λ";
+                        write!(f, "λ");
                     } else {
-                        s += "λ";
-                        s += "^";
-                        s += &k.to_string();
+                        write!(f, "λ");
+                        write!(f, "^");
+                        write!(f, "{}", k);
                     }
                     first = false;
                 }
             }
-            s
+            Ok(())
         }
     }
+}
 
-    // fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
-    //     let n = a.coeffs.len();
-    //     if n != b.coeffs.len() {
-    //         false
-    //     } else {
-    //         (0..n).all(|i| Ring::equal(&a.coeffs[i], &b.coeffs[i]))
-    //     }
-    // }
-
+impl<Ring: ComRing> ComRing for Polynomial<Ring> {
     fn zero() -> Self {
         Polynomial { coeffs: vec![] }
     }
@@ -111,15 +98,15 @@ impl<Ring: ComRing> ComRing for Polynomial<Ring> {
     //     poly
     // }
 
-    fn add_mut(mut poly: &mut Self, x: &Self) {
+    fn add_mut(&mut self, x: &Self) {
         for i in 0..x.coeffs.len() {
-            if i < poly.coeffs.len() {
-                Ring::add_mut(&mut poly.coeffs[i], &x.coeffs[i]);
+            if i < self.coeffs.len() {
+                Ring::add_mut(&mut self.coeffs[i], &x.coeffs[i]);
             } else {
-                poly.coeffs.push(x.coeffs[i].clone());
+                self.coeffs.push(x.coeffs[i].clone());
             }
         }
-        Self::reduce(&mut poly);
+        self.reduce();
     }
 
     fn mul_refs(a: &Self, b: &Self) -> Self {
@@ -140,8 +127,8 @@ impl<Ring: ComRing> ComRing for Polynomial<Ring> {
         ans
     }
 
-    fn mul_mut(poly: &mut Self, x: &Self) {
-        poly.clone_from(&Self::mul_refs(poly, x));
+    fn mul_mut(&mut self, x: &Self) {
+        self.clone_from(&Self::mul_refs(self, x));
     }
 
     fn div(a: Self, b: Self) -> Result<Self, RingDivisionError> {
@@ -931,43 +918,47 @@ impl<
 }
 
 impl<Ring: Field + FiniteUnits> Polynomial<Ring> {
-    pub fn factorize_by_trying_all_factors(f: Polynomial<Ring>) -> Factored<Polynomial<Ring>>
+    pub fn factorize_by_trying_all_factors(self) -> Option<Factored<Polynomial<Ring>>>
     where
         Self: UniqueFactorizationDomain,
     {
-        debug_assert_ne!(f, Self::zero());
-        fn partial_factor<'a, Ring: Field + FiniteUnits>(
-            f: Polynomial<Ring>,
-        ) -> Option<(Polynomial<Ring>, Polynomial<Ring>)> {
-            let f_deg = f.degree().unwrap();
-            let max_factor_degree = f_deg / 2;
-            for d in 0..max_factor_degree {
-                for mut coeffs in itertools::Itertools::multi_cartesian_product(
-                    (0..d + 1).into_iter().map(|_d| {
-                        let mut all_elems = vec![Ring::zero()];
-                        all_elems.append(&mut Ring::all_units());
-                        all_elems
-                    }),
-                ) {
-                    coeffs.push(Ring::one());
-                    let g = Polynomial::from_coeffs(coeffs);
-                    // println!("{}", self.to_string(&g));
-                    match Polynomial::div_refs(&f, &g) {
-                        Ok(h) => {
-                            return Some((g, h));
+        let f = self;
+        if f == Self::zero() {
+            None
+        } else {
+            fn partial_factor<'a, Ring: Field + FiniteUnits>(
+                f: Polynomial<Ring>,
+            ) -> Option<(Polynomial<Ring>, Polynomial<Ring>)> {
+                let f_deg = f.degree().unwrap();
+                let max_factor_degree = f_deg / 2;
+                for d in 0..max_factor_degree {
+                    for mut coeffs in itertools::Itertools::multi_cartesian_product(
+                        (0..d + 1).into_iter().map(|_d| {
+                            let mut all_elems = vec![Ring::zero()];
+                            all_elems.append(&mut Ring::all_units());
+                            all_elems
+                        }),
+                    ) {
+                        coeffs.push(Ring::one());
+                        let g = Polynomial::from_coeffs(coeffs);
+                        // println!("{}", self.to_string(&g));
+                        match Polynomial::div_refs(&f, &g) {
+                            Ok(h) => {
+                                return Some((g, h));
+                            }
+                            Err(RingDivisionError::NotDivisible) => {}
+                            Err(RingDivisionError::DivideByZero) => panic!(),
                         }
-                        Err(RingDivisionError::NotDivisible) => {}
-                        Err(RingDivisionError::DivideByZero) => panic!(),
                     }
                 }
+                None
             }
-            None
+            Some(full_factor_using_partial_factor(f, &partial_factor::<Ring>))
         }
-        full_factor_using_partial_factor(f, &partial_factor::<Ring>)
     }
 }
 
-impl<'a, F: FieldOfFractions> Polynomial<F>
+impl<F: FieldOfFractions> Polynomial<F>
 where
     F::R: EuclideanDomain + FavoriteAssociate,
 {
@@ -976,11 +967,11 @@ where
 
         let (mul, prim) = self
             .apply_map(|c| F::as_base_ring(F::mul_ref(F::from_base_ring(div.clone()), c)).unwrap())
-            .factor_primitive().unwrap();
+            .factor_primitive()
+            .unwrap();
 
         (
-            F::div(F::from_base_ring(mul), F::from_base_ring(div))
-                .unwrap(),
+            F::div(F::from_base_ring(mul), F::from_base_ring(div)).unwrap(),
             prim,
         )
     }
@@ -1226,7 +1217,7 @@ fn hensel_quadratic_lift<const IS_FIELD: bool, R: EuclideanDomain + UniqueFactor
 
 // impl Eq for Polynomial<Integer> {}
 
-impl Hash for Polynomial<Integer> {
+impl<Ring: ComRing + Hash> Hash for Polynomial<Ring> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.coeffs.hash(state);
     }
@@ -1372,15 +1363,11 @@ mod tests {
 
             let r1 = Polynomial::pseudorem_refs(&f, &g).unwrap().unwrap();
             println!("r1 = {}", r1.to_string());
-            assert_eq!(r1,
-                (-15 * x.pow(4) + 3 * x.pow(2) - 9).elem()
-            );
+            assert_eq!(r1, (-15 * x.pow(4) + 3 * x.pow(2) - 9).elem());
 
             let r2 = Polynomial::pseudorem_refs(&g, &r1).unwrap().unwrap();
             println!("r2 = {}", r2.to_string());
-            assert_eq!(r2,
-                (15795 * x.pow(2) + 30375 * x - 59535).elem()
-            );
+            assert_eq!(r2, (15795 * x.pow(2) + 30375 * x - 59535).elem());
         }
         println!();
         {
@@ -1599,7 +1586,7 @@ mod tests {
             )
         ));
 
-        let f = Polynomial::one();
+        let f = Polynomial::<Integer>::one();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(Polynomial::one(), vec![])

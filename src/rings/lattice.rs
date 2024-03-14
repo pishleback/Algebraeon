@@ -1,4 +1,5 @@
 use std::borrow::Borrow;
+use std::fmt::Display;
 
 use super::matrix::*;
 use super::nzq::*;
@@ -340,7 +341,7 @@ impl<Ring: PrincipalIdealDomain> LinearLattice<Ring> {
     }
 }
 
-impl<R: PrincipalIdealDomain> LinearLattice<R> {
+impl<R: PrincipalIdealDomain + Display> LinearLattice<R> {
     pub fn pprint(&self) {
         println!("Start Linear Lattice");
         for r in 0..self.metamatrix.rows() {
@@ -618,7 +619,7 @@ impl<Ring: PrincipalIdealDomain> AffineLattice<Ring> {
                         Self::empty(rows, cols)
                     } else {
                         let (int_metamat_h, _u, _u_det, pivs) = int_metamat.row_hermite_algorithm();
-                        int_metamat_h.pprint();
+                        // int_metamat_h.pprint();
                         if Ring::is_unit(int_metamat_h.at(0, 0).unwrap().clone()) {
                             debug_assert_eq!(int_metamat_h.at(0, 0).unwrap(), &Ring::one());
                         }
@@ -644,10 +645,10 @@ impl<Ring: PrincipalIdealDomain> AffineLattice<Ring> {
                                     basis_mat
                                 })
                                 .collect();
-                            int_offset.pprint();
-                            for basis_mat in &int_basis_mats {
-                                basis_mat.pprint();
-                            }
+                            // int_offset.pprint();
+                            // for basis_mat in &int_basis_mats {
+                            //     basis_mat.pprint();
+                            // }
                             Self::from_offset_and_linear_lattice(
                                 rows,
                                 cols,
@@ -665,7 +666,7 @@ impl<Ring: PrincipalIdealDomain> AffineLattice<Ring> {
     }
 }
 
-impl<R: PrincipalIdealDomain> AffineLattice<R> {
+impl<R: PrincipalIdealDomain + Display> AffineLattice<R> {
     pub fn pprint(&self) {
         println!("Start Affine Lattice");
         match &self.elems {

@@ -8,9 +8,9 @@ use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
 impl ComRing for Integer {
-    fn to_string(&self) -> String {
-        ToString::to_string(&self)
-    }
+    // fn to_string(&self) -> String {
+    //     ToString::to_string(&self)
+    // }
 
     // fn equal( a: &Self, b: &Self) -> bool {
     //     a == b
@@ -30,8 +30,8 @@ impl ComRing for Integer {
         -self
     }
 
-    fn add_mut(elem: &mut Self, x: &Self) {
-        *elem += x;
+    fn add_mut(&mut self, x: &Self) {
+        *self += x;
     }
     fn add(a: Self, b: Self) -> Self {
         a + b
@@ -43,8 +43,8 @@ impl ComRing for Integer {
         a + b
     }
 
-    fn mul_mut(elem: &mut Self, x: &Self) {
-        *elem *= x;
+    fn mul_mut(&mut self, x: &Self) {
+        *self *= x;
     }
     fn mul(a: Self, b: Self) -> Self {
         a * b
@@ -131,6 +131,21 @@ impl FavoriteAssociate for Integer {
     }
 }
 
+fn factor_nat(mut n: Natural) -> HashMap<Natural, Natural> {
+    //TODO: more efficient implementations
+    assert_ne!(n, 0);
+    let mut fs = HashMap::new();
+    let mut p = Natural::from(2u8);
+    while n > 1 && p <= n {
+        while &n % &p == 0 {
+            *fs.entry(p.clone()).or_insert(Natural::from(0u8)) += Natural::from(1u8);
+            n /= &p;
+        }
+        p += Natural::from(1u8);
+    }
+    fs
+}
+
 impl UniqueFactorizationDomain for Integer {
     fn factor(&self) -> Option<Factored<Self>> {
         if self == &0 {
@@ -141,21 +156,6 @@ impl UniqueFactorizationDomain for Integer {
                 unit = Integer::from(-1);
             } else {
                 unit = Integer::from(1);
-            }
-
-            fn factor_nat(mut n: Natural) -> HashMap<Natural, Natural> {
-                //TODO: more efficient implementations
-                assert_ne!(n, 0);
-                let mut fs = HashMap::new();
-                let mut p = Natural::from(2u8);
-                while n > 1 && p <= n {
-                    while &n % &p == 0 {
-                        *fs.entry(p.clone()).or_insert(Natural::from(0u8)) += Natural::from(1u8);
-                        n /= &p;
-                    }
-                    p += Natural::from(1u8);
-                }
-                fs
             }
 
             Some(Factored::new_unchecked(
@@ -227,9 +227,9 @@ impl UniqueFactorizationDomain for Polynomial<Integer> {
 // }
 
 impl ComRing for Rational {
-    fn to_string(&self) -> String {
-        ToString::to_string(&self)
-    }
+    // fn to_string(&self) -> String {
+    //     ToString::to_string(&self)
+    // }
 
     // fn equal( a: &Self, b: &Self) -> bool {
     //     a == b
@@ -252,8 +252,8 @@ impl ComRing for Rational {
         -self
     }
 
-    fn add_mut(elem: &mut Self, x: &Self) {
-        *elem += x;
+    fn add_mut(&mut self, x: &Self) {
+        *self += x;
     }
     fn add(a: Self, b: Self) -> Self {
         a + b
@@ -265,8 +265,8 @@ impl ComRing for Rational {
         a + b
     }
 
-    fn mul_mut(elem: &mut Self, x: &Self) {
-        *elem *= x;
+    fn mul_mut(&mut self, x: &Self) {
+        *self *= x;
     }
     fn mul(a: Self, b: Self) -> Self {
         a * b

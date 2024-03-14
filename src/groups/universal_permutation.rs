@@ -23,8 +23,12 @@ impl Group for UniversalPermutation {
         todo!()
     }
 
-    fn compose(a: Self, b: Self) -> Self {
+    fn compose_refs(a: &Self, b: &Self) -> Self {
         todo!()
+    }
+
+    fn compose_mut(&mut self, other: &Self) {
+        *self = Self::compose_refs(self, other);
     }
 }
 

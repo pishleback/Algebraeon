@@ -5,28 +5,35 @@ extern crate glium;
 
 use std::str::FromStr;
 
+use crate::groups::group::*;
+use crate::rings::small_int::*;
 use drawing::canvas2d::*;
 use drawing::Canvas;
 use geometry::*;
+use glium::glutin::event::MouseButton;
+use groups::permutation::*;
 use itertools::Itertools;
+use malachite_base::num::arithmetic::traits::Mod;
 use malachite_base::num::conversion::traits::IntegerMantissaAndExponent;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 use rand::Rng;
-// use rings::algebraic::*;
+use rings::algebraic::*;
 use rings::ergonomic::*;
 use rings::multipoly::*;
 use rings::nzq::*;
 use rings::poly::*;
 use rings::ring::*;
 
+// use sets::permutations::Permutation;
+
 use crate::geometry::convex_simplicial_complex::*;
 use crate::geometry::vector::*;
 
 pub mod drawing;
-pub mod geometry;
 pub mod finite_group_tables;
+pub mod geometry;
 pub mod groups;
 pub mod numbers;
 pub mod rings;
@@ -82,7 +89,6 @@ fn main() {
 }
 */
 
-
 fn todo() {
     // let s = NaturalPrimeGenerator::new();
     // for p in s {
@@ -93,8 +99,6 @@ fn todo() {
     // let f = ZZ.factor(&x);
     // println!("{:?}", f);
 
-    
-    /*
     let f = Polynomial::from_coeffs(vec![
         Integer::from(1),
         Integer::from(0),
@@ -103,15 +107,17 @@ fn todo() {
         Integer::from(0),
         Integer::from(1),
     ]);
-    let roots = f.all_complex_roots(&f);
+    let roots = f.all_complex_roots();
 
-    let a = QQ_BAR.sum(roots.iter().collect());
+    for root in roots.iter() {
+        println!("{:?}", root);
+    }
+
+    let a = ComplexAlgebraic::sum(roots.iter().collect());
 
     println!("{:?}", a);
-    */
-    
 }
 
 fn main() {
-    println!("run");
+    println!("{}", Integer::from_str("3340958708998723908547").unwrap().factor().unwrap());
 }

@@ -1,4 +1,9 @@
-use std::{borrow::Borrow, collections::HashMap, fmt::Debug, hash::Hash};
+use std::{
+    borrow::Borrow,
+    collections::HashMap,
+    fmt::{Debug, Display},
+    hash::Hash,
+};
 
 use malachite_base::num::{arithmetic::traits::UnsignedAbs, logic::traits::BitIterable};
 use malachite_nz::{integer::Integer, natural::Natural};
@@ -14,7 +19,7 @@ pub trait ComRing: Clone + Debug + PartialEq + Eq {
     //todo: remove sized here
     // type ElemT: Sized + Clone + Debug;
 
-    fn to_string(&self) -> String; //TODO: remove this, replace with std::fmt::Display triat
+    // fn to_string(&self) -> String; //TODO: remove this, replace with std::fmt::Display triat
 
     // fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool;
 
@@ -30,7 +35,7 @@ pub trait ComRing: Clone + Debug + PartialEq + Eq {
         self
     }
 
-    fn add_mut(elem: &mut Self, offset: &Self);
+    fn add_mut(&mut self, offset: &Self);
     fn add(mut a: Self, b: Self) -> Self {
         Self::add_mut(&mut a, &b);
         a
@@ -45,7 +50,7 @@ pub trait ComRing: Clone + Debug + PartialEq + Eq {
         new_a
     }
 
-    fn mul_mut(elem: &mut Self, mul: &Self);
+    fn mul_mut(&mut self, mul: &Self);
     fn mul(mut a: Self, b: Self) -> Self {
         Self::mul_mut(&mut a, &b);
         a
@@ -103,15 +108,15 @@ pub trait ComRing: Clone + Debug + PartialEq + Eq {
         ans
     }
 
-    fn nat_pow(elem: &Self, n: &Natural) -> Self {
+    fn nat_pow(&self, n: &Natural) -> Self {
         if *n == 0 {
             Self::one()
         } else if *n == 1 {
-            elem.clone()
+            self.clone()
         } else {
             debug_assert!(*n >= 2);
             let bits: Vec<_> = n.bits().collect();
-            let mut pows = vec![elem.clone()];
+            let mut pows = vec![self.clone()];
             while pows.len() < bits.len() {
                 pows.push(Self::mul_refs(&pows.last().unwrap(), &pows.last().unwrap()));
             }
@@ -127,17 +132,17 @@ pub trait ComRing: Clone + Debug + PartialEq + Eq {
         }
     }
 
-    fn int_pow(elem: &Self, n: &Integer) -> Option<Self> {
+    fn int_pow(&self, n: &Integer) -> Option<Self> {
         // println!("{:?} {:?}", elem, n);
         if *n == 0 {
             Some(Self::one())
-        } else if elem == &Self::zero() {
+        } else if self == &Self::zero() {
             Some(Self::zero())
         } else if *n > 0 {
-            Some(Self::nat_pow(elem, &n.unsigned_abs()))
+            Some(Self::nat_pow(self, &n.unsigned_abs()))
         } else {
-            match Self::inv_ref(elem) {
-                Ok(elem_inv) => Some(Self::nat_pow(&elem_inv, &(-n).unsigned_abs())),
+            match Self::inv_ref(self) {
+                Ok(self_inv) => Some(Self::nat_pow(&self_inv, &(-n).unsigned_abs())),
                 Err(RingDivisionError::NotDivisible) => None,
                 Err(RingDivisionError::DivideByZero) => panic!(),
             }
@@ -183,12 +188,12 @@ pub trait ComRing: Clone + Debug + PartialEq + Eq {
         }
     }
 
-    fn inv(elem: Self) -> Result<Self, RingDivisionError> {
-        Self::div(Self::one(), elem)
+    fn inv(self) -> Result<Self, RingDivisionError> {
+        Self::div(Self::one(), self)
     }
 
-    fn inv_ref(a: &Self) -> Result<Self, RingDivisionError> {
-        Self::div_rref(Self::one(), a)
+    fn inv_ref(&self) -> Result<Self, RingDivisionError> {
+        Self::div_rref(Self::one(), self)
     }
 }
 
@@ -291,6 +296,22 @@ pub trait GreatestCommonDivisorDomain: FavoriteAssociate {
 pub struct Factored<Ring: UniqueFactorizationDomain> {
     unit: Ring,
     factors: Vec<(Ring, Natural)>,
+}
+
+impl<Ring: UniqueFactorizationDomain + Display> Display for Factored<Ring> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.unit);
+        for (factor, k) in &self.factors {
+            write!(f, " * (");
+            write!(f, "{}", factor);
+            write!(f, ")");
+            if k != &Natural::from(1u8) {
+                write!(f, "^");
+                write!(f, "{}", k);
+            }
+        }
+        Ok(())
+    }
 }
 
 impl<Ring: UniqueFactorizationDomain> Factored<Ring> {
@@ -408,20 +429,6 @@ impl<Ring: UniqueFactorizationDomain> Factored<Ring> {
             factors: vec![],
         }
     }
-
-    pub fn to_string(&self) -> String {
-        let mut s = Ring::to_string(&self.unit);
-        for (f, k) in &self.factors {
-            s += " * (";
-            s += &Ring::to_string(f);
-            s += ")";
-            if k != &Natural::from(1u8) {
-                s += "^";
-                s += &k.to_string();
-            }
-        }
-        s
-    }
 }
 
 pub fn full_factor_using_partial_factor<R: UniqueFactorizationDomain>(
@@ -538,22 +545,6 @@ pub trait PrincipalIdealDomain: GreatestCommonDivisorDomain {
                 (g, coeffs)
             }
         }
-
-        // if all(elem == 0 for elem in elems):
-        //     return cls.int(0), [cls.int(0) for elem in elems]
-        // elems = list(elems)
-        // assert len(elems) >= 1
-        // if len(elems) == 1:
-        //     return elems[0], [cls.int(1)]
-        // elif len(elems) == 2:
-        //     g, x, y = cls.xgcd(elems[0], elems[1])
-        //     return g, [x, y]
-        // else:
-        //     n = len(elems) // 2
-        //     g1, coeffs1 = cls.xgcd_list(elems[:n])
-        //     g2, coeffs2 = cls.xgcd_list(elems[n:])
-        //     g, x, y = cls.xgcd(g1, g2)
-        //     return g, [x * c for c in coeffs1] + [y * c for c in coeffs2]
     }
 }
 

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fmt::Display;
 use std::hash::Hash;
 use std::sync::atomic::AtomicUsize;
 
@@ -58,18 +59,17 @@ impl Hash for Monomial {
     }
 }
 
-impl ToString for Monomial {
-    fn to_string(&self) -> String {
+impl Display for Monomial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.prod.len() == 0 {
-            String::from("1")
+            write!(f, "1")
         } else {
-            let mut ans = String::from("");
             for VariablePower { var, pow } in &self.prod {
-                ans += &var.name;
-                ans += "^";
-                ans += pow.to_string().as_str();
+                write!(f, "{}", &var.name);
+                write!(f, "^");
+                write!(f, "{}", pow);
             }
-            ans
+            Ok(())
         }
     }
 }
@@ -244,25 +244,26 @@ impl<Ring: ComRing> PartialEq for MultiPolynomial<Ring> {
 
 impl<Ring: ComRing> Eq for MultiPolynomial<Ring> {}
 
-impl<Ring: ComRing> ComRing for MultiPolynomial<Ring> {
-    fn to_string(&self) -> String {
+impl<Ring: ComRing + Display> Display for MultiPolynomial<Ring> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.terms.len() == 0 {
-            String::from("0")
+            write!(f, "0")
         } else {
-            let mut ans = String::from("");
             for (idx, term) in self.terms.iter().enumerate() {
                 if idx != 0 {
-                    ans += "+";
+                    write!(f, "+");
                 }
-                ans += "(";
-                ans += Ring::to_string(&term.coeff).as_str();
-                ans += ")";
-                ans += term.monomial.to_string().as_str();
+                write!(f, "(");
+                write!(f, "{}", term.coeff);
+                write!(f, ")");
+                write!(f, "{}", term.monomial);
             }
-            ans
+            Ok(())
         }
     }
+}
 
+impl<Ring: ComRing> ComRing for MultiPolynomial<Ring> {
     fn zero() -> Self {
         MultiPolynomial { terms: vec![] }
     }
@@ -286,8 +287,8 @@ impl<Ring: ComRing> ComRing for MultiPolynomial<Ring> {
         }
     }
 
-    fn add_mut(elem: &mut Self, offset: &Self) {
-        elem.clone_from(&Self::add(elem.clone(), offset.clone()))
+    fn add_mut(&mut self, offset: &Self) {
+        self.clone_from(&Self::add(self.clone(), offset.clone()))
     }
 
     fn add(mut elem: Self, offset: Self) -> Self {
@@ -320,8 +321,8 @@ impl<Ring: ComRing> ComRing for MultiPolynomial<Ring> {
         ) //sort the coeffs
     }
 
-    fn mul_mut(elem: &mut Self, offset: &Self) {
-        elem.clone_from(&Self::mul_refs(&elem, &offset))
+    fn mul_mut(&mut self, offset: &Self) {
+        self.clone_from(&Self::mul_refs(&self, &offset))
     }
 
     fn mul_refs(a: &Self, b: &Self) -> Self {

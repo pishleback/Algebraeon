@@ -1,7 +1,8 @@
+
 use super::group::Group;
 
 #[derive(Debug, Clone)]
-struct Cycle<const N: usize> {
+pub struct Cycle<const N: usize> {
     cyc: Vec<usize>,
 }
 
@@ -38,7 +39,7 @@ impl<const N: usize> std::convert::From<Cycle<N>> for Permutation<N> {
 }
 
 #[derive(Debug, Clone)]
-struct Permutation<const N: usize> {
+pub struct Permutation<const N: usize> {
     perm: [usize; N],
 }
 
@@ -59,6 +60,13 @@ impl<const N: usize> Permutation<N> {
         }
 
         Ok(Self { perm })
+    }
+
+    pub fn call(&self, x: usize) -> Result<usize, &'static str> {
+        if !(x < self.perm.len()) {
+            return Err("argument too large");
+        }
+        Ok(self.perm[x])
     }
 
     pub fn disjoint_cycles(&self) -> Vec<Cycle<N>> {
@@ -135,12 +143,16 @@ impl<const N: usize> Group for Permutation<N> {
         Self { perm: inv_perm }
     }
 
-    fn compose(a: Self, b: Self) -> Self {
+    fn compose_refs(a: &Self, b: &Self) -> Self {
         let mut comp_perm = [0; N];
         for i in 0..N {
             comp_perm[i] = a.perm[b.perm[i]];
         }
         Self { perm: comp_perm }
+    }
+
+    fn compose_mut(&mut self, other: &Self) {
+        *self = Self::compose_refs(self, other);
     }
 }
 

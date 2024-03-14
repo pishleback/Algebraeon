@@ -1,4 +1,4 @@
-use std::borrow::Borrow;
+use std::{borrow::Borrow, fmt::Display};
 
 use super::{lattice::*, nzq::*, poly::*, ring::*};
 
@@ -210,7 +210,7 @@ impl<Ring: ComRing> PartialEq for Matrix<Ring> {
 
 impl<Ring: ComRing> Eq for Matrix<Ring> {}
 
-impl<Ring: ComRing> Matrix<Ring> {
+impl<Ring: ComRing + Display> Matrix<Ring> {
     pub fn pprint(&self) {
         let mut str_rows = vec![];
         for r in 0..self.rows() {
@@ -262,7 +262,9 @@ impl<Ring: ComRing> Matrix<Ring> {
             print!("\n");
         }
     }
+}
 
+impl<Ring: ComRing> Matrix<Ring> {
     pub fn zero(rows: usize, cols: usize) -> Self {
         Matrix::construct(rows, cols, |_r, _c| Ring::zero())
     }
