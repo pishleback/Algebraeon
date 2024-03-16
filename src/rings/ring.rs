@@ -108,7 +108,8 @@ pub trait ComRing: Clone + Debug + PartialEq + Eq {
         ans
     }
 
-    fn nat_pow(&self, n: &Natural) -> Self {
+    fn nat_pow(&self, n: impl Borrow<Natural>) -> Self {
+        let n = n.borrow();
         if *n == 0 {
             Self::one()
         } else if *n == 1 {
