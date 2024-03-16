@@ -1,3 +1,5 @@
+use malachite_nz::{integer::Integer, natural::Natural};
+
 use super::ring::*;
 use std::{fmt::Display, hash::Hash};
 
@@ -30,10 +32,52 @@ pub struct Modulo<const N: usize> {
     x: usize,
 }
 
-impl<const N: usize> Modulo<N> {
-    pub fn new(x: isize) -> Self {
-        assert!(N >= 1);
-        Self { x: modulo(x, N) }
+// impl<const N: usize> Modulo<N> {
+//     pub fn new(x: isize) -> Self {
+//         assert!(N >= 1);
+//         Self { x: modulo(x, N) }
+//     }
+// }
+
+impl <const N: usize> Modulo<N> {
+    pub fn lift_nat(&self) -> Natural {
+        Natural::from(self.x)
+    }
+    pub fn lift_int(&self) -> Integer {
+        Integer::from(self.x)
+    }
+}
+
+impl<const N: usize> From<&malachite_nz::integer::Integer> for Modulo<N> {
+    fn from(value: &malachite_nz::integer::Integer) -> Self {
+        let value = value % Integer::from(N);
+        let value = value.unsigned_abs_ref();
+        Self {
+            x: malachite_base::num::conversion::traits::ExactInto::exact_into(value),
+        }
+    }
+}
+impl<const N: usize> From<malachite_nz::integer::Integer> for Modulo<N> {
+    fn from(value: malachite_nz::integer::Integer) -> Self {
+        let value = value % Integer::from(N);
+        let value = value.unsigned_abs_ref();
+        Self {
+            x: malachite_base::num::conversion::traits::ExactInto::exact_into(value),
+        }
+    }
+}
+impl<const N: usize> From<isize> for Modulo<N> {
+    fn from(value: isize) -> Self {
+        Self {
+            x: modulo(value as isize, N),
+        }
+    }
+}
+impl<const N: usize> From<i32> for Modulo<N> {
+    fn from(value: i32) -> Self {
+        Self {
+            x: modulo(value as isize, N),
+        }
     }
 }
 

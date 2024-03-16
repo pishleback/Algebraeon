@@ -119,5 +119,7 @@ fn todo() {
 }
 
 fn main() {
-    println!("{}", Integer::from_str("3340958708998723908547").unwrap().factor().unwrap());
+    let f = Polynomial::<Modulo<5>>::from_coeffs(vec![Modulo::from(-1), Modulo::from(3), Modulo::from(2), Modulo::from(1), Modulo::from(1)]);
+    println!("{}", f);
+    println!("{}", f.factor().unwrap());
 }

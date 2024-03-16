@@ -185,19 +185,19 @@ impl<Ring: ComRing> Polynomial<Ring> {
         }
     }
 
-    fn try_quorem(a: Self, b: Self) -> Result<(Self, Self), RingDivisionError> {
+    pub fn try_quorem(a: Self, b: Self) -> Result<(Self, Self), RingDivisionError> {
         Self::try_quorem_rref(a, &b)
     }
 
-    fn try_quorem_lref(a: &Self, b: Self) -> Result<(Self, Self), RingDivisionError> {
+    pub fn try_quorem_lref(a: &Self, b: Self) -> Result<(Self, Self), RingDivisionError> {
         Self::try_quorem_refs(a, &b)
     }
 
-    fn try_quorem_refs(a: &Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
+    pub fn try_quorem_refs(a: &Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
         Self::try_quorem_rref(a.clone(), b)
     }
 
-    fn try_quorem_rref(mut a: Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
+    pub fn try_quorem_rref(mut a: Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
         //try to find q such that q*b == a
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
@@ -338,6 +338,13 @@ impl<Ring: ComRing> Polynomial<Ring> {
             Some(self.coeffs[0].clone())
         } else {
             None
+        }
+    }
+
+    pub fn is_monic(&self) -> bool {
+        match self.degree() {
+            Some(d) => self.coeff(d) == Ring::one(),
+            None => false,
         }
     }
 
@@ -1619,6 +1626,17 @@ mod tests {
         let f = Polynomial::<Integer>::one();
         let g = Polynomial::<Integer>::zero();
         assert_eq!(f.derivative(), g);
+    }
+
+    #[test]
+    fn test_monic() {
+        assert!(!Polynomial::<Integer>::zero().is_monic());
+        assert!(Polynomial::<Integer>::one().is_monic());
+        let x = &Ergonomic::new(Polynomial::<Integer>::var());
+        let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3) + x.pow(4)).elem();
+        let g = (3 - 2 * x + 21 * x.pow(2)).elem();
+        assert!(f.is_monic());
+        assert!(!g.is_monic());
     }
 
     // #[test]

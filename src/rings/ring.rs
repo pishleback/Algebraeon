@@ -781,142 +781,179 @@ pub trait FieldOfFractions: Field {
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct EuclideanQuotient<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain>
-// {
-//     ed: ED,
-//     n: ED::ElemT,
-// }
+#[derive(Debug, Clone)]
+pub struct EuclideanQuotient<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain>
+{
+    a: ED,
+    n: Option<ED>,
+}
 
-// impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain>
-//     EuclideanQuotient<IS_FIELD, ED>
-// {
-//     pub fn get_ed(&self) -> ED {
-//         self.ed.clone()
-//     }
+impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> PartialEq
+    for EuclideanQuotient<IS_FIELD, ED>
+{
+    fn eq(&self, other: &Self) -> bool {
+        let n_opt = match (&self.n, &other.n) {
+            (None, None) => None,
+            (None, Some(other_n)) => Some(other_n),
+            (Some(self_n), None) => Some(self_n),
+            (Some(self_n), Some(other_n)) => {
+                assert_eq!(self_n, other_n);
+                Some(self_n)
+            }
+        };
+        match n_opt {
+            Some(n) => {
+                ED::rem_refs(&ED::add_ref(other.a.neg_ref(), &self.a), n).unwrap() == ED::zero()
+            }
+            None => self.a == other.a,
+        }
+    }
+}
 
-//     pub fn get_n(&self) -> ED::ElemT {
-//         self.n.clone()
-//     }
-// }
+impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> Eq
+    for EuclideanQuotient<IS_FIELD, ED>
+{
+}
 
-// impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> PartialEq
-//     for EuclideanQuotient<IS_FIELD, ED>
-// {
-//     fn eq(&self, other: &Self) -> bool {
-//         if self.ed == other.ed {
-//             let ans = self.ed.equal(&self.n, &other.n);
-//             debug_assert_eq!(ans, other.ed.equal(&self.n, &other.n));
-//             ans
-//         } else {
-//             false
-//         }
-//     }
-// }
+impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain>
+    EuclideanQuotient<IS_FIELD, ED>
+{
+    pub fn check_invariants(&self) -> Result<(), &'static str> {
+        match &self.n {
+            Some(n) => {
+                if n == &ED::zero() {
+                    return Err("Can't quotient by zero");
+                }
+                if IS_FIELD {
+                    if !n.is_irreducible().unwrap() {
+                        return Err("Marked as field but modulus is not irreducible");
+                    }
+                }
+            }
+            None => {}
+        }
+        Ok(())
+    }
 
-// impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> Eq
-//     for EuclideanQuotient<IS_FIELD, ED>
-// {
-// }
+    pub fn new(a: ED, n: ED) -> Self {
+        debug_assert!(n != ED::zero());
+        if IS_FIELD {
+            debug_assert!(n.is_irreducible().unwrap());
+        }
+        Self { a, n: Some(n) }
+    }
 
-// impl<ED: EuclideanDomain + UniqueFactorizationDomain> EuclideanQuotient<false, ED> {
-//     pub fn new_ring(ed: ED, n: ED::ElemT) -> Self {
-//         Self { ed, n }
-//     }
-// }
+    pub fn lift(self) -> ED {
+        self.a
+    }
 
-// impl<ED: EuclideanDomain + UniqueFactorizationDomain> EuclideanQuotient<true, ED> {
-//     pub fn new_field_unchecked(ed: ED, n: ED::ElemT) -> Self {
-//         Self { ed, n }
-//     }
-// }
+    pub fn enforce_modulus(&mut self, n: ED) {
+        match &self.n {
+            Some(self_n) => {
+                assert_eq!(self_n, &n);
+            }
+            None => {
+                self.n = Some(n);
+            }
+        }
+    }
+}
 
-// impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain>
-//     EuclideanQuotient<IS_FIELD, ED>
-// {
-//     pub fn check_invariants(&self) -> Result<(), &'static str> {
-//         if self.ed.equal(&self.n, &self.ed.zero()) {
-//             return Err("cant quotient by zero");
-//         }
+impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> ComRing
+    for EuclideanQuotient<IS_FIELD, ED>
+{
+    fn zero() -> Self {
+        Self {
+            a: ED::zero(),
+            n: None,
+        }
+    }
 
-//         if IS_FIELD {
-//             if !self.ed.is_irreducible(&self.n).unwrap() {
-//                 return Err("marked as field but element is not irreducible");
-//             }
-//         }
+    fn one() -> Self {
+        Self {
+            a: ED::one(),
+            n: None,
+        }
+    }
 
-//         Ok(())
-//     }
-// }
+    fn neg_mut(&mut self) {
+        self.a.neg_mut()
+    }
 
-// impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> ComRing
-//     for EuclideanQuotient<IS_FIELD, ED>
-// {
-//     type ElemT = ED::ElemT;
+    fn add_mut(&mut self, other: &Self) {
+        self.a.add_mut(&other.a);
+        match (&self.n, &other.n) {
+            (None, None) => {}
+            (None, Some(other_n)) => {
+                self.a = ED::rem_refs(&self.a, other_n).unwrap();
+            }
+            (Some(self_n), None) => {
+                self.a = ED::rem_refs(&self.a, self_n).unwrap();
+            }
+            (Some(self_n), Some(other_n)) => {
+                assert_eq!(self_n, other_n);
+                self.a = ED::rem_refs(&self.a, self_n).unwrap();
+            }
+        }
+    }
 
-//     fn to_string(&self, elem: &Self::ElemT) -> String {
-//         self.ed.to_string(elem)
-//     }
+    fn mul_mut(&mut self, other: &Self) {
+        self.a.mul_mut(&other.a);
+        match (&self.n, &other.n) {
+            (None, None) => {}
+            (None, Some(other_n)) => {
+                self.a = ED::rem_refs(&self.a, other_n).unwrap();
+            }
+            (Some(self_n), None) => {
+                self.a = ED::rem_refs(&self.a, self_n).unwrap();
+            }
+            (Some(self_n), Some(other_n)) => {
+                assert_eq!(self_n, other_n);
+                self.a = ED::rem_refs(&self.a, self_n).unwrap();
+            }
+        }
+    }
 
-//     fn equal(&self, a: &Self::ElemT, b: &Self::ElemT) -> bool {
-//         self.ed.equal(
-//             &self
-//                 .ed
-//                 .rem_rref(self.ed.add_ref(self.ed.neg_ref(a), b), &self.n)
-//                 .unwrap(),
-//             &self.zero(),
-//         )
-//     }
+    fn div(top: Self, bot: Self) -> Result<Self, RingDivisionError> {
+        let n = {
+            match (&top.n, &bot.n) {
+                (None, None) => {
+                    panic!("At least one modulus must be present for division in quotient of Euclidean domain");
+                }
+                (None, Some(bot_n)) => bot_n,
+                (Some(top_n), None) => top_n,
+                (Some(top_n), Some(bot_n)) => {
+                    assert_eq!(top_n, bot_n);
+                    top_n
+                }
+            }
+        };
 
-//     fn zero(&self) -> Self::ElemT {
-//         self.ed.zero()
-//     }
+        if bot == Self::zero() {
+            Err(RingDivisionError::DivideByZero)
+        } else {
+            let (g, _x, y) = ED::xgcd(n.clone(), bot.a);
+            //g = xn + yb  so   g = yb mod n
+            //if z = a/g works then
+            //zyb = a mod n
+            match ED::div(top.a, g) {
+                Ok(z) => Ok(Self {
+                    a: ED::mul(z, y),
+                    n: Some(n.clone()),
+                }),
+                Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+                Err(RingDivisionError::DivideByZero) => panic!(),
+            }
+        }
+    }
+}
 
-//     fn one(&self) -> Self::ElemT {
-//         self.ed.one()
-//     }
+impl<ED: EuclideanDomain + UniqueFactorizationDomain> IntegralDomain
+    for EuclideanQuotient<true, ED>
+{
+}
 
-//     fn neg_mut(&self, elem: &mut Self::ElemT) {
-//         *elem = self.ed.rem_rref(self.ed.neg_ref(elem), &self.n).unwrap();
-//     }
-
-//     fn add_mut(&self, elem: &mut Self::ElemT, offset: &Self::ElemT) {
-//         *elem = self
-//             .ed
-//             .rem_rref(self.ed.add_refs(elem, offset), &self.n)
-//             .unwrap();
-//     }
-
-//     fn mul_mut(&self, elem: &mut Self::ElemT, mul: &Self::ElemT) {
-//         *elem = self
-//             .ed
-//             .rem_rref(self.ed.mul_refs(elem, mul), &self.n)
-//             .unwrap();
-//     }
-
-//     fn div(&self, a: Self::ElemT, b: Self::ElemT) -> Result<Self::ElemT, RingDivisionError> {
-//         if self.equal(&b, &self.zero()) {
-//             Err(RingDivisionError::DivideByZero)
-//         } else {
-//             let (g, _x, y) = self.ed.xgcd(self.n.clone(), b);
-//             //g = xn + yb  so   g = yb mod n
-//             //if z = a/g works then
-//             //zyb = a mod n
-//             match self.ed.div(a, g) {
-//                 Ok(z) => Ok(self.mul(z, y)),
-//                 Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-//                 Err(RingDivisionError::DivideByZero) => panic!(),
-//             }
-//         }
-//     }
-// }
-
-// impl<ED: EuclideanDomain + UniqueFactorizationDomain> IntegralDomain
-//     for EuclideanQuotient<true, ED>
-// {
-// }
-
-// impl<ED: EuclideanDomain + UniqueFactorizationDomain> Field for EuclideanQuotient<true, ED> {}
+impl<ED: EuclideanDomain + UniqueFactorizationDomain> Field for EuclideanQuotient<true, ED> {}
 
 //IdealQuotient
 //PrimeQuotient
