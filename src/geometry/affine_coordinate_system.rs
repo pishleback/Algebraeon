@@ -1,6 +1,6 @@
 use crate::{
     geometry::vector::Vector,
-    rings::{
+    rings::linear::{
         lattice::{AffineLattice, LinearLattice},
         matrix::Matrix,
     },
@@ -78,7 +78,7 @@ impl AffineSubspaceCoordinateSystem {
     }
 
     pub fn from_affine_lattice(
-        afflat: crate::rings::lattice::AffineLattice<Rational>,
+        afflat: AffineLattice<Rational>,
     ) -> Option<Self> {
         let dim = afflat.rows();
         match afflat.to_offset_and_linear_lattice() {
@@ -95,7 +95,7 @@ impl AffineSubspaceCoordinateSystem {
         }
     }
 
-    pub fn to_affine_lattice(&self) -> crate::rings::lattice::AffineLattice<Rational> {
+    pub fn to_affine_lattice(&self) -> AffineLattice<Rational> {
         AffineLattice::from_offset_and_linear_lattice(
             self.dim,
             1,

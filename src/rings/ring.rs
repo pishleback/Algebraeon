@@ -9,7 +9,7 @@ use malachite_base::num::{arithmetic::traits::UnsignedAbs, logic::traits::BitIte
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RingDivisionError {
     DivideByZero,
     NotDivisible,
@@ -92,18 +92,18 @@ pub trait ComRing: Clone + Debug + PartialEq + Eq {
         }
     }
 
-    fn sum(elems: Vec<&Self>) -> Self {
+    fn sum(elems: Vec<impl Borrow<Self>>) -> Self {
         let mut ans = Self::zero();
         for elem in elems {
-            ans = Self::add_ref(ans, elem);
+            ans.add_mut(elem.borrow());
         }
         ans
     }
 
-    fn product(elems: Vec<&Self>) -> Self {
+    fn product(elems: Vec<impl Borrow<Self>>) -> Self {
         let mut ans = Self::one();
         for elem in elems {
-            ans = Self::mul_ref(ans, elem);
+            ans.mul_mut(elem.borrow());
         }
         ans
     }
@@ -241,6 +241,11 @@ pub trait FiniteUnits: ComRing {
     fn all_units() -> Vec<Self>;
 }
 
+pub trait FiniteField: FiniteUnits + Field {
+    //reutrn (p, k) where p is a prime and k>=1 such that |F|=p^k
+    fn characteristic_and_power() -> (Natural, Natural);
+}
+
 pub trait IntegralDomain: ComRing {
     //promise that mul(a, b) == 0 implies a == 0 or b == 0
 }
@@ -324,14 +329,11 @@ impl<Ring: UniqueFactorizationDomain> Factored<Ring> {
             if k == &0 {
                 return Err("prime powers must not be zero");
             }
-            if p == &Ring::zero() {
-                return Err("prime factor must not be zero");
+            if !p.is_fav_assoc() {
+                return Err("prime factor must be their favoriate associate");
             }
-            if !Ring::is_fav_assoc(p) {
-                return Err("prime factor must be their fav assoc");
-            }
-            if !Ring::is_irreducible(p).unwrap() {
-                return Err("prime factor must not be reducible");
+            if !p.is_irreducible() {
+                return Err("prime factor must be irreducible");
             }
 
             let mut i = Natural::from(0u8);
@@ -374,6 +376,10 @@ impl<Ring: UniqueFactorizationDomain> Factored<Ring> {
         &self.factors
     }
 
+    // pub fn into_factors(self) -> Vec<(Ring, Natural)> {
+    //     self.factors
+    // }
+
     pub fn is_irreducible(&self) -> bool {
         if self.factors.len() == 1 {
             let (_p, k) = self.factors.iter().next().unwrap();
@@ -401,12 +407,26 @@ impl<Ring: UniqueFactorizationDomain> Factored<Ring> {
         self.factors.push((p, k));
     }
 
+    pub fn mul_mut(&mut self, other: Self) {
+        self.unit.mul_mut(&other.unit);
+        for (p, k) in other.factors {
+            self.mul_by_unchecked(p, k);
+        }
+    }
+
     pub fn mul(mut a: Self, b: Self) -> Self {
         Ring::mul_mut(&mut a.unit, &b.unit);
         for (p, k) in b.factors {
             a.mul_by_unchecked(p, k)
         }
         a
+    }
+
+    pub fn pow(mut self, k: &Natural) -> Self {
+        for (factor, power) in self.factors.iter_mut() {
+            *power *= k;
+        }
+        self
     }
 
     pub fn factored_one() -> Self {
@@ -424,19 +444,64 @@ impl<Ring: UniqueFactorizationDomain> Factored<Ring> {
         }
     }
 
+    pub fn factored_irreducible_power_unchecked(elem: Ring, k: Natural) -> Self {
+        debug_assert!(k >= 1);
+        let (unit, assoc) = Ring::factor_fav_assoc(elem);
+        Factored {
+            unit,
+            factors: vec![(assoc, k)],
+        }
+    }
+
     pub fn factored_unit_unchecked(unit: Ring) -> Self {
         Factored {
             unit,
             factors: vec![],
         }
     }
+
+    pub fn divisors<'a>(&'a self) -> Box<dyn Iterator<Item = Ring> + 'a> {
+        if self.factors.len() == 0 {
+            Box::new(vec![Ring::one()].into_iter())
+        } else {
+            let mut factor_powers = vec![];
+            for (p, k) in &self.factors {
+                let j = factor_powers.len();
+                factor_powers.push(vec![]);
+                let mut p_pow = Ring::one();
+                let mut i = Natural::from(0u8);
+                while &i <= k {
+                    factor_powers[j].push(p_pow.clone());
+                    p_pow = Ring::mul_ref(p_pow, &p);
+                    i += Natural::from(1u8);
+                }
+            }
+
+            Box::new(
+                itertools::Itertools::multi_cartesian_product(
+                    factor_powers.into_iter().map(|p_pows| p_pows.into_iter()),
+                )
+                .map(|prime_power_factors| {
+                    Ring::product(prime_power_factors.iter().collect()).clone()
+                }),
+            )
+        }
+    }
+
+    pub fn count_divisors(&self) -> Option<Natural> {
+        let mut count = Natural::from(1u8);
+        for (_p, k) in &self.factors {
+            count *= k + Natural::from(1u8);
+        }
+        Some(count)
+    }
 }
 
-pub fn full_factor_using_partial_factor<R: UniqueFactorizationDomain>(
+pub fn factorize_by_find_factor<R: UniqueFactorizationDomain>(
     elem: R,
     partial_factor: &impl Fn(R) -> Option<(R, R)>,
 ) -> Factored<R> {
-    pub fn full_factor_using_partial_factor_no_unit<R: UniqueFactorizationDomain>(
+    pub fn factorize_nonunit_by_find_factor<R: UniqueFactorizationDomain>(
         elem: R,
         partial_factor: &impl Fn(R) -> Option<(R, R)>,
     ) -> Factored<R> {
@@ -444,8 +509,8 @@ pub fn full_factor_using_partial_factor<R: UniqueFactorizationDomain>(
         debug_assert!(!R::is_unit(elem.clone()));
         match partial_factor(elem.clone()) {
             Some((g, h)) => Factored::mul(
-                full_factor_using_partial_factor(g, partial_factor),
-                full_factor_using_partial_factor(h, partial_factor),
+                factorize_by_find_factor(g, partial_factor),
+                factorize_by_find_factor(h, partial_factor),
             ),
             None => {
                 //f is irreducible
@@ -457,7 +522,7 @@ pub fn full_factor_using_partial_factor<R: UniqueFactorizationDomain>(
     if R::is_unit(elem.clone()) {
         Factored::factored_unit_unchecked(elem)
     } else {
-        full_factor_using_partial_factor_no_unit(elem, partial_factor)
+        factorize_nonunit_by_find_factor(elem, partial_factor)
     }
 }
 
@@ -473,47 +538,11 @@ pub trait UniqueFactorizationDomain: FavoriteAssociate + Hash {
     //a UFD with an explicit algorithm to compute unique factorizations
     fn factor(&self) -> Option<Factored<Self>>;
 
-    fn is_irreducible(&self) -> Option<bool> {
+    fn is_irreducible(&self) -> bool {
         match self.factor() {
-            None => None,
-            Some(factored) => Some(factored.is_irreducible()),
+            None => false, //zero is not irreducible
+            Some(factored) => factored.is_irreducible(),
         }
-    }
-
-    fn divisors<'a>(factored: &'a Factored<Self>) -> Box<dyn Iterator<Item = Self> + 'a> {
-        if factored.factors.len() == 0 {
-            Box::new(vec![Self::one()].into_iter())
-        } else {
-            let mut factor_powers = vec![];
-            for (p, k) in &factored.factors {
-                let j = factor_powers.len();
-                factor_powers.push(vec![]);
-                let mut p_pow = Self::one();
-                let mut i = Natural::from(0u8);
-                while &i <= k {
-                    factor_powers[j].push(p_pow.clone());
-                    p_pow = Self::mul_ref(p_pow, &p);
-                    i += Natural::from(1u8);
-                }
-            }
-
-            Box::new(
-                itertools::Itertools::multi_cartesian_product(
-                    factor_powers.into_iter().map(|p_pows| p_pows.into_iter()),
-                )
-                .map(|prime_power_factors| {
-                    Self::product(prime_power_factors.iter().collect()).clone()
-                }),
-            )
-        }
-    }
-
-    fn count_divisors(factored: &Factored<Self>) -> Option<Natural> {
-        let mut count = Natural::from(1u8);
-        for (_p, k) in &factored.factors {
-            count *= k + Natural::from(1u8);
-        }
-        Some(count)
     }
 }
 
@@ -579,19 +608,21 @@ pub trait EuclideanDomain: IntegralDomain {
         Self::quo(a.clone(), b.clone())
     }
 
-    fn rem(a: Self, b: Self) -> Option<Self> {
-        match Self::quorem(a, b) {
-            Some((_q, r)) => Some(r),
-            None => None,
+    fn rem(a: Self, b: Self) -> Self {
+        if b != Self::zero() {
+            let (_q, r) = Self::quorem(a, b).unwrap();
+            r
+        } else {
+            a
         }
     }
-    fn rem_lref(a: &Self, b: Self) -> Option<Self> {
+    fn rem_lref(a: &Self, b: Self) -> Self {
         Self::rem(a.clone(), b)
     }
-    fn rem_rref(a: Self, b: &Self) -> Option<Self> {
+    fn rem_rref(a: Self, b: &Self) -> Self {
         Self::rem(a, b.clone())
     }
-    fn rem_refs(a: &Self, b: &Self) -> Option<Self> {
+    fn rem_refs(a: &Self, b: &Self) -> Self {
         Self::rem(a.clone(), b.clone())
     }
 }
@@ -600,7 +631,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> GreatestCommonDivisorDomain for R {
     fn gcd(mut x: Self, mut y: Self) -> Self {
         //Euclidean algorithm
         while y != Self::zero() {
-            let r = Self::rem_rref(x, &y).unwrap();
+            let r = Self::rem_rref(x, &y);
             (x, y) = (y, r)
         }
         let (_unit, assoc) = Self::factor_fav_assoc(x);
@@ -721,35 +752,35 @@ impl<F: Field> EuclideanDomain for F {
         }
     }
 
-    fn rem(_a: Self, b: Self) -> Option<Self> {
+    fn rem(a: Self, b: Self) -> Self {
         if b == Self::zero() {
-            None
+            a
         } else {
-            Some(Self::zero())
+            Self::zero()
         }
     }
 
-    fn rem_lref(_a: &Self, b: Self) -> Option<Self> {
+    fn rem_lref(a: &Self, b: Self) -> Self {
         if b == Self::zero() {
-            None
+            a.clone()
         } else {
-            Some(Self::zero())
+            Self::zero()
         }
     }
 
-    fn rem_rref(_a: Self, b: &Self) -> Option<Self> {
+    fn rem_rref(a: Self, b: &Self) -> Self {
         if b == &Self::zero() {
-            None
+            a
         } else {
-            Some(Self::zero())
+            Self::zero()
         }
     }
 
-    fn rem_refs(_a: &Self, b: &Self) -> Option<Self> {
+    fn rem_refs(a: &Self, b: &Self) -> Self {
         if b == &Self::zero() {
-            None
+            a.clone()
         } else {
-            Some(Self::zero())
+            Self::zero()
         }
     }
 }
@@ -783,178 +814,142 @@ pub trait FieldOfFractions: Field {
 }
 
 #[derive(Debug, Clone)]
-pub struct EuclideanQuotient<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain>
-{
-    a: ED,
-    n: Option<ED>,
+pub struct UniversalEuclideanQuotient<
+    const IS_FIELD: bool,
+    Ring: EuclideanDomain + UniqueFactorizationDomain,
+> {
+    rep: Ring, //need not be a minimal representative with respect to the euclidean norm
+    modulus: Ring,
+    /*
+    When two elements are combined the gcd of their modulii is used
+
+    When IS_FIELD=true the modulus must be prime
+    modulus=0 is also permitted for values holding integers in the ring.
+    integers with modulus=0 are only to be thought of only as elements of an abstract field
+    therefore it is invalid (and will cause a panic) to divide by any integer other than +/-1, since the characteristic of the field is unknown
+    */
 }
 
-impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> PartialEq
-    for EuclideanQuotient<IS_FIELD, ED>
+impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain> PartialEq
+    for UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
     fn eq(&self, other: &Self) -> bool {
-        let n_opt = match (&self.n, &other.n) {
-            (None, None) => None,
-            (None, Some(other_n)) => Some(other_n),
-            (Some(self_n), None) => Some(self_n),
-            (Some(self_n), Some(other_n)) => {
-                assert_eq!(self_n, other_n);
-                Some(self_n)
-            }
-        };
-        match n_opt {
-            Some(n) => {
-                ED::rem_refs(&ED::add_ref(other.a.neg_ref(), &self.a), n).unwrap() == ED::zero()
-            }
-            None => self.a == other.a,
-        }
+        let modulus = Ring::gcd(self.modulus.clone(), other.modulus.clone());
+        Ring::rem(Ring::add_ref(other.rep.neg_ref(), &self.rep), modulus) == Ring::zero()
     }
 }
 
-impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> Eq
-    for EuclideanQuotient<IS_FIELD, ED>
+impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain> Eq
+    for UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
 }
 
-impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain>
-    EuclideanQuotient<IS_FIELD, ED>
+impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain>
+    UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
-        match &self.n {
-            Some(n) => {
-                if n == &ED::zero() {
-                    return Err("Can't quotient by zero");
-                }
-                if IS_FIELD {
-                    if !n.is_irreducible().unwrap() {
-                        return Err("Marked as field but modulus is not irreducible");
-                    }
-                }
+        if IS_FIELD {
+            if !(self.modulus.is_irreducible() || self.modulus == Ring::zero()) {
+                return Err("Marked as field but modulus is not irreducible or zero");
+                //if self.modulus is zero there is the further unchecked constraint that rep should be the image of an integer in the ring
             }
-            None => {}
         }
         Ok(())
     }
 
-    pub fn new(a: ED, n: ED) -> Self {
-        debug_assert!(n != ED::zero());
+    pub fn new(a: Ring, n: Ring) -> Self {
         if IS_FIELD {
-            debug_assert!(n.is_irreducible().unwrap());
+            debug_assert!(n.is_irreducible());
         }
-        Self { a, n: Some(n) }
+        Self { rep: a, modulus: n }
     }
 
-    pub fn lift(self) -> ED {
-        self.a
+    pub fn lift(self) -> Ring {
+        self.rep
     }
 
-    pub fn enforce_modulus(&mut self, n: ED) {
-        match &self.n {
-            Some(self_n) => {
-                assert_eq!(self_n, &n);
-            }
-            None => {
-                self.n = Some(n);
-            }
-        }
+    pub fn enforce_modulus(&mut self, modulus: Ring) {
+        self.modulus = Ring::gcd(self.modulus.clone(), modulus);
     }
 }
 
-impl<const IS_FIELD: bool, ED: EuclideanDomain + UniqueFactorizationDomain> ComRing
-    for EuclideanQuotient<IS_FIELD, ED>
+impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain> ComRing
+    for UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
     fn zero() -> Self {
         Self {
-            a: ED::zero(),
-            n: None,
+            rep: Ring::zero(),
+            modulus: Ring::zero(),
         }
     }
 
     fn one() -> Self {
         Self {
-            a: ED::one(),
-            n: None,
+            rep: Ring::one(),
+            modulus: Ring::zero(),
         }
     }
 
     fn neg_mut(&mut self) {
-        self.a.neg_mut()
+        self.rep.neg_mut()
     }
 
     fn add_mut(&mut self, other: &Self) {
-        self.a.add_mut(&other.a);
-        match (&self.n, &other.n) {
-            (None, None) => {}
-            (None, Some(other_n)) => {
-                self.a = ED::rem_refs(&self.a, other_n).unwrap();
-            }
-            (Some(self_n), None) => {
-                self.a = ED::rem_refs(&self.a, self_n).unwrap();
-            }
-            (Some(self_n), Some(other_n)) => {
-                assert_eq!(self_n, other_n);
-                self.a = ED::rem_refs(&self.a, self_n).unwrap();
-            }
-        }
+        self.rep.add_mut(&other.rep);
+        let modulus = Ring::gcd(self.modulus.clone(), other.modulus.clone());
+        self.rep = Ring::rem_refs(&self.rep, &modulus);
+        self.modulus = modulus;
     }
 
     fn mul_mut(&mut self, other: &Self) {
-        self.a.mul_mut(&other.a);
-        match (&self.n, &other.n) {
-            (None, None) => {}
-            (None, Some(other_n)) => {
-                self.a = ED::rem_refs(&self.a, other_n).unwrap();
-            }
-            (Some(self_n), None) => {
-                self.a = ED::rem_refs(&self.a, self_n).unwrap();
-            }
-            (Some(self_n), Some(other_n)) => {
-                assert_eq!(self_n, other_n);
-                self.a = ED::rem_refs(&self.a, self_n).unwrap();
-            }
-        }
+        self.rep.mul_mut(&other.rep);
+        let modulus = Ring::gcd(self.modulus.clone(), other.modulus.clone());
+        self.rep = Ring::rem_refs(&self.rep, &modulus);
+        self.modulus = modulus;
     }
 
     fn div(top: Self, bot: Self) -> Result<Self, RingDivisionError> {
-        let n = {
-            match (&top.n, &bot.n) {
-                (None, None) => {
-                    panic!("At least one modulus must be present for division in quotient of Euclidean domain");
-                }
-                (None, Some(bot_n)) => bot_n,
-                (Some(top_n), None) => top_n,
-                (Some(top_n), Some(bot_n)) => {
-                    assert_eq!(top_n, bot_n);
-                    top_n
-                }
-            }
-        };
-
-        if bot == Self::zero() {
+        let modulus = Ring::gcd(top.modulus, bot.modulus);
+        if Ring::rem_refs(&bot.rep, &modulus) == Ring::zero() {
             Err(RingDivisionError::DivideByZero)
         } else {
-            let (g, _x, y) = ED::xgcd(n.clone(), bot.a);
+            let (g, _x, y) = Ring::xgcd(modulus.clone(), bot.rep);
             //g = xn + yb  so   g = yb mod n
             //if z = a/g works then
             //zyb = a mod n
-            match ED::div(top.a, g) {
+            match Ring::div(top.rep, g) {
                 Ok(z) => Ok(Self {
-                    a: ED::mul(z, y),
-                    n: Some(n.clone()),
+                    rep: Ring::mul(z, y),
+                    modulus: modulus.clone(),
                 }),
                 Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-                Err(RingDivisionError::DivideByZero) => panic!(),
+                Err(RingDivisionError::DivideByZero) => {
+                    panic!("g!=0 because bot.rep!=0 because bot!=0")
+                }
             }
         }
     }
 }
 
 impl<ED: EuclideanDomain + UniqueFactorizationDomain> IntegralDomain
-    for EuclideanQuotient<true, ED>
+    for UniversalEuclideanQuotient<true, ED>
 {
 }
 
-impl<ED: EuclideanDomain + UniqueFactorizationDomain> Field for EuclideanQuotient<true, ED> {}
+impl<ED: EuclideanDomain + UniqueFactorizationDomain> Field
+    for UniversalEuclideanQuotient<true, ED>
+{
+}
+
+// trait RingStructure {
+//     type ElementT : Clone;
+
+//     fn zero(&self) -> Self::ElementT;
+//     fn one(&self) -> Self::ElementT;
+//     fn neg(&self, a : impl Borrow<Self::ElementT>) -> Self::ElementT;
+//     fn add(&self, a : impl Borrow<Self::ElementT>, b : impl Borrow<Self::ElementT>) -> Self::ElementT;
+//     fn mul(&self, a : impl Borrow<Self::ElementT>, b : impl Borrow<Self::ElementT>) -> Self::ElementT;
+// }
 
 //IdealQuotient
 //PrimeQuotient
@@ -985,86 +980,82 @@ pub trait DenseReal: Real {
 
 #[cfg(test)]
 mod tests {
-    use super::super::nzq::*;
+    use super::super::numbers::nzq::*;
     use super::*;
 
-    // #[test]
-    // fn factorization_invariants() {
-    //     let f = Factored::new_unchecked(
-    //         Integer::from(-1),
-    //         vec![
-    //             (Integer::from(2), Natural::from(2u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ],
-    //     );
-    //     f.check_invariants(&ZZ).unwrap();
+    #[test]
+    fn factorization_invariants() {
+        let f = Factored::new_unchecked(
+            Integer::from(-1),
+            vec![
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ],
+        );
+        f.check_invariants().unwrap();
 
-    //     let f = Factored::new_unchecked(Integer::from(1), vec![]);
-    //     f.check_invariants(&ZZ).unwrap();
+        let f = Factored::new_unchecked(Integer::from(1), vec![]);
+        f.check_invariants().unwrap();
 
-    //     let f = Factored::new_unchecked(
-    //         Integer::from(-1),
-    //         vec![
-    //             (Integer::from(2), Natural::from(2u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //             (Integer::from(5), Natural::from(0u8)),
-    //         ],
-    //     );
-    //     assert_eq!(
-    //         f.check_invariants(&ZZ).is_ok(),
-    //         false,
-    //         "can't have a power of zero"
-    //     );
+        let f = Factored::new_unchecked(
+            Integer::from(-1),
+            vec![
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+                (Integer::from(5), Natural::from(0u8)),
+            ],
+        );
+        assert_eq!(
+            f.check_invariants().is_ok(),
+            false,
+            "can't have a power of zero"
+        );
 
-    //     let f = Factored::new_unchecked(
-    //         Integer::from(3),
-    //         vec![(Integer::from(2), Natural::from(2u8))],
-    //     );
-    //     assert_eq!(
-    //         f.check_invariants(&ZZ).is_ok(),
-    //         false,
-    //         "unit should be a unit"
-    //     );
+        let f = Factored::new_unchecked(
+            Integer::from(3),
+            vec![(Integer::from(2), Natural::from(2u8))],
+        );
+        assert_eq!(f.check_invariants().is_ok(), false, "unit should be a unit");
 
-    //     let f = Factored::new_unchecked(
-    //         Integer::from(1),
-    //         vec![
-    //             (Integer::from(0), Natural::from(1u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ],
-    //     );
-    //     assert_eq!(
-    //         f.check_invariants(&ZZ).is_ok(),
-    //         false,
-    //         "prime factors must not be zero"
-    //     );
+        let f = Factored::new_unchecked(
+            Integer::from(1),
+            vec![
+                (Integer::from(0), Natural::from(1u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ],
+        );
+        assert_eq!(
+            f.check_invariants().is_ok(),
+            false,
+            "prime factors must not be zero"
+        );
 
-    //     let f = Factored::new_unchecked(
-    //         Integer::from(-1),
-    //         vec![
-    //             (Integer::from(4), Natural::from(1u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ],
-    //     );
-    //     assert_eq!(
-    //         f.check_invariants(&ZZ).is_ok(),
-    //         false,
-    //         "prime factors must be prime"
-    //     );
+        let f = Factored::new_unchecked(
+            Integer::from(-1),
+            vec![
+                (Integer::from(4), Natural::from(1u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ],
+        );
+        assert_eq!(
+            f.check_invariants().is_ok(),
+            false,
+            "prime factors must be prime"
+        );
 
-    //     let f = Factored::new_unchecked(
-    //         Integer::from(-1),
-    //         vec![
-    //             (Integer::from(-2), Natural::from(2u8)),
-    //             (Integer::from(3), Natural::from(1u8)),
-    //         ],
-    //     );
-    //     assert_eq!(
-    //         f.check_invariants(&ZZ).is_ok(),
-    //         false,
-    //         "prime factors must be fav assoc"
-    //     );
-    // }
+        let f = Factored::new_unchecked(
+            Integer::from(-1),
+            vec![
+                (Integer::from(-2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ],
+        );
+        assert_eq!(
+            f.check_invariants().is_ok(),
+            false,
+            "prime factors must be favoriate associate"
+        );
+    }
 
     #[test]
     fn test_xgcd_list() {
@@ -1076,15 +1067,41 @@ mod tests {
         assert_eq!(g, &taps[0] * a);
     }
 
-    // #[test]
-    // fn test_divisors() {
-    //     for a in 1u8..25 {
-    //         let b = Integer::from(a);
-    //         let fs = ZZ::factor(&b).unwrap();
-    //         assert_eq!(
-    //             fs.count_divisors().unwrap(),
-    //             Natural::from(fs.divisors().collect::<Vec<Integer>>().len())
-    //         );
-    //     }
-    // }
+    #[test]
+    fn test_divisors() {
+        for a in 1..25 {
+            let b = Integer::from(a);
+            let fs = b.factor().unwrap();
+            println!("{}", fs);
+            assert_eq!(
+                fs.count_divisors().unwrap(),
+                Natural::from(fs.divisors().collect::<Vec<Integer>>().len())
+            );
+        }
+    }
+
+    #[test]
+    fn test_universal_euclidean_quotient() {
+        let a = UniversalEuclideanQuotient::<false, _>::new(Integer::from(3), Integer::from(10));
+        let b = UniversalEuclideanQuotient::<false, _>::new(Integer::from(9), Integer::from(15));
+        let c = UniversalEuclideanQuotient::<false, _>::new(Integer::from(2), Integer::from(5));
+        let s = UniversalEuclideanQuotient::add(a, b);
+        assert_eq!(s, c);
+        assert_eq!(s.modulus, Integer::from(5));
+
+        let a = UniversalEuclideanQuotient::<false, _>::new(Integer::from(2), Integer::from(0));
+        let b = UniversalEuclideanQuotient::<false, _>::new(Integer::from(-1), Integer::from(0));
+        let c = UniversalEuclideanQuotient::<false, _>::new(Integer::from(-2), Integer::from(0));
+        assert_eq!(UniversalEuclideanQuotient::div(a, b).unwrap(), c);
+
+        let a = UniversalEuclideanQuotient::<false, _>::new(Integer::from(1), Integer::from(5));
+        let b = UniversalEuclideanQuotient::<false, _>::new(Integer::from(3), Integer::from(5));
+        let c = UniversalEuclideanQuotient::<false, _>::new(Integer::from(2), Integer::from(5));
+        assert_eq!(UniversalEuclideanQuotient::div(a, b).unwrap(), c);
+
+        let a = UniversalEuclideanQuotient::<false, _>::new(Integer::from(2), Integer::from(5));
+        let b = UniversalEuclideanQuotient::<false, _>::new(Integer::from(3), Integer::from(5));
+        let c = UniversalEuclideanQuotient::<false, _>::new(Integer::from(4), Integer::from(5));
+        assert_eq!(UniversalEuclideanQuotient::div(a, b).unwrap(), c);
+    }
 }

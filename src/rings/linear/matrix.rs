@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, fmt::Display};
 
-use super::{lattice::*, nzq::*, poly::*, ring::*};
+use super::super::{linear::lattice::*, numbers::nzq::*, polynomial::poly::*, ring::*};
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -405,7 +405,7 @@ impl<Ring: ComRing> Matrix<Ring> {
             Err(MatOppErr::NotSquare)
         } else {
             let mut det = Ring::zero();
-            for perm in super::super::sets::permutations::all_perms(n) {
+            for perm in super::super::super::sets::permutations::all_perms(n) {
                 let mut prod = Ring::one();
                 for k in 0..n {
                     Ring::mul_mut(&mut prod, self.at(k, perm.call(k).unwrap()).unwrap());
@@ -1154,7 +1154,7 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use super::super::nzq::*;
+    use super::super::super::numbers::nzq::*;
     use super::*;
 
     #[test]

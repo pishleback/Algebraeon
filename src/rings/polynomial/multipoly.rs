@@ -4,9 +4,9 @@ use std::fmt::Display;
 use std::hash::Hash;
 use std::sync::atomic::AtomicUsize;
 
-use super::nzq::*;
-use super::poly::*;
-use super::ring::*;
+use super::super::numbers::nzq::*;
+use super::super::polynomial::poly::*;
+use super::super::ring::*;
 
 #[derive(Debug, Hash, Clone)]
 pub struct Variable {
@@ -640,7 +640,7 @@ mod tests {
             &MultiPolynomial::product(vec![&x, &x]),
             &MultiPolynomial::neg(MultiPolynomial::product(vec![&y, &y])),
         ]);
-        let g = MultiPolynomial::sum(vec![]);
+        let g = MultiPolynomial::zero();
         match MultiPolynomial::div_refs(&f, &g) {
             Ok(_) => panic!(),
             Err(RingDivisionError::NotDivisible) => panic!(),

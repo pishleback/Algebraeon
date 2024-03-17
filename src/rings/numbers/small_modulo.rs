@@ -1,6 +1,6 @@
 use malachite_nz::{integer::Integer, natural::Natural};
 
-use super::ring::*;
+use super::super::ring::*;
 use std::{fmt::Display, hash::Hash};
 
 fn xgcd(mut x: usize, mut y: usize) -> (usize, isize, isize) {
@@ -39,7 +39,7 @@ pub struct Modulo<const N: usize> {
 //     }
 // }
 
-impl <const N: usize> Modulo<N> {
+impl<const N: usize> Modulo<N> {
     pub fn lift_nat(&self) -> Natural {
         Natural::from(self.x)
     }
@@ -158,10 +158,14 @@ macro_rules! impl_field {
                 units
             }
         }
-        impl UniqueFactorizationDomain for super::poly::Polynomial<Modulo<$N>> {
+        impl FiniteField for Modulo<$N> {
+            fn characteristic_and_power() -> (Natural, Natural) {
+                (Natural::from($N as usize), Natural::from(1u8))
+            }
+        }
+        impl UniqueFactorizationDomain for super::super::polynomial::poly::Polynomial<Modulo<$N>> {
             fn factor(&self) -> Option<Factored<Self>> {
-                //TODO: use a better algorithm here
-                self.clone().factorize_by_trying_all_factors()
+                self.clone().factorize_by_berlekamps_algorithm()
             }
         }
     };

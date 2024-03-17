@@ -6,11 +6,10 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 
-use super::multipoly::*;
+use super::super::polynomial::multipoly::*;
 use super::nzq::*;
-use super::poly::*;
-use super::ring::ComRing;
-use super::ring::*;
+use super::super::polynomial::poly::*;
+use super::super::ring::*;
 
 fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));
@@ -409,7 +408,7 @@ impl SquarefreePolyRealRoots {
     }
 
     fn to_real_roots(self) -> Vec<RealAlgebraic> {
-        debug_assert!(self.poly_sqfr.is_irreducible().unwrap());
+        debug_assert!(self.poly_sqfr.is_irreducible());
         let deg = self.poly_sqfr.degree().unwrap();
         if deg == 0 {
             vec![]
@@ -948,8 +947,7 @@ impl Polynomial<Integer> {
         include_a: bool,
         include_b: bool,
     ) -> Vec<RealAlgebraic> {
-        assert_ne!(self, &Self::zero());
-        debug_assert!(self.is_irreducible().unwrap());
+        debug_assert!(self.is_irreducible());
 
         self.clone()
             .real_roots_squarefree(opt_a, opt_b, include_a, include_b)
@@ -1621,8 +1619,7 @@ impl Polynomial<Integer> {
     }
 
     pub fn all_complex_roots_irreducible(&self) -> Vec<ComplexAlgebraic> {
-        debug_assert_ne!(self, &Self::zero());
-        debug_assert!(self.is_irreducible().unwrap());
+        debug_assert!(self.is_irreducible());
         let deg = self.degree().unwrap();
 
         let mut all_roots = vec![];
@@ -1776,15 +1773,8 @@ impl RealAlgebraicRoot {
         {
             return Err("poly should be primitive and favoriate associate");
         }
-        match self.poly.is_irreducible() {
-            Some(is_irr) => {
-                if !is_irr {
+        if !self.poly.is_irreducible() {
                     return Err("poly should be irreducible");
-                }
-            }
-            None => {
-                return Err("poly should be non-zero");
-            }
         }
         if self.poly.degree().unwrap() < 2 {
             return Err("poly should have degree at least 2");
@@ -1936,16 +1926,12 @@ impl ComplexAlgebraicRoot {
         // if !(self.wide_c < self.wide_d) {
         //     return Err("wide c should be strictly less than d");
         // }
-        match self.poly.is_irreducible() {
-            Some(is_irr) => {
-                if !is_irr {
+
+                if !self.poly.is_irreducible() {
                     return Err("poly should be irreducible");
                 }
-            }
-            None => {
-                return Err("poly should be non-zero");
-            }
-        }
+
+        
         if self.poly.degree().unwrap() < 2 {
             return Err("poly should have degree at least 2");
         }
@@ -2636,7 +2622,7 @@ impl Field for ComplexAlgebraic {}
 
 #[cfg(test)]
 mod tests {
-    use super::super::poly::*;
+    use super::super::super::polynomial::poly::*;
     use super::*;
 
     #[test]

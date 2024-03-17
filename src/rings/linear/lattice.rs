@@ -2,8 +2,8 @@ use std::borrow::Borrow;
 use std::fmt::Display;
 
 use super::matrix::*;
-use super::nzq::*;
-use super::ring::*;
+use super::super::numbers::nzq::*;
+use super::super::ring::*;
 
 //return a metamatrix whose rows are a basis for the joint row span of all the passed metamatricies
 fn metamatrix_row_sum<Ring: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<Ring>>>(

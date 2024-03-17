@@ -3,10 +3,11 @@
 #[macro_use]
 extern crate glium;
 
+use std::marker::PhantomData;
 use std::str::FromStr;
 
-use crate::groups::group::*;
-use crate::rings::small_int::*;
+use groups::group::*;
+use rings::numbers::small_modulo::*;
 use drawing::canvas2d::*;
 use drawing::Canvas;
 use geometry::*;
@@ -19,11 +20,11 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 use rand::Rng;
-use rings::algebraic::*;
+use rings::numbers::algebraic::*;
 use rings::ergonomic::*;
-use rings::multipoly::*;
-use rings::nzq::*;
-use rings::poly::*;
+use rings::polynomial::multipoly::*;
+use rings::numbers::nzq::*;
+use rings::polynomial::poly::*;
 use rings::ring::*;
 
 // use sets::permutations::Permutation;
@@ -119,7 +120,8 @@ fn todo() {
 }
 
 fn main() {
-    let f = Polynomial::<Modulo<5>>::from_coeffs(vec![Modulo::from(-1), Modulo::from(3), Modulo::from(2), Modulo::from(1), Modulo::from(1)]);
+    let x = Ergonomic::new(Polynomial::<Modulo<5>>::var());
+    let f = (1 + x.pow(501)).elem();
     println!("{}", f);
     println!("{}", f.factor().unwrap());
 }

@@ -1,8 +1,8 @@
 #[allow(dead_code)]
 use std::collections::HashMap;
 
-use super::poly::*;
-use super::ring::*;
+use super::super::polynomial::poly::*;
+use super::super::ring::*;
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
@@ -227,14 +227,6 @@ impl UniqueFactorizationDomain for Polynomial<Integer> {
 // }
 
 impl ComRing for Rational {
-    // fn to_string(&self) -> String {
-    //     ToString::to_string(&self)
-    // }
-
-    // fn equal( a: &Self, b: &Self) -> bool {
-    //     a == b
-    // }
-
     fn zero() -> Self {
         Self::from(0)
     }
@@ -310,13 +302,13 @@ impl FieldOfFractions for Rational {
     }
 }
 
-// impl FiniteUnits for EuclideanQuotient<true, IntegerRing> {
-//     fn all_units(&self) -> Vec<Self> {
+// impl FiniteUnits for EuclideanQuotient<true, Integer> {
+//     fn all_units() -> Vec<Self> {
 //         let mut units = vec![];
-//         let mut u = self.one();
-//         while u < self.get_n() {
+//         let mut u = Self::one();
+//         while u < self.n {
 //             units.push(u.clone());
-//             u += self.one();
+//             u += Self::one();
 //         }
 //         units
 //     }
