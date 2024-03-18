@@ -1,4 +1,8 @@
+use std::thread::sleep;
+use std::time::Duration;
+
 use itertools::Itertools;
+use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
 use crate::rings::linear::matrix::Matrix;
@@ -13,7 +17,7 @@ pub fn factorize_by_sqfree_factorize<F: FiniteField>(
     sqfree_factorize: &impl Fn(Polynomial<F>) -> Factored<Polynomial<F>>,
 ) -> Factored<Polynomial<F>>
 where
-    Polynomial<F>: EuclideanDomain + UniqueFactorizationDomain,
+    Polynomial<F>: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain,
 {
     // println!("f = {:?}", f);
     let (unit, f) = f.factor_fav_assoc();
@@ -50,6 +54,53 @@ where
         let reduced_c = Polynomial::from_coeffs(reduced_c_coeffs);
         // println!("reduced_c = {}", reduced_c);
         factors.mul_mut(factorize_by_sqfree_factorize(reduced_c, sqfree_factorize).pow(&p));
+    }
+    factors
+}
+
+//https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
+pub fn factorize_by_primitive_sqfree_factorize_by_yuns_algorithm<
+    R: UniqueFactorizationDomain + GreatestCommonDivisorDomain + CharacteristicZero,
+>(
+    mut f: Polynomial<R>,
+    primitive_sqfree_factorize: &impl Fn(Polynomial<R>) -> Factored<Polynomial<R>>,
+) -> Factored<Polynomial<R>>
+where
+    Polynomial<R>: GreatestCommonDivisorDomain + UniqueFactorizationDomain,
+{
+    debug_assert_ne!(f, Polynomial::zero());
+    //look for a squarefree factorization of the form
+    //  f = x * a_1^1 * a_2^2 * a_3^3 * ... * a_k^k
+    //where each a_i is a squarefree primitive polynomial and x is an element of R
+
+    let (content, prim) = f.clone().factor_primitive().unwrap();
+
+    let (content_unit, content_factors) = content.factor().unwrap().unit_and_factors();
+
+    let mut factors = Factored::new_unchecked(
+        Polynomial::constant(content_unit),
+        content_factors
+            .into_iter()
+            .map(|(factor, power)| (Polynomial::constant(factor), power))
+            .collect(),
+    );
+
+    let f_prime = f.clone().derivative();
+    let mut i: usize = 1;
+    let mut a = Polynomial::gcd(f.clone(), f_prime.clone());
+    let mut b = Polynomial::div_refs(&f, &a).unwrap();
+    let mut c = Polynomial::div_refs(&f_prime, &a).unwrap();
+    let mut d = Polynomial::add_ref(b.clone().derivative().neg(), &c);
+    while b != Polynomial::one() {
+        let a = Polynomial::gcd(b.clone(), d.clone());
+        //a^i is a power of a squarefree factor of f
+        factors.mul_mut(primitive_sqfree_factorize(a.clone()).pow(&Natural::from(i)));
+        (b, c) = (
+            Polynomial::div_refs(&b, &a).unwrap(),
+            Polynomial::div_refs(&d, &a).unwrap(),
+        );
+        i += 1;
+        d = Polynomial::add_ref(b.clone().derivative().neg(), &c);
     }
     factors
 }
@@ -116,166 +167,179 @@ impl<Ring: UniqueFactorizationDomain + GreatestCommonDivisorDomain + FiniteUnits
 impl<
         Ring: UniqueFactorizationDomain + GreatestCommonDivisorDomain + CharacteristicZero + FiniteUnits,
     > Polynomial<Ring>
+where
+    Polynomial<Ring>: GreatestCommonDivisorDomain,
 {
-    fn factorize_primitive_polynomial_by_kroneckers_method(&self, f: Self) -> Factored<Self>
-    where
-        Self: UniqueFactorizationDomain,
-    {
-        debug_assert_ne!(f, Self::zero());
-        fn partial_factor<
-            'a,
-            Ring: UniqueFactorizationDomain
-                + GreatestCommonDivisorDomain
-                + CharacteristicZero
-                + FiniteUnits,
-        >(
-            f: Polynomial<Ring>,
-        ) -> Option<(Polynomial<Ring>, Polynomial<Ring>)> {
-            /*
-            Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
-            Assume it has a proper factor g(x). wlog g(x) has degree <= 2
-            g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
-            f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
-            g(0) divides 2, g(1) divides 6, g(-1) divides 2
-            there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
-            infact there are 4*8*4=128 possible triples
-            however, only 64 need to be checked as the other half are their negatives
-            more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
-             */
-            let f_deg = f.degree().unwrap();
-            if f_deg == 1 {
-                //linear factor is irreducible
-                None
-            } else {
-                let max_factor_degree = f_deg / 2;
-                let mut f_points = vec![];
-                let mut elem_gen = Ring::generate_distinct_elements();
-                //take more samples than necessary, then take the subset with the smallest number of divisors
-                while f_points.len() < 3 * (max_factor_degree + 1) {
-                    //loop terminates because polynomial over integral domain has finitely many roots
-                    let x = elem_gen.next().unwrap();
-                    let y = Polynomial::evaluate(&f, &x);
-                    if y != Ring::zero() {
-                        f_points.push((x, Ring::factor(&y).unwrap()));
-                    }
+    fn find_factor_primitive_by_kroneckers_algorithm(
+        self,
+    ) -> Option<(Polynomial<Ring>, Polynomial<Ring>)> {
+        /*
+        Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
+        Assume it has a proper factor g(x). wlog g(x) has degree <= 2
+        g(x) is determined by its value at 3 points, say at x=0, x=1, x=-1
+        f(0)=2, f(1)=6, f(-1)=2     if one of these was zero, then we would have found a linear factor
+        g(0) divides 2, g(1) divides 6, g(-1) divides 2
+        there are finitely many possible values of g(0), g(1) and g(-1) which satisfy these
+        infact there are 4*8*4=128 possible triples
+        however, only 64 need to be checked as the other half are their negatives
+        more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
+         */
+        let f = self;
+        let f_deg = f.degree().unwrap();
+        if f_deg == 1 {
+            //linear factor is irreducible
+            None
+        } else {
+            let max_factor_degree = f_deg / 2;
+            let mut f_points = vec![];
+            let mut elem_gen = Ring::generate_distinct_elements();
+            //take more samples than necessary, then take the subset with the smallest number of divisors
+            while f_points.len() < 3 * (max_factor_degree + 1) {
+                //loop terminates because polynomial over integral domain has finitely many roots
+                let x = elem_gen.next().unwrap();
+                let y = Polynomial::evaluate(&f, &x);
+                if y != Ring::zero() {
+                    f_points.push((x, Ring::factor(&y).unwrap()));
                 }
-
-                //compute all factors of each y value. choose the y with the most divisors to only factor up to units
-                f_points.sort_by_cached_key(|(_x, yf)| yf.count_divisors());
-                let _ = f_points.split_off(max_factor_degree + 1);
-                //possible_g_points is (x, possible_y_values)
-                let all_possible_g_points: Vec<(Ring, Vec<Ring>)> = f_points
-                    .into_iter()
-                    .rev()
-                    .enumerate()
-                    .map(|(i, (x, yf))| {
-                        let mut y_divs = vec![];
-                        for d in yf.divisors() {
-                            if i == 0 {
-                                //take divisors up to associates for one, because we only care about g up to associates
-                                y_divs.push(d);
-                            } else {
-                                //take _all_ divisors for the rest
-                                for u in Ring::all_units() {
-                                    y_divs.push(Ring::mul_ref(u, &d));
-                                }
-                            }
-                        }
-                        (x, y_divs)
-                    })
-                    .collect();
-
-                for possible_g_points in itertools::Itertools::multi_cartesian_product(
-                    all_possible_g_points
-                        .into_iter()
-                        .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
-                ) {
-                    // println!("{:?}", possible_g_points);
-                    match Polynomial::interpolate_by_lagrange_basis(&possible_g_points) {
-                        Some(g) => {
-                            if g.degree().unwrap() >= 1 {
-                                //g is a possible proper divisor of f
-                                match Polynomial::div_refs(&f, &g) {
-                                    Ok(h) => {
-                                        //g really is a proper divisor of f
-                                        return Some((g, h));
-                                    }
-                                    Err(RingDivisionError::NotDivisible) => {}
-                                    Err(RingDivisionError::DivideByZero) => panic!(),
-                                }
-                            }
-                        }
-                        None => {}
-                    }
-                }
-                //f is irreducible
-                None
             }
+
+            //compute all factors of each y value. choose the y with the most divisors to only factor up to units
+            f_points.sort_by_cached_key(|(_x, yf)| yf.count_divisors());
+            let _ = f_points.split_off(max_factor_degree + 1);
+            //possible_g_points is (x, possible_y_values)
+            let all_possible_g_points: Vec<(Ring, Vec<Ring>)> = f_points
+                .into_iter()
+                .rev()
+                .enumerate()
+                .map(|(i, (x, yf))| {
+                    let mut y_divs = vec![];
+                    for d in yf.divisors() {
+                        if i == 0 {
+                            //take divisors up to associates for one, because we only care about g up to associates
+                            y_divs.push(d);
+                        } else {
+                            //take _all_ divisors for the rest
+                            for u in Ring::all_units() {
+                                y_divs.push(Ring::mul_ref(u, &d));
+                            }
+                        }
+                    }
+                    (x, y_divs)
+                })
+                .collect();
+
+            for possible_g_points in itertools::Itertools::multi_cartesian_product(
+                all_possible_g_points
+                    .into_iter()
+                    .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
+            ) {
+                // println!("{:?}", possible_g_points);
+                match Polynomial::interpolate_by_lagrange_basis(&possible_g_points) {
+                    Some(g) => {
+                        if g.degree().unwrap() >= 1 {
+                            //g is a possible proper divisor of f
+                            match Polynomial::div_refs(&f, &g) {
+                                Ok(h) => {
+                                    //g really is a proper divisor of f
+                                    return Some((g, h));
+                                }
+                                Err(RingDivisionError::NotDivisible) => {}
+                                Err(RingDivisionError::DivideByZero) => panic!(),
+                            }
+                        }
+                    }
+                    None => {}
+                }
+            }
+            //f is irreducible
+            None
         }
-        factorize_by_find_factor(f, &partial_factor::<Ring>)
     }
 
-    pub fn factorize_by_kroneckers_method(&self) -> Option<Factored<Self>>
+    pub fn factorize_by_kroneckers_method(self) -> Option<Factored<Self>>
     where
         Self: UniqueFactorizationDomain,
     {
+        if self == Self::zero() {
+            None
+        } else {
+            Some(factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(
+                self,
+                &|f| {
+                    factorize_by_find_factor(f, &|f| {
+                        f.find_factor_primitive_by_kroneckers_algorithm()
+                    })
+                },
+            ))
+        }
+    }
+}
+
+impl Polynomial<Integer> {
+    fn find_factor_primitive_sqfree_by_zassenhaus_algorithm(
+        self,
+    ) -> Option<(Polynomial<Integer>, Polynomial<Integer>)> {
         let f = self;
-        if f == &Self::zero() {
-            return None;
-        }
+        let f_deg = f.degree().unwrap();
+        debug_assert_ne!(f_deg, 0);
+        println!("zassenhaus: {}", f);
+        if f_deg == 1 {
+            None
+        } else {
+            let prime_gen = NaturalPrimeGenerator::new();
+            for p in prime_gen.take(20) {
+                println!("{:?}", p);
+                let f_mod_p = f.apply_map_ref(|c| {
+                    UniversalEuclideanQuotient::<true, _>::new(c.clone(), Integer::from(&p))
+                });
 
-        // println!();
-        // println!("factorize_by_kroneckers_method");
-        // println!("f = {:?}", f);
-        let (scalar_part, f) = f.clone().factor_primitive().unwrap();
-        // println!("scalar_part = {:?}", scalar_part);
-        // println!("primitive_part = {:?}", f);
-        let factored_scalar_part = Ring::factor(&scalar_part).unwrap();
-        // println!("factored_scalar_part = {:?}", factored_scalar_part);
-        let factored_scalar_part_poly = Factored::new_unchecked(
-            Self::constant(factored_scalar_part.unit().clone()),
-            factored_scalar_part
-                .factors()
-                .iter()
-                .map(|(p, k)| (Self::constant(p.clone()), k.clone()))
-                .collect(),
-        );
-        let (linear_factors, f) = self.factor_primitive_linear_part(f);
+                println!("{}", f_mod_p);
 
-        let f_sqfree = f.clone().primitive_squarefree_part();
-        let f_sqfree_factors = self.factorize_primitive_polynomial_by_kroneckers_method(f_sqfree);
-
-        let mut f = f;
-        let mut f_factors = Factored::factored_one();
-        for (sqfree_factor, k) in f_sqfree_factors.factors() {
-            debug_assert_eq!(k, &Natural::from(1u8)); //the factorization should be squarefree
-            loop {
-                match Self::div_refs(&f, sqfree_factor) {
-                    Ok(new_f) => {
-                        f = new_f;
-                        f_factors = Factored::mul(
-                            f_factors,
-                            Factored::new_unchecked(
-                                Self::one(),
-                                vec![(sqfree_factor.clone(), Natural::from(1u8))],
-                            ),
-                        )
-                    }
-                    Err(RingDivisionError::NotDivisible) => {
-                        break;
-                    }
-                    Err(RingDivisionError::DivideByZero) => panic!(),
-                }
+                sleep(Duration::from_millis(100));
             }
-        }
-        debug_assert_eq!(f.degree().unwrap(), 0);
-        debug_assert!(Self::is_unit(f.clone()));
-        f_factors = Factored::mul(f_factors, Factored::factored_unit_unchecked(f));
 
-        return Some(Factored::mul(
-            Factored::mul(linear_factors, factored_scalar_part_poly),
-            f_factors,
-        ));
+            todo!()
+        }
+    }
+
+    pub fn factorize_by_zassenhaus_algorithm(self) -> Option<Factored<Self>> {
+        if self == Self::zero() {
+            None
+        } else {
+            Some(factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(
+                self,
+                &|f| {
+                    factorize_by_find_factor(f, &|f| {
+                        f.find_factor_primitive_sqfree_by_zassenhaus_algorithm()
+                    })
+                },
+            ))
+        }
+    }
+}
+
+impl<Fof: FieldOfFractions> Polynomial<Fof>
+where
+    Self: UniqueFactorizationDomain,
+    Polynomial<Fof::R>: UniqueFactorizationDomain,
+    Fof::R: GreatestCommonDivisorDomain,
+{
+    pub fn factorize_by_factorize_primitive_part(&self) -> Option<Factored<Polynomial<Fof>>> {
+        let (unit, prim) = self.factor_primitive_fof();
+        let (prim_unit, prim_factors) = prim.factor()?.unit_and_factors();
+        let mut fof_unit = prim_unit.apply_map(|c| Fof::from_base_ring(c));
+        let mut fof_factors = vec![];
+        for (factor, power) in prim_factors.into_iter() {
+            let fof_factor = factor.apply_map(Fof::from_base_ring);
+            let (fof_factor_unit, fof_factor_prim) = fof_factor.factor_fav_assoc();
+            fof_unit.mul_mut(&fof_factor_unit);
+            fof_factors.push((fof_factor_prim, power));
+        }
+        let factors = Factored::new_unchecked(
+            Polynomial::mul(Polynomial::constant(unit), fof_unit),
+            fof_factors,
+        );
+        Some(factors)
     }
 }
 
@@ -417,7 +481,7 @@ mod tests {
         //primitive cases
         let f = ((1 + x).pow(2)).elem();
         assert!(Factored::equal(
-            &Polynomial::factorize_by_kroneckers_method(&f).unwrap(),
+            &Polynomial::factorize_by_kroneckers_method(f).unwrap(),
             &Factored::new_unchecked(
                 Polynomial::one(),
                 vec![((1 + x).elem(), Natural::from(2u8))]

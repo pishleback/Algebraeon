@@ -233,7 +233,14 @@ impl<Ring: ComRing> Polynomial<Ring> {
         }
     }
 
-    pub fn apply_map<ImgRing: ComRing>(&self, f: impl Fn(&Ring) -> ImgRing) -> Polynomial<ImgRing> {
+    pub fn apply_map<ImgRing: ComRing>(self, f: impl Fn(Ring) -> ImgRing) -> Polynomial<ImgRing> {
+        Polynomial::from_coeffs(self.coeffs.into_iter().map(f).collect())
+    }
+
+    pub fn apply_map_ref<ImgRing: ComRing>(
+        &self,
+        f: impl Fn(&Ring) -> ImgRing,
+    ) -> Polynomial<ImgRing> {
         Polynomial::from_coeffs(self.coeffs.iter().map(f).collect())
     }
 
@@ -246,7 +253,7 @@ impl<Ring: ComRing> Polynomial<Ring> {
 
     //find p(q(x))
     pub fn compose(p: &Self, q: &Self) -> Self {
-        p.apply_map(|c| Self::constant(c.clone())).evaluate(q)
+        p.apply_map_ref(|c| Self::constant(c.clone())).evaluate(q)
     }
 
     //if n = deg(p)
@@ -506,6 +513,32 @@ impl<Ring: GreatestCommonDivisorDomain> Polynomial<Ring> {
     }
 }
 
+impl<Ring: GreatestCommonDivisorDomain> Polynomial<Ring> {
+   pub fn gcd_by_subresultant(a: Self, b: Self) -> Self {
+        if a == Polynomial::zero() {
+            b
+        } else if b == Polynomial::zero() {
+            a
+        } else {
+            let (a_unit, a_prim) = a.factor_primitive().unwrap();
+            let (b_unit, b_prim) = b.factor_primitive().unwrap();
+            let g_unit = Ring::gcd(a_unit, b_unit);
+            let mut g_prim = Polynomial::subresultant_gcd(a_prim, b_prim)
+                .factor_primitive()
+                .unwrap()
+                .1;
+            let g = Polynomial::mul(Polynomial::constant(g_unit), g_prim);
+            g.factor_fav_assoc().1
+        }
+    }
+}
+
+impl<F:Field> GreatestCommonDivisorDomain for Polynomial<F> {
+    fn gcd(x: Self, y: Self) -> Self {
+        Self::euclidean_gcd(x, y)
+    }
+}
+
 impl<Ring: GreatestCommonDivisorDomain + CharacteristicZero> Polynomial<Ring> {
     pub fn primitive_squarefree_part(self) -> Self {
         let f = self;
@@ -662,7 +695,7 @@ impl<Ring: IntegralDomain> Polynomial<Ring> {
     }
 }
 
-impl<Ring: PrincipalIdealDomain> Polynomial<Ring> {
+impl<Ring: BezoutDomain> Polynomial<Ring> {
     pub fn interpolate_by_linear_system(points: &Vec<(Ring, Ring)>) -> Option<Self> {
         /*
         e.g. finding a degree 2 polynomial f(x)=a+bx+cx^2 such that
@@ -704,13 +737,15 @@ impl<Ring: PrincipalIdealDomain> Polynomial<Ring> {
 
 impl<F: FieldOfFractions> Polynomial<F>
 where
-    F::R: EuclideanDomain + FavoriteAssociate,
+    F::R: GreatestCommonDivisorDomain,
 {
     pub fn factor_primitive_fof(&self) -> (F, Polynomial<F::R>) {
         let div = F::R::lcm_list(self.coeffs.iter().map(|c| F::denominator(&c)).collect());
 
         let (mul, prim) = self
-            .apply_map(|c| F::as_base_ring(F::mul_ref(F::from_base_ring(div.clone()), c)).unwrap())
+            .apply_map_ref(|c| {
+                F::as_base_ring(F::mul_ref(F::from_base_ring(div.clone()), c)).unwrap()
+            })
             .factor_primitive()
             .unwrap();
 
@@ -1466,7 +1501,7 @@ mod tests {
             let (mul, ans) = f.factor_primitive_fof();
             assert!(Polynomial::are_associate(&ans, &exp));
             assert_eq!(
-                Polynomial::mul_scalar(&ans.apply_map(|c| Rational::from(c)), &mul),
+                Polynomial::mul_scalar(&ans.apply_map_ref(|c| Rational::from(c)), &mul),
                 f
             );
         }

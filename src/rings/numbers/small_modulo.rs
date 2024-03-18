@@ -27,9 +27,15 @@ fn modulo(a: isize, n: usize) -> usize {
     a as usize
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Modulo<const N: usize> {
     x: usize,
+}
+
+impl<const N: usize> std::fmt::Debug for Modulo<N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Modulo").field("x", &self.x).field("N", &N).finish()
+    }
 }
 
 // impl<const N: usize> Modulo<N> {

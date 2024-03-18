@@ -454,7 +454,7 @@ struct ElementaryOpp<Ring: ComRing> {
     opp: ElementaryOppType<Ring>,
 }
 
-impl<Ring: PrincipalIdealDomain> ElementaryOpp<Ring> {
+impl<Ring: BezoutDomain> ElementaryOpp<Ring> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         match &self.opp {
             ElementaryOppType::Swap(i, j) => {
@@ -579,7 +579,7 @@ impl<Ring: PrincipalIdealDomain> ElementaryOpp<Ring> {
     }
 }
 
-impl<Ring: PrincipalIdealDomain> Matrix<Ring> {
+impl<Ring: BezoutDomain> Matrix<Ring> {
     pub fn row_span(self) -> LinearLattice<Ring> {
         LinearLattice::from_span(
             1,
@@ -1071,7 +1071,7 @@ impl<Ring: PrincipalIdealDomain> Matrix<Ring> {
     }
 }
 
-impl<Ring: EuclideanDomain + FavoriteAssociate> Matrix<Ring> {
+impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain> Matrix<Ring> {
     //if A:=self return (H, U, pivots) such that
     //H is in row reduced hermite normal form
     //U is invertible

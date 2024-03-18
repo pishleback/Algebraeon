@@ -1,8 +1,10 @@
 #[allow(dead_code)]
 use std::collections::HashMap;
+use std::net::Incoming;
 
 use super::super::polynomial::poly::*;
 use super::super::ring::*;
+use glium::Display;
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
@@ -187,6 +189,12 @@ impl EuclideanDomain for Integer {
     }
 }
 
+impl GreatestCommonDivisorDomain for Integer {
+    fn gcd(x: Self, y: Self) -> Self {
+        Self::euclidean_gcd(x, y)
+    }
+}
+
 impl Real for Integer {
     fn as_f64(x: Self) -> f64 {
         if x < 0 {
@@ -202,6 +210,42 @@ impl Real for Integer {
     }
 }
 
+impl<const IS_FIELD: bool> std::fmt::Display for UniversalEuclideanQuotient<IS_FIELD, Integer> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            Integer::rem_rref(Self::lift(self.clone()), self.modulus())
+        )
+    }
+}
+
+// impl<const IS_FIELD: bool> std::hash::Hash for UniversalEuclideanQuotient<IS_FIELD, Integer> {
+//     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+//         Integer::rem_refs(&self.lift(), self.modulus()).hash(state)
+//     }
+// }
+
+// impl FiniteUnits for UniversalEuclideanQuotient<true, Integer> {
+//     fn all_units() -> Vec<Self> {
+//         let mut units = vec![];
+//         for x in 1..$N {
+//             units.push(Self { x });
+//         }
+//         units
+//     }
+// }
+// impl FiniteField for UniversalEuclideanQuotient<true, Integer> {
+//     fn characteristic_and_power() -> (Natural, Natural) {
+//         (Natural::from($N as usize), Natural::from(1u8))
+//     }
+// }
+// impl UniqueFactorizationDomain for super::super::polynomial::poly::Polynomial<UniversalEuclideanQuotient<true, Integer>> {
+//     fn factor(&self) -> Option<Factored<Self>> {
+//         self.clone().factorize_by_berlekamps_algorithm()
+//     }
+// }
+
 impl DenseReal for Rational {
     fn from_f64_approx(x: f64) -> Self {
         let mut x = Rational::from_sci_string_simplest(x.to_string().as_str()).unwrap();
@@ -210,13 +254,6 @@ impl DenseReal for Rational {
             &Natural::from(100usize),
         );
         x
-    }
-}
-
-impl UniqueFactorizationDomain for Polynomial<Integer> {
-    fn factor(&self) -> Option<Factored<Self>> {
-        //TODO: use a more efficient algorithm: reduce mod large prime and lift, knapsack alg using LLL to pick factor subsets efficiently
-        self.factorize_by_kroneckers_method()
     }
 }
 
@@ -302,17 +339,24 @@ impl FieldOfFractions for Rational {
     }
 }
 
-// impl FiniteUnits for EuclideanQuotient<true, Integer> {
-//     fn all_units() -> Vec<Self> {
-//         let mut units = vec![];
-//         let mut u = Self::one();
-//         while u < self.n {
-//             units.push(u.clone());
-//             u += Self::one();
-//         }
-//         units
-//     }
-// }
+impl UniqueFactorizationDomain for Polynomial<Integer> {
+    fn factor(&self) -> Option<Factored<Self>> {
+        //TODO: use a more efficient algorithm: reduce mod large prime and lift, knapsack alg using LLL to pick factor subsets efficiently
+        self.clone().factorize_by_kroneckers_method()
+    }
+}
+
+impl GreatestCommonDivisorDomain for Polynomial<Integer> {
+    fn gcd(x: Self, y: Self) -> Self {
+        Self::gcd_by_subresultant(x, y)
+    }
+}
+
+impl UniqueFactorizationDomain for Polynomial<Rational> {
+    fn factor(&self) -> Option<Factored<Self>> {
+        self.factorize_by_factorize_primitive_part()
+    }
+}
 
 pub struct NaturalPrimeGenerator {
     n: Natural,

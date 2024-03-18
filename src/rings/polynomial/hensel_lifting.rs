@@ -6,18 +6,18 @@ use malachite_nz::natural::Natural;
 use super::poly::*;
 use super::super::ring::*;
 
-fn polynomial_reduce_modulo<Ring: EuclideanDomain + UniqueFactorizationDomain>(
+fn polynomial_reduce_modulo<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain>(
     poly: &Polynomial<Ring>,
     i: impl Borrow<Ring>,
     n: impl Borrow<Natural>,
 ) -> Polynomial<UniversalEuclideanQuotient<false, Ring>> {
     let i = i.borrow();
     let n = n.borrow();
-    poly.apply_map(|c| UniversalEuclideanQuotient::<false, Ring>::new(c.clone(), i.nat_pow(n)))
+    poly.apply_map_ref(|c| UniversalEuclideanQuotient::<false, Ring>::new(c.clone(), i.nat_pow(n)))
 }
 
 #[derive(Debug, Clone)]
-enum HenselProduct<Ring: EuclideanDomain + UniqueFactorizationDomain> {
+enum HenselProduct<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> {
     Leaf,
     Branch {
         //h = fg mod i^n
@@ -29,7 +29,7 @@ enum HenselProduct<Ring: EuclideanDomain + UniqueFactorizationDomain> {
     },
 }
 
-impl<Ring: EuclideanDomain + UniqueFactorizationDomain> HenselProduct<Ring> {
+impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> HenselProduct<Ring> {
     fn check(&self, h: &Polynomial<Ring>, i: &Ring, n: &Natural) -> Result<(), &'static str> {
         match self {
             HenselProduct::Leaf => {}
@@ -78,19 +78,19 @@ impl<Ring: EuclideanDomain + UniqueFactorizationDomain> HenselProduct<Ring> {
         second_fs: Vec<&Polynomial<Ring>>,
     ) -> Self {
         let first_h = Polynomial::product(first_fs.clone())
-            .apply_map(|c| Ring::rem_lref(c, p.nat_pow(n)));
+            .apply_map_ref(|c| Ring::rem_lref(c, p.nat_pow(n)));
         let second_h = Polynomial::product(second_fs.clone())
-            .apply_map(|c| Ring::rem_lref(c, p.nat_pow(n)));
+            .apply_map_ref(|c| Ring::rem_lref(c, p.nat_pow(n)));
 
         let (u, a, b) = Polynomial::xgcd(
-            first_h.apply_map(|c| UniversalEuclideanQuotient::<true, Ring>::new(c.clone(), p.clone())),
-            second_h.apply_map(|c| UniversalEuclideanQuotient::<true, Ring>::new(c.clone(), p.clone())),
+            first_h.apply_map_ref(|c| UniversalEuclideanQuotient::<true, Ring>::new(c.clone(), p.clone())),
+            second_h.apply_map_ref(|c| UniversalEuclideanQuotient::<true, Ring>::new(c.clone(), p.clone())),
         );
         if u != Polynomial::one() {
             panic!("Factors should be coprime modulo i");
         }
-        let a = a.apply_map(|c| c.clone().lift());
-        let b = b.apply_map(|c| c.clone().lift());
+        let a = a.apply_map_ref(|c| c.clone().lift());
+        let b = b.apply_map_ref(|c| c.clone().lift());
 
         Self::Branch {
             f_factorization: Box::new(HenselFactorizationImpl::new(p, n, first_h, first_fs)),
@@ -132,7 +132,7 @@ impl<Ring: EuclideanDomain + UniqueFactorizationDomain> HenselProduct<Ring> {
                 // println!("{:?}", self);
                 //  h = fg mod i^n  =>  h - fg = 0 mod i^n
                 let h_minus_fg = Polynomial::add_ref(Polynomial::mul_refs(f, g).neg(), h);
-                let delta_h_over_i_tothe_n = h_minus_fg.apply_map(|c| {
+                let delta_h_over_i_tothe_n = h_minus_fg.apply_map_ref(|c| {
                     Ring::rem_rref(Ring::quo_lref(c, i.nat_pow(n)).unwrap(), i)
                 });
                 // println!("delta_h_over_i_tothe_n = {:?}", &delta_h_over_i_tothe_n);
@@ -174,9 +174,9 @@ impl<Ring: EuclideanDomain + UniqueFactorizationDomain> HenselProduct<Ring> {
                 );
 
                 let lifted_f = Polynomial::add_ref(rf, f)
-                    .apply_map(|c| Ring::rem_lref(c, i.nat_pow(n + Natural::from(1u8))));
+                    .apply_map_ref(|c| Ring::rem_lref(c, i.nat_pow(n + Natural::from(1u8))));
                 let lifted_g = Polynomial::add_ref(rg, g)
-                    .apply_map(|c| Ring::rem_lref(c, i.nat_pow(n + Natural::from(1u8))));
+                    .apply_map_ref(|c| Ring::rem_lref(c, i.nat_pow(n + Natural::from(1u8))));
 
                 f_factorization.h = lifted_f;
                 g_factorization.h = lifted_g;
@@ -189,12 +189,12 @@ impl<Ring: EuclideanDomain + UniqueFactorizationDomain> HenselProduct<Ring> {
 }
 
 #[derive(Debug, Clone)]
-struct HenselFactorizationImpl<Ring: EuclideanDomain + UniqueFactorizationDomain> {
+struct HenselFactorizationImpl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> {
     h: Polynomial<Ring>,
     factorization: HenselProduct<Ring>,
 }
 
-impl<Ring: EuclideanDomain + UniqueFactorizationDomain> HenselFactorizationImpl<Ring> {
+impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> HenselFactorizationImpl<Ring> {
     fn check(&self, i: &Ring, n: &Natural) -> Result<(), &'static str> {
         if !self.h.is_monic() {
             return Err("h is not monic");
@@ -238,13 +238,13 @@ impl<Ring: EuclideanDomain + UniqueFactorizationDomain> HenselFactorizationImpl<
 
 //represent a factorization of a monic polynomial h(x) into coprime monic polynomials f_1(x)f_2(x)...f_k(x) modulo i^n
 #[derive(Debug, Clone)]
-pub struct HenselFactorization<Ring: EuclideanDomain + UniqueFactorizationDomain> {
+pub struct HenselFactorization<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> {
     i: Ring,
     n: Natural,
     factors_impl: HenselFactorizationImpl<Ring>, //defined absolutely and factored modulo i^n
 }
 
-impl<Ring: EuclideanDomain + UniqueFactorizationDomain> HenselFactorization<Ring> {
+impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> HenselFactorization<Ring> {
     fn check(&self) -> Result<(), &'static str> {
         self.factors_impl.check(&self.i, &self.n)
     }
@@ -315,7 +315,7 @@ mod tests {
             Integer::from(1),
         ]);
         let h = Polynomial::product(vec![&f1, &f2, &f3]);
-        let h = h.apply_map(|c| Integer::rem_lref(c, Integer::from(5)));
+        let h = h.apply_map_ref(|c| Integer::rem_lref(c, Integer::from(5)));
         //h = prod fs mod 5
         //fs are coprime
         //h and fs are monic
@@ -334,7 +334,7 @@ mod tests {
             hensel_fact.check().unwrap();
             println!("5^{}: {:?}", i, hensel_fact.factors());
             let lifted_product = Polynomial::product(hensel_fact.factors())
-                .apply_map(|c| Integer::rem_lref(c, hensel_fact.modolus()));
+                .apply_map_ref(|c| Integer::rem_lref(c, hensel_fact.modolus()));
             assert_eq!(lifted_product, h);
         }
     }

@@ -272,6 +272,7 @@ pub trait FavoriteAssociate: IntegralDomain {
 
 pub trait GreatestCommonDivisorDomain: FavoriteAssociate {
     //any gcds should be the standard associate representative
+    //euclidean_gcd can be used to implement this
     fn gcd(x: Self, y: Self) -> Self;
     fn gcd_list<BorrowSelfT: Borrow<Self>>(elems: Vec<BorrowSelfT>) -> Self {
         let mut ans = Self::zero();
@@ -374,6 +375,10 @@ impl<Ring: UniqueFactorizationDomain> Factored<Ring> {
 
     pub fn factors(&self) -> &Vec<(Ring, Natural)> {
         &self.factors
+    }
+
+    pub fn unit_and_factors(self) -> (Ring, Vec<(Ring, Natural)>) {
+        (self.unit, self.factors)
     }
 
     // pub fn into_factors(self) -> Vec<(Ring, Natural)> {
@@ -501,6 +506,7 @@ pub fn factorize_by_find_factor<R: UniqueFactorizationDomain>(
     elem: R,
     partial_factor: &impl Fn(R) -> Option<(R, R)>,
 ) -> Factored<R> {
+    debug_assert_ne!(elem, R::zero());
     pub fn factorize_nonunit_by_find_factor<R: UniqueFactorizationDomain>(
         elem: R,
         partial_factor: &impl Fn(R) -> Option<(R, R)>,
@@ -546,7 +552,7 @@ pub trait UniqueFactorizationDomain: FavoriteAssociate + Hash {
     }
 }
 
-pub trait PrincipalIdealDomain: GreatestCommonDivisorDomain {
+pub trait BezoutDomain: GreatestCommonDivisorDomain {
     //any gcds should be the standard associate representative
     fn xgcd(a: Self, b: Self) -> (Self, Self, Self); //(g, x, y) s.t. g = ax + by
     fn xgcd_list(elems: Vec<&Self>) -> (Self, Vec<Self>) {
@@ -625,10 +631,11 @@ pub trait EuclideanDomain: IntegralDomain {
     fn rem_refs(a: &Self, b: &Self) -> Self {
         Self::rem(a.clone(), b.clone())
     }
-}
 
-impl<R: EuclideanDomain + FavoriteAssociate> GreatestCommonDivisorDomain for R {
-    fn gcd(mut x: Self, mut y: Self) -> Self {
+    fn euclidean_gcd(mut x: Self, mut y: Self) -> Self
+    where
+        Self: FavoriteAssociate,
+    {
         //Euclidean algorithm
         while y != Self::zero() {
             let r = Self::rem_rref(x, &y);
@@ -639,7 +646,7 @@ impl<R: EuclideanDomain + FavoriteAssociate> GreatestCommonDivisorDomain for R {
     }
 }
 
-impl<R: EuclideanDomain + FavoriteAssociate> PrincipalIdealDomain for R {
+impl<R: EuclideanDomain + GreatestCommonDivisorDomain> BezoutDomain for R {
     fn xgcd(mut x: Self, mut y: Self) -> (Self, Self, Self) //return (g, a, b)
     {
         let mut pa = Self::one();
@@ -785,6 +792,12 @@ impl<F: Field> EuclideanDomain for F {
     }
 }
 
+impl <F : Field> GreatestCommonDivisorDomain for F {
+    fn gcd(x: Self, y: Self) -> Self {
+        Self::euclidean_gcd(x, y)
+    }
+}
+
 // impl<F: Field + Hash> UniqueFactorizationDomain for F
 // where
 //     Self::ElemT: Hash,
@@ -816,7 +829,7 @@ pub trait FieldOfFractions: Field {
 #[derive(Debug, Clone)]
 pub struct UniversalEuclideanQuotient<
     const IS_FIELD: bool,
-    Ring: EuclideanDomain + UniqueFactorizationDomain,
+    Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain,
 > {
     rep: Ring, //need not be a minimal representative with respect to the euclidean norm
     modulus: Ring,
@@ -830,7 +843,7 @@ pub struct UniversalEuclideanQuotient<
     */
 }
 
-impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain> PartialEq
+impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> PartialEq
     for UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -839,12 +852,12 @@ impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain> Pa
     }
 }
 
-impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain> Eq
+impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> Eq
     for UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
 }
 
-impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain>
+impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain>
     UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
@@ -864,6 +877,10 @@ impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain>
         Self { rep: a, modulus: n }
     }
 
+    pub fn modulus(&self) -> &Ring {
+        &self.modulus
+    } 
+
     pub fn lift(self) -> Ring {
         self.rep
     }
@@ -873,7 +890,7 @@ impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain>
     }
 }
 
-impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain> ComRing
+impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> ComRing
     for UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
     fn zero() -> Self {
@@ -931,12 +948,12 @@ impl<const IS_FIELD: bool, Ring: EuclideanDomain + UniqueFactorizationDomain> Co
     }
 }
 
-impl<ED: EuclideanDomain + UniqueFactorizationDomain> IntegralDomain
+impl<ED: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> IntegralDomain
     for UniversalEuclideanQuotient<true, ED>
 {
 }
 
-impl<ED: EuclideanDomain + UniqueFactorizationDomain> Field
+impl<ED: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> Field
     for UniversalEuclideanQuotient<true, ED>
 {
 }

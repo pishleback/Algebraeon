@@ -6,7 +6,7 @@ use super::super::numbers::nzq::*;
 use super::super::ring::*;
 
 //return a metamatrix whose rows are a basis for the joint row span of all the passed metamatricies
-fn metamatrix_row_sum<Ring: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<Ring>>>(
+fn metamatrix_row_sum<Ring: BezoutDomain, MetaMatT: Borrow<Matrix<Ring>>>(
     cols: usize,
     metamats: Vec<MetaMatT>,
 ) -> Matrix<Ring> {
@@ -19,7 +19,7 @@ fn metamatrix_row_sum<Ring: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<Ring>>
 }
 
 //return a metamatrix whose rows are a basis for the intersection of the row spans of the passed metamatricies
-fn metamatrix_row_intersection<Ring: PrincipalIdealDomain, MetaMatT: Borrow<Matrix<Ring>>>(
+fn metamatrix_row_intersection<Ring: BezoutDomain, MetaMatT: Borrow<Matrix<Ring>>>(
     cols: usize,
     mut metamat1: MetaMatT,
     mut metamat2: MetaMatT,
@@ -63,7 +63,7 @@ fn metamatrix_row_intersection<Ring: PrincipalIdealDomain, MetaMatT: Borrow<Matr
 }
 
 #[derive(Debug, Clone)]
-pub struct LinearLattice<Ring: PrincipalIdealDomain> {
+pub struct LinearLattice<Ring: BezoutDomain> {
     //matrix whose rows are a basis of the linear lattice
     //NOT necessarily in row hermite normal form
     metamatrix: Matrix<Ring>,
@@ -103,7 +103,7 @@ fn mats_to_rows<Ring: ComRing, MatT: Borrow<Matrix<Ring>>>(
     })
 }
 
-impl<Ring: PrincipalIdealDomain> LinearLattice<Ring> {
+impl<Ring: BezoutDomain> LinearLattice<Ring> {
     pub fn rows(&self) -> usize {
         self.rows
     }
@@ -341,7 +341,7 @@ impl<Ring: PrincipalIdealDomain> LinearLattice<Ring> {
     }
 }
 
-impl<R: PrincipalIdealDomain + Display> LinearLattice<R> {
+impl<R: BezoutDomain + Display> LinearLattice<R> {
     pub fn pprint(&self) {
         println!("Start Linear Lattice");
         for r in 0..self.metamatrix.rows() {
@@ -352,7 +352,7 @@ impl<R: PrincipalIdealDomain + Display> LinearLattice<R> {
 }
 
 #[derive(Debug, Clone)]
-pub enum AffineLatticeElements<Ring: PrincipalIdealDomain> {
+pub enum AffineLatticeElements<Ring: BezoutDomain> {
     Empty(),
     NonEmpty {
         offset: Matrix<Ring>,        //offset.rows == 1 and offset.cols == self.cols
@@ -361,13 +361,13 @@ pub enum AffineLatticeElements<Ring: PrincipalIdealDomain> {
 }
 
 #[derive(Debug, Clone)]
-pub struct AffineLattice<Ring: PrincipalIdealDomain> {
+pub struct AffineLattice<Ring: BezoutDomain> {
     rows: usize,
     cols: usize,
     elems: AffineLatticeElements<Ring>,
 }
 
-impl<Ring: PrincipalIdealDomain> AffineLattice<Ring> {
+impl<Ring: BezoutDomain> AffineLattice<Ring> {
     pub fn rows(&self) -> usize {
         self.rows
     }
@@ -666,7 +666,7 @@ impl<Ring: PrincipalIdealDomain> AffineLattice<Ring> {
     }
 }
 
-impl<R: PrincipalIdealDomain + Display> AffineLattice<R> {
+impl<R: BezoutDomain + Display> AffineLattice<R> {
     pub fn pprint(&self) {
         println!("Start Affine Lattice");
         match &self.elems {

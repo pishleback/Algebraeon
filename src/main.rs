@@ -6,12 +6,11 @@ extern crate glium;
 use std::marker::PhantomData;
 use std::str::FromStr;
 
-use groups::group::*;
-use rings::numbers::small_modulo::*;
 use drawing::canvas2d::*;
 use drawing::Canvas;
 use geometry::*;
 use glium::glutin::event::MouseButton;
+use groups::group::*;
 use groups::permutation::*;
 use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::Mod;
@@ -20,10 +19,11 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 use rand::Rng;
-use rings::numbers::algebraic::*;
 use rings::ergonomic::*;
-use rings::polynomial::multipoly::*;
+use rings::numbers::algebraic::*;
 use rings::numbers::nzq::*;
+use rings::numbers::small_modulo::*;
+use rings::polynomial::multipoly::*;
 use rings::polynomial::poly::*;
 use rings::ring::*;
 
@@ -120,8 +120,9 @@ fn todo() {
 }
 
 fn main() {
-    let x = Ergonomic::new(Polynomial::<Modulo<5>>::var());
-    let f = (1 + x.pow(501)).elem();
+    let x = Ergonomic::new(Polynomial::<Integer>::var());
+    let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (3 * x.pow(5) + 7 * x.pow(4) - 4)).elem();
     println!("{}", f);
-    println!("{}", f.factor().unwrap());
+    println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
+    println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
 }

@@ -15,8 +15,8 @@ fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial
     let x = Variable::new(String::from("x"));
     let z = Variable::new(String::from("z"));
 
-    let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
-    let q = q.apply_map(|c| MultiPolynomial::constant(c.clone()));
+    let p = p.apply_map_ref(|c| MultiPolynomial::constant(c.clone()));
+    let q = q.apply_map_ref(|c| MultiPolynomial::constant(c.clone()));
     let r = q
         .evaluate(&MultiPolynomial::add(
             MultiPolynomial::var(z.clone()),
@@ -26,7 +26,7 @@ fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial
 
     let root_sum_poly = Polynomial::resultant(p, r)
         .expand(&z)
-        .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
+        .apply_map_ref(|c| MultiPolynomial::as_constant(c).unwrap());
     root_sum_poly.primitive_squarefree_part()
 }
 
@@ -34,21 +34,21 @@ fn root_prod_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomia
     let x = Variable::new(String::from("x"));
     let t = Variable::new(String::from("t"));
 
-    let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
+    let p = p.apply_map_ref(|c| MultiPolynomial::constant(c.clone()));
     let q = q
-        .apply_map(|c| MultiPolynomial::constant(c.clone()))
+        .apply_map_ref(|c| MultiPolynomial::constant(c.clone()))
         .evaluate(&MultiPolynomial::var(x.clone()));
     let r = q.homogenize(&t).expand(&t);
     //x ** q.degree() * q(t * x ** -1)
 
     let root_prod_poly = Polynomial::resultant(p, r)
         .expand(&x)
-        .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
+        .apply_map_ref(|c| MultiPolynomial::as_constant(c).unwrap());
     root_prod_poly.primitive_squarefree_part()
 }
 
 fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Rational {
-    poly.apply_map(|x| Rational::from(x)).evaluate(&val)
+    poly.apply_map_ref(|x| Rational::from(x)).evaluate(&val)
 }
 
 fn bisect_box(
@@ -866,7 +866,7 @@ impl Polynomial<Integer> {
 
             //apply a transformation to p so that its roots in (a, b) are moved to roots in (0, 1)
             let (_, trans_poly) = Polynomial::compose(
-                &poly_no_endroots.apply_map(|c| Rational::from(c)),
+                &poly_no_endroots.apply_map_ref(|c| Rational::from(c)),
                 &Polynomial::from_coeffs(vec![a.clone(), b.clone() - a.clone()]),
             )
             .factor_primitive_fof();
@@ -1795,7 +1795,7 @@ impl RealAlgebraicRoot {
     }
 
     fn new_wide_bounds(poly: Polynomial<Integer>, wide_a: Rational, wide_b: Rational) -> Self {
-        let dir = poly.apply_map(|x| Rational::from(x)).evaluate(&wide_a) < Rational::from(0);
+        let dir = poly.apply_map_ref(|x| Rational::from(x)).evaluate(&wide_a) < Rational::from(0);
         let x = Self {
             poly,
             tight_a: wide_a.clone(),
@@ -2684,12 +2684,12 @@ mod tests {
             println!(
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
-                Polynomial::factorize_by_kroneckers_method(&exp)
+                Polynomial::factorize_by_kroneckers_method(exp.clone())
             );
             println!(
                 "rsp = {}    rsp_factored = {:?}",
                 Polynomial::to_string(&rsp),
-                Polynomial::factorize_by_kroneckers_method(&rsp)
+                Polynomial::factorize_by_kroneckers_method(rsp.clone())
             );
             assert!(Polynomial::are_associate(&exp, &rsp));
         }
@@ -2772,12 +2772,12 @@ mod tests {
             println!(
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
-                Polynomial::factorize_by_kroneckers_method(&exp)
+                Polynomial::factorize_by_kroneckers_method(exp.clone())
             );
             println!(
                 "rpp = {}    rpp_factored = {:?}",
                 Polynomial::to_string(&rpp),
-                Polynomial::factorize_by_kroneckers_method(&rpp)
+                Polynomial::factorize_by_kroneckers_method(rpp.clone())
             );
             assert!(Polynomial::are_associate(&exp, &rpp));
         }
