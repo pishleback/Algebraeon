@@ -171,11 +171,28 @@ macro_rules! impl_field {
         }
         impl UniqueFactorizationDomain for super::super::polynomial::poly::Polynomial<Modulo<$N>> {
             fn factor(&self) -> Option<Factored<Self>> {
+                CannonicalFiniteFieldStructure::<Modulo<$N>>::new();
                 self.clone().factorize_by_berlekamps_algorithm()
             }
         }
     };
 }
+
+pub struct SmallPrimeFiniteFieldStructure {
+
+}
+
+// impl FiniteFieldStructure for SmallPrimeFiniteFieldStructure {
+//     type ElementT;
+
+//     fn all_elements() -> Vec<Self::ElementT> {
+//         todo!()
+//     }
+
+//     fn characteristic_and_power() -> (Natural, Natural) {
+//         todo!()
+//     }
+// }
 
 impl_field!(2);
 impl_field!(3);

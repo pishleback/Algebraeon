@@ -246,6 +246,51 @@ pub trait FiniteField: FiniteUnits + Field {
     fn characteristic_and_power() -> (Natural, Natural);
 }
 
+pub trait FiniteFieldStructure {
+    type ElementT: Field;
+
+    fn all_elements(&self) -> Vec<Self::ElementT>;
+
+    //reutrn (p, k) where p is a prime and k>=1 such that |F|=p^k
+    fn characteristic_and_power(&self) -> (Natural, Natural);
+}
+
+#[derive(Debug, Clone)]
+pub struct CannonicalFiniteFieldStructure<F: FiniteField> {
+    all_elements: Vec<F>,
+    characteristic: Natural,
+    power: Natural,
+}
+
+impl<F: FiniteField> CannonicalFiniteFieldStructure<F> {
+    pub fn new() -> Self {
+        let mut all_elements = F::all_units();
+        all_elements.push(F::zero());
+        let (characteristic, power) = F::characteristic_and_power();
+        debug_assert_eq!(
+            Integer::from(characteristic.clone()).nat_pow(&power),
+            Integer::from(all_elements.len())
+        );
+        Self {
+            all_elements,
+            characteristic,
+            power,
+        }
+    }
+}
+
+impl<F: FiniteField> FiniteFieldStructure for CannonicalFiniteFieldStructure<F> {
+    type ElementT = F;
+
+    fn all_elements(&self) -> Vec<Self::ElementT> {
+        self.all_elements.clone()
+    }
+
+    fn characteristic_and_power(&self) -> (Natural, Natural) {
+        (self.characteristic.clone(), self.power.clone())
+    }
+}
+
 pub trait IntegralDomain: ComRing {
     //promise that mul(a, b) == 0 implies a == 0 or b == 0
 }
@@ -792,7 +837,7 @@ impl<F: Field> EuclideanDomain for F {
     }
 }
 
-impl <F : Field> GreatestCommonDivisorDomain for F {
+impl<F: Field> GreatestCommonDivisorDomain for F {
     fn gcd(x: Self, y: Self) -> Self {
         Self::euclidean_gcd(x, y)
     }
@@ -843,8 +888,10 @@ pub struct UniversalEuclideanQuotient<
     */
 }
 
-impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> PartialEq
-    for UniversalEuclideanQuotient<IS_FIELD, Ring>
+impl<
+        const IS_FIELD: bool,
+        Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain,
+    > PartialEq for UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
     fn eq(&self, other: &Self) -> bool {
         let modulus = Ring::gcd(self.modulus.clone(), other.modulus.clone());
@@ -852,13 +899,17 @@ impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain +
     }
 }
 
-impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> Eq
-    for UniversalEuclideanQuotient<IS_FIELD, Ring>
+impl<
+        const IS_FIELD: bool,
+        Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain,
+    > Eq for UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
 }
 
-impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain>
-    UniversalEuclideanQuotient<IS_FIELD, Ring>
+impl<
+        const IS_FIELD: bool,
+        Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain,
+    > UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
         if IS_FIELD {
@@ -879,7 +930,7 @@ impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain +
 
     pub fn modulus(&self) -> &Ring {
         &self.modulus
-    } 
+    }
 
     pub fn lift(self) -> Ring {
         self.rep
@@ -890,8 +941,10 @@ impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain +
     }
 }
 
-impl<const IS_FIELD: bool, Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> ComRing
-    for UniversalEuclideanQuotient<IS_FIELD, Ring>
+impl<
+        const IS_FIELD: bool,
+        Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain,
+    > ComRing for UniversalEuclideanQuotient<IS_FIELD, Ring>
 {
     fn zero() -> Self {
         Self {

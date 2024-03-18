@@ -12,12 +12,14 @@ use super::super::polynomial::poly::*;
 use super::super::ring::*;
 
 //https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
-pub fn factorize_by_sqfree_factorize<F: FiniteField>(
-    mut f: Polynomial<F>,
-    sqfree_factorize: &impl Fn(Polynomial<F>) -> Factored<Polynomial<F>>,
-) -> Factored<Polynomial<F>>
+pub fn factorize_by_sqfree_factorize_over_finite_field<FS: FiniteFieldStructure>(
+    fs: &FS,
+    mut f: Polynomial<FS::ElementT>,
+    sqfree_factorize: &impl Fn(Polynomial<FS::ElementT>) -> Factored<Polynomial<FS::ElementT>>,
+) -> Factored<Polynomial<FS::ElementT>>
 where
-    Polynomial<F>: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain,
+    Polynomial<FS::ElementT>:
+        EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain,
 {
     // println!("f = {:?}", f);
     let (unit, f) = f.factor_fav_assoc();
@@ -42,18 +44,18 @@ where
     if c != Polynomial::one() {
         // println!("c = {}", c);
         //c = c^{1/p}
-        let p = F::characteristic_and_power().0;
+        let p = fs.characteristic_and_power().0;
         let mut reduced_c_coeffs = vec![];
         for (k, coeff) in c.coeffs().into_iter().enumerate() {
             if Natural::from(k) % &p == 0 {
                 reduced_c_coeffs.push(coeff);
             } else {
-                debug_assert_eq!(coeff, F::zero());
+                debug_assert_eq!(coeff, FS::ElementT::zero());
             }
         }
         let reduced_c = Polynomial::from_coeffs(reduced_c_coeffs);
         // println!("reduced_c = {}", reduced_c);
-        factors.mul_mut(factorize_by_sqfree_factorize(reduced_c, sqfree_factorize).pow(&p));
+        factors.mul_mut(factorize_by_sqfree_factorize_over_finite_field(fs, reduced_c, sqfree_factorize).pow(&p));
     }
     factors
 }
@@ -383,85 +385,91 @@ impl<Ring: Field + FiniteUnits> Polynomial<Ring> {
     }
 }
 
-impl<F: FiniteField> Polynomial<F> {
-    pub fn factorize_by_berlekamps_algorithm(self) -> Option<Factored<Polynomial<F>>>
-    where
-        Self: UniqueFactorizationDomain,
-    {
-        let f = self;
-        if f == Self::zero() {
-            None
-        } else {
-            fn partial_factor<F: FiniteField>(
-                f: Polynomial<F>,
-            ) -> Option<(Polynomial<F>, Polynomial<F>)> {
-                // println!("FACTOR {}", f);
-                //f is squarefree
-                let f_deg = f.degree().unwrap();
-                let mut all_elems = F::all_units();
-                all_elems.push(F::zero());
-                let q = all_elems.len();
+pub fn factorize_by_berlekamps_algorithm<FS: FiniteFieldStructure>(
+    fs: &FS,
+    f: Polynomial<FS::ElementT>,
+) -> Option<Factored<Polynomial<FS::ElementT>>>
+where
+    Polynomial<FS::ElementT>: UniqueFactorizationDomain,
+{
+    if f == Polynomial::zero() {
+        None
+    } else {
+        fn partial_factor<FS: FiniteFieldStructure>(
+            fs: &FS,
+            f: Polynomial<FS::ElementT>,
+        ) -> Option<(Polynomial<FS::ElementT>, Polynomial<FS::ElementT>)> {
+            // println!("FACTOR {}", f);
+            //f is squarefree
+            let f_deg = f.degree().unwrap();
+            let all_elems = fs.all_elements();
+            let q = all_elems.len();
 
-                let mut row_polys = (0..f_deg)
-                    .map(|i| {
-                        Polynomial::rem_rref(
-                            Polynomial::add(
-                                Polynomial::var_pow(i * q),
-                                Polynomial::var_pow(i).neg(),
-                            ),
-                            &f,
-                        )
-                    })
-                    .collect_vec();
-                let mat = Matrix::construct(f_deg, f_deg, |i, j| row_polys[i].coeff(j));
-                // mat.pprint();
-                //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
-                let ker = mat.row_kernel();
-                // ker.pprint();
-                let ker_rank = ker.rank();
-                let ker_basis = ker
-                    .basis_matrices()
-                    .into_iter()
-                    .map(|col| {
-                        Polynomial::from_coeffs(
-                            (0..f_deg).map(|c| col.at(0, c).unwrap().clone()).collect(),
-                        )
-                    })
-                    .collect_vec();
+            let mut row_polys = (0..f_deg)
+                .map(|i| {
+                    Polynomial::rem_rref(
+                        Polynomial::add(Polynomial::var_pow(i * q), Polynomial::var_pow(i).neg()),
+                        &f,
+                    )
+                })
+                .collect_vec();
+            let mat = Matrix::construct(f_deg, f_deg, |i, j| row_polys[i].coeff(j));
+            // mat.pprint();
+            //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
+            let ker = mat.row_kernel();
+            // ker.pprint();
+            let ker_rank = ker.rank();
+            let ker_basis = ker
+                .basis_matrices()
+                .into_iter()
+                .map(|col| {
+                    Polynomial::from_coeffs(
+                        (0..f_deg).map(|c| col.at(0, c).unwrap().clone()).collect(),
+                    )
+                })
+                .collect_vec();
 
-                for berlekamp_subspace_coeffs in (0..ker_rank)
-                    .map(|i| all_elems.clone().into_iter())
-                    .multi_cartesian_product()
-                {
-                    let h = Polynomial::sum(
-                        (0..ker_rank)
-                            .map(|i| {
-                                Polynomial::mul_ref(
-                                    Polynomial::constant(berlekamp_subspace_coeffs[i].clone()),
-                                    &ker_basis[i],
-                                )
-                            })
-                            .collect(),
-                    );
-                    //g is a possible non-trivial factor
-                    let g = Polynomial::gcd(h.clone(), f.clone());
-                    // println!("g = {}", g);
-                    let g_deg = g.degree().unwrap();
-                    if g_deg != 0 && g_deg != f_deg {
-                        match Polynomial::div_rref(f, &g) {
-                            Ok(g_prime) => {
-                                return Some((g, g_prime));
-                            }
-                            Err(_) => panic!(),
+            for berlekamp_subspace_coeffs in (0..ker_rank)
+                .map(|i| all_elems.clone().into_iter())
+                .multi_cartesian_product()
+            {
+                let h = Polynomial::sum(
+                    (0..ker_rank)
+                        .map(|i| {
+                            Polynomial::mul_ref(
+                                Polynomial::constant(berlekamp_subspace_coeffs[i].clone()),
+                                &ker_basis[i],
+                            )
+                        })
+                        .collect(),
+                );
+                //g is a possible non-trivial factor
+                let g = Polynomial::gcd(h.clone(), f.clone());
+                // println!("g = {}", g);
+                let g_deg = g.degree().unwrap();
+                if g_deg != 0 && g_deg != f_deg {
+                    match Polynomial::div_rref(f, &g) {
+                        Ok(g_prime) => {
+                            return Some((g, g_prime));
                         }
+                        Err(_) => panic!(),
                     }
                 }
-                None
             }
-            Some(factorize_by_sqfree_factorize(f, &|f| {
-                factorize_by_find_factor(f, &partial_factor::<F>)
-            }))
+            None
         }
+        Some(factorize_by_sqfree_factorize_over_finite_field(fs, f, &|f| {
+            factorize_by_find_factor(f, &|f| partial_factor(fs, f))
+        }))
+    }
+}
+
+impl<F: FiniteField> Polynomial<F> {
+    pub fn factorize_by_berlekamps_algorithm(self: Polynomial<F>) -> Option<Factored<Polynomial<F>>>
+    where
+        Polynomial<F>: UniqueFactorizationDomain,
+    {
+        factorize_by_berlekamps_algorithm(&CannonicalFiniteFieldStructure::new(), self)
     }
 }
 
