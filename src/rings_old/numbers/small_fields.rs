@@ -103,7 +103,7 @@ impl UniqueFactorizationDomain for super::super::polynomial::poly::Polynomial<Qu
 
 #[cfg(test)]
 mod tests {
-    use crate::{rings::numbers::small_fields::QuaternaryField, ComRing, RingDivisionError};
+    use crate::{rings_old::numbers::small_fields::QuaternaryField, ComRing, RingDivisionError};
 
     #[test]
     fn test_neg() {

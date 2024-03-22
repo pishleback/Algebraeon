@@ -1,6 +1,6 @@
 use malachite_q::Rational;
 
-use crate::rings::linear::matrix::Matrix;
+use crate::rings_old::linear::matrix::Matrix;
 
 use super::{
     simplex::Simplex,

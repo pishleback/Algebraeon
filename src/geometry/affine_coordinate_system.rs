@@ -1,6 +1,6 @@
 use crate::{
     geometry::vector::Vector,
-    rings::linear::{
+    rings_old::linear::{
         lattice::{AffineLattice, LinearLattice},
         matrix::Matrix,
     },

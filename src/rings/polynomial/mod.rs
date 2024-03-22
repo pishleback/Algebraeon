@@ -1,4 +1,3 @@
-pub mod poly;
+pub mod polynomial;
 pub mod multipoly;
-pub mod hensel_lifting;
-pub mod factoring;
+// pub mod hensel_lifting;

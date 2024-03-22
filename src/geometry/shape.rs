@@ -4,7 +4,7 @@ use malachite_q::Rational;
 
 use crate::{
     geometry::vector::Vector,
-    rings::linear::{
+    rings_old::linear::{
         lattice::AffineLatticeElements,
         matrix::Matrix,
     },

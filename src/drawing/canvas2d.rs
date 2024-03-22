@@ -3,7 +3,7 @@ use malachite_q::Rational;
 
 use crate::{
     geometry::{shape::Shape, simplex::Simplex},
-    rings::ring::Real,
+    rings_old::ring::Real,
 };
 
 #[derive(Debug)]

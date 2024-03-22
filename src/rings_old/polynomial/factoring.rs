@@ -5,7 +5,7 @@ use itertools::Itertools;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use crate::rings::linear::matrix::Matrix;
+use crate::rings_old::linear::matrix::Matrix;
 
 use super::super::numbers::nzq::*;
 use super::super::polynomial::poly::*;
@@ -477,7 +477,7 @@ impl<F: FiniteField> Polynomial<F> {
 mod tests {
     use malachite_nz::integer::Integer;
 
-    use crate::rings::numbers::small_fields::QuaternaryField;
+    use crate::rings_old::numbers::small_fields::QuaternaryField;
 
     use super::super::super::ergonomic::*;
     use super::*;

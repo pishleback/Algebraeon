@@ -1,13 +1,6 @@
-use std::borrow::Borrow;
-use std::rc::Rc;
+use std::{borrow::Borrow, fmt::Display};
 
-use crate::polynomial::polynomial::*;
-
-use super::super::ring_structure::cannonical::*;
-use super::super::ring_structure::elements::*;
-use super::super::ring_structure::structure::*;
-use super::super::structure::*;
-use super::lattice::*;
+use super::super::{linear::lattice::*, numbers::nzq::*, polynomial::poly::*, ring::*};
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -17,14 +10,14 @@ pub enum MatOppErr {
 }
 
 #[derive(Debug, Clone)]
-pub struct Matrix<Set: Clone> {
+pub struct Matrix<Ring: ComRing> {
     dim1: usize,
     dim2: usize,
     transpose: bool,
-    elems: Vec<Set>, //length self.rows * self.cols. row r and column c is index c + r * self.cols
+    elems: Vec<Ring>, //length self.rows * self.cols. row r and column c is index c + r * self.cols
 }
 
-impl<Set: Clone> Matrix<Set> {
+impl<Ring: ComRing> Matrix<Ring> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         if self.elems.len() != self.dim1 * self.dim2 {
             return Err("matrix entries has the wrong length");
@@ -32,7 +25,7 @@ impl<Set: Clone> Matrix<Set> {
         Ok(())
     }
 
-    pub fn full(rows: usize, cols: usize, elem: &Set) -> Self {
+    pub fn full(rows: usize, cols: usize, elem: &Ring) -> Self {
         let mut elems = Vec::with_capacity(rows * cols);
         for _i in 0..rows * cols {
             elems.push(elem.clone());
@@ -45,7 +38,7 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
-    pub fn construct(rows: usize, cols: usize, make_entry: impl Fn(usize, usize) -> Set) -> Self {
+    pub fn construct(rows: usize, cols: usize, make_entry: impl Fn(usize, usize) -> Ring) -> Self {
         let mut elems = Vec::with_capacity(rows * cols);
         for idx in 0..rows * cols {
             let (r, c) = (idx / cols, idx % cols); //idx_to_rc for transpose=false
@@ -59,7 +52,7 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
-    pub fn from_rows(rows_elems: Vec<Vec<Set>>) -> Self {
+    pub fn from_rows(rows_elems: Vec<Vec<Ring>>) -> Self {
         let rows = rows_elems.len();
         assert!(rows >= 1);
         let cols = rows_elems[0].len();
@@ -69,7 +62,7 @@ impl<Set: Clone> Matrix<Set> {
         Self::construct(rows, cols, |r, c| rows_elems[r][c].clone())
     }
 
-    pub fn from_cols(cols_elems: Vec<Vec<Set>>) -> Self {
+    pub fn from_cols(cols_elems: Vec<Vec<Ring>>) -> Self {
         Self::from_rows(cols_elems).transpose()
     }
 
@@ -80,7 +73,7 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
-    pub fn at(&self, r: usize, c: usize) -> Result<&Set, MatOppErr> {
+    pub fn at(&self, r: usize, c: usize) -> Result<&Ring, MatOppErr> {
         if r >= self.rows() {
             Err(MatOppErr::InvalidIndex)
         } else if c >= self.cols() {
@@ -91,7 +84,7 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
-    pub fn at_mut(&mut self, r: usize, c: usize) -> Result<&mut Set, MatOppErr> {
+    pub fn at_mut(&mut self, r: usize, c: usize) -> Result<&mut Ring, MatOppErr> {
         if r >= self.rows() {
             Err(MatOppErr::InvalidIndex)
         } else if c >= self.cols() {
@@ -139,7 +132,7 @@ impl<Set: Clone> Matrix<Set> {
         self.submatrix((0..self.rows()).collect(), vec![col])
     }
 
-    pub fn apply_map<NewSet: Clone>(&self, f: impl Fn(&Set) -> NewSet) -> Matrix<NewSet> {
+    pub fn apply_map<ImgRing: ComRing>(&self, f: impl Fn(&Ring) -> ImgRing) -> Matrix<ImgRing> {
         Matrix {
             dim1: self.dim1,
             dim2: self.dim2,
@@ -161,7 +154,7 @@ impl<Set: Clone> Matrix<Set> {
         self.transpose = !self.transpose;
     }
 
-    pub fn join_rows<MatT: Borrow<Matrix<Set>>>(cols: usize, mats: Vec<MatT>) -> Matrix<Set> {
+    pub fn join_rows<MatT: Borrow<Matrix<Ring>>>(cols: usize, mats: Vec<MatT>) -> Matrix<Ring> {
         let mut rows = 0;
         for mat in &mats {
             assert_eq!(cols, mat.borrow().cols());
@@ -184,7 +177,7 @@ impl<Set: Clone> Matrix<Set> {
         })
     }
 
-    pub fn join_cols<MatT: Borrow<Matrix<Set>>>(rows: usize, mats: Vec<MatT>) -> Matrix<Set> {
+    pub fn join_cols<MatT: Borrow<Matrix<Ring>>>(rows: usize, mats: Vec<MatT>) -> Matrix<Ring> {
         let mut t_mats = vec![];
         for mat in mats {
             t_mats.push(mat.borrow().clone().transpose());
@@ -194,33 +187,18 @@ impl<Set: Clone> Matrix<Set> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MatrixStructure<RS: Structure> {
-    ring: Rc<RS>,
-}
-
-impl<RS: Structure> Structure for MatrixStructure<RS> {
-    type Set = Matrix<RS::Set>;
-}
-
-impl<RS: Structure> MatrixStructure<RS> {
-    pub fn new(ring: Rc<RS>) -> Self {
-        Self { ring }
-    }
-}
-
-impl<RS: EqualityStructure> MatrixStructure<RS> {
-    fn equal(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> bool {
-        let rows = a.rows();
-        let cols = a.cols();
-        if rows != b.rows() {
+impl<Ring: ComRing> PartialEq for Matrix<Ring> {
+    fn eq(&self, other: &Self) -> bool {
+        let rows = self.rows();
+        let cols = self.cols();
+        if rows != other.rows() {
             false
-        } else if cols != b.cols() {
+        } else if cols != other.cols() {
             false
         } else {
             for c in 0..cols {
                 for r in 0..rows {
-                    if !self.ring.equal(a.at(r, c).unwrap(), b.at(r, c).unwrap()) {
+                    if self.at(r, c).unwrap() != other.at(r, c).unwrap() {
                         return false;
                     }
                 }
@@ -230,51 +208,53 @@ impl<RS: EqualityStructure> MatrixStructure<RS> {
     }
 }
 
-impl<RS: DisplayableStructure> MatrixStructure<RS> {
-    pub fn pprint(&self, mat: &Matrix<RS::Set>) {
+impl<Ring: ComRing> Eq for Matrix<Ring> {}
+
+impl<Ring: ComRing + Display> Matrix<Ring> {
+    pub fn pprint(&self) {
         let mut str_rows = vec![];
-        for r in 0..mat.rows() {
+        for r in 0..self.rows() {
             str_rows.push(vec![]);
-            for c in 0..mat.cols() {
-                str_rows[r].push(self.ring.elem_to_string(mat.at(r, c).unwrap()));
+            for c in 0..self.cols() {
+                str_rows[r].push(self.at(r, c).unwrap().to_string());
             }
         }
-        let cols_widths: Vec<usize> = (0..mat.cols())
+        let cols_widths: Vec<usize> = (0..self.cols())
             .map(|c| {
-                (0..mat.rows())
+                (0..self.rows())
                     .map(|r| str_rows[r][c].len())
                     .fold(0usize, |a, b| a.max(b))
             })
             .collect();
 
-        for r in 0..mat.rows() {
-            for c in 0..mat.cols() {
+        for r in 0..self.rows() {
+            for c in 0..self.cols() {
                 while str_rows[r][c].len() < cols_widths[c] {
                     str_rows[r][c].push(' ');
                 }
             }
         }
-        for r in 0..mat.rows() {
-            if mat.rows() == 1 {
+        for r in 0..self.rows() {
+            if self.rows() == 1 {
                 print!("( ");
             } else if r == 0 {
                 print!("/ ");
-            } else if r == mat.rows() - 1 {
+            } else if r == self.rows() - 1 {
                 print!("\\ ");
             } else {
                 print!("| ");
             }
-            for c in 0..mat.cols() {
+            for c in 0..self.cols() {
                 if c != 0 {
                     print!("    ");
                 }
                 print!("{}", str_rows[r][c]);
             }
-            if mat.rows() == 1 {
+            if self.rows() == 1 {
                 print!(" )");
             } else if r == 0 {
                 print!(" \\");
-            } else if r == mat.rows() - 1 {
+            } else if r == self.rows() - 1 {
                 print!(" /");
             } else {
                 print!(" |");
@@ -284,32 +264,45 @@ impl<RS: DisplayableStructure> MatrixStructure<RS> {
     }
 }
 
-impl<RS: RingStructure> MatrixStructure<RS> {
-    pub fn zero(&self, rows: usize, cols: usize) -> Matrix<RS::Set> {
-        Matrix::construct(rows, cols, |_r, _c| self.ring.zero())
+impl<Ring: ComRing> Matrix<Ring> {
+    pub fn zero(rows: usize, cols: usize) -> Self {
+        Matrix::construct(rows, cols, |_r, _c| Ring::zero())
     }
 
-    pub fn ident(&self, n: usize) -> Matrix<RS::Set> {
-        Matrix::construct(n, n, |r, c| {
-            if r == c {
-                self.ring.one()
-            } else {
-                self.ring.zero()
-            }
-        })
+    pub fn ident(n: usize) -> Self {
+        Matrix::construct(n, n, |r, c| if r == c { Ring::one() } else { Ring::zero() })
     }
 
-    pub fn diag(&self, diag: &Vec<RS::Set>) -> Matrix<RS::Set> {
+    pub fn diag(diag: &Vec<Ring>) -> Self {
         Matrix::construct(diag.len(), diag.len(), |r, c| {
             if r == c {
                 diag[r].clone()
             } else {
-                self.ring.zero()
+                Ring::zero()
             }
         })
     }
 
-    pub fn add_mut(&self, a: &mut Matrix<RS::Set>, b: &Matrix<RS::Set>) -> Result<(), MatOppErr> {
+    // pub fn equal(&self, a: &Self, b: &Self) -> bool {
+    //     let rows = a.rows();
+    //     let cols = a.cols();
+    //     if rows != b.rows() {
+    //         false
+    //     } else if cols != b.cols() {
+    //         false
+    //     } else {
+    //         for c in 0..cols {
+    //             for r in 0..rows {
+    //                 if !Ring::equal(a.at(r, c).unwrap(), b.at(r, c).unwrap()) {
+    //                     return false;
+    //                 }
+    //             }
+    //         }
+    //         true
+    //     }
+    // }
+
+    pub fn add_mut(a: &mut Self, b: &Self) -> Result<(), MatOppErr> {
         if a.rows() != b.rows() || a.cols() != b.cols() {
             Err(MatOppErr::DimMissmatch)
         } else {
@@ -317,58 +310,75 @@ impl<RS: RingStructure> MatrixStructure<RS> {
             let cols = a.cols();
             for c in 0..cols {
                 for r in 0..rows {
-                    self.ring
-                        .add_mut(a.at_mut(r, c).unwrap(), b.at(r, c).unwrap());
+                    Ring::add_mut(a.at_mut(r, c).unwrap(), b.at(r, c).unwrap());
                 }
             }
             Ok(())
         }
     }
 
-    pub fn add(
-        &self,
-        a: &Matrix<RS::Set>,
-        b: &Matrix<RS::Set>,
-    ) -> Result<Matrix<RS::Set>, MatOppErr> {
+    pub fn add(mut a: Self, b: Self) -> Result<Self, MatOppErr> {
+        match Self::add_mut(&mut a, &b) {
+            Ok(()) => Ok(a),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn add_ref(mut a: Self, b: &Self) -> Result<Self, MatOppErr> {
+        match Self::add_mut(&mut a, b) {
+            Ok(()) => Ok(a),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn add_refs(a: &Self, b: &Self) -> Result<Self, MatOppErr> {
         let mut new_a = a.clone();
-        match self.add_mut(&mut new_a, &b) {
+        match Self::add_mut(&mut new_a, &b) {
             Ok(()) => Ok(new_a),
             Err(e) => Err(e),
         }
     }
 
-    pub fn neg_mut(&self, a: &mut Matrix<RS::Set>) {
-        for r in 0..a.rows() {
-            for c in 0..a.cols() {
-                let neg_elem = self.ring.neg(a.at(r, c).unwrap());
-                *a.at_mut(r, c).unwrap() = neg_elem;
+    pub fn neg_mut(&mut self) {
+        for r in 0..self.rows() {
+            for c in 0..self.cols() {
+                let neg_elem = Ring::neg_ref(self.at(r, c).unwrap());
+                *self.at_mut(r, c).unwrap() = neg_elem;
             }
         }
     }
 
-    pub fn neg(&self, mut a: Matrix<RS::Set>) -> Matrix<RS::Set> {
-        self.neg_mut(&mut a);
-        a
+    pub fn neg(mut self) -> Self {
+        self.neg_mut();
+        self
     }
 
-    pub fn mul(
-        &self,
-        a: &Matrix<RS::Set>,
-        b: &Matrix<RS::Set>,
-    ) -> Result<Matrix<RS::Set>, MatOppErr> {
+    // pub fn mul(a: Self, b: Self) -> Result<Self, MatOppErr> {
+    //     Self::mul_refs(&a, &b)
+    // }
+
+    // pub fn mul_lref(a: &Self, b: Self) -> Result<Self, MatOppErr> {
+    //     Self::mul_refs(a, &b)
+    // }
+
+    // pub fn mul_rref(a: Self, b: &Self) -> Result<Self, MatOppErr> {
+    //     Self::mul_refs(&a, b)
+    // }
+
+    pub fn mul_refs(a: &Self, b: &Self) -> Result<Self, MatOppErr> {
         let mids = a.cols();
         if mids != b.rows() {
             return Err(MatOppErr::DimMissmatch);
         }
         let rows = a.rows();
         let cols = b.cols();
-        let mut s = self.zero(rows, cols);
+        let mut s = Self::zero(rows, cols);
         for r in 0..rows {
             for c in 0..cols {
                 for m in 0..mids {
-                    self.ring.add_mut(
+                    Ring::add_mut(
                         s.at_mut(r, c).unwrap(),
-                        &self.ring.mul(a.at(r, m).unwrap(), b.at(m, c).unwrap()),
+                        &Ring::mul_refs(a.at(r, m).unwrap(), b.at(m, c).unwrap()),
                     );
                 }
             }
@@ -376,35 +386,34 @@ impl<RS: RingStructure> MatrixStructure<RS> {
         Ok(s)
     }
 
-    pub fn mul_scalar(&self, mut a: Matrix<RS::Set>, scalar: &RS::Set) -> Matrix<RS::Set> {
+    pub fn mul_scalar(mut a: Self, scalar: &Ring) -> Self {
         for r in 0..a.rows() {
             for c in 0..a.cols() {
-                self.ring.mul_mut(a.at_mut(r, c).unwrap(), scalar);
+                Ring::mul_mut(a.at_mut(r, c).unwrap(), scalar);
             }
         }
         a
     }
 
-    pub fn mul_scalar_ref(&self, a: &Matrix<RS::Set>, scalar: &RS::Set) -> Matrix<RS::Set> {
-        self.mul_scalar(a.clone(), scalar)
+    pub fn mul_scalar_ref(a: &Self, scalar: &Ring) -> Self {
+        Self::mul_scalar(a.clone(), scalar)
     }
 
-    pub fn det_naive(&self, a: &Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
-        let n = a.dim1;
-        if n != a.dim2 {
+    pub fn det_naive(&self) -> Result<Ring, MatOppErr> {
+        let n = self.dim1;
+        if n != self.dim2 {
             Err(MatOppErr::NotSquare)
         } else {
-            let mut det = self.ring.zero();
+            let mut det = Ring::zero();
             for perm in super::super::super::sets::permutations::all_perms(n) {
-                let mut prod = self.ring.one();
+                let mut prod = Ring::one();
                 for k in 0..n {
-                    self.ring
-                        .mul_mut(&mut prod, a.at(k, perm.call(k).unwrap()).unwrap());
+                    Ring::mul_mut(&mut prod, self.at(k, perm.call(k).unwrap()).unwrap());
                 }
                 if !perm.sign() {
-                    prod = self.ring.neg(&prod);
+                    Ring::neg_mut(&mut prod);
                 }
-                self.ring.add_mut(&mut det, &prod);
+                Ring::add_mut(&mut det, &prod);
             }
             Ok(det)
         }
@@ -412,19 +421,19 @@ impl<RS: RingStructure> MatrixStructure<RS> {
 }
 
 #[derive(Debug)]
-enum ElementaryOppType<RS: RingStructure> {
+enum ElementaryOppType<Ring: ComRing> {
     //swap distinct rows
     Swap(usize, usize),
     //multiply a row by a unit
     UnitMul {
         row: usize,
-        unit: RS::Set,
+        unit: Ring,
     },
     //row(i) -> row(i) + x*row(j)
     AddRowMul {
         i: usize,
         j: usize,
-        x: RS::Set,
+        x: Ring,
     },
     //apply invertible row operations to two rows
     // /a b\
@@ -433,20 +442,19 @@ enum ElementaryOppType<RS: RingStructure> {
     TwoInv {
         i: usize,
         j: usize,
-        a: RS::Set,
-        b: RS::Set,
-        c: RS::Set,
-        d: RS::Set,
+        a: Ring,
+        b: Ring,
+        c: Ring,
+        d: Ring,
     },
 }
 
-struct ElementaryOpp<RS: RingStructure> {
-    ring: Rc<RS>,
+struct ElementaryOpp<Ring: ComRing> {
     transpose: bool, //false = row opp, true = column opp
-    opp: ElementaryOppType<RS>,
+    opp: ElementaryOppType<Ring>,
 }
 
-impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
+impl<Ring: BezoutDomain> ElementaryOpp<Ring> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         match &self.opp {
             ElementaryOppType::Swap(i, j) => {
@@ -460,7 +468,7 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
                 }
             }
             ElementaryOppType::UnitMul { row: _row, unit } => {
-                if !self.ring.is_unit(unit) {
+                if !Ring::is_unit(unit.clone()) {
                     return Err("can only multiply a row by a unit");
                 }
             }
@@ -468,17 +476,13 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
                 if i == j {
                     return Err("rows must be distinct");
                 }
-                let m = Matrix::<RS::Set> {
+                let m = Matrix::<Ring> {
                     dim1: 2,
                     dim2: 2,
                     transpose: false,
                     elems: vec![a.clone(), b.clone(), c.clone(), d.clone()],
                 };
-                if !self.ring.is_unit(
-                    &MatrixStructure::new(self.ring.clone())
-                        .det_naive(&m)
-                        .unwrap(),
-                ) {
+                if !Ring::is_unit(m.det_naive().unwrap()) {
                     return Err("can only apply an invertible row opperation to two rows");
                 }
             }
@@ -486,31 +490,29 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
         Ok(())
     }
 
-    fn new_row_opp(ring: Rc<RS>, opp: ElementaryOppType<RS>) -> Self {
+    fn new_row_opp(opp: ElementaryOppType<Ring>) -> Self {
         Self {
-            ring,
             transpose: false,
             opp,
         }
     }
 
-    fn new_col_opp(ring: Rc<RS>, opp: ElementaryOppType<RS>) -> Self {
+    fn new_col_opp(opp: ElementaryOppType<Ring>) -> Self {
         Self {
-            ring,
             transpose: true,
             opp,
         }
     }
 
-    fn det(&self) -> RS::Set {
+    fn det(&self) -> Ring {
         match &self.opp {
-            ElementaryOppType::Swap(_i, _j) => self.ring.neg(&self.ring.one()),
+            ElementaryOppType::Swap(_i, _j) => Ring::neg(Ring::one()),
             ElementaryOppType::UnitMul { row: _row, unit } => unit.clone(),
             ElementaryOppType::AddRowMul {
                 i: _i,
                 j: _j,
                 x: _x,
-            } => self.ring.one(),
+            } => Ring::one(),
             ElementaryOppType::TwoInv {
                 i: _i,
                 j: _j,
@@ -518,13 +520,11 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
                 b,
                 c,
                 d,
-            } => self
-                .ring
-                .add(&self.ring.mul(a, d), &self.ring.neg(&self.ring.mul(b, c))),
+            } => Ring::add(Ring::mul_refs(a, d), Ring::neg(Ring::mul_refs(b, c))),
         }
     }
 
-    fn apply(&self, m: &mut Matrix<RS::Set>) {
+    fn apply(&self, m: &mut Matrix<Ring>) {
         debug_assert!(self.check_invariants().is_ok());
         if self.transpose {
             m.transpose_mut();
@@ -543,15 +543,15 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
             // \0 1/
             ElementaryOppType::AddRowMul { i, j, x } => {
                 for col in 0..m.cols() {
-                    let offset = self.ring.mul(m.at(*j, col).unwrap(), x);
-                    self.ring.add_mut(m.at_mut(*i, col).unwrap(), &offset)
+                    let offset = Ring::mul_refs(m.at(*j, col).unwrap(), x);
+                    Ring::add_mut(m.at_mut(*i, col).unwrap(), &offset)
                 }
             }
             // /u 0\
             // \0 1/
             ElementaryOppType::UnitMul { row, unit } => {
                 for col in 0..m.cols() {
-                    self.ring.mul_mut(m.at_mut(*row, col).unwrap(), unit)
+                    Ring::mul_mut(m.at_mut(*row, col).unwrap(), unit)
                 }
             }
             // /a b\
@@ -559,14 +559,14 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
             ElementaryOppType::TwoInv { i, j, a, b, c, d } => {
                 for col in 0..m.cols() {
                     // tmp = c*row(i) + d*row(j)
-                    let tmp = self.ring.add(
-                        &self.ring.mul(c, m.at(*i, col).unwrap()),
-                        &self.ring.mul(d, m.at(*j, col).unwrap()),
+                    let tmp = Ring::add(
+                        Ring::mul_refs(c, m.at(*i, col).unwrap()),
+                        Ring::mul_refs(d, m.at(*j, col).unwrap()),
                     );
                     // row(i) = a*row(i) + b*row(j)
-                    *m.at_mut(*i, col).unwrap() = self.ring.add(
-                        &self.ring.mul(a, m.at(*i, col).unwrap()),
-                        &self.ring.mul(b, m.at(*j, col).unwrap()),
+                    *m.at_mut(*i, col).unwrap() = Ring::add(
+                        Ring::mul_refs(a, m.at(*i, col).unwrap()),
+                        Ring::mul_refs(b, m.at(*j, col).unwrap()),
                     );
                     // row(j) = tmp
                     *m.at_mut(*j, col).unwrap() = tmp;
@@ -579,70 +579,66 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
-    pub fn row_span(&self, a: Matrix<RS::Set>) -> LinearLattice<RS::Set> {
-        LinearLatticeStructure::new(self.ring.clone()).from_span(
+impl<Ring: BezoutDomain> Matrix<Ring> {
+    pub fn row_span(self) -> LinearLattice<Ring> {
+        LinearLattice::from_span(
             1,
-            a.cols(),
-            (0..a.rows())
-                .map(|r| a.submatrix(vec![r], (0..a.cols()).collect()))
+            self.cols(),
+            (0..self.rows())
+                .map(|r| self.submatrix(vec![r], (0..self.cols()).collect()))
                 .collect(),
         )
     }
 
-    pub fn col_span(&self, a: Matrix<RS::Set>) -> LinearLattice<RS::Set> {
-        LinearLatticeStructure::new(self.ring.clone()).from_span(
-            a.rows(),
+    pub fn col_span(self) -> LinearLattice<Ring> {
+        LinearLattice::from_span(
+            self.rows(),
             1,
-            (0..a.cols())
-                .map(|c| a.submatrix((0..a.rows()).collect(), vec![c]))
+            (0..self.cols())
+                .map(|c| self.submatrix((0..self.rows()).collect(), vec![c]))
                 .collect(),
         )
     }
 
-    pub fn row_affine_span(&self, a: Matrix<RS::Set>) -> AffineLattice<RS::Set> {
-        let affine_lattice_structure = AffineLatticeStructure::new(self.ring.clone());
-        if a.rows() == 0 {
-            affine_lattice_structure.empty(1, a.cols())
+    pub fn row_affine_span(self) -> AffineLattice<Ring> {
+        if self.rows() == 0 {
+            AffineLattice::empty(1, self.cols())
         } else {
-            let offset = a.get_row(0);
+            let offset = self.get_row(0);
 
-            let b = Matrix::construct(a.rows() - 1, a.cols(), |r, c| {
-                self.ring.add(
-                    &self.ring.neg(offset.at(0, c).unwrap()),
-                    a.at(r + 1, c).unwrap(),
+            let b = Matrix::construct(self.rows() - 1, self.cols(), |r, c| {
+                Ring::add_ref(
+                    Ring::neg_ref(offset.at(0, c).unwrap()),
+                    self.at(r + 1, c).unwrap(),
                 )
             });
 
-            let linlat = self.row_span(b);
-
-            affine_lattice_structure.from_offset_and_linear_lattice(1, a.cols(), offset, linlat)
+            let linlat = b.row_span();
+            AffineLattice::from_offset_and_linear_lattice(1, self.cols(), offset, linlat)
         }
     }
 
-    pub fn col_affine_span(&self, a: Matrix<RS::Set>) -> AffineLattice<RS::Set> {
-        let affine_lattice_structure = AffineLatticeStructure::new(self.ring.clone());
-        if a.cols() == 0 {
-            affine_lattice_structure.empty(a.rows(), 1)
+    pub fn col_affine_span(self) -> AffineLattice<Ring> {
+        if self.cols() == 0 {
+            AffineLattice::empty(self.rows(), 1)
         } else {
-            let offset = a.get_col(0);
+            let offset = self.get_col(0);
 
-            let b = Matrix::construct(a.rows(), a.cols() - 1, |r, c| {
-                self.ring.add(
-                    &self.ring.neg(offset.at(r, 0).unwrap()),
-                    a.at(r, c + 1).unwrap(),
+            let b = Matrix::construct(self.rows(), self.cols() - 1, |r, c| {
+                Ring::add_ref(
+                    Ring::neg_ref(offset.at(r, 0).unwrap()),
+                    self.at(r, c + 1).unwrap(),
                 )
             });
 
-            let linlat = self.col_span(b);
-
-            affine_lattice_structure.from_offset_and_linear_lattice(a.rows(), 1, offset, linlat)
+            let linlat = b.col_span();
+            AffineLattice::from_offset_and_linear_lattice(self.rows(), 1, offset, linlat)
         }
     }
 
-    pub fn row_kernel(&self, a: Matrix<RS::Set>) -> LinearLattice<RS::Set> {
-        let (_h, u, _u_det, pivs) = self.row_hermite_algorithm(a);
-        LinearLatticeStructure::new(self.ring.clone()).from_basis(
+    pub fn row_kernel(self) -> LinearLattice<Ring> {
+        let (_h, u, _u_det, pivs) = self.row_hermite_algorithm();
+        LinearLattice::from_basis(
             1,
             u.cols(),
             (pivs.len()..u.rows())
@@ -652,9 +648,9 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
         )
     }
 
-    pub fn col_kernel(&self, a: Matrix<RS::Set>) -> LinearLattice<RS::Set> {
-        let (_h, u, _u_det, pivs) = self.col_hermite_algorithm(a);
-        LinearLatticeStructure::new(self.ring.clone()).from_basis(
+    pub fn col_kernel(self) -> LinearLattice<Ring> {
+        let (_h, u, _u_det, pivs) = self.col_hermite_algorithm();
+        LinearLattice::from_basis(
             u.rows(),
             1,
             (pivs.len()..u.cols())
@@ -664,103 +660,90 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
         )
     }
 
-    pub fn row_solve(
-        &self,
-        m: &Matrix<RS::Set>,
-        y: impl Borrow<Matrix<RS::Set>>,
-    ) -> Option<Matrix<RS::Set>> {
-        match self.col_solve(&m.transpose_ref(), &y.borrow().transpose_ref()) {
+    pub fn row_solve<VecT: Borrow<Self>>(&self, y: VecT) -> Option<Self> {
+        match self.transpose_ref().col_solve(&y.borrow().transpose_ref()) {
             Some(x) => Some(x.transpose()),
             None => None,
         }
     }
 
-    pub fn col_solve(
-        &self,
-        m: &Matrix<RS::Set>,
-        y: impl Borrow<Matrix<RS::Set>>,
-    ) -> Option<Matrix<RS::Set>> {
+    pub fn col_solve<VecT: Borrow<Self>>(&self, y: VecT) -> Option<Self> {
+        let m = self;
         assert_eq!(y.borrow().rows(), m.rows());
         assert_eq!(y.borrow().cols(), 1);
         //the kernel of ext_mat is related to the solution
         let ext_mat = Matrix::join_cols(m.rows(), vec![y.borrow(), m]);
         //we are looking for a point in the column kernel where the first coordinate is 1
-        let col_ker = self.col_kernel(ext_mat);
+        let col_ker = ext_mat.col_kernel();
 
-        let first_coords: Vec<&RS::Set> = (0..LinearLatticeStructure::new(self.ring.clone())
-            .rank(&col_ker))
-            .map(|basis_num| {
-                LinearLatticeStructure::new(self.ring.clone())
-                    .basis_matrix_element(&col_ker, basis_num, 0, 0)
-            })
+        let first_coords: Vec<&Ring> = (0..col_ker.rank())
+            .map(|basis_num| col_ker.basis_matrix_element(basis_num, 0, 0))
             .collect();
 
-        let (g, taps) = self.ring.xgcd_list(first_coords);
+        let (g, taps) = Ring::xgcd_list(first_coords);
 
-        if self.ring.is_unit(&g) {
-            debug_assert!(self.ring.equal(&g, &self.ring.one()));
+        if Ring::is_unit(g.clone()) {
+            debug_assert_eq!(g, Ring::one());
         }
-        if self.ring.equal(&g, &self.ring.one()) {
+        if g == Ring::one() {
             //there is a solution
             //it is given by -(sum(taps * col_ker.basis)) with the first coordinate (equal to 1) removed
-            let mut ext_ans = self.zero(m.cols() + 1, 1);
-            for basis_num in 0..LinearLatticeStructure::new(self.ring.clone()).rank(&col_ker) {
-                self.add_mut(
+            let mut ext_ans = Self::zero(m.cols() + 1, 1);
+            for basis_num in 0..col_ker.rank() {
+                Self::add_mut(
                     &mut ext_ans,
-                    &self.mul_scalar_ref(
-                        &LinearLatticeStructure::new(self.ring.clone())
-                            .basis_matrix(&col_ker, basis_num),
-                        &taps[basis_num],
-                    ),
+                    &Self::mul_scalar_ref(&col_ker.basis_matrix(basis_num), &taps[basis_num]),
                 )
                 .unwrap();
             }
-            debug_assert!(self.ring.equal(ext_ans.at(0, 0).unwrap(), &self.ring.one()));
-            let x = self.neg(ext_ans.submatrix((1..ext_ans.rows()).collect(), vec![0]));
-            debug_assert!(self.equal(&self.mul(m, &x).unwrap(), y.borrow()));
+            debug_assert_eq!(ext_ans.at(0, 0).unwrap(), &Ring::one());
+            let x = ext_ans
+                .submatrix((1..ext_ans.rows()).collect(), vec![0])
+                .neg();
+            debug_assert_eq!(&Self::mul_refs(m, &x).unwrap(), y.borrow());
             Some(x)
         } else {
             None //there is no solution
         }
     }
 
-    pub fn row_solution_lattice(
-        &self,
-        m: &Matrix<RS::Set>,
-        y: impl Borrow<Matrix<RS::Set>>,
-    ) -> AffineLattice<RS::Set> {
-        match self.row_solve(m, y) {
-            Some(x) => AffineLatticeStructure::new(self.ring.clone())
-                .from_offset_and_linear_lattice(1, m.rows(), x, self.row_kernel(m.clone())),
-            None => AffineLatticeStructure::new(self.ring.clone()).empty(1, m.rows()),
+    pub fn row_solution_lattice<VecT: Borrow<Self>>(&self, y: VecT) -> AffineLattice<Ring> {
+        match self.row_solve(y) {
+            Some(x) => AffineLattice::from_offset_and_linear_lattice(
+                1,
+                self.rows(),
+                x,
+                self.clone().row_kernel(),
+            ),
+            None => AffineLattice::empty(1, self.rows()),
         }
     }
 
-    pub fn col_solution_lattice(
-        &self,
-        m: &Matrix<RS::Set>,
-        y: impl Borrow<Matrix<RS::Set>>,
-    ) -> AffineLattice<RS::Set> {
-        match self.col_solve(m, y) {
-            Some(x) => AffineLatticeStructure::new(self.ring.clone())
-                .from_offset_and_linear_lattice(m.cols(), 1, x, self.col_kernel(m.clone())),
-            None => AffineLatticeStructure::new(self.ring.clone()).empty(m.cols(), 1),
+    pub fn col_solution_lattice<VecT: Borrow<Self>>(&self, y: VecT) -> AffineLattice<Ring> {
+        match self.col_solve(y) {
+            Some(x) => AffineLattice::from_offset_and_linear_lattice(
+                self.cols(),
+                1,
+                x,
+                self.clone().col_kernel(),
+            ),
+            None => AffineLattice::empty(self.cols(), 1),
         }
     }
 
+    //TODO: replace with over a pid
     //if A:=self return (H, U, u_det, pivots) such that
     //H is in row hermite normal form
     //U is invertible
     //H=UA
     //u det is the determinant of u. It is a unit
     //pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
-    pub fn row_hermite_algorithm(
-        &self,
-        mut m: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, RS::Set, Vec<usize>) {
+    pub fn row_hermite_algorithm(self) -> (Self, Self, Ring, Vec<usize>) {
+        let mut m = self;
+
         //build up U by applying row opps to the identity as we go
-        let mut u = self.ident(m.rows());
-        let mut u_det = self.ring.one();
+        let mut u = Self::ident(m.rows());
+        let mut u_det = Ring::one();
         let mut pivs = vec![];
 
         let (mut pr, mut pc) = (0, 0);
@@ -773,7 +756,7 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                 }
 
                 for r in pr..m.rows() {
-                    if !self.ring.equal(m.at(r, pc).unwrap(), &self.ring.zero()) {
+                    if m.at(r, pc).unwrap() != &Ring::zero() {
                         break 'next_pivot_loop;
                     }
                 }
@@ -788,115 +771,100 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                     let a = m.at(pr, pc).unwrap();
                     let b = m.at(r, pc).unwrap();
                     //if a=0 and b=0 there is nothing to do. The reduction step would fail because d=0 and we divide by d, so just skip it in this case
-                    if !self.ring.equal(a, &self.ring.zero())
-                        || !self.ring.equal(b, &self.ring.zero())
-                    {
-                        let (d, x, y) = self.ring.xgcd(a, b);
-                        debug_assert!(self.ring.equal(
-                            &self.ring.add(&self.ring.mul(&x, a), &self.ring.mul(&y, b)),
-                            &d
-                        ));
+                    if a != &Ring::zero() || b != &Ring::zero() {
+                        let (d, x, y) = Ring::xgcd(a.clone(), b.clone());
+                        debug_assert_eq!(
+                            Ring::add(Ring::mul_refs(&x, a), Ring::mul_refs(&y, b)),
+                            d
+                        );
                         // perform the following row opps on self
                         // / x  -b/d \
                         // \ y   a/d /
-                        let row_opp = ElementaryOpp::new_row_opp(
-                            self.ring.clone(),
-                            ElementaryOppType::TwoInv {
-                                i: pr,
-                                j: r,
-                                a: x,
-                                b: y,
-                                //TODO: compute b/d and a/d at the same time d is computed?
-                                c: self.ring.neg(&self.ring.div(b, &d).unwrap()),
-                                d: self.ring.div(a, &d).unwrap(),
-                            },
-                        );
+                        let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::TwoInv {
+                            i: pr,
+                            j: r,
+                            a: x,
+                            b: y,
+                            //TODO: compute b/d and a/d at the same time d is computed?
+                            c: Ring::neg(Ring::div(b.clone(), d.clone()).unwrap()),
+                            d: Ring::div(a.clone(), d.clone()).unwrap(),
+                        });
                         //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
                         row_opp.apply(&mut m);
                         row_opp.apply(&mut u);
-                        self.ring.mul_mut(&mut u_det, &row_opp.det());
+                        Ring::mul_mut(&mut u_det, &row_opp.det());
                     }
                 }
             } else {
                 //explicitly put the pivot into fav assoc form
-                let (unit, _assoc) = self.ring.factor_fav_assoc(m.at(pr, pc).unwrap());
-                let row_opp = ElementaryOpp::new_row_opp(
-                    self.ring.clone(),
-                    ElementaryOppType::UnitMul {
-                        row: pr,
-                        unit: self.ring.inv(&unit).unwrap(),
-                    },
-                );
+                let (unit, _assoc) = Ring::factor_fav_assoc_ref(m.at(pr, pc).unwrap());
+                let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::UnitMul {
+                    row: pr,
+                    unit: Ring::inv(unit).unwrap(),
+                });
                 //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
                 row_opp.apply(&mut m);
                 row_opp.apply(&mut u);
-                self.ring.mul_mut(&mut u_det, &row_opp.det());
+                Ring::mul_mut(&mut u_det, &row_opp.det());
             }
 
             //should have eliminated everything below the pivot
             for r in pr + 1..m.rows() {
-                debug_assert!(self.ring.equal(m.at(r, pc).unwrap(), &self.ring.zero()));
+                debug_assert_eq!(m.at(r, pc).unwrap(), &Ring::zero());
             }
             pr += 1;
         }
 
         if m.rows() <= 4 {
-            debug_assert!(self.ring.equal(&self.det_naive(&u).unwrap(), &u_det));
+            debug_assert_eq!(u.det_naive().unwrap(), u_det);
         }
 
         (m, u, u_det, pivs)
     }
 
-    pub fn col_hermite_algorithm(
-        &self,
-        a: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, RS::Set, Vec<usize>) {
-        let (rh, ru, u_det, pivs) = self.row_hermite_algorithm(a.transpose());
+    pub fn col_hermite_algorithm(self) -> (Self, Self, Ring, Vec<usize>) {
+        let (rh, ru, u_det, pivs) = self.transpose().row_hermite_algorithm();
         (rh.transpose(), ru.transpose(), u_det, pivs)
     }
 
-    pub fn det(&self, a: Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
-        let n = a.rows();
-        if n != a.cols() {
+    pub fn det(self) -> Result<Ring, MatOppErr> {
+        let n = self.rows();
+        if n != self.cols() {
             Err(MatOppErr::NotSquare)
         } else {
-            let (h, _u, u_det, _pivs) = self.row_hermite_algorithm(a);
+            let (h, _u, u_det, _pivs) = self.row_hermite_algorithm();
             //h = u * self, we know det(u), and h is upper triangular
-            let mut h_det = self.ring.one();
+            let mut h_det = Ring::one();
             for i in 0..n {
-                self.ring.mul_mut(&mut h_det, h.at(i, i).unwrap());
+                Ring::mul_mut(&mut h_det, h.at(i, i).unwrap());
             }
-            Ok(self.ring.div(&h_det, &u_det).unwrap())
+            Ok(Ring::div(h_det, u_det).unwrap())
         }
     }
 
-    pub fn rank(&self, a: Matrix<RS::Set>) -> usize {
-        let (_h, _u, _u_det, pivs) = self.row_hermite_algorithm(a);
+    pub fn rank(self) -> usize {
+        let (_h, _u, _u_det, pivs) = self.row_hermite_algorithm();
         pivs.len()
     }
 
     //return (u, s, v, k) such that self = usv and s is in smith normal form and u, v are invertible and k is the number of non-zero elements in the diagonal of s
-    pub fn smith_algorithm(
-        &self,
-        mut m: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, Matrix<RS::Set>, usize) {
-        let mut u = self.ident(m.rows());
-        let mut v = self.ident(m.cols());
+    pub fn smith_algorithm(self) -> (Self, Self, Self, usize) {
+        let mut m = self;
+
+        let mut u = Self::ident(m.rows());
+        let mut v = Self::ident(m.cols());
 
         let mut n = 0;
         'inductive_loop: while n < m.rows() && n < m.cols() {
             //search for a non-zero element to make the new starting point for (n, n)
             //having a non-zero element is necessary later in the algorithm
             'search_for_nonzero_element: {
-                if self.ring.equal(m.at(n, n).unwrap(), &self.ring.zero()) {
+                if m.at(n, n).unwrap() == &Ring::zero() {
                     //search the first row to start with
                     for c in n + 1..m.cols() {
-                        if !self.ring.equal(m.at(n, c).unwrap(), &self.ring.zero()) {
+                        if m.at(n, c).unwrap() != &Ring::zero() {
                             //swap column n and column c
-                            let col_opp = ElementaryOpp::new_col_opp(
-                                self.ring.clone(),
-                                ElementaryOppType::Swap(n, c),
-                            );
+                            let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::Swap(n, c));
                             col_opp.apply(&mut m);
                             col_opp.apply(&mut v);
 
@@ -906,20 +874,16 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                     //search all the rows below row n
                     for r in n + 1..m.rows() {
                         for c in n..m.cols() {
-                            if !self.ring.equal(m.at(r, c).unwrap(), &self.ring.zero()) {
+                            if m.at(r, c).unwrap() != &Ring::zero() {
                                 //swap column n and column c
-                                let col_opp = ElementaryOpp::new_col_opp(
-                                    self.ring.clone(),
-                                    ElementaryOppType::Swap(n, c),
-                                );
+                                let col_opp =
+                                    ElementaryOpp::new_col_opp(ElementaryOppType::Swap(n, c));
                                 col_opp.apply(&mut m);
                                 col_opp.apply(&mut v);
 
                                 //swap row n and row r
-                                let row_opp = ElementaryOpp::new_col_opp(
-                                    self.ring.clone(),
-                                    ElementaryOppType::Swap(n, r),
-                                );
+                                let row_opp =
+                                    ElementaryOpp::new_col_opp(ElementaryOppType::Swap(n, r));
                                 row_opp.apply(&mut m);
                                 row_opp.apply(&mut u);
 
@@ -933,14 +897,11 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
             }
 
             //turn (n, n) into its favorite associate
-            let (unit, _assoc) = self.ring.factor_fav_assoc(m.at(n, n).unwrap());
-            let row_opp = ElementaryOpp::new_row_opp(
-                self.ring.clone(),
-                ElementaryOppType::UnitMul {
-                    row: n,
-                    unit: self.ring.inv(&unit).unwrap(),
-                },
-            );
+            let (unit, _assoc) = Ring::factor_fav_assoc_ref(m.at(n, n).unwrap());
+            let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::UnitMul {
+                row: n,
+                unit: Ring::inv(unit).unwrap(),
+            });
             row_opp.apply(&mut m);
             row_opp.apply(&mut u);
 
@@ -952,18 +913,16 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                 for c in n + 1..m.cols() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(n, c).unwrap();
-                    match self.ring.div(b, a) {
+                    match Ring::div_refs(b, a) {
                         Ok(q) => {
                             //b is a multiple of a
                             //replace (a, b) with (a, 0) by subtracting a multiple of a from b
-                            let col_opp = ElementaryOpp::new_col_opp(
-                                self.ring.clone(),
-                                ElementaryOppType::AddRowMul {
+                            let col_opp =
+                                ElementaryOpp::new_col_opp(ElementaryOppType::AddRowMul {
                                     i: c,
                                     j: n,
-                                    x: self.ring.neg(&q),
-                                },
-                            );
+                                    x: Ring::neg(q),
+                                });
                             col_opp.apply(&mut m);
                             col_opp.apply(&mut v);
                         }
@@ -971,32 +930,26 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                             all_divisible = false;
                             //b is not a multiple of a
                             //replace (a, b) with (gcd, 0)
-                            let (d, x, y) = self.ring.xgcd(a, b);
-                            debug_assert!(self.ring.equal(
-                                &self.ring.add(&self.ring.mul(&x, a), &self.ring.mul(&y, b)),
-                                &d
-                            ));
-                            let col_opp = ElementaryOpp::new_col_opp(
-                                self.ring.clone(),
-                                ElementaryOppType::TwoInv {
-                                    i: n,
-                                    j: c,
-                                    a: x,
-                                    b: y,
-                                    c: self.ring.neg(&self.ring.div(b, &d).unwrap()),
-                                    d: self.ring.div(a, &d).unwrap(),
-                                },
+                            let (d, x, y) = Ring::xgcd(a.clone(), b.clone());
+                            debug_assert_eq!(
+                                Ring::add(Ring::mul_refs(&x, a), Ring::mul_refs(&y, b)),
+                                d
                             );
+                            let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::TwoInv {
+                                i: n,
+                                j: c,
+                                a: x,
+                                b: y,
+                                c: Ring::neg(Ring::div(b.clone(), d.clone()).unwrap()),
+                                d: Ring::div(a.clone(), d.clone()).unwrap(),
+                            });
                             col_opp.apply(&mut m);
                             col_opp.apply(&mut v);
                         }
                         Err(RingDivisionError::DivideByZero) => {
                             //swap a and b
                             //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
-                            let col_opp = ElementaryOpp::new_col_opp(
-                                self.ring.clone(),
-                                ElementaryOppType::Swap(n, c),
-                            );
+                            let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::Swap(n, c));
                             col_opp.apply(&mut m);
                             col_opp.apply(&mut v);
                         }
@@ -1012,18 +965,16 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                 for r in n + 1..m.rows() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(r, n).unwrap();
-                    match self.ring.div(b, a) {
+                    match Ring::div_refs(b, a) {
                         Ok(q) => {
                             //b is a multiple of a
                             //replace (a, b) with (a, 0) by subtracting a multiple of a from b
-                            let col_opp = ElementaryOpp::new_row_opp(
-                                self.ring.clone(),
-                                ElementaryOppType::AddRowMul {
+                            let col_opp =
+                                ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
                                     i: r,
                                     j: n,
-                                    x: self.ring.neg(&q),
-                                },
-                            );
+                                    x: Ring::neg(q),
+                                });
                             col_opp.apply(&mut m);
                             col_opp.apply(&mut u);
                         }
@@ -1031,32 +982,26 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                             all_divisible = false;
                             //b is not a multiple of a
                             //replace (a, b) with (gcd, 0)
-                            let (d, x, y) = self.ring.xgcd(a, b);
-                            debug_assert!(self.ring.equal(
-                                &self.ring.add(&self.ring.mul(&x, a), &self.ring.mul(&y, b)),
-                                &d
-                            ));
-                            let row_opp = ElementaryOpp::new_row_opp(
-                                self.ring.clone(),
-                                ElementaryOppType::TwoInv {
-                                    i: n,
-                                    j: r,
-                                    a: x,
-                                    b: y,
-                                    c: self.ring.neg(&self.ring.div(b, &d).unwrap()),
-                                    d: self.ring.div(a, &d).unwrap(),
-                                },
+                            let (d, x, y) = Ring::xgcd(a.clone(), b.clone());
+                            debug_assert_eq!(
+                                Ring::add(Ring::mul_refs(&x, a), Ring::mul_refs(&y, b)),
+                                d
                             );
+                            let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::TwoInv {
+                                i: n,
+                                j: r,
+                                a: x,
+                                b: y,
+                                c: Ring::neg(Ring::div(b.clone(), d.clone()).unwrap()),
+                                d: Ring::div(a.clone(), d.clone()).unwrap(),
+                            });
                             row_opp.apply(&mut m);
                             row_opp.apply(&mut u);
                         }
                         Err(RingDivisionError::DivideByZero) => {
                             //swap a and b
                             //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
-                            let col_opp = ElementaryOpp::new_row_opp(
-                                self.ring.clone(),
-                                ElementaryOppType::Swap(n, r),
-                            );
+                            let col_opp = ElementaryOpp::new_row_opp(ElementaryOppType::Swap(n, r));
                             col_opp.apply(&mut m);
                             col_opp.apply(&mut u);
                         }
@@ -1067,18 +1012,15 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                 }
             }
             //now the first row and the first column are all zero except the top left element at (n, n) which is non-zero
-            debug_assert!(!self.ring.equal(m.at(n, n).unwrap(), &self.ring.zero()));
+            debug_assert_ne!(m.at(n, n).unwrap(), &Ring::zero());
             //some more fiddling is needed now to make the top left element divides everything else
             for r in n + 1..m.rows() {
                 //row(n) = row(n) + row(r)
-                let row_opp = ElementaryOpp::new_row_opp(
-                    self.ring.clone(),
-                    ElementaryOppType::AddRowMul {
-                        i: n,
-                        j: r,
-                        x: self.ring.one(),
-                    },
-                );
+                let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
+                    i: n,
+                    j: r,
+                    x: Ring::one(),
+                });
                 row_opp.apply(&mut m);
                 row_opp.apply(&mut u);
 
@@ -1089,22 +1031,16 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                     //if a=0 and b=0 then there is nothing to do and the following step would fail when dividing by g=0
                     //b might not be a multiple of a
                     //replace (a, b) with (gcd, 0) to fix this
-                    let (g, x, y) = self.ring.xgcd(a, b);
-                    debug_assert!(self.ring.equal(
-                        &self.ring.add(&self.ring.mul(&x, a), &self.ring.mul(&y, b)),
-                        &g
-                    ));
-                    let col_opp = ElementaryOpp::new_col_opp(
-                        self.ring.clone(),
-                        ElementaryOppType::TwoInv {
-                            i: n,
-                            j: c,
-                            a: x,
-                            b: y,
-                            c: self.ring.neg(&self.ring.div(b, &g).unwrap()),
-                            d: self.ring.div(a, &g).unwrap(),
-                        },
-                    );
+                    let (g, x, y) = Ring::xgcd(a.clone(), b.clone());
+                    debug_assert_eq!(Ring::add(Ring::mul_refs(&x, a), Ring::mul_refs(&y, b)), g);
+                    let col_opp = ElementaryOpp::new_col_opp(ElementaryOppType::TwoInv {
+                        i: n,
+                        j: c,
+                        a: x,
+                        b: y,
+                        c: Ring::neg(Ring::div(b.clone(), g.clone()).unwrap()),
+                        d: Ring::div(a.clone(), g.clone()).unwrap(),
+                    });
                     col_opp.apply(&mut m);
                     col_opp.apply(&mut v);
                 }
@@ -1113,21 +1049,18 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                 for fix_r in n + 1..m.rows() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(fix_r, n).unwrap();
-                    let q = self.ring.div(b, a).unwrap();
-                    let col_opp = ElementaryOpp::new_row_opp(
-                        self.ring.clone(),
-                        ElementaryOppType::AddRowMul {
-                            i: fix_r,
-                            j: n,
-                            x: self.ring.neg(&q),
-                        },
-                    );
+                    let q = Ring::div_refs(b, a).unwrap();
+                    let col_opp = ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
+                        i: fix_r,
+                        j: n,
+                        x: Ring::neg(q),
+                    });
                     col_opp.apply(&mut m);
                     col_opp.apply(&mut u);
                 }
             }
 
-            if self.ring.equal(m.at(n, n).unwrap(), &self.ring.zero()) {
+            if m.at(n, n).unwrap() == &Ring::zero() {
                 //the bottom right submatrix is all zero
                 break 'inductive_loop;
             }
@@ -1138,19 +1071,14 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
     }
 }
 
-impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateStructure>
-    MatrixStructure<RS>
-{
+impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain> Matrix<Ring> {
     //if A:=self return (H, U, pivots) such that
     //H is in row reduced hermite normal form
     //U is invertible
     //H=UA
     //pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
-    pub fn row_reduced_hermite_algorithm(
-        &self,
-        m: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, Vec<usize>) {
-        let (mut h, mut u, _u_det, pivs) = self.row_hermite_algorithm(m);
+    pub fn row_reduced_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
+        let (mut h, mut u, _u_det, pivs) = self.row_hermite_algorithm();
 
         for (pr, pc) in pivs.iter().enumerate() {
             for r in 0..pr {
@@ -1158,15 +1086,12 @@ impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateS
                 let a = h.at(r, *pc).unwrap();
                 let b = h.at(pr, *pc).unwrap();
                 //a = b*q + r
-                let q = self.ring.quo(a, b).unwrap();
-                let row_opp = ElementaryOpp::new_row_opp(
-                    self.ring.clone(),
-                    ElementaryOppType::AddRowMul {
-                        i: r,
-                        j: pr,
-                        x: self.ring.neg(&q),
-                    },
-                );
+                let q = Ring::quo_refs(a, b).unwrap();
+                let row_opp = ElementaryOpp::new_row_opp(ElementaryOppType::AddRowMul {
+                    i: r,
+                    j: pr,
+                    x: Ring::neg(q),
+                });
                 row_opp.apply(&mut h);
                 row_opp.apply(&mut u);
             }
@@ -1175,42 +1100,30 @@ impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateS
         (h, u, pivs)
     }
 
-    pub fn col_reduced_hermite_algorithm(
-        &self,
-        m: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, Vec<usize>) {
-        let (rh, ru, pivs) = self.row_reduced_hermite_algorithm(m.transpose());
+    pub fn col_reduced_hermite_algorithm(self) -> (Self, Self, Vec<usize>) {
+        let (rh, ru, pivs) = self.transpose().row_reduced_hermite_algorithm();
         (rh.transpose(), ru.transpose(), pivs)
     }
 }
 
-impl<FS: FieldStructure> MatrixStructure<FS> {
-    pub fn presentation_matrix(
-        &self,
-        m: Matrix<FS::Set>,
-    ) -> Result<Matrix<Polynomial<FS::Set>>, MatOppErr> {
-        let n = m.rows();
-        if n != m.cols() {
+impl<F: Field> Matrix<F> {
+    pub fn presentation_matrix(self) -> Result<Matrix<Polynomial<F>>, MatOppErr> {
+        let n = self.rows();
+        if n != self.cols() {
             Err(MatOppErr::NotSquare)
         } else {
-            let poly_ring = PolynomialStructure::new(self.ring.clone());
-            let poly_mat_struct = MatrixStructure::new(poly_ring.clone().into());
-            Ok(poly_mat_struct
-                .add(
-                    &m.apply_map(|x| Polynomial::constant(x.clone())),
-                    &poly_mat_struct
-                        .neg(poly_mat_struct.diag(&(0..n).map(|_i| poly_ring.var()).collect())),
-                )
-                .unwrap())
+            Ok(Matrix::add(
+                self.apply_map(|x| Polynomial::constant(x.clone())),
+                Matrix::neg(Matrix::diag(&(0..n).map(|_i| Polynomial::var()).collect())),
+            )
+            .unwrap())
         }
     }
 
-    pub fn minimal_polynomial(&self, m: Matrix<FS::Set>) -> Result<Polynomial<FS::Set>, MatOppErr> {
-        match self.presentation_matrix(m) {
+    pub fn minimal_polynomial(self) -> Result<Polynomial<F>, MatOppErr> {
+        match self.presentation_matrix() {
             Ok(pres_mat) => {
-                let poly_ring = PolynomialStructure::new(self.ring.clone());
-                let poly_mat_struct = MatrixStructure::new(poly_ring.into());
-                let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
+                let (_u, s, _v, k) = pres_mat.smith_algorithm();
                 debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
                 Ok(s.at(k - 1, k - 1).unwrap().clone())
             }
@@ -1219,19 +1132,14 @@ impl<FS: FieldStructure> MatrixStructure<FS> {
         }
     }
 
-    pub fn characteristic_polynomial(
-        &self,
-        m: Matrix<FS::Set>,
-    ) -> Result<Polynomial<FS::Set>, MatOppErr> {
-        match self.presentation_matrix(m) {
+    pub fn characteristic_polynomial(self) -> Result<Polynomial<F>, MatOppErr> {
+        match self.presentation_matrix() {
             Ok(pres_mat) => {
-                let poly_ring = PolynomialStructure::new(self.ring.clone());
-                let poly_mat_struct = MatrixStructure::new(poly_ring.clone().into());
-                let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
+                let (_u, s, _v, k) = pres_mat.smith_algorithm();
                 debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
-                let mut char_poly = poly_ring.one();
+                let mut char_poly = Polynomial::one();
                 for i in 0..k {
-                    poly_ring.mul_mut(&mut char_poly, s.at(i, i).unwrap())
+                    Polynomial::mul_mut(&mut char_poly, s.at(i, i).unwrap())
                 }
                 Ok(char_poly)
             }
@@ -1241,186 +1149,12 @@ impl<FS: FieldStructure> MatrixStructure<FS> {
     }
 }
 
-impl<R: StructuredType> StructuredType for Matrix<R>
-where
-    R::Structure: Structure,
-{
-    type Structure = MatrixStructure<R::Structure>;
-
-    fn structure() -> Self::Structure {
-        MatrixStructure::new(R::structure().into())
-    }
-}
-
-impl<R: StructuredType> Matrix<R>
-where
-    R::Structure: DisplayableStructure,
-{
-    pub fn pprint(&self) {
-        Self::structure().pprint(self)
-    }
-}
-
-impl<R: StructuredType> PartialEq for Matrix<R>
-where
-    R::Structure: RingStructure,
-{
-    fn eq(&self, other: &Self) -> bool {
-        Self::structure().equal(self, other)
-    }
-}
-
-impl<R: StructuredType> Eq for Matrix<R> where R::Structure: RingStructure {}
-
-impl<R: StructuredType> Matrix<R>
-where
-    R::Structure: RingStructure,
-{
-    pub fn zero(rows: usize, cols: usize) -> Self {
-        Self::structure().zero(rows, cols)
-    }
-
-    pub fn ident(n: usize) -> Self {
-        Self::structure().ident(n)
-    }
-
-    pub fn diag(diag: &Vec<R>) -> Self {
-        Self::structure().diag(diag)
-    }
-
-    pub fn add_mut(&mut self, b: &Self) -> Result<(), MatOppErr> {
-        Self::structure().add_mut(self, b)
-    }
-
-    pub fn add(a: &Self, b: &Self) -> Result<Self, MatOppErr> {
-        Self::structure().add(a, b)
-    }
-
-    pub fn neg_mut(&mut self) {
-        Self::structure().neg_mut(self)
-    }
-
-    pub fn neg(&self) -> Self {
-        Self::structure().neg(self.clone())
-    }
-
-    pub fn mul(a: &Self, b: &Self) -> Result<Self, MatOppErr> {
-        Self::structure().mul(a, b)
-    }
-
-    pub fn mul_scalar(&self, scalar: &R) -> Matrix<R> {
-        Self::structure().mul_scalar(self.clone(), scalar)
-    }
-
-    pub fn mul_scalar_ref(&self, scalar: &R) -> Matrix<R> {
-        Self::structure().mul_scalar_ref(self, scalar)
-    }
-
-    pub fn det_naive(&self) -> Result<R, MatOppErr> {
-        Self::structure().det_naive(self)
-    }
-}
-
-impl<R: StructuredType> Matrix<R>
-where
-    R::Structure: BezoutDomainStructure,
-{
-    pub fn row_span(&self) -> LinearLattice<R> {
-        Self::structure().row_span(self.clone())
-    }
-
-    pub fn col_span(&self) -> LinearLattice<R> {
-        Self::structure().col_span(self.clone())
-    }
-
-    pub fn row_affine_span(&self) -> AffineLattice<R> {
-        Self::structure().row_affine_span(self.clone())
-    }
-
-    pub fn col_affine_span(&self) -> AffineLattice<R> {
-        Self::structure().col_affine_span(self.clone())
-    }
-
-    pub fn row_kernel(&self) -> LinearLattice<R> {
-        Self::structure().row_kernel(self.clone())
-    }
-
-    pub fn col_kernel(&self) -> LinearLattice<R> {
-        Self::structure().col_kernel(self.clone())
-    }
-
-    pub fn row_solve(&self, y: impl Borrow<Self>) -> Option<Self> {
-        Self::structure().row_solve(self, y)
-    }
-
-    pub fn col_solve(&self, y: impl Borrow<Self>) -> Option<Self> {
-        Self::structure().col_solve(self, y)
-    }
-
-    pub fn row_solution_lattice(&self, y: impl Borrow<Self>) -> AffineLattice<R> {
-        Self::structure().row_solution_lattice(self, y)
-    }
-
-    pub fn col_solution_lattice(&self, y: impl Borrow<Self>) -> AffineLattice<R> {
-        Self::structure().col_solution_lattice(self, y)
-    }
-
-    pub fn row_hermite_algorithm(&self) -> (Self, Self, R, Vec<usize>) {
-        Self::structure().row_hermite_algorithm(self.clone())
-    }
-
-    pub fn col_hermite_algorithm(&self) -> (Self, Self, R, Vec<usize>) {
-        Self::structure().col_hermite_algorithm(self.clone())
-    }
-
-    pub fn det(&self) -> Result<R, MatOppErr> {
-        Self::structure().det(self.clone())
-    }
-
-    pub fn rank(&self) -> usize {
-        Self::structure().rank(self.clone())
-    }
-
-    pub fn smith_algorithm(&self) -> (Self, Self, Self, usize) {
-        Self::structure().smith_algorithm(self.clone())
-    }
-}
-
-impl<R: StructuredType> Matrix<R>
-where
-    R::Structure: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateStructure,
-{
-    pub fn row_reduced_hermite_algorithm(&self) -> (Self, Self, Vec<usize>) {
-        Self::structure().row_reduced_hermite_algorithm(self.clone())
-    }
-
-    pub fn col_reduced_hermite_algorithm(&self) -> (Self, Self, Vec<usize>) {
-        Self::structure().col_reduced_hermite_algorithm(self.clone())
-    }
-}
-
-impl<F: StructuredType> Matrix<F>
-where
-    F::Structure: FieldStructure,
-{
-    pub fn presentation_matrix(&self) -> Result<Matrix<Polynomial<F>>, MatOppErr> {
-        Self::structure().presentation_matrix(self.clone())
-    }
-
-    pub fn minimal_polynomial(&self) -> Result<Polynomial<F>, MatOppErr> {
-        Self::structure().minimal_polynomial(self.clone())
-    }
-
-    pub fn characteristic_polynomial(&self) -> Result<Polynomial<F>, MatOppErr> {
-        Self::structure().characteristic_polynomial(self.clone())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
+    use super::super::super::numbers::nzq::*;
     use super::*;
 
     #[test]
@@ -1569,7 +1303,7 @@ mod tests {
             };
             c.check_invariants().unwrap();
 
-            a.add_mut(&b).unwrap();
+            Matrix::add_mut(&mut a, &b).unwrap();
 
             assert_eq!(a, c);
         }
@@ -1620,7 +1354,7 @@ mod tests {
             };
             c.check_invariants().unwrap();
 
-            a.add_mut(&b).unwrap();
+            Matrix::add_mut(&mut a, &b).unwrap();
 
             assert_eq!(a, c);
         }
@@ -1656,7 +1390,7 @@ mod tests {
             };
             b.check_invariants().unwrap();
 
-            match a.add_mut(&b) {
+            match Matrix::add_mut(&mut a, &b) {
                 Ok(()) => panic!(),
                 Err(MatOppErr::DimMissmatch) => {}
                 Err(_) => panic!(),
@@ -1709,7 +1443,7 @@ mod tests {
             };
             c.check_invariants().unwrap();
 
-            assert_eq!(Matrix::add(&a, &b).unwrap(), c);
+            assert_eq!(Matrix::add(a, b).unwrap(), c);
         }
     }
 
@@ -1769,25 +1503,17 @@ mod tests {
             };
             c.check_invariants().unwrap();
 
-            assert_eq!(Matrix::mul(&a, &b).unwrap(), c);
+            assert_eq!(Matrix::mul_refs(&a, &b).unwrap(), c);
         }
     }
 
     #[test]
     fn det_naive() {
         let m = Matrix::from_rows(vec![
-            vec![Integer::from(1), Integer::from(3)],
-            vec![Integer::from(4), Integer::from(2)],
-        ]);
-        println!("{}", m.det_naive().unwrap());
-        assert_eq!(m.det_naive().unwrap(), Integer::from(-10));
-
-        let m = Matrix::from_rows(vec![
             vec![Integer::from(1), Integer::from(3), Integer::from(2)],
             vec![Integer::from(-3), Integer::from(-1), Integer::from(-3)],
             vec![Integer::from(2), Integer::from(3), Integer::from(1)],
         ]);
-        println!("{}", m.det_naive().unwrap());
         assert_eq!(m.det_naive().unwrap(), Integer::from(-15));
     }
 
@@ -1870,7 +1596,7 @@ mod tests {
             println!("pivs = {:?}", pivs);
             println!("U =");
             u.pprint();
-            assert_eq!(h, Matrix::mul(&u, &a).unwrap());
+            assert_eq!(h, Matrix::mul_refs(&u, &a).unwrap());
 
             //trace the boundary of zeros and check that everything under is zero
             let mut rz = 0;
@@ -1895,7 +1621,7 @@ mod tests {
                     if r > pr {
                         assert_eq!(h.at(r, *pc).unwrap(), &Integer::zero());
                     } else if r == pr {
-                        let (_unit, assoc) = Integer::factor_fav_assoc(h.at(r, *pc).unwrap());
+                        let (_unit, assoc) = h.at(r, *pc).unwrap().clone().factor_fav_assoc();
                         assert_eq!(&assoc, h.at(r, *pc).unwrap());
                     } else {
                         assert!(
@@ -1933,14 +1659,14 @@ mod tests {
             }
 
             //check the pivot rows
-            assert_eq!(h, Matrix::mul(&a, &u).unwrap());
+            assert_eq!(h, Matrix::mul_refs(&a, &u).unwrap());
             for (pc, pr) in pivs.iter().enumerate() {
                 assert!(h.at(*pr, pc).unwrap() != &Integer::zero());
                 for c in 0..h.cols() {
                     if c > pc {
                         assert_eq!(h.at(*pr, c).unwrap(), &Integer::zero());
                     } else if c == pc {
-                        let (_unit, assoc) = Integer::factor_fav_assoc(h.at(*pr, c).unwrap());
+                        let (_unit, assoc) = h.at(*pr, c).unwrap().clone().factor_fav_assoc();
                         assert_eq!(&assoc, h.at(*pr, c).unwrap());
                     } else {
                         assert!(
@@ -2082,7 +1808,10 @@ mod tests {
                 vec![Integer::from(10), Integer::from(4), Integer::from(16)],
             ]);
             let (u, s, v, k) = a.clone().smith_algorithm();
-            assert_eq!(s, Matrix::mul(&Matrix::mul(&u, &a).unwrap(), &v).unwrap());
+            assert_eq!(
+                s,
+                Matrix::mul_refs(&Matrix::mul_refs(&u, &a).unwrap(), &v).unwrap()
+            );
             assert_eq!(k, 3);
             assert_eq!(
                 s,
@@ -2120,7 +1849,10 @@ mod tests {
                 ],
             ]);
             let (u, s, v, k) = a.clone().smith_algorithm();
-            assert_eq!(s, Matrix::mul(&Matrix::mul(&u, &a).unwrap(), &v).unwrap());
+            assert_eq!(
+                s,
+                Matrix::mul_refs(&Matrix::mul_refs(&u, &a).unwrap(), &v).unwrap()
+            );
             assert_eq!(k, 3);
             assert_eq!(
                 s,
@@ -2212,16 +1944,16 @@ mod tests {
             let min_p = a.clone().minimal_polynomial().unwrap();
             let char_p = a.clone().characteristic_polynomial().unwrap();
             assert_eq!(
-                &min_p,
-                &Polynomial::from_coeffs(vec![
+                min_p,
+                Polynomial::from_coeffs(vec![
                     Rational::from(0),
                     Rational::from(0),
                     Rational::from(1)
                 ])
             );
             assert_eq!(
-                &char_p,
-                &Polynomial::from_coeffs(vec![
+                char_p,
+                Polynomial::from_coeffs(vec![
                     Rational::from(0),
                     Rational::from(0),
                     Rational::from(0),
@@ -2240,10 +1972,10 @@ mod tests {
             vec![Integer::from(1), Integer::from(1), Integer::from(1)],
         ]);
 
-        assert_eq!(mat.clone().row_span().rank(), 2);
-        assert_eq!(mat.clone().col_span().rank(), 2);
-        assert_eq!(mat.clone().row_kernel().rank(), 2);
-        assert_eq!(mat.clone().col_kernel().rank(), 1);
+        assert_eq!(Matrix::row_span(mat.clone()).rank(), 2);
+        assert_eq!(Matrix::col_span(mat.clone()).rank(), 2);
+        assert_eq!(Matrix::row_kernel(mat.clone()).rank(), 2);
+        assert_eq!(Matrix::col_kernel(mat.clone()).rank(), 1);
     }
 
     #[test]
@@ -2271,7 +2003,7 @@ mod tests {
             lat1.pprint();
             lat2.pprint();
 
-            assert_eq!(lat1, lat2);
+            assert!(AffineLattice::eq(&lat1, &lat2));
         }
 
         {
@@ -2296,7 +2028,7 @@ mod tests {
             lat1.pprint();
             lat2.pprint();
 
-            assert_eq!(&lat1, &lat2);
+            assert!(AffineLattice::eq(&lat1, &lat2));
         }
     }
 

@@ -3,22 +3,18 @@ use std::borrow::Borrow;
 use malachite_base::num::basic::traits::One;
 use malachite_nz::natural::Natural;
 
-use super::super::ring_structure::structure::*;
-use super::polynomial::*;
+use super::poly::*;
+use super::super::ring::*;
 
-impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure> PolynomialStructure<RS> {
-    fn polynomial_reduce_modulo(&self,
-        poly: &Polynomial<RS::Set>,
-        i: impl Borrow<RS::Set>,
-        n: impl Borrow<Natural>,
-    ) -> Polynomial<EuclideanQuotient<RS>> {
-        let i = i.borrow();
-        let n = n.borrow();
-        poly.apply_map_ref(|c| UniversalEuclideanQuotient::<false, Ring>::new(c.clone(), i.nat_pow(n)))
-    }
+fn polynomial_reduce_modulo<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain>(
+    poly: &Polynomial<Ring>,
+    i: impl Borrow<Ring>,
+    n: impl Borrow<Natural>,
+) -> Polynomial<UniversalEuclideanQuotient<false, Ring>> {
+    let i = i.borrow();
+    let n = n.borrow();
+    poly.apply_map_ref(|c| UniversalEuclideanQuotient::<false, Ring>::new(c.clone(), i.nat_pow(n)))
 }
-
-
 
 #[derive(Debug, Clone)]
 enum HenselProduct<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> {

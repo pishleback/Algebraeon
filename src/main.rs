@@ -6,9 +6,9 @@ extern crate glium;
 use std::marker::PhantomData;
 use std::str::FromStr;
 
-use drawing::canvas2d::*;
-use drawing::Canvas;
-use geometry::*;
+// use drawing::canvas2d::*;
+// use drawing::Canvas;
+// use geometry::*;
 use glium::glutin::event::MouseButton;
 use groups::group::*;
 use groups::permutation::*;
@@ -19,24 +19,29 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 use rand::Rng;
-use rings::ergonomic::*;
-use rings::numbers::algebraic::*;
-use rings::numbers::nzq::*;
-use rings::numbers::small_modulo::*;
-use rings::polynomial::multipoly::*;
-use rings::polynomial::poly::*;
-use rings::ring::*;
+// use rings_old::ergonomic::*;
+// use rings_old::numbers::algebraic::*;
+// use rings_old::numbers::nzq::*;
+// use rings_old::numbers::small_modulo::*;
+// use rings_old::polynomial::multipoly::*;
+// use rings_old::polynomial::poly::*;
+// use rings_old::ring::*;
+use rings::*;
 
 // use sets::permutations::Permutation;
 
-use crate::geometry::convex_simplicial_complex::*;
-use crate::geometry::vector::*;
+use crate::number::modulo::Modulo;
+// use crate::geometry::convex_simplicial_complex::*;
+// use crate::geometry::vector::*;
+use crate::ring_structure::cannonical::*;
+use crate::structure::*;
 
-pub mod drawing;
+// pub mod drawing;
 pub mod finite_group_tables;
-pub mod geometry;
+// pub mod geometry;
 pub mod groups;
 pub mod numbers;
+// pub mod rings_old;
 pub mod rings;
 pub mod sets;
 
@@ -90,39 +95,45 @@ fn main() {
 }
 */
 
-fn todo() {
-    // let s = NaturalPrimeGenerator::new();
-    // for p in s {
-    //     println!("{}", p);
-    // }
+// fn todo() {
+//     // let s = NaturalPrimeGenerator::new();
+//     // for p in s {
+//     //     println!("{}", p);
+//     // }
 
-    // let x = Integer::from(10000);
-    // let f = ZZ.factor(&x);
-    // println!("{:?}", f);
+//     // let x = Integer::from(10000);
+//     // let f = ZZ.factor(&x);
+//     // println!("{:?}", f);
 
-    let f = Polynomial::from_coeffs(vec![
-        Integer::from(1),
-        Integer::from(0),
-        Integer::from(0),
-        Integer::from(0),
-        Integer::from(0),
-        Integer::from(1),
-    ]);
-    let roots = f.all_complex_roots();
+//     let f = Polynomial::from_coeffs(vec![
+//         Integer::from(1),
+//         Integer::from(0),
+//         Integer::from(0),
+//         Integer::from(0),
+//         Integer::from(0),
+//         Integer::from(1),
+//     ]);
+//     let roots = f.all_complex_roots();
 
-    for root in roots.iter() {
-        println!("{:?}", root);
-    }
+//     for root in roots.iter() {
+//         println!("{:?}", root);
+//     }
 
-    let a = ComplexAlgebraic::sum(roots.iter().collect());
+//     let a = ComplexAlgebraic::sum(roots.iter().collect());
 
-    println!("{:?}", a);
-}
+//     println!("{:?}", a);
+// }
 
 fn main() {
-    let x = Ergonomic::new(Polynomial::<Integer>::var());
-    let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (3 * x.pow(5) + 7 * x.pow(4) - 4)).elem();
-    println!("{}", f);
-    println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
-    println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
+    // let x = Ergonomic::new(Polynomial::<Integer>::var());
+    // let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (3 * x.pow(5) + 7 * x.pow(4) - 4)).elem();
+    // println!("{}", f);
+    // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
+    // println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
+
+    let a = &Modulo::<5>::from(4).as_elem();
+    let b = &Modulo::<5>::from(-3).as_elem();
+
+    // let a = Integer::from(720);
+    println!("{} + {} = {}", a, b, a + b);
 }
