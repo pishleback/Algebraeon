@@ -3,7 +3,7 @@ use std::{borrow::Borrow, fmt::Display, marker::PhantomData, rc::Rc};
 
 //Instances of this represent structure on Set represented by a type
 //For example, instances of this might represent a group structure on a Set
-pub trait Structure: Clone + PartialEq + Eq {
+pub trait Structure: Clone + PartialEq + Eq + 'static {
     type Set: Clone + Debug;
 }
 
@@ -13,6 +13,11 @@ pub trait DisplayableStructure: Structure {
 
 pub trait EqualityStructure: Structure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool;
+}
+
+pub trait InfiniteStructure: Structure {
+    //generate an infinite sequence of distinct elements
+    fn generate_distinct_elements(&self) ->  Box<dyn Iterator<Item = Self::Set>>;
 }
 
 pub fn common_structure<RS: Structure>(
@@ -26,13 +31,13 @@ pub fn common_structure<RS: Structure>(
     }
 }
 
-pub trait StructuredType: Clone + Debug {
+pub trait StructuredType: Clone + Debug + 'static {
     type Structure: Structure<Set = Self>;
 
-    fn structure() -> Self::Structure;
+    fn structure() -> Rc<Self::Structure>;
 
     fn as_elem(self) -> StructuredElement<Self::Structure> {
-        StructuredElement::new(Rc::new(Self::structure()), self)
+        StructuredElement::new(Self::structure(), self)
     }
 }
 

@@ -5,6 +5,7 @@ use std::{borrow::Borrow, fmt::Debug, marker::PhantomData};
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
+use malachite_q::Rational;
 
 use super::super::structure::*;
 use super::elements::*;
@@ -37,6 +38,24 @@ where
     fn product(vals: Vec<&Self>) -> Self {
         Self::structure().product(vals)
     }
+
+    fn nat_pow(a: &Self, n: &Natural) -> Self {
+        Self::structure().nat_pow(a, n)
+    }
+    fn from_int(x: &Integer) -> Self {
+        Self::structure().from_int(x)
+    }
+}
+
+//TODO: autogenerate these cannonical versions of the ring structures and their implementations in a proc macro?
+//In a proc macro how would I do the ones which go from opp(a : &Self::Set) to opp(&self)?
+
+impl<R: StructuredType> Ring for R where Self::Structure: RingStructure<Set = R> {}
+
+pub trait IntegralDomain: Ring
+where
+    Self::Structure: IntegralDomainStructure<Set = Self>,
+{
     fn div(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
         Self::structure().div(a, b)
     }
@@ -44,14 +63,12 @@ where
         Self::structure().inv(self)
     }
 
-    fn nat_pow(a: &Self, n: &Natural) -> Self {
-        Self::structure().nat_pow(a, n)
+    fn from_rat(x: &Rational) -> Option<Self> {
+        Self::structure().from_rat(x)
     }
+
     fn int_pow(a: &Self, n: &Integer) -> Option<Self> {
         Self::structure().int_pow(a, n)
-    }
-    fn from_int(x: &Integer) -> Self {
-        Self::structure().from_int(x)
     }
 
     fn divisible(a: &Self, b: &Self) -> bool {
@@ -63,17 +80,6 @@ where
     fn is_unit(&self) -> bool {
         Self::structure().is_unit(self)
     }
-}
-
-//TODO: autogenerate these cannonical versions of the ring structures and their implementations in a proc macro?
-//In a proc macro how would I do the ones which go from opp(a : &Self::Set) to opp(&self)?
-
-impl<R: StructuredType> Ring for R where Self::Structure: RingStructure<Set = R> {}
-
-pub trait IntegralDomain: Ring
-where
-    Self::Structure: RingStructure<Set = Self>,
-{
 }
 
 impl<R: Ring> IntegralDomain for R where Self::Structure: IntegralDomainStructure<Set = R> {}
@@ -243,6 +249,35 @@ where
 }
 
 impl<R: RealDomain> DenseRealDomain for R where Self::Structure: DenseRealStructure<Set = R> {}
+
+pub trait FieldOfFractionsDomain: Ring
+where
+    Self::Structure: FieldOfFractionsStructure<Set = Self>,
+{
+    fn base_ring_structure() -> Rc<<Self::Structure as FieldOfFractionsStructure>::RS> {
+        Self::structure().base_ring_structure()
+    }
+    fn from_base_ring(
+        a: <<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set,
+    ) -> Self {
+        Self::structure().from_base_ring(a)
+    }
+    fn numerator(&self) -> <<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set {
+        Self::structure().numerator(self)
+    }
+    fn denominator(
+        &self,
+    ) -> <<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set {
+        Self::structure().denominator(self)
+    }
+    fn as_base_ring(
+        self,
+    ) -> Option<<<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set> {
+        Self::structure().as_base_ring(self)
+    }
+}
+
+impl<R: Ring> FieldOfFractionsDomain for R where Self::Structure: FieldOfFractionsStructure<Set = R> {}
 
 // impl<R: Ring> RingStructure for CannonicalStructure<R> {
 //     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {

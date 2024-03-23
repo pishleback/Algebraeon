@@ -1,32 +1,37 @@
 use std::fmt::Display;
 use std::ops::Mul;
+use std::rc::Rc;
 
 use malachite_base::num::arithmetic::traits::NegAssign;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 
+use super::super::super::*;
+use super::super::ring_structure::cannonical::*;
+use super::super::ring_structure::structure::*;
+
+use super::super::number::natural::NaturalPrimeGenerator;
+
 use super::super::polynomial::multipoly::*;
-use super::nzq::*;
-use super::super::polynomial::poly::*;
-use super::super::ring::*;
+use super::super::polynomial::polynomial::*;
 
 fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));
     let z = Variable::new(String::from("z"));
 
-    let p = p.apply_map_ref(|c| MultiPolynomial::constant(c.clone()));
-    let q = q.apply_map_ref(|c| MultiPolynomial::constant(c.clone()));
+    let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
+    let q = q.apply_map(|c| MultiPolynomial::constant(c.clone()));
     let r = q
         .evaluate(&MultiPolynomial::add(
-            MultiPolynomial::var(z.clone()),
-            MultiPolynomial::neg(MultiPolynomial::var(x.clone())),
+            &MultiPolynomial::var(z.clone()),
+            &MultiPolynomial::neg(&MultiPolynomial::var(x.clone())),
         ))
         .expand(&x);
 
-    let root_sum_poly = Polynomial::resultant(p, r)
+    let root_sum_poly = Polynomial::resultant(&p, &r)
         .expand(&z)
-        .apply_map_ref(|c| MultiPolynomial::as_constant(c).unwrap());
+        .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
     root_sum_poly.primitive_squarefree_part()
 }
 
@@ -34,21 +39,21 @@ fn root_prod_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomia
     let x = Variable::new(String::from("x"));
     let t = Variable::new(String::from("t"));
 
-    let p = p.apply_map_ref(|c| MultiPolynomial::constant(c.clone()));
+    let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
     let q = q
-        .apply_map_ref(|c| MultiPolynomial::constant(c.clone()))
+        .apply_map(|c| MultiPolynomial::constant(c.clone()))
         .evaluate(&MultiPolynomial::var(x.clone()));
     let r = q.homogenize(&t).expand(&t);
     //x ** q.degree() * q(t * x ** -1)
 
-    let root_prod_poly = Polynomial::resultant(p, r)
+    let root_prod_poly = Polynomial::resultant(&p, &r)
         .expand(&x)
-        .apply_map_ref(|c| MultiPolynomial::as_constant(c).unwrap());
+        .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
     root_prod_poly.primitive_squarefree_part()
 }
 
 fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Rational {
-    poly.apply_map_ref(|x| Rational::from(x)).evaluate(&val)
+    poly.apply_map(|x| Rational::from(x)).evaluate(&val)
 }
 
 fn bisect_box(
@@ -461,8 +466,7 @@ impl SquarefreePolyRealRoots {
     //return Err if a root in roots1 and a root in roots2 are equal and thus cant be separated
     //ends of real root intervals should not equal rational roots in the other one
     fn separate(roots1: &mut Self, roots2: &mut Self) -> Result<Vec<(Interleave, usize)>, ()> {
-        let poly_gcd_sqfr =
-            Polynomial::subresultant_gcd(roots1.poly_sqfr.clone(), roots2.poly_sqfr.clone());
+        let poly_gcd_sqfr = Polynomial::subresultant_gcd(&roots1.poly_sqfr, &roots2.poly_sqfr);
         let (_, poly_gcd_sqfr) = poly_gcd_sqfr.factor_primitive().unwrap();
 
         //compute which of the roots are equals to some root from the other one
@@ -664,14 +668,14 @@ impl Polynomial<Integer> {
         //https://en.wikipedia.org/wiki/Descartes'_rule_of_signs
         //equals the number of strictly positive real roots modulo 2
         //and number of positive real roots is less than this number
-        let nonzero_coeffs: Vec<_> = self
+        let nonzero_coeffs = self
             .coeffs()
             .into_iter()
-            .filter(|c| c != &Integer::zero())
-            .collect();
+            .filter(|c| c != &&Integer::zero())
+            .collect_vec();
         let mut v = 0;
         for i in 0..nonzero_coeffs.len() - 1 {
-            if (nonzero_coeffs[i] < 0) != (nonzero_coeffs[i + 1] < 0) {
+            if (nonzero_coeffs[i] < &0) != (nonzero_coeffs[i + 1] < &0) {
                 v += 1;
             }
         }
@@ -695,7 +699,7 @@ impl Polynomial<Integer> {
             let (c, k, mut q) = l.pop().unwrap();
             if q.evaluate(&Integer::from(0)) == Integer::from(0) {
                 //q = q/x
-                q = Self::div(q, Self::var()).unwrap();
+                q = Self::div(&q, &Self::var()).unwrap();
                 isol.push((c.clone(), k.clone(), false)); //rational root
             }
             let v = Self::compose(
@@ -829,8 +833,8 @@ impl Polynomial<Integer> {
             let mut intervals = vec![];
             if evaluate_at_rational(&self, a) == Rational::from(0) {
                 poly_no_endroots = Self::div(
-                    poly_no_endroots,
-                    Polynomial::from_coeffs(vec![
+                    &poly_no_endroots,
+                    &Polynomial::from_coeffs(vec![
                         -Rational::numerator(a),
                         Rational::denominator(a),
                     ]),
@@ -843,8 +847,8 @@ impl Polynomial<Integer> {
             let mut do_add_b = false;
             if evaluate_at_rational(&self, b) == Rational::from(0) {
                 poly_no_endroots = Self::div(
-                    poly_no_endroots,
-                    Polynomial::from_coeffs(vec![
+                    &poly_no_endroots,
+                    &Polynomial::from_coeffs(vec![
                         -Rational::numerator(b),
                         Rational::denominator(b),
                     ]),
@@ -866,7 +870,7 @@ impl Polynomial<Integer> {
 
             //apply a transformation to p so that its roots in (a, b) are moved to roots in (0, 1)
             let (_, trans_poly) = Polynomial::compose(
-                &poly_no_endroots.apply_map_ref(|c| Rational::from(c)),
+                &poly_no_endroots.apply_map(|c| Rational::from(c)),
                 &Polynomial::from_coeffs(vec![a.clone(), b.clone() - a.clone()]),
             )
             .factor_primitive_fof();
@@ -1347,8 +1351,8 @@ impl Polynomial<Integer> {
 
                 if evaluate_at_rational(&re_sqfr, s) == Rational::from(0) {
                     re_sqfr = Polynomial::div(
-                        re_sqfr,
-                        Polynomial::from_coeffs(vec![
+                        &re_sqfr,
+                        &Polynomial::from_coeffs(vec![
                             -Rational::numerator(s),
                             Rational::denominator(s),
                         ]),
@@ -1358,8 +1362,8 @@ impl Polynomial<Integer> {
 
                 if evaluate_at_rational(&re_sqfr, t) == Rational::from(0) {
                     re_sqfr = Polynomial::div(
-                        re_sqfr,
-                        Polynomial::from_coeffs(vec![
+                        &re_sqfr,
+                        &Polynomial::from_coeffs(vec![
                             -Rational::numerator(t),
                             Rational::denominator(t),
                         ]),
@@ -1369,8 +1373,8 @@ impl Polynomial<Integer> {
 
                 if evaluate_at_rational(&im_sqfr, s) == Rational::from(0) {
                     im_sqfr = Polynomial::div(
-                        im_sqfr,
-                        Polynomial::from_coeffs(vec![
+                        &im_sqfr,
+                        &Polynomial::from_coeffs(vec![
                             -Rational::numerator(s),
                             Rational::denominator(s),
                         ]),
@@ -1379,8 +1383,8 @@ impl Polynomial<Integer> {
                 }
                 if evaluate_at_rational(&im_sqfr, t) == Rational::from(0) {
                     im_sqfr = Polynomial::div(
-                        im_sqfr,
-                        Polynomial::from_coeffs(vec![
+                        &im_sqfr,
+                        &Polynomial::from_coeffs(vec![
                             -Rational::numerator(t),
                             Rational::denominator(t),
                         ]),
@@ -1774,7 +1778,7 @@ impl RealAlgebraicRoot {
             return Err("poly should be primitive and favoriate associate");
         }
         if !self.poly.is_irreducible() {
-                    return Err("poly should be irreducible");
+            return Err("poly should be irreducible");
         }
         if self.poly.degree().unwrap() < 2 {
             return Err("poly should have degree at least 2");
@@ -1795,7 +1799,7 @@ impl RealAlgebraicRoot {
     }
 
     fn new_wide_bounds(poly: Polynomial<Integer>, wide_a: Rational, wide_b: Rational) -> Self {
-        let dir = poly.apply_map_ref(|x| Rational::from(x)).evaluate(&wide_a) < Rational::from(0);
+        let dir = poly.apply_map(|x| Rational::from(x)).evaluate(&wide_a) < Rational::from(0);
         let x = Self {
             poly,
             tight_a: wide_a.clone(),
@@ -1877,7 +1881,7 @@ impl RealAlgebraicRoot {
         }
     }
 
-    pub fn neg_mut(&mut self) {
+    fn neg_mut(&mut self) {
         let (unit, fav_assoc) = Polynomial::compose(
             &self.poly,
             &Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(-1)]),
@@ -1886,13 +1890,18 @@ impl RealAlgebraicRoot {
         if unit == Polynomial::one() {
             self.poly = fav_assoc;
             self.dir = !self.dir;
-        } else if unit == Polynomial::neg(Polynomial::one()) {
+        } else if unit == Polynomial::neg(&Polynomial::one()) {
             self.poly = fav_assoc;
         } else {
             panic!();
         }
         (self.tight_a, self.tight_b) = (-self.tight_b.clone(), -self.tight_a.clone());
         (self.wide_a, self.wide_b) = (self.wide_b.clone().neg(), self.wide_a.clone().neg());
+    }
+
+    fn neg(mut self) -> Self {
+        self.neg_mut();
+        self
     }
 }
 
@@ -1927,11 +1936,10 @@ impl ComplexAlgebraicRoot {
         //     return Err("wide c should be strictly less than d");
         // }
 
-                if !self.poly.is_irreducible() {
-                    return Err("poly should be irreducible");
-                }
+        if !self.poly.is_irreducible() {
+            return Err("poly should be irreducible");
+        }
 
-        
         if self.poly.degree().unwrap() < 2 {
             return Err("poly should have degree at least 2");
         }
@@ -1965,6 +1973,11 @@ impl ComplexAlgebraicRoot {
         .fav_assoc();
         (self.tight_a, self.tight_b) = (-self.tight_b.clone(), -self.tight_a.clone());
         (self.tight_c, self.tight_d) = (-self.tight_d.clone(), -self.tight_c.clone());
+    }
+
+    pub fn neg(mut self) -> Self {
+        self.neg_mut();
+        self
     }
 
     pub fn refine(&mut self) {
@@ -2082,6 +2095,14 @@ impl ComplexAlgebraic {
     }
 }
 
+impl StructuredType for RealAlgebraic {
+    type Structure = CannonicalStructure<RealAlgebraic>;
+
+    fn structure() -> Rc<Self::Structure> {
+        CannonicalStructure::new().into()
+    }
+}
+
 impl Display for RealAlgebraic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -2091,40 +2112,42 @@ impl Display for RealAlgebraic {
     }
 }
 
-impl ComRing for RealAlgebraic {
-    fn zero() -> Self {
+impl EqualityStructure for CannonicalStructure<RealAlgebraic> {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        a == b
+    }
+}
+
+impl RingStructure for CannonicalStructure<RealAlgebraic> {
+    fn zero(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(0))
     }
 
-    fn one() -> Self {
+    fn one(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(1))
     }
 
-    fn neg_mut(&mut self) {
-        match self {
-            RealAlgebraic::Rational(a) => a.neg_assign(),
-            RealAlgebraic::Real(root) => root.neg_mut(),
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        match a {
+            RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
+            RealAlgebraic::Real(root) => RealAlgebraic::Real(root.clone().neg()),
         }
     }
 
-    fn add_mut(&mut self, offset: &Self) {
-        *self = Self::add(self.clone(), offset.clone());
-    }
-
-    fn add(alg1: Self, alg2: Self) -> Self {
-        fn add_rat(mut elem: RealAlgebraicRoot, rat: Rational) -> RealAlgebraicRoot {
-            elem.tight_a += &rat;
-            elem.tight_b += &rat;
+    fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
+        fn add_rat(mut elem: RealAlgebraicRoot, rat: &Rational) -> RealAlgebraicRoot {
+            elem.tight_a += rat;
+            elem.tight_b += rat;
             match &elem.wide_a {
                 LowerBound::Inf => {}
                 LowerBound::Finite(a) => {
-                    elem.wide_a = LowerBound::Finite(a + &rat);
+                    elem.wide_a = LowerBound::Finite(a + rat);
                 }
             }
             match &elem.wide_b {
                 UpperBound::Inf => {}
                 UpperBound::Finite(b) => {
-                    elem.wide_b = UpperBound::Finite(b + &rat);
+                    elem.wide_b = UpperBound::Finite(b + rat);
                 }
             }
 
@@ -2132,8 +2155,8 @@ impl ComRing for RealAlgebraic {
             elem.poly = Polynomial::compose(
                 &elem.poly,
                 &Polynomial::from_coeffs(vec![
-                    -Rational::numerator(&rat),
-                    Rational::denominator(&rat),
+                    -Rational::numerator(rat),
+                    Rational::denominator(rat),
                 ]),
             )
             .primitive_part()
@@ -2145,15 +2168,18 @@ impl ComRing for RealAlgebraic {
 
         match (alg1, alg2) {
             (RealAlgebraic::Rational(rat1), RealAlgebraic::Rational(rat2)) => {
-                RealAlgebraic::Rational(Rational::add(rat1, rat2))
+                RealAlgebraic::Rational(rat1 + rat2)
             }
             (RealAlgebraic::Rational(rat1), RealAlgebraic::Real(alg2)) => {
-                RealAlgebraic::Real(add_rat(alg2, rat1))
+                RealAlgebraic::Real(add_rat(alg2.clone(), rat1))
             }
             (RealAlgebraic::Real(alg1), RealAlgebraic::Rational(rat2)) => {
-                RealAlgebraic::Real(add_rat(alg1, rat2))
+                RealAlgebraic::Real(add_rat(alg1.clone(), rat2))
             }
-            (RealAlgebraic::Real(mut alg1), RealAlgebraic::Real(mut alg2)) => {
+            (RealAlgebraic::Real(alg1), RealAlgebraic::Real(alg2)) => {
+                let mut alg1 = alg1.clone();
+                let mut alg2 = alg2.clone();
+
                 let factored_rsp = root_sum_poly(&alg1.poly, &alg2.poly).factor().unwrap();
                 let polys: Vec<_> = factored_rsp.factors().iter().map(|(f, _k)| f).collect();
                 //the sum of alg1 and alg2 is exactly one root of exactly one of the irreducible polynomials in polys
@@ -2208,48 +2234,44 @@ impl ComRing for RealAlgebraic {
         }
     }
 
-    fn mul_mut(&mut self, mul: &Self) {
-        *self = Self::mul(self.clone(), mul.clone());
-    }
-
-    fn mul(elem1: Self, elem2: Self) -> Self {
-        match elem1.cmp(&Self::zero()) {
+    fn mul(&self, elem1: &Self::Set, elem2: &Self::Set) -> Self::Set {
+        match elem1.cmp(&self.zero()) {
             std::cmp::Ordering::Less => {
-                return Self::neg(Self::mul(Self::neg(elem1), elem2));
+                return self.neg(&self.mul(&self.neg(elem1), elem2));
             }
             std::cmp::Ordering::Equal => {
-                return Self::zero();
+                return self.zero();
             }
             std::cmp::Ordering::Greater => {}
         }
 
-        match elem2.cmp(&Self::zero()) {
+        match elem2.cmp(&self.zero()) {
             std::cmp::Ordering::Less => {
-                return Self::neg(Self::mul(elem1, Self::neg(elem2)));
+                return self.neg(&self.mul(elem1, &self.neg(elem2)));
             }
             std::cmp::Ordering::Equal => {
-                return Self::zero();
+                return self.zero();
             }
             std::cmp::Ordering::Greater => {}
         }
 
-        debug_assert!(&elem1 > &Self::zero());
-        debug_assert!(&elem2 > &Self::zero());
+        debug_assert!(elem1 > &self.zero());
+        debug_assert!(elem2 > &self.zero());
 
-        fn mul_pos_rat(mut elem: RealAlgebraicRoot, rat: Rational) -> RealAlgebraicRoot {
-            debug_assert!(rat > Rational::from(0));
-            elem.tight_a *= &rat;
-            elem.tight_b *= &rat;
+        fn mul_pos_rat(mut elem: RealAlgebraicRoot, rat: &Rational) -> RealAlgebraicRoot {
+            debug_assert!(rat > &Rational::from(0));
+            elem.tight_a *= rat;
+            elem.tight_b *= rat;
             match &elem.wide_a {
                 LowerBound::Inf => {}
                 LowerBound::Finite(a) => {
-                    elem.wide_a = LowerBound::Finite(a * &rat);
+                    elem.wide_a = LowerBound::Finite(a * rat);
                 }
             }
             match &elem.wide_b {
                 UpperBound::Inf => {}
                 UpperBound::Finite(b) => {
-                    elem.wide_b = UpperBound::Finite(b * &rat);
+                    elem.wide_b = UpperBound::Finite(b * rat);
                 }
             }
             //we are multiplying by a so need to replace f(x) with f(x/a)
@@ -2258,7 +2280,7 @@ impl ComRing for RealAlgebraic {
             //e.g. f(x) = 1 + x + x^2 replace it with f(d/n * x) = 1 + d/n x + d^2/n^2 x^2 = n^2 + ndx + d^2 x
             elem.poly = Polynomial::from_coeffs({
                 let degree = elem.poly.degree().unwrap();
-                let (n, d) = (Rational::numerator(&rat), Rational::denominator(&rat));
+                let (n, d) = (Rational::numerator(rat), Rational::denominator(rat));
                 let mut n_pows = vec![Integer::from(1)];
                 let mut d_pows = vec![Integer::from(1)];
 
@@ -2276,7 +2298,7 @@ impl ComRing for RealAlgebraic {
 
                 let coeffs = elem
                     .poly
-                    .coeffs()
+                    .into_coeffs()
                     .iter()
                     .enumerate()
                     .map(|(i, c)| &d_pows[i] * &n_pows[degree - i] * c)
@@ -2289,15 +2311,18 @@ impl ComRing for RealAlgebraic {
 
         match (elem1, elem2) {
             (RealAlgebraic::Rational(rat1), RealAlgebraic::Rational(rat2)) => {
-                RealAlgebraic::Rational(<Rational as ComRing>::mul(rat1, rat2))
+                RealAlgebraic::Rational(rat1 * rat2)
             }
             (RealAlgebraic::Rational(rat1), RealAlgebraic::Real(alg2)) => {
-                RealAlgebraic::Real(mul_pos_rat(alg2, rat1))
+                RealAlgebraic::Real(mul_pos_rat(alg2.clone(), rat1))
             }
             (RealAlgebraic::Real(alg1), RealAlgebraic::Rational(rat2)) => {
-                RealAlgebraic::Real(mul_pos_rat(alg1, rat2))
+                RealAlgebraic::Real(mul_pos_rat(alg1.clone(), rat2))
             }
-            (RealAlgebraic::Real(mut alg1), RealAlgebraic::Real(mut alg2)) => {
+            (RealAlgebraic::Real(alg1), RealAlgebraic::Real(alg2)) => {
+                let mut alg1 = alg1.clone();
+                let mut alg2 = alg2.clone();
+
                 let factored_rsp = root_prod_poly(&alg1.poly, &alg2.poly).factor().unwrap();
                 let polys: Vec<_> = factored_rsp.factors().iter().map(|(f, _k)| f).collect();
                 //the sum of alg1 and alg2 is exactly one root of exactly one of the irreducible polynomials in polys
@@ -2351,24 +2376,27 @@ impl ComRing for RealAlgebraic {
             }
         }
     }
+}
 
-    fn div(a: Self, b: Self) -> Result<Self, RingDivisionError> {
-        match Self::inv(b) {
-            Ok(b_inv) => Ok(Self::mul(a, b_inv)),
+impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
+    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        match self.inv(b) {
+            Ok(b_inv) => Ok(self.mul(a, &b_inv)),
             Err(err) => Err(err),
         }
     }
 
-    fn inv(mut self) -> Result<Self, RingDivisionError> {
-        match self.cmp_mut(&mut Self::zero()) {
-            std::cmp::Ordering::Less => match Self::inv(Self::neg(self)) {
-                Ok(neg_elem_inv) => Ok(Self::neg(neg_elem_inv)),
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        let mut a = a.clone();
+        match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {
+            std::cmp::Ordering::Less => match self.inv(&self.neg(&a)) {
+                Ok(neg_elem_inv) => Ok(self.neg(&neg_elem_inv)),
                 Err(err) => Err(err),
             },
             std::cmp::Ordering::Equal => Err(RingDivisionError::DivideByZero),
-            std::cmp::Ordering::Greater => match self {
+            std::cmp::Ordering::Greater => match a {
                 RealAlgebraic::Rational(x) => {
-                    Ok(RealAlgebraic::Rational(Rational::inv(x).unwrap()))
+                    Ok(RealAlgebraic::Rational(Rational::inv(&x).unwrap()))
                 }
                 RealAlgebraic::Real(mut root) => {
                     debug_assert!(root.tight_a >= Rational::from(0));
@@ -2377,14 +2405,14 @@ impl ComRing for RealAlgebraic {
                     }
                     debug_assert!(Rational::from(0) < root.tight_a);
                     (root.tight_a, root.tight_b) = (
-                        Rational::inv(root.tight_b).unwrap(),
-                        Rational::inv(root.tight_a).unwrap(),
+                        Rational::inv(&root.tight_b).unwrap(),
+                        Rational::inv(&root.tight_a).unwrap(),
                     );
                     (root.wide_a, root.wide_b) = (
                         {
                             match root.wide_b {
                                 UpperBound::Inf => LowerBound::Finite(Rational::from(0)),
-                                UpperBound::Finite(x) => match Rational::inv(x) {
+                                UpperBound::Finite(x) => match Rational::inv(&x) {
                                     Ok(x_inv) => LowerBound::Finite(x_inv),
                                     Err(RingDivisionError::DivideByZero) => panic!("wide upper bound of strictly positive root should be strictly positive i.e. non-zero"),
                                     Err(_) => panic!()
@@ -2398,19 +2426,20 @@ impl ComRing for RealAlgebraic {
                                     std::cmp::Ordering::Less => UpperBound::Inf,
                                     std::cmp::Ordering::Equal => UpperBound::Inf,
                                     std::cmp::Ordering::Greater => {
-                                        UpperBound::Finite(Rational::inv(x).unwrap())
+                                        UpperBound::Finite(Rational::inv(&x).unwrap())
                                     }
                                 },
                             }
                         },
                     );
-                    let (unit, fav_assoc) =
-                        Polynomial::from_coeffs(root.poly.coeffs().into_iter().rev().collect())
-                            .factor_fav_assoc();
+                    let (unit, fav_assoc) = Polynomial::from_coeffs(
+                        root.poly.into_coeffs().into_iter().rev().collect(),
+                    )
+                    .factor_fav_assoc();
                     if unit == Polynomial::one() {
                         root.poly = fav_assoc;
                         root.dir = !root.dir;
-                    } else if unit == Polynomial::neg(Polynomial::one()) {
+                    } else if unit == Polynomial::neg(&Polynomial::one()) {
                         root.poly = fav_assoc;
                     } else {
                         panic!();
@@ -2424,9 +2453,7 @@ impl ComRing for RealAlgebraic {
     }
 }
 
-impl IntegralDomain for RealAlgebraic {}
-
-impl Field for RealAlgebraic {}
+impl FieldStructure for CannonicalStructure<RealAlgebraic> {}
 
 impl PartialEq for ComplexAlgebraic {
     fn eq(&self, other: &Self) -> bool {
@@ -2435,6 +2462,14 @@ impl PartialEq for ComplexAlgebraic {
 }
 
 impl Eq for ComplexAlgebraic {}
+
+impl StructuredType for ComplexAlgebraic {
+    type Structure = CannonicalStructure<ComplexAlgebraic>;
+
+    fn structure() -> Rc<Self::Structure> {
+        CannonicalStructure::new().into()
+    }
+}
 
 impl Display for ComplexAlgebraic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -2445,29 +2480,29 @@ impl Display for ComplexAlgebraic {
     }
 }
 
-impl ComRing for ComplexAlgebraic {
-    fn zero() -> Self {
+impl EqualityStructure for CannonicalStructure<ComplexAlgebraic> {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        a == b
+    }
+}
+
+impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
+    fn zero(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
     }
 
-    fn one() -> Self {
+    fn one(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::one()))
     }
 
-    fn neg_mut(&mut self) {
-        match self {
-            ComplexAlgebraic::Real(root) => RealAlgebraic::neg_mut(root),
-            ComplexAlgebraic::Complex(root) => {
-                root.neg_mut();
-            }
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        match a {
+            ComplexAlgebraic::Real(root) => ComplexAlgebraic::Real(RealAlgebraic::neg(root)),
+            ComplexAlgebraic::Complex(root) => ComplexAlgebraic::Complex(root.clone().neg()),
         }
     }
 
-    fn add_mut(&mut self, offset: &Self) {
-        *self = Self::add(self.clone(), offset.clone());
-    }
-
-    fn add(alg1: Self, alg2: Self) -> Self {
+    fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
         fn add_real(mut cpx: ComplexAlgebraicRoot, real: RealAlgebraic) -> ComplexAlgebraicRoot {
             match real {
                 RealAlgebraic::Rational(rat) => {
@@ -2540,12 +2575,15 @@ impl ComRing for ComplexAlgebraic {
                 ComplexAlgebraic::Real(RealAlgebraic::add(real1, real2))
             }
             (ComplexAlgebraic::Real(real1), ComplexAlgebraic::Complex(cpx2)) => {
-                ComplexAlgebraic::Complex(add_real(cpx2, real1))
+                ComplexAlgebraic::Complex(add_real(cpx2.clone(), real1.clone()))
             }
             (ComplexAlgebraic::Complex(cpx1), ComplexAlgebraic::Real(real2)) => {
-                ComplexAlgebraic::Complex(add_real(cpx1, real2))
+                ComplexAlgebraic::Complex(add_real(cpx1.clone(), real2.clone()))
             }
-            (ComplexAlgebraic::Complex(mut cpx1), ComplexAlgebraic::Complex(mut cpx2)) => {
+            (ComplexAlgebraic::Complex(cpx1), ComplexAlgebraic::Complex(cpx2)) => {
+                let mut cpx1 = cpx1.clone();
+                let mut cpx2 = cpx2.clone();
+
                 let mut roots = root_sum_poly(&cpx1.poly, &cpx2.poly).all_complex_roots();
                 let mut possible: std::collections::HashSet<_> = (0..roots.len()).collect();
 
@@ -2603,26 +2641,21 @@ impl ComRing for ComplexAlgebraic {
         }
     }
 
-    fn mul_mut(&mut self, mul: &Self) {
-        *self = Self::mul(self.clone(), mul.clone());
-    }
-
-    fn mul(alg1: Self, alg2: Self) -> Self {
-        todo!()
-    }
-
-    fn div(_a: Self, _b: Self) -> Result<Self, RingDivisionError> {
+    fn mul(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
         todo!()
     }
 }
 
-impl IntegralDomain for ComplexAlgebraic {}
+impl IntegralDomainStructure for CannonicalStructure<ComplexAlgebraic> {
+    fn div(&self, _a: &Self::Set, _b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        todo!()
+    }
+}
 
-impl Field for ComplexAlgebraic {}
+impl FieldStructure for CannonicalStructure<ComplexAlgebraic> {}
 
 #[cfg(test)]
 mod tests {
-    use super::super::super::polynomial::poly::*;
     use super::*;
 
     #[test]
@@ -2684,12 +2717,12 @@ mod tests {
             println!(
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
-                Polynomial::factorize_by_kroneckers_method(exp.clone())
+                exp.factorize_by_kroneckers_method()
             );
             println!(
                 "rsp = {}    rsp_factored = {:?}",
                 Polynomial::to_string(&rsp),
-                Polynomial::factorize_by_kroneckers_method(rsp.clone())
+                rsp.factorize_by_kroneckers_method()
             );
             assert!(Polynomial::are_associate(&exp, &rsp));
         }
@@ -2772,12 +2805,12 @@ mod tests {
             println!(
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
-                Polynomial::factorize_by_kroneckers_method(exp.clone())
+                exp.factorize_by_kroneckers_method()
             );
             println!(
                 "rpp = {}    rpp_factored = {:?}",
                 Polynomial::to_string(&rpp),
-                Polynomial::factorize_by_kroneckers_method(rpp.clone())
+                rpp.factorize_by_kroneckers_method()
             );
             assert!(Polynomial::are_associate(&exp, &rpp));
         }
@@ -2819,7 +2852,7 @@ mod tests {
                 Integer::from(-1),
             ]),
         ]);
-        let f = Polynomial::primitive_squarefree_part(f);
+        let f = f.primitive_squarefree_part();
         //f is a squarefree polynomial with lots of roots
         println!("f = {:?}", f);
         let intervals = Polynomial::real_roots_squarefree(f, None, None, false, false);
@@ -3088,7 +3121,7 @@ mod tests {
     fn test_count_complex_roots() {
         //cyclotomic polynomials in a box of sidelength 4
         for k in 1..19 {
-            let f = Polynomial::add(Polynomial::var_pow(k), Polynomial::neg(Polynomial::one()));
+            let f = Polynomial::add(&Polynomial::var_pow(k),& Polynomial::neg(&Polynomial::one()));
             let n = f
                 .count_complex_roots(
                     &Rational::from(-2),
@@ -3102,7 +3135,7 @@ mod tests {
 
         //cyclotomic polynomials in a box with a boundary root iff k=0 mod 2
         for k in 1..19 {
-            let f = Polynomial::add(Polynomial::var_pow(k), Polynomial::neg(Polynomial::one()));
+            let f = Polynomial::add(&Polynomial::var_pow(k), &Polynomial::neg(&Polynomial::one()));
             let n = Polynomial::count_complex_roots(
                 &f,
                 &Rational::from(-1),
@@ -3119,7 +3152,7 @@ mod tests {
 
         //cyclotomic polynomials in a box with a boundary root iff k=0 mod 4
         for k in 1..19 {
-            let f = Polynomial::add(Polynomial::var_pow(k), Polynomial::neg(Polynomial::one()));
+            let f = Polynomial::add(&Polynomial::var_pow(k),& Polynomial::neg(&Polynomial::one()));
             let n = Polynomial::count_complex_roots(
                 &f,
                 &Rational::from(-2),
@@ -3215,8 +3248,8 @@ mod tests {
             let a = &roots[0];
             let b = &roots[1];
 
-            let a_neg = RealAlgebraic::neg_ref(a);
-            let b_neg = RealAlgebraic::neg_ref(b);
+            let a_neg = RealAlgebraic::neg(a);
+            let b_neg = RealAlgebraic::neg(b);
 
             a_neg.check_invariants().unwrap();
             b_neg.check_invariants().unwrap();
@@ -3245,7 +3278,7 @@ mod tests {
 
             assert_eq!(roots.len(), 3);
             for root in roots {
-                RealAlgebraic::neg(root).check_invariants().unwrap();
+                RealAlgebraic::neg(&root).check_invariants().unwrap();
             }
         }
         {
@@ -3258,8 +3291,8 @@ mod tests {
             let roots = Polynomial::all_real_roots(&f);
             for root in roots {
                 let root2 = RealAlgebraic::add(
-                    root,
-                    RealAlgebraic::from_rat(&Rational::from_signeds(1, 2)).unwrap(),
+                   & root,
+                    &RealAlgebraic::from_rat(&Rational::from_signeds(1, 2)).unwrap(),
                 );
                 root2.check_invariants().unwrap();
             }

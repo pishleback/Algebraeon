@@ -422,7 +422,9 @@ impl<RS: RingStructure> RingStructure for MultiPolynomialStructure<RS> {
                 .collect(),
         ))
     }
+}
 
+impl<RS: IntegralDomainStructure> IntegralDomainStructure for MultiPolynomialStructure<RS> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let mut vars = HashSet::new();
         vars.extend(a.free_vars());
@@ -456,8 +458,6 @@ impl<RS: RingStructure> RingStructure for MultiPolynomialStructure<RS> {
         }
     }
 }
-
-impl<RS: IntegralDomainStructure> IntegralDomainStructure for MultiPolynomialStructure<RS> {}
 
 impl<RS: RingStructure> MultiPolynomialStructure<RS> {
     pub fn reduce(&self, p: MultiPolynomial<RS::Set>) -> MultiPolynomial<RS::Set> {
@@ -574,8 +574,8 @@ where
 {
     type Structure = MultiPolynomialStructure<R::Structure>;
 
-    fn structure() -> Self::Structure {
-        MultiPolynomialStructure::new(R::structure().into())
+    fn structure() -> Rc<Self::Structure> {
+        MultiPolynomialStructure::new(R::structure()).into()
     }
 }
 

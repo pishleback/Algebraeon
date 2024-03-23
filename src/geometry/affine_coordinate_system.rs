@@ -1,6 +1,6 @@
 use crate::{
     geometry::vector::Vector,
-    rings_old::linear::{
+    rings::linear::{
         lattice::{AffineLattice, LinearLattice},
         matrix::Matrix,
     },
@@ -121,7 +121,7 @@ impl AffineSubspaceCoordinateSystem {
     pub fn point_image(&self, p: &Vector) -> Vector {
         assert_eq!(p.dim(), self.rank());
         &self.origin
-            + &Vector::from_matrix(&Matrix::mul_refs(&self.basis_matrix(), &p.as_matrix()).unwrap())
+            + &Vector::from_matrix(&Matrix::mul(&self.basis_matrix(), &p.as_matrix()).unwrap())
     }
 
     pub fn simplex_image(&self, s: &Simplex) -> Simplex {

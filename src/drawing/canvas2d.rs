@@ -1,10 +1,7 @@
 use glium::{backend::Facade, glutin::event::Event, Display, Program, Surface, VertexBuffer};
 use malachite_q::Rational;
 
-use crate::{
-    geometry::{shape::Shape, simplex::Simplex},
-    rings_old::ring::Real,
-};
+use crate::{geometry::{shape::Shape, simplex::Simplex}, RealDomain};
 
 #[derive(Debug)]
 struct Camera {
@@ -481,8 +478,8 @@ impl Shape2dCanvas {
             1 => {
                 self.point_verts.push(Vertex {
                     position: [
-                        Rational::as_f32(points[0].get_coord(0)),
-                        Rational::as_f32(points[0].get_coord(1)),
+                        Rational::as_f32(&points[0].get_coord(0)),
+                        Rational::as_f32(&points[0].get_coord(1)),
                     ],
                     colour: [colour.0, colour.1, colour.2],
                 });
@@ -491,15 +488,15 @@ impl Shape2dCanvas {
             2 => {
                 self.line_verts.push(Vertex {
                     position: [
-                        Rational::as_f32(points[0].get_coord(0)),
-                        Rational::as_f32(points[0].get_coord(1)),
+                        Rational::as_f32(&points[0].get_coord(0)),
+                        Rational::as_f32(&points[0].get_coord(1)),
                     ],
                     colour: [colour.0, colour.1, colour.2],
                 });
                 self.line_verts.push(Vertex {
                     position: [
-                        Rational::as_f32(points[1].get_coord(0)),
-                        Rational::as_f32(points[1].get_coord(1)),
+                        Rational::as_f32(&points[1].get_coord(0)),
+                        Rational::as_f32(&points[1].get_coord(1)),
                     ],
                     colour: [colour.0, colour.1, colour.2],
                 });
@@ -508,23 +505,23 @@ impl Shape2dCanvas {
             3 => {
                 self.triangle_verts.push(Vertex {
                     position: [
-                        Rational::as_f32(points[0].get_coord(0)),
-                        Rational::as_f32(points[0].get_coord(1)),
+                        Rational::as_f32(&points[0].get_coord(0)),
+                        Rational::as_f32(&points[0].get_coord(1)),
                     ],
                     colour: [colour.0, colour.1, colour.2],
                 });
 
                 self.triangle_verts.push(Vertex {
                     position: [
-                        Rational::as_f32(points[1].get_coord(0)),
-                        Rational::as_f32(points[1].get_coord(1)),
+                        Rational::as_f32(&points[1].get_coord(0)),
+                        Rational::as_f32(&points[1].get_coord(1)),
                     ],
                     colour: [colour.0, colour.1, colour.2],
                 });
                 self.triangle_verts.push(Vertex {
                     position: [
-                        Rational::as_f32(points[2].get_coord(0)),
-                        Rational::as_f32(points[2].get_coord(1)),
+                        Rational::as_f32(&points[2].get_coord(0)),
+                        Rational::as_f32(&points[2].get_coord(1)),
                     ],
                     colour: [colour.0, colour.1, colour.2],
                 });

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use malachite_base::num::arithmetic::traits::DivMod;
 use malachite_base::num::arithmetic::traits::UnsignedAbs;
@@ -7,8 +8,7 @@ use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use crate::structure::StructuredType;
-
+use super::super::polynomial::polynomial::PolynomialStructure;
 use super::super::super::structure::*;
 use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::factorization::*;
@@ -19,8 +19,8 @@ use super::natural::*;
 impl StructuredType for Integer {
     type Structure = CannonicalStructure<Self>;
 
-    fn structure() -> Self::Structure {
-        Self::Structure::new()
+    fn structure() -> Rc<Self::Structure> {
+        Self::Structure::new().into()
     }
 }
 
@@ -50,7 +50,9 @@ impl RingStructure for CannonicalStructure<Integer> {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
+}
 
+impl IntegralDomainStructure for CannonicalStructure<Integer> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.quorem(a, b) {
             Some((q, r)) => {
@@ -64,8 +66,6 @@ impl RingStructure for CannonicalStructure<Integer> {
         }
     }
 }
-
-impl IntegralDomainStructure for CannonicalStructure<Integer> {}
 
 impl FiniteUnitsStructure for CannonicalStructure<Integer> {
     fn all_units(&self) -> Vec<Self::Set> {
@@ -155,6 +155,67 @@ impl RealStructure for CannonicalStructure<Integer> {
                 flt += (k as f64) * (2.0 as f64).powf(i as f64 * 64.0);
             }
             flt
+        }
+    }
+}
+
+impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {
+    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
+        self.gcd_by_primitive_subresultant(x.clone(), y.clone())
+    }
+}
+
+impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Integer>> {
+    fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
+        //TODO: use a better algorithm here
+        self.factorize_by_kroneckers_method(p)
+    }
+}
+
+#[cfg(any())]
+impl Polynomial<Integer> {
+    fn find_factor_primitive_sqfree_by_zassenhaus_algorithm(
+        &self,
+        f: &Polynomial<Integer>,
+    ) -> Option<(Polynomial<Integer>, Polynomial<Integer>)> {
+        let f_deg = f.degree().unwrap();
+        debug_assert_ne!(f_deg, 0);
+        println!("zassenhaus: {}", f);
+        if f_deg == 1 {
+            None
+        } else {
+            let prime_gen = NaturalPrimeGenerator::new();
+            for p in prime_gen.take(20) {
+                println!("{:?}", p);
+                // let f_mod_p = f.apply_map_ref(|c| {
+                //     UniversalEuclideanQuotient::<true, _>::new(c.clone(), Integer::from(&p))
+                // });
+
+                // println!("{}", f_mod_p);
+
+                sleep(Duration::from_millis(100));
+            }
+
+            todo!()
+        }
+    }
+
+    pub fn factorize_by_zassenhaus_algorithm(
+        &self,
+        f: &Polynomial<Integer>,
+    ) -> Option<Factored<PolynomialStructure<Integer>>> {
+        if self == Self::zero() {
+            None
+        } else {
+            Some(factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(
+                self,
+                f,
+                &|f| {
+                    factorize_by_find_factor(self, f, &|f| {
+                        self.find_factor_primitive_sqfree_by_zassenhaus_algorithm(f)
+                    })
+                },
+            ))
         }
     }
 }

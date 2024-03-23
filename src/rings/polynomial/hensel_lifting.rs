@@ -1,40 +1,71 @@
 use std::borrow::Borrow;
+use std::rc::Rc;
 
 use malachite_base::num::basic::traits::One;
 use malachite_nz::natural::Natural;
 
+use super::super::super::structure::*;
+use super::super::ring_structure::quotient::*;
 use super::super::ring_structure::structure::*;
 use super::polynomial::*;
 
-impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure> PolynomialStructure<RS> {
-    fn polynomial_reduce_modulo(&self,
-        poly: &Polynomial<RS::Set>,
-        i: impl Borrow<RS::Set>,
-        n: impl Borrow<Natural>,
-    ) -> Polynomial<EuclideanQuotient<RS>> {
-        let i = i.borrow();
-        let n = n.borrow();
-        poly.apply_map_ref(|c| UniversalEuclideanQuotient::<false, Ring>::new(c.clone(), i.nat_pow(n)))
-    }
-}
-
-
+// impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure> PolynomialStructure<RS> {
+//     fn polynomial_reduce_modulo(&self,
+//         poly: &Polynomial<RS::Set>,
+//         i: impl Borrow<RS::Set>,
+//         n: impl Borrow<Natural>,
+//     ) -> Polynomial<EuclideanQuotient<RS>> {
+//         let i = i.borrow();
+//         let n = n.borrow();
+//         poly.apply_map_ref(|c| UniversalEuclideanQuotient::<false, Ring>::new(c.clone(), i.nat_pow(n)))
+//     }
+// }
 
 #[derive(Debug, Clone)]
-enum HenselProduct<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> {
+enum HenselProduct<
+    RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+> {
     Leaf,
     Branch {
         //h = fg mod i^n
         //af + bg = 1 mod i
-        f_factorization: Box<HenselFactorizationImpl<Ring>>, //defined modulo i^n
-        g_factorization: Box<HenselFactorizationImpl<Ring>>, //defined modulo i^n
-        a: Polynomial<Ring>,                                 //defined modulo i
-        b: Polynomial<Ring>,                                 //defined modulo i
+        f_factorization: Box<HenselFactorizationImpl<RS>>, //defined modulo i^n
+        g_factorization: Box<HenselFactorizationImpl<RS>>, //defined modulo i^n
+        a: Polynomial<RS::Set>,                            //defined modulo i
+        b: Polynomial<RS::Set>,                            //defined modulo i
     },
 }
 
-impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> HenselProduct<Ring> {
-    fn check(&self, h: &Polynomial<Ring>, i: &Ring, n: &Natural) -> Result<(), &'static str> {
+#[derive(Debug, Clone)]
+struct HenselFactorizationImpl<
+    RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+> {
+    h: Polynomial<RS::Set>,
+    factorization: HenselProduct<RS>,
+}
+
+//represent a factorization of a monic polynomial h(x) into coprime monic polynomials f_1(x)f_2(x)...f_k(x) modulo i^n
+#[derive(Debug, Clone)]
+pub struct HenselFactorization<
+    RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+> {
+    ring: Rc<RS>,
+    i: RS::Set,
+    n: Natural,
+    factors_impl: HenselFactorizationImpl<RS>, //defined absolutely and factored modulo i^n
+}
+
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselProduct<RS>
+{
+    fn check(
+        &self,
+        ring: &RS,
+        h: &Polynomial<RS::Set>,
+        i: &RS::Set,
+        n: &Natural,
+    ) -> Result<(), &'static str> {
         match self {
             HenselProduct::Leaf => {}
             HenselProduct::Branch {
@@ -43,31 +74,32 @@ impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDo
                 a,
                 b,
             } => {
-                f_factorization.check(i, n)?;
-                g_factorization.check(i, n)?;
+                f_factorization.check(ring, i, n)?;
+                g_factorization.check(ring, i, n)?;
+
                 //af + bg = 1 mod i
-                if polynomial_reduce_modulo(
-                    &Polynomial::sum(vec![
-                        &Polynomial::mul_refs(a, &f_factorization.h),
-                        &Polynomial::mul_refs(b, &g_factorization.h),
-                        &Polynomial::one().neg(),
-                    ]),
-                    i,
-                    &Natural::from(1u8),
-                ) != Polynomial::zero()
-                {
+                let poly_ring_mod_i = PolynomialStructure::new(
+                    QuotientStructure::new_ring(ring.clone().into(), i.clone()).into(),
+                );
+                if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(vec![
+                    poly_ring_mod_i.mul(a, &f_factorization.h),
+                    poly_ring_mod_i.mul(b, &g_factorization.h),
+                    poly_ring_mod_i.neg(&poly_ring_mod_i.one()),
+                ])) {
                     return Err("af + bg != 1 mod i");
                 }
                 //h = fg mod i^n
-                if polynomial_reduce_modulo(
-                    &Polynomial::add_ref(
-                        Polynomial::mul_refs(&f_factorization.h, &g_factorization.h).neg(),
+                let poly_ring_mod_i_tothe_n = PolynomialStructure::new(
+                    QuotientStructure::new_ring(ring.clone().into(), ring.nat_pow(i, n)).into(),
+                );
+                if !poly_ring_mod_i_tothe_n.is_zero(
+                    &poly_ring_mod_i_tothe_n.add(
+                        &poly_ring_mod_i_tothe_n.neg(
+                            &poly_ring_mod_i_tothe_n.mul(&f_factorization.h, &g_factorization.h),
+                        ),
                         h,
                     ),
-                    i,
-                    n,
-                ) != Polynomial::zero()
-                {
+                ) {
                     return Err("h != fg mod i^n");
                 }
             }
@@ -76,35 +108,42 @@ impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDo
     }
 
     fn new_split(
-        p: &Ring,
+        ring: &RS,
+        p: &RS::Set,
         n: &Natural,
-        first_fs: Vec<&Polynomial<Ring>>,
-        second_fs: Vec<&Polynomial<Ring>>,
+        first_fs: Vec<&Polynomial<RS::Set>>,
+        second_fs: Vec<&Polynomial<RS::Set>>,
     ) -> Self {
-        let first_h = Polynomial::product(first_fs.clone())
-            .apply_map_ref(|c| Ring::rem_lref(c, p.nat_pow(n)));
-        let second_h = Polynomial::product(second_fs.clone())
-            .apply_map_ref(|c| Ring::rem_lref(c, p.nat_pow(n)));
-
-        let (u, a, b) = Polynomial::xgcd(
-            first_h.apply_map_ref(|c| UniversalEuclideanQuotient::<true, Ring>::new(c.clone(), p.clone())),
-            second_h.apply_map_ref(|c| UniversalEuclideanQuotient::<true, Ring>::new(c.clone(), p.clone())),
+        let poly_ring = PolynomialStructure::new(ring.clone().into());
+        let poly_ring_mod_p = PolynomialStructure::new(
+            QuotientStructure::new_field(ring.clone().into(), p.clone()).into(),
         );
-        if u != Polynomial::one() {
+
+        //first_h and second_h are defined modulo p^n
+        let first_h = poly_ring
+            .product(first_fs.clone())
+            .apply_map(|c| ring.rem(c, &ring.nat_pow(p, n)));
+        let second_h = poly_ring
+            .product(second_fs.clone())
+            .apply_map(|c| ring.rem(c, &ring.nat_pow(p, n)));
+
+        //find a, b such that af + bg = 1 mod i
+        let (u, a, b) = poly_ring_mod_p.xgcd(&first_h, &second_h);
+        if !poly_ring_mod_p.equal(&u, &poly_ring_mod_p.one()) {
             panic!("Factors should be coprime modulo i");
         }
-        let a = a.apply_map_ref(|c| c.clone().lift());
-        let b = b.apply_map_ref(|c| c.clone().lift());
 
         Self::Branch {
-            f_factorization: Box::new(HenselFactorizationImpl::new(p, n, first_h, first_fs)),
-            g_factorization: Box::new(HenselFactorizationImpl::new(p, n, second_h, second_fs)),
+            f_factorization: Box::new(HenselFactorizationImpl::new(ring, p, n, first_h, first_fs)),
+            g_factorization: Box::new(HenselFactorizationImpl::new(
+                ring, p, n, second_h, second_fs,
+            )),
             a,
             b,
         }
     }
 
-    fn factor_list<'a>(&'a self, h: &'a Polynomial<Ring>) -> Vec<&'a Polynomial<Ring>> {
+    fn factor_list<'a>(&'a self, h: &'a Polynomial<RS::Set>) -> Vec<&'a Polynomial<RS::Set>> {
         match self {
             HenselProduct::Leaf => vec![h],
             HenselProduct::Branch {
@@ -121,7 +160,9 @@ impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDo
         }
     }
 
-    fn linear_lift(&mut self, i: &Ring, n: &Natural, h: &Polynomial<Ring>) {
+    fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
+        let poly_ring = PolynomialStructure::new(ring.clone().into());
+
         match self {
             HenselProduct::Leaf => {}
             HenselProduct::Branch {
@@ -135,79 +176,91 @@ impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDo
 
                 // println!("{:?}", self);
                 //  h = fg mod i^n  =>  h - fg = 0 mod i^n
-                let h_minus_fg = Polynomial::add_ref(Polynomial::mul_refs(f, g).neg(), h);
-                let delta_h_over_i_tothe_n = h_minus_fg.apply_map_ref(|c| {
-                    Ring::rem_rref(Ring::quo_lref(c, i.nat_pow(n)).unwrap(), i)
-                });
+                let h_minus_fg = poly_ring.add(&poly_ring.neg(&poly_ring.mul(f, g)), h);
+                let delta_h_over_i_tothe_n = h_minus_fg
+                    .apply_map(|c| ring.rem(&ring.quo(c, &ring.nat_pow(i, n)).unwrap(), i));
                 // println!("delta_h_over_i_tothe_n = {:?}", &delta_h_over_i_tothe_n);
 
-                let delta_h =
-                    Polynomial::mul(delta_h_over_i_tothe_n, Polynomial::constant(i.nat_pow(n)));
+                let delta_h = poly_ring.mul(
+                    &delta_h_over_i_tothe_n,
+                    &Polynomial::constant(ring.nat_pow(i, n)),
+                );
 
                 //found delta_h such that
                 //delta_h = h - fg mod i^n+1
-                debug_assert_eq!(
-                    polynomial_reduce_modulo(
-                        &Polynomial::add_ref(Polynomial::mul_refs(f, g).neg(), h),
-                        i,
-                        n + Natural::from(1u8)
-                    ),
-                    polynomial_reduce_modulo(&delta_h, i, n + Natural::from(1u8))
+                let poly_ring_mod_i_tothe_nplusone = PolynomialStructure::new(
+                    QuotientStructure::new_ring(
+                        ring.clone().into(),
+                        ring.nat_pow(i, &(n + Natural::ONE)),
+                    )
+                    .into(),
                 );
+
+                debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
+                    &poly_ring_mod_i_tothe_nplusone.add(
+                        &poly_ring_mod_i_tothe_nplusone
+                            .neg(&poly_ring_mod_i_tothe_nplusone.mul(f, g)),
+                        h
+                    ),
+                    &delta_h
+                ));
 
                 // println!("delta_h = {:?}", &delta_h);
 
                 //(qg, rg) = quorem(a * delta_h, g)
                 //(qf, rf) = quorem(b * delta_h, f)
-                let (qg, rg) =
-                    Polynomial::try_quorem_rref(Polynomial::mul_refs(a, &delta_h), g).unwrap();
-                let (qf, rf) =
-                    Polynomial::try_quorem_rref(Polynomial::mul_refs(b, &delta_h), f).unwrap();
+                let (qg, rg) = poly_ring
+                    .try_quorem(&poly_ring.mul(a, &delta_h), g)
+                    .unwrap();
+                let (qf, rf) = poly_ring
+                    .try_quorem(&poly_ring.mul(b, &delta_h), f)
+                    .unwrap();
 
                 // println!("qg = {:?}  rg = {:?}", qg, rg);
                 // println!("qf = {:?}  rf = {:?}", qf, rf);
 
                 //qf + qg = 0 mod i^{n+1}
-                debug_assert_eq!(
-                    polynomial_reduce_modulo(
-                        &Polynomial::add_refs(&qf, &qg),
-                        i,
-                        n + Natural::from(1u8)
-                    ),
-                    Polynomial::zero()
-                );
+                debug_assert!(poly_ring_mod_i_tothe_nplusone
+                    .is_zero(&poly_ring_mod_i_tothe_nplusone.add(&qf, &qg),));
 
-                let lifted_f = Polynomial::add_ref(rf, f)
-                    .apply_map_ref(|c| Ring::rem_lref(c, i.nat_pow(n + Natural::from(1u8))));
-                let lifted_g = Polynomial::add_ref(rg, g)
-                    .apply_map_ref(|c| Ring::rem_lref(c, i.nat_pow(n + Natural::from(1u8))));
+                let lifted_f = poly_ring
+                    .add(&rf, f)
+                    .apply_map(|c| ring.rem(c, &ring.nat_pow(i, &(n + Natural::ONE))));
+                let lifted_g = poly_ring
+                    .add(&rg, g)
+                    .apply_map(|c| ring.rem(c, &ring.nat_pow(i, &(n + Natural::ONE))));
 
                 f_factorization.h = lifted_f;
                 g_factorization.h = lifted_g;
 
-                f_factorization.linear_lift(i, n);
-                g_factorization.linear_lift(i, n);
+                f_factorization.linear_lift(ring, i, n);
+                g_factorization.linear_lift(ring, i, n);
             }
         }
     }
 }
 
-#[derive(Debug, Clone)]
-struct HenselFactorizationImpl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> {
-    h: Polynomial<Ring>,
-    factorization: HenselProduct<Ring>,
-}
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorizationImpl<RS>
+{
+    fn check(&self, ring: &RS, i: &RS::Set, n: &Natural) -> Result<(), &'static str> {
+        let poly_ring = PolynomialStructure::new(ring.clone().into());
 
-impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> HenselFactorizationImpl<Ring> {
-    fn check(&self, i: &Ring, n: &Natural) -> Result<(), &'static str> {
-        if !self.h.is_monic() {
+        if !poly_ring.is_monic(&self.h) {
             return Err("h is not monic");
         }
-        self.factorization.check(&self.h, i, n)?;
+        self.factorization.check(ring, &self.h, i, n)?;
         Ok(())
     }
 
-    fn new(p: &Ring, n: &Natural, h: Polynomial<Ring>, mut fs: Vec<&Polynomial<Ring>>) -> Self {
+    fn new(
+        ring: &RS,
+        p: &RS::Set,
+        n: &Natural,
+        h: Polynomial<RS::Set>,
+        mut fs: Vec<&Polynomial<RS::Set>>,
+    ) -> Self {
         debug_assert!(fs.len() >= 1);
         match fs.len() {
             0 => panic!(),
@@ -225,51 +278,57 @@ impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDo
                 // println!("{:?}, {:?}", first_fs, second_fs);
                 Self {
                     h,
-                    factorization: HenselProduct::new_split(p, n, first_fs, second_fs),
+                    factorization: HenselProduct::new_split(ring, p, n, first_fs, second_fs),
                 }
             }
         }
     }
 
-    fn factor_list(&self) -> Vec<&Polynomial<Ring>> {
+    fn factor_list(&self) -> Vec<&Polynomial<RS::Set>> {
         self.factorization.factor_list(&self.h)
     }
 
-    fn linear_lift(&mut self, i: &Ring, n: &Natural) {
-        self.factorization.linear_lift(i, n, &self.h);
+    fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
+        self.factorization.linear_lift(ring, i, n, &self.h);
     }
 }
 
-//represent a factorization of a monic polynomial h(x) into coprime monic polynomials f_1(x)f_2(x)...f_k(x) modulo i^n
-#[derive(Debug, Clone)]
-pub struct HenselFactorization<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> {
-    i: Ring,
-    n: Natural,
-    factors_impl: HenselFactorizationImpl<Ring>, //defined absolutely and factored modulo i^n
-}
-
-impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDomain> HenselFactorization<Ring> {
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorization<RS>
+{
     fn check(&self) -> Result<(), &'static str> {
-        self.factors_impl.check(&self.i, &self.n)
+        self.factors_impl
+            .check(self.ring.as_ref(), &self.i, &self.n)
     }
 
-    pub fn new(p: Ring, n: Natural, h: Polynomial<Ring>, fs: Vec<Polynomial<Ring>>) -> Self {
-        debug_assert!(p.is_irreducible());
+    pub fn new(
+        ring: Rc<RS>,
+        p: RS::Set,
+        n: Natural,
+        h: Polynomial<RS::Set>,
+        fs: Vec<Polynomial<RS::Set>>,
+    ) -> Self {
+        let poly_ring = PolynomialStructure::new(ring.clone());
+
+        debug_assert!(ring.is_irreducible(&p));
 
         // h and all fs monic
         assert!(fs.len() >= 1);
-        debug_assert!(h.is_monic());
+        debug_assert!(poly_ring.is_monic(&h));
         for f in fs.iter() {
-            debug_assert!(f.is_monic());
+            debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n
-        debug_assert_eq!(
-            polynomial_reduce_modulo(&h, &p, &n),
-            polynomial_reduce_modulo(&Polynomial::product(fs.iter().collect()), &p, &n)
+        let poly_ring_mod_p_tothe_n = PolynomialStructure::new(
+            QuotientStructure::new_ring(ring.clone(), ring.nat_pow(&p, &n)).into(),
         );
+        debug_assert!(poly_ring_mod_p_tothe_n
+            .equal(&h, &poly_ring_mod_p_tothe_n.product(fs.iter().collect())));
         // fs are coprime mod i - checked when computing bezout coefficients
-        let factors = HenselFactorizationImpl::new(&p, &n, h, fs.iter().collect());
+        let factors = HenselFactorizationImpl::new(ring.as_ref(), &p, &n, h, fs.iter().collect());
         let ans = Self {
+            ring,
             i: p,
             n,
             factors_impl: factors,
@@ -278,17 +337,18 @@ impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDo
         ans
     }
 
-    pub fn modolus(&self) -> Ring {
-        self.i.nat_pow(&self.n)
+    pub fn modolus(&self) -> RS::Set {
+        self.ring.nat_pow(&self.i, &self.n)
     }
 
     //return the lifted factors in order
-    pub fn factors(&self) -> Vec<&Polynomial<Ring>> {
+    pub fn factors(&self) -> Vec<&Polynomial<RS::Set>> {
         self.factors_impl.factor_list()
     }
 
     pub fn linear_lift(&mut self) {
-        self.factors_impl.linear_lift(&self.i, &self.n);
+        self.factors_impl
+            .linear_lift(self.ring.as_ref(), &self.i, &self.n);
         self.n += Natural::ONE;
     }
 }
@@ -296,6 +356,8 @@ impl<Ring: EuclideanDomain + GreatestCommonDivisorDomain + UniqueFactorizationDo
 #[cfg(test)]
 mod tests {
     use malachite_nz::integer::Integer;
+
+    use super::super::super::ring_structure::cannonical::*;
 
     use super::*;
 
@@ -317,13 +379,14 @@ mod tests {
             Integer::from(1),
         ]);
         let h = Polynomial::product(vec![&f1, &f2, &f3]);
-        let h = h.apply_map_ref(|c| Integer::rem_lref(c, Integer::from(5)));
+        let h = h.apply_map(|c| Integer::rem(c, &Integer::from(5)));
         //h = prod fs mod 5
         //fs are coprime
         //h and fs are monic
 
         //set up bezout coefficients for hensel lifting the factorization modulo 25, 125, ...
         let mut hensel_fact = HenselFactorization::new(
+            Integer::structure(),
             Integer::from(5),
             Natural::from(1u8),
             h.clone(),
@@ -336,7 +399,7 @@ mod tests {
             hensel_fact.check().unwrap();
             println!("5^{}: {:?}", i, hensel_fact.factors());
             let lifted_product = Polynomial::product(hensel_fact.factors())
-                .apply_map_ref(|c| Integer::rem_lref(c, hensel_fact.modolus()));
+                .apply_map(|c| Integer::rem(c, &hensel_fact.modolus()));
             assert_eq!(lifted_product, h);
         }
     }

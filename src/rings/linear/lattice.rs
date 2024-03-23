@@ -834,8 +834,8 @@ where
 {
     type Structure = LinearLatticeStructure<R::Structure>;
 
-    fn structure() -> Self::Structure {
-        LinearLatticeStructure::new(R::structure().into())
+    fn structure() -> Rc<Self::Structure> {
+        LinearLatticeStructure::new(R::structure()).into()
     }
 }
 
@@ -965,8 +965,8 @@ where
 {
     type Structure = AffineLatticeStructure<R::Structure>;
 
-    fn structure() -> Self::Structure {
-        AffineLatticeStructure::new(R::structure().into())
+    fn structure() -> Rc<Self::Structure> {
+        AffineLatticeStructure::new(R::structure()).into()
     }
 }
 

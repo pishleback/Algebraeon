@@ -140,7 +140,7 @@ impl<RS: RingStructure> Mul<StructuredElement<RS>> for StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Div<&StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: IntegralDomainStructure> Div<&StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn div(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -151,7 +151,7 @@ impl<RS: RingStructure> Div<&StructuredElement<RS>> for &StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Div<StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: IntegralDomainStructure> Div<StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn div(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -159,7 +159,7 @@ impl<RS: RingStructure> Div<StructuredElement<RS>> for &StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Div<&StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: IntegralDomainStructure> Div<&StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn div(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -167,7 +167,7 @@ impl<RS: RingStructure> Div<&StructuredElement<RS>> for StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Div<StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: IntegralDomainStructure> Div<StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn div(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -175,7 +175,7 @@ impl<RS: RingStructure> Div<StructuredElement<RS>> for StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> StructuredElement<RS> {
+impl<RS: IntegralDomainStructure> StructuredElement<RS> {
     pub fn pow(&self, n: i32) -> StructuredElement<RS> {
         StructuredElement::new(
             self.structure().clone(),

@@ -1,7 +1,11 @@
+use std::rc::Rc;
+
 use malachite_base::num::basic::traits::One;
 use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
+
+use super::super::polynomial::polynomial::*;
 
 use super::super::super::structure::*;
 
@@ -12,8 +16,8 @@ use super::super::ring_structure::structure::*;
 impl StructuredType for Rational {
     type Structure = CannonicalStructure<Self>;
 
-    fn structure() -> Self::Structure {
-        Self::Structure::new()
+    fn structure() -> Rc<Self::Structure> {
+        Self::Structure::new().into()
     }
 }
 
@@ -43,7 +47,9 @@ impl RingStructure for CannonicalStructure<Rational> {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
+}
 
+impl IntegralDomainStructure for CannonicalStructure<Rational> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if b == &Rational::ZERO {
             Err(RingDivisionError::DivideByZero)
@@ -53,14 +59,12 @@ impl RingStructure for CannonicalStructure<Rational> {
     }
 }
 
-impl IntegralDomainStructure for CannonicalStructure<Rational> {}
-
 impl FieldStructure for CannonicalStructure<Rational> {}
 
 impl FieldOfFractionsStructure for CannonicalStructure<Rational> {
     type RS = CannonicalStructure<Integer>;
 
-    fn base_ring_structure(&self) -> Self::RS {
+    fn base_ring_structure(&self) -> Rc<Self::RS> {
         Integer::structure()
     }
 
@@ -78,5 +82,11 @@ impl FieldOfFractionsStructure for CannonicalStructure<Rational> {
 
     fn denominator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
         Integer::from(elem.denominator_ref())
+    }
+}
+
+impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Rational>> {
+    fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
+        self.factorize_by_factorize_primitive_part(p)
     }
 }

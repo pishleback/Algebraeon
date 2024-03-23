@@ -19,29 +19,21 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 use rand::Rng;
-// use rings_old::ergonomic::*;
-// use rings_old::numbers::algebraic::*;
-// use rings_old::numbers::nzq::*;
-// use rings_old::numbers::small_modulo::*;
-// use rings_old::polynomial::multipoly::*;
-// use rings_old::polynomial::poly::*;
-// use rings_old::ring::*;
 use rings::*;
 
 // use sets::permutations::Permutation;
 
 use crate::number::modulo::Modulo;
-// use crate::geometry::convex_simplicial_complex::*;
-// use crate::geometry::vector::*;
+use crate::geometry::convex_simplicial_complex::*;
+use crate::geometry::vector::*;
 use crate::ring_structure::cannonical::*;
 use crate::structure::*;
 
-// pub mod drawing;
+pub mod drawing;
 pub mod finite_group_tables;
-// pub mod geometry;
+pub mod geometry;
 pub mod groups;
 pub mod numbers;
-// pub mod rings_old;
 pub mod rings;
 pub mod sets;
 

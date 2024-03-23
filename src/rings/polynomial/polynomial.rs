@@ -22,6 +22,10 @@ impl<Set> Polynomial<Set> {
         self.coeffs.iter().collect()
     }
 
+    pub fn into_coeffs(self) -> Vec<Set> {
+        self.coeffs
+    }
+
     pub fn from_coeffs(coeffs: Vec<Set>) -> Self {
         Self { coeffs }
     }
@@ -48,6 +52,12 @@ pub struct PolynomialStructure<RS: RingStructure> {
     coeff_ring: Rc<RS>,
 }
 
+impl<RS: RingStructure> PolynomialStructure<RS> {
+    pub fn coeff_ring(&self) -> Rc<RS> {
+        self.coeff_ring.clone()
+    }
+}
+
 impl<RS: RingStructure> Structure for PolynomialStructure<RS> {
     type Set = Polynomial<RS::Set>;
 }
@@ -62,7 +72,7 @@ impl<RS: RingStructure> Eq for PolynomialStructure<RS> {}
 
 impl<RS: RingStructure + DisplayableStructure> DisplayableStructure for PolynomialStructure<RS> {
     fn elem_to_string(&self, elem: &Self::Set) -> String {
-        if elem.coeffs.len() == 0 {
+        if self.num_coeffs(elem) == 0 {
             "0".into()
         } else {
             let mut s = String::new();
@@ -151,21 +161,6 @@ impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
         }
         self.reduce_poly(Polynomial::from_coeffs(coeffs))
     }
-
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        match self.try_quorem(&a, &b) {
-            Ok((q, r)) => {
-                debug_assert!(self.equal(&self.add(&self.mul(&q, &b), &r), &a));
-                if self.is_zero(&r) {
-                    Ok(q)
-                } else {
-                    Err(RingDivisionError::NotDivisible)
-                }
-            }
-            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
-        }
-    }
 }
 
 impl<RS: RingStructure> PolynomialStructure<RS> {
@@ -198,7 +193,7 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
         Polynomial::from_coeffs(vec![self.coeff_ring.zero(), self.coeff_ring.one()])
     }
 
-    fn var_pow(&self, n: usize) -> Polynomial<RS::Set> {
+    pub fn var_pow(&self, n: usize) -> Polynomial<RS::Set> {
         Polynomial::from_coeffs(
             (0..n + 1)
                 .map(|i| {
@@ -273,6 +268,13 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
         ))
     }
 
+    pub fn num_coeffs(&self, p: &Polynomial<RS::Set>) -> usize {
+        match self.degree(p) {
+            Some(n) => n + 1,
+            None => 0,
+        }
+    }
+
     //zero -> None
     //const -> 0
     //linear -> 1
@@ -289,9 +291,9 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
     }
 
     pub fn as_constant(&self, p: &Polynomial<RS::Set>) -> Option<RS::Set> {
-        if p.coeffs.len() == 0 {
+        if self.num_coeffs(p) == 0 {
             Some(self.coeff_ring.zero())
-        } else if p.coeffs.len() == 1 {
+        } else if self.num_coeffs(p) == 1 {
             Some(p.coeffs[0].clone())
         } else {
             None
@@ -308,8 +310,8 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
     }
 
     pub fn derivative(&self, mut p: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
-        if p.coeffs.len() > 0 {
-            for i in 0..p.coeffs.len() - 1 {
+        if self.num_coeffs(&p) > 0 {
+            for i in 0..self.num_coeffs(&p) - 1 {
                 p.coeffs[i] = p.coeffs[i + 1].clone();
                 self.coeff_ring.mul_mut(
                     &mut p.coeffs[i],
@@ -320,7 +322,9 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
         }
         self.reduce_poly(p)
     }
+}
 
+impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     pub fn try_quorem(
         &self,
         a: &Polynomial<RS::Set>,
@@ -330,10 +334,13 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
 
+        println!("a = {:?}", a);
+        println!("b = {:?}", b);
+
         let mut a = a.clone();
 
-        let m = a.coeffs.len();
-        let n = b.coeffs.len();
+        let m = self.num_coeffs(&a);
+        let n = self.num_coeffs(b);
         if n == 0 {
             Err(RingDivisionError::DivideByZero)
         } else if m < n {
@@ -364,9 +371,7 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
             Ok((Polynomial::from_coeffs(q_coeffs), a))
         }
     }
-}
 
-impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     //None if b = 0
     //error if deg(a) < deg(b)
     pub fn pseudorem(
@@ -374,8 +379,8 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
         mut a: Polynomial<RS::Set>,
         b: &Polynomial<RS::Set>,
     ) -> Option<Result<Polynomial<RS::Set>, &'static str>> {
-        let m = a.coeffs.len();
-        let n = b.coeffs.len();
+        let m = self.num_coeffs(&a);
+        let n = self.num_coeffs(b);
 
         if n == 0 {
             None
@@ -477,7 +482,22 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     }
 }
 
-impl<RS: IntegralDomainStructure> IntegralDomainStructure for PolynomialStructure<RS> {}
+impl<RS: IntegralDomainStructure> IntegralDomainStructure for PolynomialStructure<RS> {
+    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        match self.try_quorem(&a, &b) {
+            Ok((q, r)) => {
+                debug_assert!(self.equal(&self.add(&self.mul(&q, &b), &r), &a));
+                if self.is_zero(&r) {
+                    Ok(q)
+                } else {
+                    Err(RingDivisionError::NotDivisible)
+                }
+            }
+            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
+        }
+    }
+}
 
 // impl<R: UniqueFactorizationDomain> UniqueFactorizationDomain for Polynomial<R> {}
 
@@ -504,7 +524,7 @@ impl<RS: GreatestCommonDivisorStructure> PolynomialStructure<RS> {
         }
     }
 
-    pub fn gcd_by_subresultant(
+    pub fn gcd_by_primitive_subresultant(
         &self,
         a: Polynomial<RS::Set>,
         b: Polynomial<RS::Set>,
@@ -566,8 +586,8 @@ impl<RS: FavoriteAssociateStructure + IntegralDomainStructure> FavoriteAssociate
             let mut a = a.clone();
             let (u, _c) = self
                 .coeff_ring
-                .factor_fav_assoc(&a.coeffs[a.coeffs.len() - 1]);
-            for i in 0..a.coeffs.len() {
+                .factor_fav_assoc(&a.coeffs[self.num_coeffs(&a) - 1]);
+            for i in 0..self.num_coeffs(&a) {
                 a.coeffs[i] = self.coeff_ring.div(&a.coeffs[i], &u).unwrap()
             }
             (Polynomial::constant(u), a.clone())
@@ -595,11 +615,7 @@ impl<RS: IntegralDomainStructure + FiniteUnitsStructure> FiniteUnitsStructure
 
 impl<FS: FieldStructure> EuclideanDivisionStructure for PolynomialStructure<FS> {
     fn norm(&self, elem: &Self::Set) -> Option<Natural> {
-        if self.is_zero(elem) {
-            None
-        } else {
-            Some(Natural::from(elem.coeffs.len() - 1))
-        }
+        Some(Natural::from(self.degree(elem)?))
     }
 
     fn quorem(&self, a: &Self::Set, b: &Self::Set) -> Option<(Self::Set, Self::Set)> {
@@ -756,7 +772,7 @@ where
                 .collect(),
         );
 
-        let (mul, prim) = PolynomialStructure::new(self.coeff_ring.base_ring_structure().into())
+        let (mul, prim) = PolynomialStructure::new(self.coeff_ring.base_ring_structure())
             .factor_primitive(p.apply_map(|c| {
                 self.coeff_ring
                     .as_base_ring(
@@ -785,8 +801,8 @@ where
 {
     type Structure = PolynomialStructure<R::Structure>;
 
-    fn structure() -> Self::Structure {
-        PolynomialStructure::new(R::structure().into())
+    fn structure() -> Rc<Self::Structure> {
+        PolynomialStructure::new(R::structure().into()).into()
     }
 }
 
@@ -827,6 +843,10 @@ where
         Self::structure().var()
     }
 
+    pub fn var_pow(n: usize) -> Self {
+        Self::structure().var_pow(n)
+    }
+
     //this one returns a value rather than a reference
     pub fn coeff(&self, i: usize) -> R {
         Self::structure().coeff(self, i).clone()
@@ -858,16 +878,16 @@ where
     pub fn derivative(self) -> Self {
         Self::structure().derivative(self)
     }
-
-    pub fn try_quorem(a: &Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
-        Self::structure().try_quorem(a, b)
-    }
 }
 
 impl<R: StructuredType> Polynomial<R>
 where
     R::Structure: IntegralDomainStructure,
 {
+    pub fn try_quorem(a: &Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
+        Self::structure().try_quorem(a, b)
+    }
+
     pub fn pseudorem(a: &Self, b: &Self) -> Option<Result<Polynomial<R>, &'static str>> {
         Self::structure().pseudorem(a.clone(), b)
     }
@@ -891,6 +911,23 @@ where
 {
     pub fn factor_primitive(self) -> Option<(R, Polynomial<R>)> {
         Self::structure().factor_primitive(self)
+    }
+
+    pub fn primitive_part(self) -> Option<Polynomial<R>> {
+        Self::structure().primitive_part(self)
+    }
+
+    pub fn gcd_by_primitive_subresultant(a: Polynomial<R>, b: Polynomial<R>) -> Polynomial<R> {
+        Self::structure().gcd_by_primitive_subresultant(a, b)
+    }
+}
+
+impl<R: StructuredType> Polynomial<R>
+where
+    R::Structure: GreatestCommonDivisorStructure + CharZeroStructure,
+{
+    pub fn primitive_squarefree_part(&self) -> Self {
+        Self::structure().primitive_squarefree_part(self.clone())
     }
 }
 

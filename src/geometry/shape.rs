@@ -4,7 +4,7 @@ use malachite_q::Rational;
 
 use crate::{
     geometry::vector::Vector,
-    rings_old::linear::{
+    rings::linear::{
         lattice::AffineLatticeElements,
         matrix::Matrix,
     },
@@ -576,7 +576,7 @@ pub fn cut_simplex_by_simplex(cut_simplex: &Simplex, simplex: &Simplex) -> (Shap
                 }
 
                 let unflat_transform = &|pt: Vector| {
-                    &Vector::from_matrix(&Matrix::mul_refs(&mat, &pt.as_matrix()).unwrap())
+                    &Vector::from_matrix(&Matrix::mul(&mat, &pt.as_matrix()).unwrap())
                         + &offset_vec
                 };
                 let unflat_inside = flat_inside.transform(dim, unflat_transform);

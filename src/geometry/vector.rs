@@ -1,6 +1,6 @@
 use malachite_q::Rational;
 
-use crate::rings_old::linear::matrix::Matrix;
+use crate::rings::linear::matrix::Matrix;
 
 //represent a vector in space
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

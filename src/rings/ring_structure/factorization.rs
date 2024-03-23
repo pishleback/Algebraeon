@@ -5,8 +5,8 @@ use malachite_nz::natural::Natural;
 
 use crate::sets::set::Set;
 
-use super::structure::*;
 use super::super::structure::*;
+use super::structure::*;
 
 #[derive(Debug)]
 pub struct Factored<RS: UniqueFactorizationStructure> {
@@ -89,7 +89,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
 
     pub fn equal(a: &Self, b: &Self) -> bool {
         let ring = common_structure(&a.ring, &b.ring);
-        if ring.equal(a.unit(), b.unit()) {
+        if !ring.equal(a.unit(), b.unit()) {
             false
         } else {
             //every a_factor is a b_factor
@@ -266,23 +266,23 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
 }
 
 pub fn factorize_by_find_factor<RS: UniqueFactorizationStructure>(
-    ring: Rc<RS>,
+    ring: &RS,
     elem: RS::Set,
     partial_factor: &impl Fn(RS::Set) -> Option<(RS::Set, RS::Set)>,
 ) -> Factored<RS> {
     debug_assert!(!ring.is_zero(&elem));
     if ring.is_unit(&elem) {
-        Factored::factored_unit_unchecked(ring, elem)
+        Factored::factored_unit_unchecked(ring.clone().into(), elem)
     } else {
         debug_assert!(!ring.is_unit(&elem));
         match partial_factor(elem.clone()) {
             Some((g, h)) => Factored::mul(
-                factorize_by_find_factor(ring.clone(), g, partial_factor),
-                factorize_by_find_factor(ring.clone(), h, partial_factor),
+                factorize_by_find_factor(ring, g, partial_factor),
+                factorize_by_find_factor(ring, h, partial_factor),
             ),
             None => {
                 //f is irreducible
-                Factored::factored_irreducible_unchecked(ring, elem)
+                Factored::factored_irreducible_unchecked(ring.clone().into(), elem)
             }
         }
     }
@@ -298,7 +298,7 @@ mod tests {
     #[test]
     fn factorization_invariants() {
         let f = Factored::new_unchecked(
-            Integer::structure().into(),
+            Integer::structure(),
             Integer::from(-1),
             vec![
                 (Integer::from(2), Natural::from(2u8)),
@@ -307,11 +307,11 @@ mod tests {
         );
         f.check_invariants().unwrap();
 
-        let f = Factored::new_unchecked(Integer::structure().into(), Integer::from(1), vec![]);
+        let f = Factored::new_unchecked(Integer::structure(), Integer::from(1), vec![]);
         f.check_invariants().unwrap();
 
         let f = Factored::new_unchecked(
-            Integer::structure().into(),
+            Integer::structure(),
             Integer::from(-1),
             vec![
                 (Integer::from(2), Natural::from(2u8)),
@@ -326,14 +326,14 @@ mod tests {
         );
 
         let f = Factored::new_unchecked(
-            Integer::structure().into(),
+            Integer::structure(),
             Integer::from(3),
             vec![(Integer::from(2), Natural::from(2u8))],
         );
         assert_eq!(f.check_invariants().is_ok(), false, "unit should be a unit");
 
         let f = Factored::new_unchecked(
-            Integer::structure().into(),
+            Integer::structure(),
             Integer::from(1),
             vec![
                 (Integer::from(0), Natural::from(1u8)),
@@ -347,7 +347,7 @@ mod tests {
         );
 
         let f = Factored::new_unchecked(
-            Integer::structure().into(),
+            Integer::structure(),
             Integer::from(-1),
             vec![
                 (Integer::from(4), Natural::from(1u8)),
@@ -361,7 +361,7 @@ mod tests {
         );
 
         let f = Factored::new_unchecked(
-            Integer::structure().into(),
+            Integer::structure(),
             Integer::from(-1),
             vec![
                 (Integer::from(-2), Natural::from(2u8)),

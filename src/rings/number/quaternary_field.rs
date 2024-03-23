@@ -1,8 +1,10 @@
 use std::fmt::Display;
+use std::rc::Rc;
 
 use malachite_nz::natural::Natural;
 
 use crate::polynomial::polynomial::Polynomial;
+use crate::polynomial::polynomial::PolynomialStructure;
 use crate::ring_structure::factorization::Factored;
 use crate::structure::StructuredType;
 
@@ -33,8 +35,8 @@ impl Display for QuaternaryField {
 impl StructuredType for QuaternaryField {
     type Structure = CannonicalStructure<Self>;
 
-    fn structure() -> Self::Structure {
-        CannonicalStructure::new()
+    fn structure() -> Rc<Self::Structure> {
+        CannonicalStructure::new().into()
     }
 }
 
@@ -85,7 +87,9 @@ impl RingStructure for CannonicalStructure<QuaternaryField> {
             (QuaternaryField::Beta, QuaternaryField::Beta) => QuaternaryField::Alpha,
         }
     }
+}
 
+impl IntegralDomainStructure for CannonicalStructure<QuaternaryField> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match (&a, &b) {
             (_, QuaternaryField::Zero) => Err(RingDivisionError::DivideByZero),
@@ -101,8 +105,6 @@ impl RingStructure for CannonicalStructure<QuaternaryField> {
     }
 }
 
-impl IntegralDomainStructure for CannonicalStructure<QuaternaryField> {}
-
 impl FieldStructure for CannonicalStructure<QuaternaryField> {}
 
 impl FiniteUnitsStructure for CannonicalStructure<QuaternaryField> {
@@ -115,15 +117,15 @@ impl FiniteUnitsStructure for CannonicalStructure<QuaternaryField> {
     }
 }
 
-#[cfg(any())]
-impl FiniteField for QuaternaryField {
-    fn characteristic_and_power() -> (Natural, Natural) {
+
+impl FiniteFieldStructure for CannonicalStructure<QuaternaryField> {
+    fn characteristic_and_power(&self) -> (Natural, Natural) {
         (Natural::from(2u8), Natural::from(2u8))
     }
 }
 
-#[cfg(any())]
-impl UniqueFactorizationStructure for <Polynomial<QuaternaryField> as Ring>::RS {
+
+impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<QuaternaryField>> {
     fn factor(
         &self,
         a: &Self::Set,

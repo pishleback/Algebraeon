@@ -1,8 +1,11 @@
 use malachite_nz::{integer::Integer, natural::Natural};
 
 use super::super::super::structure::*;
+use super::super::polynomial::polynomial::*;
 use super::super::ring_structure::cannonical::*;
+use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
+use std::rc::Rc;
 use std::{fmt::Display, hash::Hash};
 
 fn xgcd(mut x: usize, mut y: usize) -> (usize, isize, isize) {
@@ -106,8 +109,8 @@ impl<const N: usize> Display for Modulo<N> {
 impl<const N: usize> StructuredType for Modulo<N> {
     type Structure = CannonicalStructure<Self>;
 
-    fn structure() -> Self::Structure {
-        CannonicalStructure::new()
+    fn structure() -> Rc<Self::Structure> {
+        CannonicalStructure::new().into()
     }
 }
 
@@ -147,29 +150,33 @@ impl<const N: usize> RingStructure for CannonicalStructure<Modulo<N>> {
             x: (&a.x * &b.x) % N,
         }
     }
-
-    fn div(&self, top: &Self::Set, bot: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        if bot == &self.zero() {
-            Err(RingDivisionError::DivideByZero)
-        } else {
-            let (g, a, b) = xgcd(bot.x, N);
-            debug_assert_eq!(g as isize, a * bot.x as isize + b * N as isize);
-            //g = a * bot mod N and g divides N
-            //want ?*bot = top
-            if top.x % g == 0 {
-                Ok(Modulo {
-                    x: (modulo(a, N) * (top.x / g)) % N,
-                })
-            } else {
-                Err(RingDivisionError::NotDivisible)
-            }
-        }
-    }
 }
 
 macro_rules! impl_field {
     ($N: literal) => {
-        impl IntegralDomainStructure for CannonicalStructure<Modulo<$N>> {}
+        impl IntegralDomainStructure for CannonicalStructure<Modulo<$N>> {
+            fn div(
+                &self,
+                top: &Self::Set,
+                bot: &Self::Set,
+            ) -> Result<Self::Set, RingDivisionError> {
+                if bot == &self.zero() {
+                    Err(RingDivisionError::DivideByZero)
+                } else {
+                    let (g, a, b) = xgcd(bot.x, $N);
+                    debug_assert_eq!(g as isize, a * bot.x as isize + b * $N as isize);
+                    //g = a * bot mod N and g divides N
+                    //want ?*bot = top
+                    if top.x % g == 0 {
+                        Ok(Modulo {
+                            x: (modulo(a, $N) * (top.x / g)) % $N,
+                        })
+                    } else {
+                        Err(RingDivisionError::NotDivisible)
+                    }
+                }
+            }
+        }
         impl FieldStructure for CannonicalStructure<Modulo<$N>> {}
         impl FiniteUnitsStructure for CannonicalStructure<Modulo<$N>> {
             fn all_units(&self) -> Vec<Modulo<$N>> {
@@ -180,17 +187,14 @@ macro_rules! impl_field {
                 units
             }
         }
-        #[cfg(any())]
-        impl FiniteField for Modulo<$N> {
-            fn characteristic_and_power() -> (Natural, Natural) {
+        impl FiniteFieldStructure for CannonicalStructure<Modulo<$N>> {
+            fn characteristic_and_power(&self) -> (Natural, Natural) {
                 (Natural::from($N as usize), Natural::from(1u8))
             }
         }
-        #[cfg(any())]
-        impl UniqueFactorizationDomain for Polynomial<Modulo<$N>> {
-            fn factor(&self) -> Option<Factored<Self>> {
-                CannonicalFiniteFieldStructure::<Modulo<$N>>::new();
-                self.clone().factorize_by_berlekamps_algorithm()
+        impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Modulo<$N>>> {
+            fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
+                self.factorize_by_berlekamps_algorithm(p.clone())
             }
         }
     };

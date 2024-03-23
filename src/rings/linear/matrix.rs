@@ -1247,8 +1247,8 @@ where
 {
     type Structure = MatrixStructure<R::Structure>;
 
-    fn structure() -> Self::Structure {
-        MatrixStructure::new(R::structure().into())
+    fn structure() -> Rc<Self::Structure> {
+        MatrixStructure::new(R::structure()).into()
     }
 }
 
