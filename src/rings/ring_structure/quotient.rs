@@ -28,6 +28,10 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
         }
         Self { ring, modulus }
     }
+
+    pub fn modulus(&self) -> &RS::Set {
+        &self.modulus
+    }
 }
 
 impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> QuotientStructure<RS, false> {

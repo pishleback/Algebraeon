@@ -5,6 +5,7 @@ extern crate glium;
 
 use std::marker::PhantomData;
 use std::str::FromStr;
+use std::task::Poll;
 
 // use drawing::canvas2d::*;
 // use drawing::Canvas;
@@ -23,10 +24,13 @@ use rings::*;
 
 // use sets::permutations::Permutation;
 
-use crate::number::modulo::Modulo;
 use crate::geometry::convex_simplicial_complex::*;
 use crate::geometry::vector::*;
+use crate::number::modulo::Modulo;
+use crate::polynomial::polynomial::Polynomial;
 use crate::ring_structure::cannonical::*;
+use crate::ring_structure::quotient::QuotientStructure;
+use crate::ring_structure::structure::FiniteFieldStructure;
 use crate::structure::*;
 
 pub mod drawing;
@@ -117,15 +121,14 @@ fn main() {
 // }
 
 fn main() {
-    // let x = Ergonomic::new(Polynomial::<Integer>::var());
-    // let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (3 * x.pow(5) + 7 * x.pow(4) - 4)).elem();
+    let x = &Polynomial::<Integer>::var().into_ring();
+    let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (3 * x.pow(5) + 7 * x.pow(4) - 4)).into_set();
+    println!("{}", f);
+    println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
+    println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
+
+    // let x = &Polynomial::<Modulo<5>>::var().as_elem();
+    // let f = x.pow(100) - x.pow(3) + 2;
     // println!("{}", f);
-    // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
-    // println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
-
-    let a = &Modulo::<5>::from(4).as_elem();
-    let b = &Modulo::<5>::from(-3).as_elem();
-
-    // let a = Integer::from(720);
-    println!("{} + {} = {}", a, b, a + b);
+    // println!("{}", f.elem().factor().unwrap());
 }

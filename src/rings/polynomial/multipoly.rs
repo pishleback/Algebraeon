@@ -758,15 +758,15 @@ mod tests {
 
     #[test]
     fn test_elems() {
-        let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).as_elem();
-        let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).as_elem();
-        let z = &MultiPolynomial::<Integer>::var(Variable::new("z")).as_elem();
+        let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).into_ring();
+        let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).into_ring();
+        let z = &MultiPolynomial::<Integer>::var(Variable::new("z")).into_ring();
 
         let f = x + y + z;
         let g = x - y + z;
 
         let h = (&f * &g) / &f;
-        h.into_elem().check_invariants().unwrap();
+        h.into_set().check_invariants().unwrap();
 
         println!("f = {}", f);
         println!("g = {}", g);

@@ -6,6 +6,8 @@ use itertools::Itertools;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
+use crate::linear::matrix::MatrixStructure;
+
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
@@ -310,6 +312,7 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
     }
 
     pub fn derivative(&self, mut p: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
+        p = self.reduce_poly(p);
         if self.num_coeffs(&p) > 0 {
             for i in 0..self.num_coeffs(&p) - 1 {
                 p.coeffs[i] = p.coeffs[i + 1].clone();
@@ -320,7 +323,7 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
             }
             p.coeffs.pop();
         }
-        self.reduce_poly(p)
+        p
     }
 }
 
@@ -333,9 +336,6 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
         //try to find q such that q*b == a
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
-
-        println!("a = {:?}", a);
-        println!("b = {:?}", b);
 
         let mut a = a.clone();
 
@@ -587,7 +587,7 @@ impl<RS: FavoriteAssociateStructure + IntegralDomainStructure> FavoriteAssociate
             let (u, _c) = self
                 .coeff_ring
                 .factor_fav_assoc(&a.coeffs[self.num_coeffs(&a) - 1]);
-            for i in 0..self.num_coeffs(&a) {
+            for i in 0..a.coeffs.len() {
                 a.coeffs[i] = self.coeff_ring.div(&a.coeffs[i], &u).unwrap()
             }
             (Polynomial::constant(u), a.clone())
@@ -716,9 +716,11 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     }
 }
 
-#[cfg(any())]
-impl<RS: BezoutDomain> Polynomial<RS> {
-    pub fn interpolate_by_linear_system(points: &Vec<(RS, RS)>) -> Option<Self> {
+impl<RS: BezoutDomainStructure> PolynomialStructure<RS> {
+    pub fn interpolate_by_linear_system(
+        &self,
+        points: &Vec<(RS::Set, RS::Set)>,
+    ) -> Option<Polynomial<RS::Set>> {
         /*
         e.g. finding a degree 2 polynomial f(x)=a+bx+cx^2 such that
         f(1)=3
@@ -729,25 +731,28 @@ impl<RS: BezoutDomain> Polynomial<RS> {
         | 1 2 4 | | b | = | 1  |
         \ 1 3 9 / \ c /   \ -2 /
         */
+
+        let matrix_structure = MatrixStructure::new(self.coeff_ring());
+
         let n = points.len();
-        let mut mat = Matrix::<RS>::zero(n, n);
+        let mut mat = matrix_structure.zero(n, n);
         for r in 0..n {
             let (x, _y) = &points[r];
-            let mut x_pow = RS::one();
+            let mut x_pow = self.coeff_ring().one();
             for c in 0..n {
                 *mat.at_mut(r, c).unwrap() = x_pow.clone();
-                RS::mul_mut(&mut x_pow, x);
+                self.coeff_ring().mul_mut(&mut x_pow, x);
             }
         }
 
-        let mut output_vec = Matrix::zero(n, 1);
+        let mut output_vec = matrix_structure.zero(n, 1);
         for r in 0..n {
             let (_x, y) = &points[r];
             *output_vec.at_mut(r, 0).unwrap() = y.clone();
         }
 
-        match mat.col_solve(output_vec) {
-            Some(coeff_vec) => Some(Self::from_coeffs(
+        match matrix_structure.col_solve(&mat, output_vec) {
+            Some(coeff_vec) => Some(Polynomial::from_coeffs(
                 (0..n)
                     .map(|i| coeff_vec.at(i, 0).unwrap().clone())
                     .collect(),
@@ -907,6 +912,15 @@ where
 
 impl<R: StructuredType> Polynomial<R>
 where
+    R::Structure: BezoutDomainStructure,
+{
+    pub fn interpolate_by_linear_system(points: &Vec<(R, R)>) -> Option<Self> {
+        Self::structure().interpolate_by_linear_system(points)
+    }
+}
+
+impl<R: StructuredType> Polynomial<R>
+where
     R::Structure: GreatestCommonDivisorStructure,
 {
     pub fn factor_primitive(self) -> Option<(R, Polynomial<R>)> {
@@ -951,6 +965,8 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
+    use crate::number::quaternary_field::QuaternaryField;
+
     use super::super::super::number::rational::*;
     use super::super::super::ring_structure::cannonical::*;
     use super::super::super::ring_structure::structure::*;
@@ -970,7 +986,7 @@ mod tests {
 
         //test that this compliles
         println!("{}", f);
-        println!("{}", f.as_elem());
+        println!("{}", f.into_ring());
         //    Integer : Display
         // => CannonicalRS<Integer> : DisplayableRSStructure
         // => PolynomialStructure<CannonicalRS<Integer>> : DisplayableRSStructure
@@ -1001,21 +1017,21 @@ mod tests {
 
     #[test]
     fn divisibility_over_integers() {
-        let x = &Polynomial::<Integer>::var().as_elem();
+        let x = &Polynomial::<Integer>::var().into_ring();
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
-        match Polynomial::div(a.elem(), b.elem()) {
+        match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
-                assert_eq!(a, b * c.as_elem())
+                assert_eq!(a, b * c.into_ring())
             }
             Err(_) => panic!(),
         }
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) + 1;
-        match Polynomial::div(a.elem(), b.elem()) {
+        match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
             Err(_) => panic!(),
@@ -1023,7 +1039,7 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
-        match Polynomial::div(a.elem(), b.elem()) {
+        match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
             Err(_) => panic!(),
@@ -1031,7 +1047,7 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = 0 * x;
-        match Polynomial::div(a.elem(), b.elem()) {
+        match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::DivideByZero) => {}
             Err(_) => panic!(),
@@ -1039,7 +1055,7 @@ mod tests {
 
         let a = 0 * x;
         let b = (x - x) + 5;
-        match Polynomial::div(a.elem(), b.elem()) {
+        match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
                 assert_eq!(c, Polynomial::zero())
             }
@@ -1049,26 +1065,25 @@ mod tests {
 
         let a = 3087 * x - 8805 * x.pow(2) + 607 * x.pow(3) + x.pow(4);
         let b = (x - x) + 1;
-        match Polynomial::div(a.elem(), b.elem()) {
+        match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
-                assert_eq!(c.as_elem(), a)
+                assert_eq!(c.into_ring(), a)
             }
             Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
         }
     }
 
-    #[cfg(any())]
     #[test]
     fn divisibility_over_f4() {
-        let x = &Ergonomic::new(Polynomial::<QuaternaryField>::var());
+        let x = &Polynomial::<QuaternaryField>::var().into_ring();
 
         let a = 1 + x + x.pow(2);
-        let b = Ergonomic::new(Polynomial::constant(QuaternaryField::Alpha)) + x;
-        match Polynomial::div(a.elem(), b.elem()) {
+        let b = Polynomial::constant(QuaternaryField::Alpha).into_ring() + x;
+        match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
-                assert_eq!(a, b * Ergonomic::new(c))
+                assert_eq!(a, b * c.into_ring())
             }
             Err(e) => panic!("{:?}", e),
         }
@@ -1076,19 +1091,19 @@ mod tests {
 
     #[test]
     fn euclidean() {
-        let x = &Polynomial::<Rational>::var().as_elem();
+        let x = &Polynomial::<Rational>::var().into_ring();
 
         let a = 1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5);
         let b = 1 + x + 3 * x.pow(2) + 2 * x.pow(3);
-        let (q, r) = Polynomial::quorem(&a.elem(), &b.elem()).unwrap();
-        let (q, r) = (q.as_elem(), r.as_elem());
+        let (q, r) = Polynomial::quorem(&a.ref_set(), &b.ref_set()).unwrap();
+        let (q, r) = (q.into_ring(), r.into_ring());
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
 
         let a = 3 * x;
         let b = 2 * x;
-        let (q, r) = Polynomial::quorem(&a.elem(), &b.elem()).unwrap();
-        let (q, r) = (q.as_elem(), r.as_elem());
+        let (q, r) = Polynomial::quorem(&a.ref_set(), &b.ref_set()).unwrap();
+        let (q, r) = (q.into_ring(), r.into_ring());
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
 
@@ -1098,35 +1113,35 @@ mod tests {
         let x = &a * &b;
         let y = &b * &c;
 
-        let g = Polynomial::gcd(x.elem(), y.elem());
+        let g = Polynomial::gcd(x.ref_set(), y.ref_set());
 
         println!("gcd({:?} , {:?}) = {:?}", x, y, g);
-        Polynomial::div(&g, &b.elem()).unwrap();
-        Polynomial::div(&b.elem(), &g).unwrap();
+        Polynomial::div(&g, &b.ref_set()).unwrap();
+        Polynomial::div(&b.ref_set(), &g).unwrap();
     }
 
     #[test]
     fn test_pseudo_remainder() {
-        let x = &Polynomial::<Integer>::var().as_elem();
+        let x = &Polynomial::<Integer>::var().into_ring();
         {
             let f = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
-                .into_elem();
-            let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_elem();
+                .into_set();
+            let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_set();
 
             println!("f = {}", f.to_string());
             println!("g = {}", g.to_string());
 
             let r1 = Polynomial::pseudorem(&f, &g).unwrap().unwrap();
             println!("r1 = {}", r1.to_string());
-            assert_eq!(r1.clone().as_elem(), -15 * x.pow(4) + 3 * x.pow(2) - 9);
+            assert_eq!(r1.clone().into_ring(), -15 * x.pow(4) + 3 * x.pow(2) - 9);
 
             let r2 = Polynomial::pseudorem(&g, &r1).unwrap().unwrap();
             println!("r2 = {}", r2.to_string());
-            assert_eq!(r2.as_elem(), 15795 * x.pow(2) + 30375 * x - 59535);
+            assert_eq!(r2.into_ring(), 15795 * x.pow(2) + 30375 * x - 59535);
         }
         println!();
         {
-            let f = (4 * x.pow(3) + 2 * x - 7).into_elem();
+            let f = (4 * x.pow(3) + 2 * x - 7).into_set();
             let g = Polynomial::zero();
 
             println!("f = {}", f.to_string());
@@ -1139,9 +1154,9 @@ mod tests {
         }
         println!();
         {
-            let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_elem();
+            let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_set();
             let g = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
-                .into_elem();
+                .into_set();
 
             println!("f = {}", f.to_string());
             println!("g = {}", g.to_string());
@@ -1155,19 +1170,19 @@ mod tests {
 
     #[test]
     fn integer_primitive_and_assoc() {
-        let x = &Polynomial::<Integer>::var().as_elem();
-        let p1 = (-2 - 4 * x.pow(2)).into_elem();
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let p1 = (-2 - 4 * x.pow(2)).into_set();
         let (g, p2) = p1.factor_primitive().unwrap();
         assert_eq!(g, Integer::from(2));
         let (u, p3) = p2.factor_fav_assoc();
         assert_eq!(u.coeffs[0], Integer::from(-1));
-        assert_eq!(p3.as_elem(), 1 + 2 * x.pow(2));
+        assert_eq!(p3.into_ring(), 1 + 2 * x.pow(2));
     }
 
     #[test]
     fn test_evaluate() {
-        let x = &Polynomial::<Integer>::var().as_elem();
-        let f = (1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5)).into_elem();
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let f = (1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5)).into_set();
         assert_eq!(f.evaluate(&Integer::from(3)), Integer::from(868));
 
         let f = Polynomial::zero();
@@ -1222,7 +1237,6 @@ mod tests {
         }
     }
 
-    #[cfg(any())]
     #[test]
     fn test_interpolate_by_linear_system() {
         for points in vec![
@@ -1273,9 +1287,9 @@ mod tests {
 
     #[test]
     fn test_derivative() {
-        let x = &Polynomial::<Integer>::var().as_elem();
-        let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3)).into_elem();
-        let g = (3 - 2 * x + 21 * x.pow(2)).into_elem();
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3)).into_set();
+        let g = (3 - 2 * x + 21 * x.pow(2)).into_set();
         assert_eq!(f.derivative(), g);
 
         let f = Polynomial::<Integer>::zero();
@@ -1291,37 +1305,37 @@ mod tests {
     fn test_monic() {
         assert!(!Polynomial::<Integer>::zero().is_monic());
         assert!(Polynomial::<Integer>::one().is_monic());
-        let x = &Polynomial::<Integer>::var().as_elem();
-        let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3) + x.pow(4)).into_elem();
-        let g = (3 - 2 * x + 21 * x.pow(2)).into_elem();
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let f = (2 + 3 * x - x.pow(2) + 7 * x.pow(3) + x.pow(4)).into_set();
+        let g = (3 - 2 * x + 21 * x.pow(2)).into_set();
         assert!(f.is_monic());
         assert!(!g.is_monic());
     }
 
     #[test]
     fn test_subresultant_gcd() {
-        let x = &Polynomial::<Integer>::var().as_elem();
+        let x = &Polynomial::<Integer>::var().into_ring();
 
         let f = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
-            .into_elem();
-        let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_elem();
+            .into_set();
+        let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_set();
         assert_eq!(
             Polynomial::subresultant_gcd(&f, &g),
             Polynomial::constant(Integer::from(260708))
         );
 
-        let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_elem();
+        let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_set();
         let g = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
-            .into_elem();
+            .into_set();
         assert_eq!(
             Polynomial::subresultant_gcd(&f, &g),
             Polynomial::constant(Integer::from(260708))
         );
 
-        let f = ((x + 2).pow(2) * (2 * x - 3).pow(2)).into_elem();
-        let g = ((3 * x - 1) * (2 * x - 3).pow(2)).into_elem();
+        let f = ((x + 2).pow(2) * (2 * x - 3).pow(2)).into_set();
+        let g = ((3 * x - 1) * (2 * x - 3).pow(2)).into_set();
         assert_eq!(
-            Polynomial::subresultant_gcd(&f, &g).as_elem(),
+            Polynomial::subresultant_gcd(&f, &g).into_ring(),
             7056 - 9408 * x + 3136 * x.pow(2)
         );
     }

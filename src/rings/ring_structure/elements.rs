@@ -12,7 +12,7 @@ use super::structure::*;
 impl<RS: RingStructure> PartialEq for StructuredElement<RS> {
     fn eq(&self, other: &Self) -> bool {
         let structure = common_structure(self.structure(), other.structure());
-        structure.equal(&self.elem(), &other.elem())
+        structure.equal(&self.ref_set(), &other.ref_set())
     }
 }
 
@@ -22,7 +22,7 @@ impl<RS: RingStructure> Neg for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn neg(self) -> Self::Output {
-        StructuredElement::new(self.structure().clone(), self.structure().neg(&self.elem()))
+        StructuredElement::new(self.structure().clone(), self.structure().neg(&self.ref_set()))
     }
 }
 
@@ -40,7 +40,7 @@ impl<RS: RingStructure> Add<&StructuredElement<RS>> for &StructuredElement<RS> {
     fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
         StructuredElement::new(
             self.structure().clone(),
-            self.structure().add(&self.elem(), &rhs.elem()),
+            self.structure().add(&self.ref_set(), &rhs.ref_set()),
         )
     }
 }
@@ -76,7 +76,7 @@ impl<RS: RingStructure> Sub<&StructuredElement<RS>> for &StructuredElement<RS> {
         StructuredElement::new(
             self.structure().clone(),
             self.structure()
-                .add(&self.elem(), &self.structure().neg(&rhs.elem())),
+                .add(&self.ref_set(), &self.structure().neg(&rhs.ref_set())),
         )
     }
 }
@@ -111,7 +111,7 @@ impl<RS: RingStructure> Mul<&StructuredElement<RS>> for &StructuredElement<RS> {
     fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
         StructuredElement::new(
             self.structure().clone(),
-            self.structure().mul(&self.elem(), &rhs.elem()),
+            self.structure().mul(&self.ref_set(), &rhs.ref_set()),
         )
     }
 }
@@ -146,7 +146,7 @@ impl<RS: IntegralDomainStructure> Div<&StructuredElement<RS>> for &StructuredEle
     fn div(self, rhs: &StructuredElement<RS>) -> Self::Output {
         StructuredElement::new(
             self.structure().clone(),
-            self.structure().div(&self.elem(), &rhs.elem()).unwrap(),
+            self.structure().div(&self.ref_set(), &rhs.ref_set()).unwrap(),
         )
     }
 }
@@ -180,7 +180,7 @@ impl<RS: IntegralDomainStructure> StructuredElement<RS> {
         StructuredElement::new(
             self.structure().clone(),
             self.structure()
-                .int_pow(&self.elem(), &Integer::from(n))
+                .int_pow(&self.ref_set(), &Integer::from(n))
                 .unwrap(),
         )
     }
@@ -471,7 +471,7 @@ mod tests {
 
     #[test]
     fn test_poly_elem_opps() {
-        let x = &Polynomial::<Integer>::var().as_elem();
+        let x = &Polynomial::<Integer>::var().into_ring();
 
         let f = 4 * x.pow(2) - 1;
         let g = 2 * x + 1;

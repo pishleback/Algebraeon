@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::thread::sleep;
+use std::time::Duration;
 
 use malachite_base::num::arithmetic::traits::DivMod;
 use malachite_base::num::arithmetic::traits::UnsignedAbs;
@@ -8,8 +10,10 @@ use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use super::super::polynomial::polynomial::PolynomialStructure;
+use crate::ring_structure::quotient::QuotientStructure;
+
 use super::super::super::structure::*;
+use super::super::polynomial::polynomial::*;
 use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
@@ -172,12 +176,11 @@ impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<In
     }
 }
 
-#[cfg(any())]
 impl Polynomial<Integer> {
     fn find_factor_primitive_sqfree_by_zassenhaus_algorithm(
-        &self,
-        f: &Polynomial<Integer>,
+        self,
     ) -> Option<(Polynomial<Integer>, Polynomial<Integer>)> {
+        let f = self;
         let f_deg = f.degree().unwrap();
         debug_assert_ne!(f_deg, 0);
         println!("zassenhaus: {}", f);
@@ -185,8 +188,13 @@ impl Polynomial<Integer> {
             None
         } else {
             let prime_gen = NaturalPrimeGenerator::new();
-            for p in prime_gen.take(20) {
-                println!("{:?}", p);
+            for p in prime_gen.take(10) {
+                let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(&p));
+                let poly_mod_p = PolynomialStructure::new(mod_p.into());
+
+                println!("f mod {} = {}", p, poly_mod_p.elem_to_string(&f));
+                println!("{}", poly_mod_p.factor(&f).unwrap());
+
                 // let f_mod_p = f.apply_map_ref(|c| {
                 //     UniversalEuclideanQuotient::<true, _>::new(c.clone(), Integer::from(&p))
                 // });
@@ -201,22 +209,51 @@ impl Polynomial<Integer> {
     }
 
     pub fn factorize_by_zassenhaus_algorithm(
-        &self,
-        f: &Polynomial<Integer>,
-    ) -> Option<Factored<PolynomialStructure<Integer>>> {
+        self,
+    ) -> Option<Factored<PolynomialStructure<CannonicalStructure<Integer>>>> {
         if self == Self::zero() {
             None
         } else {
-            Some(factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(
-                self,
-                f,
-                &|f| {
-                    factorize_by_find_factor(self, f, &|f| {
-                        self.find_factor_primitive_sqfree_by_zassenhaus_algorithm(f)
-                    })
-                },
-            ))
+            Some(
+                Self::structure().factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(
+                    self,
+                    &|f| {
+                        factorize_by_find_factor(&Self::structure(), f, &|f| {
+                            Self::find_factor_primitive_sqfree_by_zassenhaus_algorithm(f)
+                        })
+                    },
+                ),
+            )
         }
+    }
+}
+
+impl FiniteUnitsStructure for QuotientStructure<CannonicalStructure<Integer>, true> {
+    fn all_units(&self) -> Vec<Self::Set> {
+        let mut units = vec![];
+        let mut u = Integer::from(1);
+        while u < self.modulus().unsigned_abs() {
+            units.push(u.clone());
+            u += Integer::ONE;
+        }
+        units
+    }
+}
+
+impl FiniteFieldStructure for QuotientStructure<CannonicalStructure<Integer>, true> {
+    fn characteristic_and_power(&self) -> (Natural, Natural) {
+        (self.modulus().unsigned_abs(), Natural::ONE)
+    }
+}
+
+impl UniqueFactorizationStructure
+    for PolynomialStructure<QuotientStructure<CannonicalStructure<Integer>, true>>
+{
+    fn factor(
+        &self,
+        a: &Self::Set,
+    ) -> Option<crate::ring_structure::factorization::Factored<Self>> {
+        self.factorize_by_berlekamps_algorithm(a.clone())
     }
 }
 

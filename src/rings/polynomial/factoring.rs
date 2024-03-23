@@ -33,14 +33,17 @@ where
             + GreatestCommonDivisorStructure
             + UniqueFactorizationStructure,
     {
-        // println!("f = {:?}", f);
         let (unit, f) = self.factor_fav_assoc(&f);
+        // println!("f = {:?}", f);
         let mut factors = Factored::new_unchecked(self.clone().into(), unit, vec![]);
         //let w be the squarefree product of all factors of f of multiplicity not divisible by p
         let mut c = self.gcd(&f, &self.derivative(f.clone()));
         let mut w = self.div(&f, &c).unwrap();
         // println!("c = {:?}", c);
         // println!("w = {:?}", w);
+        // println!("{:?}", self.divisible(&f, &c));
+        // println!("{:?}", self.divisible(&f, &w));
+        // println!("f' = {:?}", self.derivative(f.clone()));
 
         //find all the factors in w
         let mut i = Natural::from(1u8);
@@ -54,9 +57,9 @@ where
 
         // c is now the product, with multiplicity, of the remaining factors of f
         if !self.equal(&c, &self.one()) {
-            // println!("c = {}", c);
             //c = c^{1/p}
             let p = self.coeff_ring().characteristic_and_power().0;
+            // println!("p = {:?} c = {:?}", p, c);
             let mut reduced_c_coeffs = vec![];
             for (k, coeff) in c.coeffs().into_iter().enumerate() {
                 if Natural::from(k) % &p == 0 {
@@ -120,7 +123,6 @@ where
         let mut d = self.add(&self.neg(&self.derivative(b.clone())), &c);
         while self.degree(&f).unwrap() != 0 {
             let a = self.gcd(&b, &d);
-            println!("a^i = {:?} ^ {}", a, i);
             //a^i is a power of a squarefree factor of f
             factors.mul_mut(primitive_sqfree_factorize(a.clone()).pow(&Natural::from(i)));
             f = self.div(&f, &self.nat_pow(&a, &Natural::from(i))).unwrap();
@@ -227,7 +229,6 @@ where
         however, only 64 need to be checked as the other half are their negatives
         more abstractly, some possibilities can be avoided because we only care about g up to multiplication by a unit
          */
-        println!("find_factor_primitive_by_kroneckers_algorithm: {:?}", f);
         let f_deg = self.degree(f).unwrap();
         if f_deg == 1 {
             //linear factor is irreducible
@@ -543,54 +544,54 @@ mod tests {
 
     #[test]
     fn test_factor_by_kroneckers_method_over_integers() {
-        let x = &Polynomial::<Integer>::var().as_elem();
+        let x = &Polynomial::<Integer>::var().into_ring();
 
         //primitive cases
-        let f = ((1 + x).pow(2)).into_elem();
+        let f = ((1 + x).pow(2)).into_set();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
-                vec![((1 + x).into_elem(), Natural::from(2u8))]
+                vec![((1 + x).into_set(), Natural::from(2u8))]
             )
         ));
 
-        let f = (-1 - 2 * x).into_elem();
+        let f = (-1 - 2 * x).into_set();
         let fs1 = f.factorize_by_kroneckers_method().unwrap();
         let fs2 = &Factored::new_unchecked(
             Polynomial::<Integer>::structure().into(),
             Polynomial::neg(&Polynomial::one()),
-            vec![((1 + 2 * x).into_elem(), Natural::from(1u8))],
+            vec![((1 + 2 * x).into_set(), Natural::from(1u8))],
         );
         println!("fs1={} fs2={}", fs1, fs2);
         assert!(Factored::equal(&fs1, &fs2));
 
-        let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).into_elem();
+        let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).into_set();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
-                    ((1 + x + x.pow(2)).into_elem(), Natural::from(1u8)),
-                    ((2 - x + x.pow(3)).into_elem(), Natural::from(1u8))
+                    ((1 + x + x.pow(2)).into_set(), Natural::from(1u8)),
+                    ((2 - x + x.pow(3)).into_set(), Natural::from(1u8))
                 ]
             )
         ));
 
-        let f = (1 + x + x.pow(2)).pow(2).into_elem();
+        let f = (1 + x + x.pow(2)).pow(2).into_set();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
-                vec![((1 + x + x.pow(2)).into_elem(), Natural::from(2u8))]
+                vec![((1 + x + x.pow(2)).into_set(), Natural::from(2u8))]
             )
         ));
 
         //non-primitive cases
-        let f = (2 + 2 * x).into_elem();
+        let f = (2 + 2 * x).into_set();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
@@ -598,12 +599,12 @@ mod tests {
                 Polynomial::one(),
                 vec![
                     (Polynomial::from_int(&Integer::from(2)), Natural::from(1u8)),
-                    ((1 + x).into_elem(), Natural::from(1u8))
+                    ((1 + x).into_set(), Natural::from(1u8))
                 ]
             )
         ));
 
-        let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).into_elem();
+        let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).into_set();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
@@ -612,8 +613,8 @@ mod tests {
                 vec![
                     (Polynomial::from_int(&Integer::from(2)), Natural::from(2u8)),
                     (Polynomial::from_int(&Integer::from(3)), Natural::from(1u8)),
-                    ((2 + 3 * x).into_elem(), Natural::from(1u8)),
-                    ((x - 1).into_elem(), Natural::from(2u8))
+                    ((2 + 3 * x).into_set(), Natural::from(1u8)),
+                    ((x - 1).into_set(), Natural::from(2u8))
                 ]
             )
         ));
@@ -628,15 +629,15 @@ mod tests {
             )
         ));
 
-        let f = ((x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_elem();
+        let f = ((x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_set();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
-                    ((x.pow(4) + x + 1).into_elem(), Natural::from(1u8)),
-                    ((x.pow(3) + x + 1).into_elem(), Natural::from(1u8))
+                    ((x.pow(4) + x + 1).into_set(), Natural::from(1u8)),
+                    ((x.pow(3) + x + 1).into_set(), Natural::from(1u8))
                 ]
             )
         ));
@@ -644,8 +645,8 @@ mod tests {
 
     #[test]
     fn test_fof_factor_over_rationals() {
-        let x = &Polynomial::<Rational>::var().as_elem();
-        let f = (6 * (x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_elem();
+        let x = &Polynomial::<Rational>::var().into_ring();
+        let f = (6 * (x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_set();
 
         assert!(Factored::equal(
             &f.factor().unwrap(),
@@ -653,8 +654,8 @@ mod tests {
                 Polynomial::<Rational>::structure().into(),
                 Polynomial::constant(Rational::from(6)),
                 vec![
-                    ((x.pow(4) + x + 1).into_elem(), Natural::from(1u8)),
-                    ((x.pow(3) + x + 1).into_elem(), Natural::from(1u8))
+                    ((x.pow(4) + x + 1).into_set(), Natural::from(1u8)),
+                    ((x.pow(3) + x + 1).into_set(), Natural::from(1u8))
                 ]
             )
         ));
@@ -662,14 +663,14 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f2_example1() {
-        let x = &Polynomial::<Modulo<2>>::var().as_elem();
-        let p = (1 + x.pow(4) + x.pow(5)).pow(12).into_elem();
+        let x = &Polynomial::<Modulo<2>>::var().into_ring();
+        let p = (1 + x.pow(4) + x.pow(5)).pow(12).into_set();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<2>>::structure().into(),
             Polynomial::one(),
             vec![
-                ((1 + x + x.pow(2)).into_elem(), Natural::from(12u32)),
-                ((1 + x + x.pow(3)).into_elem(), Natural::from(12u32)),
+                ((1 + x + x.pow(2)).into_set(), Natural::from(12u32)),
+                ((1 + x + x.pow(3)).into_set(), Natural::from(12u32)),
             ],
         );
 
@@ -684,14 +685,14 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f2_example2() {
-        let x = &Polynomial::<Modulo<2>>::var().as_elem();
-        let p = ((1 + x.pow(4) + x.pow(7)).pow(6) * (1 + x.pow(6) + x.pow(7)).pow(4)).into_elem();
+        let x = &Polynomial::<Modulo<2>>::var().into_ring();
+        let p = ((1 + x.pow(4) + x.pow(7)).pow(6) * (1 + x.pow(6) + x.pow(7)).pow(4)).into_set();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<2>>::structure().into(),
             Polynomial::one(),
             vec![
-                ((1 + x.pow(4) + x.pow(7)).into_elem(), Natural::from(6u32)),
-                ((1 + x.pow(6) + x.pow(7)).into_elem(), Natural::from(4u32)),
+                ((1 + x.pow(4) + x.pow(7)).into_set(), Natural::from(6u32)),
+                ((1 + x.pow(6) + x.pow(7)).into_set(), Natural::from(4u32)),
             ],
         );
 
@@ -706,14 +707,14 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f5_example1() {
-        let x = &Polynomial::<Modulo<5>>::var().as_elem();
-        let p = (1 + x.pow(4)).pow(5).into_elem();
+        let x = &Polynomial::<Modulo<5>>::var().into_ring();
+        let p = (1 + x.pow(4)).pow(5).into_set();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<5>>::structure().into(),
             Polynomial::one(),
             vec![
-                ((2 + x.pow(2)).into_elem(), Natural::from(5u8)),
-                ((3 + x.pow(2)).into_elem(), Natural::from(5u8)),
+                ((2 + x.pow(2)).into_set(), Natural::from(5u8)),
+                ((3 + x.pow(2)).into_set(), Natural::from(5u8)),
             ],
         );
 
@@ -728,12 +729,12 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f5_example2() {
-        let x = &Polynomial::<Modulo<5>>::var().as_elem();
-        let p = (3 + 2 * x.pow(2) + x.pow(4) + x.pow(6)).into_elem();
+        let x = &Polynomial::<Modulo<5>>::var().into_ring();
+        let p = (3 + 2 * x.pow(2) + x.pow(4) + x.pow(6)).into_set();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<5>>::structure().into(),
             Polynomial::one(),
-            vec![((2 + x.pow(2)).into_elem(), Natural::from(3u8))],
+            vec![((2 + x.pow(2)).into_set(), Natural::from(3u8))],
         );
 
         let f = p.factorize_by_trying_all_factors().unwrap();
@@ -747,34 +748,34 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f31_example1() {
-        let x = &Polynomial::<Modulo<31>>::var().as_elem();
-        let p = (1 + x.pow(27) + 8 * x.pow(30)).into_elem();
+        let x = &Polynomial::<Modulo<31>>::var().into_ring();
+        let p = (1 + x.pow(27) + 8 * x.pow(30)).into_set();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<31>>::structure().into(),
             Polynomial::constant(Modulo::from_int(&Integer::from(8))),
             vec![
-                ((12 + x.pow(3)).into_elem(), Natural::from(1u32)),
+                ((12 + x.pow(3)).into_set(), Natural::from(1u32)),
                 (
                     (25 + 27 * x + 3 * x.pow(2) + 3 * x.pow(3) + 29 * x.pow(4) + x.pow(5))
-                        .into_elem()
+                        .into_set()
                         .clone(),
                     Natural::from(1u32),
                 ),
                 (
                     (1 + 24 * x + 3 * x.pow(2) + 15 * x.pow(3) + 12 * x.pow(4) + x.pow(5))
-                        .into_elem()
+                        .into_set()
                         .clone(),
                     Natural::from(1u32),
                 ),
                 (
                     (21 + 12 * x.pow(3) + 22 * x.pow(6) + 4 * x.pow(9) + x.pow(12))
-                        .into_elem()
+                        .into_set()
                         .clone(),
                     Natural::from(1u32),
                 ),
                 (
                     (5 + 11 * x + 3 * x.pow(2) + 13 * x.pow(3) + 21 * x.pow(4) + x.pow(5))
-                        .into_elem()
+                        .into_set()
                         .clone(),
                     Natural::from(1u32),
                 ),
@@ -788,19 +789,19 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f4_example1() {
-        let x = &Polynomial::<QuaternaryField>::var().as_elem();
+        let x = &Polynomial::<QuaternaryField>::var().into_ring();
 
-        let a = x - Polynomial::constant(QuaternaryField::One).as_elem();
-        let b = x - Polynomial::constant(QuaternaryField::Alpha).as_elem();
-        let c = x - Polynomial::constant(QuaternaryField::Beta).as_elem();
-        let p = (1 - x.pow(3)).pow(48).into_elem();
+        let a = x - Polynomial::constant(QuaternaryField::One).into_ring();
+        let b = x - Polynomial::constant(QuaternaryField::Alpha).into_ring();
+        let c = x - Polynomial::constant(QuaternaryField::Beta).into_ring();
+        let p = (1 - x.pow(3)).pow(48).into_set();
         let ans = Factored::new_unchecked(
             Polynomial::<QuaternaryField>::structure().into(),
             Polynomial::one(),
             vec![
-                (a.into_elem(), Natural::from(48u32)),
-                (b.into_elem(), Natural::from(48u32)),
-                (c.into_elem(), Natural::from(48u32)),
+                (a.into_set(), Natural::from(48u32)),
+                (b.into_set(), Natural::from(48u32)),
+                (c.into_set(), Natural::from(48u32)),
             ],
         );
 

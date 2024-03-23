@@ -36,7 +36,7 @@ pub trait StructuredType: Clone + Debug + 'static {
 
     fn structure() -> Rc<Self::Structure>;
 
-    fn as_elem(self) -> StructuredElement<Self::Structure> {
+    fn into_ring(self) -> StructuredElement<Self::Structure> {
         StructuredElement::new(Self::structure(), self)
     }
 }
@@ -56,11 +56,11 @@ impl<S: Structure> StructuredElement<S> {
         self.structure.clone()
     }
 
-    pub fn elem(&self) -> &S::Set {
+    pub fn ref_set(&self) -> &S::Set {
         &self.elem
     }
 
-    pub fn into_elem(self) -> S::Set {
+    pub fn into_set(self) -> S::Set {
         self.elem
     }
 }

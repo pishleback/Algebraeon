@@ -220,6 +220,7 @@ pub trait BezoutDomainStructure: GreatestCommonDivisorStructure {
     //any gcds should be the standard associate representative
     fn xgcd(&self, a: &Self::Set, b: &Self::Set) -> (Self::Set, Self::Set, Self::Set); //(g, x, y) s.t. g = ax + by
     fn xgcd_list(&self, elems: Vec<&Self::Set>) -> (Self::Set, Vec<Self::Set>) {
+        println!("{:?}", elems);
         match elems.len() {
             0 => (self.zero(), vec![]),
             1 => {
@@ -376,7 +377,11 @@ pub trait FieldStructure: IntegralDomainStructure {}
 
 impl<FS: FieldStructure> FavoriteAssociateStructure for FS {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
-        (a.clone(), self.one())
+        if self.is_zero(a) {
+            (self.one(), self.zero())
+        } else {
+            (a.clone(), self.one())
+        }
     }
 }
 
