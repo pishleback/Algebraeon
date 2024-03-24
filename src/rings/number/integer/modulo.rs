@@ -20,8 +20,6 @@ impl FiniteFieldStructure for QuotientStructure<CannonicalStructure<Integer>, tr
     }
 }
 
-
-
 impl UniqueFactorizationStructure
     for PolynomialStructure<QuotientStructure<CannonicalStructure<Integer>, true>>
 {

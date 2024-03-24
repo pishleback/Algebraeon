@@ -64,6 +64,7 @@ impl Polynomial<Integer> {
                     // println!("f mod {} = {:?}", p, facotred_f_mod_p);
                     match facotred_f_mod_p.into_hensel_factorization(f.clone()) {
                         Some(mut hensel_factorization_f_over_p) => {
+                            // println!("good prime = {}", p);
                             // println!("{:?}", hensel_factorization_f_over_p.factors());
 
                             while hensel_factorization_f_over_p.modolus() < target_modolus {
@@ -76,7 +77,6 @@ impl Polynomial<Integer> {
 
                             // println!("{:?}", hensel_factorization_f_over_p.modolus());
                             // println!("{:?}", lifted_factors);
-
                             // println!("lifted_factors.len() = {:?}", lifted_factors.len());
 
                             for subset in (0..lifted_factors.len())
@@ -99,7 +99,13 @@ impl Polynomial<Integer> {
                                     } else {
                                         c.clone()
                                     }
-                                });
+                                })
+                                .primitive_part() //factoring f(x) = 49x^2-10000 had possible_factor = 49x-700, which is only a factor over the rationals and not over the integers unless we take the primitive part which is 7x-100, soo this seems to make sense though I cant properly justify it right now.
+                                .unwrap();
+
+                                // println!("possible_factor = {:?}", possible_factor);
+
+                                // println!("{:?}", Polynomial::div(&f, &possible_factor));
 
                                 if possible_factor.degree().unwrap() != 0
                                     && possible_factor.degree().unwrap() != f_deg
@@ -143,7 +149,6 @@ impl Polynomial<Integer> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -151,6 +156,7 @@ mod tests {
     #[test]
     fn test_zassenhaus() {
         let x = &Polynomial::<Integer>::var().into_ring();
+
         let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_set();
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
@@ -158,6 +164,15 @@ mod tests {
         assert!(Factored::equal(
             &f.clone().factorize_by_kroneckers_method().unwrap(),
             &f.clone().factorize_by_zassenhaus_algorithm().unwrap()
-        ))
+        ));
+
+        let f = (49 * x.pow(2) - 10000).into_set();
+        println!("{}", f);
+        // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
+        // println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
+        assert!(Factored::equal(
+            &f.clone().factorize_by_kroneckers_method().unwrap(),
+            &f.clone().factorize_by_zassenhaus_algorithm().unwrap()
+        ));
     }
 }

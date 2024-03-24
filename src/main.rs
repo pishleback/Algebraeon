@@ -122,13 +122,8 @@ fn main() {
 
 fn main() {
     let x = &Polynomial::<Integer>::var().into_ring();
-    // let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (12 * x.pow(5) + 7 * x.pow(4) - 4)).into_set();
-    let f = (x.pow(38) - 1).into_set();
+    let f = (49 * x.pow(2) - 10000).into_set();
+
     println!("{}", f);
     println!("{}", f.factor().unwrap());
-
-    // let x = &Polynomial::<Modulo<5>>::var().as_elem();
-    // let f = x.pow(100) - x.pow(3) + 2;
-    // println!("{}", f);
-    // println!("{}", f.elem().factor().unwrap());
 }

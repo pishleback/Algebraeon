@@ -3,6 +3,7 @@ use std::ops::Mul;
 use std::rc::Rc;
 
 use malachite_base::num::arithmetic::traits::NegAssign;
+use malachite_base::num::basic::traits::Two;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
@@ -15,6 +16,24 @@ use super::super::number::natural::NaturalPrimeGenerator;
 
 use super::super::polynomial::multipoly::*;
 use super::super::polynomial::polynomial::*;
+
+fn rat_to_string(a: Rational) -> String {
+    if a == 0 {
+        return "0".into();
+    }
+    let neg = a < Rational::from(0);
+    let (mant, exp): (f64, _) = a
+        .sci_mantissa_and_exponent_with_rounding(
+            malachite_base::rounding_modes::RoundingMode::Nearest,
+        )
+        .unwrap();
+    let mut b = (2.0 as f64).powf(exp as f64) * mant;
+    if neg {
+        b = -b;
+    }
+    b = (1000.0 * b).round() / 1000.0;
+    b.to_string()
+}
 
 fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));
@@ -1735,26 +1754,17 @@ pub struct RealAlgebraicRoot {
 
 impl Display for RealAlgebraicRoot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let m = (&self.tight_a + &self.tight_b) / Rational::from(2);
-
-        fn rat_to_string(a: Rational) -> String {
-            let neg = a < Rational::from(0);
-            let (mant, exp): (f64, _) = a
-                .sci_mantissa_and_exponent_with_rounding(
-                    malachite_base::rounding_modes::RoundingMode::Nearest,
-                )
-                .unwrap();
-            let mut b = (2.0 as f64).powf(exp as f64) * mant;
-            if neg {
-                b = -b;
-            }
-            b.to_string()
-        }
+        let mut root = self.clone();
+        root.refine_to_accuracy(&Rational::from_integers(
+            Integer::from(1),
+            Integer::from(100),
+        ));
+        let m = (&root.tight_a + &root.tight_b) / Rational::TWO;
 
         write!(f, "≈");
         write!(f, "{}", rat_to_string(m));
-        write!(f, "±");
-        write!(f, "{}", rat_to_string(self.accuracy() / Rational::from(2)));
+        // write!(f, "±");
+        // write!(f, "{}", rat_to_string(self.accuracy() / Rational::TWO));
         Ok(())
     }
 }
@@ -1917,7 +1927,27 @@ pub struct ComplexAlgebraicRoot {
 
 impl Display for ComplexAlgebraicRoot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        let mut root = self.clone();
+        root.refine_to_accuracy(&Rational::from_integers(
+            Integer::from(1),
+            Integer::from(100),
+        ));
+
+        let m_re = (&root.tight_a + &root.tight_b) / Rational::TWO;
+        let m_im = (&root.tight_c + &root.tight_d) / Rational::TWO;
+
+        write!(f, "≈");
+        write!(f, "{}", rat_to_string(m_re));
+        // write!(f, "±");
+        // write!(f, "{}", rat_to_string(self.accuracy_re() / Rational::TWO));
+        if m_im >= 0 {
+            write!(f, "+");
+        }
+        write!(f, "{}", rat_to_string(m_im));
+        // write!(f, "±");
+        // write!(f, "{}", rat_to_string(self.accuracy_im() / Rational::TWO));
+        write!(f, "i");
+        Ok(())
     }
 }
 
@@ -1958,6 +1988,14 @@ impl ComplexAlgebraicRoot {
             }
         }
         Ok(())
+    }
+
+    pub fn accuracy_re(&self) -> Rational {
+        &self.tight_b - &self.tight_a
+    }
+
+    pub fn accuracy_im(&self) -> Rational {
+        &self.tight_d - &self.tight_c
     }
 
     fn conj(mut self) -> Self {
@@ -2009,6 +2047,12 @@ impl ComplexAlgebraicRoot {
         }
 
         debug_assert!(self.check_invariants().is_ok());
+    }
+
+    pub fn refine_to_accuracy(&mut self, accuracy: &Rational) {
+        while &self.accuracy_re() > accuracy || &self.accuracy_im() > accuracy {
+            self.refine();
+        }
     }
 }
 
@@ -3038,7 +3082,7 @@ mod tests {
 
         println!("f = {}", Polynomial::to_string(&f));
 
-        let (vert_re_f, vert_im_f) = Polynomial::at_fixed_re(&f, &Rational::from(2));
+        let (vert_re_f, vert_im_f) = Polynomial::at_fixed_re(&f, &Rational::TWO);
         println!("re = {}", Polynomial::to_string(&vert_re_f));
         println!("im = {}", Polynomial::to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
@@ -3078,7 +3122,7 @@ mod tests {
             ])
         );
 
-        let (vert_re_f, vert_im_f) = Polynomial::at_fixed_im(&f, &Rational::from(2));
+        let (vert_re_f, vert_im_f) = Polynomial::at_fixed_im(&f, &Rational::TWO);
         println!("re = {}", Polynomial::to_string(&vert_re_f));
         println!("im = {}", Polynomial::to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
@@ -3121,7 +3165,10 @@ mod tests {
     fn test_count_complex_roots() {
         //cyclotomic polynomials in a box of sidelength 4
         for k in 1..19 {
-            let f = Polynomial::add(&Polynomial::var_pow(k),& Polynomial::neg(&Polynomial::one()));
+            let f = Polynomial::add(
+                &Polynomial::var_pow(k),
+                &Polynomial::neg(&Polynomial::one()),
+            );
             let n = f
                 .count_complex_roots(
                     &Rational::from(-2),
@@ -3135,7 +3182,10 @@ mod tests {
 
         //cyclotomic polynomials in a box with a boundary root iff k=0 mod 2
         for k in 1..19 {
-            let f = Polynomial::add(&Polynomial::var_pow(k), &Polynomial::neg(&Polynomial::one()));
+            let f = Polynomial::add(
+                &Polynomial::var_pow(k),
+                &Polynomial::neg(&Polynomial::one()),
+            );
             let n = Polynomial::count_complex_roots(
                 &f,
                 &Rational::from(-1),
@@ -3152,7 +3202,10 @@ mod tests {
 
         //cyclotomic polynomials in a box with a boundary root iff k=0 mod 4
         for k in 1..19 {
-            let f = Polynomial::add(&Polynomial::var_pow(k),& Polynomial::neg(&Polynomial::one()));
+            let f = Polynomial::add(
+                &Polynomial::var_pow(k),
+                &Polynomial::neg(&Polynomial::one()),
+            );
             let n = Polynomial::count_complex_roots(
                 &f,
                 &Rational::from(-2),
@@ -3291,7 +3344,7 @@ mod tests {
             let roots = Polynomial::all_real_roots(&f);
             for root in roots {
                 let root2 = RealAlgebraic::add(
-                   & root,
+                    &root,
                     &RealAlgebraic::from_rat(&Rational::from_signeds(1, 2)).unwrap(),
                 );
                 root2.check_invariants().unwrap();
@@ -3360,19 +3413,19 @@ mod tests {
         }
     }
 
-    /*
-    #[test]
-    fn test_complex_add() {
-
-        let f = Polynomial::from_coeffs(vec![
-            Integer::from(1),
-            Integer::from(0),
-            Integer::from(0),
-            Integer::from(1),
-        ]);
-        let roots = f.all_complex_roots();
-        let s = ComplexAlgebraic::sum(roots.iter().collect());
-        assert_eq!(s, ComplexAlgebraic::zero());
+    
+    // #[test]
+    // fn test_complex_add() {
+    //     let f = Polynomial::from_coeffs(vec![
+    //         Integer::from(1),
+    //         Integer::from(0),
+    //         Integer::from(0),
+    //         Integer::from(1),
+    //     ]);
+    //     let roots = f.all_complex_roots();
+    //     let s = ComplexAlgebraic::sum(roots.iter().collect());
+    //     println!("{:?}", s);
+    //     assert_eq!(s, ComplexAlgebraic::zero());
 
 
         //TODO
@@ -3399,8 +3452,9 @@ mod tests {
         // let roots = Polynomial::all_real_roots(&f);
         // let a = QQ_BAR_REAL.sum(roots);
         // assert_eq!(a, QQ_BAR_REAL.zero());
-    }
+    // }
 
+    /*
     #[test]
     fn test_complex_mul() {
         todo!()
