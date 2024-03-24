@@ -230,6 +230,10 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
         }
     }
 
+    pub fn leading_coeff<'a>(&self, a: &'a Polynomial<RS::Set>) -> Option<&'a RS::Set> {
+        Some(a.coeffs.get(self.degree(a)?).unwrap())
+    }
+
     pub fn evaluate(&self, p: &Polynomial<RS::Set>, x: &RS::Set) -> RS::Set {
         // f(x) = a + bx + cx^2 + dx^3
         // evaluate as f(x) = a + x(b + x(c + x(d)))
@@ -303,10 +307,8 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
     }
 
     pub fn is_monic(&self, p: &Polynomial<RS::Set>) -> bool {
-        match self.degree(p) {
-            Some(d) => self
-                .coeff_ring
-                .equal(self.coeff(p, d), &self.coeff_ring.one()),
+        match self.leading_coeff(p) {
+            Some(lc) => self.coeff_ring.equal(lc, &self.coeff_ring.one()),
             None => false,
         }
     }
@@ -852,9 +854,12 @@ where
         Self::structure().var_pow(n)
     }
 
-    //this one returns a value rather than a reference
     pub fn coeff(&self, i: usize) -> R {
         Self::structure().coeff(self, i).clone()
+    }
+
+    pub fn leading_coeff(&self) -> Option<R> {
+        Self::structure().leading_coeff(self).cloned()
     }
 
     pub fn evaluate(&self, x: &R) -> R {

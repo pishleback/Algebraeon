@@ -29,6 +29,10 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
         Self { ring, modulus }
     }
 
+    pub fn ring(&self) -> Rc<RS> {
+        self.ring.clone()
+    }
+
     pub fn modulus(&self) -> &RS::Set {
         &self.modulus
     }

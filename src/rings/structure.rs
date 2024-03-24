@@ -3,7 +3,7 @@ use std::{borrow::Borrow, fmt::Display, marker::PhantomData, rc::Rc};
 
 //Instances of this represent structure on Set represented by a type
 //For example, instances of this might represent a group structure on a Set
-pub trait Structure: Clone + PartialEq + Eq + 'static {
+pub trait Structure: Debug + Clone + PartialEq + Eq + 'static {
     type Set: Clone + Debug;
 }
 

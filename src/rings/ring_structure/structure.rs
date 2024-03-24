@@ -165,8 +165,9 @@ pub trait FavoriteAssociateStructure: IntegralDomainStructure {
     //For associate class of elements, choose a unique representative
     //write self=unit*assoc and return (unit, assoc)
     //0 is required to return (1, 0)
+    //every unit u is required to return (u, 1)
 
-    //it happens that usually the product of favorite associates is another favorite associate. Should this be a requirement?
+    //it seems to happen that the product of favorite associates is another favorite associate. Should this be a requirement?
 
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set);
     fn fav_assoc(&self, a: &Self::Set) -> Self::Set {
