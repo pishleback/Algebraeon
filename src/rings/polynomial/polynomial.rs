@@ -6,7 +6,8 @@ use itertools::Itertools;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use crate::linear::matrix::MatrixStructure;
+
+use crate::rings::linear::matrix::*;
 
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
@@ -970,7 +971,7 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::number::quaternary_field::QuaternaryField;
+    use crate::rings::number::quaternary_field::QuaternaryField;
 
     use super::super::super::number::rational::*;
     use super::super::super::ring_structure::cannonical::*;

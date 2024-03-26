@@ -4,11 +4,11 @@ use std::rc::Rc;
 use malachite_base::num::basic::traits::One;
 use malachite_nz::natural::Natural;
 
-use crate::ring_structure::factorization::Factored;
+use crate::rings::ring_structure::factorization::*;
+use crate::rings::ring_structure::quotient::*;
+use crate::rings::ring_structure::structure::*;
+use crate::rings::structure::*;
 
-use super::super::super::structure::*;
-use super::super::ring_structure::quotient::*;
-use super::super::ring_structure::structure::*;
 use super::polynomial::*;
 
 // impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure> PolynomialStructure<RS> {

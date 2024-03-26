@@ -1,6 +1,9 @@
 use malachite_nz::integer::Integer;
 
-use crate::{number::integer::*, polynomial::polynomial::*, ring_structure::quotient::*, *};
+use crate::rings::{
+    number::integer::*, polynomial::polynomial::*, ring_structure::cannonical::*,
+    ring_structure::quotient::*, *,
+};
 
 impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {

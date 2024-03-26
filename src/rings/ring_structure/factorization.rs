@@ -3,9 +3,6 @@ use std::{fmt::Display, rc::Rc};
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::natural::Natural;
 
-use crate::polynomial::polynomial::{Polynomial, PolynomialStructure};
-use crate::sets::set::Set;
-
 use super::super::structure::*;
 use super::structure::*;
 

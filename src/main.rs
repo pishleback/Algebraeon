@@ -3,36 +3,6 @@
 #[macro_use]
 extern crate glium;
 
-use std::marker::PhantomData;
-use std::str::FromStr;
-use std::task::Poll;
-
-// use drawing::canvas2d::*;
-// use drawing::Canvas;
-// use geometry::*;
-use glium::glutin::event::MouseButton;
-use groups::group::*;
-use groups::permutation::*;
-use itertools::Itertools;
-use malachite_base::num::arithmetic::traits::Mod;
-use malachite_base::num::conversion::traits::IntegerMantissaAndExponent;
-use malachite_nz::integer::Integer;
-use malachite_nz::natural::Natural;
-use malachite_q::Rational;
-use rand::Rng;
-use rings::*;
-
-// use sets::permutations::Permutation;
-
-use crate::geometry::convex_simplicial_complex::*;
-use crate::geometry::vector::*;
-use crate::number::modulo::Modulo;
-use crate::polynomial::polynomial::Polynomial;
-use crate::ring_structure::cannonical::*;
-use crate::ring_structure::quotient::QuotientStructure;
-use crate::ring_structure::structure::FiniteFieldStructure;
-use crate::structure::*;
-
 pub mod drawing;
 pub mod finite_group_tables;
 pub mod geometry;
@@ -121,9 +91,33 @@ fn main() {
 // }
 
 fn main() {
-    let x = &Polynomial::<Integer>::var().into_ring();
-    let f = (49 * x.pow(2) - 10000).into_set();
+    use std::marker::PhantomData;
+    use std::str::FromStr;
+    use std::task::Poll;
 
-    println!("{}", f);
+    use crate::drawing::canvas2d::*;
+    use crate::drawing::Canvas;
+    use crate::geometry::convex_simplicial_complex::*;
+    use crate::geometry::vector::*;
+    use crate::geometry::*;
+    use crate::groups::group::*;
+    use crate::groups::permutation::*;
+    use crate::rings::number::modulo::*;
+    use crate::rings::polynomial::polynomial::*;
+    use crate::rings::ring_structure::cannonical::*;
+    use crate::rings::ring_structure::quotient::*;
+    use crate::rings::ring_structure::structure::*;
+    use crate::rings::structure::*;
+    use malachite_nz::integer::Integer;
+    use malachite_nz::natural::Natural;
+    use malachite_q::Rational;
+
+    use crate::rings::polynomial::polynomial::*;
+
+    let x = &Polynomial::<Integer>::var().into_ring();
+    let f = (x.pow(15) - x + 1).into_set();
     println!("{}", f.factor().unwrap());
+    for root in f.all_complex_roots() {
+        println!("{}", root);
+    }
 }

@@ -2,20 +2,20 @@ use std::fmt::Display;
 use std::ops::Mul;
 use std::rc::Rc;
 
+use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::NegAssign;
 use malachite_base::num::basic::traits::Two;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 
-use super::super::super::*;
-use super::super::ring_structure::cannonical::*;
-use super::super::ring_structure::structure::*;
+use crate::rings::number::natural::*;
+use crate::rings::polynomial::multipoly::*;
+use crate::rings::polynomial::polynomial::*;
+use crate::rings::ring_structure::cannonical::*;
+use crate::rings::ring_structure::structure::*;
+use crate::rings::structure::*;
 
-use super::super::number::natural::NaturalPrimeGenerator;
-
-use super::super::polynomial::multipoly::*;
-use super::super::polynomial::polynomial::*;
 
 fn rat_to_string(a: Rational) -> String {
     if a == 0 {
@@ -1641,6 +1641,89 @@ impl Polynomial<Integer> {
         }
     }
 
+    fn uhp_complex_roots_irreducible_impl(
+        &self,
+        num_real_roots: usize,
+    ) -> Vec<ComplexAlgebraicRoot> {
+        debug_assert!(self.is_irreducible());
+        debug_assert_eq!(self.all_real_roots().len(), num_real_roots);
+        let deg = self.degree().unwrap();
+        debug_assert!(num_real_roots <= deg);
+        if num_real_roots == deg {
+            vec![]
+        } else {
+            //search the upper half plane for the complete roots with positive imaginary part
+            debug_assert_eq!((deg - num_real_roots) % 2, 0);
+            let target_uhp_num = (deg - num_real_roots) / 2;
+
+            let mut a = Rational::from(-1);
+            let mut b = Rational::from(1);
+            let mut c = Rational::from_signeds(1, 2);
+            let mut d = Rational::from(2);
+
+            loop {
+                match self.count_complex_roots(&a, &b, &c, &d) {
+                    Some(n) => {
+                        debug_assert!(n <= target_uhp_num);
+                        if n == target_uhp_num {
+                            break;
+                        }
+                    }
+                    None => {
+                        //boundary root
+                    }
+                }
+                a *= Rational::from(2);
+                b *= Rational::from(2);
+                c *= Rational::from_signeds(1, 2);
+                d *= Rational::from(2);
+            }
+
+            fn bisect(
+                poly: &Polynomial<Integer>,
+                n: usize,
+                a: &Rational,
+                b: &Rational,
+                c: &Rational,
+                d: &Rational,
+            ) -> Vec<ComplexAlgebraicRoot> {
+                debug_assert!(a < b);
+                debug_assert!(c < d);
+                debug_assert_eq!(poly.count_complex_roots(&a, &b, &c, &d).unwrap(), n);
+                if n == 0 {
+                    vec![]
+                } else if n == 1 {
+                    vec![ComplexAlgebraicRoot {
+                        poly: poly.clone(),
+                        tight_a: a.clone(),
+                        tight_b: b.clone(),
+                        tight_c: c.clone(),
+                        tight_d: d.clone(),
+                    }]
+                } else {
+                    let ((n1, a1, b1, c1, d1), (n2, a2, b2, c2, d2)) =
+                        bisect_box(poly, n, a, b, c, d);
+
+                    let mut roots = bisect(poly, n1, &a1, &b1, &c1, &d1);
+                    roots.append(&mut bisect(poly, n2, &a2, &b2, &c2, &d2));
+                    return roots;
+                }
+            }
+
+            bisect(self, target_uhp_num, &a, &b, &c, &d)
+        }
+    }
+
+    fn lhp_complex_roots_irreducible_impl(
+        &self,
+        num_real_roots: usize,
+    ) -> Vec<ComplexAlgebraicRoot> {
+        self.uhp_complex_roots_irreducible_impl(num_real_roots)
+            .into_iter()
+            .map(|root| root.conj())
+            .collect()
+    }
+
     pub fn all_complex_roots_irreducible(&self) -> Vec<ComplexAlgebraic> {
         debug_assert!(self.is_irreducible());
         let deg = self.degree().unwrap();
@@ -1656,64 +1739,7 @@ impl Polynomial<Integer> {
             return all_roots;
         }
 
-        //search the upper half plane for the complete roots with positive imaginary part
-        debug_assert_eq!((deg - num_real_roots) % 2, 0);
-        let target_uhp_num = (deg - num_real_roots) / 2;
-
-        let mut a = Rational::from(-1);
-        let mut b = Rational::from(1);
-        let mut c = Rational::from_signeds(1, 2);
-        let mut d = Rational::from(2);
-
-        loop {
-            match self.count_complex_roots(&a, &b, &c, &d) {
-                Some(n) => {
-                    debug_assert!(n <= target_uhp_num);
-                    if n == target_uhp_num {
-                        break;
-                    }
-                }
-                None => {
-                    //boundary root
-                }
-            }
-            a *= Rational::from(2);
-            b *= Rational::from(2);
-            c *= Rational::from_signeds(1, 2);
-            d *= Rational::from(2);
-        }
-
-        fn bisect(
-            poly: &Polynomial<Integer>,
-            n: usize,
-            a: &Rational,
-            b: &Rational,
-            c: &Rational,
-            d: &Rational,
-        ) -> Vec<ComplexAlgebraicRoot> {
-            debug_assert!(a < b);
-            debug_assert!(c < d);
-            debug_assert_eq!(poly.count_complex_roots(&a, &b, &c, &d).unwrap(), n);
-            if n == 0 {
-                vec![]
-            } else if n == 1 {
-                vec![ComplexAlgebraicRoot {
-                    poly: poly.clone(),
-                    tight_a: a.clone(),
-                    tight_b: b.clone(),
-                    tight_c: c.clone(),
-                    tight_d: d.clone(),
-                }]
-            } else {
-                let ((n1, a1, b1, c1, d1), (n2, a2, b2, c2, d2)) = bisect_box(poly, n, a, b, c, d);
-
-                let mut roots = bisect(poly, n1, &a1, &b1, &c1, &d1);
-                roots.append(&mut bisect(poly, n2, &a2, &b2, &c2, &d2));
-                return roots;
-            }
-        }
-
-        for complex_root in bisect(self, target_uhp_num, &a, &b, &c, &d) {
+        for complex_root in self.uhp_complex_roots_irreducible_impl(num_real_roots) {
             all_roots.push(ComplexAlgebraic::Complex(complex_root.clone().conj()));
             all_roots.push(ComplexAlgebraic::Complex(complex_root));
         }
@@ -1852,7 +1878,7 @@ impl RealAlgebraicRoot {
     pub fn cmp_mut(&mut self, other: &mut Self) -> std::cmp::Ordering {
         let polys_are_eq = self.poly == other.poly; //polys should be irreducible primitive fav-assoc so this is valid
         loop {
-            //test for equality: if the tight bounds on one are within the wide bounds of the other
+            //test for equality: If the tight bounds on one are within the wide bounds of the other
             if polys_are_eq {
                 if other.wide_a <= self.tight_a && self.tight_b <= other.wide_b {
                     return std::cmp::Ordering::Equal;
@@ -1862,7 +1888,7 @@ impl RealAlgebraicRoot {
                 }
             }
 
-            //test for inequality: if the tight bounds are disjoint
+            //test for inequality: If the tight bounds are disjoint
             if self.tight_b <= other.tight_a {
                 return std::cmp::Ordering::Less;
             }
@@ -2054,6 +2080,83 @@ impl ComplexAlgebraicRoot {
             self.refine();
         }
     }
+
+    pub fn eq_mut(&mut self, other: &mut Self) -> bool {
+        let poly = &self.poly;
+        //polys should be irreducible primitive fav-assoc so this is valid
+        if poly == &other.poly {
+            let mut uhp_roots = poly.uhp_complex_roots_irreducible_impl(
+                poly.real_roots_irreducible(None, None, false, false).len(),
+            );
+            //want to identify which of the uhp_roots or their conjugates self and other are
+            //use false/true for uph/lhp and use usize for the index in uhp_roots
+            let mut identify = |root: &mut Self| -> (bool, usize) {
+                let mut possible = vec![];
+                for i in 0..uhp_roots.len() {
+                    possible.push((false, i));
+                    possible.push((true, i));
+                }
+
+                while possible.len() > 1 {
+                    possible = possible
+                        .into_iter()
+                        .filter(|(conj, idx)| {
+                            let (possible_root_tight_a, possible_root_tight_b) =
+                                (&uhp_roots[*idx].tight_a, &uhp_roots[*idx].tight_b);
+                            let (possible_root_tight_c, possible_root_tight_d) = match conj {
+                                false => (
+                                    uhp_roots[*idx].tight_c.clone(),
+                                    uhp_roots[*idx].tight_d.clone(),
+                                ),
+                                true => (-&uhp_roots[*idx].tight_d, -&uhp_roots[*idx].tight_c),
+                            };
+                            //does the region for root overlap with region for possible_tight_root?
+                            possible_root_tight_a < &root.tight_b
+                                && &root.tight_a < possible_root_tight_b
+                                && possible_root_tight_c < root.tight_d
+                                && root.tight_c < possible_root_tight_d
+                        })
+                        .collect();
+
+                    root.refine();
+                    for uhp_root in &mut uhp_roots {
+                        uhp_root.refine();
+                    }
+                }
+
+                debug_assert_ne!(possible.len(), 0);
+                possible[0]
+            };
+            identify(self) == identify(other)
+        } else {
+            false
+        }
+
+        // let polys_are_eq = self.poly == other.poly; //polys should be irreducible primitive fav-assoc so this is valid
+        // loop {
+        //     //test for equality: If the tight bounds on one are within the wide bounds of the other
+        //     if polys_are_eq {
+        //         if other.wide_a <= self.tight_a && self.tight_b <= other.wide_b {
+        //             return std::cmp::Ordering::Equal;
+        //         }
+        //         if self.wide_a <= other.tight_a && other.tight_b <= self.wide_b {
+        //             return std::cmp::Ordering::Equal;
+        //         }
+        //     }
+
+        //     //test for inequality: If the tight bounds are disjoint
+        //     if self.tight_b <= other.tight_a {
+        //         return std::cmp::Ordering::Less;
+        //     }
+        //     if other.tight_b <= self.tight_a {
+        //         return std::cmp::Ordering::Greater;
+        //     }
+
+        //     //refine
+        //     self.refine();
+        //     other.refine();
+        // }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -2136,6 +2239,17 @@ impl ComplexAlgebraic {
             },
         }
         Ok(())
+    }
+
+    pub fn eq_mut(&mut self, other: &mut Self) -> bool {
+        match (self, other) {
+            (ComplexAlgebraic::Real(a), ComplexAlgebraic::Real(b)) => {
+                RealAlgebraic::cmp_mut(a, b).is_eq()
+            }
+            (ComplexAlgebraic::Real(a), ComplexAlgebraic::Complex(b)) => false,
+            (ComplexAlgebraic::Complex(a), ComplexAlgebraic::Real(b)) => false,
+            (ComplexAlgebraic::Complex(a), ComplexAlgebraic::Complex(b)) => a.eq_mut(b),
+        }
     }
 }
 
@@ -2501,7 +2615,7 @@ impl FieldStructure for CannonicalStructure<RealAlgebraic> {}
 
 impl PartialEq for ComplexAlgebraic {
     fn eq(&self, other: &Self) -> bool {
-        todo!()
+        Self::eq_mut(&mut self.clone(), &mut other.clone())
     }
 }
 
@@ -2691,8 +2805,12 @@ impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
 }
 
 impl IntegralDomainStructure for CannonicalStructure<ComplexAlgebraic> {
-    fn div(&self, _a: &Self::Set, _b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         todo!()
+    }
+
+    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        Ok(self.mul(a, &self.inv(b)?))
     }
 }
 
@@ -2700,6 +2818,8 @@ impl FieldStructure for CannonicalStructure<ComplexAlgebraic> {}
 
 #[cfg(test)]
 mod tests {
+    use crate::rings::polynomial::polynomial::Polynomial;
+
     use super::*;
 
     #[test]
@@ -3413,46 +3533,56 @@ mod tests {
         }
     }
 
-    
-    // #[test]
-    // fn test_complex_add() {
-    //     let f = Polynomial::from_coeffs(vec![
-    //         Integer::from(1),
-    //         Integer::from(0),
-    //         Integer::from(0),
-    //         Integer::from(1),
-    //     ]);
-    //     let roots = f.all_complex_roots();
-    //     let s = ComplexAlgebraic::sum(roots.iter().collect());
-    //     println!("{:?}", s);
-    //     assert_eq!(s, ComplexAlgebraic::zero());
+    #[test]
+    fn test_complex_equal() {
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let f = (x.pow(5) - x + 1).into_set();
+        assert!(f.is_irreducible());
+        let mut count = 0;
+        for a in f.all_complex_roots() {
+            for b in f.all_complex_roots() {
+                if a == b {
+                    count += 1;
+                }
+            }
+        }
+        assert_eq!(count, f.degree().unwrap());
+    }
 
+    #[test]
+    fn test_complex_root_sum() {
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(1),
+            Integer::from(0),
+            Integer::from(0),
+            Integer::from(1),
+        ]);
+        let roots = f.all_complex_roots();
+        let s = ComplexAlgebraic::sum(roots.iter().collect());
+        println!("{:?}", s);
+        assert_eq!(s, ComplexAlgebraic::zero());
 
-        //TODO
-
-        // let f = Polynomial::from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(3)]);
-        // let roots = Polynomial::all_real_roots(&f);
-        // let a = QQ_BAR_REAL.sum(roots);
-        // assert_eq!(a, QQ_BAR_REAL.zero());
-
-        // let f = Polynomial::from_coeffs(vec![
-        //     Integer::from(-7),
-        //     Integer::from(0),
-        //     Integer::from(100),
-        // ]);
-        // let roots = Polynomial::all_real_roots(&f);
-        // let a = QQ_BAR_REAL.sum(roots);
-        // assert_eq!(a, QQ_BAR_REAL.zero());
-
-        // let f = Polynomial::from_coeffs(vec![
-        //     Integer::from(-100),
-        //     Integer::from(0),
-        //     Integer::from(7),
-        // ]);
-        // let roots = Polynomial::all_real_roots(&f);
-        // let a = QQ_BAR_REAL.sum(roots);
-        // assert_eq!(a, QQ_BAR_REAL.zero());
-    // }
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(7),
+            Integer::from(-3),
+            Integer::from(-42),
+            Integer::from(9),
+        ]);
+        println!("f = {}", f);
+        let roots = f.all_complex_roots();
+        for root in &roots {
+            println!("root = {}", root);
+        }
+        let s = ComplexAlgebraic::sum(roots.iter().collect());
+        println!("root sum = {:?}", s);
+        assert_eq!(
+            s,
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from_integers(
+                Integer::from(14),
+                Integer::from(3)
+            )))
+        );
+    }
 
     /*
     #[test]

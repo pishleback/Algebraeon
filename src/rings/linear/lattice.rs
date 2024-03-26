@@ -1075,8 +1075,6 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::polynomial::polynomial::*;
-
     use super::*;
 
     #[test]

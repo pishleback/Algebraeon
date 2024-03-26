@@ -12,15 +12,14 @@ use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use super::super::super::structure::*;
-use super::super::ring_structure::cannonical::*;
-use super::super::ring_structure::factorization::*;
-use super::super::ring_structure::structure::*;
+use crate::rings::number::natural::*;
+use crate::rings::ring_structure::cannonical::*;
+use crate::rings::ring_structure::factorization::*;
+use crate::rings::ring_structure::structure::*;
+use crate::rings::structure::*;
 
-use super::natural::*;
-
-pub mod polynomial;
 pub mod modulo;
+pub mod polynomial;
 
 impl StructuredType for Integer {
     type Structure = CannonicalStructure<Self>;
@@ -92,10 +91,7 @@ impl FavoriteAssociateStructure for CannonicalStructure<Integer> {
 }
 
 impl UniqueFactorizationStructure for CannonicalStructure<Integer> {
-    fn factor(
-        &self,
-        a: &Self::Set,
-    ) -> Option<crate::ring_structure::factorization::Factored<Self>> {
+    fn factor(&self, a: &Self::Set) -> Option<Factored<Self>> {
         if a == &0 {
             None
         } else {

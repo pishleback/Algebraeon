@@ -5,11 +5,10 @@ use malachite_base::num::logic::traits::BitIterable;
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
-use crate::FieldOfFractionsDomain;
+use super::super::structure::*;
 
-use super::super::super::structure::*;
-
-use super::factorization::Factored;
+use super::cannonical::*;
+use super::factorization::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RingDivisionError {

@@ -5,9 +5,9 @@ use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
 
-use super::super::polynomial::polynomial::*;
+use crate::rings::structure::*;
 
-use super::super::super::structure::*;
+use super::super::polynomial::polynomial::*;
 
 use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::factorization::*;

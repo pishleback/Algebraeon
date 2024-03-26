@@ -1,10 +1,10 @@
 use malachite_nz::{integer::Integer, natural::Natural};
 
-use super::super::super::structure::*;
-use super::super::polynomial::polynomial::*;
-use super::super::ring_structure::cannonical::*;
-use super::super::ring_structure::factorization::*;
-use super::super::ring_structure::structure::*;
+use crate::rings::polynomial::polynomial::*;
+use crate::rings::ring_structure::factorization::*;
+use crate::rings::ring_structure::structure::*;
+use crate::rings::structure::*;
+
 use std::rc::Rc;
 use std::{fmt::Display, hash::Hash};
 

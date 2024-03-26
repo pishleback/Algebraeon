@@ -6,10 +6,6 @@ use itertools::Itertools;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use crate::linear::lattice::LinearLattice;
-use crate::linear::lattice::LinearLatticeStructure;
-use crate::ring_structure::structure;
-
 use super::super::linear::matrix::*;
 use super::super::number::natural::*;
 use super::super::ring_structure::cannonical::*;
@@ -17,6 +13,7 @@ use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
 use super::polynomial::*;
+use crate::rings::linear::lattice::*;
 
 impl<FS: FiniteFieldStructure> PolynomialStructure<FS>
 where
@@ -538,7 +535,7 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::number::{modulo::Modulo, quaternary_field::QuaternaryField};
+    use crate::rings::number::{modulo::Modulo, quaternary_field::QuaternaryField};
 
     use super::*;
 

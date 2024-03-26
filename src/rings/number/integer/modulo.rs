@@ -1,4 +1,4 @@
-use crate::{polynomial::polynomial::*, ring_structure::quotient::*};
+use crate::rings::{polynomial::polynomial::*, ring_structure::quotient::*};
 
 use super::*;
 
@@ -26,7 +26,7 @@ impl UniqueFactorizationStructure
     fn factor(
         &self,
         a: &Self::Set,
-    ) -> Option<crate::ring_structure::factorization::Factored<Self>> {
+    ) -> Option<crate::rings::ring_structure::factorization::Factored<Self>> {
         self.factorize_by_berlekamps_algorithm(a.clone())
     }
 }

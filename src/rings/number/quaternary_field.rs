@@ -3,14 +3,10 @@ use std::rc::Rc;
 
 use malachite_nz::natural::Natural;
 
-use crate::polynomial::polynomial::Polynomial;
-use crate::polynomial::polynomial::PolynomialStructure;
-use crate::ring_structure::factorization::Factored;
-use crate::structure::StructuredType;
-
-use super::super::super::structure::*;
-use super::super::ring_structure::cannonical::*;
-use super::super::ring_structure::structure::*;
+use crate::rings::polynomial::polynomial::*;
+use crate::rings::ring_structure::cannonical::*;
+use crate::rings::ring_structure::structure::*;
+use crate::rings::structure::*;
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -117,19 +113,17 @@ impl FiniteUnitsStructure for CannonicalStructure<QuaternaryField> {
     }
 }
 
-
 impl FiniteFieldStructure for CannonicalStructure<QuaternaryField> {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (Natural::from(2u8), Natural::from(2u8))
     }
 }
 
-
 impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<QuaternaryField>> {
     fn factor(
         &self,
         a: &Self::Set,
-    ) -> Option<crate::ring_structure::factorization::Factored<Self>> {
+    ) -> Option<crate::rings::ring_structure::factorization::Factored<Self>> {
         self.factorize_by_berlekamps_algorithm(a.clone())
     }
 }

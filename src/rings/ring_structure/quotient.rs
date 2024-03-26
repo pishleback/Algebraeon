@@ -36,6 +36,10 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
     pub fn modulus(&self) -> &RS::Set {
         &self.modulus
     }
+
+    pub fn reduce(&self, a : &RS::Set) -> RS::Set {
+        self.ring.rem(a, &self.modulus)
+    }
 }
 
 impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> QuotientStructure<RS, false> {

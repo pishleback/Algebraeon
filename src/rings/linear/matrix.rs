@@ -1,8 +1,7 @@
 use std::borrow::Borrow;
 use std::rc::Rc;
 
-use crate::polynomial::polynomial::*;
-
+use crate::rings::polynomial::polynomial::*;
 use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::elements::*;
 use super::super::ring_structure::structure::*;
