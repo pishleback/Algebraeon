@@ -16,9 +16,9 @@ Code for doing maths on finite sets
  - Real root isolation
  - Real root arithmetic
  - Complex root isolation
+ - Zassenhaus algorithm for factoring polynomials over the integers
 
 ## Planned Features
- - Zassenhaus algorithm for factoring polynomials over the integers
  - Complex root arithmetic
  - Jordan normal form of a matrix
  - Universal cyclotomic field
