@@ -800,6 +800,13 @@ where
             prim,
         )
     }
+
+    pub fn primitive_part_fof(
+        &self,
+        p: &Polynomial<FS::Set>,
+    ) -> Polynomial<<FS::RS as Structure>::Set> {
+        self.factor_primitive_fof(p).1
+    }
 }
 
 impl<R: StructuredType> StructuredType for Polynomial<R>
@@ -966,6 +973,12 @@ where
         Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as Structure>::Set>,
     ) {
         Self::structure().factor_primitive_fof(self)
+    }
+
+    pub fn primitive_part_fof(
+        &self,
+    ) -> Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as Structure>::Set> {
+        Self::structure().primitive_part_fof(self)
     }
 }
 

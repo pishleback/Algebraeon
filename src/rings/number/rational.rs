@@ -73,7 +73,7 @@ impl FieldOfFractionsStructure for CannonicalStructure<Rational> {
     }
 
     fn numerator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
-        //malachite returns a natural for the numerator for some reason
+        //malachite returns a natural for the numerator for some
         if elem >= &0 {
             Integer::from(elem.numerator_ref())
         } else {

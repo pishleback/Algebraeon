@@ -419,6 +419,137 @@ impl<RS: BezoutDomainStructure + DisplayableStructure> LinearLatticeStructure<RS
     }
 }
 
+impl<R: StructuredType> StructuredType for LinearLattice<R>
+where
+    R::Structure: BezoutDomainStructure,
+{
+    type Structure = LinearLatticeStructure<R::Structure>;
+
+    fn structure() -> Rc<Self::Structure> {
+        LinearLatticeStructure::new(R::structure()).into()
+    }
+}
+
+impl<R: StructuredType> LinearLattice<R>
+where
+    R::Structure: BezoutDomainStructure + DisplayableStructure,
+{
+    pub fn pprint(&self) {
+        Self::structure().pprint(self)
+    }
+}
+
+impl<R: StructuredType> PartialEq for LinearLattice<R>
+where
+    R::Structure: BezoutDomainStructure,
+{
+    fn eq(&self, other: &Self) -> bool {
+        Self::structure().equal(self, other)
+    }
+}
+
+impl<R: StructuredType> LinearLattice<R>
+where
+    R::Structure: BezoutDomainStructure,
+{
+    pub fn check_invariants(&self) -> Result<(), &'static str> {
+        Self::structure().check_invariants(self)
+    }
+
+    pub fn from_span<MatT: Borrow<Matrix<R>>>(
+        rows: usize,
+        cols: usize,
+        mats: Vec<MatT>,
+    ) -> LinearLattice<R> {
+        Self::structure().from_span(rows, cols, mats)
+    }
+
+    pub fn from_basis<MatT: Borrow<Matrix<R>>>(
+        rows: usize,
+        cols: usize,
+        mats: Vec<MatT>,
+    ) -> LinearLattice<R> {
+        Self::structure().from_basis(rows, cols, mats)
+    }
+
+    pub fn rank(&self) -> usize {
+        Self::structure().rank(self)
+    }
+
+    fn basis_row(&self, basis_num: usize) -> Matrix<R> {
+        Self::structure().basis_row(self, basis_num)
+    }
+
+    pub fn basis_matrix(&self, r: usize) -> Matrix<R> {
+        Self::structure().basis_matrix(self, r)
+    }
+
+    pub fn basis_matrices(&self) -> Vec<Matrix<R>> {
+        Self::structure().basis_matrices(self)
+    }
+
+    pub fn basis_matrix_element<'b>(
+        &self,
+        lat: &'b LinearLattice<R>,
+        basis_num: usize,
+        r: usize,
+        c: usize,
+    ) -> &'b R {
+        Self::structure().basis_matrix_element(lat, basis_num, r, c)
+    }
+
+    fn contains_row(&self, mat_as_row: impl Borrow<Matrix<R>>) -> bool {
+        Self::structure().contains_row(self, mat_as_row)
+    }
+
+    pub fn contains_point<MatT: Borrow<Matrix<R>>>(&self, mat: MatT) -> bool {
+        Self::structure().contains_point(self, mat)
+    }
+
+    //is lat a subset of self?
+    pub fn contains_sublattice(&self, sublat: impl Borrow<LinearLattice<R>>) -> bool {
+        Self::structure().contains_sublattice(self, sublat)
+    }
+
+    pub fn sum<LatT: Borrow<LinearLattice<R>>>(
+        rows: usize,
+        cols: usize,
+        lats: Vec<LatT>,
+    ) -> LinearLattice<R> {
+        Self::structure().sum(rows, cols, lats)
+    }
+
+    pub fn sum_pair<LatT: Borrow<LinearLattice<R>>>(
+        rows: usize,
+        cols: usize,
+        lat1: LatT,
+        lat2: LatT,
+    ) -> LinearLattice<R> {
+        Self::structure().sum_pair(rows, cols, lat1, lat2)
+    }
+
+    pub fn intersect<LatT: Borrow<LinearLattice<R>>>(
+        rows: usize,
+        cols: usize,
+        lats: Vec<LatT>,
+    ) -> LinearLattice<R> {
+        Self::structure().intersect(rows, cols, lats)
+    }
+
+    pub fn intersect_pair(
+        rows: usize,
+        cols: usize,
+        lat1: impl Borrow<LinearLattice<R>>,
+        lat2: impl Borrow<LinearLattice<R>>,
+    ) -> LinearLattice<R> {
+        Self::structure().intersect_pair(rows, cols, lat1, lat2)
+    }
+
+    pub fn as_hyperplane_intersection(&self) -> Vec<LinearLattice<R>> {
+        Self::structure().as_hyperplane_intersection(self)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum AffineLatticeElements<Set: Clone> {
     Empty(),
@@ -825,137 +956,6 @@ impl<RS: BezoutDomainStructure + DisplayableStructure> AffineLatticeStructure<RS
             }
         }
         println!("End Affine Lattice");
-    }
-}
-
-impl<R: StructuredType> StructuredType for LinearLattice<R>
-where
-    R::Structure: BezoutDomainStructure,
-{
-    type Structure = LinearLatticeStructure<R::Structure>;
-
-    fn structure() -> Rc<Self::Structure> {
-        LinearLatticeStructure::new(R::structure()).into()
-    }
-}
-
-impl<R: StructuredType> LinearLattice<R>
-where
-    R::Structure: BezoutDomainStructure + DisplayableStructure,
-{
-    pub fn pprint(&self) {
-        Self::structure().pprint(self)
-    }
-}
-
-impl<R: StructuredType> PartialEq for LinearLattice<R>
-where
-    R::Structure: BezoutDomainStructure,
-{
-    fn eq(&self, other: &Self) -> bool {
-        Self::structure().equal(self, other)
-    }
-}
-
-impl<R: StructuredType> LinearLattice<R>
-where
-    R::Structure: BezoutDomainStructure,
-{
-    pub fn check_invariants(&self) -> Result<(), &'static str> {
-        Self::structure().check_invariants(self)
-    }
-
-    pub fn from_span<MatT: Borrow<Matrix<R>>>(
-        rows: usize,
-        cols: usize,
-        mats: Vec<MatT>,
-    ) -> LinearLattice<R> {
-        Self::structure().from_span(rows, cols, mats)
-    }
-
-    pub fn from_basis<MatT: Borrow<Matrix<R>>>(
-        rows: usize,
-        cols: usize,
-        mats: Vec<MatT>,
-    ) -> LinearLattice<R> {
-        Self::structure().from_basis(rows, cols, mats)
-    }
-
-    pub fn rank(&self) -> usize {
-        Self::structure().rank(self)
-    }
-
-    fn basis_row(&self, basis_num: usize) -> Matrix<R> {
-        Self::structure().basis_row(self, basis_num)
-    }
-
-    pub fn basis_matrix(&self, r: usize) -> Matrix<R> {
-        Self::structure().basis_matrix(self, r)
-    }
-
-    pub fn basis_matrices(&self) -> Vec<Matrix<R>> {
-        Self::structure().basis_matrices(self)
-    }
-
-    pub fn basis_matrix_element<'b>(
-        &self,
-        lat: &'b LinearLattice<R>,
-        basis_num: usize,
-        r: usize,
-        c: usize,
-    ) -> &'b R {
-        Self::structure().basis_matrix_element(lat, basis_num, r, c)
-    }
-
-    fn contains_row(&self, mat_as_row: impl Borrow<Matrix<R>>) -> bool {
-        Self::structure().contains_row(self, mat_as_row)
-    }
-
-    pub fn contains_point<MatT: Borrow<Matrix<R>>>(&self, mat: MatT) -> bool {
-        Self::structure().contains_point(self, mat)
-    }
-
-    //is lat a subset of self?
-    pub fn contains_sublattice(&self, sublat: impl Borrow<LinearLattice<R>>) -> bool {
-        Self::structure().contains_sublattice(self, sublat)
-    }
-
-    pub fn sum<LatT: Borrow<LinearLattice<R>>>(
-        rows: usize,
-        cols: usize,
-        lats: Vec<LatT>,
-    ) -> LinearLattice<R> {
-        Self::structure().sum(rows, cols, lats)
-    }
-
-    pub fn sum_pair<LatT: Borrow<LinearLattice<R>>>(
-        rows: usize,
-        cols: usize,
-        lat1: LatT,
-        lat2: LatT,
-    ) -> LinearLattice<R> {
-        Self::structure().sum_pair(rows, cols, lat1, lat2)
-    }
-
-    pub fn intersect<LatT: Borrow<LinearLattice<R>>>(
-        rows: usize,
-        cols: usize,
-        lats: Vec<LatT>,
-    ) -> LinearLattice<R> {
-        Self::structure().intersect(rows, cols, lats)
-    }
-
-    pub fn intersect_pair(
-        rows: usize,
-        cols: usize,
-        lat1: impl Borrow<LinearLattice<R>>,
-        lat2: impl Borrow<LinearLattice<R>>,
-    ) -> LinearLattice<R> {
-        Self::structure().intersect_pair(rows, cols, lat1, lat2)
-    }
-
-    pub fn as_hyperplane_intersection(&self) -> Vec<LinearLattice<R>> {
-        Self::structure().as_hyperplane_intersection(self)
     }
 }
 

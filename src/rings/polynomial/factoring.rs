@@ -6,14 +6,14 @@ use itertools::Itertools;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use super::super::linear::matrix::*;
 use super::super::number::natural::*;
 use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
 use super::polynomial::*;
-use crate::rings::linear::lattice::*;
+use crate::rings::linear::matrix::*;
+use crate::rings::linear::subspace::*;
 
 impl<FS: FiniteFieldStructure> PolynomialStructure<FS>
 where

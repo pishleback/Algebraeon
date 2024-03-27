@@ -5,7 +5,7 @@ use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::elements::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
-use super::lattice::*;
+use super::subspace::*;
 use crate::rings::polynomial::polynomial::*;
 
 #[derive(Debug)]
@@ -355,6 +355,23 @@ impl<RS: RingStructure> MatrixStructure<RS> {
                 self.ring.zero()
             }
         })
+    }
+
+    pub fn dot(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> RS::Set {
+        let rows = a.rows();
+        let cols = a.cols();
+        assert_eq!(rows, b.rows());
+        assert_eq!(cols, b.cols());
+        let mut tot = self.ring.zero();
+        for r in 0..rows {
+            for c in 0..cols {
+                self.ring.add_mut(
+                    &mut tot,
+                    &self.ring.mul(a.at(r, c).unwrap(), b.at(r, c).unwrap()),
+                );
+            }
+        }
+        tot
     }
 
     pub fn add_mut(&self, a: &mut Matrix<RS::Set>, b: &Matrix<RS::Set>) -> Result<(), MatOppErr> {
@@ -1412,6 +1429,10 @@ where
 
     pub fn diag(diag: &Vec<R>) -> Self {
         Self::structure().diag(diag)
+    }
+
+    pub fn dot(a: &Self, b: &Self) -> R {
+        Self::structure().dot(a, b)
     }
 
     pub fn add_mut(&mut self, b: &Self) -> Result<(), MatOppErr> {

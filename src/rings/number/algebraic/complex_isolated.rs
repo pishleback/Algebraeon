@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::NegAssign;
+use malachite_base::num::basic::traits::One;
 use malachite_base::num::basic::traits::Two;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
@@ -15,7 +16,6 @@ use crate::rings::polynomial::polynomial::*;
 use crate::rings::ring_structure::cannonical::*;
 use crate::rings::ring_structure::structure::*;
 use crate::rings::structure::*;
-
 
 fn rat_to_string(a: Rational) -> String {
     if a == 0 {
@@ -1939,6 +1939,10 @@ impl RealAlgebraicRoot {
         self.neg_mut();
         self
     }
+
+    pub fn min_poly(&self) -> Polynomial<Rational> {
+        self.poly.apply_map(|c| Rational::from(c)).fav_assoc()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -2131,32 +2135,36 @@ impl ComplexAlgebraicRoot {
         } else {
             false
         }
-
-        // let polys_are_eq = self.poly == other.poly; //polys should be irreducible primitive fav-assoc so this is valid
-        // loop {
-        //     //test for equality: If the tight bounds on one are within the wide bounds of the other
-        //     if polys_are_eq {
-        //         if other.wide_a <= self.tight_a && self.tight_b <= other.wide_b {
-        //             return std::cmp::Ordering::Equal;
-        //         }
-        //         if self.wide_a <= other.tight_a && other.tight_b <= self.wide_b {
-        //             return std::cmp::Ordering::Equal;
-        //         }
-        //     }
-
-        //     //test for inequality: If the tight bounds are disjoint
-        //     if self.tight_b <= other.tight_a {
-        //         return std::cmp::Ordering::Less;
-        //     }
-        //     if other.tight_b <= self.tight_a {
-        //         return std::cmp::Ordering::Greater;
-        //     }
-
-        //     //refine
-        //     self.refine();
-        //     other.refine();
-        // }
     }
+
+    pub fn min_poly(&self) -> Polynomial<Rational> {
+        self.poly.apply_map(|c| Rational::from(c)).fav_assoc()
+    }
+
+    // let polys_are_eq = self.poly == other.poly; //polys should be irreducible primitive fav-assoc so this is valid
+    // loop {
+    //     //test for equality: If the tight bounds on one are within the wide bounds of the other
+    //     if polys_are_eq {
+    //         if other.wide_a <= self.tight_a && self.tight_b <= other.wide_b {
+    //             return std::cmp::Ordering::Equal;
+    //         }
+    //         if self.wide_a <= other.tight_a && other.tight_b <= self.wide_b {
+    //             return std::cmp::Ordering::Equal;
+    //         }
+    //     }
+
+    //     //test for inequality: If the tight bounds are disjoint
+    //     if self.tight_b <= other.tight_a {
+    //         return std::cmp::Ordering::Less;
+    //     }
+    //     if other.tight_b <= self.tight_a {
+    //         return std::cmp::Ordering::Greater;
+    //     }
+
+    //     //refine
+    //     self.refine();
+    //     other.refine();
+    // }
 }
 
 #[derive(Debug, Clone)]
@@ -2191,6 +2199,13 @@ impl RealAlgebraic {
                     RealAlgebraic::Real(other_rep) => self_rep.cmp_mut(other_rep),
                 },
             }
+        }
+    }
+
+    pub fn min_poly(&self) -> Polynomial<Rational> {
+        match self {
+            RealAlgebraic::Rational(rat) => Polynomial::from_coeffs(vec![-rat, Rational::ONE]),
+            RealAlgebraic::Real(real_root) => real_root.min_poly(),
         }
     }
 }
@@ -2815,6 +2830,15 @@ impl IntegralDomainStructure for CannonicalStructure<ComplexAlgebraic> {
 }
 
 impl FieldStructure for CannonicalStructure<ComplexAlgebraic> {}
+
+impl ComplexAlgebraic {
+    pub fn min_poly(&self) -> Polynomial<Rational> {
+        match self {
+            ComplexAlgebraic::Real(real_algebraic) => real_algebraic.min_poly(),
+            ComplexAlgebraic::Complex(complex_root) => complex_root.min_poly(),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

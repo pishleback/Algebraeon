@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use malachite_q::Rational;
 
-use crate::rings::linear::lattice::{AffineLattice, LinearLattice};
+use crate::rings::linear::subspace::{AffineLattice, LinearLattice};
 
 use super::{
     affine_coordinate_system::AffineSubspaceCoordinateSystem,

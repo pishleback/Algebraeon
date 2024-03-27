@@ -17,7 +17,7 @@ use crate::rings::{
     structure::*,
 };
 
-type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructure<Rational>>, true>;
+pub type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructure<Rational>>, true>;
 
 pub fn new_anf(f: Polynomial<Rational>) -> ANFStructure {
     ANFStructure::new(PolynomialStructure::new(Rational::structure()).into(), f)
@@ -57,6 +57,7 @@ impl ANFStructure {
             debug_assert_eq!(disc.denominator_ref(), &Natural::ONE); //discriminant of algebraic integers is an integer
             let disc = Rational::numerator(&disc);
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
+            // println!("{}", disc);
             let (_sign, disc_factors) = disc.factor().unwrap().unit_and_factors();
             // If p is a prime such that p^2 divides Disc
             // then can find an alg int of the form

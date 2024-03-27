@@ -20,6 +20,7 @@ use crate::rings::structure::*;
 
 pub mod modulo;
 pub mod polynomial;
+pub mod lattice;
 
 impl StructuredType for Integer {
     type Structure = CannonicalStructure<Self>;

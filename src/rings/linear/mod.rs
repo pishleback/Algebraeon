@@ -1,2 +1,5 @@
 pub mod matrix;
-pub mod lattice;
+pub mod subspace;
+
+use matrix::*;
+use subspace::*;

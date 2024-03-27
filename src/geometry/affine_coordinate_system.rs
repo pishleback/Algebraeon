@@ -1,7 +1,7 @@
 use crate::{
     geometry::vector::Vector,
     rings::linear::{
-        lattice::{AffineLattice, LinearLattice},
+        subspace::{AffineLattice, LinearLattice},
         matrix::Matrix,
     },
 };
