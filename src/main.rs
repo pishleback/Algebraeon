@@ -102,6 +102,7 @@ fn main() {
     use crate::geometry::*;
     use crate::groups::group::*;
     use crate::groups::permutation::*;
+    use crate::rings::number::algebraic::number_field::*;
     use crate::rings::number::modulo::*;
     use crate::rings::polynomial::polynomial::*;
     use crate::rings::ring_structure::cannonical::*;
@@ -114,10 +115,9 @@ fn main() {
 
     use crate::rings::polynomial::polynomial::*;
 
-    let x = &Polynomial::<Integer>::var().into_ring();
-    let f = (x.pow(15) - x + 1).into_set();
+    let x = &Polynomial::<Rational>::var().into_ring();
+    let f = (x.pow(5) - 16 * x + 32).into_set();
     println!("{}", f.factor().unwrap());
-    for root in f.all_complex_roots() {
-        println!("{}", root);
-    }
+    let anf = new_anf(f);
+    println!("{:?}", anf.compute_integral_basis());
 }

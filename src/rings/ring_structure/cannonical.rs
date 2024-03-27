@@ -29,13 +29,13 @@ where
     fn add(a: &Self, b: &Self) -> Self {
         Self::structure().add(a, b)
     }
-    fn sum(vals: Vec<&Self>) -> Self {
+    fn sum(vals: Vec<impl Borrow<Self>>) -> Self {
         Self::structure().sum(vals)
     }
     fn mul(a: &Self, b: &Self) -> Self {
         Self::structure().mul(a, b)
     }
-    fn product(vals: Vec<&Self>) -> Self {
+    fn product(vals: Vec<impl Borrow<Self>>) -> Self {
         Self::structure().product(vals)
     }
 
@@ -121,7 +121,7 @@ where
         Self::structure().gcd(x, y)
     }
 
-    fn gcd_list(elems: Vec<&Self>) -> Self {
+    fn gcd_list(elems: Vec<impl Borrow<Self>>) -> Self {
         Self::structure().gcd_list(elems)
     }
 
@@ -129,7 +129,7 @@ where
         Self::structure().lcm(x, y)
     }
 
-    fn lcm_list(elems: Vec<&Self>) -> Self {
+    fn lcm_list(elems: Vec<impl Borrow<Self>>) -> Self {
         Self::structure().lcm_list(elems)
     }
 }

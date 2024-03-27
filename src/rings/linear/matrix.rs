@@ -1,12 +1,12 @@
 use std::borrow::Borrow;
 use std::rc::Rc;
 
-use crate::rings::polynomial::polynomial::*;
 use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::elements::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
 use super::lattice::*;
+use crate::rings::polynomial::polynomial::*;
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -20,6 +20,8 @@ pub struct Matrix<Set: Clone> {
     dim1: usize,
     dim2: usize,
     transpose: bool,
+    flip_rows: bool,
+    flip_cols: bool,
     elems: Vec<Set>, //length self.rows * self.cols. row r and column c is index c + r * self.cols
 }
 
@@ -40,6 +42,8 @@ impl<Set: Clone> Matrix<Set> {
             dim1: rows,
             dim2: cols,
             transpose: false,
+            flip_rows: false,
+            flip_cols: false,
             elems,
         }
     }
@@ -54,6 +58,8 @@ impl<Set: Clone> Matrix<Set> {
             dim1: rows,
             dim2: cols,
             transpose: false,
+            flip_rows: false,
+            flip_cols: false,
             elems,
         }
     }
@@ -72,7 +78,15 @@ impl<Set: Clone> Matrix<Set> {
         Self::from_rows(cols_elems).transpose()
     }
 
-    fn rc_to_idx(&self, r: usize, c: usize) -> usize {
+    fn rc_to_idx(&self, mut r: usize, mut c: usize) -> usize {
+        if self.flip_rows {
+            r = self.rows() - r - 1;
+        }
+
+        if self.flip_cols {
+            c = self.cols() - c - 1;
+        }
+
         match self.transpose {
             false => c + r * self.dim2,
             true => r + c * self.dim2,
@@ -126,6 +140,8 @@ impl<Set: Clone> Matrix<Set> {
             dim1: rows.len(),
             dim2: cols.len(),
             transpose: false,
+            flip_rows: false,
+            flip_cols: false,
             elems,
         }
     }
@@ -143,6 +159,8 @@ impl<Set: Clone> Matrix<Set> {
             dim1: self.dim1,
             dim2: self.dim2,
             transpose: self.transpose,
+            flip_rows: self.flip_rows,
+            flip_cols: self.flip_cols,
             elems: self.elems.iter().map(|x| f(x)).collect(),
         }
     }
@@ -151,13 +169,34 @@ impl<Set: Clone> Matrix<Set> {
         self.transpose_mut();
         self
     }
-
     pub fn transpose_ref(&self) -> Self {
         self.clone().transpose()
     }
-
     pub fn transpose_mut(&mut self) {
         self.transpose = !self.transpose;
+        (self.flip_rows, self.flip_cols) = (self.flip_cols, self.flip_rows);
+    }
+
+    pub fn flip_rows(mut self) -> Self {
+        self.flip_rows_mut();
+        self
+    }
+    pub fn flip_rows_ref(&self) -> Self {
+        self.clone().flip_rows()
+    }
+    pub fn flip_rows_mut(&mut self) {
+        self.flip_rows = !self.flip_rows;
+    }
+
+    pub fn flip_cols(mut self) -> Self {
+        self.flip_cols_mut();
+        self
+    }
+    pub fn flip_cols_ref(&self) -> Self {
+        self.clone().flip_cols()
+    }
+    pub fn flip_cols_mut(&mut self) {
+        self.flip_cols = !self.flip_cols;
     }
 
     pub fn join_rows<MatT: Borrow<Matrix<Set>>>(cols: usize, mats: Vec<MatT>) -> Matrix<Set> {
@@ -190,6 +229,16 @@ impl<Set: Clone> Matrix<Set> {
         }
         let joined = Self::join_rows(rows, t_mats.iter().collect());
         joined.transpose()
+    }
+
+    pub fn entries_list(&self) -> Vec<&Set> {
+        let mut entries = vec![];
+        for r in 0..self.rows() {
+            for c in 0..self.cols() {
+                entries.push(self.at(r, c).unwrap());
+            }
+        }
+        entries
     }
 }
 
@@ -408,6 +457,15 @@ impl<RS: RingStructure> MatrixStructure<RS> {
             Ok(det)
         }
     }
+
+    pub fn trace(&self, a: &Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
+        let n = a.dim1;
+        if n != a.dim2 {
+            Err(MatOppErr::NotSquare)
+        } else {
+            Ok(self.ring.sum((0..n).map(|i| a.at(i, i).unwrap()).collect()))
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -471,6 +529,8 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
                     dim1: 2,
                     dim2: 2,
                     transpose: false,
+                    flip_rows: false,
+                    flip_cols: false,
                     elems: vec![a.clone(), b.clone(), c.clone(), d.clone()],
                 };
                 if !self.ring.is_unit(
@@ -874,7 +934,7 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
         pivs.len()
     }
 
-    //return (u, s, v, k) such that self = usv and s is in smith normal form and u, v are invertible and k is the number of non-zero elements in the diagonal of s
+    //return (u, s, v, k) such that self = usv and s is in smith normal form (with diagonal entries their favorite associates) and u, v are invertible and k is the number of non-zero elements in the diagonal of s
     pub fn smith_algorithm(
         &self,
         mut m: Matrix<RS::Set>,
@@ -1174,12 +1234,79 @@ impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateS
         (h, u, pivs)
     }
 
+    pub fn row_reduced_hermite_normal_form(&self, m: Matrix<RS::Set>) -> Matrix<RS::Set> {
+        self.row_reduced_hermite_algorithm(m).0
+    }
+
     pub fn col_reduced_hermite_algorithm(
         &self,
         m: Matrix<RS::Set>,
     ) -> (Matrix<RS::Set>, Matrix<RS::Set>, Vec<usize>) {
         let (rh, ru, pivs) = self.row_reduced_hermite_algorithm(m.transpose());
         (rh.transpose(), ru.transpose(), pivs)
+    }
+
+    pub fn col_reduced_hermite_normal_form(&self, m: Matrix<RS::Set>) -> Matrix<RS::Set> {
+        self.col_reduced_hermite_algorithm(m).0
+    }
+}
+
+impl<RS: GreatestCommonDivisorStructure> MatrixStructure<RS> {
+    pub fn factor_primitive(&self, mut mat: Matrix<RS::Set>) -> Option<(RS::Set, Matrix<RS::Set>)> {
+        let mut entries = mat.entries_list();
+        let g = self.ring.gcd_list(entries);
+        if self.ring.is_zero(&g) {
+            None
+        } else {
+            for r in 0..mat.rows() {
+                for c in 0..mat.cols() {
+                    *mat.at_mut(r, c).unwrap() = self.ring.div(mat.at(r, c).unwrap(), &g).unwrap();
+                }
+            }
+            Some((g, mat))
+        }
+    }
+
+    pub fn primitive_part(&self, mat: Matrix<RS::Set>) -> Option<Matrix<RS::Set>> {
+        match self.factor_primitive(mat) {
+            Some((_unit, prim)) => Some(prim),
+            None => None,
+        }
+    }
+}
+
+impl<FS: FieldOfFractionsStructure> MatrixStructure<FS>
+where
+    FS::RS: GreatestCommonDivisorStructure,
+{
+    pub fn factor_primitive_fof(
+        &self,
+        mat: &Matrix<FS::Set>,
+    ) -> (FS::Set, Matrix<<FS::RS as Structure>::Set>) {
+        let div = self.ring.base_ring_structure().lcm_list(
+            mat.entries_list()
+                .into_iter()
+                .map(|c| self.ring.denominator(&c))
+                .collect(),
+        );
+
+        let (mul, prim) = MatrixStructure::new(self.ring.base_ring_structure())
+            .factor_primitive(mat.apply_map(|c| {
+                self.ring
+                    .as_base_ring(self.ring.mul(&self.ring.from_base_ring(div.clone()), c))
+                    .unwrap()
+            }))
+            .unwrap();
+
+        (
+            self.ring
+                .div(
+                    &self.ring.from_base_ring(mul),
+                    &self.ring.from_base_ring(div),
+                )
+                .unwrap(),
+            prim,
+        )
     }
 }
 
@@ -1318,6 +1445,10 @@ where
     pub fn det_naive(&self) -> Result<R, MatOppErr> {
         Self::structure().det_naive(self)
     }
+
+    pub fn trace(&self) -> Result<R, MatOppErr> {
+        Self::structure().trace(&self)
+    }
 }
 
 impl<R: StructuredType> Matrix<R>
@@ -1393,8 +1524,44 @@ where
         Self::structure().row_reduced_hermite_algorithm(self.clone())
     }
 
+    pub fn row_reduced_hermite_normal_form(&self) -> Self {
+        Self::structure().row_reduced_hermite_normal_form(self.clone())
+    }
+
     pub fn col_reduced_hermite_algorithm(&self) -> (Self, Self, Vec<usize>) {
         Self::structure().col_reduced_hermite_algorithm(self.clone())
+    }
+
+    pub fn col_reduced_hermite_normal_form(&self) -> Self {
+        Self::structure().col_reduced_hermite_normal_form(self.clone())
+    }
+}
+
+impl<R: StructuredType> Matrix<R>
+where
+    R::Structure: GreatestCommonDivisorStructure,
+{
+    pub fn factor_primitive(self) -> Option<(R, Matrix<R>)> {
+        Self::structure().factor_primitive(self)
+    }
+
+    pub fn primitive_part(self) -> Option<Matrix<R>> {
+        Self::structure().primitive_part(self)
+    }
+}
+
+impl<F: StructuredType> Matrix<F>
+where
+    F::Structure: FieldOfFractionsStructure,
+    <F::Structure as FieldOfFractionsStructure>::RS: GreatestCommonDivisorStructure,
+{
+    pub fn factor_primitive_fof(
+        &self,
+    ) -> (
+        F,
+        Matrix<<<F::Structure as FieldOfFractionsStructure>::RS as Structure>::Set>,
+    ) {
+        Self::structure().factor_primitive_fof(self)
     }
 }
 
@@ -1460,6 +1627,8 @@ mod tests {
             dim1: 3,
             dim2: 4,
             transpose: false,
+            flip_rows: false,
+            flip_cols: false,
             elems: vec![
                 Integer::from(1),
                 Integer::from(2),
@@ -1477,6 +1646,8 @@ mod tests {
             dim1: 2,
             dim2: 3,
             transpose: true,
+            flip_rows: false,
+            flip_cols: false,
             elems: vec![
                 Integer::from(1),
                 Integer::from(2),
@@ -1495,6 +1666,8 @@ mod tests {
             dim1: 2,
             dim2: 2,
             transpose: false,
+            flip_rows: false,
+            flip_cols: false,
             elems: vec![
                 Integer::from(0),
                 Integer::from(1),
@@ -1508,6 +1681,8 @@ mod tests {
             dim1: 2,
             dim2: 2,
             transpose: true,
+            flip_rows: false,
+            flip_cols: false,
             elems: vec![
                 Integer::from(0),
                 Integer::from(2),
@@ -1521,12 +1696,83 @@ mod tests {
     }
 
     #[test]
+    fn flip_axes_eq() {
+        let mut a = Matrix::from_rows(vec![
+            vec![Integer::from(1), Integer::from(2)],
+            vec![Integer::from(3), Integer::from(4)],
+        ]);
+        a.pprint();
+        println!("flip rows");
+        a.flip_rows_mut();
+        a.pprint();
+        assert_eq!(
+            a,
+            Matrix::from_rows(vec![
+                vec![Integer::from(3), Integer::from(4)],
+                vec![Integer::from(1), Integer::from(2)],
+            ])
+        );
+        println!("transpose");
+        a.transpose_mut();
+        a.pprint();
+        assert_eq!(
+            a,
+            Matrix::from_rows(vec![
+                vec![Integer::from(3), Integer::from(1)],
+                vec![Integer::from(4), Integer::from(2)],
+            ])
+        );
+        println!("flip rows");
+        a.flip_rows_mut();
+        a.pprint();
+        assert_eq!(
+            a,
+            Matrix::from_rows(vec![
+                vec![Integer::from(4), Integer::from(2)],
+                vec![Integer::from(3), Integer::from(1)],
+            ])
+        );
+        println!("flip cols");
+        a.flip_cols_mut();
+        a.pprint();
+        assert_eq!(
+            a,
+            Matrix::from_rows(vec![
+                vec![Integer::from(2), Integer::from(4)],
+                vec![Integer::from(1), Integer::from(3)],
+            ])
+        );
+        println!("transpose");
+        a.transpose_mut();
+        a.pprint();
+        assert_eq!(
+            a,
+            Matrix::from_rows(vec![
+                vec![Integer::from(2), Integer::from(1)],
+                vec![Integer::from(4), Integer::from(3)],
+            ])
+        );
+        println!("flip cols");
+        a.flip_cols_mut();
+        a.pprint();
+        assert_eq!(
+            a,
+            Matrix::from_rows(vec![
+                vec![Integer::from(1), Integer::from(2)],
+                vec![Integer::from(3), Integer::from(4)],
+            ])
+        );
+    }
+
+    #[test]
     fn add() {
         {
             let mut a = Matrix {
                 dim1: 2,
                 dim2: 3,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(1),
                     Integer::from(2),
@@ -1542,6 +1788,8 @@ mod tests {
                 dim1: 2,
                 dim2: 3,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(1),
                     Integer::from(2),
@@ -1557,6 +1805,8 @@ mod tests {
                 dim1: 2,
                 dim2: 3,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(2),
                     Integer::from(4),
@@ -1578,6 +1828,8 @@ mod tests {
                 dim1: 3,
                 dim2: 2,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(1),
                     Integer::from(2),
@@ -1593,6 +1845,8 @@ mod tests {
                 dim1: 2,
                 dim2: 3,
                 transpose: true,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(10),
                     Integer::from(20),
@@ -1608,6 +1862,8 @@ mod tests {
                 dim1: 3,
                 dim2: 2,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(11),
                     Integer::from(42),
@@ -1629,6 +1885,8 @@ mod tests {
                 dim1: 3,
                 dim2: 2,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(1),
                     Integer::from(2),
@@ -1644,6 +1902,8 @@ mod tests {
                 dim1: 2,
                 dim2: 3,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(1),
                     Integer::from(2),
@@ -1667,6 +1927,8 @@ mod tests {
                 dim1: 2,
                 dim2: 3,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(1),
                     Integer::from(2),
@@ -1682,6 +1944,8 @@ mod tests {
                 dim1: 2,
                 dim2: 3,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(1),
                     Integer::from(2),
@@ -1697,6 +1961,8 @@ mod tests {
                 dim1: 2,
                 dim2: 3,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(2),
                     Integer::from(4),
@@ -1719,6 +1985,8 @@ mod tests {
                 dim1: 2,
                 dim2: 4,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(3),
                     Integer::from(2),
@@ -1736,6 +2004,8 @@ mod tests {
                 dim1: 4,
                 dim2: 3,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(2),
                     Integer::from(9),
@@ -1757,6 +2027,8 @@ mod tests {
                 dim1: 2,
                 dim2: 3,
                 transpose: false,
+                flip_rows: false,
+                flip_cols: false,
                 elems: vec![
                     Integer::from(50),
                     Integer::from(42),

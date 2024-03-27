@@ -6,7 +6,6 @@ use itertools::Itertools;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-
 use crate::rings::linear::matrix::*;
 
 use super::super::ring_structure::factorization::*;
@@ -870,6 +869,10 @@ where
     //find p(q(x))
     pub fn compose(p: &Self, q: &Self) -> Self {
         Self::structure().compose(p, q)
+    }
+
+    pub fn num_coeffs(&self) -> usize {
+        Self::structure().num_coeffs(self)
     }
 
     //if n = deg(p)

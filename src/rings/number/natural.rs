@@ -3,6 +3,22 @@ use std::{collections::HashMap, f32::NAN};
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::natural::Natural;
 
+pub fn nat_to_usize(n: &Natural) -> Result<usize, ()> {
+    let limbs = n.to_limbs_asc();
+    if limbs.len() == 0 {
+        Ok(0)
+    } else if limbs.len() == 1 {
+        let n = limbs[0];
+        if Natural::from(n) > Natural::from(usize::MAX) {
+            Err(())
+        } else {
+            Ok(n as usize)
+        }
+    } else {
+        Err(())
+    }
+}
+
 pub struct NaturalPrimeGenerator {
     n: Natural,
     primes: Vec<Natural>,
@@ -84,6 +100,13 @@ pub fn choose(a: usize, b: usize) -> Natural {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_nat_to_usize() {
+        assert_eq!(nat_to_usize(&Natural::from(0u8)).unwrap(), 0);
+        assert_eq!(nat_to_usize(&Natural::from(1u8)).unwrap(), 1);
+        assert_eq!(nat_to_usize(&Natural::from(2u8)).unwrap(), 2);
+    }
 
     #[test]
     fn test_choose() {
