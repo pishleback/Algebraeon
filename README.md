@@ -17,9 +17,11 @@ Code for doing maths on finite sets
  - Real root arithmetic
  - Complex root isolation
  - Zassenhaus algorithm for factoring polynomials over the integers
+ - Complex root arithmetic
 
 ## Planned Features
- - Complex root arithmetic
+ - Gram–Schmidt algorithm
+ - LLL basis reduction algorithm
  - Jordan normal form of a matrix
  - Universal cyclotomic field
  - Ideals in algebraic number fields
