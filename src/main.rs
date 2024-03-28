@@ -112,15 +112,56 @@ fn main() {
     use malachite_nz::integer::Integer;
     use malachite_nz::natural::Natural;
     use malachite_q::Rational;
+    use crate::rings::number::algebraic::isolated_roots::*;
+    use crate::rings::linear::matrix::*;
+
 
     use crate::rings::polynomial::polynomial::*;
 
-    let a = Rational::from(5);
-    println!("{:?}", a.conj());
+    let i = &ComplexAlgebraic::i().into_ring();
 
-    // let x = &Polynomial::<Rational>::var().into_ring();
-    // let f = (x.pow(2) - 15).into_set();
-    // println!("{}", f.factor().unwrap());
-    // let anf = new_anf(f);
-    // println!("{:?}", anf.compute_integral_basis());
+        let mat = Matrix::from_rows(vec![
+            vec![
+                (1 + 0 * i).into_set(),
+                (1 * i).into_set(),
+            ],
+            vec![
+                (1 + 0 * i).into_set(),
+                (1 + 0 * i).into_set(),
+            ],
+
+        ]);
+        mat.pprint();
+        mat.gram_schmidt_col_orthogonalization().pprint();
+
+        let mat = Matrix::from_rows(vec![
+            vec![
+                (-2 + 2 * i).into_set(),
+                (7 + 3 * i).into_set(),
+                (7 + 3 * i).into_set(),
+                (-5 + 4 * i).into_set(),
+            ],
+            vec![
+                (3 + 3 * i).into_set(),
+                (-2 + 4 * i).into_set(),
+                (6 + 2 * i).into_set(),
+                (-1 + 4 * i).into_set(),
+            ],
+            vec![
+                (2 + 2 * i).into_set(),
+                (8 + 0 * i).into_set(),
+                (-9 + 1 * i).into_set(),
+                (-7 + 5 * i).into_set(),
+            ],
+            vec![
+                (8 + 2 * i).into_set(),
+                (-9 + 0 * i).into_set(),
+                (6 + 3 * i).into_set(),
+                (-4 + 4 * i).into_set(),
+            ],
+        ]);
+        mat.pprint();
+        mat.clone().gram_schmidt_col_orthogonalization().pprint();
+        mat.presentation_matrix().unwrap().pprint();
+        mat.presentation_matrix().unwrap().smith_algorithm().1.pprint();
 }

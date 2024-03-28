@@ -79,25 +79,34 @@ fn root_prod_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomia
 
 fn root_pos_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomial<Integer> {
     debug_assert!(rat > &Rational::ZERO);
+    debug_assert!(poly.is_irreducible());
     //we are multiplying by a so need to replace f(x) with f(x/a)
     //e.g. f(x) = x-1 and multiply root by 3 then replace f(x) with
     //f(x/3) = 3/x-1 = x-3
     //e.g. f(x) = 1 + x + x^2 replace it with f(d/n * x) = 1 + d/n x + d^2/n^2 x^2 = n^2 + ndx + d^2 x
 
-    Polynomial::from_coeffs({
+    // println!("poly = {}", poly);
+    // println!("rat = {}", rat);
+
+    let rat_mul_poly = Polynomial::from_coeffs({
         let degree = poly.degree().unwrap();
         let (n, d) = (Rational::numerator(rat), Rational::denominator(rat));
         let mut n_pows = vec![Integer::from(1)];
         let mut d_pows = vec![Integer::from(1)];
 
         {
-            let n_pow = n;
-            let d_pow = d;
+            let mut n_pow = n.clone();
+            let mut d_pow = d.clone();
             for _i in 0..degree {
                 n_pows.push(n_pow.clone());
                 d_pows.push(d_pow.clone());
+                n_pow *= &n;
+                d_pow *= &d;
             }
         }
+
+        // println!("n_pows = {:?}", n_pows);
+        // println!("d_pows = {:?}", d_pows);
 
         debug_assert_eq!(n_pows.len(), degree + 1);
         debug_assert_eq!(d_pows.len(), degree + 1);
@@ -109,7 +118,14 @@ fn root_pos_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomia
             .map(|(i, c)| &d_pows[i] * &n_pows[degree - i] * c)
             .collect();
         coeffs
-    })
+    }).primitive_part().unwrap();
+
+    // println!("rat_mul_poly = {}", rat_mul_poly);
+    // println!("rat_mul_poly = {}", rat_mul_poly.factor().unwrap());
+
+    debug_assert!(rat_mul_poly.is_irreducible());
+
+    rat_mul_poly
 }
 
 fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
@@ -2179,7 +2195,8 @@ impl ComplexAlgebraicRoot {
             }
         }
 
-        debug_assert!(self.check_invariants().is_ok());
+        #[cfg(debug_assertions)]
+        self.check_invariants().unwrap();
     }
 
     pub fn refine_to_accuracy(&mut self, accuracy: &Rational) {
@@ -2338,6 +2355,21 @@ impl Ord for RealAlgebraic {
 pub enum ComplexAlgebraic {
     Real(RealAlgebraic),
     Complex(ComplexAlgebraicRoot),
+}
+
+impl ComplexAlgebraic {
+    pub fn i() -> Self {
+        let i = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
+            tight_a: Rational::from_integers(Integer::from(-1), Integer::from(1)),
+            tight_b: Rational::from_integers(Integer::from(1), Integer::from(1)),
+            tight_c: Rational::from_integers(Integer::from(0), Integer::from(1)),
+            tight_d: Rational::from_integers(Integer::from(2), Integer::from(1)),
+            poly: Polynomial::from_coeffs(vec![Integer::ONE, Integer::ZERO, Integer::ONE]),
+        });
+        #[cfg(debug_assertions)]
+        i.check_invariants().unwrap();
+        i
+    }
 }
 
 impl ComplexAlgebraic {
@@ -4120,5 +4152,11 @@ mod tests {
                 ComplexAlgebraic::one()
             );
         }
+    }
+
+    #[test]
+    fn test_complex_opps() {
+        let i = &ComplexAlgebraic::i().into_ring();
+        println!("{}", 2 * i);
     }
 }

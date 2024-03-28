@@ -294,18 +294,20 @@ impl<RS: DisplayableStructure> MatrixStructure<RS> {
         let cols_widths: Vec<usize> = (0..mat.cols())
             .map(|c| {
                 (0..mat.rows())
-                    .map(|r| str_rows[r][c].len())
+                    .map(|r| str_rows[r][c].chars().count())
                     .fold(0usize, |a, b| a.max(b))
             })
             .collect();
 
         for r in 0..mat.rows() {
             for c in 0..mat.cols() {
-                while str_rows[r][c].len() < cols_widths[c] {
+                while str_rows[r][c].chars().count() < cols_widths[c] {
                     str_rows[r][c].push(' ');
                 }
+                debug_assert_eq!(str_rows[r][c].chars().count(), cols_widths[c]);
             }
         }
+
         for r in 0..mat.rows() {
             if mat.rows() == 1 {
                 print!("( ");
@@ -1683,6 +1685,8 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
+    use crate::rings::number::algebraic::isolated_roots::ComplexAlgebraic;
+
     use super::*;
 
     #[test]
@@ -2736,6 +2740,49 @@ mod tests {
 
     #[test]
     fn complex_gram_schmidt() {
-        todo!("test gram schmidt with some complex numbers");
+        let i = &ComplexAlgebraic::i().into_ring();
+
+        let mat = Matrix::from_rows(vec![
+            vec![
+                (1 + 0 * i).into_set(),
+                (1 * i).into_set(),
+            ],
+            vec![
+                (1 + 0 * i).into_set(),
+                (1 + 0 * i).into_set(),
+            ],
+
+        ]);
+        mat.pprint();
+        mat.gram_schmidt_col_orthogonalization().pprint();
+
+        let mat = Matrix::from_rows(vec![
+            vec![
+                (-2 + 2 * i).into_set(),
+                (7 + 3 * i).into_set(),
+                (7 + 3 * i).into_set(),
+                (-5 + 4 * i).into_set(),
+            ],
+            vec![
+                (3 + 3 * i).into_set(),
+                (-2 + 4 * i).into_set(),
+                (6 + 2 * i).into_set(),
+                (-1 + 4 * i).into_set(),
+            ],
+            vec![
+                (2 + 2 * i).into_set(),
+                (8 + 0 * i).into_set(),
+                (-9 + 1 * i).into_set(),
+                (-7 + 5 * i).into_set(),
+            ],
+            vec![
+                (8 + 2 * i).into_set(),
+                (-9 + 0 * i).into_set(),
+                (6 + 3 * i).into_set(),
+                (-4 + 4 * i).into_set(),
+            ],
+        ]);
+        mat.pprint();
+        mat.clone().gram_schmidt_col_orthogonalization().pprint();
     }
 }
