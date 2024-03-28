@@ -1,6 +1,8 @@
 use std::{borrow::Borrow, fmt::Debug, rc::Rc};
 
 use malachite_base::num::arithmetic::traits::UnsignedAbs;
+use malachite_base::num::basic::traits::One;
+use malachite_base::num::basic::traits::Two;
 use malachite_base::num::logic::traits::BitIterable;
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
@@ -359,17 +361,51 @@ impl<RS: CharZeroStructure> InfiniteStructure for RS {
     }
 }
 
-pub trait RealStructure: CharZeroStructure {
+//is a subset of the complex numbers
+pub trait ComplexSubsetStructure: Structure {}
+
+//is a subset of the real numbers
+pub trait RealSubsetStructure: ComplexSubsetStructure {}
+
+pub trait RealRoundingStructure: RealSubsetStructure {
+    fn floor(&self, x: &Self::Set) -> Integer; //round down
+    fn ceil(&self, x: &Self::Set) -> Integer; //round up
+    fn round(&self, x: &Self::Set) -> Integer; //round closets, either direction is fine if mid way
+
+    /*
+    fn ceil(&self, x: &Self::Set) -> Integer {
+        -self.floor(&self.neg(x))
+    }
+    fn round(&self, x: &Self::Set) -> Integer {
+        self.floor(&self.add(
+            x,
+            &self.from_rat(&Rational::from_integers(Integer::ONE, Integer::TWO)).unwrap(),
+        ))
+    }
+    */
+}
+
+pub trait RealToFloatStructure: RealSubsetStructure {
     fn as_f64(&self, x: &Self::Set) -> f64;
     fn as_f32(&self, x: &Self::Set) -> f32 {
         self.as_f64(x) as f32
     }
 }
 
-pub trait DenseRealStructure: RealStructure {
+pub trait RealFromFloatStructure: RealSubsetStructure {
     fn from_f64_approx(&self, x: f64) -> Self::Set;
     fn from_f32_approx(&self, x: f32) -> Self::Set {
         self.from_f64_approx(x as f64)
+    }
+}
+
+pub trait ComplexConjugateStructure: Structure {
+    fn conjugate(&self, x: &Self::Set) -> Self::Set;
+}
+
+impl<RS: RealSubsetStructure> ComplexConjugateStructure for RS {
+    fn conjugate(&self, x: &Self::Set) -> Self::Set {
+        x.clone()
     }
 }
 
@@ -459,9 +495,16 @@ pub trait FieldOfFractionsStructure: FieldStructure {
 
 impl<FS: FieldOfFractionsStructure> CharZeroStructure for FS where FS::RS: CharZeroStructure {}
 
-impl<FS: FieldOfFractionsStructure> RealStructure for FS
+impl<FS: FieldOfFractionsStructure> ComplexSubsetStructure for FS where
+    FS::RS: ComplexSubsetStructure
+{
+}
+
+impl<FS: FieldOfFractionsStructure> RealSubsetStructure for FS where FS::RS: RealSubsetStructure {}
+
+impl<FS: FieldOfFractionsStructure> RealToFloatStructure for FS
 where
-    FS::RS: RealStructure,
+    FS::RS: RealToFloatStructure,
 {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         let base_ring = self.base_ring_structure();

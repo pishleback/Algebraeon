@@ -115,9 +115,12 @@ fn main() {
 
     use crate::rings::polynomial::polynomial::*;
 
-    let x = &Polynomial::<Rational>::var().into_ring();
-    let f = (x.pow(2) - 15).into_set();
-    println!("{}", f.factor().unwrap());
-    let anf = new_anf(f);
-    println!("{:?}", anf.compute_integral_basis());
+    let a = Rational::from(5);
+    println!("{:?}", a.conj());
+
+    // let x = &Polynomial::<Rational>::var().into_ring();
+    // let f = (x.pow(2) - 15).into_set();
+    // println!("{}", f.factor().unwrap());
+    // let anf = new_anf(f);
+    // println!("{:?}", anf.compute_integral_basis());
 }

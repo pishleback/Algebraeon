@@ -1,15 +1,21 @@
+use std::f32::RADIX;
 use std::fmt::Display;
 use std::ops::Mul;
 use std::rc::Rc;
+use std::str::FromStr;
 
 use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::NegAssign;
 use malachite_base::num::basic::traits::One;
+use malachite_base::num::basic::traits::OneHalf;
 use malachite_base::num::basic::traits::Two;
+use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
+use malachite_q::arithmetic::traits::SimplestRationalInInterval;
 use malachite_q::Rational;
 
+use crate::rings::number::algebraic::bisection_gen::RationalSimpleBetweenGenerator;
 use crate::rings::number::natural::*;
 use crate::rings::polynomial::multipoly::*;
 use crate::rings::polynomial::polynomial::*;
@@ -71,6 +77,46 @@ fn root_prod_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomia
     root_prod_poly.primitive_squarefree_part()
 }
 
+fn root_pos_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomial<Integer> {
+    debug_assert!(rat > &Rational::ZERO);
+    //we are multiplying by a so need to replace f(x) with f(x/a)
+    //e.g. f(x) = x-1 and multiply root by 3 then replace f(x) with
+    //f(x/3) = 3/x-1 = x-3
+    //e.g. f(x) = 1 + x + x^2 replace it with f(d/n * x) = 1 + d/n x + d^2/n^2 x^2 = n^2 + ndx + d^2 x
+
+    Polynomial::from_coeffs({
+        let degree = poly.degree().unwrap();
+        let (n, d) = (Rational::numerator(rat), Rational::denominator(rat));
+        let mut n_pows = vec![Integer::from(1)];
+        let mut d_pows = vec![Integer::from(1)];
+
+        {
+            let n_pow = n;
+            let d_pow = d;
+            for _i in 0..degree {
+                n_pows.push(n_pow.clone());
+                d_pows.push(d_pow.clone());
+            }
+        }
+
+        debug_assert_eq!(n_pows.len(), degree + 1);
+        debug_assert_eq!(d_pows.len(), degree + 1);
+
+        let coeffs = poly
+            .into_coeffs()
+            .iter()
+            .enumerate()
+            .map(|(i, c)| &d_pows[i] * &n_pows[degree - i] * c)
+            .collect();
+        coeffs
+    })
+}
+
+fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
+    debug_assert_eq!(poly.degree().unwrap(), 1);
+    -Rational::from_integers(poly.coeff(0), poly.coeff(1))
+}
+
 fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Rational {
     poly.apply_map(|x| Rational::from(x)).evaluate(&val)
 }
@@ -86,47 +132,94 @@ fn bisect_box(
     (usize, Rational, Rational, Rational, Rational),
     (usize, Rational, Rational, Rational, Rational),
 ) {
-    let pgen = NaturalPrimeGenerator::new();
-    for y in pgen {
-        let mut x = Natural::from(1u8);
-        while x < y {
-            {
-                let f = Rational::from_naturals_ref(&x, &y);
-
-                let ba = b - a;
-                let dc = d - c;
-
-                let ((a1, b1, c1, d1), (a2, b2, c2, d2)) = {
-                    if ba >= dc {
-                        let m = a + f * ba;
-                        (
-                            (a.clone(), m.clone(), c.clone(), d.clone()),
-                            (m, b.clone(), c.clone(), d.clone()),
-                        )
-                    } else {
-                        let m = c + f * dc;
-                        (
-                            (a.clone(), b.clone(), c.clone(), m.clone()),
-                            (a.clone(), b.clone(), m, d.clone()),
-                        )
-                    }
-                };
-
-                match (
-                    poly.count_complex_roots(&a1, &b1, &c1, &d1),
-                    poly.count_complex_roots(&a2, &b2, &c2, &d2),
-                ) {
-                    (Some(n1), Some(n2)) => {
-                        debug_assert_eq!(n1 + n2, n);
-                        return ((n1, a1, b1, c1, d1), (n2, a2, b2, c2, d2));
-                    }
-                    _ => {}
+    let ba = b - a;
+    let dc = d - c;
+    if ba >= dc {
+        //bisect (a, b)
+        for m in RationalSimpleBetweenGenerator::new_between_middle(
+            a,
+            b,
+            &Rational::from_integers(Integer::from(1), Integer::from(3)),
+        ) {
+            match (
+                poly.count_complex_roots(&a, &m, &c, &d),
+                poly.count_complex_roots(&m, &b, &c, &d),
+            ) {
+                (Some(n1), Some(n2)) => {
+                    debug_assert_eq!(n1 + n2, n);
+                    return (
+                        (n1, a.clone(), m.clone(), c.clone(), d.clone()),
+                        (n2, m, b.clone(), c.clone(), d.clone()),
+                    );
                 }
-                x += Natural::from(1u8);
+                _ => {}
+            }
+        }
+    } else {
+        //bisect (c, d)
+        for m in RationalSimpleBetweenGenerator::new_between_middle(
+            c,
+            d,
+            &Rational::from_integers(Integer::from(1), Integer::from(3)),
+        ) {
+            match (
+                poly.count_complex_roots(&a, &b, &c, &m),
+                poly.count_complex_roots(&a, &b, &m, &d),
+            ) {
+                (Some(n1), Some(n2)) => {
+                    debug_assert_eq!(n1 + n2, n);
+                    return (
+                        (n1, a.clone(), b.clone(), c.clone(), m.clone()),
+                        (n2, a.clone(), b.clone(), m, d.clone()),
+                    );
+                }
+                _ => {}
             }
         }
     }
-    panic!();
+    unreachable!()
+
+    // let pgen = NaturalPrimeGenerator::new();
+    // for p in pgen {
+    //     let mut x = Natural::from(1u8);
+    //     while x < p {
+    //         {
+    //             let f = Rational::from_naturals_ref(&x, &p);
+
+    //             let ba = b - a;
+    //             let dc = d - c;
+
+    //             let ((a1, b1, c1, d1), (a2, b2, c2, d2)) = {
+    //                 if ba >= dc {
+    //                     let m = a + f * ba;
+    //                     (
+    //                         (a.clone(), m.clone(), c.clone(), d.clone()),
+    //                         (m, b.clone(), c.clone(), d.clone()),
+    //                     )
+    //                 } else {
+    //                     let m = c + f * dc;
+    //                     (
+    //                         (a.clone(), b.clone(), c.clone(), m.clone()),
+    //                         (a.clone(), b.clone(), m, d.clone()),
+    //                     )
+    //                 }
+    //             };
+
+    //             match (
+    //                 poly.count_complex_roots(&a1, &b1, &c1, &d1),
+    //                 poly.count_complex_roots(&a2, &b2, &c2, &d2),
+    //             ) {
+    //                 (Some(n1), Some(n2)) => {
+    //                     debug_assert_eq!(n1 + n2, n);
+    //                     return ((n1, a1, b1, c1, d1), (n2, a2, b2, c2, d2));
+    //                 }
+    //                 _ => {}
+    //             }
+    //             x += Natural::from(1u8);
+    //         }
+    //     }
+    // }
+    // unreachable!();
 }
 
 #[derive(Debug, Clone)]
@@ -399,7 +492,14 @@ impl SquarefreePolyRealRoots {
         match &mut self.intervals[idx] {
             SquarefreePolyRealRootInterval::Rational(_a) => {}
             SquarefreePolyRealRootInterval::Real(a, b, dir) => {
-                let m = (&*a + &*b) / Rational::from(2);
+                let m = RationalSimpleBetweenGenerator::new_between_middle(
+                    a,
+                    b,
+                    &Rational::from_integers(Integer::from(1), Integer::from(3)),
+                )
+                .next()
+                .unwrap();
+
                 match evaluate_at_rational(&self.poly_sqfr, &m).cmp(&Rational::from(0)) {
                     std::cmp::Ordering::Less => match dir {
                         true => {
@@ -446,10 +546,7 @@ impl SquarefreePolyRealRoots {
                     }
                     SquarefreePolyRealRootInterval::Real(_, _, _) => {
                         // panic!("degree 1 polynomial should have had rational root found exactly");
-                        vec![RealAlgebraic::Rational(-Rational::from_integers(
-                            self.poly_sqfr.coeff(0),
-                            self.poly_sqfr.coeff(1),
-                        ))]
+                        vec![RealAlgebraic::Rational(unique_linear_root(&self.poly_sqfr))]
                     }
                 }
             } else {
@@ -780,7 +877,7 @@ impl Polynomial<Integer> {
         } else if d == 1 {
             //poly = a+bx
             //root = -a/b
-            let root = -Rational::from(self.coeff(0)) / Rational::from(self.coeff(1));
+            let root = unique_linear_root(&self);
 
             if {
                 match opt_a {
@@ -1201,7 +1298,7 @@ impl Polynomial<Integer> {
         let (c_horz_re, c_horz_im) = self.at_fixed_im(c);
         let (d_horz_re, d_horz_im) = self.at_fixed_im(d);
 
-        // println!("poly = {} abcd = {} {} {} {}", Polynomial::to_string(&poly), a, b, c, d);
+        // println!("poly = {} abcd = {} {} {} {}", &self, a, b, c, d);
         // println!(
         //     "a_vert_re = {}, a_vert_im = {}",
         //     Polynomial::to_string(&a_vert_re),
@@ -1257,7 +1354,7 @@ impl Polynomial<Integer> {
         //     evaluate_at_rational(&d_horz_im, b)
         // );
 
-        //compute squarefree versions for when only care about the roots without multiplicity
+        //compute squarefree versions because when only care about the roots without multiplicity
         let a_vert_re_sqfr = a_vert_re.clone().primitive_squarefree_part();
         let a_vert_im_sqfr = a_vert_im.clone().primitive_squarefree_part();
         let b_vert_re_sqfr = b_vert_re.clone().primitive_squarefree_part();
@@ -1857,7 +1954,13 @@ impl RealAlgebraicRoot {
     }
 
     pub fn refine(&mut self) {
-        let m = (&self.tight_a + &self.tight_b) / Rational::from(2);
+        let m = RationalSimpleBetweenGenerator::new_between_middle(
+            &self.tight_a,
+            &self.tight_b,
+            &Rational::from_integers(Integer::from(1), Integer::from(3)),
+        )
+        .next()
+        .unwrap();
         let m_sign = self.evaluate(&m) > Rational::from(0);
         match self.dir == m_sign {
             true => {
@@ -2072,7 +2175,7 @@ impl ComplexAlgebraicRoot {
                 self.tight_d = d2;
             }
             _ => {
-                panic!();
+                unreachable!();
             }
         }
 
@@ -2447,37 +2550,7 @@ impl RingStructure for CannonicalStructure<RealAlgebraic> {
                     elem.wide_b = UpperBound::Finite(b * rat);
                 }
             }
-            //we are multiplying by a so need to replace f(x) with f(x/a)
-            //e.g. f(x) = x-1 and multiply root by 3 then replace f(x) with
-            //f(x/3) = 3/x-1 = x-3
-            //e.g. f(x) = 1 + x + x^2 replace it with f(d/n * x) = 1 + d/n x + d^2/n^2 x^2 = n^2 + ndx + d^2 x
-            elem.poly = Polynomial::from_coeffs({
-                let degree = elem.poly.degree().unwrap();
-                let (n, d) = (Rational::numerator(rat), Rational::denominator(rat));
-                let mut n_pows = vec![Integer::from(1)];
-                let mut d_pows = vec![Integer::from(1)];
-
-                {
-                    let n_pow = n;
-                    let d_pow = d;
-                    for _i in 0..degree {
-                        n_pows.push(n_pow.clone());
-                        d_pows.push(d_pow.clone());
-                    }
-                }
-
-                debug_assert_eq!(n_pows.len(), degree + 1);
-                debug_assert_eq!(d_pows.len(), degree + 1);
-
-                let coeffs = elem
-                    .poly
-                    .into_coeffs()
-                    .iter()
-                    .enumerate()
-                    .map(|(i, c)| &d_pows[i] * &n_pows[degree - i] * c)
-                    .collect();
-                coeffs
-            });
+            elem.poly = root_pos_rat_mul_poly(elem.poly, rat);
             debug_assert!(elem.check_invariants().is_ok());
             elem
         }
@@ -2628,6 +2701,30 @@ impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
 
 impl FieldStructure for CannonicalStructure<RealAlgebraic> {}
 
+impl CharZeroStructure for CannonicalStructure<RealAlgebraic> {}
+
+impl ComplexSubsetStructure for CannonicalStructure<RealAlgebraic> {}
+
+impl RealSubsetStructure for CannonicalStructure<RealAlgebraic> {}
+
+impl RealToFloatStructure for CannonicalStructure<RealAlgebraic> {
+    fn as_f64(&self, x: &Self::Set) -> f64 {
+        todo!()
+    }
+}
+
+impl RealRoundingStructure for CannonicalStructure<RealAlgebraic> {
+    fn floor(&self, x: &Self::Set) -> Integer {
+        todo!()
+    }
+    fn ceil(&self, x: &Self::Set) -> Integer {
+        todo!()
+    }
+    fn round(&self, x: &Self::Set) -> Integer {
+        todo!()
+    }
+}
+
 impl PartialEq for ComplexAlgebraic {
     fn eq(&self, other: &Self) -> bool {
         Self::eq_mut(&mut self.clone(), &mut other.clone())
@@ -2696,49 +2793,58 @@ impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
                     cpx
                 }
                 RealAlgebraic::Real(mut real) => {
-                    let mut roots: Vec<_> = root_sum_poly(&cpx.poly, &real.poly)
-                        .primitive_squarefree_part()
-                        .all_complex_roots()
-                        .into_iter()
-                        .filter(|alg| match alg {
-                            ComplexAlgebraic::Real(_) => false,
-                            ComplexAlgebraic::Complex(_) => true,
-                        })
-                        .map(|alg| match alg {
-                            ComplexAlgebraic::Real(_) => panic!(),
-                            ComplexAlgebraic::Complex(cpx) => cpx,
-                        })
-                        .collect();
+                    let sum_poly = root_sum_poly(&cpx.poly, &real.poly).primitive_squarefree_part();
 
-                    let mut possible: std::collections::HashSet<_> = (0..roots.len()).collect();
-
-                    while possible.len() > 1 {
+                    loop {
                         let ans_tight_a = &cpx.tight_a + &real.tight_a;
                         let ans_tight_b = &cpx.tight_b + &real.tight_b;
                         let ans_tight_c = cpx.tight_c.clone();
                         let ans_tight_d = cpx.tight_d.clone();
-                        //filter out roots which dont overlap with the known range for the sum root
 
-                        possible = possible
-                            .into_iter()
-                            .filter(|i| {
-                                let possible_cpx_root = &roots[*i];
-                                &possible_cpx_root.tight_a < &ans_tight_b
-                                    && &ans_tight_a < &possible_cpx_root.tight_b
-                                    && &possible_cpx_root.tight_c < &ans_tight_d
-                                    && &ans_tight_c < &possible_cpx_root.tight_d
-                            })
-                            .collect();
+                        match sum_poly.count_complex_roots(
+                            &ans_tight_a,
+                            &ans_tight_b,
+                            &ans_tight_c,
+                            &ans_tight_d,
+                        ) {
+                            Some(count) => {
+                                if count == 0 {
+                                    unreachable!();
+                                } else if count == 1 {
+                                    for (irr_poly, k) in
+                                        sum_poly.factor().unwrap().unit_and_factors().1
+                                    {
+                                        debug_assert_eq!(k, Natural::ONE);
+                                        if irr_poly
+                                            .count_complex_roots(
+                                                &ans_tight_a,
+                                                &ans_tight_b,
+                                                &ans_tight_c,
+                                                &ans_tight_d,
+                                            )
+                                            .unwrap()
+                                            == 1
+                                        {
+                                            let ans = ComplexAlgebraicRoot {
+                                                tight_a: ans_tight_a,
+                                                tight_b: ans_tight_b,
+                                                tight_c: ans_tight_c,
+                                                tight_d: ans_tight_d,
+                                                poly: irr_poly,
+                                            };
+                                            #[cfg(debug_assertions)]
+                                            ans.check_invariants().unwrap();
+                                            return ans;
+                                        }
+                                    }
+                                }
+                            }
+                            None => {}
+                        }
 
                         cpx.refine();
                         real.refine();
-                        for i in &possible {
-                            roots[*i].refine();
-                        }
                     }
-                    assert_eq!(possible.len(), 1);
-                    let i = possible.into_iter().next().unwrap();
-                    roots.into_iter().nth(i).unwrap()
                 }
             }
         }
@@ -2757,71 +2863,418 @@ impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
                 let mut cpx1 = cpx1.clone();
                 let mut cpx2 = cpx2.clone();
 
-                let mut roots = root_sum_poly(&cpx1.poly, &cpx2.poly).all_complex_roots();
-                let mut possible: std::collections::HashSet<_> = (0..roots.len()).collect();
+                let sum_poly = root_sum_poly(&cpx1.poly, &cpx2.poly).primitive_squarefree_part();
 
-                while possible.len() > 1 {
+                loop {
                     let ans_tight_a = &cpx1.tight_a + &cpx2.tight_a;
                     let ans_tight_b = &cpx1.tight_b + &cpx2.tight_b;
                     let ans_tight_c = &cpx1.tight_c + &cpx2.tight_c;
                     let ans_tight_d = &cpx1.tight_d + &cpx2.tight_d;
-                    //filter out roots which dont overlap with the known range for the sum root
 
-                    possible = possible
-                        .into_iter()
-                        .filter(|i| match &roots[*i] {
-                            ComplexAlgebraic::Real(real) => match real {
-                                RealAlgebraic::Rational(rat) => {
-                                    &ans_tight_a < rat
-                                        && rat < &ans_tight_b
-                                        && &ans_tight_c < &Rational::from(0)
-                                        && &Rational::from(0) < &ans_tight_d
+                    match sum_poly.count_complex_roots(
+                        &ans_tight_a,
+                        &ans_tight_b,
+                        &ans_tight_c,
+                        &ans_tight_d,
+                    ) {
+                        Some(count) => {
+                            if count == 0 {
+                                unreachable!();
+                            } else if count == 1 {
+                                for (irr_poly, k) in sum_poly.factor().unwrap().unit_and_factors().1
+                                {
+                                    debug_assert_eq!(k, Natural::ONE);
+                                    if irr_poly
+                                        .count_complex_roots(
+                                            &ans_tight_a,
+                                            &ans_tight_b,
+                                            &ans_tight_c,
+                                            &ans_tight_d,
+                                        )
+                                        .unwrap()
+                                        == 1
+                                    {
+                                        let ans;
+                                        if irr_poly.degree().unwrap() == 1 {
+                                            ans = ComplexAlgebraic::Real(RealAlgebraic::Rational(
+                                                unique_linear_root(&irr_poly),
+                                            ));
+                                        } else {
+                                            ans = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
+                                                tight_a: ans_tight_a,
+                                                tight_b: ans_tight_b,
+                                                tight_c: ans_tight_c,
+                                                tight_d: ans_tight_d,
+                                                poly: irr_poly,
+                                            });
+                                        }
+                                        #[cfg(debug_assertions)]
+                                        ans.check_invariants().unwrap();
+                                        return ans;
+                                    }
                                 }
-                                RealAlgebraic::Real(real) => {
-                                    &real.tight_a < &ans_tight_b
-                                        && &ans_tight_a < &real.tight_b
-                                        && &ans_tight_c < &Rational::from(0)
-                                        && &Rational::from(0) < &ans_tight_d
-                                }
-                            },
-                            ComplexAlgebraic::Complex(cpx) => {
-                                &cpx.tight_a < &ans_tight_b
-                                    && &ans_tight_a < &cpx.tight_b
-                                    && &cpx.tight_c < &ans_tight_d
-                                    && &ans_tight_c < &cpx.tight_d
                             }
-                        })
-                        .collect();
+                        }
+                        None => {}
+                    }
 
                     cpx1.refine();
                     cpx2.refine();
-                    for i in &possible {
-                        match &mut roots[*i] {
-                            ComplexAlgebraic::Real(real) => match real {
-                                RealAlgebraic::Rational(_rat) => {}
-                                RealAlgebraic::Real(real) => real.refine(),
-                            },
-                            ComplexAlgebraic::Complex(cpx) => {
-                                cpx.refine();
-                            }
-                        }
-                    }
                 }
-                assert_eq!(possible.len(), 1);
-                let i = possible.into_iter().next().unwrap();
-                roots.into_iter().nth(i).unwrap()
             }
         }
     }
 
     fn mul(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
-        todo!()
+        fn mul_real(mut cpx: ComplexAlgebraicRoot, real: RealAlgebraic) -> ComplexAlgebraic {
+            match real {
+                RealAlgebraic::Rational(rat) => match rat.cmp(&Rational::ZERO) {
+                    std::cmp::Ordering::Equal => ComplexAlgebraic::zero(),
+                    std::cmp::Ordering::Less => mul_real(cpx.neg(), RealAlgebraic::Rational(-rat)),
+                    std::cmp::Ordering::Greater => {
+                        debug_assert!(rat > Rational::ZERO);
+                        cpx.tight_a *= &rat;
+                        cpx.tight_b *= &rat;
+                        cpx.tight_c *= &rat;
+                        cpx.tight_d *= &rat;
+                        cpx.poly = root_pos_rat_mul_poly(cpx.poly, &rat);
+                        #[cfg(debug_assertions)]
+                        cpx.check_invariants().is_ok();
+                        ComplexAlgebraic::Complex(cpx)
+                    }
+                },
+                RealAlgebraic::Real(mut real) => {
+                    let prod_poly =
+                        root_prod_poly(&cpx.poly, &real.poly).primitive_squarefree_part();
+
+                    loop {
+                        let mut pts_re = vec![];
+                        let mut pts_im = vec![];
+                        for (re, im) in [
+                            (&cpx.tight_a, &cpx.tight_c),
+                            (&cpx.tight_a, &cpx.tight_d),
+                            (&cpx.tight_b, &cpx.tight_c),
+                            (&cpx.tight_b, &cpx.tight_d),
+                        ] {
+                            for t in [&real.tight_a, &real.tight_b] {
+                                pts_re.push(t * re);
+                                pts_im.push(t * im);
+                            }
+                        }
+
+                        let ans_tight_a = pts_re.iter().min().unwrap().clone();
+                        let ans_tight_b = pts_re.into_iter().max().unwrap();
+                        let ans_tight_c = pts_im.iter().min().unwrap().clone();
+                        let ans_tight_d = pts_im.into_iter().max().unwrap();
+
+                        //allow the bounds to expand a little bit so that the bounds are simpler
+                        let diff_re = &ans_tight_b - &ans_tight_a;
+                        let diff_im = &ans_tight_d - &ans_tight_c;
+                        let ans_tight_a = Rational::simplest_rational_in_closed_interval(
+                            &(&ans_tight_a - (&diff_re * Rational::from_str("1/10").unwrap())),
+                            &ans_tight_a,
+                        );
+                        let ans_tight_b = Rational::simplest_rational_in_closed_interval(
+                            &ans_tight_b,
+                            &(&ans_tight_b + (&diff_re * Rational::from_str("1/10").unwrap())),
+                        );
+                        let ans_tight_c = Rational::simplest_rational_in_closed_interval(
+                            &(&ans_tight_c - (&diff_im * Rational::from_str("1/10").unwrap())),
+                            &ans_tight_c,
+                        );
+                        let ans_tight_d = Rational::simplest_rational_in_closed_interval(
+                            &ans_tight_d,
+                            &(&ans_tight_d + (&diff_im * Rational::from_str("1/10").unwrap())),
+                        );
+
+                        // println!("cpx1 = {:?}", cpx1);
+                        // println!("cpx2 = {:?}", cpx2);
+                        // println!(
+                        //     "abcd = {} {} {} {}",
+                        //     ans_tight_a, ans_tight_b, ans_tight_c, ans_tight_d
+                        // );
+
+                        match prod_poly.count_complex_roots(
+                            &ans_tight_a,
+                            &ans_tight_b,
+                            &ans_tight_c,
+                            &ans_tight_d,
+                        ) {
+                            Some(count) => {
+                                if count == 0 {
+                                    unreachable!();
+                                } else if count == 1 {
+                                    for (irr_poly, k) in
+                                        prod_poly.factor().unwrap().unit_and_factors().1
+                                    {
+                                        debug_assert_eq!(k, Natural::ONE);
+                                        if irr_poly
+                                            .count_complex_roots(
+                                                &ans_tight_a,
+                                                &ans_tight_b,
+                                                &ans_tight_c,
+                                                &ans_tight_d,
+                                            )
+                                            .unwrap()
+                                            == 1
+                                        {
+                                            let ans;
+
+                                            ans = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
+                                                tight_a: ans_tight_a,
+                                                tight_b: ans_tight_b,
+                                                tight_c: ans_tight_c,
+                                                tight_d: ans_tight_d,
+                                                poly: irr_poly,
+                                            });
+
+                                            #[cfg(debug_assertions)]
+                                            ans.check_invariants().unwrap();
+                                            return ans;
+                                        }
+                                    }
+                                }
+                            }
+                            None => {}
+                        }
+
+                        cpx.refine();
+                        real.refine();
+                    }
+                }
+            }
+        }
+
+        match (alg1, alg2) {
+            (ComplexAlgebraic::Real(real1), ComplexAlgebraic::Real(real2)) => {
+                ComplexAlgebraic::Real(RealAlgebraic::mul(real1, real2))
+            }
+            (ComplexAlgebraic::Real(real1), ComplexAlgebraic::Complex(cpx2)) => {
+                mul_real(cpx2.clone(), real1.clone())
+            }
+            (ComplexAlgebraic::Complex(cpx1), ComplexAlgebraic::Real(real2)) => {
+                mul_real(cpx1.clone(), real2.clone())
+            }
+            (ComplexAlgebraic::Complex(cpx1), ComplexAlgebraic::Complex(cpx2)) => {
+                let mut cpx1 = cpx1.clone();
+                let mut cpx2 = cpx2.clone();
+
+                let prod_poly = root_prod_poly(&cpx1.poly, &cpx2.poly).primitive_squarefree_part();
+
+                loop {
+                    let mut pts_re = vec![];
+                    let mut pts_im = vec![];
+                    for (re1, im1) in [
+                        (&cpx1.tight_a, &cpx1.tight_c),
+                        (&cpx1.tight_a, &cpx1.tight_d),
+                        (&cpx1.tight_b, &cpx1.tight_c),
+                        (&cpx1.tight_b, &cpx1.tight_d),
+                    ] {
+                        for (re2, im2) in [
+                            (&cpx2.tight_a, &cpx2.tight_c),
+                            (&cpx2.tight_a, &cpx2.tight_d),
+                            (&cpx2.tight_b, &cpx2.tight_c),
+                            (&cpx2.tight_b, &cpx2.tight_d),
+                        ] {
+                            pts_re.push(re1 * re2 - im1 * im2);
+                            pts_im.push(re1 * im2 + im1 * re2);
+                        }
+                    }
+
+                    let ans_tight_a = pts_re.iter().min().unwrap().clone();
+                    let ans_tight_b = pts_re.into_iter().max().unwrap();
+                    let ans_tight_c = pts_im.iter().min().unwrap().clone();
+                    let ans_tight_d = pts_im.into_iter().max().unwrap();
+
+                    //allow the bounds to expand a little bit so that the bounds are simpler
+                    let diff_re = &ans_tight_b - &ans_tight_a;
+                    let diff_im = &ans_tight_d - &ans_tight_c;
+                    let ans_tight_a = Rational::simplest_rational_in_closed_interval(
+                        &(&ans_tight_a - (&diff_re * Rational::from_str("1/10").unwrap())),
+                        &ans_tight_a,
+                    );
+                    let ans_tight_b = Rational::simplest_rational_in_closed_interval(
+                        &ans_tight_b,
+                        &(&ans_tight_b + (&diff_re * Rational::from_str("1/10").unwrap())),
+                    );
+                    let ans_tight_c = Rational::simplest_rational_in_closed_interval(
+                        &(&ans_tight_c - (&diff_im * Rational::from_str("1/10").unwrap())),
+                        &ans_tight_c,
+                    );
+                    let ans_tight_d = Rational::simplest_rational_in_closed_interval(
+                        &ans_tight_d,
+                        &(&ans_tight_d + (&diff_im * Rational::from_str("1/10").unwrap())),
+                    );
+
+                    // println!("cpx1 = {:?}", cpx1);
+                    // println!("cpx2 = {:?}", cpx2);
+                    // println!(
+                    //     "abcd = {} {} {} {}",
+                    //     ans_tight_a, ans_tight_b, ans_tight_c, ans_tight_d
+                    // );
+
+                    match prod_poly.count_complex_roots(
+                        &ans_tight_a,
+                        &ans_tight_b,
+                        &ans_tight_c,
+                        &ans_tight_d,
+                    ) {
+                        Some(count) => {
+                            if count == 0 {
+                                unreachable!();
+                            } else if count == 1 {
+                                for (irr_poly, k) in
+                                    prod_poly.factor().unwrap().unit_and_factors().1
+                                {
+                                    debug_assert_eq!(k, Natural::ONE);
+                                    if irr_poly
+                                        .count_complex_roots(
+                                            &ans_tight_a,
+                                            &ans_tight_b,
+                                            &ans_tight_c,
+                                            &ans_tight_d,
+                                        )
+                                        .unwrap()
+                                        == 1
+                                    {
+                                        let ans;
+                                        if irr_poly.degree().unwrap() == 1 {
+                                            ans = ComplexAlgebraic::Real(RealAlgebraic::Rational(
+                                                unique_linear_root(&irr_poly),
+                                            ));
+                                        } else {
+                                            ans = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
+                                                tight_a: ans_tight_a,
+                                                tight_b: ans_tight_b,
+                                                tight_c: ans_tight_c,
+                                                tight_d: ans_tight_d,
+                                                poly: irr_poly,
+                                            });
+                                        }
+                                        #[cfg(debug_assertions)]
+                                        ans.check_invariants().unwrap();
+                                        return ans;
+                                    }
+                                }
+                            }
+                        }
+                        None => {}
+                    }
+
+                    cpx1.refine();
+                    cpx2.refine();
+                }
+            }
+        }
     }
 }
 
 impl IntegralDomainStructure for CannonicalStructure<ComplexAlgebraic> {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        todo!()
+        match a {
+            ComplexAlgebraic::Real(a) => Ok(ComplexAlgebraic::Real(a.inv()?)),
+            ComplexAlgebraic::Complex(a) => {
+                let mut root = a.clone();
+
+                let inv_poly = Polynomial::from_coeffs(
+                    root.poly.clone().into_coeffs().into_iter().rev().collect(),
+                )
+                .fav_assoc();
+                debug_assert!(inv_poly.is_irreducible());
+
+                // println!("root = {} = {:?}", root, root);
+                // println!("inv_poly = {}", inv_poly);
+                // for root in inv_poly.all_complex_roots() {
+                //     println!("root = {}", root);
+                // }
+
+                // z = the root represented by self
+                // a = the center of the approximation
+                // eps = the radius of the approximation
+
+                //result used to get region which contains the reciprocal
+                // if for some 0 < lambda < 1 we have |z - a| < eps <= (1 - lambda) |a| then |1/z - 1/a| < eps / lambda |a|^2
+
+                loop {
+                    //estimate eps such that |z - a| < eps
+                    let eps = ((&root.tight_b - &root.tight_a) + (&root.tight_d - &root.tight_c))
+                        / Rational::TWO;
+
+                    let w_re = (&root.tight_a + &root.tight_b) / Rational::TWO;
+                    let w_im = (&root.tight_c + &root.tight_d) / Rational::TWO;
+                    let w_mag_sq = &w_re * &w_re + &w_im * &w_im;
+
+                    // println!(
+                    //     "w = {} + {} i",
+                    //     rat_to_string(w_re.clone()),
+                    //     rat_to_string(w_im.clone())
+                    // );
+
+                    //refine until eps < |a|
+                    if &eps * &eps > w_mag_sq {
+                        root.refine();
+                        continue;
+                    }
+
+                    // find 0 < lambda < 1 such that eps < (1 - lambda) * |a|
+                    let mut lambda = Rational::ONE_HALF;
+                    while &eps * &eps >= (Rational::ONE - &lambda) * &w_mag_sq {
+                        lambda = lambda * &Rational::ONE_HALF;
+                    }
+                    let lambda = lambda;
+                    // println!("lambda = {}", lambda);
+
+                    // |1/z - 1/a| < eps / lambda |a|^2
+
+                    let w_recip_re = w_re / &w_mag_sq;
+                    let w_recip_im = -w_im / &w_mag_sq;
+                    let delta = &eps / (lambda * w_mag_sq);
+
+                    let inv_tight_a = &w_recip_re - &delta;
+                    let inv_tight_b = &w_recip_re + &delta;
+                    let inv_tight_c = &w_recip_im - &delta;
+                    let inv_tight_d = &w_recip_im + &delta;
+
+                    // println!(
+                    //     "w_inv = {} + {} i",
+                    //     rat_to_string(w_recip_re),
+                    //     rat_to_string(w_recip_im)
+                    // );
+                    // println!(
+                    //     "eps = {}  delta = {}",
+                    //     rat_to_string(eps),
+                    //     rat_to_string(delta)
+                    // );
+
+                    match inv_poly.count_complex_roots(
+                        &inv_tight_a,
+                        &inv_tight_b,
+                        &inv_tight_c,
+                        &inv_tight_d,
+                    ) {
+                        Some(count) => {
+                            if count == 0 {
+                                unreachable!();
+                            } else if count == 1 {
+                                let ans = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
+                                    tight_a: inv_tight_a,
+                                    tight_b: inv_tight_b,
+                                    tight_c: inv_tight_c,
+                                    tight_d: inv_tight_d,
+                                    poly: inv_poly,
+                                });
+                                #[cfg(debug_assertions)]
+                                ans.check_invariants().unwrap();
+                                return Ok(ans);
+                            }
+                        }
+                        None => {}
+                    }
+
+                    root.refine();
+                }
+            }
+        }
     }
 
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
@@ -2830,6 +3283,19 @@ impl IntegralDomainStructure for CannonicalStructure<ComplexAlgebraic> {
 }
 
 impl FieldStructure for CannonicalStructure<ComplexAlgebraic> {}
+
+impl CharZeroStructure for CannonicalStructure<ComplexAlgebraic> {}
+
+impl ComplexSubsetStructure for CannonicalStructure<ComplexAlgebraic> {}
+
+impl ComplexConjugateStructure for CannonicalStructure<ComplexAlgebraic> {
+    fn conjugate(&self, x: &Self::Set) -> Self::Set {
+        match x {
+            ComplexAlgebraic::Real(x) => ComplexAlgebraic::Real(x.clone()),
+            ComplexAlgebraic::Complex(x) => ComplexAlgebraic::Complex(x.clone().conj()),
+        }
+    }
+}
 
 impl ComplexAlgebraic {
     pub fn min_poly(&self) -> Polynomial<Rational> {
@@ -3589,7 +4055,7 @@ mod tests {
         let f = Polynomial::from_coeffs(vec![
             Integer::from(7),
             Integer::from(-3),
-            Integer::from(-42),
+            Integer::from(42),
             Integer::from(9),
         ]);
         println!("f = {}", f);
@@ -3602,21 +4068,57 @@ mod tests {
         assert_eq!(
             s,
             ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from_integers(
-                Integer::from(14),
+                Integer::from(-14),
                 Integer::from(3)
             )))
         );
     }
 
-    /*
     #[test]
     fn test_complex_mul() {
-        todo!()
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(1),
+            Integer::from(0),
+            Integer::from(0),
+            Integer::from(1),
+        ]);
+        let roots = f.all_complex_roots();
+        let s = ComplexAlgebraic::product(roots.iter().collect());
+        println!("{:?}", s);
+        assert_eq!(s, ComplexAlgebraic::one().neg());
+
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(7),
+            Integer::from(-3),
+            Integer::from(42),
+            Integer::from(9),
+        ]);
+        println!("f = {}", f);
+        let roots = f.all_complex_roots();
+        for root in &roots {
+            println!("root = {}", root);
+        }
+        let s = ComplexAlgebraic::product(roots.iter().collect());
+        println!("root prod = {:?}", s);
+        assert_eq!(
+            s,
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from_integers(
+                Integer::from(-7),
+                Integer::from(9)
+            )))
+        );
     }
 
     #[test]
     fn test_complex_inv() {
-        todo!()
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let f = (x.pow(4) - x + 1).into_set();
+
+        for root in f.all_complex_roots() {
+            assert_eq!(
+                ComplexAlgebraic::mul(&root.inv().unwrap(), &root),
+                ComplexAlgebraic::one()
+            );
+        }
     }
-    */
 }

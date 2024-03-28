@@ -218,11 +218,25 @@ where
 {
 }
 
-impl<R: Ring> CharZero for R where Self::Structure: CharZeroStructure<Set = R> {}
+impl<R: StructuredType> CharZero for R where Self::Structure: CharZeroStructure<Set = R> {}
 
-pub trait RealDomain: CharZero
+pub trait ComplexConjugateOpps: StructuredType
 where
-    Self::Structure: RealStructure<Set = Self>,
+    Self::Structure: ComplexConjugateStructure<Set = Self>,
+{
+    fn conj(&self) -> Self {
+        Self::structure().conjugate(self)
+    }
+}
+
+impl<R: StructuredType> ComplexConjugateOpps for R where
+    Self::Structure: ComplexConjugateStructure<Set = R>
+{
+}
+
+pub trait RealToFloatOpps: StructuredType
+where
+    Self::Structure: RealToFloatStructure<Set = Self>,
 {
     fn as_f64(&self) -> f64 {
         Self::structure().as_f64(self)
@@ -233,11 +247,30 @@ where
     }
 }
 
-impl<R: CharZero> RealDomain for R where Self::Structure: RealStructure<Set = R> {}
+impl<R: StructuredType> RealToFloatOpps for R where Self::Structure: RealToFloatStructure<Set = R> {}
 
-pub trait DenseRealDomain: RealDomain
+pub trait RealRoundingOpps: StructuredType
 where
-    Self::Structure: DenseRealStructure<Set = Self>,
+    Self::Structure: RealRoundingStructure<Set = Self>,
+{
+    fn floor(&self) -> Integer {
+        Self::structure().floor(self)
+    }
+
+    fn ceil(&self) -> Integer {
+        Self::structure().ceil(self)
+    }
+
+    fn round(&self) -> Integer {
+        Self::structure().round(self)
+    }
+}
+
+impl<R: StructuredType> RealRoundingOpps for R where Self::Structure: RealRoundingStructure<Set = R> {}
+
+pub trait RealFromFloatOpps: StructuredType
+where
+    Self::Structure: RealFromFloatStructure<Set = Self>,
 {
     fn from_f64_approx(x: f64) -> Self {
         Self::structure().from_f64_approx(x)
@@ -248,7 +281,10 @@ where
     }
 }
 
-impl<R: RealDomain> DenseRealDomain for R where Self::Structure: DenseRealStructure<Set = R> {}
+impl<R: StructuredType> RealFromFloatOpps for R where
+    Self::Structure: RealFromFloatStructure<Set = R>
+{
+}
 
 pub trait FieldOfFractionsDomain: Ring
 where

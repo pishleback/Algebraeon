@@ -20,7 +20,6 @@ use crate::rings::structure::*;
 
 pub mod modulo;
 pub mod polynomial;
-pub mod lattice;
 
 impl StructuredType for Integer {
     type Structure = CannonicalStructure<Self>;
@@ -147,7 +146,11 @@ impl BezoutDomainStructure for CannonicalStructure<Integer> {
 
 impl CharZeroStructure for CannonicalStructure<Integer> {}
 
-impl RealStructure for CannonicalStructure<Integer> {
+impl ComplexSubsetStructure for CannonicalStructure<Integer> {}
+
+impl RealSubsetStructure for CannonicalStructure<Integer> {}
+
+impl RealToFloatStructure for CannonicalStructure<Integer> {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         if x < &0 {
             -self.as_f64(&-x)

@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, rc::Rc};
 
-use super::{complex_isolated::*, number_field::*};
+use super::{isolated_roots::*, number_field::*};
 
 #[derive(Debug, Clone)]
 struct EmbeddedAnf {

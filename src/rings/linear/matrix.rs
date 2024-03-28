@@ -255,6 +255,10 @@ impl<RS: Structure> MatrixStructure<RS> {
     pub fn new(ring: Rc<RS>) -> Self {
         Self { ring }
     }
+
+    pub fn ring(&self) -> Rc<RS> {
+        self.ring.clone()
+    }
 }
 
 impl<RS: EqualityStructure> MatrixStructure<RS> {
@@ -1384,6 +1388,62 @@ impl<FS: FieldStructure> MatrixStructure<FS> {
     }
 }
 
+impl<FS: ComplexConjugateStructure> MatrixStructure<FS> {
+    pub fn conjugate(&self, mat: &Matrix<FS::Set>) -> Matrix<FS::Set> {
+        mat.apply_map(|x| self.ring().conjugate(x))
+    }
+
+    pub fn conjugate_transpose(&self, mat: &Matrix<FS::Set>) -> Matrix<FS::Set> {
+        self.conjugate(mat).transpose()
+    }
+}
+
+impl<FS: ComplexConjugateStructure + RingStructure> MatrixStructure<FS> {
+    // dot product of a and conj(b)
+    pub fn inner_product(&self, a: &Matrix<FS::Set>, b: &Matrix<FS::Set>) -> FS::Set {
+        self.dot(a, &self.conjugate(b))
+    }
+}
+
+impl<FS: ComplexConjugateStructure + FieldStructure> MatrixStructure<FS> {
+    pub fn gram_schmidt_col_orthogonalization(&self, mut mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
+        //make the columns orthogonal by gram_schmidt gram_schmidt_col_orthogonalization
+        for i in 0..mat.cols() {
+            for j in 0..i {
+                //col_i = col_i - (projection of col_j onto col_i)
+                let lambda = self
+                    .ring()
+                    .div(
+                        &self.inner_product(&mat.get_col(i), &mat.get_col(j)),
+                        &self.inner_product(&mat.get_col(j), &mat.get_col(j)),
+                    )
+                    .unwrap();
+                //col_i -= lambda col_j
+                for r in 0..mat.rows() {
+                    let mat_rj = mat.at(r, j).unwrap().clone();
+                    self.ring().add_mut(
+                        mat.at_mut(r, i).unwrap(),
+                        &self.ring().neg(&self.ring().mul(&lambda, &mat_rj)),
+                    );
+                }
+            }
+        }
+        for i in 0..mat.cols() {
+            for j in (i + 1)..mat.cols() {
+                debug_assert!(self
+                    .ring()
+                    .is_zero(&self.inner_product(&mat.get_col(i), &mat.get_col(j)),));
+            }
+        }
+        mat
+    }
+
+    pub fn gram_schmidt_row_orthogonalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
+        self.gram_schmidt_col_orthogonalization(mat.transpose())
+            .transpose()
+    }
+}
+
 impl<R: StructuredType> StructuredType for Matrix<R>
 where
     R::Structure: Structure,
@@ -1603,8 +1663,23 @@ where
     }
 }
 
+impl<F: StructuredType> Matrix<F>
+where
+    F::Structure: ComplexConjugateStructure + FieldStructure,
+{
+    pub fn gram_schmidt_col_orthogonalization(self) -> Matrix<F> {
+        Self::structure().gram_schmidt_col_orthogonalization(self)
+    }
+
+    pub fn gram_schmidt_row_orthogonalization(self) -> Matrix<F> {
+        Self::structure().gram_schmidt_row_orthogonalization(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
@@ -2628,5 +2703,39 @@ mod tests {
             vec![Integer::from(5)],
             vec![Integer::from(-3)]
         ])));
+    }
+
+    #[test]
+    fn rational_gram_schmidt() {
+        let mat = Matrix::from_rows(vec![
+            vec![Rational::from(1), Rational::from(-1), Rational::from(3)],
+            vec![Rational::from(1), Rational::from(0), Rational::from(5)],
+            vec![Rational::from(1), Rational::from(2), Rational::from(6)],
+        ]);
+
+        let mat_gs = Matrix::from_rows(vec![
+            vec![
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("-4/3").unwrap(),
+                Rational::from_str("-3/7").unwrap(),
+            ],
+            vec![
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("-1/3").unwrap(),
+                Rational::from_str("9/14").unwrap(),
+            ],
+            vec![
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("5/3").unwrap(),
+                Rational::from_str("-3/14").unwrap(),
+            ],
+        ]);
+
+        assert_eq!(mat.gram_schmidt_col_orthogonalization(), mat_gs);
+    }
+
+    #[test]
+    fn complex_gram_schmidt() {
+        todo!("test gram schmidt with some complex numbers");
     }
 }
