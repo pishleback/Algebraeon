@@ -2735,6 +2735,9 @@ mod tests {
             ],
         ]);
 
+        mat.pprint();
+        mat_gs.pprint();
+
         assert_eq!(mat.gram_schmidt_col_orthogonalization(), mat_gs);
     }
 

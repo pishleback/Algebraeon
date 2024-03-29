@@ -118,7 +118,9 @@ fn root_pos_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomia
             .map(|(i, c)| &d_pows[i] * &n_pows[degree - i] * c)
             .collect();
         coeffs
-    }).primitive_part().unwrap();
+    })
+    .primitive_part()
+    .unwrap();
 
     // println!("rat_mul_poly = {}", rat_mul_poly);
     // println!("rat_mul_poly = {}", rat_mul_poly.factor().unwrap());
@@ -547,6 +549,61 @@ impl SquarefreePolyRealRoots {
         }
     }
 
+    fn get_real_root(&self, idx: usize) -> RealAlgebraic {
+        // println!("get_real_root of {:?} at {}", self, idx);
+        // println!("{}", self.poly_sqfr);
+        assert!(idx < self.intervals.len());
+        match &self.intervals[idx] {
+            SquarefreePolyRealRootInterval::Rational(rat) => RealAlgebraic::Rational(rat.clone()),
+            SquarefreePolyRealRootInterval::Real(a, b, dir) => {
+                let (unit, factors) = self.poly_sqfr.factor().unwrap().unit_and_factors();
+                for (factor, k) in factors.into_iter() {
+                    // println!("factor = {}", factor);
+                    debug_assert_eq!(k, Natural::ONE); //square free
+                    let deg = factor.degree().unwrap();
+                    debug_assert_ne!(deg, 0);
+                    let at_a = evaluate_at_rational(&factor, a);
+                    let at_b = evaluate_at_rational(&factor, b);
+                    debug_assert_ne!(at_a, Rational::ZERO);
+                    debug_assert_ne!(at_b, Rational::ZERO);
+                    let sign_a = at_a >= Rational::ZERO;
+                    let sign_b = at_b >= Rational::ZERO;
+                    // println!("at_a = {}", at_a);
+                    // println!("at_b = {}", at_b);
+                    if deg == 1 {
+                        if sign_a != sign_b {
+                            return RealAlgebraic::Rational(unique_linear_root(&factor));
+                        }
+                    } else {
+                        if sign_a && !sign_b {
+                            let (wide_a, wide_b) = self.get_wide_interval(idx);
+                            return RealAlgebraic::Real(RealAlgebraicRoot {
+                                poly: factor,
+                                tight_a: a.clone(),
+                                tight_b: b.clone(),
+                                wide_a: wide_a,
+                                wide_b: wide_b,
+                                dir: false,
+                            });
+                        } else if !sign_a && sign_b {
+                            let (wide_a, wide_b) = self.get_wide_interval(idx);
+                            return RealAlgebraic::Real(RealAlgebraicRoot {
+                                poly: factor,
+                                tight_a: a.clone(),
+                                tight_b: b.clone(),
+                                wide_a: wide_a,
+                                wide_b: wide_b,
+                                dir: true,
+                            });
+                        }
+                    }
+                    debug_assert_eq!(sign_a, sign_b);
+                }
+                unreachable!()
+            }
+        }
+    }
+
     fn to_real_roots(self) -> Vec<RealAlgebraic> {
         debug_assert!(self.poly_sqfr.is_irreducible());
         let deg = self.poly_sqfr.degree().unwrap();
@@ -929,15 +986,13 @@ impl Polynomial<Integer> {
                 //compute a bound M on the absolute value of any root
                 //m = (Cauchy's bound + 1) https://captainblack.wordpress.com/2009/03/08/cauchys-upper-bound-for-the-roots-of-a-polynomial/
                 let m = Rational::from(2)
-                    + Rational::from_integers(
-                        Integer::from(
-                            itertools::max(
-                                (0..d).map(|i| self.coeff(i).unsigned_abs_ref().clone()),
-                            )
+                    + Rational::from_naturals(
+                        itertools::max((0..d).map(|i| self.coeff(i).unsigned_abs_ref().clone()))
                             .unwrap(),
-                        ),
-                        self.coeff(d),
+                        self.coeff(d).unsigned_abs_ref().clone(),
                     );
+
+                debug_assert!(m > Rational::ZERO);
 
                 return match opt_a {
                     Some(a_val) => match opt_b {
@@ -2023,6 +2078,8 @@ impl RealAlgebraicRoot {
 
     pub fn cmp_rat_mut(&mut self, other: &Rational) -> std::cmp::Ordering {
         loop {
+            // println!("cmp_rat_mut {:?}", self);
+
             //test for inequality: other is outside the tight bounds
             if &self.tight_b <= other {
                 return std::cmp::Ordering::Less;
@@ -2030,6 +2087,8 @@ impl RealAlgebraicRoot {
             if other <= &self.tight_a {
                 return std::cmp::Ordering::Greater;
             }
+
+            // println!("refine");
 
             //refine
             self.refine();
@@ -2328,6 +2387,75 @@ impl RealAlgebraic {
             RealAlgebraic::Real(real_root) => real_root.min_poly(),
         }
     }
+
+    pub fn nth_root(&self, n: usize) -> Result<RealAlgebraic, ()> {
+        if n == 0 {
+            panic!()
+        } else if n == 1 {
+            Ok(self.clone())
+        } else {
+            match self.cmp(&mut RealAlgebraic::zero()) {
+                std::cmp::Ordering::Less => Err(()),
+                std::cmp::Ordering::Equal => Ok(Self::zero()),
+                std::cmp::Ordering::Greater => {
+                    let poly = match self {
+                        RealAlgebraic::Rational(rat) => {
+                            Polynomial::from_coeffs(vec![-rat.numerator(), rat.denominator()])
+                        }
+                        RealAlgebraic::Real(real) => real.poly.clone(),
+                    };
+                    let mut coeffs = vec![];
+                    for (i, c) in poly.into_coeffs().into_iter().enumerate() {
+                        if i != 0 {
+                            for _j in 0..(n - 1) {
+                                coeffs.push(Integer::ZERO);
+                            }
+                        }
+                        coeffs.push(c)
+                    }
+                    let nthroot_poly = Polynomial::from_coeffs(coeffs).primitive_squarefree_part();
+                    // println!("nthroot_poly = {:?}", nthroot_poly);
+                    let possible_nthroots = nthroot_poly.all_real_roots_squarefree();
+                    //search through the intervals starting from the largest.
+                    //if it is positive, check that the nth power of the bounds surrounds self
+                    //otherwise, the first one that does not have both bounds positive must be the nth root
+
+                    // println!("{:?}", possible_nthroots);
+
+                    for (idx, interval) in possible_nthroots.intervals.iter().enumerate().rev() {
+                        match interval {
+                            SquarefreePolyRealRootInterval::Rational(rat) => {
+                                debug_assert!(rat > &Rational::ZERO);
+                                match self {
+                                    RealAlgebraic::Rational(self_rat) => {
+                                        debug_assert_eq!(&rat.nat_pow(&Natural::from(n)), self_rat);
+                                    }
+                                    RealAlgebraic::Real(_) => debug_assert!(false),
+                                }
+                                return Ok(possible_nthroots.get_real_root(idx));
+                            }
+                            SquarefreePolyRealRootInterval::Real(a, b, dir) => {
+                                debug_assert!(a < b);
+                                if &Rational::ZERO < a {
+                                    let a_pow = a.nat_pow(&Natural::from(n));
+                                    let b_pow = b.nat_pow(&Natural::from(n));
+                                    if &RealAlgebraic::Rational(a_pow) <= self
+                                        && self <= &RealAlgebraic::Rational(b_pow)
+                                    {
+                                        return Ok(possible_nthroots.get_real_root(idx));
+                                    }
+                                } else {
+                                    return Ok(possible_nthroots.get_real_root(idx));
+                                }
+                            }
+                        }
+                    }
+
+                    unreachable!()
+                }
+            }
+        }
+    }
 }
 
 impl PartialEq for RealAlgebraic {
@@ -2443,6 +2571,8 @@ impl RingStructure for CannonicalStructure<RealAlgebraic> {
     }
 
     fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
+        // println!("add {:?} {:?}", alg1, alg2);
+
         fn add_rat(mut elem: RealAlgebraicRoot, rat: &Rational) -> RealAlgebraicRoot {
             elem.tight_a += rat;
             elem.tight_b += rat;
@@ -2601,8 +2731,8 @@ impl RingStructure for CannonicalStructure<RealAlgebraic> {
                 let mut alg1 = alg1.clone();
                 let mut alg2 = alg2.clone();
 
-                let factored_rsp = root_prod_poly(&alg1.poly, &alg2.poly).factor().unwrap();
-                let polys: Vec<_> = factored_rsp.factors().iter().map(|(f, _k)| f).collect();
+                let factored_rpp = root_prod_poly(&alg1.poly, &alg2.poly).factor().unwrap();
+                let polys: Vec<_> = factored_rpp.factors().iter().map(|(f, _k)| f).collect();
                 //the sum of alg1 and alg2 is exactly one root of exactly one of the irreducible polynomials in polys
                 //the task now is to refine alg1 and alg2 until the root is identified
 
@@ -4039,6 +4169,40 @@ mod tests {
     }
 
     #[test]
+    fn test_real_nth_root() {
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let f = ((4 * x.pow(5) - 12 * x.pow(3) + 8 * x + 1)
+            * (x + 1)
+            * (x)
+            * (x - 1)
+            * (x - 2)
+            * (x - 3)
+            * (x - 4)
+            * (x - 5)
+            * (x - 144)
+            * (x.pow(2) - 3))
+            .into_set();
+        let n = 2;
+
+        for root in f.all_real_roots() {
+            println!();
+            println!("root = {}", root);
+            match root.nth_root(n) {
+                Ok(nth_root) => {
+                    println!("YES {}-root = {}", n, nth_root);
+                    debug_assert!(RealAlgebraic::zero() <= root);
+                    debug_assert!(RealAlgebraic::zero() <= nth_root);
+                    debug_assert_eq!(nth_root.nat_pow(&Natural::from(n)), root);
+                }
+                Err(()) => {
+                    println!("NO {}-root", n);
+                    debug_assert!(RealAlgebraic::zero() > root);
+                }
+            }
+        }
+    }
+
+    #[test]
     fn test_all_complex_roots() {
         let f = Polynomial::from_coeffs(vec![
             Integer::from(-1),
@@ -4152,11 +4316,5 @@ mod tests {
                 ComplexAlgebraic::one()
             );
         }
-    }
-
-    #[test]
-    fn test_complex_opps() {
-        let i = &ComplexAlgebraic::i().into_ring();
-        println!("{}", 2 * i);
     }
 }

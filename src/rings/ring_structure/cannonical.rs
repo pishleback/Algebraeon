@@ -39,8 +39,8 @@ where
         Self::structure().product(vals)
     }
 
-    fn nat_pow(a: &Self, n: &Natural) -> Self {
-        Self::structure().nat_pow(a, n)
+    fn nat_pow(&self, n: &Natural) -> Self {
+        Self::structure().nat_pow(self, n)
     }
     fn from_int(x: &Integer) -> Self {
         Self::structure().from_int(x)
@@ -67,8 +67,8 @@ where
         Self::structure().from_rat(x)
     }
 
-    fn int_pow(a: &Self, n: &Integer) -> Option<Self> {
-        Self::structure().int_pow(a, n)
+    fn int_pow(&self, n: &Integer) -> Option<Self> {
+        Self::structure().int_pow(self, n)
     }
 
     fn divisible(a: &Self, b: &Self) -> bool {
