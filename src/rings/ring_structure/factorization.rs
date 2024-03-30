@@ -6,7 +6,7 @@ use malachite_nz::natural::Natural;
 use super::super::structure::*;
 use super::structure::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Factored<RS: UniqueFactorizationStructure> {
     ring: Rc<RS>,
     unit: RS::Set,
@@ -73,12 +73,29 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         }
     }
 
+    pub fn make_squarefree(self) -> Self {
+        let one = self.ring.one();
+        Self {
+            ring: self.ring,
+            unit: one,
+            factors: self
+                .factors
+                .into_iter()
+                .map(|(f, k)| (f, Natural::ONE))
+                .collect(),
+        }
+    }
+
     pub fn expand(&self) -> RS::Set {
         let mut ans = self.unit.clone();
         for (p, k) in &self.factors {
             self.ring.mul_mut(&mut ans, &self.ring.nat_pow(p, k));
         }
         ans
+    }
+
+    pub fn expand_squarefree(&self) -> RS::Set {
+        self.clone().make_squarefree().expand()
     }
 
     pub fn new_unchecked(ring: Rc<RS>, unit: RS::Set, factors: Vec<(RS::Set, Natural)>) -> Self {

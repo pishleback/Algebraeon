@@ -7,6 +7,11 @@ use malachite_base::num::logic::traits::BitIterable;
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
+use crate::rings::number::algebraic::isolated_roots::ComplexAlgebraic;
+use crate::rings::number::natural::nat_to_usize;
+use crate::rings::polynomial::polynomial::Polynomial;
+use crate::rings::polynomial::polynomial::PolynomialStructure;
+
 use super::super::structure::*;
 
 use super::cannonical::*;
@@ -361,54 +366,6 @@ impl<RS: CharZeroStructure> InfiniteStructure for RS {
     }
 }
 
-//is a subset of the complex numbers
-pub trait ComplexSubsetStructure: Structure {}
-
-//is a subset of the real numbers
-pub trait RealSubsetStructure: ComplexSubsetStructure {}
-
-pub trait RealRoundingStructure: RealSubsetStructure {
-    fn floor(&self, x: &Self::Set) -> Integer; //round down
-    fn ceil(&self, x: &Self::Set) -> Integer; //round up
-    fn round(&self, x: &Self::Set) -> Integer; //round closets, either direction is fine if mid way
-
-    /*
-    fn ceil(&self, x: &Self::Set) -> Integer {
-        -self.floor(&self.neg(x))
-    }
-    fn round(&self, x: &Self::Set) -> Integer {
-        self.floor(&self.add(
-            x,
-            &self.from_rat(&Rational::from_integers(Integer::ONE, Integer::TWO)).unwrap(),
-        ))
-    }
-    */
-}
-
-pub trait RealToFloatStructure: RealSubsetStructure {
-    fn as_f64(&self, x: &Self::Set) -> f64;
-    fn as_f32(&self, x: &Self::Set) -> f32 {
-        self.as_f64(x) as f32
-    }
-}
-
-pub trait RealFromFloatStructure: RealSubsetStructure {
-    fn from_f64_approx(&self, x: f64) -> Self::Set;
-    fn from_f32_approx(&self, x: f32) -> Self::Set {
-        self.from_f64_approx(x as f64)
-    }
-}
-
-pub trait ComplexConjugateStructure: Structure {
-    fn conjugate(&self, x: &Self::Set) -> Self::Set;
-}
-
-impl<RS: RealSubsetStructure> ComplexConjugateStructure for RS {
-    fn conjugate(&self, x: &Self::Set) -> Self::Set {
-        x.clone()
-    }
-}
-
 pub trait FieldStructure: IntegralDomainStructure {}
 
 impl<FS: FieldStructure> FavoriteAssociateStructure for FS {
@@ -509,5 +466,103 @@ where
     fn as_f64(&self, x: &Self::Set) -> f64 {
         let base_ring = self.base_ring_structure();
         base_ring.as_f64(&self.numerator(x)) / base_ring.as_f64(&self.denominator(x))
+    }
+}
+
+//is a subset of the complex numbers
+pub trait ComplexSubsetStructure: Structure {}
+
+//is a subset of the real numbers
+pub trait RealSubsetStructure: ComplexSubsetStructure {}
+
+pub trait RealRoundingStructure: RealSubsetStructure {
+    fn floor(&self, x: &Self::Set) -> Integer; //round down
+    fn ceil(&self, x: &Self::Set) -> Integer; //round up
+    fn round(&self, x: &Self::Set) -> Integer; //round closets, either direction is fine if mid way
+
+    /*
+    fn ceil(&self, x: &Self::Set) -> Integer {
+        -self.floor(&self.neg(x))
+    }
+    fn round(&self, x: &Self::Set) -> Integer {
+        self.floor(&self.add(
+            x,
+            &self.from_rat(&Rational::from_integers(Integer::ONE, Integer::TWO)).unwrap(),
+        ))
+    }
+    */
+}
+
+pub trait RealToFloatStructure: RealSubsetStructure {
+    fn as_f64(&self, x: &Self::Set) -> f64;
+    fn as_f32(&self, x: &Self::Set) -> f32 {
+        self.as_f64(x) as f32
+    }
+}
+
+pub trait RealFromFloatStructure: RealSubsetStructure {
+    fn from_f64_approx(&self, x: f64) -> Self::Set;
+    fn from_f32_approx(&self, x: f32) -> Self::Set {
+        self.from_f64_approx(x as f64)
+    }
+}
+
+pub trait ComplexConjugateStructure: Structure {
+    fn conjugate(&self, x: &Self::Set) -> Self::Set;
+}
+
+impl<RS: RealSubsetStructure> ComplexConjugateStructure for RS {
+    fn conjugate(&self, x: &Self::Set) -> Self::Set {
+        x.clone()
+    }
+}
+
+pub trait PositiveRealNthRootStructure: ComplexSubsetStructure {
+    //if x is a non-negative real number, return the nth root of x
+    //may also return Ok for other well-defined values such as for 1st root of any x and 0th root of any non-zero x, but is not required to
+    fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()>;
+}
+
+pub trait AlgebraicClosureStructure: FieldStructure
+where
+    PolynomialStructure<Self>:
+        UniqueFactorizationStructure + Structure<Set = Polynomial<Self::Set>>,
+{
+    type ACFS: FieldStructure; //algebraic closure field structure
+
+    fn algebraic_closure_field(&self) -> Rc<Self::ACFS>;
+    //natural inclusion of GFS into Self
+    fn algebraic_closure_inclusion(&self, x: &Self::Set) -> <Self::ACFS as Structure>::Set;
+    //return None for the zero polynomial
+    fn all_roots_list(
+        &self,
+        poly: &Polynomial<Self::Set>,
+    ) -> Option<Vec<<Self::ACFS as Structure>::Set>>;
+    fn all_roots_unique(
+        &self,
+        poly: &Polynomial<Self::Set>,
+    ) -> Option<Vec<<Self::ACFS as Structure>::Set>> {
+        self.all_roots_list(
+            &PolynomialStructure::new(self.clone().into())
+                .factor(poly)
+                .unwrap()
+                .expand_squarefree(),
+        )
+    }
+    fn all_roots_powers(
+        &self,
+        poly: &Polynomial<Self::Set>,
+    ) -> Option<Vec<(<Self::ACFS as Structure>::Set, usize)>> {
+        let mut root_powers = vec![];
+        for (factor, k) in PolynomialStructure::new(self.clone().into())
+            .factor(poly)?
+            .unit_and_factors()
+            .1
+        {
+            for root in self.all_roots_list(&factor).unwrap() {
+                root_powers.push((root, nat_to_usize(&k).unwrap()))
+            }
+        }
+        Some(root_powers)
     }
 }

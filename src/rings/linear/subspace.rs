@@ -177,6 +177,21 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         lattice
     }
 
+    pub fn transpose(&self, lat: &LinearLattice<RS::Set>) -> LinearLattice<RS::Set> {
+        LinearLattice {
+            metamatrix: mats_to_rows(
+                lat.cols,
+                lat.rows,
+                self.basis_matrices(lat)
+                    .into_iter()
+                    .map(|mat| mat.transpose())
+                    .collect(),
+            ),
+            rows: lat.cols,
+            cols: lat.rows,
+        }
+    }
+
     pub fn from_basis<MatT: Borrow<Matrix<RS::Set>>>(
         &self,
         rows: usize,

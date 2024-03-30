@@ -117,5 +117,16 @@ fn main() {
 
     use crate::rings::polynomial::polynomial::*;
 
-    
+    let mat = Matrix::from_rows(vec![
+        vec![
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("1").unwrap(),
+        ],
+        vec![
+            Rational::from_str("1").unwrap(),
+            Rational::from_str("-2").unwrap(),
+        ],
+    ]);
+    mat.pprint();
+    mat.gram_schmidt_col_orthogonalization().pprint();
 }

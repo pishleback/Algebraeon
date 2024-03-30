@@ -12,6 +12,9 @@ use super::elements::*;
 use super::factorization::*;
 use super::structure::*;
 
+//TODO: autogenerate these cannonical versions of the ring structures and their implementations in a proc macro?
+//In a proc macro how would I do the ones which go from opp(a : &Self::Set) to opp(&self)?
+
 pub trait Ring: StructuredType
 where
     Self::Structure: RingStructure<Set = Self>,
@@ -47,10 +50,21 @@ where
     }
 }
 
-//TODO: autogenerate these cannonical versions of the ring structures and their implementations in a proc macro?
-//In a proc macro how would I do the ones which go from opp(a : &Self::Set) to opp(&self)?
-
 impl<R: StructuredType> Ring for R where Self::Structure: RingStructure<Set = R> {}
+
+pub trait RingEqualityOpps: StructuredType
+where
+    Self::Structure: RingStructure<Set = Self> + EqualityStructure,
+{
+    fn is_zero(&self) -> bool {
+        Self::structure().is_zero(self)
+    }
+}
+
+impl<R: StructuredType> RingEqualityOpps for R where
+    Self::Structure: RingStructure<Set = R> + EqualityStructure
+{
+}
 
 pub trait IntegralDomain: Ring
 where
@@ -224,13 +238,27 @@ pub trait ComplexConjugateOpps: StructuredType
 where
     Self::Structure: ComplexConjugateStructure<Set = Self>,
 {
-    fn conj(&self) -> Self {
+    fn conjugate(&self) -> Self {
         Self::structure().conjugate(self)
     }
 }
 
 impl<R: StructuredType> ComplexConjugateOpps for R where
     Self::Structure: ComplexConjugateStructure<Set = R>
+{
+}
+
+pub trait PositiveRealNthRootOpps: StructuredType
+where
+    Self::Structure: PositiveRealNthRootStructure<Set = Self>,
+{
+    fn nth_root(&self, n: usize) -> Result<Self, ()> {
+        Self::structure().nth_root(self, n)
+    }
+}
+
+impl<R: StructuredType> PositiveRealNthRootOpps for R where
+    Self::Structure: PositiveRealNthRootStructure<Set = R>
 {
 }
 

@@ -1062,7 +1062,7 @@ impl Polynomial<Integer> {
             )
             .factor_primitive_fof();
 
-            for (c, k, h) in trans_poly.isolate_real_roots_by_collin_akritas() {
+            'interval_loop: for (c, k, h) in trans_poly.isolate_real_roots_by_collin_akritas() {
                 let d = Natural::from(1u8) << k;
                 let mut interval_a = (b - a) * Rational::from_naturals(c.clone(), d.clone()) + a;
                 if h {
@@ -1077,17 +1077,24 @@ impl Polynomial<Integer> {
                         let interval_m = (&interval_a + &interval_b) / Rational::from(2);
                         let mut shrunk_inerval_a = (&interval_a + &interval_m) / Rational::from(2);
                         let mut shrunk_inerval_b = (&interval_m + &interval_b) / Rational::from(2);
-                        debug_assert_ne!(
-                            evaluate_at_rational(&self, &shrunk_inerval_a),
-                            Rational::from(0)
-                        );
-                        debug_assert_ne!(
-                            evaluate_at_rational(&self, &shrunk_inerval_b),
-                            Rational::from(0)
-                        );
-                        while (evaluate_at_rational(&self, &shrunk_inerval_a) > Rational::from(0))
-                            == (evaluate_at_rational(&self, &shrunk_inerval_b) > Rational::from(0))
-                        {
+                        loop {
+                            let shrunk_a_sign = evaluate_at_rational(&self, &shrunk_inerval_a)
+                                .cmp(&Rational::from(0));
+                            let shrunk_b_sign = evaluate_at_rational(&self, &shrunk_inerval_b)
+                                .cmp(&Rational::from(0));
+                            if shrunk_a_sign.is_eq() {
+                                intervals.push(SquarefreePolyRealRootInterval::Rational(
+                                    shrunk_inerval_a,
+                                ));
+                                continue 'interval_loop;
+                            } else if shrunk_b_sign.is_eq() {
+                                intervals.push(SquarefreePolyRealRootInterval::Rational(
+                                    shrunk_inerval_b,
+                                ));
+                                continue 'interval_loop;
+                            } else if shrunk_a_sign.is_ge() != shrunk_b_sign.is_ge() {
+                                break;
+                            }
                             shrunk_inerval_a =
                                 (&interval_a + &shrunk_inerval_a) / Rational::from(2);
                             shrunk_inerval_b =
@@ -1097,13 +1104,11 @@ impl Polynomial<Integer> {
                         interval_b = shrunk_inerval_b;
                     }
 
+                    let sign_a = evaluate_at_rational(&self, &interval_a) > Rational::from(0);
                     let sign_b = evaluate_at_rational(&self, &interval_b) > Rational::from(0);
                     debug_assert_ne!(evaluate_at_rational(&self, &interval_a), Rational::from(0));
                     debug_assert_ne!(evaluate_at_rational(&self, &interval_b), Rational::from(0));
-                    debug_assert_ne!(
-                        evaluate_at_rational(&self, &interval_a) > Rational::from(0),
-                        sign_b
-                    );
+                    debug_assert_ne!(sign_a, sign_b);
                     intervals.push(SquarefreePolyRealRootInterval::Real(
                         interval_a, interval_b, sign_b,
                     ));
@@ -1120,7 +1125,8 @@ impl Polynomial<Integer> {
                 poly_sqfr: self,
                 intervals,
             };
-            debug_assert!(roots.check_invariants().is_ok());
+            #[cfg(debug_assertions)]
+            roots.check_invariants().unwrap();
             roots
         }
     }
@@ -1948,17 +1954,106 @@ pub struct RealAlgebraicRoot {
 
 impl Display for RealAlgebraicRoot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut root = self.clone();
-        root.refine_to_accuracy(&Rational::from_integers(
-            Integer::from(1),
-            Integer::from(100),
-        ));
-        let m = (&root.tight_a + &root.tight_b) / Rational::TWO;
+        if self.poly.num_coeffs() == 3 {
+            //quadratic
+            let a = self.poly.coeff(2);
+            let b = self.poly.coeff(1);
+            let c = self.poly.coeff(0);
+            debug_assert!(a > Integer::ZERO);
 
-        write!(f, "≈");
-        write!(f, "{}", rat_to_string(m));
-        // write!(f, "±");
-        // write!(f, "{}", rat_to_string(self.accuracy() / Rational::TWO));
+            let d = &b * &b - Integer::from(4) * &a * &c;
+            let mut d_sq = Integer::ONE;
+            let mut d_sqfreee = Integer::ONE;
+            let (d_sign, d_factors) = d.factor().unwrap().unit_and_factors();
+            for (d_factor, k) in d_factors {
+                d_sq *= d_factor.nat_pow(&(&k / Natural::TWO));
+                if k % Natural::TWO == Natural::ONE {
+                    d_sqfreee *= d_factor;
+                }
+            }
+            debug_assert_eq!(d_sign, Integer::ONE); //because we are a real number
+            debug_assert_eq!(d, &d_sqfreee * &d_sq * &d_sq);
+
+            let two_a = Integer::TWO * a;
+
+            let x = Rational::from_integers(-b, two_a.clone());
+            let y = Rational::from_integers(d_sq, two_a);
+            debug_assert!(y > Rational::ZERO);
+            let r = d_sqfreee;
+
+            let mut tight_a_abs = self.tight_a.clone();
+            if tight_a_abs < Rational::ZERO {
+                tight_a_abs = -tight_a_abs;
+            }
+
+            let mut tight_b_abs = self.tight_b.clone();
+            if tight_b_abs < Rational::ZERO {
+                tight_b_abs = -tight_b_abs;
+            }
+
+            let sign = tight_a_abs < tight_b_abs;
+            if x == Rational::ZERO {
+                if y == Rational::ONE {
+                    write!(
+                        f,
+                        "{}√{}",
+                        match sign {
+                            true => "",
+                            false => "-",
+                        },
+                        r
+                    );
+                } else {
+                    write!(
+                        f,
+                        "{}{}√{}",
+                        match sign {
+                            true => "",
+                            false => "-",
+                        },
+                        y,
+                        r
+                    );
+                }
+            } else {
+                if y == Rational::ONE {
+                    write!(
+                        f,
+                        "{}{}√{}",
+                        x,
+                        match sign {
+                            true => "+",
+                            false => "-",
+                        },
+                        r
+                    );
+                } else {
+                    write!(
+                        f,
+                        "{}{}{}√{}",
+                        x,
+                        match sign {
+                            true => "+",
+                            false => "-",
+                        },
+                        y,
+                        r
+                    );
+                }
+            }
+        } else {
+            let mut root = self.clone();
+            root.refine_to_accuracy(&Rational::from_integers(
+                Integer::from(1),
+                Integer::from(100),
+            ));
+            let m = (&root.tight_a + &root.tight_b) / Rational::TWO;
+
+            write!(f, "≈");
+            write!(f, "{}", rat_to_string(m));
+            // write!(f, "±");
+            // write!(f, "{}", rat_to_string(self.accuracy() / Rational::TWO));
+        }
         Ok(())
     }
 }
@@ -2135,26 +2230,122 @@ pub struct ComplexAlgebraicRoot {
 
 impl Display for ComplexAlgebraicRoot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut root = self.clone();
-        root.refine_to_accuracy(&Rational::from_integers(
-            Integer::from(1),
-            Integer::from(100),
-        ));
+        if self.poly.num_coeffs() == 3 {
+            //quadratic
+            let a = self.poly.coeff(2);
+            let b = self.poly.coeff(1);
+            let c = self.poly.coeff(0);
+            debug_assert!(a > Integer::ZERO);
 
-        let m_re = (&root.tight_a + &root.tight_b) / Rational::TWO;
-        let m_im = (&root.tight_c + &root.tight_d) / Rational::TWO;
+            let d = &b * &b - Integer::from(4) * &a * &c;
+            let mut d_sq = Integer::ONE;
+            let mut d_sqfreee = Integer::ONE;
+            let (d_sign, d_factors) = d.factor().unwrap().unit_and_factors();
+            for (d_factor, k) in d_factors {
+                d_sq *= d_factor.nat_pow(&(&k / Natural::TWO));
+                if k % Natural::TWO == Natural::ONE {
+                    d_sqfreee *= d_factor;
+                }
+            }
+            debug_assert_eq!(d_sign, -Integer::ONE); //because we are a real number
+            debug_assert_eq!(-d, &d_sqfreee * &d_sq * &d_sq);
 
-        write!(f, "≈");
-        write!(f, "{}", rat_to_string(m_re));
-        // write!(f, "±");
-        // write!(f, "{}", rat_to_string(self.accuracy_re() / Rational::TWO));
-        if m_im >= 0 {
-            write!(f, "+");
+            let two_a = Integer::TWO * a;
+
+            let x = Rational::from_integers(-b, two_a.clone());
+            let y = Rational::from_integers(d_sq, two_a);
+            debug_assert!(y > Rational::ZERO);
+            let r = d_sqfreee;
+            let r_str = {
+                if r == Integer::ONE {
+                    String::from("i")
+                } else {
+                    String::from("i√") + &r.to_string()
+                }
+            };
+
+            let mut tight_c_abs = self.tight_c.clone();
+            if tight_c_abs < Rational::ZERO {
+                tight_c_abs = -tight_c_abs;
+            }
+
+            let mut tight_d_abs = self.tight_d.clone();
+            if tight_d_abs < Rational::ZERO {
+                tight_d_abs = -tight_d_abs;
+            }
+
+            let sign = tight_c_abs < tight_d_abs;
+            if x == Rational::ZERO {
+                if y == Rational::ONE {
+                    write!(
+                        f,
+                        "{}{}",
+                        match sign {
+                            true => "",
+                            false => "-",
+                        },
+                        r_str
+                    );
+                } else {
+                    write!(
+                        f,
+                        "{}{}{}",
+                        match sign {
+                            true => "",
+                            false => "-",
+                        },
+                        y,
+                        r_str
+                    );
+                }
+            } else {
+                if y == Rational::ONE {
+                    write!(
+                        f,
+                        "{}{}{}",
+                        x,
+                        match sign {
+                            true => "+",
+                            false => "-",
+                        },
+                        r_str
+                    );
+                } else {
+                    write!(
+                        f,
+                        "{}{}{}{}",
+                        x,
+                        match sign {
+                            true => "+",
+                            false => "-",
+                        },
+                        y,
+                        r_str
+                    );
+                }
+            }
+        } else {
+            let mut root = self.clone();
+            root.refine_to_accuracy(&Rational::from_integers(
+                Integer::from(1),
+                Integer::from(100),
+            ));
+
+            let m_re = (&root.tight_a + &root.tight_b) / Rational::TWO;
+            let m_im = (&root.tight_c + &root.tight_d) / Rational::TWO;
+
+            write!(f, "≈");
+            write!(f, "{}", rat_to_string(m_re));
+            // write!(f, "±");
+            // write!(f, "{}", rat_to_string(self.accuracy_re() / Rational::TWO));
+            if m_im >= 0 {
+                write!(f, "+");
+            }
+            write!(f, "{}", rat_to_string(m_im));
+            // write!(f, "±");
+            // write!(f, "{}", rat_to_string(self.accuracy_im() / Rational::TWO));
+            write!(f, "i");
         }
-        write!(f, "{}", rat_to_string(m_im));
-        // write!(f, "±");
-        // write!(f, "{}", rat_to_string(self.accuracy_im() / Rational::TWO));
-        write!(f, "i");
         Ok(())
     }
 }
@@ -2387,18 +2578,20 @@ impl RealAlgebraic {
             RealAlgebraic::Real(real_root) => real_root.min_poly(),
         }
     }
+}
 
-    pub fn nth_root(&self, n: usize) -> Result<RealAlgebraic, ()> {
+impl PositiveRealNthRootStructure for CannonicalStructure<RealAlgebraic> {
+    fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
         if n == 0 {
             panic!()
         } else if n == 1 {
-            Ok(self.clone())
+            Ok(x.clone())
         } else {
-            match self.cmp(&mut RealAlgebraic::zero()) {
+            match x.cmp(&mut RealAlgebraic::zero()) {
                 std::cmp::Ordering::Less => Err(()),
-                std::cmp::Ordering::Equal => Ok(Self::zero()),
+                std::cmp::Ordering::Equal => Ok(self.zero()),
                 std::cmp::Ordering::Greater => {
-                    let poly = match self {
+                    let poly = match x {
                         RealAlgebraic::Rational(rat) => {
                             Polynomial::from_coeffs(vec![-rat.numerator(), rat.denominator()])
                         }
@@ -2426,7 +2619,7 @@ impl RealAlgebraic {
                         match interval {
                             SquarefreePolyRealRootInterval::Rational(rat) => {
                                 debug_assert!(rat > &Rational::ZERO);
-                                match self {
+                                match x {
                                     RealAlgebraic::Rational(self_rat) => {
                                         debug_assert_eq!(&rat.nat_pow(&Natural::from(n)), self_rat);
                                     }
@@ -2439,8 +2632,8 @@ impl RealAlgebraic {
                                 if &Rational::ZERO < a {
                                     let a_pow = a.nat_pow(&Natural::from(n));
                                     let b_pow = b.nat_pow(&Natural::from(n));
-                                    if &RealAlgebraic::Rational(a_pow) <= self
-                                        && self <= &RealAlgebraic::Rational(b_pow)
+                                    if &RealAlgebraic::Rational(a_pow) <= x
+                                        && x <= &RealAlgebraic::Rational(b_pow)
                                     {
                                         return Ok(possible_nthroots.get_real_root(idx));
                                     }
@@ -2591,14 +2784,10 @@ impl RingStructure for CannonicalStructure<RealAlgebraic> {
 
             //compose with x - n/d = dx - n
             elem.poly = Polynomial::compose(
-                &elem.poly,
-                &Polynomial::from_coeffs(vec![
-                    -Rational::numerator(rat),
-                    Rational::denominator(rat),
-                ]),
+                &elem.poly.apply_map(|c| Rational::from(c)),
+                &Polynomial::from_coeffs(vec![-rat, Rational::ONE]),
             )
-            .primitive_part()
-            .unwrap();
+            .primitive_part_fof();
 
             debug_assert!(elem.check_invariants().is_ok());
             elem
@@ -2942,16 +3131,13 @@ impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
                     cpx.tight_b += &rat;
                     //compose with x - n/d = dx - n
                     cpx.poly = Polynomial::compose(
-                        &cpx.poly,
-                        &Polynomial::from_coeffs(vec![
-                            -Rational::numerator(&rat),
-                            Rational::denominator(&rat),
-                        ]),
+                        &cpx.poly.apply_map(|c| Rational::from(c)),
+                        &Polynomial::from_coeffs(vec![-rat, Rational::ONE]),
                     )
-                    .primitive_part()
-                    .unwrap();
+                    .primitive_part_fof();
 
-                    debug_assert!(cpx.check_invariants().is_ok());
+                    #[cfg(debug_assertions)]
+                    cpx.check_invariants().unwrap();
                     cpx
                 }
                 RealAlgebraic::Real(mut real) => {
@@ -3459,6 +3645,15 @@ impl ComplexConjugateStructure for CannonicalStructure<ComplexAlgebraic> {
     }
 }
 
+impl PositiveRealNthRootStructure for CannonicalStructure<ComplexAlgebraic> {
+    fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
+        match x {
+            ComplexAlgebraic::Real(x) => Ok(ComplexAlgebraic::Real(x.nth_root(n)?)),
+            ComplexAlgebraic::Complex(x) => Err(()),
+        }
+    }
+}
+
 impl ComplexAlgebraic {
     pub fn min_poly(&self) -> Polynomial<Rational> {
         match self {
@@ -3748,6 +3943,25 @@ mod tests {
                 .len(),
             4
         );
+    }
+
+    #[test]
+    fn test_real_roots_squarefree() {
+        //a test where real_roots_squarefree find rational roots while refining the bounds on a real root such that no rational root lies on the end points
+        let poly = Polynomial::from_coeffs(vec![
+            Integer::from(0),
+            Integer::from(9),
+            Integer::from(0),
+            Integer::from(-4),
+        ]);
+        let roots = poly.real_roots_squarefree(
+            Some(&Rational::from(-2)),
+            Some(&Rational::from(2)),
+            false,
+            true,
+        );
+        println!("{:?}", roots);
+        roots.check_invariants().unwrap();
     }
 
     #[test]
@@ -4057,6 +4271,46 @@ mod tests {
             )
             .unwrap();
         assert_eq!(n, 2);
+    }
+
+    #[test]
+    fn test_count_complex_roots_big_values() {
+        {
+            let a = Rational::from_str("667/19382").unwrap(); //0.034413373232896505
+            let b = Rational::from_str("754/4405").unwrap(); //0.17116912599318956
+            let c = Rational::from_str("899/9691").unwrap(); //0.09276648436693839
+            let d = Rational::from_str("3161/19382").unwrap(); //0.16308946445155298
+
+            //0.951343405 -6.707838852x + 27.141574009x^2 = 0
+            // x = 0.123571 - 0.140646 i
+            // x = 0.123571 + 0.140646 i
+
+            let poly = Polynomial::from_coeffs(vec![
+                Integer::from_str("951343405").unwrap(),
+                Integer::from_str("-6707838852").unwrap(),
+                Integer::from_str("27141574009").unwrap(),
+            ]);
+            assert_eq!(poly.count_complex_roots(&a, &b, &c, &d), Some(1));
+        }
+
+        // {
+        //     let a = Rational::from_str("-163099/329494").unwrap(); //-0.49499839147298585
+        //     let b = Rational::from_str("-26827/74885").unwrap(); //-0.3582426387126928
+        //     let c = Rational::from_str("899/9691").unwrap(); //0.09276648436693839
+        //     let d = Rational::from_str("3161/19382").unwrap(); //0.16308946445155298
+
+        //     //2139048288466 + 8191288386270x + 7843914888601x^2 = 0
+        //     //same as
+        //     //2.139048288466 + 8.191288386270x + 7.843914888601x^2 = 0
+        //     //roots are -0.52 +/- a tiny complex bit
+
+        //     let poly = Polynomial::from_coeffs(vec![
+        //         Integer::from_str("2139048288466").unwrap(),
+        //         Integer::from_str("8191288386270").unwrap(),
+        //         Integer::from_str("7843914888601").unwrap(),
+        //     ]);
+        //     assert_eq!(poly.count_complex_roots(&a, &b, &c, &d), Some(1));
+        // }
     }
 
     #[test]

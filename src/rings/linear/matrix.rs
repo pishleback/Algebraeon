@@ -1,6 +1,9 @@
 use std::borrow::Borrow;
 use std::rc::Rc;
 
+use malachite_base::num::basic::traits::One;
+use malachite_nz::natural::Natural;
+
 use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::elements::*;
 use super::super::ring_structure::structure::*;
@@ -363,6 +366,32 @@ impl<RS: RingStructure> MatrixStructure<RS> {
         })
     }
 
+    pub fn join_diag<MatT: Borrow<Matrix<RS::Set>>>(&self, mats: Vec<MatT>) -> Matrix<RS::Set> {
+        if mats.len() == 0 {
+            Matrix::construct(0, 0, |r, c| unreachable!())
+        } else if mats.len() == 1 {
+            mats[0].borrow().clone()
+        } else {
+            let i = mats.len() / 2;
+            let (first, last) = mats.split_at(i);
+            let first = self.join_diag(first.into_iter().map(|m| m.borrow()).collect());
+            let last = self.join_diag(last.into_iter().map(|m| m.borrow()).collect());
+            Matrix::construct(
+                first.rows() + last.rows(),
+                first.cols() + last.cols(),
+                |r, c| {
+                    if r < first.rows() && c < first.cols() {
+                        first.at(r, c).unwrap().clone()
+                    } else if first.rows() <= r && first.cols() <= c {
+                        last.at(r - first.rows(), c - first.cols()).unwrap().clone()
+                    } else {
+                        self.ring().zero()
+                    }
+                },
+            )
+        }
+    }
+
     pub fn dot(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> RS::Set {
         let rows = a.rows();
         let cols = a.cols();
@@ -487,6 +516,36 @@ impl<RS: RingStructure> MatrixStructure<RS> {
             Err(MatOppErr::NotSquare)
         } else {
             Ok(self.ring.sum((0..n).map(|i| a.at(i, i).unwrap()).collect()))
+        }
+    }
+
+    pub fn nat_pow(&self, a: &Matrix<RS::Set>, k: &Natural) -> Matrix<RS::Set> {
+        use malachite_base::num::logic::traits::BitIterable;
+        let n = a.rows();
+        assert_eq!(n, a.cols());
+        if *k == 0 {
+            self.ident(n)
+        } else if *k == 1 {
+            a.clone()
+        } else {
+            debug_assert!(*k >= 2);
+            let bits: Vec<_> = k.bits().collect();
+            let mut pows = vec![a.clone()];
+            while pows.len() < bits.len() {
+                pows.push(
+                    self.mul(&pows.last().unwrap(), &pows.last().unwrap())
+                        .unwrap(),
+                );
+            }
+            let count = bits.len();
+            debug_assert_eq!(count, pows.len());
+            let mut ans = self.ident(n);
+            for i in 0..count {
+                if bits[i] {
+                    ans = self.mul(&ans, &pows[i]).unwrap();
+                }
+            }
+            ans
         }
     }
 }
@@ -893,7 +952,7 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                                 d: self.ring.div(a, &d).unwrap(),
                             },
                         );
-                        //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
+                        //this will implicitly put the pivot into fav assoc form because that is what gcd does
                         row_opp.apply(&mut m);
                         row_opp.apply(&mut u);
                         self.ring.mul_mut(&mut u_det, &row_opp.det());
@@ -1272,6 +1331,18 @@ impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateS
     pub fn col_reduced_hermite_normal_form(&self, m: Matrix<RS::Set>) -> Matrix<RS::Set> {
         self.col_reduced_hermite_algorithm(m).0
     }
+
+    pub fn inv(&self, a: Matrix<RS::Set>) -> Option<Matrix<RS::Set>> {
+        let n = a.rows();
+        assert_eq!(n, a.cols());
+        let (h, u, pivs) = self.row_reduced_hermite_algorithm(a);
+        //h = u*a
+        if self.equal(&h, &self.ident(n)) {
+            Some(u)
+        } else {
+            None
+        }
+    }
 }
 
 impl<RS: GreatestCommonDivisorStructure> MatrixStructure<RS> {
@@ -1408,41 +1479,409 @@ impl<FS: ComplexConjugateStructure + RingStructure> MatrixStructure<FS> {
 }
 
 impl<FS: ComplexConjugateStructure + FieldStructure> MatrixStructure<FS> {
-    pub fn gram_schmidt_col_orthogonalization(&self, mut mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
-        //make the columns orthogonal by gram_schmidt gram_schmidt_col_orthogonalization
-        for i in 0..mat.cols() {
+    //return mat=LQ where L is lower triangular and Q is row-orthogonal (not orthonormal)
+    pub fn gram_schmidt_row_orthogonalization_algorithm(
+        &self,
+        mut mat: Matrix<FS::Set>,
+    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+        #[cfg(debug_assertions)]
+        let origional_mat = mat.clone();
+
+        let mut lt = self.ident(mat.rows());
+        for i in 0..mat.rows() {
             for j in 0..i {
                 //col_i = col_i - (projection of col_j onto col_i)
                 let lambda = self
                     .ring()
                     .div(
-                        &self.inner_product(&mat.get_col(i), &mat.get_col(j)),
-                        &self.inner_product(&mat.get_col(j), &mat.get_col(j)),
+                        &self.inner_product(&mat.get_row(i), &mat.get_row(j)),
+                        &self.inner_product(&mat.get_row(j), &mat.get_row(j)),
                     )
                     .unwrap();
                 //col_i -= lambda col_j
-                for r in 0..mat.rows() {
-                    let mat_rj = mat.at(r, j).unwrap().clone();
-                    self.ring().add_mut(
-                        mat.at_mut(r, i).unwrap(),
-                        &self.ring().neg(&self.ring().mul(&lambda, &mat_rj)),
-                    );
-                }
+                let row_opp = ElementaryOpp::new_row_opp(
+                    self.ring.clone(),
+                    ElementaryOppType::AddRowMul {
+                        i: i,
+                        j: j,
+                        x: self.ring().neg(&lambda),
+                    },
+                );
+                row_opp.apply(&mut lt);
+                row_opp.apply(&mut mat);
             }
         }
-        for i in 0..mat.cols() {
-            for j in (i + 1)..mat.cols() {
+
+        for i in 0..mat.rows() {
+            for j in (i + 1)..mat.rows() {
                 debug_assert!(self
                     .ring()
-                    .is_zero(&self.inner_product(&mat.get_col(i), &mat.get_col(j)),));
+                    .is_zero(&self.inner_product(&mat.get_row(i), &mat.get_row(j)),));
             }
         }
-        mat
+
+        #[cfg(debug_assertions)]
+        assert!(self.equal(&mat, &self.mul(&lt, &origional_mat).unwrap()));
+
+        (lt, mat)
     }
 
-    pub fn gram_schmidt_row_orthogonalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
-        self.gram_schmidt_col_orthogonalization(mat.transpose())
-            .transpose()
+    //return mat=QR where Q is col-orthogonal (not orthonormal) and R is upper triangular and
+    pub fn gram_schmidt_col_orthogonalization_algorithm(
+        &self,
+        mut mat: Matrix<FS::Set>,
+    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+        let (l, q) = self.gram_schmidt_row_orthogonalization_algorithm(mat.transpose());
+        (q.transpose(), l.transpose())
+    }
+
+    pub fn gram_schmidt_row_orthogonalization(&self, mut mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
+        self.gram_schmidt_row_orthogonalization_algorithm(mat).1
+    }
+
+    pub fn gram_schmidt_col_orthogonalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
+        self.gram_schmidt_col_orthogonalization_algorithm(mat).0
+    }
+}
+
+impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructure>
+    MatrixStructure<FS>
+{
+    //return L*mat=Q where L is lower triangular and Q is orthonormal
+    pub fn lq_decomposition_algorithm(
+        &self,
+        mut mat: Matrix<FS::Set>,
+    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+        let (mut lt, mut mat) = self.gram_schmidt_row_orthogonalization_algorithm(mat);
+
+        for r in 0..mat.rows() {
+            let row = mat.get_row(r);
+            let lensq = self.inner_product(&row, &row);
+            let row_opp = ElementaryOpp::new_row_opp(
+                self.ring.clone(),
+                ElementaryOppType::UnitMul {
+                    row: r,
+                    unit: self
+                        .ring()
+                        .inv(&self.ring().nth_root(&lensq, 2).unwrap())
+                        .unwrap(),
+                },
+            );
+            row_opp.apply(&mut lt);
+            row_opp.apply(&mut mat);
+        }
+
+        debug_assert!(self.equal(
+            &self.ident(mat.rows()),
+            &self
+                .mul(&mat, &self.conjugate(&mat.transpose_ref()))
+                .unwrap()
+        ));
+
+        (lt, mat)
+    }
+
+    //return mat*R=Q where Q is col-orthogonal (not orthonormal) and R is upper triangular
+    pub fn qr_decomposition_algorithm(
+        &self,
+        mut mat: Matrix<FS::Set>,
+    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+        let (l, q) = self.lq_decomposition_algorithm(mat.transpose());
+        (q.transpose(), l.transpose())
+    }
+
+    pub fn gram_schmidt_row_orthonormalization(&self, mut mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
+        self.lq_decomposition_algorithm(mat).1
+    }
+
+    pub fn gram_schmidt_col_orthonormalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
+        self.qr_decomposition_algorithm(mat).0
+    }
+}
+
+struct JordanBlock<FS: AlgebraicClosureStructure>
+where
+    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+{
+    eigenvalue: <FS::ACFS as Structure>::Set,
+    blocksize: usize,
+}
+
+impl<FS: AlgebraicClosureStructure> MatrixStructure<FS>
+where
+    FS: DisplayableStructure,       //TODO: remove
+    FS::ACFS: DisplayableStructure, //TODO: remove
+    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+{
+    pub fn eigenvalues_list(&self, mat: Matrix<FS::Set>) -> Vec<<FS::ACFS as Structure>::Set> {
+        self.ring()
+            .all_roots_list(&self.characteristic_polynomial(mat).unwrap())
+            .unwrap()
+    }
+
+    pub fn eigenvalues_unique(&self, mat: Matrix<FS::Set>) -> Vec<<FS::ACFS as Structure>::Set> {
+        self.ring()
+            .all_roots_unique(&self.characteristic_polynomial(mat).unwrap())
+            .unwrap()
+    }
+
+    pub fn eigenvalues_powers(
+        &self,
+        mat: Matrix<FS::Set>,
+    ) -> Vec<(<FS::ACFS as Structure>::Set, usize)> {
+        self.ring()
+            .all_roots_powers(&self.characteristic_polynomial(mat).unwrap())
+            .unwrap()
+    }
+
+    pub fn generalized_col_eigenspace(
+        &self,
+        mat: &Matrix<FS::Set>,
+        eigenvalue: &<FS::ACFS as Structure>::Set,
+        k: usize,
+    ) -> LinearLattice<<FS::ACFS as Structure>::Set> {
+        let n = mat.rows();
+        assert_eq!(n, mat.cols());
+        //compute ker((M - xI)^k)
+        let ac_mat_structure = MatrixStructure::new(self.ring().algebraic_closure_field());
+        ac_mat_structure.col_kernel(
+            ac_mat_structure.nat_pow(
+                &ac_mat_structure
+                    .add(
+                        &mat.apply_map(|x| self.ring().algebraic_closure_inclusion(x)),
+                        &ac_mat_structure.neg(
+                            ac_mat_structure.mul_scalar(ac_mat_structure.ident(n), eigenvalue),
+                        ),
+                    )
+                    .unwrap(),
+                &Natural::from(k),
+            ),
+        )
+    }
+
+    pub fn generalized_row_eigenspace(
+        &self,
+        mat: &Matrix<FS::Set>,
+        eigenvalue: &<FS::ACFS as Structure>::Set,
+        k: usize,
+    ) -> LinearLattice<<FS::ACFS as Structure>::Set> {
+        LinearLatticeStructure::new(self.ring().algebraic_closure_field())
+            .transpose(&self.generalized_col_eigenspace(&mat.transpose_ref(), eigenvalue, k))
+    }
+
+    pub fn col_eigenspace(
+        &self,
+        mat: &Matrix<FS::Set>,
+        eigenvalue: &<FS::ACFS as Structure>::Set,
+    ) -> LinearLattice<<FS::ACFS as Structure>::Set> {
+        self.generalized_col_eigenspace(mat, eigenvalue, 1)
+    }
+
+    pub fn row_eigenspace(
+        &self,
+        mat: &Matrix<FS::Set>,
+        eigenvalue: &<FS::ACFS as Structure>::Set,
+    ) -> LinearLattice<<FS::ACFS as Structure>::Set> {
+        self.generalized_row_eigenspace(mat, eigenvalue, 1)
+    }
+
+    /*
+
+    def jcf_info(self):
+        if self._jcf_info == None:
+            T = self
+
+            e_vals = self.eigen_val_powers()
+            gen_e_spaces = self.gen_eigen_spaces()
+
+            jcf_info = []
+            for x in e_vals:
+                info = {"ev" : x,
+                        "n" : e_vals[x],
+                        "gesp" : gen_e_spaces[x]}
+                jcf_info.append(info)
+
+            #basis of vectors - created as a union of vectors from the gen_eig_spaces
+            B = []
+            for info in jcf_info:
+                B.extend(info["gesp"].basis)
+            B = join_cols(B)
+
+            #write T in basis B - T should now be a block diagonal form - one block for each eigen value
+            T_B = B ** -1 * T * B
+
+            block_sizes = [info["n"] for info in jcf_info]
+            T_B_blocks = split_block_diag(T_B, block_sizes, block_sizes)
+            for i, info in enumerate(jcf_info):
+                info["gesp_block"] = T_B_blocks[i]
+
+            for info in jcf_info:
+                T = info["gesp_block"]
+                x = info["ev"]
+                S = T - Identity(T.n) * x
+
+                def get_S_jcf_bases(S, V):
+                    #return a jcf basis of S acting on V
+                    n = V.dimention()
+                    if n == 0:
+                        return []
+                    if n == 1:
+                        return [[V.basis[0]]]
+                    else:
+                        new_vecs = [] #keep track of the vectors we add this time round
+
+                        #let W be the image of S acting on V
+                        W = S * V
+                        #dim W is less than dim V since S has an eigen value of 0 - some direction gets sent to 0
+                        assert W.dimention() < V.dimention()
+                        #now find the jcf basis of S acting on W
+                        W_bases = get_S_jcf_bases(S, W)
+                        #now extend to a basis of V by:
+                        #1) adding the preimages of each previous W_basis vector under S
+                        #2) extending what is left to include ker(S)
+
+                        V_bases = [[w for w in W_basis] for W_basis in W_bases]
+                        #1)
+                        for i in range(len(W_bases)):
+                            w = W_bases[i][-1]
+                            V_bases[i].append(S.solve(w, V))
+
+                        #2)
+                        S_ker = S.kernel()
+                        #this is the extra stuff which needs to be added to extend the basis to one of ker S too
+                        #should add stuff from ker(S) which is in V but not in W. ie the stuff S sends straight to 0 from V / W
+                        for new_vec in (V & S_ker.quotient(W & S_ker)).basis:
+                            V_bases.append([new_vec])
+
+                        return V_bases
+
+                S_jcf_bases = get_S_jcf_bases(S, Identity(S.n).image())
+                info["gesp_block_jcf_bases"] = S_jcf_bases
+
+            import random
+            random.shuffle(jcf_info)
+            self._jcf_info = jcf_info
+        return self._jcf_info
+
+    @staticmethod
+    def jcf_info_to_jcf_basis(jcf_info):
+        gesp_basis = join_cols(sum([info["gesp"].basis for info in jcf_info], []))
+        gesp_jcf_basis = join_diag([join_cols(sum(info["gesp_block_jcf_bases"], [])) for info in jcf_info])
+        return gesp_basis * gesp_jcf_basis
+
+    def jcf_basis(self):
+        return self.jcf_info_to_jcf_basis(self.jcf_info())
+
+    def jcf_spec(self):
+        #return a list of (eigen value, jordan block size) pairs which specify the similarity equiv class of the matrix
+        return set(sum([[tuple([info["ev"], len(basis)]) for basis in info["gesp_block_jcf_bases"]] for info in self.jcf_info()], []))
+
+    def jcf(self):
+        B = self.jcf_basis()
+        return B ** -1 * self * B
+
+    def min_poly(self):
+        # product over i of (x - lambda_i) ^ (r_i)
+        # where r_i is the size of the smallest lambda block in the jcf of self
+        powers = {info["ev"] : max([len(basis) for basis in info["gesp_block_jcf_bases"]]) for info in self.jcf_info()}
+        return polynomial.Roots(sum([[ev] * powers[ev] for ev in powers], []))
+
+    def similar_basis(self, other):
+        #find a basis in which self looks like other
+        #equivelently, find P such that P^-1*self*P == other
+        if type(self) == type(other) == Matrix:
+            if self.n == other.n:
+                if self.jcf_spec() == other.jcf_spec():
+                    #need to find a jcf basis for self and other such that the jcf matricies are identical (including order (thats the only hard part))
+                    #NOTE - by the implementation of the algorithm used, each eigen block will be consistently ordered - largest first
+                    #HOWEVER, the order of the eigen block is still unknown (and an order cant be imposed in the algorhtm becasue in general, arbitrary number things cant be ordered in a consistent way)
+                    self_jcf_info = self.jcf_info()
+                    other_jcf_info = other.jcf_info()
+                    #rewrite these in terms of {e_val : info}
+                    self_jcf_info = {info["ev"] : info for info in self_jcf_info}
+                    other_jcf_info = {info["ev"] : info for info in other_jcf_info}
+                    assert self_jcf_info.keys() == other_jcf_info.keys()
+                    keys = list(self_jcf_info.keys()) #decide a consistent order here
+                    #reorder the info
+                    self_jcf_info = [self_jcf_info[ev] for ev in keys]
+                    other_jcf_info = [other_jcf_info[ev] for ev in keys]
+                    #now both info lists have the eigen values in the same order
+                    #as well as all blocks within each eigen block being in the right order
+                    self_jcf_basis = Matrix.jcf_info_to_jcf_basis(self_jcf_info)
+                    other_jcf_basis = Matrix.jcf_info_to_jcf_basis(other_jcf_info)
+                    return self_jcf_basis * other_jcf_basis ** -1
+                else:
+                    raise Exception("Matricies are not similar so cant find a basis in which one looks like the other")
+        raise NotImplementedError
+    */
+
+    pub fn jordan_algorithm(
+        &self,
+        mat: &Matrix<FS::Set>,
+    ) -> (Matrix<<FS::ACFS as Structure>::Set>, Vec<JordanBlock<FS>>) {
+        let n = mat.rows();
+        assert_eq!(n, mat.cols());
+
+        let ac_mat_structure = MatrixStructure::new(self.ring().algebraic_closure_field());
+        let ac_linlat_structure =
+            LinearLatticeStructure::new(self.ring().algebraic_closure_field());
+
+        let mut basis = vec![];
+        let mut multiplicities = vec![];
+        for (eigenvalue, multiplicity) in self.eigenvalues_powers(mat.clone()) {
+            let eigenspace = self.generalized_col_eigenspace(mat, &eigenvalue, multiplicity);
+            debug_assert_eq!(ac_linlat_structure.rank(&eigenspace), multiplicity);
+            basis.append(&mut ac_linlat_structure.basis_matrices(&eigenspace));
+            multiplicities.push(multiplicity);
+        }
+        //b = direct sum of generalized eigenspace
+        let gesp_basis = Matrix::join_cols(mat.rows(), basis);
+        //b^-1 * mat * b = block diagonal of generalized eigenspaces
+        let gesp_blocks_mat = ac_mat_structure
+            .mul(
+                &ac_mat_structure.inv(gesp_basis.clone()).unwrap(),
+                &ac_mat_structure
+                    .mul(
+                        &mat.apply_map(|x| self.ring().algebraic_closure_inclusion(x)),
+                        &gesp_basis,
+                    )
+                    .unwrap(),
+            )
+            .unwrap();
+
+        let mut idx_to_block = vec![];
+        for (b, m) in multiplicities.iter().enumerate() {
+            for i in (0..*m) {
+                idx_to_block.push(b);
+            }
+        }
+
+        println!("{:?}", idx_to_block);
+        println!("{:?}", multiplicities);
+        ac_mat_structure.pprint(&gesp_blocks_mat);
+
+        //extract the blocks from the block diagonal gesp_blocks_mat
+        let mut gesp_blocks = vec![];
+        let mut cum_m = 0;
+        for m in multiplicities {
+            gesp_blocks.push(Matrix::construct(m, m, |r, c| {
+                gesp_blocks_mat.at(cum_m + r, cum_m + c).unwrap().clone()
+            }));
+            cum_m += m;
+        }
+        debug_assert_eq!(cum_m, n);
+        drop(gesp_blocks_mat);
+
+        for block in gesp_blocks {
+            ac_mat_structure.pprint(&block);
+        }
+
+        todo!()
+    }
+
+    pub fn jordan_blocks(&self, mat: &Matrix<FS::Set>) {
+        self.pprint(mat);
+        todo!()
     }
 }
 
@@ -1618,6 +2057,10 @@ where
     pub fn col_reduced_hermite_normal_form(&self) -> Self {
         Self::structure().col_reduced_hermite_normal_form(self.clone())
     }
+
+    pub fn inv(&self) -> Option<Matrix<R>> {
+        Self::structure().inv(self.clone())
+    }
 }
 
 impl<R: StructuredType> Matrix<R>
@@ -1669,12 +2112,41 @@ impl<F: StructuredType> Matrix<F>
 where
     F::Structure: ComplexConjugateStructure + FieldStructure,
 {
-    pub fn gram_schmidt_col_orthogonalization(self) -> Matrix<F> {
-        Self::structure().gram_schmidt_col_orthogonalization(self)
+    pub fn gram_schmidt_row_orthogonalization_algorithm(self) -> (Matrix<F>, Matrix<F>) {
+        Self::structure().gram_schmidt_row_orthogonalization_algorithm(self)
+    }
+
+    pub fn gram_schmidt_col_orthogonalization_algorithm(self) -> (Matrix<F>, Matrix<F>) {
+        Self::structure().gram_schmidt_col_orthogonalization_algorithm(self)
     }
 
     pub fn gram_schmidt_row_orthogonalization(self) -> Matrix<F> {
         Self::structure().gram_schmidt_row_orthogonalization(self)
+    }
+
+    pub fn gram_schmidt_col_orthogonalization(self) -> Matrix<F> {
+        Self::structure().gram_schmidt_col_orthogonalization(self)
+    }
+}
+
+impl<F: StructuredType> Matrix<F>
+where
+    F::Structure: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructure,
+{
+    pub fn lq_decomposition_algorithm(self) -> (Matrix<F>, Matrix<F>) {
+        Self::structure().lq_decomposition_algorithm(self)
+    }
+
+    pub fn qr_decomposition_algorithm(self) -> (Matrix<F>, Matrix<F>) {
+        Self::structure().qr_decomposition_algorithm(self)
+    }
+
+    pub fn gram_schmidt_row_orthonormalization(self) -> Matrix<F> {
+        Self::structure().gram_schmidt_row_orthonormalization(self)
+    }
+
+    pub fn gram_schmidt_col_orthonormalization(self) -> Matrix<F> {
+        Self::structure().gram_schmidt_col_orthonormalization(self)
     }
 }
 
@@ -1685,7 +2157,7 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::rings::number::algebraic::isolated_roots::ComplexAlgebraic;
+    use crate::rings::number::algebraic::isolated_roots::{ComplexAlgebraic, RealAlgebraic};
 
     use super::*;
 
@@ -2445,6 +2917,21 @@ mod tests {
     }
 
     #[test]
+    fn invert() {
+        let a = Matrix::from_rows(vec![
+            vec![Rational::from(2), Rational::from(4), Rational::from(4)],
+            vec![Rational::from(-6), Rational::from(6), Rational::from(12)],
+            vec![Rational::from(10), Rational::from(7), Rational::from(17)],
+        ]);
+        a.pprint();
+        println!("{:?}", a.rank());
+        let b = Matrix::inv(&a).unwrap();
+        b.pprint();
+        debug_assert_eq!(Matrix::mul(&a, &b).unwrap(), Matrix::ident(3));
+        debug_assert_eq!(Matrix::mul(&b, &a).unwrap(), Matrix::ident(3));
+    }
+
+    #[test]
     fn smith_algorithm() {
         {
             let a = Matrix::from_rows(vec![
@@ -2717,7 +3204,7 @@ mod tests {
             vec![Rational::from(1), Rational::from(2), Rational::from(6)],
         ]);
 
-        let mat_gs = Matrix::from_rows(vec![
+        let mat_expected_gs = Matrix::from_rows(vec![
             vec![
                 Rational::from_str("1").unwrap(),
                 Rational::from_str("-4/3").unwrap(),
@@ -2736,9 +3223,16 @@ mod tests {
         ]);
 
         mat.pprint();
-        mat_gs.pprint();
+        mat_expected_gs.pprint();
 
-        assert_eq!(mat.gram_schmidt_col_orthogonalization(), mat_gs);
+        let (mat_actual_gs, mat_actual_ut) =
+            mat.clone().gram_schmidt_col_orthogonalization_algorithm();
+
+        mat_actual_gs.pprint();
+        mat_actual_ut.pprint();
+        Matrix::mul(&mat, &mat_actual_ut).unwrap().pprint();
+
+        assert_eq!(mat.gram_schmidt_col_orthogonalization(), mat_expected_gs);
     }
 
     #[test]
@@ -2746,15 +3240,8 @@ mod tests {
         let i = &ComplexAlgebraic::i().into_ring();
 
         let mat = Matrix::from_rows(vec![
-            vec![
-                (1 + 0 * i).into_set(),
-                (1 * i).into_set(),
-            ],
-            vec![
-                (1 + 0 * i).into_set(),
-                (1 + 0 * i).into_set(),
-            ],
-
+            vec![(1 + 0 * i).into_set(), (1 * i).into_set()],
+            vec![(1 + 0 * i).into_set(), (1 + 0 * i).into_set()],
         ]);
         mat.pprint();
         mat.gram_schmidt_col_orthogonalization().pprint();
@@ -2787,5 +3274,64 @@ mod tests {
         ]);
         mat.pprint();
         mat.clone().gram_schmidt_col_orthogonalization().pprint();
+    }
+
+    #[test]
+    fn complex_gram_schmidt_normalized() {
+        let one = &RealAlgebraic::one().into_ring();
+
+        let mat = Matrix::from_rows(vec![
+            vec![(1 * one).into_set(), (1 * one).into_set()],
+            vec![(1 * one).into_set(), (2 * one).into_set()],
+        ]);
+        mat.pprint();
+        mat.gram_schmidt_col_orthonormalization().pprint();
+
+        let i = &ComplexAlgebraic::i().into_ring();
+        let mat = Matrix::from_rows(vec![
+            vec![(-2 + 2 * i).into_set(), (-9 + 1 * i).into_set()],
+            vec![(3 + 3 * i).into_set(), (-2 + 4 * i).into_set()],
+        ]);
+        mat.pprint();
+        mat.clone().gram_schmidt_col_orthonormalization().pprint();
+    }
+
+    #[test]
+    fn eigenstuff() {
+        let mat = Matrix::from_rows(vec![
+            vec![
+                Rational::from(3),
+                Rational::from(1),
+                Rational::from(0),
+                Rational::from(1),
+            ],
+            vec![
+                Rational::from(-1),
+                Rational::from(5),
+                Rational::from(4),
+                Rational::from(1),
+            ],
+            vec![
+                Rational::from(0),
+                Rational::from(0),
+                Rational::from(2),
+                Rational::from(0),
+            ],
+            vec![
+                Rational::from(0),
+                Rational::from(0),
+                Rational::from(0),
+                Rational::from(4),
+            ],
+        ]);
+
+        for root in MatrixStructure::new(Rational::structure()).eigenvalues_list(mat.clone()) {
+            println!("{}", root);
+        }
+
+        mat.pprint();
+        let x = MatrixStructure::new(Rational::structure()).jordan_algorithm(&mat);
+
+        todo!()
     }
 }
