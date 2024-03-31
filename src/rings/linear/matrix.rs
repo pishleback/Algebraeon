@@ -1,6 +1,7 @@
 use std::borrow::Borrow;
 use std::rc::Rc;
 
+use itertools::Itertools;
 use malachite_base::num::basic::traits::One;
 use malachite_nz::natural::Natural;
 
@@ -1209,7 +1210,7 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
             }
             //now the first row and the first column are all zero except the top left element at (n, n) which is non-zero
             debug_assert!(!self.ring.equal(m.at(n, n).unwrap(), &self.ring.zero()));
-            //some more fiddling is needed now to make the top left element divides everything else
+            //some more fiddling is needed now to make sure the top left element divides everything else
             for r in n + 1..m.rows() {
                 //row(n) = row(n) + row(r)
                 let row_opp = ElementaryOpp::new_row_opp(
@@ -1223,7 +1224,7 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                 row_opp.apply(&mut m);
                 row_opp.apply(&mut u);
 
-                //row(n) goes from (g, a1, a2, ..., an) to (gcd, 0, 0, ..., 0)
+                //row(n) goes from (g, a1, a2, ..., an) to (gcd, 0, 0, ..., 0) by applying col opps
                 for c in n + 1..m.cols() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(n, c).unwrap();
@@ -1249,23 +1250,23 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                     col_opp.apply(&mut m);
                     col_opp.apply(&mut v);
                 }
+            }
 
-                //fix the first column
-                for fix_r in n + 1..m.rows() {
-                    let a = m.at(n, n).unwrap();
-                    let b = m.at(fix_r, n).unwrap();
-                    let q = self.ring.div(b, a).unwrap();
-                    let col_opp = ElementaryOpp::new_row_opp(
-                        self.ring.clone(),
-                        ElementaryOppType::AddRowMul {
-                            i: fix_r,
-                            j: n,
-                            x: self.ring.neg(&q),
-                        },
-                    );
-                    col_opp.apply(&mut m);
-                    col_opp.apply(&mut u);
-                }
+            //fix the first column
+            for fix_r in n + 1..m.rows() {
+                let a = m.at(n, n).unwrap();
+                let b = m.at(fix_r, n).unwrap();
+                let q = self.ring.div(b, a).unwrap();
+                let col_opp = ElementaryOpp::new_row_opp(
+                    self.ring.clone(),
+                    ElementaryOppType::AddRowMul {
+                        i: fix_r,
+                        j: n,
+                        x: self.ring.neg(&q),
+                    },
+                );
+                col_opp.apply(&mut m);
+                col_opp.apply(&mut u);
             }
 
             if self.ring.equal(m.at(n, n).unwrap(), &self.ring.zero()) {
@@ -1599,12 +1600,54 @@ impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructu
     }
 }
 
-struct JordanBlock<FS: AlgebraicClosureStructure>
+pub struct JordanBlock<FS: AlgebraicClosureStructure>
 where
     PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
 {
     eigenvalue: <FS::ACFS as Structure>::Set,
     blocksize: usize,
+}
+
+impl<FS: AlgebraicClosureStructure> JordanBlock<FS>
+where
+    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+{
+    pub fn matrix(&self, field: &FS) -> Matrix<<FS::ACFS as Structure>::Set> {
+        let ac_field = field.algebraic_closure_field();
+        Matrix::construct(self.blocksize, self.blocksize, |r, c| {
+            if r == c {
+                self.eigenvalue.clone()
+            } else if r + 1 == c {
+                ac_field.one()
+            } else {
+                ac_field.zero()
+            }
+        })
+    }
+}
+
+pub struct JordanNormalForm<FS: AlgebraicClosureStructure>
+where
+    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+{
+    field: Rc<FS>,
+    blocks: Vec<JordanBlock<FS>>,
+}
+
+impl<FS: AlgebraicClosureStructure> JordanNormalForm<FS>
+where
+    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+{
+    pub fn matrix(&self) -> Matrix<<FS::ACFS as Structure>::Set> {
+        let ac_field = self.field.algebraic_closure_field();
+        let ac_mat_structure = MatrixStructure::new(ac_field.clone());
+        ac_mat_structure.join_diag(
+            self.blocks
+                .iter()
+                .map(|block| block.matrix(self.field.as_ref()))
+                .collect(),
+        )
+    }
 }
 
 impl<FS: AlgebraicClosureStructure> MatrixStructure<FS>
@@ -1685,154 +1728,28 @@ where
         self.generalized_row_eigenspace(mat, eigenvalue, 1)
     }
 
-    /*
-
-    def jcf_info(self):
-        if self._jcf_info == None:
-            T = self
-
-            e_vals = self.eigen_val_powers()
-            gen_e_spaces = self.gen_eigen_spaces()
-
-            jcf_info = []
-            for x in e_vals:
-                info = {"ev" : x,
-                        "n" : e_vals[x],
-                        "gesp" : gen_e_spaces[x]}
-                jcf_info.append(info)
-
-            #basis of vectors - created as a union of vectors from the gen_eig_spaces
-            B = []
-            for info in jcf_info:
-                B.extend(info["gesp"].basis)
-            B = join_cols(B)
-
-            #write T in basis B - T should now be a block diagonal form - one block for each eigen value
-            T_B = B ** -1 * T * B
-
-            block_sizes = [info["n"] for info in jcf_info]
-            T_B_blocks = split_block_diag(T_B, block_sizes, block_sizes)
-            for i, info in enumerate(jcf_info):
-                info["gesp_block"] = T_B_blocks[i]
-
-            for info in jcf_info:
-                T = info["gesp_block"]
-                x = info["ev"]
-                S = T - Identity(T.n) * x
-
-                def get_S_jcf_bases(S, V):
-                    #return a jcf basis of S acting on V
-                    n = V.dimention()
-                    if n == 0:
-                        return []
-                    if n == 1:
-                        return [[V.basis[0]]]
-                    else:
-                        new_vecs = [] #keep track of the vectors we add this time round
-
-                        #let W be the image of S acting on V
-                        W = S * V
-                        #dim W is less than dim V since S has an eigen value of 0 - some direction gets sent to 0
-                        assert W.dimention() < V.dimention()
-                        #now find the jcf basis of S acting on W
-                        W_bases = get_S_jcf_bases(S, W)
-                        #now extend to a basis of V by:
-                        #1) adding the preimages of each previous W_basis vector under S
-                        #2) extending what is left to include ker(S)
-
-                        V_bases = [[w for w in W_basis] for W_basis in W_bases]
-                        #1)
-                        for i in range(len(W_bases)):
-                            w = W_bases[i][-1]
-                            V_bases[i].append(S.solve(w, V))
-
-                        #2)
-                        S_ker = S.kernel()
-                        #this is the extra stuff which needs to be added to extend the basis to one of ker S too
-                        #should add stuff from ker(S) which is in V but not in W. ie the stuff S sends straight to 0 from V / W
-                        for new_vec in (V & S_ker.quotient(W & S_ker)).basis:
-                            V_bases.append([new_vec])
-
-                        return V_bases
-
-                S_jcf_bases = get_S_jcf_bases(S, Identity(S.n).image())
-                info["gesp_block_jcf_bases"] = S_jcf_bases
-
-            import random
-            random.shuffle(jcf_info)
-            self._jcf_info = jcf_info
-        return self._jcf_info
-
-    @staticmethod
-    def jcf_info_to_jcf_basis(jcf_info):
-        gesp_basis = join_cols(sum([info["gesp"].basis for info in jcf_info], []))
-        gesp_jcf_basis = join_diag([join_cols(sum(info["gesp_block_jcf_bases"], [])) for info in jcf_info])
-        return gesp_basis * gesp_jcf_basis
-
-    def jcf_basis(self):
-        return self.jcf_info_to_jcf_basis(self.jcf_info())
-
-    def jcf_spec(self):
-        #return a list of (eigen value, jordan block size) pairs which specify the similarity equiv class of the matrix
-        return set(sum([[tuple([info["ev"], len(basis)]) for basis in info["gesp_block_jcf_bases"]] for info in self.jcf_info()], []))
-
-    def jcf(self):
-        B = self.jcf_basis()
-        return B ** -1 * self * B
-
-    def min_poly(self):
-        # product over i of (x - lambda_i) ^ (r_i)
-        # where r_i is the size of the smallest lambda block in the jcf of self
-        powers = {info["ev"] : max([len(basis) for basis in info["gesp_block_jcf_bases"]]) for info in self.jcf_info()}
-        return polynomial.Roots(sum([[ev] * powers[ev] for ev in powers], []))
-
-    def similar_basis(self, other):
-        #find a basis in which self looks like other
-        #equivelently, find P such that P^-1*self*P == other
-        if type(self) == type(other) == Matrix:
-            if self.n == other.n:
-                if self.jcf_spec() == other.jcf_spec():
-                    #need to find a jcf basis for self and other such that the jcf matricies are identical (including order (thats the only hard part))
-                    #NOTE - by the implementation of the algorithm used, each eigen block will be consistently ordered - largest first
-                    #HOWEVER, the order of the eigen block is still unknown (and an order cant be imposed in the algorhtm becasue in general, arbitrary number things cant be ordered in a consistent way)
-                    self_jcf_info = self.jcf_info()
-                    other_jcf_info = other.jcf_info()
-                    #rewrite these in terms of {e_val : info}
-                    self_jcf_info = {info["ev"] : info for info in self_jcf_info}
-                    other_jcf_info = {info["ev"] : info for info in other_jcf_info}
-                    assert self_jcf_info.keys() == other_jcf_info.keys()
-                    keys = list(self_jcf_info.keys()) #decide a consistent order here
-                    #reorder the info
-                    self_jcf_info = [self_jcf_info[ev] for ev in keys]
-                    other_jcf_info = [other_jcf_info[ev] for ev in keys]
-                    #now both info lists have the eigen values in the same order
-                    #as well as all blocks within each eigen block being in the right order
-                    self_jcf_basis = Matrix.jcf_info_to_jcf_basis(self_jcf_info)
-                    other_jcf_basis = Matrix.jcf_info_to_jcf_basis(other_jcf_info)
-                    return self_jcf_basis * other_jcf_basis ** -1
-                else:
-                    raise Exception("Matricies are not similar so cant find a basis in which one looks like the other")
-        raise NotImplementedError
-    */
-
+    //return the jordan normal form F of the matrix M and a basis matrix B such that
+    // B^-1 M B = J
     pub fn jordan_algorithm(
         &self,
         mat: &Matrix<FS::Set>,
-    ) -> (Matrix<<FS::ACFS as Structure>::Set>, Vec<JordanBlock<FS>>) {
+    ) -> (JordanNormalForm<FS>, Matrix<<FS::ACFS as Structure>::Set>) {
         let n = mat.rows();
         assert_eq!(n, mat.cols());
 
-        let ac_mat_structure = MatrixStructure::new(self.ring().algebraic_closure_field());
-        let ac_linlat_structure =
-            LinearLatticeStructure::new(self.ring().algebraic_closure_field());
+        let ac_field = self.ring().algebraic_closure_field();
+        let ac_mat_structure = MatrixStructure::new(ac_field.clone());
+        let ac_linlat_structure = LinearLatticeStructure::new(ac_field.clone());
+
+        let ac_mat = mat.apply_map(|x| self.ring().algebraic_closure_inclusion(x));
 
         let mut basis = vec![];
-        let mut multiplicities = vec![];
+        let mut eigenvalues = vec![]; //store (gesp_basis, eigenvalue, multiplicity)
         for (eigenvalue, multiplicity) in self.eigenvalues_powers(mat.clone()) {
             let eigenspace = self.generalized_col_eigenspace(mat, &eigenvalue, multiplicity);
             debug_assert_eq!(ac_linlat_structure.rank(&eigenspace), multiplicity);
             basis.append(&mut ac_linlat_structure.basis_matrices(&eigenspace));
-            multiplicities.push(multiplicity);
+            eigenvalues.push((eigenvalue, multiplicity));
         }
         //b = direct sum of generalized eigenspace
         let gesp_basis = Matrix::join_cols(mat.rows(), basis);
@@ -1840,48 +1757,203 @@ where
         let gesp_blocks_mat = ac_mat_structure
             .mul(
                 &ac_mat_structure.inv(gesp_basis.clone()).unwrap(),
-                &ac_mat_structure
-                    .mul(
-                        &mat.apply_map(|x| self.ring().algebraic_closure_inclusion(x)),
-                        &gesp_basis,
-                    )
-                    .unwrap(),
+                &ac_mat_structure.mul(&ac_mat, &gesp_basis).unwrap(),
             )
             .unwrap();
 
         let mut idx_to_block = vec![];
-        for (b, m) in multiplicities.iter().enumerate() {
-            for i in (0..*m) {
+        for (b, (eval, mult)) in eigenvalues.iter().enumerate() {
+            for i in (0..*mult) {
                 idx_to_block.push(b);
             }
         }
 
-        println!("{:?}", idx_to_block);
-        println!("{:?}", multiplicities);
-        ac_mat_structure.pprint(&gesp_blocks_mat);
+        // println!("{:?}", idx_to_block);
+        // println!("{:?}", eigenvalues);
+        // ac_mat_structure.pprint(&gesp_blocks_mat);
 
         //extract the blocks from the block diagonal gesp_blocks_mat
         let mut gesp_blocks = vec![];
-        let mut cum_m = 0;
-        for m in multiplicities {
-            gesp_blocks.push(Matrix::construct(m, m, |r, c| {
-                gesp_blocks_mat.at(cum_m + r, cum_m + c).unwrap().clone()
-            }));
-            cum_m += m;
+        let mut cum_mult = 0;
+        for (eval, mult) in eigenvalues {
+            gesp_blocks.push((
+                eval,
+                mult,
+                Matrix::construct(mult, mult, |r, c| {
+                    gesp_blocks_mat
+                        .at(cum_mult + r, cum_mult + c)
+                        .unwrap()
+                        .clone()
+                }),
+            ));
+            cum_mult += mult;
         }
-        debug_assert_eq!(cum_m, n);
+        debug_assert_eq!(cum_mult, n);
         drop(gesp_blocks_mat);
 
-        for block in gesp_blocks {
-            ac_mat_structure.pprint(&block);
+        // Vec<(eval, multiplicity, Vec<Jordan Block>)>
+        let jnf_info = gesp_blocks
+            .into_iter()
+            .map(|(eval, m, mat_t)| {
+                debug_assert_eq!(mat_t.rows(), m);
+                debug_assert_eq!(mat_t.cols(), m);
+                // println!("eval = {:?} m={}", eval, m);
+                // ac_mat_structure.pprint(&mat_t);
+                //all eigenvalues of T are eval
+                //let S = T - x I so that all eigenvlues of S are zero
+                let mat_s = ac_mat_structure
+                    .add(
+                        &mat_t,
+                        &ac_mat_structure
+                            .mul_scalar(ac_mat_structure.ident(m), &ac_field.neg(&eval)),
+                    )
+                    .unwrap();
+
+                let jb_basis = {
+                    debug_assert!(m >= 1);
+
+                    let mut mat_s_pows = vec![ac_mat_structure.ident(m), mat_s.clone()];
+                    for i in 0..(m - 1) {
+                        mat_s_pows.push(
+                            ac_mat_structure
+                                .mul(mat_s_pows.last().unwrap(), &mat_s)
+                                .unwrap(),
+                        );
+                    }
+                    debug_assert!(
+                        ac_mat_structure.equal(&ac_mat_structure.zero(m, m), &mat_s_pows[m])
+                    );
+                    // for (i, spow) in mat_s_pows.iter().enumerate() {
+                    //     println!("s^{}", i);
+                    //     ac_mat_structure.pprint(&spow);
+                    // }
+                    let mat_s_pow_kers = mat_s_pows
+                        .into_iter()
+                        .map(|s_mat_pow| ac_mat_structure.col_kernel(s_mat_pow))
+                        .collect_vec();
+                    // ker(S) in ker(S^2) in ker(S^3) in ...
+                    // for (i, ker) in mat_s_pow_kers.iter().enumerate() {
+                    //     println!("ker(s^{})", i);
+                    //     ac_linlat_structure.pprint(&ker);
+                    // }
+
+                    let mut accounted = ac_linlat_structure.zero(m, 1);
+                    let mut jordan_block_bases = vec![];
+                    for k in (0..m).rev() {
+                        //extend the basis by stuff in ker(S^{k+1}) but not in ker(S^k) and their images under S, and which are not already accounted for
+                        // println!("k = {} {}", k + 1, k);
+                        let ker_ext = ac_linlat_structure.from_basis(
+                            m,
+                            1,
+                            ac_linlat_structure
+                                .extension_basis(&mat_s_pow_kers[k], &mat_s_pow_kers[k + 1]),
+                        );
+
+                        let unaccounted_ker_ext_basis = ac_linlat_structure.extension_basis(
+                            &ac_linlat_structure.intersect_pair(m, 1, &accounted, &ker_ext),
+                            &ker_ext,
+                        );
+                        let unaccounted_ker_ext =
+                            ac_linlat_structure.from_basis(m, 1, unaccounted_ker_ext_basis.clone());
+
+                        for ukeb in unaccounted_ker_ext_basis {
+                            //one new jordan block for each ukeb
+                            // println!("ukeb");
+                            // ac_mat_structure.pprint(&ukeb);
+
+                            let mut jb_basis = vec![ukeb];
+                            for i in 0..k {
+                                let ukeb_img = ac_mat_structure
+                                    .mul(&mat_s, &jb_basis.last().unwrap())
+                                    .unwrap();
+                                // println!("ukeb_img #{}", i);
+                                // ac_mat_structure.pprint(&ukeb_img);
+                                jb_basis.push(ukeb_img);
+                            }
+
+                            accounted = ac_linlat_structure.sum_pair(
+                                m,
+                                1,
+                                &accounted,
+                                &ac_linlat_structure.from_basis(m, 1, jb_basis.clone()),
+                            );
+
+                            jordan_block_bases.push(jb_basis.into_iter().rev().collect_vec());
+                        }
+                    }
+
+                    // println!(
+                    //     "jb sizes = {:?}",
+                    //     jordan_block_bases.iter().map(|v| v.len()).collect_vec()
+                    // );
+
+                    jordan_block_bases
+
+                    // Matrix::join_cols(m, jordan_block_bases.into_iter().flatten().collect_vec())
+                };
+
+                // println!("gesp_jordan_basis");
+                // ac_mat_structure.pprint(&jb_basis);
+                // ac_mat_structure.pprint(
+                //     &ac_mat_structure
+                //         .mul(
+                //             &ac_mat_structure.inv(jb_basis.clone()).unwrap(),
+                //             &ac_mat_structure.mul(&mat_t, &jb_basis).unwrap(),
+                //         )
+                //         .unwrap(),
+                // );
+
+                (eval, m, jb_basis)
+            })
+            .collect_vec();
+
+        let mut jordan_blocks = vec![];
+        let mut jnf_basis_rel_gesp_basis: Vec<Matrix<<FS::ACFS as Structure>::Set>> = vec![];
+        for (eval, mult, blocks) in jnf_info {
+            // println!("eval={:?}, mult={}", eval, mult);
+            let mut eigenblock_basis = vec![];
+            for mut block in blocks {
+                jordan_blocks.push(JordanBlock {
+                    eigenvalue: eval.clone(),
+                    blocksize: block.len(),
+                });
+                eigenblock_basis.append(&mut block);
+            }
+            jnf_basis_rel_gesp_basis.push(Matrix::join_cols(mult, eigenblock_basis));
         }
+        let jnf = JordanNormalForm {
+            field: self.ring(),
+            blocks: jordan_blocks,
+        };
+        let jordan_blocks_basis = ac_mat_structure.join_diag(jnf_basis_rel_gesp_basis);
 
-        todo!()
-    }
+        // ac_mat_structure.pprint(&jnf.matrix());
 
-    pub fn jordan_blocks(&self, mat: &Matrix<FS::Set>) {
-        self.pprint(mat);
-        todo!()
+        // println!("jordan_blocks_basis");
+        // ac_mat_structure.pprint(&jordan_blocks_basis);
+
+        let jnf_basis = ac_mat_structure
+            .mul(&gesp_basis, &jordan_blocks_basis)
+            .unwrap();
+        // println!("jnf_basis");
+        // ac_mat_structure.pprint(&jnf_basis);
+
+        //check that B^-1 M B = JNF
+        debug_assert!(ac_mat_structure.equal(
+            &ac_mat_structure
+                .mul(
+                    &ac_mat_structure.inv(jnf_basis.clone()).unwrap(),
+                    &ac_mat_structure.mul(&ac_mat, &jnf_basis).unwrap(),
+                )
+                .unwrap(),
+            &jnf.matrix()
+        ));
+        // println!("jnf");
+        // ac_mat_structure.pprint(&jnf);
+
+        // todo!()
+
+        (jnf, jnf_basis)
     }
 }
 
@@ -3087,6 +3159,47 @@ mod tests {
                 ])
             );
         }
+
+        {
+            let a = Matrix::from_rows(vec![
+                vec![
+                    Rational::from(4),
+                    Rational::from(0),
+                    Rational::from(0),
+                    Rational::from(0),
+                ],
+                vec![
+                    Rational::from(0),
+                    Rational::from(4),
+                    Rational::from(0),
+                    Rational::from(0),
+                ],
+                vec![
+                    Rational::from(0),
+                    Rational::from(1),
+                    Rational::from(4),
+                    Rational::from(0),
+                ],
+                vec![
+                    Rational::from(0),
+                    Rational::from(0),
+                    Rational::from(1),
+                    Rational::from(4),
+                ],
+            ]);
+            let min_p = a.clone().minimal_polynomial().unwrap();
+            let char_p = a.clone().characteristic_polynomial().unwrap();
+            assert_eq!(
+                &min_p,
+                &Polynomial::from_coeffs(vec![Rational::from(-4), Rational::from(1),])
+                    .nat_pow(&Natural::from(3u8))
+            );
+            assert_eq!(
+                &char_p,
+                &Polynomial::from_coeffs(vec![Rational::from(-4), Rational::from(1),])
+                    .nat_pow(&Natural::from(4u8))
+            );
+        }
     }
 
     #[test]
@@ -3297,7 +3410,7 @@ mod tests {
     }
 
     #[test]
-    fn eigenstuff() {
+    fn jordan_normal_form() {
         let mat = Matrix::from_rows(vec![
             vec![
                 Rational::from(3),
@@ -3325,13 +3438,28 @@ mod tests {
             ],
         ]);
 
+        mat.pprint();
         for root in MatrixStructure::new(Rational::structure()).eigenvalues_list(mat.clone()) {
             println!("{}", root);
         }
 
-        mat.pprint();
-        let x = MatrixStructure::new(Rational::structure()).jordan_algorithm(&mat);
+        let (j, b) = MatrixStructure::new(Rational::structure()).jordan_algorithm(&mat);
+        j.matrix().pprint();
+        b.pprint();
 
-        todo!()
+        let mat = Matrix::from_rows(vec![
+            vec![Rational::from(1), Rational::from(0), Rational::from(0)],
+            vec![Rational::from(0), Rational::from(0), Rational::from(-1)],
+            vec![Rational::from(0), Rational::from(1), Rational::from(0)],
+        ]);
+
+        mat.pprint();
+        for root in MatrixStructure::new(Rational::structure()).eigenvalues_list(mat.clone()) {
+            println!("{}", root);
+        }
+
+        let (j, b) = MatrixStructure::new(Rational::structure()).jordan_algorithm(&mat);
+        j.matrix().pprint();
+        b.pprint();
     }
 }
