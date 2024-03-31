@@ -208,8 +208,20 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         lattice
     }
 
+    pub fn zero(&self, rows: usize, cols: usize) -> LinearLattice<RS::Set> {
+        self.from_basis::<Matrix<RS::Set>>(rows, cols, vec![])
+    }
+
     pub fn rank(&self, lat: &LinearLattice<RS::Set>) -> usize {
         lat.metamatrix.rows()
+    }
+
+    pub fn take_nonzero_point(&self, lat: &LinearLattice<RS::Set>) -> Option<(Matrix<RS::Set>)> {
+        if self.rank(&lat) == 0 {
+            None
+        } else {
+            Some(self.basis_matrix(&lat, 0))
+        }
     }
 
     fn basis_row(&self, lat: &LinearLattice<RS::Set>, basis_num: usize) -> Matrix<RS::Set> {
@@ -283,6 +295,46 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
 
     pub fn equal(&self, lat1: &LinearLattice<RS::Set>, lat2: &LinearLattice<RS::Set>) -> bool {
         self.contains_sublattice(lat1, lat2) && self.contains_sublattice(lat2, lat1)
+    }
+
+    //given a contained in b, find rank(b) - rank(a) basis vectors needed to extend a to b
+    pub fn extension_basis(
+        &self,
+        lat_a: &LinearLattice<RS::Set>,
+        lat_b: &LinearLattice<RS::Set>,
+    ) -> Vec<Matrix<RS::Set>> {
+        //https://math.stackexchange.com/questions/2554408/how-to-find-the-basis-of-a-quotient-space
+
+        let rows = lat_a.rows();
+        let cols = lat_b.cols();
+        assert_eq!(rows, lat_b.rows());
+        assert_eq!(cols, lat_b.cols());
+        debug_assert!(self.contains_sublattice(lat_b, lat_a));
+
+        let n = rows * cols;
+        // form matrix of all vectors from [other self]
+        // row reduce and get pivots - take cols from orig to form basies of the quotient space
+
+        let mat_structure = MatrixStructure::new(self.ring.clone());
+        let metamatrix = Matrix::join_rows(n, vec![&lat_a.metamatrix, &lat_b.metamatrix]);
+        let (h, u, u_det, pivs) = mat_structure.col_hermite_algorithm(metamatrix.clone());
+
+        let mut extension_basis = vec![];
+        for r in pivs {
+            //dont take vectors which form a basis of lat_a
+            if r >= self.rank(lat_a) {
+                extension_basis.push(Matrix::construct(rows, cols, |mr, mc| {
+                    metamatrix
+                        .at(r, rc_to_idx(rows, cols, mr, mc))
+                        .unwrap()
+                        .clone()
+                }));
+            }
+        }
+
+        debug_assert_eq!(self.rank(&lat_a) + extension_basis.len(), self.rank(&lat_b));
+
+        extension_basis
     }
 
     pub fn sum<LatT: Borrow<LinearLattice<RS::Set>>>(
@@ -676,6 +728,13 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
         }
     }
 
+    pub fn take_point(&self, lat: AffineLattice<RS::Set>) -> Option<(Matrix<RS::Set>)> {
+        match self.to_offset_and_linear_lattice(lat) {
+            Some((offset, linat)) => Some(offset),
+            None => None,
+        }
+    }
+
     pub fn from_offset_and_linear_lattice(
         &self,
         rows: usize,
@@ -841,7 +900,7 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
         *metamat.at_mut(0, 0).unwrap() = self.ring.one();
         for idx in 0..rows * cols {
             let (r, c) = idx_to_rc(rows, cols, idx);
-            println!("rows={} cols={} r={} c={} idx={}", rows, cols, r, c, idx);
+            // println!("rows={} cols={} r={} c={} idx={}", rows, cols, r, c, idx);
             *metamat.at_mut(0, 1 + idx).unwrap() = offset.at(r, c).unwrap().clone();
         }
         for bn in 0..LinearLatticeStructure::new(self.ring.clone()).rank(linlat) {
@@ -1494,6 +1553,34 @@ mod tests {
 
             assert_eq!(int, c.col_span());
             assert_eq!(sum, d.col_span());
+        }
+    }
+
+    #[test]
+    fn linear_lattice_extension_basis() {
+        let a = Matrix::from_rows(vec![
+            vec![Rational::from(1), Rational::from(0), Rational::from(0)],
+            vec![Rational::from(1), Rational::from(0), Rational::from(0)],
+            vec![Rational::from(-1), Rational::from(0), Rational::from(0)],
+        ]);
+
+        let b = Matrix::from_rows(vec![
+            vec![Rational::from(1), Rational::from(1), Rational::from(0)],
+            vec![Rational::from(1), Rational::from(1), Rational::from(0)],
+            vec![Rational::from(1), Rational::from(-1), Rational::from(0)],
+        ]);
+
+        println!("a");
+        a.pprint();
+        println!("b");
+        b.pprint();
+
+        let ll_s = LinearLatticeStructure::new(Rational::structure());
+        let ext = ll_s.extension_basis(&a.col_span(), &b.col_span());
+
+        println!("ext");
+        for v in ext {
+            v.pprint();
         }
     }
 
