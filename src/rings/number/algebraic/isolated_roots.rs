@@ -1472,7 +1472,7 @@ impl Polynomial<Integer> {
             debug_assert!(re_sqfr != Polynomial::zero() || im_sqfr != Polynomial::zero());
             if re_sqfr == Polynomial::zero() {
                 //the image is doing a path confied to the imaginary axis
-                let roots_im = im.real_roots(Some(s), Some(t), REVERSE, !REVERSE);
+                let roots_im = im.real_roots(Some(s), Some(t), true, true);
                 if roots_im.len() == 0 {
                     //the image stays once side of the real axis
                     let val = evaluate_at_rational(im, s);
@@ -1488,7 +1488,7 @@ impl Polynomial<Integer> {
                 }
             } else if im_sqfr == Polynomial::zero() {
                 //the image is doing a path confied to the real axis
-                let roots_re = re.real_roots(Some(s), Some(t), REVERSE, !REVERSE);
+                let roots_re = re.real_roots(Some(s), Some(t), true, true);
                 if roots_re.len() == 0 {
                     //the image stays one side of the imaginary axis
                     let val = evaluate_at_rational(re, s);
