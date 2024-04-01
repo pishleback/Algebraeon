@@ -68,17 +68,17 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
-    pub fn from_rows(rows_elems: Vec<Vec<Set>>) -> Self {
+    pub fn from_rows(rows_elems: Vec<Vec<impl Into<Set> + Clone>>) -> Self {
         let rows = rows_elems.len();
         assert!(rows >= 1);
         let cols = rows_elems[0].len();
         for r in 1..rows {
             assert_eq!(rows_elems[r].len(), cols);
         }
-        Self::construct(rows, cols, |r, c| rows_elems[r][c].clone())
+        Self::construct(rows, cols, |r, c| rows_elems[r][c].clone().into())
     }
 
-    pub fn from_cols(cols_elems: Vec<Vec<Set>>) -> Self {
+    pub fn from_cols(cols_elems: Vec<Vec<impl Into<Set> + Clone>>) -> Self {
         Self::from_rows(cols_elems).transpose()
     }
 
@@ -1228,27 +1228,30 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
                 for c in n + 1..m.cols() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(n, c).unwrap();
+                    // println!("a={:?} b={:?}", a, b);
                     //if a=0 and b=0 then there is nothing to do and the following step would fail when dividing by g=0
-                    //b might not be a multiple of a
-                    //replace (a, b) with (gcd, 0) to fix this
-                    let (g, x, y) = self.ring.xgcd(a, b);
-                    debug_assert!(self.ring.equal(
-                        &self.ring.add(&self.ring.mul(&x, a), &self.ring.mul(&y, b)),
-                        &g
-                    ));
-                    let col_opp = ElementaryOpp::new_col_opp(
-                        self.ring.clone(),
-                        ElementaryOppType::TwoInv {
-                            i: n,
-                            j: c,
-                            a: x,
-                            b: y,
-                            c: self.ring.neg(&self.ring.div(b, &g).unwrap()),
-                            d: self.ring.div(a, &g).unwrap(),
-                        },
-                    );
-                    col_opp.apply(&mut m);
-                    col_opp.apply(&mut v);
+                    if !self.ring().is_zero(a) || !self.ring.is_zero(b) {
+                        //b might not be a multiple of a
+                        //replace (a, b) with (gcd, 0) to fix this
+                        let (g, x, y) = self.ring.xgcd(a, b);
+                        debug_assert!(self.ring.equal(
+                            &self.ring.add(&self.ring.mul(&x, a), &self.ring.mul(&y, b)),
+                            &g
+                        ));
+                        let col_opp = ElementaryOpp::new_col_opp(
+                            self.ring.clone(),
+                            ElementaryOppType::TwoInv {
+                                i: n,
+                                j: c,
+                                a: x,
+                                b: y,
+                                c: self.ring.neg(&self.ring.div(b, &g).unwrap()),
+                                d: self.ring.div(a, &g).unwrap(),
+                            },
+                        );
+                        col_opp.apply(&mut m);
+                        col_opp.apply(&mut v);
+                    }
                 }
             }
 
@@ -1600,6 +1603,7 @@ impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructu
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct JordanBlock<FS: AlgebraicClosureStructure>
 where
     PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
@@ -1626,6 +1630,7 @@ where
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct JordanNormalForm<FS: AlgebraicClosureStructure>
 where
     PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
@@ -1652,8 +1657,6 @@ where
 
 impl<FS: AlgebraicClosureStructure> MatrixStructure<FS>
 where
-    FS: DisplayableStructure,       //TODO: remove
-    FS::ACFS: DisplayableStructure, //TODO: remove
     PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
 {
     pub fn eigenvalues_list(&self, mat: Matrix<FS::Set>) -> Vec<<FS::ACFS as Structure>::Set> {
@@ -1751,6 +1754,7 @@ where
             basis.append(&mut ac_linlat_structure.basis_matrices(&eigenspace));
             eigenvalues.push((eigenvalue, multiplicity));
         }
+
         //b = direct sum of generalized eigenspace
         let gesp_basis = Matrix::join_cols(mat.rows(), basis);
         //b^-1 * mat * b = block diagonal of generalized eigenspaces
@@ -1955,6 +1959,44 @@ where
 
         (jnf, jnf_basis)
     }
+
+    pub fn jordan_normal_form(
+        &self,
+        mat: &Matrix<FS::Set>,
+    ) -> (Matrix<<FS::ACFS as Structure>::Set>) {
+        self.jordan_algorithm(mat).0.matrix()
+    }
+
+    //TODO: find basis which make two matricies similar if one exists
+    /*
+    def similar_basis(self, other):
+    #find a basis in which self looks like other
+    #equivelently, find P such that P^-1*self*P == other
+    if type(self) == type(other) == Matrix:
+        if self.n == other.n:
+            if self.jcf_spec() == other.jcf_spec():
+                #need to find a jcf basis for self and other such that the jcf matricies are identical (including order (thats the only hard part))
+                #NOTE - by the implementation of the algorithm used, each eigen block will be consistently ordered - largest first
+                #HOWEVER, the order of the eigen block is still unknown (and an order cant be imposed in the algorhtm becasue in general, arbitrary number things cant be ordered in a consistent way)
+                self_jcf_info = self.jcf_info()
+                other_jcf_info = other.jcf_info()
+                #rewrite these in terms of {e_val : info}
+                self_jcf_info = {info["ev"] : info for info in self_jcf_info}
+                other_jcf_info = {info["ev"] : info for info in other_jcf_info}
+                assert self_jcf_info.keys() == other_jcf_info.keys()
+                keys = list(self_jcf_info.keys()) #decide a consistent order here
+                #reorder the info
+                self_jcf_info = [self_jcf_info[ev] for ev in keys]
+                other_jcf_info = [other_jcf_info[ev] for ev in keys]
+                #now both info lists have the eigen values in the same order
+                #as well as all blocks within each eigen block being in the right order
+                self_jcf_basis = Matrix.jcf_info_to_jcf_basis(self_jcf_info)
+                other_jcf_basis = Matrix.jcf_info_to_jcf_basis(other_jcf_info)
+                return self_jcf_basis * other_jcf_basis ** -1
+            else:
+                raise Exception("Matricies are not similar so cant find a basis in which one looks like the other")
+    raise NotImplementedError
+    */
 }
 
 impl<R: StructuredType> StructuredType for Matrix<R>
@@ -2222,6 +2264,81 @@ where
     }
 }
 
+impl<F: StructuredType> Matrix<F>
+where
+    F::Structure: AlgebraicClosureStructure,
+    PolynomialStructure<F::Structure>:
+        UniqueFactorizationStructure + Structure<Set = Polynomial<F>>,
+{
+    pub fn eigenvalues_list(
+        self,
+    ) -> Vec<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set> {
+        Self::structure().eigenvalues_list(self)
+    }
+
+    pub fn eigenvalues_unique(
+        self,
+    ) -> Vec<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set> {
+        Self::structure().eigenvalues_unique(self)
+    }
+
+    pub fn eigenvalues_powers(
+        self,
+    ) -> Vec<(
+        <<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set,
+        usize,
+    )> {
+        Self::structure().eigenvalues_powers(self)
+    }
+
+    pub fn generalized_col_eigenspace(
+        &self,
+        eigenvalue: &<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set,
+        k: usize,
+    ) -> LinearLattice<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set> {
+        Self::structure().generalized_col_eigenspace(self, eigenvalue, k)
+    }
+
+    pub fn generalized_row_eigenspace(
+        &self,
+        eigenvalue: &<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set,
+        k: usize,
+    ) -> LinearLattice<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set> {
+        Self::structure().generalized_row_eigenspace(self, eigenvalue, k)
+    }
+
+    pub fn col_eigenspace(
+        &self,
+        eigenvalue: &<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set,
+    ) -> LinearLattice<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set> {
+        Self::structure().col_eigenspace(self, eigenvalue)
+    }
+
+    pub fn row_eigenspace(
+        &self,
+        eigenvalue: &<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set,
+    ) -> LinearLattice<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set> {
+        Self::structure().row_eigenspace(self, eigenvalue)
+    }
+
+    //return the jordan normal form F of the matrix M and a basis matrix B such that
+    // B^-1 M B = J
+    pub fn jordan_algorithm(
+        &self,
+    ) -> (
+        JordanNormalForm<F::Structure>,
+        Matrix<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set>,
+    ) {
+        Self::structure().jordan_algorithm(self)
+    }
+
+    pub fn jordan_normal_form(
+        &self,
+    ) -> (Matrix<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set>) {
+        Self::structure().jordan_normal_form(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -2235,21 +2352,10 @@ mod tests {
 
     #[test]
     fn test_join_rows() {
-        let top = Matrix::from_rows(vec![
-            vec![Integer::from(1), Integer::from(2), Integer::from(3)],
-            vec![Integer::from(4), Integer::from(5), Integer::from(6)],
-        ]);
-        let bot = Matrix::from_rows(vec![vec![
-            Integer::from(7),
-            Integer::from(8),
-            Integer::from(9),
-        ]]);
+        let top = Matrix::<Integer>::from_rows(vec![vec![1, 2, 3], vec![4, 5, 6]]);
+        let bot = Matrix::from_rows(vec![vec![7, 8, 9]]);
 
-        let both = Matrix::from_rows(vec![
-            vec![Integer::from(1), Integer::from(2), Integer::from(3)],
-            vec![Integer::from(4), Integer::from(5), Integer::from(6)],
-            vec![Integer::from(7), Integer::from(8), Integer::from(9)],
-        ]);
+        let both = Matrix::from_rows(vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]]);
 
         println!("top");
         top.pprint();
@@ -2341,10 +2447,7 @@ mod tests {
 
     #[test]
     fn flip_axes_eq() {
-        let mut a = Matrix::from_rows(vec![
-            vec![Integer::from(1), Integer::from(2)],
-            vec![Integer::from(3), Integer::from(4)],
-        ]);
+        let mut a = Matrix::<Integer>::from_rows(vec![vec![1, 2], vec![3, 4]]);
         a.pprint();
         println!("flip rows");
         a.flip_rows_mut();
@@ -2690,14 +2793,14 @@ mod tests {
 
     #[test]
     fn det_naive() {
-        let m = Matrix::from_rows(vec![
+        let m = Matrix::<Integer>::from_rows(vec![
             vec![Integer::from(1), Integer::from(3)],
             vec![Integer::from(4), Integer::from(2)],
         ]);
         println!("{}", m.det_naive().unwrap());
         assert_eq!(m.det_naive().unwrap(), Integer::from(-10));
 
-        let m = Matrix::from_rows(vec![
+        let m = Matrix::<Integer>::from_rows(vec![
             vec![Integer::from(1), Integer::from(3), Integer::from(2)],
             vec![Integer::from(-3), Integer::from(-1), Integer::from(-3)],
             vec![Integer::from(2), Integer::from(3), Integer::from(1)],
@@ -2869,7 +2972,7 @@ mod tests {
 
         {
             //integer reduced hermite normal form is unique, so we can fully check an example
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![
                     Integer::from(2),
                     Integer::from(3),
@@ -2926,7 +3029,7 @@ mod tests {
 
         {
             //this one used to cause a dividion by zero error when replacing (a, b) with (gcd, 0) when (a, b) = (0, 0)
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(1), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(0)],
@@ -2990,7 +3093,7 @@ mod tests {
 
     #[test]
     fn invert() {
-        let a = Matrix::from_rows(vec![
+        let a = Matrix::<Rational>::from_rows(vec![
             vec![Rational::from(2), Rational::from(4), Rational::from(4)],
             vec![Rational::from(-6), Rational::from(6), Rational::from(12)],
             vec![Rational::from(10), Rational::from(7), Rational::from(17)],
@@ -3006,7 +3109,7 @@ mod tests {
     #[test]
     fn smith_algorithm() {
         {
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(2), Integer::from(4), Integer::from(4)],
                 vec![Integer::from(-6), Integer::from(6), Integer::from(12)],
                 vec![Integer::from(10), Integer::from(4), Integer::from(16)],
@@ -3023,7 +3126,7 @@ mod tests {
                 ])
             );
 
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![
                     Integer::from(-6),
                     Integer::from(111),
@@ -3085,7 +3188,7 @@ mod tests {
 
         {
             //used to cause a divide by zero
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![
                     Integer::from(0),
                     Integer::from(0),
@@ -3118,7 +3221,7 @@ mod tests {
     #[test]
     fn min_and_char_polys() {
         {
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(0), Integer::from(4), Integer::from(4)],
                 vec![Integer::from(1), Integer::from(4), Integer::from(16)],
             ]);
@@ -3204,7 +3307,7 @@ mod tests {
 
     #[test]
     fn span_and_kernel_rank() {
-        let mat = Matrix::from_rows(vec![
+        let mat = Matrix::<Integer>::from_rows(vec![
             vec![Integer::from(1), Integer::from(1), Integer::from(1)],
             vec![Integer::from(1), Integer::from(2), Integer::from(1)],
             vec![Integer::from(1), Integer::from(1), Integer::from(1)],
@@ -3221,7 +3324,7 @@ mod tests {
     fn affine_span() {
         {
             //row affine span
-            let lat1 = Matrix::from_rows(vec![
+            let lat1 = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(1), Integer::from(1)],
                 vec![Integer::from(3), Integer::from(1)],
                 vec![Integer::from(2), Integer::from(3)],
@@ -3247,7 +3350,7 @@ mod tests {
 
         {
             //column affine span
-            let lat1 = Matrix::from_rows(vec![
+            let lat1 = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(1), Integer::from(3), Integer::from(2)],
                 vec![Integer::from(1), Integer::from(1), Integer::from(3)],
             ])
@@ -3273,7 +3376,7 @@ mod tests {
 
     #[test]
     fn span_and_kernel_points() {
-        let mat = Matrix::from_rows(vec![
+        let mat = Matrix::<Integer>::from_rows(vec![
             vec![
                 Integer::from(1),
                 Integer::from(1),
@@ -3311,7 +3414,7 @@ mod tests {
 
     #[test]
     fn rational_gram_schmidt() {
-        let mat = Matrix::from_rows(vec![
+        let mat = Matrix::<Rational>::from_rows(vec![
             vec![Rational::from(1), Rational::from(-1), Rational::from(3)],
             vec![Rational::from(1), Rational::from(0), Rational::from(5)],
             vec![Rational::from(1), Rational::from(2), Rational::from(6)],
@@ -3352,14 +3455,14 @@ mod tests {
     fn complex_gram_schmidt() {
         let i = &ComplexAlgebraic::i().into_ring();
 
-        let mat = Matrix::from_rows(vec![
+        let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
             vec![(1 + 0 * i).into_set(), (1 * i).into_set()],
             vec![(1 + 0 * i).into_set(), (1 + 0 * i).into_set()],
         ]);
         mat.pprint();
         mat.gram_schmidt_col_orthogonalization().pprint();
 
-        let mat = Matrix::from_rows(vec![
+        let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
             vec![
                 (-2 + 2 * i).into_set(),
                 (7 + 3 * i).into_set(),
@@ -3393,7 +3496,7 @@ mod tests {
     fn complex_gram_schmidt_normalized() {
         let one = &RealAlgebraic::one().into_ring();
 
-        let mat = Matrix::from_rows(vec![
+        let mat = Matrix::<RealAlgebraic>::from_rows(vec![
             vec![(1 * one).into_set(), (1 * one).into_set()],
             vec![(1 * one).into_set(), (2 * one).into_set()],
         ]);
@@ -3401,7 +3504,7 @@ mod tests {
         mat.gram_schmidt_col_orthonormalization().pprint();
 
         let i = &ComplexAlgebraic::i().into_ring();
-        let mat = Matrix::from_rows(vec![
+        let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
             vec![(-2 + 2 * i).into_set(), (-9 + 1 * i).into_set()],
             vec![(3 + 3 * i).into_set(), (-2 + 4 * i).into_set()],
         ]);
@@ -3444,14 +3547,11 @@ mod tests {
         }
 
         let (j, b) = MatrixStructure::new(Rational::structure()).jordan_algorithm(&mat);
+        println!("{:?}", j);
         j.matrix().pprint();
         b.pprint();
 
-        let mat = Matrix::from_rows(vec![
-            vec![Rational::from(1), Rational::from(0), Rational::from(0)],
-            vec![Rational::from(0), Rational::from(0), Rational::from(-1)],
-            vec![Rational::from(0), Rational::from(1), Rational::from(0)],
-        ]);
+        let mat = Matrix::<Rational>::from_rows(vec![vec![1, 0, 0], vec![0, 0, -1], vec![0, 2, 0]]);
 
         mat.pprint();
         for root in MatrixStructure::new(Rational::structure()).eigenvalues_list(mat.clone()) {
@@ -3459,6 +3559,7 @@ mod tests {
         }
 
         let (j, b) = MatrixStructure::new(Rational::structure()).jordan_algorithm(&mat);
+        println!("{:?}", j);
         j.matrix().pprint();
         b.pprint();
     }
