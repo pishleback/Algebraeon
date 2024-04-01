@@ -117,16 +117,15 @@ fn main() {
 
     use crate::rings::polynomial::polynomial::*;
 
-    let mat = Matrix::from_rows(vec![
-        vec![
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1").unwrap(),
-        ],
-        vec![
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("-2").unwrap(),
-        ],
+    let mat = Matrix::<Rational>::from_rows(vec![
+        vec![0, -1, 1, 1],
+        vec![1, 0, 1, 0],
+        vec![0, 0, 0, 1],
+        vec![0, 0, -1, 0],
     ]);
     mat.pprint();
-    mat.gram_schmidt_col_orthogonalization().pprint();
+    for root in mat.clone().eigenvalues_list() {
+        println!("{}", root);
+    }
+    mat.jordan_normal_form().pprint();
 }

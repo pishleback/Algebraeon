@@ -16,6 +16,7 @@ impl<RS: RingStructure> PartialEq for StructuredElement<RS> {
     }
 }
 
+
 impl<RS: RingStructure> Eq for StructuredElement<RS> {}
 
 impl<RS: RingStructure> Neg for &StructuredElement<RS> {

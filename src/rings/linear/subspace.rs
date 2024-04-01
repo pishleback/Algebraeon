@@ -1154,7 +1154,7 @@ mod tests {
     #[test]
     fn linear_lattice_invariant() {
         let lattice = LinearLattice {
-            metamatrix: Matrix::from_rows(vec![
+            metamatrix: Matrix::<Integer>::from_rows(vec![
                 vec![
                     Integer::from(0),
                     Integer::from(3),
@@ -1174,7 +1174,7 @@ mod tests {
         lattice.check_invariants().unwrap();
 
         let lattice = LinearLattice {
-            metamatrix: Matrix::from_rows(vec![
+            metamatrix: Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(0), Integer::from(3), Integer::from(0)],
                 vec![Integer::from(2), Integer::from(0), Integer::from(1)],
             ]),
@@ -1184,7 +1184,7 @@ mod tests {
         assert!(lattice.check_invariants().is_err());
 
         let lattice = LinearLattice {
-            metamatrix: Matrix::from_rows(vec![
+            metamatrix: Matrix::<Integer>::from_rows(vec![
                 vec![
                     Integer::from(6),
                     Integer::from(0),
@@ -1223,7 +1223,7 @@ mod tests {
 
     #[test]
     fn containment() {
-        let lattice = LinearLattice::from_span(
+        let lattice = LinearLattice::<Integer>::from_span(
             2,
             2,
             vec![
@@ -1267,7 +1267,7 @@ mod tests {
                 2,
                 3,
                 vec![
-                    &Matrix::from_rows(vec![
+                    &Matrix::<Integer>::from_rows(vec![
                         vec![Integer::from(0), Integer::from(2), Integer::from(0)],
                         vec![Integer::from(0), Integer::from(0), Integer::from(0)],
                     ]),
@@ -1298,7 +1298,7 @@ mod tests {
     fn linear_lattice_sum_and_intersection() {
         {
             //standard basis sum and intersection
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(1), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(0)],
@@ -1341,7 +1341,7 @@ mod tests {
 
         {
             //sum and intersection as gcd and lcm
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(3), Integer::from(0), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(5), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(0), Integer::from(7)],
@@ -1384,7 +1384,7 @@ mod tests {
 
         {
             //triple intersection
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![
                     Integer::from(1),
                     Integer::from(0),
@@ -1502,7 +1502,7 @@ mod tests {
 
         {
             //complex example
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(3), Integer::from(9), Integer::from(27)],
                 vec![Integer::from(-4), Integer::from(6), Integer::from(-100)],
                 vec![Integer::from(2), Integer::from(8), Integer::from(7)],
@@ -1601,7 +1601,7 @@ mod tests {
                     2,
                     2,
                     vec![
-                        Matrix::from_rows(vec![
+                        Matrix::<Integer>::from_rows(vec![
                             vec![Integer::from(1), Integer::from(0)],
                             vec![Integer::from(0), Integer::from(1)],
                         ]),
@@ -1621,7 +1621,7 @@ mod tests {
     }
 
     fn affine_lattice_sum_and_intersection() {
-        let a1 = Matrix::from_rows(vec![
+        let a1 = Matrix::<Integer>::from_rows(vec![
             vec![Integer::from(3), Integer::from(1), Integer::from(0)],
             vec![Integer::from(3), Integer::from(1), Integer::from(0)],
             vec![Integer::from(3), Integer::from(1), Integer::from(1)],

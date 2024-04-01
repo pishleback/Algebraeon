@@ -15,6 +15,15 @@ use super::structure::*;
 //TODO: autogenerate these cannonical versions of the ring structures and their implementations in a proc macro?
 //In a proc macro how would I do the ones which go from opp(a : &Self::Set) to opp(&self)?
 
+// impl<R: StructuredType> From<StructuredElement<CannonicalStructure<R>>> for R
+// where
+//     R::Structure: RingStructure<Set = R>,
+// {
+//     fn from(value: StructuredElement<CannonicalStructure<R>>) -> Self {
+//         todo!()
+//     }
+// }
+
 pub trait Ring: StructuredType
 where
     Self::Structure: RingStructure<Set = Self>,
