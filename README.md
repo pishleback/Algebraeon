@@ -18,10 +18,10 @@ Code for doing maths on finite sets
  - Complex root isolation
  - Zassenhaus algorithm for factoring polynomials over the integers
  - Complex root arithmetic
+ - Gram–Schmidt algorithm
+ - Jordan normal form of a matrix
 
 ## Planned Features
- - Gram–Schmidt algorithm
  - LLL basis reduction algorithm
- - Jordan normal form of a matrix
  - Universal cyclotomic field
  - Ideals in algebraic number fields
