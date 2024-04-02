@@ -3,13 +3,14 @@
 #[macro_use]
 extern crate glium;
 
+pub mod combinatorics;
 pub mod drawing;
 pub mod finite_group_tables;
 pub mod geometry;
 pub mod groups;
 pub mod numbers;
 pub mod rings;
-pub mod sets;
+pub mod sets; //TODO: remove
 
 /*
 fn main() {
@@ -106,6 +107,7 @@ fn main() {
     use crate::rings::number::algebraic::isolated_roots::*;
     use crate::rings::number::algebraic::number_field::*;
     use crate::rings::number::modulo::*;
+    use crate::rings::polynomial::multipoly::*;
     use crate::rings::polynomial::polynomial::*;
     use crate::rings::ring_structure::cannonical::*;
     use crate::rings::ring_structure::quotient::*;
@@ -117,15 +119,20 @@ fn main() {
 
     use crate::rings::polynomial::polynomial::*;
 
-    let mat = Matrix::<Rational>::from_rows(vec![
-        vec![0, -1, 1, 1],
-        vec![1, 0, 1, 0],
-        vec![0, 0, 0, 1],
-        vec![0, 0, -1, 0],
-    ]);
-    mat.pprint();
-    for root in mat.clone().eigenvalues_list() {
-        println!("{}", root);
-    }
-    mat.jordan_normal_form().pprint();
+    let x_var = Variable::new("x");
+    let y_var = Variable::new("y");
+    let z_var = Variable::new("z");
+
+    let x = &MultiPolynomial::<Integer>::var(x_var.clone()).into_ring();
+    let y = &MultiPolynomial::<Integer>::var(y_var.clone()).into_ring();
+    let z = &MultiPolynomial::<Integer>::var(z_var.clone()).into_ring();
+
+    let f = (x.pow(2) + y.pow(2) + z.pow(2)).into_set();
+
+    let (e, g) = f
+        .as_elementary_symmetric_polynomials(vec![&x_var, &y_var, &z_var])
+        .unwrap();
+
+    println!("{:?}", e);
+    println!("{}", g);
 }

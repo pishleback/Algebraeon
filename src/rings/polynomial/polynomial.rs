@@ -28,8 +28,10 @@ impl<Set> Polynomial<Set> {
         self.coeffs
     }
 
-    pub fn from_coeffs(coeffs: Vec<Set>) -> Self {
-        Self { coeffs }
+    pub fn from_coeffs(coeffs: Vec<impl Into<Set>>) -> Self {
+        Self {
+            coeffs: coeffs.into_iter().map(|x| x.into()).collect(),
+        }
     }
 
     pub fn constant(x: Set) -> Self {
@@ -123,7 +125,7 @@ impl<RS: RingStructure> EqualityStructure for PolynomialStructure<RS> {
 }
 impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
     fn zero(&self) -> Self::Set {
-        Polynomial::from_coeffs(vec![])
+        Polynomial { coeffs: vec![] }
     }
 
     fn one(&self) -> Self::Set {
@@ -374,6 +376,25 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
         }
     }
 
+    pub fn div_impl(
+        &self,
+        a: &Polynomial<RS::Set>,
+        b: &Polynomial<RS::Set>,
+    ) -> Result<Polynomial<RS::Set>, RingDivisionError> {
+        match self.try_quorem(&a, &b) {
+            Ok((q, r)) => {
+                debug_assert!(self.equal(&self.add(&self.mul(&q, &b), &r), &a));
+                if self.is_zero(&r) {
+                    Ok(q)
+                } else {
+                    Err(RingDivisionError::NotDivisible)
+                }
+            }
+            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
+        }
+    }
+
     //None if b = 0
     //error if deg(a) < deg(b)
     pub fn pseudorem(
@@ -486,18 +507,7 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
 
 impl<RS: IntegralDomainStructure> IntegralDomainStructure for PolynomialStructure<RS> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        match self.try_quorem(&a, &b) {
-            Ok((q, r)) => {
-                debug_assert!(self.equal(&self.add(&self.mul(&q, &b), &r), &a));
-                if self.is_zero(&r) {
-                    Ok(q)
-                } else {
-                    Err(RingDivisionError::NotDivisible)
-                }
-            }
-            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
-        }
+        self.div_impl(a, b)
     }
 }
 
@@ -1018,7 +1028,7 @@ mod tests {
 
     #[test]
     fn invariant_reduction() {
-        let mut unreduced = Polynomial::from_coeffs(vec![
+        let mut unreduced = Polynomial::<Integer>::from_coeffs(vec![
             Integer::from(0),
             Integer::from(1),
             Integer::from(0),
@@ -1033,7 +1043,7 @@ mod tests {
             Integer::from(0),
             Integer::from(0),
         ]);
-        let reduced = Polynomial::<Integer>::from_coeffs(vec![]);
+        let reduced = Polynomial::<Integer>::zero();
         assert_eq!(unreduced, reduced);
     }
 

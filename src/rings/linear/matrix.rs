@@ -3237,7 +3237,7 @@ mod tests {
         }
 
         {
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Rational>::from_rows(vec![
                 vec![Rational::from(0), Rational::from(0), Rational::from(0)],
                 vec![Rational::from(0), Rational::from(0), Rational::from(1)],
                 vec![Rational::from(0), Rational::from(0), Rational::from(0)],
@@ -3264,7 +3264,7 @@ mod tests {
         }
 
         {
-            let a = Matrix::from_rows(vec![
+            let a = Matrix::<Rational>::from_rows(vec![
                 vec![
                     Rational::from(4),
                     Rational::from(0),
@@ -3467,25 +3467,16 @@ mod tests {
                 (-2 + 2 * i).into_set(),
                 (7 + 3 * i).into_set(),
                 (7 + 3 * i).into_set(),
-                (-5 + 4 * i).into_set(),
             ],
             vec![
                 (3 + 3 * i).into_set(),
                 (-2 + 4 * i).into_set(),
                 (6 + 2 * i).into_set(),
-                (-1 + 4 * i).into_set(),
             ],
             vec![
                 (2 + 2 * i).into_set(),
                 (8 + 0 * i).into_set(),
                 (-9 + 1 * i).into_set(),
-                (-7 + 5 * i).into_set(),
-            ],
-            vec![
-                (8 + 2 * i).into_set(),
-                (-9 + 0 * i).into_set(),
-                (6 + 3 * i).into_set(),
-                (-4 + 4 * i).into_set(),
             ],
         ]);
         mat.pprint();
@@ -3564,3 +3555,33 @@ mod tests {
         b.pprint();
     }
 }
+
+/*
+//for LLL testing from wikipeida
+let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
+            vec![
+                (-2 + 2 * i).into_set(),
+                (7 + 3 * i).into_set(),
+                (7 + 3 * i).into_set(),
+                (-5 + 4 * i).into_set(),
+            ],
+            vec![
+                (3 + 3 * i).into_set(),
+                (-2 + 4 * i).into_set(),
+                (6 + 2 * i).into_set(),
+                (-1 + 4 * i).into_set(),
+            ],
+            vec![
+                (2 + 2 * i).into_set(),
+                (8 + 0 * i).into_set(),
+                (-9 + 1 * i).into_set(),
+                (-7 + 5 * i).into_set(),
+            ],
+            vec![
+                (8 + 2 * i).into_set(),
+                (-9 + 0 * i).into_set(),
+                (6 + 3 * i).into_set(),
+                (-4 + 4 * i).into_set(),
+            ],
+        ]);
+        */

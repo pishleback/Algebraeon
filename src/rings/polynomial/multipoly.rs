@@ -5,6 +5,8 @@ use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::atomic::AtomicUsize;
 
+use malachite_nz::natural::Natural;
+
 use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
@@ -160,6 +162,21 @@ impl Monomial {
             .collect()
     }
 
+    pub fn evaluate<RS: RingStructure>(
+        &self,
+        ring: Rc<RS>,
+        values: &HashMap<Variable, RS::Set>,
+    ) -> RS::Set {
+        ring.product(
+            self.prod
+                .iter()
+                .map(|VariablePower { var, pow }| {
+                    ring.nat_pow(values.get(var).unwrap(), &Natural::from(*pow))
+                })
+                .collect(),
+        )
+    }
+
     fn mul(a: &Self, b: &Self) -> Self {
         Self::new({
             let mut prod = HashMap::new();
@@ -224,6 +241,10 @@ impl<ElemT: Clone> Term<ElemT> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         self.monomial.check_invariants()
     }
+
+    pub fn degree(&self) -> usize {
+        self.monomial.degree()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -280,6 +301,65 @@ impl<R: Clone> MultiPolynomial<R> {
         }
         vars
     }
+
+    pub fn apply_map<ImgSet: Clone>(&self, f: impl Fn(&R) -> ImgSet) -> MultiPolynomial<ImgSet> {
+        MultiPolynomial {
+            terms: self
+                .terms
+                .iter()
+                .map(|Term { coeff, monomial }| Term {
+                    coeff: f(coeff),
+                    monomial: monomial.clone(),
+                })
+                .collect(),
+        }
+    }
+
+    pub fn apply_map_vars(self, f: HashMap<Variable, Variable>) -> MultiPolynomial<R> {
+        MultiPolynomial {
+            terms: self
+                .terms
+                .into_iter()
+                .map(
+                    |Term {
+                         coeff,
+                         monomial: Monomial { prod, ident_lookup },
+                     }| Term {
+                        coeff: coeff,
+                        monomial: Monomial::new(
+                            prod.into_iter()
+                                .map(|VariablePower { var, pow }| VariablePower {
+                                    var: f.get(&var).unwrap().clone(),
+                                    pow,
+                                })
+                                .collect(),
+                        ),
+                    },
+                )
+                .collect(),
+        }
+    }
+
+    pub fn evaluate_var_zero(self, v: &Variable) -> MultiPolynomial<R> {
+        MultiPolynomial {
+            terms: self
+                .terms
+                .into_iter()
+                .filter(|Term { coeff, monomial }| monomial.get_var_pow(v) == 0)
+                .collect(),
+        }
+    }
+
+    //return the terms where every var in vars is present
+    pub fn has_all_vars_parts(self, vars: Vec<&Variable>) -> MultiPolynomial<R> {
+        MultiPolynomial {
+            terms: self
+                .terms
+                .into_iter()
+                .filter(|Term { coeff, monomial }| vars.iter().all(|v| monomial.get_var_pow(v) > 0))
+                .collect(),
+        }
+    }
 }
 
 impl<RS: RingStructure + DisplayableStructure> DisplayableStructure
@@ -312,6 +392,10 @@ pub struct MultiPolynomialStructure<RS: RingStructure> {
 impl<RS: RingStructure> MultiPolynomialStructure<RS> {
     pub fn new(coeff_ring: Rc<RS>) -> Self {
         Self { coeff_ring }
+    }
+
+    pub fn coeff_ring(&self) -> Rc<RS> {
+        self.coeff_ring.clone()
     }
 }
 
@@ -498,19 +582,26 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
     }
 
     pub fn degree(&self, p: &MultiPolynomial<RS::Set>) -> Option<usize> {
-        if p.terms.len() == 0 {
-            None
-        } else {
-            let mut d = 0;
-            for Term {
-                coeff: _coeff,
-                monomial,
-            } in &p.terms
-            {
-                d = std::cmp::max(d, monomial.degree())
+        p.terms.iter().map(|t| t.degree()).max()
+    }
+
+    pub fn split_by_degree(
+        &self,
+        p: MultiPolynomial<RS::Set>,
+    ) -> HashMap<usize, MultiPolynomial<RS::Set>> {
+        let mut p_by_deg = HashMap::new();
+        for term in p.terms {
+            // let term = MultiPolynomial::new(vec![term]);
+            let deg = term.degree();
+            if !p_by_deg.contains_key(&deg) {
+                p_by_deg.insert(deg, vec![]);
             }
-            Some(d)
+            p_by_deg.get_mut(&deg).unwrap().push(term);
         }
+        p_by_deg
+            .into_iter()
+            .map(|(d, t)| (d, MultiPolynomial { terms: t }))
+            .collect()
     }
 
     pub fn homogenize(
@@ -565,6 +656,22 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
             );
         }
         Polynomial::from_coeffs(coeffs)
+    }
+
+    pub fn evaluate(
+        &self,
+        poly: &MultiPolynomial<RS::Set>,
+        values: &HashMap<Variable, RS::Set>,
+    ) -> RS::Set {
+        self.coeff_ring().sum(
+            poly.terms
+                .iter()
+                .map(|Term { coeff, monomial }| {
+                    self.coeff_ring()
+                        .mul(coeff, &monomial.evaluate(self.coeff_ring(), &values))
+                })
+                .collect(),
+        )
     }
 }
 
