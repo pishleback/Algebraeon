@@ -25,3 +25,4 @@ Code for doing maths on finite sets
  - LLL basis reduction algorithm
  - Universal cyclotomic field
  - Ideals in algebraic number fields
+ - Write symmetric polynomials in terms of elementary symmetric polynomial
