@@ -3,3 +3,4 @@ pub mod multipoly;
 pub mod symmetric;
 pub mod factoring;
 pub mod hensel_lifting;
+pub mod quotient;

@@ -119,20 +119,17 @@ fn main() {
 
     use crate::rings::polynomial::polynomial::*;
 
-    let x_var = Variable::new("x");
-    let y_var = Variable::new("y");
-    let z_var = Variable::new("z");
+    {
+        let y = &Polynomial::<Rational>::var().into_ring();
+        let k = new_anf((y.pow(3) - 3 * y + 1).into_set());
+        let k_poly = PolynomialStructure::new(k.clone().into());
+        let x = &k_poly.var().into_ring();
 
-    let x = &MultiPolynomial::<Integer>::var(x_var.clone()).into_ring();
-    let y = &MultiPolynomial::<Integer>::var(y_var.clone()).into_ring();
-    let z = &MultiPolynomial::<Integer>::var(z_var.clone()).into_ring();
-
-    let f = (x.pow(2) + y.pow(2) + z.pow(2)).into_set();
-
-    let (e, g) = f
-        .as_elementary_symmetric_polynomials(vec![&x_var, &y_var, &z_var])
-        .unwrap();
-
-    println!("{:?}", e);
-    println!("{}", g);
+        println!(
+            "{}",
+            k_poly
+                .factor(&(2 * x.pow(3) - 6 * x + 2).into_set())
+                .unwrap()
+        );
+    }
 }

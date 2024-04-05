@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Display;
@@ -165,13 +166,13 @@ impl Monomial {
     pub fn evaluate<RS: RingStructure>(
         &self,
         ring: Rc<RS>,
-        values: &HashMap<Variable, RS::Set>,
+        values: &HashMap<Variable, impl Borrow<RS::Set>>,
     ) -> RS::Set {
         ring.product(
             self.prod
                 .iter()
                 .map(|VariablePower { var, pow }| {
-                    ring.nat_pow(values.get(var).unwrap(), &Natural::from(*pow))
+                    ring.nat_pow(values.get(var).unwrap().borrow(), &Natural::from(*pow))
                 })
                 .collect(),
         )
@@ -661,7 +662,7 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
     pub fn evaluate(
         &self,
         poly: &MultiPolynomial<RS::Set>,
-        values: &HashMap<Variable, RS::Set>,
+        values: &HashMap<Variable, impl Borrow<RS::Set>>,
     ) -> RS::Set {
         self.coeff_ring().sum(
             poly.terms
@@ -732,6 +733,10 @@ where
 
     pub fn expand(&self, v: &Variable) -> Polynomial<Self> {
         Self::structure().expand(self, v)
+    }
+
+    pub fn evaluate(&self, values: &HashMap<Variable, &R>) -> R {
+        Self::structure().evaluate(self, values)
     }
 }
 

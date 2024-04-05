@@ -13,7 +13,7 @@ use crate::{
 use super::multipoly::*;
 use crate::rings::structure::*;
 
-fn ss_num(n: usize) -> String {
+pub fn ss_num(n: usize) -> String {
     let mut ss = String::new();
     for x in n.to_string().chars() {
         match x {
@@ -191,7 +191,7 @@ where
     }
 
     //assume input is symmetrical
-    pub fn as_elementary_symmetric_polynomials_unsafe(
+    pub fn as_elementary_symmetric_polynomials_unchecked(
         &self,
         vars: Vec<impl Borrow<Variable>>,
         poly: &MultiPolynomial<RS::Set>,
@@ -232,7 +232,7 @@ where
         if !self.is_symmetric(vars.iter().map(|v| v.borrow().clone()).collect(), poly) {
             None
         } else {
-            Some(self.as_elementary_symmetric_polynomials_unsafe(vars, poly))
+            Some(self.as_elementary_symmetric_polynomials_unchecked(vars, poly))
         }
     }
 }
@@ -256,6 +256,13 @@ where
         vars: Vec<impl Borrow<Variable>>,
     ) -> Option<(Vec<Variable>, MultiPolynomial<R>)> {
         Self::structure().as_elementary_symmetric_polynomials(vars, self)
+    }
+
+    pub fn as_elementary_symmetric_polynomials_unchecked(
+        &self,
+        vars: Vec<impl Borrow<Variable>>,
+    ) -> (Vec<Variable>, MultiPolynomial<R>) {
+        Self::structure().as_elementary_symmetric_polynomials_unchecked(vars, self)
     }
 }
 

@@ -33,7 +33,7 @@ where
 }
 
 impl<RS: UniqueFactorizationStructure> Factored<RS> {
-    fn check_invariants(&self) -> Result<(), &'static str> {
+    pub fn check_invariants(&self) -> Result<(), &'static str> {
         if !self.ring.is_unit(&self.unit) {
             return Err("unit must be a unit");
         }

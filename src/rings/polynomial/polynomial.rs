@@ -902,6 +902,10 @@ where
         Self::structure().degree(self)
     }
 
+    pub fn as_constant(&self) -> Option<R> {
+        Self::structure().as_constant(self)
+    }
+
     pub fn is_monic(&self) -> bool {
         Self::structure().is_monic(self)
     }
