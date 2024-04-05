@@ -21,12 +21,12 @@ Code for doing maths on finite sets
  - Gram–Schmidt algorithm
  - Jordan normal form of a matrix
  - Write symmetric polynomials in terms of elementary symmetric polynomial
+ - Factor polynomials over algebraic number fields
 
 ## Planned Features
  - LLL basis reduction algorithm
  - Universal cyclotomic field
  - Ideals in algebraic number fields
  - Algebraic closure and Galois theory of finite fields
- - Factor polynomials over algebraic number fields
  - Splitting fields of algebraic number fields
  - Galois groups of algebraic number fields
