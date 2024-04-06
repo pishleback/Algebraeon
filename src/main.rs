@@ -121,14 +121,14 @@ fn main() {
 
     {
         let y = &Polynomial::<Rational>::var().into_ring();
-        let k = new_anf((y.pow(3) - 3 * y + 1).into_set());
+        let k = new_anf((y.pow(4) - y.pow(2) + 1).into_set());
         let k_poly = PolynomialStructure::new(k.clone().into());
         let x = &k_poly.var().into_ring();
 
         println!(
             "{}",
             k_poly
-                .factor(&(2 * x.pow(3) - 6 * x + 2).into_set())
+                .factor(&(x.pow(24) - 1).into_set())
                 .unwrap()
         );
     }
