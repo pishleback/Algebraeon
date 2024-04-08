@@ -125,11 +125,6 @@ fn main() {
         let k_poly = PolynomialStructure::new(k.clone().into());
         let x = &k_poly.var().into_ring();
 
-        println!(
-            "{}",
-            k_poly
-                .factor(&(x.pow(24) - 1).into_set())
-                .unwrap()
-        );
+        println!("{}", k_poly.factor(&(x.pow(24) - 1).into_set()).unwrap());
     }
 }
