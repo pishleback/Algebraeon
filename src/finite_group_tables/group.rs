@@ -155,20 +155,20 @@ impl Group {
         self.ident
     }
 
-    pub fn from_model<T: PartialEq + Eq + Hash + Clone + Debug>(
+    pub fn from_raw_model<T: PartialEq + Eq + Hash + Clone + Debug>(
         elems: Vec<T>,
         ident: impl Fn() -> T,
         inv: impl Fn(T) -> T,
         mul: impl Fn(T, T) -> T,
     ) -> Result<Self, &'static str> {
-        let grp = Self::from_model_unchecked(elems, ident, inv, mul, None, None);
+        let grp = Self::from_raw_model_unchecked(elems, ident, inv, mul, None, None);
         match grp.check_state() {
             Ok(()) => Ok(grp),
             Err(msg) => Err(msg),
         }
     }
 
-    pub fn from_model_unchecked<T: PartialEq + Eq + Hash + Clone + Debug>(
+    pub fn from_raw_model_unchecked<T: PartialEq + Eq + Hash + Clone + Debug>(
         elems: Vec<T>,
         ident: impl Fn() -> T,
         inv: impl Fn(T) -> T,
@@ -408,7 +408,7 @@ pub fn direct_product_structure(group_one: &Group, group_two: &Group) -> Group {
 }
 
 pub fn cyclic_group_structure(n: usize) -> Group {
-    Group::from_model_unchecked(
+    Group::from_raw_model_unchecked(
         (0..n).collect(),
         || 0,
         |x: usize| (n - x) % n,

@@ -32,8 +32,8 @@ pub fn subsets_vec<T: Clone>(items: Vec<T>, k: usize) -> Vec<Vec<T>> {
 mod tests {
     use super::*;
 
-    // #[test]
-    // pub fn run() {
-    //     println!("{:?}", subsets(5, 3));
-    // }
+    #[test]
+    pub fn run() {
+        println!("{:?}", subsets(5, 3));
+    }
 }

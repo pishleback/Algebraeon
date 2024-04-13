@@ -3,7 +3,7 @@ use std::{borrow::Borrow, collections::HashSet, rc::Rc};
 use itertools::Itertools;
 
 use crate::{
-    combinatorics::subset::{subsets, subsets_vec},
+    combinatorics::subset::*,
     rings::{
         ring_structure::structure::{IntegralDomainStructure, RingStructure},
         structure::CannonicalStructure,

@@ -1,136 +1,8 @@
+use std::future::poll_fn;
+
 use crate::rings::polynomial::polynomial::Polynomial;
 
 use super::*;
-
-#[test]
-fn test_root_sum_poly() {
-    for (f, g, exp) in vec![
-        (
-            Polynomial::from_coeffs(vec![Integer::from(0)]),
-            Polynomial::from_coeffs(vec![Integer::from(0)]),
-            Polynomial::from_coeffs(vec![Integer::from(0)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(0)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(-3), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-5), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-8), Integer::from(1)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-7), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(2)]),
-            Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(3)]),
-            Polynomial::from_coeffs(vec![Integer::from(-5), Integer::from(6)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(-2), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![
-                Integer::from(-7),
-                Integer::from(5),
-                Integer::from(3),
-                Integer::from(-1),
-            ]),
-        ),
-    ] {
-        println!();
-        let rsp = root_sum_poly(&f, &g);
-        println!("f = {}", Polynomial::to_string(&f));
-        println!("g = {}", Polynomial::to_string(&g));
-        println!(
-            "exp = {}    exp_factored = {:?}",
-            Polynomial::to_string(&exp),
-            exp.factorize_by_kroneckers_method()
-        );
-        println!(
-            "rsp = {}    rsp_factored = {:?}",
-            Polynomial::to_string(&rsp),
-            rsp.factorize_by_kroneckers_method()
-        );
-        assert!(Polynomial::are_associate(&exp, &rsp));
-    }
-}
-
-#[test]
-fn test_root_prod_poly() {
-    for (f, g, exp) in vec![
-        (
-            Polynomial::from_coeffs(vec![Integer::from(0)]),
-            Polynomial::from_coeffs(vec![Integer::from(0)]),
-            Polynomial::from_coeffs(vec![Integer::from(0)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(0)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(-3), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-5), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-15), Integer::from(1)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-7), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(1)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(2)]),
-            Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(3)]),
-            Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(6)]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(-2), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![
-                Integer::from(4),
-                Integer::from(0),
-                Integer::from(-12),
-                Integer::from(0),
-                Integer::from(1),
-            ]),
-        ),
-        (
-            Polynomial::from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(1)]),
-            Polynomial::from_coeffs(vec![Integer::from(-4), Integer::from(0), Integer::from(1)]),
-        ),
-    ] {
-        println!();
-        let rpp = root_prod_poly(&f, &g);
-        println!("f = {}", Polynomial::to_string(&f));
-        println!("g = {}", Polynomial::to_string(&g));
-        println!(
-            "exp = {}    exp_factored = {:?}",
-            Polynomial::to_string(&exp),
-            exp.factorize_by_kroneckers_method()
-        );
-        println!(
-            "rpp = {}    rpp_factored = {:?}",
-            Polynomial::to_string(&rpp),
-            rpp.factorize_by_kroneckers_method()
-        );
-        assert!(Polynomial::are_associate(&exp, &rpp));
-    }
-}
 
 #[test]
 fn test_squarefree_polynomial_real_root_isolation() {
@@ -908,4 +780,69 @@ fn test_as_poly_expr() {
     for root in f.primitive_part_fof().all_complex_roots() {
         assert_eq!(as_poly_expr(&root, &root), Some(x.pow(1).into_set()));
     }
+}
+
+#[test]
+fn test_pair_generated_anf() {
+    let x = &Polynomial::<Rational>::var().into_ring();
+
+    let sqrt_two = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(2)))
+        .nth_root(2)
+        .unwrap();
+    let sqrt_three = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(3)))
+        .nth_root(2)
+        .unwrap();
+    let sqrt_six = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(6)))
+        .nth_root(2)
+        .unwrap();
+
+    println!("{}", sqrt_two);
+    println!("{}", sqrt_three);
+    println!("{}", sqrt_six);
+
+    let (gen, _, _, x, y) = anf_pair_primitive_element_theorem(&sqrt_two, &sqrt_three);
+    println!(
+        "gen = {} min_poly = {} deg = {}",
+        gen,
+        gen.min_poly(),
+        gen.min_poly().degree().unwrap()
+    );
+    assert_eq!(
+        gen,
+        (sqrt_two.clone().into_ring() + sqrt_three.clone().into_ring()).into_set()
+    );
+    let oof = (sqrt_two.clone().into_ring() + sqrt_three.clone().into_ring()).into_set();
+    println!("{} {}", oof, oof.min_poly());
+    println!("x = {}", x);
+    println!("y = {}", y);
+}
+
+#[test]
+fn test_multi_generated_anf() {
+    let x = &Polynomial::<Rational>::var().into_ring();
+
+    let sqrt_two = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(2)))
+        .nth_root(2)
+        .unwrap();
+    let sqrt_three = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(3)))
+        .nth_root(2)
+        .unwrap();
+    let sqrt_six = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(6)))
+        .nth_root(2)
+        .unwrap();
+
+    println!("{}", sqrt_two);
+    println!("{}", sqrt_three);
+    println!("{}", sqrt_six);
+
+    let (mut g, p) = anf_multi_primitive_element_theorem(vec![&sqrt_two, &sqrt_three, &sqrt_six]);
+
+    println!("{} of degree {}", g, g.degree());
+    println!("sqrt(2) = {} applied to {}", p[0], g);
+    println!("sqrt(3) = {} applied to {}", p[1], g);
+    println!("sqrt(6) = {} applied to {}", p[2], g);
+
+    assert_eq!(sqrt_two, g.apply_poly(&p[0]));
+    assert_eq!(sqrt_three, g.apply_poly(&p[1]));
+    assert_eq!(sqrt_six, g.apply_poly(&p[2]));
 }

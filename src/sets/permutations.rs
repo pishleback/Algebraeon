@@ -146,7 +146,7 @@ pub fn alternating_group_structure(
     use super::permutations::*;
     let alt_perms: Vec<Permutation> = all_perms(n).into_iter().filter(|p| p.sign()).collect();
     (
-        Group::from_model_unchecked(
+        Group::from_raw_model_unchecked(
             alt_perms.clone(),
             || Permutation::new_ident(n),
             |x: Permutation| x.invert(),
@@ -169,7 +169,7 @@ pub fn symmetric_group_structure(
 ) -> (Group, Vec<Permutation>, HashMap<Permutation, usize>) {
     let perms: Vec<Permutation> = all_perms(n);
     (
-        Group::from_model_unchecked(
+        Group::from_raw_model_unchecked(
             perms.clone(),
             || Permutation::new_ident(n),
             |x: Permutation| x.invert(),

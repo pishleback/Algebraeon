@@ -1,9 +1,19 @@
 [package]
-name = "thing"
+name = "orthoclase-package"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "orthoclase_all"
+path = "src/lib.rs"
+
+[[bin]]
+name = "main"
+doc = false
+
+[[bin]]
+name = "main_sc"
+doc = false
 
 [dependencies]
 rayon="1.7.0"

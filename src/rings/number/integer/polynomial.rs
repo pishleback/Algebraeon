@@ -22,6 +22,8 @@ impl Polynomial<Integer> {
     fn find_factor_primitive_sqfree_by_zassenhaus_algorithm(
         self,
     ) -> Option<(Polynomial<Integer>, Polynomial<Integer>)> {
+        // println!("{}", self);
+
         //ways to improve this:
         //1) use LLL to find the right combination of modular factors
         //2) don't use factor by find factor, just do it all in one go and partition the modular factors into true factors

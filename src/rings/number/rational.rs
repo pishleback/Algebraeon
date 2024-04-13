@@ -102,6 +102,12 @@ impl RealRoundingStructure for CannonicalStructure<Rational> {
     }
 }
 
+impl RealFromFloatStructure for CannonicalStructure<Rational> {
+    fn from_f64_approx(&self, x: f64) -> Self::Set {
+        Rational::try_from_float_simplest(x).unwrap()
+    }
+}
+
 impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Rational>> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
         self.factorize_by_factorize_primitive_part(p)

@@ -88,7 +88,7 @@ impl<P: Fn(usize) -> bool + Copy> Iterator for PartitionIterator<P> {
     }
 }
 
-pub fn partitions_sized<P: Fn(usize) -> bool + Copy>(
+pub fn predicated_partitions_sized<P: Fn(usize) -> bool + Copy>(
     n: usize,
     x: usize,
     predicate: P,
@@ -96,7 +96,7 @@ pub fn partitions_sized<P: Fn(usize) -> bool + Copy>(
     PartitionIterator::new(n, x, predicate)
 }
 
-pub fn partitions_sized_zero<P: Fn(usize) -> bool + Copy>(
+pub fn predicated_partitions_sized_zero<P: Fn(usize) -> bool + Copy>(
     n: usize,
     x: usize,
     predicate: P,
@@ -105,30 +105,56 @@ pub fn partitions_sized_zero<P: Fn(usize) -> bool + Copy>(
         .map(|part| part.into_iter().map(|k| k - 1).collect::<Vec<usize>>())
 }
 
-pub fn partitions<P: Fn(usize) -> bool + Copy>(
+pub fn predicated_partitions<P: Fn(usize) -> bool + Copy>(
     n: usize,
     predicate: P,
 ) -> impl Iterator<Item = Vec<usize>> {
-    (1..n + 1).flat_map(move |x| partitions_sized::<P>(n, x, predicate))
+    (1..n + 1).flat_map(move |x| predicated_partitions_sized::<P>(n, x, predicate))
+}
+
+pub fn partitions_sized(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    predicated_partitions_sized(n, x, |_| true)
+}
+
+pub fn partitions_sized_zero(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    predicated_partitions_sized_zero(n, x, |_| true)
+}
+
+pub fn partitions(n: usize) -> impl Iterator<Item = Vec<usize>> {
+    predicated_partitions(n, |_| true)
 }
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+
     use super::*;
 
     #[test]
     fn test_partitions() {
-        let parts = partitions(12, |k| k % 2 == 1);
+        let parts = predicated_partitions(12, |k| k % 2 == 1);
         println!("start");
         for part in parts {
             println!("{:?}", part);
         }
         println!("end");
-        let parts = partitions(12, |_k| true);
+
+        let parts = predicated_partitions(12, |_k| true);
         println!("start");
         for part in parts {
             println!("{:?}", part);
         }
         println!("end");
+
+        let parts = partitions_sized_zero(5, 3);
+        println!("start");
+        for part in parts {
+            println!("{:?}", part);
+        }
+        println!("end");
+
+        // for x in (0..5).map(|i| (0..3)).multi_cartesian_product() {
+        //     println!("{:?}", x);
+        // }
     }
 }

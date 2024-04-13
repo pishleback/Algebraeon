@@ -25,7 +25,13 @@ use crate::rings::polynomial::polynomial::*;
 use crate::rings::ring_structure::cannonical::*;
 use crate::rings::ring_structure::structure::*;
 use crate::rings::structure::*;
+
+mod poly_tools;
+mod regions;
 mod tests;
+
+use poly_tools::*;
+use regions::*;
 
 fn rat_to_string(a: Rational) -> String {
     if a == 0 {
@@ -43,215 +49,6 @@ fn rat_to_string(a: Rational) -> String {
     }
     b = (1000.0 * b).round() / 1000.0;
     b.to_string()
-}
-
-fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
-    let x = Variable::new(String::from("x"));
-    let z = Variable::new(String::from("z"));
-
-    let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
-    let q = q.apply_map(|c| MultiPolynomial::constant(c.clone()));
-    let r = q
-        .evaluate(&MultiPolynomial::add(
-            &MultiPolynomial::var(z.clone()),
-            &MultiPolynomial::neg(&MultiPolynomial::var(x.clone())),
-        ))
-        .expand(&x);
-
-    let root_sum_poly = Polynomial::resultant(&p, &r)
-        .expand(&z)
-        .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
-    root_sum_poly.primitive_squarefree_part()
-}
-
-fn root_prod_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
-    let x = Variable::new(String::from("x"));
-    let t = Variable::new(String::from("t"));
-
-    let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
-    let q = q
-        .apply_map(|c| MultiPolynomial::constant(c.clone()))
-        .evaluate(&MultiPolynomial::var(x.clone()));
-    let r = q.homogenize(&t).expand(&t);
-    //x ** q.degree() * q(t * x ** -1)
-
-    let root_prod_poly = Polynomial::resultant(&p, &r)
-        .expand(&x)
-        .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
-    root_prod_poly.primitive_squarefree_part()
-}
-
-fn root_pos_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomial<Integer> {
-    debug_assert!(rat > &Rational::ZERO);
-    debug_assert!(poly.is_irreducible());
-    //we are multiplying by a so need to replace f(x) with f(x/a)
-    //e.g. f(x) = x-1 and multiply root by 3 then replace f(x) with
-    //f(x/3) = 3/x-1 = x-3
-    //e.g. f(x) = 1 + x + x^2 replace it with f(d/n * x) = 1 + d/n x + d^2/n^2 x^2 = n^2 + ndx + d^2 x
-
-    // println!("poly = {}", poly);
-    // println!("rat = {}", rat);
-
-    let rat_mul_poly = Polynomial::from_coeffs({
-        let degree = poly.degree().unwrap();
-        let (n, d) = (Rational::numerator(rat), Rational::denominator(rat));
-        let mut n_pows = vec![Integer::from(1)];
-        let mut d_pows = vec![Integer::from(1)];
-
-        {
-            let mut n_pow = n.clone();
-            let mut d_pow = d.clone();
-            for _i in 0..degree {
-                n_pows.push(n_pow.clone());
-                d_pows.push(d_pow.clone());
-                n_pow *= &n;
-                d_pow *= &d;
-            }
-        }
-
-        // println!("n_pows = {:?}", n_pows);
-        // println!("d_pows = {:?}", d_pows);
-
-        debug_assert_eq!(n_pows.len(), degree + 1);
-        debug_assert_eq!(d_pows.len(), degree + 1);
-
-        let coeffs = poly
-            .into_coeffs()
-            .iter()
-            .enumerate()
-            .map(|(i, c)| &d_pows[i] * &n_pows[degree - i] * c)
-            .collect();
-        coeffs
-    })
-    .primitive_part()
-    .unwrap();
-
-    // println!("rat_mul_poly = {}", rat_mul_poly);
-    // println!("rat_mul_poly = {}", rat_mul_poly.factor().unwrap());
-
-    debug_assert!(rat_mul_poly.is_irreducible());
-
-    rat_mul_poly
-}
-
-fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
-    debug_assert_eq!(poly.degree().unwrap(), 1);
-    -Rational::from_integers(poly.coeff(0), poly.coeff(1))
-}
-
-fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Rational {
-    poly.apply_map(|x| Rational::from(x)).evaluate(&val)
-}
-
-fn add_intervals(
-    first: (&Rational, &Rational),
-    second: (&Rational, &Rational),
-) -> (Rational, Rational) {
-    (first.0 + second.0, first.1 + second.1)
-}
-
-fn add_interval_rat(interval: (&Rational, &Rational), rat: &Rational) -> (Rational, Rational) {
-    (interval.0 + rat, interval.1 + rat)
-}
-
-fn mul_intervals(
-    first: (&Rational, &Rational),
-    second: (&Rational, &Rational),
-) -> (Rational, Rational) {
-    let mut pts = vec![];
-    for x in [first.0, first.1] {
-        for y in [second.0, second.1] {
-            pts.push(x * y);
-        }
-    }
-    (
-        pts.iter().min().unwrap().clone(),
-        pts.iter().max().unwrap().clone(),
-    )
-}
-
-fn mul_interval_rat(interval: (&Rational, &Rational), rat: &Rational) -> (Rational, Rational) {
-    match rat.cmp(&Rational::ZERO) {
-        std::cmp::Ordering::Less => (rat * interval.1, rat * interval.0),
-        std::cmp::Ordering::Equal => panic!(),
-        std::cmp::Ordering::Greater => (rat * interval.0, rat * interval.1),
-    }
-}
-
-fn add_boxes(
-    first: (&Rational, &Rational, &Rational, &Rational),
-    second: (&Rational, &Rational, &Rational, &Rational),
-) -> (Rational, Rational, Rational, Rational) {
-    (
-        first.0 + second.0,
-        first.1 + second.1,
-        first.2 + second.2,
-        first.3 + second.3,
-    )
-}
-
-fn add_box_rat(
-    box_region: (&Rational, &Rational, &Rational, &Rational),
-    rat: &Rational,
-) -> (Rational, Rational, Rational, Rational) {
-    (
-        box_region.0 + rat,
-        box_region.1 + rat,
-        box_region.2.clone(),
-        box_region.3.clone(),
-    )
-}
-
-fn mul_boxes(
-    first: (&Rational, &Rational, &Rational, &Rational),
-    second: (&Rational, &Rational, &Rational, &Rational),
-) -> (Rational, Rational, Rational, Rational) {
-    let mut pts_re = vec![];
-    let mut pts_im = vec![];
-    for (re1, im1) in [
-        (first.0, first.2),
-        (first.0, first.3),
-        (first.1, first.2),
-        (first.1, first.3),
-    ] {
-        for (re2, im2) in [
-            (second.0, second.2),
-            (second.0, second.3),
-            (second.1, second.2),
-            (second.1, second.3),
-        ] {
-            pts_re.push(re1 * re2 - im1 * im2);
-            pts_im.push(re1 * im2 + im1 * re2);
-        }
-    }
-
-    (
-        pts_re.iter().min().unwrap().clone(),
-        pts_re.into_iter().max().unwrap(),
-        pts_im.iter().min().unwrap().clone(),
-        pts_im.into_iter().max().unwrap(),
-    )
-}
-
-fn mul_box_rat(
-    box_region: (&Rational, &Rational, &Rational, &Rational),
-    rat: &Rational,
-) -> (Rational, Rational, Rational, Rational) {
-    match rat.cmp(&Rational::ZERO) {
-        std::cmp::Ordering::Less => (
-            rat * box_region.1,
-            rat * box_region.0,
-            rat * box_region.3,
-            rat * box_region.2,
-        ),
-        std::cmp::Ordering::Equal => panic!(),
-        std::cmp::Ordering::Greater => (
-            rat * box_region.0,
-            rat * box_region.1,
-            rat * box_region.2,
-            rat * box_region.3,
-        ),
-    }
 }
 
 fn bisect_box(
@@ -2855,6 +2652,10 @@ impl RealAlgebraic {
             RealAlgebraic::Real(real_root) => real_root.apply_poly(poly),
         }
     }
+
+    pub fn degree(&self) -> usize {
+        self.min_poly().degree().unwrap()
+    }
 }
 
 impl PositiveRealNthRootStructure for CannonicalStructure<RealAlgebraic> {
@@ -3005,6 +2806,10 @@ impl ComplexAlgebraic {
             ComplexAlgebraic::Real(reat_alg) => ComplexAlgebraic::Real(reat_alg.apply_poly(poly)),
             ComplexAlgebraic::Complex(cpx_root) => cpx_root.apply_poly(poly),
         }
+    }
+
+    pub fn degree(&self) -> usize {
+        self.min_poly().degree().unwrap()
     }
 }
 
@@ -3717,4 +3522,164 @@ pub fn as_poly_expr(
         }
     }
     None
+}
+
+/*
+input: complex algebraic numbers a and b
+output: (g, k, p, q) such that k in {1, 2, 3, ...} is minimal such that Q[a, b] = Q[g] where g = a + kb
+        moreover a=p(g) and b=q(g)
+*/
+// pub fn anf_pair_primitive_element_theorem_impl(
+//     a: &ComplexAlgebraic,
+//     b: &ComplexAlgebraic,
+// ) -> (
+//     ComplexAlgebraic,
+//     usize,
+//     Polynomial<Rational>,
+//     Polynomial<Rational>,
+// ) {
+//     for k in (1usize..) {
+//         let gen = ComplexAlgebraic::add(
+//             a,
+//             &ComplexAlgebraic::mul(
+//                 &ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(k))),
+//                 b,
+//             ),
+//         );
+//         match as_poly_expr(a, &gen) {
+//             Some(a_rel_gen) => {
+//                 let anf = new_anf(gen.min_poly());
+//                 //gen = a + kb
+//                 //so b = (gen - a) / k
+//                 let b_rel_gen = anf.mul(
+//                     &anf.add(&Polynomial::var(), &anf.neg(&a_rel_gen)),
+//                     &Polynomial::constant(Rational::from_integers(
+//                         Integer::from(1),
+//                         Integer::from(k),
+//                     )),
+//                 );
+//                 #[cfg(debug_assertions)]
+//                 {
+//                     let mut gen_mut = gen.clone();
+//                     assert_eq!(a, &gen_mut.apply_poly(&a_rel_gen));
+//                     assert_eq!(b, &gen_mut.apply_poly(&b_rel_gen));
+//                 }
+//                 return (gen, k, a_rel_gen, b_rel_gen);
+//             }
+//             None => {}
+//         }
+//     }
+//     unreachable!()
+// }
+
+/*
+input: complex algebraic numbers a and b
+output: (g, x, y, p, q) such that
+    Q[a, b] = Q[g]
+    x, y are coprime integers - in some sense the "simplest possible"
+    g = ax + by
+    a=p(g)
+    b=q(g)
+*/
+pub fn anf_pair_primitive_element_theorem(
+    a: &ComplexAlgebraic,
+    b: &ComplexAlgebraic,
+) -> (
+    ComplexAlgebraic,
+    Integer,
+    Integer,
+    Polynomial<Rational>,
+    Polynomial<Rational>,
+) {
+    //try g = a
+    match as_poly_expr(b, a) {
+        Some(q) => {
+            return (a.clone(), Integer::ONE, Integer::ZERO, Polynomial::var(), q);
+        }
+        None => {}
+    }
+
+    //try g = b
+    match as_poly_expr(a, b) {
+        Some(p) => {
+            return (b.clone(), Integer::ZERO, Integer::ONE, p, Polynomial::var());
+        }
+        None => {}
+    }
+
+    let mut nontrivial_linear_combinations =
+        malachite_q::exhaustive::exhaustive_rationals().map(|r| (r.numerator(), r.denominator()));
+    nontrivial_linear_combinations.next().unwrap();
+    for (x, y) in nontrivial_linear_combinations {
+        let gen = ComplexAlgebraic::add(
+            &ComplexAlgebraic::mul(
+                &ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(x.clone()))),
+                a,
+            ),
+            &ComplexAlgebraic::mul(
+                &ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(y.clone()))),
+                b,
+            ),
+        );
+
+        match as_poly_expr(a, &gen) {
+            Some(a_rel_gen) => {
+                let anf = new_anf(gen.min_poly());
+                //gen = xa + yb
+                //so b = (gen - xa) / y
+                let b_rel_gen = anf.mul(
+                    &anf.add(
+                        &Polynomial::var(),
+                        &anf.mul(&a_rel_gen, &Polynomial::constant(Rational::from(-&x))),
+                    ),
+                    &Polynomial::constant(Rational::from_integers(Integer::from(1), y.clone())),
+                );
+                #[cfg(debug_assertions)]
+                {
+                    let mut gen_mut = gen.clone();
+                    assert_eq!(a, &gen_mut.apply_poly(&a_rel_gen));
+                    assert_eq!(b, &gen_mut.apply_poly(&b_rel_gen));
+                }
+                return (gen, x, y, a_rel_gen, b_rel_gen);
+            }
+            None => {}
+        }
+    }
+    unreachable!()
+}
+
+/*
+input: non-empty list of complex algebraic numbers (a_1, a_2, ..., a_n)
+output: (g, p_1, p_2, ..., p_n) such that Q[a_1, a_2, ..., a_n] = Q[g]
+        moreover a_i=p_i(g)
+*/
+pub fn anf_multi_primitive_element_theorem(
+    nums: Vec<&ComplexAlgebraic>,
+) -> (ComplexAlgebraic, Vec<Polynomial<Rational>>) {
+    #[cfg(debug_assertions)]
+    let orig_nums = nums.clone();
+
+    assert!(!nums.is_empty());
+    let mut nums = nums.into_iter();
+    let mut g = nums.next().unwrap().clone();
+    let mut p = vec![Polynomial::var()];
+    for num in nums {
+        let (new_g, _x, _y, old_g_poly, num_poly) = anf_pair_primitive_element_theorem(&g, num);
+        let new_g_anf = new_anf(new_g.min_poly());
+        p = p
+            .into_iter()
+            .map(|old_p| new_g_anf.reduce(&Polynomial::compose(&old_p, &old_g_poly)))
+            .collect();
+        p.push(num_poly);
+        g = new_g;
+    }
+    #[cfg(debug_assertions)]
+    {
+        let n = orig_nums.len();
+        assert_eq!(n, p.len());
+        for i in 0..n {
+            assert_eq!(orig_nums[i], &g.apply_poly(&p[i]));
+        }
+    }
+    (g, p)
 }

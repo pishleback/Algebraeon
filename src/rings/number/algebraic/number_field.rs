@@ -7,7 +7,9 @@ use malachite_q::{exhaustive::exhaustive_rationals, Rational};
 
 use crate::rings::{
     linear::matrix::Matrix,
-    number::natural::nat_to_usize,
+    number::{
+        algebraic::isolated_roots::anf_multi_primitive_element_theorem, natural::nat_to_usize,
+    },
     polynomial::{multipoly::*, polynomial::*, quotient::*, symmetric::*},
     ring_structure::{cannonical::*, factorization::Factored, quotient::*, structure::*},
     structure::*,
@@ -17,6 +19,13 @@ pub type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructur
 
 pub fn new_anf(f: Polynomial<Rational>) -> ANFStructure {
     ANFStructure::new(PolynomialStructure::new(Rational::structure()).into(), f)
+}
+
+//return the splitting field and the roots of f in the splitting field
+pub fn splitting_field_anf(f: &Polynomial<Rational>) -> (ANFStructure, Vec<Polynomial<Rational>>) {
+    let roots = f.primitive_part_fof().all_complex_roots();
+    let (g, roots_rel_g) = anf_multi_primitive_element_theorem(roots.iter().collect());
+    (new_anf(g.min_poly()), roots_rel_g)
 }
 
 impl ANFStructure {
@@ -240,6 +249,9 @@ impl PolynomialStructure<ANFStructure> {
                 The elementary symmetric polynomials in σ₀(θ) σ₁(θ) σ₂(θ) are (up to sign flips) the (rational) coefficients of the minimal polynomial of θ
     */
     pub fn polynomial_norm(&self, f: &Polynomial<Polynomial<Rational>>) -> Polynomial<Rational> {
+        // println!("f = {}", f);
+        // panic!();
+
         // println!("start");
 
         let n = self.coeff_ring().degree();
@@ -327,7 +339,6 @@ impl PolynomialStructure<ANFStructure> {
 
         // println!("sqfree factor");
         // println!("p = {}", p);
-        // println!("p^2 = {}", self.mul(&p, &p));
 
         let mut k: usize = 0;
         let mut t;
@@ -412,263 +423,295 @@ impl PolynomialStructure<ANFStructure> {
         let l_reduced_ring = QuotientStructure::new_ring(self.clone().into(), p.clone());
         //n = degree over L over Q
         let k_deg = self.coeff_ring().degree();
-        let p_deg = l_reduced_ring.degree();
-        let n = k_deg * p_deg;
-        // println!("k_deg = {}", k_deg);
-        // println!("p_deg = {}", p_deg);
-        // println!("n = {}", n);
-        //turn elements of L into length n vectors over Q
-        let l_to_vec = |x: Polynomial<Polynomial<Rational>>| {
-            double_poly_to_row(p_deg, k_deg, l_reduced_ring.reduce(&x))
-        };
-        //turn length n vectors over Q into elements of L
-        let vec_to_l = |x: Matrix<Rational>| -> Polynomial<Polynomial<Rational>> {
-            row_to_double_poly(p_deg, k_deg, x)
-        };
-
-        // println!("l_reduced_ring = {:?}", l_reduced_ring);
-
-        //find alpha in L which generates L
-        let mut alpha: Polynomial<Polynomial<Rational>>;
-        let mut alpha_pow_mat;
-        'alpha_search: {
-            //generate random alpha in L until we find one which generates L
-            //each random alpha has a good probability of generating L by the primitive element theorem
-            let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0);
-            let mut rat_pool = vec![];
-            let mut rat_gen = exhaustive_rationals();
-            rat_pool.push(rat_gen.next().unwrap()); //0
-            rat_pool.push(rat_gen.next().unwrap()); //1
-            for rat in rat_gen {
-                // println!("rat_pool = {:?}", rat_pool);
-                for _ in (0..1) {
-                    alpha = Polynomial::from_coeffs(
-                        (0..p_deg)
-                            .map(|i| {
-                                Polynomial::from_coeffs(
-                                    (0..k_deg)
-                                        .map(|j| {
-                                            if rand::Rng::gen_range(&mut rng, 0..(1 + n / 3)) != 0
-                                            //try to keep the choice of alpha simple by choosing lots of zeros
-                                            {
-                                                Rational::ZERO
-                                            } else {
-                                                rand::seq::IteratorRandom::choose(
-                                                    rat_pool.iter(),
-                                                    &mut rng,
-                                                )
-                                                .unwrap()
-                                                .clone()
-                                            }
-                                        })
-                                        .collect(),
-                                )
-                            })
-                            .collect(),
-                    );
-                    // println!("{}", n);
-                    // println!("possible alpha = {}", alpha);
-
-                    assert!(l_reduced_ring.equal(&alpha, &vec_to_l(l_to_vec(alpha.clone()))));
-
-                    alpha_pow_mat = Matrix::<Rational>::join_rows(n, {
-                        let mut alpha_pow = l_reduced_ring.one();
-                        let mut rows = vec![];
-                        for k in (0..n) {
-                            if k != 0 {
-                                l_reduced_ring.mul_mut(&mut alpha_pow, &alpha);
-                            }
-                            rows.push(l_to_vec(alpha_pow.clone()));
-                        }
-                        rows
-                    });
-
-                    // println!("alpha_pow_mat rank = {:?}", alpha_pow_mat.rank());
-
-                    if alpha_pow_mat.rank() == n {
-                        break 'alpha_search;
-                    }
-                }
-                rat_pool.push(rat);
-            }
-
-            unreachable!();
-        }
-        debug_assert_eq!(alpha_pow_mat.rank(), n);
-        let alpha_vec = l_to_vec(alpha.clone());
-
-        // println!("alpha = {}", alpha);
-        // println!("alpha_vec = {:?}", alpha_vec);
-        // alpha_pow_mat.pprint();
-        // println!("αⁿ = {}", l_reduced_ring.nat_pow(&alpha, &Natural::from(n)));
-        // println!(
-        //     "αⁿ = {:?}",
-        //     l_to_vec(l_reduced_ring.nat_pow(&alpha, &Natural::from(n)))
-        // );
-
-        //compute q_prime(y) in Q[y] such that αⁿ = q_prime(α)
-        //then q(y) = yⁿ - q_prime(y) is such that q(α) = 0
-        let q_prime_row = alpha_pow_mat
-            .row_solve(l_to_vec(l_reduced_ring.nat_pow(&alpha, &Natural::from(n))))
-            .unwrap();
-        let q_prime = Polynomial::<Rational>::from_coeffs(
-            (0..n)
-                .map(|c| q_prime_row.at(0, c).unwrap().clone())
-                .collect(),
-        );
-        let q = Polynomial::add(&Polynomial::var_pow(n), &q_prime.neg());
-        //assert q(α) = 0
-        debug_assert!(l_reduced_ring.is_zero(
-            &PolynomialStructure::new(l_reduced_ring.clone().into()).evaluate(
-                &q.apply_map::<Polynomial<Polynomial<Rational>>>(|c| {
-                    Polynomial::from_coeffs(vec![Polynomial::from_coeffs(vec![c.clone()])])
-                }),
-                &alpha
-            )
-        ));
-
-        //Let la be L represented by rational polynomials in α modulo q(x) and set up isomorphisms between l and la
-        let la_reduced_ring = QuotientStructure::new_ring(
-            PolynomialStructure::new(Rational::structure()).into(),
-            q.clone(),
-        );
-        let l_to_la = |x_in_l: Polynomial<Polynomial<Rational>>| -> Polynomial<Rational> {
-            let x_in_q = l_to_vec(x_in_l);
-            let x_in_la_vec = alpha_pow_mat.row_solve(x_in_q).unwrap();
-            let x_in_la = Polynomial::from_coeffs(
-                (0..n)
-                    .map(|c| x_in_la_vec.at(0, c).unwrap().clone())
+        if k_deg == 1 {
+            let (unit, factors) = Polynomial::<Rational>::from_coeffs(
+                p.coeffs()
+                    .into_iter()
+                    .map(|c| self.coeff_ring().reduce(c).as_constant().unwrap())
                     .collect(),
-            );
-            x_in_la
-        };
-        let la_to_l = |x_in_la: Polynomial<Rational>| -> Polynomial<Polynomial<Rational>> {
-            PolynomialStructure::new(l_reduced_ring.clone().into()).evaluate(
-                &x_in_la.apply_map::<Polynomial<Polynomial<Rational>>>(|c| {
-                    Polynomial::from_coeffs(vec![Polynomial::from_coeffs(vec![c.clone()])])
-                }),
-                &alpha,
             )
-        };
-
-        // l_reduced_ring and la_reduced_ring are isomorphic
-        // so the unique decomposition of l_reduced_ring coresponding to the distinct factors pi(x) of p(x)
-        // is the same as the unique decomposition of la_reduced_ring coresponding to the distinct factors qi(y) of q(y)
-        // Q[y]/qi = K[x]/pi
-        // so to compute pi we embed K and x into Q[y]/qi and compute the minimal polynomial of the embedded x over the embedded K
-
-        // println!("q = {}", q);
-        // println!("q = {}", q.factor().unwrap());
-
-        let gen = Polynomial::constant(self.coeff_ring().generator());
-        let x = self.var();
-        // println!("gen = {}", gen);
-        // println!("x {}", &x);
-
-        let gen_in_la = l_to_la(gen);
-        let x_in_la = l_to_la(x);
-        // println!("gen in la = {}", gen_in_la);
-        // println!("x in la {}", &x_in_la);
-
-        let p_factors = q
             .factor()
             .unwrap()
-            .factors()
-            .into_iter()
-            .map(|(qi, pow)| {
-                // println!("");
-
-                debug_assert_eq!(pow, &Natural::ONE);
-                drop(pow);
-
-                // Q[y]/qi(y)
-                let lai_reduced_ring = QuotientStructure::new_field(
-                    PolynomialStructure::new(Rational::structure()).into(),
-                    qi.clone(),
-                );
-
-                //pi(x) can now be computed as the degree d minimal polynomial of x in K[x]/pi(x) = Q[y]/qi(y)
-                //this is done by writing x^d as a linear combination of smaller powers of x and powers of the generator t of K
-                //a basis of lai_reduced_ring is given by
-                // 1, t, ..., t^{deg(K)-1}
-                // x, tx, ..., t^{deg(K)-1}x
-                //        ...
-                // x^{d-1}, tx^{d-1}, ..., t^{deg(K)-1}x^{d-1}
-                //lets say that lai_reduced_ring with respect to this basis is called li_reduced_ring
-
-                //compute the degree of the coresponding factor pi(x) of p(x)
-                let qi_deg = lai_reduced_ring.degree();
-                debug_assert_eq!(qi_deg % k_deg, 0);
-                let pi_deg = qi_deg / k_deg;
-
-                //the basis (1, t, ..., t^{deg(K)-1}, x, tx, ..., t^{deg(K)-1}x, ..., x^{d-1}, tx^{d-1}, ..., t^{deg(K)-1}x^{d-1}) in that order
-                let lai_basis = (0..pi_deg)
-                    .map(|i| {
-                        (0..k_deg)
-                            .map(|j| {
-                                lai_reduced_ring.mul(
-                                    &lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(i)),
-                                    &lai_reduced_ring.nat_pow(&gen_in_la, &Natural::from(j)),
-                                )
-                            })
-                            .collect_vec()
+            .unit_and_factors();
+            Factored::new_unchecked(
+                self.clone().into(),
+                Polynomial::constant(unit),
+                factors
+                    .into_iter()
+                    .map(|(f, f_pow)| {
+                        (
+                            Polynomial::<Polynomial<Rational>>::from_coeffs(
+                                f.coeffs()
+                                    .into_iter()
+                                    .map(|c| Polynomial::constant(c.clone()))
+                                    .collect(),
+                            ),
+                            f_pow,
+                        )
                     })
-                    .flatten()
-                    .collect_vec();
-                // for b in lai_basis.iter() {
-                //     println!("b = {}", b);
-                //     lai_reduced_ring.to_row_vector(b).pprint();
-                // }
-                let lai_basis_mat = Matrix::join_rows(
-                    qi_deg,
-                    lai_basis
-                        .iter()
-                        .map(|b| lai_reduced_ring.to_row_vector(b))
-                        .collect_vec(),
+                    .collect(),
+            )
+        } else {
+            debug_assert!(k_deg >= 2);
+            let p_deg = l_reduced_ring.degree();
+            let n = k_deg * p_deg;
+            // println!("k_deg = {}", k_deg);
+            // println!("p_deg = {}", p_deg);
+            // println!("n = {}", n);
+            //turn elements of L into length n vectors over Q
+            let l_to_vec = |x: Polynomial<Polynomial<Rational>>| {
+                double_poly_to_row(p_deg, k_deg, l_reduced_ring.reduce(&x))
+            };
+            //turn length n vectors over Q into elements of L
+            let vec_to_l = |x: Matrix<Rational>| -> Polynomial<Polynomial<Rational>> {
+                row_to_double_poly(p_deg, k_deg, x)
+            };
+
+            // println!("l_reduced_ring = {:?}", l_reduced_ring);
+
+            //find alpha in L which generates L
+            let mut alpha: Polynomial<Polynomial<Rational>>;
+            let mut alpha_pow_mat;
+            'alpha_search: {
+                //generate random alpha in L until we find one which generates L
+                //each random alpha has a good probability of generating L by the primitive element theorem
+                let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0);
+                let mut rat_pool = vec![];
+                let mut rat_gen = exhaustive_rationals();
+                rat_pool.push(rat_gen.next().unwrap()); //0
+                rat_pool.push(rat_gen.next().unwrap()); //1
+                for rat in rat_gen {
+                    // println!("rat_pool = {:?}", rat_pool);
+                    for _ in (0..1) {
+                        alpha = Polynomial::from_coeffs(
+                            (0..p_deg)
+                                .map(|i| {
+                                    Polynomial::from_coeffs(
+                                        (0..k_deg)
+                                            .map(|j| {
+                                                if rand::Rng::gen_range(&mut rng, 0..(1 + n / 3))
+                                                    != 0
+                                                //try to keep the choice of alpha simple by choosing lots of zeros
+                                                {
+                                                    Rational::ZERO
+                                                } else {
+                                                    rand::seq::IteratorRandom::choose(
+                                                        rat_pool.iter(),
+                                                        &mut rng,
+                                                    )
+                                                    .unwrap()
+                                                    .clone()
+                                                }
+                                            })
+                                            .collect(),
+                                    )
+                                })
+                                .collect(),
+                        );
+                        // println!("{}", n);
+                        // println!("possible alpha = {}", alpha);
+
+                        assert!(l_reduced_ring.equal(&alpha, &vec_to_l(l_to_vec(alpha.clone()))));
+
+                        alpha_pow_mat = Matrix::<Rational>::join_rows(n, {
+                            let mut alpha_pow = l_reduced_ring.one();
+                            let mut rows = vec![];
+                            for k in (0..n) {
+                                if k != 0 {
+                                    l_reduced_ring.mul_mut(&mut alpha_pow, &alpha);
+                                }
+                                rows.push(l_to_vec(alpha_pow.clone()));
+                            }
+                            rows
+                        });
+                        // alpha_pow_mat.pprint();
+                        // println!("{}", alpha_pow_mat.clone().primitive_part().unwrap().rank());
+
+                        // println!("alpha_pow_mat rank = {:?}", alpha_pow_mat.rank());
+
+                        if alpha_pow_mat.rank() == n {
+                            break 'alpha_search;
+                        }
+                    }
+                    rat_pool.push(rat);
+                }
+
+                unreachable!();
+            }
+            debug_assert_eq!(alpha_pow_mat.rank(), n);
+            let alpha_vec = l_to_vec(alpha.clone());
+
+            // println!("alpha = {}", alpha);
+            // println!("alpha_vec = {:?}", alpha_vec);
+            // alpha_pow_mat.pprint();
+            // println!("αⁿ = {}", l_reduced_ring.nat_pow(&alpha, &Natural::from(n)));
+            // println!(
+            //     "αⁿ = {:?}",
+            //     l_to_vec(l_reduced_ring.nat_pow(&alpha, &Natural::from(n)))
+            // );
+
+            //compute q_prime(y) in Q[y] such that αⁿ = q_prime(α)
+            //then q(y) = yⁿ - q_prime(y) is such that q(α) = 0
+            let q_prime_row = alpha_pow_mat
+                .row_solve(l_to_vec(l_reduced_ring.nat_pow(&alpha, &Natural::from(n))))
+                .unwrap();
+            let q_prime = Polynomial::<Rational>::from_coeffs(
+                (0..n)
+                    .map(|c| q_prime_row.at(0, c).unwrap().clone())
+                    .collect(),
+            );
+            let q = Polynomial::add(&Polynomial::var_pow(n), &q_prime.neg());
+            //assert q(α) = 0
+            debug_assert!(l_reduced_ring.is_zero(
+                &PolynomialStructure::new(l_reduced_ring.clone().into()).evaluate(
+                    &q.apply_map::<Polynomial<Polynomial<Rational>>>(|c| {
+                        Polynomial::from_coeffs(vec![Polynomial::from_coeffs(vec![c.clone()])])
+                    }),
+                    &alpha
+                )
+            ));
+
+            //Let la be L represented by rational polynomials in α modulo q(x) and set up isomorphisms between l and la
+            let la_reduced_ring = QuotientStructure::new_ring(
+                PolynomialStructure::new(Rational::structure()).into(),
+                q.clone(),
+            );
+            let l_to_la = |x_in_l: Polynomial<Polynomial<Rational>>| -> Polynomial<Rational> {
+                let x_in_q = l_to_vec(x_in_l);
+                let x_in_la_vec = alpha_pow_mat.row_solve(x_in_q).unwrap();
+                let x_in_la = Polynomial::from_coeffs(
+                    (0..n)
+                        .map(|c| x_in_la_vec.at(0, c).unwrap().clone())
+                        .collect(),
                 );
-                // lai_basis_mat.pprint();
-                debug_assert_eq!(lai_basis_mat.rank(), qi_deg);
+                x_in_la
+            };
+            let la_to_l = |x_in_la: Polynomial<Rational>| -> Polynomial<Polynomial<Rational>> {
+                PolynomialStructure::new(l_reduced_ring.clone().into()).evaluate(
+                    &x_in_la.apply_map::<Polynomial<Polynomial<Rational>>>(|c| {
+                        Polynomial::from_coeffs(vec![Polynomial::from_coeffs(vec![c.clone()])])
+                    }),
+                    &alpha,
+                )
+            };
 
-                // println!("pi_deg = {}", pi_deg);
-                // println!("qi = {}", qi);
-                // println!("gen = {}", Polynomial::rem(&gen_in_la, qi));
-                // println!("x = {}", Polynomial::rem(&x_in_la, qi));
-                // println!(
-                //     "x^d = {}",
-                //     lai_reduced_ring.reduce(
-                //         &lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg))
-                //     )
-                // );
+            // l_reduced_ring and la_reduced_ring are isomorphic
+            // so the unique decomposition of l_reduced_ring coresponding to the distinct factors pi(x) of p(x)
+            // is the same as the unique decomposition of la_reduced_ring coresponding to the distinct factors qi(y) of q(y)
+            // Q[y]/qi = K[x]/pi
+            // so to compute pi we embed K and x into Q[y]/qi and compute the minimal polynomial of the embedded x over the embedded K
 
-                let x_wrapping_pow_vec = lai_reduced_ring
-                    .to_row_vector(&lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg)));
-                // println!("x_wrapping_pow_vec");
-                // x_wrapping_pow_vec.pprint();
-                //this is a vector containing the coefficients of (the coefficients of elements of K of) the polynomial pi_prime(x) in K[x] such that
-                //x^n = pi_prime(x)
-                //so pi(x) = x^n - pi_prime(x) is such that pi(x) = 0 and so is the irreducible factor of p we seek such that K[x]/pi(x) = Q[y]/qi(y)
-                let x_wrapping_pow_vec_coeffs =
-                    lai_basis_mat.row_solve(x_wrapping_pow_vec).unwrap();
-                // println!("x_wrapping_pow_vec_coeffs");
-                // x_wrapping_pow_vec_coeffs.pprint();
-                let pi_prime = row_to_double_poly(pi_deg, k_deg, x_wrapping_pow_vec_coeffs);
-                // println!("pi_prime = {}", pi_prime);
-                let pi = self.add(&self.var_pow(pi_deg), &pi_prime.neg());
-                // println!("pi = {}", pi);
-                pi
-            })
-            .collect_vec();
+            // println!("q = {}", q);
+            // println!("q = {}", q.factor().unwrap());
 
-        // println!("p factors");
-        // for pi in p_factors.iter() {
-        //     println!("pi = {}", pi);
-        // }
+            let gen = Polynomial::constant(self.coeff_ring().generator());
+            let x = self.var();
 
-        Factored::new_unchecked(
-            self.clone().into(),
-            self.one(),
-            p_factors.into_iter().map(|pi| (pi, Natural::ONE)).collect(),
-        )
+            let gen_in_la = l_to_la(gen);
+            let x_in_la = l_to_la(x);
+            // println!("gen in la = {}", gen_in_la);
+            // println!("x in la {}", &x_in_la);
+
+            let p_factors = q
+                .factor()
+                .unwrap()
+                .factors()
+                .into_iter()
+                .map(|(qi, pow)| {
+                    // println!("");
+
+                    debug_assert_eq!(pow, &Natural::ONE);
+                    drop(pow);
+
+                    // Q[y]/qi(y)
+                    let lai_reduced_ring = QuotientStructure::new_field(
+                        PolynomialStructure::new(Rational::structure()).into(),
+                        qi.clone(),
+                    );
+
+                    //pi(x) can now be computed as the degree d minimal polynomial of x in K[x]/pi(x) = Q[y]/qi(y)
+                    //this is done by writing x^d as a linear combination of smaller powers of x and powers of the generator t of K
+                    //a basis of lai_reduced_ring is given by
+                    // 1, t, ..., t^{deg(K)-1}
+                    // x, tx, ..., t^{deg(K)-1}x
+                    //        ...
+                    // x^{d-1}, tx^{d-1}, ..., t^{deg(K)-1}x^{d-1}
+                    //lets say that lai_reduced_ring with respect to this basis is called li_reduced_ring
+
+                    //compute the degree of the coresponding factor pi(x) of p(x)
+                    let qi_deg = lai_reduced_ring.degree();
+                    debug_assert_eq!(qi_deg % k_deg, 0);
+                    let pi_deg = qi_deg / k_deg;
+
+                    //the basis (1, t, ..., t^{deg(K)-1}, x, tx, ..., t^{deg(K)-1}x, ..., x^{d-1}, tx^{d-1}, ..., t^{deg(K)-1}x^{d-1}) in that order
+                    let lai_basis = (0..pi_deg)
+                        .map(|i| {
+                            (0..k_deg)
+                                .map(|j| {
+                                    lai_reduced_ring.mul(
+                                        &lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(i)),
+                                        &lai_reduced_ring.nat_pow(&gen_in_la, &Natural::from(j)),
+                                    )
+                                })
+                                .collect_vec()
+                        })
+                        .flatten()
+                        .collect_vec();
+                    // for b in lai_basis.iter() {
+                    //     println!("b = {}", b);
+                    //     lai_reduced_ring.to_row_vector(b).pprint();
+                    // }
+                    let lai_basis_mat = Matrix::join_rows(
+                        qi_deg,
+                        lai_basis
+                            .iter()
+                            .map(|b| lai_reduced_ring.to_row_vector(b))
+                            .collect_vec(),
+                    );
+                    // lai_basis_mat.pprint();
+                    debug_assert_eq!(lai_basis_mat.rank(), qi_deg);
+
+                    // println!("pi_deg = {}", pi_deg);
+                    // println!("qi = {}", qi);
+                    // println!("gen = {}", Polynomial::rem(&gen_in_la, qi));
+                    // println!("x = {}", Polynomial::rem(&x_in_la, qi));
+                    // println!(
+                    //     "x^d = {}",
+                    //     lai_reduced_ring.reduce(
+                    //         &lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg))
+                    //     )
+                    // );
+
+                    let x_wrapping_pow_vec = lai_reduced_ring
+                        .to_row_vector(&lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg)));
+                    // println!("x_wrapping_pow_vec");
+                    // x_wrapping_pow_vec.pprint();
+                    //this is a vector containing the coefficients of (the coefficients of elements of K of) the polynomial pi_prime(x) in K[x] such that
+                    //x^n = pi_prime(x)
+                    //so pi(x) = x^n - pi_prime(x) is such that pi(x) = 0 and so is the irreducible factor of p we seek such that K[x]/pi(x) = Q[y]/qi(y)
+                    let x_wrapping_pow_vec_coeffs =
+                        lai_basis_mat.row_solve(x_wrapping_pow_vec).unwrap();
+                    // println!("x_wrapping_pow_vec_coeffs");
+                    // x_wrapping_pow_vec_coeffs.pprint();
+                    let pi_prime = row_to_double_poly(pi_deg, k_deg, x_wrapping_pow_vec_coeffs);
+                    // println!("pi_prime = {}", pi_prime);
+                    let pi = self.add(&self.var_pow(pi_deg), &pi_prime.neg());
+                    // println!("pi = {}", pi);
+                    pi
+                })
+                .collect_vec();
+
+            // println!("p factors");
+            // for pi in p_factors.iter() {
+            //     println!("pi = {}", pi);
+            // }
+
+            Factored::new_unchecked(
+                self.clone().into(),
+                self.one(),
+                p_factors.into_iter().map(|pi| (pi, Natural::ONE)).collect(),
+            )
+        }
     }
 
     //factor over the rationals first, then factor each irreducible rational factor over the anf
@@ -722,6 +765,7 @@ impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
                 self.factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(a.clone(), &|a| {
                     self.factorize_rational_factorize_first(&a, &|a| {
                         self.factor_primitive_sqfree_by_reduced_ring(a)
+                        // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
                     })
                 }),
             )
