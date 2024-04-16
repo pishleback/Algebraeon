@@ -407,58 +407,73 @@ pub fn direct_product_structure(group_one: &Group, group_two: &Group) -> Group {
     }
 }
 
-pub fn cyclic_group_structure(n: usize) -> Group {
-    Group::from_raw_model_unchecked(
-        (0..n).collect(),
-        || 0,
-        |x: usize| (n - x) % n,
-        |x: usize, y: usize| (x + y) % n,
-        Some(true),
-        None,
-    )
-}
+pub mod examples {
+    use super::*;
 
-pub fn dihedral_group_structure(n: usize) -> Group {
-    // dihedral group using the presentation
-    // <a b : a^2 = b^2 = (ab)^n = e>
-    assert!(1 <= n);
-    let mut rels = vec![];
-    rels.push(vec![0, 0]);
-    rels.push(vec![2, 2]);
-    rels.push(vec![0, 2].into_iter().cycle().take(2 * n).collect());
-    let mut grp = todd_coxeter::enumerate_group(2, rels);
-    grp.is_abelian = Some(n <= 2);
-    grp.is_simple = Some(n <= 1);
-    grp
-}
+    pub fn trivial_group_structure() -> Group {
+        cyclic_group_structure(1)
+    }
 
-pub fn quaternion_group_structure() -> Group {
-    // quaternion group using the presentation
-    // <-1 i j k : (-1)^2 = i^2 = j^2 = k^2 = ijk = -1>
-    let mut grp = todd_coxeter::enumerate_group(
-        4,
-        vec![
-            vec![0, 0],
-            vec![2, 2, 1],
-            vec![4, 4, 1],
-            vec![6, 6, 1],
-            vec![2, 4, 6, 1],
-        ],
-    );
-    grp.is_abelian = Some(false);
-    grp.is_simple = Some(false);
-    grp
+    pub fn cyclic_group_structure(n: usize) -> Group {
+        Group::from_raw_model_unchecked(
+            (0..n).collect(),
+            || 0,
+            |x: usize| (n - x) % n,
+            |x: usize, y: usize| (x + y) % n,
+            Some(true),
+            None,
+        )
+    }
+
+    pub fn dihedral_group_structure(n: usize) -> Group {
+        // dihedral group using the presentation
+        // <a b : a^2 = b^2 = (ab)^n = e>
+        assert!(1 <= n);
+        let mut rels = vec![];
+        rels.push(vec![0, 0]);
+        rels.push(vec![2, 2]);
+        rels.push(vec![0, 2].into_iter().cycle().take(2 * n).collect());
+        let mut grp = todd_coxeter::enumerate_group(2, rels);
+        grp.is_abelian = Some(n <= 2);
+        grp.is_simple = Some(n <= 1);
+        grp
+    }
+
+    pub fn quaternion_group_structure() -> Group {
+        // quaternion group using the presentation
+        // <-1 i j k : (-1)^2 = i^2 = j^2 = k^2 = ijk = -1>
+        let mut grp = todd_coxeter::enumerate_group(
+            4,
+            vec![
+                vec![0, 0],
+                vec![2, 2, 1],
+                vec![4, 4, 1],
+                vec![6, 6, 1],
+                vec![2, 4, 6, 1],
+            ],
+        );
+        grp.is_abelian = Some(false);
+        grp.is_simple = Some(false);
+        grp
+    }
+
+    pub fn symmetric_group_structure(n: usize) -> Group {
+        super::super::super::permutation::Permutation::symmetric_composition_table(n).0
+    }
+
+    pub fn alternating_group_structure(n: usize) -> Group {
+        super::super::super::permutation::Permutation::alternating_composition_table(n).0
+    }
 }
 
 #[cfg(test)]
 mod group_tests {
-    use super::super::super::sets::permutations::*;
     use super::*;
 
     #[test]
     fn test_cyclic() {
         for k in vec![1, 2, 3, 81, 91, 97, 100, 128] {
-            let mut grp = cyclic_group_structure(k);
+            let mut grp = examples::cyclic_group_structure(k);
             grp.cache_conjugacy_classes();
             grp.check_state().unwrap();
             assert_eq!(grp.elems().len(), k);
@@ -468,7 +483,7 @@ mod group_tests {
     #[test]
     fn test_dihedral() {
         for k in vec![1, 2, 3, 16, 17, 18, 50] {
-            let mut grp = dihedral_group_structure(k);
+            let mut grp = examples::dihedral_group_structure(k);
             grp.cache_conjugacy_classes();
             grp.check_state().unwrap();
             assert_eq!(grp.elems().len(), 2 * k);
@@ -477,7 +492,7 @@ mod group_tests {
 
     #[test]
     fn test_quaternion() {
-        let mut grp = quaternion_group_structure();
+        let mut grp = examples::quaternion_group_structure();
         assert_eq!(grp.size(), 8);
         grp.cache_conjugacy_classes();
         grp.check_state().unwrap();
@@ -485,8 +500,8 @@ mod group_tests {
 
     #[test]
     fn test_direct_product() {
-        let grp1 = dihedral_group_structure(5);
-        let grp2 = dihedral_group_structure(4);
+        let grp1 = examples::dihedral_group_structure(5);
+        let grp2 = examples::dihedral_group_structure(4);
         let grp3 = direct_product_structure(&grp1, &grp2);
         grp3.check_state().unwrap();
     }
@@ -494,17 +509,17 @@ mod group_tests {
     #[test]
     fn test_conjugacy_class_count() {
         for (grp, num_ccls) in vec![
-            (cyclic_group_structure(12), 12),
-            (cyclic_group_structure(13), 13),
-            (dihedral_group_structure(1), 2),
-            (dihedral_group_structure(12), 9),
-            (dihedral_group_structure(13), 8),
-            (symmetric_group_structure(1).0, 1), //only the identity
-            (symmetric_group_structure(2).0, 2), //ident, 2-cycle
-            (symmetric_group_structure(3).0, 3), //ident, 2-cycle, 3-cycle
-            (symmetric_group_structure(4).0, 5), //ident, 2-cycle, 3-cycle, 4-cycle, (2, 2)-cycle
-            (symmetric_group_structure(5).0, 7), //ident, 2-cycle, 3-cycle, 4-cycle, 5-cycle, (2, 2)-cycle, (2, 3)-cycle
-            (symmetric_group_structure(6).0, 11), //ident, 2, 3, 4, 5, 6, (2, 2), (2, 3), (2, 4), (3, 3), (2, 2, 2)
+            (examples::cyclic_group_structure(12), 12),
+            (examples::cyclic_group_structure(13), 13),
+            (examples::dihedral_group_structure(1), 2),
+            (examples::dihedral_group_structure(12), 9),
+            (examples::dihedral_group_structure(13), 8),
+            (examples::symmetric_group_structure(1), 1), //only the identity
+            (examples::symmetric_group_structure(2), 2), //ident, 2-cycle
+            (examples::symmetric_group_structure(3), 3), //ident, 2-cycle, 3-cycle
+            (examples::symmetric_group_structure(4), 5), //ident, 2-cycle, 3-cycle, 4-cycle, (2, 2)-cycle
+            (examples::symmetric_group_structure(5), 7), //ident, 2-cycle, 3-cycle, 4-cycle, 5-cycle, (2, 2)-cycle, (2, 3)-cycle
+            (examples::symmetric_group_structure(6), 11), //ident, 2, 3, 4, 5, 6, (2, 2), (2, 3), (2, 4), (3, 3), (2, 2, 2)
         ] {
             assert_eq!(grp.conjugacy_classes().size(), num_ccls);
         }

@@ -194,34 +194,35 @@ impl<'a> Clone for Subset<'a> {
 
 #[cfg(test)]
 mod subset_tests {
-    use super::super::super::sets::permutations::*;
     use super::*;
 
     #[test]
     fn subset_left_mul() {
-        let (grp, _perms, elems) = symmetric_group_structure(4);
+        use crate::groups::examples::symmetric::Permutation;
+
+        let (grp, _perms, elems) = Permutation::<4>::symmetric_composition_table();
 
         let subset = Subset {
             group: &grp,
             elems: vec![
-                elems[&Permutation::new(vec![1, 2, 3, 0]).unwrap()],
-                elems[&Permutation::new(vec![0, 1, 3, 2]).unwrap()],
-                elems[&Permutation::new(vec![3, 2, 1, 0]).unwrap()],
+                elems[&Permutation::new([1, 2, 3, 0]).unwrap()],
+                elems[&Permutation::new([0, 1, 3, 2]).unwrap()],
+                elems[&Permutation::new([3, 2, 1, 0]).unwrap()],
             ]
             .into_iter()
             .collect(),
         };
         let left_mul_subset = subset
-            .left_mul(elems[&Permutation::new(vec![1, 2, 0, 3]).unwrap()])
+            .left_mul(elems[&Permutation::new([1, 2, 0, 3]).unwrap()])
             .unwrap();
         assert_eq!(
             left_mul_subset.elems,
             Subset {
                 group: &grp,
                 elems: vec![
-                    elems[&Permutation::new(vec![2, 0, 3, 1]).unwrap()],
-                    elems[&Permutation::new(vec![1, 2, 3, 0]).unwrap()],
-                    elems[&Permutation::new(vec![3, 0, 2, 1]).unwrap()]
+                    elems[&Permutation::new([2, 0, 3, 1]).unwrap()],
+                    elems[&Permutation::new([1, 2, 3, 0]).unwrap()],
+                    elems[&Permutation::new([3, 0, 2, 1]).unwrap()]
                 ]
                 .into_iter()
                 .collect()
@@ -232,29 +233,31 @@ mod subset_tests {
 
     #[test]
     fn subset_right_mul() {
-        let (grp, _perms, elems) = symmetric_group_structure(4);
+        use crate::groups::examples::symmetric::Permutation;
+
+        let (grp, _perms, elems) = Permutation::<4>::symmetric_composition_table();
 
         let subset = Subset {
             group: &grp,
             elems: vec![
-                elems[&Permutation::new(vec![1, 2, 3, 0]).unwrap()],
-                elems[&Permutation::new(vec![0, 1, 3, 2]).unwrap()],
-                elems[&Permutation::new(vec![3, 2, 1, 0]).unwrap()],
+                elems[&Permutation::new([1, 2, 3, 0]).unwrap()],
+                elems[&Permutation::new([0, 1, 3, 2]).unwrap()],
+                elems[&Permutation::new([3, 2, 1, 0]).unwrap()],
             ]
             .into_iter()
             .collect(),
         };
         let left_mul_subset = subset
-            .right_mul(elems[&Permutation::new(vec![1, 2, 0, 3]).unwrap()])
+            .right_mul(elems[&Permutation::new([1, 2, 0, 3]).unwrap()])
             .unwrap();
         assert_eq!(
             left_mul_subset.elems,
             Subset {
                 group: &grp,
                 elems: vec![
-                    elems[&Permutation::new(vec![2, 3, 1, 0]).unwrap()],
-                    elems[&Permutation::new(vec![1, 3, 0, 2]).unwrap()],
-                    elems[&Permutation::new(vec![2, 1, 3, 0]).unwrap()]
+                    elems[&Permutation::new([2, 3, 1, 0]).unwrap()],
+                    elems[&Permutation::new([1, 3, 0, 2]).unwrap()],
+                    elems[&Permutation::new([2, 1, 3, 0]).unwrap()]
                 ]
                 .into_iter()
                 .collect()

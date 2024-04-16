@@ -1,5 +1,4 @@
-use super::super::sets::permutations::Permutation;
-use super::group::Group;
+use crate::groups::{group::Group, permutation::*};
 
 #[derive(Clone, Copy)]
 enum Neighbor {
@@ -184,11 +183,11 @@ pub fn enumerate_elements(num_gens: usize, rels: Vec<Vec<usize>>) -> (usize, Vec
     enumerate_cosets(num_gens, rels, vec![])
 }
 
-pub fn enumerate_group(num_gens: usize, rels: Vec<Vec<usize>>) -> Group {
+pub fn enumerate_group(num_gens: usize, rels: Vec<Vec<usize>>) -> super::group::Group {
     let (n, gen_perms) = enumerate_cosets(num_gens, rels, vec![]);
     let inv_gen_perms = gen_perms
         .iter()
-        .map(|perm| perm.invert())
+        .map(|perm| perm.inverse_ref())
         .collect::<Vec<Permutation>>();
 
     //write each element as a word in the n generators
@@ -204,7 +203,7 @@ pub fn enumerate_group(num_gens: usize, rels: Vec<Vec<usize>>) -> Group {
             let (b_done, b_path) = paths[b_idx].clone();
             debug_assert!(b_done);
             for g in 0..num_gens {
-                let c = gen_perms[g].call(b_idx).unwrap();
+                let c = gen_perms[g].call(b_idx);
                 if !paths[c].0 {
                     let mut c_path = b_path.clone();
                     c_path.push(g);
@@ -231,14 +230,14 @@ pub fn enumerate_group(num_gens: usize, rels: Vec<Vec<usize>>) -> Group {
         }
     }
 
-    Group::new_unchecked(
+    super::group::Group::new_unchecked(
         n,
         0,
         (0..n)
             .map(|x| {
                 let mut y = 0;
                 for g in paths[x].iter().rev() {
-                    y = inv_gen_perms[*g].call(y).unwrap();
+                    y = inv_gen_perms[*g].call(y);
                 }
                 y
             })
@@ -249,10 +248,10 @@ pub fn enumerate_group(num_gens: usize, rels: Vec<Vec<usize>>) -> Group {
                     .map(|y| {
                         let mut z = 0;
                         for g in paths[x].iter() {
-                            z = gen_perms[*g].call(z).unwrap();
+                            z = gen_perms[*g].call(z);
                         }
                         for g in paths[y].iter() {
-                            z = gen_perms[*g].call(z).unwrap();
+                            z = gen_perms[*g].call(z);
                         }
                         z
                     })

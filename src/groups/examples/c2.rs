@@ -1,4 +1,4 @@
-use super::group::Group;
+use crate::groups::group::Group;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum C2 {

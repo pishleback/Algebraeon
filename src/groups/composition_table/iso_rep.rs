@@ -55,7 +55,7 @@ impl IsoRep {
         }
 
         //cyclic
-        match find_isomorphism(group, &cyclic_group_structure(n)) {
+        match find_isomorphism(group, &examples::cyclic_group_structure(n)) {
             Some(_f) => {
                 return Self::Cyclic(n);
             }
@@ -87,7 +87,7 @@ impl IsoRep {
         debug_assert_eq!(false, group.is_abelian());
 
         //quaternion
-        match find_isomorphism(group, &quaternion_group_structure()) {
+        match find_isomorphism(group, &examples::quaternion_group_structure()) {
             Some(_f) => {
                 return Self::Quaternion;
             }
@@ -102,10 +102,7 @@ impl IsoRep {
             k_fact *= k;
         }
         if n == k_fact {
-            match find_isomorphism(
-                group,
-                &super::super::sets::permutations::symmetric_group_structure(k).0,
-            ) {
+            match find_isomorphism(group, &examples::symmetric_group_structure(k)) {
                 Some(_f) => {
                     return Self::Symmetric(k);
                 }
@@ -121,10 +118,7 @@ impl IsoRep {
             half_k_fact *= k;
         }
         if n == half_k_fact {
-            match find_isomorphism(
-                group,
-                &super::super::sets::permutations::alternating_group_structure(k).0,
-            ) {
+            match find_isomorphism(group, &examples::alternating_group_structure(k)) {
                 Some(_f) => {
                     return Self::Alternating(k);
                 }
@@ -134,7 +128,7 @@ impl IsoRep {
 
         //dihedral
         if n % 2 == 0 {
-            match find_isomorphism(group, &dihedral_group_structure(n / 2)) {
+            match find_isomorphism(group, &examples::dihedral_group_structure(n / 2)) {
                 Some(_f) => {
                     return Self::Dihedral(n / 2);
                 }
@@ -147,16 +141,12 @@ impl IsoRep {
 
     pub fn to_group(&self) -> Result<Group, ()> {
         match self {
-            Self::Trivial => Ok(cyclic_group_structure(1)),
-            Self::Cyclic(n) => Ok(cyclic_group_structure(*n)),
-            Self::Dihedral(n) => Ok(dihedral_group_structure(*n)),
-            Self::Quaternion => Ok(quaternion_group_structure()),
-            Self::Alternating(n) => {
-                Ok(super::super::sets::permutations::alternating_group_structure(*n).0)
-            }
-            Self::Symmetric(n) => {
-                Ok(super::super::sets::permutations::symmetric_group_structure(*n).0)
-            }
+            Self::Trivial => Ok(examples::cyclic_group_structure(1)),
+            Self::Cyclic(n) => Ok(examples::cyclic_group_structure(*n)),
+            Self::Dihedral(n) => Ok(examples::dihedral_group_structure(*n)),
+            Self::Quaternion => Ok(examples::quaternion_group_structure()),
+            Self::Alternating(n) => Ok(examples::alternating_group_structure(*n)),
+            Self::Symmetric(n) => Ok(examples::symmetric_group_structure(*n)),
             Self::DirectProduct(factors) => {
                 let mut factors_list = vec![];
                 for (factor, power) in factors.iter() {
@@ -164,7 +154,7 @@ impl IsoRep {
                         factors_list.push(factor);
                     }
                 }
-                let mut prod_group = cyclic_group_structure(1);
+                let mut prod_group = examples::trivial_group_structure();
                 for factor in factors_list {
                     match factor.to_group() {
                         Ok(factor_group) => {

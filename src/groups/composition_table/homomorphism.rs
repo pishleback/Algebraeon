@@ -311,7 +311,6 @@ pub fn find_isomorphism<'a, 'b>(
 
 #[cfg(test)]
 mod homomorphism_tests {
-    use super::super::super::sets::permutations::*;
     use super::super::todd_coxeter;
     use super::*;
 
@@ -319,8 +318,8 @@ mod homomorphism_tests {
     fn homomorphism_state() {
         {
             //identity map
-            let grp_g = cyclic_group_structure(6);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::cyclic_group_structure(6);
+            let grp_h = examples::cyclic_group_structure(6);
             let f = Homomorphism {
                 domain: &grp_g,
                 range: &grp_h,
@@ -334,8 +333,8 @@ mod homomorphism_tests {
 
         {
             //injective map
-            let grp_g = cyclic_group_structure(3);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::cyclic_group_structure(3);
+            let grp_h = examples::cyclic_group_structure(6);
             let f = Homomorphism {
                 domain: &grp_g,
                 range: &grp_h,
@@ -349,8 +348,8 @@ mod homomorphism_tests {
 
         {
             //surjective map
-            let grp_g = cyclic_group_structure(6);
-            let grp_h = cyclic_group_structure(3);
+            let grp_g = examples::cyclic_group_structure(6);
+            let grp_h = examples::cyclic_group_structure(3);
             let f = Homomorphism {
                 domain: &grp_g,
                 range: &grp_h,
@@ -364,8 +363,8 @@ mod homomorphism_tests {
 
         {
             //bad func
-            let grp_g = cyclic_group_structure(3);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::cyclic_group_structure(3);
+            let grp_h = examples::cyclic_group_structure(6);
             let f = Homomorphism {
                 domain: &grp_g,
                 range: &grp_h,
@@ -379,8 +378,8 @@ mod homomorphism_tests {
 
         {
             //bad func
-            let grp_g = cyclic_group_structure(6);
-            let grp_h = cyclic_group_structure(3);
+            let grp_g = examples::cyclic_group_structure(6);
+            let grp_h = examples::cyclic_group_structure(3);
             let f = Homomorphism {
                 domain: &grp_g,
                 range: &grp_h,
@@ -394,8 +393,8 @@ mod homomorphism_tests {
 
         {
             //bad hom
-            let grp_g = cyclic_group_structure(3);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::cyclic_group_structure(3);
+            let grp_h = examples::cyclic_group_structure(6);
             let f = Homomorphism {
                 domain: &grp_g,
                 range: &grp_h,
@@ -412,8 +411,8 @@ mod homomorphism_tests {
     fn isomorphism_state() {
         {
             //happy
-            let grp_g = cyclic_group_structure(6);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::cyclic_group_structure(6);
+            let grp_h = examples::cyclic_group_structure(6);
             let f = Isomorphism {
                 left_group: &grp_g,
                 right_group: &grp_h,
@@ -428,8 +427,8 @@ mod homomorphism_tests {
 
         {
             //size missmatch
-            let grp_g = cyclic_group_structure(3);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::cyclic_group_structure(3);
+            let grp_h = examples::cyclic_group_structure(6);
             let f = Isomorphism {
                 left_group: &grp_g,
                 right_group: &grp_h,
@@ -444,8 +443,8 @@ mod homomorphism_tests {
 
         {
             //not inv
-            let grp_g = cyclic_group_structure(6);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::cyclic_group_structure(6);
+            let grp_h = examples::cyclic_group_structure(6);
             let f = Isomorphism {
                 left_group: &grp_g,
                 right_group: &grp_h,
@@ -463,8 +462,8 @@ mod homomorphism_tests {
     fn homomorphism_to_isomorphism() {
         {
             //happy
-            let grp_g = cyclic_group_structure(7);
-            let grp_h = cyclic_group_structure(7);
+            let grp_g = examples::cyclic_group_structure(7);
+            let grp_h = examples::cyclic_group_structure(7);
             let f = Homomorphism {
                 domain: &grp_g,
                 range: &grp_h,
@@ -479,8 +478,8 @@ mod homomorphism_tests {
 
         {
             //size missmatch
-            let grp_g = cyclic_group_structure(3);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::cyclic_group_structure(3);
+            let grp_h = examples::cyclic_group_structure(6);
             let f = Homomorphism {
                 domain: &grp_g,
                 range: &grp_h,
@@ -495,8 +494,8 @@ mod homomorphism_tests {
 
         {
             //not surjective
-            let grp_g = cyclic_group_structure(6);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::cyclic_group_structure(6);
+            let grp_h = examples::cyclic_group_structure(6);
             let f = Homomorphism {
                 domain: &grp_g,
                 range: &grp_h,
@@ -513,8 +512,8 @@ mod homomorphism_tests {
     #[test]
     fn test_find_isomorphism() {
         {
-            let (grp_g, _perms, _elems) = symmetric_group_structure(3);
-            let grp_h = dihedral_group_structure(3);
+            let grp_g = examples::symmetric_group_structure(3);
+            let grp_h = examples::dihedral_group_structure(3);
 
             match find_isomorphism(&grp_g, &grp_h) {
                 Some(f) => {
@@ -526,8 +525,8 @@ mod homomorphism_tests {
         }
 
         {
-            let (grp_g, _perms, _elems) = symmetric_group_structure(3);
-            let grp_h = cyclic_group_structure(6);
+            let grp_g = examples::symmetric_group_structure(3);
+            let grp_h = examples::cyclic_group_structure(6);
 
             match find_isomorphism(&grp_g, &grp_h) {
                 Some(_f) => panic!(),
@@ -536,7 +535,7 @@ mod homomorphism_tests {
         }
 
         {
-            let (grp_g, _perms, _elems) = symmetric_group_structure(5);
+            let grp_g = examples::symmetric_group_structure(5);
             let grp_h = todd_coxeter::enumerate_group(
                 3,
                 vec![

@@ -10,6 +10,7 @@ use super::super::ring_structure::elements::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
 use super::subspace::*;
+use crate::groups::permutation::Permutation;
 use crate::rings::polynomial::polynomial::*;
 
 #[derive(Debug)]
@@ -496,15 +497,18 @@ impl<RS: RingStructure> MatrixStructure<RS> {
             Err(MatOppErr::NotSquare)
         } else {
             let mut det = self.ring.zero();
-            for perm in super::super::super::sets::permutations::all_perms(n) {
+            for perm in crate::groups::permutation::Permutation::all_permutations(n) {
                 let mut prod = self.ring.one();
                 for k in 0..n {
-                    self.ring
-                        .mul_mut(&mut prod, a.at(k, perm.call(k).unwrap()).unwrap());
+                    self.ring.mul_mut(&mut prod, a.at(k, perm.call(k)).unwrap());
                 }
-                if !perm.sign() {
-                    prod = self.ring.neg(&prod);
+                match perm.sign() {
+                    crate::groups::examples::c2::C2::Ident => {}
+                    crate::groups::examples::c2::C2::Flip => {
+                        prod = self.ring.neg(&prod);
+                    }
                 }
+
                 self.ring.add_mut(&mut det, &prod);
             }
             Ok(det)

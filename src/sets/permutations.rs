@@ -1,4 +1,3 @@
-use super::super::finite_group_tables::group::Group;
 use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -140,52 +139,52 @@ pub fn all_perms(k: usize) -> Vec<Permutation> {
     }
 }
 
-pub fn alternating_group_structure(
-    n: usize,
-) -> (Group, Vec<Permutation>, HashMap<Permutation, usize>) {
-    use super::permutations::*;
-    let alt_perms: Vec<Permutation> = all_perms(n).into_iter().filter(|p| p.sign()).collect();
-    (
-        Group::from_raw_model_unchecked(
-            alt_perms.clone(),
-            || Permutation::new_ident(n),
-            |x: Permutation| x.invert(),
-            |x: Permutation, y: Permutation| x.compose(&y).unwrap(),
-            Some(n <= 3),           //A0, A1, A2, A3 are abelian, the rest are not
-            Some(n == 3 || 5 <= n), //A3, A5, A6, A7, ... are simple, the rest are not
-        ),
-        alt_perms.clone(),
-        alt_perms
-            .clone()
-            .into_iter()
-            .enumerate()
-            .map(|(idx, perm)| (perm, idx))
-            .collect(),
-    )
-}
+// pub fn alternating_group_structure(
+//     n: usize,
+// ) -> (Group, Vec<Permutation>, HashMap<Permutation, usize>) {
+//     use super::permutations::*;
+//     let alt_perms: Vec<Permutation> = all_perms(n).into_iter().filter(|p| p.sign()).collect();
+//     (
+//         Group::from_raw_model_unchecked(
+//             alt_perms.clone(),
+//             || Permutation::new_ident(n),
+//             |x: Permutation| x.invert(),
+//             |x: Permutation, y: Permutation| x.compose(&y).unwrap(),
+//             Some(n <= 3),           //A0, A1, A2, A3 are abelian, the rest are not
+//             Some(n == 3 || 5 <= n), //A3, A5, A6, A7, ... are simple, the rest are not
+//         ),
+//         alt_perms.clone(),
+//         alt_perms
+//             .clone()
+//             .into_iter()
+//             .enumerate()
+//             .map(|(idx, perm)| (perm, idx))
+//             .collect(),
+//     )
+// }
 
-pub fn symmetric_group_structure(
-    n: usize,
-) -> (Group, Vec<Permutation>, HashMap<Permutation, usize>) {
-    let perms: Vec<Permutation> = all_perms(n);
-    (
-        Group::from_raw_model_unchecked(
-            perms.clone(),
-            || Permutation::new_ident(n),
-            |x: Permutation| x.invert(),
-            |x: Permutation, y: Permutation| x.compose(&y).unwrap(),
-            Some(n <= 2), //S0, S1, S2 are abelian, the rest are not
-            Some(n == 2), //S2 is simple, the rest are not
-        ),
-        perms.clone(),
-        perms
-            .clone()
-            .into_iter()
-            .enumerate()
-            .map(|(idx, perm)| (perm, idx))
-            .collect(),
-    )
-}
+// pub fn symmetric_group_structure(
+//     n: usize,
+// ) -> (Group, Vec<Permutation>, HashMap<Permutation, usize>) {
+//     let perms: Vec<Permutation> = all_perms(n);
+//     (
+//         Group::from_raw_model_unchecked(
+//             perms.clone(),
+//             || Permutation::new_ident(n),
+//             |x: Permutation| x.invert(),
+//             |x: Permutation, y: Permutation| x.compose(&y).unwrap(),
+//             Some(n <= 2), //S0, S1, S2 are abelian, the rest are not
+//             Some(n == 2), //S2 is simple, the rest are not
+//         ),
+//         perms.clone(),
+//         perms
+//             .clone()
+//             .into_iter()
+//             .enumerate()
+//             .map(|(idx, perm)| (perm, idx))
+//             .collect(),
+//     )
+// }
 
 #[cfg(test)]
 mod tests {

@@ -1,9 +1,17 @@
-use std::{fmt::Debug, ops::Mul};
+use std::{
+    borrow::Borrow,
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+    hash::Hash,
+    ops::Mul,
+};
 
+use itertools::Itertools;
 use malachite_base::num::{arithmetic::traits::UnsignedAbs, logic::traits::BitIterable};
 use malachite_nz::{integer::Integer, natural::Natural};
+use malachite_q::arithmetic::add;
 
-pub trait Group: Clone + PartialEq + Eq {
+pub trait Group: Debug + Clone + PartialEq + Eq {
     fn identity() -> Self;
 
     fn inverse(self) -> Self;
@@ -26,10 +34,10 @@ pub trait Group: Clone + PartialEq + Eq {
         Self::compose(a.clone(), b.clone())
     }
 
-    fn compose_list(elems: Vec<&Self>) -> Self {
+    fn compose_list(elems: Vec<impl Borrow<Self>>) -> Self {
         let mut ans = Self::identity();
         for elem in elems {
-            ans.compose_mut(elem);
+            ans.compose_mut(elem.borrow());
         }
         ans
     }
@@ -71,30 +79,110 @@ pub trait Group: Clone + PartialEq + Eq {
         }
     }
 
-    fn finite_generated_subgroup(generators: Vec<Self>) -> Vec<Self> {
-        todo!()
+    fn generated_finite_subgroup_table(
+        generators: Vec<Self>,
+    ) -> (
+        crate::groups::composition_table::group::Group,
+        Vec<Self>,
+        HashMap<Self, usize>,
+    )
+    where
+        Self: std::hash::Hash,
+    {
+        let mut n = 0;
+        let mut idx_to_elem: Vec<Self> = vec![];
+        let mut elem_to_idx: HashMap<Self, usize> = HashMap::new();
+        let mut mul: Vec<Vec<Option<usize>>> = vec![];
+        let mut to_mul: Vec<(usize, usize)> = vec![];
+
+        macro_rules! add_elem {
+            ($elem : expr) => {{
+                debug_assert_eq!(idx_to_elem.len(), n);
+                debug_assert_eq!(elem_to_idx.len(), n);
+                debug_assert_eq!(mul.len(), n);
+                for m in &mul {
+                    debug_assert_eq!(m.len(), n);
+                }
+                if !elem_to_idx.contains_key(&$elem) {
+                    n += 1;
+                    let k = elem_to_idx.len();
+                    idx_to_elem.push($elem.clone());
+                    elem_to_idx.insert($elem, k);
+                    for i in (0..k) {
+                        mul[i].push(None);
+                        to_mul.push((i, k));
+                        to_mul.push((k, i));
+                    }
+                    mul.push(vec![None; k + 1]);
+                    to_mul.push((k, k));
+                    k
+                } else {
+                    *elem_to_idx.get(&$elem).unwrap()
+                }
+            }};
+        }
+
+        add_elem!(Self::identity());
+        for gen in generators {
+            add_elem!(gen);
+        }
+        while !to_mul.is_empty() {
+            let (i, j) = to_mul.pop().unwrap().clone();
+            let k = add_elem!(Self::compose_refs(&idx_to_elem[i], &idx_to_elem[j]));
+            debug_assert!(mul[i][j].is_none());
+            mul[i][j] = Some(k);
+        }
+        drop(to_mul);
+        let mul = mul
+            .into_iter()
+            .map(|m| m.into_iter().map(|x| x.unwrap()).collect_vec())
+            .collect_vec();
+        let inv = idx_to_elem
+            .iter()
+            .map(|elem| *elem_to_idx.get(&Self::inverse_ref(elem)).unwrap())
+            .collect_vec();
+
+        let grp = crate::groups::composition_table::group::Group::new_unchecked(
+            n, 0, inv, mul, None, None,
+        );
+
+        #[cfg(debug_assertions)]
+        grp.check_state().unwrap();
+
+        (grp, idx_to_elem, elem_to_idx)
     }
 
-    fn finite_generated_subgroup_table(
-        generators: Vec<Self>,
-    ) -> super::super::finite_group_tables::group::Group {
-        todo!()
+    fn generated_finite_subgroup(gens: Vec<Self>) -> FiniteSubgroup<Self>
+    where
+        Self: Hash,
+    {
+        //generate subgroup by adding all generated elements
+        let mut sg = HashSet::new();
+        sg.insert(Self::identity());
+
+        let mut boundary = vec![Self::identity()];
+        let mut next_boundary = vec![];
+        let mut y;
+        while boundary.len() > 0 {
+            println!("{}", sg.len());
+            for x in &boundary {
+                for g in &gens {
+                    y = Self::compose_refs(x, g);
+                    if !sg.contains(&y) {
+                        sg.insert(y.clone());
+                        next_boundary.push(y);
+                    }
+                }
+            }
+            boundary = next_boundary.clone();
+            next_boundary = vec![];
+        }
+
+        FiniteSubgroup {
+            elems: sg.into_iter().collect(),
+        }
     }
 }
-
-// pub struct MultiplicativeNotation<G: Group> {
-//     elem: G,
-// }
-
-// impl<G: Group> Mul<MultiplicativeNotation<G>> for MultiplicativeNotation<G> {
-//     type Output = MultiplicativeNotation<G>;
-
-//     fn mul(self, rhs: MultiplicativeNotation<G>) -> Self::Output {
-//         MultiplicativeNotation {
-//             elem: G::compose(self.elem, rhs.elem),
-//         }
-//     }
-// }
 
 pub trait Pow<ExpT> {
     fn pow(&self, exp: ExpT) -> Self;
@@ -147,5 +235,20 @@ impl<G: Group> Pow<i32> for G {
 impl<G: Group> Pow<i64> for G {
     fn pow(&self, exp: i64) -> Self {
         self.int_pow(&Integer::from(exp))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FiniteSubgroup<G: Group> {
+    elems: Vec<G>,
+}
+
+impl<G: Group> FiniteSubgroup<G> {
+    pub fn size(&self) -> usize {
+        self.elems.len()
+    }
+
+    pub fn elements(&self) -> impl Iterator<Item = &G> {
+        self.elems.iter()
     }
 }

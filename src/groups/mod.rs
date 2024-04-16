@@ -1,4 +1,4 @@
 pub mod group;
+pub mod examples;
 pub mod permutation;
-pub mod universal_permutation;
-pub mod c2;
+pub mod composition_table;

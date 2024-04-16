@@ -219,12 +219,11 @@ impl<'a> Congruence<'a> {
 
 #[cfg(test)]
 mod partition_tests {
-    use super::super::super::sets::permutations::*;
     use super::*;
 
     #[test]
     fn partition_check_bad_state() {
-        let grp = cyclic_group_structure(6);
+        let grp = examples::cyclic_group_structure(6);
 
         //elements too big
         let p = PartitionState {
@@ -294,7 +293,7 @@ mod partition_tests {
 
     #[test]
     fn congruence_check_state() {
-        let (grp, _perms, _elems) = symmetric_group_structure(4);
+        let grp = examples::symmetric_group_structure(4);
         for (sg, _gens) in grp.subgroups() {
             match sg.to_normal_subgroup() {
                 None => {

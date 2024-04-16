@@ -73,6 +73,11 @@ impl<const N: usize> From<malachite_nz::integer::Integer> for Modulo<N> {
         }
     }
 }
+impl<const N: usize> From<usize> for Modulo<N> {
+    fn from(value: usize) -> Self {
+        Self { x: value % N }
+    }
+}
 impl<const N: usize> From<isize> for Modulo<N> {
     fn from(value: isize) -> Self {
         Self {
@@ -85,6 +90,12 @@ impl<const N: usize> From<i32> for Modulo<N> {
         Self {
             x: modulo(value as isize, N),
         }
+    }
+}
+
+impl<const N: usize> From<Modulo<N>> for usize {
+    fn from(value: Modulo<N>) -> Self {
+        value.x
     }
 }
 

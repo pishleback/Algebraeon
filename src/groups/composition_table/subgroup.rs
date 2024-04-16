@@ -141,22 +141,21 @@ impl<'a> Subgroup<'a> {
 
 #[cfg(test)]
 mod subgroup_tests {
-    use super::super::super::sets::permutations::*;
     use super::*;
 
     #[test]
     fn subgroup_counts() {
         for (grp, num_sgs) in vec![
-            (cyclic_group_structure(12), 6),
-            (cyclic_group_structure(13), 2),
-            (dihedral_group_structure(1), 2),
-            (dihedral_group_structure(12), 34),
-            (dihedral_group_structure(13), 16),
-            (symmetric_group_structure(1).0, 1),
-            (symmetric_group_structure(2).0, 2),
-            (symmetric_group_structure(3).0, 6),
-            (symmetric_group_structure(4).0, 30),
-            (symmetric_group_structure(5).0, 156),
+            (examples::cyclic_group_structure(12), 6),
+            (examples::cyclic_group_structure(13), 2),
+            (examples::dihedral_group_structure(1), 2),
+            (examples::dihedral_group_structure(12), 34),
+            (examples::dihedral_group_structure(13), 16),
+            (examples::symmetric_group_structure(1), 1),
+            (examples::symmetric_group_structure(2), 2),
+            (examples::symmetric_group_structure(3), 6),
+            (examples::symmetric_group_structure(4), 30),
+            (examples::symmetric_group_structure(5), 156),
         ] {
             assert_eq!(grp.subgroups().len(), num_sgs);
         }
@@ -166,9 +165,9 @@ mod subgroup_tests {
     fn subgroup_state() {
         //are the states of subgroups, normal subgroups, and generating sets correct when produced by grp.subgroups() and grp.normal_subgroups()?
         for grp in vec![
-            symmetric_group_structure(4).0,
-            dihedral_group_structure(12),
-            cyclic_group_structure(8),
+            examples::symmetric_group_structure(4),
+            examples::dihedral_group_structure(12),
+            examples::cyclic_group_structure(8),
         ] {
             let sgs = grp.subgroups();
             for (sg, gens) in sgs {
@@ -183,13 +182,15 @@ mod subgroup_tests {
 
     #[test]
     fn subgroup_left_cosets() {
-        let (grp, _perms, elems) = symmetric_group_structure(3);
+        use crate::groups::examples::symmetric::Permutation;
+
+        let (grp, _perms, elems) = Permutation::<3>::symmetric_composition_table();
         let sg = Subgroup {
             subset: Subset::new_unchecked(
                 &grp,
                 vec![
-                    elems[&Permutation::new(vec![0, 1, 2]).unwrap()],
-                    elems[&Permutation::new(vec![1, 0, 2]).unwrap()],
+                    elems[&Permutation::new([0, 1, 2]).unwrap()],
+                    elems[&Permutation::new([1, 0, 2]).unwrap()],
                 ]
                 .into_iter()
                 .collect(),
@@ -205,20 +206,20 @@ mod subgroup_tests {
                     &grp,
                     vec![
                         vec![
-                            elems[&Permutation::new(vec![0, 1, 2]).unwrap()],
-                            elems[&Permutation::new(vec![1, 0, 2]).unwrap()],
+                            elems[&Permutation::new([0, 1, 2]).unwrap()],
+                            elems[&Permutation::new([1, 0, 2]).unwrap()],
                         ]
                         .into_iter()
                         .collect(),
                         vec![
-                            elems[&Permutation::new(vec![1, 2, 0]).unwrap()],
-                            elems[&Permutation::new(vec![2, 1, 0]).unwrap()],
+                            elems[&Permutation::new([1, 2, 0]).unwrap()],
+                            elems[&Permutation::new([2, 1, 0]).unwrap()],
                         ]
                         .into_iter()
                         .collect(),
                         vec![
-                            elems[&Permutation::new(vec![2, 0, 1]).unwrap()],
-                            elems[&Permutation::new(vec![0, 2, 1]).unwrap()],
+                            elems[&Permutation::new([2, 0, 1]).unwrap()],
+                            elems[&Permutation::new([0, 2, 1]).unwrap()],
                         ]
                         .into_iter()
                         .collect()
@@ -230,13 +231,15 @@ mod subgroup_tests {
 
     #[test]
     fn subgroup_right_cosets() {
-        let (grp, _perms, elems) = symmetric_group_structure(3);
+        use crate::groups::examples::symmetric::Permutation;
+
+        let (grp, _perms, elems) = Permutation::<3>::symmetric_composition_table();
         let sg = Subgroup {
             subset: Subset::new_unchecked(
                 &grp,
                 vec![
-                    elems[&Permutation::new(vec![0, 1, 2]).unwrap()],
-                    elems[&Permutation::new(vec![1, 0, 2]).unwrap()],
+                    elems[&Permutation::new([0, 1, 2]).unwrap()],
+                    elems[&Permutation::new([1, 0, 2]).unwrap()],
                 ]
                 .into_iter()
                 .collect(),
@@ -252,20 +255,20 @@ mod subgroup_tests {
                     &grp,
                     vec![
                         vec![
-                            elems[&Permutation::new(vec![0, 1, 2]).unwrap()],
-                            elems[&Permutation::new(vec![1, 0, 2]).unwrap()],
+                            elems[&Permutation::new([0, 1, 2]).unwrap()],
+                            elems[&Permutation::new([1, 0, 2]).unwrap()],
                         ]
                         .into_iter()
                         .collect(),
                         vec![
-                            elems[&Permutation::new(vec![1, 2, 0]).unwrap()],
-                            elems[&Permutation::new(vec![0, 2, 1]).unwrap()],
+                            elems[&Permutation::new([1, 2, 0]).unwrap()],
+                            elems[&Permutation::new([0, 2, 1]).unwrap()],
                         ]
                         .into_iter()
                         .collect(),
                         vec![
-                            elems[&Permutation::new(vec![2, 0, 1]).unwrap()],
-                            elems[&Permutation::new(vec![2, 1, 0]).unwrap()],
+                            elems[&Permutation::new([2, 0, 1]).unwrap()],
+                            elems[&Permutation::new([2, 1, 0]).unwrap()],
                         ]
                         .into_iter()
                         .collect()

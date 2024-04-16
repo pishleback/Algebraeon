@@ -58,8 +58,8 @@ impl ANFStructure {
             debug_assert_eq!(disc.denominator_ref(), &Natural::ONE); //discriminant of algebraic integers is an integer
             let disc = Rational::numerator(&disc);
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
-                                                   // println!("{}", disc);
-            let (_sign, disc_factors) = disc.factor().unwrap().unit_and_factors();
+                                                   //    println!("{}", disc);
+            let (_sign, mut disc_factors) = disc.factor().unwrap().unit_and_factors();
             // If p is a prime such that p^2 divides Disc
             // then can find an alg int of the form
             // 1/p (x_1a_1 + ... + x_na_n)
@@ -71,6 +71,8 @@ impl ANFStructure {
             // println!("guess = {:?}", guess);
             // println!("disc = {:?}", disc);
             // println!("disc_factors = {:?}", disc_factors);
+            disc_factors.sort_by_key(|(p, k)| p.clone()); //try small primes first
+
             for (p, k) in disc_factors {
                 debug_assert!(p >= Integer::ZERO);
                 let p = nat_to_usize(p.unsigned_abs_ref()).unwrap(); //if p is too big for usize then this algorithm was doomed to take longer than my lifespan anyway

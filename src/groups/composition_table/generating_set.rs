@@ -175,24 +175,23 @@ impl Group {
 
 #[cfg(test)]
 mod generating_set_tests {
-    use super::super::super::sets::permutations::*;
     use super::*;
 
     #[test]
     fn test_generating_set() {
-        let grp = cyclic_group_structure(10);
+        let grp = examples::cyclic_group_structure(10);
         let g_set = grp.generating_set();
         g_set.check_state().unwrap();
 
-        let grp = dihedral_group_structure(12);
+        let grp = examples::dihedral_group_structure(12);
         let g_set = grp.generating_set();
         g_set.check_state().unwrap();
 
-        let (grp, _perms, _elems) = symmetric_group_structure(4);
+        let grp = examples::symmetric_group_structure(4);
         let g_set = grp.generating_set();
         g_set.check_state().unwrap();
 
-        let (grp, _perms, _elems) = symmetric_group_structure(5);
+        let grp = examples::symmetric_group_structure(5);
         let g_set = grp.generating_set();
         g_set.check_state().unwrap();
     }
