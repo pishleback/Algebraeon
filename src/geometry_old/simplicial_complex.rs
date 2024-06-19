@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 
-use crate::geometry::vector::are_points_nondegenerage;
+use crate::geometry_old::vector::are_points_nondegenerage;
 
 use super::{
     affine_coordinate_system::affine_span_of_simplices, oriented_simplex::OrientedSimplex,

@@ -72,6 +72,12 @@ impl IntegralDomainStructure for CannonicalStructure<Integer> {
     }
 }
 
+impl OrderedRingStructure for CannonicalStructure<Integer> {
+    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+        Self::Set::cmp(a, b)
+    }
+}
+
 impl FiniteUnitsStructure for CannonicalStructure<Integer> {
     fn all_units(&self) -> Vec<Self::Set> {
         vec![Integer::ONE, -Integer::ONE]

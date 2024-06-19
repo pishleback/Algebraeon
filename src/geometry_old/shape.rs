@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use malachite_q::Rational;
 
 use crate::{
-    geometry::vector::Vector,
+    geometry_old::vector::Vector,
     rings::linear::{
         subspace::AffineLatticeElements,
         matrix::Matrix,

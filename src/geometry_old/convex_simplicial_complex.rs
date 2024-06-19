@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use malachite_q::Rational;
 
-use crate::geometry::simplex::Simplex;
+use crate::geometry_old::simplex::Simplex;
 
 use super::{
     affine_coordinate_system::AffineSubspaceCoordinateSystem, oriented_simplex::OrientedSimplex,

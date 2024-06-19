@@ -12,9 +12,9 @@ use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 use orthoclase_all::drawing::canvas2d::*;
 use orthoclase_all::drawing::Canvas;
-use orthoclase_all::geometry::convex_simplicial_complex::*;
-use orthoclase_all::geometry::vector::*;
-use orthoclase_all::geometry::*;
+use orthoclase_all::geometry_old::convex_simplicial_complex::*;
+use orthoclase_all::geometry_old::vector::*;
+use orthoclase_all::geometry_old::*;
 use orthoclase_all::groups::group::*;
 use orthoclase_all::groups::permutation::*;
 use orthoclase_all::rings::linear::matrix::*;
@@ -44,7 +44,7 @@ fn main() {
 
     let shape = convex_hull(
         2,
-        (0..240)
+        (0..5000)
             .map(|i| random_point(2, f64::sqrt((i + 1) as f64)))
             .collect(),
     )

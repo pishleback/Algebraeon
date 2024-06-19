@@ -1,7 +1,7 @@
 use glium::{backend::Facade, glutin::event::Event, Display, Program, Surface, VertexBuffer};
 use malachite_q::Rational;
 
-use crate::{geometry::{shape::Shape, simplex::Simplex}, rings::ring_structure::cannonical::*};
+use crate::{geometry_old::{shape::Shape, simplex::Simplex}, rings::ring_structure::cannonical::*};
 
 #[derive(Debug)]
 struct Camera {

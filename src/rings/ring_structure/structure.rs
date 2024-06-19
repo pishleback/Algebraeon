@@ -163,6 +163,20 @@ pub trait IntegralDomainStructure: RingStructure {
     }
 }
 
+
+pub trait OrderedRingStructure: IntegralDomainStructure {
+    // <= satisfying translation invariance and multiplication by positive scalar
+    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering;
+    fn abs(&self, a: &Self::Set) -> Self::Set {
+        match self.ring_cmp(a, &self.zero()) {
+            std::cmp::Ordering::Less => self.neg(a),
+            std::cmp::Ordering::Equal => self.zero(),
+            std::cmp::Ordering::Greater => a.clone(),
+        }
+    }
+}
+
+
 pub trait FiniteUnitsStructure: RingStructure {
     fn all_units(&self) -> Vec<Self::Set>;
 }
@@ -474,6 +488,10 @@ pub trait ComplexSubsetStructure: Structure {}
 
 //is a subset of the real numbers
 pub trait RealSubsetStructure: ComplexSubsetStructure {}
+
+// pub trait OrderedFieldStructure: RealSubsetStructure {
+//     fn cmp(&self, x: &Self::Set, y: &Self::Set) -> std::cmp::Ordering;
+// }
 
 pub trait RealRoundingStructure: RealSubsetStructure {
     fn floor(&self, x: &Self::Set) -> Integer; //round down

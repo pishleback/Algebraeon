@@ -257,6 +257,21 @@ impl<R: StructuredType> ComplexConjugateOpps for R where
 {
 }
 
+pub trait OrderedRingOpps: StructuredType
+where
+    Self::Structure: OrderedRingStructure,
+{
+    fn ring_cmp(a: &Self, b: &Self) -> std::cmp::Ordering {
+        Self::structure().ring_cmp(a, b)
+    }
+
+    fn abs(a : &Self) -> Self {
+        Self::structure().abs(a)
+    }
+}
+
+impl<R: StructuredType> OrderedRingOpps for R where Self::Structure: OrderedRingStructure<Set = R> {}
+
 pub trait PositiveRealNthRootOpps: StructuredType
 where
     Self::Structure: PositiveRealNthRootStructure<Set = Self>,

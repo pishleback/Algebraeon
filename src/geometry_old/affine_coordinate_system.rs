@@ -1,5 +1,5 @@
 use crate::{
-    geometry::vector::Vector,
+    geometry_old::vector::Vector,
     rings::linear::{
         subspace::{AffineLattice, LinearLattice},
         matrix::Matrix,

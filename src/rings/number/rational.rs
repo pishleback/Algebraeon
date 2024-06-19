@@ -63,6 +63,12 @@ impl IntegralDomainStructure for CannonicalStructure<Rational> {
     }
 }
 
+impl OrderedRingStructure for CannonicalStructure<Rational> {
+    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+        Self::Set::cmp(a, b)
+    }
+}
+
 impl FieldStructure for CannonicalStructure<Rational> {}
 
 impl FieldOfFractionsStructure for CannonicalStructure<Rational> {
