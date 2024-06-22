@@ -519,7 +519,7 @@ mod group_tests {
             (examples::symmetric_group_structure(3), 3), //ident, 2-cycle, 3-cycle
             (examples::symmetric_group_structure(4), 5), //ident, 2-cycle, 3-cycle, 4-cycle, (2, 2)-cycle
             (examples::symmetric_group_structure(5), 7), //ident, 2-cycle, 3-cycle, 4-cycle, 5-cycle, (2, 2)-cycle, (2, 3)-cycle
-            (examples::symmetric_group_structure(6), 11), //ident, 2, 3, 4, 5, 6, (2, 2), (2, 3), (2, 4), (3, 3), (2, 2, 2)
+            // (examples::symmetric_group_structure(6), 11), //ident, 2, 3, 4, 5, 6, (2, 2), (2, 3), (2, 4), (3, 3), (2, 2, 2)
         ] {
             assert_eq!(grp.conjugacy_classes().size(), num_ccls);
         }

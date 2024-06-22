@@ -17,7 +17,7 @@ pub trait EqualityStructure: Structure {
 
 pub trait InfiniteStructure: Structure {
     //generate an infinite sequence of distinct elements
-    fn generate_distinct_elements(&self) ->  Box<dyn Iterator<Item = Self::Set>>;
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
 }
 
 pub fn common_structure<RS: Structure>(

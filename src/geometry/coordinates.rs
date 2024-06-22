@@ -1,42 +1,22 @@
-use std::borrow::Borrow;
-
 use crate::rings::linear::matrix::Matrix;
+use std::borrow::Borrow;
+use std::hash::Hash;
 
 use super::*;
 
-// #[derive(Debug, Clone)]
-// pub struct Point<FS: OrderedRingStructure + FieldStructure, SP : Borrow<LinearSpace<FS>>> {
-//     abmient_space: &'a Space<FS>,
-//     coordinates: Vec<FS::Set>, //length equal to abmient_space.dimension()
-// }
-
-// impl<FS: OrderedRingStructure + FieldStructure, SP : Borrow<LinearSpace<FS>>> PartialEq for Point<FS, SP> {
-//     fn eq(&self, other: &Self) -> bool {
-//         let space = common_space(&self.abmient_space, &other.abmient_space);
-//         let n = space.dimension();
-//         (0..n).all(|i| {
-//             space
-//                 .ordered_field()
-//                 .equal(self.coordinate(i), other.coordinate(i))
-//         })
-//     }
-// }
-
-// impl<FS: OrderedRingStructure + FieldStructure, SP : Borrow<LinearSpace<FS>>> Eq for Point<FS, SP> {}
-
 #[derive(Debug, Clone)]
-pub struct Vector<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>>> {
-    abmient_space: SP,
-    coordinates: Vec<FS::Set>, //length equal to abmient_space.dimension()
+pub struct Vector<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> {
+    ambient_space: SP,
+    coordinates: Vec<FS::Set>, //length equal to ambient_space.dimension()
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>>> PartialEq
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> PartialEq
     for Vector<FS, SP>
 {
     fn eq(&self, other: &Self) -> bool {
-        match common_space(self.abmient_space.borrow(), other.abmient_space.borrow()) {
+        match common_space(self.ambient_space.borrow(), other.ambient_space.borrow()) {
             Some(space) => {
-                let n = space.dimension();
+                let n = space.linear_dimension().unwrap();
                 (0..n).all(|i| {
                     space
                         .ordered_field()
@@ -48,102 +28,110 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>>> Par
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>>> Eq for Vector<FS, SP> {}
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Eq for Vector<FS, SP> {}
 
-// impl<FS: OrderedRingStructure + FieldStructure, SP : Borrow<LinearSpace<FS>>> Point<FS, SP> {
-//     pub fn new(abmient_space: &'a Space<FS>, coordinates: Vec<FS::Set>) -> Self {
-//         assert_eq!(abmient_space.dimension(), coordinates.len());
-//         Self {
-//             abmient_space,
-//             coordinates,
-//         }
-//     }
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Hash for Vector<FS, SP>
+where
+    FS::Set: Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // self.ambient_space.borrow().hash(state);
+        self.coordinates.hash(state);
+    }
+}
 
-//     fn into_vector(self) -> Vector<FS, SP> {
-//         Vector {
-//             abmient_space: self.abmient_space,
-//             coordinates: self.coordinates,
-//         }
-//     }
-
-//     pub fn ordered_field(&self) -> Rc<FS> {
-//         self.abmient_space.ordered_field()
-//     }
-
-//     pub fn coordinate(&self, i: usize) -> &FS::Set {
-//         self.coordinates.get(i).unwrap()
-//     }
-// }
-
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>>> Vector<FS, SP> {
-    pub fn new(abmient_space: SP, coordinates: Vec<FS::Set>) -> Self {
-        assert_eq!(abmient_space.borrow().dimension(), coordinates.len());
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Vector<FS, SP> {
+    pub fn new(ambient_space: SP, coordinates: Vec<FS::Set>) -> Self {
+        assert_eq!(
+            ambient_space.borrow().linear_dimension().unwrap(),
+            coordinates.len()
+        );
         Self {
-            abmient_space,
+            ambient_space,
             coordinates,
         }
     }
 
-    // fn into_point(self) -> Point<FS, SP> {
-    //     Point {
-    //         abmient_space: self.abmient_space,
-    //         coordinates: self.coordinates,
-    //     }
+    pub fn construct(ambient_space: SP, coordinates: impl Fn(usize) -> FS::Set) -> Self {
+        let coordinates = (0..ambient_space.borrow().linear_dimension().unwrap())
+            .map(|i| coordinates(i))
+            .collect();
+        Self {
+            ambient_space,
+            coordinates,
+        }
+    }
+
+    pub fn zero(ambient_space: SP) -> Self {
+        let ordered_field = ambient_space.borrow().ordered_field();
+        Self::construct(ambient_space, |i| ordered_field.zero())
+    }
+
+    pub fn ambient_space(&self) -> &SP {
+        &self.ambient_space
+    }
+
+    // pub fn ordered_field(&self) -> Rc<FS> {
+    //     self.ambient_space.borrow().ordered_field()
     // }
 
-    pub fn abmient_space(&self) -> &SP {
-        &self.abmient_space
-    }
-
-    pub fn ordered_field(&self) -> Rc<FS> {
-        self.abmient_space.borrow().ordered_field()
-    }
-
-    pub fn dimension(&self) -> usize {
-        self.abmient_space.borrow().dimension()
-    }
+    // pub fn dimension(&self) -> usize {
+    //     self.ambient_space.borrow().dimension()
+    // }
 
     pub fn coordinate(&self, i: usize) -> &FS::Set {
         self.coordinates.get(i).unwrap()
     }
 
+    pub fn coordinate_mut(&mut self, i: usize) -> &mut FS::Set {
+        self.coordinates.get_mut(i).unwrap()
+    }
+
     pub fn into_row(&self) -> Matrix<FS::Set> {
-        Matrix::construct(self.dimension(), 1, |r, _c| self.coordinate(r).clone())
+        Matrix::construct(
+            1,
+            self.ambient_space().borrow().linear_dimension().unwrap(),
+            |_r, c| self.coordinate(c).clone(),
+        )
     }
 
     pub fn into_col(&self) -> Matrix<FS::Set> {
-        Matrix::construct(1, self.dimension(), |_r, c| self.coordinate(c).clone())
+        Matrix::construct(
+            self.ambient_space().borrow().linear_dimension().unwrap(),
+            1,
+            |r, _c| self.coordinate(r).clone(),
+        )
     }
 }
 
-// -vector
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>> + Clone> std::ops::Neg
+// -&vector
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::ops::Neg
     for &Vector<FS, SP>
 {
     type Output = Vector<FS, SP>;
 
     fn neg(self) -> Self::Output {
         Vector {
-            abmient_space: self.abmient_space.clone(),
+            ambient_space: self.ambient_space.clone(),
             coordinates: self
                 .coordinates
                 .iter()
-                .map(|x| self.ordered_field().neg(x))
+                .map(|x| self.ambient_space().borrow().ordered_field().neg(x))
                 .collect(),
         }
     }
 }
 
-// vector + vector
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>> + Clone>
+// &vector + &vector
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
     std::ops::Add<&Vector<FS, SP>> for &Vector<FS, SP>
 {
     type Output = Vector<FS, SP>;
 
     fn add(self, other: &Vector<FS, SP>) -> Self::Output {
-        match common_space(self.abmient_space.clone(), other.abmient_space.clone()) {
+        match common_space(self.ambient_space.clone(), other.ambient_space.clone()) {
             Some(space) => {
-                let n = space.borrow().dimension();
+                let n = space.borrow().linear_dimension().unwrap();
                 let coordinates = (0..n)
                     .map(|i| {
                         space
@@ -153,7 +141,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>> + Cl
                     })
                     .collect();
                 Vector {
-                    abmient_space: space,
+                    ambient_space: space,
                     coordinates,
                 }
             }
@@ -162,8 +150,28 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>> + Cl
     }
 }
 
-// vector - vector
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>> + Clone>
+// mut vector += &vector
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+    std::ops::AddAssign<&Vector<FS, SP>> for Vector<FS, SP>
+{
+    fn add_assign(&mut self, other: &Vector<FS, SP>) {
+        match common_space(self.ambient_space.clone(), other.ambient_space.clone()) {
+            Some(space) => {
+                let n = space.borrow().linear_dimension().unwrap();
+                for i in (0..n) {
+                    space
+                        .borrow()
+                        .ordered_field()
+                        .add_mut(self.coordinate_mut(i), other.coordinate(i));
+                }
+            }
+            None => panic!("Can't add vectors belonging to different spaces"),
+        }
+    }
+}
+
+// &vector - &vector
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
     std::ops::Sub<&Vector<FS, SP>> for &Vector<FS, SP>
 {
     type Output = Vector<FS, SP>;
@@ -173,54 +181,21 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>> + Cl
     }
 }
 
-// vector * scalar
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<LinearSpace<FS>> + Clone>
+// &vector * &scalar
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
     Vector<FS, SP>
 {
-    fn scalar_mul(&self, other: &FS::Set) -> Vector<FS, SP> {
+    pub fn scalar_mul(&self, other: &FS::Set) -> Vector<FS, SP> {
         Vector {
-            abmient_space: self.abmient_space.clone(),
+            ambient_space: self.ambient_space.clone(),
             coordinates: self
                 .coordinates
                 .iter()
-                .map(|x| self.ordered_field().mul(x, other))
+                .map(|x| self.ambient_space().borrow().ordered_field().mul(x, other))
                 .collect(),
         }
     }
 }
-
-// //point - vector -> point
-// impl<FS: OrderedRingStructure + FieldStructure, SP : Borrow<LinearSpace<FS>>> std::ops::Sub<&Vector<FS, SP>>
-//     for &Point<FS, SP>
-// {
-//     type Output = Point<FS, SP>;
-
-//     fn sub(self, other: &Vector<FS, SP>) -> Self::Output {
-//         (&self.clone().into_vector() - other).into_point()
-//     }
-// }
-
-// //point + vector -> point
-// impl<FS: OrderedRingStructure + FieldStructure, SP : Borrow<LinearSpace<FS>>> std::ops::Add<&Vector<FS, SP>>
-//     for &Point<FS, SP>
-// {
-//     type Output = Point<FS, SP>;
-
-//     fn add(self, other: &Vector<FS, SP>) -> Self::Output {
-//         (&self.clone().into_vector() + other).into_point()
-//     }
-// }
-
-// //point - point -> vector
-// impl<FS: OrderedRingStructure + FieldStructure, SP : Borrow<LinearSpace<FS>>> std::ops::Sub<&Point<FS, SP>>
-//     for &Point<FS, SP>
-// {
-//     type Output = Vector<FS, SP>;
-
-//     fn sub(self, other: &Point<FS, SP>) -> Self::Output {
-//         &self.clone().into_vector() - &other.clone().into_vector()
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
@@ -231,13 +206,47 @@ mod tests {
     use super::*;
 
     #[test]
+    fn vector_from_mat() {
+        let space = AffineSpace::new(Rational::structure(), 2);
+        let mat = Matrix::<Rational>::from_rows(vec![
+            vec![Rational::from(1), Rational::from(2)],
+            vec![Rational::from(3), Rational::from(4)],
+        ]);
+
+        mat.pprint();
+
+        let mut vecs = vectors_from_rows(&space, &mat);
+        let v2 = vecs.pop().unwrap();
+        let v1 = vecs.pop().unwrap();
+        println!("v1 = {:?}", v1);
+        println!("v2 = {:?}", v2);
+
+        assert_eq!(
+            v1,
+            Vector::new(&space, vec![Rational::from(1), Rational::from(2)])
+        );
+        assert_eq!(
+            v2,
+            Vector::new(&space, vec![Rational::from(3), Rational::from(4)])
+        );
+    }
+
+    #[test]
+    fn det() {
+        let space = AffineSpace::new(Rational::structure(), 2);
+        let v1 = Vector::new(&space, vec![Rational::from(3), Rational::from(2)]);
+        let v2 = Vector::new(&space, vec![Rational::from(5), Rational::from(7)]);
+        assert_eq!(space.determinant(vec![&v1, &v2]), Rational::from(11));
+    }
+
+    #[test]
     fn test_abgroup() {
-        let space_ab = LinearSpace::new(Rational::structure(), 2);
+        let space_ab = AffineSpace::new(Rational::structure(), 2);
         let a = Vector::new(&space_ab, vec![Rational::from(1), Rational::from(2)]);
         let b = Vector::new(&space_ab, vec![Rational::from(6), Rational::from(3)]);
         let c = Vector::new(&space_ab, vec![Rational::from(7), Rational::from(5)]);
 
-        let space_xy = LinearSpace::new(Rational::structure(), 2);
+        let space_xy = AffineSpace::new(Rational::structure(), 2);
         let x = Vector::new(&space_xy, vec![Rational::from(1), Rational::from(2)]);
         let y = Vector::new(&space_xy, vec![Rational::from(6), Rational::from(3)]);
         let z = Vector::new(&space_xy, vec![Rational::from(7), Rational::from(5)]);
@@ -247,7 +256,7 @@ mod tests {
         assert_eq!(z, &x + &y);
         assert_eq!(a, a);
         assert_ne!(a, b);
-        assert!(std::panic::catch_unwind(|| a == x).is_err()); //same coordinates but different space
+        assert_ne!(a, x); //same coordinates but different space
         assert_ne!(x.scalar_mul(&Rational::from(-2)), z);
         assert_eq!(x.scalar_mul(&Rational::from(-2)), w);
     }
