@@ -1,7 +1,10 @@
 use glium::{backend::Facade, glutin::event::Event, Display, Program, Surface, VertexBuffer};
 use malachite_q::Rational;
 
-use crate::{geometry_old::{shape::Shape, simplex::Simplex}, rings::ring_structure::cannonical::*};
+use crate::{
+    geometry_old::{shape::Shape, simplex::Simplex},
+    rings::ring_structure::cannonical::*,
+};
 
 #[derive(Debug)]
 struct Camera {
@@ -45,12 +48,12 @@ impl Camera {
     }
 }
 
-pub struct Canvas {
+pub struct Canvas2D {
     camera: Camera,
     program: Option<Program>,
 }
 
-impl Canvas {
+impl Canvas2D {
     fn make_program(&mut self, display: &Display) {
         if self.program.is_none() {
             let vertex_shader_src = r#"
@@ -98,7 +101,7 @@ impl Canvas {
     }
 }
 
-impl super::Canvas for Canvas {
+impl super::Canvas for Canvas2D {
     fn new(facade: &impl Facade) -> Self {
         Self {
             camera: Camera {
@@ -134,14 +137,6 @@ impl super::Canvas for Canvas {
                 position: [0.0, 1.0],
                 colour: [0.0, 1.0, 0.0, 1.0],
             },
-            // Vertex {
-            //     position: [0.5, 0.0],
-            //     colour: [1.0, 0.0, 0.0, 1.0],
-            // },
-            // Vertex {
-            //     position: [0.5, 0.5],
-            //     colour: [0.0, 1.0, 0.0, 1.0],
-            // },
             Vertex {
                 position: [1.0, 0.0],
                 colour: [0.0, 0.0, 1.0, 1.0],
@@ -212,6 +207,10 @@ impl super::Canvas for Canvas {
     }
 }
 
+pub trait Drawable {
+    fn draw(&self, canvas: &mut Diagram2dCanvas, colour : (f32, f32, f32));
+}
+
 #[derive(Debug, Copy, Clone)]
 struct Vertex {
     position: [f32; 2],
@@ -219,7 +218,7 @@ struct Vertex {
 }
 implement_vertex!(Vertex, position, colour);
 
-pub struct Shape2dCanvas {
+pub struct Diagram2dCanvas {
     camera: Camera,
     point_program: Option<Program>,
     line_program: Option<Program>,
@@ -234,7 +233,7 @@ pub struct Shape2dCanvas {
     triangles_vertex_buffer: Option<VertexBuffer<Vertex>>,
 }
 
-impl Shape2dCanvas {
+impl Diagram2dCanvas {
     fn make_program(&mut self, display: &Display) {
         if self.point_program.is_none() {
             self.point_program = Some(
@@ -469,6 +468,54 @@ impl Shape2dCanvas {
         }
     }
 
+    pub fn draw(&mut self, obj: impl Drawable, colour : (f32, f32, f32)) {
+        obj.draw(self, colour)
+    }
+
+    pub fn draw_point(&mut self, pt: (f32, f32), colour: (f32, f32, f32)) {
+        self.point_verts.push(Vertex {
+            position: [pt.0, pt.1],
+            colour: [colour.0, colour.1, colour.2],
+        });
+        self.points_vertex_buffer = None;
+    }
+
+    pub fn draw_line(&mut self, a: (f32, f32), b: (f32, f32), colour: (f32, f32, f32)) {
+        self.line_verts.push(Vertex {
+            position: [a.0, a.1],
+            colour: [colour.0, colour.1, colour.2],
+        });
+        self.line_verts.push(Vertex {
+            position: [b.0, b.1],
+            colour: [colour.0, colour.1, colour.2],
+        });
+        self.lines_vertex_buffer = None;
+    }
+
+    pub fn draw_triangle(
+        &mut self,
+        a: (f32, f32),
+        b: (f32, f32),
+        c: (f32, f32),
+        colour: (f32, f32, f32),
+    ) {
+        self.triangle_verts.push(Vertex {
+            position: [a.0, a.1],
+            colour: [colour.0, colour.1, colour.2],
+        });
+
+        self.triangle_verts.push(Vertex {
+            position: [b.0, b.1],
+            colour: [colour.0, colour.1, colour.2],
+        });
+        self.triangle_verts.push(Vertex {
+            position: [c.0, c.1],
+            colour: [colour.0, colour.1, colour.2],
+        });
+        self.triangles_vertex_buffer = None;
+    }
+
+    #[deprecated]
     pub fn draw_simplex(&mut self, simplex: &Simplex, colour: (f32, f32, f32)) {
         assert_eq!(simplex.dim(), 2);
 
@@ -531,6 +578,7 @@ impl Shape2dCanvas {
         }
     }
 
+    #[deprecated]
     pub fn draw_shape(&mut self, shape: &Shape, colour: (f32, f32, f32)) {
         assert_eq!(shape.dim(), 2);
 
@@ -552,7 +600,7 @@ impl Shape2dCanvas {
     // }
 }
 
-impl super::Canvas for Shape2dCanvas {
+impl super::Canvas for Diagram2dCanvas {
     fn new(facade: &impl glium::backend::Facade) -> Self {
         Self {
             camera: Camera {
@@ -650,13 +698,14 @@ impl super::Canvas for Shape2dCanvas {
 }
 
 impl Shape {
+    #[deprecated]
     pub fn view2d(&self) -> ! {
         if self.dim() != 2 {
             panic!()
         }
 
         use super::Canvas;
-        let mut canvas = Shape2dCanvas::run(|canvas| {
+        let mut canvas = Diagram2dCanvas::run(|canvas| {
             canvas.draw_shape(self, (1.0, 1.0, 1.0));
         });
     }

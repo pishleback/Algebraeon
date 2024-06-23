@@ -206,21 +206,23 @@ mod simplex {
     in 1d space it is a point
     in 0d space it is a null simplex. The orientation looses meaning but it is nice to still count this case.
     */
+
     #[derive(Debug, Clone)]
-    pub enum OrientedSimplex<
+    struct OrientedSimplexOrientation<
         FS: OrderedRingStructure + FieldStructure,
         SP: Borrow<AffineSpace<FS>> + Clone,
     > {
-        Null {
-            simplex: Simplex<FS, SP>, //must be the null simplex
-        },
-        NotNull {
-            simplex: Simplex<FS, SP>, // a simplex spanning a hyperplane
-            // the ordering of the verticies gives an orientation
-            flip: bool, // flip the orientation if necessary
-            positive_point: Vector<FS, SP>, // a point on the positive side
-                        //we do not allow the null oriented simplex in 0d space
-        },
+        flip: bool,                     // flip the orientation if necessary
+        positive_point: Vector<FS, SP>, // a point on the positive side
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct OrientedSimplex<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+    > {
+        simplex: Simplex<FS, SP>,
+        orientation: Option<OrientedSimplexOrientation<FS, SP>>, //None iff simplex is null
     }
 
     impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
@@ -235,30 +237,29 @@ mod simplex {
             if points.len() != ambient_space.borrow().linear_dimension().unwrap() {
                 return Err("Oriented simplex must have dimension one less than the ambient space");
             }
-            if points.is_empty() {
-                return Err("The null simplex in dimension 0 is not valid");
-            }
+            let n = points.len();
             let simplex = Simplex::new(ambient_space, points)?;
-            let mut guess = Self::NotNull {
-                simplex,
-                flip: false,
-                positive_point: ref_point.clone(),
-            };
-            match guess.classify_point(ref_point) {
-                OrientationSide::Positive => Ok(guess),
-                OrientationSide::Neutral => Err("The reference point lies on the hyperplane"),
-                OrientationSide::Negative => {
-                    match &mut guess {
-                        OrientedSimplex::Null { .. } => unreachable!(),
-                        OrientedSimplex::NotNull {
-                            simplex,
-                            flip,
-                            positive_point,
-                        } => {
-                            *flip = !*flip;
-                        }
+            if n == 0 {
+                Ok(Self {
+                    simplex,
+                    orientation: None,
+                })
+            } else {
+                let mut guess = Self {
+                    simplex,
+                    orientation: Some(OrientedSimplexOrientation {
+                        flip: false,
+                        positive_point: ref_point.clone(),
+                    }),
+                };
+                match guess.classify_point(ref_point) {
+                    OrientationSide::Positive => Ok(guess),
+                    OrientationSide::Neutral => Err("The reference point lies on the hyperplane"),
+                    OrientationSide::Negative => {
+                        let orientation = guess.orientation.as_mut().unwrap();
+                        orientation.flip = !orientation.flip;
+                        Ok(guess)
                     }
-                    Ok(guess)
                 }
             }
         }
@@ -271,11 +272,16 @@ mod simplex {
             Ok(Self::new_with_positive_point(ambient_space, points, ref_point)?.flip())
         }
 
-        fn positive_point(&self) -> Option<&Vector<FS, SP>> {
-            match self {
-                OrientedSimplex::Null { .. } => None,
-                OrientedSimplex::NotNull { positive_point, .. } => Some(positive_point),
-            }
+        pub fn positive_point(&self) -> Option<Vector<FS, SP>> {
+            Some(self.orientation.as_ref()?.positive_point.clone())
+        }
+
+        pub fn negative_point(&self) -> Option<Vector<FS, SP>> {
+            let positive_point = self.positive_point()?;
+            Some({
+                let pt: &Vector<FS, SP> = &self.simplex.points()[0];
+                &(pt + pt) - &positive_point
+            })
         }
 
         pub fn ambient_space(&self) -> SP {
@@ -283,33 +289,31 @@ mod simplex {
         }
 
         pub fn simplex(&self) -> &Simplex<FS, SP> {
-            match self {
-                OrientedSimplex::Null { simplex } => simplex,
-                OrientedSimplex::NotNull { simplex, .. } => simplex,
-            }
+            &self.simplex
         }
 
         pub fn flip(mut self) -> Self {
-            match &mut self {
-                OrientedSimplex::Null { simplex } => {}
-                OrientedSimplex::NotNull {
-                    simplex,
+            let negative_point = self.negative_point();
+            match &mut self.orientation {
+                Some(OrientedSimplexOrientation {
                     flip,
                     positive_point,
-                } => {
-                    *flip = !*flip;
-                    let pt: &Vector<FS, SP> = &simplex.points()[0];
-                    *positive_point = &(pt + pt) - positive_point;
+                }) => {
+                    (*flip, *positive_point) = (!*flip, negative_point.unwrap());
                 }
+                None => {}
             }
-            match &self {
-                OrientedSimplex::Null { .. } => {}
-                OrientedSimplex::NotNull { positive_point, .. } => {
+            match &self.orientation {
+                Some(OrientedSimplexOrientation {
+                    flip,
+                    positive_point,
+                }) => {
                     debug_assert_eq!(
                         self.classify_point(positive_point),
                         OrientationSide::Positive
                     );
                 }
+                None => {}
             }
             self
         }
@@ -317,19 +321,16 @@ mod simplex {
         pub fn classify_point(&self, point: &Vector<FS, SP>) -> OrientationSide {
             let space = self.ambient_space();
             let field = space.borrow().ordered_field();
-
-            match self {
-                OrientedSimplex::Null { simplex } => OrientationSide::Neutral,
-                OrientedSimplex::NotNull {
-                    simplex,
+            match &self.orientation {
+                Some(OrientedSimplexOrientation {
                     flip,
                     positive_point,
-                } => match space.borrow().linear_dimension().unwrap() {
-                    0 => OrientationSide::Neutral,
+                }) => match space.borrow().linear_dimension().unwrap() {
+                    0 => unreachable!(),
                     d => {
-                        let root = &simplex.points[0];
+                        let root = &self.simplex.points[0];
                         let mut vecs = (1..d)
-                            .map(|i| &simplex.points[i] - root)
+                            .map(|i| &self.simplex.points[i] - root)
                             .collect::<Vec<_>>();
                         vecs.push(point - root);
                         let det = space.borrow().determinant(vecs.iter().collect());
@@ -347,6 +348,7 @@ mod simplex {
                         }
                     }
                 },
+                None => OrientationSide::Neutral,
             }
         }
     }
@@ -405,15 +407,10 @@ mod simplex {
             let s_neg =
                 OrientedSimplex::new_with_negative_point(&space, vec![v1, v2], &v3).unwrap();
 
-            match (s_pos, s_neg) {
-                (
-                    OrientedSimplex::NotNull { flip: pos_flip, .. },
-                    OrientedSimplex::NotNull { flip: neg_flip, .. },
-                ) => {
-                    assert_ne!(pos_flip, neg_flip);
-                }
-                _ => unreachable!(),
-            }
+            assert_ne!(
+                s_pos.orientation.unwrap().flip,
+                s_neg.orientation.unwrap().flip
+            );
         }
     }
 }
@@ -469,7 +466,7 @@ mod convex_hull {
         ambient_space: SP,
         subspace: EmbeddedAffineSubspace<FS, SP, Rc<AffineSpace<FS>>>,
         // oriented facets belonging to subspace such
-        // the negative side of each facet is on the interior of the convex hull
+        // the positive side of each facet is on the interior of the convex hull
         // the facets form a simplicial complex
         facets: Vec<OrientedSimplex<FS, Rc<AffineSpace<FS>>>>,
         interior: Vec<Simplex<FS, Rc<AffineSpace<FS>>>>,
@@ -578,29 +575,6 @@ mod convex_hull {
                 }
             }
 
-            /*
-            //check that the closure of the facets plus the interior is closed under taking facets
-            {
-                let mut all_spx = HashSet::new();
-                for facet in &self.facets {
-                    for spx in facet.simplex().sub_simplices() {
-                        all_spx.insert(spx);
-                    }
-                }
-                for spx in &self.interior {
-                    all_spx.insert(spx.clone());
-                }
-
-                for spx in &self.interior {
-                    for subspx in spx.sub_simplices() {
-                        if !all_spx.contains(&subspx) {
-                            return Err("Closure of facets union interior should be closed under taking facets");
-                        }
-                    }
-                }
-            }
-            */
-
             //check that facets are convex with negative side inwards by checking that no point is on the positive side of a facet
             {
                 let mut all_pts = HashSet::new();
@@ -617,10 +591,10 @@ mod convex_hull {
                 for facet in &self.facets {
                     for pt in &all_pts {
                         match facet.classify_point(pt) {
-                            OrientationSide::Positive => {
-                                return Err("Every point must be on the negative or neutral side of every facet");
+                            OrientationSide::Negative => {
+                                return Err("Every point must be on the positive or neutral side of every facet");
                             }
-                            OrientationSide::Neutral | OrientationSide::Negative => {}
+                            OrientationSide::Neutral | OrientationSide::Positive => {}
                         }
                     }
                 }
@@ -647,28 +621,213 @@ mod convex_hull {
             #[cfg(debug_assertions)]
             self.check().unwrap();
 
+            // println!(
+            //     "subspace_dim={:?}",
+            //     self.subspace.embedded_space().linear_dimension()
+            // );
+
             match self.subspace.unembed_point(&pt) {
                 Some(subsp_pt) => {
-                    //partition into visible / hidden facets
-                    //compute horizon as ridges where visible meets hidden
-                    //delete visible facets and extend horizion ridges to the new point for replacement facets
-                    todo!();
+                    //Partition into visible / hidden facets
+                    //Compute horizon as ridges where visible meets hidden
+                    //Delete visible facets and extend horizion ridges to the new point for replacement facets
+
+                    let mut visible = vec![];
+                    let mut hidden = vec![];
+                    for facet in &self.facets {
+                        match facet.classify_point(&subsp_pt) {
+                            OrientationSide::Negative => {
+                                visible.push(facet);
+                            }
+                            OrientationSide::Neutral | OrientationSide::Positive => {
+                                hidden.push(facet);
+                            }
+                        }
+                    }
+
+                    let mut horizon = HashMap::new();
+                    for facet in &visible {
+                        for ridge in facet.simplex().facets() {
+                            match horizon.contains_key(&ridge) {
+                                true => {
+                                    horizon.remove(&ridge);
+                                }
+                                false => {
+                                    horizon.insert(ridge, facet);
+                                }
+                            }
+                        }
+                    }
+                    #[cfg(debug_assertions)]
+                    {
+                        let mut horizon_alt = HashSet::new();
+                        for facet in &hidden {
+                            for ridge in facet.simplex().facets() {
+                                match horizon_alt.contains(&ridge) {
+                                    true => {
+                                        horizon_alt.remove(&ridge);
+                                    }
+                                    false => {
+                                        horizon_alt.insert(ridge);
+                                    }
+                                }
+                            }
+                        }
+                        assert_eq!(
+                            horizon.keys().map(|r| r.clone()).collect::<HashSet<_>>(),
+                            horizon_alt
+                        );
+                    }
+
+                    // println!(
+                    //     "#visible={:?} #hidden={:?} #horizon={:?}",
+                    //     visible.len(),
+                    //     hidden.len(),
+                    //     horizon.len()
+                    // );
+
+                    (self.facets, self.interior) = (
+                        horizon
+                            .into_iter()
+                            .map(|(ridge, facet)| {
+                                OrientedSimplex::new_with_positive_point(
+                                    self.subspace.embedded_space(),
+                                    {
+                                        let mut points = ridge.points().clone();
+                                        points.push(subsp_pt.clone());
+                                        points
+                                    },
+                                    &{
+                                        match facet.positive_point() {
+                                            Some(pos_pt) => pos_pt,
+                                            None => {
+                                                debug_assert_eq!(
+                                                    self.subspace
+                                                        .embedded_space()
+                                                        .affine_dimension(),
+                                                    1
+                                                );
+                                                /*
+                                                unreachable because the embedded subspace has linear dimension 0
+                                                therefore the only way we are here is if we start with a convex hull equal to a point and add that same point
+                                                in this case hidden={the null facet} and visible={} so horizon={}
+                                                this is contained in iteration over the horizon, so doesn't run
+                                                */
+                                                unreachable!()
+                                            }
+                                        }
+                                    },
+                                )
+                                .unwrap()
+                            })
+                            .chain(hidden.into_iter().map(|f| f.clone()))
+                            .collect::<Vec<_>>(),
+                        visible
+                            .into_iter()
+                            .map(|facet| {
+                                Simplex::new(self.subspace.embedded_space(), {
+                                    let mut points = facet.simplex().points().clone();
+                                    points.push(subsp_pt.clone());
+                                    points
+                                })
+                                .unwrap()
+                            })
+                            .chain(self.interior.iter().map(|s| s.clone()))
+                            .collect::<Vec<_>>(),
+                    );
                 }
                 None => {
-                    //The new point is outside the current embedded affine subspace
-                    //The new facets are given by the old interior union the old facets extended into the new dimension
-                    //The new interior is given by the old interior extended into the new dimension
-                    let (iota, new_subspace) = self.subspace.extend_dimension_by_point_unsafe(pt);
+                    (self.subspace, self.facets, self.interior) = {
+                        //The new point is outside the current embedded affine subspace
+                        //The new facets are given by the old interior union the old facets extended into the new dimension
+                        //The new interior is given by the old interior extended into the new dimension
+                        {
+                            let (iota, new_subspace_embedding, pt_in_new_subspace) =
+                                self.subspace.extend_dimension_by_point_unsafe(pt.clone());
 
-                    println!("do stuff here");
+                            let new_subspace = iota.ambient_space();
+                            debug_assert_eq!(new_subspace, new_subspace_embedding.embedded_space());
 
-                    println!("#f={:?} #i={:?}", self.facets.len(), self.interior.len());
+                            //new_facets <- old_interior & old_facets
+                            //new_interior <- old_interior
+                            let mut new_facets = vec![];
+                            let mut new_interior = vec![];
+                            for old_facet in &self.facets {
+                                debug_assert_eq!(
+                                    old_facet.ambient_space(),
+                                    self.subspace.embedded_space()
+                                );
+                                new_facets.push(
+                                    OrientedSimplex::new_with_positive_point(
+                                        new_subspace.clone(),
+                                        {
+                                            let mut points = vec![];
+                                            for pt in old_facet.simplex().points() {
+                                                points.push(iota.embed_point(pt));
+                                            }
+                                            points.push(pt_in_new_subspace.clone());
+                                            points
+                                        },
+                                        &{
+                                            //If old_facet is null living inside 0D space then take the iota-embedding of the unique point in the 0D space as the reference
+                                            //If old_facet is not null then it comes equiped with a reference point which we embed via iota and use
+                                            match old_facet.positive_point() {
+                                                Some(pos_pt) => iota.embed_point(&pos_pt),
+                                                None => {
+                                                    debug_assert_eq!(
+                                                        self.subspace
+                                                            .embedded_space()
+                                                            .affine_dimension(),
+                                                        1
+                                                    );
+                                                    iota.embed_point(
+                                                        &self
+                                                            .subspace
+                                                            .embedded_space()
+                                                            .origin()
+                                                            .unwrap(),
+                                                    )
+                                                }
+                                            }
+                                        },
+                                    )
+                                    .unwrap(),
+                                );
+                            }
+                            for old_interior in &self.interior {
+                                debug_assert_eq!(
+                                    old_interior.ambient_space(),
+                                    self.subspace.embedded_space()
+                                );
+                                new_facets.push(
+                                    OrientedSimplex::new_with_positive_point(
+                                        new_subspace.clone(),
+                                        old_interior
+                                            .points()
+                                            .iter()
+                                            .map(|pt| iota.embed_point(pt))
+                                            .collect(),
+                                        &pt_in_new_subspace,
+                                    )
+                                    .unwrap(),
+                                );
+                                new_interior.push(
+                                    Simplex::new(new_subspace.clone(), {
+                                        let mut points = old_interior
+                                            .points()
+                                            .iter()
+                                            .map(|pt| iota.embed_point(pt))
+                                            .collect::<Vec<_>>();
+                                        points.push(pt_in_new_subspace.clone());
+                                        points
+                                    })
+                                    .unwrap(),
+                                );
+                            }
 
-                    todo!();
-
-                    self.subspace = new_subspace;
-                    //TODO: new_facets <- old_interior & old_facets
-                    //TODO: new_interior <- old_interior
+                            (new_subspace_embedding, new_facets, new_interior)
+                        }
+                    }
                 }
             };
 
@@ -679,6 +838,7 @@ mod convex_hull {
 
     #[cfg(test)]
     mod tests {
+        use malachite_base::num::conversion::traits::FromSciString;
         use malachite_q::Rational;
 
         use crate::rings::structure::StructuredType;
@@ -689,18 +849,59 @@ mod convex_hull {
         fn construct_convex_hull() {
             let space = AffineSpace::new_linear(Rational::structure(), 2);
             let mut ch = ConvexHull::new_empty(&space);
+            //add a point to get started
             ch.extend_by_point(Vector::new(
                 &space,
                 vec![Rational::from(1), Rational::from(1)],
             ));
+            //add the same point again
             ch.extend_by_point(Vector::new(
                 &space,
-                vec![Rational::from(2), Rational::from(3)],
+                vec![Rational::from(1), Rational::from(1)],
             ));
-
-            println!("{:?}", ch);
-
-            todo!();
+            //add a point to form a line
+            ch.extend_by_point(Vector::new(
+                &space,
+                vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
+            ));
+            //add a point such that the line is extended to a longer line
+            ch.extend_by_point(Vector::new(
+                &space,
+                vec![Rational::from(-1), Rational::from(0)],
+            ));
+            //add that point again
+            ch.extend_by_point(Vector::new(
+                &space,
+                vec![Rational::from(-1), Rational::from(0)],
+            ));
+            //add the middle point of the line again
+            ch.extend_by_point(Vector::new(
+                &space,
+                vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
+            ));
+            //add a middle point in the middle of one of the two line segments
+            ch.extend_by_point(Vector::new(
+                &space,
+                vec![
+                    Rational::from(1) / Rational::from(2),
+                    Rational::from(3) / Rational::from(4),
+                ],
+            ));
+            //add a point to form a double triangle
+            ch.extend_by_point(Vector::new(
+                &space,
+                vec![Rational::from(2), Rational::from(-1)],
+            ));
+            //add a point to extend by one triangle
+            ch.extend_by_point(Vector::new(
+                &space,
+                vec![Rational::from(0), Rational::from(-2)],
+            ));
+            //add a point to extend by three triangles
+            ch.extend_by_point(Vector::new(
+                &space,
+                vec![Rational::from(2), Rational::from(2)],
+            ));
         }
     }
 }
@@ -757,8 +958,5 @@ TODO: Get the component of a simplex on the positive side of a hyperplane
     induct on the dimension of the simplex
     0d: the simplex is a point and it is trivial
     nd: take the interior of the convex hull of the positive component of each facet
-
-TODO: Iterative convex hull
-    build up an affine subspace and a full convex hull using visibility and horizion
 
 */

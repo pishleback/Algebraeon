@@ -14,3 +14,5 @@ mod affine_subspace;
 pub use affine_subspace::*;
 
 pub mod simplices;
+
+pub mod drawing;

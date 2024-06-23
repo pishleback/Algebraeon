@@ -81,13 +81,17 @@ impl<
 
     //Let A be the affine subspace and let S be its ambient space
     //Find an affine subspace B of S obtained by linearly extending by pt
-    //Return the embeddings (f, g) where f : A -> B and g : B -> S
+    //Return the embeddings (f, g, pt) where
+    //  f : A -> B
+    //  g : B -> S
+    //  pt is pt in B
     pub fn extend_dimension_by_point_unsafe(
         &self,
         pt: Vector<FS, SP>,
     ) -> (
         EmbeddedAffineSubspace<FS, Rc<AffineSpace<FS>>, ESP>,
         EmbeddedAffineSubspace<FS, SP, Rc<AffineSpace<FS>>>,
+        Vector<FS, Rc<AffineSpace<FS>>>,
     ) {
         debug_assert_eq!(self.ambient_space.borrow(), pt.ambient_space().borrow());
         debug_assert!(self.unembed_point(&pt).is_none());
@@ -129,6 +133,10 @@ impl<
                     pts
                 },
             },
+            Vector::construct(extended_embedded_space.clone(), |i| match i + 1 == n {
+                true => ordered_field.one(),
+                false => ordered_field.zero(),
+            }),
         )
     }
 
@@ -339,5 +347,56 @@ mod tests {
                 None
             );
         }
+    }
+
+    #[test]
+    fn extend_by_point_embedding_composition() {
+        let space = AffineSpace::new_linear(Rational::structure(), 4);
+        let v1 = Vector::new(
+            &space,
+            vec![
+                Rational::from(1),
+                Rational::from(2),
+                Rational::from(1),
+                Rational::from(1),
+            ],
+        );
+        let v2 = Vector::new(
+            &space,
+            vec![
+                Rational::from(1),
+                Rational::from(-2),
+                Rational::from(2),
+                Rational::from(0),
+            ],
+        );
+        let v3 = Vector::new(
+            &space,
+            vec![
+                Rational::from(2),
+                Rational::from(1),
+                Rational::from(0),
+                Rational::from(2),
+            ],
+        );
+        let h = EmbeddedAffineSubspace::new(&space, v1, vec![v2, v3]).unwrap();
+        let v4 = Vector::new(
+            &space,
+            vec![
+                Rational::from(0),
+                Rational::from(3),
+                Rational::from(-2),
+                Rational::from(1),
+            ],
+        );
+        let (f, g, v4_inv) = h.extend_dimension_by_point_unsafe(v4.clone());
+        assert_eq!(g.embed_point(&v4_inv), v4);
+
+        let x = Vector::new(
+            h.embedded_space(),
+            vec![Rational::from(5), Rational::from(7)],
+        );
+        //check that g(f(x)) = h(x)
+        assert_eq!(g.embed_point(&f.embed_point(&x)), h.embed_point(&x));
     }
 }

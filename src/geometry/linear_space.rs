@@ -52,6 +52,12 @@ impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
         self.ordered_field.clone()
     }
 
+    pub fn origin<SP: Borrow<Self> + Clone + From<Self>>(&self) -> Option<Vector<FS, SP>> {
+        Some(Vector::construct(self.clone().into(), |i| {
+            self.ordered_field.zero()
+        }))
+    }
+
     pub fn linear_dimension(&self) -> Option<usize> {
         if self.affine_dimension == 0 {
             None
