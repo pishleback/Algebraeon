@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn vector_from_mat() {
-        let space = AffineSpace::new(Rational::structure(), 2);
+        let space = AffineSpace::new_linear(Rational::structure(), 2);
         let mat = Matrix::<Rational>::from_rows(vec![
             vec![Rational::from(1), Rational::from(2)],
             vec![Rational::from(3), Rational::from(4)],
@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn det() {
-        let space = AffineSpace::new(Rational::structure(), 2);
+        let space = AffineSpace::new_linear(Rational::structure(), 2);
         let v1 = Vector::new(&space, vec![Rational::from(3), Rational::from(2)]);
         let v2 = Vector::new(&space, vec![Rational::from(5), Rational::from(7)]);
         assert_eq!(space.determinant(vec![&v1, &v2]), Rational::from(11));
@@ -241,12 +241,12 @@ mod tests {
 
     #[test]
     fn test_abgroup() {
-        let space_ab = AffineSpace::new(Rational::structure(), 2);
+        let space_ab = AffineSpace::new_linear(Rational::structure(), 2);
         let a = Vector::new(&space_ab, vec![Rational::from(1), Rational::from(2)]);
         let b = Vector::new(&space_ab, vec![Rational::from(6), Rational::from(3)]);
         let c = Vector::new(&space_ab, vec![Rational::from(7), Rational::from(5)]);
 
-        let space_xy = AffineSpace::new(Rational::structure(), 2);
+        let space_xy = AffineSpace::new_linear(Rational::structure(), 2);
         let x = Vector::new(&space_xy, vec![Rational::from(1), Rational::from(2)]);
         let y = Vector::new(&space_xy, vec![Rational::from(6), Rational::from(3)]);
         let z = Vector::new(&space_xy, vec![Rational::from(7), Rational::from(5)]);

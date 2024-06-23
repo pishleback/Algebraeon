@@ -3,22 +3,6 @@ use crate::rings::linear::matrix::MatrixStructure;
 use super::*;
 
 #[derive(Debug, Clone)]
-enum AffineSubspaceEmbedding<
-    FS: OrderedRingStructure + FieldStructure,
-    SP: Borrow<AffineSpace<FS>> + Clone,
-    ESP: Borrow<AffineSpace<FS>> + Clone,
-> {
-    Empty {
-        subspace: ESP, //must be empty i.e. affine dimension = 0 i.e. linear dimension = None
-    },
-    NonEmpty {
-        subspace: ESP, //dimension equal to the length of the basis
-        root: Vector<FS, SP>,
-        basis: Vec<Vector<FS, SP>>,
-    },
-}
-
-#[derive(Debug, Clone)]
 pub struct EmbeddedAffineSubspace<
     FS: OrderedRingStructure + FieldStructure,
     SP: Borrow<AffineSpace<FS>> + Clone,
@@ -26,7 +10,15 @@ pub struct EmbeddedAffineSubspace<
 > {
     //The ordered_field of ambient_space and subspace must match
     ambient_space: SP,
-    embedding: AffineSubspaceEmbedding<FS, SP, ESP>,
+    embedded_space: ESP,
+    /*
+    these vectors must be equal in length to the affine dimension of subspace
+    they define the embedding of subspace into ambient space
+        if they are empty then they define the empty embedding
+        if there is one vector then it defines the location of the embedded point
+        if there are vectors [v0, v1, v2, ..., vn] then the embedding sends (a1, a2, ..., an) in subspace to v0 + a1*v1, v0 + a2*v2, ..., v0 + an*vn in ambient space
+    */
+    embedding_points: Vec<Vector<FS, SP>>,
 }
 
 impl<
@@ -35,14 +27,23 @@ impl<
         ESP: Borrow<AffineSpace<FS>> + From<AffineSpace<FS>> + Clone,
     > EmbeddedAffineSubspace<FS, SP, ESP>
 {
-    pub fn new_empty(ambient_space: SP) -> Self {
-        let ordered_field = ambient_space.borrow().ordered_field();
-        Self {
-            ambient_space,
-            embedding: AffineSubspaceEmbedding::Empty {
-                subspace: AffineSpace::new_empty(ordered_field.clone()).into(),
-            },
+    fn new_impl(ambient_space: SP, points: Vec<Vector<FS, SP>>) -> Result<Self, &'static str> {
+        if !ambient_space
+            .borrow()
+            .are_points_affine_independent(points.iter().collect())
+        {
+            return Err("Affine embedding points must be affine independent");
         }
+        let ordered_field = ambient_space.borrow().ordered_field();
+        Ok(Self {
+            ambient_space,
+            embedded_space: AffineSpace::new_affine(ordered_field, points.len()).into(),
+            embedding_points: points,
+        })
+    }
+
+    pub fn new_empty(ambient_space: SP) -> Self {
+        Self::new_impl(ambient_space, vec![]).unwrap()
     }
 }
 
@@ -54,25 +55,9 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         root: Vector<FS, SP>,
         span: Vec<Vector<FS, SP>>,
     ) -> Result<Self, &'static str> {
-        assert_eq!(root.ambient_space().borrow(), ambient_space.borrow());
-        for vec in &span {
-            assert_eq!(vec.ambient_space().borrow(), ambient_space.borrow());
-        }
-        let ordered_field = ambient_space.borrow().ordered_field();
-        if ambient_space.borrow().rank(span.iter().collect()) != span.len() {
-            Err("The span must be linearly independent when constructing an affine subspace")
-        } else {
-            let d = ambient_space.borrow().linear_dimension().unwrap();
-            let embedding = AffineSubspaceEmbedding::NonEmpty {
-                subspace: AffineSpace::new(ordered_field.clone(), span.len()),
-                root: root,
-                basis: span,
-            };
-            Ok(Self {
-                ambient_space,
-                embedding,
-            })
-        }
+        let mut points = vec![root.clone()];
+        points.extend(span.iter().map(|vec| &root + vec));
+        Self::new_impl(ambient_space, points)
     }
 }
 
@@ -90,28 +75,8 @@ impl<
         self.ambient_space.clone()
     }
 
-    // pub fn embedded_dimension(&self) -> Option<usize> {
-    //     match &self.embedding {
-    //         AffineSubspaceEmbedding::Empty => None,
-    //         AffineSubspaceEmbedding::NonEmpty {
-    //             subspace,
-    //             root,
-    //             basis,
-    //         } => {
-    //             debug_assert_eq!(subspace.borrow().dimension(), basis.len());
-    //             Some(basis.len())
-    //         }
-    //     }
-    // }
-
     pub fn embedded_space(&self) -> ESP {
-        match &self.embedding {
-            AffineSubspaceEmbedding::Empty { subspace } => {
-                debug_assert_eq!(subspace.borrow().affine_dimension(), 0);
-                subspace.clone()
-            }
-            AffineSubspaceEmbedding::NonEmpty { subspace, .. } => subspace.clone(),
-        }
+        self.embedded_space.clone()
     }
 
     //Let A be the affine subspace and let S be its ambient space
@@ -119,138 +84,111 @@ impl<
     //Return the embeddings (f, g) where f : A -> B and g : B -> S
     pub fn extend_dimension_by_point_unsafe(
         &self,
-        pt: &Vector<FS, SP>,
+        pt: Vector<FS, SP>,
     ) -> (
         EmbeddedAffineSubspace<FS, Rc<AffineSpace<FS>>, ESP>,
         EmbeddedAffineSubspace<FS, SP, Rc<AffineSpace<FS>>>,
     ) {
         debug_assert_eq!(self.ambient_space.borrow(), pt.ambient_space().borrow());
-        debug_assert!(self.unembed_point(pt).is_none());
+        debug_assert!(self.unembed_point(&pt).is_none());
         let ordered_field = self.ordered_field();
-        match &self.embedding {
-            AffineSubspaceEmbedding::Empty { subspace } => {
-                let extended_linear_space = Rc::new(AffineSpace::new(ordered_field, 0));
-                (
-                    EmbeddedAffineSubspace {
-                        ambient_space: extended_linear_space.clone(),
-                        embedding: AffineSubspaceEmbedding::Empty {
-                            subspace: subspace.clone(),
-                        },
-                    },
-                    EmbeddedAffineSubspace {
-                        ambient_space: self.ambient_space.clone(),
-                        embedding: AffineSubspaceEmbedding::NonEmpty {
-                            subspace: extended_linear_space,
-                            root: pt.clone(),
-                            basis: vec![],
-                        },
-                    },
-                )
-            }
-            AffineSubspaceEmbedding::NonEmpty {
-                subspace,
-                root,
-                basis,
-            } => {
-                let n = subspace.borrow().linear_dimension().unwrap();
-                let extended_linear_space = Rc::new(AffineSpace::new(ordered_field.clone(), n + 1));
-                (
-                    EmbeddedAffineSubspace {
-                        ambient_space: extended_linear_space.clone(),
-                        embedding: AffineSubspaceEmbedding::NonEmpty {
-                            subspace: subspace.clone(),
-                            root: Vector::zero(extended_linear_space.clone()),
-                            basis: (0..n)
-                                .map(|k| {
-                                    Vector::construct(extended_linear_space.clone(), |i| {
-                                        match i == k {
-                                            true => ordered_field.one(),
-                                            false => ordered_field.zero(),
-                                        }
-                                    })
-                                })
-                                .collect(),
-                        },
-                    },
-                    EmbeddedAffineSubspace {
-                        ambient_space: self.ambient_space.clone(),
-                        embedding: AffineSubspaceEmbedding::NonEmpty {
-                            subspace: extended_linear_space.clone(),
-                            root: root.clone(),
-                            basis: {
-                                let mut basis = basis.clone();
-                                basis.push(pt - root);
-                                basis
-                            },
-                        },
-                    },
-                )
-            }
-        }
+
+        let n = self.embedded_space.borrow().affine_dimension();
+        let extended_embedded_space =
+            Rc::new(AffineSpace::new_affine(ordered_field.clone(), n + 1));
+
+        (
+            EmbeddedAffineSubspace {
+                ambient_space: extended_embedded_space.clone(),
+                embedded_space: self.embedded_space.clone(),
+                // 0, e_1, e_2, ..., e_(n-1)
+                embedding_points: {
+                    (0..n)
+                        .map(|k| {
+                            Vector::construct(extended_embedded_space.clone(), |i| {
+                                if k == 0 {
+                                    ordered_field.zero()
+                                } else {
+                                    let j = k - 1;
+                                    match i == j {
+                                        true => ordered_field.one(),
+                                        false => ordered_field.zero(),
+                                    }
+                                }
+                            })
+                        })
+                        .collect()
+                },
+            },
+            EmbeddedAffineSubspace {
+                ambient_space: self.ambient_space.clone(),
+                embedded_space: extended_embedded_space.clone(),
+                embedding_points: {
+                    let mut pts = self.embedding_points.clone();
+                    pts.push(pt);
+                    pts
+                },
+            },
+        )
     }
 
-    pub fn embed_point(&self, p: &Vector<FS, ESP>) -> Vector<FS, SP> {
-        match &self.embedding {
-            AffineSubspaceEmbedding::Empty { .. } => panic!(),
-            AffineSubspaceEmbedding::NonEmpty {
-                subspace,
-                root,
-                basis,
-            } => {
-                assert_eq!(p.ambient_space().borrow(), subspace.borrow());
-                let mut total = root.clone();
-                for (i, b) in basis.iter().enumerate() {
-                    total += &b.scalar_mul(p.coordinate(i));
-                }
-                total
-            }
-        }
+    pub fn get_root_and_span(&self) -> Option<(Vector<FS, SP>, Vec<Vector<FS, SP>>)> {
+        let mut points = self.embedding_points.iter();
+        let root = points.next()?;
+        let span = points.map(|pt| pt - root).collect::<Vec<_>>();
+        Some((root.clone(), span))
     }
 
-    pub fn unembed_point(&self, p: &Vector<FS, SP>) -> Option<Vector<FS, ESP>> {
-        assert_eq!(p.ambient_space().borrow(), self.ambient_space.borrow());
-        //solve root + x * basis = v for x
-        match &self.embedding {
-            AffineSubspaceEmbedding::Empty { .. } => None,
-            AffineSubspaceEmbedding::NonEmpty {
-                subspace,
-                root,
-                basis,
-            } => {
-                let y = (p - root).into_col();
+    pub fn embed_point(&self, pt: &Vector<FS, ESP>) -> Vector<FS, SP> {
+        assert_eq!(pt.ambient_space().borrow(), self.embedded_space.borrow());
+        let (root, span) = self.get_root_and_span().unwrap(); //pt exists in the embedded space, so the embedded space is non-empty, so has a root and span
+        let mut total = root.clone();
+        for (i, vec) in span.iter().enumerate() {
+            total += &vec.scalar_mul(pt.coordinate(i));
+        }
+        total
+    }
+
+    pub fn unembed_point(&self, pt: &Vector<FS, SP>) -> Option<Vector<FS, ESP>> {
+        assert_eq!(pt.ambient_space().borrow(), self.ambient_space.borrow());
+        match self.get_root_and_span() {
+            Some((root, span)) => {
+                //solve root + x * basis = v for x
+                let y = (pt - &root).into_col();
                 let basis_matrix = self
                     .ambient_space
                     .borrow()
-                    .cols_from_vectors(basis.iter().collect());
+                    .cols_from_vectors(span.iter().collect());
                 let x = MatrixStructure::new(self.ambient_space.borrow().ordered_field())
                     .col_solve(&basis_matrix, y);
                 Some(vector_from_col(self.embedded_space(), &x?))
             }
+            None => None,
         }
     }
 
-    pub fn embed_vector(&self, v: &Vector<FS, ESP>) -> Vector<FS, SP> {
-        match &self.embedding {
-            AffineSubspaceEmbedding::Empty { .. } => panic!(),
-            AffineSubspaceEmbedding::NonEmpty {
-                subspace,
-                root,
-                basis,
-            } => {
-                assert_eq!(v.ambient_space().borrow(), subspace.borrow());
-                let mut total = Vector::zero(self.ambient_space.clone());
-                for (i, b) in basis.iter().enumerate() {
-                    total += &b.scalar_mul(v.coordinate(i));
-                }
-                total
-            }
-        }
-    }
+    // pub fn embed_vector(&self, v: &Vector<FS, ESP>) -> Vector<FS, SP> {
+    //     match &self.embedding {
+    //         AffineSubspaceEmbedding::Empty { .. } => panic!(),
+    //         AffineSubspaceEmbedding::NonEmpty {
+    //             subspace,
+    //             root,
+    //             basis,
+    //         } => {
+    //             assert_eq!(v.ambient_space().borrow(), subspace.borrow());
+    //             let mut total = Vector::zero(self.ambient_space.clone());
+    //             for (i, b) in basis.iter().enumerate() {
+    //                 total += &b.scalar_mul(v.coordinate(i));
+    //             }
+    //             total
+    //         }
+    //     }
+    // }
 
-    pub fn unembed_vector(&self, v: &Vector<FS, SP>) -> Option<Vector<FS, ESP>> {
-        assert_eq!(v.ambient_space().borrow(), self.ambient_space.borrow());
-        todo!()
-    }
+    // pub fn unembed_vector(&self, v: &Vector<FS, SP>) -> Option<Vector<FS, ESP>> {
+    //     assert_eq!(v.ambient_space().borrow(), self.ambient_space.borrow());
+    //     todo!()
+    // }
 }
 
 pub fn compose_affine_embeddings<
@@ -275,7 +213,7 @@ mod tests {
 
     #[test]
     fn make_affine_subspace() {
-        let space = AffineSpace::new(Rational::structure(), 3);
+        let space = AffineSpace::new_linear(Rational::structure(), 3);
         let v1 = Vector::new(
             &space,
             vec![Rational::from(1), Rational::from(1), Rational::from(1)],
@@ -289,9 +227,9 @@ mod tests {
             vec![Rational::from(0), Rational::from(1), Rational::from(0)],
         );
         let s = EmbeddedAffineSubspace::new(&space, v1, vec![v2, v3]);
-        assert!(s.is_ok());
+        s.unwrap();
 
-        let space = AffineSpace::new(Rational::structure(), 3);
+        let space = AffineSpace::new_linear(Rational::structure(), 3);
         let v1 = Vector::new(
             &space,
             vec![Rational::from(1), Rational::from(1), Rational::from(1)],
@@ -312,7 +250,7 @@ mod tests {
     fn affine_subspace_embed_and_unembed() {
         //1d embedded in 2d
         {
-            let plane = AffineSpace::new(Rational::structure(), 2);
+            let plane = AffineSpace::new_linear(Rational::structure(), 2);
             //the line x + y = 2
             let line = EmbeddedAffineSubspace::new(
                 &plane,
@@ -351,7 +289,7 @@ mod tests {
 
         //2d embedded in 3d
         {
-            let space = AffineSpace::new(Rational::structure(), 3);
+            let space = AffineSpace::new_linear(Rational::structure(), 3);
             let plane = EmbeddedAffineSubspace::new(
                 &space,
                 Vector::new(

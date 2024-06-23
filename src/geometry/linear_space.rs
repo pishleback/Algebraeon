@@ -6,9 +6,8 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct AffineSpace<FS: OrderedRingStructure + FieldStructure> {
     ordered_field: Rc<FS>,
-    //affine dimension = dimension + 1. affine dimension = 0 if linear dimension = None
-    //dimension = None -> empty set
-    dimension: Option<usize>,
+    //linear dimension = affine dimension - 1
+    affine_dimension: usize,
     ident: usize,
 }
 
@@ -16,7 +15,7 @@ impl<FS: OrderedRingStructure + FieldStructure> PartialEq for AffineSpace<FS> {
     fn eq(&self, other: &Self) -> bool {
         #[cfg(debug_assertions)]
         if self.ident == other.ident {
-            assert_eq!(self.dimension, other.dimension);
+            assert_eq!(self.affine_dimension, other.affine_dimension);
             assert_eq!(self.ordered_field, other.ordered_field);
         }
         self.ident == other.ident
@@ -27,53 +26,42 @@ impl<FS: OrderedRingStructure + FieldStructure> Eq for AffineSpace<FS> {}
 
 impl<FS: OrderedRingStructure + FieldStructure + Hash> Hash for AffineSpace<FS> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.ordered_field.hash(state);
-        self.dimension.hash(state);
+        self.ident.hash(state);
     }
 }
 
 impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
-    fn new_impl(ordered_field: Rc<FS>, dimension: Option<usize>) -> Self {
+    pub fn new_affine(ordered_field: Rc<FS>, affine_dimension: usize) -> Self {
         static COUNTER: AtomicUsize = AtomicUsize::new(0);
         Self {
             ordered_field,
-            dimension,
+            affine_dimension,
             ident: COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
         }
     }
 
     pub fn new_empty(ordered_field: Rc<FS>) -> Self {
-        Self::new_impl(ordered_field, None)
+        Self::new_affine(ordered_field, 0)
     }
 
-    pub fn new(ordered_field: Rc<FS>, dimension: usize) -> Self {
-        Self::new_impl(ordered_field, Some(dimension))
+    pub fn new_linear(ordered_field: Rc<FS>, linear_dimension: usize) -> Self {
+        Self::new_affine(ordered_field, linear_dimension + 1)
     }
-
-
-    // //this is supposed to be an affine space, so no origin
-    // pub fn origin<'a>(&'a self) -> Option<Vector<FS, &Self>> {
-    //     Some(Vector::new(
-    //         self,
-    //         (0..self.dimension?)
-    //             .map(|i| self.ordered_field.zero())
-    //             .collect(),
-    //     ))
-    // }
 
     pub fn ordered_field(&self) -> Rc<FS> {
         self.ordered_field.clone()
     }
 
     pub fn linear_dimension(&self) -> Option<usize> {
-        self.dimension
+        if self.affine_dimension == 0 {
+            None
+        } else {
+            Some(self.affine_dimension - 1)
+        }
     }
 
     pub fn affine_dimension(&self) -> usize {
-        match self.dimension {
-            Some(d) => d + 1,
-            None => 0,
-        }
+        self.affine_dimension
     }
 
     pub fn rows_from_vectors(&self, vecs: Vec<&Vector<FS, impl Borrow<Self>>>) -> Matrix<FS::Set> {
@@ -99,7 +87,7 @@ impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
         MatrixStructure::new(self.ordered_field()).rank(self.rows_from_vectors(vecs))
     }
 
-    pub fn are_points_nondegenerage(
+    pub fn are_points_affine_independent(
         &self,
         points: Vec<&Vector<FS, impl Borrow<Self> + Clone>>,
     ) -> bool {
@@ -111,6 +99,8 @@ impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
                 .map(|i| points[i] - points[0])
                 .collect::<Vec<_>>();
             let mat = self.rows_from_vectors(vecs.iter().collect());
+            // println!("{:?}", mat);
+            // println!("{:?} {:?}", vecs.len(), MatrixStructure::new(self.ordered_field()).rank(mat.clone()));
             MatrixStructure::new(self.ordered_field()).rank(mat) == vecs.len()
         } else {
             true

@@ -92,7 +92,7 @@ mod simplex {
             points.sort_unstable();
             if !ambient_space
                 .borrow()
-                .are_points_nondegenerage(points.iter().collect())
+                .are_points_affine_independent(points.iter().collect())
             {
                 Err("Can't make a simplex using degenerate points")
             } else {
@@ -361,14 +361,14 @@ mod simplex {
 
         #[test]
         fn make_simplex() {
-            let space = AffineSpace::new(Rational::structure(), 2);
+            let space = AffineSpace::new_linear(Rational::structure(), 2);
             let v1 = Vector::new(&space, vec![Rational::from(1), Rational::from(1)]);
             let v2 = Vector::new(&space, vec![Rational::from(1), Rational::from(0)]);
             let v3 = Vector::new(&space, vec![Rational::from(0), Rational::from(1)]);
             let s = Simplex::new(&space, vec![v1, v2, v3]);
             assert!(s.is_ok());
 
-            let space = AffineSpace::new(Rational::structure(), 2);
+            let space = AffineSpace::new_linear(Rational::structure(), 2);
             let v1 = Vector::new(&space, vec![Rational::from(0), Rational::from(0)]);
             let v2 = Vector::new(&space, vec![Rational::from(1), Rational::from(0)]);
             let v3 = Vector::new(&space, vec![Rational::from(2), Rational::from(0)]);
@@ -378,7 +378,7 @@ mod simplex {
 
         #[test]
         fn simplex_skeleton() {
-            let space = AffineSpace::new(Rational::structure(), 2);
+            let space = AffineSpace::new_linear(Rational::structure(), 2);
             let v1 = Vector::new(&space, vec![Rational::from(1), Rational::from(1)]);
             let v2 = Vector::new(&space, vec![Rational::from(1), Rational::from(0)]);
             let v3 = Vector::new(&space, vec![Rational::from(0), Rational::from(1)]);
@@ -395,7 +395,7 @@ mod simplex {
 
         #[test]
         fn make_oriented_simplex() {
-            let space = AffineSpace::new(Rational::structure(), 2);
+            let space = AffineSpace::new_linear(Rational::structure(), 2);
             let v1 = Vector::new(&space, vec![Rational::from(1), Rational::from(0)]);
             let v2 = Vector::new(&space, vec![Rational::from(0), Rational::from(1)]);
             let v3 = Vector::new(&space, vec![Rational::from(2), Rational::from(3)]);
@@ -500,11 +500,15 @@ mod convex_hull {
 
             {
                 for facet in &self.facets {
-                    assert_eq!(facet.ambient_space(), self.subspace.embedded_space());
+                    if facet.ambient_space() != self.subspace.embedded_space() {
+                        return Err("Facet must belong to the embedded subspace");
+                    }
                 }
                 //interior simplicies must have dimenion equal to self.subspace
                 for spx in &self.interior {
-                    assert_eq!(spx.ambient_space(), self.subspace.embedded_space());
+                    if spx.ambient_space() != self.subspace.embedded_space() {
+                        return Err("Interior simplex must belong to the embedded subspace");
+                    }
                     if spx.n() != self.subspace.embedded_space().affine_dimension() {
                         return Err("Interior simplex must span the embedded subspace");
                     }
@@ -626,11 +630,12 @@ mod convex_hull {
         }
 
         pub fn new_empty(ambient_space: SP) -> Self {
+            let subspace = EmbeddedAffineSubspace::new_empty(ambient_space.clone());
             Self {
                 ambient_space: ambient_space.clone(),
-                subspace: EmbeddedAffineSubspace::new_empty(ambient_space),
+                subspace: subspace.clone(),
                 facets: vec![],
-                interior: vec![],
+                interior: vec![Simplex::new(subspace.embedded_space(), vec![]).unwrap()],
             }
         }
 
@@ -650,8 +655,10 @@ mod convex_hull {
                     todo!();
                 }
                 None => {
-                    //new facets are interior of old facets union extension of old facets to the new point
-                    let (iota, new_subspace) = self.subspace.extend_dimension_by_point_unsafe(&pt);
+                    //The new point is outside the current embedded affine subspace
+                    //The new facets are given by the old interior union the old facets extended into the new dimension
+                    //The new interior is given by the old interior extended into the new dimension
+                    let (iota, new_subspace) = self.subspace.extend_dimension_by_point_unsafe(pt);
 
                     println!("do stuff here");
 
@@ -660,6 +667,8 @@ mod convex_hull {
                     todo!();
 
                     self.subspace = new_subspace;
+                    //TODO: new_facets <- old_interior & old_facets
+                    //TODO: new_interior <- old_interior
                 }
             };
 
@@ -678,7 +687,7 @@ mod convex_hull {
 
         #[test]
         fn construct_convex_hull() {
-            let space = AffineSpace::new(Rational::structure(), 2);
+            let space = AffineSpace::new_linear(Rational::structure(), 2);
             let mut ch = ConvexHull::new_empty(&space);
             ch.extend_by_point(Vector::new(
                 &space,
