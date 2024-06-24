@@ -208,7 +208,7 @@ impl super::Canvas for Canvas2D {
 }
 
 pub trait Drawable {
-    fn draw(&self, canvas: &mut Diagram2dCanvas, colour : (f32, f32, f32));
+    fn draw(&self, canvas: &mut Diagram2dCanvas, colour: (f32, f32, f32));
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -468,7 +468,7 @@ impl Diagram2dCanvas {
         }
     }
 
-    pub fn draw(&mut self, obj: impl Drawable, colour : (f32, f32, f32)) {
+    pub fn draw(&mut self, obj: &impl Drawable, colour: (f32, f32, f32)) {
         obj.draw(self, colour)
     }
 

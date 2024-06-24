@@ -13,6 +13,6 @@ pub use linear_space::*;
 mod affine_subspace;
 pub use affine_subspace::*;
 
-pub mod simplices;
+pub mod simplexes;
 
 pub mod drawing;

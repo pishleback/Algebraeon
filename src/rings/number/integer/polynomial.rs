@@ -159,7 +159,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_zassenhaus() {
+    fn test_zassenhaus_against_kroneckers() {
         let x = &Polynomial::<Integer>::var().into_ring();
 
         let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_set();

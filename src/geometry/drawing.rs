@@ -7,7 +7,12 @@ use crate::{
     },
 };
 
-use super::{simplices::Simplex, AffineSpace};
+use super::{
+    simplexes::{
+        FullSubSimplicialComplex, PartialSubSimplicialComplex, Simplex, SimplicialComplex,
+    },
+    AffineSpace,
+};
 
 impl<
         FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
@@ -67,6 +72,62 @@ impl<
             _ => {
                 unreachable!()
             }
+        }
+    }
+}
+
+impl<
+        FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+    > Drawable for SimplicialComplex<FS, SP>
+where
+    FS::Set: std::hash::Hash,
+{
+    fn draw(
+        &self,
+        canvas: &mut crate::drawing::canvas2d::Diagram2dCanvas,
+        colour: (f32, f32, f32),
+    ) {
+        for simplex in self.simplexes() {
+            simplex.draw(canvas, colour);
+        }
+    }
+}
+
+impl<
+        FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        SC: Borrow<SimplicialComplex<FS, SP>> + Clone,
+    > Drawable for PartialSubSimplicialComplex<FS, SP, SC>
+where
+    FS::Set: std::hash::Hash,
+{
+    fn draw(
+        &self,
+        canvas: &mut crate::drawing::canvas2d::Diagram2dCanvas,
+        colour: (f32, f32, f32),
+    ) {
+        for simplex in self.simplexes() {
+            simplex.draw(canvas, colour);
+        }
+    }
+}
+
+impl<
+        FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        SC: Borrow<SimplicialComplex<FS, SP>> + Clone,
+    > Drawable for FullSubSimplicialComplex<FS, SP, SC>
+where
+    FS::Set: std::hash::Hash,
+{
+    fn draw(
+        &self,
+        canvas: &mut crate::drawing::canvas2d::Diagram2dCanvas,
+        colour: (f32, f32, f32),
+    ) {
+        for simplex in self.simplexes() {
+            simplex.draw(canvas, colour);
         }
     }
 }
