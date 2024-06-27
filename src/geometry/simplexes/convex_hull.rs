@@ -4,7 +4,7 @@ use crate::geometry_old::simplicial_complex::SubSimplicialComplex;
 
 use super::*;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ConvexHull<
     FS: OrderedRingStructure + FieldStructure,
     SP: Borrow<AffineSpace<FS>> + Clone,
@@ -30,6 +30,23 @@ pub struct ConvexHull<
 
     This highlights what the behavour should been in the case where the dimension is null and 0
     */
+}
+
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
+    for ConvexHull<FS, SP>
+where
+    FS::Set: std::hash::Hash + std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ConvexHull")
+            .field(
+                "embedded_in_dim",
+                &self.subspace.embedded_space().affine_dimension(),
+            )
+            .field("facets", &self.facets)
+            .field("interior", &self.interior)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -175,6 +192,32 @@ where
         ch
     }
 
+    pub fn ambient_space(&self) -> SP {
+        self.subspace.ambient_space()
+    }
+
+    pub fn defining_points(&self) -> HashSet<Vector<FS, SP>> {
+        match self.subspace.borrow().embedded_space().affine_dimension() {
+            0 => HashSet::new(),
+            1 => {
+                //need to handle affine_dim = 1 case seperately from higher dimensional cases
+                //because the facet in the 1d case is the null simplex with no points
+                let (root, span) = self.subspace.get_root_and_span().unwrap();
+                debug_assert_eq!(span.len(), 0);
+                HashSet::from([root])
+            }
+            _ => {
+                let mut points = HashSet::new();
+                for facet in &self.facets {
+                    for point in facet.simplex().points() {
+                        points.insert(self.subspace.embed_point(point));
+                    }
+                }
+                points
+            }
+        }
+    }
+
     pub fn extend_by_point(&mut self, pt: Vector<FS, SP>) {
         assert_eq!(pt.ambient_space().borrow(), self.ambient_space.borrow());
         #[cfg(debug_assertions)]
@@ -204,15 +247,17 @@ where
                     }
                 }
 
-                let mut horizon = HashMap::new();
+                let mut horizon = HashMap::new(); //horizon ridge -> (its adjacent facet, the other vertex)
                 for facet in &visible {
-                    for ridge in facet.simplex().facets() {
+                    let facet_simplex = facet.simplex();
+                    for i in 0..facet_simplex.n() {
+                        let (ridge, pt) = (facet_simplex.facet(i), &facet_simplex.points()[i]);
                         match horizon.contains_key(&ridge) {
                             true => {
                                 horizon.remove(&ridge);
                             }
                             false => {
-                                horizon.insert(ridge, facet);
+                                horizon.insert(ridge, (facet, pt));
                             }
                         }
                     }
@@ -247,8 +292,8 @@ where
 
                 (self.facets, self.interior) = (
                     horizon
-                        .into_iter()
-                        .map(|(ridge, facet)| {
+                        .iter()
+                        .map(|(ridge, (facet, facet_pt))| {
                             OrientedSimplex::new_with_positive_point(
                                 self.subspace.embedded_space(),
                                 {
@@ -256,24 +301,7 @@ where
                                     points.push(subsp_pt.clone());
                                     points
                                 },
-                                &{
-                                    match facet.positive_point() {
-                                        Some(pos_pt) => pos_pt,
-                                        None => {
-                                            debug_assert_eq!(
-                                                self.subspace.embedded_space().affine_dimension(),
-                                                1
-                                            );
-                                            /*
-                                            unreachable because the embedded subspace has linear dimension 0
-                                            therefore the only way we are here is if we start with a convex hull equal to a point and add that same point
-                                            in this case hidden={the null facet} and visible={} so horizon={}
-                                            this is contained in iteration over the horizon, so doesn't run
-                                            */
-                                            unreachable!()
-                                        }
-                                    }
-                                },
+                                *facet_pt,
                             )
                             .unwrap()
                         })
@@ -479,11 +507,33 @@ where
         let mut outer_edges = HashSet::new();
         for facet in &self.facets {
             for point in facet.simplex().points() {
-                outer_points.insert(point);
+                outer_points.insert(point.clone());
             }
             for edge in facet.simplex().edges() {
                 outer_edges.insert(edge);
             }
+        }
+        //note that in dimension 0 we need to explicitly add the unique point to outer points
+        if self.subspace.embedded_space().affine_dimension() == 1 {
+            let (root, span) = self.subspace.get_root_and_span().unwrap();
+            debug_assert_eq!(span.len(), 0);
+            outer_points.insert(Vector::new(self.subspace.embedded_space(), vec![]));
+        }
+        //note that in dimension 1 this doesnt quite work for outer edges since the boundary is not connected. instead outer edges should just be the edge between the two points
+        if self.subspace.embedded_space().affine_dimension() == 2 {
+            debug_assert_eq!(outer_points.len(), 2);
+            debug_assert_eq!(outer_edges.len(), 0);
+            let mut pts = outer_points.iter();
+            outer_edges.insert(
+                Simplex::new(
+                    self.subspace.embedded_space(),
+                    vec![
+                        (*pts.next().unwrap()).clone(),
+                        (*pts.next().unwrap()).clone(),
+                    ],
+                )
+                .unwrap(),
+            );
         }
 
         /*
@@ -495,7 +545,7 @@ where
         let mut positive_points = HashSet::new();
         let mut middle_points = HashSet::new();
         let mut negative_points = HashSet::new();
-        for subsp_point in outer_points {
+        for subsp_point in &outer_points {
             let point = self.subspace.embed_point(subsp_point);
             match hyperplane.classify_point(&point) {
                 OrientationSide::Positive => {
@@ -521,6 +571,10 @@ where
             }
         }
 
+        if !positive_points.is_empty() && !negative_points.is_empty() {
+            debug_assert!(!middle_points.is_empty());
+        }
+
         Self::new(self.ambient_space.clone(), {
             match region {
                 OrientationSide::Positive => middle_points
@@ -536,6 +590,62 @@ where
                     .collect(),
             }
         })
+    }
+
+    pub fn intersect_mut(&mut self, other: &Self) {
+        let ambient_space = self.ambient_space();
+        assert_eq!(ambient_space.borrow(), other.ambient_space().borrow());
+        match other.subspace.as_hyperplane_intersection() {
+            Some(hyperplanes) => {
+                // step 1: intersect with the affine space spanned by other
+                for hyperplane in hyperplanes {
+                    *self = self
+                        .intersect_with_oriented_hyperplane(&hyperplane, OrientationSide::Neutral);
+                }
+                // step2: embed self into other.affine_subspace
+                let mut embedded_self_in_other_subspace = ConvexHull::new(
+                    other.subspace.embedded_space(),
+                    self.defining_points()
+                        .into_iter()
+                        .map(|point| other.subspace.unembed_point(&point).unwrap())
+                        .collect(),
+                );
+                debug_assert_eq!(
+                    embedded_self_in_other_subspace
+                        .subspace
+                        .embedded_space()
+                        .affine_dimension(),
+                    self.subspace.embedded_space().affine_dimension()
+                );
+                // step3 : intersect self with each oriented facet of other
+                for facet in &other.facets {
+                    embedded_self_in_other_subspace = embedded_self_in_other_subspace
+                        .intersect_with_oriented_hyperplane(
+                            &facet.clone().into_oriented_hyperplane(),
+                            OrientationSide::Positive,
+                        );
+                }
+                // step4: unembed self back to the ambient space
+                *self = ConvexHull::new(
+                    self.ambient_space(),
+                    embedded_self_in_other_subspace
+                        .defining_points()
+                        .into_iter()
+                        .map(|point| other.subspace.embed_point(&point))
+                        .collect(),
+                );
+            }
+            None => {
+                //other is empty, so the intersection with other is empty
+                *self = Self::new_empty(self.ambient_space.clone());
+            }
+        }
+    }
+
+    pub fn intersect(&self, other: &Self) -> Self {
+        let mut self_mut = self.clone();
+        self_mut.intersect_mut(other);
+        self_mut
     }
 }
 
@@ -660,5 +770,128 @@ mod tests {
         let smaller_ch = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Positive);
 
         let smaller_ch = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Negative);
+    }
+
+    #[test]
+    fn convex_hull_intersections() {
+        let space = AffineSpace::new_linear(Rational::structure(), 2);
+        //2d intersect 2d
+        {
+            let ch1 = ConvexHull::new(
+                &space,
+                vec![
+                    Vector::new(&space, vec![Rational::from(1), Rational::from(1)]),
+                    Vector::new(&space, vec![Rational::from(1), Rational::from(1)]),
+                    Vector::new(
+                        &space,
+                        vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
+                    ),
+                    Vector::new(&space, vec![Rational::from(-1), Rational::from(0)]),
+                    Vector::new(&space, vec![Rational::from(-1), Rational::from(0)]),
+                    Vector::new(
+                        &space,
+                        vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
+                    ),
+                    Vector::new(
+                        &space,
+                        vec![
+                            Rational::from(1) / Rational::from(2),
+                            Rational::from(3) / Rational::from(4),
+                        ],
+                    ),
+                    Vector::new(&space, vec![Rational::from(2), Rational::from(-1)]),
+                    Vector::new(&space, vec![Rational::from(0), Rational::from(-2)]),
+                    Vector::new(&space, vec![Rational::from(2), Rational::from(0)]),
+                    Vector::new(&space, vec![Rational::from(2), Rational::from(2)]),
+                ],
+            );
+            let ch2 = ConvexHull::new(
+                &space,
+                vec![
+                    Vector::new(&space, vec![Rational::from(-2), Rational::from(0)]),
+                    Vector::new(&space, vec![Rational::from(3), Rational::from(0)]),
+                    Vector::new(&space, vec![Rational::from(3), Rational::from(2)]),
+                    Vector::new(&space, vec![Rational::from(0), Rational::from(-1)]),
+                ],
+            );
+            let ch3 = ch1.intersect(&ch2);
+        }
+        //2d intersect 1d
+        {
+            let ch1 = ConvexHull::new(
+                &space,
+                vec![
+                    Vector::new(&space, vec![Rational::from(1), Rational::from(1)]),
+                    Vector::new(&space, vec![Rational::from(1), Rational::from(1)]),
+                    Vector::new(
+                        &space,
+                        vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
+                    ),
+                    Vector::new(&space, vec![Rational::from(-1), Rational::from(0)]),
+                    Vector::new(&space, vec![Rational::from(-1), Rational::from(0)]),
+                    Vector::new(
+                        &space,
+                        vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
+                    ),
+                    Vector::new(
+                        &space,
+                        vec![
+                            Rational::from(1) / Rational::from(2),
+                            Rational::from(3) / Rational::from(4),
+                        ],
+                    ),
+                    Vector::new(&space, vec![Rational::from(2), Rational::from(-1)]),
+                    Vector::new(&space, vec![Rational::from(0), Rational::from(-2)]),
+                    Vector::new(&space, vec![Rational::from(2), Rational::from(0)]),
+                    Vector::new(&space, vec![Rational::from(2), Rational::from(2)]),
+                ],
+            );
+            let ch2 = ConvexHull::new(
+                &space,
+                vec![
+                    Vector::new(&space, vec![Rational::from(3), Rational::from(2)]),
+                    Vector::new(&space, vec![Rational::from(0), Rational::from(-1)]),
+                ],
+            );
+            let ch3 = ch1.intersect(&ch2);
+        }
+        //line misses line
+        {
+            let mut ch1 = ConvexHull::new(
+                &space,
+                vec![
+                    Vector::new(&space, vec![Rational::from(-2), Rational::from(-1)]),
+                    Vector::new(&space, vec![Rational::from(-1), Rational::from(1)]),
+                ],
+            );
+            let ch2 = ConvexHull::new(
+                &space,
+                vec![
+                    Vector::new(&space, vec![Rational::from(1), Rational::from(1)]),
+                    Vector::new(&space, vec![Rational::from(-1), Rational::from(0)]),
+                ],
+            );
+            let ch3 = ch1.intersect(&ch2);
+            debug_assert_eq!(ch3.subspace.embedded_space().affine_dimension(), 0);
+        }
+        //line hits line
+        {
+            let mut ch1 = ConvexHull::new(
+                &space,
+                vec![
+                    Vector::new(&space, vec![Rational::from(2), Rational::from(0)]),
+                    Vector::new(&space, vec![Rational::from(-2), Rational::from(-1)]),
+                ],
+            );
+            let ch2 = ConvexHull::new(
+                &space,
+                vec![
+                    Vector::new(&space, vec![Rational::from(0), Rational::from(-1)]),
+                    Vector::new(&space, vec![Rational::from(1), Rational::from(1)]),
+                ],
+            );
+            let ch3 = ch1.intersect(&ch2);
+            debug_assert_eq!(ch3.subspace.embedded_space().affine_dimension(), 1);
+        }
     }
 }

@@ -1,4 +1,7 @@
-use crate::rings::linear::matrix::MatrixStructure;
+use malachite_nz::integer::logic::or;
+use simplexes::{OrientedHyperplane, OrientedSimplex};
+
+use crate::rings::linear::matrix::{Matrix, MatrixStructure};
 
 use super::*;
 
@@ -197,6 +200,87 @@ impl<
     //     assert_eq!(v.ambient_space().borrow(), self.ambient_space.borrow());
     //     todo!()
     // }
+
+    pub fn as_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<FS, SP>>> {
+        let ambient_space = self.ambient_space();
+        let ordered_field = ambient_space.borrow().ordered_field();
+        match self.get_root_and_span() {
+            Some((root, span)) => {
+                let dim_amb = ambient_space.borrow().linear_dimension().unwrap();
+                let dim_ss = span.len();
+                // step 1: extend span to a basis by appending a subset of the elementary basis vectors
+                //first columns = span, remaining columns = identity matrix
+                let mat = Matrix::construct(dim_amb, dim_ss + dim_amb, |r, c| {
+                    if c < dim_ss {
+                        span[c].coordinate(r).clone()
+                    } else {
+                        let c = c - dim_ss;
+                        match r == c {
+                            false => ordered_field.zero(),
+                            true => ordered_field.one(),
+                        }
+                    }
+                });
+                let (_, _, _, pivs) =
+                    MatrixStructure::new(ordered_field.clone()).row_hermite_algorithm(mat);
+                debug_assert_eq!(pivs.len(), dim_amb);
+                for i in 0..dim_ss {
+                    debug_assert_eq!(pivs[i], i);
+                }
+                let extension_elementary_basis_vectors = (dim_ss..dim_amb)
+                    .map(|i| pivs[i] - dim_ss)
+                    .collect::<Vec<_>>();
+
+                // step 2: take the hyperplanes formed by removing exactly one of each of the added elementary basis vectors at a time
+                let hyperplanes = (0..extension_elementary_basis_vectors.len())
+                    .map(|i| {
+                        OrientedSimplex::new_with_positive_point(
+                            ambient_space.clone(),
+                            {
+                                let mut points = vec![root.clone()];
+                                for s in &span {
+                                    points.push(&root + s);
+                                }
+                                for j in 0..extension_elementary_basis_vectors.len() {
+                                    if i != j {
+                                        let k = extension_elementary_basis_vectors[j];
+                                        //push root + e_k
+                                        points.push(Vector::construct(ambient_space.clone(), |l| {
+                                            ordered_field.add(root.coordinate(l), &{
+                                                match l == j {
+                                                    false => ordered_field.zero(),
+                                                    true => ordered_field.one(),
+                                                }
+                                            })
+                                        }))
+                                    }
+                                }
+                                points
+                            },
+                            {
+                                //root + e_k
+                                let k = extension_elementary_basis_vectors[i];
+                                &Vector::construct(ambient_space.clone(), |l| {
+                                    ordered_field.add(
+                                        root.coordinate(l),
+                                        &match l == k {
+                                            false => ordered_field.zero(),
+                                            true => ordered_field.one(),
+                                        },
+                                    )
+                                })
+                            },
+                        )
+                        .unwrap()
+                        .into_oriented_hyperplane()
+                    })
+                    .collect::<Vec<_>>();
+                debug_assert_eq!(hyperplanes.len(), dim_amb - dim_ss);
+                Some(hyperplanes)
+            }
+            None => None,
+        }
+    }
 }
 
 pub fn compose_affine_embeddings<

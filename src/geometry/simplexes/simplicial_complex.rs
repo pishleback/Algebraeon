@@ -6,8 +6,22 @@ use std::{
 use super::*;
 
 #[derive(Debug, Clone)]
+struct SimplicialComplexSimplexBoundaryExtension {
+    //this is a boundary of there is a non-empty ordered list of distinct points such that extending self.points by this list yields the simplex of which self is a boundary
+    points: Vec<usize>,
+    //describe the subset of the points of the larger simplex which forms the boundary simplex
+    //the indexes of the ordered list of points of the larger simplex which give the boundary simplex
+    boundary_subset: HashSet<usize>,
+    //the indexes of the ordered list of points of the larger simplex which give the other points which dont form the boundary simplex
+    non_boundary_subset: HashSet<usize>,
+    //sanity check: boundary_subset union non_boundary_subset = {0,1,...,n-1} where n is the number of points of the larger simplex
+}
+
+#[derive(Debug, Clone)]
 struct SimplicialComplexSimplex {
-    points: Vec<usize>, //non-empty ordered distinct
+    //non-empty ordered distinct
+    points: Vec<usize>,
+    bdry_exts: Vec<SimplicialComplexSimplexBoundaryExtension>,
 }
 
 impl SimplicialComplexSimplex {
@@ -19,7 +33,10 @@ impl SimplicialComplexSimplex {
                 panic!("Points must be distinct");
             }
         }
-        Self { points }
+        Self {
+            points,
+            bdry_exts: vec![],
+        }
     }
 }
 
@@ -38,7 +55,45 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 where
     FS::Set: Hash,
 {
+    fn check(&self) -> Result<(), &'static str> {
+        for simplex in &self.simplexes {
+            if simplex.points.len() == 0 {
+                return Err("Simplicial complex musn't contain the null simplex");
+            }
+        }
+
+        let mut actual_simplexes = self.simplexes().into_iter().collect::<HashSet<_>>();
+        if self.simplexes.len() != actual_simplexes.len() {
+            return Err("Simplicial complex simplexes must all be distinct");
+        }
+
+        //set up a bijection between our simplexes and actual ones
+        let mut our_simplex_to_actual_simplex: HashMap<usize, Simplex<FS, SP>> = HashMap::new();
+        let mut actual_simplex_to_our_simplex: HashMap<Simplex<FS, SP>, usize> = HashMap::new();
+        for (idx, our_simplex) in self.simplexes.iter().enumerate() {
+            let actual_simplex = self.idx_to_simplex(idx);
+            our_simplex_to_actual_simplex.insert(idx, actual_simplex.clone());
+            actual_simplex_to_our_simplex.insert(actual_simplex, idx);
+        }
+
+        for simplex in &actual_simplexes {
+            for bdry_simplex in simplex.sub_simplices_not_null() {
+                if !actual_simplexes.contains(&bdry_simplex) {
+                    return Err("Simplicial complex must be closed under taking facets");
+                }
+            }
+        }
+
+        todo!("check boundary stuff");
+
+        Ok(())
+    }
+
     fn new_impl(ambient_space: SP, simplexes: Vec<Simplex<FS, SP>>) -> Self {
+        for simplex in &simplexes {
+            assert_eq!(simplex.ambient_space().borrow(), ambient_space.borrow());
+        }
+
         let mut idx_to_point: Vec<Vector<FS, SP>> = vec![];
         let mut existing_points: HashMap<Vector<FS, SP>, usize> = HashMap::new();
 
@@ -66,30 +121,16 @@ where
     }
 
     pub fn new_unchecked(ambient_space: SP, simplexes: Vec<Simplex<FS, SP>>) -> Self {
+        let sc = Self::new_impl(ambient_space, simplexes);
         #[cfg(debug_assertions)]
-        Self::new(ambient_space.clone(), simplexes.clone()).unwrap();
-        Self::new_impl(ambient_space, simplexes)
+        sc.check().unwrap();
+        sc
     }
 
     pub fn new(ambient_space: SP, simplexes: Vec<Simplex<FS, SP>>) -> Result<Self, &'static str> {
-        for simplex in &simplexes {
-            assert_eq!(simplex.ambient_space().borrow(), ambient_space.borrow());
-            if simplex.n() == 0 {
-                return Err("Simplicial complex musn't contain the null simplex");
-            }
-        }
-        let mut all_simplexes: HashSet<_> = simplexes.iter().collect();
-        if simplexes.len() != all_simplexes.len() {
-            return Err("Simplicial complex simplexes must be distinct");
-        }
-        for simplex in &simplexes {
-            for bdry_simplex in simplex.sub_simplices_not_null() {
-                if !all_simplexes.contains(&bdry_simplex) {
-                    return Err("Simplicial complex must be closed under taking facets");
-                }
-            }
-        }
-        Ok(Self::new_impl(ambient_space, simplexes))
+        let sc = Self::new_impl(ambient_space, simplexes);
+        sc.check()?;
+        Ok(sc)
     }
 
     fn idx_to_simplex(&self, idx: usize) -> Simplex<FS, SP> {

@@ -4,10 +4,16 @@ use std::hash::Hash;
 
 use super::*;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Vector<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> {
     ambient_space: SP,
     coordinates: Vec<FS::Set>, //length equal to ambient_space.dimension()
+}
+
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> std::fmt::Debug for Vector<FS, SP> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Vector").field("coordinates", &self.coordinates).finish()
+    }
 }
 
 impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> PartialEq
