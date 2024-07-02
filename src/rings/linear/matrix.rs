@@ -1001,18 +1001,27 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
         (rh.transpose(), ru.transpose(), u_det, pivs)
     }
 
+    fn det_hermite(&self, a: Matrix<RS::Set>) -> RS::Set {
+        let n = a.rows();
+        debug_assert_eq!(n, a.cols());
+        let (h, _u, u_det, _pivs) = self.row_hermite_algorithm(a);
+        //h = u * self, we know det(u), and h is upper triangular
+        let mut h_det = self.ring.one();
+        for i in 0..n {
+            self.ring.mul_mut(&mut h_det, h.at(i, i).unwrap());
+        }
+        self.ring.div(&h_det, &u_det).unwrap()
+    }
+
     pub fn det(&self, a: Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
         let n = a.rows();
         if n != a.cols() {
             Err(MatOppErr::NotSquare)
+        } else if n <= 3 {
+            //for speed
+            Ok(self.det_naive(&a).unwrap())
         } else {
-            let (h, _u, u_det, _pivs) = self.row_hermite_algorithm(a);
-            //h = u * self, we know det(u), and h is upper triangular
-            let mut h_det = self.ring.one();
-            for i in 0..n {
-                self.ring.mul_mut(&mut h_det, h.at(i, i).unwrap());
-            }
-            Ok(self.ring.div(&h_det, &u_det).unwrap())
+            Ok(self.det_hermite(a))
         }
     }
 

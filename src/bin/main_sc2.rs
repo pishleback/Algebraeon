@@ -87,7 +87,7 @@ fn main() {
         // canvas.draw(ch.as_simplicial_complex().entire.as_ref(), (1.0, 1.0, 1.0));
         canvas.draw(ospx.simplex(), (1.0, 0.0, 0.0));
         canvas.draw(
-            smaller_ch_neutral.as_simplicial_complex().entire.as_ref(),
+            &smaller_ch_neutral.as_simplicial_complex().entire,
             (0.0, 1.0, 0.0),
         );
         canvas.draw(

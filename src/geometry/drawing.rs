@@ -9,7 +9,7 @@ use crate::{
 
 use super::{
     simplexes::{
-        FullSubSimplicialComplex, PartialSubSimplicialComplex, Simplex, SimplicialComplex,
+        PartialSimplicialComplex, Simplex, SimplicialComplex, SimplicialDisjointUnion,
     },
     AffineSpace,
 };
@@ -97,8 +97,7 @@ where
 impl<
         FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
         SP: Borrow<AffineSpace<FS>> + Clone,
-        SC: Borrow<SimplicialComplex<FS, SP>> + Clone,
-    > Drawable for PartialSubSimplicialComplex<FS, SP, SC>
+    > Drawable for PartialSimplicialComplex<FS, SP>
 where
     FS::Set: std::hash::Hash,
 {
@@ -116,8 +115,7 @@ where
 impl<
         FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
         SP: Borrow<AffineSpace<FS>> + Clone,
-        SC: Borrow<SimplicialComplex<FS, SP>> + Clone,
-    > Drawable for FullSubSimplicialComplex<FS, SP, SC>
+    > Drawable for SimplicialDisjointUnion<FS, SP>
 where
     FS::Set: std::hash::Hash,
 {
@@ -131,3 +129,22 @@ where
         }
     }
 }
+
+// impl<
+//         FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+//         SP: Borrow<AffineSpace<FS>> + Clone,
+//         SC: Borrow<SimplicialComplex<FS, SP>> + Clone,
+//     > Drawable for FullSubSimplicialComplex<FS, SP, SC>
+// where
+//     FS::Set: std::hash::Hash,
+// {
+//     fn draw(
+//         &self,
+//         canvas: &mut crate::drawing::canvas2d::Diagram2dCanvas,
+//         colour: (f32, f32, f32),
+//     ) {
+//         for simplex in self.simplexes() {
+//             simplex.draw(canvas, colour);
+//         }
+//     }
+// }

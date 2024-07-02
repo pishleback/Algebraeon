@@ -1,7 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::geometry_old::simplicial_complex::SubSimplicialComplex;
-
 use super::*;
 
 #[derive(Clone)]
@@ -54,9 +52,9 @@ pub struct ConvexHullAsSimplicialComplexResult<
     FS: OrderedRingStructure + FieldStructure,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > {
-    pub entire: Rc<SimplicialComplex<FS, SP>>,
-    pub boundary: FullSubSimplicialComplex<FS, SP, Rc<SimplicialComplex<FS, SP>>>,
-    pub interior: PartialSubSimplicialComplex<FS, SP, Rc<SimplicialComplex<FS, SP>>>,
+    pub entire: SimplicialComplex<FS, SP>,
+    pub boundary: SimplicialComplex<FS, SP>,
+    pub interior: PartialSimplicialComplex<FS, SP>,
 }
 
 impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
@@ -175,7 +173,7 @@ where
     }
 
     pub fn new_empty(ambient_space: SP) -> Self {
-        let subspace = EmbeddedAffineSubspace::new_empty(ambient_space.clone());
+        let (subspace, _) = EmbeddedAffineSubspace::new_empty(ambient_space.clone());
         Self {
             ambient_space: ambient_space.clone(),
             subspace: subspace.clone(),
@@ -192,8 +190,31 @@ where
         ch
     }
 
+    pub fn affine_span_dimension(&self) -> usize {
+        self.subspace.embedded_space().affine_dimension()
+    }
+
+    pub fn from_simplex(spx: Simplex<FS, SP>) -> Self {
+        let ambient_space = spx.ambient_space();
+        let ordered_field = ambient_space.borrow().ordered_field();
+        let (subspace, embedded_pts) =
+            EmbeddedAffineSubspace::new_affine_span(ambient_space.clone(), spx.into_points())
+                .unwrap();
+        let embedded_spx = Simplex::new(subspace.embedded_space(), embedded_pts).unwrap();
+        Self {
+            ambient_space,
+            subspace,
+            facets: embedded_spx.oriented_facets(),
+            interior: vec![embedded_spx],
+        }
+    }
+
     pub fn ambient_space(&self) -> SP {
         self.subspace.ambient_space()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.subspace.borrow().embedded_space().affine_dimension() == 0
     }
 
     pub fn defining_points(&self) -> HashSet<Vector<FS, SP>> {
@@ -419,6 +440,8 @@ where
         #[cfg(debug_assertions)]
         self.check().unwrap();
     }
+
+    
     fn embedded_interior_simplexes(&self) -> Vec<Simplex<FS, SP>> {
         self.interior
             .iter()
@@ -469,43 +492,47 @@ where
                     .map(|spx| spx.sub_simplices_not_null())
                     .flatten(),
             )
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect::<Vec<_>>();
+            .collect::<HashSet<_>>();
 
-        let mut boundary_indexes = HashSet::new();
-        let mut interior_indexes = HashSet::new();
-        for (idx, spx) in all_simplexes.iter().enumerate() {
-            match boundary_simplexes.contains(spx) {
-                true => {
-                    boundary_indexes.insert(idx);
-                }
-                false => {
-                    interior_indexes.insert(idx);
-                }
+        let mut interior_simplexes = HashSet::new();
+        for spx in &all_simplexes {
+            if !boundary_simplexes.contains(spx) {
+                interior_simplexes.insert(spx.clone());
             }
         }
 
-        let entire = Rc::new(SimplicialComplex::new_unchecked(
-            self.ambient_space.clone(),
-            all_simplexes,
-        ));
+        let entire = SimplicialComplex::new(self.ambient_space.clone(), all_simplexes).unwrap();
         ConvexHullAsSimplicialComplexResult {
             entire: entire.clone(),
-            boundary: FullSubSimplicialComplex::new_unchecked(entire.clone(), boundary_indexes),
-            interior: PartialSubSimplicialComplex::new_unchecked(entire.clone(), interior_indexes),
+            boundary: SimplicialComplex::new(self.ambient_space.clone(), boundary_simplexes.into_iter().collect())
+                .unwrap(),
+            interior: PartialSimplicialComplex::new_unchecked(
+                self.ambient_space.clone(),
+                interior_simplexes,
+            ),
         }
     }
+}
 
-    pub fn intersect_with_oriented_hyperplane(
-        &self,
-        hyperplane: &OrientedHyperplane<FS, SP>,
-        region: OrientationSide, //TODO: make this const generic once rust has const generic enums
-    ) -> Self {
-        //find outer_points and outer_edges giving the 1-skeleton of the surface of the convex hull
+#[derive(Clone)]
+struct ConvexHullWireframe<
+    FS: OrderedRingStructure + FieldStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+> {
+    ambient_space: SP,
+    points: Vec<Vector<FS, SP>>,
+    edges: Vec<(Vector<FS, SP>, Vector<FS, SP>)>,
+}
+
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+    ConvexHullWireframe<FS, SP>
+where
+    FS::Set: Hash,
+{
+    fn from_convex_hull(ch: &ConvexHull<FS, SP>) -> Self {
         let mut outer_points = HashSet::new();
         let mut outer_edges = HashSet::new();
-        for facet in &self.facets {
+        for facet in &ch.facets {
             for point in facet.simplex().points() {
                 outer_points.insert(point.clone());
             }
@@ -513,29 +540,56 @@ where
                 outer_edges.insert(edge);
             }
         }
+        let mut outer_points = outer_points.into_iter().collect::<Vec<_>>();
+        let mut outer_edges = outer_edges
+            .into_iter()
+            .map(|line| {
+                let mut pts = line.into_points().into_iter();
+                (pts.next().unwrap(), pts.next().unwrap())
+            })
+            .collect::<Vec<_>>();
+
         //note that in dimension 0 we need to explicitly add the unique point to outer points
-        if self.subspace.embedded_space().affine_dimension() == 1 {
-            let (root, span) = self.subspace.get_root_and_span().unwrap();
+        if ch.subspace.embedded_space().affine_dimension() == 1 {
+            let (root, span) = ch.subspace.get_root_and_span().unwrap();
             debug_assert_eq!(span.len(), 0);
-            outer_points.insert(Vector::new(self.subspace.embedded_space(), vec![]));
+            debug_assert_eq!(outer_points.len(), 0);
+            outer_points.push(Vector::new(ch.subspace.embedded_space(), vec![]));
         }
+
         //note that in dimension 1 this doesnt quite work for outer edges since the boundary is not connected. instead outer edges should just be the edge between the two points
-        if self.subspace.embedded_space().affine_dimension() == 2 {
+        if ch.subspace.embedded_space().affine_dimension() == 2 {
             debug_assert_eq!(outer_points.len(), 2);
             debug_assert_eq!(outer_edges.len(), 0);
             let mut pts = outer_points.iter();
-            outer_edges.insert(
-                Simplex::new(
-                    self.subspace.embedded_space(),
-                    vec![
-                        (*pts.next().unwrap()).clone(),
-                        (*pts.next().unwrap()).clone(),
-                    ],
-                )
-                .unwrap(),
-            );
+            outer_edges.push((
+                (*pts.next().unwrap()).clone(),
+                (*pts.next().unwrap()).clone(),
+            ));
         }
 
+        Self {
+            ambient_space: ch.ambient_space(),
+            points: outer_points
+                .into_iter()
+                .map(|pt| ch.subspace.embed_point(&pt))
+                .collect(),
+            edges: outer_edges
+                .into_iter()
+                .map(|(pt1, pt2)| (ch.subspace.embed_point(&pt1), ch.subspace.embed_point(&pt2)))
+                .collect(),
+        }
+    }
+
+    fn into_convex_hull(self) -> ConvexHull<FS, SP> {
+        ConvexHull::new(self.ambient_space, self.points)
+    }
+
+    pub fn intersect_with_oriented_hyperplane(
+        &self,
+        hyperplane: &OrientedHyperplane<FS, SP>,
+        region: OrientationSide, //TODO: make this const generic once rust has const generic enums
+    ) -> Self {
         /*
         Find positive_points, middle_points, negative_points such that
         ConvexHull(middle_points) = self intersect hyperplane
@@ -545,51 +599,112 @@ where
         let mut positive_points = HashSet::new();
         let mut middle_points = HashSet::new();
         let mut negative_points = HashSet::new();
-        for subsp_point in &outer_points {
-            let point = self.subspace.embed_point(subsp_point);
+        for point in &self.points {
             match hyperplane.classify_point(&point) {
                 OrientationSide::Positive => {
-                    positive_points.insert(point);
+                    positive_points.insert(point.clone());
                 }
                 OrientationSide::Neutral => {
-                    middle_points.insert(point);
+                    middle_points.insert(point.clone());
                 }
                 OrientationSide::Negative => {
-                    negative_points.insert(point);
+                    negative_points.insert(point.clone());
                 }
             }
         }
-        for edge in &outer_edges {
-            debug_assert_eq!(edge.points().len(), 2);
-            let a = self.subspace.embed_point(&edge.points()[0]);
-            let b = self.subspace.embed_point(&edge.points()[1]);
+        let mut positive_edges = HashSet::new();
+        let mut negative_edges = HashSet::new();
+        for (a, b) in &self.edges {
             match hyperplane.intersect_line(&a, &b) {
-                Some(m) => {
+                OrientedHyperplaneIntersectLineResult::PositivePositive
+                | OrientedHyperplaneIntersectLineResult::PositiveNeutral
+                | OrientedHyperplaneIntersectLineResult::NeutralPositive => {
+                    positive_edges.insert((a.clone(), b.clone()));
+                }
+                OrientedHyperplaneIntersectLineResult::NegativeNegative
+                | OrientedHyperplaneIntersectLineResult::NegativeNeutral
+                | OrientedHyperplaneIntersectLineResult::NeutralNegative => {
+                    negative_edges.insert((a.clone(), b.clone()));
+                }
+
+                OrientedHyperplaneIntersectLineResult::NeutralNeutral => {
+                    //We deal with middle edges later
+                }
+                OrientedHyperplaneIntersectLineResult::PositiveNegative {
+                    intersection_point: m,
+                } => {
+                    positive_edges.insert((a.clone(), m.clone()));
+                    negative_edges.insert((m.clone(), b.clone()));
                     middle_points.insert(m);
                 }
-                None => {}
+                OrientedHyperplaneIntersectLineResult::NegativePositive {
+                    intersection_point: m,
+                } => {
+                    positive_edges.insert((b.clone(), m.clone()));
+                    negative_edges.insert((m.clone(), a.clone()));
+                    middle_points.insert(m);
+                }
             }
         }
+
+        let ConvexHullWireframe {
+            ambient_space: _,
+            points: middle_points,
+            edges: middle_edges,
+        } = Self::from_convex_hull(&ConvexHull::new(
+            self.ambient_space.clone(),
+            middle_points.into_iter().collect(),
+        ));
 
         if !positive_points.is_empty() && !negative_points.is_empty() {
             debug_assert!(!middle_points.is_empty());
         }
 
-        Self::new(self.ambient_space.clone(), {
-            match region {
-                OrientationSide::Positive => middle_points
-                    .union(&positive_points)
-                    .map(|pt| pt.clone())
-                    .collect(),
-                OrientationSide::Neutral => {
-                    middle_points.into_iter().map(|pt| pt.clone()).collect()
+        let mut points: HashSet<Vector<FS, SP>> = middle_points.into_iter().collect();
+        let mut edges: HashSet<(Vector<FS, SP>, Vector<FS, SP>)> =
+            middle_edges.into_iter().collect();
+
+        match region {
+            OrientationSide::Positive => {
+                for pt in positive_points {
+                    points.insert(pt);
                 }
-                OrientationSide::Negative => middle_points
-                    .union(&negative_points)
-                    .map(|pt| pt.clone())
-                    .collect(),
+                for edge in positive_edges {
+                    edges.insert(edge);
+                }
             }
-        })
+            OrientationSide::Neutral => {}
+            OrientationSide::Negative => {
+                for pt in negative_points {
+                    points.insert(pt);
+                }
+                for edge in negative_edges {
+                    edges.insert(edge);
+                }
+            }
+        }
+
+        Self {
+            ambient_space: self.ambient_space.clone(),
+            points: points.into_iter().collect(),
+            edges: edges.into_iter().collect(),
+        }
+    }
+}
+
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+    ConvexHull<FS, SP>
+where
+    FS::Set: Hash,
+{
+    pub fn intersect_with_oriented_hyperplane(
+        &self,
+        hyperplane: &OrientedHyperplane<FS, SP>,
+        region: OrientationSide, //TODO: make this const generic once rust has const generic enums
+    ) -> Self {
+        ConvexHullWireframe::from_convex_hull(self)
+            .intersect_with_oriented_hyperplane(hyperplane, region)
+            .into_convex_hull()
     }
 
     pub fn intersect_mut(&mut self, other: &Self) {
@@ -603,7 +718,7 @@ where
                         .intersect_with_oriented_hyperplane(&hyperplane, OrientationSide::Neutral);
                 }
                 // step2: embed self into other.affine_subspace
-                let mut embedded_self_in_other_subspace = ConvexHull::new(
+                let embedded_self_in_other_subspace = &ConvexHull::new(
                     other.subspace.embedded_space(),
                     self.defining_points()
                         .into_iter()
@@ -617,6 +732,8 @@ where
                         .affine_dimension(),
                     self.subspace.embedded_space().affine_dimension()
                 );
+                let mut embedded_self_in_other_subspace =
+                    ConvexHullWireframe::from_convex_hull(&embedded_self_in_other_subspace);
                 // step3 : intersect self with each oriented facet of other
                 for facet in &other.facets {
                     embedded_self_in_other_subspace = embedded_self_in_other_subspace
@@ -625,10 +742,12 @@ where
                             OrientationSide::Positive,
                         );
                 }
+
                 // step4: unembed self back to the ambient space
                 *self = ConvexHull::new(
                     self.ambient_space(),
                     embedded_self_in_other_subspace
+                        .into_convex_hull()
                         .defining_points()
                         .into_iter()
                         .map(|point| other.subspace.embed_point(&point))
@@ -648,7 +767,6 @@ where
         self_mut
     }
 }
-
 #[cfg(test)]
 mod tests {
     use malachite_base::num::conversion::traits::FromSciString;
@@ -893,5 +1011,46 @@ mod tests {
             let ch3 = ch1.intersect(&ch2);
             debug_assert_eq!(ch3.subspace.embedded_space().affine_dimension(), 1);
         }
+    }
+
+    #[test]
+    fn convex_hull_from_simplex() {
+        let space = AffineSpace::new_linear(Rational::structure(), 3);
+        let p1 = Vector::new(
+            &space,
+            vec![Rational::from(4), Rational::from(2), Rational::from(2)],
+        );
+        let p2 = Vector::new(
+            &space,
+            vec![Rational::from(5), Rational::from(-3), Rational::from(3)],
+        );
+        let p3 = Vector::new(
+            &space,
+            vec![Rational::from(-5), Rational::from(6), Rational::from(2)],
+        );
+        let p4 = Vector::new(
+            &space,
+            vec![Rational::from(8), Rational::from(2), Rational::from(-9)],
+        );
+
+        ConvexHull::from_simplex(Simplex::new(&space, vec![]).unwrap())
+            .check()
+            .unwrap();
+        ConvexHull::from_simplex(Simplex::new(&space, vec![p1.clone()]).unwrap())
+            .check()
+            .unwrap();
+        ConvexHull::from_simplex(Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap())
+            .check()
+            .unwrap();
+        ConvexHull::from_simplex(
+            Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap(),
+        )
+        .check()
+        .unwrap();
+        ConvexHull::from_simplex(
+            Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone(), p4.clone()]).unwrap(),
+        )
+        .check()
+        .unwrap();
     }
 }

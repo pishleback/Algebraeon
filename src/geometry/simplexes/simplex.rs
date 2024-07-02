@@ -78,6 +78,14 @@ where
         &self.points
     }
 
+    pub fn into_points(self) -> Vec<Vector<FS, SP>> {
+        self.points
+    }
+
+    pub fn point(&self, i: usize) -> &Vector<FS, SP> {
+        &self.points[i]
+    }
+
     pub fn skeleton(&self, skel_n: isize) -> Vec<Self> {
         if skel_n < 0 {
             vec![]
@@ -143,12 +151,27 @@ where
             .collect()
     }
 
+    pub fn proper_sub_simplices_not_null(&self) -> Vec<Self> {
+        self.sub_simplices()
+            .into_iter()
+            .filter(|spx| spx.n() != 0 && spx.n() != self.n())
+            .collect()
+    }
+
+    pub fn sub_simplex(&self, pts: Vec<usize>) -> Self {
+        Self::new(
+            self.ambient_space(),
+            pts.iter().map(|idx| self.points[*idx].clone()).collect(),
+        )
+        .unwrap()
+    }
+
     pub fn oriented_facet(&self, k: usize) -> OrientedSimplex<FS, SP> {
-        //return the oriented facet of self with positive side on the outside and negative side on the inside
+        //return the oriented facet of self with negative side on the outside and positive side on the inside
         assert!(k <= self.points.len());
         let mut facet_points = self.points.clone();
         let other_pt = facet_points.remove(k);
-        OrientedSimplex::new_with_negative_point(
+        OrientedSimplex::new_with_positive_point(
             self.ambient_space.clone(),
             facet_points,
             &other_pt,
@@ -261,7 +284,9 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         mut points: Vec<Vector<FS, SP>>,
         ref_point: &Vector<FS, SP>,
     ) -> Result<Self, &'static str> {
-        Ok(Self::new_with_positive_point(ambient_space, points, ref_point)?.flip())
+        let mut ans = Self::new_with_positive_point(ambient_space, points, ref_point)?;
+        ans.flip();
+        Ok(ans)
     }
 
     pub fn positive_point(&self) -> Option<Vector<FS, SP>> {
@@ -284,7 +309,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         &self.simplex
     }
 
-    pub fn flip(mut self) -> Self {
+    pub fn flip(&mut self) {
         let negative_point = self.negative_point();
         match &mut self.orientation {
             Some(OrientedSimplexOrientation {
@@ -307,7 +332,6 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
             }
             None => {}
         }
-        self
     }
 
     fn classify_point_quantitatively(&self, point: &Vector<FS, SP>) -> FS::Set {
@@ -380,6 +404,21 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 //     }
 // }
 
+pub enum OrientedHyperplaneIntersectLineResult<
+    FS: OrderedRingStructure + FieldStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+> {
+    PositivePositive,
+    NegativeNegative,
+    PositiveNeutral,
+    NegativeNeutral,
+    NeutralPositive,
+    NeutralNegative,
+    NeutralNeutral,
+    PositiveNegative { intersection_point: Vector<FS, SP> },
+    NegativePositive { intersection_point: Vector<FS, SP> },
+}
+
 impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
     OrientedHyperplane<FS, SP>
 {
@@ -391,7 +430,11 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         self.oriented_simplex.classify_point(point)
     }
 
-    pub fn intersect_line(&self, a: &Vector<FS, SP>, b: &Vector<FS, SP>) -> Option<Vector<FS, SP>> {
+    pub fn intersect_line(
+        &self,
+        a: &Vector<FS, SP>,
+        b: &Vector<FS, SP>,
+    ) -> OrientedHyperplaneIntersectLineResult<FS, SP> {
         let space = self.ambient_space();
         let field = space.borrow().ordered_field();
 
@@ -402,15 +445,68 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
             field.ring_cmp(&a_val, &field.zero()),
             field.ring_cmp(&b_val, &field.zero()),
         ) {
-            (std::cmp::Ordering::Less, std::cmp::Ordering::Greater)
-            | (std::cmp::Ordering::Greater, std::cmp::Ordering::Less) => {
+            (std::cmp::Ordering::Less, std::cmp::Ordering::Greater) => {
                 let t = field
                     .div(&a_val, &field.add(&a_val, &field.neg(&b_val)))
                     .unwrap();
-                Some(a + &(b - a).scalar_mul(&t))
+                {
+                    debug_assert_eq!(
+                        self.oriented_simplex.classify_point(a),
+                        OrientationSide::Negative
+                    );
+                    debug_assert_eq!(
+                        self.oriented_simplex.classify_point(b),
+                        OrientationSide::Positive
+                    );
+                    OrientedHyperplaneIntersectLineResult::NegativePositive {
+                        intersection_point: a + &(b - a).scalar_mul(&t),
+                    }
+                }
             }
-            _ => None,
+            (std::cmp::Ordering::Greater, std::cmp::Ordering::Less) => {
+                let t = field
+                    .div(&a_val, &field.add(&a_val, &field.neg(&b_val)))
+                    .unwrap();
+                {
+                    debug_assert_eq!(
+                        self.oriented_simplex.classify_point(a),
+                        OrientationSide::Positive
+                    );
+                    debug_assert_eq!(
+                        self.oriented_simplex.classify_point(b),
+                        OrientationSide::Negative
+                    );
+                    OrientedHyperplaneIntersectLineResult::PositiveNegative {
+                        intersection_point: a + &(b - a).scalar_mul(&t),
+                    }
+                }
+            }
+            (std::cmp::Ordering::Less, std::cmp::Ordering::Less) => {
+                OrientedHyperplaneIntersectLineResult::NegativeNegative
+            }
+            (std::cmp::Ordering::Less, std::cmp::Ordering::Equal) => {
+                OrientedHyperplaneIntersectLineResult::NegativeNeutral
+            }
+            (std::cmp::Ordering::Equal, std::cmp::Ordering::Less) => {
+                OrientedHyperplaneIntersectLineResult::NeutralNegative
+            }
+            (std::cmp::Ordering::Equal, std::cmp::Ordering::Equal) => {
+                OrientedHyperplaneIntersectLineResult::NeutralNeutral
+            }
+            (std::cmp::Ordering::Equal, std::cmp::Ordering::Greater) => {
+                OrientedHyperplaneIntersectLineResult::NeutralPositive
+            }
+            (std::cmp::Ordering::Greater, std::cmp::Ordering::Equal) => {
+                OrientedHyperplaneIntersectLineResult::PositiveNeutral
+            }
+            (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater) => {
+                OrientedHyperplaneIntersectLineResult::PositivePositive
+            }
         }
+    }
+
+    pub fn flip(&mut self) {
+        self.oriented_simplex.flip()
     }
 }
 
@@ -504,238 +600,4 @@ mod tests {
             s_neg.orientation.unwrap().flip
         );
     }
-
-    /*
-    #[test]
-    fn intersect_simplex_hyperplane() {
-        let space = AffineSpace::new_linear(Rational::structure(), 2);
-        let hyperplane = OrientedSimplex::new_with_positive_point(
-            &space,
-            vec![
-                Vector::new(&space, vec![Rational::from(1), Rational::from(0)]),
-                Vector::new(&space, vec![Rational::from(2), Rational::from(3)]),
-            ],
-            &Vector::new(&space, vec![Rational::from(0), Rational::from(1)]),
-        )
-        .unwrap();
-
-        assert_eq!(
-            simplex_intersect_with_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![Vector::new(
-                        &space,
-                        vec![Rational::from(0), Rational::from(1)],
-                    )],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            0
-        );
-        assert_eq!(
-            simplex_intersect_positive_side_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![Vector::new(
-                        &space,
-                        vec![Rational::from(0), Rational::from(1)],
-                    )],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            1
-        );
-        assert_eq!(
-            simplex_intersect_negative_side_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![Vector::new(
-                        &space,
-                        vec![Rational::from(0), Rational::from(1)],
-                    )],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            0
-        );
-
-        assert_eq!(
-            simplex_intersect_with_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![Vector::new(
-                        &space,
-                        vec![Rational::from(3), Rational::from(6)],
-                    )],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            1
-        );
-        assert_eq!(
-            simplex_intersect_positive_side_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![Vector::new(
-                        &space,
-                        vec![Rational::from(3), Rational::from(6)],
-                    )],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            0
-        );
-        assert_eq!(
-            simplex_intersect_negative_side_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![Vector::new(
-                        &space,
-                        vec![Rational::from(3), Rational::from(6)],
-                    )],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            0
-        );
-
-        assert_eq!(
-            simplex_intersect_with_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(1)],),
-                        Vector::new(&space, vec![Rational::from(2), Rational::from(0)],)
-                    ],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            1
-        );
-        assert_eq!(
-            simplex_intersect_positive_side_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(1)],),
-                        Vector::new(&space, vec![Rational::from(2), Rational::from(0)],)
-                    ],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            1
-        );
-
-        assert_eq!(
-            simplex_intersect_with_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(1)],),
-                        Vector::new(&space, vec![Rational::from(-1), Rational::from(2)],)
-                    ],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            0
-        );
-        assert_eq!(
-            simplex_intersect_positive_side_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(1)],),
-                        Vector::new(&space, vec![Rational::from(-1), Rational::from(2)],)
-                    ],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            1
-        );
-
-        assert_eq!(
-            simplex_intersect_with_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(1)],),
-                        Vector::new(&space, vec![Rational::from(2), Rational::from(3)],)
-                    ],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            1
-        );
-        assert_eq!(
-            simplex_intersect_positive_side_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(1)],),
-                        Vector::new(&space, vec![Rational::from(2), Rational::from(3)],)
-                    ],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            0
-        );
-
-        assert_eq!(
-            simplex_intersect_with_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(0)],),
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(1)],),
-                        Vector::new(&space, vec![Rational::from(2), Rational::from(0)],)
-                    ],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            1
-        );
-        assert_eq!(
-            simplex_intersect_positive_side_hyperplane(
-                &Simplex::new(
-                    &space,
-                    vec![
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(0)],),
-                        Vector::new(&space, vec![Rational::from(0), Rational::from(1)],),
-                        Vector::new(&space, vec![Rational::from(2), Rational::from(0)],)
-                    ],
-                )
-                .unwrap(),
-                &hyperplane
-            )
-            .len(),
-            3
-        );
-    }
-    */
 }

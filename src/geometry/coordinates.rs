@@ -58,9 +58,9 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Vec
         }
     }
 
-    pub fn construct(ambient_space: SP, coordinates: impl Fn(usize) -> FS::Set) -> Self {
+    pub fn construct(ambient_space: SP, mut coordinate_func: impl FnMut(usize) -> FS::Set) -> Self {
         let coordinates = (0..ambient_space.borrow().linear_dimension().unwrap())
-            .map(|i| coordinates(i))
+            .map(|i| coordinate_func(i))
             .collect();
         Self {
             ambient_space,

@@ -30,7 +30,10 @@ impl<
         ESP: Borrow<AffineSpace<FS>> + From<AffineSpace<FS>> + Clone,
     > EmbeddedAffineSubspace<FS, SP, ESP>
 {
-    fn new_impl(ambient_space: SP, points: Vec<Vector<FS, SP>>) -> Result<Self, &'static str> {
+    pub fn new_affine_span(
+        ambient_space: SP,
+        points: Vec<Vector<FS, SP>>,
+    ) -> Result<(Self, Vec<Vector<FS, ESP>>), &'static str> {
         if !ambient_space
             .borrow()
             .are_points_affine_independent(points.iter().collect())
@@ -38,15 +41,35 @@ impl<
             return Err("Affine embedding points must be affine independent");
         }
         let ordered_field = ambient_space.borrow().ordered_field();
-        Ok(Self {
-            ambient_space,
-            embedded_space: AffineSpace::new_affine(ordered_field, points.len()).into(),
-            embedding_points: points,
-        })
+        let embedded_space: ESP =
+            AffineSpace::new_affine(ordered_field.clone(), points.len()).into();
+        let n = points.len();
+        let embedded_pts = (0..n)
+            .map(|i| {
+                Vector::construct(embedded_space.clone(), |j| {
+                    if i == 0 {
+                        ordered_field.zero()
+                    } else {
+                        match i == j + 1 {
+                            true => ordered_field.one(),
+                            false => ordered_field.zero(),
+                        }
+                    }
+                })
+            })
+            .collect();
+        Ok((
+            Self {
+                ambient_space,
+                embedded_space,
+                embedding_points: points,
+            },
+            embedded_pts,
+        ))
     }
 
-    pub fn new_empty(ambient_space: SP) -> Self {
-        Self::new_impl(ambient_space, vec![]).unwrap()
+    pub fn new_empty(ambient_space: SP) -> (Self, Vec<Vector<FS, ESP>>) {
+        Self::new_affine_span(ambient_space, vec![]).unwrap()
     }
 }
 
@@ -57,10 +80,10 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         ambient_space: SP,
         root: Vector<FS, SP>,
         span: Vec<Vector<FS, SP>>,
-    ) -> Result<Self, &'static str> {
+    ) -> Result<(Self, Vec<Vector<FS, AffineSpace<FS>>>), &'static str> {
         let mut points = vec![root.clone()];
         points.extend(span.iter().map(|vec| &root + vec));
-        Self::new_impl(ambient_space, points)
+        Self::new_affine_span(ambient_space, points)
     }
 }
 
@@ -344,7 +367,7 @@ mod tests {
         {
             let plane = AffineSpace::new_linear(Rational::structure(), 2);
             //the line x + y = 2
-            let line = EmbeddedAffineSubspace::new(
+            let (line, _) = EmbeddedAffineSubspace::new(
                 &plane,
                 Vector::new(&plane, vec![Rational::from(1), Rational::from(1)]),
                 vec![Vector::new(
@@ -382,7 +405,7 @@ mod tests {
         //2d embedded in 3d
         {
             let space = AffineSpace::new_linear(Rational::structure(), 3);
-            let plane = EmbeddedAffineSubspace::new(
+            let (plane, _) = EmbeddedAffineSubspace::new(
                 &space,
                 Vector::new(
                     &space,
@@ -463,7 +486,7 @@ mod tests {
                 Rational::from(2),
             ],
         );
-        let h = EmbeddedAffineSubspace::new(&space, v1, vec![v2, v3]).unwrap();
+        let (h, _) = EmbeddedAffineSubspace::new(&space, v1, vec![v2, v3]).unwrap();
         let v4 = Vector::new(
             &space,
             vec![
