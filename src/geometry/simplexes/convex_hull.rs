@@ -173,7 +173,7 @@ where
     }
 
     pub fn new_empty(ambient_space: SP) -> Self {
-        let (subspace, _) = EmbeddedAffineSubspace::new_empty(ambient_space.clone());
+        let subspace = EmbeddedAffineSubspace::new_empty(ambient_space.clone());
         Self {
             ambient_space: ambient_space.clone(),
             subspace: subspace.clone(),

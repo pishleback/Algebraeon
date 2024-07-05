@@ -68,8 +68,8 @@ impl<
         ))
     }
 
-    pub fn new_empty(ambient_space: SP) -> (Self, Vec<Vector<FS, ESP>>) {
-        Self::new_affine_span(ambient_space, vec![]).unwrap()
+    pub fn new_empty(ambient_space: SP) -> Self {
+        Self::new_affine_span(ambient_space, vec![]).unwrap().0
     }
 }
 
@@ -84,6 +84,32 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         let mut points = vec![root.clone()];
         points.extend(span.iter().map(|vec| &root + vec));
         Self::new_affine_span(ambient_space, points)
+    }
+
+    pub fn new_affine_span_linearly_dependent(
+        ambient_space: SP,
+        points: Vec<&Vector<FS, SP>>,
+    ) -> Self {
+        if points.is_empty() {
+            Self::new_empty(ambient_space)
+        } else {
+            let dim = ambient_space.borrow().linear_dimension().unwrap();
+            let ordered_field = ambient_space.borrow().ordered_field();
+            let mut points = points.into_iter();
+            let root = points.next().unwrap();
+            let span = points.map(|pt| pt - root).collect::<Vec<_>>();
+            //matrix whose columns are pt - root for every other pt in points
+            let mat = Matrix::construct(dim, span.len(), |r, c| span[c].coordinate(r).clone());
+            let (_, _, _, pivs) =
+                MatrixStructure::new(ordered_field.clone()).row_hermite_algorithm(mat);
+            Self::new(
+                ambient_space,
+                root.clone(),
+                pivs.into_iter().map(|i| span[i].clone()).collect(),
+            )
+            .unwrap()
+            .0
+        }
     }
 }
 
