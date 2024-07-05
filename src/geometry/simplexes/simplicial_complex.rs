@@ -493,6 +493,20 @@ where
         #[cfg(debug_assertions)]
         self.check();
     }
+
+    pub fn union(&self, other: &Self) -> Self {
+        SimplicialDisjointUnion::union(&self.into(), &other.into())
+            .refine_to_partial_simplicial_complex()
+            .closure_as_simplicial_complex()
+            .simplify()
+    }
+
+    pub fn intersection(&self, other: &Self) -> Self {
+        SimplicialDisjointUnion::intersection(&self.into(), &other.into())
+            .refine_to_partial_simplicial_complex()
+            .closure_as_simplicial_complex()
+            .simplify()
+    }
 }
 
 #[derive(Clone)]
@@ -674,12 +688,12 @@ where
 
         VennResult {
             left: Self::subtract(self, other),
-            middle: Self::intersect(self, other),
+            middle: Self::intersection(self, other),
             right: Self::subtract(other, self),
         }
     }
 
-    pub fn intersect(&self, other: &Self) -> SimplicialDisjointUnion<FS, SP> {
+    pub fn intersection(&self, other: &Self) -> SimplicialDisjointUnion<FS, SP> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
         Self::new_unchecked(ambient_space.clone(), {
             let mut simplexes = HashSet::new();
@@ -855,6 +869,12 @@ where
         }
 
         PartialSimplicialComplex::new(ambient_space, self.into_simplexes()).unwrap()
+    }
+
+    pub fn closure_as_simplicial_complex(self) -> SimplicialComplex<FS, SP> {
+        self.refine_to_partial_simplicial_complex()
+            .closure_as_simplicial_complex()
+            .simplify()
     }
 }
 
