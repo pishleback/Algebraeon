@@ -274,7 +274,7 @@ impl<
                     MatrixStructure::new(ordered_field.clone()).row_hermite_algorithm(mat);
                 debug_assert_eq!(pivs.len(), dim_amb);
                 for i in 0..dim_ss {
-                    debug_assert_eq!(pivs[i], i);
+                    debug_assert_eq!(pivs[i], i); //span is linearly independent so we expect this
                 }
                 let extension_elementary_basis_vectors = (dim_ss..dim_amb)
                     .map(|i| pivs[i] - dim_ss)
@@ -296,7 +296,7 @@ impl<
                                         //push root + e_k
                                         points.push(Vector::construct(ambient_space.clone(), |l| {
                                             ordered_field.add(root.coordinate(l), &{
-                                                match l == j {
+                                                match l == k {
                                                     false => ordered_field.zero(),
                                                     true => ordered_field.one(),
                                                 }

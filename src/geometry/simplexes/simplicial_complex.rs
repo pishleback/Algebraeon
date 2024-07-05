@@ -234,7 +234,6 @@ where
                 pt
             };
 
-            println!("pt = {:?}", pt);
             let pt_spx = Simplex::new(self.ambient_space(), vec![pt.clone()]).unwrap();
 
             if interior.contains(&pt_spx) {
@@ -366,12 +365,6 @@ where
                     reachable
                 };
 
-                println!("link_simplexes_idxed = {:?}", link_simplexes_idxed);
-                println!(
-                    "link_point_to_link_ofacet = {:?}",
-                    link_point_to_link_ofacet
-                );
-
                 for link_pt_idx in (0..num_link_points) {
                     let link_pt = &link_points[link_pt_idx];
                     let link_pt_img = &link_points_img[link_pt_idx];
@@ -385,16 +378,6 @@ where
                         link_point_to_link_ofacet.get(&link_pt_idx).unwrap();
                     let weak_adjacent_hyperplane_ofacets =
                         point_img_to_adjacent_hyperplane_ofacets(link_pt_idx);
-
-                    println!("orientations = {:?}", orientations);
-                    println!(
-                        "weak_adjacent_hyperplane_ofacets = {:?}",
-                        weak_adjacent_hyperplane_ofacets
-                    );
-                    println!(
-                        "strong_adjacent_hyperplane_ofacets = {:?}",
-                        strong_adjacent_hyperplane_ofacets
-                    );
 
                     if weak_adjacent_hyperplane_ofacets.len()
                         == strong_adjacent_hyperplane_ofacets.len()
@@ -418,8 +401,6 @@ where
                                 })
                                 .collect::<Vec<_>>();
 
-                            println!("{:?}", orientations);
-
                             //replace star with the extension of simplexes in link such that not every point belongs to some adjacent oriented facet to link pt
                             let filled_link = link
                                 .into_iter()
@@ -442,8 +423,6 @@ where
                                     .unwrap()
                                 })
                                 .collect::<Vec<_>>();
-
-                            println!("add# = {:?} rm# = {:?}", filled_link.len(), star.len());
 
                             self.remove_simplexes_unchecked(star.into_iter().collect());
                             self.add_simplexes_unchecked(filled_link);

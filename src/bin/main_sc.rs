@@ -58,13 +58,13 @@ fn main() {
 
     let ch1 = ConvexHull::new(
         space.clone(),
-        (0..24)
+        (0..16)
             .map(|i| random_point(space.clone(), (i + 1) as f64))
             .collect(),
     );
     let ch2 = ConvexHull::new(
         space.clone(),
-        (0..24)
+        (0..16)
             .map(|i| random_point(space.clone(), (i + 1) as f64))
             .collect(),
     );
@@ -77,19 +77,26 @@ fn main() {
     // let VennResult {
     //     left: a,
     //     middle: b,
-    //     right: c,
+    //     right: c,0
+
     // }
 
     let sc4 = SimplicialDisjointUnion::union(&(&sc1).into(), &(&sc2).into());
-    let sc5 = sc4.clone().refine_to_partial_simplicial_complex().closure_as_simplicial_complex();
+    println!("done union");
+    let sc5 = sc4
+        .clone()
+        .refine_to_partial_simplicial_complex()
+        .closure_as_simplicial_complex();
+    println!("done to sc");
     let sc6 = sc5.clone().simplify();
+    println!("done simplify");
 
     orthoclase_all::drawing::canvas2d::Diagram2dCanvas::run(|canvas| {
-        // canvas.draw(&sc1, (1.0, 0.0, 0.0));
-        // canvas.draw(&sc2, (0.0, 1.0, 0.0));
+        canvas.draw(&sc1, (1.0, 0.0, 1.0));
+        canvas.draw(&sc2, (0.0, 1.0, 1.0));
         // canvas.draw(&sc3, (1.0, 1.0, 0.0));
 
-        canvas.draw(&sc5, (0.0, 1.0, 0.0));
-        canvas.draw(&sc6, (1.0, 0.0, 0.0));
+        // canvas.draw(&sc5, (1.0, 0.0, 0.0));
+        canvas.draw(&sc6, (0.0, 1.0, 0.0));
     });
 }
