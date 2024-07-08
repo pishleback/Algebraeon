@@ -498,14 +498,12 @@ where
         SimplicialDisjointUnion::union(&self.into(), &other.into())
             .refine_to_partial_simplicial_complex()
             .closure_as_simplicial_complex()
-            .simplify()
     }
 
     pub fn intersection(&self, other: &Self) -> Self {
         SimplicialDisjointUnion::intersection(&self.into(), &other.into())
             .refine_to_partial_simplicial_complex()
             .closure_as_simplicial_complex()
-            .simplify()
     }
 }
 
@@ -874,7 +872,6 @@ where
     pub fn closure_as_simplicial_complex(self) -> SimplicialComplex<FS, SP> {
         self.refine_to_partial_simplicial_complex()
             .closure_as_simplicial_complex()
-            .simplify()
     }
 }
 
