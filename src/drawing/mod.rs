@@ -18,7 +18,7 @@ pub trait Canvas {
     where
         Self: Sized + 'static,
     {
-        let display_size = (2 * 1024, 2 * 768);
+        let display_size = (1 * 1024, 1 * 768);
 
         // 1. We start by creating the EventLoop, this can only be done once per process.
         // This also needs to happen on the main thread to make the program portable.
