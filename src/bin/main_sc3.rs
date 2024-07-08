@@ -50,18 +50,44 @@ fn main() {
             Vector::new(&space, vec![Rational::from(0), Rational::from(1)]),
             Vector::new(&space, vec![Rational::from(1), Rational::from(0)]),
             Vector::new(&space, vec![Rational::from(0), Rational::from(0)]),
-            Vector::new(&space, vec![Rational::from(0), Rational::from(0)]),
         ],
     )
     .as_simplicial_complex()
     .entire;
-
-    let c = SimplicialDisjointUnion::subtract(&a.clone().into(), &b.clone().into())
+    let a = SimplicialDisjointUnion::subtract(&a.clone().into(), &b.clone().into())
         .closure_as_simplicial_complex();
+
+    let b = ConvexHull::new(
+        &space,
+        vec![
+            Vector::new(&space, vec![Rational::from(-1), Rational::from(0)]),
+            Vector::new(&space, vec![Rational::from(0), Rational::from(-1)]),
+            Vector::new(&space, vec![Rational::from(-1), Rational::from(-1)]),
+        ],
+    )
+    .as_simplicial_complex()
+    .entire;
+    let a = SimplicialDisjointUnion::subtract(&a.clone().into(), &b.clone().into())
+        .closure_as_simplicial_complex();
+
+    let b = ConvexHull::new(
+        &space,
+        vec![
+            Vector::new(&space, vec![Rational::from(-1), Rational::from(0)]),
+            Vector::new(&space, vec![Rational::from(0), Rational::from(1)]),
+            Vector::new(&space, vec![Rational::from(-1), Rational::from(1)]),
+        ],
+    )
+    .as_simplicial_complex()
+    .entire;
+    let a = SimplicialDisjointUnion::subtract(&a.clone().into(), &b.clone().into())
+        .closure_as_simplicial_complex();
+
+    let a = a.simplify();
 
     orthoclase_all::drawing::canvas2d::Diagram2dCanvas::run(|canvas| {
         // canvas.draw(&a, (1.0, 0.0, 0.0));
         // canvas.draw(&b, (0.0, 1.0, 0.0));
-        canvas.draw(&c, (1.0, 1.0, 0.0));
+        canvas.draw(&a, (1.0, 1.0, 0.0));
     });
 }
