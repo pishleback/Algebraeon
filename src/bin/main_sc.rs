@@ -58,13 +58,13 @@ fn main() {
 
     let ch1 = ConvexHull::new(
         space.clone(),
-        (0..16)
+        (0..6)
             .map(|i| random_point(space.clone(), (i + 1) as f64))
             .collect(),
     );
     let ch2 = ConvexHull::new(
         space.clone(),
-        (0..16)
+        (0..6)
             .map(|i| random_point(space.clone(), (i + 1) as f64))
             .collect(),
     );
