@@ -236,7 +236,73 @@ where
 
             let pt_spx = Simplex::new(self.ambient_space(), vec![pt.clone()]).unwrap();
 
-            if interior.contains(&pt_spx) {
+            if !interior.contains(&pt_spx) {
+                /* Method
+
+                :pt lies on the boundary:
+
+                          i
+                     +---------+
+                    / \       / \
+                i  /   \  s  /   \ i
+                  /  s  \   /  s  \
+                 /       \ /       \
+                +---------p---------+
+                     b         b
+
+                In this case we first try to remove p from b.
+                This is only possible if b is spanned by a single hyperplane.
+                In that case p belongs to the interior of the local boundary
+
+                +---------p---------+
+                     b         b
+
+                and the method for simplification when p is in the interior can be used in one fewer dimensions
+                Once the boundary is simplified
+
+                +-------------------+
+                          b
+
+                we replace s with the fan out from some point on i union b as in the case where p belongs to the interior
+
+                          i
+                     +---------+
+                    /  \__       \
+                i  /      \__     \ i
+                  /          \__   \
+                 /              \__ \
+                +-------------------+
+                          b
+
+
+                :pt lies in the interior:
+
+                           i
+                     +---------+
+                    / \       / \
+                i  /   \  s  /   \ i
+                  /  s  \   /  s  \
+                 /       \ /       \
+                +---------p---------+
+                 \       / \       /
+                  \  s  /   \  s  /
+                i  \   /  s  \   / i
+                    \ /       \ /
+                     +---------+
+                          i
+
+                In this case we try to remove p and replace s with a fan out from some point q on i.
+                The point q much be chosen such that it is on the interior side of each hyperplace in i
+                Once q is chosen, the simplexes from i to fan out to are those which are not entirely contained in any hyperplane in i directly adjacent to q
+
+                p = pt
+                s = star
+                i = ilink
+                b = blink
+                 */
+
+                
+            } else {
                 //compute the star and link and nbd := star \sqcup link of pt
                 //star is anything with pt on its boundary including pt itself
                 //link is the closure of star minus star. link is homeomorphic to a sphere around pt since pt is an interior point
@@ -323,12 +389,15 @@ where
                 let num_facets = link_ofacets_img.len();
 
                 let link_point_to_link_ofacet: HashMap<usize, Vec<usize>> = {
-                    let mut link_point_to_link_ofacet: HashMap<usize, Vec<usize>> = HashMap::new();
+                    let mut link_point_to_link_ofacet: HashMap<usize, Vec<usize>> = (0
+                        ..num_link_points)
+                        .map(|pt_idx| (pt_idx, vec![]))
+                        .collect();
                     for of_idx in (0..num_facets) {
                         for pt_idx in link_ofacet_img_points[of_idx] {
                             link_point_to_link_ofacet
-                                .entry(*pt_idx)
-                                .or_insert(vec![])
+                                .get_mut(pt_idx)
+                                .unwrap()
                                 .push(of_idx);
                         }
                     }
