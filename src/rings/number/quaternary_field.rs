@@ -9,7 +9,7 @@ use crate::rings::ring_structure::structure::*;
 use crate::rings::structure::*;
 
 //the finite field of 4 elements
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum QuaternaryField {
     Zero,
     One,

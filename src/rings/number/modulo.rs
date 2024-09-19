@@ -37,6 +37,12 @@ pub struct Modulo<const N: usize> {
     x: usize,
 }
 
+impl<const N: usize> Modulo<N> {
+    pub const fn new(x: usize) -> Self {
+        Self { x }
+    }
+}
+
 impl<const N: usize> std::fmt::Debug for Modulo<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Modulo")
@@ -211,20 +217,6 @@ macro_rules! impl_field {
     };
 }
 
-pub struct SmallPrimeFiniteFieldStructure {}
-
-// impl FiniteFieldStructure for SmallPrimeFiniteFieldStructure {
-//     type ElementT;
-
-//     fn all_elements() -> Vec<Self::ElementT> {
-//         todo!()
-//     }
-
-//     fn characteristic_and_power() -> (Natural, Natural) {
-//         todo!()
-//     }
-// }
-
 impl_field!(2);
 impl_field!(3);
 impl_field!(5);
@@ -397,6 +389,8 @@ impl_field!(997);
 
 #[cfg(test)]
 mod tests {
+    use crate::rings::ring_structure::cannonical::Ring;
+
     use super::*;
 
     #[test]

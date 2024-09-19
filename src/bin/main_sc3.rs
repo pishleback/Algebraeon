@@ -85,6 +85,10 @@ fn main() {
 
     let a = a.simplify();
 
+    //This is where I left off.
+    //As you can see, it is not fully simplified
+    //The solution will be to simplify points on flat parts of the boundary as if they are interior points of the boundary in a lower dimension
+
     orthoclase_all::drawing::canvas2d::Diagram2dCanvas::run(|canvas| {
         // canvas.draw(&a, (1.0, 0.0, 0.0));
         // canvas.draw(&b, (0.0, 1.0, 0.0));

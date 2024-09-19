@@ -304,7 +304,6 @@ mod tests {
                 vec![0, 4, 0, 4],
             ],
         );
-
         assert_eq!(n, 120);
     }
 
@@ -326,7 +325,13 @@ mod tests {
                 vec![2, 6, 2, 6],
             ],
         );
-
         assert_eq!(n, 14400);
+    }
+
+    #[test]
+    fn unexpected_trivial() {
+        // <a, b | bab^-1=a^2, aba=bab> is the trivial group
+        let (n, _perms) = enumerate_elements(2, vec![vec![2, 0, 3, 1, 1], vec![0, 2, 0, 3, 1, 3]]);
+        assert_eq!(n, 1);
     }
 }
