@@ -30,3 +30,4 @@ Code for doing maths on finite sets
  - Algebraic closure and Galois theory of finite fields
  - Splitting fields of algebraic number fields
  - Galois groups of algebraic number fields
+ - Boolean operations with geometric sximplicial complexes
