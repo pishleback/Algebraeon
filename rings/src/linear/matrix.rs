@@ -2355,7 +2355,10 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::{number::algebraic::isolated_roots::{ComplexAlgebraic, RealAlgebraic}, ring_structure::cannonical::{EuclideanDivisionDomain, FavoriteAssociateDomain, Ring}};
+    use crate::{
+        number::algebraic::isolated_roots::{complex::ComplexAlgebraic, real::RealAlgebraic},
+        ring_structure::cannonical::{EuclideanDivisionDomain, FavoriteAssociateDomain, Ring},
+    };
 
     use super::*;
 

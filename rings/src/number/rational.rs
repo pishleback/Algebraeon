@@ -13,8 +13,8 @@ use super::super::polynomial::polynomial::*;
 use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
-use super::algebraic::isolated_roots::ComplexAlgebraic;
-use super::algebraic::isolated_roots::RealAlgebraic;
+use super::algebraic::isolated_roots::complex::*;
+use super::algebraic::isolated_roots::real::*;
 
 impl StructuredType for Rational {
     type Structure = CannonicalStructure<Self>;

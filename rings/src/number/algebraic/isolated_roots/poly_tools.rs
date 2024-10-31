@@ -106,9 +106,12 @@ pub fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Ratio
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
-    use crate::{number::algebraic::isolated_roots::{root_prod_poly, root_sum_poly}, ring_structure::cannonical::IntegralDomain};
     use super::Polynomial;
+    use crate::{
+        number::algebraic::isolated_roots::{root_prod_poly, root_sum_poly},
+        ring_structure::cannonical::IntegralDomain,
+    };
+    use malachite_nz::integer::Integer;
 
     #[test]
     fn test_root_sum_poly() {

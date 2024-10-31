@@ -1,3 +1,5 @@
+#![allow(dead_code, warnings)]
+
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
 use orthoclase_rings::{
@@ -5,8 +7,6 @@ use orthoclase_rings::{
 };
 
 fn main() {
-    println!("{:?}", Rational::abs(&Rational::from(-10)));
-
     let x = &Polynomial::<Integer>::var().into_ring();
     println!("{}", (x.pow(12) - 1).into_set().factor().unwrap());
 }

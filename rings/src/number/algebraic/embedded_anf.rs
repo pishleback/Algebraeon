@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::{isolated_roots::*, number_field::*};
+use super::{isolated_roots::complex::ComplexAlgebraic, number_field::*};
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
@@ -57,13 +57,12 @@ impl EmbeddedAnf {
 
 #[cfg(test)]
 mod tests {
-
     use malachite_nz::integer::Integer;
 
     use crate::{polynomial::polynomial::*, structure::*};
 
     #[test]
-    fn test_embedded_anf_run() {
+    fn test_embedded_anf_integral_basis() {
         let x = &Polynomial::<Integer>::var().into_ring();
         let f = (x.pow(2) + 7).into_set();
         for root in f.all_complex_roots() {

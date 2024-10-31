@@ -1,8 +1,5 @@
 #![allow(dead_code, warnings, unused)]
 
-#[macro_use]
-extern crate glium;
-
 use std::marker::PhantomData;
 use std::str::FromStr;
 use std::task::Poll;
@@ -10,8 +7,6 @@ use std::task::Poll;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
-use orthoclase_drawing::canvas::canvas2d::*;
-use orthoclase_drawing::canvas::Canvas;
 use orthoclase_groups::examples::symmetric::*;
 use orthoclase_groups::group::*;
 use orthoclase_rings::linear::matrix::*;

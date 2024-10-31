@@ -1,5 +1,5 @@
+use std::borrow::Borrow;
 use std::rc::Rc;
-use std::{borrow::Borrow};
 
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
@@ -262,7 +262,7 @@ where
         Self::structure().ring_cmp(a, b)
     }
 
-    fn abs(a : &Self) -> Self {
+    fn abs(a: &Self) -> Self {
         Self::structure().abs(a)
     }
 }
@@ -288,11 +288,11 @@ where
     Self::Structure: RealToFloatStructure<Set = Self>,
 {
     fn as_f64(&self) -> f64 {
-        Self::structure().as_f64(self)
+        RealToFloatStructure::as_f64(Self::structure().as_ref(), self)
     }
 
     fn as_f32(&self) -> f32 {
-        Self::structure().as_f32(self)
+        RealToFloatStructure::as_f32(Self::structure().as_ref(), self)
     }
 }
 

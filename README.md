@@ -4,45 +4,57 @@ Rust implementation of some computational algebra algorithms.
 This project began as a faster and more maintainable replacement for an older attempt of mine written in Python: https://github.com/pishleback/Python-Computational-Algebra
 
 ## Sets
+ - k-element subsets of an n-element set
+ - Partitions of natural numbers
 
 ## Groups
+ - Permutations
+ - Groups represented by multiplication tables
+   - Conjugacy classes
+   - Quotients
+   - Tests for isomorphism
+ - Todd-Coxeter algorithm coset enumeration
 
 ## Rings
+### Rings
+ - Euclids algorithm for gcd
+ - Extended Euclids algorithm for obtaining Bezout coefficients
 
-## Combinatorics
-
-## Geometry
-
-# Old readme:
-I need to move this into the sections above...
-
-## Features:
- - Permutations
- - Partitions
- - Finding isomorphisms between finite groups
- - Matricies
- - Euclids algorithm for gcd and extended version for obtaining Bezout coefficients
- - Hermite normal form over a PID
- - Smith normal form over a PID
- - Solution to a linear system of equations over a PID
- - Solution to an affine system of equations over a PID
- - Kronecker's method for factoring polynomials over the integers (very slow)
- - Berlekamp's algorithm for factoring polynomials over finite fields
- - Real root isolation
- - Real root arithmetic
- - Complex root isolation
- - Zassenhaus algorithm for factoring polynomials over the integers
- - Complex root arithmetic
+### Linear Algebra
+ - Hermite normal form of a matrix over a PID
+ - Smith normal form of a matrix over a PID
+ - General solution to a linear or affine system of equations over a PID
  - Gram–Schmidt algorithm
  - Jordan normal form of a matrix
- - Write symmetric polynomials in terms of elementary symmetric polynomial
+
+### Polynomials
+ - Kronecker's method for factoring polynomials over the integers (very slow)
+ - Zassenhaus algorithm for factoring polynomials over the integers
+ - Berlekamp's algorithm for factoring polynomials over finite fields
  - Factor polynomials over algebraic number fields
+ - Express symmetric polynomials in terms of elementary symmetric polynomial
+
+### Algebraic Numbers
+ - Real root isolation and arithmetic
+ - Complex root isolation and arithmetic
+
+## Combinatorics
+ - Binary Golay Codes
+   - Find isomorphisms
+ - Ternary Golay Codes
+
+## Geometry
+ - Geometric simplicial complexes
+   - Intersection
+   - Union
+   - Difference
+   - Simplification
 
 ## Planned Features
+ - Fast integer factorization
  - LLL basis reduction algorithm
  - Universal cyclotomic field
  - Ideals in algebraic number fields
  - Algebraic closure and Galois theory of finite fields
  - Splitting fields of algebraic number fields
  - Galois groups of algebraic number fields
- - Boolean operations with geometric sximplicial complexes

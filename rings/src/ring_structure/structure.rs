@@ -160,7 +160,6 @@ pub trait IntegralDomainStructure: RingStructure {
     }
 }
 
-
 pub trait OrderedRingStructure: IntegralDomainStructure {
     // <= satisfying translation invariance and multiplication by positive scalar
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering;
@@ -172,7 +171,6 @@ pub trait OrderedRingStructure: IntegralDomainStructure {
         }
     }
 }
-
 
 pub trait FiniteUnitsStructure: RingStructure {
     fn all_units(&self) -> Vec<Self::Set>;
@@ -476,7 +474,8 @@ where
 {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         let base_ring = self.base_ring_structure();
-        base_ring.as_f64(&self.numerator(x)) / base_ring.as_f64(&self.denominator(x))
+        RealToFloatStructure::as_f64(base_ring.as_ref(), &self.numerator(x))
+            / RealToFloatStructure::as_f64(base_ring.as_ref(), &self.denominator(x))
     }
 }
 
@@ -511,7 +510,7 @@ pub trait RealRoundingStructure: RealSubsetStructure {
 pub trait RealToFloatStructure: RealSubsetStructure {
     fn as_f64(&self, x: &Self::Set) -> f64;
     fn as_f32(&self, x: &Self::Set) -> f32 {
-        self.as_f64(x) as f32
+        RealToFloatStructure::as_f64(self, x) as f32
     }
 }
 
