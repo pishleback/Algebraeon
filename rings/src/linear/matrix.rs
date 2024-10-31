@@ -499,7 +499,7 @@ impl<RS: RingStructure> MatrixStructure<RS> {
                     self.ring.mul_mut(&mut prod, a.at(k, perm.call(k)).unwrap());
                 }
                 match perm.sign() {
-                    orthoclase_groups::examples::c2::C2::Ident => {}
+                    orthoclase_groups::examples::c2::C2::Identity => {}
                     orthoclase_groups::examples::c2::C2::Flip => {
                         prod = self.ring.neg(&prod);
                     }

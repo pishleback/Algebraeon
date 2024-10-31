@@ -1,8 +1,12 @@
-use crate::number::algebraic::isolated_roots::unique_linear_root;
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
 use super::*;
+
+fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
+    debug_assert_eq!(poly.degree().unwrap(), 1);
+    -Rational::from_integers(poly.coeff(0), poly.coeff(1))
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Interleave {

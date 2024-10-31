@@ -1,10 +1,16 @@
 use crate::{
-    number::algebraic::isolated_roots::*, polynomial::polynomial::Polynomial,
-    structure::CannonicalStructure,
+    number::algebraic::{isolated_roots::*, number_field::new_anf},
+    polynomial::polynomial::Polynomial,
+    ring_structure::{cannonical::*, structure::*},
+    structure::*,
 };
+use bisection_gen::RationalSimpleBetweenGenerator;
+use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
-use std::fmt::Display;
+use malachite_q::{arithmetic::traits::SimplestRationalInInterval, Rational};
+use poly_tools::*;
+use real::RealAlgebraic;
+use std::{collections::HashSet, fmt::Display, rc::Rc, str::FromStr};
 
 use boxes::*;
 
@@ -81,7 +87,7 @@ fn identify_complex_root(
 
     let irr_poly = {
         let (_unit, factors) = poly.factor().unwrap().unit_and_factors();
-        let irr_polys = factors.into_iter().map(|(f, _k)| f).collect_vec();
+        let irr_polys = factors.into_iter().map(|(f, _k)| f).collect::<Vec<_>>();
         let mut possible_irr_poly_idxs: HashSet<_> = (0..irr_polys.len()).collect();
         loop {
             debug_assert!(!possible_irr_poly_idxs.is_empty());
@@ -325,7 +331,7 @@ impl ComplexAlgebraicRoot {
                     &RealAlgebraic::Rational(self.tight_a.clone()) < x
                         && x < &RealAlgebraic::Rational(self.tight_b.clone())
                 })
-                .collect_vec()
+                .collect::<Vec<_>>()
         } else {
             vec![]
         };
@@ -953,6 +959,156 @@ impl ComplexAlgebraic {
         match self {
             ComplexAlgebraic::Real(real_algebraic) => real_algebraic.min_poly(),
             ComplexAlgebraic::Complex(complex_root) => complex_root.min_poly(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_apply_poly() {
+        let x = &Polynomial::<Rational>::var().into_ring();
+
+        let f = (2 * x.pow(2) - 4 * x - 3).into_set();
+        let g = (3 * x.pow(3) + 7 * x - 1).into_set();
+        //h(x) = f(g(x))
+        let h = Polynomial::compose(&f, &g);
+
+        println!("f = {}", f);
+        println!("g = {}", g);
+        println!("h = {}", h);
+
+        for x in h.primitive_part_fof().all_complex_roots() {
+            println!("");
+            println!("x = {} deg = {}", x, x.min_poly().degree().unwrap());
+            let gx = x.clone().apply_poly(&g);
+            println!("gx = {}", gx);
+            let fgx = gx.clone().apply_poly(&f);
+            println!("fgx = {}", fgx);
+            debug_assert_eq!(fgx, ComplexAlgebraic::zero());
+        }
+
+        let i = &ComplexAlgebraic::i().into_ring();
+        let a = (2 + 3 * i).into_set();
+        let f = (x.pow(10)).into_set();
+        assert_eq!(a.clone().apply_poly(&f), (-341525 - 145668 * i).into_set());
+    }
+
+    #[test]
+    fn test_all_complex_roots() {
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(-1),
+            Integer::from(-1),
+            Integer::from(0),
+            Integer::from(0),
+            Integer::from(0),
+            Integer::from(1),
+        ]);
+        let roots = Polynomial::all_complex_roots(&f);
+        assert_eq!(roots.len(), Polynomial::degree(&f).unwrap());
+        for root in &roots {
+            root.check_invariants().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_complex_equal() {
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let f = (x.pow(5) - x + 1).into_set();
+        assert!(f.is_irreducible());
+        let mut count = 0;
+        for a in f.all_complex_roots() {
+            for b in f.all_complex_roots() {
+                if a == b {
+                    count += 1;
+                }
+            }
+        }
+        assert_eq!(count, f.degree().unwrap());
+    }
+
+    #[test]
+    fn test_complex_root_sum() {
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(1),
+            Integer::from(0),
+            Integer::from(0),
+            Integer::from(1),
+        ]);
+        let roots = f.all_complex_roots();
+        let s = ComplexAlgebraic::sum(roots.iter().collect());
+        println!("{:?}", s);
+        assert_eq!(s, ComplexAlgebraic::zero());
+
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(7),
+            Integer::from(-3),
+            Integer::from(42),
+            Integer::from(9),
+        ]);
+        println!("f = {}", f);
+        let roots = f.all_complex_roots();
+        for root in &roots {
+            println!("root = {}", root);
+        }
+        let s = ComplexAlgebraic::sum(roots.iter().collect());
+        println!("root sum = {:?}", s);
+        assert_eq!(
+            s,
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from_integers(
+                Integer::from(-14),
+                Integer::from(3)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_complex_mul() {
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(1),
+            Integer::from(0),
+            Integer::from(0),
+            Integer::from(1),
+        ]);
+        let roots = f.all_complex_roots();
+        let s = ComplexAlgebraic::product(roots.iter().collect());
+        println!("{:?}", s);
+        assert_eq!(s, ComplexAlgebraic::one().neg());
+
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(7),
+            Integer::from(-3),
+            Integer::from(42),
+            Integer::from(9),
+        ]);
+        println!("f = {}", f);
+        let roots = f.all_complex_roots();
+        for root in &roots {
+            println!("root = {}", root);
+        }
+        let s = ComplexAlgebraic::product(roots.iter().collect());
+        println!("root prod = {:?}", s);
+        assert_eq!(
+            s,
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from_integers(
+                Integer::from(-7),
+                Integer::from(9)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_complex_inv() {
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let f = (x.pow(4) - x + 1).into_set();
+
+        for root in f.all_complex_roots() {
+            assert_eq!(
+                ComplexAlgebraic::mul(&root.inv().unwrap(), &root),
+                ComplexAlgebraic::one()
+            );
         }
     }
 }

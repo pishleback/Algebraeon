@@ -192,14 +192,11 @@ pub enum OrientationSide {
     Negative,
 }
 
-/*
-a simplex spanning a hyperplane with a positive side and a negative side
-in 3d space it is a triangle
-in 2d space it is a line
-in 1d space it is a point
-in 0d space it is a null simplex. The orientation looses meaning but it is nice to still count this case.
-*/
-
+/// a simplex spanning a hyperplane with a positive side and a negative side
+/// in 3d space it is a triangle
+/// in 2d space it is a line
+/// in 1d space it is a point
+/// in 0d space it is a null simplex. The orientation looses meaning but it is nice to still count this case.
 #[derive(Clone)]
 struct OrientedSimplexOrientation<
     FS: OrderedRingStructure + FieldStructure,

@@ -172,7 +172,7 @@ impl Permutation {
     ) {
         Self::generated_finite_subgroup_table(
             Self::all_permutations(n)
-                .filter(|p| p.sign() == C2::Ident)
+                .filter(|p| p.sign() == C2::Identity)
                 .collect(),
         )
     }
@@ -284,7 +284,7 @@ mod tests {
         println!("c = {}", c);
 
         assert_eq!(a.sign(), C2::Flip);
-        assert_eq!(b.sign(), C2::Ident);
+        assert_eq!(b.sign(), C2::Identity);
         assert_eq!(c.sign(), C2::Flip);
     }
 

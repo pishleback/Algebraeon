@@ -10,7 +10,7 @@ pub struct EmbeddedAffineSubspace<
     SP: Borrow<AffineSpace<FS>> + Clone,
     ESP: Borrow<AffineSpace<FS>> + Clone,
 > {
-    //The ordered_field of ambient_space and subspace must match
+    // The ordered_field of ambient_space and subspace must match
     ambient_space: SP,
     embedded_space: ESP,
     /*
@@ -225,29 +225,6 @@ impl<
             None => None,
         }
     }
-
-    // pub fn embed_vector(&self, v: &Vector<FS, ESP>) -> Vector<FS, SP> {
-    //     match &self.embedding {
-    //         AffineSubspaceEmbedding::Empty { .. } => panic!(),
-    //         AffineSubspaceEmbedding::NonEmpty {
-    //             subspace,
-    //             root,
-    //             basis,
-    //         } => {
-    //             assert_eq!(v.ambient_space().borrow(), subspace.borrow());
-    //             let mut total = Vector::zero(self.ambient_space.clone());
-    //             for (i, b) in basis.iter().enumerate() {
-    //                 total += &b.scalar_mul(v.coordinate(i));
-    //             }
-    //             total
-    //         }
-    //     }
-    // }
-
-    // pub fn unembed_vector(&self, v: &Vector<FS, SP>) -> Option<Vector<FS, ESP>> {
-    //     assert_eq!(v.ambient_space().borrow(), self.ambient_space.borrow());
-    //     todo!()
-    // }
 
     pub fn as_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<FS, SP>>> {
         let ambient_space = self.ambient_space();

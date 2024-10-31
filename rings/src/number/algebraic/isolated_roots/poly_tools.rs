@@ -95,23 +95,13 @@ pub fn root_pos_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polyn
     rat_mul_poly
 }
 
-pub fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
-    debug_assert_eq!(poly.degree().unwrap(), 1);
-    -Rational::from_integers(poly.coeff(0), poly.coeff(1))
-}
-
 pub fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Rational {
     poly.apply_map(|x| Rational::from(x)).evaluate(&val)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Polynomial;
-    use crate::{
-        number::algebraic::isolated_roots::{root_prod_poly, root_sum_poly},
-        ring_structure::cannonical::IntegralDomain,
-    };
-    use malachite_nz::integer::Integer;
+    use super::*;
 
     #[test]
     fn test_root_sum_poly() {

@@ -1,18 +1,15 @@
-
-use itertools::Itertools;
-use malachite_base::num::basic::traits::{One, Zero};
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::{exhaustive::exhaustive_rationals, Rational};
-
+use super::embedded_anf::anf_multi_primitive_element_theorem;
 use crate::{
     linear::matrix::Matrix,
-    number::{
-        algebraic::isolated_roots::anf_multi_primitive_element_theorem, natural::nat_to_usize,
-    },
+    number::natural::nat_to_usize,
     polynomial::{multipoly::*, polynomial::*, symmetric::*},
     ring_structure::{cannonical::*, factorization::Factored, quotient::*, structure::*},
     structure::*,
 };
+use itertools::Itertools;
+use malachite_base::num::basic::traits::{One, Zero};
+use malachite_nz::{integer::Integer, natural::Natural};
+use malachite_q::{exhaustive::exhaustive_rationals, Rational};
 
 pub type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructure<Rational>>, true>;
 
@@ -777,7 +774,6 @@ impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
 
 #[cfg(test)]
 mod tests {
-    
 
     use super::*;
 

@@ -2,13 +2,13 @@ use crate::group::Group;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum C2 {
-    Ident,
+    Identity,
     Flip,
 }
 
 impl Group for C2 {
     fn identity() -> Self {
-        Self::Ident
+        Self::Identity
     }
 
     fn inverse(self) -> Self {
@@ -17,12 +17,12 @@ impl Group for C2 {
 
     fn compose_mut(&mut self, other: &Self) {
         match other {
-            C2::Ident => {}
+            C2::Identity => {}
             C2::Flip => match self {
-                C2::Ident => {
+                C2::Identity => {
                     *self = Self::Flip;
                 }
-                C2::Flip => *self = Self::Ident,
+                C2::Flip => *self = Self::Identity,
             },
         }
     }
@@ -34,12 +34,12 @@ mod tests {
 
     #[test]
     fn test_c2() {
-        debug_assert_eq!(C2::identity(), C2::Ident);
-        debug_assert_eq!(C2::Ident.inverse(), C2::Ident);
+        debug_assert_eq!(C2::identity(), C2::Identity);
+        debug_assert_eq!(C2::Identity.inverse(), C2::Identity);
         debug_assert_eq!(C2::Flip.inverse(), C2::Flip);
-        debug_assert_eq!(C2::compose(C2::Ident, C2::Ident), C2::Ident);
-        debug_assert_eq!(C2::compose(C2::Flip, C2::Ident), C2::Flip);
-        debug_assert_eq!(C2::compose(C2::Ident, C2::Flip), C2::Flip);
-        debug_assert_eq!(C2::compose(C2::Flip, C2::Flip), C2::Ident);
+        debug_assert_eq!(C2::compose(C2::Identity, C2::Identity), C2::Identity);
+        debug_assert_eq!(C2::compose(C2::Flip, C2::Identity), C2::Flip);
+        debug_assert_eq!(C2::compose(C2::Identity, C2::Flip), C2::Flip);
+        debug_assert_eq!(C2::compose(C2::Flip, C2::Flip), C2::Identity);
     }
 }

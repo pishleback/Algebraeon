@@ -1,5 +1,5 @@
-use complex::bisect_box;
-use malachite_nz::integer::Integer;
+use complex::*;
+use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
 use crate::{number::algebraic::isolated_roots::*, polynomial::polynomial::Polynomial};

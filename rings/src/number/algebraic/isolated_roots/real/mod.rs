@@ -1,15 +1,18 @@
-use super::*;
 use crate::{
-    number::algebraic::bisection_gen::RationalSimpleBetweenGenerator,
-    polynomial::polynomial::Polynomial, ring_structure::cannonical::Ring,
+    number::algebraic::number_field::new_anf, polynomial::polynomial::Polynomial,
+    ring_structure::*, structure::*,
 };
 use bounds::*;
+use cannonical::*;
 use interval::*;
 use malachite_base::num::basic::traits::{One, Two, Zero};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 use polynomial::*;
-use std::fmt::Display;
+use std::{fmt::Display, rc::Rc};
+use structure::*;
+
+use super::{bisection_gen::RationalSimpleBetweenGenerator, poly_tools::*, rat_to_string};
 
 mod bounds;
 mod interval;
@@ -310,7 +313,7 @@ impl RealAlgebraicRoot {
         match poly.as_constant() {
             Some(rat) => RealAlgebraic::Rational(rat),
             None => {
-                let ans_poly = super::new_anf(self.min_poly())
+                let ans_poly = new_anf(self.min_poly())
                     .min_poly(&poly)
                     .primitive_part_fof();
 
@@ -705,6 +708,149 @@ impl RealRoundingStructure for CannonicalStructure<RealAlgebraic> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_real_neg() {
+        {
+            let f = Polynomial::from_coeffs(vec![
+                Integer::from(-2),
+                Integer::from(0),
+                Integer::from(1),
+            ]);
+            let roots = Polynomial::all_real_roots(&f);
+
+            assert_eq!(roots.len(), 2);
+            let a = &roots[0];
+            let b = &roots[1];
+
+            let a_neg = RealAlgebraic::neg(a);
+            let b_neg = RealAlgebraic::neg(b);
+
+            a_neg.check_invariants().unwrap();
+            b_neg.check_invariants().unwrap();
+
+            println!("a = {}", a.to_string());
+            println!("b = {}", b.to_string());
+            println!("a_neg = {}", a_neg.to_string());
+            println!("b_neg = {}", b_neg.to_string());
+
+            assert_ne!(a, b);
+            assert_eq!(a, &b_neg);
+            assert_eq!(b, &a_neg);
+        }
+        {
+            let f = Polynomial::from_coeffs(vec![
+                Integer::from(-1),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(0),
+                Integer::from(3),
+                Integer::from(1),
+            ]);
+            let roots = Polynomial::all_real_roots(&f);
+
+            assert_eq!(roots.len(), 3);
+            for root in roots {
+                RealAlgebraic::neg(&root).check_invariants().unwrap();
+            }
+        }
+        {
+            //example where f(g(x)) is not primitive even though f and g are
+            let f = Polynomial::from_coeffs(vec![
+                Integer::from(-4),
+                Integer::from(-1),
+                Integer::from(1),
+            ]);
+            let roots = Polynomial::all_real_roots(&f);
+            for root in roots {
+                let root2 = RealAlgebraic::add(
+                    &root,
+                    &RealAlgebraic::from_rat(&Rational::from_signeds(1, 2)).unwrap(),
+                );
+                root2.check_invariants().unwrap();
+            }
+        }
+    }
+
+    #[test]
+    fn test_real_add() {
+        let f =
+            Polynomial::from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(3)]);
+        let roots = Polynomial::all_real_roots(&f);
+        let a = RealAlgebraic::sum(roots.iter().collect());
+        assert_eq!(a, RealAlgebraic::zero());
+
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(-7),
+            Integer::from(0),
+            Integer::from(100),
+        ]);
+        let roots = Polynomial::all_real_roots(&f);
+        let a = RealAlgebraic::sum(roots.iter().collect());
+        assert_eq!(a, RealAlgebraic::zero());
+
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(-100),
+            Integer::from(0),
+            Integer::from(7),
+        ]);
+        let roots = Polynomial::all_real_roots(&f);
+        let a = RealAlgebraic::sum(roots.iter().collect());
+        assert_eq!(a, RealAlgebraic::zero());
+    }
+
+    #[test]
+    fn test_real_mul() {
+        let f = Polynomial::from_coeffs(vec![
+            Integer::from(-100),
+            Integer::from(0),
+            Integer::from(7),
+        ]);
+        // (x-a)(x-b) = x^2 - 100/7
+        // so ab=-100/7
+        let roots = Polynomial::all_real_roots(&f);
+        let a = RealAlgebraic::product(roots.iter().collect());
+        assert_eq!(
+            a,
+            RealAlgebraic::from_rat(&Rational::from_signeds(-100, 7)).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_real_nth_root() {
+        let x = &Polynomial::<Integer>::var().into_ring();
+        let f = ((4 * x.pow(5) - 12 * x.pow(3) + 8 * x + 1)
+            * (x + 1)
+            * (x)
+            * (x - 1)
+            * (x - 2)
+            * (x - 3)
+            * (x - 4)
+            * (x - 5)
+            * (x - 144)
+            * (x.pow(2) - 3))
+            .into_set();
+        let n = 2;
+
+        for root in f.all_real_roots() {
+            println!();
+            println!("root = {}", root);
+            match root.nth_root(n) {
+                Ok(nth_root) => {
+                    println!("YES {}-root = {}", n, nth_root);
+                    debug_assert!(RealAlgebraic::zero() <= root);
+                    debug_assert!(RealAlgebraic::zero() <= nth_root);
+                    debug_assert_eq!(nth_root.nat_pow(&Natural::from(n)), root);
+                }
+                Err(()) => {
+                    println!("NO {}-root", n);
+                    debug_assert!(RealAlgebraic::zero() > root);
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_real_algebraic_ordering() {

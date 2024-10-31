@@ -5,18 +5,22 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 #[derive(Debug, Eq, PartialEq, Hash, PartialOrd, Ord, Clone)]
-pub enum IsoRep {
+pub enum IsomorphismClass {
     Trivial,
     Cyclic(usize),
     Dihedral(usize),
     Quaternion,
     Alternating(usize),
     Symmetric(usize),
-    DirectProduct(Box<BTreeMap<IsoRep, usize>>), //count how many of each isomorphic factor
+    DirectProduct(Box<BTreeMap<IsomorphismClass, usize>>), //count how many of each isomorphic factor
     Unknown(usize),
 }
 
-impl IsoRep {
+pub fn isomorphism_class(group: &Group) -> IsomorphismClass {
+    IsomorphismClass::from_group(group)
+}
+
+impl IsomorphismClass {
     fn check_state(&self) -> Result<(), &'static str> {
         match self {
             Self::Trivial => {}
@@ -77,7 +81,8 @@ impl IsoRep {
                 let isom_result = find_isomorphism(&prod_group, &group);
                 match isom_result {
                     Some(_f) => {
-                        return IsoRep::from_group(&nsg_group) * IsoRep::from_group(&quo_group);
+                        return IsomorphismClass::from_group(&nsg_group)
+                            * IsomorphismClass::from_group(&quo_group);
                     }
                     None => {}
                 }
@@ -136,7 +141,7 @@ impl IsoRep {
             }
         }
 
-        IsoRep::Unknown(n)
+        IsomorphismClass::Unknown(n)
     }
 
     pub fn to_group(&self) -> Result<Group, ()> {
@@ -198,27 +203,27 @@ impl IsoRep {
     }
 }
 
-impl std::ops::Mul<IsoRep> for IsoRep {
-    type Output = IsoRep;
+impl std::ops::Mul<IsomorphismClass> for IsomorphismClass {
+    type Output = IsomorphismClass;
 
-    fn mul(self, other: IsoRep) -> Self::Output {
+    fn mul(self, other: IsomorphismClass) -> Self::Output {
         match self {
-            IsoRep::Trivial => {
+            IsomorphismClass::Trivial => {
                 return self;
             }
             _ => {}
         }
         match other {
-            IsoRep::Trivial => {
+            IsomorphismClass::Trivial => {
                 return other;
             }
             _ => {}
         }
 
-        let mut factors: BTreeMap<IsoRep, usize> = BTreeMap::new();
+        let mut factors: BTreeMap<IsomorphismClass, usize> = BTreeMap::new();
 
         match self {
-            IsoRep::DirectProduct(fs) => {
+            IsomorphismClass::DirectProduct(fs) => {
                 for (f, p) in fs.iter() {
                     *factors.entry(f.clone()).or_insert(0) += p;
                 }
@@ -229,7 +234,7 @@ impl std::ops::Mul<IsoRep> for IsoRep {
         }
 
         match other {
-            IsoRep::DirectProduct(fs) => {
+            IsomorphismClass::DirectProduct(fs) => {
                 for (f, p) in fs.iter() {
                     *factors.entry(f.clone()).or_insert(0) += p;
                 }
@@ -239,9 +244,25 @@ impl std::ops::Mul<IsoRep> for IsoRep {
             }
         }
 
-        IsoRep::DirectProduct(Box::new(factors))
+        IsomorphismClass::DirectProduct(Box::new(factors))
     }
 }
 
 #[cfg(test)]
-mod isom_class_tests {}
+mod isom_class_tests {
+    use super::*;
+
+    #[test]
+    fn test() {
+        let g = examples::klein_four_structure();
+        let i = IsomorphismClass::from_group(&g);
+        println!("{:?}", i.to_string());
+        assert_eq!(
+            i,
+            IsomorphismClass::DirectProduct(Box::new(BTreeMap::from([(
+                IsomorphismClass::Cyclic(2),
+                2
+            )])))
+        )
+    }
+}
