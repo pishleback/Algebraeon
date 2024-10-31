@@ -1,2 +1,9 @@
-/target
+/old
+/old_rm
+/sets/target
+/groups/target
+/rings/target
+/combinatorics/target
+/geometry/target
+/drawing/target
 .vscode/launch.json

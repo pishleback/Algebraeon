@@ -1,0 +1,14 @@
+[package]
+name = "orthoclase-groups"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "orthoclase_groups"
+
+[dependencies]
+itertools="0.11.0"
+rayon="1.7.0"
+malachite-base = "0.3.2"
+malachite-nz = "0.3.2"
+malachite-q = "0.3.2"

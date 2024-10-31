@@ -1,5 +1,20 @@
 # Rust-Computational-Algebra
-Code for doing maths on finite sets
+Rust implementation of some computational algebra algorithms. 
+
+This project began as a faster and more maintainable replacement for an older attempt of mine written in Python: https://github.com/pishleback/Python-Computational-Algebra
+
+## Sets
+
+## Groups
+
+## Rings
+
+## Combinatorics
+
+## Geometry
+
+# Old readme:
+I need to move this into the sections above...
 
 ## Features:
  - Permutations

@@ -1,0 +1,19 @@
+[package]
+name = "orthoclase-drawing"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "orthoclase_drawing"
+
+[dependencies]
+glium = "0.32"
+rand = "0.8.5"
+malachite-base = "0.3.2"
+malachite-nz = "0.3.2"
+malachite-q = "0.3.2"
+orthoclase-sets = { version = "0.1.0", path = "../sets" }
+orthoclase-groups = { version = "0.1.0", path = "../groups" }
+orthoclase-rings = { version = "0.1.0", path = "../rings" }
+orthoclase-geometry = { version = "0.1.0", path = "../geometry" }
+orthoclase-combinatorics = { version = "0.1.0", path = "../combinatorics" }
