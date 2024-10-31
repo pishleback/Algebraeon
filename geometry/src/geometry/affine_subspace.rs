@@ -1,4 +1,3 @@
-use malachite_nz::integer::logic::or;
 use simplexes::{OrientedHyperplane, OrientedSimplex};
 
 use orthoclase_rings::linear::matrix::{Matrix, MatrixStructure};
@@ -338,8 +337,8 @@ pub fn compose_affine_embeddings<
     SPB: Borrow<AffineSpace<FS>> + Clone,
     SPC: Borrow<AffineSpace<FS>> + Clone,
 >(
-    a_to_b: EmbeddedAffineSubspace<FS, SPB, SPA>,
-    b_to_c: EmbeddedAffineSubspace<FS, SPC, SPB>,
+    _a_to_b: EmbeddedAffineSubspace<FS, SPB, SPA>,
+    _b_to_c: EmbeddedAffineSubspace<FS, SPC, SPB>,
 ) -> EmbeddedAffineSubspace<FS, SPC, SPA> {
     todo!() // call b_to_c.embed on the defining points of a_to_b
 }

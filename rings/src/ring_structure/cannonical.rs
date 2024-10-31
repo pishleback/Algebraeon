@@ -1,14 +1,11 @@
-use std::fmt::Display;
 use std::rc::Rc;
-use std::{borrow::Borrow, fmt::Debug, marker::PhantomData};
+use std::{borrow::Borrow};
 
-use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 
 use super::super::structure::*;
-use super::elements::*;
 use super::factorization::*;
 use super::structure::*;
 
@@ -215,14 +212,14 @@ where
         Self::structure().rem(a, b)
     }
 
-    fn euclidean_gcd(mut x: Self, mut y: Self) -> Self
+    fn euclidean_gcd(x: Self, y: Self) -> Self
     where
         Self::Structure: FavoriteAssociateStructure,
     {
         Self::structure().euclidean_gcd(x, y)
     }
 
-    fn euclidean_xgcd(mut x: Self, mut y: Self) -> (Self, Self, Self)
+    fn euclidean_xgcd(x: Self, y: Self) -> (Self, Self, Self)
     where
         Self::Structure: GreatestCommonDivisorStructure,
     {

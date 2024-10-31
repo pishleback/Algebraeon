@@ -5,7 +5,6 @@ use malachite_q::Rational;
 use crate::polynomial::multipoly::*;
 use crate::polynomial::polynomial::*;
 use crate::ring_structure::cannonical::*;
-use crate::structure::*;
 
 pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));
@@ -105,8 +104,11 @@ pub fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Ratio
     poly.apply_map(|x| Rational::from(x)).evaluate(&val)
 }
 
+#[cfg(test)]
 mod tests {
-    use super::*;
+    use malachite_nz::integer::Integer;
+    use crate::{number::algebraic::isolated_roots::{root_prod_poly, root_sum_poly}, ring_structure::cannonical::IntegralDomain};
+    use super::Polynomial;
 
     #[test]
     fn test_root_sum_poly() {

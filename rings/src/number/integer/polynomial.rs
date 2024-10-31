@@ -1,8 +1,8 @@
 use malachite_nz::integer::Integer;
 
 use crate::{
-    number::integer::*, polynomial::polynomial::*, ring_structure::cannonical::*,
-    ring_structure::quotient::*, *,
+    number::integer::*, polynomial::polynomial::*,
+    ring_structure::quotient::*,
 };
 
 impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {
@@ -85,7 +85,7 @@ impl Polynomial<Integer> {
                             // println!("lifted_factors.len() = {:?}", lifted_factors.len());
 
                             for subset in (0..lifted_factors.len())
-                                .map(|i| vec![false, true])
+                                .map(|_i| vec![false, true])
                                 .multi_cartesian_product()
                             {
                                 let possible_factor = Polynomial::mul(

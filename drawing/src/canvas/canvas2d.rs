@@ -2,10 +2,6 @@ use glium::{
     backend::Facade, glutin::event::Event, implement_vertex, uniform, Display, Program, Surface,
     VertexBuffer,
 };
-use malachite_q::Rational;
-
-use orthoclase_geometry::geometry_old::{shape::Shape, simplex::Simplex};
-use orthoclase_rings::ring_structure::cannonical::*;
 
 #[derive(Debug)]
 struct Camera {
@@ -103,7 +99,7 @@ impl Canvas2D {
 }
 
 impl super::Canvas for Canvas2D {
-    fn new(facade: &impl Facade) -> Self {
+    fn new(_facade: &impl Facade) -> Self {
         Self {
             camera: Camera {
                 center: (0.0, 0.0),
@@ -516,77 +512,77 @@ impl Diagram2dCanvas {
         self.triangles_vertex_buffer = None;
     }
 
-    #[deprecated]
-    pub fn draw_simplex(&mut self, simplex: &Simplex, colour: (f32, f32, f32)) {
-        assert_eq!(simplex.dim(), 2);
+    // #[deprecated]
+    // pub fn draw_simplex(&mut self, simplex: &Simplex, colour: (f32, f32, f32)) {
+    //     assert_eq!(simplex.dim(), 2);
 
-        let points = simplex.points();
+    //     let points = simplex.points();
 
-        match simplex.n() {
-            1 => {
-                self.point_verts.push(Vertex {
-                    position: [
-                        Rational::as_f32(&points[0].get_coord(0)),
-                        Rational::as_f32(&points[0].get_coord(1)),
-                    ],
-                    colour: [colour.0, colour.1, colour.2],
-                });
-                self.points_vertex_buffer = None;
-            }
-            2 => {
-                self.line_verts.push(Vertex {
-                    position: [
-                        Rational::as_f32(&points[0].get_coord(0)),
-                        Rational::as_f32(&points[0].get_coord(1)),
-                    ],
-                    colour: [colour.0, colour.1, colour.2],
-                });
-                self.line_verts.push(Vertex {
-                    position: [
-                        Rational::as_f32(&points[1].get_coord(0)),
-                        Rational::as_f32(&points[1].get_coord(1)),
-                    ],
-                    colour: [colour.0, colour.1, colour.2],
-                });
-                self.lines_vertex_buffer = None;
-            }
-            3 => {
-                self.triangle_verts.push(Vertex {
-                    position: [
-                        Rational::as_f32(&points[0].get_coord(0)),
-                        Rational::as_f32(&points[0].get_coord(1)),
-                    ],
-                    colour: [colour.0, colour.1, colour.2],
-                });
+    //     match simplex.n() {
+    //         1 => {
+    //             self.point_verts.push(Vertex {
+    //                 position: [
+    //                     Rational::as_f32(&points[0].get_coord(0)),
+    //                     Rational::as_f32(&points[0].get_coord(1)),
+    //                 ],
+    //                 colour: [colour.0, colour.1, colour.2],
+    //             });
+    //             self.points_vertex_buffer = None;
+    //         }
+    //         2 => {
+    //             self.line_verts.push(Vertex {
+    //                 position: [
+    //                     Rational::as_f32(&points[0].get_coord(0)),
+    //                     Rational::as_f32(&points[0].get_coord(1)),
+    //                 ],
+    //                 colour: [colour.0, colour.1, colour.2],
+    //             });
+    //             self.line_verts.push(Vertex {
+    //                 position: [
+    //                     Rational::as_f32(&points[1].get_coord(0)),
+    //                     Rational::as_f32(&points[1].get_coord(1)),
+    //                 ],
+    //                 colour: [colour.0, colour.1, colour.2],
+    //             });
+    //             self.lines_vertex_buffer = None;
+    //         }
+    //         3 => {
+    //             self.triangle_verts.push(Vertex {
+    //                 position: [
+    //                     Rational::as_f32(&points[0].get_coord(0)),
+    //                     Rational::as_f32(&points[0].get_coord(1)),
+    //                 ],
+    //                 colour: [colour.0, colour.1, colour.2],
+    //             });
 
-                self.triangle_verts.push(Vertex {
-                    position: [
-                        Rational::as_f32(&points[1].get_coord(0)),
-                        Rational::as_f32(&points[1].get_coord(1)),
-                    ],
-                    colour: [colour.0, colour.1, colour.2],
-                });
-                self.triangle_verts.push(Vertex {
-                    position: [
-                        Rational::as_f32(&points[2].get_coord(0)),
-                        Rational::as_f32(&points[2].get_coord(1)),
-                    ],
-                    colour: [colour.0, colour.1, colour.2],
-                });
-                self.triangles_vertex_buffer = None;
-            }
-            _ => panic!(),
-        }
-    }
+    //             self.triangle_verts.push(Vertex {
+    //                 position: [
+    //                     Rational::as_f32(&points[1].get_coord(0)),
+    //                     Rational::as_f32(&points[1].get_coord(1)),
+    //                 ],
+    //                 colour: [colour.0, colour.1, colour.2],
+    //             });
+    //             self.triangle_verts.push(Vertex {
+    //                 position: [
+    //                     Rational::as_f32(&points[2].get_coord(0)),
+    //                     Rational::as_f32(&points[2].get_coord(1)),
+    //                 ],
+    //                 colour: [colour.0, colour.1, colour.2],
+    //             });
+    //             self.triangles_vertex_buffer = None;
+    //         }
+    //         _ => panic!(),
+    //     }
+    // }
 
-    #[deprecated]
-    pub fn draw_shape(&mut self, shape: &Shape, colour: (f32, f32, f32)) {
-        assert_eq!(shape.dim(), 2);
+    // #[deprecated]
+    // pub fn draw_shape(&mut self, shape: &Shape, colour: (f32, f32, f32)) {
+    //     assert_eq!(shape.dim(), 2);
 
-        for simplex in shape.clone().simplices() {
-            self.draw_simplex(&simplex, colour);
-        }
-    }
+    //     for simplex in shape.clone().simplices() {
+    //         self.draw_simplex(&simplex, colour);
+    //     }
+    // }
 
     // pub fn draw_partial_simplicial_complex(
     //     &mut self,
@@ -602,7 +598,7 @@ impl Diagram2dCanvas {
 }
 
 impl super::Canvas for Diagram2dCanvas {
-    fn new(facade: &impl glium::backend::Facade) -> Self {
+    fn new(_facade: &impl glium::backend::Facade) -> Self {
         Self {
             camera: Camera {
                 center: (0.0, 0.0),

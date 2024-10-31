@@ -1,6 +1,6 @@
 use std::{fmt::Display, rc::Rc};
 
-use malachite_base::num::basic::traits::{One, Zero};
+use malachite_base::num::basic::traits::One;
 use malachite_nz::natural::Natural;
 
 use super::super::structure::*;
@@ -18,14 +18,14 @@ where
     RS::Set: Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.unit);
+        write!(f, "{}", self.unit)?;
         for (factor, k) in &self.factors {
-            write!(f, " * (");
-            write!(f, "{}", factor);
-            write!(f, ")");
+            write!(f, " * (")?;
+            write!(f, "{}", factor)?;
+            write!(f, ")")?;
             if k != &Natural::from(1u8) {
-                write!(f, "^");
-                write!(f, "{}", k);
+                write!(f, "^")?;
+                write!(f, "{}", k)?;
             }
         }
         Ok(())
@@ -81,7 +81,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
             factors: self
                 .factors
                 .into_iter()
-                .map(|(f, k)| (f, Natural::ONE))
+                .map(|(f, _k)| (f, Natural::ONE))
                 .collect(),
         }
     }
@@ -112,23 +112,23 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
             false
         } else {
             //every a_factor is a b_factor
-            for (a_factor, a_power) in a.factors() {
+            for (a_factor, _a_power) in a.factors() {
                 debug_assert!(ring.is_fav_assoc(a_factor));
                 if !b
                     .factors()
                     .into_iter()
-                    .any(|(b_factor, b_power)| ring.equal(a_factor, b_factor))
+                    .any(|(b_factor, _b_power)| ring.equal(a_factor, b_factor))
                 {
                     return false;
                 }
             }
             //every b_factor is an a_factor
-            for (b_factor, b_power) in b.factors() {
+            for (b_factor, _b_power) in b.factors() {
                 debug_assert!(ring.is_fav_assoc(b_factor));
                 if !a
                     .factors()
                     .into_iter()
-                    .any(|(a_factor, a_power)| ring.equal(a_factor, b_factor))
+                    .any(|(a_factor, _a_power)| ring.equal(a_factor, b_factor))
                 {
                     return false;
                 }
@@ -204,7 +204,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
     }
 
     pub fn pow(mut self, k: &Natural) -> Self {
-        for (factor, power) in self.factors.iter_mut() {
+        for (_factor, power) in self.factors.iter_mut() {
             *power *= k;
         }
         self
@@ -311,7 +311,6 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationStructure>(
 mod tests {
     use malachite_nz::integer::Integer;
 
-    use super::super::cannonical::*;
     use super::*;
 
     #[test]

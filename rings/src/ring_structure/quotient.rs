@@ -37,7 +37,7 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
         &self.modulus
     }
 
-    pub fn reduce(&self, a : &RS::Set) -> RS::Set {
+    pub fn reduce(&self, a: &RS::Set) -> RS::Set {
         self.ring.rem(a, &self.modulus)
     }
 }
@@ -164,10 +164,7 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> FieldStructu
 #[cfg(test)]
 mod tests {
     use malachite_nz::integer::Integer;
-    use malachite_q::Rational;
 
-    use super::super::super::number::rational::*;
-    use super::super::super::ring_structure::cannonical::*;
     use super::super::super::ring_structure::structure::*;
 
     use super::*;

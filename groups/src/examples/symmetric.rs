@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
 use itertools::Itertools;
-use malachite_base::num::{arithmetic::traits::DivRem, basic::traits::Zero};
-use malachite_nz::integer::Integer;
 
 use crate::group::Group;
 
@@ -176,7 +174,7 @@ impl<const N: usize> std::fmt::Display for Permutation<N> {
         cycles.retain(|cycle| cycle.len() != 1);
 
         if cycles.len() == 0 {
-            f.write_str("()");
+            f.write_str("()")?;
         }
 
         let string = cycles

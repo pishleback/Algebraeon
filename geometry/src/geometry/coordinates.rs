@@ -70,7 +70,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Vec
 
     pub fn zero(ambient_space: SP) -> Self {
         let ordered_field = ambient_space.borrow().ordered_field();
-        Self::construct(ambient_space, |i| ordered_field.zero())
+        Self::construct(ambient_space, |_i| ordered_field.zero())
     }
 
     pub fn ambient_space(&self) -> &SP {

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, f32::NAN};
+use std::collections::HashMap;
 
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::natural::Natural;
@@ -83,7 +83,7 @@ pub fn choose(a: usize, b: usize) -> Natural {
         Natural::ZERO
     } else {
         let mut vals = vec![Natural::ONE];
-        for i in 0..a {
+        for _i in 0..a {
             vals = {
                 let mut next_vals = vec![Natural::ONE];
                 for i in 0..vals.len() - 1 {

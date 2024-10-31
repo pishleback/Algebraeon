@@ -46,7 +46,7 @@ impl Iterator for RationalSimpleBetweenGenerator {
 
     fn next(&mut self) -> Option<Self::Item> {
         Some({
-            let mut key = self.regions.last_entry().unwrap().key().clone();
+            let key = self.regions.last_entry().unwrap().key().clone();
             let (a, b) = self.regions.get_mut(&key).unwrap().pop().unwrap();
             if self.regions.get(&key).unwrap().is_empty() {
                 self.regions.remove(&key);

@@ -1,13 +1,6 @@
-use std::rc::Rc;
-use std::thread::sleep;
-use std::time::Duration;
-
 use itertools::Itertools;
-use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
-use super::super::number::natural::*;
-use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
@@ -22,7 +15,7 @@ where
     //https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
     pub fn factorize_by_sqfree_factorize_over_finite_field(
         &self,
-        mut f: Polynomial<FS::Set>,
+        f: Polynomial<FS::Set>,
         sqfree_factorize: &impl Fn(Polynomial<FS::Set>) -> Factored<PolynomialStructure<FS>>,
     ) -> Factored<PolynomialStructure<FS>>
     where
@@ -114,7 +107,7 @@ where
         let mut f = prim;
         let f_prime = self.derivative(f.clone());
         let mut i: usize = 1;
-        let mut a = self.gcd(&f, &f_prime);
+        let a = self.gcd(&f, &f_prime);
         let mut b = self.div(&f, &a).unwrap();
         let mut c = self.div(&f_prime, &a).unwrap();
         let mut d = self.add(&self.neg(&self.derivative(b.clone())), &c);
@@ -441,7 +434,7 @@ where
         let all_elems = self.coeff_ring().all_elements();
         let q = all_elems.len();
 
-        let mut row_polys = (0..f_deg)
+        let row_polys = (0..f_deg)
             .map(|i| {
                 self.rem(
                     &self.add(&self.var_pow(i * q), &self.neg(&self.var_pow(i))),
@@ -466,7 +459,7 @@ where
             .collect_vec();
 
         for berlekamp_subspace_coeffs in (0..ker_rank)
-            .map(|i| all_elems.clone().into_iter())
+            .map(|_i| all_elems.clone().into_iter())
             .multi_cartesian_product()
         {
             let h = self.sum(
@@ -531,11 +524,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_base::num::arithmetic::traits::Mod;
+
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::number::{modulo::Modulo, quaternary_field::QuaternaryField};
+    use crate::{
+        number::{modulo::Modulo, quaternary_field::QuaternaryField},
+        ring_structure::cannonical::{Ring, UniqueFactorizationDomain},
+    };
 
     use super::*;
 

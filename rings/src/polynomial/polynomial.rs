@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::fmt::Display;
 use std::rc::Rc;
 
@@ -8,7 +7,6 @@ use malachite_nz::natural::Natural;
 
 use crate::linear::matrix::*;
 
-use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
 
@@ -142,7 +140,6 @@ impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        let zero = self.coeff_ring.zero();
         self.reduce_poly(Polynomial::from_coeffs(
             (0..std::cmp::max(a.coeffs.len(), b.coeffs.len()))
                 .map(|i| self.coeff_ring.add(self.coeff(a, i), self.coeff(b, i)))
@@ -549,7 +546,7 @@ impl<RS: GreatestCommonDivisorStructure> PolynomialStructure<RS> {
             let (a_unit, a_prim) = self.factor_primitive(a).unwrap();
             let (b_unit, b_prim) = self.factor_primitive(b).unwrap();
             let g_unit = self.coeff_ring.gcd(&a_unit, &b_unit);
-            let mut g_prim = self
+            let g_prim = self
                 .factor_primitive(self.subresultant_gcd(a_prim, b_prim))
                 .unwrap()
                 .1;
@@ -1003,11 +1000,18 @@ mod tests {
 
     use crate::number::quaternary_field::QuaternaryField;
 
-    use super::super::super::number::rational::*;
     use super::super::super::ring_structure::cannonical::*;
     use super::super::super::ring_structure::structure::*;
 
     use super::*;
+
+    #[test]
+    fn test_constant_var_pow() {
+        let ring = Polynomial::<Integer>::structure();
+        let p = ring.constant_var_pow(Integer::from(2), 7);
+        let q = ring.mul(&ring.from_int(&Integer::from(2)), &ring.var_pow(7));
+        assert_eq!(p, q);
+    }
 
     #[test]
     fn test_display_poly_over_display_cannonical_ring() {
@@ -1032,7 +1036,7 @@ mod tests {
 
     #[test]
     fn invariant_reduction() {
-        let mut unreduced = Polynomial::<Integer>::from_coeffs(vec![
+        let unreduced = Polynomial::<Integer>::from_coeffs(vec![
             Integer::from(0),
             Integer::from(1),
             Integer::from(0),
@@ -1041,7 +1045,7 @@ mod tests {
         let reduced = Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(1)]);
         assert_eq!(unreduced, reduced);
 
-        let mut unreduced = Polynomial::from_coeffs(vec![
+        let unreduced = Polynomial::from_coeffs(vec![
             Integer::from(0),
             Integer::from(0),
             Integer::from(0),

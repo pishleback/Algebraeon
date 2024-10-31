@@ -2,16 +2,12 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 
 use itertools::Itertools;
-use malachite_base::num::basic::traits::One;
 use malachite_nz::natural::Natural;
 
-use super::super::ring_structure::cannonical::*;
-use super::super::ring_structure::elements::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
 use super::subspace::*;
 use crate::polynomial::polynomial::*;
-use orthoclase_groups::permutation::Permutation;
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -370,7 +366,7 @@ impl<RS: RingStructure> MatrixStructure<RS> {
 
     pub fn join_diag<MatT: Borrow<Matrix<RS::Set>>>(&self, mats: Vec<MatT>) -> Matrix<RS::Set> {
         if mats.len() == 0 {
-            Matrix::construct(0, 0, |r, c| unreachable!())
+            Matrix::construct(0, 0, |_r, _c| unreachable!())
         } else if mats.len() == 1 {
             mats[0].borrow().clone()
         } else {
@@ -1352,7 +1348,7 @@ impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateS
     pub fn inv(&self, a: Matrix<RS::Set>) -> Option<Matrix<RS::Set>> {
         let n = a.rows();
         assert_eq!(n, a.cols());
-        let (h, u, pivs) = self.row_reduced_hermite_algorithm(a);
+        let (h, u, _pivs) = self.row_reduced_hermite_algorithm(a);
         //h = u*a
         if self.equal(&h, &self.ident(n)) {
             Some(u)
@@ -1364,7 +1360,7 @@ impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateS
 
 impl<RS: GreatestCommonDivisorStructure> MatrixStructure<RS> {
     pub fn factor_primitive(&self, mut mat: Matrix<RS::Set>) -> Option<(RS::Set, Matrix<RS::Set>)> {
-        let mut entries = mat.entries_list();
+        let entries = mat.entries_list();
         let g = self.ring.gcd_list(entries);
         if self.ring.is_zero(&g) {
             None
@@ -1546,13 +1542,13 @@ impl<FS: ComplexConjugateStructure + FieldStructure> MatrixStructure<FS> {
     //return mat=QR where Q is col-orthogonal (not orthonormal) and R is upper triangular and
     pub fn gram_schmidt_col_orthogonalization_algorithm(
         &self,
-        mut mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Set>,
     ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
         let (l, q) = self.gram_schmidt_row_orthogonalization_algorithm(mat.transpose());
         (q.transpose(), l.transpose())
     }
 
-    pub fn gram_schmidt_row_orthogonalization(&self, mut mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
+    pub fn gram_schmidt_row_orthogonalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
         self.gram_schmidt_row_orthogonalization_algorithm(mat).1
     }
 
@@ -1567,7 +1563,7 @@ impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructu
     //return L*mat=Q where L is lower triangular and Q is orthonormal
     pub fn lq_decomposition_algorithm(
         &self,
-        mut mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Set>,
     ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
         let (mut lt, mut mat) = self.gram_schmidt_row_orthogonalization_algorithm(mat);
 
@@ -1601,13 +1597,13 @@ impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructu
     //return mat*R=Q where Q is col-orthogonal (not orthonormal) and R is upper triangular
     pub fn qr_decomposition_algorithm(
         &self,
-        mut mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Set>,
     ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
         let (l, q) = self.lq_decomposition_algorithm(mat.transpose());
         (q.transpose(), l.transpose())
     }
 
-    pub fn gram_schmidt_row_orthonormalization(&self, mut mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
+    pub fn gram_schmidt_row_orthonormalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
         self.lq_decomposition_algorithm(mat).1
     }
 
@@ -1779,8 +1775,8 @@ where
             .unwrap();
 
         let mut idx_to_block = vec![];
-        for (b, (eval, mult)) in eigenvalues.iter().enumerate() {
-            for i in (0..*mult) {
+        for (b, (_eval, mult)) in eigenvalues.iter().enumerate() {
+            for _i in 0..*mult {
                 idx_to_block.push(b);
             }
         }
@@ -1830,7 +1826,7 @@ where
                     debug_assert!(m >= 1);
 
                     let mut mat_s_pows = vec![ac_mat_structure.ident(m), mat_s.clone()];
-                    for i in 0..(m - 1) {
+                    for _i in 0..(m - 1) {
                         mat_s_pows.push(
                             ac_mat_structure
                                 .mul(mat_s_pows.last().unwrap(), &mat_s)
@@ -1870,8 +1866,8 @@ where
                             &ac_linlat_structure.intersect_pair(m, 1, &accounted, &ker_ext),
                             &ker_ext,
                         );
-                        let unaccounted_ker_ext =
-                            ac_linlat_structure.from_basis(m, 1, unaccounted_ker_ext_basis.clone());
+                        // let unaccounted_ker_ext =
+                        //     ac_linlat_structure.from_basis(m, 1, unaccounted_ker_ext_basis.clone());
 
                         for ukeb in unaccounted_ker_ext_basis {
                             //one new jordan block for each ukeb
@@ -1879,7 +1875,7 @@ where
                             // ac_mat_structure.pprint(&ukeb);
 
                             let mut jb_basis = vec![ukeb];
-                            for i in 0..k {
+                            for _i in 0..k {
                                 let ukeb_img = ac_mat_structure
                                     .mul(&mat_s, &jb_basis.last().unwrap())
                                     .unwrap();
@@ -1976,7 +1972,7 @@ where
     pub fn jordan_normal_form(
         &self,
         mat: &Matrix<FS::Set>,
-    ) -> (Matrix<<FS::ACFS as Structure>::Set>) {
+    ) -> Matrix<<FS::ACFS as Structure>::Set> {
         self.jordan_algorithm(mat).0.matrix()
     }
 
@@ -2347,7 +2343,7 @@ where
 
     pub fn jordan_normal_form(
         &self,
-    ) -> (Matrix<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set>) {
+    ) -> Matrix<<<F::Structure as AlgebraicClosureStructure>::ACFS as Structure>::Set> {
         Self::structure().jordan_normal_form(self)
     }
 }
@@ -2359,7 +2355,7 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::number::algebraic::isolated_roots::{ComplexAlgebraic, RealAlgebraic};
+    use crate::{number::algebraic::isolated_roots::{ComplexAlgebraic, RealAlgebraic}, ring_structure::cannonical::{EuclideanDivisionDomain, FavoriteAssociateDomain, Ring}};
 
     use super::*;
 

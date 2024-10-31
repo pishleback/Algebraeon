@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 
 use itertools::Itertools;
 use malachite_base::num::basic::traits::{One, Zero};
@@ -10,7 +9,7 @@ use crate::{
     number::{
         algebraic::isolated_roots::anf_multi_primitive_element_theorem, natural::nat_to_usize,
     },
-    polynomial::{multipoly::*, polynomial::*, quotient::*, symmetric::*},
+    polynomial::{multipoly::*, polynomial::*, symmetric::*},
     ring_structure::{cannonical::*, factorization::Factored, quotient::*, structure::*},
     structure::*,
 };
@@ -71,7 +70,7 @@ impl ANFStructure {
             // println!("guess = {:?}", guess);
             // println!("disc = {:?}", disc);
             // println!("disc_factors = {:?}", disc_factors);
-            disc_factors.sort_by_key(|(p, k)| p.clone()); //try small primes first
+            disc_factors.sort_by_key(|(p, _k)| p.clone()); //try small primes first
 
             for (p, k) in disc_factors {
                 debug_assert!(p >= Integer::ZERO);
@@ -179,7 +178,7 @@ fn double_poly_to_row(
     inner_poly_len: usize,
     a: Polynomial<Polynomial<Rational>>,
 ) -> Matrix<Rational> {
-    let n = outer_poly_len * inner_poly_len;
+    // let n = outer_poly_len * inner_poly_len;
     debug_assert!(a.num_coeffs() <= outer_poly_len);
     for c in a.coeffs() {
         debug_assert!(c.num_coeffs() <= inner_poly_len);
@@ -209,9 +208,9 @@ fn row_to_double_poly(
         .collect_vec();
     debug_assert_eq!(a_vec.len(), n);
     let mut coeffs = vec![];
-    for i in (0..outer_poly_len) {
+    for _i in 0..outer_poly_len {
         let mut coeff_coeffs = vec![];
-        for j in (0..inner_poly_len) {
+        for _j in 0..inner_poly_len {
             coeff_coeffs.push(a_vec.pop().unwrap().clone());
         }
         coeffs.push(Polynomial::from_coeffs(coeff_coeffs));
@@ -484,13 +483,13 @@ impl PolynomialStructure<ANFStructure> {
                 rat_pool.push(rat_gen.next().unwrap()); //1
                 for rat in rat_gen {
                     // println!("rat_pool = {:?}", rat_pool);
-                    for _ in (0..1) {
+                    for _ in 0..1 {
                         alpha = Polynomial::from_coeffs(
                             (0..p_deg)
-                                .map(|i| {
+                                .map(|_i| {
                                     Polynomial::from_coeffs(
                                         (0..k_deg)
-                                            .map(|j| {
+                                            .map(|_j| {
                                                 if rand::Rng::gen_range(&mut rng, 0..(1 + n / 3))
                                                     != 0
                                                 //try to keep the choice of alpha simple by choosing lots of zeros
@@ -518,7 +517,7 @@ impl PolynomialStructure<ANFStructure> {
                         alpha_pow_mat = Matrix::<Rational>::join_rows(n, {
                             let mut alpha_pow = l_reduced_ring.one();
                             let mut rows = vec![];
-                            for k in (0..n) {
+                            for k in 0..n {
                                 if k != 0 {
                                     l_reduced_ring.mul_mut(&mut alpha_pow, &alpha);
                                 }
@@ -541,8 +540,7 @@ impl PolynomialStructure<ANFStructure> {
                 unreachable!();
             }
             debug_assert_eq!(alpha_pow_mat.rank(), n);
-            let alpha_vec = l_to_vec(alpha.clone());
-
+            // let alpha_vec = l_to_vec(alpha.clone());
             // println!("alpha = {}", alpha);
             // println!("alpha_vec = {:?}", alpha_vec);
             // alpha_pow_mat.pprint();
@@ -574,6 +572,7 @@ impl PolynomialStructure<ANFStructure> {
             ));
 
             //Let la be L represented by rational polynomials in α modulo q(x) and set up isomorphisms between l and la
+            #[cfg(any())]
             let la_reduced_ring = QuotientStructure::new_ring(
                 PolynomialStructure::new(Rational::structure()).into(),
                 q.clone(),
@@ -588,6 +587,7 @@ impl PolynomialStructure<ANFStructure> {
                 );
                 x_in_la
             };
+            #[cfg(any())]
             let la_to_l = |x_in_la: Polynomial<Rational>| -> Polynomial<Polynomial<Rational>> {
                 PolynomialStructure::new(l_reduced_ring.clone().into()).evaluate(
                     &x_in_la.apply_map::<Polynomial<Polynomial<Rational>>>(|c| {
@@ -623,7 +623,7 @@ impl PolynomialStructure<ANFStructure> {
                     // println!("");
 
                     debug_assert_eq!(pow, &Natural::ONE);
-                    drop(pow);
+                    let _ = pow;
 
                     // Q[y]/qi(y)
                     let lai_reduced_ring = QuotientStructure::new_field(
@@ -741,7 +741,7 @@ impl PolynomialStructure<ANFStructure> {
         let (rat_unit, rat_factors) = rat_f.factor().unwrap().unit_and_factors();
         let mut factored =
             Factored::factored_unit_unchecked(self.clone().into(), Polynomial::constant(rat_unit));
-        for (rat_factor, rat_pow) in rat_factors {
+        for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor
                     .coeffs()
@@ -777,7 +777,7 @@ impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
+    
 
     use super::*;
 

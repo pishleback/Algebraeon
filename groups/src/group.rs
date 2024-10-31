@@ -3,13 +3,11 @@ use std::{
     collections::{HashMap, HashSet},
     fmt::Debug,
     hash::Hash,
-    ops::Mul,
 };
 
 use itertools::Itertools;
 use malachite_base::num::{arithmetic::traits::UnsignedAbs, logic::traits::BitIterable};
 use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::arithmetic::add;
 
 pub trait Group: Debug + Clone + PartialEq + Eq {
     fn identity() -> Self;

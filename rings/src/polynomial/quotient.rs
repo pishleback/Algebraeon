@@ -21,8 +21,6 @@ where
     pub fn col_multiplication_matrix(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
         let poly_ring = self.ring();
         let field = poly_ring.coeff_ring();
-
-        let a_reduced = self.reduce(a);
         let deg = self.degree();
         Matrix::from_cols(
             (0..self.degree())
@@ -46,7 +44,7 @@ where
 
     pub fn to_col_vector(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
         let a_reduced = self.reduce(a);
-        Matrix::construct(self.degree(), 1, |r, c| {
+        Matrix::construct(self.degree(), 1, |r, _c| {
             self.ring().coeff(&a_reduced, r).clone()
         })
     }

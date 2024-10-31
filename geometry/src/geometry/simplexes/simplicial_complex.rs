@@ -1,12 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    marker::PhantomData,
-};
-
-use itertools::Itertools;
-
-use crate::geometry_old::affine_coordinate_system::AffineSubspaceCoordinateSystem;
-use orthoclase_rings::ring_structure::structure::RealToFloatStructure;
+use std::collections::{HashMap, HashSet};
 
 use super::*;
 
@@ -62,7 +54,7 @@ where
             inv_bdry_map.insert(spx.clone(), HashSet::new());
         }
 
-        for (spx, info) in &self.simplexes {
+        for (spx, _info) in &self.simplexes {
             for bdry_spx in spx.proper_sub_simplices_not_null() {
                 assert!(self.simplexes.contains_key(&bdry_spx));
                 inv_bdry_map.get_mut(&bdry_spx).unwrap().insert(spx.clone());
@@ -447,7 +439,7 @@ where
                     if weak_adjacent_hyperplane_ofacets.len()
                         == strong_adjacent_hyperplane_ofacets.len()
                     {
-                        drop(strong_adjacent_hyperplane_ofacets);
+                        let _ = strong_adjacent_hyperplane_ofacets;
                         let adjacent_hyperplane_ofacets = weak_adjacent_hyperplane_ofacets;
 
                         if orientations.iter().enumerate().all(|(of_idx, sign)| {
@@ -747,7 +739,7 @@ where
         &self,
         other: &Self,
     ) -> VennResult<SimplicialDisjointUnion<FS, SP>, SimplicialDisjointUnion<FS, SP>> {
-        let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
+        // let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
 
         VennResult {
             left: Self::subtract(self, other),

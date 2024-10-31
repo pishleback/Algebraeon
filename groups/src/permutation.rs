@@ -224,7 +224,7 @@ impl std::fmt::Display for Permutation {
         cycles.retain(|cycle| cycle.len() != 1);
 
         if cycles.len() == 0 {
-            f.write_str("()");
+            f.write_str("()")?;
         }
 
         let string = cycles

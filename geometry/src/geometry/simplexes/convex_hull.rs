@@ -107,7 +107,7 @@ where
                         self.subspace.embedded_space(),
                         vec![Vector::construct(
                             self.subspace.embedded_space(),
-                            |i| unreachable!(),
+                            |_| unreachable!(),
                         )],
                     )
                     .unwrap()]
@@ -139,7 +139,7 @@ where
                     *ridges_count.get_mut(&ridge).unwrap() += 1;
                 }
             }
-            if !ridges_count.into_iter().all(|(ridge, count)| count == 2) {
+            if !ridges_count.into_iter().all(|(_ridge, count)| count == 2) {
                 return Err("Ridges of facets should each be shared between exactly two facets");
             }
         }
@@ -196,7 +196,7 @@ where
 
     pub fn from_simplex(spx: Simplex<FS, SP>) -> Self {
         let ambient_space = spx.ambient_space();
-        let ordered_field = ambient_space.borrow().ordered_field();
+        // let ordered_field = ambient_space.borrow().ordered_field();
         let (subspace, embedded_pts) =
             EmbeddedAffineSubspace::new_affine_span(ambient_space.clone(), spx.into_points())
                 .unwrap();
@@ -314,7 +314,7 @@ where
                 (self.facets, self.interior) = (
                     horizon
                         .iter()
-                        .map(|(ridge, (facet, facet_pt))| {
+                        .map(|(ridge, (_facet, facet_pt))| {
                             OrientedSimplex::new_with_positive_point(
                                 self.subspace.embedded_space(),
                                 {
@@ -441,7 +441,6 @@ where
         self.check().unwrap();
     }
 
-    
     fn embedded_interior_simplexes(&self) -> Vec<Simplex<FS, SP>> {
         self.interior
             .iter()
@@ -504,8 +503,11 @@ where
         let entire = SimplicialComplex::new(self.ambient_space.clone(), all_simplexes).unwrap();
         ConvexHullAsSimplicialComplexResult {
             entire: entire.clone(),
-            boundary: SimplicialComplex::new(self.ambient_space.clone(), boundary_simplexes.into_iter().collect())
-                .unwrap(),
+            boundary: SimplicialComplex::new(
+                self.ambient_space.clone(),
+                boundary_simplexes.into_iter().collect(),
+            )
+            .unwrap(),
             interior: PartialSimplicialComplex::new_unchecked(
                 self.ambient_space.clone(),
                 interior_simplexes,
@@ -551,7 +553,7 @@ where
 
         //note that in dimension 0 we need to explicitly add the unique point to outer points
         if ch.subspace.embedded_space().affine_dimension() == 1 {
-            let (root, span) = ch.subspace.get_root_and_span().unwrap();
+            let (_root, span) = ch.subspace.get_root_and_span().unwrap();
             debug_assert_eq!(span.len(), 0);
             debug_assert_eq!(outer_points.len(), 0);
             outer_points.push(Vector::new(ch.subspace.embedded_space(), vec![]));
@@ -769,7 +771,6 @@ where
 }
 #[cfg(test)]
 mod tests {
-    use malachite_base::num::conversion::traits::FromSciString;
     use malachite_q::Rational;
 
     use orthoclase_rings::structure::StructuredType;
@@ -843,7 +844,7 @@ mod tests {
     #[test]
     fn convex_hull_intersect_hyperplane() {
         let space = AffineSpace::new_linear(Rational::structure(), 2);
-        let mut ch = ConvexHull::new(
+        let ch = ConvexHull::new(
             &space,
             vec![
                 Vector::new(&space, vec![Rational::from(1), Rational::from(1)]),
@@ -884,10 +885,11 @@ mod tests {
         .into_oriented_hyperplane();
 
         let smaller_ch = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Neutral);
-
+        println!("{:?}", smaller_ch);
         let smaller_ch = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Positive);
-
+        println!("{:?}", smaller_ch);
         let smaller_ch = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Negative);
+        println!("{:?}", smaller_ch);
     }
 
     #[test]
@@ -933,6 +935,7 @@ mod tests {
                 ],
             );
             let ch3 = ch1.intersect(&ch2);
+            println!("{:?}", ch3);
         }
         //2d intersect 1d
         {
@@ -972,10 +975,11 @@ mod tests {
                 ],
             );
             let ch3 = ch1.intersect(&ch2);
+            println!("{:?}", ch3);
         }
         //line misses line
         {
-            let mut ch1 = ConvexHull::new(
+            let ch1 = ConvexHull::new(
                 &space,
                 vec![
                     Vector::new(&space, vec![Rational::from(-2), Rational::from(-1)]),
@@ -994,7 +998,7 @@ mod tests {
         }
         //line hits line
         {
-            let mut ch1 = ConvexHull::new(
+            let ch1 = ConvexHull::new(
                 &space,
                 vec![
                     Vector::new(&space, vec![Rational::from(2), Rational::from(0)]),

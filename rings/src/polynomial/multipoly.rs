@@ -8,8 +8,6 @@ use std::sync::atomic::AtomicUsize;
 
 use malachite_nz::natural::Natural;
 
-use super::super::ring_structure::cannonical::*;
-use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
 use super::polynomial::*;
@@ -72,9 +70,9 @@ impl Display for Monomial {
             write!(f, "1")
         } else {
             for VariablePower { var, pow } in &self.prod {
-                write!(f, "{}", &var.name);
-                write!(f, "^");
-                write!(f, "{}", pow);
+                write!(f, "{}", &var.name)?;
+                write!(f, "^")?;
+                write!(f, "{}", pow)?;
             }
             Ok(())
         }
@@ -324,7 +322,7 @@ impl<R: Clone> MultiPolynomial<R> {
                 .map(
                     |Term {
                          coeff,
-                         monomial: Monomial { prod, ident_lookup },
+                         monomial: Monomial { prod, .. },
                      }| Term {
                         coeff: coeff,
                         monomial: Monomial::new(
@@ -346,7 +344,7 @@ impl<R: Clone> MultiPolynomial<R> {
             terms: self
                 .terms
                 .into_iter()
-                .filter(|Term { coeff, monomial }| monomial.get_var_pow(v) == 0)
+                .filter(|Term { monomial, .. }| monomial.get_var_pow(v) == 0)
                 .collect(),
         }
     }
@@ -357,7 +355,7 @@ impl<R: Clone> MultiPolynomial<R> {
             terms: self
                 .terms
                 .into_iter()
-                .filter(|Term { coeff, monomial }| vars.iter().all(|v| monomial.get_var_pow(v) > 0))
+                .filter(|Term { monomial, .. }| vars.iter().all(|v| monomial.get_var_pow(v) > 0))
                 .collect(),
         }
     }
@@ -549,7 +547,7 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
         MultiPolynomial::new(
             p.terms
                 .into_iter()
-                .filter(|Term { monomial, coeff }| !self.coeff_ring.is_zero(coeff))
+                .filter(|Term {  coeff , ..}| !self.coeff_ring.is_zero(coeff))
                 .collect(),
         )
     }
@@ -743,6 +741,8 @@ where
 #[cfg(test)]
 mod tests {
     use malachite_nz::integer::Integer;
+
+    use crate::ring_structure::cannonical::{IntegralDomain, Ring};
 
     use super::*;
 

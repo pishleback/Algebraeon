@@ -1,8 +1,6 @@
 use std::borrow::Borrow;
 use std::rc::Rc;
 
-use super::super::ring_structure::cannonical::*;
-use super::super::ring_structure::elements::*;
 use super::super::ring_structure::structure::*;
 use super::super::structure::*;
 use super::matrix::*;
@@ -216,7 +214,7 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         lat.metamatrix.rows()
     }
 
-    pub fn take_nonzero_point(&self, lat: &LinearLattice<RS::Set>) -> Option<(Matrix<RS::Set>)> {
+    pub fn take_nonzero_point(&self, lat: &LinearLattice<RS::Set>) -> Option<Matrix<RS::Set>> {
         if self.rank(&lat) == 0 {
             None
         } else {
@@ -317,7 +315,7 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
 
         let mat_structure = MatrixStructure::new(self.ring.clone());
         let metamatrix = Matrix::join_rows(n, vec![&lat_a.metamatrix, &lat_b.metamatrix]);
-        let (h, u, u_det, pivs) = mat_structure.col_hermite_algorithm(metamatrix.clone());
+        let (_h, _u, _u_det, pivs) = mat_structure.col_hermite_algorithm(metamatrix.clone());
 
         let mut extension_basis = vec![];
         for r in pivs {
@@ -728,9 +726,9 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
         }
     }
 
-    pub fn take_point(&self, lat: AffineLattice<RS::Set>) -> Option<(Matrix<RS::Set>)> {
+    pub fn take_point(&self, lat: AffineLattice<RS::Set>) -> Option<Matrix<RS::Set>> {
         match self.to_offset_and_linear_lattice(lat) {
-            Some((offset, linat)) => Some(offset),
+            Some((offset, _linlat)) => Some(offset),
             None => None,
         }
     }
@@ -1620,6 +1618,7 @@ mod tests {
         assert!(afflat.check_invariants().is_ok());
     }
 
+    #[test]
     fn affine_lattice_sum_and_intersection() {
         let a1 = Matrix::<Integer>::from_rows(vec![
             vec![Integer::from(3), Integer::from(1), Integer::from(0)],

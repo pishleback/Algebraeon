@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, rc::Rc};
+use std::rc::Rc;
 
 use super::{isolated_roots::*, number_field::*};
 
@@ -36,6 +36,7 @@ impl ComplexAlgebraic {
     }
 }
 
+#[cfg(any())]
 impl EmbeddedAnf {
     pub fn intersect_pair(field1: &Self, field2: &Self) -> Self {
         todo!()
@@ -56,14 +57,10 @@ impl EmbeddedAnf {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
 
     use malachite_nz::integer::Integer;
-    use malachite_q::Rational;
 
     use crate::{polynomial::polynomial::*, structure::*};
-
-    use super::*;
 
     #[test]
     fn test_embedded_anf_run() {

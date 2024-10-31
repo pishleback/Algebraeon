@@ -1,8 +1,12 @@
-use std::future::poll_fn;
+use std::str::FromStr;
 
-use crate::polynomial::polynomial::Polynomial;
+use malachite_base::num::basic::traits::Two;
+use malachite_nz::{integer::Integer, natural::Natural};
+use malachite_q::Rational;
 
-use super::*;
+use crate::{number::algebraic::isolated_roots::{anf_multi_primitive_element_theorem, anf_pair_primitive_element_theorem, as_poly_expr, ComplexAlgebraic, RealAlgebraic}, polynomial::polynomial::Polynomial, ring_structure::cannonical::{PositiveRealNthRootOpps, Ring, UniqueFactorizationDomain}};
+
+use super::{IntegralDomain, StructuredType};
 
 #[test]
 fn test_squarefree_polynomial_real_root_isolation() {
@@ -784,7 +788,7 @@ fn test_as_poly_expr() {
 
 #[test]
 fn test_pair_generated_anf() {
-    let x = &Polynomial::<Rational>::var().into_ring();
+    // let x = &Polynomial::<Rational>::var().into_ring();
 
     let sqrt_two = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(2)))
         .nth_root(2)
@@ -819,7 +823,7 @@ fn test_pair_generated_anf() {
 
 #[test]
 fn test_multi_generated_anf() {
-    let x = &Polynomial::<Rational>::var().into_ring();
+    // let x = &Polynomial::<Rational>::var().into_ring();
 
     let sqrt_two = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(2)))
         .nth_root(2)

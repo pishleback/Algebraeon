@@ -1,6 +1,5 @@
 use std::rc::Rc;
 
-use malachite_base::num::arithmetic::traits::Floor;
 use malachite_base::num::basic::traits::One;
 use malachite_base::num::basic::traits::OneHalf;
 use malachite_base::num::basic::traits::Zero;

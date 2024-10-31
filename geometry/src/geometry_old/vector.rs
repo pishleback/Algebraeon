@@ -174,8 +174,6 @@ pub fn are_points_nondegenerage(dim: usize, points: Vec<&Vector>) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
     use super::*;
 
     #[test]
@@ -185,11 +183,11 @@ mod tests {
             Rational::from(2),
             Rational::from(3),
         ]);
-        let b = Vector::new(vec![
-            Rational::from(2),
-            Rational::from(-4),
-            Rational::from(0),
-        ]);
+        // let b = Vector::new(vec![
+        //     Rational::from(2),
+        //     Rational::from(-4),
+        //     Rational::from(0),
+        // ]);
         let c = Vector::new(vec![
             Rational::from(2),
             Rational::from(-2),

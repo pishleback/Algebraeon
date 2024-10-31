@@ -1,8 +1,4 @@
-use std::{
-    fmt::{Debug, Display},
-    ops::{Add, Div, Mul, Neg, Sub},
-    rc::Rc,
-};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 use malachite_nz::integer::Integer;
 
@@ -16,14 +12,16 @@ impl<RS: RingStructure> PartialEq for StructuredElement<RS> {
     }
 }
 
-
 impl<RS: RingStructure> Eq for StructuredElement<RS> {}
 
 impl<RS: RingStructure> Neg for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn neg(self) -> Self::Output {
-        StructuredElement::new(self.structure().clone(), self.structure().neg(&self.ref_set()))
+        StructuredElement::new(
+            self.structure().clone(),
+            self.structure().neg(&self.ref_set()),
+        )
     }
 }
 
@@ -147,7 +145,9 @@ impl<RS: IntegralDomainStructure> Div<&StructuredElement<RS>> for &StructuredEle
     fn div(self, rhs: &StructuredElement<RS>) -> Self::Output {
         StructuredElement::new(
             self.structure().clone(),
-            self.structure().div(&self.ref_set(), &rhs.ref_set()).unwrap(),
+            self.structure()
+                .div(&self.ref_set(), &rhs.ref_set())
+                .unwrap(),
         )
     }
 }
@@ -211,10 +211,7 @@ impl<RS: RingStructure> Add<i32> for &StructuredElement<RS> {
 
     fn add(self, rhs: i32) -> Self::Output {
         let ring = self.structure().clone();
-        self + StructuredElement::new(
-            self.structure().clone(),
-            self.structure().from_int(&Integer::from(rhs)),
-        )
+        self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
     }
 }
 
@@ -222,11 +219,8 @@ impl<RS: RingStructure> Add<&i32> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn add(self, rhs: &i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self + StructuredElement::new(
-            self.structure().clone(),
-            self.structure().from_int(&Integer::from(*rhs)),
-        )
+        let ring = self.structure();
+        self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*rhs)))
     }
 }
 
@@ -235,10 +229,7 @@ impl<RS: RingStructure> Add<StructuredElement<RS>> for i32 {
 
     fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(self)),
-        ) + rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) + rhs
     }
 }
 
@@ -247,10 +238,7 @@ impl<RS: RingStructure> Add<&StructuredElement<RS>> for i32 {
 
     fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(self)),
-        ) + rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) + rhs
     }
 }
 
@@ -259,10 +247,7 @@ impl<RS: RingStructure> Add<StructuredElement<RS>> for &i32 {
 
     fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(*self)),
-        ) + rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) + rhs
     }
 }
 
@@ -271,10 +256,7 @@ impl<RS: RingStructure> Add<&StructuredElement<RS>> for &i32 {
 
     fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(*self)),
-        ) + rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) + rhs
     }
 }
 
@@ -302,10 +284,7 @@ impl<RS: RingStructure> Sub<i32> for &StructuredElement<RS> {
 
     fn sub(self, rhs: i32) -> Self::Output {
         let ring = self.structure().clone();
-        self - StructuredElement::new(
-            self.structure().clone(),
-            self.structure().from_int(&Integer::from(rhs)),
-        )
+        self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
     }
 }
 
@@ -314,10 +293,7 @@ impl<RS: RingStructure> Sub<&i32> for &StructuredElement<RS> {
 
     fn sub(self, rhs: &i32) -> Self::Output {
         let ring = self.structure().clone();
-        self - StructuredElement::new(
-            self.structure().clone(),
-            self.structure().from_int(&Integer::from(*rhs)),
-        )
+        self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*rhs)))
     }
 }
 
@@ -326,10 +302,7 @@ impl<RS: RingStructure> Sub<StructuredElement<RS>> for i32 {
 
     fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(self)),
-        ) - rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) - rhs
     }
 }
 
@@ -338,10 +311,7 @@ impl<RS: RingStructure> Sub<&StructuredElement<RS>> for i32 {
 
     fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(self)),
-        ) - rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) - rhs
     }
 }
 
@@ -350,10 +320,7 @@ impl<RS: RingStructure> Sub<StructuredElement<RS>> for &i32 {
 
     fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(*self)),
-        ) - rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) - rhs
     }
 }
 
@@ -362,10 +329,7 @@ impl<RS: RingStructure> Sub<&StructuredElement<RS>> for &i32 {
 
     fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(*self)),
-        ) - rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) - rhs
     }
 }
 
@@ -393,10 +357,7 @@ impl<RS: RingStructure> Mul<i32> for &StructuredElement<RS> {
 
     fn mul(self, rhs: i32) -> Self::Output {
         let ring = self.structure().clone();
-        self * StructuredElement::new(
-            self.structure().clone(),
-            self.structure().from_int(&Integer::from(rhs)),
-        )
+        self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
     }
 }
 
@@ -405,10 +366,7 @@ impl<RS: RingStructure> Mul<&i32> for &StructuredElement<RS> {
 
     fn mul(self, rhs: &i32) -> Self::Output {
         let ring = self.structure().clone();
-        self * StructuredElement::new(
-            self.structure().clone(),
-            self.structure().from_int(&Integer::from(*rhs)),
-        )
+        self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*rhs)))
     }
 }
 
@@ -417,10 +375,7 @@ impl<RS: RingStructure> Mul<StructuredElement<RS>> for i32 {
 
     fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(self)),
-        ) * rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) * rhs
     }
 }
 
@@ -429,10 +384,7 @@ impl<RS: RingStructure> Mul<&StructuredElement<RS>> for i32 {
 
     fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(self)),
-        ) * rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) * rhs
     }
 }
 
@@ -441,10 +393,7 @@ impl<RS: RingStructure> Mul<StructuredElement<RS>> for &i32 {
 
     fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(*self)),
-        ) * rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) * rhs
     }
 }
 
@@ -453,10 +402,7 @@ impl<RS: RingStructure> Mul<&StructuredElement<RS>> for &i32 {
 
     fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
         let ring = rhs.structure().clone();
-        StructuredElement::new(
-            rhs.structure().clone(),
-            rhs.structure().from_int(&Integer::from(*self)),
-        ) * rhs
+        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) * rhs
     }
 }
 
@@ -464,9 +410,7 @@ impl<RS: RingStructure> Mul<&StructuredElement<RS>> for &i32 {
 mod tests {
     use malachite_nz::integer::Integer;
 
-    use super::super::super::number::integer::*;
     use super::super::super::polynomial::polynomial::*;
-    use super::super::cannonical::*;
 
     use super::*;
 

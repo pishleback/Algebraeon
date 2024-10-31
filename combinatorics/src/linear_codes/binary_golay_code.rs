@@ -6,21 +6,17 @@ use std::{
 use derivative::Derivative;
 use itertools::Itertools;
 use malachite_base::num::logic::traits::BitIterable;
-use static_assertions::const_assert;
 
 use orthoclase_groups::examples::symmetric::*;
 use orthoclase_rings::{
-    linear::matrix::{Matrix, MatrixStructure},
+    linear::matrix::Matrix,
     number::{modulo::Modulo, quaternary_field::QuaternaryField},
     ring_structure::cannonical::*,
-    structure::StructuredType,
 };
 
 pub type BinaryField = Modulo<2>;
 pub const ZERO: BinaryField = BinaryField::new(0);
 pub const ONE: BinaryField = BinaryField::new(1);
-
-use super::*;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Vector24 {
@@ -387,12 +383,14 @@ impl ExtendedBinaryGolayCode {
         let t4 = Vector24::from(sextet.foursome(4));
         let t5 = Vector24::from(sextet.foursome(5));
 
+        let _ = t1; //It's not used
+
         fn take_unique_pt(v: Vector24) -> usize {
             let mut pts = v.points();
             let pt = pts.next().unwrap();
             debug_assert_eq!(pts.next(), None);
             pt
-        };
+        }
 
         // Complete the hexacodeword (0, 1, alpha, ?, ?, ?)
         let (beta, gamma, delta) = match alpha {
@@ -435,7 +433,7 @@ impl ExtendedBinaryGolayCode {
         // Use the sextet formed by completing (T1 \ {x}) U {y} to label the rest of T3 U T4 U T5 U T6
         let t2345 = t2 | t3 | t4 | t5;
         debug_assert_eq!(t2345.weight(), 16);
-        for (i, li, wi) in vec![
+        for (_i, li, wi) in vec![
             (2, alpha, w2),
             (3, beta, w3),
             (4, gamma, w4),

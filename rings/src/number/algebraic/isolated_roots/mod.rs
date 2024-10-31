@@ -1,12 +1,9 @@
 use std::collections::HashSet;
-use std::f32::RADIX;
 use std::fmt::Display;
-use std::ops::Mul;
 use std::rc::Rc;
 use std::str::FromStr;
 
 use itertools::Itertools;
-use malachite_base::num::arithmetic::traits::NegAssign;
 use malachite_base::num::basic::traits::One;
 use malachite_base::num::basic::traits::OneHalf;
 use malachite_base::num::basic::traits::Two;
@@ -15,12 +12,9 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::arithmetic::traits::SimplestRationalInInterval;
 use malachite_q::Rational;
-use rayon::collections::binary_heap::Iter;
 
 use crate::number::algebraic::bisection_gen::RationalSimpleBetweenGenerator;
 use crate::number::algebraic::number_field::*;
-use crate::number::natural::*;
-use crate::polynomial::multipoly::*;
 use crate::polynomial::polynomial::*;
 use crate::ring_structure::cannonical::*;
 use crate::ring_structure::structure::*;
@@ -28,6 +22,8 @@ use crate::structure::*;
 
 mod poly_tools;
 mod regions;
+
+#[cfg(test)]
 mod tests;
 
 use poly_tools::*;
@@ -425,8 +421,8 @@ impl SquarefreePolyRealRoots {
         assert!(idx < self.intervals.len());
         match &self.intervals[idx] {
             SquarefreePolyRealRootInterval::Rational(rat) => RealAlgebraic::Rational(rat.clone()),
-            SquarefreePolyRealRootInterval::Real(a, b, dir) => {
-                let (unit, factors) = self.poly_sqfr.factor().unwrap().unit_and_factors();
+            SquarefreePolyRealRootInterval::Real(a, b, _dir) => {
+                let (_unit, factors) = self.poly_sqfr.factor().unwrap().unit_and_factors();
                 for (factor, k) in factors.into_iter() {
                     // println!("factor = {}", factor);
                     debug_assert_eq!(k, Natural::ONE); //square free
@@ -1872,7 +1868,7 @@ impl Display for RealAlgebraicRoot {
                             false => "-",
                         },
                         r
-                    );
+                    )?;
                 } else {
                     write!(
                         f,
@@ -1883,7 +1879,7 @@ impl Display for RealAlgebraicRoot {
                         },
                         y,
                         r
-                    );
+                    )?;
                 }
             } else {
                 if y == Rational::ONE {
@@ -1896,7 +1892,7 @@ impl Display for RealAlgebraicRoot {
                             false => "-",
                         },
                         r
-                    );
+                    )?;
                 } else {
                     write!(
                         f,
@@ -1908,7 +1904,7 @@ impl Display for RealAlgebraicRoot {
                         },
                         y,
                         r
-                    );
+                    )?;
                 }
             }
         } else {
@@ -1919,8 +1915,8 @@ impl Display for RealAlgebraicRoot {
             ));
             let m = (&root.tight_a + &root.tight_b) / Rational::TWO;
 
-            write!(f, "≈");
-            write!(f, "{}", rat_to_string(m));
+            write!(f, "≈")?;
+            write!(f, "{}", rat_to_string(m))?;
             // write!(f, "±");
             // write!(f, "{}", rat_to_string(self.accuracy() / Rational::TWO));
         }
@@ -2190,7 +2186,7 @@ impl Display for ComplexAlgebraicRoot {
                             false => "-",
                         },
                         r_str
-                    );
+                    )?;
                 } else {
                     write!(
                         f,
@@ -2201,7 +2197,7 @@ impl Display for ComplexAlgebraicRoot {
                         },
                         y,
                         r_str
-                    );
+                    )?;
                 }
             } else {
                 if y == Rational::ONE {
@@ -2214,7 +2210,7 @@ impl Display for ComplexAlgebraicRoot {
                             false => "-",
                         },
                         r_str
-                    );
+                    )?;
                 } else {
                     write!(
                         f,
@@ -2226,7 +2222,7 @@ impl Display for ComplexAlgebraicRoot {
                         },
                         y,
                         r_str
-                    );
+                    )?;
                 }
             }
         } else {
@@ -2239,17 +2235,17 @@ impl Display for ComplexAlgebraicRoot {
             let m_re = (&root.tight_a + &root.tight_b) / Rational::TWO;
             let m_im = (&root.tight_c + &root.tight_d) / Rational::TWO;
 
-            write!(f, "≈");
-            write!(f, "{}", rat_to_string(m_re));
+            write!(f, "≈")?;
+            write!(f, "{}", rat_to_string(m_re))?;
             // write!(f, "±");
             // write!(f, "{}", rat_to_string(self.accuracy_re() / Rational::TWO));
             if m_im >= 0 {
-                write!(f, "+");
+                write!(f, "+")?;
             }
-            write!(f, "{}", rat_to_string(m_im));
+            write!(f, "{}", rat_to_string(m_im))?;
             // write!(f, "±");
             // write!(f, "{}", rat_to_string(self.accuracy_im() / Rational::TWO));
-            write!(f, "i");
+            write!(f, "i")?;
         }
         Ok(())
     }
@@ -2539,8 +2535,8 @@ fn identify_complex_root(
     let (mut a, mut b, mut c, mut d) = box_gen.next().unwrap();
 
     let irr_poly = {
-        let (unit, factors) = poly.factor().unwrap().unit_and_factors();
-        let irr_polys = factors.into_iter().map(|(f, k)| f).collect_vec();
+        let (_unit, factors) = poly.factor().unwrap().unit_and_factors();
+        let irr_polys = factors.into_iter().map(|(f, _k)| f).collect_vec();
         let mut possible_irr_poly_idxs: HashSet<_> = (0..irr_polys.len()).collect();
         loop {
             debug_assert!(!possible_irr_poly_idxs.is_empty());
@@ -2584,7 +2580,7 @@ fn identify_complex_root(
         (a, b, c, d) = box_gen.next().unwrap();
         for idx in &possible_roots {
             match &mut roots[*idx] {
-                ComplexAlgebraic::Real(RealAlgebraic::Rational(root)) => {}
+                ComplexAlgebraic::Real(RealAlgebraic::Rational(_root)) => {}
                 ComplexAlgebraic::Real(RealAlgebraic::Real(root)) => {
                     root.refine();
                 }
@@ -2705,7 +2701,7 @@ impl PositiveRealNthRootStructure for CannonicalStructure<RealAlgebraic> {
                                 }
                                 return Ok(possible_nthroots.get_real_root(idx));
                             }
-                            SquarefreePolyRealRootInterval::Real(a, b, dir) => {
+                            SquarefreePolyRealRootInterval::Real(a, b, _dir) => {
                                 debug_assert!(a < b);
                                 if &Rational::ZERO < a {
                                     let a_pow = a.nat_pow(&Natural::from(n));
@@ -2795,8 +2791,8 @@ impl ComplexAlgebraic {
             (ComplexAlgebraic::Real(a), ComplexAlgebraic::Real(b)) => {
                 RealAlgebraic::cmp_mut(a, b).is_eq()
             }
-            (ComplexAlgebraic::Real(a), ComplexAlgebraic::Complex(b)) => false,
-            (ComplexAlgebraic::Complex(a), ComplexAlgebraic::Real(b)) => false,
+            (ComplexAlgebraic::Real(_a), ComplexAlgebraic::Complex(_b)) => false,
+            (ComplexAlgebraic::Complex(_a), ComplexAlgebraic::Real(_b)) => false,
             (ComplexAlgebraic::Complex(a), ComplexAlgebraic::Complex(b)) => a.equal(b),
         }
     }
@@ -3077,19 +3073,19 @@ impl ComplexSubsetStructure for CannonicalStructure<RealAlgebraic> {}
 impl RealSubsetStructure for CannonicalStructure<RealAlgebraic> {}
 
 impl RealToFloatStructure for CannonicalStructure<RealAlgebraic> {
-    fn as_f64(&self, x: &Self::Set) -> f64 {
+    fn as_f64(&self, _x: &Self::Set) -> f64 {
         todo!()
     }
 }
 
 impl RealRoundingStructure for CannonicalStructure<RealAlgebraic> {
-    fn floor(&self, x: &Self::Set) -> Integer {
+    fn floor(&self, _x: &Self::Set) -> Integer {
         todo!()
     }
-    fn ceil(&self, x: &Self::Set) -> Integer {
+    fn ceil(&self, _x: &Self::Set) -> Integer {
         todo!()
     }
-    fn round(&self, x: &Self::Set) -> Integer {
+    fn round(&self, _x: &Self::Set) -> Integer {
         todo!()
     }
 }
@@ -3230,7 +3226,7 @@ impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
                         cpx.tight_d *= &rat;
                         cpx.poly = root_pos_rat_mul_poly(cpx.poly, &rat);
                         #[cfg(debug_assertions)]
-                        cpx.check_invariants().is_ok();
+                        assert!(cpx.check_invariants().is_ok());
                         ComplexAlgebraic::Complex(cpx)
                     }
                 },
@@ -3478,7 +3474,7 @@ impl PositiveRealNthRootStructure for CannonicalStructure<ComplexAlgebraic> {
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
         match x {
             ComplexAlgebraic::Real(x) => Ok(ComplexAlgebraic::Real(x.nth_root(n)?)),
-            ComplexAlgebraic::Complex(x) => Err(()),
+            ComplexAlgebraic::Complex(_) => Err(()),
         }
     }
 }
@@ -3511,7 +3507,7 @@ pub fn as_poly_expr(
 
     let target_min_poly_factored = gen_anf_poly.factor(&target_min_poly).unwrap();
     let mut generator = generator.clone();
-    for (factor, factor_mult) in target_min_poly_factored.factors() {
+    for (factor, _factor_mult) in target_min_poly_factored.factors() {
         //the factor should be monic
         debug_assert!(gen_anf.equal(&factor.leading_coeff().unwrap(), &gen_anf.one()));
         if factor.degree().unwrap() == 1 {

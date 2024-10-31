@@ -1,7 +1,4 @@
-use std::collections::HashMap;
 use std::rc::Rc;
-use std::thread::sleep;
-use std::time::Duration;
 
 use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::DivMod;

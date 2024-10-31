@@ -53,7 +53,7 @@ impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
     }
 
     pub fn origin<SP: Borrow<Self> + Clone + From<Self>>(&self) -> Option<Vector<FS, SP>> {
-        Some(Vector::construct(self.clone().into(), |i| {
+        Some(Vector::construct(self.clone().into(), |_i| {
             self.ordered_field.zero()
         }))
     }

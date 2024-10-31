@@ -389,7 +389,7 @@ impl_field!(997);
 
 #[cfg(test)]
 mod tests {
-    use crate::ring_structure::cannonical::Ring;
+    
 
     use super::*;
 

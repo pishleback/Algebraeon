@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::rc::Rc;
 
 use malachite_base::num::basic::traits::One;
@@ -154,8 +153,8 @@ impl<
             HenselProduct::Branch {
                 f_factorization,
                 g_factorization,
-                a,
-                b,
+                a: _,
+                b: _,
             } => {
                 let mut fs = vec![];
                 fs.extend(f_factorization.factor_list());
@@ -278,7 +277,7 @@ impl<
     > HenselFactorizationImpl<RS>
 {
     fn check(&self, ring: &RS, i: &RS::Set, n: &Natural) -> Result<(), &'static str> {
-        let poly_ring = PolynomialStructure::new(ring.clone().into());
+        // let poly_ring = PolynomialStructure::new(ring.clone().into());
         // if !poly_ring.is_monic(&self.h) {
         //     return Err("h is not monic");
         // }
@@ -313,7 +312,7 @@ impl<
                 let alpha = PolynomialStructure::new(ring.clone().into())
                     .leading_coeff(&h)
                     .unwrap();
-                let (g, beta, gamma) = ring.euclidean_xgcd(alpha.clone(), p.clone());
+                let (g, _beta, _gamma) = ring.euclidean_xgcd(alpha.clone(), p.clone());
                 debug_assert!(ring.equal(&g, &ring.one()));
 
                 Self {
@@ -418,10 +417,10 @@ where
         let poly_ring_mod = self.ring().clone();
         let ring_mod = poly_ring_mod.coeff_ring();
         let ring = ring_mod.ring();
-        let poly_ring: PolynomialStructure<RS> = PolynomialStructure::new(ring.clone());
+        // let poly_ring: PolynomialStructure<RS> = PolynomialStructure::new(ring.clone());
 
         let mut fs = vec![];
-        let (unit, factors) = self.unit_and_factors();
+        let (_unit, factors) = self.unit_and_factors();
         for (factor, power) in factors {
             if power == Natural::ONE {
                 fs.push(factor);
@@ -429,7 +428,7 @@ where
                 return None;
             }
         }
-        let unit = poly_ring_mod.as_constant(&unit).unwrap();
+        // let unit = poly_ring_mod.as_constant(&unit).unwrap();
         // println!("into_hensel_factorization: {:?}", fs);
         // println!("unit = {:?}", unit);
 

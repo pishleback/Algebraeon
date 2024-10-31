@@ -245,7 +245,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 {
     pub fn new_with_positive_point(
         ambient_space: SP,
-        mut points: Vec<Vector<FS, SP>>,
+        points: Vec<Vector<FS, SP>>,
         ref_point: &Vector<FS, SP>,
     ) -> Result<Self, &'static str> {
         assert_eq!(ref_point.ambient_space().borrow(), ambient_space.borrow());
@@ -281,7 +281,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 
     pub fn new_with_negative_point(
         ambient_space: SP,
-        mut points: Vec<Vector<FS, SP>>,
+        points: Vec<Vector<FS, SP>>,
         ref_point: &Vector<FS, SP>,
     ) -> Result<Self, &'static str> {
         let mut ans = Self::new_with_positive_point(ambient_space, points, ref_point)?;
@@ -322,7 +322,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         }
         match &self.orientation {
             Some(OrientedSimplexOrientation {
-                flip,
+                flip: _flip,
                 positive_point,
             }) => {
                 debug_assert_eq!(
@@ -340,7 +340,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         match &self.orientation {
             Some(OrientedSimplexOrientation {
                 flip,
-                positive_point,
+                positive_point: _,
             }) => match space.borrow().linear_dimension().unwrap() {
                 0 => unreachable!(),
                 d => {

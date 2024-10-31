@@ -16,7 +16,7 @@ impl Group for C2 {
     }
 
     fn compose_mut(&mut self, other: &Self) {
-        match (other) {
+        match other {
             C2::Ident => {}
             C2::Flip => match self {
                 C2::Ident => {
