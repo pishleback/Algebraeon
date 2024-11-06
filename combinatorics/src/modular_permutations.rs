@@ -10,3 +10,20 @@ pub fn modular_permutation<const N: usize>(
     }
     Permutation::new(perm)
 }
+
+#[cfg(test)]
+mod tests {
+    use orthoclase_rings::structure::StructuredType;
+
+    use super::*;
+
+    #[test]
+    pub fn test() {
+        println!(
+            "{:?}",
+            modular_permutation::<23>(|i| (i.into_ring() * 7).into_set())
+                .unwrap()
+                .disjoint_cycles()
+        );
+    }
+}

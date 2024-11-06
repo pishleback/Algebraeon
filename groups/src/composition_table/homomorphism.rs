@@ -311,7 +311,6 @@ pub fn find_isomorphism<'a, 'b>(
 
 #[cfg(test)]
 mod homomorphism_tests {
-    use super::super::todd_coxeter;
     use super::*;
 
     #[test]
@@ -536,7 +535,7 @@ mod homomorphism_tests {
 
         {
             let grp_g = examples::symmetric_group_structure(5);
-            let grp_h = todd_coxeter::enumerate_group(
+            let grp_h = super::super::super::free_group::todd_coxeter::enumerate_group(
                 3,
                 vec![
                     vec![0, 0],

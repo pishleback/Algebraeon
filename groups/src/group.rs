@@ -73,7 +73,7 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         } else if *n > 0 {
             self.nat_pow(&n.unsigned_abs())
         } else {
-            self.nat_pow(&(-n).unsigned_abs())
+            self.nat_pow(&(-n).unsigned_abs()).inverse()
         }
     }
 
@@ -140,9 +140,7 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
             .map(|elem| *elem_to_idx.get(&Self::inverse_ref(elem)).unwrap())
             .collect_vec();
 
-        let grp = crate::composition_table::group::Group::new_unchecked(
-            n, 0, inv, mul, None, None,
-        );
+        let grp = crate::composition_table::group::Group::new_unchecked(n, 0, inv, mul, None, None);
 
         #[cfg(debug_assertions)]
         grp.check_state().unwrap();

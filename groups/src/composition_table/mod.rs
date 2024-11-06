@@ -6,4 +6,3 @@ pub mod normal_subgroup;
 pub mod partition;
 pub mod subgroup;
 pub mod subset;
-pub mod todd_coxeter;

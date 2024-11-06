@@ -4,3 +4,4 @@ pub mod group;
 pub mod examples;
 pub mod permutation;
 pub mod composition_table;
+pub mod free_group;

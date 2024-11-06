@@ -1,3 +1,5 @@
+use core::num;
+
 use crate::{group::Group, permutation::*};
 
 #[derive(Clone, Copy)]
@@ -183,7 +185,10 @@ pub fn enumerate_elements(num_gens: usize, rels: Vec<Vec<usize>>) -> (usize, Vec
     enumerate_cosets(num_gens, rels, vec![])
 }
 
-pub fn enumerate_group(num_gens: usize, rels: Vec<Vec<usize>>) -> super::group::Group {
+pub fn enumerate_group(
+    num_gens: usize,
+    rels: Vec<Vec<usize>>,
+) -> super::super::composition_table::group::Group {
     let (n, gen_perms) = enumerate_cosets(num_gens, rels, vec![]);
     let inv_gen_perms = gen_perms
         .iter()
@@ -230,7 +235,7 @@ pub fn enumerate_group(num_gens: usize, rels: Vec<Vec<usize>>) -> super::group::
         }
     }
 
-    super::group::Group::new_unchecked(
+    super::super::composition_table::group::Group::new_unchecked(
         n,
         0,
         (0..n)

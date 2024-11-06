@@ -2,7 +2,6 @@ use super::normal_subgroup::*;
 use super::partition::*;
 use super::subgroup::*;
 use super::subset::*;
-use super::todd_coxeter;
 use rayon::prelude::*;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
@@ -437,7 +436,7 @@ pub mod examples {
         rels.push(vec![0, 0]);
         rels.push(vec![2, 2]);
         rels.push(vec![0, 2].into_iter().cycle().take(2 * n).collect());
-        let mut grp = todd_coxeter::enumerate_group(2, rels);
+        let mut grp = super::super::super::free_group::todd_coxeter::enumerate_group(2, rels);
         grp.is_abelian = Some(n <= 2);
         grp.is_simple = Some(n <= 1);
         grp
@@ -446,7 +445,7 @@ pub mod examples {
     pub fn quaternion_group_structure() -> Group {
         // quaternion group using the presentation
         // <-1 i j k : (-1)^2 = i^2 = j^2 = k^2 = ijk = -1>
-        let mut grp = todd_coxeter::enumerate_group(
+        let mut grp = super::super::super::free_group::todd_coxeter::enumerate_group(
             4,
             vec![
                 vec![0, 0],
