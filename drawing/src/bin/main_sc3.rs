@@ -2,20 +2,18 @@
 
 use std::rc::Rc;
 
-use geometry::AffineSpace;
-use geometry::Vector;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::arithmetic::traits::Approximate;
 use malachite_q::Rational;
 use orthoclase_drawing::canvas::canvas2d::*;
 use orthoclase_drawing::canvas::Canvas;
-use orthoclase_geometry::geometry::simplexes::ConvexHull;
-use orthoclase_geometry::geometry::simplexes::OrientationSide;
-use orthoclase_geometry::geometry::simplexes::OrientedSimplex;
-use orthoclase_geometry::geometry::simplexes::Simplex;
-use orthoclase_geometry::geometry::simplexes::SimplicialDisjointUnion;
-use orthoclase_geometry::geometry::simplexes::VennResult;
+use orthoclase_geometry::simplexes::ConvexHull;
+use orthoclase_geometry::simplexes::OrientationSide;
+use orthoclase_geometry::simplexes::OrientedSimplex;
+use orthoclase_geometry::simplexes::Simplex;
+use orthoclase_geometry::simplexes::SimplicialDisjointUnion;
+use orthoclase_geometry::simplexes::VennResult;
 use orthoclase_geometry::*;
 use orthoclase_rings::ring_structure::cannonical::*;
 use orthoclase_rings::structure::CannonicalStructure;

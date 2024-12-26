@@ -5,7 +5,7 @@ use orthoclase_rings::ring_structure::structure::{
     FieldStructure, OrderedRingStructure, RealToFloatStructure,
 };
 
-use orthoclase_geometry::geometry::{
+use orthoclase_geometry::{
     simplexes::{PartialSimplicialComplex, Simplex, SimplicialComplex, SimplicialDisjointUnion},
     AffineSpace,
 };
@@ -75,11 +75,7 @@ impl<
 where
     FS::Set: std::hash::Hash,
 {
-    fn draw(
-        &self,
-        canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas,
-        colour: (f32, f32, f32),
-    ) {
+    fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
         for simplex in self.simplexes() {
             simplex.draw(canvas, colour);
         }
@@ -93,11 +89,7 @@ impl<
 where
     FS::Set: std::hash::Hash,
 {
-    fn draw(
-        &self,
-        canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas,
-        colour: (f32, f32, f32),
-    ) {
+    fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
         for simplex in self.simplexes() {
             simplex.draw(canvas, colour);
         }
@@ -111,11 +103,7 @@ impl<
 where
     FS::Set: std::hash::Hash,
 {
-    fn draw(
-        &self,
-        canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas,
-        colour: (f32, f32, f32),
-    ) {
+    fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
         for simplex in self.simplexes() {
             simplex.draw(canvas, colour);
         }
