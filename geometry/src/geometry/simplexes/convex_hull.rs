@@ -9,13 +9,19 @@ pub struct ConvexHull<
 > where
     FS::Set: Hash,
 {
+    // the space in which this convex hull lives
     ambient_space: SP,
+    // the affine subspace spanned by this convex hull
+    // so that this convex hull is "full" in this embedded subspace
     subspace: EmbeddedAffineSubspace<FS, SP, Rc<AffineSpace<FS>>>,
-    // oriented facets belonging to subspace such
-    // the positive side of each facet is on the interior of the convex hull
-    // the facets form a simplicial complex
+    // oriented facets belonging to the embedded subspace such that 
+    // the positive side of each facet is on the interior of the convex hull and 
+    // the negative side of each facet is on the outside of the convex hull.
+    // These facets should form a simplicial complex
     facets: Vec<OrientedSimplex<FS, Rc<AffineSpace<FS>>>>,
+    // These interior simplicies are the full-dimensional simplicies in the embedded subspace forming the interior of the convex hull
     interior: Vec<Simplex<FS, Rc<AffineSpace<FS>>>>,
+
     /*
     Consider the case of a convex hull given by a simplex in dimension d:
 
@@ -196,7 +202,6 @@ where
 
     pub fn from_simplex(spx: Simplex<FS, SP>) -> Self {
         let ambient_space = spx.ambient_space();
-        // let ordered_field = ambient_space.borrow().ordered_field();
         let (subspace, embedded_pts) =
             EmbeddedAffineSubspace::new_affine_span(ambient_space.clone(), spx.into_points())
                 .unwrap();
@@ -542,6 +547,8 @@ where
                 outer_edges.insert(edge);
             }
         }
+
+        // type cast
         let mut outer_points = outer_points.into_iter().collect::<Vec<_>>();
         let mut outer_edges = outer_edges
             .into_iter()
@@ -551,7 +558,7 @@ where
             })
             .collect::<Vec<_>>();
 
-        //note that in dimension 0 we need to explicitly add the unique point to outer points
+        // Note that in linear dimension 0 we need to explicitly add the unique point to outer points.
         if ch.subspace.embedded_space().affine_dimension() == 1 {
             let (_root, span) = ch.subspace.get_root_and_span().unwrap();
             debug_assert_eq!(span.len(), 0);
@@ -559,7 +566,7 @@ where
             outer_points.push(Vector::new(ch.subspace.embedded_space(), vec![]));
         }
 
-        //note that in dimension 1 this doesnt quite work for outer edges since the boundary is not connected. instead outer edges should just be the edge between the two points
+        // Note that in linear dimension 1 this doesnt quite work for outer edges since the boundary is not connected. Instead, outer edges should just be the edge between the two points.
         if ch.subspace.embedded_space().affine_dimension() == 2 {
             debug_assert_eq!(outer_points.len(), 2);
             debug_assert_eq!(outer_edges.len(), 0);
@@ -618,28 +625,28 @@ where
         let mut negative_edges = HashSet::new();
         for (a, b) in &self.edges {
             match hyperplane.intersect_line(&a, &b) {
-                OrientedHyperplaneIntersectLineResult::PositivePositive
-                | OrientedHyperplaneIntersectLineResult::PositiveNeutral
-                | OrientedHyperplaneIntersectLineResult::NeutralPositive => {
+                OrientedHyperplaneIntersectLineSegmentResult::PositivePositive
+                | OrientedHyperplaneIntersectLineSegmentResult::PositiveNeutral
+                | OrientedHyperplaneIntersectLineSegmentResult::NeutralPositive => {
                     positive_edges.insert((a.clone(), b.clone()));
                 }
-                OrientedHyperplaneIntersectLineResult::NegativeNegative
-                | OrientedHyperplaneIntersectLineResult::NegativeNeutral
-                | OrientedHyperplaneIntersectLineResult::NeutralNegative => {
+                OrientedHyperplaneIntersectLineSegmentResult::NegativeNegative
+                | OrientedHyperplaneIntersectLineSegmentResult::NegativeNeutral
+                | OrientedHyperplaneIntersectLineSegmentResult::NeutralNegative => {
                     negative_edges.insert((a.clone(), b.clone()));
                 }
 
-                OrientedHyperplaneIntersectLineResult::NeutralNeutral => {
+                OrientedHyperplaneIntersectLineSegmentResult::NeutralNeutral => {
                     //We deal with middle edges later
                 }
-                OrientedHyperplaneIntersectLineResult::PositiveNegative {
+                OrientedHyperplaneIntersectLineSegmentResult::PositiveNegative {
                     intersection_point: m,
                 } => {
                     positive_edges.insert((a.clone(), m.clone()));
                     negative_edges.insert((m.clone(), b.clone()));
                     middle_points.insert(m);
                 }
-                OrientedHyperplaneIntersectLineResult::NegativePositive {
+                OrientedHyperplaneIntersectLineSegmentResult::NegativePositive {
                     intersection_point: m,
                 } => {
                     positive_edges.insert((b.clone(), m.clone()));

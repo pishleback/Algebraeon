@@ -7,12 +7,10 @@ use orthoclase_rings::ring_structure::structure::{FieldStructure, OrderedRingStr
 mod coordinates;
 pub use coordinates::*;
 
-mod linear_space;
-pub use linear_space::*;
+mod ambient_space;
+pub use ambient_space::*;
 
 mod affine_subspace;
 pub use affine_subspace::*;
 
 pub mod simplexes;
-
-// pub mod drawing;

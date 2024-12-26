@@ -401,7 +401,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 //     }
 // }
 
-pub enum OrientedHyperplaneIntersectLineResult<
+pub enum OrientedHyperplaneIntersectLineSegmentResult<
     FS: OrderedRingStructure + FieldStructure,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > {
@@ -431,7 +431,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         &self,
         a: &Vector<FS, SP>,
         b: &Vector<FS, SP>,
-    ) -> OrientedHyperplaneIntersectLineResult<FS, SP> {
+    ) -> OrientedHyperplaneIntersectLineSegmentResult<FS, SP> {
         let space = self.ambient_space();
         let field = space.borrow().ordered_field();
 
@@ -455,7 +455,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
                         self.oriented_simplex.classify_point(b),
                         OrientationSide::Positive
                     );
-                    OrientedHyperplaneIntersectLineResult::NegativePositive {
+                    OrientedHyperplaneIntersectLineSegmentResult::NegativePositive {
                         intersection_point: a + &(b - a).scalar_mul(&t),
                     }
                 }
@@ -473,31 +473,31 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
                         self.oriented_simplex.classify_point(b),
                         OrientationSide::Negative
                     );
-                    OrientedHyperplaneIntersectLineResult::PositiveNegative {
+                    OrientedHyperplaneIntersectLineSegmentResult::PositiveNegative {
                         intersection_point: a + &(b - a).scalar_mul(&t),
                     }
                 }
             }
             (std::cmp::Ordering::Less, std::cmp::Ordering::Less) => {
-                OrientedHyperplaneIntersectLineResult::NegativeNegative
+                OrientedHyperplaneIntersectLineSegmentResult::NegativeNegative
             }
             (std::cmp::Ordering::Less, std::cmp::Ordering::Equal) => {
-                OrientedHyperplaneIntersectLineResult::NegativeNeutral
+                OrientedHyperplaneIntersectLineSegmentResult::NegativeNeutral
             }
             (std::cmp::Ordering::Equal, std::cmp::Ordering::Less) => {
-                OrientedHyperplaneIntersectLineResult::NeutralNegative
+                OrientedHyperplaneIntersectLineSegmentResult::NeutralNegative
             }
             (std::cmp::Ordering::Equal, std::cmp::Ordering::Equal) => {
-                OrientedHyperplaneIntersectLineResult::NeutralNeutral
+                OrientedHyperplaneIntersectLineSegmentResult::NeutralNeutral
             }
             (std::cmp::Ordering::Equal, std::cmp::Ordering::Greater) => {
-                OrientedHyperplaneIntersectLineResult::NeutralPositive
+                OrientedHyperplaneIntersectLineSegmentResult::NeutralPositive
             }
             (std::cmp::Ordering::Greater, std::cmp::Ordering::Equal) => {
-                OrientedHyperplaneIntersectLineResult::PositiveNeutral
+                OrientedHyperplaneIntersectLineSegmentResult::PositiveNeutral
             }
             (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater) => {
-                OrientedHyperplaneIntersectLineResult::PositivePositive
+                OrientedHyperplaneIntersectLineSegmentResult::PositivePositive
             }
         }
     }

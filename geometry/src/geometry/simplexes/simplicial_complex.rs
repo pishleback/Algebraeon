@@ -197,13 +197,95 @@ where
     pub fn boundary(&self) -> SimplicialComplex<FS, SP> {
         self.interior_and_boundary().1
     }
+}
 
+/*
+Input:
+    A list of oriented simplicies which join to form a closed region of space
+    with negative side inside and positive side outside which join
+
+Output:
+    Figure out whether the region can be filled in by fanning out from some point
+    If it can't: return None
+    If it can: return the simplicies to use to fill in the interior region
+
+*/
+fn simplify_in_region<
+    FS: OrderedRingStructure + FieldStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+>(
+    space: SP,
+    boundary_facets: Vec<OrientedSimplex<FS, SP>>,
+) -> Option<Vec<Simplex<FS, SP>>>
+where
+    FS::Set: Hash,
+{
+    for spx in &boundary_facets {
+        debug_assert_eq!(spx.ambient_space().borrow(), space.borrow());
+    }
+
+    let mut boundary_points: HashMap<Vector<FS, SP>, Vec<usize>> = HashMap::new();
+    for (idx, spx) in boundary_facets.iter().enumerate() {
+        for pt in spx.simplex().points() {
+            if boundary_points.contains_key(pt) {
+                boundary_points.get_mut(pt).unwrap().push(idx);
+            } else {
+                boundary_points.insert(pt.clone(), vec![idx]);
+            }
+        }
+    }
+
+    for (boundary_point, adjacent_facets) in boundary_points {
+        let mut nonadjacent_facets = (0..boundary_facets.len()).collect::<HashSet<_>>();
+        for idx in &adjacent_facets {
+            nonadjacent_facets.remove(idx);
+        }
+
+        if nonadjacent_facets.iter().all(|idx| {
+            match boundary_facets[*idx].classify_point(&boundary_point) {
+                OrientationSide::Positive => false,
+                OrientationSide::Neutral => false,
+                OrientationSide::Negative => true,
+            }
+        }) {
+            let mut nonadjacent_simplexes = HashSet::new();
+            for idx in nonadjacent_facets {
+                for spx in boundary_facets[idx].simplex().sub_simplices_not_null() {
+                    nonadjacent_simplexes.insert(spx);
+                }
+            }
+            for idx in adjacent_facets {
+                for spx in boundary_facets[idx].simplex().sub_simplices_not_null() {
+                    nonadjacent_simplexes.remove(&spx);
+                }
+            }
+
+            let filler = nonadjacent_simplexes
+                .into_iter()
+                .map(|spx| {
+                    let mut points = spx.points().clone();
+                    points.push(boundary_point.clone());
+                    Simplex::new(spx.ambient_space().clone(), points).unwrap()
+                })
+                .collect();
+
+            return Some(filler);
+        }
+    }
+    None
+}
+
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+    SimplicialComplex<FS, SP>
+where
+    FS::Set: Hash,
+{
     pub fn simplify(mut self) -> Self {
         //go through each point
         //compute its star
         //enter the affine subspace spanned by its star
         //compute its link as oriented simplices
-        //if point is part of the link then no simplification can be made, so more on
+        //if point is part of the link then no simplification can be made, so move on
         //check whether any point of the link is in the interior with respect to every boundary of the link
         //if such a point exists, it can be used to fill in the star in a simpler way by fanning out
 
@@ -214,9 +296,7 @@ where
             }
         }
 
-        let interior = self.interior().into_simplexes();
-
-        'SIMP_LOOP: while !pts_todo.is_empty() {
+        while !pts_todo.is_empty() {
             let pt = {
                 let mut pts_todo_iter = pts_todo.into_iter();
                 let pt = pts_todo_iter.next().unwrap();
@@ -225,269 +305,303 @@ where
             };
 
             let pt_spx = Simplex::new(self.ambient_space(), vec![pt.clone()]).unwrap();
+            let (star, link) = {
+                let mut star = self.simplexes.get(&pt_spx).unwrap().inv_bdry.clone();
+                star.insert(pt_spx.clone());
 
-            if !interior.contains(&pt_spx) {
-                /* Method
+                let mut nbd = HashSet::new();
+                for spx in &star {
+                    for bdry in spx.sub_simplices_not_null() {
+                        nbd.insert(bdry);
+                    }
+                }
 
-                :pt lies on the boundary:
+                let mut link = nbd.clone();
+                for spx in &star {
+                    link.remove(spx);
+                }
 
-                          i
+                debug_assert_eq!(star.len() + link.len(), nbd.len());
+                for link_spx in &link {
+                    debug_assert!(self.simplexes.contains_key(&link_spx));
+                }
+
+                (star, link)
+            };
+
+            let link_points = {
+                let mut link_points: Vec<Vector<FS, SP>> = vec![];
+                for spx in &link {
+                    for p in spx.points() {
+                        link_points.push(p.clone());
+                    }
+                }
+                link_points
+            };
+
+            let nbd_points = {
+                let mut nbd_points = link_points.clone();
+                nbd_points.push(pt.clone());
+                nbd_points
+            };
+
+            let nbd_affine_subspace = EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
+                self.ambient_space(),
+                nbd_points.iter().collect(),
+            );
+
+            let nbd_points_img = nbd_points
+                .iter()
+                .map(|pt| nbd_affine_subspace.unembed_point(pt).unwrap())
+                .collect::<Vec<_>>();
+            let pt_img = nbd_affine_subspace.unembed_point(&pt).unwrap();
+            let pt_img_spx =
+                Simplex::new(nbd_affine_subspace.embedded_space(), vec![pt_img.clone()]).unwrap();
+            let star_img = star
+                .iter()
+                .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
+                .collect::<HashSet<_>>();
+            let link_img = link
+                .iter()
+                .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
+                .collect::<HashSet<_>>();
+
+            let nbd = SimplicialComplex::new(nbd_affine_subspace.embedded_space(), {
+                let mut simplexes = HashSet::new();
+                simplexes.extend(star_img.clone());
+                simplexes.extend(link_img.clone());
+                simplexes
+            })
+            .unwrap();
+            let nbd_interior = nbd.interior().into_simplexes();
+
+            if !nbd_interior.contains(&pt_img_spx) {
+                /*
+                pt is on the boundary of nbd and nbd looks something like this
+
+                    l     l      l
+                     +----------+
+                    / \\__       \
+                l  /   \  \__ s   \ l
+                  /   s \    \__   \
+                 /       \      \__ \
+                +---------+---------+
+                r    b    p    b    r
+
+                where
+                    p = point
+                    b = boundary = intersection of star and ndb.boundary
+                    r = rim = closure of boundary minus boundary
+                    l = semilink = link minus rim
+                    s = semistar = star minus boundary
+
+                so the idea here is
+                    simplify the boundary by filling in the rim to replace the boundary
+                    then simplify the rest by filling in the new boundary and the link to replace the star
+                */
+
+                let boundary_img = star_img
+                    .iter()
+                    .filter(|spx| !nbd_interior.contains(&spx))
+                    .collect::<HashSet<_>>();
+
+                let mut boundary_img_points = HashSet::new();
+                for spx in &boundary_img {
+                    for p in spx.points() {
+                        boundary_img_points.insert(p);
+                    }
+                }
+                let nbd_boundary_affine_subspace =
+                    EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
+                        nbd_affine_subspace.embedded_space(),
+                        boundary_img_points.into_iter().collect(),
+                    );
+                debug_assert!(
+                    nbd_boundary_affine_subspace
+                        .embedded_space()
+                        .affine_dimension()
+                        <= nbd_affine_subspace.embedded_space().affine_dimension()
+                );
+                if nbd_boundary_affine_subspace
+                    .embedded_space()
+                    .affine_dimension()
+                    + 1
+                    == nbd_affine_subspace.embedded_space().affine_dimension()
+                {
+                    let ref_point_img = {
+                        let mut ref_point_img = None;
+                        for pt in &nbd_points_img {
+                            if nbd_boundary_affine_subspace.unembed_point(pt).is_none() {
+                                ref_point_img = Some(pt.clone());
+                                break;
+                            }
+                        }
+                        ref_point_img.unwrap()
+                    };
+                    let oriented_hyperplane = OrientedSimplex::new_with_negative_point(
+                        nbd_boundary_affine_subspace.ambient_space(),
+                        nbd_boundary_affine_subspace.get_embedding_points().clone(),
+                        &ref_point_img,
+                    )
+                    .unwrap();
+                    for pt in &nbd_points_img {
+                        debug_assert!(
+                            oriented_hyperplane.classify_point(pt) != OrientationSide::Positive
+                        );
+                    }
+
+                    let rim_img = {
+                        let mut rim_img = HashSet::new();
+                        for spx in &boundary_img {
+                            for bspx in spx.sub_simplices_not_null() {
+                                rim_img.insert(bspx);
+                            }
+                        }
+                        for spx in &boundary_img {
+                            rim_img.remove(spx);
+                        }
+                        rim_img
+                    };
+
+                    let pt_img_img = nbd_boundary_affine_subspace.unembed_point(&pt_img).unwrap();
+
+                    let rim_img_img = rim_img
+                        .iter()
+                        .map(|spx| {
+                            OrientedSimplex::new_with_negative_point(
+                                nbd_boundary_affine_subspace.embedded_space(),
+                                nbd_boundary_affine_subspace
+                                    .unembed_simplex(spx)
+                                    .unwrap()
+                                    .points()
+                                    .clone(),
+                                &pt_img_img,
+                            )
+                            .unwrap()
+                        })
+                        .collect::<Vec<_>>();
+
+                    if let Some(new_boundary_img_img) = simplify_in_region(
+                        nbd_boundary_affine_subspace.embedded_space(),
+                        rim_img_img,
+                    ) {
+                        let new_boundary_img = new_boundary_img_img
+                            .iter()
+                            .map(|spx| nbd_boundary_affine_subspace.embed_simplex(spx))
+                            .collect::<Vec<_>>();
+
+                        let sphere_img = {
+                            let mut sphere_img = vec![];
+                            for spx in &new_boundary_img {
+                                if spx.n() + 1
+                                    == nbd_affine_subspace.embedded_space().affine_dimension()
+                                {
+                                    sphere_img.push(
+                                        OrientedSimplex::new_with_negative_point(
+                                            nbd_affine_subspace.embedded_space(),
+                                            spx.points().clone(),
+                                            &ref_point_img,
+                                        )
+                                        .unwrap(),
+                                    );
+                                }
+                            }
+                            for spx in &link_img {
+                                if spx.n() + 1
+                                    == nbd_affine_subspace.embedded_space().affine_dimension()
+                                {
+                                    sphere_img.push(
+                                        OrientedSimplex::new_with_negative_point(
+                                            nbd_affine_subspace.embedded_space(),
+                                            spx.points().clone(),
+                                            &pt_img,
+                                        )
+                                        .unwrap(),
+                                    );
+                                }
+                            }
+                            sphere_img
+                        };
+
+                        if let Some(new_star_img) =
+                            simplify_in_region(nbd_affine_subspace.embedded_space(), sphere_img)
+                        {
+                            self.remove_simplexes_unchecked(star.into_iter().collect());
+                            self.add_simplexes_unchecked(
+                                new_boundary_img
+                                    .into_iter()
+                                    .map(|spx_img| nbd_affine_subspace.embed_simplex(&spx_img))
+                                    .collect(),
+                            );
+                            self.add_simplexes_unchecked(
+                                new_star_img
+                                    .into_iter()
+                                    .map(|spx_img| nbd_affine_subspace.embed_simplex(&spx_img))
+                                    .collect(),
+                            );
+                            pts_todo.extend(link_points);
+                        }
+                    }
+                }
+            } else {
+                /*
+                pt is in the interior and nbd looks something like
+
+                          l
                      +---------+
                     / \       / \
-                i  /   \  s  /   \ i
-                  /  s  \   /  s  \
-                 /       \ /       \
-                +---------p---------+
-                     b         b
-
-                In this case we first try to remove p from b.
-                This is only possible if b is spanned by a single hyperplane.
-                In that case p belongs to the interior of the local boundary
-
-                +---------p---------+
-                     b         b
-
-                and the method for simplification when p is in the interior can be used in one fewer dimensions
-                Once the boundary is simplified
-
-                +-------------------+
-                          b
-
-                we replace s with the fan out from some point on i union b as in the case where p belongs to the interior
-
-                          i
-                     +---------+
-                    /  \__       \
-                i  /      \__     \ i
-                  /          \__   \
-                 /              \__ \
-                +-------------------+
-                          b
-
-
-                :pt lies in the interior:
-
-                           i
-                     +---------+
-                    / \       / \
-                i  /   \  s  /   \ i
+                l  /   \  s  /   \ l
                   /  s  \   /  s  \
                  /       \ /       \
                 +---------p---------+
                  \       / \       /
                   \  s  /   \  s  /
-                i  \   /  s  \   / i
+                l  \   /  s  \   / l
                     \ /       \ /
                      +---------+
-                          i
+                          l
 
-                In this case we try to remove p and replace s with a fan out from some point q on i.
-                The point q much be chosen such that it is on the interior side of each hyperplace in i
-                Once q is chosen, the simplexes from i to fan out to are those which are not entirely contained in any hyperplane in i directly adjacent to q
+                where
+                    p = point
+                    s = star
+                    l = link
+                */
 
-                p = pt
-                s = star
-                i = ilink
-                b = blink
-                 */
-            } else {
-                //compute the star and link and nbd := star \sqcup link of pt
-                //star is anything with pt on its boundary including pt itself
-                //link is the closure of star minus star. link is homeomorphic to a sphere around pt since pt is an interior point
-                let (star, link) = {
-                    let mut star = self.simplexes.get(&pt_spx).unwrap().inv_bdry.clone();
-                    star.insert(pt_spx.clone());
-                    let mut nbd = HashSet::new();
-                    for spx in &star {
-                        for bdry in spx.sub_simplices_not_null() {
-                            nbd.insert(bdry);
+                let boundary = link_img
+                    .iter()
+                    .filter(|spx| {
+                        let n = spx.n();
+                        let a = nbd_affine_subspace.embedded_space().affine_dimension();
+                        if n >= a {
+                            unreachable!()
+                        } else if n + 1 == a {
+                            true
+                        } else {
+                            debug_assert!(n + 1 < a);
+                            false
                         }
-                    }
-                    let mut link = nbd.clone();
-                    for spx in &star {
-                        link.remove(spx);
-                    }
-                    debug_assert_eq!(star.len() + link.len(), nbd.len());
-                    (star, link)
-                };
-                for link_spx in &link {
-                    debug_assert!(self.simplexes.contains_key(&link_spx));
-                }
-
-                //set up the points in link and the simplexes in link as indxes into the points
-                let (link_points, link_point_to_idx, link_simplexes_idxed) = {
-                    let mut link_points: Vec<Vector<FS, SP>> = vec![];
-                    let mut link_point_to_idx: HashMap<Vector<FS, SP>, usize> = HashMap::new();
-                    let mut link_simplexes_idxed: Vec<Vec<usize>> = vec![];
-                    for spx in &link {
-                        link_simplexes_idxed.push(
-                            spx.points()
-                                .into_iter()
-                                .map(|p| match link_point_to_idx.get(p) {
-                                    Some(idx) => *idx,
-                                    None => {
-                                        let idx = link_points.len();
-                                        link_points.push(p.clone());
-                                        link_point_to_idx.insert(p.clone(), idx);
-                                        idx
-                                    }
-                                })
-                                .collect::<Vec<_>>(),
-                        );
-                    }
-                    (link_points, link_point_to_idx, link_simplexes_idxed)
-                };
-
-                let affine_subspace = EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
-                    self.ambient_space(),
-                    {
-                        let mut points = link_points.iter().collect::<Vec<_>>();
-                        points.push(&pt);
-                        points
-                    },
-                );
-
-                let num_link_points = link_points.len();
-                let link_points_img = link_points
-                    .iter()
-                    .map(|p| affine_subspace.unembed_point(p).unwrap())
-                    .collect::<Vec<_>>();
-                let pt_img = affine_subspace.unembed_point(&pt).unwrap();
-                let link_ofacet_img_points = link_simplexes_idxed
-                    .iter()
-                    .filter(|pidxs| {
-                        pidxs.len() + 1 == affine_subspace.embedded_space().affine_dimension()
                     })
-                    .collect::<Vec<_>>();
-                let link_ofacets_img = link_ofacet_img_points
-                    .iter()
-                    .map(|pidxs| {
-                        OrientedSimplex::new_with_positive_point(
-                            affine_subspace.embedded_space(),
-                            pidxs
-                                .iter()
-                                .map(|idx| link_points_img[*idx].clone())
-                                .collect(),
+                    .map(|spx| {
+                        OrientedSimplex::new_with_negative_point(
+                            nbd_affine_subspace.embedded_space(),
+                            spx.points().clone(),
                             &pt_img,
                         )
                         .unwrap()
                     })
-                    .collect::<Vec<_>>();
+                    .collect();
 
-                let num_facets = link_ofacets_img.len();
-
-                let link_point_to_link_ofacet: HashMap<usize, Vec<usize>> = {
-                    let mut link_point_to_link_ofacet: HashMap<usize, Vec<usize>> = (0
-                        ..num_link_points)
-                        .map(|pt_idx| (pt_idx, vec![]))
-                        .collect();
-                    for of_idx in 0..num_facets {
-                        for pt_idx in link_ofacet_img_points[of_idx] {
-                            link_point_to_link_ofacet
-                                .get_mut(pt_idx)
-                                .unwrap()
-                                .push(of_idx);
-                        }
-                    }
-                    link_point_to_link_ofacet
-                };
-
-                //given a point of the link return all oriented facets which form the hyperplanes adjacent to the point
-                let point_img_to_adjacent_hyperplane_ofacets = |pt_idx: usize| -> HashSet<usize> {
-                    let mut reachable = link_point_to_link_ofacet
-                        .get(&pt_idx)
-                        .unwrap()
-                        .iter()
-                        .map(|i| i.clone())
-                        .collect::<HashSet<_>>();
-                    let mut boundary = reachable.clone().into_iter().collect::<Vec<_>>();
-                    let mut checked = HashSet::new();
-                    while !boundary.is_empty() {
-                        let of_idx = boundary.pop().unwrap();
-                        for adj_pt_idx in link_ofacet_img_points[of_idx] {
-                            for adj_of_idx in link_point_to_link_ofacet.get(adj_pt_idx).unwrap() {
-                                if !checked.contains(adj_of_idx) {
-                                    checked.insert(*adj_of_idx);
-                                    if link_ofacets_img[*adj_of_idx]
-                                        .classify_point(&link_points_img[pt_idx])
-                                        == OrientationSide::Neutral
-                                    {
-                                        reachable.insert(*adj_of_idx);
-                                        boundary.push(*adj_of_idx);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    reachable
-                };
-
-                for link_pt_idx in 0..num_link_points {
-                    let link_pt = &link_points[link_pt_idx];
-                    let link_pt_img = &link_points_img[link_pt_idx];
-
-                    let orientations = link_ofacets_img
-                        .iter()
-                        .map(|os| os.classify_point(link_pt_img))
-                        .collect::<Vec<_>>();
-
-                    let strong_adjacent_hyperplane_ofacets =
-                        link_point_to_link_ofacet.get(&link_pt_idx).unwrap();
-                    let weak_adjacent_hyperplane_ofacets =
-                        point_img_to_adjacent_hyperplane_ofacets(link_pt_idx);
-
-                    if weak_adjacent_hyperplane_ofacets.len()
-                        == strong_adjacent_hyperplane_ofacets.len()
-                    {
-                        let _ = strong_adjacent_hyperplane_ofacets;
-                        let adjacent_hyperplane_ofacets = weak_adjacent_hyperplane_ofacets;
-
-                        if orientations.iter().enumerate().all(|(of_idx, sign)| {
-                            match adjacent_hyperplane_ofacets.contains(&of_idx) {
-                                true => *sign != OrientationSide::Negative,
-                                false => *sign == OrientationSide::Positive,
-                            }
-                        }) {
-                            let adjacent_hyperplane_ofacets_points = adjacent_hyperplane_ofacets
-                                .into_iter()
-                                .map(|of_idx| {
-                                    link_ofacet_img_points[of_idx]
-                                        .iter()
-                                        .map(|i| *i)
-                                        .collect::<HashSet<_>>()
-                                })
-                                .collect::<Vec<_>>();
-
-                            //replace star with the extension of simplexes in link such that not every point belongs to some adjacent oriented facet to link pt
-                            let filled_link = link
-                                .into_iter()
-                                .filter(|spx| {
-                                    !adjacent_hyperplane_ofacets_points.iter().any(
-                                        |adjacent_hyperplane_ofacet_points| {
-                                            spx.points().iter().all(|p| {
-                                                adjacent_hyperplane_ofacet_points
-                                                    .contains(link_point_to_idx.get(p).unwrap())
-                                            })
-                                        },
-                                    )
-                                })
-                                .map(|link_spx| {
-                                    Simplex::new(self.ambient_space(), {
-                                        let mut points = link_spx.points().clone();
-                                        points.push(link_pt.clone());
-                                        points
-                                    })
-                                    .unwrap()
-                                })
-                                .collect::<Vec<_>>();
-
-                            self.remove_simplexes_unchecked(star.into_iter().collect());
-                            self.add_simplexes_unchecked(filled_link);
-                            pts_todo.extend(link_points);
-
-                            continue 'SIMP_LOOP;
-                        }
-                    }
+                if let Some(new_star_img) =
+                    simplify_in_region(nbd_affine_subspace.embedded_space(), boundary)
+                {
+                    self.remove_simplexes_unchecked(star.into_iter().collect());
+                    self.add_simplexes_unchecked(
+                        new_star_img
+                            .into_iter()
+                            .map(|spx_img| nbd_affine_subspace.embed_simplex(&spx_img))
+                            .collect(),
+                    );
+                    pts_todo.extend(link_points);
                 }
             }
         }

@@ -136,7 +136,7 @@ impl<S: UnderlyingSet> FreeGroup<S> {
 mod tests {
     use malachite_nz::natural::Natural;
 
-    use crate::{composition_table::iso_rep::IsomorphismClass, group::Group};
+    use crate::group::Group;
 
     use super::*;
 

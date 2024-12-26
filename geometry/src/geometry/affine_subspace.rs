@@ -1,4 +1,4 @@
-use simplexes::{OrientedHyperplane, OrientedSimplex};
+use simplexes::{OrientedHyperplane, OrientedSimplex, Simplex};
 
 use orthoclase_rings::linear::matrix::{Matrix, MatrixStructure};
 
@@ -33,6 +33,9 @@ impl<
         ambient_space: SP,
         points: Vec<Vector<FS, SP>>,
     ) -> Result<(Self, Vec<Vector<FS, ESP>>), &'static str> {
+        for point in &points {
+            debug_assert_eq!(point.ambient_space().borrow(), ambient_space.borrow());
+        }
         if !ambient_space
             .borrow()
             .are_points_affine_independent(points.iter().collect())
@@ -198,6 +201,10 @@ impl<
         Some((root.clone(), span))
     }
 
+    pub fn get_embedding_points(&self) -> &Vec<Vector<FS, SP>> {
+        &self.embedding_points
+    }
+
     pub fn embed_point(&self, pt: &Vector<FS, ESP>) -> Vector<FS, SP> {
         assert_eq!(pt.ambient_space().borrow(), self.embedded_space.borrow());
         let (root, span) = self.get_root_and_span().unwrap(); //pt exists in the embedded space, so the embedded space is non-empty, so has a root and span
@@ -206,6 +213,17 @@ impl<
             total += &vec.scalar_mul(pt.coordinate(i));
         }
         total
+    }
+
+    pub fn embed_simplex(&self, spx: &Simplex<FS, ESP>) -> Simplex<FS, SP> {
+        Simplex::new(
+            self.ambient_space(),
+            spx.points()
+                .into_iter()
+                .map(|p| self.embed_point(p))
+                .collect(),
+        )
+        .unwrap()
     }
 
     pub fn unembed_point(&self, pt: &Vector<FS, SP>) -> Option<Vector<FS, ESP>> {
@@ -224,6 +242,21 @@ impl<
             }
             None => None,
         }
+    }
+
+    pub fn unembed_simplex(&self, spx: &Simplex<FS, SP>) -> Option<Simplex<FS, ESP>> {
+        let mut pts = vec![];
+        for embedded_pt in spx.points() {
+            match self.unembed_point(embedded_pt) {
+                Some(pt) => {
+                    pts.push(pt);
+                }
+                None => {
+                    return None;
+                }
+            }
+        }
+        Some(Simplex::new(self.embedded_space(), pts).unwrap())
     }
 
     pub fn as_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<FS, SP>>> {

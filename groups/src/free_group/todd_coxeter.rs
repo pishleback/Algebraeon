@@ -1,5 +1,3 @@
-use core::num;
-
 use crate::{group::Group, permutation::*};
 
 #[derive(Clone, Copy)]
