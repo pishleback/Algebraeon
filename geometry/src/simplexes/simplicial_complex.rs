@@ -3,13 +3,20 @@ use std::collections::{HashMap, HashSet};
 use super::*;
 
 #[derive(Clone)]
-pub struct SCSpxInfo<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
-{
+pub struct SCSpxInfo<
+    FS: OrderedRingStructure + FieldStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+    T: Eq + Clone,
+> {
     inv_bdry: HashSet<Simplex<FS, SP>>,
+    label: T,
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
-    for SCSpxInfo<FS, SP>
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > std::fmt::Debug for SCSpxInfo<FS, SP, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SCSpxInfo")
@@ -19,16 +26,22 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 #[derive(Clone)]
-pub struct SimplicialComplex<
+pub struct LabelledSimplicialComplex<
     FS: OrderedRingStructure + FieldStructure,
     SP: Borrow<AffineSpace<FS>> + Clone,
+    T: Eq + Clone,
 > {
     ambient_space: SP,
-    simplexes: HashMap<Simplex<FS, SP>, SCSpxInfo<FS, SP>>,
+    simplexes: HashMap<Simplex<FS, SP>, SCSpxInfo<FS, SP, T>>,
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
-    for SimplicialComplex<FS, SP>
+pub type SimplicialComplex<FS, SP> = LabelledSimplicialComplex<FS, SP, ()>;
+
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > std::fmt::Debug for LabelledSimplicialComplex<FS, SP, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SimplicialComplex")
@@ -39,6 +52,25 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 
 impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
     SimplicialComplex<FS, SP>
+where
+    FS::Set: Hash,
+{
+    pub fn new(
+        ambient_space: SP,
+        simplexes: HashSet<Simplex<FS, SP>>,
+    ) -> Result<Self, &'static str> {
+        Self::new_labelled(
+            ambient_space,
+            simplexes.into_iter().map(|spx| (spx, ())).collect(),
+        )
+    }
+}
+
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
 {
@@ -67,11 +99,11 @@ where
         .check();
     }
 
-    pub fn new(
+    pub fn new_labelled(
         ambient_space: SP,
-        simplexes: HashSet<Simplex<FS, SP>>,
+        simplexes: HashMap<Simplex<FS, SP>, T>,
     ) -> Result<Self, &'static str> {
-        for simplex in &simplexes {
+        for simplex in simplexes.keys() {
             assert_eq!(simplex.ambient_space().borrow(), ambient_space.borrow());
             if simplex.points().len() == 0 {
                 return Err("Simplicial complex musn't contain the null simplex");
@@ -80,11 +112,12 @@ where
 
         let mut simplexes = simplexes
             .into_iter()
-            .map(|spx| {
+            .map(|(spx, label)| {
                 (
                     spx,
                     SCSpxInfo {
                         inv_bdry: HashSet::new(),
+                        label,
                     },
                 )
             })
@@ -115,6 +148,27 @@ where
 
     pub fn ambient_space(&self) -> SP {
         self.ambient_space.clone()
+    }
+
+    pub fn common_label<'a>(
+        &'a self,
+        simplexes: impl Iterator<Item = &'a Simplex<FS, SP>>,
+    ) -> Option<&'a T> {
+        let mut label = None;
+        for spx in simplexes {
+            let spx_label = &self.simplexes.get(&spx).unwrap().label;
+            match label {
+                Some(label) => {
+                    if label != spx_label {
+                        return None;
+                    }
+                }
+                None => {
+                    label = Some(spx_label);
+                }
+            }
+        }
+        label
     }
 
     pub fn interior_and_boundary(
@@ -176,7 +230,7 @@ where
                 self.ambient_space(),
                 interior.into_iter().map(|s| s.clone()).collect(),
             ),
-            SimplicialComplex::new(
+            LabelledSimplicialComplex::new(
                 self.ambient_space(),
                 boundary.into_iter().map(|s| s.clone()).collect(),
             )
@@ -269,8 +323,11 @@ where
     None
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
-    SimplicialComplex<FS, SP>
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
 {
@@ -360,7 +417,7 @@ where
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
                 .collect::<HashSet<_>>();
 
-            let nbd = SimplicialComplex::new(nbd_affine_subspace.embedded_space(), {
+            let nbd = LabelledSimplicialComplex::new(nbd_affine_subspace.embedded_space(), {
                 let mut simplexes = HashSet::new();
                 simplexes.extend(star_img.clone());
                 simplexes.extend(link_img.clone());
@@ -399,141 +456,161 @@ where
                     .filter(|spx| !nbd_interior.contains(&spx))
                     .collect::<HashSet<_>>();
 
-                let mut boundary_img_points = HashSet::new();
-                for spx in &boundary_img {
-                    for p in spx.points() {
-                        boundary_img_points.insert(p);
+                let boundary = boundary_img
+                    .iter()
+                    .map(|spx| nbd_affine_subspace.embed_simplex(spx))
+                    .collect::<Vec<_>>();
+                let semistar = {
+                    let mut semistar = star.clone();
+                    for spx in &boundary {
+                        semistar.remove(spx);
                     }
-                }
-                let nbd_boundary_affine_subspace =
-                    EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
-                        nbd_affine_subspace.embedded_space(),
-                        boundary_img_points.into_iter().collect(),
+                    semistar
+                };
+                debug_assert_eq!(boundary.len() + semistar.len(), star.len());
+                if let (Some(boundary_label), Some(semistar_label)) = (
+                    self.common_label(boundary.iter()).cloned(),
+                    self.common_label(semistar.iter()).cloned(),
+                ) {
+                    let mut boundary_img_points = HashSet::new();
+                    for spx in &boundary_img {
+                        for p in spx.points() {
+                            boundary_img_points.insert(p);
+                        }
+                    }
+                    let nbd_boundary_affine_subspace =
+                        EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
+                            nbd_affine_subspace.embedded_space(),
+                            boundary_img_points.into_iter().collect(),
+                        );
+                    debug_assert!(
+                        nbd_boundary_affine_subspace
+                            .embedded_space()
+                            .affine_dimension()
+                            <= nbd_affine_subspace.embedded_space().affine_dimension()
                     );
-                debug_assert!(
-                    nbd_boundary_affine_subspace
+                    if nbd_boundary_affine_subspace
                         .embedded_space()
                         .affine_dimension()
-                        <= nbd_affine_subspace.embedded_space().affine_dimension()
-                );
-                if nbd_boundary_affine_subspace
-                    .embedded_space()
-                    .affine_dimension()
-                    + 1
-                    == nbd_affine_subspace.embedded_space().affine_dimension()
-                {
-                    let ref_point_img = {
-                        let mut ref_point_img = None;
+                        + 1
+                        == nbd_affine_subspace.embedded_space().affine_dimension()
+                    {
+                        let ref_point_img = {
+                            let mut ref_point_img = None;
+                            for pt in &nbd_points_img {
+                                if nbd_boundary_affine_subspace.unembed_point(pt).is_none() {
+                                    ref_point_img = Some(pt.clone());
+                                    break;
+                                }
+                            }
+                            ref_point_img.unwrap()
+                        };
+                        let oriented_hyperplane = OrientedSimplex::new_with_negative_point(
+                            nbd_boundary_affine_subspace.ambient_space(),
+                            nbd_boundary_affine_subspace.get_embedding_points().clone(),
+                            &ref_point_img,
+                        )
+                        .unwrap();
                         for pt in &nbd_points_img {
-                            if nbd_boundary_affine_subspace.unembed_point(pt).is_none() {
-                                ref_point_img = Some(pt.clone());
-                                break;
-                            }
+                            debug_assert!(
+                                oriented_hyperplane.classify_point(pt) != OrientationSide::Positive
+                            );
                         }
-                        ref_point_img.unwrap()
-                    };
-                    let oriented_hyperplane = OrientedSimplex::new_with_negative_point(
-                        nbd_boundary_affine_subspace.ambient_space(),
-                        nbd_boundary_affine_subspace.get_embedding_points().clone(),
-                        &ref_point_img,
-                    )
-                    .unwrap();
-                    for pt in &nbd_points_img {
-                        debug_assert!(
-                            oriented_hyperplane.classify_point(pt) != OrientationSide::Positive
-                        );
-                    }
 
-                    let rim_img = {
-                        let mut rim_img = HashSet::new();
-                        for spx in &boundary_img {
-                            for bspx in spx.sub_simplices_not_null() {
-                                rim_img.insert(bspx);
-                            }
-                        }
-                        for spx in &boundary_img {
-                            rim_img.remove(spx);
-                        }
-                        rim_img
-                    };
-
-                    let pt_img_img = nbd_boundary_affine_subspace.unembed_point(&pt_img).unwrap();
-
-                    let rim_img_img = rim_img
-                        .iter()
-                        .map(|spx| {
-                            OrientedSimplex::new_with_negative_point(
-                                nbd_boundary_affine_subspace.embedded_space(),
-                                nbd_boundary_affine_subspace
-                                    .unembed_simplex(spx)
-                                    .unwrap()
-                                    .points()
-                                    .clone(),
-                                &pt_img_img,
-                            )
-                            .unwrap()
-                        })
-                        .collect::<Vec<_>>();
-
-                    if let Some(new_boundary_img_img) = simplify_in_region(
-                        nbd_boundary_affine_subspace.embedded_space(),
-                        rim_img_img,
-                    ) {
-                        let new_boundary_img = new_boundary_img_img
-                            .iter()
-                            .map(|spx| nbd_boundary_affine_subspace.embed_simplex(spx))
-                            .collect::<Vec<_>>();
-
-                        let sphere_img = {
-                            let mut sphere_img = vec![];
-                            for spx in &new_boundary_img {
-                                if spx.n() + 1
-                                    == nbd_affine_subspace.embedded_space().affine_dimension()
-                                {
-                                    sphere_img.push(
-                                        OrientedSimplex::new_with_negative_point(
-                                            nbd_affine_subspace.embedded_space(),
-                                            spx.points().clone(),
-                                            &ref_point_img,
-                                        )
-                                        .unwrap(),
-                                    );
+                        let rim_img = {
+                            let mut rim_img = HashSet::new();
+                            for spx in &boundary_img {
+                                for bspx in spx.sub_simplices_not_null() {
+                                    rim_img.insert(bspx);
                                 }
                             }
-                            for spx in &link_img {
-                                if spx.n() + 1
-                                    == nbd_affine_subspace.embedded_space().affine_dimension()
-                                {
-                                    sphere_img.push(
-                                        OrientedSimplex::new_with_negative_point(
-                                            nbd_affine_subspace.embedded_space(),
-                                            spx.points().clone(),
-                                            &pt_img,
-                                        )
-                                        .unwrap(),
-                                    );
-                                }
+                            for spx in &boundary_img {
+                                rim_img.remove(spx);
                             }
-                            sphere_img
+                            rim_img
                         };
 
-                        if let Some(new_star_img) =
-                            simplify_in_region(nbd_affine_subspace.embedded_space(), sphere_img)
-                        {
-                            self.remove_simplexes_unchecked(star.into_iter().collect());
-                            self.add_simplexes_unchecked(
-                                new_boundary_img
-                                    .into_iter()
-                                    .map(|spx_img| nbd_affine_subspace.embed_simplex(&spx_img))
-                                    .collect(),
-                            );
-                            self.add_simplexes_unchecked(
-                                new_star_img
-                                    .into_iter()
-                                    .map(|spx_img| nbd_affine_subspace.embed_simplex(&spx_img))
-                                    .collect(),
-                            );
-                            pts_todo.extend(link_points);
+                        let pt_img_img =
+                            nbd_boundary_affine_subspace.unembed_point(&pt_img).unwrap();
+
+                        let rim_img_img = rim_img
+                            .iter()
+                            .map(|spx| {
+                                OrientedSimplex::new_with_negative_point(
+                                    nbd_boundary_affine_subspace.embedded_space(),
+                                    nbd_boundary_affine_subspace
+                                        .unembed_simplex(spx)
+                                        .unwrap()
+                                        .points()
+                                        .clone(),
+                                    &pt_img_img,
+                                )
+                                .unwrap()
+                            })
+                            .collect::<Vec<_>>();
+
+                        if let Some(new_boundary_img_img) = simplify_in_region(
+                            nbd_boundary_affine_subspace.embedded_space(),
+                            rim_img_img,
+                        ) {
+                            let new_boundary_img = new_boundary_img_img
+                                .iter()
+                                .map(|spx| nbd_boundary_affine_subspace.embed_simplex(spx))
+                                .collect::<Vec<_>>();
+
+                            let sphere_img = {
+                                let mut sphere_img = vec![];
+                                for spx in &new_boundary_img {
+                                    if spx.n() + 1
+                                        == nbd_affine_subspace.embedded_space().affine_dimension()
+                                    {
+                                        sphere_img.push(
+                                            OrientedSimplex::new_with_negative_point(
+                                                nbd_affine_subspace.embedded_space(),
+                                                spx.points().clone(),
+                                                &ref_point_img,
+                                            )
+                                            .unwrap(),
+                                        );
+                                    }
+                                }
+                                for spx in &link_img {
+                                    if spx.n() + 1
+                                        == nbd_affine_subspace.embedded_space().affine_dimension()
+                                    {
+                                        sphere_img.push(
+                                            OrientedSimplex::new_with_negative_point(
+                                                nbd_affine_subspace.embedded_space(),
+                                                spx.points().clone(),
+                                                &pt_img,
+                                            )
+                                            .unwrap(),
+                                        );
+                                    }
+                                }
+                                sphere_img
+                            };
+
+                            if let Some(new_star_img) =
+                                simplify_in_region(nbd_affine_subspace.embedded_space(), sphere_img)
+                            {
+                                self.remove_simplexes_unchecked(star.into_iter().collect());
+                                self.add_simplexes_unchecked(
+                                    new_boundary_img
+                                        .into_iter()
+                                        .map(|spx_img| nbd_affine_subspace.embed_simplex(&spx_img))
+                                        .collect(),
+                                    &boundary_label,
+                                );
+                                self.add_simplexes_unchecked(
+                                    new_star_img
+                                        .into_iter()
+                                        .map(|spx_img| nbd_affine_subspace.embed_simplex(&spx_img))
+                                        .collect(),
+                                    &semistar_label,
+                                );
+                                pts_todo.extend(link_points);
+                            }
                         }
                     }
                 }
@@ -561,41 +638,44 @@ where
                     l = link
                 */
 
-                let boundary = link_img
-                    .iter()
-                    .filter(|spx| {
-                        let n = spx.n();
-                        let a = nbd_affine_subspace.embedded_space().affine_dimension();
-                        if n >= a {
-                            unreachable!()
-                        } else if n + 1 == a {
-                            true
-                        } else {
-                            debug_assert!(n + 1 < a);
-                            false
-                        }
-                    })
-                    .map(|spx| {
-                        OrientedSimplex::new_with_negative_point(
-                            nbd_affine_subspace.embedded_space(),
-                            spx.points().clone(),
-                            &pt_img,
-                        )
-                        .unwrap()
-                    })
-                    .collect();
+                if let Some(star_label) = self.common_label(star.iter()).cloned() {
+                    let boundary = link_img
+                        .iter()
+                        .filter(|spx| {
+                            let n = spx.n();
+                            let a = nbd_affine_subspace.embedded_space().affine_dimension();
+                            if n >= a {
+                                unreachable!()
+                            } else if n + 1 == a {
+                                true
+                            } else {
+                                debug_assert!(n + 1 < a);
+                                false
+                            }
+                        })
+                        .map(|spx| {
+                            OrientedSimplex::new_with_negative_point(
+                                nbd_affine_subspace.embedded_space(),
+                                spx.points().clone(),
+                                &pt_img,
+                            )
+                            .unwrap()
+                        })
+                        .collect();
 
-                if let Some(new_star_img) =
-                    simplify_in_region(nbd_affine_subspace.embedded_space(), boundary)
-                {
-                    self.remove_simplexes_unchecked(star.into_iter().collect());
-                    self.add_simplexes_unchecked(
-                        new_star_img
-                            .into_iter()
-                            .map(|spx_img| nbd_affine_subspace.embed_simplex(&spx_img))
-                            .collect(),
-                    );
-                    pts_todo.extend(link_points);
+                    if let Some(new_star_img) =
+                        simplify_in_region(nbd_affine_subspace.embedded_space(), boundary)
+                    {
+                        self.remove_simplexes_unchecked(star.into_iter().collect());
+                        self.add_simplexes_unchecked(
+                            new_star_img
+                                .into_iter()
+                                .map(|spx_img| nbd_affine_subspace.embed_simplex(&spx_img))
+                                .collect(),
+                            &star_label,
+                        );
+                        pts_todo.extend(link_points);
+                    }
                 }
             }
         }
@@ -605,6 +685,22 @@ where
 
         self
     }
+
+    // #[deprecated]
+    // pub fn frick(self) -> LabelledSimplicialComplex<FS, SP, usize> {
+    //     let mut count = 0;
+    //     LabelledSimplicialComplex::new_labelled(
+    //         self.ambient_space().clone(),
+    //         self.simplexes
+    //             .iter()
+    //             .map(|(spx, _)| {
+    //                 count += 1;
+    //                 (spx.clone(), count)
+    //             })
+    //             .collect(),
+    //     )
+    //     .unwrap()
+    // }
 
     //remove simplexes and remove them from the inverse boundary of any others
     //self may not be in a valid state after this operation
@@ -633,12 +729,13 @@ where
     //add the given simplexes and add them to the inverse boundary map on anything on their boundaries
     //must be added together to cover the case where there are mutual boundary relations
     //self may not be in a valid state after this operation
-    fn add_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, SP>>) {
+    fn add_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, SP>>, label: &T) {
         for spx in &simplexes {
             self.simplexes.insert(
                 spx.clone(),
                 SCSpxInfo {
                     inv_bdry: HashSet::new(),
+                    label: label.clone(),
                 },
             );
         }
@@ -653,8 +750,8 @@ where
         }
     }
 
-    fn add_simplexes(&mut self, simplexes: Vec<Simplex<FS, SP>>) {
-        self.add_simplexes_unchecked(simplexes);
+    fn add_simplexes(&mut self, simplexes: Vec<Simplex<FS, SP>>, label: &T) {
+        self.add_simplexes_unchecked(simplexes, label);
         #[cfg(debug_assertions)]
         self.check();
     }
@@ -720,6 +817,6 @@ where
                 simplexes.insert(bdry);
             }
         }
-        SimplicialComplex::new(self.ambient_space(), simplexes).unwrap()
+        LabelledSimplicialComplex::new(self.ambient_space(), simplexes).unwrap()
     }
 }

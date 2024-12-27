@@ -6,7 +6,9 @@ use orthoclase_rings::ring_structure::structure::{
 };
 
 use orthoclase_geometry::{
-    simplexes::{PartialSimplicialComplex, Simplex, SimplicialComplex, SimplicialDisjointUnion},
+    simplexes::{
+        LabelledSimplicialComplex, PartialSimplicialComplex, Simplex, SimplicialDisjointUnion,
+    },
     AffineSpace,
 };
 
@@ -71,7 +73,8 @@ impl<
 impl<
         FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
         SP: Borrow<AffineSpace<FS>> + Clone,
-    > Drawable for SimplicialComplex<FS, SP>
+        T: Eq + Clone,
+    > Drawable for LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: std::hash::Hash,
 {

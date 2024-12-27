@@ -505,10 +505,10 @@ where
             }
         }
 
-        let entire = SimplicialComplex::new(self.ambient_space.clone(), all_simplexes).unwrap();
+        let entire = LabelledSimplicialComplex::new(self.ambient_space.clone(), all_simplexes).unwrap();
         ConvexHullAsSimplicialComplexResult {
             entire: entire.clone(),
-            boundary: SimplicialComplex::new(
+            boundary: LabelledSimplicialComplex::new(
                 self.ambient_space.clone(),
                 boundary_simplexes.into_iter().collect(),
             )

@@ -18,7 +18,7 @@ use orthoclase_rings::ring_structure::cannonical::*;
 use orthoclase_rings::structure::CannonicalStructure;
 use orthoclase_rings::structure::StructuredType;
 use rand::Rng;
-use simplexes::SimplicialComplex;
+use simplexes::LabelledSimplicialComplex;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
@@ -77,10 +77,11 @@ fn main() {
         .entire,
     );
 
-    let x = x.union_raw(&c).refine_to_partial_simplicial_complex().closure_as_simplicial_complex().simplify();
-    // let y = x.union(&c);
-
-    // let x = x.refine_to_partial_simplicial_complex();
+    let x = x
+        .union_raw(&c)
+        .refine_to_partial_simplicial_complex()
+        .closure_as_simplicial_complex();
+    // let y = x.clone().simplify();
 
     orthoclase_drawing::canvas::canvas2d::Diagram2dCanvas::run(|canvas| {
         canvas.draw(&x, (1.0, 0.0, 0.0));
