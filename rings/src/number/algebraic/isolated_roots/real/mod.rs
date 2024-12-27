@@ -31,6 +31,13 @@ pub struct RealAlgebraicRoot {
     dir: bool,
 }
 
+impl std::hash::Hash for RealAlgebraicRoot {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        debug_assert!(self.poly.leading_coeff().unwrap() > 0);
+        self.poly.hash(state);
+    }
+}
+
 impl RealAlgebraicRoot {
     pub fn poly(&self) -> &Polynomial<Integer> {
         &self.poly
@@ -344,7 +351,7 @@ impl RealAlgebraicRoot {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub enum RealAlgebraic {
     Rational(Rational),
     Real(RealAlgebraicRoot),
@@ -687,9 +694,25 @@ impl ComplexSubsetStructure for CannonicalStructure<RealAlgebraic> {}
 
 impl RealSubsetStructure for CannonicalStructure<RealAlgebraic> {}
 
+impl OrderedRingStructure for CannonicalStructure<RealAlgebraic> {
+    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+        a.cmp(b)
+    }
+}
+
 impl RealToFloatStructure for CannonicalStructure<RealAlgebraic> {
-    fn as_f64(&self, _x: &Self::Set) -> f64 {
-        todo!()
+    fn as_f64(&self, x: &Self::Set) -> f64 {
+        match x {
+            RealAlgebraic::Rational(x) => x.as_f64(),
+            RealAlgebraic::Real(x) => {
+                let mut x = x.clone();
+                x.refine_to_accuracy(&Rational::from_integers(
+                    Integer::from(1),
+                    Integer::from(1000000000000000i64),
+                ));
+                ((x.tight_a + x.tight_b) / Rational::from(2)).as_f64()
+            }
+        }
     }
 }
 

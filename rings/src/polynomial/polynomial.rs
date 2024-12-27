@@ -17,6 +17,12 @@ pub struct Polynomial<Set> {
     coeffs: Vec<Set>,
 }
 
+impl<Set: std::hash::Hash> std::hash::Hash for Polynomial<Set> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.coeffs.hash(state);
+    }
+}
+
 impl<Set> Polynomial<Set> {
     pub fn coeffs(&self) -> Vec<&Set> {
         self.coeffs.iter().collect()

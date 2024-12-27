@@ -693,17 +693,3 @@ impl super::Canvas for Diagram2dCanvas {
         }
     }
 }
-
-// impl Shape {
-//     #[deprecated]
-//     pub fn view2d(&self) -> ! {
-//         if self.dim() != 2 {
-//             panic!()
-//         }
-
-//         use super::Canvas;
-//         let mut canvas = Diagram2dCanvas::run(|canvas| {
-//             canvas.draw_shape(self, (1.0, 1.0, 1.0));
-//         });
-//     }
-// }
