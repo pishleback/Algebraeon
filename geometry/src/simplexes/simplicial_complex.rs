@@ -64,6 +64,77 @@ where
             simplexes.into_iter().map(|spx| (spx, ())).collect(),
         )
     }
+
+    pub fn interior_and_boundary(
+        &self,
+    ) -> LabelledSimplicialComplex<FS, SP, InteriorBoundaryLabel> {
+        /*
+        let n be the dimension of the space self is living in
+         - every simplex of rank n is part of the interior
+         - a simplex of rank n-1 is the facet of at most 2 simplices of rank n, and is part of the interior if and only if it is the facet of exactly 2 simplices of rank n
+         - a simplex of rank less or equal to n-2 is part of the interior iff it is in the boundary of some strictly higher rank simplex AND every strictly higher rank simplex containing it as part of the boundary is part of the interior
+        */
+
+        let n = self.ambient_space().borrow().affine_dimension();
+
+        let mut simplexes = HashMap::new();
+
+        let mut all = self.simplexes.keys().cloned().collect::<Vec<_>>();
+        all.sort_unstable_by_key(|s| std::cmp::Reverse(s.n())); //so that we process largest rank first
+        for simplex in all {
+            let r = simplex.n();
+            if r == n {
+                //rank n simplex is always part of the interior
+                simplexes.insert(simplex, InteriorBoundaryLabel::Interior);
+            } else {
+                let inv_bdry = &self.simplexes.get(&simplex).unwrap().inv_bdry;
+                if r == n - 1 {
+                    //rank n-1 simplex is part of the boundary of at most 2 rank n simplices
+                    //it is part of the boundary of the simplicial complex iff it is the boundary of exactly 2
+                    match inv_bdry.len() {
+                        0 | 1 => {
+                            simplexes.insert(simplex, InteriorBoundaryLabel::Boundary);
+                        }
+                        2 => {
+                            simplexes.insert(simplex, InteriorBoundaryLabel::Interior);
+                        }
+                        _ => panic!(
+                        "rank n-1 simplex should be in the boundary of at most 2 rank n simplices"
+                    ),
+                    }
+                } else {
+                    //rank < n-1 simplex is part of the interior iff it is part of the boundary of at least one simplex and every such simplex is part of the interior
+                    debug_assert!(r < n - 1);
+                    if inv_bdry.is_empty() {
+                        simplexes.insert(simplex, InteriorBoundaryLabel::Boundary);
+                    } else {
+                        if inv_bdry
+                            .iter()
+                            .all(|b| simplexes.get(b).unwrap() == &InteriorBoundaryLabel::Interior)
+                        {
+                            simplexes.insert(simplex, InteriorBoundaryLabel::Interior);
+                        } else {
+                            simplexes.insert(simplex, InteriorBoundaryLabel::Boundary);
+                        }
+                    }
+                }
+            }
+        }
+
+        LabelledSimplicialComplex::new_labelled(self.ambient_space(), simplexes).unwrap()
+    }
+
+    pub fn interior(&self) -> PartialSimplicialComplex<FS, SP> {
+        self.interior_and_boundary()
+            .labelled_subset(&InteriorBoundaryLabel::Interior)
+    }
+
+    pub fn boundary(&self) -> SimplicialComplex<FS, SP> {
+        self.interior_and_boundary()
+            .labelled_subset(&InteriorBoundaryLabel::Boundary)
+            .try_as_simplicial_complex()
+            .unwrap()
+    }
 }
 
 impl<
@@ -171,79 +242,34 @@ where
         label
     }
 
-    pub fn interior_and_boundary(
-        &self,
-    ) -> (PartialSimplicialComplex<FS, SP>, SimplicialComplex<FS, SP>) {
-        /*
-        let n be the dimension of the space self is living in
-         - every simplex of rank n is part of the interior
-         - a simplex of rank n-1 is the facet of at most 2 simplices of rank n, and is part of the interior if and only if it is the facet of exactly 2 simplices of rank n
-         - a simplex of rank less or equal to n-2 is part of the interior iff it is in the boundary of some strictly higher rank simplex AND every strictly higher rank simplex containing it as part of the boundary is part of the interior
-        */
-
-        let n = self.ambient_space().borrow().affine_dimension();
-
-        let mut interior: HashSet<&Simplex<FS, SP>> = HashSet::new();
-        let mut boundary: HashSet<&Simplex<FS, SP>> = HashSet::new();
-
-        let mut all = self.simplexes.keys().collect::<Vec<_>>();
-        all.sort_unstable_by_key(|s| std::cmp::Reverse(s.n())); //so that we process largest rank first
-        for simplex in all {
-            let r = simplex.n();
-            if r == n {
-                //rank n simplex is always part of the interior
-                interior.insert(simplex);
-            } else {
-                let inv_bdry = &self.simplexes.get(simplex).unwrap().inv_bdry;
-                if r == n - 1 {
-                    //rank n-1 simplex is part of the boundary of at most 2 rank n simplices
-                    //it is part of the boundary of the simplicial complex iff it is the boundary of exactly 2
-                    match inv_bdry.len() {
-                        0 | 1 => {
-                            boundary.insert(simplex);
-                        }
-                        2 => {
-                            interior.insert(simplex);
-                        }
-                        _ => panic!(
-                        "rank n-1 simplex should be in the boundary of at most 2 rank n simplices"
-                    ),
-                    }
-                } else {
-                    //rank < n-1 simplex is part of the interior iff it is part of the boundary of at least one simplex and every such simplex is part of the interior
-                    debug_assert!(r < n - 1);
-                    if inv_bdry.is_empty() {
-                        boundary.insert(simplex);
-                    } else {
-                        if inv_bdry.iter().all(|b| interior.contains(b)) {
-                            interior.insert(simplex);
-                        } else {
-                            boundary.insert(simplex);
-                        }
-                    }
-                }
-            }
-        }
-
-        (
-            PartialSimplicialComplex::new_unchecked(
-                self.ambient_space(),
-                interior.into_iter().map(|s| s.clone()).collect(),
-            ),
-            LabelledSimplicialComplex::new(
-                self.ambient_space(),
-                boundary.into_iter().map(|s| s.clone()).collect(),
-            )
-            .unwrap(),
+    pub fn labelled_subset(&self, label: &T) -> PartialSimplicialComplex<FS, SP> {
+        PartialSimplicialComplex::new_unchecked(
+            self.ambient_space().clone(),
+            self.simplexes
+                .iter()
+                .filter(|(_, info)| &info.label == label)
+                .map(|(spx, _)| spx.clone())
+                .collect(),
         )
     }
 
-    pub fn interior(&self) -> PartialSimplicialComplex<FS, SP> {
-        self.interior_and_boundary().0
-    }
-
-    pub fn boundary(&self) -> SimplicialComplex<FS, SP> {
-        self.interior_and_boundary().1
+    pub fn forget_labels(self) -> SimplicialComplex<FS, SP> {
+        SimplicialComplex {
+            ambient_space: self.ambient_space,
+            simplexes: self
+                .simplexes
+                .into_iter()
+                .map(|(spx, info)| {
+                    (
+                        spx,
+                        SCSpxInfo {
+                            inv_bdry: info.inv_bdry,
+                            label: (),
+                        },
+                    )
+                })
+                .collect(),
+        }
     }
 }
 
@@ -757,6 +783,12 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ClosureLabel {
+    Origional,
+    Closure,
+}
+
 #[derive(Clone)]
 pub struct PartialSimplicialComplex<
     FS: OrderedRingStructure + FieldStructure,
@@ -810,13 +842,36 @@ where
         self.simplexes
     }
 
-    pub fn closure_as_simplicial_complex(&self) -> SimplicialComplex<FS, SP> {
+    pub fn try_as_simplicial_complex(self) -> Result<SimplicialComplex<FS, SP>, &'static str> {
+        SimplicialComplex::new(self.ambient_space, self.simplexes)
+    }
+
+    pub fn closure(&self) -> LabelledSimplicialComplex<FS, SP, ClosureLabel> {
         let mut simplexes = HashSet::new();
         for spx in &self.simplexes {
             for bdry in spx.sub_simplices_not_null() {
                 simplexes.insert(bdry);
             }
         }
-        LabelledSimplicialComplex::new(self.ambient_space(), simplexes).unwrap()
+        LabelledSimplicialComplex::new_labelled(
+            self.ambient_space(),
+            simplexes
+                .into_iter()
+                .map(|spx| {
+                    let label = match self.simplexes.contains(&spx) {
+                        true => ClosureLabel::Origional,
+                        false => ClosureLabel::Closure,
+                    };
+                    (spx, label)
+                })
+                .collect(),
+        )
+        .unwrap()
+    }
+
+    pub fn simplify(&self) -> Self {
+        self.closure()
+            .simplify()
+            .labelled_subset(&simplexes::ClosureLabel::Origional)
     }
 }

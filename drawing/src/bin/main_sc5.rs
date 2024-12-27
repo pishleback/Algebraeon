@@ -45,7 +45,7 @@ fn main() {
             ],
         )
         .as_simplicial_complex()
-        .interior,
+        .labelled_subset(&simplexes::InteriorBoundaryLabel::Interior),
     );
 
     let b = SimplicialDisjointUnion::from(
@@ -59,7 +59,7 @@ fn main() {
             ],
         )
         .as_simplicial_complex()
-        .entire,
+        .forget_labels(),
     );
 
     let x = a.union_raw(&b);
@@ -74,17 +74,14 @@ fn main() {
             ],
         )
         .as_simplicial_complex()
-        .entire,
+        .forget_labels(),
     );
 
-    let x = x
-        .union_raw(&c)
-        .refine_to_partial_simplicial_complex()
-        .closure_as_simplicial_complex();
-    // let y = x.clone().simplify();
+    let x = x.union_raw(&c).refine_to_partial_simplicial_complex();
+    let y = x.clone().simplify();
 
     orthoclase_drawing::canvas::canvas2d::Diagram2dCanvas::run(|canvas| {
-        canvas.draw(&x, (1.0, 0.0, 0.0));
-        // canvas.draw(&y, (0.0, 1.0, 0.0));
+        // canvas.draw(&x, (1.0, 0.0, 0.0));
+        canvas.draw(&y, (0.0, 1.0, 0.0));
     });
 }

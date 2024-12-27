@@ -69,8 +69,8 @@ fn main() {
     );
     // let ch3 = ch1.intersect(&ch2);
 
-    let sc1 = ch1.as_simplicial_complex().entire;
-    let sc2 = ch2.as_simplicial_complex().entire;
+    let sc1 = ch1.as_simplicial_complex().forget_labels();
+    let sc2 = ch2.as_simplicial_complex().forget_labels();
     // let sc3 = ch3.as_simplicial_complex().entire;
 
     // let VennResult {
@@ -85,7 +85,7 @@ fn main() {
     let sc5 = sc4
         .clone()
         .refine_to_partial_simplicial_complex()
-        .closure_as_simplicial_complex();
+        .closure();
     println!("done to sc");
     let sc6 = sc5.clone().simplify();
     println!("done simplify");

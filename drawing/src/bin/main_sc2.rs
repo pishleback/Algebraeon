@@ -87,15 +87,19 @@ fn main() {
         // canvas.draw(ch.as_simplicial_complex().entire.as_ref(), (1.0, 1.0, 1.0));
         canvas.draw(ospx.simplex(), (1.0, 0.0, 0.0));
         canvas.draw(
-            &smaller_ch_neutral.as_simplicial_complex().entire,
+            &smaller_ch_neutral.as_simplicial_complex().forget_labels(),
             (0.0, 1.0, 0.0),
         );
         canvas.draw(
-            &smaller_ch_pos.as_simplicial_complex().interior,
+            &smaller_ch_pos
+                .as_simplicial_complex()
+                .labelled_subset(&simplexes::InteriorBoundaryLabel::Interior),
             (0.0, 1.0, 1.0),
         );
         canvas.draw(
-            &smaller_ch_neg.as_simplicial_complex().interior,
+            &smaller_ch_neg
+                .as_simplicial_complex()
+                .labelled_subset(&simplexes::InteriorBoundaryLabel::Interior),
             (0.0, 0.0, 1.0),
         );
     });

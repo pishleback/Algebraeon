@@ -150,6 +150,7 @@ where
                             }
                             Err(_) => true,
                         } {
+                            //there is a bad overlap between spx1 and spx2
                             let mut spx1_replacement = overlap.clone();
                             for pt in spx1.points() {
                                 spx1_replacement.extend_by_point(pt.clone());
@@ -201,7 +202,7 @@ where
                             //add the refinements of spx1 and spx2 and update the pairs todo
                             for spx1_repl in spx1_replacement
                                 .as_simplicial_complex()
-                                .interior
+                                .labelled_subset(&InteriorBoundaryLabel::Interior)
                                 .into_simplexes()
                             {
                                 for spx in &spx1_paired {
@@ -219,7 +220,7 @@ where
 
                             for spx2_repl in spx2_replacement
                                 .as_simplicial_complex()
-                                .interior
+                                .labelled_subset(&InteriorBoundaryLabel::Interior)
                                 .into_simplexes()
                             {
                                 for spx in &spx2_paired {
@@ -243,8 +244,8 @@ where
         PartialSimplicialComplex::new(ambient_space, self.into_simplexes()).unwrap()
     }
 
-    pub fn closure_as_simplicial_complex(self) -> SimplicialComplex<FS, SP> {
-        self.refine_to_partial_simplicial_complex()
-            .closure_as_simplicial_complex()
-    }
+    // pub fn closure_as_simplicial_complex(self) -> SimplicialComplex<FS, SP> {
+    //     self.refine_to_partial_simplicial_complex()
+    //         .closure_as_simplicial_complex()
+    // }
 }

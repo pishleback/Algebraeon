@@ -38,6 +38,12 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InteriorBoundaryLabel {
+    Interior,
+    Boundary,
+}
+
 mod simplex;
 pub use simplex::*;
 

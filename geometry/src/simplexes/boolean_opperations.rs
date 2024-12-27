@@ -29,7 +29,7 @@ where
         }
         let self_parts = self_ext
             .as_simplicial_complex()
-            .interior
+            .labelled_subset(&InteriorBoundaryLabel::Interior)
             .simplexes()
             .into_iter()
             .map(|s| s.clone())
@@ -41,7 +41,7 @@ where
         }
         let other_parts = other_ext
             .as_simplicial_complex()
-            .interior
+            .labelled_subset(&InteriorBoundaryLabel::Interior)
             .simplexes()
             .into_iter()
             .map(|s| s.clone())
@@ -156,28 +156,97 @@ where
     }
 }
 
+// impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+//     PartialSimplicialComplex<FS, SP>
+// where
+//     FS::Set: Hash,
+// {
+//     pub fn union(&self, other: &Self) -> Self {
+//         self.union_raw(other).simplify()
+//     }
+
+//     pub fn union_raw(&self, other: &Self) -> Self {
+//         SimplicialComplex::union_raw(&self, other)
+//     }
+
+//     pub fn intersection_raw(&self, other: &Self) -> Self {
+//         SimplicialDisjointUnion::intersection_raw(&self.into(), &other.into())
+//             .refine_to_partial_simplicial_complex()
+//             .closure()
+//             .forget_labels()
+//             .into()
+//     }
+
+//     pub fn intersection(&self, other: &Self) -> Self {
+//         self.intersection_raw(other).simplify()
+//     }
+// }
+
 impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
     SimplicialComplex<FS, SP>
 where
     FS::Set: Hash,
 {
-    pub fn union(&self, other: &Self) -> Self {
-        self.union_raw(other).simplify()
-    }
-
     pub fn union_raw(&self, other: &Self) -> Self {
         SimplicialDisjointUnion::union_raw(&self.into(), &other.into())
             .refine_to_partial_simplicial_complex()
-            .closure_as_simplicial_complex()
+            .try_as_simplicial_complex()
+            .unwrap()
+    }
+
+    pub fn union(&self, other: &Self) -> Self {
+        self.union_raw(other).simplify()
     }
 
     pub fn intersection_raw(&self, other: &Self) -> Self {
         SimplicialDisjointUnion::intersection_raw(&self.into(), &other.into())
             .refine_to_partial_simplicial_complex()
-            .closure_as_simplicial_complex()
+            .try_as_simplicial_complex()
+            .unwrap()
     }
 
     pub fn intersection(&self, other: &Self) -> Self {
         self.intersection_raw(other).simplify()
     }
 }
+
+pub fn labelled_simplicial_complex_venn_raw<
+    FS: OrderedRingStructure + FieldStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+    T1: Eq + Clone,
+    T2: Eq + Clone,
+>(
+    left: &LabelledSimplicialComplex<FS, SP, T1>,
+    right: &LabelledSimplicialComplex<FS, SP, T2>,
+) -> LabelledSimplicialComplex<FS, SP, (Option<T1>, Option<T2>)> {
+    todo!()
+}
+
+pub fn labelled_simplicial_complex_venn<
+    FS: OrderedRingStructure + FieldStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+    T1: Eq + Clone,
+    T2: Eq + Clone,
+>(
+    left: &LabelledSimplicialComplex<FS, SP, T1>,
+    right: &LabelledSimplicialComplex<FS, SP, T2>,
+) -> LabelledSimplicialComplex<FS, SP, (Option<T1>, Option<T2>)>
+where
+    FS::Set: Hash,
+{
+    labelled_simplicial_complex_venn_raw(left, right).simplify()
+}
+
+
+/*
+ - Add labels to simplex disjoint union
+ - Refining disjoint union <T> to produce labelled simplicial complex <Option<T>>
+ - Intersecting disjoint unions <T1> <T2> to produce disjoint union <(T1, T2)>
+ - Subtracting disjoint union <T2> from dju <T1> to produce disjoint union <T1>
+ - Union dju <()> and dju <()> to more efficiently produce dju <()>
+ - Venn dju <T1> and dju <T2> to produce dju <(Option<T1>, Option<T2>)>
+ - Replace partial simplicial complex (psc) with labelled simplicial complex <bool>
+ - Intersect psc, psc -> psc
+ - Union psc, psc -> psc
+ - Subtract psc, psc -> psc
+*/

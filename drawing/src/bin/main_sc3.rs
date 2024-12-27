@@ -43,7 +43,7 @@ fn main() {
         ],
     )
     .as_simplicial_complex()
-    .entire;
+    .forget_labels();
     let x = a;
 
     let b = ConvexHull::new(
@@ -56,7 +56,7 @@ fn main() {
         ],
     )
     .as_simplicial_complex()
-    .entire;
+    .forget_labels();
     let x = SimplicialDisjointUnion::union_raw(&(&x).into(), &(&b).into())
         .closure_as_simplicial_complex();
 
@@ -70,7 +70,7 @@ fn main() {
         ],
     )
     .as_simplicial_complex()
-    .entire;
+    .forget_labels();
     let x = SimplicialDisjointUnion::subtract_raw(&(&x).into(), &(&c).into())
         .closure_as_simplicial_complex();
 

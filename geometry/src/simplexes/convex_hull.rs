@@ -14,14 +14,13 @@ pub struct ConvexHull<
     // the affine subspace spanned by this convex hull
     // so that this convex hull is "full" in this embedded subspace
     subspace: EmbeddedAffineSubspace<FS, SP, Rc<AffineSpace<FS>>>,
-    // oriented facets belonging to the embedded subspace such that 
-    // the positive side of each facet is on the interior of the convex hull and 
+    // oriented facets belonging to the embedded subspace such that
+    // the positive side of each facet is on the interior of the convex hull and
     // the negative side of each facet is on the outside of the convex hull.
     // These facets should form a simplicial complex
     facets: Vec<OrientedSimplex<FS, Rc<AffineSpace<FS>>>>,
     // These interior simplicies are the full-dimensional simplicies in the embedded subspace forming the interior of the convex hull
     interior: Vec<Simplex<FS, Rc<AffineSpace<FS>>>>,
-
     /*
     Consider the case of a convex hull given by a simplex in dimension d:
 
@@ -53,15 +52,15 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct ConvexHullAsSimplicialComplexResult<
-    FS: OrderedRingStructure + FieldStructure,
-    SP: Borrow<AffineSpace<FS>> + Clone,
-> {
-    pub entire: SimplicialComplex<FS, SP>,
-    pub boundary: SimplicialComplex<FS, SP>,
-    pub interior: PartialSimplicialComplex<FS, SP>,
-}
+// #[derive(Debug, Clone)]
+// pub struct ConvexHullAsSimplicialComplexResult<
+//     FS: OrderedRingStructure + FieldStructure,
+//     SP: Borrow<AffineSpace<FS>> + Clone,
+// > {
+//     pub entire: SimplicialComplex<FS, SP>,
+//     pub boundary: SimplicialComplex<FS, SP>,
+//     pub interior: PartialSimplicialComplex<FS, SP>,
+// }
 
 impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
     ConvexHull<FS, SP>
@@ -479,7 +478,9 @@ where
             .collect()
     }
 
-    pub fn as_simplicial_complex(&self) -> ConvexHullAsSimplicialComplexResult<FS, SP> {
+    pub fn as_simplicial_complex(
+        &self,
+    ) -> LabelledSimplicialComplex<FS, SP, InteriorBoundaryLabel> {
         let boundary_simplexes = self
             .embedded_facet_simplexes()
             .into_iter()
@@ -498,26 +499,42 @@ where
             )
             .collect::<HashSet<_>>();
 
-        let mut interior_simplexes = HashSet::new();
-        for spx in &all_simplexes {
-            if !boundary_simplexes.contains(spx) {
-                interior_simplexes.insert(spx.clone());
-            }
-        }
+        LabelledSimplicialComplex::new_labelled(
+            self.ambient_space().clone(),
+            all_simplexes
+                .into_iter()
+                .map(|spx| {
+                    let label = match boundary_simplexes.contains(&spx) {
+                        false => InteriorBoundaryLabel::Interior,
+                        true => InteriorBoundaryLabel::Boundary,
+                    };
+                    (spx, label)
+                })
+                .collect(),
+        )
+        .unwrap()
 
-        let entire = LabelledSimplicialComplex::new(self.ambient_space.clone(), all_simplexes).unwrap();
-        ConvexHullAsSimplicialComplexResult {
-            entire: entire.clone(),
-            boundary: LabelledSimplicialComplex::new(
-                self.ambient_space.clone(),
-                boundary_simplexes.into_iter().collect(),
-            )
-            .unwrap(),
-            interior: PartialSimplicialComplex::new_unchecked(
-                self.ambient_space.clone(),
-                interior_simplexes,
-            ),
-        }
+        // let mut interior_simplexes = HashSet::new();
+        // for spx in &all_simplexes {
+        //     if !boundary_simplexes.contains(spx) {
+        //         interior_simplexes.insert(spx.clone());
+        //     }
+        // }
+
+        // let entire =
+        //     LabelledSimplicialComplex::new(self.ambient_space.clone(), all_simplexes).unwrap();
+        // ConvexHullAsSimplicialComplexResult {
+        //     entire: entire.clone(),
+        //     boundary: LabelledSimplicialComplex::new(
+        //         self.ambient_space.clone(),
+        //         boundary_simplexes.into_iter().collect(),
+        //     )
+        //     .unwrap(),
+        //     interior: PartialSimplicialComplex::new_unchecked(
+        //         self.ambient_space.clone(),
+        //         interior_simplexes,
+        //     ),
+        // }
     }
 }
 
