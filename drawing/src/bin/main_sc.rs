@@ -13,7 +13,6 @@ use orthoclase_geometry::simplexes::OrientationSide;
 use orthoclase_geometry::simplexes::OrientedSimplex;
 use orthoclase_geometry::simplexes::Simplex;
 use orthoclase_geometry::simplexes::SimplicialDisjointUnion;
-use orthoclase_geometry::simplexes::VennResult;
 use orthoclase_geometry::*;
 use orthoclase_rings::ring_structure::cannonical::*;
 use orthoclase_rings::structure::CannonicalStructure;
@@ -81,7 +80,7 @@ fn main() {
 
     // }
 
-    let sc4 = SimplicialDisjointUnion::union(&(&sc1).into(), &(&sc2).into());
+    let sc4 = SimplicialDisjointUnion::union_raw(&(&sc1).into(), &(&sc2).into());
     println!("done union");
     let sc5 = sc4
         .clone()

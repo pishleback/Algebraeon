@@ -46,3 +46,9 @@ pub use convex_hull::*;
 
 mod simplicial_complex;
 pub use simplicial_complex::*;
+
+mod simplicial_disjoint_union;
+pub use simplicial_disjoint_union::*;
+
+mod boolean_opperations;
+// pub use boolean_opperations::*;

@@ -13,7 +13,6 @@ use orthoclase_geometry::simplexes::OrientationSide;
 use orthoclase_geometry::simplexes::OrientedSimplex;
 use orthoclase_geometry::simplexes::Simplex;
 use orthoclase_geometry::simplexes::SimplicialDisjointUnion;
-use orthoclase_geometry::simplexes::VennResult;
 use orthoclase_geometry::*;
 use orthoclase_rings::ring_structure::cannonical::*;
 use orthoclase_rings::structure::CannonicalStructure;
@@ -58,7 +57,7 @@ fn main() {
     )
     .as_simplicial_complex()
     .entire;
-    let x = SimplicialDisjointUnion::union(&x.clone().into(), &b.clone().into())
+    let x = SimplicialDisjointUnion::union_raw(&(&x).into(), &(&b).into())
         .closure_as_simplicial_complex();
 
     let c = ConvexHull::new(
@@ -72,7 +71,7 @@ fn main() {
     )
     .as_simplicial_complex()
     .entire;
-    let x = SimplicialDisjointUnion::subtract(&x.clone().into(), &c.clone().into())
+    let x = SimplicialDisjointUnion::subtract_raw(&(&x).into(), &(&c).into())
         .closure_as_simplicial_complex();
 
     let y = x.clone().simplify();
