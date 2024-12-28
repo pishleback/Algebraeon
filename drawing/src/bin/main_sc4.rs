@@ -12,7 +12,7 @@ use orthoclase_geometry::simplexes::ConvexHull;
 use orthoclase_geometry::simplexes::OrientationSide;
 use orthoclase_geometry::simplexes::OrientedSimplex;
 use orthoclase_geometry::simplexes::Simplex;
-use orthoclase_geometry::simplexes::SimplicialDisjointUnion;
+use orthoclase_geometry::simplexes::LabelledSimplicialDisjointUnion;
 use orthoclase_geometry::*;
 use orthoclase_rings::number::algebraic::isolated_roots::real::RealAlgebraic;
 use orthoclase_rings::ring_structure::cannonical::*;
@@ -91,8 +91,9 @@ fn main() {
     .as_simplicial_complex()
     .forget_labels();
 
-    let x = SimplicialDisjointUnion::union_raw(&(&a).into(), &(&b).into())
-        .closure_as_simplicial_complex();
+    let x = LabelledSimplicialDisjointUnion::union_raw(&(&a).into(), &(&b).into())
+        .refine_to_partial_simplicial_complex()
+        .closure();
 
     for spx in x.simplexes() {
         for pt in spx.points() {

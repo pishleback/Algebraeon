@@ -7,7 +7,8 @@ use orthoclase_rings::ring_structure::structure::{
 
 use orthoclase_geometry::{
     simplexes::{
-        LabelledSimplicialComplex, PartialSimplicialComplex, Simplex, SimplicialDisjointUnion,
+        LabelledSimplicialComplex, LabelledSimplicialDisjointUnion, PartialSimplicialComplex,
+        Simplex,
     },
     AffineSpace,
 };
@@ -93,7 +94,7 @@ where
     FS::Set: std::hash::Hash,
 {
     fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
-        for simplex in self.simplexes() {
+        for (simplex, _label) in self.simplexes() {
             simplex.draw(canvas, colour);
         }
     }
@@ -102,12 +103,13 @@ where
 impl<
         FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
         SP: Borrow<AffineSpace<FS>> + Clone,
-    > Drawable for SimplicialDisjointUnion<FS, SP>
+        T: Eq + Clone,
+    > Drawable for LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: std::hash::Hash,
 {
     fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
-        for simplex in self.simplexes() {
+        for (simplex, _label) in self.simplexes() {
             simplex.draw(canvas, colour);
         }
     }

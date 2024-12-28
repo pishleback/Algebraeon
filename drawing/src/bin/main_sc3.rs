@@ -9,10 +9,10 @@ use malachite_q::Rational;
 use orthoclase_drawing::canvas::canvas2d::*;
 use orthoclase_drawing::canvas::Canvas;
 use orthoclase_geometry::simplexes::ConvexHull;
+use orthoclase_geometry::simplexes::LabelledSimplicialDisjointUnion;
 use orthoclase_geometry::simplexes::OrientationSide;
 use orthoclase_geometry::simplexes::OrientedSimplex;
 use orthoclase_geometry::simplexes::Simplex;
-use orthoclase_geometry::simplexes::SimplicialDisjointUnion;
 use orthoclase_geometry::*;
 use orthoclase_rings::ring_structure::cannonical::*;
 use orthoclase_rings::structure::CannonicalStructure;
@@ -57,8 +57,8 @@ fn main() {
     )
     .as_simplicial_complex()
     .forget_labels();
-    let x = SimplicialDisjointUnion::union_raw(&(&x).into(), &(&b).into())
-        .closure_as_simplicial_complex();
+    let x = LabelledSimplicialDisjointUnion::union_raw(&(&x).into(), &(&b).into())
+        .refine_to_partial_simplicial_complex();
 
     let c = ConvexHull::new(
         &space,
@@ -71,10 +71,11 @@ fn main() {
     )
     .as_simplicial_complex()
     .forget_labels();
-    let x = SimplicialDisjointUnion::subtract_raw(&(&x).into(), &(&c).into())
-        .closure_as_simplicial_complex();
+    let x = LabelledSimplicialDisjointUnion::subtract_raw(&(&x).into(), &(&c).into());
 
-    let y = x.clone().simplify();
+    let y = x.clone().refine_to_partial_simplicial_complex().simplify();
+
+    // let y = x.clone().refine_to_partial_simplicial_complex().simplify();
 
     // let mut y = ConvexHull::new_empty(&space);
     // y.extend_by_point(Vector::new(
@@ -91,10 +92,6 @@ fn main() {
     // ));
     // let y = y.as_simplicial_complex().entire;
     // let y = y.simplify();
-
-    //This is where I left off.
-    //As you can see, it is not fully simplified
-    //The solution will be to simplify points on flat parts of the boundary as if they are interior points of the boundary in a lower dimension
 
     orthoclase_drawing::canvas::canvas2d::Diagram2dCanvas::run(|canvas| {
         // canvas.draw(&a, (1.0, 0.0, 0.0));

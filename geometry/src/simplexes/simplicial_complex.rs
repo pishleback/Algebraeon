@@ -163,9 +163,12 @@ where
         }
 
         //check that every pair of distinct simplexes intersect in the empty set
-        SimplicialDisjointUnion::new_unchecked(
+        LabelledSimplicialDisjointUnion::new_unchecked(
             self.ambient_space(),
-            self.simplexes.keys().map(|s| s.clone()).collect(),
+            self.simplexes
+                .iter()
+                .map(|(spx, info)| (spx.clone(), info.label.clone()))
+                .collect(),
         )
         .check();
     }
@@ -213,6 +216,35 @@ where
         })
     }
 
+    pub fn labelled_simplexes(&self) -> HashMap<&Simplex<FS, SP>, &T> {
+        self.simplexes
+            .iter()
+            .map(|(spx, info)| (spx, &info.label))
+            .collect()
+    }
+
+    pub fn apply_label_function<S: Eq + Clone>(
+        self,
+        f: impl Fn(&T) -> S,
+    ) -> LabelledSimplicialComplex<FS, SP, S> {
+        LabelledSimplicialComplex {
+            ambient_space: self.ambient_space,
+            simplexes: self
+                .simplexes
+                .into_iter()
+                .map(|(spx, info)| {
+                    (
+                        spx,
+                        SCSpxInfo {
+                            inv_bdry: info.inv_bdry,
+                            label: f(&info.label),
+                        },
+                    )
+                })
+                .collect(),
+        }
+    }
+
     pub fn simplexes(&self) -> Vec<&Simplex<FS, SP>> {
         self.simplexes.keys().collect()
     }
@@ -248,7 +280,21 @@ where
             self.simplexes
                 .iter()
                 .filter(|(_, info)| &info.label == label)
-                .map(|(spx, _)| spx.clone())
+                .map(|(spx, _)| (spx.clone(), ()))
+                .collect(),
+        )
+    }
+
+    pub fn labelled_subset_filtered(
+        &self,
+        f: impl Fn(&T) -> bool,
+    ) -> LabelledPartialSimplicialComplex<FS, SP, T> {
+        LabelledPartialSimplicialComplex::new_unchecked(
+            self.ambient_space().clone(),
+            self.simplexes
+                .iter()
+                .filter(|(_, info)| f(&info.label))
+                .map(|(spx, info)| (spx.clone(), info.label.clone()))
                 .collect(),
         )
     }
@@ -452,7 +498,7 @@ where
             .unwrap();
             let nbd_interior = nbd.interior().into_simplexes();
 
-            if !nbd_interior.contains(&pt_img_spx) {
+            if !nbd_interior.contains_key(&pt_img_spx) {
                 /*
                 pt is on the boundary of nbd and nbd looks something like this
 
@@ -479,7 +525,7 @@ where
 
                 let boundary_img = star_img
                     .iter()
-                    .filter(|spx| !nbd_interior.contains(&spx))
+                    .filter(|spx| !nbd_interior.contains_key(&spx))
                     .collect::<HashSet<_>>();
 
                 let boundary = boundary_img
@@ -783,20 +829,17 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ClosureLabel {
-    Origional,
-    Closure,
-}
-
 #[derive(Clone)]
-pub struct PartialSimplicialComplex<
+pub struct LabelledPartialSimplicialComplex<
     FS: OrderedRingStructure + FieldStructure,
     SP: Borrow<AffineSpace<FS>> + Clone,
+    T: Eq + Clone,
 > {
     ambient_space: SP,
-    simplexes: HashSet<Simplex<FS, SP>>,
+    simplexes: HashMap<Simplex<FS, SP>, T>,
 }
+
+pub type PartialSimplicialComplex<FS, SP> = LabelledPartialSimplicialComplex<FS, SP, ()>;
 
 impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
     for PartialSimplicialComplex<FS, SP>
@@ -808,14 +851,17 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
-    PartialSimplicialComplex<FS, SP>
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > LabelledPartialSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
 {
     pub fn new(
         ambient_space: SP,
-        simplexes: HashSet<Simplex<FS, SP>>,
+        simplexes: HashMap<Simplex<FS, SP>, T>,
     ) -> Result<Self, &'static str> {
         Ok(Self {
             ambient_space,
@@ -823,7 +869,7 @@ where
         })
     }
 
-    pub fn new_unchecked(ambient_space: SP, simplexes: HashSet<Simplex<FS, SP>>) -> Self {
+    pub fn new_unchecked(ambient_space: SP, simplexes: HashMap<Simplex<FS, SP>, T>) -> Self {
         Self {
             ambient_space,
             simplexes,
@@ -834,21 +880,62 @@ where
         self.ambient_space.clone()
     }
 
-    pub fn simplexes(&self) -> &HashSet<Simplex<FS, SP>> {
+    pub fn simplexes(&self) -> &HashMap<Simplex<FS, SP>, T> {
         &self.simplexes
     }
 
-    pub fn into_simplexes(self) -> HashSet<Simplex<FS, SP>> {
+    pub fn into_simplexes(self) -> HashMap<Simplex<FS, SP>, T> {
         self.simplexes
     }
 
-    pub fn try_as_simplicial_complex(self) -> Result<SimplicialComplex<FS, SP>, &'static str> {
-        SimplicialComplex::new(self.ambient_space, self.simplexes)
+    pub fn try_as_simplicial_complex(
+        self,
+    ) -> Result<LabelledSimplicialComplex<FS, SP, T>, &'static str> {
+        LabelledSimplicialComplex::new_labelled(self.ambient_space, self.simplexes)
     }
 
-    pub fn closure(&self) -> LabelledSimplicialComplex<FS, SP, ClosureLabel> {
+    pub fn labelled_subset(&self, label: &T) -> PartialSimplicialComplex<FS, SP> {
+        PartialSimplicialComplex::new_unchecked(
+            self.ambient_space().clone(),
+            self.simplexes
+                .iter()
+                .filter(|(_, spx_label)| spx_label == &label)
+                .map(|(spx, _)| (spx.clone(), ()))
+                .collect(),
+        )
+    }
+
+    pub fn labelled_subset_filtered(
+        &self,
+        f: impl Fn(&T) -> bool,
+    ) -> LabelledPartialSimplicialComplex<FS, SP, T> {
+        LabelledPartialSimplicialComplex::new_unchecked(
+            self.ambient_space().clone(),
+            self.simplexes
+                .iter()
+                .filter(|(_, spx_label)| f(spx_label))
+                .map(|(spx, label)| (spx.clone(), label.clone()))
+                .collect(),
+        )
+    }
+
+    pub fn apply_label_function<S: Eq + Clone>(
+        self,
+        f: impl Fn(&T) -> S,
+    ) -> LabelledPartialSimplicialComplex<FS, SP, S> {
+        LabelledPartialSimplicialComplex {
+            ambient_space: self.ambient_space,
+            simplexes: self
+                .simplexes
+                .into_iter()
+                .map(|(spx, label)| (spx, f(&label)))
+                .collect(),
+        }
+    }
+
+    pub fn closure(&self) -> LabelledSimplicialComplex<FS, SP, Option<T>> {
         let mut simplexes = HashSet::new();
-        for spx in &self.simplexes {
+        for (spx, _label) in &self.simplexes {
             for bdry in spx.sub_simplices_not_null() {
                 simplexes.insert(bdry);
             }
@@ -858,10 +945,7 @@ where
             simplexes
                 .into_iter()
                 .map(|spx| {
-                    let label = match self.simplexes.contains(&spx) {
-                        true => ClosureLabel::Origional,
-                        false => ClosureLabel::Closure,
-                    };
+                    let label = self.simplexes.get(&spx).cloned();
                     (spx, label)
                 })
                 .collect(),
@@ -872,6 +956,7 @@ where
     pub fn simplify(&self) -> Self {
         self.closure()
             .simplify()
-            .labelled_subset(&simplexes::ClosureLabel::Origional)
+            .labelled_subset_filtered(|label| label.is_some())
+            .apply_label_function(|label| label.clone().unwrap())
     }
 }

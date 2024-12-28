@@ -12,7 +12,7 @@ use orthoclase_geometry::simplexes::ConvexHull;
 use orthoclase_geometry::simplexes::OrientationSide;
 use orthoclase_geometry::simplexes::OrientedSimplex;
 use orthoclase_geometry::simplexes::Simplex;
-use orthoclase_geometry::simplexes::SimplicialDisjointUnion;
+use orthoclase_geometry::simplexes::LabelledSimplicialDisjointUnion;
 use orthoclase_geometry::*;
 use orthoclase_rings::ring_structure::cannonical::*;
 use orthoclase_rings::structure::CannonicalStructure;
@@ -34,7 +34,7 @@ fn main() {
 
     let space = AffineSpace::new_linear(field, 2);
 
-    let a = SimplicialDisjointUnion::from(
+    let a = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(
             &space,
             vec![
@@ -48,7 +48,7 @@ fn main() {
         .labelled_subset(&simplexes::InteriorBoundaryLabel::Interior),
     );
 
-    let b = SimplicialDisjointUnion::from(
+    let b = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(
             &space,
             vec![
@@ -64,7 +64,7 @@ fn main() {
 
     let x = a.union_raw(&b);
 
-    let c = SimplicialDisjointUnion::from(
+    let c = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(
             &space,
             vec![

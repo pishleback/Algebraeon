@@ -3,50 +3,71 @@ use std::collections::{HashMap, HashSet};
 use super::*;
 
 #[derive(Clone)]
-pub struct SimplicialDisjointUnion<
+pub struct LabelledSimplicialDisjointUnion<
     FS: OrderedRingStructure + FieldStructure,
     SP: Borrow<AffineSpace<FS>> + Clone,
+    T: Eq + Clone,
 > where
     FS::Set: Hash,
 {
     ambient_space: SP,
-    simplexes: HashSet<Simplex<FS, SP>>,
+    simplexes: HashMap<Simplex<FS, SP>, T>,
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
-    From<&SimplicialComplex<FS, SP>> for SimplicialDisjointUnion<FS, SP>
+pub type SimplicialDisjointUnion<FS, SP> = LabelledSimplicialDisjointUnion<FS, SP, ()>;
+
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > From<&LabelledSimplicialComplex<FS, SP, T>> for LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: Hash,
 {
-    fn from(sc: &SimplicialComplex<FS, SP>) -> Self {
+    fn from(sc: &LabelledSimplicialComplex<FS, SP, T>) -> Self {
         Self {
             ambient_space: sc.ambient_space(),
-            simplexes: sc.simplexes().into_iter().map(|s| s.clone()).collect(),
+            simplexes: sc
+                .labelled_simplexes()
+                .into_iter()
+                .map(|(spx, label)| (spx.clone(), label.clone()))
+                .collect(),
         }
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
-    From<&PartialSimplicialComplex<FS, SP>> for SimplicialDisjointUnion<FS, SP>
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > From<&LabelledPartialSimplicialComplex<FS, SP, T>>
+    for LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: Hash,
 {
-    fn from(sc: &PartialSimplicialComplex<FS, SP>) -> Self {
+    fn from(sc: &LabelledPartialSimplicialComplex<FS, SP, T>) -> Self {
         Self {
             ambient_space: sc.ambient_space(),
-            simplexes: sc.simplexes().into_iter().map(|s| s.clone()).collect(),
+            simplexes: sc
+                .simplexes()
+                .into_iter()
+                .map(|(s, label)| (s.clone(), label.clone()))
+                .collect(),
         }
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
-    SimplicialDisjointUnion<FS, SP>
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: Hash,
 {
     pub(super) fn check(&self) {
-        for spx_a in &self.simplexes {
-            for spx_b in &self.simplexes {
+        for (spx_a, _label_a) in &self.simplexes {
+            for (spx_b, _label_b) in &self.simplexes {
                 let bdry_a = spx_a
                     .sub_simplices_not_null()
                     .into_iter()
@@ -73,18 +94,43 @@ where
         }
     }
 
-    pub fn new_unchecked(ambient_space: SP, simplexes: HashSet<Simplex<FS, SP>>) -> Self {
+    pub fn new_unchecked(ambient_space: SP, simplexes: HashMap<Simplex<FS, SP>, T>) -> Self {
         Self {
             ambient_space,
             simplexes,
         }
     }
 
-    pub fn simplexes(&self) -> &HashSet<Simplex<FS, SP>> {
+    pub fn labelled_subset(&self, label: &T) -> SimplicialDisjointUnion<FS, SP> {
+        SimplicialDisjointUnion::new_unchecked(
+            self.ambient_space().clone(),
+            self.simplexes
+                .iter()
+                .filter(|(_, spx_label)| spx_label == &label)
+                .map(|(spx, _)| (spx.clone(), ()))
+                .collect(),
+        )
+    }
+
+    pub fn labelled_subset_filtered(
+        &self,
+        f: impl Fn(&T) -> bool,
+    ) -> LabelledSimplicialDisjointUnion<FS, SP, T> {
+        LabelledSimplicialDisjointUnion::new_unchecked(
+            self.ambient_space().clone(),
+            self.simplexes
+                .iter()
+                .filter(|(_, spx_label)| f(spx_label))
+                .map(|(spx, label)| (spx.clone(), label.clone()))
+                .collect(),
+        )
+    }
+
+    pub fn simplexes(&self) -> &HashMap<Simplex<FS, SP>, T> {
         &self.simplexes
     }
 
-    pub fn into_simplexes(self) -> HashSet<Simplex<FS, SP>> {
+    pub fn into_simplexes(self) -> HashMap<Simplex<FS, SP>, T> {
         self.simplexes
     }
 
@@ -92,7 +138,9 @@ where
         self.ambient_space.clone()
     }
 
-    pub fn refine_to_partial_simplicial_complex(mut self) -> PartialSimplicialComplex<FS, SP> {
+    pub fn refine_to_partial_simplicial_complex(
+        mut self,
+    ) -> LabelledPartialSimplicialComplex<FS, SP, T> {
         let ambient_space = self.ambient_space();
 
         //maintain a list of pairs of simplexes which may intersect on their boundary
@@ -100,7 +148,7 @@ where
         let simplexes = self
             .simplexes()
             .iter()
-            .map(|spx| spx.clone())
+            .map(|(spx, _label)| spx.clone())
             .collect::<Vec<_>>();
         for i in 0..simplexes.len() {
             for j in 0..simplexes.len() {
@@ -127,8 +175,8 @@ where
                     pairs_todo.get_mut(&spx2).unwrap().remove(&spx1);
 
                     debug_assert_ne!(spx1, spx2);
-                    debug_assert!(self.simplexes.contains(&spx1));
-                    debug_assert!(self.simplexes.contains(&spx2));
+                    debug_assert!(self.simplexes.contains_key(&spx1));
+                    debug_assert!(self.simplexes.contains_key(&spx2));
 
                     let overlap = ConvexHull::intersect(
                         &ConvexHull::from_simplex(spx1.clone()),
@@ -165,7 +213,7 @@ where
                             for spx in pairs_todo.get(&spx1).unwrap_or(&HashSet::new()).clone() {
                                 debug_assert_ne!(spx, spx1);
                                 debug_assert_ne!(spx, spx2);
-                                debug_assert!(self.simplexes.contains(&spx));
+                                debug_assert!(self.simplexes.contains_key(&spx));
                                 pairs_todo
                                     .get_mut(&spx)
                                     .unwrap_or(&mut HashSet::new())
@@ -178,7 +226,7 @@ where
                             for spx in pairs_todo.get(&spx2).unwrap_or(&HashSet::new()).clone() {
                                 debug_assert_ne!(spx, spx1);
                                 debug_assert_ne!(spx, spx2);
-                                debug_assert!(self.simplexes.contains(&spx));
+                                debug_assert!(self.simplexes.contains_key(&spx));
                                 pairs_todo
                                     .get_mut(&spx)
                                     .unwrap_or(&mut HashSet::new())
@@ -195,6 +243,9 @@ where
                             //     }
                             // }
 
+                            let spx1_label = self.simplexes.get(&spx1).unwrap().clone();
+                            let spx2_label = self.simplexes.get(&spx2).unwrap().clone();
+
                             //remove spx1 and spx2
                             self.simplexes.remove(&spx1);
                             self.simplexes.remove(&spx2);
@@ -204,6 +255,8 @@ where
                                 .as_simplicial_complex()
                                 .labelled_subset(&InteriorBoundaryLabel::Interior)
                                 .into_simplexes()
+                                .into_iter()
+                                .map(|(spx, _)| spx)
                             {
                                 for spx in &spx1_paired {
                                     pairs_todo
@@ -215,13 +268,15 @@ where
                                         .or_insert(HashSet::new())
                                         .insert(spx1_repl.clone());
                                 }
-                                self.simplexes.insert(spx1_repl);
+                                self.simplexes.insert(spx1_repl, spx1_label.clone());
                             }
 
                             for spx2_repl in spx2_replacement
                                 .as_simplicial_complex()
                                 .labelled_subset(&InteriorBoundaryLabel::Interior)
                                 .into_simplexes()
+                                .into_iter()
+                                .map(|(spx, _)| spx)
                             {
                                 for spx in &spx2_paired {
                                     pairs_todo
@@ -233,7 +288,7 @@ where
                                         .or_insert(HashSet::new())
                                         .insert(spx2_repl.clone());
                                 }
-                                self.simplexes.insert(spx2_repl);
+                                self.simplexes.insert(spx2_repl, spx2_label.clone());
                             }
                         }
                     }
@@ -241,7 +296,9 @@ where
             }
         }
 
-        PartialSimplicialComplex::new(ambient_space, self.into_simplexes()).unwrap()
+        LabelledPartialSimplicialComplex::new_unchecked(ambient_space, self.simplexes)
+
+        // PartialSimplicialComplex::new(ambient_space, self.into_simplexes()).unwrap()
     }
 
     // pub fn closure_as_simplicial_complex(self) -> SimplicialComplex<FS, SP> {
