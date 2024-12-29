@@ -2,9 +2,7 @@ use std::{borrow::Borrow, collections::HashSet};
 
 use itertools::Itertools;
 
-use crate::{
-    ring_structure::structure::{IntegralDomainStructure, RingStructure},
-};
+use crate::ring_structure::structure::{IntegralDomainStructure, RingStructure};
 
 use super::multipoly::*;
 use crate::structure::*;
