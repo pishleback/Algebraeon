@@ -18,6 +18,7 @@ use orthoclase_rings::ring_structure::cannonical::*;
 use orthoclase_rings::structure::CannonicalStructure;
 use orthoclase_rings::structure::StructuredType;
 use rand::Rng;
+use simplexes::LabelledSimplexCollection;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
@@ -43,7 +44,7 @@ fn main() {
         ],
     )
     .as_simplicial_complex()
-    .forget_labels();
+    .into_forget_labels();
     let x = a;
 
     let b = ConvexHull::new(
@@ -56,7 +57,7 @@ fn main() {
         ],
     )
     .as_simplicial_complex()
-    .forget_labels();
+    .into_forget_labels();
     let x = LabelledSimplicialDisjointUnion::union_raw(&(&x).into(), &(&b).into())
         .refine_to_partial_simplicial_complex();
 
@@ -70,7 +71,7 @@ fn main() {
         ],
     )
     .as_simplicial_complex()
-    .forget_labels();
+    .into_forget_labels();
     let x = LabelledSimplicialDisjointUnion::subtract_raw(&(&x).into(), &(&c).into());
 
     let y = x.clone().refine_to_partial_simplicial_complex().simplify();

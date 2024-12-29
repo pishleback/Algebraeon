@@ -50,8 +50,14 @@ pub use simplex::*;
 mod convex_hull;
 pub use convex_hull::*;
 
+mod simplex_collection;
+pub use simplex_collection::*;
+
 mod simplicial_complex;
 pub use simplicial_complex::*;
+
+mod partial_simplicial_complex;
+pub use partial_simplicial_complex::*;
 
 mod simplicial_disjoint_union;
 pub use simplicial_disjoint_union::*;

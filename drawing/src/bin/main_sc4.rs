@@ -9,10 +9,10 @@ use malachite_q::Rational;
 use orthoclase_drawing::canvas::canvas2d::*;
 use orthoclase_drawing::canvas::Canvas;
 use orthoclase_geometry::simplexes::ConvexHull;
+use orthoclase_geometry::simplexes::LabelledSimplicialDisjointUnion;
 use orthoclase_geometry::simplexes::OrientationSide;
 use orthoclase_geometry::simplexes::OrientedSimplex;
 use orthoclase_geometry::simplexes::Simplex;
-use orthoclase_geometry::simplexes::LabelledSimplicialDisjointUnion;
 use orthoclase_geometry::*;
 use orthoclase_rings::number::algebraic::isolated_roots::real::RealAlgebraic;
 use orthoclase_rings::ring_structure::cannonical::*;
@@ -21,6 +21,7 @@ use orthoclase_rings::ring_structure::structure::RingStructure;
 use orthoclase_rings::structure::CannonicalStructure;
 use orthoclase_rings::structure::StructuredType;
 use rand::Rng;
+use simplexes::LabelledSimplexCollection;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
@@ -89,7 +90,7 @@ fn main() {
         ],
     )
     .as_simplicial_complex()
-    .forget_labels();
+    .into_forget_labels();
 
     let x = LabelledSimplicialDisjointUnion::union_raw(&(&a).into(), &(&b).into())
         .refine_to_partial_simplicial_complex()

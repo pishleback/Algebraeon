@@ -18,6 +18,7 @@ use orthoclase_rings::ring_structure::cannonical::*;
 use orthoclase_rings::structure::CannonicalStructure;
 use orthoclase_rings::structure::StructuredType;
 use rand::Rng;
+use simplexes::LabelledSimplexCollection;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
@@ -69,8 +70,8 @@ fn main() {
     );
     // let ch3 = ch1.intersect(&ch2);
 
-    let sc1 = ch1.as_simplicial_complex().forget_labels();
-    let sc2 = ch2.as_simplicial_complex().forget_labels();
+    let sc1 = ch1.as_simplicial_complex().into_forget_labels();
+    let sc2 = ch2.as_simplicial_complex().into_forget_labels();
     // let sc3 = ch3.as_simplicial_complex().entire;
 
     // let VennResult {

@@ -50,21 +50,135 @@ impl<
     }
 }
 
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > LabelledSimplexCollection<FS, SP, T> for LabelledSimplicialComplex<FS, SP, T>
+where
+    FS::Set: Hash,
+{
+    type WithLabel<S: Eq + Clone> = LabelledSimplicialComplex<FS, SP, S>;
+    type SubsetType = LabelledPartialSimplicialComplex<FS, SP, T>;
+
+    fn new_labelled(
+        ambient_space: SP,
+        simplexes: HashMap<Simplex<FS, SP>, T>,
+    ) -> Result<Self, &'static str> {
+        for simplex in simplexes.keys() {
+            assert_eq!(simplex.ambient_space().borrow(), ambient_space.borrow());
+            if simplex.points().len() == 0 {
+                return Err("Simplicial complex musn't contain the null simplex");
+            }
+        }
+
+        let mut simplexes = simplexes
+            .into_iter()
+            .map(|(spx, label)| {
+                (
+                    spx,
+                    SCSpxInfo {
+                        inv_bdry: HashSet::new(),
+                        label,
+                    },
+                )
+            })
+            .collect::<HashMap<_, _>>();
+
+        for simplex in simplexes.keys().map(|s| s.clone()).collect::<Vec<_>>() {
+            for bdry_spx in simplex.proper_sub_simplices_not_null() {
+                match simplexes.get_mut(&bdry_spx) {
+                    Some(entry) => {
+                        entry.inv_bdry.insert(simplex.clone());
+                    }
+                    None => {
+                        return Err("Simplicial complex must be closed under taking boundaries");
+                    }
+                }
+            }
+        }
+
+        Ok(Self {
+            ambient_space,
+            simplexes,
+        })
+    }
+
+    fn new_labelled_unchecked(ambient_space: SP, simplexes: HashMap<Simplex<FS, SP>, T>) -> Self {
+        Self::new_labelled(ambient_space, simplexes).unwrap()
+    }
+
+    fn ambient_space(&self) -> SP {
+        self.ambient_space.clone()
+    }
+
+    fn labelled_simplexes(&self) -> HashMap<&Simplex<FS, SP>, &T> {
+        self.simplexes
+            .iter()
+            .map(|(spx, info)| (spx, &info.label))
+            .collect()
+    }
+
+    fn into_labelled_simplexes(self) -> HashMap<Simplex<FS, SP>, T> {
+        self.simplexes
+            .into_iter()
+            .map(|(spx, info)| (spx, info.label))
+            .collect()
+    }
+
+    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<FS, SP, T> {
+        LabelledPartialSimplicialComplex::new_labelled_unchecked(
+            self.ambient_space,
+            self.simplexes
+                .into_iter()
+                .map(|(spx, info)| (spx, info.label))
+                .collect(),
+        )
+    }
+}
+
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > LabelledSimplicialComplex<FS, SP, T>
+where
+    FS::Set: Hash,
+{
+    fn check(&self) {
+        let mut inv_bdry_map = HashMap::new();
+        for spx in self.simplexes.keys() {
+            inv_bdry_map.insert(spx.clone(), HashSet::new());
+        }
+
+        for (spx, _info) in &self.simplexes {
+            for bdry_spx in spx.proper_sub_simplices_not_null() {
+                assert!(self.simplexes.contains_key(&bdry_spx));
+                inv_bdry_map.get_mut(&bdry_spx).unwrap().insert(spx.clone());
+            }
+        }
+
+        for (spx, info) in &self.simplexes {
+            assert_eq!(&info.inv_bdry, inv_bdry_map.get(spx).unwrap());
+        }
+
+        //check that every pair of distinct simplexes intersect in the empty set
+        LabelledSimplicialDisjointUnion::new_labelled_unchecked(
+            self.ambient_space(),
+            self.simplexes
+                .iter()
+                .map(|(spx, info)| (spx.clone(), info.label.clone()))
+                .collect(),
+        )
+        .check();
+    }
+}
+
 impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
     SimplicialComplex<FS, SP>
 where
     FS::Set: Hash,
 {
-    pub fn new(
-        ambient_space: SP,
-        simplexes: HashSet<Simplex<FS, SP>>,
-    ) -> Result<Self, &'static str> {
-        Self::new_labelled(
-            ambient_space,
-            simplexes.into_iter().map(|spx| (spx, ())).collect(),
-        )
-    }
-
     pub fn interior_and_boundary(
         &self,
     ) -> LabelledSimplicialComplex<FS, SP, InteriorBoundaryLabel> {
@@ -126,196 +240,14 @@ where
 
     pub fn interior(&self) -> PartialSimplicialComplex<FS, SP> {
         self.interior_and_boundary()
-            .labelled_subset(&InteriorBoundaryLabel::Interior)
+            .subset_by_label(&InteriorBoundaryLabel::Interior)
     }
 
     pub fn boundary(&self) -> SimplicialComplex<FS, SP> {
         self.interior_and_boundary()
-            .labelled_subset(&InteriorBoundaryLabel::Boundary)
+            .subset_by_label(&InteriorBoundaryLabel::Boundary)
             .try_as_simplicial_complex()
             .unwrap()
-    }
-}
-
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledSimplicialComplex<FS, SP, T>
-where
-    FS::Set: Hash,
-{
-    fn check(&self) {
-        let mut inv_bdry_map = HashMap::new();
-        for spx in self.simplexes.keys() {
-            inv_bdry_map.insert(spx.clone(), HashSet::new());
-        }
-
-        for (spx, _info) in &self.simplexes {
-            for bdry_spx in spx.proper_sub_simplices_not_null() {
-                assert!(self.simplexes.contains_key(&bdry_spx));
-                inv_bdry_map.get_mut(&bdry_spx).unwrap().insert(spx.clone());
-            }
-        }
-
-        for (spx, info) in &self.simplexes {
-            assert_eq!(&info.inv_bdry, inv_bdry_map.get(spx).unwrap());
-        }
-
-        //check that every pair of distinct simplexes intersect in the empty set
-        LabelledSimplicialDisjointUnion::new_unchecked(
-            self.ambient_space(),
-            self.simplexes
-                .iter()
-                .map(|(spx, info)| (spx.clone(), info.label.clone()))
-                .collect(),
-        )
-        .check();
-    }
-
-    pub fn new_labelled(
-        ambient_space: SP,
-        simplexes: HashMap<Simplex<FS, SP>, T>,
-    ) -> Result<Self, &'static str> {
-        for simplex in simplexes.keys() {
-            assert_eq!(simplex.ambient_space().borrow(), ambient_space.borrow());
-            if simplex.points().len() == 0 {
-                return Err("Simplicial complex musn't contain the null simplex");
-            }
-        }
-
-        let mut simplexes = simplexes
-            .into_iter()
-            .map(|(spx, label)| {
-                (
-                    spx,
-                    SCSpxInfo {
-                        inv_bdry: HashSet::new(),
-                        label,
-                    },
-                )
-            })
-            .collect::<HashMap<_, _>>();
-
-        for simplex in simplexes.keys().map(|s| s.clone()).collect::<Vec<_>>() {
-            for bdry_spx in simplex.proper_sub_simplices_not_null() {
-                match simplexes.get_mut(&bdry_spx) {
-                    Some(entry) => {
-                        entry.inv_bdry.insert(simplex.clone());
-                    }
-                    None => {
-                        return Err("Simplicial complex must be closed under taking boundaries");
-                    }
-                }
-            }
-        }
-
-        Ok(Self {
-            ambient_space,
-            simplexes,
-        })
-    }
-
-    pub fn labelled_simplexes(&self) -> HashMap<&Simplex<FS, SP>, &T> {
-        self.simplexes
-            .iter()
-            .map(|(spx, info)| (spx, &info.label))
-            .collect()
-    }
-
-    pub fn apply_label_function<S: Eq + Clone>(
-        self,
-        f: impl Fn(&T) -> S,
-    ) -> LabelledSimplicialComplex<FS, SP, S> {
-        LabelledSimplicialComplex {
-            ambient_space: self.ambient_space,
-            simplexes: self
-                .simplexes
-                .into_iter()
-                .map(|(spx, info)| {
-                    (
-                        spx,
-                        SCSpxInfo {
-                            inv_bdry: info.inv_bdry,
-                            label: f(&info.label),
-                        },
-                    )
-                })
-                .collect(),
-        }
-    }
-
-    pub fn simplexes(&self) -> Vec<&Simplex<FS, SP>> {
-        self.simplexes.keys().collect()
-    }
-
-    pub fn ambient_space(&self) -> SP {
-        self.ambient_space.clone()
-    }
-
-    pub fn common_label<'a>(
-        &'a self,
-        simplexes: impl Iterator<Item = &'a Simplex<FS, SP>>,
-    ) -> Option<&'a T> {
-        let mut label = None;
-        for spx in simplexes {
-            let spx_label = &self.simplexes.get(&spx).unwrap().label;
-            match label {
-                Some(label) => {
-                    if label != spx_label {
-                        return None;
-                    }
-                }
-                None => {
-                    label = Some(spx_label);
-                }
-            }
-        }
-        label
-    }
-
-    pub fn labelled_subset(&self, label: &T) -> PartialSimplicialComplex<FS, SP> {
-        PartialSimplicialComplex::new_unchecked(
-            self.ambient_space().clone(),
-            self.simplexes
-                .iter()
-                .filter(|(_, info)| &info.label == label)
-                .map(|(spx, _)| (spx.clone(), ()))
-                .collect(),
-        )
-    }
-
-    pub fn labelled_subset_filtered(
-        &self,
-        f: impl Fn(&T) -> bool,
-    ) -> LabelledPartialSimplicialComplex<FS, SP, T> {
-        LabelledPartialSimplicialComplex::new_unchecked(
-            self.ambient_space().clone(),
-            self.simplexes
-                .iter()
-                .filter(|(_, info)| f(&info.label))
-                .map(|(spx, info)| (spx.clone(), info.label.clone()))
-                .collect(),
-        )
-    }
-
-    pub fn forget_labels(self) -> SimplicialComplex<FS, SP> {
-        SimplicialComplex {
-            ambient_space: self.ambient_space,
-            simplexes: self
-                .simplexes
-                .into_iter()
-                .map(|(spx, info)| {
-                    (
-                        spx,
-                        SCSpxInfo {
-                            inv_bdry: info.inv_bdry,
-                            label: (),
-                        },
-                    )
-                })
-                .collect(),
-        }
     }
 }
 
@@ -489,16 +421,19 @@ where
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
                 .collect::<HashSet<_>>();
 
-            let nbd = LabelledSimplicialComplex::new(nbd_affine_subspace.embedded_space(), {
-                let mut simplexes = HashSet::new();
-                simplexes.extend(star_img.clone());
-                simplexes.extend(link_img.clone());
-                simplexes
-            })
+            let nbd = LabelledSimplicialComplex::<FS, AffineSpace<FS>, T>::new(
+                nbd_affine_subspace.embedded_space(),
+                {
+                    let mut simplexes = HashSet::new();
+                    simplexes.extend(star_img.clone());
+                    simplexes.extend(link_img.clone());
+                    simplexes
+                },
+            )
             .unwrap();
             let nbd_interior = nbd.interior().into_simplexes();
 
-            if !nbd_interior.contains_key(&pt_img_spx) {
+            if !nbd_interior.contains(&pt_img_spx) {
                 /*
                 pt is on the boundary of nbd and nbd looks something like this
 
@@ -525,7 +460,7 @@ where
 
                 let boundary_img = star_img
                     .iter()
-                    .filter(|spx| !nbd_interior.contains_key(&spx))
+                    .filter(|spx| !nbd_interior.contains(&spx))
                     .collect::<HashSet<_>>();
 
                 let boundary = boundary_img
@@ -826,137 +761,5 @@ where
         self.add_simplexes_unchecked(simplexes, label);
         #[cfg(debug_assertions)]
         self.check();
-    }
-}
-
-#[derive(Clone)]
-pub struct LabelledPartialSimplicialComplex<
-    FS: OrderedRingStructure + FieldStructure,
-    SP: Borrow<AffineSpace<FS>> + Clone,
-    T: Eq + Clone,
-> {
-    ambient_space: SP,
-    simplexes: HashMap<Simplex<FS, SP>, T>,
-}
-
-pub type PartialSimplicialComplex<FS, SP> = LabelledPartialSimplicialComplex<FS, SP, ()>;
-
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
-    for PartialSimplicialComplex<FS, SP>
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PartialSimplicialComplex")
-            .field("simplexes", &self.simplexes)
-            .finish()
-    }
-}
-
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledPartialSimplicialComplex<FS, SP, T>
-where
-    FS::Set: Hash,
-{
-    pub fn new(
-        ambient_space: SP,
-        simplexes: HashMap<Simplex<FS, SP>, T>,
-    ) -> Result<Self, &'static str> {
-        Ok(Self {
-            ambient_space,
-            simplexes,
-        })
-    }
-
-    pub fn new_unchecked(ambient_space: SP, simplexes: HashMap<Simplex<FS, SP>, T>) -> Self {
-        Self {
-            ambient_space,
-            simplexes,
-        }
-    }
-
-    pub fn ambient_space(&self) -> SP {
-        self.ambient_space.clone()
-    }
-
-    pub fn simplexes(&self) -> &HashMap<Simplex<FS, SP>, T> {
-        &self.simplexes
-    }
-
-    pub fn into_simplexes(self) -> HashMap<Simplex<FS, SP>, T> {
-        self.simplexes
-    }
-
-    pub fn try_as_simplicial_complex(
-        self,
-    ) -> Result<LabelledSimplicialComplex<FS, SP, T>, &'static str> {
-        LabelledSimplicialComplex::new_labelled(self.ambient_space, self.simplexes)
-    }
-
-    pub fn labelled_subset(&self, label: &T) -> PartialSimplicialComplex<FS, SP> {
-        PartialSimplicialComplex::new_unchecked(
-            self.ambient_space().clone(),
-            self.simplexes
-                .iter()
-                .filter(|(_, spx_label)| spx_label == &label)
-                .map(|(spx, _)| (spx.clone(), ()))
-                .collect(),
-        )
-    }
-
-    pub fn labelled_subset_filtered(
-        &self,
-        f: impl Fn(&T) -> bool,
-    ) -> LabelledPartialSimplicialComplex<FS, SP, T> {
-        LabelledPartialSimplicialComplex::new_unchecked(
-            self.ambient_space().clone(),
-            self.simplexes
-                .iter()
-                .filter(|(_, spx_label)| f(spx_label))
-                .map(|(spx, label)| (spx.clone(), label.clone()))
-                .collect(),
-        )
-    }
-
-    pub fn apply_label_function<S: Eq + Clone>(
-        self,
-        f: impl Fn(&T) -> S,
-    ) -> LabelledPartialSimplicialComplex<FS, SP, S> {
-        LabelledPartialSimplicialComplex {
-            ambient_space: self.ambient_space,
-            simplexes: self
-                .simplexes
-                .into_iter()
-                .map(|(spx, label)| (spx, f(&label)))
-                .collect(),
-        }
-    }
-
-    pub fn closure(&self) -> LabelledSimplicialComplex<FS, SP, Option<T>> {
-        let mut simplexes = HashSet::new();
-        for (spx, _label) in &self.simplexes {
-            for bdry in spx.sub_simplices_not_null() {
-                simplexes.insert(bdry);
-            }
-        }
-        LabelledSimplicialComplex::new_labelled(
-            self.ambient_space(),
-            simplexes
-                .into_iter()
-                .map(|spx| {
-                    let label = self.simplexes.get(&spx).cloned();
-                    (spx, label)
-                })
-                .collect(),
-        )
-        .unwrap()
-    }
-
-    pub fn simplify(&self) -> Self {
-        self.closure()
-            .simplify()
-            .labelled_subset_filtered(|label| label.is_some())
-            .apply_label_function(|label| label.clone().unwrap())
     }
 }

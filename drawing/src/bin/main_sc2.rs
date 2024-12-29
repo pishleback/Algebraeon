@@ -11,6 +11,7 @@ use orthoclase_geometry::simplexes::OrientedSimplex;
 use orthoclase_geometry::simplexes::Simplex;
 use orthoclase_geometry::*;
 use orthoclase_rings::structure::StructuredType;
+use simplexes::LabelledSimplexCollection;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
@@ -87,19 +88,21 @@ fn main() {
         // canvas.draw(ch.as_simplicial_complex().entire.as_ref(), (1.0, 1.0, 1.0));
         canvas.draw(ospx.simplex(), (1.0, 0.0, 0.0));
         canvas.draw(
-            &smaller_ch_neutral.as_simplicial_complex().forget_labels(),
+            &smaller_ch_neutral
+                .as_simplicial_complex()
+                .into_forget_labels(),
             (0.0, 1.0, 0.0),
         );
         canvas.draw(
             &smaller_ch_pos
                 .as_simplicial_complex()
-                .labelled_subset(&simplexes::InteriorBoundaryLabel::Interior),
+                .subset_by_label(&simplexes::InteriorBoundaryLabel::Interior),
             (0.0, 1.0, 1.0),
         );
         canvas.draw(
             &smaller_ch_neg
                 .as_simplicial_complex()
-                .labelled_subset(&simplexes::InteriorBoundaryLabel::Interior),
+                .subset_by_label(&simplexes::InteriorBoundaryLabel::Interior),
             (0.0, 0.0, 1.0),
         );
     });

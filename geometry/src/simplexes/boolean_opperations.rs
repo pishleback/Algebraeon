@@ -33,11 +33,8 @@ where
         }
         let self_parts = self_ext
             .as_simplicial_complex()
-            .labelled_subset(&InteriorBoundaryLabel::Interior)
-            .simplexes()
-            .into_iter()
-            .map(|(s, _)| s.clone())
-            .collect::<HashSet<_>>();
+            .subset_by_label(&InteriorBoundaryLabel::Interior)
+            .into_simplexes();
 
         let mut other_ext = overlap.clone();
         for pt in other.points() {
@@ -45,14 +42,11 @@ where
         }
         let other_parts = other_ext
             .as_simplicial_complex()
-            .labelled_subset(&InteriorBoundaryLabel::Interior)
-            .simplexes()
-            .into_iter()
-            .map(|(s, _)| s.clone())
-            .collect::<HashSet<_>>();
+            .subset_by_label(&InteriorBoundaryLabel::Interior)
+            .into_simplexes();
 
         let all_parts = self_parts.union(&other_parts);
-        LabelledPartialSimplicialComplex::new_unchecked(
+        LabelledPartialSimplicialComplex::<FS, SP, VennLabel>::new_labelled_unchecked(
             ambient_space.clone(),
             all_parts
                 .into_iter()
@@ -86,19 +80,17 @@ where
     ) -> LabelledSimplicialDisjointUnion<FS, SP, T> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
 
-        Self::new_unchecked(ambient_space.clone(), {
+        Self::new_labelled_unchecked(ambient_space.clone(), {
             let mut simplexes = HashMap::new();
-            for (self_spx, self_spx_label) in self.simplexes() {
+            for (self_spx, self_spx_label) in self.labelled_simplexes() {
                 let mut self_leftover = HashSet::from([self_spx.clone()]);
-                for (other_spx, _other_spx_label) in other.simplexes() {
+                for other_spx in other.simplexes() {
                     self_leftover = self_leftover
                         .into_iter()
                         .map(|self_leftover_spx| {
                             Simplex::venn(&self_leftover_spx, other_spx)
-                                .labelled_subset(&VennLabel::Left)
+                                .subset_by_label(&VennLabel::Left)
                                 .into_simplexes()
-                                .into_iter()
-                                .map(|(spx, _)| spx)
                         })
                         .flatten()
                         .collect();
@@ -116,15 +108,13 @@ where
         other: &LabelledSimplicialDisjointUnion<FS, SP, S>,
     ) -> LabelledSimplicialDisjointUnion<FS, SP, (T, S)> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
-        LabelledSimplicialDisjointUnion::new_unchecked(ambient_space.clone(), {
+        LabelledSimplicialDisjointUnion::new_labelled_unchecked(ambient_space.clone(), {
             let mut simplexes = HashMap::new();
-            for (self_spx, self_spx_label) in self.simplexes() {
-                for (other_spx, other_spx_label) in other.simplexes() {
+            for (self_spx, self_spx_label) in self.labelled_simplexes() {
+                for (other_spx, other_spx_label) in other.labelled_simplexes() {
                     for spx in Simplex::venn(self_spx, other_spx)
-                        .labelled_subset(&VennLabel::Middle)
+                        .subset_by_label(&VennLabel::Middle)
                         .into_simplexes()
-                        .into_iter()
-                        .map(|(spx, _)| spx)
                     {
                         simplexes.insert(spx, (self_spx_label.clone(), other_spx_label.clone()));
                     }
@@ -142,12 +132,12 @@ where
 {
     pub fn union_raw(&self, other: &Self) -> SimplicialDisjointUnion<FS, SP> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
-        let mut simplexes = HashMap::new();
-        for (spx, _) in Self::subtract_raw(other, self).into_simplexes() {
-            simplexes.insert(spx, ());
+        let mut simplexes = HashSet::new();
+        for spx in Self::subtract_raw(other, self).into_simplexes() {
+            simplexes.insert(spx);
         }
-        for (spx, _) in self.simplexes() {
-            simplexes.insert(spx.clone(), ());
+        for spx in self.simplexes() {
+            simplexes.insert(spx.clone());
         }
         return Self::new_unchecked(ambient_space, simplexes);
     }

@@ -49,11 +49,57 @@ where
         Self {
             ambient_space: sc.ambient_space(),
             simplexes: sc
-                .simplexes()
+                .labelled_simplexes()
                 .into_iter()
                 .map(|(s, label)| (s.clone(), label.clone()))
                 .collect(),
         }
+    }
+}
+
+impl<
+        FS: OrderedRingStructure + FieldStructure,
+        SP: Borrow<AffineSpace<FS>> + Clone,
+        T: Eq + Clone,
+    > LabelledSimplexCollection<FS, SP, T> for LabelledSimplicialDisjointUnion<FS, SP, T>
+where
+    FS::Set: Hash,
+{
+    type WithLabel<S: Eq + Clone> = LabelledSimplicialDisjointUnion<FS, SP, S>;
+    type SubsetType = LabelledSimplicialDisjointUnion<FS, SP, T>;
+
+    fn new_labelled(
+        ambient_space: SP,
+        simplexes: HashMap<Simplex<FS, SP>, T>,
+    ) -> Result<Self, &'static str> {
+        //todo: check simplexes are disjoint
+        Ok(Self {
+            ambient_space,
+            simplexes,
+        })
+    }
+
+    fn new_labelled_unchecked(ambient_space: SP, simplexes: HashMap<Simplex<FS, SP>, T>) -> Self {
+        Self {
+            ambient_space,
+            simplexes,
+        }
+    }
+
+    fn ambient_space(&self) -> SP {
+        self.ambient_space.clone()
+    }
+
+    fn labelled_simplexes(&self) -> HashMap<&Simplex<FS, SP>, &T> {
+        self.simplexes.iter().collect()
+    }
+
+    fn into_labelled_simplexes(self) -> HashMap<Simplex<FS, SP>, T> {
+        self.simplexes
+    }
+
+    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<FS, SP, T> {
+        self.refine_to_partial_simplicial_complex()
     }
 }
 
@@ -94,50 +140,6 @@ where
         }
     }
 
-    pub fn new_unchecked(ambient_space: SP, simplexes: HashMap<Simplex<FS, SP>, T>) -> Self {
-        Self {
-            ambient_space,
-            simplexes,
-        }
-    }
-
-    pub fn labelled_subset(&self, label: &T) -> SimplicialDisjointUnion<FS, SP> {
-        SimplicialDisjointUnion::new_unchecked(
-            self.ambient_space().clone(),
-            self.simplexes
-                .iter()
-                .filter(|(_, spx_label)| spx_label == &label)
-                .map(|(spx, _)| (spx.clone(), ()))
-                .collect(),
-        )
-    }
-
-    pub fn labelled_subset_filtered(
-        &self,
-        f: impl Fn(&T) -> bool,
-    ) -> LabelledSimplicialDisjointUnion<FS, SP, T> {
-        LabelledSimplicialDisjointUnion::new_unchecked(
-            self.ambient_space().clone(),
-            self.simplexes
-                .iter()
-                .filter(|(_, spx_label)| f(spx_label))
-                .map(|(spx, label)| (spx.clone(), label.clone()))
-                .collect(),
-        )
-    }
-
-    pub fn simplexes(&self) -> &HashMap<Simplex<FS, SP>, T> {
-        &self.simplexes
-    }
-
-    pub fn into_simplexes(self) -> HashMap<Simplex<FS, SP>, T> {
-        self.simplexes
-    }
-
-    pub fn ambient_space(&self) -> SP {
-        self.ambient_space.clone()
-    }
-
     pub fn refine_to_partial_simplicial_complex(
         mut self,
     ) -> LabelledPartialSimplicialComplex<FS, SP, T> {
@@ -145,16 +147,12 @@ where
 
         //maintain a list of pairs of simplexes which may intersect on their boundary
         let mut pairs_todo: HashMap<Simplex<FS, SP>, HashSet<Simplex<FS, SP>>> = HashMap::new();
-        let simplexes = self
-            .simplexes()
-            .iter()
-            .map(|(spx, _label)| spx.clone())
-            .collect::<Vec<_>>();
+        let simplexes = self.simplexes().into_iter().collect::<Vec<_>>();
         for i in 0..simplexes.len() {
             for j in 0..simplexes.len() {
                 if i != j {
-                    let spx_i = &simplexes[i];
-                    let spx_j = &simplexes[j];
+                    let spx_i = simplexes[i];
+                    let spx_j = simplexes[j];
                     pairs_todo
                         .entry(spx_i.clone())
                         .or_insert(HashSet::new())
@@ -253,10 +251,8 @@ where
                             //add the refinements of spx1 and spx2 and update the pairs todo
                             for spx1_repl in spx1_replacement
                                 .as_simplicial_complex()
-                                .labelled_subset(&InteriorBoundaryLabel::Interior)
+                                .subset_by_label(&InteriorBoundaryLabel::Interior)
                                 .into_simplexes()
-                                .into_iter()
-                                .map(|(spx, _)| spx)
                             {
                                 for spx in &spx1_paired {
                                     pairs_todo
@@ -273,10 +269,8 @@ where
 
                             for spx2_repl in spx2_replacement
                                 .as_simplicial_complex()
-                                .labelled_subset(&InteriorBoundaryLabel::Interior)
+                                .subset_by_label(&InteriorBoundaryLabel::Interior)
                                 .into_simplexes()
-                                .into_iter()
-                                .map(|(spx, _)| spx)
                             {
                                 for spx in &spx2_paired {
                                     pairs_todo
@@ -296,13 +290,6 @@ where
             }
         }
 
-        LabelledPartialSimplicialComplex::new_unchecked(ambient_space, self.simplexes)
-
-        // PartialSimplicialComplex::new(ambient_space, self.into_simplexes()).unwrap()
+        LabelledPartialSimplicialComplex::new_labelled_unchecked(ambient_space, self.simplexes)
     }
-
-    // pub fn closure_as_simplicial_complex(self) -> SimplicialComplex<FS, SP> {
-    //     self.refine_to_partial_simplicial_complex()
-    //         .closure_as_simplicial_complex()
-    // }
 }
