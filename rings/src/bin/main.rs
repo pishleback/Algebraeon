@@ -2,7 +2,7 @@
 
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
-use orthoclase_rings::{
+use algebraeon_rings::{
     polynomial::polynomial::Polynomial, ring_structure::cannonical::*, structure::StructuredType,
 };
 

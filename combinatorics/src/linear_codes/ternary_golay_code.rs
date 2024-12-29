@@ -1,4 +1,4 @@
-use orthoclase_rings::number::modulo::Modulo;
+use algebraeon_rings::number::modulo::Modulo;
 
 pub type TernaryField = Modulo<3>;
 pub const ZERO: TernaryField = TernaryField::new(0);
@@ -11,7 +11,7 @@ struct ExtendedTernaryGolayCode {
 
 #[cfg(test)]
 mod tests {
-    use orthoclase_groups::examples::symmetric::Permutation;
+    use algebraeon_groups::examples::symmetric::Permutation;
 
     #[test]
     fn test_something() {

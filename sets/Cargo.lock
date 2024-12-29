@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "orthoclase-sets"
+name = "algebraeon-sets"
 version = "0.1.0"

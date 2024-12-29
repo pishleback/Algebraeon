@@ -1,14 +1,14 @@
 [package]
-name = "orthoclase-geometry"
+name = "algebraeon-geometry"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "orthoclase_geometry"
+name = "algebraeon_geometry"
 
 [dependencies]
 itertools="0.11.0"
 malachite-base = "0.3.2"
 malachite-nz = "0.3.2"
 malachite-q = "0.3.2"
-orthoclase-rings = { version = "0.1.0", path = "../rings" }
+algebraeon-rings = { version = "0.1.0", path = "../rings" }

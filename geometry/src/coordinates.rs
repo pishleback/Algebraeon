@@ -1,4 +1,4 @@
-use orthoclase_rings::linear::matrix::Matrix;
+use algebraeon_rings::linear::matrix::Matrix;
 use std::borrow::Borrow;
 use std::hash::Hash;
 
@@ -207,7 +207,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 mod tests {
     use malachite_q::Rational;
 
-    use orthoclase_rings::structure::StructuredType;
+    use algebraeon_rings::structure::StructuredType;
 
     use super::*;
 

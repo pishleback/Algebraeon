@@ -7,8 +7,8 @@ use derivative::Derivative;
 use itertools::Itertools;
 use malachite_base::num::logic::traits::BitIterable;
 
-use orthoclase_groups::examples::symmetric::*;
-use orthoclase_rings::{
+use algebraeon_groups::examples::symmetric::*;
+use algebraeon_rings::{
     linear::matrix::Matrix,
     number::{modulo::Modulo, quaternary_field::QuaternaryField},
     ring_structure::cannonical::*,

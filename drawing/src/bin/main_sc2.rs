@@ -3,14 +3,14 @@
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
-use orthoclase_drawing::canvas::canvas2d::*;
-use orthoclase_drawing::canvas::Canvas;
-use orthoclase_geometry::simplexes::ConvexHull;
-use orthoclase_geometry::simplexes::OrientationSide;
-use orthoclase_geometry::simplexes::OrientedSimplex;
-use orthoclase_geometry::simplexes::Simplex;
-use orthoclase_geometry::*;
-use orthoclase_rings::structure::StructuredType;
+use algebraeon_drawing::canvas::canvas2d::*;
+use algebraeon_drawing::canvas::Canvas;
+use algebraeon_geometry::simplexes::ConvexHull;
+use algebraeon_geometry::simplexes::OrientationSide;
+use algebraeon_geometry::simplexes::OrientedSimplex;
+use algebraeon_geometry::simplexes::Simplex;
+use algebraeon_geometry::*;
+use algebraeon_rings::structure::StructuredType;
 use simplexes::LabelledSimplexCollection;
 
 fn main() {
@@ -69,7 +69,7 @@ fn main() {
     let smaller_ch_pos = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Positive);
     let smaller_ch_neg = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Negative);
 
-    orthoclase_drawing::canvas::canvas2d::Diagram2dCanvas::run(|canvas| {
+    algebraeon_drawing::canvas::canvas2d::Diagram2dCanvas::run(|canvas| {
         // canvas.draw_point((0.0, 0.0), (1.0, 0.0, 0.0));
         // canvas.draw_point((-1.0, -1.0), (1.0, 0.0, 0.0));
         // canvas.draw_point((1.0, -1.0), (1.0, 0.0, 0.0));

@@ -1,10 +1,10 @@
 [package]
-name = "orthoclase-combinatorics"
+name = "algebraeon-combinatorics"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "orthoclase_combinatorics"
+name = "algebraeon_combinatorics"
 
 [dependencies]
 derivative = "2.2.0"
@@ -13,6 +13,6 @@ malachite-base = "0.3.2"
 malachite-nz = "0.3.2"
 malachite-q = "0.3.2"
 static_assertions = "1.1.0"
-orthoclase-sets = { version = "0.1.0", path = "../sets" }
-orthoclase-groups = { version = "0.1.0", path = "../groups" }
-orthoclase-rings = { version = "0.1.0", path = "../rings" }
+algebraeon-sets = { version = "0.1.0", path = "../sets" }
+algebraeon-groups = { version = "0.1.0", path = "../groups" }
+algebraeon-rings = { version = "0.1.0", path = "../rings" }

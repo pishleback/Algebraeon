@@ -2,12 +2,6 @@ use std::collections::{HashMap, HashSet};
 
 use super::*;
 
-// pub struct VennResult<W, X> {
-//     pub left: W,
-//     pub middle: X,
-//     pub right: W,
-// }
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum VennLabel {
     Left,

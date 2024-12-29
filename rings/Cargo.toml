@@ -1,14 +1,14 @@
 [package]
-name = "orthoclase-rings"
+name = "algebraeon-rings"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "orthoclase_rings"
+name = "algebraeon_rings"
 
 [dependencies]
-orthoclase-sets = { version = "0.1.0", path = "../sets" }
-orthoclase-groups = { version = "0.1.0", path = "../groups" }
+algebraeon-sets = { version = "0.1.0", path = "../sets" }
+algebraeon-groups = { version = "0.1.0", path = "../groups" }
 rand = "0.8.5"
 rayon="1.7.0"
 itertools="0.11.0"

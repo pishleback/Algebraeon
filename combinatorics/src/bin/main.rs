@@ -7,22 +7,22 @@ use std::task::Poll;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
-use orthoclase_groups::examples::symmetric::*;
-use orthoclase_groups::group::*;
-use orthoclase_rings::linear::matrix::*;
-use orthoclase_rings::number::algebraic::isolated_roots::*;
-use orthoclase_rings::number::algebraic::number_field::*;
-use orthoclase_rings::number::modulo::*;
-use orthoclase_rings::polynomial::multipoly::*;
-use orthoclase_rings::polynomial::polynomial::*;
-use orthoclase_rings::polynomial::polynomial::*;
-use orthoclase_rings::ring_structure::cannonical::*;
-use orthoclase_rings::ring_structure::quotient::*;
-use orthoclase_rings::ring_structure::structure::*;
-use orthoclase_rings::structure::*;
+use algebraeon_groups::examples::symmetric::*;
+use algebraeon_groups::group::*;
+use algebraeon_rings::linear::matrix::*;
+use algebraeon_rings::number::algebraic::isolated_roots::*;
+use algebraeon_rings::number::algebraic::number_field::*;
+use algebraeon_rings::number::modulo::*;
+use algebraeon_rings::polynomial::multipoly::*;
+use algebraeon_rings::polynomial::polynomial::*;
+use algebraeon_rings::polynomial::polynomial::*;
+use algebraeon_rings::ring_structure::cannonical::*;
+use algebraeon_rings::ring_structure::quotient::*;
+use algebraeon_rings::ring_structure::structure::*;
+use algebraeon_rings::structure::*;
 
 fn main() {
-    let a = orthoclase_combinatorics::modular_permutations::modular_permutation::<24>(|x| {
+    let a = algebraeon_combinatorics::modular_permutations::modular_permutation::<24>(|x| {
         let x: usize = x.into();
         if x == 23 {
             23.into()
@@ -33,7 +33,7 @@ fn main() {
         }
     });
 
-    let a = orthoclase_combinatorics::modular_permutations::modular_permutation::<24>(|x| {
+    let a = algebraeon_combinatorics::modular_permutations::modular_permutation::<24>(|x| {
         let x: usize = x.into();
         if x == 23 {
             23.into()
@@ -44,7 +44,7 @@ fn main() {
         }
     })
     .unwrap();
-    let b = orthoclase_combinatorics::modular_permutations::modular_permutation::<24>(|x| {
+    let b = algebraeon_combinatorics::modular_permutations::modular_permutation::<24>(|x| {
         let x: usize = x.into();
         if x == 23 {
             23.into()
@@ -55,7 +55,7 @@ fn main() {
         }
     })
     .unwrap();
-    let c = orthoclase_combinatorics::modular_permutations::modular_permutation::<24>(|x| {
+    let c = algebraeon_combinatorics::modular_permutations::modular_permutation::<24>(|x| {
         let x: usize = x.into();
         if x == 23 {
             0.into()

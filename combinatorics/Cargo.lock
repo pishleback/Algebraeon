@@ -3,6 +3,50 @@
 version = 3
 
 [[package]]
+name = "algebraeon-combinatorics"
+version = "0.1.0"
+dependencies = [
+ "algebraeon-groups",
+ "algebraeon-rings",
+ "algebraeon-sets",
+ "derivative",
+ "itertools 0.11.0",
+ "malachite-base",
+ "malachite-nz",
+ "malachite-q",
+ "static_assertions",
+]
+
+[[package]]
+name = "algebraeon-groups"
+version = "0.1.0"
+dependencies = [
+ "itertools 0.11.0",
+ "malachite-base",
+ "malachite-nz",
+ "malachite-q",
+ "rayon",
+]
+
+[[package]]
+name = "algebraeon-rings"
+version = "0.1.0"
+dependencies = [
+ "algebraeon-groups",
+ "algebraeon-sets",
+ "itertools 0.11.0",
+ "malachite-base",
+ "malachite-nz",
+ "malachite-q",
+ "rand 0.8.5",
+ "rayon",
+]
+
+[[package]]
+name = "algebraeon-sets"
+version = "0.1.0"
+
+[[package]]
 name = "base64"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -213,50 +257,6 @@ name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
-
-[[package]]
-name = "orthoclase-combinatorics"
-version = "0.1.0"
-dependencies = [
- "derivative",
- "itertools 0.11.0",
- "malachite-base",
- "malachite-nz",
- "malachite-q",
- "orthoclase-groups",
- "orthoclase-rings",
- "orthoclase-sets",
- "static_assertions",
-]
-
-[[package]]
-name = "orthoclase-groups"
-version = "0.1.0"
-dependencies = [
- "itertools 0.11.0",
- "malachite-base",
- "malachite-nz",
- "malachite-q",
- "rayon",
-]
-
-[[package]]
-name = "orthoclase-rings"
-version = "0.1.0"
-dependencies = [
- "itertools 0.11.0",
- "malachite-base",
- "malachite-nz",
- "malachite-q",
- "orthoclase-groups",
- "orthoclase-sets",
- "rand 0.8.5",
- "rayon",
-]
-
-[[package]]
-name = "orthoclase-sets"
-version = "0.1.0"
 
 [[package]]
 name = "ppv-lite86"

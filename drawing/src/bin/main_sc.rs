@@ -6,17 +6,17 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::arithmetic::traits::Approximate;
 use malachite_q::Rational;
-use orthoclase_drawing::canvas::canvas2d::*;
-use orthoclase_drawing::canvas::Canvas;
-use orthoclase_geometry::simplexes::ConvexHull;
-use orthoclase_geometry::simplexes::OrientationSide;
-use orthoclase_geometry::simplexes::OrientedSimplex;
-use orthoclase_geometry::simplexes::Simplex;
-use orthoclase_geometry::simplexes::LabelledSimplicialDisjointUnion;
-use orthoclase_geometry::*;
-use orthoclase_rings::ring_structure::cannonical::*;
-use orthoclase_rings::structure::CannonicalStructure;
-use orthoclase_rings::structure::StructuredType;
+use algebraeon_drawing::canvas::canvas2d::*;
+use algebraeon_drawing::canvas::Canvas;
+use algebraeon_geometry::simplexes::ConvexHull;
+use algebraeon_geometry::simplexes::OrientationSide;
+use algebraeon_geometry::simplexes::OrientedSimplex;
+use algebraeon_geometry::simplexes::Simplex;
+use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
+use algebraeon_geometry::*;
+use algebraeon_rings::ring_structure::cannonical::*;
+use algebraeon_rings::structure::CannonicalStructure;
+use algebraeon_rings::structure::StructuredType;
 use rand::Rng;
 use simplexes::LabelledSimplexCollection;
 
@@ -91,7 +91,7 @@ fn main() {
     let sc6 = sc5.clone().simplify();
     println!("done simplify");
 
-    orthoclase_drawing::canvas::canvas2d::Diagram2dCanvas::run(|canvas| {
+    algebraeon_drawing::canvas::canvas2d::Diagram2dCanvas::run(|canvas| {
         canvas.draw(&sc1, (1.0, 0.0, 1.0));
         canvas.draw(&sc2, (0.0, 1.0, 1.0));
         // canvas.draw(&sc3, (1.0, 1.0, 0.0));

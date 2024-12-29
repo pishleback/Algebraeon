@@ -543,7 +543,7 @@ pub fn simplex_intersect_negative_side_hyperplane<
 mod tests {
     use malachite_q::Rational;
 
-    use orthoclase_rings::structure::StructuredType;
+    use algebraeon_rings::structure::StructuredType;
 
     use super::*;
 

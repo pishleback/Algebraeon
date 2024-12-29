@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicUsize;
 
-use orthoclase_rings::linear::matrix::{Matrix, MatrixStructure};
+use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
 
 use super::*;
 #[derive(Debug, Clone)]

@@ -1,5 +1,5 @@
-use orthoclase_groups::examples::symmetric::Permutation;
-use orthoclase_rings::number::modulo::Modulo;
+use algebraeon_groups::examples::symmetric::Permutation;
+use algebraeon_rings::number::modulo::Modulo;
 
 pub fn modular_permutation<const N: usize>(
     f: impl Fn(Modulo<N>) -> Modulo<N>,
@@ -13,7 +13,7 @@ pub fn modular_permutation<const N: usize>(
 
 #[cfg(test)]
 mod tests {
-    use orthoclase_rings::structure::StructuredType;
+    use algebraeon_rings::structure::StructuredType;
 
     use super::*;
 

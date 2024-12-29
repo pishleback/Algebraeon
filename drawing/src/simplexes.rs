@@ -1,11 +1,11 @@
 use std::borrow::Borrow;
 
 use crate::canvas::canvas2d::Drawable;
-use orthoclase_rings::ring_structure::structure::{
+use algebraeon_rings::ring_structure::structure::{
     FieldStructure, OrderedRingStructure, RealToFloatStructure,
 };
 
-use orthoclase_geometry::{
+use algebraeon_geometry::{
     simplexes::{
         LabelledSimplexCollection, LabelledSimplicialComplex, LabelledSimplicialDisjointUnion,
         PartialSimplicialComplex, Simplex,

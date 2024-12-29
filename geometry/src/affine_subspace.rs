@@ -1,6 +1,6 @@
 use simplexes::{OrientedHyperplane, OrientedSimplex, Simplex};
 
-use orthoclase_rings::linear::matrix::{Matrix, MatrixStructure};
+use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
 
 use super::*;
 
@@ -357,7 +357,7 @@ pub fn compose_affine_embeddings<
 mod tests {
     use malachite_q::Rational;
 
-    use orthoclase_rings::structure::StructuredType;
+    use algebraeon_rings::structure::StructuredType;
 
     use super::*;
 

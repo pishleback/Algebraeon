@@ -1,10 +1,10 @@
 [package]
-name = "orthoclase-groups"
+name = "algebraeon-groups"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "orthoclase_groups"
+name = "algebraeon_groups"
 
 [dependencies]
 itertools="0.11.0"
