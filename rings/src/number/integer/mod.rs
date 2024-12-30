@@ -93,7 +93,7 @@ impl UniqueFactorizationStructure for CannonicalStructure<Integer> {
             Some(Factored::new_unchecked(
                 self.clone().into(),
                 unit,
-                factor_nat(a.unsigned_abs())
+                factor_natural_by_try_primes(a.unsigned_abs())
                     .into_iter()
                     .map(|(p, k)| (Integer::from(p), k))
                     .collect(),
