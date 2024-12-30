@@ -2,8 +2,8 @@ use super::polynomial::*;
 use crate::{
     linear::matrix::*,
     ring_structure::{quotient::*, structure::*},
-    structure::*,
 };
+use algebraeon_structure::*;
 
 impl<FS: FieldStructure, const IS_FIELD: bool> QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
 where

@@ -15,8 +15,8 @@ use algebraeon_geometry::simplexes::OrientedSimplex;
 use algebraeon_geometry::simplexes::Simplex;
 use algebraeon_geometry::*;
 use algebraeon_rings::ring_structure::cannonical::*;
-use algebraeon_rings::structure::CannonicalStructure;
-use algebraeon_rings::structure::StructuredType;
+use algebraeon_rings::elements::*;
+use algebraeon_structure::*;
 use rand::Rng;
 use simplexes::LabelledSimplexCollection;
 

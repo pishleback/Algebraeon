@@ -1,8 +1,13 @@
-use complex::*;
+use crate::{
+    algebraic::isolated_roots::complex::bisect_box, polynomial::polynomial::*,
+    ring_structure::cannonical::*,
+};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
-use crate::{number::algebraic::isolated_roots::*, polynomial::polynomial::Polynomial};
+use crate::algebraic::isolated_roots::complex::evaluate_at_rational;
+
+use super::{ComplexAlgebraic, ComplexAlgebraicRoot};
 
 impl Polynomial<Integer> {
     fn at_fixed_re_or_im_impl<const RE_OR_IM: bool>(
@@ -285,7 +290,7 @@ impl Polynomial<Integer> {
             s: &Rational,
             t: &Rational,
         ) -> Option<Vec<Crossing>> {
-            use real::polynomial::*;
+            use super::super::real::polynomial::*;
             // println!(
             //     "REVERSE={} re={}, re_sqfr={}, im={}, im_sqfr={}",
             //     REVERSE,
@@ -769,6 +774,10 @@ impl Polynomial<Integer> {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
+    use malachite_base::num::basic::traits::Two;
+
     use super::*;
 
     #[test]

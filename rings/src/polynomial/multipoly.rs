@@ -9,8 +9,8 @@ use std::sync::atomic::AtomicUsize;
 use malachite_nz::natural::Natural;
 
 use super::super::ring_structure::structure::*;
-use super::super::structure::*;
 use super::polynomial::*;
+use algebraeon_structure::*;
 
 #[derive(Debug, Hash, Clone)]
 pub struct Variable {
@@ -361,10 +361,8 @@ impl<R: Clone> MultiPolynomial<R> {
     }
 }
 
-impl<RS: RingStructure + DisplayableStructure> DisplayableStructure
-    for MultiPolynomialStructure<RS>
-{
-    fn elem_to_string(&self, p: &Self::Set) -> String {
+impl<RS: RingStructure + ToStringStructure> ToStringStructure for MultiPolynomialStructure<RS> {
+    fn to_string(&self, p: &Self::Set) -> String {
         if p.terms.len() == 0 {
             "0".into()
         } else {
@@ -374,7 +372,7 @@ impl<RS: RingStructure + DisplayableStructure> DisplayableStructure
                     s += "+";
                 }
                 s += "(";
-                s += &self.coeff_ring.elem_to_string(&term.coeff);
+                s += &self.coeff_ring.to_string(&term.coeff);
                 s += ")";
                 s += &term.monomial.to_string();
             }
@@ -402,7 +400,7 @@ impl<RS: RingStructure> Structure for MultiPolynomialStructure<RS> {
     type Set = MultiPolynomial<RS::Set>;
 }
 
-impl<RS: RingStructure> EqualityStructure for MultiPolynomialStructure<RS> {
+impl<RS: RingStructure> PartialEqStructure for MultiPolynomialStructure<RS> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         let a = self.reduce(a.clone());
         let b = self.reduce(b.clone());
@@ -418,6 +416,7 @@ impl<RS: RingStructure> EqualityStructure for MultiPolynomialStructure<RS> {
         }
     }
 }
+impl<RS: RingStructure> EqStructure for MultiPolynomialStructure<RS> {}
 
 impl<RS: RingStructure> RingStructure for MultiPolynomialStructure<RS> {
     fn zero(&self) -> Self::Set {
@@ -547,7 +546,7 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
         MultiPolynomial::new(
             p.terms
                 .into_iter()
-                .filter(|Term {  coeff , ..}| !self.coeff_ring.is_zero(coeff))
+                .filter(|Term { coeff, .. }| !self.coeff_ring.is_zero(coeff))
                 .collect(),
         )
     }
@@ -674,27 +673,27 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
     }
 }
 
-impl<R: StructuredType> StructuredType for MultiPolynomial<R>
+impl<R: MetaType> MetaType for MultiPolynomial<R>
 where
     R::Structure: RingStructure,
 {
     type Structure = MultiPolynomialStructure<R::Structure>;
 
-    fn structure() -> Rc<Self::Structure> {
+    fn structure() -> std::rc::Rc<Self::Structure> {
         MultiPolynomialStructure::new(R::structure()).into()
     }
 }
 
-impl<R: StructuredType> Display for MultiPolynomial<R>
+impl<R: MetaType> Display for MultiPolynomial<R>
 where
-    R::Structure: RingStructure + DisplayableStructure,
+    R::Structure: RingStructure + ToStringStructure,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", Self::structure().elem_to_string(self))
+        write!(f, "{}", Self::structure().to_string(self))
     }
 }
 
-impl<R: StructuredType> PartialEq for MultiPolynomial<R>
+impl<R: MetaType> PartialEq for MultiPolynomial<R>
 where
     R::Structure: RingStructure,
 {
@@ -703,9 +702,9 @@ where
     }
 }
 
-impl<R: StructuredType> Eq for MultiPolynomial<R> where R::Structure: RingStructure {}
+impl<R: MetaType> Eq for MultiPolynomial<R> where R::Structure: RingStructure {}
 
-impl<R: StructuredType> MultiPolynomial<R>
+impl<R: MetaType> MultiPolynomial<R>
 where
     R::Structure: RingStructure,
 {
@@ -745,6 +744,7 @@ mod tests {
     use crate::ring_structure::cannonical::{IntegralDomain, Ring};
 
     use super::*;
+    use crate::elements::*;
 
     #[test]
     fn test_monomial_ordering() {

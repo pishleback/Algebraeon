@@ -1,10 +1,7 @@
+use crate::{polynomial::{multipoly::*, polynomial::*}, ring_structure::cannonical::*};
 use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
-
-use crate::polynomial::multipoly::*;
-use crate::polynomial::polynomial::*;
-use crate::ring_structure::cannonical::*;
 
 pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));

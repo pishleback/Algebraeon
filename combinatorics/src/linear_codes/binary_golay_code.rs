@@ -208,7 +208,7 @@ pub struct UnorderedSextet<'g> {
     parts: [Vector24; 6],
 }
 impl<'g> UnorderedSextet<'g> {
-    pub fn orderings<'a>(&'a self) -> impl Iterator<Item = OrderedSextet> + 'a {
+    pub fn orderings<'a>(&'a self) -> impl Iterator<Item = OrderedSextet<'a>> + 'a {
         (0..6).permutations(6).map(|perm| {
             let mut parts = [Vector24::zero(); 6];
             for (i, j) in perm.into_iter().enumerate() {

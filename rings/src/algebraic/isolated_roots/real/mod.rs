@@ -1,16 +1,12 @@
-use crate::{
-    number::algebraic::number_field::new_anf, polynomial::polynomial::Polynomial,
-    ring_structure::*, structure::*,
-};
+use crate::{algebraic::number_field::new_anf, polynomial::polynomial::*, ring_structure::{cannonical::*, structure::*}};
+use algebraeon_structure::*;
 use bounds::*;
-use cannonical::*;
 use interval::*;
 use malachite_base::num::basic::traits::{One, Two, Zero};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 use polynomial::*;
 use std::{fmt::Display, rc::Rc};
-use structure::*;
 
 use super::{bisection_gen::RationalSimpleBetweenGenerator, poly_tools::*, rat_to_string};
 
@@ -431,7 +427,7 @@ impl Ord for RealAlgebraic {
     }
 }
 
-impl StructuredType for RealAlgebraic {
+impl MetaType for RealAlgebraic {
     type Structure = CannonicalStructure<RealAlgebraic>;
 
     fn structure() -> Rc<Self::Structure> {
@@ -448,11 +444,13 @@ impl Display for RealAlgebraic {
     }
 }
 
-impl EqualityStructure for CannonicalStructure<RealAlgebraic> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
+// impl PartialEqStructure for <RealAlgebraic as MetaType>::Structure {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         a == b
+//     }
+// }
+
+// impl EqStructure for CannonicalStructure<RealAlgebraic> {}
 
 impl RingStructure for CannonicalStructure<RealAlgebraic> {
     fn zero(&self) -> Self::Set {
@@ -730,6 +728,8 @@ impl RealRoundingStructure for CannonicalStructure<RealAlgebraic> {
 
 #[cfg(test)]
 mod tests {
+    use crate::elements::*;
+
     use super::*;
 
     #[test]

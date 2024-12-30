@@ -795,9 +795,8 @@ where
 }
 #[cfg(test)]
 mod tests {
+    use algebraeon_structure::*;
     use malachite_q::Rational;
-
-    use algebraeon_rings::structure::StructuredType;
 
     use super::*;
 

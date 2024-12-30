@@ -3,7 +3,7 @@ use malachite_nz::{integer::Integer, natural::Natural};
 use crate::polynomial::polynomial::*;
 use crate::ring_structure::factorization::*;
 use crate::ring_structure::structure::*;
-use crate::structure::*;
+use algebraeon_structure::*;
 
 use std::rc::Rc;
 use std::{fmt::Display, hash::Hash};
@@ -123,17 +123,11 @@ impl<const N: usize> Display for Modulo<N> {
     }
 }
 
-impl<const N: usize> StructuredType for Modulo<N> {
-    type Structure = CannonicalStructure<Self>;
+impl<const N: usize> MetaType for Modulo<N> {
+    type Structure = CannonicalStructure<Modulo<N>>;
 
     fn structure() -> Rc<Self::Structure> {
         CannonicalStructure::new().into()
-    }
-}
-
-impl<const N: usize> EqualityStructure for CannonicalStructure<Modulo<N>> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
     }
 }
 
@@ -389,7 +383,6 @@ impl_field!(997);
 
 #[cfg(test)]
 mod tests {
-    
 
     use super::*;
 

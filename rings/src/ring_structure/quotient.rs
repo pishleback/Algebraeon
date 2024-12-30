@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::super::structure::*;
+use algebraeon_structure::*;
 
 use super::structure::*;
 
@@ -82,17 +82,17 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
 }
 
 impl<
-        RS: EuclideanDivisionStructure + UniqueFactorizationStructure + DisplayableStructure,
+        RS: EuclideanDivisionStructure + UniqueFactorizationStructure + ToStringStructure,
         const IS_FIELD: bool,
-    > DisplayableStructure for QuotientStructure<RS, IS_FIELD>
+    > ToStringStructure for QuotientStructure<RS, IS_FIELD>
 {
-    fn elem_to_string(&self, elem: &Self::Set) -> String {
-        self.ring.elem_to_string(elem)
+    fn to_string(&self, elem: &Self::Set) -> String {
+        self.ring.to_string(elem)
     }
 }
 
 impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>
-    EqualityStructure for QuotientStructure<RS, IS_FIELD>
+    PartialEqStructure for QuotientStructure<RS, IS_FIELD>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.ring.is_zero(
@@ -101,6 +101,11 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
                 .rem(&self.ring.add(a, &self.ring.neg(b)), &self.modulus),
         )
     }
+}
+
+impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>
+    EqStructure for QuotientStructure<RS, IS_FIELD>
+{
 }
 
 impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>

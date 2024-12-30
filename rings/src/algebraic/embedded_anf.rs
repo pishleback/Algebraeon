@@ -1,15 +1,16 @@
 use std::rc::Rc;
 
-use super::{isolated_roots::complex::ComplexAlgebraic, number_field::*};
 use crate::{
-    number::algebraic::isolated_roots::real::RealAlgebraic,
-    polynomial::polynomial::{Polynomial, PolynomialStructure},
-    ring_structure::{cannonical::*, structure::*},
-    structure::*,
+    algebraic::isolated_roots::real::RealAlgebraic, polynomial::polynomial::*, ring_structure::*,
 };
+
+use super::{isolated_roots::complex::ComplexAlgebraic, number_field::*};
+use algebraeon_structure::*;
+use cannonical::*;
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
+use structure::*;
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
@@ -41,6 +42,30 @@ impl ComplexAlgebraic {
         EmbeddedAnf {
             anf: self.abstract_generated_algebraic_number_field().into(),
             gen: self,
+        }
+    }
+}
+
+//TODO
+// use complex::*;
+// use  real::*;
+
+impl AlgebraicClosureStructure for CannonicalStructure<ComplexAlgebraic> {
+    type BFS = <Rational as algebraeon_structure::MetaType>::Structure;
+
+    fn base_field(&self) -> Rc<Self::BFS> {
+        Rational::structure()
+    }
+
+    fn base_field_inclusion(&self, x: &Rational) -> Self::Set {
+        ComplexAlgebraic::Real(RealAlgebraic::Rational(x.clone()))
+    }
+
+    fn all_roots_list(&self, poly: &Polynomial<Rational>) -> Option<Vec<Self::Set>> {
+        if poly.is_zero() {
+            None
+        } else {
+            Some(poly.primitive_part_fof().all_complex_roots())
         }
     }
 }
@@ -201,6 +226,8 @@ pub fn anf_multi_primitive_element_theorem(
 
 #[cfg(test)]
 mod tests {
+    use crate::{algebraic::isolated_roots::real::RealAlgebraic, elements::*};
+
     use super::*;
 
     #[test]

@@ -124,6 +124,7 @@ pub trait LabelledSimplexCollection<
         simplexes: impl Iterator<Item = &'a Simplex<FS, SP>>,
     ) -> Option<&'a T>
     where
+        FS: 'a,
         SP: 'a,
     {
         let mut label = None;

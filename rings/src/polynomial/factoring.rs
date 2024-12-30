@@ -3,10 +3,10 @@ use malachite_nz::natural::Natural;
 
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
-use super::super::structure::*;
 use super::polynomial::*;
 use crate::linear::matrix::*;
 use crate::linear::subspace::*;
+use algebraeon_structure::*;
 
 impl<FS: FiniteFieldStructure> PolynomialStructure<FS>
 where
@@ -199,7 +199,8 @@ impl<
         RS: UniqueFactorizationStructure
             + GreatestCommonDivisorStructure
             + CharZeroStructure
-            + FiniteUnitsStructure,
+            + FiniteUnitsStructure
+            + 'static,
     > PolynomialStructure<RS>
 where
     PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + GreatestCommonDivisorStructure,
@@ -308,12 +309,13 @@ where
     }
 }
 
-impl<R: StructuredType> Polynomial<R>
+impl<R: MetaType> Polynomial<R>
 where
     R::Structure: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
         + CharZeroStructure
-        + FiniteUnitsStructure,
+        + FiniteUnitsStructure
+        + 'static,
     PolynomialStructure<R::Structure>: Structure<Set = Polynomial<R>>
         + GreatestCommonDivisorStructure
         + UniqueFactorizationStructure,
@@ -407,7 +409,7 @@ where
     }
 }
 
-impl<F: StructuredType> Polynomial<F>
+impl<F: MetaType> Polynomial<F>
 where
     F::Structure: FieldStructure + FiniteUnitsStructure,
     PolynomialStructure<F::Structure>:
@@ -509,7 +511,7 @@ where
     }
 }
 
-impl<F: StructuredType> Polynomial<F>
+impl<F: MetaType> Polynomial<F>
 where
     F::Structure: FiniteFieldStructure,
     PolynomialStructure<F::Structure>:
@@ -527,6 +529,7 @@ mod tests {
 
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
+    use crate::elements::*;
 
     use crate::{
         number::{modulo::Modulo, quaternary_field::QuaternaryField},

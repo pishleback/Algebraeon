@@ -156,6 +156,7 @@ impl Polynomial<Integer> {
 
 #[cfg(test)]
 mod tests {
+    use crate::elements::*;
     use super::*;
 
     #[test]

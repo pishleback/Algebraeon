@@ -9,7 +9,7 @@ use crate::number::natural::nat_to_usize;
 use crate::polynomial::polynomial::Polynomial;
 use crate::polynomial::polynomial::PolynomialStructure;
 
-use super::super::structure::*;
+use algebraeon_structure::*;
 
 use super::cannonical::*;
 use super::factorization::*;
@@ -20,7 +20,7 @@ pub enum RingDivisionError {
     NotDivisible,
 }
 
-pub trait RingStructure: EqualityStructure {
+pub trait RingStructure: EqStructure {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
     }
@@ -344,11 +344,22 @@ pub trait EuclideanDivisionStructure: IntegralDomainStructure {
     }
 }
 
+pub trait InfiniteStructure: Structure {
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
+}
+pub trait Infinite: MetaType {
+    fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>>;
+}
+impl<T: MetaType> Infinite for T where CannonicalStructure<T>: InfiniteStructure {
+    fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>> {
+        todo!()
+    }
+}
+
 pub trait CharZeroStructure: RingStructure {}
 
-impl<RS: CharZeroStructure> InfiniteStructure for RS {
-    //the integers are distinct in a char zero ring
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>> {
+impl<RS: CharZeroStructure + 'static> InfiniteStructure for RS {
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as Structure>::Set>> {
         struct IntegerIterator<RS: CharZeroStructure> {
             ring: RS,
             next: Integer,
@@ -539,25 +550,26 @@ pub trait PositiveRealNthRootStructure: ComplexSubsetStructure {
 
 pub trait AlgebraicClosureStructure: FieldStructure
 where
-    PolynomialStructure<Self>:
-        UniqueFactorizationStructure + Structure<Set = Polynomial<Self::Set>>,
+    PolynomialStructure<Self::BFS>:
+        UniqueFactorizationStructure + Structure<Set = Polynomial<<Self::BFS as Structure>::Set>>,
 {
-    type ACFS: FieldStructure; //algebraic closure field structure
+    type BFS: FieldStructure; //base field structure
 
-    fn algebraic_closure_field(&self) -> Rc<Self::ACFS>;
-    //natural inclusion of GFS into Self
-    fn algebraic_closure_inclusion(&self, x: &Self::Set) -> <Self::ACFS as Structure>::Set;
+    fn base_field(&self) -> Rc<Self::BFS>;
+
+    fn base_field_inclusion(&self, x: &<Self::BFS as Structure>::Set) -> Self::Set;
+
     //return None for the zero polynomial
     fn all_roots_list(
         &self,
-        poly: &Polynomial<Self::Set>,
-    ) -> Option<Vec<<Self::ACFS as Structure>::Set>>;
+        poly: &Polynomial<<Self::BFS as Structure>::Set>,
+    ) -> Option<Vec<Self::Set>>;
     fn all_roots_unique(
         &self,
-        poly: &Polynomial<Self::Set>,
-    ) -> Option<Vec<<Self::ACFS as Structure>::Set>> {
+        poly: &Polynomial<<Self::BFS as Structure>::Set>,
+    ) -> Option<Vec<Self::Set>> {
         self.all_roots_list(
-            &PolynomialStructure::new(self.clone().into())
+            &PolynomialStructure::new(self.base_field())
                 .factor(poly)
                 .unwrap()
                 .expand_squarefree(),
@@ -565,10 +577,10 @@ where
     }
     fn all_roots_powers(
         &self,
-        poly: &Polynomial<Self::Set>,
-    ) -> Option<Vec<(<Self::ACFS as Structure>::Set, usize)>> {
+        poly: &Polynomial<<Self::BFS as Structure>::Set>,
+    ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
-        for (factor, k) in PolynomialStructure::new(self.clone().into())
+        for (factor, k) in PolynomialStructure::new(self.base_field())
             .factor(poly)?
             .unit_and_factors()
             .1

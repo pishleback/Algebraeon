@@ -6,30 +6,12 @@ use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
 
-use crate::structure::*;
 
 use super::super::polynomial::polynomial::*;
 
-use super::super::ring_structure::cannonical::*;
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
-use super::algebraic::isolated_roots::complex::*;
-use super::algebraic::isolated_roots::real::*;
-
-impl StructuredType for Rational {
-    type Structure = CannonicalStructure<Self>;
-
-    fn structure() -> Rc<Self::Structure> {
-        Self::Structure::new().into()
-    }
-}
-
-impl EqualityStructure for CannonicalStructure<Rational> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
-
+use algebraeon_structure::*;
 impl RingStructure for CannonicalStructure<Rational> {
     fn zero(&self) -> Self::Set {
         Rational::ZERO
@@ -116,29 +98,6 @@ impl RealFromFloatStructure for CannonicalStructure<Rational> {
 impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Rational>> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
         self.factorize_by_factorize_primitive_part(p)
-    }
-}
-
-impl AlgebraicClosureStructure for CannonicalStructure<Rational> {
-    type ACFS = CannonicalStructure<ComplexAlgebraic>;
-
-    fn algebraic_closure_field(&self) -> Rc<Self::ACFS> {
-        ComplexAlgebraic::structure()
-    }
-
-    fn algebraic_closure_inclusion(&self, x: &Self::Set) -> <Self::ACFS as Structure>::Set {
-        ComplexAlgebraic::Real(RealAlgebraic::Rational(x.clone()))
-    }
-
-    fn all_roots_list(
-        &self,
-        poly: &Polynomial<Self::Set>,
-    ) -> Option<Vec<<Self::ACFS as Structure>::Set>> {
-        if poly.is_zero() {
-            None
-        } else {
-            Some(poly.primitive_part_fof().all_complex_roots())
-        }
     }
 }
 

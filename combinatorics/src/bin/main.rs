@@ -10,8 +10,6 @@ use malachite_q::Rational;
 use algebraeon_groups::examples::symmetric::*;
 use algebraeon_groups::group::*;
 use algebraeon_rings::linear::matrix::*;
-use algebraeon_rings::number::algebraic::isolated_roots::*;
-use algebraeon_rings::number::algebraic::number_field::*;
 use algebraeon_rings::number::modulo::*;
 use algebraeon_rings::polynomial::multipoly::*;
 use algebraeon_rings::polynomial::polynomial::*;
@@ -19,7 +17,7 @@ use algebraeon_rings::polynomial::polynomial::*;
 use algebraeon_rings::ring_structure::cannonical::*;
 use algebraeon_rings::ring_structure::quotient::*;
 use algebraeon_rings::ring_structure::structure::*;
-use algebraeon_rings::structure::*;
+use algebraeon_rings::elements::*;
 
 fn main() {
     let a = algebraeon_combinatorics::modular_permutations::modular_permutation::<24>(|x| {

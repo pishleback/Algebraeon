@@ -5,7 +5,7 @@ use malachite_nz::natural::Natural;
 
 use crate::polynomial::polynomial::*;
 use crate::ring_structure::structure::*;
-use crate::structure::*;
+use algebraeon_structure::*;
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -27,17 +27,11 @@ impl Display for QuaternaryField {
     }
 }
 
-impl StructuredType for QuaternaryField {
-    type Structure = CannonicalStructure<Self>;
+impl MetaType for QuaternaryField {
+    type Structure = CannonicalStructure<QuaternaryField>;
 
     fn structure() -> Rc<Self::Structure> {
         CannonicalStructure::new().into()
-    }
-}
-
-impl EqualityStructure for CannonicalStructure<QuaternaryField> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
     }
 }
 

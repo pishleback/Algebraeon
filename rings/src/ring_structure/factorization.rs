@@ -1,9 +1,9 @@
 use std::{fmt::Display, rc::Rc};
 
+use algebraeon_structure::*;
 use malachite_base::num::basic::traits::One;
 use malachite_nz::natural::Natural;
 
-use super::super::structure::*;
 use super::structure::*;
 
 #[derive(Debug, Clone)]

@@ -5,9 +5,9 @@ use itertools::Itertools;
 use malachite_nz::natural::Natural;
 
 use super::super::ring_structure::structure::*;
-use super::super::structure::*;
 use super::subspace::*;
 use crate::polynomial::polynomial::*;
+use algebraeon_structure::*;
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -262,7 +262,7 @@ impl<RS: Structure> MatrixStructure<RS> {
     }
 }
 
-impl<RS: EqualityStructure> MatrixStructure<RS> {
+impl<RS: EqStructure> MatrixStructure<RS> {
     fn equal(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> bool {
         let rows = a.rows();
         let cols = a.cols();
@@ -283,13 +283,13 @@ impl<RS: EqualityStructure> MatrixStructure<RS> {
     }
 }
 
-impl<RS: DisplayableStructure> MatrixStructure<RS> {
+impl<RS: ToStringStructure> MatrixStructure<RS> {
     pub fn pprint(&self, mat: &Matrix<RS::Set>) {
         let mut str_rows = vec![];
         for r in 0..mat.rows() {
             str_rows.push(vec![]);
             for c in 0..mat.cols() {
-                str_rows[r].push(self.ring.elem_to_string(mat.at(r, c).unwrap()));
+                str_rows[r].push(self.ring.to_string(mat.at(r, c).unwrap()));
             }
         }
         let cols_widths: Vec<usize> = (0..mat.cols())
@@ -1615,25 +1615,27 @@ impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructu
 #[derive(Debug, Clone)]
 pub struct JordanBlock<FS: AlgebraicClosureStructure>
 where
-    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS::BFS>:
+        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
-    eigenvalue: <FS::ACFS as Structure>::Set,
+    eigenvalue: FS::Set,
     blocksize: usize,
 }
 
 impl<FS: AlgebraicClosureStructure> JordanBlock<FS>
 where
-    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS::BFS>:
+        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
-    pub fn matrix(&self, field: &FS) -> Matrix<<FS::ACFS as Structure>::Set> {
-        let ac_field = field.algebraic_closure_field();
+    pub fn matrix(&self, field: &FS) -> Matrix<FS::Set> {
+        // let base_field = field.base_field();
         Matrix::construct(self.blocksize, self.blocksize, |r, c| {
             if r == c {
                 self.eigenvalue.clone()
             } else if r + 1 == c {
-                ac_field.one()
+                field.one()
             } else {
-                ac_field.zero()
+                field.zero()
             }
         })
     }
@@ -1642,7 +1644,8 @@ where
 #[derive(Debug, Clone)]
 pub struct JordanNormalForm<FS: AlgebraicClosureStructure>
 where
-    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS::BFS>:
+        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
     field: Rc<FS>,
     blocks: Vec<JordanBlock<FS>>,
@@ -1650,11 +1653,11 @@ where
 
 impl<FS: AlgebraicClosureStructure> JordanNormalForm<FS>
 where
-    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS::BFS>:
+        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
-    pub fn matrix(&self) -> Matrix<<FS::ACFS as Structure>::Set> {
-        let ac_field = self.field.algebraic_closure_field();
-        let ac_mat_structure = MatrixStructure::new(ac_field.clone());
+    pub fn matrix(&self) -> Matrix<FS::Set> {
+        let ac_mat_structure = MatrixStructure::new(self.field.clone());
         ac_mat_structure.join_diag(
             self.blocks
                 .iter()
@@ -1666,47 +1669,60 @@ where
 
 impl<FS: AlgebraicClosureStructure> MatrixStructure<FS>
 where
-    PolynomialStructure<FS>: UniqueFactorizationStructure + Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS::BFS>:
+        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
-    pub fn eigenvalues_list(&self, mat: Matrix<FS::Set>) -> Vec<<FS::ACFS as Structure>::Set> {
+    pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as Structure>::Set>) -> Vec<FS::Set> {
+        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
         self.ring()
-            .all_roots_list(&self.characteristic_polynomial(mat).unwrap())
+            .all_roots_list(
+                &base_field_mat_structure
+                    .characteristic_polynomial(mat)
+                    .unwrap(),
+            )
             .unwrap()
     }
 
-    pub fn eigenvalues_unique(&self, mat: Matrix<FS::Set>) -> Vec<<FS::ACFS as Structure>::Set> {
+    pub fn eigenvalues_unique(&self, mat: Matrix<<FS::BFS as Structure>::Set>) -> Vec<FS::Set> {
+        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
         self.ring()
-            .all_roots_unique(&self.characteristic_polynomial(mat).unwrap())
+            .all_roots_unique(
+                &base_field_mat_structure
+                    .characteristic_polynomial(mat)
+                    .unwrap(),
+            )
             .unwrap()
     }
 
     pub fn eigenvalues_powers(
         &self,
-        mat: Matrix<FS::Set>,
-    ) -> Vec<(<FS::ACFS as Structure>::Set, usize)> {
+        mat: Matrix<<FS::BFS as Structure>::Set>,
+    ) -> Vec<(FS::Set, usize)> {
+        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
         self.ring()
-            .all_roots_powers(&self.characteristic_polynomial(mat).unwrap())
+            .all_roots_powers(
+                &base_field_mat_structure
+                    .characteristic_polynomial(mat)
+                    .unwrap(),
+            )
             .unwrap()
     }
 
     pub fn generalized_col_eigenspace(
         &self,
-        mat: &Matrix<FS::Set>,
-        eigenvalue: &<FS::ACFS as Structure>::Set,
+        mat: &Matrix<<FS::BFS as Structure>::Set>,
+        eigenvalue: &FS::Set,
         k: usize,
-    ) -> LinearLattice<<FS::ACFS as Structure>::Set> {
+    ) -> LinearLattice<FS::Set> {
         let n = mat.rows();
         assert_eq!(n, mat.cols());
         //compute ker((M - xI)^k)
-        let ac_mat_structure = MatrixStructure::new(self.ring().algebraic_closure_field());
-        ac_mat_structure.col_kernel(
-            ac_mat_structure.nat_pow(
-                &ac_mat_structure
+        self.col_kernel(
+            self.nat_pow(
+                &self
                     .add(
-                        &mat.apply_map(|x| self.ring().algebraic_closure_inclusion(x)),
-                        &ac_mat_structure.neg(
-                            ac_mat_structure.mul_scalar(ac_mat_structure.ident(n), eigenvalue),
-                        ),
+                        &mat.apply_map(|x| self.ring().base_field_inclusion(x)),
+                        &self.neg(self.mul_scalar(self.ident(n), eigenvalue)),
                     )
                     .unwrap(),
                 &Natural::from(k),
@@ -1716,27 +1732,30 @@ where
 
     pub fn generalized_row_eigenspace(
         &self,
-        mat: &Matrix<FS::Set>,
-        eigenvalue: &<FS::ACFS as Structure>::Set,
+        mat: &Matrix<<FS::BFS as Structure>::Set>,
+        eigenvalue: &FS::Set,
         k: usize,
-    ) -> LinearLattice<<FS::ACFS as Structure>::Set> {
-        LinearLatticeStructure::new(self.ring().algebraic_closure_field())
-            .transpose(&self.generalized_col_eigenspace(&mat.transpose_ref(), eigenvalue, k))
+    ) -> LinearLattice<FS::Set> {
+        LinearLatticeStructure::new(self.ring()).transpose(&self.generalized_col_eigenspace(
+            &mat.transpose_ref(),
+            eigenvalue,
+            k,
+        ))
     }
 
     pub fn col_eigenspace(
         &self,
-        mat: &Matrix<FS::Set>,
-        eigenvalue: &<FS::ACFS as Structure>::Set,
-    ) -> LinearLattice<<FS::ACFS as Structure>::Set> {
+        mat: &Matrix<<FS::BFS as Structure>::Set>,
+        eigenvalue: &FS::Set,
+    ) -> LinearLattice<FS::Set> {
         self.generalized_col_eigenspace(mat, eigenvalue, 1)
     }
 
     pub fn row_eigenspace(
         &self,
-        mat: &Matrix<FS::Set>,
-        eigenvalue: &<FS::ACFS as Structure>::Set,
-    ) -> LinearLattice<<FS::ACFS as Structure>::Set> {
+        mat: &Matrix<<FS::BFS as Structure>::Set>,
+        eigenvalue: &FS::Set,
+    ) -> LinearLattice<FS::Set> {
         self.generalized_row_eigenspace(mat, eigenvalue, 1)
     }
 
@@ -1744,16 +1763,16 @@ where
     // B^-1 M B = J
     pub fn jordan_algorithm(
         &self,
-        mat: &Matrix<FS::Set>,
-    ) -> (JordanNormalForm<FS>, Matrix<<FS::ACFS as Structure>::Set>) {
+        mat: &Matrix<<FS::BFS as Structure>::Set>,
+    ) -> (JordanNormalForm<FS>, Matrix<FS::Set>) {
         let n = mat.rows();
         assert_eq!(n, mat.cols());
 
-        let ac_field = self.ring().algebraic_closure_field();
-        let ac_mat_structure = MatrixStructure::new(ac_field.clone());
+        let ac_field = self.ring();
+        let ac_mat_structure = self;
         let ac_linlat_structure = LinearLatticeStructure::new(ac_field.clone());
 
-        let ac_mat = mat.apply_map(|x| self.ring().algebraic_closure_inclusion(x));
+        let ac_mat = mat.apply_map(|x| self.ring().base_field_inclusion(x));
 
         let mut basis = vec![];
         let mut eigenvalues = vec![]; //store (gesp_basis, eigenvalue, multiplicity)
@@ -1921,7 +1940,7 @@ where
             .collect_vec();
 
         let mut jordan_blocks = vec![];
-        let mut jnf_basis_rel_gesp_basis: Vec<Matrix<<FS::ACFS as Structure>::Set>> = vec![];
+        let mut jnf_basis_rel_gesp_basis: Vec<Matrix<FS::Set>> = vec![];
         for (eval, mult, blocks) in jnf_info {
             // println!("eval={:?}, mult={}", eval, mult);
             let mut eigenblock_basis = vec![];
@@ -1969,10 +1988,7 @@ where
         (jnf, jnf_basis)
     }
 
-    pub fn jordan_normal_form(
-        &self,
-        mat: &Matrix<FS::Set>,
-    ) -> Matrix<<FS::ACFS as Structure>::Set> {
+    pub fn jordan_normal_form(&self, mat: &Matrix<<FS::BFS as Structure>::Set>) -> Matrix<FS::Set> {
         self.jordan_algorithm(mat).0.matrix()
     }
 
@@ -2008,7 +2024,7 @@ where
     */
 }
 
-impl<R: StructuredType> StructuredType for Matrix<R>
+impl<R: MetaType> MetaType for Matrix<R>
 where
     R::Structure: Structure,
 {
@@ -2019,16 +2035,16 @@ where
     }
 }
 
-impl<R: StructuredType> Matrix<R>
+impl<R: MetaType> Matrix<R>
 where
-    R::Structure: DisplayableStructure,
+    R::Structure: ToStringStructure,
 {
     pub fn pprint(&self) {
         Self::structure().pprint(self)
     }
 }
 
-impl<R: StructuredType> PartialEq for Matrix<R>
+impl<R: MetaType> PartialEq for Matrix<R>
 where
     R::Structure: RingStructure,
 {
@@ -2037,9 +2053,9 @@ where
     }
 }
 
-impl<R: StructuredType> Eq for Matrix<R> where R::Structure: RingStructure {}
+impl<R: MetaType> Eq for Matrix<R> where R::Structure: RingStructure {}
 
-impl<R: StructuredType> Matrix<R>
+impl<R: MetaType> Matrix<R>
 where
     R::Structure: RingStructure,
 {
@@ -2096,7 +2112,7 @@ where
     }
 }
 
-impl<R: StructuredType> Matrix<R>
+impl<R: MetaType> Matrix<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -2161,7 +2177,7 @@ where
     }
 }
 
-impl<R: StructuredType> Matrix<R>
+impl<R: MetaType> Matrix<R>
 where
     R::Structure: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateStructure,
 {
@@ -2186,7 +2202,7 @@ where
     }
 }
 
-impl<R: StructuredType> Matrix<R>
+impl<R: MetaType> Matrix<R>
 where
     R::Structure: GreatestCommonDivisorStructure,
 {
@@ -2199,7 +2215,7 @@ where
     }
 }
 
-impl<F: StructuredType> Matrix<F>
+impl<F: MetaType> Matrix<F>
 where
     F::Structure: FieldOfFractionsStructure,
     <F::Structure as FieldOfFractionsStructure>::RS: GreatestCommonDivisorStructure,
@@ -2214,7 +2230,7 @@ where
     }
 }
 
-impl<F: StructuredType> Matrix<F>
+impl<F: MetaType> Matrix<F>
 where
     F::Structure: FieldStructure,
 {
@@ -2231,7 +2247,7 @@ where
     }
 }
 
-impl<F: StructuredType> Matrix<F>
+impl<F: MetaType> Matrix<F>
 where
     F::Structure: ComplexConjugateStructure + FieldStructure,
 {
@@ -2252,7 +2268,7 @@ where
     }
 }
 
-impl<F: StructuredType> Matrix<F>
+impl<F: MetaType> Matrix<F>
 where
     F::Structure: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructure,
 {
@@ -2273,11 +2289,17 @@ where
     }
 }
 
-impl<F: StructuredType> Matrix<F>
+/*
+impl<F: MetaType> Matrix<F>
 where
     F::Structure: AlgebraicClosureStructure,
-    PolynomialStructure<F::Structure>:
-        UniqueFactorizationStructure + Structure<Set = Polynomial<F>>,
+    PolynomialStructure<<F::Structure as AlgebraicClosureStructure>::BFS>:
+        UniqueFactorizationStructure
+            + Structure<
+                Set = Polynomial<
+                    <<F::Structure as AlgebraicClosureStructure>::BFS as Structure>::Set,
+                >,
+            >,
 {
     pub fn eigenvalues_list(
         self,
@@ -2347,6 +2369,7 @@ where
         Self::structure().jordan_normal_form(self)
     }
 }
+*/
 
 #[cfg(test)]
 mod tests {
@@ -2356,11 +2379,12 @@ mod tests {
     use malachite_q::Rational;
 
     use crate::{
-        number::algebraic::isolated_roots::{complex::ComplexAlgebraic, real::RealAlgebraic},
+        algebraic::isolated_roots::{complex::ComplexAlgebraic, real::RealAlgebraic},
         ring_structure::cannonical::{EuclideanDivisionDomain, FavoriteAssociateDomain, Ring},
     };
 
     use super::*;
+    use crate::elements::*;
 
     #[test]
     fn test_join_rows() {
@@ -3545,11 +3569,11 @@ mod tests {
         ]);
 
         mat.pprint();
-        for root in MatrixStructure::new(Rational::structure()).eigenvalues_list(mat.clone()) {
+        for root in MatrixStructure::new(ComplexAlgebraic::structure()).eigenvalues_list(mat.clone()) {
             println!("{}", root);
         }
 
-        let (j, b) = MatrixStructure::new(Rational::structure()).jordan_algorithm(&mat);
+        let (j, b) = MatrixStructure::new(ComplexAlgebraic::structure()).jordan_algorithm(&mat);
         println!("{:?}", j);
         j.matrix().pprint();
         b.pprint();
@@ -3557,11 +3581,11 @@ mod tests {
         let mat = Matrix::<Rational>::from_rows(vec![vec![1, 0, 0], vec![0, 0, -1], vec![0, 2, 0]]);
 
         mat.pprint();
-        for root in MatrixStructure::new(Rational::structure()).eigenvalues_list(mat.clone()) {
+        for root in MatrixStructure::new(ComplexAlgebraic::structure()).eigenvalues_list(mat.clone()) {
             println!("{}", root);
         }
 
-        let (j, b) = MatrixStructure::new(Rational::structure()).jordan_algorithm(&mat);
+        let (j, b) = MatrixStructure::new(ComplexAlgebraic::structure()).jordan_algorithm(&mat);
         println!("{:?}", j);
         j.matrix().pprint();
         b.pprint();

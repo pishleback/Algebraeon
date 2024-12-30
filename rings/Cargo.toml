@@ -8,6 +8,7 @@ name = "algebraeon_rings"
 
 [dependencies]
 algebraeon-sets = { version = "0.1.0", path = "../sets" }
+algebraeon-structure = { version = "0.1.0", path = "../structure" }
 algebraeon-groups = { version = "0.1.0", path = "../groups" }
 rand = "0.8.5"
 rayon="1.7.0"

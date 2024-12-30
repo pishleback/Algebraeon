@@ -1,15 +1,15 @@
-use crate::{
-    number::algebraic::{isolated_roots::*, number_field::new_anf},
-    polynomial::polynomial::Polynomial,
-    ring_structure::{cannonical::*, structure::*},
-    structure::*,
-};
-use bisection_gen::RationalSimpleBetweenGenerator;
+use crate::algebraic::number_field::new_anf;
+use crate::ring_structure::cannonical::*;
+use crate::ring_structure::structure::*;
+
+use super::poly_tools::*;
+use super::real::RealAlgebraic;
+use super::{bisection_gen::RationalSimpleBetweenGenerator, rat_to_string};
+use crate::polynomial::polynomial::*;
+use algebraeon_structure::*;
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::{arithmetic::traits::SimplestRationalInInterval, Rational};
-use poly_tools::*;
-use real::RealAlgebraic;
 use std::{collections::HashSet, fmt::Display, rc::Rc, str::FromStr};
 
 use boxes::*;
@@ -573,7 +573,7 @@ impl PartialEq for ComplexAlgebraic {
 
 impl Eq for ComplexAlgebraic {}
 
-impl StructuredType for ComplexAlgebraic {
+impl MetaType for ComplexAlgebraic {
     type Structure = CannonicalStructure<ComplexAlgebraic>;
 
     fn structure() -> Rc<Self::Structure> {
@@ -590,11 +590,12 @@ impl Display for ComplexAlgebraic {
     }
 }
 
-impl EqualityStructure for CannonicalStructure<ComplexAlgebraic> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
+// impl PartialEqStructure for CannonicalStructure<ComplexAlgebraic> {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         a == b
+//     }
+// }
+// impl EqStructure for CannonicalStructure<ComplexAlgebraic> {}
 
 impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
     fn zero(&self) -> Self::Set {
@@ -965,6 +966,8 @@ impl ComplexAlgebraic {
 
 #[cfg(test)]
 mod tests {
+    use crate::elements::*;
+
     use super::*;
 
     #[test]

@@ -6,9 +6,9 @@ use malachite_nz::natural::Natural;
 use crate::ring_structure::factorization::*;
 use crate::ring_structure::quotient::*;
 use crate::ring_structure::structure::*;
-use crate::structure::*;
 
 use super::polynomial::*;
+use algebraeon_structure::*;
 
 // impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure> PolynomialStructure<RS> {
 //     fn polynomial_reduce_modulo(&self,

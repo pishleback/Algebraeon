@@ -1,0 +1,12 @@
+[package]
+name = "algebraeon-structure"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "algebraeon_structure"
+
+[dependencies]
+malachite-base = "0.3.2"
+malachite-nz = "0.3.2"
+malachite-q = "0.3.2"

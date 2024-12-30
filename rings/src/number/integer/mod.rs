@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::DivMod;
 use malachite_base::num::arithmetic::traits::UnsignedAbs;
@@ -13,24 +11,11 @@ use crate::number::natural::*;
 use crate::ring_structure::cannonical::*;
 use crate::ring_structure::factorization::*;
 use crate::ring_structure::structure::*;
-use crate::structure::*;
+
+use algebraeon_structure::*;
 
 pub mod modulo;
 pub mod polynomial;
-
-impl StructuredType for Integer {
-    type Structure = CannonicalStructure<Self>;
-
-    fn structure() -> Rc<Self::Structure> {
-        Self::Structure::new().into()
-    }
-}
-
-impl EqualityStructure for CannonicalStructure<Integer> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
 
 impl RingStructure for CannonicalStructure<Integer> {
     fn zero(&self) -> Self::Set {

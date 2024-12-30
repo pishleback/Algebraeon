@@ -5,25 +5,25 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::Rational;
 
-use super::super::structure::*;
 use super::factorization::*;
 use super::structure::*;
+use algebraeon_structure::*;
 
 //TODO: autogenerate these cannonical versions of the ring structures and their implementations in a proc macro?
 //In a proc macro how would I do the ones which go from opp(a : &Self::Set) to opp(&self)?
 
-// impl<R: StructuredType> From<StructuredElement<CannonicalStructure<R>>> for R
+// impl<R: MetaType> From<StructuredElement<R::Structure>> for R
 // where
 //     R::Structure: RingStructure<Set = R>,
 // {
-//     fn from(value: StructuredElement<CannonicalStructure<R>>) -> Self {
+//     fn from(value: StructuredElement<R::Structure>) -> Self {
 //         todo!()
 //     }
 // }
 
-pub trait Ring: StructuredType
+pub trait Ring: MetaType
 where
-    Self::Structure: RingStructure<Set = Self>,
+    Self::Structure: RingStructure,
 {
     fn zero() -> Self {
         Self::structure().zero()
@@ -55,26 +55,22 @@ where
         Self::structure().from_int(x)
     }
 }
+impl<R: MetaType> Ring for R where Self::Structure: RingStructure {}
 
-impl<R: StructuredType> Ring for R where Self::Structure: RingStructure<Set = R> {}
-
-pub trait RingEqualityOpps: StructuredType
+pub trait RingEqualityOpps: MetaType
 where
-    Self::Structure: RingStructure<Set = Self> + EqualityStructure,
+    Self::Structure: RingStructure + EqStructure,
 {
     fn is_zero(&self) -> bool {
         Self::structure().is_zero(self)
     }
 }
 
-impl<R: StructuredType> RingEqualityOpps for R where
-    Self::Structure: RingStructure<Set = R> + EqualityStructure
-{
-}
+impl<R: MetaType> RingEqualityOpps for R where Self::Structure: RingStructure + EqStructure {}
 
 pub trait IntegralDomain: Ring
 where
-    Self::Structure: IntegralDomainStructure<Set = Self>,
+    Self::Structure: IntegralDomainStructure,
 {
     fn div(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
         Self::structure().div(a, b)
@@ -106,7 +102,7 @@ impl<R: Ring> IntegralDomain for R where Self::Structure: IntegralDomainStructur
 
 pub trait FiniteUnitsDomain: Ring
 where
-    Self::Structure: FiniteUnitsStructure<Set = Self>,
+    Self::Structure: FiniteUnitsStructure,
 {
     fn all_units(&self) -> Vec<Self> {
         Self::structure().all_units()
@@ -117,7 +113,7 @@ impl<R: Ring> FiniteUnitsDomain for R where Self::Structure: FiniteUnitsStructur
 
 pub trait FavoriteAssociateDomain: IntegralDomain
 where
-    Self::Structure: FavoriteAssociateStructure<Set = Self>,
+    Self::Structure: FavoriteAssociateStructure,
 {
     fn factor_fav_assoc(&self) -> (Self, Self) {
         Self::structure().factor_fav_assoc(self)
@@ -135,7 +131,7 @@ impl<R: Ring> FavoriteAssociateDomain for R where
 
 pub trait GreatestCommonDivisorDomain: FavoriteAssociateDomain
 where
-    Self::Structure: GreatestCommonDivisorStructure<Set = Self>,
+    Self::Structure: GreatestCommonDivisorStructure,
 {
     fn gcd(x: &Self, y: &Self) -> Self {
         Self::structure().gcd(x, y)
@@ -161,7 +157,7 @@ impl<R: Ring> GreatestCommonDivisorDomain for R where
 
 pub trait UniqueFactorizationDomain: FavoriteAssociateDomain
 where
-    Self::Structure: UniqueFactorizationStructure<Set = Self>,
+    Self::Structure: UniqueFactorizationStructure,
 {
     fn factor(&self) -> Option<Factored<Self::Structure>> {
         Self::structure().factor(self)
@@ -179,7 +175,7 @@ impl<R: Ring> UniqueFactorizationDomain for R where
 
 pub trait BezoutDomain: GreatestCommonDivisorDomain
 where
-    Self::Structure: BezoutDomainStructure<Set = Self>,
+    Self::Structure: BezoutDomainStructure,
 {
     fn xgcd(x: &Self, y: &Self) -> (Self, Self, Self) {
         Self::structure().xgcd(x, y)
@@ -194,7 +190,7 @@ impl<R: Ring> BezoutDomain for R where Self::Structure: BezoutDomainStructure<Se
 
 pub trait EuclideanDivisionDomain: IntegralDomain
 where
-    Self::Structure: EuclideanDivisionStructure<Set = Self>,
+    Self::Structure: EuclideanDivisionStructure,
 {
     fn norm(&self) -> Option<malachite_nz::natural::Natural> {
         Self::structure().norm(self)
@@ -234,27 +230,27 @@ impl<R: Ring> EuclideanDivisionDomain for R where
 
 pub trait CharZero: Ring
 where
-    Self::Structure: CharZeroStructure<Set = Self>,
+    Self::Structure: CharZeroStructure,
 {
 }
 
-impl<R: StructuredType> CharZero for R where Self::Structure: CharZeroStructure<Set = R> {}
+impl<R: MetaType> CharZero for R where Self::Structure: CharZeroStructure<Set = R> {}
 
-pub trait ComplexConjugateOpps: StructuredType
+pub trait ComplexConjugateOpps: MetaType
 where
-    Self::Structure: ComplexConjugateStructure<Set = Self>,
+    Self::Structure: ComplexConjugateStructure,
 {
     fn conjugate(&self) -> Self {
         Self::structure().conjugate(self)
     }
 }
 
-impl<R: StructuredType> ComplexConjugateOpps for R where
+impl<R: MetaType> ComplexConjugateOpps for R where
     Self::Structure: ComplexConjugateStructure<Set = R>
 {
 }
 
-pub trait OrderedRingOpps: StructuredType
+pub trait OrderedRingOpps: MetaType
 where
     Self::Structure: OrderedRingStructure,
 {
@@ -267,40 +263,40 @@ where
     }
 }
 
-impl<R: StructuredType> OrderedRingOpps for R where Self::Structure: OrderedRingStructure<Set = R> {}
+impl<R: MetaType> OrderedRingOpps for R where Self::Structure: OrderedRingStructure<Set = R> {}
 
-pub trait PositiveRealNthRootOpps: StructuredType
+pub trait PositiveRealNthRootOpps: MetaType
 where
-    Self::Structure: PositiveRealNthRootStructure<Set = Self>,
+    Self::Structure: PositiveRealNthRootStructure,
 {
     fn nth_root(&self, n: usize) -> Result<Self, ()> {
         Self::structure().nth_root(self, n)
     }
 }
 
-impl<R: StructuredType> PositiveRealNthRootOpps for R where
+impl<R: MetaType> PositiveRealNthRootOpps for R where
     Self::Structure: PositiveRealNthRootStructure<Set = R>
 {
 }
 
-pub trait RealToFloatOpps: StructuredType
+pub trait RealToFloatOpps: MetaType
 where
-    Self::Structure: RealToFloatStructure<Set = Self>,
+    Self::Structure: RealToFloatStructure,
 {
     fn as_f64(&self) -> f64 {
-        RealToFloatStructure::as_f64(Self::structure().as_ref(), self)
+        Self::structure().as_f64(self)
     }
 
     fn as_f32(&self) -> f32 {
-        RealToFloatStructure::as_f32(Self::structure().as_ref(), self)
+        Self::structure().as_f32(self)
     }
 }
 
-impl<R: StructuredType> RealToFloatOpps for R where Self::Structure: RealToFloatStructure<Set = R> {}
+impl<R: MetaType> RealToFloatOpps for R where Self::Structure: RealToFloatStructure {}
 
-pub trait RealRoundingOpps: StructuredType
+pub trait RealRoundingOpps: MetaType
 where
-    Self::Structure: RealRoundingStructure<Set = Self>,
+    Self::Structure: RealRoundingStructure,
 {
     fn floor(&self) -> Integer {
         Self::structure().floor(self)
@@ -315,11 +311,11 @@ where
     }
 }
 
-impl<R: StructuredType> RealRoundingOpps for R where Self::Structure: RealRoundingStructure<Set = R> {}
+impl<R: MetaType> RealRoundingOpps for R where Self::Structure: RealRoundingStructure<Set = R> {}
 
-pub trait RealFromFloatOpps: StructuredType
+pub trait RealFromFloatOpps: MetaType
 where
-    Self::Structure: RealFromFloatStructure<Set = Self>,
+    Self::Structure: RealFromFloatStructure,
 {
     fn from_f64_approx(x: f64) -> Self {
         Self::structure().from_f64_approx(x)
@@ -330,14 +326,11 @@ where
     }
 }
 
-impl<R: StructuredType> RealFromFloatOpps for R where
-    Self::Structure: RealFromFloatStructure<Set = R>
-{
-}
+impl<R: MetaType> RealFromFloatOpps for R where Self::Structure: RealFromFloatStructure<Set = R> {}
 
 pub trait FieldOfFractionsDomain: Ring
 where
-    Self::Structure: FieldOfFractionsStructure<Set = Self>,
+    Self::Structure: FieldOfFractionsStructure,
 {
     fn base_ring_structure() -> Rc<<Self::Structure as FieldOfFractionsStructure>::RS> {
         Self::structure().base_ring_structure()
@@ -364,7 +357,7 @@ where
 
 impl<R: Ring> FieldOfFractionsDomain for R where Self::Structure: FieldOfFractionsStructure<Set = R> {}
 
-// impl<R: Ring> RingStructure for CannonicalStructure<R> {
+// impl<R: Ring> RingStructure for R::Structure {
 //     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
 //         a == b
 //     }
@@ -394,7 +387,7 @@ impl<R: Ring> FieldOfFractionsDomain for R where Self::Structure: FieldOfFractio
 //     }
 // }
 
-// impl<R: Ring + Display> DisplayableStructure for CannonicalStructure<R> {
+// impl<R: Ring + Display> DisplayableStructure for R::Structure {
 //     fn fmt_elem(&self, elem: &Self::Set, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         write!(f, "{}", elem)
 //     }

@@ -8,7 +8,7 @@ use malachite_nz::natural::Natural;
 use crate::linear::matrix::*;
 
 use super::super::ring_structure::structure::*;
-use super::super::structure::*;
+use algebraeon_structure::*;
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {
@@ -78,8 +78,8 @@ impl<RS: RingStructure> PartialEq for PolynomialStructure<RS> {
 
 impl<RS: RingStructure> Eq for PolynomialStructure<RS> {}
 
-impl<RS: RingStructure + DisplayableStructure> DisplayableStructure for PolynomialStructure<RS> {
-    fn elem_to_string(&self, elem: &Self::Set) -> String {
+impl<RS: RingStructure + ToStringStructure> ToStringStructure for PolynomialStructure<RS> {
+    fn to_string(&self, elem: &Self::Set) -> String {
         if self.num_coeffs(elem) == 0 {
             "0".into()
         } else {
@@ -98,7 +98,7 @@ impl<RS: RingStructure + DisplayableStructure> DisplayableStructure for Polynomi
                             s += "+";
                         }
                         s += "(";
-                        s += &self.coeff_ring.elem_to_string(c);
+                        s += &self.coeff_ring.to_string(c);
                         s += ")";
                     }
                     if k == 0 {
@@ -117,7 +117,7 @@ impl<RS: RingStructure + DisplayableStructure> DisplayableStructure for Polynomi
     }
 }
 
-impl<RS: RingStructure> EqualityStructure for PolynomialStructure<RS> {
+impl<RS: RingStructure> PartialEqStructure for PolynomialStructure<RS> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         for i in 0..std::cmp::max(a.coeffs.len(), b.coeffs.len()) {
             if !self.coeff_ring.equal(self.coeff(a, i), self.coeff(b, i)) {
@@ -127,6 +127,9 @@ impl<RS: RingStructure> EqualityStructure for PolynomialStructure<RS> {
         true
     }
 }
+
+impl<RS: RingStructure> EqStructure for PolynomialStructure<RS> {}
+
 impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
     fn zero(&self) -> Self::Set {
         Polynomial { coeffs: vec![] }
@@ -822,36 +825,36 @@ where
     }
 }
 
-impl<R: StructuredType> StructuredType for Polynomial<R>
+impl<R: MetaType> MetaType for Polynomial<R>
 where
     R::Structure: RingStructure,
 {
     type Structure = PolynomialStructure<R::Structure>;
 
     fn structure() -> Rc<Self::Structure> {
-        PolynomialStructure::new(R::structure().into()).into()
+        PolynomialStructure::new(R::structure()).into()
     }
 }
 
-impl<R: StructuredType> Polynomial<R>
+impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: RingStructure,
+    R::Structure: RingStructure<Set = R>,
 {
     fn reduce(self) -> Self {
         Self::structure().reduce_poly(self)
     }
 }
 
-impl<R: StructuredType> Display for Polynomial<R>
+impl<R: MetaType> Display for Polynomial<R>
 where
-    R::Structure: RingStructure + DisplayableStructure,
+    R::Structure: RingStructure + ToStringStructure,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", Self::structure().elem_to_string(self))
+        write!(f, "{}", Self::structure().to_string(self))
     }
 }
 
-impl<R: StructuredType> PartialEq for Polynomial<R>
+impl<R: MetaType> PartialEq for Polynomial<R>
 where
     R::Structure: RingStructure,
 {
@@ -860,11 +863,11 @@ where
     }
 }
 
-impl<R: StructuredType> Eq for Polynomial<R> where R::Structure: RingStructure {}
+impl<R: MetaType> Eq for Polynomial<R> where R::Structure: RingStructure {}
 
-impl<R: StructuredType> Polynomial<R>
+impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: RingStructure,
+    R::Structure: RingStructure<Set = R>,
 {
     pub fn var() -> Self {
         Self::structure().var()
@@ -918,7 +921,7 @@ where
     }
 }
 
-impl<R: StructuredType> Polynomial<R>
+impl<R: MetaType> Polynomial<R>
 where
     R::Structure: IntegralDomainStructure,
 {
@@ -943,7 +946,7 @@ where
     }
 }
 
-impl<R: StructuredType> Polynomial<R>
+impl<R: MetaType> Polynomial<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -952,7 +955,7 @@ where
     }
 }
 
-impl<R: StructuredType> Polynomial<R>
+impl<R: MetaType> Polynomial<R>
 where
     R::Structure: GreatestCommonDivisorStructure,
 {
@@ -969,7 +972,7 @@ where
     }
 }
 
-impl<R: StructuredType> Polynomial<R>
+impl<R: MetaType> Polynomial<R>
 where
     R::Structure: GreatestCommonDivisorStructure + CharZeroStructure,
 {
@@ -978,7 +981,7 @@ where
     }
 }
 
-impl<F: StructuredType> Polynomial<F>
+impl<F: MetaType> Polynomial<F>
 where
     F::Structure: FieldOfFractionsStructure,
     <F::Structure as FieldOfFractionsStructure>::RS: GreatestCommonDivisorStructure,
@@ -1004,12 +1007,13 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::number::quaternary_field::QuaternaryField;
+    use crate::number::quaternary_field::*;
 
     use super::super::super::ring_structure::cannonical::*;
     use super::super::super::ring_structure::structure::*;
 
     use super::*;
+    use crate::elements::*;
 
     #[test]
     fn test_constant_var_pow() {

@@ -2,8 +2,8 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 
 use super::super::ring_structure::structure::*;
-use super::super::structure::*;
 use super::matrix::*;
+use algebraeon_structure::*;
 
 //return a metamatrix whose rows are a basis for the joint row span of all the passed metamatricies
 fn metamatrix_row_sum<RS: BezoutDomainStructure, MetaMatT: Borrow<Matrix<RS::Set>>>(
@@ -474,7 +474,7 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure + DisplayableStructure> LinearLatticeStructure<RS> {
+impl<RS: BezoutDomainStructure + ToStringStructure> LinearLatticeStructure<RS> {
     pub fn pprint(&self, lat: &LinearLattice<RS::Set>) {
         println!("Start Linear Lattice");
         for r in 0..lat.metamatrix.rows() {
@@ -484,7 +484,7 @@ impl<RS: BezoutDomainStructure + DisplayableStructure> LinearLatticeStructure<RS
     }
 }
 
-impl<R: StructuredType> StructuredType for LinearLattice<R>
+impl<R: MetaType> MetaType for LinearLattice<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -495,16 +495,16 @@ where
     }
 }
 
-impl<R: StructuredType> LinearLattice<R>
+impl<R: MetaType> LinearLattice<R>
 where
-    R::Structure: BezoutDomainStructure + DisplayableStructure,
+    R::Structure: BezoutDomainStructure + ToStringStructure,
 {
     pub fn pprint(&self) {
         Self::structure().pprint(self)
     }
 }
 
-impl<R: StructuredType> PartialEq for LinearLattice<R>
+impl<R: MetaType> PartialEq for LinearLattice<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -513,7 +513,7 @@ where
     }
 }
 
-impl<R: StructuredType> LinearLattice<R>
+impl<R: MetaType> LinearLattice<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -1016,7 +1016,7 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure + DisplayableStructure> AffineLatticeStructure<RS> {
+impl<RS: BezoutDomainStructure + ToStringStructure> AffineLatticeStructure<RS> {
     pub fn pprint(&self, lat: &AffineLattice<RS::Set>) {
         println!("Start Affine Lattice");
         match &lat.elems {
@@ -1031,7 +1031,7 @@ impl<RS: BezoutDomainStructure + DisplayableStructure> AffineLatticeStructure<RS
     }
 }
 
-impl<R: StructuredType> StructuredType for AffineLattice<R>
+impl<R: MetaType> MetaType for AffineLattice<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -1042,16 +1042,16 @@ where
     }
 }
 
-impl<R: StructuredType> AffineLattice<R>
+impl<R: MetaType> AffineLattice<R>
 where
-    R::Structure: BezoutDomainStructure + DisplayableStructure,
+    R::Structure: BezoutDomainStructure + ToStringStructure,
 {
     pub fn pprint(&self) {
         Self::structure().pprint(self)
     }
 }
 
-impl<R: StructuredType> PartialEq for AffineLattice<R>
+impl<R: MetaType> PartialEq for AffineLattice<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -1060,7 +1060,7 @@ where
     }
 }
 
-impl<R: StructuredType> AffineLattice<R>
+impl<R: MetaType> AffineLattice<R>
 where
     R::Structure: BezoutDomainStructure,
 {

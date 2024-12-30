@@ -13,9 +13,8 @@ pub fn modular_permutation<const N: usize>(
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_rings::structure::StructuredType;
-
     use super::*;
+    use algebraeon_rings::elements::*;
 
     #[test]
     pub fn test() {

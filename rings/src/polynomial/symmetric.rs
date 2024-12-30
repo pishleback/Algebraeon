@@ -3,9 +3,9 @@ use std::{borrow::Borrow, collections::HashSet};
 use itertools::Itertools;
 
 use crate::ring_structure::structure::{IntegralDomainStructure, RingStructure};
+use algebraeon_structure::*;
 
 use super::multipoly::*;
-use crate::structure::*;
 
 pub fn ss_num(n: usize) -> String {
     let mut ss = String::new();
@@ -32,7 +32,7 @@ pub fn ss_num(n: usize) -> String {
 impl<RS: IntegralDomainStructure> MultiPolynomialStructure<RS>
 //TODO: replace integral domain with division ring structure
 where
-    MultiPolynomialStructure<RS>: Structure<Set = MultiPolynomial<RS::Set>> + DisplayableStructure,
+    MultiPolynomialStructure<RS>: Structure<Set = MultiPolynomial<RS::Set>> + ToStringStructure,
 {
     pub fn is_symmetric(
         &self,
@@ -231,11 +231,11 @@ where
     }
 }
 
-impl<R: StructuredType> MultiPolynomial<R>
+
+impl<R: MetaType> MultiPolynomial<R>
 where
     R::Structure: IntegralDomainStructure,
-    MultiPolynomialStructure<R::Structure>:
-        Structure<Set = MultiPolynomial<R>> + DisplayableStructure,
+    MultiPolynomialStructure<R::Structure>: Structure<Set = Self> + ToStringStructure,
 {
     pub fn is_symmetric(&self, vars: Vec<impl Borrow<Variable>>) -> bool {
         Self::structure().is_symmetric(vars, self)
@@ -265,6 +265,7 @@ mod tests {
     use malachite_nz::integer::Integer;
 
     use super::*;
+    use crate::elements::*;
 
     #[test]
     fn test_ffosp() {

@@ -13,6 +13,7 @@ malachite-base = "0.3.2"
 malachite-nz = "0.3.2"
 malachite-q = "0.3.2"
 algebraeon-sets = { version = "0.1.0", path = "../sets" }
+algebraeon-structure = { version = "0.1.0", path = "../structure" }
 algebraeon-groups = { version = "0.1.0", path = "../groups" }
 algebraeon-rings = { version = "0.1.0", path = "../rings" }
 algebraeon-geometry = { version = "0.1.0", path = "../geometry" }

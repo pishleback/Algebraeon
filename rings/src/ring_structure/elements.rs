@@ -1,8 +1,9 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
+use algebraeon_structure::*;
 use malachite_nz::integer::Integer;
 
-use super::super::structure::*;
+use super::super::elements::*;
 use super::structure::*;
 
 impl<RS: RingStructure> PartialEq for StructuredElement<RS> {

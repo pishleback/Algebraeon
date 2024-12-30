@@ -1,11 +1,11 @@
 use super::embedded_anf::anf_multi_primitive_element_theorem;
 use crate::{
-    linear::matrix::Matrix,
+    linear::matrix::*,
     number::natural::nat_to_usize,
-    polynomial::{multipoly::*, polynomial::*, symmetric::*},
+    polynomial::{multipoly::*, polynomial::*, symmetric::ss_num},
     ring_structure::{cannonical::*, factorization::Factored, quotient::*, structure::*},
-    structure::*,
 };
+use algebraeon_structure::*;
 use itertools::Itertools;
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::{integer::Integer, natural::Natural};
@@ -774,6 +774,7 @@ impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
 
 #[cfg(test)]
 mod tests {
+    use crate::elements::*;
 
     use super::*;
 
