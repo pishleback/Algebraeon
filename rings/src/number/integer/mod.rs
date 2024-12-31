@@ -1,3 +1,4 @@
+use factor::factor_by_try_primes;
 use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::DivMod;
 use malachite_base::num::arithmetic::traits::UnsignedAbs;
@@ -93,7 +94,9 @@ impl UniqueFactorizationStructure for CannonicalStructure<Integer> {
             Some(Factored::new_unchecked(
                 self.clone().into(),
                 unit,
-                factor_natural_by_try_primes(a.unsigned_abs())
+                factor_by_try_primes(a.unsigned_abs())
+                    .unwrap()
+                    .into_powers()
                     .into_iter()
                     .map(|(p, k)| (Integer::from(p), k))
                     .collect(),

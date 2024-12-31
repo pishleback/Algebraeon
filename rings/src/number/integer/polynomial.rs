@@ -1,7 +1,9 @@
 use malachite_nz::integer::Integer;
 
 use crate::{
-    number::integer::*, polynomial::polynomial::*,
+    number::integer::*,
+    number::natural::{functions::*, primes::*},
+    polynomial::polynomial::*,
     ring_structure::quotient::*,
 };
 
@@ -42,7 +44,7 @@ impl Polynomial<Integer> {
         for c in f.coeffs() {
             factor_coeff_bound += c.unsigned_abs();
         }
-        factor_coeff_bound *= choose(f_deg, f_deg / 2);
+        factor_coeff_bound *= choose_usize(f_deg, f_deg / 2);
         //for the lifted factors we have
         // 0 <= coeff < hensel_factorization_f_over_p.modolus()
         //so replacing the coefficient with a different representative if necessary we have
@@ -59,7 +61,7 @@ impl Polynomial<Integer> {
         if f_deg == 1 {
             None
         } else {
-            let prime_gen = NaturalPrimeGenerator::new();
+            let prime_gen = PrimeGenerator::new();
             for p in prime_gen {
                 let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(&p));
                 let poly_mod_p = PolynomialStructure::new(mod_p.into());
@@ -156,8 +158,8 @@ impl Polynomial<Integer> {
 
 #[cfg(test)]
 mod tests {
-    use crate::elements::*;
     use super::*;
+    use crate::elements::*;
 
     #[test]
     fn test_zassenhaus_against_kroneckers() {
