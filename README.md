@@ -16,6 +16,9 @@ This project began as a faster and more maintainable replacement for an older at
  - Todd-Coxeter algorithm coset enumeration
 
 ## Rings
+### Number Theory
+ - AKS algorithm for primality testing
+
 ### Rings
  - Euclids algorithm for gcd
  - Extended Euclids algorithm for obtaining Bezout coefficients
@@ -40,7 +43,7 @@ This project began as a faster and more maintainable replacement for an older at
 
 ## Combinatorics
  - Binary Golay Codes
-   - Find isomorphisms
+   - Finding isomorphisms
  - Ternary Golay Codes
 
 ## Geometry
