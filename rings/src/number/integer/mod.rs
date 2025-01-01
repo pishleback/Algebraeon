@@ -9,7 +9,6 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
 use crate::number::natural::*;
-use crate::ring_structure::cannonical::*;
 use crate::ring_structure::factorization::*;
 use crate::ring_structure::structure::*;
 

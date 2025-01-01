@@ -1,5 +1,5 @@
 use algebraeon_groups::examples::symmetric::Permutation;
-use algebraeon_rings::number::modulo::Modulo;
+use algebraeon_rings::number::finite_fields::modulo::Modulo;
 
 pub fn modular_permutation<const N: usize>(
     f: impl Fn(Modulo<N>) -> Modulo<N>,

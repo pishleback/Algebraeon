@@ -741,8 +741,6 @@ where
 mod tests {
     use malachite_nz::integer::Integer;
 
-    use crate::ring_structure::cannonical::{IntegralDomain, Ring};
-
     use super::*;
     use crate::elements::*;
 

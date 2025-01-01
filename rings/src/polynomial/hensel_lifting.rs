@@ -444,8 +444,6 @@ where
 mod tests {
     use malachite_nz::integer::Integer;
 
-    use super::super::super::ring_structure::cannonical::*;
-
     use super::*;
 
     #[test]

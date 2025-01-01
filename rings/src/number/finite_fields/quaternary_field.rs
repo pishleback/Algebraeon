@@ -123,8 +123,6 @@ impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Qu
 
 #[cfg(test)]
 mod tests {
-    use crate::ring_structure::cannonical::{IntegralDomain, Ring};
-
     use super::*;
 
     #[test]

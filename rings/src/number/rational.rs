@@ -105,7 +105,6 @@ impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Ra
 mod tests {
     use std::str::FromStr;
 
-    use super::super::super::ring_structure::cannonical::*;
     use super::*;
 
     #[test]

@@ -11,7 +11,6 @@ use crate::polynomial::polynomial::PolynomialStructure;
 
 use algebraeon_structure::*;
 
-use super::cannonical::*;
 use super::factorization::*;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -99,6 +98,52 @@ pub trait RingStructure: EqStructure {
     }
 }
 
+pub trait MetaRing: MetaType
+where
+    Self::Structure: RingStructure,
+{
+    fn zero() -> Self {
+        Self::structure().zero()
+    }
+    fn one() -> Self {
+        Self::structure().one()
+    }
+
+    fn neg(&self) -> Self {
+        Self::structure().neg(self)
+    }
+    fn add(a: &Self, b: &Self) -> Self {
+        Self::structure().add(a, b)
+    }
+    fn sum(vals: Vec<impl Borrow<Self>>) -> Self {
+        Self::structure().sum(vals)
+    }
+    fn mul(a: &Self, b: &Self) -> Self {
+        Self::structure().mul(a, b)
+    }
+    fn product(vals: Vec<impl Borrow<Self>>) -> Self {
+        Self::structure().product(vals)
+    }
+
+    fn nat_pow(&self, n: &Natural) -> Self {
+        Self::structure().nat_pow(self, n)
+    }
+    fn from_int(x: &Integer) -> Self {
+        Self::structure().from_int(x)
+    }
+}
+impl<R: MetaType> MetaRing for R where Self::Structure: RingStructure {}
+
+pub trait MetaRingEq: MetaType
+where
+    Self::Structure: RingStructure + EqStructure,
+{
+    fn is_zero(&self) -> bool {
+        Self::structure().is_zero(self)
+    }
+}
+impl<R: MetaType> MetaRingEq for R where Self::Structure: RingStructure + EqStructure {}
+
 // pub trait DisplayableRingStructure: RingStructure {
 //     fn fmt_elem(&self, elem: &Self::Set, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 // }
@@ -159,6 +204,36 @@ pub trait IntegralDomainStructure: RingStructure {
         }
     }
 }
+pub trait MetaIntegralDomain: MetaRing
+where
+    Self::Structure: IntegralDomainStructure,
+{
+    fn div(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
+        Self::structure().div(a, b)
+    }
+    fn inv(&self) -> Result<Self, RingDivisionError> {
+        Self::structure().inv(self)
+    }
+
+    fn from_rat(x: &Rational) -> Option<Self> {
+        Self::structure().from_rat(x)
+    }
+
+    fn int_pow(&self, n: &Integer) -> Option<Self> {
+        Self::structure().int_pow(self, n)
+    }
+
+    fn divisible(a: &Self, b: &Self) -> bool {
+        Self::structure().divisible(a, b)
+    }
+    fn are_associate(a: &Self, b: &Self) -> bool {
+        Self::structure().are_associate(a, b)
+    }
+    fn is_unit(&self) -> bool {
+        Self::structure().is_unit(self)
+    }
+}
+impl<R: MetaRing> MetaIntegralDomain for R where Self::Structure: IntegralDomainStructure<Set = R> {}
 
 pub trait OrderedRingStructure: IntegralDomainStructure {
     // <= satisfying translation invariance and multiplication by positive scalar
@@ -171,10 +246,33 @@ pub trait OrderedRingStructure: IntegralDomainStructure {
         }
     }
 }
+pub trait MetaOrderedRing: MetaType
+where
+    Self::Structure: OrderedRingStructure,
+{
+    fn ring_cmp(a: &Self, b: &Self) -> std::cmp::Ordering {
+        Self::structure().ring_cmp(a, b)
+    }
+
+    fn abs(a: &Self) -> Self {
+        Self::structure().abs(a)
+    }
+}
+impl<R: MetaType> MetaOrderedRing for R where Self::Structure: OrderedRingStructure<Set = R> {}
 
 pub trait FiniteUnitsStructure: RingStructure {
     fn all_units(&self) -> Vec<Self::Set>;
 }
+
+pub trait MetaFiniteUnits: MetaRing
+where
+    Self::Structure: FiniteUnitsStructure,
+{
+    fn all_units(&self) -> Vec<Self> {
+        Self::structure().all_units()
+    }
+}
+impl<R: MetaRing> MetaFiniteUnits for R where Self::Structure: FiniteUnitsStructure<Set = R> {}
 
 pub trait FavoriteAssociateStructure: IntegralDomainStructure {
     //For associate class of elements, choose a unique representative
@@ -193,6 +291,23 @@ pub trait FavoriteAssociateStructure: IntegralDomainStructure {
         self.equal(a, &b)
     }
 }
+pub trait MetaFavoriteAssociate: MetaIntegralDomain
+where
+    Self::Structure: FavoriteAssociateStructure,
+{
+    fn factor_fav_assoc(&self) -> (Self, Self) {
+        Self::structure().factor_fav_assoc(self)
+    }
+
+    fn fav_assoc(&self) -> Self {
+        Self::structure().fav_assoc(self)
+    }
+}
+impl<R: MetaRing> MetaFavoriteAssociate for R where
+    Self::Structure: FavoriteAssociateStructure<Set = R>
+{
+}
+
 pub trait GreatestCommonDivisorStructure: FavoriteAssociateStructure {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
@@ -219,6 +334,30 @@ pub trait GreatestCommonDivisorStructure: FavoriteAssociateStructure {
         lcm
     }
 }
+pub trait MetaGreatestCommonDivisor: MetaFavoriteAssociate
+where
+    Self::Structure: GreatestCommonDivisorStructure,
+{
+    fn gcd(x: &Self, y: &Self) -> Self {
+        Self::structure().gcd(x, y)
+    }
+
+    fn gcd_list(elems: Vec<impl Borrow<Self>>) -> Self {
+        Self::structure().gcd_list(elems)
+    }
+
+    fn lcm(x: &Self, y: &Self) -> Self {
+        Self::structure().lcm(x, y)
+    }
+
+    fn lcm_list(elems: Vec<impl Borrow<Self>>) -> Self {
+        Self::structure().lcm_list(elems)
+    }
+}
+impl<R: MetaRing> MetaGreatestCommonDivisor for R where
+    Self::Structure: GreatestCommonDivisorStructure<Set = R>
+{
+}
 
 pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {
     //a UFD with an explicit algorithm to compute unique factorizations
@@ -230,6 +369,22 @@ pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {
             Some(factored) => factored.is_irreducible(),
         }
     }
+}
+pub trait MetaUniqueFactorization: MetaFavoriteAssociate
+where
+    Self::Structure: UniqueFactorizationStructure,
+{
+    fn factor(&self) -> Option<Factored<Self::Structure>> {
+        Self::structure().factor(self)
+    }
+
+    fn is_irreducible(&self) -> bool {
+        Self::structure().is_irreducible(self)
+    }
+}
+impl<R: MetaRing> MetaUniqueFactorization for R where
+    Self::Structure: UniqueFactorizationStructure<Set = R>
+{
 }
 
 pub trait BezoutDomainStructure: GreatestCommonDivisorStructure {
@@ -264,6 +419,20 @@ pub trait BezoutDomainStructure: GreatestCommonDivisorStructure {
         }
     }
 }
+
+pub trait MetaBezoutDomain: MetaGreatestCommonDivisor
+where
+    Self::Structure: BezoutDomainStructure,
+{
+    fn xgcd(x: &Self, y: &Self) -> (Self, Self, Self) {
+        Self::structure().xgcd(x, y)
+    }
+
+    fn xgcd_list(elems: Vec<&Self>) -> (Self, Vec<Self>) {
+        Self::structure().xgcd_list(elems)
+    }
+}
+impl<R: MetaRing> MetaBezoutDomain for R where Self::Structure: BezoutDomainStructure<Set = R> {}
 
 pub trait EuclideanDivisionStructure: IntegralDomainStructure {
     //should return None for 0, and Some(norm) for everything else
@@ -344,19 +513,67 @@ pub trait EuclideanDivisionStructure: IntegralDomainStructure {
     }
 }
 
+pub trait MetaEuclideanDivision: MetaIntegralDomain
+where
+    Self::Structure: EuclideanDivisionStructure,
+{
+    fn norm(&self) -> Option<malachite_nz::natural::Natural> {
+        Self::structure().norm(self)
+    }
+
+    fn quorem(a: &Self, b: &Self) -> Option<(Self, Self)> {
+        Self::structure().quorem(a, b)
+    }
+
+    fn quo(a: &Self, b: &Self) -> Option<Self> {
+        Self::structure().quo(a, b)
+    }
+
+    fn rem(a: &Self, b: &Self) -> Self {
+        Self::structure().rem(a, b)
+    }
+
+    fn euclidean_gcd(x: Self, y: Self) -> Self
+    where
+        Self::Structure: FavoriteAssociateStructure,
+    {
+        Self::structure().euclidean_gcd(x, y)
+    }
+
+    fn euclidean_xgcd(x: Self, y: Self) -> (Self, Self, Self)
+    where
+        Self::Structure: GreatestCommonDivisorStructure,
+    {
+        Self::structure().euclidean_xgcd(x, y)
+    }
+}
+impl<R: MetaRing> MetaEuclideanDivision for R where
+    Self::Structure: EuclideanDivisionStructure<Set = R>
+{
+}
+
 pub trait InfiniteStructure: Structure {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
 }
 pub trait Infinite: MetaType {
     fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>>;
 }
-impl<T: MetaType> Infinite for T where CannonicalStructure<T>: InfiniteStructure {
+impl<T: MetaType> Infinite for T
+where
+    CannonicalStructure<T>: InfiniteStructure,
+{
     fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>> {
         todo!()
     }
 }
 
 pub trait CharZeroStructure: RingStructure {}
+pub trait MetaCharZero: MetaRing
+where
+    Self::Structure: CharZeroStructure,
+{
+}
+impl<R: MetaType> MetaCharZero for R where Self::Structure: CharZeroStructure<Set = R> {}
 
 impl<RS: CharZeroStructure + 'static> InfiniteStructure for RS {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as Structure>::Set>> {
@@ -469,6 +686,36 @@ pub trait FieldOfFractionsStructure: FieldStructure {
         }
     }
 }
+pub trait MetaFieldOfFractions: MetaRing
+where
+    Self::Structure: FieldOfFractionsStructure,
+{
+    fn base_ring_structure() -> Rc<<Self::Structure as FieldOfFractionsStructure>::RS> {
+        Self::structure().base_ring_structure()
+    }
+    fn from_base_ring(
+        a: <<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set,
+    ) -> Self {
+        Self::structure().from_base_ring(a)
+    }
+    fn numerator(&self) -> <<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set {
+        Self::structure().numerator(self)
+    }
+    fn denominator(
+        &self,
+    ) -> <<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set {
+        Self::structure().denominator(self)
+    }
+    fn as_base_ring(
+        self,
+    ) -> Option<<<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set> {
+        Self::structure().as_base_ring(self)
+    }
+}
+impl<R: MetaRing> MetaFieldOfFractions for R where
+    Self::Structure: FieldOfFractionsStructure<Set = R>
+{
+}
 
 impl<FS: FieldOfFractionsStructure> CharZeroStructure for FS where FS::RS: CharZeroStructure {}
 
@@ -518,12 +765,44 @@ pub trait RealRoundingStructure: RealSubsetStructure {
     */
 }
 
+pub trait MetaRealRounding: MetaType
+where
+    Self::Structure: RealRoundingStructure,
+{
+    fn floor(&self) -> Integer {
+        Self::structure().floor(self)
+    }
+
+    fn ceil(&self) -> Integer {
+        Self::structure().ceil(self)
+    }
+
+    fn round(&self) -> Integer {
+        Self::structure().round(self)
+    }
+}
+impl<R: MetaType> MetaRealRounding for R where Self::Structure: RealRoundingStructure<Set = R> {}
+
 pub trait RealToFloatStructure: RealSubsetStructure {
     fn as_f64(&self, x: &Self::Set) -> f64;
     fn as_f32(&self, x: &Self::Set) -> f32 {
         RealToFloatStructure::as_f64(self, x) as f32
     }
 }
+
+pub trait MetaRealToFloat: MetaType
+where
+    Self::Structure: RealToFloatStructure,
+{
+    fn as_f64(&self) -> f64 {
+        Self::structure().as_f64(self)
+    }
+
+    fn as_f32(&self) -> f32 {
+        Self::structure().as_f32(self)
+    }
+}
+impl<R: MetaType> MetaRealToFloat for R where Self::Structure: RealToFloatStructure {}
 
 pub trait RealFromFloatStructure: RealSubsetStructure {
     fn from_f64_approx(&self, x: f64) -> Self::Set;
@@ -532,8 +811,34 @@ pub trait RealFromFloatStructure: RealSubsetStructure {
     }
 }
 
+pub trait MetaRealFromFloat: MetaType
+where
+    Self::Structure: RealFromFloatStructure,
+{
+    fn from_f64_approx(x: f64) -> Self {
+        Self::structure().from_f64_approx(x)
+    }
+
+    fn from_f32_approx(x: f32) -> Self {
+        Self::structure().from_f32_approx(x)
+    }
+}
+impl<R: MetaType> MetaRealFromFloat for R where Self::Structure: RealFromFloatStructure<Set = R> {}
+
 pub trait ComplexConjugateStructure: Structure {
     fn conjugate(&self, x: &Self::Set) -> Self::Set;
+}
+pub trait MetaComplexConjugate: MetaType
+where
+    Self::Structure: ComplexConjugateStructure,
+{
+    fn conjugate(&self) -> Self {
+        Self::structure().conjugate(self)
+    }
+}
+impl<R: MetaType> MetaComplexConjugate for R where
+    Self::Structure: ComplexConjugateStructure<Set = R>
+{
 }
 
 impl<RS: RealSubsetStructure> ComplexConjugateStructure for RS {
@@ -546,6 +851,19 @@ pub trait PositiveRealNthRootStructure: ComplexSubsetStructure {
     //if x is a non-negative real number, return the nth root of x
     //may also return Ok for other well-defined values such as for 1st root of any x and 0th root of any non-zero x, but is not required to
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()>;
+}
+
+pub trait MetaPositiveRealNthRoot: MetaType
+where
+    Self::Structure: PositiveRealNthRootStructure,
+{
+    fn nth_root(&self, n: usize) -> Result<Self, ()> {
+        Self::structure().nth_root(self, n)
+    }
+}
+impl<R: MetaType> MetaPositiveRealNthRoot for R where
+    Self::Structure: PositiveRealNthRootStructure<Set = R>
+{
 }
 
 pub trait AlgebraicClosureStructure: FieldStructure

@@ -2,21 +2,21 @@
 
 use std::rc::Rc;
 
+use algebraeon_drawing::canvas::canvas2d::*;
+use algebraeon_drawing::canvas::Canvas;
+use algebraeon_geometry::simplexes::ConvexHull;
+use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
+use algebraeon_geometry::simplexes::OrientationSide;
+use algebraeon_geometry::simplexes::OrientedSimplex;
+use algebraeon_geometry::simplexes::Simplex;
+use algebraeon_geometry::*;
+use algebraeon_rings::elements::*;
+use algebraeon_rings::ring_structure::structure::*;
+use algebraeon_structure::*;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::arithmetic::traits::Approximate;
 use malachite_q::Rational;
-use algebraeon_drawing::canvas::canvas2d::*;
-use algebraeon_drawing::canvas::Canvas;
-use algebraeon_geometry::simplexes::ConvexHull;
-use algebraeon_geometry::simplexes::OrientationSide;
-use algebraeon_geometry::simplexes::OrientedSimplex;
-use algebraeon_geometry::simplexes::Simplex;
-use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
-use algebraeon_geometry::*;
-use algebraeon_rings::ring_structure::cannonical::*;
-use algebraeon_rings::elements::*;
-use algebraeon_structure::*;
 use rand::Rng;
 use simplexes::LabelledSimplexCollection;
 
@@ -83,10 +83,7 @@ fn main() {
 
     let sc4 = LabelledSimplicialDisjointUnion::union_raw(&(&sc1).into(), &(&sc2).into());
     println!("done union");
-    let sc5 = sc4
-        .clone()
-        .refine_to_partial_simplicial_complex()
-        .closure();
+    let sc5 = sc4.clone().refine_to_partial_simplicial_complex().closure();
     println!("done to sc");
     let sc6 = sc5.clone().simplify();
     println!("done simplify");

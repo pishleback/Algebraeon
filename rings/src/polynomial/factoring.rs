@@ -12,7 +12,8 @@ impl<FS: FiniteFieldStructure> PolynomialStructure<FS>
 where
     PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>>,
 {
-    //https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
+    /// Reduce a factorization problem for polynomials over a finite field to factorizations of squarefree polynomials over the finite field
+    // https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
     pub fn factorize_by_sqfree_factorize_over_finite_field(
         &self,
         f: Polynomial<FS::Set>,
@@ -76,6 +77,7 @@ where
         + GreatestCommonDivisorStructure
         + UniqueFactorizationStructure,
 {
+    /// Reduce a factorization problem for polynomials over a ring of characteristic 0 to a factorization of primitive squarefree polynomials over the ring
     //https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
     pub fn factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(
         &self,
@@ -138,10 +140,14 @@ where
     where
         PolynomialStructure<RS>: UniqueFactorizationStructure,
     {
-        //f should be a primitive polynomial over R
-        //linear factor (a+bx) of c0 + c1*x + c2*x^2 + ... + cn*x^n
-        //must be such that a divides c0 and b divides cn
-        //so just factor c0 and cn and check all divisors
+        debug_assert!(self.is_primitive(f.clone()));
+
+        /*
+        If f is a primitive polynomial over R then any
+        linear factor `(a+bx)` of `f(x) = c0 + c1*x + c2*x^2 + ... + cn*x^n`
+        is such that `a` divides `c0` and `b` divides `cn`
+        so just factor c0 and cn and check all divisors
+        */
 
         let mut linear_factors = Factored::factored_one(self.clone().into());
         'seek_linear_factor: while self.degree(&f).unwrap() > 0 {
@@ -527,14 +533,11 @@ where
 #[cfg(test)]
 mod tests {
 
+    use crate::elements::*;
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
-    use crate::elements::*;
 
-    use crate::{
-        number::{modulo::Modulo, quaternary_field::QuaternaryField},
-        ring_structure::cannonical::{Ring, UniqueFactorizationDomain},
-    };
+    use crate::number::finite_fields::{modulo::Modulo, quaternary_field::QuaternaryField};
 
     use super::*;
 

@@ -535,6 +535,13 @@ impl<RS: GreatestCommonDivisorStructure> PolynomialStructure<RS> {
         }
     }
 
+    pub fn is_primitive(&self, p: Polynomial<RS::Set>) -> bool {
+        match self.factor_primitive(p) {
+            Some((unit, _)) => self.coeff_ring().is_unit(&unit),
+            None => false,
+        }
+    }
+
     pub fn primitive_part(&self, p: Polynomial<RS::Set>) -> Option<Polynomial<RS::Set>> {
         match self.factor_primitive(p) {
             Some((_unit, prim)) => Some(prim),
@@ -1007,9 +1014,8 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::number::quaternary_field::*;
+    use crate::number::finite_fields::quaternary_field::*;
 
-    use super::super::super::ring_structure::cannonical::*;
     use super::super::super::ring_structure::structure::*;
 
     use super::*;

@@ -2378,9 +2378,8 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::{
-        algebraic::isolated_roots::{complex::ComplexAlgebraic, real::RealAlgebraic},
-        ring_structure::cannonical::{EuclideanDivisionDomain, FavoriteAssociateDomain, Ring},
+    use crate::number::algebraic::isolated_roots::{
+        complex::ComplexAlgebraic, real::RealAlgebraic,
     };
 
     use super::*;
@@ -3254,6 +3253,7 @@ mod tests {
             assert_eq!(k, 1);
         }
     }
+
     #[test]
     fn min_and_char_polys() {
         {
@@ -3569,7 +3569,9 @@ mod tests {
         ]);
 
         mat.pprint();
-        for root in MatrixStructure::new(ComplexAlgebraic::structure()).eigenvalues_list(mat.clone()) {
+        for root in
+            MatrixStructure::new(ComplexAlgebraic::structure()).eigenvalues_list(mat.clone())
+        {
             println!("{}", root);
         }
 
@@ -3581,7 +3583,9 @@ mod tests {
         let mat = Matrix::<Rational>::from_rows(vec![vec![1, 0, 0], vec![0, 0, -1], vec![0, 2, 0]]);
 
         mat.pprint();
-        for root in MatrixStructure::new(ComplexAlgebraic::structure()).eigenvalues_list(mat.clone()) {
+        for root in
+            MatrixStructure::new(ComplexAlgebraic::structure()).eigenvalues_list(mat.clone())
+        {
             println!("{}", root);
         }
 

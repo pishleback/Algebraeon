@@ -1,8 +1,6 @@
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
-use crate::ring_structure::cannonical::*;
-
 use super::*;
 
 fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {

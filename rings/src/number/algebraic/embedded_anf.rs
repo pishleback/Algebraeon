@@ -1,12 +1,12 @@
 use std::rc::Rc;
 
 use crate::{
-    algebraic::isolated_roots::real::RealAlgebraic, polynomial::polynomial::*, ring_structure::*,
+    number::algebraic::isolated_roots::real::RealAlgebraic, polynomial::polynomial::*,
+    ring_structure::*,
 };
 
 use super::{isolated_roots::complex::ComplexAlgebraic, number_field::*};
 use algebraeon_structure::*;
-use cannonical::*;
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
@@ -226,7 +226,7 @@ pub fn anf_multi_primitive_element_theorem(
 
 #[cfg(test)]
 mod tests {
-    use crate::{algebraic::isolated_roots::real::RealAlgebraic, elements::*};
+    use crate::{elements::*, number::algebraic::isolated_roots::real::RealAlgebraic};
 
     use super::*;
 

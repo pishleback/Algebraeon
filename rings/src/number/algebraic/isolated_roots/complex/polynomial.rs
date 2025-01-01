@@ -1,11 +1,6 @@
-use crate::{
-    algebraic::isolated_roots::complex::bisect_box, polynomial::polynomial::*,
-    ring_structure::cannonical::*,
-};
+use crate::number::algebraic::isolated_roots::complex::*;
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
-
-use crate::algebraic::isolated_roots::complex::evaluate_at_rational;
 
 use super::{ComplexAlgebraic, ComplexAlgebraicRoot};
 

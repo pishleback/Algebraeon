@@ -3,7 +3,7 @@ use crate::{
     linear::matrix::*,
     number::natural::nat_to_usize,
     polynomial::{multipoly::*, polynomial::*, symmetric::ss_num},
-    ring_structure::{cannonical::*, factorization::Factored, quotient::*, structure::*},
+    ring_structure::{factorization::Factored, quotient::*, structure::*},
 };
 use algebraeon_structure::*;
 use itertools::Itertools;

@@ -1,7 +1,5 @@
-//N, Z, Q
+pub mod algebraic;
+pub mod finite_fields;
 pub mod integer;
 pub mod natural;
 pub mod rational;
-//finite rings and fields
-pub mod modulo;
-pub mod quaternary_field;

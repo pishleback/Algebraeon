@@ -1,5 +1,4 @@
-use crate::algebraic::number_field::new_anf;
-use crate::ring_structure::cannonical::*;
+use crate::number::algebraic::number_field::*;
 use crate::ring_structure::structure::*;
 
 use super::poly_tools::*;

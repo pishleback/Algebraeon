@@ -1,4 +1,7 @@
-use crate::{polynomial::{multipoly::*, polynomial::*}, ring_structure::cannonical::*};
+use crate::{
+    polynomial::{multipoly::*, polynomial::*},
+    ring_structure::structure::*,
+};
 use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;

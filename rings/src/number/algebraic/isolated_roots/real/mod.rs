@@ -1,4 +1,7 @@
-use crate::{algebraic::number_field::new_anf, polynomial::polynomial::*, ring_structure::{cannonical::*, structure::*}};
+use crate::{
+    number::algebraic::number_field::new_anf, polynomial::polynomial::*,
+    ring_structure::structure::*,
+};
 use algebraeon_structure::*;
 use bounds::*;
 use interval::*;
