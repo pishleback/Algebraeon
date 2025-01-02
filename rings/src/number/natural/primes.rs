@@ -8,6 +8,7 @@ use malachite_base::num::logic::traits::BitIterable;
 use super::functions::*;
 use super::*;
 
+#[derive(Debug)]
 pub struct PrimeGenerator {
     n: Natural,
     primes: Vec<Natural>,

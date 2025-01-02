@@ -284,10 +284,16 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
     }
 }
 
+#[derive(Debug)]
+pub enum FindFactorResult<RS: RingStructure> {
+    Irreducible,
+    Composite(RS::Set, RS::Set),
+}
+
 pub fn factorize_by_find_factor<RS: UniqueFactorizationStructure>(
     ring: &RS,
     elem: RS::Set,
-    partial_factor: &impl Fn(RS::Set) -> Option<(RS::Set, RS::Set)>,
+    partial_factor: &impl Fn(RS::Set) -> FindFactorResult<RS>,
 ) -> Factored<RS> {
     debug_assert!(!ring.is_zero(&elem));
     if ring.is_unit(&elem) {
@@ -295,11 +301,11 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationStructure>(
     } else {
         debug_assert!(!ring.is_unit(&elem));
         match partial_factor(elem.clone()) {
-            Some((g, h)) => Factored::mul(
+            FindFactorResult::Composite(g, h) => Factored::mul(
                 factorize_by_find_factor(ring, g, partial_factor),
                 factorize_by_find_factor(ring, h, partial_factor),
             ),
-            None => {
+            FindFactorResult::Irreducible => {
                 //f is irreducible
                 Factored::factored_irreducible_unchecked(ring.clone().into(), elem)
             }

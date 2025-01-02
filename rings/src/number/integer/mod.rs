@@ -16,6 +16,7 @@ use algebraeon_structure::*;
 
 pub mod modulo;
 pub mod polynomial;
+pub mod berlekamp_zassenhaus;
 
 impl RingStructure for CannonicalStructure<Integer> {
     fn zero(&self) -> Self::Set {

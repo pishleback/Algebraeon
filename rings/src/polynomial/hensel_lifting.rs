@@ -406,7 +406,7 @@ where
     PolynomialStructure<QuotientStructure<RS, true>>:
         Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
 {
-    //return a hensel factorization if squarefree, otherwise return None
+    /// If the polynomial is squarefree return a hensel factorization, otherwise return None
     pub fn into_hensel_factorization(
         self,
         h: Polynomial<RS::Set>,

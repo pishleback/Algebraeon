@@ -214,7 +214,7 @@ where
     fn find_factor_primitive_by_kroneckers_algorithm(
         &self,
         f: &Polynomial<RS::Set>,
-    ) -> Option<(Polynomial<RS::Set>, Polynomial<RS::Set>)> {
+    ) -> FindFactorResult<PolynomialStructure<RS>> {
         /*
         Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
         Assume it has a proper factor g(x). wlog g(x) has degree <= 2
@@ -229,7 +229,7 @@ where
         let f_deg = self.degree(f).unwrap();
         if f_deg == 1 {
             //linear factor is irreducible
-            None
+            FindFactorResult::Irreducible
         } else {
             let max_factor_degree = f_deg / 2;
             let mut f_points = vec![];
@@ -282,7 +282,7 @@ where
                             match self.div(&f, &g) {
                                 Ok(h) => {
                                     //g really is a proper divisor of f
-                                    return Some((g, h));
+                                    return FindFactorResult::Composite(g, h);
                                 }
                                 Err(RingDivisionError::NotDivisible) => {}
                                 Err(RingDivisionError::DivideByZero) => panic!(),
@@ -293,7 +293,7 @@ where
                 }
             }
             //f is irreducible
-            None
+            FindFactorResult::Irreducible
         }
     }
 
@@ -373,7 +373,7 @@ where
     fn find_factor_by_trying_all_factors(
         &self,
         f: Polynomial<RS::Set>,
-    ) -> Option<(Polynomial<RS::Set>, Polynomial<RS::Set>)> {
+    ) -> FindFactorResult<PolynomialStructure<RS>> {
         let f_deg = self.degree(&f).unwrap();
         let max_factor_degree = f_deg / 2;
         for d in 0..max_factor_degree {
@@ -388,14 +388,14 @@ where
                 let g = Polynomial::from_coeffs(coeffs);
                 match self.div(&f, &g) {
                     Ok(h) => {
-                        return Some((g, h));
+                        return FindFactorResult::Composite(g, h);
                     }
                     Err(RingDivisionError::NotDivisible) => {}
                     Err(RingDivisionError::DivideByZero) => panic!(),
                 }
             }
         }
-        None
+        FindFactorResult::Irreducible
     }
 
     pub fn factorize_by_trying_all_factors(
@@ -435,8 +435,7 @@ where
     fn find_factor_by_berlekamps_algorithm(
         &self,
         f: Polynomial<FS::Set>,
-    ) -> Option<(Polynomial<FS::Set>, Polynomial<FS::Set>)> {
-        // println!("FACTOR {}", f);
+    ) -> FindFactorResult<PolynomialStructure<FS>> {
         //f is squarefree
         let f_deg = self.degree(&f).unwrap();
         let all_elems = self.coeff_ring().all_elements();
@@ -487,13 +486,13 @@ where
             if g_deg != 0 && g_deg != f_deg {
                 match self.div(&f, &g) {
                     Ok(g_prime) => {
-                        return Some((g, g_prime));
+                        return FindFactorResult::Composite(g, g_prime);
                     }
                     Err(_) => panic!(),
                 }
             }
         }
-        None
+        FindFactorResult::Irreducible
     }
 
     pub fn factorize_by_berlekamps_algorithm(
@@ -646,6 +645,9 @@ mod tests {
     fn test_fof_factor_over_rationals() {
         let x = &Polynomial::<Rational>::var().into_ring();
         let f = (6 * (x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_set();
+        let fs = f.factor().unwrap();
+
+        println!("fs = {}", fs);
 
         assert!(Factored::equal(
             &f.factor().unwrap(),
