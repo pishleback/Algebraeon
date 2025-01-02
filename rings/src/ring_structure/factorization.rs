@@ -1,7 +1,7 @@
 use std::{fmt::Display, rc::Rc};
 
 use algebraeon_structure::*;
-use malachite_base::num::basic::traits::One;
+use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::natural::Natural;
 
 use super::structure::*;
@@ -153,6 +153,18 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
 
     pub fn factors(&self) -> &Vec<(RS::Set, Natural)> {
         &self.factors
+    }
+
+    pub fn factors_list(&self) -> Vec<RS::Set> {
+        let mut factors = vec![];
+        for (factor, power) in &self.factors {
+            let mut i = Natural::ZERO;
+            while i < *power {
+                factors.push(factor.clone());
+                i += Natural::ONE;
+            }
+        }
+        factors
     }
 
     pub fn unit_and_factors(self) -> (RS::Set, Vec<(RS::Set, Natural)>) {

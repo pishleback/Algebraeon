@@ -15,10 +15,10 @@ use malachite_q::Rational;
 use primes::aks_primality_test;
 
 fn main() {
-    let x = &Polynomial::<Integer>::var().into_ring();
-    let f = (x.pow(120) - 1).into_set();
+    // let x = &Polynomial::<Integer>::var().into_ring();
+    // let f = (x.pow(120) - 1).into_set();
 
-    // let f = p1();
+    let f = p1();
 
 
 

@@ -14,7 +14,7 @@ where
 {
     /// Reduce a factorization problem for polynomials over a ring of characteristic 0 to a factorization of primitive squarefree polynomials over the ring
     //https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
-    pub fn factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(
+    pub fn factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
         &self,
         f: Polynomial<RS::Set>,
         primitive_sqfree_factorize: &impl Fn(Polynomial<RS::Set>) -> Factored<PolynomialStructure<RS>>,
@@ -44,10 +44,11 @@ where
         let mut f = prim;
         let f_prime = self.derivative(f.clone());
         let mut i: usize = 1;
-        let a = self.gcd(&f, &f_prime);
+        let a = self.gcd_by_primitive_subresultant(f.clone(), f_prime.clone());
         let mut b = self.div(&f, &a).unwrap();
         let mut c = self.div(&f_prime, &a).unwrap();
         let mut d = self.add(&self.neg(&self.derivative(b.clone())), &c);
+
         while self.degree(&f).unwrap() != 0 {
             let a = self.gcd(&b, &d);
             //a^i is a power of a squarefree factor of f
@@ -58,6 +59,7 @@ where
             i += 1;
             d = self.add(&self.neg(&self.derivative(b.clone())), &c);
         }
+
         factors.mul_mut(Factored::factored_unit_unchecked(self.clone().into(), f));
         factors
     }
@@ -240,11 +242,14 @@ where
             None
         } else {
             Some(
-                self.factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(f.clone(), &|f| {
-                    factorize_by_find_factor(self, f, &|f| {
-                        self.find_factor_primitive_by_kroneckers_algorithm(&f)
-                    })
-                }),
+                self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
+                    f.clone(),
+                    &|f| {
+                        factorize_by_find_factor(self, f, &|f| {
+                            self.find_factor_primitive_by_kroneckers_algorithm(&f)
+                        })
+                    },
+                ),
             )
         }
     }

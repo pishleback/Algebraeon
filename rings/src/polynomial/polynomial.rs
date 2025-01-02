@@ -1020,7 +1020,6 @@ mod tests {
     use super::super::super::ring_structure::structure::*;
 
     use super::*;
-    
 
     #[test]
     fn test_constant_var_pow() {

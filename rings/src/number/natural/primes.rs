@@ -1,7 +1,6 @@
 use factor::Factored;
 use malachite_base::num::arithmetic::traits::PowerOf2;
 
-use malachite_base::num::arithmetic::traits::DivMod;
 use malachite_base::num::arithmetic::traits::{Mod, ModPow};
 use malachite_base::num::logic::traits::BitIterable;
 
@@ -331,6 +330,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             };
             #[cfg(debug_assertions)]
             let bigint_to_poly = |mut p_bigint: Natural| -> Vec<Natural> {
+                use malachite_base::num::arithmetic::traits::DivMod;
                 let mut p = zero_poly();
                 let coeff_modulus = Natural::ONE << coeff_size;
                 let mut coeff;

@@ -469,7 +469,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
     } else {
         Some(
             Polynomial::<Integer>::structure()
-                .factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(poly, &|f| {
+                .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(poly, &|f| {
                     if f.degree().unwrap() == 0 {
                         Factored::factored_unit_unchecked(Polynomial::<Integer>::structure(), f)
                     } else {
@@ -485,6 +485,8 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
 fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     f: Polynomial<Integer>,
 ) -> FindFactorResult<PolynomialStructure<CannonicalStructure<Integer>>> {
+    println!("weee");
+
     let f_deg = f.degree().unwrap();
     debug_assert_ne!(f_deg, 0);
     let factor_coeff_bound = f.mignotte_factor_coefficient_bound().unwrap();
@@ -580,7 +582,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm_naive(
     } else {
         Some(
             Polynomial::<Integer>::structure()
-                .factorize_by_primitive_sqfree_factorize_by_yuns_algorithm(f, &|f| {
+                .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(f, &|f| {
                     factorize_by_find_factor(&Polynomial::<Integer>::structure(), f, &|f| {
                         find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(f)
                     })
