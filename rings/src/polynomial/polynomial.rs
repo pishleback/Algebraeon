@@ -1015,11 +1015,12 @@ mod tests {
     use malachite_q::Rational;
 
     use crate::number::finite_fields::quaternary_field::*;
+    use crate::ring_structure::elements::IntoRingElem;
 
     use super::super::super::ring_structure::structure::*;
 
     use super::*;
-    use crate::elements::*;
+    
 
     #[test]
     fn test_constant_var_pow() {

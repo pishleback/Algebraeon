@@ -1,10 +1,49 @@
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::{ops::{Add, Div, Mul, Neg, Sub}, rc::Rc};
 
 use algebraeon_structure::*;
 use malachite_nz::integer::Integer;
-
-use super::super::elements::*;
 use super::structure::*;
+
+pub trait IntoRingElem: MetaType {
+    fn into_ring(self) -> StructuredElement<Self::Structure> {
+        StructuredElement::new(Self::structure(), self)
+    }
+}
+impl<T: MetaType> IntoRingElem for T {}
+
+#[derive(Debug, Clone)]
+pub struct StructuredElement<S: Structure> {
+    structure: Rc<S>,
+    elem: S::Set,
+}
+
+impl<S: Structure> StructuredElement<S> {
+    pub fn new(structure: Rc<S>, elem: S::Set) -> Self {
+        Self { structure, elem }
+    }
+
+    pub fn structure(&self) -> Rc<S> {
+        self.structure.clone()
+    }
+
+    pub fn ref_set(&self) -> &S::Set {
+        &self.elem
+    }
+
+    pub fn into_set(self) -> S::Set {
+        self.elem
+    }
+}
+
+impl<S: Structure> std::fmt::Display for StructuredElement<S>
+where
+    S::Set: std::fmt::Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.elem, f)
+    }
+}
+
 
 impl<RS: RingStructure> PartialEq for StructuredElement<RS> {
     fn eq(&self, other: &Self) -> bool {
@@ -188,224 +227,267 @@ impl<RS: IntegralDomainStructure> StructuredElement<RS> {
     }
 }
 
-//adding i32
-impl<RS: RingStructure> Add<i32> for StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
+macro_rules! impl_int_ops {
+    ($I : ty) => {
+        //adding $I
 
-    fn add(self, rhs: i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
-    }
+        impl<RS: RingStructure> Add<$I> for StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn add(self, rhs: $I) -> Self::Output {
+                let ring = self.structure().clone();
+                self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+            }
+        }
+
+        impl<RS: RingStructure> Add<&$I> for StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn add(self, rhs: &$I) -> Self::Output {
+                let ring = self.structure().clone();
+                self + StructuredElement::new(
+                    ring.clone(),
+                    ring.from_int(&Integer::from(rhs.clone())),
+                )
+            }
+        }
+
+        impl<RS: RingStructure> Add<$I> for &StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn add(self, rhs: $I) -> Self::Output {
+                let ring = self.structure().clone();
+                self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+            }
+        }
+
+        impl<RS: RingStructure> Add<&$I> for &StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn add(self, rhs: &$I) -> Self::Output {
+                let ring = self.structure();
+                self + StructuredElement::new(
+                    ring.clone(),
+                    ring.from_int(&Integer::from(rhs.clone())),
+                )
+            }
+        }
+
+        impl<RS: RingStructure> Add<StructuredElement<RS>> for $I {
+            type Output = StructuredElement<RS>;
+
+            fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) + rhs
+            }
+        }
+
+        impl<RS: RingStructure> Add<&StructuredElement<RS>> for $I {
+            type Output = StructuredElement<RS>;
+
+            fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) + rhs
+            }
+        }
+
+        impl<RS: RingStructure> Add<StructuredElement<RS>> for &$I {
+            type Output = StructuredElement<RS>;
+
+            fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                    + rhs
+            }
+        }
+
+        impl<RS: RingStructure> Add<&StructuredElement<RS>> for &$I {
+            type Output = StructuredElement<RS>;
+
+            fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                    + rhs
+            }
+        }
+
+        //subbing $I
+        impl<RS: RingStructure> Sub<$I> for StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn sub(self, rhs: $I) -> Self::Output {
+                let ring = self.structure().clone();
+                self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+            }
+        }
+
+        impl<RS: RingStructure> Sub<&$I> for StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn sub(self, rhs: &$I) -> Self::Output {
+                let ring = self.structure().clone();
+                self - StructuredElement::new(
+                    ring.clone(),
+                    ring.from_int(&Integer::from(rhs.clone())),
+                )
+            }
+        }
+
+        impl<RS: RingStructure> Sub<$I> for &StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn sub(self, rhs: $I) -> Self::Output {
+                let ring = self.structure().clone();
+                self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+            }
+        }
+
+        impl<RS: RingStructure> Sub<&$I> for &StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn sub(self, rhs: &$I) -> Self::Output {
+                let ring = self.structure().clone();
+                self - StructuredElement::new(
+                    ring.clone(),
+                    ring.from_int(&Integer::from(rhs.clone())),
+                )
+            }
+        }
+
+        impl<RS: RingStructure> Sub<StructuredElement<RS>> for $I {
+            type Output = StructuredElement<RS>;
+
+            fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) - rhs
+            }
+        }
+
+        impl<RS: RingStructure> Sub<&StructuredElement<RS>> for $I {
+            type Output = StructuredElement<RS>;
+
+            fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) - rhs
+            }
+        }
+
+        impl<RS: RingStructure> Sub<StructuredElement<RS>> for &$I {
+            type Output = StructuredElement<RS>;
+
+            fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                    - rhs
+            }
+        }
+
+        impl<RS: RingStructure> Sub<&StructuredElement<RS>> for &$I {
+            type Output = StructuredElement<RS>;
+
+            fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                    - rhs
+            }
+        }
+
+        //multiplying $I
+        impl<RS: RingStructure> Mul<$I> for StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn mul(self, rhs: $I) -> Self::Output {
+                let ring = self.structure().clone();
+                self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+            }
+        }
+
+        impl<RS: RingStructure> Mul<&$I> for StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn mul(self, rhs: &$I) -> Self::Output {
+                let ring = self.structure().clone();
+                self * StructuredElement::new(
+                    ring.clone(),
+                    ring.from_int(&Integer::from(rhs.clone())),
+                )
+            }
+        }
+
+        impl<RS: RingStructure> Mul<$I> for &StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn mul(self, rhs: $I) -> Self::Output {
+                let ring = self.structure().clone();
+                self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+            }
+        }
+
+        impl<RS: RingStructure> Mul<&$I> for &StructuredElement<RS> {
+            type Output = StructuredElement<RS>;
+
+            fn mul(self, rhs: &$I) -> Self::Output {
+                let ring = self.structure().clone();
+                self * StructuredElement::new(
+                    ring.clone(),
+                    ring.from_int(&Integer::from(rhs.clone())),
+                )
+            }
+        }
+
+        impl<RS: RingStructure> Mul<StructuredElement<RS>> for $I {
+            type Output = StructuredElement<RS>;
+
+            fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) * rhs
+            }
+        }
+
+        impl<RS: RingStructure> Mul<&StructuredElement<RS>> for $I {
+            type Output = StructuredElement<RS>;
+
+            fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) * rhs
+            }
+        }
+
+        impl<RS: RingStructure> Mul<StructuredElement<RS>> for &$I {
+            type Output = StructuredElement<RS>;
+
+            fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                    * rhs
+            }
+        }
+
+        impl<RS: RingStructure> Mul<&StructuredElement<RS>> for &$I {
+            type Output = StructuredElement<RS>;
+
+            fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
+                let ring = rhs.structure().clone();
+                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                    * rhs
+            }
+        }
+    };
 }
 
-impl<RS: RingStructure> Add<&i32> for StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
+// impl_int_ops!(u8);
+// impl_int_ops!(u16);
+// impl_int_ops!(u32);
+// impl_int_ops!(u64);
+// impl_int_ops!(u128);
 
-    fn add(self, rhs: &i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*rhs)))
-    }
-}
+// impl_int_ops!(i8);
+// impl_int_ops!(i16);
+impl_int_ops!(i32);
+// impl_int_ops!(i64);
+// impl_int_ops!(i128);
 
-impl<RS: RingStructure> Add<i32> for &StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn add(self, rhs: i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
-    }
-}
-
-impl<RS: RingStructure> Add<&i32> for &StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn add(self, rhs: &i32) -> Self::Output {
-        let ring = self.structure();
-        self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*rhs)))
-    }
-}
-
-impl<RS: RingStructure> Add<StructuredElement<RS>> for i32 {
-    type Output = StructuredElement<RS>;
-
-    fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) + rhs
-    }
-}
-
-impl<RS: RingStructure> Add<&StructuredElement<RS>> for i32 {
-    type Output = StructuredElement<RS>;
-
-    fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) + rhs
-    }
-}
-
-impl<RS: RingStructure> Add<StructuredElement<RS>> for &i32 {
-    type Output = StructuredElement<RS>;
-
-    fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) + rhs
-    }
-}
-
-impl<RS: RingStructure> Add<&StructuredElement<RS>> for &i32 {
-    type Output = StructuredElement<RS>;
-
-    fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) + rhs
-    }
-}
-
-//subbing i32
-impl<RS: RingStructure> Sub<i32> for StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn sub(self, rhs: i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
-    }
-}
-
-impl<RS: RingStructure> Sub<&i32> for StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn sub(self, rhs: &i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*rhs)))
-    }
-}
-
-impl<RS: RingStructure> Sub<i32> for &StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn sub(self, rhs: i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
-    }
-}
-
-impl<RS: RingStructure> Sub<&i32> for &StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn sub(self, rhs: &i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*rhs)))
-    }
-}
-
-impl<RS: RingStructure> Sub<StructuredElement<RS>> for i32 {
-    type Output = StructuredElement<RS>;
-
-    fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) - rhs
-    }
-}
-
-impl<RS: RingStructure> Sub<&StructuredElement<RS>> for i32 {
-    type Output = StructuredElement<RS>;
-
-    fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) - rhs
-    }
-}
-
-impl<RS: RingStructure> Sub<StructuredElement<RS>> for &i32 {
-    type Output = StructuredElement<RS>;
-
-    fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) - rhs
-    }
-}
-
-impl<RS: RingStructure> Sub<&StructuredElement<RS>> for &i32 {
-    type Output = StructuredElement<RS>;
-
-    fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) - rhs
-    }
-}
-
-//multiplying i32
-impl<RS: RingStructure> Mul<i32> for StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn mul(self, rhs: i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
-    }
-}
-
-impl<RS: RingStructure> Mul<&i32> for StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn mul(self, rhs: &i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*rhs)))
-    }
-}
-
-impl<RS: RingStructure> Mul<i32> for &StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn mul(self, rhs: i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
-    }
-}
-
-impl<RS: RingStructure> Mul<&i32> for &StructuredElement<RS> {
-    type Output = StructuredElement<RS>;
-
-    fn mul(self, rhs: &i32) -> Self::Output {
-        let ring = self.structure().clone();
-        self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*rhs)))
-    }
-}
-
-impl<RS: RingStructure> Mul<StructuredElement<RS>> for i32 {
-    type Output = StructuredElement<RS>;
-
-    fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) * rhs
-    }
-}
-
-impl<RS: RingStructure> Mul<&StructuredElement<RS>> for i32 {
-    type Output = StructuredElement<RS>;
-
-    fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) * rhs
-    }
-}
-
-impl<RS: RingStructure> Mul<StructuredElement<RS>> for &i32 {
-    type Output = StructuredElement<RS>;
-
-    fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) * rhs
-    }
-}
-
-impl<RS: RingStructure> Mul<&StructuredElement<RS>> for &i32 {
-    type Output = StructuredElement<RS>;
-
-    fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
-        let ring = rhs.structure().clone();
-        StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(*self))) * rhs
-    }
-}
+impl_int_ops!(Integer);
 
 #[cfg(test)]
 mod tests {
@@ -422,7 +504,7 @@ mod tests {
         let f = 4 * x.pow(2) - 1;
         let g = 2 * x + 1;
 
-        //test operations by value and reference
+        // test operations by value and reference
         println!("{}", -&f.clone());
         println!("{}", -f.clone());
         println!("{}", f.clone() + g.clone());

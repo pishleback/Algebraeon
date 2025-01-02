@@ -774,7 +774,9 @@ impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
 
 #[cfg(test)]
 mod tests {
-    use crate::elements::*;
+    
+
+    use crate::ring_structure::elements::IntoRingElem;
 
     use super::*;
 

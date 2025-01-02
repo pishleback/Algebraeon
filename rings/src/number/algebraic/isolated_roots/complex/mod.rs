@@ -965,9 +965,8 @@ impl ComplexAlgebraic {
 
 #[cfg(test)]
 mod tests {
-    use crate::elements::*;
-
     use super::*;
+    use crate::ring_structure::elements::*;
 
     #[test]
     fn test_apply_poly() {

@@ -226,7 +226,9 @@ pub fn anf_multi_primitive_element_theorem(
 
 #[cfg(test)]
 mod tests {
-    use crate::{elements::*, number::algebraic::isolated_roots::real::RealAlgebraic};
+    use elements::IntoRingElem;
+
+    use crate::number::algebraic::isolated_roots::real::RealAlgebraic;
 
     use super::*;
 

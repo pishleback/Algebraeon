@@ -55,6 +55,10 @@ some improvements
  - brute search optimizations https://www.shoup.net/papers/asz.pdf
  - berlekamp_zassenhaus_algorithm
  - don't use factor by find factor, just do it all in one go and partition the modular factors into true factors
+
+
+ Polynomial Factorization Challenges: a collection of polynomials difficult to factor
+    https://homepages.loria.fr/PZimmermann/mupad/
 */
 
 use crate::{number::integer::*, polynomial::polynomial::*, ring_structure::quotient::*};
@@ -220,17 +224,6 @@ impl<SG: SemigroupStructure> MemoryStack<SG> {
     }
 }
 
-// The (d-1) test
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct MachineUintSemigroup {}
-impl Structure for MachineUintSemigroup {
-    type Set = usize;
-}
-impl SemigroupStructure for MachineUintSemigroup {
-    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        a.wrapping_add(*b)
-    }
-}
 /// The (d-1) test
 /// A quick test allowing some subsets of modular factors to be ruled out from yielding true factors.
 ///
@@ -238,74 +231,117 @@ impl SemigroupStructure for MachineUintSemigroup {
 /// The (d-1)st coefficient of the product of modular factors is easily computed as the sum of the (d-1)st coefficients of each modular factor.
 /// The (d-1)st coefficients of the modular factors can be quickly summed and checked whether they are in the possible range for true factors.
 /// Even better, this summing can be translated to machine arithmetic taking advantage of the wrapping behavour of binary addition. This is at the cost of a slight lossening of the bound on the (d-1)st coefficient.
-///
-///
-struct DMinusOneTest {
-    memory_stack: MemoryStack<MachineUintSemigroup>,
-    f_root_bound: usize,
-}
-impl DMinusOneTest {
-    fn new(
-        modulus: &Integer,
-        poly: &Polynomial<Integer>,
-        modular_factors: &Vec<Polynomial<Integer>>,
-    ) -> Self {
-        use malachite_base::num::arithmetic::traits::{Abs, Mod};
-        use malachite_q::Rational;
+mod dminusone_test {
+    use super::*;
 
-        let machine_range = Natural::from(usize::MAX) + Natural::ONE; // Probably 2^64
-        let conversion_mult =
-            Rational::from_integers(Integer::from(&machine_range), modulus.clone());
-
-        let poly_root_bound = Rational::from(poly.leading_coeff().unwrap().abs())
-            * poly.cauchys_root_bound().unwrap()
-            * Rational::from(poly.degree().unwrap());
-
-        Self {
-            f_root_bound: nat_to_usize(
-                &(&poly_root_bound * &conversion_mult).ceil().unsigned_abs(),
-            )
-            .unwrap_or(usize::MAX),
-            memory_stack: MemoryStack::new(
-                MachineUintSemigroup {},
-                modular_factors
-                    .iter()
-                    .map(|g| {
-                        let d = g.degree().unwrap();
-                        let coeff =
-                            (poly.leading_coeff().unwrap() * g.coeff(d - 1)).mod_op(modulus);
-                        debug_assert!(0 <= coeff);
-                        debug_assert!(coeff < *modulus);
-                        nat_to_usize(
-                            &(Rational::from(coeff) * &conversion_mult)
-                                .floor()
-                                .unsigned_abs()
-                                .mod_op(&machine_range),
-                        )
-                        .unwrap()
-                    })
-                    .collect(),
-            ),
+    #[derive(Debug, Clone)]
+    struct DMinusOneTestSemigroupElem {
+        approx_coeff_lower_bound: usize, // An upper bound is given by this +1
+        degree: usize,
+    }
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    struct DMinusOneTestSemigroup {}
+    impl Structure for DMinusOneTestSemigroup {
+        type Set = DMinusOneTestSemigroupElem;
+    }
+    impl SemigroupStructure for DMinusOneTestSemigroup {
+        fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+            DMinusOneTestSemigroupElem {
+                approx_coeff_lower_bound: a
+                    .approx_coeff_lower_bound
+                    .wrapping_add(b.approx_coeff_lower_bound),
+                degree: a.degree.wrapping_add(b.degree),
+            }
         }
     }
 
-    /// Return true if the subset definitely wont yield a true factor.
-    /// Return false if the subset might yield a true factor.
-    fn test(&mut self, subset: &Vec<usize>) -> bool {
-        let range_bot = *self.memory_stack.get_product(subset);
-        let range_top = range_bot.wrapping_add(subset.len());
-        /*
-        In the machine coordinates 0-usize::MAX we have:
-            The (d-1) coefficient of the lifted product lies in the range [range_bot, range_top]
-            The (d-1) coefficient of any true factor is bounded above by b := r*d where r is a root bound for f
-        So we need to check whether [0, b] union [usize::MAX - b + 1, usize::MAX] is disjoint from [range_bot, range_top]
-        */
-        let b1 = self.f_root_bound;
-        if b1 == 0 {
-            0 < range_bot && range_bot <= range_top
-        } else {
-            let b2 = usize::MAX - b1 + 1;
-            b1 < range_bot && range_bot <= range_top && range_top < b2
+    pub struct DMinusOneTest {
+        memory_stack: MemoryStack<DMinusOneTestSemigroup>,
+        factor_dminusone_coeff_bound_divby_gdeg: usize,
+    }
+    impl DMinusOneTest {
+        pub fn new(
+            modulus: &Integer,
+            f: &Polynomial<Integer>,
+            modular_factors: &Vec<Polynomial<Integer>>,
+        ) -> Self {
+            use malachite_base::num::arithmetic::traits::{Abs, Mod};
+            use malachite_q::Rational;
+
+            // Probably 2^64
+            let machine_range = Natural::from(usize::MAX) + Natural::ONE;
+
+            // Conversion multiplier from 0,...,p^t to 0,...,2^64
+            let conversion_mult =
+                Rational::from_integers(Integer::from(&machine_range), modulus.clone());
+
+            /*
+            Compute a bound for the (d-1)st coefficient of any factor of f using a root bound.
+
+            If g(x) = M(x-a)(x-b)(x-c)(x-d) is a factor of f(x) then it has the same roots and g(x) = Mx^4 - M(a + b + c + d)x^3 + ...
+            The (d-1)st = 3rd coefficient of g(x) is M(a + b + c + d)
+            So if B is a root bound for f(x) then the (d-1)st coefficient of g(x) is bounded by M*B*deg(g)
+
+            Here we compute M*B and leave the multiplication by deg(g) for later
+            */
+            let factor_dminusone_coeff_bound_divby_gdeg =
+                Rational::from(f.leading_coeff().unwrap().abs()) * f.cauchys_root_bound().unwrap();
+
+            Self {
+                factor_dminusone_coeff_bound_divby_gdeg: nat_to_usize(
+                    &(&factor_dminusone_coeff_bound_divby_gdeg * &conversion_mult)
+                        .ceil()
+                        .unsigned_abs(),
+                )
+                .unwrap_or(usize::MAX),
+                memory_stack: MemoryStack::new(
+                    DMinusOneTestSemigroup {},
+                    modular_factors
+                        .iter()
+                        .map(|g| {
+                            let d = g.degree().unwrap();
+                            let coeff =
+                                (f.leading_coeff().unwrap() * g.coeff(d - 1)).mod_op(modulus);
+                            DMinusOneTestSemigroupElem {
+                                approx_coeff_lower_bound: nat_to_usize(
+                                    &(Rational::from(coeff) * &conversion_mult)
+                                        .floor()
+                                        .unsigned_abs()
+                                        .mod_op(&machine_range),
+                                )
+                                .unwrap(),
+                                degree: d,
+                            }
+                        })
+                        .collect(),
+                ),
+            }
+        }
+
+        /// Return true if the subset definitely wont yield a true factor.
+        /// Return false if the subset might yield a true factor.
+        pub fn test(&mut self, subset: &Vec<usize>) -> bool {
+            let DMinusOneTestSemigroupElem {
+                approx_coeff_lower_bound: range_bot,
+                degree: d,
+            } = *self.memory_stack.get_product(subset);
+            let range_top = range_bot.wrapping_add(subset.len());
+            /*
+            In the machine coordinates 0-usize::MAX we have:
+                The (d-1) coefficient of the lifted product lies in the range [range_bot, range_top]
+                The (d-1) coefficient of any true factor is bounded above by b := r*d where r is a root bound for f
+            So we need to check whether [0, b] union [usize::MAX - b + 1, usize::MAX] is disjoint from [range_bot, range_top]
+            */
+            let b1 = self
+                .factor_dminusone_coeff_bound_divby_gdeg
+                .checked_mul(d)
+                .unwrap_or(usize::MAX);
+            if b1 == 0 {
+                0 < range_bot && range_bot <= range_top
+            } else {
+                let b2 = usize::MAX - b1 + 1;
+                b1 < range_bot && range_bot <= range_top && range_top < b2
+            }
         }
     }
 }
@@ -326,7 +362,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         let n = self.modular_factors.len();
 
         let mut dminusone_test =
-            DMinusOneTest::new(&self.modulus, &self.poly, &self.modular_factors);
+            dminusone_test::DMinusOneTest::new(&self.modulus, &self.poly, &self.modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
             PolynomialStructure::new(
                 QuotientStructure::new_ring(Integer::structure(), self.modulus.clone()).into(),

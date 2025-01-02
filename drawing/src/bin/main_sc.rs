@@ -10,7 +10,6 @@ use algebraeon_geometry::simplexes::OrientationSide;
 use algebraeon_geometry::simplexes::OrientedSimplex;
 use algebraeon_geometry::simplexes::Simplex;
 use algebraeon_geometry::*;
-use algebraeon_rings::elements::*;
 use algebraeon_rings::ring_structure::structure::*;
 use algebraeon_structure::*;
 use malachite_nz::integer::Integer;

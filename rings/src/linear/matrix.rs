@@ -2378,12 +2378,12 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::number::algebraic::isolated_roots::{
+    use crate::{number::algebraic::isolated_roots::{
         complex::ComplexAlgebraic, real::RealAlgebraic,
-    };
+    }, ring_structure::elements::IntoRingElem};
 
     use super::*;
-    use crate::elements::*;
+    
 
     #[test]
     fn test_join_rows() {

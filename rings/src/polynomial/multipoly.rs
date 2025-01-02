@@ -741,8 +741,10 @@ where
 mod tests {
     use malachite_nz::integer::Integer;
 
+    use crate::ring_structure::elements::IntoRingElem;
+
     use super::*;
-    use crate::elements::*;
+    
 
     #[test]
     fn test_monomial_ordering() {

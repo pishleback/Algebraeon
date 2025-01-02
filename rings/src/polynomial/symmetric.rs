@@ -231,7 +231,6 @@ where
     }
 }
 
-
 impl<R: MetaType> MultiPolynomial<R>
 where
     R::Structure: IntegralDomainStructure,
@@ -265,7 +264,7 @@ mod tests {
     use malachite_nz::integer::Integer;
 
     use super::*;
-    use crate::elements::*;
+    use crate::ring_structure::elements::*;
 
     #[test]
     fn test_ffosp() {

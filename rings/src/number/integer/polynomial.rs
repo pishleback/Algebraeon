@@ -55,8 +55,10 @@ impl Polynomial<Integer> {
 mod tests {
     use berlekamp_zassenhaus::*;
 
+    use crate::ring_structure::elements::IntoRingElem;
+
     use super::*;
-    use crate::elements::*;
+    
 
     #[test]
     fn test_zassenhaus_against_kroneckers() {

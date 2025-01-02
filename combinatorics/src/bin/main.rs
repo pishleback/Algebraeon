@@ -6,12 +6,12 @@ use std::task::Poll;
 
 use algebraeon_groups::examples::symmetric::*;
 use algebraeon_groups::group::*;
-use algebraeon_rings::elements::*;
 use algebraeon_rings::linear::matrix::*;
 use algebraeon_rings::number::finite_fields::modulo::*;
 use algebraeon_rings::polynomial::multipoly::*;
 use algebraeon_rings::polynomial::polynomial::*;
 use algebraeon_rings::polynomial::polynomial::*;
+use algebraeon_rings::ring_structure::elements::*;
 use algebraeon_rings::ring_structure::quotient::*;
 use algebraeon_rings::ring_structure::structure::*;
 use malachite_nz::integer::Integer;
