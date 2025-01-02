@@ -16,7 +16,7 @@ use primes::aks_primality_test;
 fn main() {
     let x = &Polynomial::<Integer>::var().into_ring();
     // println!("{}", (x.pow(60) - 1).into_set().factor().unwrap());
-    println!("{}", (x.pow(30) - 1).into_set().factor().unwrap());
+    println!("{}", (49 * x.pow(2) - 10000).into_set().factor().unwrap());
 
     // println!(
     //     "{:?}",

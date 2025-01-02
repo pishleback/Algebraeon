@@ -144,65 +144,204 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
     }
 }
 
-trait SemiGrpTestInfo {
-    fn compose(a: &Self, b: &Self) -> Self;
+trait SemigroupStructure: Structure {
+    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 }
 
-struct BZATestManager<G: SemiGrpTestInfo> {
-    modular_factors_semigrp: Vec<G>,
-    prev_subset: Vec<usize>,
-    prev_semigrp: G,
+struct MemoryStack<SG: SemigroupStructure> {
+    semigroup: SG,
+    modular_factor_values: Vec<SG::Set>,
+    // Store the partial products of a previous calculation
+    // Since subsets are visited in lexographic order, if a test is performed frequently, values towards the right will need to be updated
+    /*
+    For example if this vector contains
+        [(0, a), (2, b), (3, c)]
+    That means the subset [0, 2, 3] has partial products
+        v(0) = a
+        v(0)v(2) = b
+        v(0)v(2)v(3) = c
+     */
+    prev_calc: Vec<(usize, SG::Set)>,
 }
 
-impl<G: SemiGrpTestInfo> BZATestManager<G> {
-    fn test(&self, subset: &Vec<usize>) {}
+impl<SG: SemigroupStructure> MemoryStack<SG> {
+    fn new(semigroup: SG, modular_factor_values: Vec<SG::Set>) -> Self {
+        Self {
+            semigroup,
+            modular_factor_values,
+            prev_calc: vec![],
+        }
+    }
+
+    fn get_val(&self, i: usize) -> &<SG as Structure>::Set {
+        &self.modular_factor_values[i]
+    }
+
+    fn get_product(&mut self, subset: &Vec<usize>) -> &<SG as Structure>::Set {
+        debug_assert!(!subset.is_empty());
+        let mut i = 0;
+        loop {
+            if i == self.prev_calc.len() {
+                break;
+            }
+            if i == subset.len() {
+                break;
+            }
+            if self.prev_calc[i].0 != subset[i] {
+                break;
+            }
+            i += 1;
+        }
+        /*
+        By way of example, suppose
+            subset = abcxyz
+            memory = a ab acd abcd abcde
+        Then we use abc from memory and compose with the remaining items xyz
+         */
+
+        // subset and memory agree in the first i places
+        self.prev_calc.truncate(i);
+        if i == 0 {
+            let ss = subset[0];
+            self.prev_calc.push((ss, self.get_val(ss).clone()));
+            i += 1;
+        }
+        // subset and memory still agree in the first i >=1 places
+        for j in i..subset.len() {
+            let ss = subset[j];
+            self.prev_calc.push((
+                ss,
+                self.semigroup
+                    .compose(&self.prev_calc[j - 1].1, self.get_val(ss)),
+            ));
+        }
+
+        &self.prev_calc[subset.len() - 1].1
+    }
+}
+
+// The (d-1) test
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct MachineUintSemigroup {}
+impl Structure for MachineUintSemigroup {
+    type Set = usize;
+}
+impl SemigroupStructure for MachineUintSemigroup {
+    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        a.wrapping_add(*b)
+    }
+}
+/// The (d-1) test
+/// A quick test allowing some subsets of modular factors to be ruled out from yielding true factors.
+///
+/// A bound is found for the (d-1)st coefficient of any factors of $f(x)$.
+/// The (d-1)st coefficient of the product of modular factors is easily computed as the sum of the (d-1)st coefficients of each modular factor.
+/// The (d-1)st coefficients of the modular factors can be quickly summed and checked whether they are in the possible range for true factors.
+/// Even better, this summing can be translated to machine arithmetic taking advantage of the wrapping behavour of binary addition. This is at the cost of a slight lossening of the bound on the (d-1)st coefficient.
+///
+///
+struct DMinusOneTest {
+    memory_stack: MemoryStack<MachineUintSemigroup>,
+    f_root_bound: usize,
+}
+impl DMinusOneTest {
+    fn new(
+        modulus: &Integer,
+        poly: &Polynomial<Integer>,
+        modular_factors: &Vec<Polynomial<Integer>>,
+    ) -> Self {
+        use malachite_base::num::arithmetic::traits::{Abs, Mod};
+        use malachite_q::Rational;
+
+        let machine_range = Natural::from(usize::MAX) + Natural::ONE; // Probably 2^64
+        let conversion_mult =
+            Rational::from_integers(Integer::from(&machine_range), modulus.clone());
+
+        let poly_root_bound = Rational::from(poly.leading_coeff().unwrap().abs())
+            * poly.cauchys_root_bound().unwrap()
+            * Rational::from(poly.degree().unwrap());
+
+        Self {
+            f_root_bound: nat_to_usize(
+                &(&poly_root_bound * &conversion_mult).ceil().unsigned_abs(),
+            )
+            .unwrap_or(usize::MAX),
+            memory_stack: MemoryStack::new(
+                MachineUintSemigroup {},
+                modular_factors
+                    .iter()
+                    .map(|g| {
+                        let d = g.degree().unwrap();
+                        let coeff =
+                            (poly.leading_coeff().unwrap() * g.coeff(d - 1)).mod_op(modulus);
+                        debug_assert!(0 <= coeff);
+                        debug_assert!(coeff < *modulus);
+                        nat_to_usize(
+                            &(Rational::from(coeff) * &conversion_mult)
+                                .floor()
+                                .unsigned_abs()
+                                .mod_op(&machine_range),
+                        )
+                        .unwrap()
+                    })
+                    .collect(),
+            ),
+        }
+    }
+
+    /// Return true if the subset definitely wont yield a true factor.
+    /// Return false if the subset might yield a true factor.
+    fn test(&mut self, subset: &Vec<usize>) -> bool {
+        let range_bot = *self.memory_stack.get_product(subset);
+        let range_top = range_bot.wrapping_add(subset.len());
+        /*
+        In the machine coordinates 0-usize::MAX we have:
+            The (d-1) coefficient of the lifted product lies in the range [range_bot, range_top]
+            The (d-1) coefficient of any true factor is bounded above by b := r*d where r is a root bound for f
+        So we need to check whether [0, b] union [usize::MAX - b + 1, usize::MAX] is disjoint from [range_bot, range_top]
+        */
+        let b1 = self.f_root_bound;
+        if b1 == 0 {
+            0 < range_bot && range_bot <= range_top
+        } else {
+            let b2 = usize::MAX - b1 + 1;
+            b1 < range_bot && range_bot <= range_top && range_top < b2
+        }
+    }
+}
+
+// Polynomial division test. This test is never wrong.
+type ModularFactorMultSemigrp =
+    PolynomialStructure<QuotientStructure<CannonicalStructure<Integer>, false>>;
+impl SemigroupStructure for ModularFactorMultSemigrp {
+    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.mul(a, b)
+    }
 }
 
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn factor_by_try_all_subsets<'a>(
         &'a self,
     ) -> Factored<PolynomialStructure<CannonicalStructure<Integer>>> {
-        // println!("{:?}", self);
+        let n = self.modular_factors.len();
 
-        /*
-         * Loop over subsets of modular factors in order of increasing cardinality, then in lexographic order for each cardinality
-         * Exclude half the subsets by ignoring complimentary subsets
-         */
+        let mut dminusone_test =
+            DMinusOneTest::new(&self.modulus, &self.poly, &self.modular_factors);
+        let mut modular_factor_product_memory_stack = MemoryStack::new(
+            PolynomialStructure::new(
+                QuotientStructure::new_ring(Integer::structure(), self.modulus.clone()).into(),
+            ),
+            self.modular_factors.iter().map(|g| g.clone()).collect(),
+        );
 
-        // let mod_m = QuotientStructure::new_ring(Integer::structure(), self.modulus.clone());
-        // let poly_mod_m = PolynomialStructure::new(mod_m.into());
-
-        let modular_factors: Vec<_> = self.modular_factors.iter().collect();
-        let n = modular_factors.len();
-
-        // self.modular_factors
-        //     .sort_by_cached_key(|mf| poly_mod_m.degree(mf).unwrap());
-        // println!("{:?}", self.modular_factors);
-
-        let subset_to_possible_factor = |subset: &Vec<usize>| {
-            Polynomial::mul(
-                &Polynomial::constant(self.leading_coeff.clone()),
-                &Polynomial::product(subset.iter().map(|i| modular_factors[*i]).collect()),
-            )
-            .apply_map(|c| {
-                let c = Integer::rem(c, &self.modulus);
-                if c > Integer::quo(&self.modulus, &Integer::TWO).unwrap() {
-                    c - &self.modulus
-                } else {
-                    c.clone()
-                }
-            })
-            .primitive_part() //factoring f(x) = 49x^2-10000 had possible_factor = 49x-700, which is only a factor over the rationals and not over the integers unless we take the primitive part which is 7x-100, soo this seems to make sense though I cant properly justify it right now.
-            .unwrap()
-        };
-
-        // println!("n = {:?}", n);
         let mut factored = Factored::factored_one(Polynomial::<Integer>::structure());
         let mut excluded_modular_factors = vec![];
         let mut f = self.poly.clone();
         let mut k = 1; // The cardinality of the subset to search for each loop
         let mut m = n; // Keep track of the number of remaining modular factors i.e. m = n - excluded_modular_factors.len()
 
+        // Loop over subsets of modular factors in order of increasing cardinality, then in lexographic order for each cardinality
+        // Only half of the cardinalities need to be checked since complimentary subsets need not be checked
         // Keep searching for cardinalities up to and including half the number of remaining modular factors
         while k <= m / 2 {
             let mut k_combinations = LexicographicCombinationsWithRemovals::new(n, k);
@@ -217,8 +356,26 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
             loop {
                 match k_combinations.next() {
                     Some(subset) => {
+                        if dminusone_test.test(&subset) {
+                            continue;
+                        }
+
                         // println!("{:?}", subset);
-                        let g = subset_to_possible_factor(&subset);
+
+                        let g = Polynomial::mul(
+                            &Polynomial::constant(self.leading_coeff.clone()),
+                            modular_factor_product_memory_stack.get_product(&subset),
+                        )
+                        .apply_map(|c| {
+                            let c = Integer::rem(c, &self.modulus);
+                            if c > Integer::quo(&self.modulus, &Integer::TWO).unwrap() {
+                                c - &self.modulus
+                            } else {
+                                c.clone()
+                            }
+                        })
+                        .primitive_part() //factoring f(x) = 49x^2-10000 had possible_factor = 49x-700, which is only a factor over the rationals and not over the integers unless we take the primitive part which is 7x-100, soo this seems to make sense though I cant properly justify it right now.
+                        .unwrap();
                         debug_assert_ne!(g.degree().unwrap(), 0);
 
                         // println!("possible_factor = {}", g);

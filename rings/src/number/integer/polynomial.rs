@@ -1,4 +1,5 @@
 use malachite_nz::integer::Integer;
+use malachite_q::Rational;
 
 use crate::{number::integer::*, number::natural::functions::*, polynomial::polynomial::*};
 
@@ -31,6 +32,23 @@ impl Polynomial<Integer> {
         bound *= choose_usize(deg, deg / 2);
         Some(bound)
     }
+
+    //https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots#Lagrange's_and_Cauchy's_bounds
+    pub fn cauchys_root_bound(&self) -> Option<Rational> {
+        use malachite_base::num::arithmetic::traits::Abs;
+        let d = self.degree()?;
+        if d == 0 {
+            None
+        } else {
+            Some(
+                Rational::ONE
+                    + (0..d)
+                        .map(|i| Rational::from_integers(self.coeff(i), self.coeff(d)).abs())
+                        .max()
+                        .unwrap(),
+            )
+        }
+    }
 }
 
 #[cfg(test)]
@@ -45,21 +63,31 @@ mod tests {
         let x = &Polynomial::<Integer>::var().into_ring();
 
         let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_set();
+        let fs = f.clone().factorize_by_kroneckers_method().unwrap();
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
         // println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
         assert!(Factored::equal(
-            &f.clone().factorize_by_kroneckers_method().unwrap(),
+            &fs,
             &factorize_by_berlekamp_zassenhaus_algorithm_naive(f.clone()).unwrap()
+        ));
+        assert!(Factored::equal(
+            &fs,
+            &factorize_by_berlekamp_zassenhaus_algorithm(f.clone()).unwrap()
         ));
 
         let f = (49 * x.pow(2) - 10000).into_set();
+        let fs = f.clone().factorize_by_kroneckers_method().unwrap();
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
         // println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
         assert!(Factored::equal(
-            &f.clone().factorize_by_kroneckers_method().unwrap(),
+            &fs,
             &factorize_by_berlekamp_zassenhaus_algorithm_naive(f.clone()).unwrap()
+        ));
+        assert!(Factored::equal(
+            &fs,
+            &factorize_by_berlekamp_zassenhaus_algorithm(f.clone()).unwrap()
         ));
     }
 }
