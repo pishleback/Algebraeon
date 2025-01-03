@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use malachite_base::num::basic::traits::One;
+use malachite_base::num::basic::traits::Two;
 use malachite_nz::natural::Natural;
 
 use crate::ring_structure::factorization::*;
@@ -10,20 +11,9 @@ use crate::ring_structure::structure::*;
 use super::polynomial::*;
 use algebraeon_structure::*;
 
-// impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure> PolynomialStructure<RS> {
-//     fn polynomial_reduce_modulo(&self,
-//         poly: &Polynomial<RS::Set>,
-//         i: impl Borrow<RS::Set>,
-//         n: impl Borrow<Natural>,
-//     ) -> Polynomial<EuclideanQuotient<RS>> {
-//         let i = i.borrow();
-//         let n = n.borrow();
-//         poly.apply_map_ref(|c| UniversalEuclideanQuotient::<false, Ring>::new(c.clone(), i.nat_pow(n)))
-//     }
-// }
-
 #[derive(Debug, Clone)]
 enum HenselProduct<
+    const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
 > {
     Leaf,
@@ -32,35 +22,38 @@ enum HenselProduct<
         //alpha is invertible modulo i (thus also any power of i)
         //h = alpha*f*g mod i^n
         //af + bg = 1 mod i
-        f_factorization: Box<HenselFactorizationImpl<RS>>, //defined modulo i^n
-        g_factorization: Box<HenselFactorizationImpl<RS>>, //defined modulo i^n
-        a: Polynomial<RS::Set>,                            //defined modulo i
-        b: Polynomial<RS::Set>,                            //defined modulo i
+        f_factorization: Box<HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>>, //defined modulo i^n
+        g_factorization: Box<HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>>, //defined modulo i^n
+        a: Polynomial<RS::Set>,                                                  //defined modulo i
+        b: Polynomial<RS::Set>,                                                  //defined modulo i
     },
 }
 
 #[derive(Debug, Clone)]
 struct HenselFactorizationImpl<
+    const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
 > {
     h: Polynomial<RS::Set>,
-    factorization: HenselProduct<RS>,
+    factorization: HenselProduct<LIFTED_BEZOUT_COEFFS, RS>,
 }
 
 //represent a factorization of a polynomial h(x) as a product alpha f_1(x)f_2(x)...f_k(x) modulo i^n where f_1(x), f_2(x), ..., f_n(x) are monic and alpha is the leading coefficient of h and is non-zero modulo i
 #[derive(Debug, Clone)]
 pub struct HenselFactorization<
+    const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
 > {
     ring: Rc<RS>,
     i: RS::Set,
     n: Natural,
-    factors_impl: HenselFactorizationImpl<RS>, //defined absolutely and factored modulo i^n
+    factorization: HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>, //defined absolutely and factored modulo i^n
 }
 
 impl<
+        const LIFTED_BEZOUT_COEFFS: bool,
         RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselProduct<RS>
+    > HenselProduct<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(
         &self,
@@ -83,6 +76,17 @@ impl<
                 let poly_ring = PolynomialStructure::new(ring.clone().into());
                 let ring_mod_i = QuotientStructure::new_ring(ring.clone().into(), i.clone());
                 let poly_ring_mod_i = PolynomialStructure::new(ring_mod_i.clone().into());
+                let poly_ring_mod_i_tothe_n = PolynomialStructure::new(
+                    QuotientStructure::new_ring(ring.clone().into(), ring.nat_pow(i, n)).into(),
+                );
+
+                //deg(a) < deg(g) and deg(b) < deg(f)
+                if poly_ring.degree(a).unwrap() >= poly_ring.degree(&g_factorization.h).unwrap() {
+                    return Err("deg(a) >= deg(g)");
+                }
+                if poly_ring.degree(b).unwrap() >= poly_ring.degree(&f_factorization.h).unwrap() {
+                    return Err("deg(b) >= deg(f)");
+                }
 
                 //af + bg = 1 mod i
                 if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(vec![
@@ -92,10 +96,19 @@ impl<
                 ])) {
                     return Err("af + bg != 1 mod i");
                 }
+
+                //af + bg = 1 mod i^n
+                if LIFTED_BEZOUT_COEFFS {
+                    if !poly_ring_mod_i_tothe_n.is_zero(&poly_ring_mod_i_tothe_n.sum(vec![
+                        poly_ring_mod_i_tothe_n.mul(a, &f_factorization.h),
+                        poly_ring_mod_i_tothe_n.mul(b, &g_factorization.h),
+                        poly_ring_mod_i_tothe_n.neg(&poly_ring_mod_i_tothe_n.one()),
+                    ])) {
+                        return Err("af + bg != 1 mod i^n");
+                    }
+                }
+
                 //h = alpha*f*g mod i^n
-                let poly_ring_mod_i_tothe_n = PolynomialStructure::new(
-                    QuotientStructure::new_ring(ring.clone().into(), ring.nat_pow(i, n)).into(),
-                );
                 if !poly_ring_mod_i_tothe_n.equal(
                     h,
                     &poly_ring_mod_i_tothe_n.product(vec![
@@ -164,7 +177,7 @@ impl<
         }
     }
 
-    fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
+    fn linear_lift_impl(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
         #[cfg(debug_assertions)]
         self.check(ring, h, i, n).unwrap();
 
@@ -194,7 +207,7 @@ impl<
                     .add(
                         h,
                         &poly_ring.neg(&poly_ring.product(vec![
-                            &Polynomial::constant(poly_ring.leading_coeff(h).unwrap().clone()),
+                            &Polynomial::constant(alpha.clone()),
                             f,
                             g,
                         ])),
@@ -265,8 +278,8 @@ impl<
                 f_factorization.h = lifted_f;
                 g_factorization.h = lifted_g;
 
-                f_factorization.linear_lift(ring, i, n);
-                g_factorization.linear_lift(ring, i, n);
+                f_factorization.linear_lift_impl(ring, i, n);
+                g_factorization.linear_lift_impl(ring, i, n);
             }
         }
     }
@@ -274,7 +287,80 @@ impl<
 
 impl<
         RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorizationImpl<RS>
+    > HenselProduct<true, RS>
+{
+    fn dont_lift_bezout_coeffs(self) -> HenselProduct<false, RS> {
+        match self {
+            HenselProduct::Leaf => HenselProduct::Leaf,
+            HenselProduct::Branch {
+                f_factorization,
+                g_factorization,
+                a,
+                b,
+            } => HenselProduct::Branch {
+                f_factorization: Box::new(f_factorization.dont_lift_bezout_coeffs()),
+                g_factorization: Box::new(g_factorization.dont_lift_bezout_coeffs()),
+                a,
+                b,
+            },
+        }
+    }
+}
+
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselProduct<false, RS>
+{
+    fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
+        self.linear_lift_impl(ring, i, n, h);
+        match self {
+            HenselProduct::Leaf => {}
+            HenselProduct::Branch {
+                f_factorization,
+                g_factorization,
+                ..
+            } => {
+                f_factorization.linear_lift(ring, i, n);
+                g_factorization.linear_lift(ring, i, n);
+            }
+        }
+
+        #[cfg(debug_assertions)]
+        self.check(ring, h, i, &(n + Natural::ONE)).unwrap();
+    }
+}
+
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselProduct<true, RS>
+{
+    fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
+        self.linear_lift_impl(ring, &ring.nat_pow(i, n), &Natural::ONE, h);
+
+        match self {
+            HenselProduct::Leaf => {}
+            HenselProduct::Branch {
+                f_factorization,
+                g_factorization,
+                a,
+                b,
+            } => {
+                unimplemented!("todo need to update a and b here");
+
+                f_factorization.quadratic_lift(ring, i, n);
+                g_factorization.quadratic_lift(ring, i, n);
+            }
+        }
+
+        #[cfg(debug_assertions)]
+        self.check(ring, h, i, &(n * Natural::TWO)).unwrap();
+    }
+}
+
+impl<
+        const LIFTED_BEZOUT_COEFFS: bool,
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(&self, ring: &RS, i: &RS::Set, n: &Natural) -> Result<(), &'static str> {
         // let poly_ring = PolynomialStructure::new(ring.clone().into());
@@ -326,7 +412,34 @@ impl<
     fn factor_list(&self) -> Vec<&Polynomial<RS::Set>> {
         self.factorization.factor_list(&self.h)
     }
+}
 
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorizationImpl<true, RS>
+{
+    fn dont_lift_bezout_coeffs(self) -> HenselFactorizationImpl<false, RS> {
+        HenselFactorizationImpl {
+            h: self.h,
+            factorization: self.factorization.dont_lift_bezout_coeffs(),
+        }
+    }
+}
+
+impl<
+        const DONT_LIFT_BEZOUT_COEFFS: bool,
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorizationImpl<DONT_LIFT_BEZOUT_COEFFS, RS>
+{
+    fn linear_lift_impl(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
+        self.factorization.linear_lift_impl(ring, i, n, &self.h);
+    }
+}
+
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorizationImpl<false, RS>
+{
     fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
         self.factorization.linear_lift(ring, i, n, &self.h);
     }
@@ -334,10 +447,20 @@ impl<
 
 impl<
         RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorization<RS>
+    > HenselFactorizationImpl<true, RS>
+{
+    fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
+        self.factorization.quadratic_lift(ring, i, n, &self.h);
+    }
+}
+
+impl<
+        const LIFTED_BEZOUT_COEFFS: bool,
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorization<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(&self) -> Result<(), &'static str> {
-        self.factors_impl
+        self.factorization
             .check(self.ring.as_ref(), &self.i, &self.n)
     }
 
@@ -376,7 +499,7 @@ impl<
             ring,
             i: p,
             n,
-            factors_impl: factors,
+            factorization: factors,
         };
         #[cfg(debug_assertions)]
         ans.check().unwrap();
@@ -389,13 +512,43 @@ impl<
 
     //return the lifted factors in order
     pub fn factors(&self) -> Vec<&Polynomial<RS::Set>> {
-        self.factors_impl.factor_list()
+        self.factorization.factor_list()
     }
+}
 
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorization<true, RS>
+{
+    pub fn dont_lift_bezout_coeffs(self) -> HenselFactorization<false, RS> {
+        HenselFactorization {
+            ring: self.ring,
+            i: self.i,
+            n: self.n,
+            factorization: self.factorization.dont_lift_bezout_coeffs(),
+        }
+    }
+}
+
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorization<false, RS>
+{
     pub fn linear_lift(&mut self) {
-        self.factors_impl
+        self.factorization
             .linear_lift(self.ring.as_ref(), &self.i, &self.n);
         self.n += Natural::ONE;
+    }
+}
+
+impl<
+        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+    > HenselFactorization<true, RS>
+{
+    pub fn quadratic_lift(&mut self) {
+        self.factorization
+            .quadratic_lift(self.ring.as_ref(), &self.i, &self.n);
+        self.n *= Natural::TWO;
     }
 }
 
@@ -410,7 +563,7 @@ where
     pub fn into_hensel_factorization(
         self,
         h: Polynomial<RS::Set>,
-    ) -> Option<HenselFactorization<RS>>
+    ) -> Option<HenselFactorization<true, RS>>
     where
         RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure,
     {
@@ -470,13 +623,14 @@ mod tests {
         //h and fs are monic
 
         //set up bezout coefficients for hensel lifting the factorization modulo 25, 125, ...
-        let mut hensel_fact = HenselFactorization::new(
+        let mut hensel_fact = HenselFactorization::<true, _>::new(
             Integer::structure(),
             Integer::from(5),
             Natural::from(1u8),
             h.clone(),
             vec![f1, f2, f3],
-        );
+        )
+        .dont_lift_bezout_coeffs();
         hensel_fact.check().unwrap();
         println!("5^1: {:?}", hensel_fact.factors());
         for i in 2..20 {
