@@ -82,35 +82,29 @@ x^6+27578084871448383028954307699482484177292371088638694175094794599157673413\
 """
 import re
 
-def convert_polynomial(polynomial_str):
-    def convert_term(match):
-        coef = match.group('coef') or '1'  # Default coefficient is 1 if not specified.
-        if coef == '-':
-            coef = '-1'
-        power = match.group('power')
+def convert_polynomial(poly_str):
+    # Regular expression to match terms in the polynomial
+    term_pattern = re.compile(r'([+-]?\d+)(?:\*x(?:\^(\d+))?)?')
+    
+    # Function to process a single term
+    def process_term(match):
+        coeff = match.group(1)  # Coefficient (e.g., 2, -4, 1)
+        exponent = match.group(2)  # Exponent (e.g., 3, or None)
         
-        if power:
-            return f"Integer::from_str(\"{coef}\").unwrap()*x.pow({power})"
-        elif 'x' in match.group('term'):
-            return f"Integer::from_str(\"{coef}\").unwrap()*x"
+        coeff_str = f'Integer::from_str("{coeff}").unwrap()'
+        
+        if exponent:
+            return f'\n + {coeff_str} * x.pow({exponent})'
+        elif '*x' in match.group(0):
+            return f'\n + {coeff_str} * x'
         else:
-            return f"Integer::from_str(\"{coef}\").unwrap()"
+            return f"\n + {coeff_str}"
 
-    # Regex pattern to match polynomial terms
-    term_pattern = re.compile(r'(?P<term>(?P<coef>-?\d*|-)\*?x(?:\^(?P<power>\d+))?|(?P<constant>-?\d+))')
+    # Replace each term in the polynomial string
+    converted_terms = [process_term(m) for m in term_pattern.finditer(poly_str)]
 
-    # Match all terms and convert them
-    converted_terms = [convert_term(match) for match in term_pattern.finditer(polynomial_str)]
-
-    # Join converted terms with the original operators (+/-)
-    operator_pattern = re.compile(r'[+-]')
-    operators = operator_pattern.findall(polynomial_str)
-
-    result = converted_terms[0]
-    for op, term in zip(operators, converted_terms[1:]):
-        result += f' {op} {term}'
-
-    return result
+    # Join terms into the final string
+    return ' '.join(converted_terms)
 
 
 print(convert_polynomial(p))
