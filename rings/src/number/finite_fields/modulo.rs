@@ -205,7 +205,11 @@ macro_rules! impl_field {
         }
         impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Modulo<$N>>> {
             fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
-                self.factorize_by_berlekamps_algorithm(p.clone())
+                Some(
+                    self.factorize_monic(p)?
+                        .factorize_squarefree()
+                        .factorize_berlekamps(),
+                )
             }
         }
     };

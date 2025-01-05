@@ -155,6 +155,10 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         &self.factors
     }
 
+    pub fn into_factors(self) -> Vec<(RS::Set, Natural)> {
+        self.factors
+    }
+
     pub fn factors_list(&self) -> Vec<RS::Set> {
         let mut factors = vec![];
         for (factor, power) in &self.factors {

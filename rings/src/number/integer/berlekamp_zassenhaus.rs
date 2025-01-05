@@ -56,9 +56,6 @@ some improvements
  - berlekamp_zassenhaus_algorithm
  - don't use factor by find factor, just do it all in one go and partition the modular factors into true factors
 
-
- Polynomial Factorization Challenges: a collection of polynomials difficult to factor
-    https://homepages.loria.fr/PZimmermann/mupad/
 */
 
 use crate::{number::integer::*, polynomial::polynomial::*, ring_structure::quotient::*};
@@ -122,8 +119,11 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         if poly_mod_p.degree(&state.poly) == Some(state.degree) {
             let facotred_f_mod_p = poly_mod_p.factor(&state.poly).unwrap();
             match facotred_f_mod_p.into_hensel_factorization(state.poly.clone()) {
-                Some(mut hensel_factorization_f_over_p) => {
+                Some(hensel_factorization_f_over_p) => {
+                    let mut hensel_factorization_f_over_p =
+                        hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
                     while hensel_factorization_f_over_p.modolus() < state.minimum_modolus {
+                        println!("lift");
                         hensel_factorization_f_over_p.linear_lift();
                     }
                     let modulus = hensel_factorization_f_over_p.modolus();
@@ -396,8 +396,6 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                             continue;
                         }
 
-                        // println!("{:?}", subset);
-
                         let g = Polynomial::mul(
                             &Polynomial::constant(self.leading_coeff.clone()),
                             modular_factor_product_memory_stack.get_product(&subset),
@@ -413,9 +411,6 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                         .primitive_part() //factoring f(x) = 49x^2-10000 had possible_factor = 49x-700, which is only a factor over the rationals and not over the integers unless we take the primitive part which is 7x-100, soo this seems to make sense though I cant properly justify it right now.
                         .unwrap();
                         debug_assert_ne!(g.degree().unwrap(), 0);
-
-                        // println!("possible_factor = {}", g);
-                        // println!("{:?}", Polynomial::div(&f, &g));
 
                         match Polynomial::div(&f, &g) {
                             Ok(h) => {
@@ -485,8 +480,6 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
 fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     f: Polynomial<Integer>,
 ) -> FindFactorResult<PolynomialStructure<CannonicalStructure<Integer>>> {
-    println!("weee");
-
     let f_deg = f.degree().unwrap();
     debug_assert_ne!(f_deg, 0);
     let factor_coeff_bound = f.mignotte_factor_coefficient_bound().unwrap();
@@ -501,12 +494,10 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
             let poly_mod_p = PolynomialStructure::new(mod_p.into());
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap();
-                // println!("f mod {} = {:?}", p, facotred_f_mod_p);
                 match facotred_f_mod_p.into_hensel_factorization(f.clone()) {
-                    Some(mut hensel_factorization_f_over_p) => {
-                        // println!("good prime = {}", p);
-                        // println!("{:?}", hensel_factorization_f_over_p.factors());
-
+                    Some(hensel_factorization_f_over_p) => {
+                        let mut hensel_factorization_f_over_p =
+                            hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
                         while hensel_factorization_f_over_p.modolus() < minimum_modolus {
                             hensel_factorization_f_over_p.linear_lift();
                         }
@@ -514,10 +505,6 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                         let modulus = hensel_factorization_f_over_p.modolus();
 
                         let modular_factors = hensel_factorization_f_over_p.factors();
-
-                        // println!("{:?}", hensel_factorization_f_over_p.modolus());
-                        // println!("{:?}", lifted_factors);
-                        // println!("lifted_factors.len() = {:?}", lifted_factors.len());
 
                         for subset in (0..modular_factors.len())
                             .map(|_i| vec![false, true])
@@ -542,10 +529,6 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                             })
                             .primitive_part() //factoring f(x) = 49x^2-10000 had possible_factor = 49x-700, which is only a factor over the rationals and not over the integers unless we take the primitive part which is 7x-100, soo this seems to make sense though I cant properly justify it right now.
                             .unwrap();
-
-                            // println!("possible_factor = {:?}", possible_factor);
-
-                            // println!("{:?}", Polynomial::div(&f, &possible_factor));
 
                             if possible_factor.degree().unwrap() != 0
                                 && possible_factor.degree().unwrap() != f_deg

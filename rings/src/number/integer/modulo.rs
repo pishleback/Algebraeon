@@ -25,8 +25,12 @@ impl UniqueFactorizationStructure
 {
     fn factor(
         &self,
-        a: &Self::Set,
+        p: &Self::Set,
     ) -> Option<crate::ring_structure::factorization::Factored<Self>> {
-        self.factorize_by_berlekamps_algorithm(a.clone())
+        Some(
+            self.factorize_monic(p)?
+                .factorize_squarefree()
+                .factorize_berlekamps(),
+        )
     }
 }

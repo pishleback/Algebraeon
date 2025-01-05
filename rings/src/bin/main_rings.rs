@@ -2,11 +2,14 @@
 
 use std::str::FromStr;
 
-use algebraeon_rings::number::natural::*;
+use algebraeon_rings::number::finite_fields::modulo::Modulo;
 use algebraeon_rings::number::integer::zimmermann_polys::*;
+use algebraeon_rings::number::natural::*;
 use algebraeon_rings::polynomial::polynomial::Polynomial;
 use algebraeon_rings::ring_structure::elements::*;
+use algebraeon_rings::ring_structure::factorization::Factored;
 use algebraeon_rings::ring_structure::structure::*;
+use algebraeon_structure::MetaType;
 use functions::*;
 use malachite_base::num::basic::traits::One;
 use malachite_nz::integer::Integer;
@@ -16,16 +19,13 @@ use primes::aks_primality_test;
 
 fn main() {
     // let x = &Polynomial::<Integer>::var().into_ring();
-    // let f = (x.pow(120) - 1).into_set();
+    // let f = (x.pow(30) - 1).into_set();
 
     let f = p1();
 
-
-
-
+    println!("{}", f);
 
     println!("{}", f.factor().unwrap());
-
 
     // println!(
     //     "{:?}",

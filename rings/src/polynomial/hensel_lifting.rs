@@ -80,14 +80,6 @@ impl<
                     QuotientStructure::new_ring(ring.clone().into(), ring.nat_pow(i, n)).into(),
                 );
 
-                //deg(a) < deg(g) and deg(b) < deg(f)
-                if poly_ring.degree(a).unwrap() >= poly_ring.degree(&g_factorization.h).unwrap() {
-                    return Err("deg(a) >= deg(g)");
-                }
-                if poly_ring.degree(b).unwrap() >= poly_ring.degree(&f_factorization.h).unwrap() {
-                    return Err("deg(b) >= deg(f)");
-                }
-
                 //af + bg = 1 mod i
                 if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(vec![
                     poly_ring_mod_i.mul(a, &f_factorization.h),
@@ -107,6 +99,14 @@ impl<
                         return Err("af + bg != 1 mod i^n");
                     }
                 }
+
+                // //deg(a) < deg(g) and deg(b) < deg(f)
+                // if poly_ring.degree(a).unwrap() >= poly_ring.degree(&g_factorization.h).unwrap() {
+                //     return Err("deg(a) >= deg(g)");
+                // }
+                // if poly_ring.degree(b).unwrap() >= poly_ring.degree(&f_factorization.h).unwrap() {
+                //     return Err("deg(b) >= deg(f)");
+                // }
 
                 //h = alpha*f*g mod i^n
                 if !poly_ring_mod_i_tothe_n.equal(
@@ -176,113 +176,6 @@ impl<
             }
         }
     }
-
-    fn linear_lift_impl(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
-        #[cfg(debug_assertions)]
-        self.check(ring, h, i, n).unwrap();
-
-        let poly_ring = PolynomialStructure::new(ring.clone().into());
-
-        match self {
-            HenselProduct::Leaf => {}
-            HenselProduct::Branch {
-                f_factorization,
-                g_factorization,
-                a,
-                b,
-            } => {
-                let f = &f_factorization.h;
-                let g = &g_factorization.h;
-
-                let alpha = poly_ring.leading_coeff(h).unwrap();
-                let (gcd, beta, gamma) = ring.euclidean_xgcd(alpha.clone(), i.clone());
-                debug_assert!(ring.equal(&gcd, &ring.one()));
-                drop(gcd);
-                drop(gamma);
-
-                let ring_mod_i = QuotientStructure::new_ring(ring.clone().into(), i.clone());
-                debug_assert!(ring_mod_i.equal(alpha, poly_ring.leading_coeff(h).unwrap()));
-
-                let delta_h = poly_ring
-                    .add(
-                        h,
-                        &poly_ring.neg(&poly_ring.product(vec![
-                            &Polynomial::constant(alpha.clone()),
-                            f,
-                            g,
-                        ])),
-                    )
-                    .apply_map(|c| ring.rem(c, &ring.nat_pow(i, &(n + Natural::ONE))));
-
-                // println!("f = {:?}", f);
-                // println!("g = {:?}", g);
-                // println!("alpha = {:?}", alpha);
-                // println!("h = {:?}", h);
-                // println!("delta_h = {:?}", delta_h);
-
-                //found delta_h such that
-                //delta_h = h - alpha*f*g mod i^n+1
-                let poly_ring_mod_i_tothe_nplusone = PolynomialStructure::new(
-                    QuotientStructure::new_ring(
-                        ring.clone().into(),
-                        ring.nat_pow(i, &(n + Natural::ONE)),
-                    )
-                    .into(),
-                );
-                debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
-                    &delta_h,
-                    &poly_ring_mod_i_tothe_nplusone.add(
-                        h,
-                        &poly_ring_mod_i_tothe_nplusone.neg(
-                            &poly_ring_mod_i_tothe_nplusone.product(vec![
-                                &Polynomial::constant(alpha.clone()),
-                                f,
-                                g,
-                            ])
-                        )
-                    ),
-                ));
-                let poly_ring = PolynomialStructure::new(ring.clone().into());
-
-                debug_assert!(
-                    poly_ring.degree(&delta_h).unwrap_or(0) < poly_ring.degree(h).unwrap()
-                );
-
-                // println!("delta_h = {:?}", &delta_h);
-
-                //(qg, rg) = quorem(a * delta_h, g)
-                //(qf, rf) = quorem(b * delta_h, f)
-                let (qg, rg) = poly_ring
-                    .try_quorem(&poly_ring.mul(a, &delta_h), g)
-                    .unwrap();
-                let (qf, rf) = poly_ring
-                    .try_quorem(&poly_ring.mul(b, &delta_h), f)
-                    .unwrap();
-
-                // println!("qg = {:?}  rg = {:?}", qg, rg);
-                // println!("qf = {:?}  rf = {:?}", qf, rf);
-
-                // println!("qf+qg = {:?}", poly_ring_mod_i_tothe_nplusone.add(&qf, &qg));
-
-                //qf + qg = 0 mod i^{n+1}
-                debug_assert!(poly_ring_mod_i_tothe_nplusone
-                    .is_zero(&poly_ring_mod_i_tothe_nplusone.add(&qf, &qg)));
-
-                let lifted_f = poly_ring
-                    .add(&poly_ring.mul(&Polynomial::constant(beta.clone()), &rf), f)
-                    .apply_map(|c| ring.rem(c, &ring.nat_pow(i, &(n + Natural::ONE))));
-                let lifted_g = poly_ring
-                    .add(&poly_ring.mul(&Polynomial::constant(beta.clone()), &rg), g)
-                    .apply_map(|c| ring.rem(c, &ring.nat_pow(i, &(n + Natural::ONE))));
-
-                f_factorization.h = lifted_f;
-                g_factorization.h = lifted_g;
-
-                f_factorization.linear_lift_impl(ring, i, n);
-                g_factorization.linear_lift_impl(ring, i, n);
-            }
-        }
-    }
 }
 
 impl<
@@ -307,19 +200,108 @@ impl<
     }
 }
 
+fn compute_lift_factors<
+    RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+>(
+    ring: &RS,
+    i: &RS::Set,
+    n: &Natural,
+    a: &Polynomial<RS::Set>,
+    b: &Polynomial<RS::Set>,
+    f: &Polynomial<RS::Set>,
+    g: &Polynomial<RS::Set>,
+    h: &Polynomial<RS::Set>,
+) -> (
+    Polynomial<RS::Set>,
+    Polynomial<RS::Set>,
+    Polynomial<RS::Set>,
+    Polynomial<RS::Set>,
+) {
+    let poly_ring = PolynomialStructure::new(ring.clone().into());
+
+    let alpha = poly_ring.leading_coeff(h).unwrap();
+    let (gcd, beta, gamma) = ring.euclidean_xgcd(alpha.clone(), i.clone());
+    debug_assert!(ring.equal(&gcd, &ring.one()));
+    drop(gcd);
+    drop(gamma);
+
+    let ring_mod_i = QuotientStructure::new_ring(ring.clone().into(), i.clone());
+    debug_assert!(ring_mod_i.equal(alpha, poly_ring.leading_coeff(h).unwrap()));
+
+    let delta_h = poly_ring
+        .add(
+            h,
+            &poly_ring.neg(&poly_ring.product(vec![&Polynomial::constant(alpha.clone()), f, g])),
+        )
+        .apply_map(|c| ring.rem(c, &ring.nat_pow(i, &(n + Natural::ONE))));
+
+    //found delta_h such that
+    //delta_h = h - alpha*f*g mod i^n+1
+    let poly_ring_mod_i_tothe_nplusone = PolynomialStructure::new(
+        QuotientStructure::new_ring(ring.clone().into(), ring.nat_pow(i, &(n + Natural::ONE)))
+            .into(),
+    );
+    debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
+        &delta_h,
+        &poly_ring_mod_i_tothe_nplusone.add(
+            h,
+            &poly_ring_mod_i_tothe_nplusone.neg(&poly_ring_mod_i_tothe_nplusone.product(vec![
+                &Polynomial::constant(alpha.clone()),
+                f,
+                g,
+            ]))
+        ),
+    ));
+    let poly_ring = PolynomialStructure::new(ring.clone().into());
+
+    debug_assert!(poly_ring.degree(&delta_h).unwrap_or(0) < poly_ring.degree(h).unwrap());
+
+    //(qg, rg) = quorem(a * delta_h, g)
+    //(qf, rf) = quorem(b * delta_h, f)
+    let (qg, rg) = poly_ring
+        .try_quorem(&poly_ring.mul(a, &delta_h), g)
+        .unwrap();
+    let (qf, rf) = poly_ring
+        .try_quorem(&poly_ring.mul(b, &delta_h), f)
+        .unwrap();
+
+    //qf + qg = 0 mod i^{n+1}
+    debug_assert!(
+        poly_ring_mod_i_tothe_nplusone.is_zero(&poly_ring_mod_i_tothe_nplusone.add(&qf, &qg))
+    );
+
+    let delta_f = poly_ring.mul(&Polynomial::constant(beta.clone()), &rf);
+    let delta_g = poly_ring.mul(&Polynomial::constant(beta.clone()), &rg);
+
+    let lifted_f = poly_ring
+        .add(&delta_f, f)
+        .apply_map(|c| ring.rem(c, &ring.nat_pow(i, &(n + Natural::ONE))));
+    let lifted_g = poly_ring
+        .add(&delta_g, g)
+        .apply_map(|c| ring.rem(c, &ring.nat_pow(i, &(n + Natural::ONE))));
+
+    (delta_f, delta_g, lifted_f, lifted_g)
+}
+
 impl<
         RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
     > HenselProduct<false, RS>
 {
     fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
-        self.linear_lift_impl(ring, i, n, h);
         match self {
             HenselProduct::Leaf => {}
             HenselProduct::Branch {
                 f_factorization,
                 g_factorization,
-                ..
+                a,
+                b,
             } => {
+                let f = &f_factorization.h;
+                let g = &g_factorization.h;
+                let (_, _, lifted_f, lifted_g) = compute_lift_factors(ring, i, n, a, b, &f, &g, h);
+                f_factorization.h = lifted_f;
+                g_factorization.h = lifted_g;
+
                 f_factorization.linear_lift(ring, i, n);
                 g_factorization.linear_lift(ring, i, n);
             }
@@ -335,8 +317,6 @@ impl<
     > HenselProduct<true, RS>
 {
     fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
-        self.linear_lift_impl(ring, &ring.nat_pow(i, n), &Natural::ONE, h);
-
         match self {
             HenselProduct::Leaf => {}
             HenselProduct::Branch {
@@ -345,7 +325,51 @@ impl<
                 a,
                 b,
             } => {
-                unimplemented!("todo need to update a and b here");
+                let pring_mod_i2n = PolynomialStructure::new(
+                    QuotientStructure::new_ring(
+                        ring.clone().into(),
+                        ring.nat_pow(i, &(n * Natural::TWO)),
+                    )
+                    .into(),
+                );
+
+                let f = &f_factorization.h;
+                let g = &g_factorization.h;
+                let (delta_f, delta_g, lifted_f, lifted_g) =
+                    compute_lift_factors(ring, &ring.nat_pow(i, n), &Natural::ONE, a, b, &f, &g, h);
+
+                // beta = af + bg - 1 mod i^n
+                let beta = pring_mod_i2n.sum(vec![
+                    pring_mod_i2n.mul(a, f),
+                    pring_mod_i2n.mul(b, g),
+                    pring_mod_i2n.neg(&pring_mod_i2n.one()),
+                ]);
+
+                // big_delta = beta + a * delta_f + b * delta_g mod i^n
+                let big_delta = pring_mod_i2n.sum(vec![
+                    beta,
+                    pring_mod_i2n.mul(a, &delta_f),
+                    pring_mod_i2n.mul(b, &delta_g),
+                ]);
+
+                // a * lifted_f + b * lifted_g = 1 + big_delta
+                debug_assert!(pring_mod_i2n.equal(
+                    &pring_mod_i2n.add(
+                        &pring_mod_i2n.mul(a, &lifted_f),
+                        &pring_mod_i2n.mul(b, &lifted_g)
+                    ),
+                    &pring_mod_i2n.add(&big_delta, &pring_mod_i2n.one())
+                ));
+
+                // delta_a = -a * big_delta
+                // delta_b = -b * big_delta
+                let delta_a = pring_mod_i2n.neg(&pring_mod_i2n.mul(a, &big_delta));
+                let delta_b = pring_mod_i2n.neg(&pring_mod_i2n.mul(b, &big_delta));
+
+                f_factorization.h = lifted_f;
+                g_factorization.h = lifted_g;
+                *a = pring_mod_i2n.add(a, &delta_a);
+                *b = pring_mod_i2n.add(b, &delta_b);
 
                 f_factorization.quadratic_lift(ring, i, n);
                 g_factorization.quadratic_lift(ring, i, n);
@@ -392,7 +416,6 @@ impl<
                 debug_assert!(first_fs.len() >= 1);
                 debug_assert!(second_fs.len() >= 1);
                 debug_assert_eq!(first_fs.len() + second_fs.len(), fs_len);
-                // println!("{:?}, {:?}", first_fs, second_fs);
 
                 //find an inverse beta to alpha modulo p
                 let alpha = PolynomialStructure::new(ring.clone().into())
@@ -423,16 +446,6 @@ impl<
             h: self.h,
             factorization: self.factorization.dont_lift_bezout_coeffs(),
         }
-    }
-}
-
-impl<
-        const DONT_LIFT_BEZOUT_COEFFS: bool,
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorizationImpl<DONT_LIFT_BEZOUT_COEFFS, RS>
-{
-    fn linear_lift_impl(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
-        self.factorization.linear_lift_impl(ring, i, n, &self.h);
     }
 }
 
@@ -581,9 +594,6 @@ where
                 return None;
             }
         }
-        // let unit = poly_ring_mod.as_constant(&unit).unwrap();
-        // println!("into_hensel_factorization: {:?}", fs);
-        // println!("unit = {:?}", unit);
 
         let hensel_factorization =
             HenselFactorization::new(ring, ring_mod.modulus().clone(), Natural::ONE, h, fs);

@@ -509,6 +509,11 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
             None => self.coeff_ring.zero(),
         }
     }
+
+    pub fn is_squarefree(&self, p: &Polynomial<RS::Set>) -> bool {
+        let dp = self.derivative(p.clone());
+        self.degree(&self.subresultant_gcd(p.clone(), dp)).unwrap() == 0
+    }
 }
 
 impl<RS: IntegralDomainStructure> IntegralDomainStructure for PolynomialStructure<RS> {
