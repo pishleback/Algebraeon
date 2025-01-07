@@ -85,7 +85,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-rings"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-sets",
