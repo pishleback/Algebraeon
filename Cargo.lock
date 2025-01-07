@@ -62,7 +62,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-groups"
-version = "0.0.1"
+version = "0.0.0"
 dependencies = [
  "itertools 0.11.0",
  "malachite-base",
@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-rings"
-version = "0.0.1"
+version = "0.0.0"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-sets",
@@ -87,7 +87,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-sets"
-version = "0.0.1"
+version = "0.0.0"
 dependencies = [
  "malachite-base",
  "malachite-nz",
@@ -2026,9 +2026,9 @@ checksum = "0ef33da6b1660b4ddbfb3aef0ade110c8b8a781a3b6382fa5f2b5b040fd55f61"
 
 [[package]]
 name = "xml-rs"
-version = "0.8.24"
+version = "0.8.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea8b391c9a790b496184c29f7f93b9ed5b16abb306c05415b68bcc16e4d06432"
+checksum = "c5b940ebc25896e71dd073bad2dbaa2abfe97b0a391415e22ad1326d9c54e3c4"
 
 [[package]]
 name = "zerocopy"

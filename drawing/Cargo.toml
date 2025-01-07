@@ -12,8 +12,8 @@ rand = "0.8.5"
 malachite-base = "0.3.2"
 malachite-nz = "0.3.2"
 malachite-q = "0.3.2"
-algebraeon-sets = { version = "0.0.1", path = "../sets" }
-algebraeon-groups = { version = "0.0.1", path = "../groups" }
-algebraeon-rings = { version = "0.0.1", path = "../rings" }
+algebraeon-sets = { version = "0.0.0", path = "../sets" }
+algebraeon-groups = { version = "0.0.0", path = "../groups" }
+algebraeon-rings = { version = "0.0.0", path = "../rings" }
 algebraeon-geometry = { version = "0.0.0", path = "../geometry" }
 algebraeon-combinatorics = { version = "0.0.0", path = "../combinatorics" }
