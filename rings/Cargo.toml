@@ -2,6 +2,9 @@
 name = "algebraeon-rings"
 version = "0.0.0"
 edition = "2021"
+license = "GPL-3.0-only"
+description = "Algorithms in linear algebra, polynomials, and number theory."
+repository = "https://github.com/pishleback/Algebraeon"
 
 [lib]
 name = "algebraeon_rings"
