@@ -4,12 +4,12 @@ use algebraeon_sets::structure::*;
 use malachite_nz::integer::Integer;
 use super::structure::*;
 
-pub trait IntoRingElem: MetaType {
-    fn into_ring(self) -> StructuredElement<Self::Structure> {
+pub trait IntoErgonomic: MetaType {
+    fn into_ergonomic(self) -> StructuredElement<Self::Structure> {
         StructuredElement::new(Self::structure(), self)
     }
 }
-impl<T: MetaType> IntoRingElem for T {}
+impl<T: MetaType> IntoErgonomic for T {}
 
 #[derive(Debug, Clone)]
 pub struct StructuredElement<S: Structure> {
@@ -30,7 +30,7 @@ impl<S: Structure> StructuredElement<S> {
         &self.elem
     }
 
-    pub fn into_set(self) -> S::Set {
+    pub fn into_verbose(self) -> S::Set {
         self.elem
     }
 }
@@ -499,7 +499,7 @@ mod tests {
 
     #[test]
     fn test_poly_elem_opps() {
-        let x = &Polynomial::<Integer>::var().into_ring();
+        let x = &Polynomial::<Integer>::var().into_ergonomic();
 
         let f = 4 * x.pow(2) - 1;
         let g = 2 * x + 1;

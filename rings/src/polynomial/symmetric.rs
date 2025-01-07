@@ -292,11 +292,11 @@ mod tests {
         //     MultiPolynomial::<Integer>::elementary_symmetric(3, vec![&x_var, &y_var, &z_var])
         // );
 
-        let x = &MultiPolynomial::<Integer>::var(x_var.clone()).into_ring();
-        let y = &MultiPolynomial::<Integer>::var(y_var.clone()).into_ring();
-        let z = &MultiPolynomial::<Integer>::var(z_var.clone()).into_ring();
+        let x = &MultiPolynomial::<Integer>::var(x_var.clone()).into_ergonomic();
+        let y = &MultiPolynomial::<Integer>::var(y_var.clone()).into_ergonomic();
+        let z = &MultiPolynomial::<Integer>::var(z_var.clone()).into_ergonomic();
 
-        let f = (x * x * y + x * x * z + y * y * x + y * y * z + z * z * x + z * z * y).into_set();
+        let f = (x * x * y + x * x * z + y * y * x + y * y * z + z * z * x + z * z * y).into_verbose();
 
         println!(
             "f={} {}",
@@ -322,11 +322,11 @@ mod tests {
         let y_var = Variable::new("y");
         let z_var = Variable::new("z");
 
-        let x = &MultiPolynomial::<Integer>::var(x_var.clone()).into_ring();
-        let y = &MultiPolynomial::<Integer>::var(y_var.clone()).into_ring();
-        let z = &MultiPolynomial::<Integer>::var(z_var.clone()).into_ring();
+        let x = &MultiPolynomial::<Integer>::var(x_var.clone()).into_ergonomic();
+        let y = &MultiPolynomial::<Integer>::var(y_var.clone()).into_ergonomic();
+        let z = &MultiPolynomial::<Integer>::var(z_var.clone()).into_ergonomic();
 
-        let f = (x.pow(12) + y.pow(12) + z.pow(12)).into_set();
+        let f = (x.pow(12) + y.pow(12) + z.pow(12)).into_verbose();
 
         let (e, g) = f
             .as_elementary_symmetric_polynomials(vec![&x_var, &y_var, &z_var])

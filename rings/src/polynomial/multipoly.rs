@@ -741,7 +741,7 @@ where
 mod tests {
     use malachite_nz::integer::Integer;
 
-    use crate::ring_structure::elements::IntoRingElem;
+    use crate::ring_structure::elements::IntoErgonomic;
 
     use super::*;
     
@@ -870,15 +870,15 @@ mod tests {
 
     #[test]
     fn test_elems() {
-        let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).into_ring();
-        let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).into_ring();
-        let z = &MultiPolynomial::<Integer>::var(Variable::new("z")).into_ring();
+        let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).into_ergonomic();
+        let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).into_ergonomic();
+        let z = &MultiPolynomial::<Integer>::var(Variable::new("z")).into_ergonomic();
 
         let f = x + y + z;
         let g = x - y + z;
 
         let h = (&f * &g) / &f;
-        h.into_set().check_invariants().unwrap();
+        h.into_verbose().check_invariants().unwrap();
 
         println!("f = {}", f);
         println!("g = {}", g);

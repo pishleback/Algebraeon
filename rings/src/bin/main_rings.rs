@@ -5,8 +5,8 @@ use malachite_nz::integer::Integer;
 
 
 fn main() {
-    let x = &Polynomial::<Integer>::var().into_ring();
-    let f = (x.pow(30) - 1).into_set();
+    let x = &Polynomial::<Integer>::var().into_ergonomic();
+    let f = (x.pow(30) - 1).into_verbose();
 
     // let f = p1();
 

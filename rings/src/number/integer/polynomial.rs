@@ -55,16 +55,16 @@ impl Polynomial<Integer> {
 mod tests {
     use berlekamp_zassenhaus::*;
 
-    use crate::ring_structure::elements::IntoRingElem;
+    use crate::ring_structure::elements::IntoErgonomic;
 
     use super::*;
     
 
     #[test]
     fn test_zassenhaus_against_kroneckers() {
-        let x = &Polynomial::<Integer>::var().into_ring();
+        let x = &Polynomial::<Integer>::var().into_ergonomic();
 
-        let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_set();
+        let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_verbose();
         let fs = f.clone().factorize_by_kroneckers_method().unwrap();
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
@@ -78,7 +78,7 @@ mod tests {
             &factorize_by_berlekamp_zassenhaus_algorithm(f.clone()).unwrap()
         ));
 
-        let f = (49 * x.pow(2) - 10000).into_set();
+        let f = (49 * x.pow(2) - 10000).into_verbose();
         let fs = f.clone().factorize_by_kroneckers_method().unwrap();
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());

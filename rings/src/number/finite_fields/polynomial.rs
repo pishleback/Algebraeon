@@ -397,21 +397,21 @@ mod tests {
 
     use crate::{
         number::finite_fields::{modulo::*, quaternary_field::QuaternaryField},
-        ring_structure::elements::IntoRingElem,
+        ring_structure::elements::IntoErgonomic,
     };
 
     use super::*;
 
     #[test]
     fn test_factorize_over_f2_example1() {
-        let x = &Polynomial::<Modulo<2>>::var().into_ring();
-        let p = (1 + x.pow(4) + x.pow(5)).pow(12).into_set();
+        let x = &Polynomial::<Modulo<2>>::var().into_ergonomic();
+        let p = (1 + x.pow(4) + x.pow(5)).pow(12).into_verbose();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<2>>::structure().into(),
             Polynomial::one(),
             vec![
-                ((1 + x + x.pow(2)).into_set(), Natural::from(12u32)),
-                ((1 + x + x.pow(3)).into_set(), Natural::from(12u32)),
+                ((1 + x + x.pow(2)).into_verbose(), Natural::from(12u32)),
+                ((1 + x + x.pow(3)).into_verbose(), Natural::from(12u32)),
             ],
         );
 
@@ -430,14 +430,14 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f2_example2() {
-        let x = &Polynomial::<Modulo<2>>::var().into_ring();
-        let p = ((1 + x.pow(4) + x.pow(7)).pow(6) * (1 + x.pow(6) + x.pow(7)).pow(4)).into_set();
+        let x = &Polynomial::<Modulo<2>>::var().into_ergonomic();
+        let p = ((1 + x.pow(4) + x.pow(7)).pow(6) * (1 + x.pow(6) + x.pow(7)).pow(4)).into_verbose();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<2>>::structure().into(),
             Polynomial::one(),
             vec![
-                ((1 + x.pow(4) + x.pow(7)).into_set(), Natural::from(6u32)),
-                ((1 + x.pow(6) + x.pow(7)).into_set(), Natural::from(4u32)),
+                ((1 + x.pow(4) + x.pow(7)).into_verbose(), Natural::from(6u32)),
+                ((1 + x.pow(6) + x.pow(7)).into_verbose(), Natural::from(4u32)),
             ],
         );
 
@@ -456,14 +456,14 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f5_example1() {
-        let x = &Polynomial::<Modulo<5>>::var().into_ring();
-        let p = (1 + x.pow(4)).pow(5).into_set();
+        let x = &Polynomial::<Modulo<5>>::var().into_ergonomic();
+        let p = (1 + x.pow(4)).pow(5).into_verbose();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<5>>::structure().into(),
             Polynomial::one(),
             vec![
-                ((2 + x.pow(2)).into_set(), Natural::from(5u8)),
-                ((3 + x.pow(2)).into_set(), Natural::from(5u8)),
+                ((2 + x.pow(2)).into_verbose(), Natural::from(5u8)),
+                ((3 + x.pow(2)).into_verbose(), Natural::from(5u8)),
             ],
         );
 
@@ -482,12 +482,12 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f5_example2() {
-        let x = &Polynomial::<Modulo<5>>::var().into_ring();
-        let p = (3 + 2 * x.pow(2) + x.pow(4) + x.pow(6)).into_set();
+        let x = &Polynomial::<Modulo<5>>::var().into_ergonomic();
+        let p = (3 + 2 * x.pow(2) + x.pow(4) + x.pow(6)).into_verbose();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<5>>::structure().into(),
             Polynomial::one(),
-            vec![((2 + x.pow(2)).into_set(), Natural::from(3u8))],
+            vec![((2 + x.pow(2)).into_verbose(), Natural::from(3u8))],
         );
 
         let f = p.factorize_by_trying_all_factors().unwrap();
@@ -505,34 +505,34 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f31_example1() {
-        let x = &Polynomial::<Modulo<31>>::var().into_ring();
-        let p = (1 + x.pow(27) + 8 * x.pow(30)).into_set();
+        let x = &Polynomial::<Modulo<31>>::var().into_ergonomic();
+        let p = (1 + x.pow(27) + 8 * x.pow(30)).into_verbose();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<31>>::structure().into(),
             Polynomial::constant(Modulo::from_int(&Integer::from(8))),
             vec![
-                ((12 + x.pow(3)).into_set(), Natural::from(1u32)),
+                ((12 + x.pow(3)).into_verbose(), Natural::from(1u32)),
                 (
                     (25 + 27 * x + 3 * x.pow(2) + 3 * x.pow(3) + 29 * x.pow(4) + x.pow(5))
-                        .into_set()
+                        .into_verbose()
                         .clone(),
                     Natural::from(1u32),
                 ),
                 (
                     (1 + 24 * x + 3 * x.pow(2) + 15 * x.pow(3) + 12 * x.pow(4) + x.pow(5))
-                        .into_set()
+                        .into_verbose()
                         .clone(),
                     Natural::from(1u32),
                 ),
                 (
                     (21 + 12 * x.pow(3) + 22 * x.pow(6) + 4 * x.pow(9) + x.pow(12))
-                        .into_set()
+                        .into_verbose()
                         .clone(),
                     Natural::from(1u32),
                 ),
                 (
                     (5 + 11 * x + 3 * x.pow(2) + 13 * x.pow(3) + 21 * x.pow(4) + x.pow(5))
-                        .into_set()
+                        .into_verbose()
                         .clone(),
                     Natural::from(1u32),
                 ),
@@ -552,19 +552,19 @@ mod tests {
 
     #[test]
     fn test_factorize_over_f4_example1() {
-        let x = &Polynomial::<QuaternaryField>::var().into_ring();
+        let x = &Polynomial::<QuaternaryField>::var().into_ergonomic();
 
-        let a = x - Polynomial::constant(QuaternaryField::One).into_ring();
-        let b = x - Polynomial::constant(QuaternaryField::Alpha).into_ring();
-        let c = x - Polynomial::constant(QuaternaryField::Beta).into_ring();
-        let p = (1 - x.pow(3)).pow(48).into_set();
+        let a = x - Polynomial::constant(QuaternaryField::One).into_ergonomic();
+        let b = x - Polynomial::constant(QuaternaryField::Alpha).into_ergonomic();
+        let c = x - Polynomial::constant(QuaternaryField::Beta).into_ergonomic();
+        let p = (1 - x.pow(3)).pow(48).into_verbose();
         let ans = Factored::new_unchecked(
             Polynomial::<QuaternaryField>::structure().into(),
             Polynomial::one(),
             vec![
-                (a.into_set(), Natural::from(48u32)),
-                (b.into_set(), Natural::from(48u32)),
-                (c.into_set(), Natural::from(48u32)),
+                (a.into_verbose(), Natural::from(48u32)),
+                (b.into_verbose(), Natural::from(48u32)),
+                (c.into_verbose(), Natural::from(48u32)),
             ],
         );
 

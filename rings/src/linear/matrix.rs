@@ -2380,7 +2380,7 @@ mod tests {
 
     use crate::{number::algebraic::isolated_roots::{
         complex::ComplexAlgebraic, real::RealAlgebraic,
-    }, ring_structure::elements::IntoRingElem};
+    }, ring_structure::elements::IntoErgonomic};
 
     use super::*;
     
@@ -3489,30 +3489,30 @@ mod tests {
 
     #[test]
     fn complex_gram_schmidt() {
-        let i = &ComplexAlgebraic::i().into_ring();
+        let i = &ComplexAlgebraic::i().into_ergonomic();
 
         let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
-            vec![(1 + 0 * i).into_set(), (1 * i).into_set()],
-            vec![(1 + 0 * i).into_set(), (1 + 0 * i).into_set()],
+            vec![(1 + 0 * i).into_verbose(), (1 * i).into_verbose()],
+            vec![(1 + 0 * i).into_verbose(), (1 + 0 * i).into_verbose()],
         ]);
         mat.pprint();
         mat.gram_schmidt_col_orthogonalization().pprint();
 
         let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
             vec![
-                (-2 + 2 * i).into_set(),
-                (7 + 3 * i).into_set(),
-                (7 + 3 * i).into_set(),
+                (-2 + 2 * i).into_verbose(),
+                (7 + 3 * i).into_verbose(),
+                (7 + 3 * i).into_verbose(),
             ],
             vec![
-                (3 + 3 * i).into_set(),
-                (-2 + 4 * i).into_set(),
-                (6 + 2 * i).into_set(),
+                (3 + 3 * i).into_verbose(),
+                (-2 + 4 * i).into_verbose(),
+                (6 + 2 * i).into_verbose(),
             ],
             vec![
-                (2 + 2 * i).into_set(),
-                (8 + 0 * i).into_set(),
-                (-9 + 1 * i).into_set(),
+                (2 + 2 * i).into_verbose(),
+                (8 + 0 * i).into_verbose(),
+                (-9 + 1 * i).into_verbose(),
             ],
         ]);
         mat.pprint();
@@ -3521,19 +3521,19 @@ mod tests {
 
     #[test]
     fn complex_gram_schmidt_normalized() {
-        let one = &RealAlgebraic::one().into_ring();
+        let one = &RealAlgebraic::one().into_ergonomic();
 
         let mat = Matrix::<RealAlgebraic>::from_rows(vec![
-            vec![(1 * one).into_set(), (1 * one).into_set()],
-            vec![(1 * one).into_set(), (2 * one).into_set()],
+            vec![(1 * one).into_verbose(), (1 * one).into_verbose()],
+            vec![(1 * one).into_verbose(), (2 * one).into_verbose()],
         ]);
         mat.pprint();
         mat.gram_schmidt_col_orthonormalization().pprint();
 
-        let i = &ComplexAlgebraic::i().into_ring();
+        let i = &ComplexAlgebraic::i().into_ergonomic();
         let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
-            vec![(-2 + 2 * i).into_set(), (-9 + 1 * i).into_set()],
-            vec![(3 + 3 * i).into_set(), (-2 + 4 * i).into_set()],
+            vec![(-2 + 2 * i).into_verbose(), (-9 + 1 * i).into_verbose()],
+            vec![(3 + 3 * i).into_verbose(), (-2 + 4 * i).into_verbose()],
         ]);
         mat.pprint();
         mat.clone().gram_schmidt_col_orthonormalization().pprint();
@@ -3600,28 +3600,28 @@ mod tests {
 //for LLL testing from wikipeida
 let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
             vec![
-                (-2 + 2 * i).into_set(),
-                (7 + 3 * i).into_set(),
-                (7 + 3 * i).into_set(),
-                (-5 + 4 * i).into_set(),
+                (-2 + 2 * i).into_verbose(),
+                (7 + 3 * i).into_verbose(),
+                (7 + 3 * i).into_verbose(),
+                (-5 + 4 * i).into_verbose(),
             ],
             vec![
-                (3 + 3 * i).into_set(),
-                (-2 + 4 * i).into_set(),
-                (6 + 2 * i).into_set(),
-                (-1 + 4 * i).into_set(),
+                (3 + 3 * i).into_verbose(),
+                (-2 + 4 * i).into_verbose(),
+                (6 + 2 * i).into_verbose(),
+                (-1 + 4 * i).into_verbose(),
             ],
             vec![
-                (2 + 2 * i).into_set(),
-                (8 + 0 * i).into_set(),
-                (-9 + 1 * i).into_set(),
-                (-7 + 5 * i).into_set(),
+                (2 + 2 * i).into_verbose(),
+                (8 + 0 * i).into_verbose(),
+                (-9 + 1 * i).into_verbose(),
+                (-7 + 5 * i).into_verbose(),
             ],
             vec![
-                (8 + 2 * i).into_set(),
-                (-9 + 0 * i).into_set(),
-                (6 + 3 * i).into_set(),
-                (-4 + 4 * i).into_set(),
+                (8 + 2 * i).into_verbose(),
+                (-9 + 0 * i).into_verbose(),
+                (6 + 3 * i).into_verbose(),
+                (-4 + 4 * i).into_verbose(),
             ],
         ]);
         */

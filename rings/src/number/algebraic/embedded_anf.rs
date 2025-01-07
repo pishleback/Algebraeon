@@ -226,7 +226,7 @@ pub fn anf_multi_primitive_element_theorem(
 
 #[cfg(test)]
 mod tests {
-    use elements::IntoRingElem;
+    use elements::IntoErgonomic;
 
     use crate::number::algebraic::isolated_roots::real::RealAlgebraic;
 
@@ -234,8 +234,8 @@ mod tests {
 
     #[test]
     fn test_embedded_anf_integral_basis() {
-        let x = &Polynomial::<Integer>::var().into_ring();
-        let f = (x.pow(2) + 7).into_set();
+        let x = &Polynomial::<Integer>::var().into_ergonomic();
+        let f = (x.pow(2) + 7).into_verbose();
         for root in f.all_complex_roots() {
             println!(
                 "{:?}",
@@ -247,26 +247,26 @@ mod tests {
 
     #[test]
     fn test_as_poly_expr() {
-        let x = &Polynomial::<Rational>::var().into_ring();
+        let x = &Polynomial::<Rational>::var().into_ergonomic();
 
         let two = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(2)));
         let sqrt_two = two.nth_root(2).unwrap();
         let fourrt_two = sqrt_two.nth_root(2).unwrap();
         assert_eq!(
             as_poly_expr(&sqrt_two, &fourrt_two),
-            Some(x.pow(2).into_set())
+            Some(x.pow(2).into_verbose())
         );
         assert_eq!(as_poly_expr(&fourrt_two, &sqrt_two), None);
 
-        let f = (x.pow(3) - 2 * x.pow(2) - 2 * x - 1).into_set();
+        let f = (x.pow(3) - 2 * x.pow(2) - 2 * x - 1).into_verbose();
         for root in f.primitive_part_fof().all_complex_roots() {
-            assert_eq!(as_poly_expr(&root, &root), Some(x.pow(1).into_set()));
+            assert_eq!(as_poly_expr(&root, &root), Some(x.pow(1).into_verbose()));
         }
     }
 
     #[test]
     fn test_pair_generated_anf() {
-        // let x = &Polynomial::<Rational>::var().into_ring();
+        // let x = &Polynomial::<Rational>::var().into_ergonomic();
 
         let sqrt_two = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(2)))
             .nth_root(2)
@@ -291,9 +291,9 @@ mod tests {
         );
         assert_eq!(
             gen,
-            (sqrt_two.clone().into_ring() + sqrt_three.clone().into_ring()).into_set()
+            (sqrt_two.clone().into_ergonomic() + sqrt_three.clone().into_ergonomic()).into_verbose()
         );
-        let oof = (sqrt_two.clone().into_ring() + sqrt_three.clone().into_ring()).into_set();
+        let oof = (sqrt_two.clone().into_ergonomic() + sqrt_three.clone().into_ergonomic()).into_verbose();
         println!("{} {}", oof, oof.min_poly());
         println!("x = {}", x);
         println!("y = {}", y);
@@ -301,7 +301,7 @@ mod tests {
 
     #[test]
     fn test_multi_generated_anf() {
-        // let x = &Polynomial::<Rational>::var().into_ring();
+        // let x = &Polynomial::<Rational>::var().into_ergonomic();
 
         let sqrt_two = ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(2)))
             .nth_root(2)

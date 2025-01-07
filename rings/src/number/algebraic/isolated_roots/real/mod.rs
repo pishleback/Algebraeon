@@ -733,7 +733,7 @@ impl RealRoundingStructure for CannonicalStructure<RealAlgebraic> {
 mod tests {
     
 
-    use crate::ring_structure::elements::IntoRingElem;
+    use crate::ring_structure::elements::IntoErgonomic;
 
     use super::*;
 
@@ -848,7 +848,7 @@ mod tests {
 
     #[test]
     fn test_real_nth_root() {
-        let x = &Polynomial::<Integer>::var().into_ring();
+        let x = &Polynomial::<Integer>::var().into_ergonomic();
         let f = ((4 * x.pow(5) - 12 * x.pow(3) + 8 * x + 1)
             * (x + 1)
             * (x)
@@ -859,7 +859,7 @@ mod tests {
             * (x - 5)
             * (x - 144)
             * (x.pow(2) - 3))
-            .into_set();
+            .into_verbose();
         let n = 2;
 
         for root in f.all_real_roots() {

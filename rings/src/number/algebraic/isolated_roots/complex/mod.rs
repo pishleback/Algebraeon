@@ -970,10 +970,10 @@ mod tests {
 
     #[test]
     fn test_apply_poly() {
-        let x = &Polynomial::<Rational>::var().into_ring();
+        let x = &Polynomial::<Rational>::var().into_ergonomic();
 
-        let f = (2 * x.pow(2) - 4 * x - 3).into_set();
-        let g = (3 * x.pow(3) + 7 * x - 1).into_set();
+        let f = (2 * x.pow(2) - 4 * x - 3).into_verbose();
+        let g = (3 * x.pow(3) + 7 * x - 1).into_verbose();
         //h(x) = f(g(x))
         let h = Polynomial::compose(&f, &g);
 
@@ -991,10 +991,10 @@ mod tests {
             debug_assert_eq!(fgx, ComplexAlgebraic::zero());
         }
 
-        let i = &ComplexAlgebraic::i().into_ring();
-        let a = (2 + 3 * i).into_set();
-        let f = (x.pow(10)).into_set();
-        assert_eq!(a.clone().apply_poly(&f), (-341525 - 145668 * i).into_set());
+        let i = &ComplexAlgebraic::i().into_ergonomic();
+        let a = (2 + 3 * i).into_verbose();
+        let f = (x.pow(10)).into_verbose();
+        assert_eq!(a.clone().apply_poly(&f), (-341525 - 145668 * i).into_verbose());
     }
 
     #[test]
@@ -1016,8 +1016,8 @@ mod tests {
 
     #[test]
     fn test_complex_equal() {
-        let x = &Polynomial::<Integer>::var().into_ring();
-        let f = (x.pow(5) - x + 1).into_set();
+        let x = &Polynomial::<Integer>::var().into_ergonomic();
+        let f = (x.pow(5) - x + 1).into_verbose();
         assert!(f.is_irreducible());
         let mut count = 0;
         for a in f.all_complex_roots() {
@@ -1102,8 +1102,8 @@ mod tests {
 
     #[test]
     fn test_complex_inv() {
-        let x = &Polynomial::<Integer>::var().into_ring();
-        let f = (x.pow(4) - x + 1).into_set();
+        let x = &Polynomial::<Integer>::var().into_ergonomic();
+        let f = (x.pow(4) - x + 1).into_verbose();
 
         for root in f.all_complex_roots() {
             assert_eq!(

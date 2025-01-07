@@ -13,7 +13,7 @@ pub fn modular_permutation<const N: usize>(
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_rings::ring_structure::elements::IntoRingElem;
+    use algebraeon_rings::ring_structure::elements::IntoErgonomic;
 
     use super::*;
 
@@ -21,7 +21,7 @@ mod tests {
     pub fn test() {
         println!(
             "{:?}",
-            modular_permutation::<23>(|i| (i.into_ring() * 7).into_set())
+            modular_permutation::<23>(|i| (i.into_ergonomic() * 7).into_verbose())
                 .unwrap()
                 .disjoint_cycles()
         );

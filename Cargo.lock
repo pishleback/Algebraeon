@@ -21,9 +21,9 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 name = "algebraeon-combinatorics"
 version = "0.0.0"
 dependencies = [
- "algebraeon-groups 0.0.2",
- "algebraeon-rings 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "algebraeon-sets 0.0.2",
+ "algebraeon-groups",
+ "algebraeon-rings",
+ "algebraeon-sets",
  "derivative",
  "itertools 0.11.0",
  "malachite-base",
@@ -38,9 +38,9 @@ version = "0.0.0"
 dependencies = [
  "algebraeon-combinatorics",
  "algebraeon-geometry",
- "algebraeon-groups 0.0.2",
- "algebraeon-rings 0.0.2",
- "algebraeon-sets 0.0.2",
+ "algebraeon-groups",
+ "algebraeon-rings",
+ "algebraeon-sets",
  "glium",
  "malachite-base",
  "malachite-nz",
@@ -52,9 +52,9 @@ dependencies = [
 name = "algebraeon-examples"
 version = "0.0.0"
 dependencies = [
- "algebraeon-groups 0.0.2",
- "algebraeon-rings 0.0.2",
- "algebraeon-sets 0.0.2",
+ "algebraeon-groups",
+ "algebraeon-rings",
+ "algebraeon-sets",
  "malachite-base",
  "malachite-nz",
  "malachite-q",
@@ -64,8 +64,8 @@ dependencies = [
 name = "algebraeon-geometry"
 version = "0.0.0"
 dependencies = [
- "algebraeon-rings 0.0.2",
- "algebraeon-sets 0.0.2",
+ "algebraeon-rings",
+ "algebraeon-sets",
  "itertools 0.11.0",
  "malachite-base",
  "malachite-nz",
@@ -84,40 +84,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "algebraeon-groups"
-version = "0.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f076077101220b3e35baf48be26368c75d9a6cdd463846c3619ab3050479b1b"
-dependencies = [
- "itertools 0.11.0",
- "malachite-base",
- "malachite-nz",
- "malachite-q",
- "rayon",
-]
-
-[[package]]
 name = "algebraeon-rings"
 version = "0.0.2"
 dependencies = [
- "algebraeon-groups 0.0.2",
- "algebraeon-sets 0.0.2",
- "itertools 0.11.0",
- "malachite-base",
- "malachite-nz",
- "malachite-q",
- "rand 0.8.5",
- "rayon",
-]
-
-[[package]]
-name = "algebraeon-rings"
-version = "0.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7e47b0a2f8afc92faa123cb33778dd868e57f21a1f361dc5eb0b029222819e5"
-dependencies = [
- "algebraeon-groups 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "algebraeon-sets 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "algebraeon-groups",
+ "algebraeon-sets",
  "itertools 0.11.0",
  "malachite-base",
  "malachite-nz",
@@ -129,17 +100,6 @@ dependencies = [
 [[package]]
 name = "algebraeon-sets"
 version = "0.0.2"
-dependencies = [
- "malachite-base",
- "malachite-nz",
- "malachite-q",
-]
-
-[[package]]
-name = "algebraeon-sets"
-version = "0.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82bab6a7010673b1114ba79ace9aef774f473378d57ae03912fb37c999910830"
 dependencies = [
  "malachite-base",
  "malachite-nz",

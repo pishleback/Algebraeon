@@ -373,60 +373,60 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::ring_structure::elements::IntoRingElem;
+    use crate::ring_structure::elements::IntoErgonomic;
 
     use super::*;
 
     #[test]
     fn test_factor_by_kroneckers_method_over_integers() {
-        let x = &Polynomial::<Integer>::var().into_ring();
+        let x = &Polynomial::<Integer>::var().into_ergonomic();
 
         //primitive cases
-        let f = ((1 + x).pow(2)).into_set();
+        let f = ((1 + x).pow(2)).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
-                vec![((1 + x).into_set(), Natural::from(2u8))]
+                vec![((1 + x).into_verbose(), Natural::from(2u8))]
             )
         ));
 
-        let f = (-1 - 2 * x).into_set();
+        let f = (-1 - 2 * x).into_verbose();
         let fs1 = f.factorize_by_kroneckers_method().unwrap();
         let fs2 = &Factored::new_unchecked(
             Polynomial::<Integer>::structure().into(),
             Polynomial::neg(&Polynomial::one()),
-            vec![((1 + 2 * x).into_set(), Natural::from(1u8))],
+            vec![((1 + 2 * x).into_verbose(), Natural::from(1u8))],
         );
         println!("fs1={} fs2={}", fs1, fs2);
         assert!(Factored::equal(&fs1, &fs2));
 
-        let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).into_set();
+        let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
-                    ((1 + x + x.pow(2)).into_set(), Natural::from(1u8)),
-                    ((2 - x + x.pow(3)).into_set(), Natural::from(1u8))
+                    ((1 + x + x.pow(2)).into_verbose(), Natural::from(1u8)),
+                    ((2 - x + x.pow(3)).into_verbose(), Natural::from(1u8))
                 ]
             )
         ));
 
-        let f = (1 + x + x.pow(2)).pow(2).into_set();
+        let f = (1 + x + x.pow(2)).pow(2).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
-                vec![((1 + x + x.pow(2)).into_set(), Natural::from(2u8))]
+                vec![((1 + x + x.pow(2)).into_verbose(), Natural::from(2u8))]
             )
         ));
 
         //non-primitive cases
-        let f = (2 + 2 * x).into_set();
+        let f = (2 + 2 * x).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
@@ -434,12 +434,12 @@ mod tests {
                 Polynomial::one(),
                 vec![
                     (Polynomial::from_int(&Integer::from(2)), Natural::from(1u8)),
-                    ((1 + x).into_set(), Natural::from(1u8))
+                    ((1 + x).into_verbose(), Natural::from(1u8))
                 ]
             )
         ));
 
-        let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).into_set();
+        let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
@@ -448,8 +448,8 @@ mod tests {
                 vec![
                     (Polynomial::from_int(&Integer::from(2)), Natural::from(2u8)),
                     (Polynomial::from_int(&Integer::from(3)), Natural::from(1u8)),
-                    ((2 + 3 * x).into_set(), Natural::from(1u8)),
-                    ((x - 1).into_set(), Natural::from(2u8))
+                    ((2 + 3 * x).into_verbose(), Natural::from(1u8)),
+                    ((x - 1).into_verbose(), Natural::from(2u8))
                 ]
             )
         ));
@@ -464,15 +464,15 @@ mod tests {
             )
         ));
 
-        let f = ((x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_set();
+        let f = ((x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method().unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
-                    ((x.pow(4) + x + 1).into_set(), Natural::from(1u8)),
-                    ((x.pow(3) + x + 1).into_set(), Natural::from(1u8))
+                    ((x.pow(4) + x + 1).into_verbose(), Natural::from(1u8)),
+                    ((x.pow(3) + x + 1).into_verbose(), Natural::from(1u8))
                 ]
             )
         ));
@@ -480,8 +480,8 @@ mod tests {
 
     #[test]
     fn test_fof_factor_over_rationals() {
-        let x = &Polynomial::<Rational>::var().into_ring();
-        let f = (6 * (x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_set();
+        let x = &Polynomial::<Rational>::var().into_ergonomic();
+        let f = (6 * (x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_verbose();
         let fs = f.factor().unwrap();
 
         println!("fs = {}", fs);
@@ -492,8 +492,8 @@ mod tests {
                 Polynomial::<Rational>::structure().into(),
                 Polynomial::constant(Rational::from(6)),
                 vec![
-                    ((x.pow(4) + x + 1).into_set(), Natural::from(1u8)),
-                    ((x.pow(3) + x + 1).into_set(), Natural::from(1u8))
+                    ((x.pow(4) + x + 1).into_verbose(), Natural::from(1u8)),
+                    ((x.pow(3) + x + 1).into_verbose(), Natural::from(1u8))
                 ]
             )
         ));

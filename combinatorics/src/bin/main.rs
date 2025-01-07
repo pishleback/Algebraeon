@@ -25,7 +25,7 @@ fn main() {
             23.into()
         } else {
             let x: Modulo<23> = x.into();
-            let x: usize = (x.into_ring() + 1).into_set().into();
+            let x: usize = (x.into_ergonomic() + 1).into_verbose().into();
             x.into()
         }
     });
@@ -36,7 +36,7 @@ fn main() {
             23.into()
         } else {
             let x: Modulo<23> = x.into();
-            let x: usize = (x.into_ring() + 1).into_set().into();
+            let x: usize = (x.into_ergonomic() + 1).into_verbose().into();
             x.into()
         }
     })
@@ -47,7 +47,7 @@ fn main() {
             23.into()
         } else {
             let x: Modulo<23> = x.into();
-            let x: usize = (x.into_ring() * 2).into_set().into();
+            let x: usize = (x.into_ergonomic() * 2).into_verbose().into();
             x.into()
         }
     })

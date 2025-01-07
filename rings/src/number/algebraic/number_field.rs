@@ -776,15 +776,15 @@ impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
 mod tests {
     
 
-    use crate::ring_structure::elements::IntoRingElem;
+    use crate::ring_structure::elements::IntoErgonomic;
 
     use super::*;
 
     #[test]
     fn test_anf_to_and_from_vector() {
-        let x = &Polynomial::<Rational>::var().into_ring();
-        let anf = new_anf((x.pow(5) - x + 1).into_set());
-        let alpha = (x.pow(9) + 5).into_set();
+        let x = &Polynomial::<Rational>::var().into_ergonomic();
+        let anf = new_anf((x.pow(5) - x + 1).into_verbose());
+        let alpha = (x.pow(9) + 5).into_verbose();
 
         println!("{}", alpha);
         println!("{}", anf.reduce(&alpha));
@@ -816,49 +816,49 @@ mod tests {
 
     #[test]
     fn test_anf_poly_factor_count() {
-        let y = &Polynomial::<Rational>::var().into_ring();
-        let k = new_anf((y.pow(2) - 3).into_set());
+        let y = &Polynomial::<Rational>::var().into_ergonomic();
+        let k = new_anf((y.pow(2) - 3).into_verbose());
         let k_poly = PolynomialStructure::new(k.clone().into());
-        let x = &k_poly.var().into_ring();
+        let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
-                .factor(&(x.pow(2) - 12).into_set())
+                .factor(&(x.pow(2) - 12).into_verbose())
                 .unwrap()
                 .factors()
                 .len(),
             2
         );
 
-        let y = &Polynomial::<Rational>::var().into_ring();
-        let k = new_anf((y.pow(4) - y.pow(2) + 1).into_set());
+        let y = &Polynomial::<Rational>::var().into_ergonomic();
+        let k = new_anf((y.pow(4) - y.pow(2) + 1).into_verbose());
         let k_poly = PolynomialStructure::new(k.clone().into());
-        let x = &k_poly.var().into_ring();
+        let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
-                .factor(&(x.pow(4) - x.pow(2) + 1).into_set())
+                .factor(&(x.pow(4) - x.pow(2) + 1).into_verbose())
                 .unwrap()
                 .factors()
                 .len(),
             4
         );
 
-        let k = new_anf((y.pow(3) - y + 1).into_set());
+        let k = new_anf((y.pow(3) - y + 1).into_verbose());
         let k_poly = PolynomialStructure::new(k.clone().into());
         debug_assert_eq!(
             k_poly
-                .factor(&(x.pow(3) - x + 1).into_set())
+                .factor(&(x.pow(3) - x + 1).into_verbose())
                 .unwrap()
                 .factors()
                 .len(),
             2
         );
 
-        let k = new_anf((y.pow(4) - y.pow(2) + 1).into_set());
+        let k = new_anf((y.pow(4) - y.pow(2) + 1).into_verbose());
         let k_poly = PolynomialStructure::new(k.clone().into());
-        let x = &k_poly.var().into_ring();
+        let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
-                .factor(&(x.pow(12) - 1).into_set())
+                .factor(&(x.pow(12) - 1).into_verbose())
                 .unwrap()
                 .factors()
                 .len(),

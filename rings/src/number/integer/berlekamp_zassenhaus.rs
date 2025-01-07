@@ -123,7 +123,6 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                     let mut hensel_factorization_f_over_p =
                         hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
                     while hensel_factorization_f_over_p.modolus() < state.minimum_modolus {
-                        println!("lift");
                         hensel_factorization_f_over_p.linear_lift();
                     }
                     let modulus = hensel_factorization_f_over_p.modolus();
