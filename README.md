@@ -36,7 +36,8 @@ and much more.
  - P-adic root approximation and arithmetic.
 
 # Usage
-Add the required crate(s) to your ``cargo.toml`` out of
+Add the required crates to your ``cargo.toml`` file
  - [algebraeon-sets](https://crates.io/crates/algebraeon-sets)
  - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
  - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
+
