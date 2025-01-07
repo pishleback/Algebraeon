@@ -5,7 +5,7 @@ edition = "2021"
 license = "GPL-3.0-only"
 description = "Algorithms in linear algebra, polynomials, and number theory."
 repository = "https://github.com/pishleback/Algebraeon"
-keywords = ["maths", "matrix", "polynomial", "number theory", "factoring"]
+keywords = ["maths", "matrix", "polynomial", "number-theory", "factoring"]
 categories = ["mathematics"]
 readme = "../README.md"
 
