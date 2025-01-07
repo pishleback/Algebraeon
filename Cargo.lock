@@ -62,7 +62,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-groups"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "itertools 0.11.0",
  "malachite-base",
@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-rings"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-sets",
@@ -87,7 +87,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-sets"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "malachite-base",
  "malachite-nz",
