@@ -1,15 +1,15 @@
 [package]
 name = "algebraeon-rings"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2021"
 
 [lib]
 name = "algebraeon_rings"
 
 [dependencies]
-algebraeon-sets = { version = "0.1.0", path = "../sets" }
-algebraeon-structure = { version = "0.1.0", path = "../structure" }
-algebraeon-groups = { version = "0.1.0", path = "../groups" }
+algebraeon-sets = { version = "0.0.0", path = "../sets" }
+algebraeon-structure = { version = "0.0.0", path = "../structure" }
+algebraeon-groups = { version = "0.0.0", path = "../groups" }
 rand = "0.8.5"
 rayon="1.7.0"
 itertools="0.11.0"

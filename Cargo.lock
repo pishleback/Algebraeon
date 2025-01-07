@@ -19,7 +19,7 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 
 [[package]]
 name = "algebraeon-combinatorics"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-rings",
@@ -34,7 +34,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-drawing"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "algebraeon-combinatorics",
  "algebraeon-geometry",
@@ -51,7 +51,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-geometry"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "algebraeon-rings",
  "algebraeon-structure",
@@ -63,7 +63,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-groups"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "itertools 0.11.0",
  "malachite-base",
@@ -74,7 +74,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-rings"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-sets",
@@ -89,11 +89,11 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-sets"
-version = "0.1.0"
+version = "0.0.0"
 
 [[package]]
 name = "algebraeon-structure"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "malachite-base",
  "malachite-nz",
@@ -207,9 +207,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.6"
+version = "1.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d6dbb628b8f8555f86d0323c2eb39e3ec81901f4b83e091db8a6a76d316a333"
+checksum = "a012a0df96dd6d06ba9a1b29d6402d1a5d77c6befd2566afdc26e10603dc93d7"
 dependencies = [
  "shlex",
 ]
@@ -597,7 +597,7 @@ checksum = "1a5c6c585bc94aaf2c7b51dd4c2ba22680844aba4c687be581871a6f518c5742"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.93",
+ "syn 2.0.95",
 ]
 
 [[package]]
@@ -1390,7 +1390,7 @@ checksum = "5a9bf7cf98d04a2b28aead066b7496853d4779c9cc183c440dbac457641e19a0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.93",
+ "syn 2.0.95",
 ]
 
 [[package]]
@@ -1507,9 +1507,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.93"
+version = "2.0.95"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c786062daee0d6db1132800e623df74274a0a87322d8e183338e01b3d98d058"
+checksum = "46f71c0377baf4ef1cc3e3402ded576dccc315800fbc62dfc7fe04b009773b4a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1539,7 +1539,7 @@ checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.93",
+ "syn 2.0.95",
 ]
 
 [[package]]
@@ -1641,7 +1641,7 @@ dependencies = [
  "log",
  "proc-macro2",
  "quote",
- "syn 2.0.93",
+ "syn 2.0.95",
  "wasm-bindgen-shared",
 ]
 
@@ -1663,7 +1663,7 @@ checksum = "30d7a95b763d3c45903ed6c81f156801839e5ee968bb07e534c44df0fcd330c2"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.93",
+ "syn 2.0.95",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -2054,5 +2054,5 @@ checksum = "fa4f8080344d4671fb4e831a13ad1e68092748387dfc4f55e356242fae12ce3e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.93",
+ "syn 2.0.95",
 ]
