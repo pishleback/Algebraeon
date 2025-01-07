@@ -8,6 +8,7 @@ pub struct LexicographicCombinationsWithRemovals {
     finished: bool,
 }
 
+
 impl LexicographicCombinationsWithRemovals {
     pub fn new(n: usize, k: usize) -> Self {
         Self {
