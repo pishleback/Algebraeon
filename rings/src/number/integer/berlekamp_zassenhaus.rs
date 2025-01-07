@@ -4,7 +4,7 @@
  * The Berlekamp Zassenhaus algorithm (BZA) is a method for factoring integer polynomials.
  * BZA works on primitive squarefree polynomials, so other algorithms must be used first to reduce the factorization problem to this case.
  *
- * Let $f(x) \in \mathbb{Z}[x]$ be non-zero primitive squarefree polynomial of degree at least $1$
+ * Let $f(x) \in \mathbb{Z}\[x\]$ be non-zero primitive squarefree polynomial of degree at least $1$
  * 1. A bound $B \in \mathbb{N}$ is found such that the absolute value of the coefficients of any factor of $f$ are bounded above by $B$.
  * 2. A prime number $p$ is found such that the reduction $\tilde{f}(x) \in \mathbb{F}_p(x)$ of $f$ modulo $p$ is has the same degree as $f$ and that $\tilde{f}$ is squarefree.
  * 3. $\tilde{f}(x)$ is factored using methods for polynomial factorization over finite fields.
