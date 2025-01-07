@@ -6,12 +6,11 @@ use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
 
-
 use super::super::polynomial::polynomial::*;
-
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
+
 impl RingStructure for CannonicalStructure<Rational> {
     fn zero(&self) -> Self::Set {
         Rational::ZERO

@@ -3,7 +3,7 @@ use malachite_nz::natural::Natural;
 use super::super::ring_structure::factorization::*;
 use super::super::ring_structure::structure::*;
 use super::polynomial::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + CharZeroStructure>
     PolynomialStructure<RS>

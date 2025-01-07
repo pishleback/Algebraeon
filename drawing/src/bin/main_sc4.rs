@@ -13,7 +13,7 @@ use algebraeon_geometry::*;
 use algebraeon_rings::number::algebraic::isolated_roots::real::RealAlgebraic;
 use algebraeon_rings::ring_structure::structure::PositiveRealNthRootStructure;
 use algebraeon_rings::ring_structure::structure::RingStructure;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::arithmetic::traits::Approximate;

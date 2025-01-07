@@ -5,7 +5,7 @@ use malachite_nz::natural::Natural;
 
 use crate::polynomial::polynomial::*;
 use crate::ring_structure::structure::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

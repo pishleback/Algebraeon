@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, rc::Rc};
 
-use malachite_nz::integer::Integer;
+use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
 pub trait Structure: Clone + Debug + PartialEq + Eq {
@@ -64,6 +64,14 @@ impl<T: MetaType + PartialEq> PartialEqStructure for CannonicalStructure<T> {
 
 pub trait EqStructure: PartialEqStructure {}
 impl<T: MetaType + Eq> EqStructure for CannonicalStructure<T> {}
+
+impl MetaType for Natural {
+    type Structure = CannonicalStructure<Natural>;
+
+    fn structure() -> Rc<Self::Structure> {
+        CannonicalStructure::new().into()
+    }
+}
 
 impl MetaType for Integer {
     type Structure = CannonicalStructure<Integer>;

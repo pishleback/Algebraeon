@@ -2,7 +2,7 @@ use crate::{
     number::algebraic::number_field::new_anf, polynomial::polynomial::*,
     ring_structure::structure::*,
 };
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 use bounds::*;
 use interval::*;
 use malachite_base::num::basic::traits::{One, Two, Zero};

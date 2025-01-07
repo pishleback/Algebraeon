@@ -541,7 +541,7 @@ pub fn simplex_intersect_negative_side_hyperplane<
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_structure::*;
+    use algebraeon_sets::structure::*;
     use malachite_q::Rational;
 
     use super::*;

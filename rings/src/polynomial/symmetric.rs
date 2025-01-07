@@ -3,7 +3,7 @@ use std::{borrow::Borrow, collections::HashSet};
 use itertools::Itertools;
 
 use crate::ring_structure::structure::{IntegralDomainStructure, RingStructure};
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 use super::multipoly::*;
 

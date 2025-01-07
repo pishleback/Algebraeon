@@ -2,11 +2,9 @@
 resolver = "2"
 members = [
     "sets",
-    "structure",
     "groups",
     "rings",
     "geometry",
     "drawing",
     "combinatorics",
-
 ]

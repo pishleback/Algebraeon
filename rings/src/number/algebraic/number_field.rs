@@ -5,7 +5,7 @@ use crate::{
     polynomial::{multipoly::*, polynomial::*, symmetric::ss_num},
     ring_structure::{factorization::Factored, quotient::*, structure::*},
 };
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::{integer::Integer, natural::Natural};

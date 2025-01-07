@@ -9,7 +9,7 @@ use algebraeon_rings::polynomial::polynomial::Polynomial;
 use algebraeon_rings::ring_structure::elements::*;
 use algebraeon_rings::ring_structure::factorization::Factored;
 use algebraeon_rings::ring_structure::structure::*;
-use algebraeon_structure::MetaType;
+use algebraeon_sets::structure::MetaType;
 use functions::*;
 use malachite_base::num::basic::traits::One;
 use malachite_nz::integer::Integer;

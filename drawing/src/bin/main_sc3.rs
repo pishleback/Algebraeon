@@ -14,7 +14,7 @@ use algebraeon_geometry::simplexes::OrientationSide;
 use algebraeon_geometry::simplexes::OrientedSimplex;
 use algebraeon_geometry::simplexes::Simplex;
 use algebraeon_geometry::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 use rand::Rng;
 use simplexes::LabelledSimplexCollection;
 

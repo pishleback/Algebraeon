@@ -2,8 +2,13 @@
 name = "algebraeon-sets"
 version = "0.0.0"
 edition = "2021"
+license = "GPL-3.0-only"
+description = "Algebraeon crate for algorithms related to sets and combinatorics."
 
 [lib]
 name = "algebraeon_sets"
 
 [dependencies]
+malachite-base = "0.3.2"
+malachite-nz = "0.3.2"
+malachite-q = "0.3.2"

@@ -41,7 +41,6 @@ dependencies = [
  "algebraeon-groups",
  "algebraeon-rings",
  "algebraeon-sets",
- "algebraeon-structure",
  "glium",
  "malachite-base",
  "malachite-nz",
@@ -54,7 +53,7 @@ name = "algebraeon-geometry"
 version = "0.0.0"
 dependencies = [
  "algebraeon-rings",
- "algebraeon-structure",
+ "algebraeon-sets",
  "itertools 0.11.0",
  "malachite-base",
  "malachite-nz",
@@ -78,7 +77,6 @@ version = "0.0.0"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-sets",
- "algebraeon-structure",
  "itertools 0.11.0",
  "malachite-base",
  "malachite-nz",
@@ -89,10 +87,6 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-sets"
-version = "0.0.0"
-
-[[package]]
-name = "algebraeon-structure"
 version = "0.0.0"
 dependencies = [
  "malachite-base",

@@ -8,7 +8,7 @@ use malachite_nz::natural::Natural;
 use crate::linear::matrix::*;
 
 use super::super::ring_structure::structure::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {

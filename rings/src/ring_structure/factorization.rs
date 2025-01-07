@@ -1,6 +1,6 @@
 use std::{fmt::Display, rc::Rc};
 
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::natural::Natural;
 

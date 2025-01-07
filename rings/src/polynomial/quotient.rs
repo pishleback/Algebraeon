@@ -3,7 +3,7 @@ use crate::{
     linear::matrix::*,
     ring_structure::{quotient::*, structure::*},
 };
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 impl<FS: FieldStructure, const IS_FIELD: bool> QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
 where

@@ -10,7 +10,7 @@ use malachite_nz::natural::Natural;
 
 use super::super::ring_structure::structure::*;
 use super::polynomial::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 #[derive(Debug, Hash, Clone)]
 pub struct Variable {

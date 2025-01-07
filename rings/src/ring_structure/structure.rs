@@ -9,7 +9,7 @@ use crate::number::natural::nat_to_usize;
 use crate::polynomial::polynomial::Polynomial;
 use crate::polynomial::polynomial::PolynomialStructure;
 
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 use super::factorization::*;
 

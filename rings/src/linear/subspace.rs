@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use super::super::ring_structure::structure::*;
 use super::matrix::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 //return a metamatrix whose rows are a basis for the joint row span of all the passed metamatricies
 fn metamatrix_row_sum<RS: BezoutDomainStructure, MetaMatT: Borrow<Matrix<RS::Set>>>(

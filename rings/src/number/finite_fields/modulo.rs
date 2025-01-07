@@ -3,7 +3,7 @@ use malachite_nz::{integer::Integer, natural::Natural};
 use crate::polynomial::polynomial::*;
 use crate::ring_structure::factorization::*;
 use crate::ring_structure::structure::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 use std::rc::Rc;
 use std::{fmt::Display, hash::Hash};

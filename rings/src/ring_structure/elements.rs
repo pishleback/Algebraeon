@@ -1,6 +1,6 @@
 use std::{ops::{Add, Div, Mul, Neg, Sub}, rc::Rc};
 
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 use malachite_nz::integer::Integer;
 use super::structure::*;
 

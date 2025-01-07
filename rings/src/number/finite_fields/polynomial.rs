@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use malachite_base::num::basic::traits::One;
 use malachite_nz::natural::Natural;

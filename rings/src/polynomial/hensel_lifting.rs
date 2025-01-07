@@ -9,7 +9,7 @@ use crate::ring_structure::quotient::*;
 use crate::ring_structure::structure::*;
 
 use super::polynomial::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 enum HenselProduct<

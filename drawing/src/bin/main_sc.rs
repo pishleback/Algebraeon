@@ -11,7 +11,7 @@ use algebraeon_geometry::simplexes::OrientedSimplex;
 use algebraeon_geometry::simplexes::Simplex;
 use algebraeon_geometry::*;
 use algebraeon_rings::ring_structure::structure::*;
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 use malachite_q::arithmetic::traits::Approximate;

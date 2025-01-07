@@ -12,7 +12,7 @@ use crate::number::natural::*;
 use crate::ring_structure::factorization::*;
 use crate::ring_structure::structure::*;
 
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 pub mod modulo;
 pub mod polynomial;

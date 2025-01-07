@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 
 use super::structure::*;
 
@@ -171,6 +171,7 @@ mod tests {
     use malachite_nz::integer::Integer;
 
     use super::super::super::ring_structure::structure::*;
+    use algebraeon_sets::structure::*;
 
     use super::*;
 

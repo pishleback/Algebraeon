@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{isolated_roots::complex::ComplexAlgebraic, number_field::*};
-use algebraeon_structure::*;
+use algebraeon_sets::structure::*;
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
@@ -51,7 +51,7 @@ impl ComplexAlgebraic {
 // use  real::*;
 
 impl AlgebraicClosureStructure for CannonicalStructure<ComplexAlgebraic> {
-    type BFS = <Rational as algebraeon_structure::MetaType>::Structure;
+    type BFS = <Rational as algebraeon_sets::structure::MetaType>::Structure;
 
     fn base_field(&self) -> Rc<Self::BFS> {
         Rational::structure()
