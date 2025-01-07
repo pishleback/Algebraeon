@@ -34,3 +34,6 @@ and much more.
  - Splitting fields of algebraic number fields.
  - Galois groups of algebraic number fields.
  - P-adic root approximation and arithmetic.
+
+## Stability
+Algebraeon is still in an early experimental stage of development and as such the API will be unstable.
