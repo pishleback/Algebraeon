@@ -11,5 +11,5 @@ itertools="0.11.0"
 malachite-base = "0.3.2"
 malachite-nz = "0.3.2"
 malachite-q = "0.3.2"
-algebraeon-sets = { version = "0.0.0", path = "../sets" }
-algebraeon-rings = { version = "0.0.0", path = "../rings" }
+algebraeon-sets = { version = "0.0.1", path = "../sets" }
+algebraeon-rings = { version = "0.0.1", path = "../rings" }

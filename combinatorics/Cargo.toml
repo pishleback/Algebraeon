@@ -13,6 +13,6 @@ malachite-base = "0.3.2"
 malachite-nz = "0.3.2"
 malachite-q = "0.3.2"
 static_assertions = "1.1.0"
-algebraeon-sets = { version = "0.0.0", path = "../sets" }
-algebraeon-groups = { version = "0.0.0", path = "../groups" }
-algebraeon-rings = { version = "0.0.0", path = "../rings" }
+algebraeon-sets = { version = "0.0.1", path = "../sets" }
+algebraeon-groups = { version = "0.0.1", path = "../groups" }
+algebraeon-rings = { version = "0.0.1", path = "../rings" }
