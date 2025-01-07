@@ -1,63 +1,36 @@
-# Rust-Computational-Algebra
-Rust implementation of some computational algebra algorithms. 
+# Algebraeon
+Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations rather than approximate numerical solutions.
 
-This project began as a faster and more maintainable replacement for an older attempt of mine written in Python: https://github.com/pishleback/Python-Computational-Algebra
+## What it can do
+Algebraeon can currently do the following:
+ - Euclids algorithm for GCD and the extended version for obtaining Bezout coefficients.
+ - Polynomial GCD computations using subresultant pseudo-remainder sequences.
+ - AKS algorithm for natural number primality testing.
+ - Matrix algorithms including:
+   - Putting a matrix into Hermite normal form. In particular putting it into echelon form.
+   - Putting a matrix into Smith normal form.
+   - Gram–Schmidt algorithm for orthogonalization and orthonormalization.
+   - Putting a matrix into Jordan normal.
+   - Finding the general solution to a linear or affine system of equations.
+ - Polynomial factoring algorithms including:
+   - Kronecker's method for factoring polynomials over the integers (slow).
+   - Berlekamp-Zassenhaus algorithm for factoring polynomials over the integers.
+   - Berlekamp's algorithm for factoring polynomials over finite fields.
+   - Trager's algorithm for factoring polynomials over algebraic number fields.
+ - Expressing symmetric polynomials in terms of elementary symmetric polynomials.
+ - Computations with algebraic numbers:
+   - Real root isolation and arithmetic.
+   - Complex root isolation and arithmetic.
+ - Computations with multiplication tables for small finite groups.
+ - Todd-Coxeter algorithm for the enumeration of finite index cosets of a finitely generated groups.
+and much more.
 
-## Sets
- - k-element subsets of an n-element set
- - Partitions of natural numbers
-
-## Groups
- - Permutations
- - Groups represented by multiplication tables
-   - Conjugacy classes
-   - Quotients
-   - Tests for isomorphism
- - Todd-Coxeter algorithm coset enumeration
-
-## Rings
-### Number Theory
- - AKS algorithm for primality testing
-
-### Rings
- - Euclids algorithm for gcd
- - Extended Euclids algorithm for obtaining Bezout coefficients
-
-### Linear Algebra
- - Hermite normal form of a matrix over a PID
- - Smith normal form of a matrix over a PID
- - General solution to a linear or affine system of equations over a PID
- - Gram–Schmidt algorithm
- - Jordan normal form of a matrix
-
-### Polynomials
- - Kronecker's method for factoring polynomials over the integers (very slow)
- - Zassenhaus algorithm for factoring polynomials over the integers
- - Berlekamp's algorithm for factoring polynomials over finite fields
- - Factor polynomials over algebraic number fields
- - Express symmetric polynomials in terms of elementary symmetric polynomial
-
-### Algebraic Numbers
- - Real root isolation and arithmetic
- - Complex root isolation and arithmetic
-
-## Combinatorics
- - Binary Golay Codes
-   - Finding isomorphisms
- - Ternary Golay Codes
-
-## Geometry
- - Geometric simplicial complexes
-   - Intersection
-   - Union
-   - Difference
-   - Simplification
-
-## Planned Features
- - Fast integer factorization
- - LLL basis reduction algorithm
- - Universal cyclotomic field
- - Ideals in algebraic number fields
- - Algebraic closure and Galois theory of finite fields
- - Splitting fields of algebraic number fields
- - Galois groups of algebraic number fields
+## Planned algorithms
+ - Fast integer factorization.
+ - LLL basis reduction algorithm.
+ - Universal cyclotomic field.
+ - Ideals in algebraic number fields.
+ - Algebraic closure and Galois theory of finite fields.
+ - Splitting fields of algebraic number fields.
+ - Galois groups of algebraic number fields.
+ - P-adic root approximation and arithmetic.
