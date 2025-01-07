@@ -6,5 +6,6 @@ members = [
     "rings",
     "geometry",
     "drawing",
-    "combinatorics",
+    "combinatorics", 
+    "examples",
 ]

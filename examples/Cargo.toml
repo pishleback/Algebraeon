@@ -1,0 +1,24 @@
+[package]
+name = "algebraeon-examples"
+# version = "0.0.2"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Algebraeon example usage."
+repository = "https://github.com/pishleback/Algebraeon"
+keywords = ["maths"]
+categories = ["mathematics"]
+readme = "../README.md"
+
+[lib]
+name = "algebraeon_examples"
+
+[dependencies]
+algebraeon-sets = { version = "0.0.2", path = "../sets" }
+algebraeon-groups = { version = "0.0.2", path = "../groups" }
+algebraeon-rings = { version = "0.0.2", path = "../rings" }
+malachite-base = "0.3.2"
+malachite-nz = "0.3.2"
+malachite-q = "0.3.2"
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "katex-header.html" ]

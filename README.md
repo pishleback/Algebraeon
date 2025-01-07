@@ -41,3 +41,14 @@ Add the required crates to your ``cargo.toml`` file
  - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
  - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
 
+Factoring an integer polynomial
+```
+use algebraeon_rings::{polynomial::polynomial::*, ring_structure::{elements::*, structure::*}};
+use malachite_nz::integer::Integer;
+
+let x = &Polynomial::<Integer>::var().into_ring();
+let f = (x.pow(30) - 1).into_set();
+println!("unfactored f = {}", f);
+println!("factored   f = {}", f.factor().unwrap());
+```
+
