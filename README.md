@@ -50,6 +50,5 @@ let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(30) - 1).into_verbose();
 println!("unfactored f = {}", f);
 println!("factored   f = {}", f.factor().unwrap());
-assert!("false");
 ```
 
