@@ -35,5 +35,9 @@ and much more.
  - Galois groups of algebraic number fields.
  - P-adic root approximation and arithmetic.
 
-## Stability
-Algebraeon is still in an early experimental stage of development and as such the API will be unstable.
+# Usage
+Add the required crates to your ``cargo.toml`` file
+ - [algebraeon-sets](https://crates.io/crates/algebraeon-sets)
+ - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
+ - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
+
