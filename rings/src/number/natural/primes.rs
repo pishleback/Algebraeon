@@ -431,6 +431,20 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
     }
 }
 
+pub fn is_prime(n: &Natural) -> bool {
+    let result = if n <= &Natural::from(1000u32) {
+        naive_primality_test(n)
+    } else {
+        aks_primality_test(n)
+    };
+    match result {
+        PrimalityTestResult::Zero => false,
+        PrimalityTestResult::One => false,
+        PrimalityTestResult::Prime => true,
+        PrimalityTestResult::Composite => false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
