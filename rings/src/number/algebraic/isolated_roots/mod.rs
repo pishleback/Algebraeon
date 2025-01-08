@@ -1,9 +1,10 @@
 use malachite_q::Rational;
 
+pub mod bisection_gen;
 pub mod complex;
+pub mod padic;
 pub mod poly_tools;
 pub mod real;
-pub mod bisection_gen;
 
 fn rat_to_string(a: Rational) -> String {
     if a == 0 {

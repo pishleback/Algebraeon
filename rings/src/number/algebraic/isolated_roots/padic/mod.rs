@@ -8,8 +8,8 @@ use malachite_base::num::{
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
-use super::natural::primes::is_prime;
 use crate::{
+    number::natural::primes::is_prime,
     polynomial::polynomial::*,
     ring_structure::{quotient::QuotientStructure, structure::*},
 };
