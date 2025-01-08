@@ -774,8 +774,6 @@ impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
 
 #[cfg(test)]
 mod tests {
-    
-
     use crate::ring_structure::elements::IntoErgonomic;
 
     use super::*;
