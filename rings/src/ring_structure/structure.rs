@@ -144,10 +144,6 @@ where
 }
 impl<R: MetaType> MetaRingEq for R where Self::Structure: RingStructure + EqStructure {}
 
-// pub trait DisplayableRingStructure: RingStructure {
-//     fn fmt_elem(&self, elem: &Self::Set, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
-// }
-
 pub trait IntegralDomainStructure: RingStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
