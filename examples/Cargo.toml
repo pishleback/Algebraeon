@@ -13,9 +13,9 @@ readme = "../README.md"
 name = "algebraeon_examples"
 
 [dependencies]
-algebraeon-sets = { version = "0.0.2", path = "../sets" }
-algebraeon-groups = { version = "0.0.2", path = "../groups" }
-algebraeon-rings = { version = "0.0.5", path = "../rings" }
+algebraeon-sets = { version = "0.0.6", path = "../sets" }
+algebraeon-groups = { version = "0.0.6", path = "../groups" }
+algebraeon-rings = { version = "0.0.6", path = "../rings" }
 malachite-base = "0.3.2"
 malachite-nz = "0.3.2"
 malachite-q = "0.3.2"
