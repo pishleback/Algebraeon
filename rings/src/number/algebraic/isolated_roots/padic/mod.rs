@@ -266,8 +266,8 @@ impl PAdicAlgebraicRoot {
 
 #[derive(Debug, Clone)]
 pub struct PAdicRational {
-    pub p: Natural, // a prime number
-    pub rat: Rational,
+    p: Natural, // a prime number
+    rat: Rational,
 }
 impl PAdicRational {
     fn reduce_modulo_valuation<'a>(&'a self, k: isize) -> PAdicDigits<'a> {
@@ -309,17 +309,18 @@ impl PAdicRational {
 }
 
 #[derive(Debug, Clone)]
-pub struct PAdicDigits<'a> {
+struct PAdicDigits<'a> {
     p: &'a Natural,
     value: Natural,
     shift: isize,
 }
 impl<'a> PAdicDigits<'a> {
-    pub fn digits(&mut self) -> (Vec<Natural>, isize) {
+    fn digits(&mut self) -> (Vec<Natural>, isize) {
         (padic_digits(self.p, self.value.clone()), self.shift)
     }
 }
 
+/// Store an algebraic p-adic number
 #[derive(Debug, Clone)]
 pub enum PAdicAlgebraic {
     Rational(PAdicRational),
@@ -331,19 +332,13 @@ impl From<PAdicIntegerAlgebraicRoot> for PAdicAlgebraic {
     }
 }
 impl PAdicAlgebraic {
-    pub fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicDigits<'a> {
+    fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicDigits<'a> {
         match self {
             PAdicAlgebraic::Rational(rational) => rational.reduce_modulo_valuation(k),
             PAdicAlgebraic::Algebraic(root) => root.reduce_modulo_valuation(k),
         }
     }
 }
-
-// impl PAdicAlgebraic {
-//     pub fn reduce_modulo_valuation(&mut self, k: usize) -> PAdicReduction<'a> {
-//         match self {}
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
