@@ -41,7 +41,7 @@ Add the required crates to your ``cargo.toml`` file
  - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
  - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
 
-Factoring an integer polynomial
+## Factoring an polynomials
 ```
 use algebraeon_rings::{polynomial::polynomial::*, ring_structure::{elements::*, structure::*}};
 use malachite_nz::integer::Integer;
