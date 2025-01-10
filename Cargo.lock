@@ -62,7 +62,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-geometry"
-version = "0.0.0"
+version = "0.0.7"
 dependencies = [
  "algebraeon-rings",
  "algebraeon-sets",
@@ -85,7 +85,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-rings"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-sets",

@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-geometry"
-# version = "0.0.0"
+version = "0.0.7"
 edition = "2021"
 
 [lib]
@@ -12,4 +12,4 @@ malachite-base = "0.3.2"
 malachite-nz = "0.3.2"
 malachite-q = "0.3.2"
 algebraeon-sets = { version = "0.0.6", path = "../sets" }
-algebraeon-rings = { version = "0.0.6", path = "../rings" }
+algebraeon-rings = { version = "0.0.7", path = "../rings" }
