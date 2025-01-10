@@ -23,17 +23,6 @@ Algebraeon already implements the following:
    - Complex root isolation and arithmetic.
  - Computations with multiplication tables for small finite groups.
  - Todd-Coxeter algorithm for the enumeration of finite index cosets of a finitely generated groups.
-and much more.
-
-## Planned algorithms
- - Fast integer factorization.
- - LLL basis reduction algorithm.
- - Universal cyclotomic field.
- - Ideals in algebraic number fields.
- - Algebraic closure and Galois theory of finite fields.
- - Splitting fields of algebraic number fields.
- - Galois groups of algebraic number fields.
- - P-adic root approximation and arithmetic.
 
 # Usage
 Add the required crates to your ``cargo.toml`` file
