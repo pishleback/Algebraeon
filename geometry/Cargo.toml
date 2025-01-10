@@ -2,6 +2,12 @@
 name = "algebraeon-geometry"
 version = "0.0.7"
 edition = "2021"
+license = "GPL-3.0-only"
+description = "Algorithms for working with geometric shapes"
+repository = "https://github.com/pishleback/Algebraeon"
+keywords = ["maths", "geometry", "simpelx"]
+categories = ["mathematics"]
+readme = "../README.md"
 
 [lib]
 name = "algebraeon_geometry"
