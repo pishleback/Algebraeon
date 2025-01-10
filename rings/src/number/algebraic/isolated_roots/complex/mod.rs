@@ -106,7 +106,7 @@ fn identify_complex_root(
             .unwrap()
     };
 
-    let mut roots = irr_poly.all_complex_roots();
+    let mut roots = irr_poly.all_complex_roots_irreducible();
     let mut possible_roots: HashSet<_> = (0..roots.len()).collect();
     loop {
         debug_assert!(!possible_roots.is_empty());
