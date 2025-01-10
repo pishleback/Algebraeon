@@ -55,7 +55,7 @@ fn padic_digits(p: &Natural, mut n: Natural) -> Vec<Natural> {
 #[derive(Debug, Clone)]
 struct PAdicIntegerAlgebraicRoot {
     p: Natural,                 // a prime number
-    poly: Polynomial<Integer>,  // an irreducible degree >= 2 polynomial
+    poly: Polynomial<Integer>,  // a primitive irreducible degree >= 2 polynomial
     dpoly: Polynomial<Integer>, // the derivative of poly
     dpoly_valuation: usize, // f'(a) where a is the approximate root OR equivelently the lifted root.
     approx_root: Integer,   // an approximation to the root represented by this struct modulo p^k
@@ -63,7 +63,7 @@ struct PAdicIntegerAlgebraicRoot {
     // Furthermore approx_root must satisfy unique lifting to p-adic integers. By hensels lemma, this is the case whenever
     // |f(a)|_p < |f'(a)|^2
     // where f = poly and a = approx root
-    // The true root b will differ from an approximate root a by at most p^dpoly_valuation
+    // The true root b will agree with the approximate root a in the first dpoly_valuation+1 digits since |a-b| < |f'(a)| = |f'(b)|
 }
 
 impl PAdicIntegerAlgebraicRoot {
@@ -88,6 +88,9 @@ impl PAdicIntegerAlgebraicRoot {
         }
         if !Polynomial::is_irreducible(&self.poly) {
             return Err("poly is not irreducible");
+        }
+        if self.poly != self.poly.clone().primitive_part().unwrap() {
+            return Err("f is not primitive");
         }
         if self.dpoly != self.poly.clone().derivative() {
             return Err("dpoly is not the derivative of poly");
@@ -177,6 +180,22 @@ impl PAdicIntegerAlgebraicRoot {
         pos_int_to_nat(Integer::rem(&self.approx_root, &pk))
     }
 
+    fn equal_mut(&mut self, other: &mut Self) -> bool {
+        let p = &self.p;
+        if p != &other.p {
+            return false;
+        }
+        if self.poly != other.poly {
+            return false;
+        }
+        let dpoly_valuation = self.dpoly_valuation;
+        if dpoly_valuation != other.dpoly_valuation {
+            return false;
+        }
+        self.reduce_modulo_valuation(dpoly_valuation + 1)
+            == other.reduce_modulo_valuation(dpoly_valuation + 1)
+    }
+
     fn rightshift(&mut self) -> Option<Self> {
         if self.reduce_modulo_valuation(1) != Integer::ZERO {
             None
@@ -234,6 +253,12 @@ impl From<PAdicIntegerAlgebraicRoot> for PAdicAlgebraicRoot {
             root,
             k: k as isize,
         }
+    }
+}
+
+impl PAdicAlgebraicRoot {
+    fn shift_by(&mut self, k: isize) {
+        self.k += k;
     }
 }
 
@@ -331,6 +356,11 @@ impl From<PAdicIntegerAlgebraicRoot> for PAdicAlgebraic {
         PAdicAlgebraic::Algebraic(value.into())
     }
 }
+impl From<PAdicAlgebraicRoot> for PAdicAlgebraic {
+    fn from(value: PAdicAlgebraicRoot) -> Self {
+        PAdicAlgebraic::Algebraic(value)
+    }
+}
 impl PAdicAlgebraic {
     fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicDigits<'a> {
         match self {
@@ -340,8 +370,129 @@ impl PAdicAlgebraic {
     }
 }
 
+impl Polynomial<Integer> {
+    fn all_padic_roots_irreducible(&self, p: &Natural) -> Vec<PAdicAlgebraic> {
+        debug_assert!(is_prime(p));
+        debug_assert!(self.is_irreducible());
+
+        let f = self.clone();
+        let d = f.degree().unwrap();
+
+        debug_assert!(d > 0);
+        if d == 1 {
+            // Rational root
+            let a = f.coeff(1);
+            let b = f.coeff(0);
+            // f(x) = ax + b
+            // root = -b/a
+            vec![PAdicAlgebraic::Rational(PAdicRational {
+                p: p.clone(),
+                rat: -Rational::from_integers(b, a),
+            })]
+        } else {
+            // Algebraic root
+
+            // Apply f(x) -> f(x/p) until the leading coefficient is not divisible by p i.e. is a p-adic integer.
+            // Call the resulting polynomial g(x)
+            let shift = padic_valuation(p, f.leading_coeff().unwrap()).unwrap();
+            let g = f
+                .apply_map_with_powers(|(power, coeff)| {
+                    coeff * Integer::from(p).nat_pow(&Natural::from(shift * (d - power)))
+                })
+                .primitive_part()
+                .unwrap();
+            let dg = g.clone().derivative();
+
+            // Manually lift roots until they uniquely lift to the p-adic integers
+            let mut k = 0;
+            let mut pk = Natural::ONE;
+            let mut ununique_liftable_roots = vec![Natural::ZERO];
+            let mut unique_liftable_roots = vec![];
+            while !ununique_liftable_roots.is_empty() {
+                let mut lifted_roots = vec![];
+                let mod_pk1 =
+                    QuotientStructure::new_ring(Integer::structure(), Integer::from(&pk * p));
+                let poly_mod_pk1 = PolynomialStructure::new(mod_pk1.into());
+                for root in ununique_liftable_roots {
+                    let mut offset = Natural::ZERO;
+                    while offset < *p {
+                        let possible_lifted_root = &root + &pk * &offset;
+                        let g_eval =
+                            poly_mod_pk1.evaluate(&g, &Integer::from(&possible_lifted_root));
+                        if g_eval == Integer::ZERO {
+                            let g_valuation = k + 1;
+                            let dg_eval =
+                                poly_mod_pk1.evaluate(&dg, &Integer::from(&possible_lifted_root));
+                            let dg_valuation = padic_valuation(p, dg_eval).unwrap_or(k + 1);
+                            if g_valuation > 2 * dg_valuation {
+                                let mut padic_int_root = PAdicIntegerAlgebraicRoot {
+                                    p: p.clone(),
+                                    poly: g.clone(),
+                                    dpoly: dg.clone(),
+                                    dpoly_valuation: dg_valuation,
+                                    approx_root: Integer::from(possible_lifted_root),
+                                    k: k + 1,
+                                };
+                                #[cfg(debug_assertions)]
+                                padic_int_root.check().unwrap();
+                                if !unique_liftable_roots
+                                    .iter_mut()
+                                    .any(|unique_liftable_root| {
+                                        PAdicIntegerAlgebraicRoot::equal_mut(
+                                            unique_liftable_root,
+                                            &mut padic_int_root,
+                                        )
+                                    })
+                                {
+                                    unique_liftable_roots.push(padic_int_root);
+                                }
+                            } else {
+                                lifted_roots.push(possible_lifted_root);
+                            }
+                        }
+                        offset += Natural::ONE;
+                    }
+                }
+                ununique_liftable_roots = lifted_roots;
+                k += 1;
+                pk *= p;
+            }
+
+            unique_liftable_roots
+                .into_iter()
+                .map(|root| {
+                    {
+                        let mut root = PAdicAlgebraicRoot::from(root);
+                        root.shift_by(-(shift as isize));
+                        root
+                    }
+                    .into()
+                })
+                .collect()
+        }
+    }
+    pub fn all_padic_roots(&self, p: &Natural) -> Vec<PAdicAlgebraic> {
+        debug_assert!(is_prime(p));
+        assert_ne!(self, &Self::zero());
+        let factors = self.factor().unwrap();
+        let mut roots = vec![];
+        for (factor, k) in factors.factors() {
+            for root in factor.all_padic_roots_irreducible(p) {
+                let mut i = Natural::from(0u8);
+                while &i < k {
+                    roots.push(root.clone());
+                    i += Natural::from(1u8);
+                }
+            }
+        }
+        roots
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::ring_structure::elements::IntoErgonomic;
+
     use super::*;
 
     #[test]
@@ -538,5 +689,40 @@ mod tests {
                 -2
             )
         );
+    }
+
+    #[test]
+    fn test_all_padic_roots_example1() {
+        let x = Polynomial::<Integer>::var().into_ergonomic();
+        let f = (16 * x.pow(2) - 17).into_verbose();
+        println!("{:?}", f);
+        let roots = f.all_padic_roots(&Natural::from(2u32));
+        assert_eq!(roots.len(), 2);
+        for mut root in roots {
+            println!("{:?}", root.reduce_modulo_valuation(10).digits());
+        }
+    }
+
+    #[test]
+    fn test_all_padic_roots_example2() {
+        let x = Polynomial::<Integer>::var().into_ergonomic();
+        let f = (x.pow(6) - 2).into_verbose();
+        println!("{:?}", f);
+        assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 0);
+        assert_eq!(f.all_padic_roots(&Natural::from(7u32)).len(), 0);
+        assert_eq!(f.all_padic_roots(&Natural::from(727u32)).len(), 6);
+    }
+
+    #[test]
+    fn test_all_padic_roots_example3() {
+        let x = Polynomial::<Integer>::var().into_ergonomic();
+        let f = (3 * x - 2).into_verbose();
+        println!("{:?}", f);
+        for mut root in f.all_padic_roots(&Natural::from(7u32)) {
+            println!("{:?}", root.reduce_modulo_valuation(10).digits());
+        }
+        assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 1);
+        assert_eq!(f.all_padic_roots(&Natural::from(3u32)).len(), 1);
+        assert_eq!(f.all_padic_roots(&Natural::from(5u32)).len(), 1);
     }
 }
