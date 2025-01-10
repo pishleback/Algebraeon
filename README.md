@@ -2,7 +2,7 @@
 Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations rather than approximate numerical solutions.
 
 ## What it can do
-Algebraeon can currently do the following:
+Algebraeon already implements the following:
  - Euclids algorithm for GCD and the extended version for obtaining Bezout coefficients.
  - Polynomial GCD computations using subresultant pseudo-remainder sequences.
  - AKS algorithm for natural number primality testing.
