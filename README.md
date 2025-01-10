@@ -41,14 +41,45 @@ Add the required crates to your ``cargo.toml`` file
  - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
  - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
 
-## Factoring Polynomials
+## Factoring a Polynomial
 ```
-use algebraeon_rings::{polynomial::polynomial::*, ring_structure::{elements::*, structure::*}};
+use algebraeon_rings::{
+    polynomial::polynomial::*,
+    ring_structure::{elements::*, structure::*},
+};
 use malachite_nz::integer::Integer;
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
-let f = (x.pow(30) - 1).into_verbose();
-println!("unfactored f = {}", f);
-println!("factored   f = {}", f.factor().unwrap());
+let f = (x.pow(15) - 1).into_verbose();
+println!("f = {}", f.factor().unwrap());
+/*
+Output:
+    f = 1 * ((-1)+λ) * (1+λ+λ^2) * (1+λ+λ^2+λ^3+λ^4) * (1+(-1)λ+λ^3+(-1)λ^4+λ^5+(-1)λ^7+λ^8)
+*/
+```
+
+## Jordan Normal Form of a Matrix
+```
+use algebraeon_rings::{linear::matrix::*, number::algebraic::isolated_roots::complex::*};
+use algebraeon_sets::structure::*;
+use malachite_q::Rational;
+// Construct a matrix
+let a = Matrix::<Rational>::from_rows(vec![
+    vec![5, 4, 2, 1],
+    vec![0, 1, -1, -1],
+    vec![-1, -1, 3, 0],
+    vec![1, 1, -1, 2],
+]);
+// Put it into Jordan Normal Form
+let j = MatrixStructure::new(ComplexAlgebraic::structure()).jordan_normal_form(&a);
+j.pprint();
+/*
+Output:
+    / 2    0    0    0 \
+    | 0    1    0    0 |
+    | 0    0    4    1 |
+    \ 0    0    0    4 /
+*/
+```
 
 
