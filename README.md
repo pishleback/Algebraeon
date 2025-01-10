@@ -29,6 +29,7 @@ Add the required crates to your ``cargo.toml`` file
  - [algebraeon-sets](https://crates.io/crates/algebraeon-sets)
  - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
  - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
+ - [algebraeon-geometry](https://crates.io/crates/algebraeon-geometry)
 
 ## Factoring a Polynomial
 ```
