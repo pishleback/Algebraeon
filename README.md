@@ -6,7 +6,7 @@ Algebraeon is published under four separate crates.
  - [algebraeon-geometry](https://crates.io/crates/algebraeon-geometry)
 
 # Algebraeon
-Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API is currently highly unstable and subject to change. Algebraeon uses [https://www.malachite.rs/](Malachite) for arbitrary sized integer and rational numbers.
+Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API is currently highly unstable and subject to change. Algebraeon uses [Malachite](https://www.malachite.rs/) for arbitrary sized integer and rational numbers.
 
 As a taste for the sorts of problems Algebraeon solves, it already implements the following:
  - Euclids algorithm for GCD and the extended version for obtaining Bezout coefficients.
