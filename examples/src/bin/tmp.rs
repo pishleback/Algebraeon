@@ -1,25 +1,23 @@
 #![allow(dead_code, warnings)]
 
+use algebraeon_rings::{polynomial::polynomial::*, structure::elements::*};
+use malachite_nz::integer::Integer;
 
 fn main() {
-    use algebraeon_rings::{
-        polynomial::polynomial::*,
-        structure::{elements::*, structure::*},
-    };
-    use malachite_nz::integer::Integer;
-    
     let x = &Polynomial::<Integer>::var().into_ergonomic();
-    let f = (x.pow(2) - 5*x + 6).into_verbose();
-    println!("f(λ) = {}", f.factor().unwrap());
+    let f = ((x.pow(5) - x + 1) * (x.pow(2) + 1)).into_verbose();
+    // Find the complex roots of f(x)
+    for root in f.all_complex_roots() {
+        println!("root {} of degree {}", root, root.degree());
+    }
     /*
     Output:
-        f(λ) = 1 * ((-2)+λ) * ((-3)+λ)
-    */
-    
-    let f = (x.pow(15) - 1).into_verbose();
-    println!("f(λ) = {}", f.factor().unwrap());
-    /*
-    Output:
-        f(λ) = 1 * ((-1)+λ) * (1+λ+λ^2) * (1+λ+λ^2+λ^3+λ^4) * (1+(-1)λ+λ^3+(-1)λ^4+λ^5+(-1)λ^7+λ^8)
+        root -i of degree 2
+        root i of degree 2
+        root ≈-1.172 of degree 5
+        root ≈-0.179-1.087i of degree 5
+        root ≈-0.179+1.087i of degree 5
+        root ≈0.767-0.352i of degree 5
+        root ≈0.767+0.352i of degree 5
     */
 }
