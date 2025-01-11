@@ -94,7 +94,7 @@ s.pprint();
 Output:
     Start Affine Lattice
     Offset
-    ( 1    0    -1 )
+    ( 2    0    -1 )
     Start Linear Lattice
     ( 1    -1    -1 )
     End Linear Lattice
@@ -102,7 +102,7 @@ Output:
 */
 ```
 so the general solution is all $a$, $b$, $c$ such that
-$$\begin{pmatrix}a \\ b \\ c\end{pmatrix} = \begin{pmatrix}1 \\ 0 \\ -1\end{pmatrix} + t\begin{pmatrix}1 \\ -1 \\ -1\end{pmatrix}$$
+$$\begin{pmatrix}a \\ b \\ c\end{pmatrix} = \begin{pmatrix}2 \\ 0 \\ -1\end{pmatrix} + t\begin{pmatrix}1 \\ -1 \\ -1\end{pmatrix}$$
 for some integer $t$.
 
 
