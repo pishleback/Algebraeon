@@ -311,6 +311,8 @@ pub fn find_isomorphism<'a, 'b>(
 
 #[cfg(test)]
 mod homomorphism_tests {
+    use crate::free_group::todd_coxeter::FinitelyGeneratedGroupPresentation;
+
     use super::*;
 
     #[test]
@@ -535,17 +537,17 @@ mod homomorphism_tests {
 
         {
             let grp_g = examples::symmetric_group_structure(5);
-            let grp_h = super::super::super::free_group::todd_coxeter::enumerate_group(
-                3,
-                vec![
-                    vec![0, 0],
-                    vec![2, 2],
-                    vec![4, 4],
-                    vec![0, 4, 0, 4],
-                    vec![0, 2, 0, 2, 0, 2],
-                    vec![2, 4, 2, 4, 2, 4, 2, 4, 2, 4],
-                ],
-            ); //A5 x C2
+            let mut grp_h = FinitelyGeneratedGroupPresentation::new();
+            let a = grp_h.add_generator();
+            let b = grp_h.add_generator();
+            let c = grp_h.add_generator();
+            grp_h.add_relation(a.pow(2));
+            grp_h.add_relation(b.pow(2));
+            grp_h.add_relation(c.pow(2));
+            grp_h.add_relation((&a * &c).pow(2));
+            grp_h.add_relation((&a * &b).pow(3));
+            grp_h.add_relation((&b * &c).pow(5));
+            let grp_h = grp_h.into_finite_group(); //A5 x C2
 
             match find_isomorphism(&grp_g, &grp_h) {
                 Some(_f) => panic!(),

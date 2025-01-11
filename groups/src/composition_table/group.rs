@@ -407,6 +407,8 @@ pub fn direct_product_structure(group_one: &Group, group_two: &Group) -> Group {
 }
 
 pub mod examples {
+    use crate::free_group::todd_coxeter::FinitelyGeneratedGroupPresentation;
+
     use super::*;
 
     pub fn trivial_group_structure() -> Group {
@@ -432,11 +434,14 @@ pub mod examples {
         // dihedral group using the presentation
         // <a b : a^2 = b^2 = (ab)^n = e>
         assert!(1 <= n);
-        let mut rels = vec![];
-        rels.push(vec![0, 0]);
-        rels.push(vec![2, 2]);
-        rels.push(vec![0, 2].into_iter().cycle().take(2 * n).collect());
-        let mut grp = super::super::super::free_group::todd_coxeter::enumerate_group(2, rels);
+
+        let mut grp = FinitelyGeneratedGroupPresentation::new();
+        let a = grp.add_generator();
+        let b = grp.add_generator();
+        grp.add_relation(a.pow(2));
+        grp.add_relation(b.pow(2));
+        grp.add_relation((&a * &b).pow(n as isize));
+        let mut grp = grp.into_finite_group();
         grp.is_abelian = Some(n <= 2);
         grp.is_simple = Some(n <= 1);
         grp
@@ -444,17 +449,18 @@ pub mod examples {
 
     pub fn quaternion_group_structure() -> Group {
         // quaternion group using the presentation
-        // <-1 i j k : (-1)^2 = i^2 = j^2 = k^2 = ijk = -1>
-        let mut grp = super::super::super::free_group::todd_coxeter::enumerate_group(
-            4,
-            vec![
-                vec![0, 0],
-                vec![2, 2, 1],
-                vec![4, 4, 1],
-                vec![6, 6, 1],
-                vec![2, 4, 6, 1],
-            ],
-        );
+        // <-1 i j k : (-1)^2 = 1  i^2 = j^2 = k^2 = ijk = -1>
+        let mut grp = FinitelyGeneratedGroupPresentation::new();
+        let a = grp.add_generator();
+        let i = grp.add_generator();
+        let j = grp.add_generator();
+        let k = grp.add_generator();
+        grp.add_relation(a.pow(2));
+        grp.add_two_sided_relation(i.pow(2), a.clone());
+        grp.add_two_sided_relation(j.pow(2), a.clone());
+        grp.add_two_sided_relation(k.pow(2), a.clone());
+        grp.add_two_sided_relation(&i * &j * &k, a.clone());
+        let mut grp = grp.into_finite_group();
         grp.is_abelian = Some(false);
         grp.is_simple = Some(false);
         grp

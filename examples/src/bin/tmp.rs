@@ -1,26 +1,21 @@
 #![allow(dead_code, warnings)]
 
+use algebraeon_groups::free_group::todd_coxeter::*;
+
 fn main() {
-    use algebraeon_rings::{linear::matrix::*, number::algebraic::isolated_roots::complex::*};
-    use algebraeon_sets::structure::*;
-    use malachite_q::Rational;
-    // Construct a matrix
-    let a = Matrix::<Rational>::from_rows(vec![
-        vec![7, 5, -3, -2],
-        vec![1, -1, -1, -1],
-        vec![7, 4, -3, -6],
-        vec![-1, 5, 1, 5],
-    ]);
-    // Put it into Jordan Normal Form
-    #[cfg(not(debug_assertions))]
-    let j = MatrixStructure::new(ComplexAlgebraic::structure()).jordan_normal_form(&a);
-    #[cfg(not(debug_assertions))]
-    j.pprint();
-    /*
-    Output:
-        / -i√3    0      0    0 \
-        | 0       i√3    0    0 |
-        | 0       0      4    1 |
-        \ 0       0      0    4 /
-    */
+    let mut g = FinitelyGeneratedGroupPresentation::new();
+    // Add the 3 generators
+    let a = g.add_generator();
+    let b = g.add_generator();
+    let c = g.add_generator();
+    // Add the relations
+    g.add_relation(a.pow(2));
+    g.add_relation(b.pow(2));
+    g.add_relation(c.pow(2));
+    g.add_relation((&a * &b).pow(3));
+    g.add_relation((&b * &c).pow(5));
+    g.add_relation((&a * &c).pow(2));
+    // Count elements
+    let (n, _) = g.enumerate_elements();
+    assert_eq!(n, 120);
 }
