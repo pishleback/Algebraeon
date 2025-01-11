@@ -25,7 +25,7 @@ impl SemiRingStructure for CannonicalStructure<Natural> {
     }
 }
 
-pub fn nat_to_usize(n: &Natural) -> Result<usize, ()> {
+pub(crate) fn nat_to_usize(n: &Natural) -> Result<usize, ()> {
     let limbs = n.to_limbs_asc();
     if limbs.len() == 0 {
         Ok(0)
