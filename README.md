@@ -1,8 +1,14 @@
-# Algebraeon
-Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations rather than approximate numerical solutions.
+## Crates
+Algebraeon is published under the four separate crates.
+ - [algebraeon-sets](https://crates.io/crates/algebraeon-sets)
+ - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
+ - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
+ - [algebraeon-geometry](https://crates.io/crates/algebraeon-geometry)
 
-## What it can do
-Algebraeon already implements the following:
+# Algebraeon
+Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API is currently highly unstable and subject to change.
+
+As a taste for the sorts of problems Algebraeon solves, it already implements the following:
  - Euclids algorithm for GCD and the extended version for obtaining Bezout coefficients.
  - Polynomial GCD computations using subresultant pseudo-remainder sequences.
  - AKS algorithm for natural number primality testing.
@@ -24,13 +30,7 @@ Algebraeon already implements the following:
  - Computations with multiplication tables for small finite groups.
  - Todd-Coxeter algorithm for the enumeration of finite index cosets of a finitely generated groups.
 
-# Usage
-Add the required crates to your ``cargo.toml`` file
- - [algebraeon-sets](https://crates.io/crates/algebraeon-sets)
- - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
- - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
- - [algebraeon-geometry](https://crates.io/crates/algebraeon-geometry)
-
+# Example Usage
 ## Factoring a Polynomial
 ```
 use algebraeon_rings::{
@@ -40,6 +40,13 @@ use algebraeon_rings::{
 use malachite_nz::integer::Integer;
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
+let f = (x.pow(2) - 5*x + 6).into_verbose();
+println!("f = {}", f.factor().unwrap());
+/*
+Output:
+    f = 1 * ((-2)+λ) * ((-3)+λ)
+*/
+
 let f = (x.pow(15) - 1).into_verbose();
 println!("f = {}", f.factor().unwrap());
 /*
@@ -72,4 +79,21 @@ Output:
 */
 ```
 
+# Getting Help
+If you have questions, concerns, bug reports, etc, please file an issue in this repository's Issue Tracker.
 
+# Contributing
+Contributions are welcome. There are two primary ways to contribute:
+
+## Using the issue tracker
+Use the issue tracker to suggest feature requests, report bugs, and ask questions.
+
+## Changing the code-base
+You should fork this repository, make changes in your own fork, and then submit a pull request. New code should have associated unit tests that validate implemented features and the presence or lack of defects.
+
+Algebraeon is organized as a [cargo workspace](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). Run `cargo test` in the root directory to build and run all tests.
+
+A suggested workflow for testing new features:
+ - Create a new binary in `examples/src/bin`, for example `my_main.rs`.
+ - To run, use `cargo run --bin my_main.rs` in the root directory.
+ - Test any changes to the codebase with unit tests and/or using `my_main.rs`.
