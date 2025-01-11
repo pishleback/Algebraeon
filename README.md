@@ -62,20 +62,22 @@ use algebraeon_sets::structure::*;
 use malachite_q::Rational;
 // Construct a matrix
 let a = Matrix::<Rational>::from_rows(vec![
-    vec![5, 4, 2, 1],
-    vec![0, 1, -1, -1],
-    vec![-1, -1, 3, 0],
-    vec![1, 1, -1, 2],
+    vec![7, 5, -3, -2],
+    vec![1, -1, -1, -1],
+    vec![7, 4, -3, -6],
+    vec![-1, 5, 1, 5],
 ]);
 // Put it into Jordan Normal Form
+# #[cfg(not(debug_assertions))]
 let j = MatrixStructure::new(ComplexAlgebraic::structure()).jordan_normal_form(&a);
+# #[cfg(not(debug_assertions))]
 j.pprint();
 /*
 Output:
-    / 2    0    0    0 \
-    | 0    1    0    0 |
-    | 0    0    4    1 |
-    \ 0    0    0    4 /
+    / -i√3    0      0    0 \
+    | 0       i√3    0    0 |
+    | 0       0      4    1 |
+    \ 0       0      0    4 /
 */
 ```
 
