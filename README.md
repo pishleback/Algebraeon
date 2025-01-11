@@ -1,5 +1,5 @@
 ## Installation via Crates.io
-Algebraeon is published under the four separate crates.
+Algebraeon is published under the four separate crates:
  - [algebraeon-sets](https://crates.io/crates/algebraeon-sets)
  - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
  - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
