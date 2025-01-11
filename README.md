@@ -94,27 +94,25 @@ so the general solution is all $a$, $b$, $c$ such that
 for some integer $t$.
 
 ## Complex Root Isolation
-Find the complex roots of the polynomial
-$$f(x) = (x^2 + 1)(x^5 - x + 1)$$
+Find all complex roots of the polynomial
+$$f(x) = x^5 + x^2 - x + 1$$
 ```
 use algebraeon_rings::{polynomial::polynomial::*, structure::elements::*};
 use malachite_nz::integer::Integer;
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
-let f = ((x.pow(2) + 1) * (x.pow(5) - x + 1)).into_verbose();
+let f = (x.pow(5) + x.pow(2) - x + 1).into_verbose();
 // Find the complex roots of f(x)
 for root in f.all_complex_roots() {
     println!("root {} of degree {}", root, root.degree());
 }
 /*
 Output:
+    root ≈-1.328 of degree 3
+    root ≈0.662-0.559i of degree 3
+    root ≈0.662+0.559i of degree 3
     root -i of degree 2
     root i of degree 2
-    root ≈-1.172 of degree 5
-    root ≈-0.179-1.087i of degree 5
-    root ≈-0.179+1.087i of degree 5
-    root ≈0.767-0.352i of degree 5
-    root ≈0.767+0.352i of degree 5
 */
 ```
 Despite the output, the roots found are _not_ numerical approximations. Rather, they are stored internally as exact algebraic numbers by using isolating boxes in the complex plane.
