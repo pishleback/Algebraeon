@@ -4,7 +4,7 @@
 
 use std::str::FromStr;
 
-use crate::{polynomial::polynomial::*, ring_structure::elements::IntoErgonomic};
+use crate::{polynomial::polynomial::*, structure::elements::IntoErgonomic};
 use malachite_nz::integer::Integer;
 
 // https://homepages.loria.fr/PZimmermann/mupad/

@@ -1,4 +1,4 @@
-use crate::{polynomial::polynomial::*, ring_structure::quotient::*};
+use crate::{polynomial::polynomial::*, structure::quotient::*};
 
 use super::*;
 
@@ -26,7 +26,7 @@ impl UniqueFactorizationStructure
     fn factor(
         &self,
         p: &Self::Set,
-    ) -> Option<crate::ring_structure::factorization::Factored<Self>> {
+    ) -> Option<crate::structure::factorization::Factored<Self>> {
         Some(
             self.factorize_monic(p)?
                 .factorize_squarefree()

@@ -1,7 +1,7 @@
 use malachite_nz::natural::Natural;
 
-use super::super::ring_structure::factorization::*;
-use super::super::ring_structure::structure::*;
+use super::super::structure::factorization::*;
+use super::super::structure::structure::*;
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
 
@@ -373,7 +373,7 @@ mod tests {
     use malachite_nz::integer::Integer;
     use malachite_q::Rational;
 
-    use crate::ring_structure::elements::IntoErgonomic;
+    use crate::structure::elements::IntoErgonomic;
 
     use super::*;
 

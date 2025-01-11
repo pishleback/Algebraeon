@@ -8,7 +8,7 @@ use std::sync::atomic::AtomicUsize;
 
 use malachite_nz::natural::Natural;
 
-use super::super::ring_structure::structure::*;
+use super::super::structure::structure::*;
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
 
@@ -418,7 +418,7 @@ impl<RS: RingStructure> PartialEqStructure for MultiPolynomialStructure<RS> {
 }
 impl<RS: RingStructure> EqStructure for MultiPolynomialStructure<RS> {}
 
-impl<RS: RingStructure> RingStructure for MultiPolynomialStructure<RS> {
+impl<RS: RingStructure> SemiRingStructure for MultiPolynomialStructure<RS> {
     fn zero(&self) -> Self::Set {
         MultiPolynomial { terms: vec![] }
     }
@@ -429,24 +429,6 @@ impl<RS: RingStructure> RingStructure for MultiPolynomialStructure<RS> {
                 coeff: self.coeff_ring.one(),
                 monomial: Monomial::one(),
             }],
-        }
-    }
-
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        MultiPolynomial {
-            terms: a
-                .terms
-                .iter()
-                .map(
-                    |Term {
-                         coeff: c,
-                         monomial: m,
-                     }| Term {
-                        coeff: self.coeff_ring.neg(&c),
-                        monomial: m.clone(),
-                    },
-                )
-                .collect(),
         }
     }
 
@@ -503,6 +485,26 @@ impl<RS: RingStructure> RingStructure for MultiPolynomialStructure<RS> {
                 .map(|(monomial, coeff)| Term { coeff, monomial })
                 .collect(),
         ))
+    }
+}
+
+impl<RS: RingStructure> RingStructure for MultiPolynomialStructure<RS> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        MultiPolynomial {
+            terms: a
+                .terms
+                .iter()
+                .map(
+                    |Term {
+                         coeff: c,
+                         monomial: m,
+                     }| Term {
+                        coeff: self.coeff_ring.neg(&c),
+                        monomial: m.clone(),
+                    },
+                )
+                .collect(),
+        }
     }
 }
 
@@ -741,10 +743,9 @@ where
 mod tests {
     use malachite_nz::integer::Integer;
 
-    use crate::ring_structure::elements::IntoErgonomic;
+    use crate::structure::elements::IntoErgonomic;
 
     use super::*;
-    
 
     #[test]
     fn test_monomial_ordering() {

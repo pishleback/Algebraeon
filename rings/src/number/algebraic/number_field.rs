@@ -3,7 +3,7 @@ use crate::{
     linear::matrix::*,
     number::natural::nat_to_usize,
     polynomial::{multipoly::*, polynomial::*, symmetric::ss_num},
-    ring_structure::{factorization::Factored, quotient::*, structure::*},
+    structure::{factorization::Factored, quotient::*, structure::*},
 };
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
@@ -327,7 +327,7 @@ impl PolynomialStructure<ANFStructure> {
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
         p: &<Self as Structure>::Set,
-    ) -> crate::ring_structure::factorization::Factored<Self> {
+    ) -> crate::structure::factorization::Factored<Self> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
         debug_assert!(!self.is_zero(p));
@@ -756,7 +756,7 @@ impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
     fn factor(
         &self,
         a: &Self::Set,
-    ) -> Option<crate::ring_structure::factorization::Factored<Self>> {
+    ) -> Option<crate::structure::factorization::Factored<Self>> {
         if self.is_zero(a) {
             None
         } else {
@@ -774,7 +774,7 @@ impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
 
 #[cfg(test)]
 mod tests {
-    use crate::ring_structure::elements::IntoErgonomic;
+    use crate::structure::elements::IntoErgonomic;
 
     use super::*;
 

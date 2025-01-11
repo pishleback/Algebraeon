@@ -12,7 +12,7 @@ use malachite_q::Rational;
 use crate::{
     number::natural::primes::is_prime,
     polynomial::polynomial::*,
-    ring_structure::{quotient::QuotientStructure, structure::*},
+    structure::{quotient::QuotientStructure, structure::*},
 };
 
 fn pos_int_to_nat(x: Integer) -> Natural {
@@ -491,7 +491,7 @@ impl Polynomial<Integer> {
 
 #[cfg(test)]
 mod tests {
-    use crate::ring_structure::elements::IntoErgonomic;
+    use crate::structure::elements::IntoErgonomic;
 
     use super::*;
 

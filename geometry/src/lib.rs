@@ -4,7 +4,7 @@ use std::borrow::Borrow;
 use std::hash::Hash;
 use std::rc::Rc;
 
-use algebraeon_rings::ring_structure::structure::{FieldStructure, OrderedRingStructure};
+use algebraeon_rings::structure::structure::{FieldStructure, OrderedRingStructure};
 
 mod coordinates;
 pub use coordinates::*;

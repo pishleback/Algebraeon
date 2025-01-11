@@ -4,9 +4,9 @@ use malachite_base::num::basic::traits::One;
 use malachite_base::num::basic::traits::Two;
 use malachite_nz::natural::Natural;
 
-use crate::ring_structure::factorization::*;
-use crate::ring_structure::quotient::*;
-use crate::ring_structure::structure::*;
+use crate::structure::factorization::*;
+use crate::structure::quotient::*;
+use crate::structure::structure::*;
 
 use super::polynomial::*;
 use algebraeon_sets::structure::*;

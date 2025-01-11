@@ -8,7 +8,7 @@ use malachite_nz::natural::Natural;
 use crate::{
     linear::{matrix::*, subspace::*},
     polynomial::polynomial::*,
-    ring_structure::{factorization::*, structure::*},
+    structure::{factorization::*, structure::*},
 };
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
@@ -397,7 +397,7 @@ mod tests {
 
     use crate::{
         number::finite_fields::{modulo::*, quaternary_field::QuaternaryField},
-        ring_structure::elements::IntoErgonomic,
+        structure::elements::IntoErgonomic,
     };
 
     use super::*;

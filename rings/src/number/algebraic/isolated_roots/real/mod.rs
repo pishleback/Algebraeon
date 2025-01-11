@@ -1,6 +1,5 @@
 use crate::{
-    number::algebraic::number_field::new_anf, polynomial::polynomial::*,
-    ring_structure::structure::*,
+    number::algebraic::number_field::new_anf, polynomial::polynomial::*, structure::structure::*,
 };
 use algebraeon_sets::structure::*;
 use bounds::*;
@@ -455,20 +454,13 @@ impl Display for RealAlgebraic {
 
 // impl EqStructure for CannonicalStructure<RealAlgebraic> {}
 
-impl RingStructure for CannonicalStructure<RealAlgebraic> {
+impl SemiRingStructure for CannonicalStructure<RealAlgebraic> {
     fn zero(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(0))
     }
 
     fn one(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(1))
-    }
-
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        match a {
-            RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
-            RealAlgebraic::Real(root) => RealAlgebraic::Real(root.clone().neg()),
-        }
     }
 
     fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
@@ -611,6 +603,15 @@ impl RingStructure for CannonicalStructure<RealAlgebraic> {
     }
 }
 
+impl RingStructure for CannonicalStructure<RealAlgebraic> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        match a {
+            RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
+            RealAlgebraic::Real(root) => RealAlgebraic::Real(root.clone().neg()),
+        }
+    }
+}
+
 impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.inv(b) {
@@ -731,9 +732,8 @@ impl RealRoundingStructure for CannonicalStructure<RealAlgebraic> {
 
 #[cfg(test)]
 mod tests {
-    
 
-    use crate::ring_structure::elements::IntoErgonomic;
+    use crate::structure::elements::IntoErgonomic;
 
     use super::*;
 

@@ -13,7 +13,7 @@ pub fn modular_permutation<const N: usize>(
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_rings::ring_structure::elements::IntoErgonomic;
+    use algebraeon_rings::structure::elements::IntoErgonomic;
 
     use super::*;
 

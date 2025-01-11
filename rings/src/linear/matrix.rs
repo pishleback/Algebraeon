@@ -4,7 +4,7 @@ use std::rc::Rc;
 use itertools::Itertools;
 use malachite_nz::natural::Natural;
 
-use super::super::ring_structure::structure::*;
+use super::super::structure::structure::*;
 use super::subspace::*;
 use crate::polynomial::polynomial::*;
 use algebraeon_sets::structure::*;
@@ -2380,7 +2380,7 @@ mod tests {
 
     use crate::{number::algebraic::isolated_roots::{
         complex::ComplexAlgebraic, real::RealAlgebraic,
-    }, ring_structure::elements::IntoErgonomic};
+    }, structure::elements::IntoErgonomic};
 
     use super::*;
     

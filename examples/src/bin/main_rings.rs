@@ -2,7 +2,7 @@
 
 use algebraeon_rings::{
     polynomial::polynomial::*,
-    ring_structure::{elements::*, structure::*},
+    structure::{elements::*, structure::*},
 };
 use malachite_nz::integer::Integer;
 

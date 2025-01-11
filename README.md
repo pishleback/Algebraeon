@@ -36,7 +36,7 @@ Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
 ```
 use algebraeon_rings::{
     polynomial::polynomial::*,
-    ring_structure::{elements::*, structure::*},
+    structure::{elements::*, structure::*},
 };
 use malachite_nz::integer::Integer;
 

@@ -1,7 +1,7 @@
 use std::borrow::Borrow;
 use std::rc::Rc;
 
-use super::super::ring_structure::structure::*;
+use super::super::structure::structure::*;
 use super::matrix::*;
 use algebraeon_sets::structure::*;
 

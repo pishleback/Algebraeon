@@ -2,7 +2,7 @@ use std::{borrow::Borrow, collections::HashSet};
 
 use itertools::Itertools;
 
-use crate::ring_structure::structure::{IntegralDomainStructure, RingStructure};
+use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
 
 use super::multipoly::*;
@@ -264,7 +264,7 @@ mod tests {
     use malachite_nz::integer::Integer;
 
     use super::*;
-    use crate::ring_structure::elements::*;
+    use crate::structure::elements::*;
 
     #[test]
     fn test_ffosp() {

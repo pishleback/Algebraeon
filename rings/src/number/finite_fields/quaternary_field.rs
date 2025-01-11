@@ -4,7 +4,7 @@ use std::rc::Rc;
 use malachite_nz::natural::Natural;
 
 use crate::polynomial::polynomial::*;
-use crate::ring_structure::structure::*;
+use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
 
 //the finite field of 4 elements
@@ -35,17 +35,13 @@ impl MetaType for QuaternaryField {
     }
 }
 
-impl RingStructure for CannonicalStructure<QuaternaryField> {
+impl SemiRingStructure for CannonicalStructure<QuaternaryField> {
     fn zero(&self) -> Self::Set {
         QuaternaryField::Zero
     }
 
     fn one(&self) -> Self::Set {
         QuaternaryField::One
-    }
-
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        a.clone()
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -75,6 +71,12 @@ impl RingStructure for CannonicalStructure<QuaternaryField> {
             (QuaternaryField::Beta, QuaternaryField::Alpha) => QuaternaryField::One,
             (QuaternaryField::Beta, QuaternaryField::Beta) => QuaternaryField::Alpha,
         }
+    }
+}
+
+impl RingStructure for CannonicalStructure<QuaternaryField> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        a.clone()
     }
 }
 
@@ -113,10 +115,7 @@ impl FiniteFieldStructure for CannonicalStructure<QuaternaryField> {
 }
 
 impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<QuaternaryField>> {
-    fn factor(
-        &self,
-        p: &Self::Set,
-    ) -> Option<crate::ring_structure::factorization::Factored<Self>> {
+    fn factor(&self, p: &Self::Set) -> Option<crate::structure::factorization::Factored<Self>> {
         Some(
             self.factorize_monic(p)?
                 .factorize_squarefree()

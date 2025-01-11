@@ -11,7 +11,7 @@ use algebraeon_groups::examples::symmetric::*;
 use algebraeon_rings::{
     linear::matrix::Matrix,
     number::finite_fields::{modulo::Modulo, quaternary_field::QuaternaryField},
-    ring_structure::structure::*,
+    structure::structure::*,
 };
 
 pub type BinaryField = Modulo<2>;

@@ -58,7 +58,7 @@ some improvements
 
 */
 
-use crate::{number::integer::*, polynomial::polynomial::*, ring_structure::quotient::*};
+use crate::{number::integer::*, polynomial::polynomial::*, structure::quotient::*};
 use algebraeon_sets::combinations::LexicographicCombinationsWithRemovals;
 use primes::PrimeGenerator;
 

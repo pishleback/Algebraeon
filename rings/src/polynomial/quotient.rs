@@ -1,7 +1,7 @@
 use super::polynomial::*;
 use crate::{
     linear::matrix::*,
-    ring_structure::{quotient::*, structure::*},
+    structure::{quotient::*, structure::*},
 };
 use algebraeon_sets::structure::*;
 

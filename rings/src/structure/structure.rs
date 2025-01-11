@@ -19,7 +19,7 @@ pub enum RingDivisionError {
     NotDivisible,
 }
 
-pub trait RingStructure: EqStructure {
+pub trait SemiRingStructure: EqStructure {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
     }
@@ -27,7 +27,6 @@ pub trait RingStructure: EqStructure {
     fn zero(&self) -> Self::Set;
     fn one(&self) -> Self::Set;
 
-    fn neg(&self, a: &Self::Set) -> Self::Set;
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
     fn add_mut(&self, a: &mut Self::Set, b: &Self::Set) {
         *a = self.add(a, b);
@@ -74,6 +73,41 @@ pub trait RingStructure: EqStructure {
             ans
         }
     }
+}
+
+pub trait MetaSemiRing: MetaType
+where
+    Self::Structure: SemiRingStructure,
+{
+    fn zero() -> Self {
+        Self::structure().zero()
+    }
+    fn one() -> Self {
+        Self::structure().one()
+    }
+
+    fn add(a: &Self, b: &Self) -> Self {
+        Self::structure().add(a, b)
+    }
+    fn sum(vals: Vec<impl Borrow<Self>>) -> Self {
+        Self::structure().sum(vals)
+    }
+    fn mul(a: &Self, b: &Self) -> Self {
+        Self::structure().mul(a, b)
+    }
+    fn product(vals: Vec<impl Borrow<Self>>) -> Self {
+        Self::structure().product(vals)
+    }
+
+    fn nat_pow(&self, n: &Natural) -> Self {
+        Self::structure().nat_pow(self, n)
+    }
+}
+impl<R: MetaType> MetaSemiRing for R where Self::Structure: SemiRingStructure {}
+
+pub trait RingStructure: SemiRingStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set;
+
     fn from_int(&self, x: &Integer) -> Self::Set {
         if *x < 0 {
             self.neg(&self.from_int(&-x))
@@ -102,32 +136,10 @@ pub trait MetaRing: MetaType
 where
     Self::Structure: RingStructure,
 {
-    fn zero() -> Self {
-        Self::structure().zero()
-    }
-    fn one() -> Self {
-        Self::structure().one()
-    }
-
     fn neg(&self) -> Self {
         Self::structure().neg(self)
     }
-    fn add(a: &Self, b: &Self) -> Self {
-        Self::structure().add(a, b)
-    }
-    fn sum(vals: Vec<impl Borrow<Self>>) -> Self {
-        Self::structure().sum(vals)
-    }
-    fn mul(a: &Self, b: &Self) -> Self {
-        Self::structure().mul(a, b)
-    }
-    fn product(vals: Vec<impl Borrow<Self>>) -> Self {
-        Self::structure().product(vals)
-    }
-
-    fn nat_pow(&self, n: &Natural) -> Self {
-        Self::structure().nat_pow(self, n)
-    }
+    
     fn from_int(x: &Integer) -> Self {
         Self::structure().from_int(x)
     }

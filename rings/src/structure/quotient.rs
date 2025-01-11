@@ -109,7 +109,7 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
 }
 
 impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>
-    RingStructure for QuotientStructure<RS, IS_FIELD>
+    SemiRingStructure for QuotientStructure<RS, IS_FIELD>
 {
     fn zero(&self) -> Self::Set {
         self.ring.zero()
@@ -119,16 +119,20 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
         self.ring.one()
     }
 
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        self.ring.neg(a)
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.ring.rem(&self.ring.add(a, b), &self.modulus)
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.ring.rem(&self.ring.mul(a, b), &self.modulus)
+    }
+}
+
+impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>
+    RingStructure for QuotientStructure<RS, IS_FIELD>
+{
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        self.ring.neg(a)
     }
 }
 
@@ -170,7 +174,7 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> FieldStructu
 mod tests {
     use malachite_nz::integer::Integer;
 
-    use super::super::super::ring_structure::structure::*;
+    use super::super::super::structure::structure::*;
     use algebraeon_sets::structure::*;
 
     use super::*;

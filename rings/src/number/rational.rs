@@ -7,11 +7,11 @@ use malachite_nz::integer::Integer;
 use malachite_q::Rational;
 
 use super::super::polynomial::polynomial::*;
-use super::super::ring_structure::factorization::*;
-use super::super::ring_structure::structure::*;
+use super::super::structure::factorization::*;
+use super::super::structure::structure::*;
 use algebraeon_sets::structure::*;
 
-impl RingStructure for CannonicalStructure<Rational> {
+impl SemiRingStructure for CannonicalStructure<Rational> {
     fn zero(&self) -> Self::Set {
         Rational::ZERO
     }
@@ -20,16 +20,18 @@ impl RingStructure for CannonicalStructure<Rational> {
         Rational::ONE
     }
 
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        -a
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
+    }
+}
+
+impl RingStructure for CannonicalStructure<Rational> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        -a
     }
 }
 

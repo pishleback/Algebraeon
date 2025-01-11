@@ -55,7 +55,7 @@ impl Polynomial<Integer> {
 mod tests {
     use berlekamp_zassenhaus::*;
 
-    use crate::ring_structure::elements::IntoErgonomic;
+    use crate::structure::elements::IntoErgonomic;
 
     use super::*;
     

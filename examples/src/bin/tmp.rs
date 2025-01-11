@@ -1,21 +1,25 @@
 #![allow(dead_code, warnings)]
 
-use algebraeon_groups::free_group::todd_coxeter::*;
 
 fn main() {
-    let mut g = FinitelyGeneratedGroupPresentation::new();
-    // Add the 3 generators
-    let a = g.add_generator();
-    let b = g.add_generator();
-    let c = g.add_generator();
-    // Add the relations
-    g.add_relation(a.pow(2));
-    g.add_relation(b.pow(2));
-    g.add_relation(c.pow(2));
-    g.add_relation((&a * &b).pow(3));
-    g.add_relation((&b * &c).pow(5));
-    g.add_relation((&a * &c).pow(2));
-    // Count elements
-    let (n, _) = g.enumerate_elements();
-    assert_eq!(n, 120);
+    use algebraeon_rings::{
+        polynomial::polynomial::*,
+        structure::{elements::*, structure::*},
+    };
+    use malachite_nz::integer::Integer;
+    
+    let x = &Polynomial::<Integer>::var().into_ergonomic();
+    let f = (x.pow(2) - 5*x + 6).into_verbose();
+    println!("f(λ) = {}", f.factor().unwrap());
+    /*
+    Output:
+        f(λ) = 1 * ((-2)+λ) * ((-3)+λ)
+    */
+    
+    let f = (x.pow(15) - 1).into_verbose();
+    println!("f(λ) = {}", f.factor().unwrap());
+    /*
+    Output:
+        f(λ) = 1 * ((-1)+λ) * (1+λ+λ^2) * (1+λ+λ^2+λ^3+λ^4) * (1+(-1)λ+λ^3+(-1)λ^4+λ^5+(-1)λ^7+λ^8)
+    */
 }

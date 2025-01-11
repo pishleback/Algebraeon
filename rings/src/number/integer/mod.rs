@@ -9,17 +9,17 @@ use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
 use crate::number::natural::*;
-use crate::ring_structure::factorization::*;
-use crate::ring_structure::structure::*;
+use crate::structure::factorization::*;
+use crate::structure::structure::*;
 
 use algebraeon_sets::structure::*;
 
+pub mod berlekamp_zassenhaus;
 pub mod modulo;
 pub mod polynomial;
-pub mod berlekamp_zassenhaus;
 pub mod zimmermann_polys;
 
-impl RingStructure for CannonicalStructure<Integer> {
+impl SemiRingStructure for CannonicalStructure<Integer> {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
@@ -28,16 +28,18 @@ impl RingStructure for CannonicalStructure<Integer> {
         Integer::ONE
     }
 
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        -a
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
+    }
+}
+
+impl RingStructure for CannonicalStructure<Integer> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        -a
     }
 }
 

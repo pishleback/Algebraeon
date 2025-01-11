@@ -1,5 +1,5 @@
 use crate::number::algebraic::number_field::*;
-use crate::ring_structure::structure::*;
+use crate::structure::structure::*;
 
 use super::poly_tools::*;
 use super::real::RealAlgebraic;
@@ -596,20 +596,13 @@ impl Display for ComplexAlgebraic {
 // }
 // impl EqStructure for CannonicalStructure<ComplexAlgebraic> {}
 
-impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
+impl SemiRingStructure for CannonicalStructure<ComplexAlgebraic> {
     fn zero(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
     }
 
     fn one(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::one()))
-    }
-
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        match a {
-            ComplexAlgebraic::Real(root) => ComplexAlgebraic::Real(RealAlgebraic::neg(root)),
-            ComplexAlgebraic::Complex(root) => ComplexAlgebraic::Complex(root.clone().neg()),
-        }
     }
 
     fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
@@ -814,6 +807,15 @@ impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
     }
 }
 
+impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        match a {
+            ComplexAlgebraic::Real(root) => ComplexAlgebraic::Real(RealAlgebraic::neg(root)),
+            ComplexAlgebraic::Complex(root) => ComplexAlgebraic::Complex(root.clone().neg()),
+        }
+    }
+}
+
 impl IntegralDomainStructure for CannonicalStructure<ComplexAlgebraic> {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         // println!("inv {:?}", a);
@@ -966,7 +968,7 @@ impl ComplexAlgebraic {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ring_structure::elements::*;
+    use crate::structure::elements::*;
 
     #[test]
     fn test_apply_poly() {
@@ -994,7 +996,10 @@ mod tests {
         let i = &ComplexAlgebraic::i().into_ergonomic();
         let a = (2 + 3 * i).into_verbose();
         let f = (x.pow(10)).into_verbose();
-        assert_eq!(a.clone().apply_poly(&f), (-341525 - 145668 * i).into_verbose());
+        assert_eq!(
+            a.clone().apply_poly(&f),
+            (-341525 - 145668 * i).into_verbose()
+        );
     }
 
     #[test]

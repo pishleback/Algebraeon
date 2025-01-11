@@ -1,6 +1,6 @@
 use crate::{
     polynomial::{multipoly::*, polynomial::*},
-    ring_structure::structure::*,
+    structure::structure::*,
 };
 use malachite_base::num::basic::traits::Zero;
 use malachite_nz::integer::Integer;

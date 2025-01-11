@@ -7,7 +7,7 @@ use malachite_nz::natural::Natural;
 
 use crate::linear::matrix::*;
 
-use super::super::ring_structure::structure::*;
+use super::super::structure::structure::*;
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
@@ -130,22 +130,13 @@ impl<RS: RingStructure> PartialEqStructure for PolynomialStructure<RS> {
 
 impl<RS: RingStructure> EqStructure for PolynomialStructure<RS> {}
 
-impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
+impl<RS: RingStructure> SemiRingStructure for PolynomialStructure<RS> {
     fn zero(&self) -> Self::Set {
         Polynomial { coeffs: vec![] }
     }
 
     fn one(&self) -> Self::Set {
         Polynomial::from_coeffs(vec![self.coeff_ring.one()])
-    }
-
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        Polynomial::from_coeffs(
-            a.coeffs()
-                .into_iter()
-                .map(|c| self.coeff_ring.neg(&c))
-                .collect(),
-        )
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -170,6 +161,17 @@ impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
             }
         }
         self.reduce_poly(Polynomial::from_coeffs(coeffs))
+    }
+}
+
+impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        Polynomial::from_coeffs(
+            a.coeffs()
+                .into_iter()
+                .map(|c| self.coeff_ring.neg(&c))
+                .collect(),
+        )
     }
 }
 
@@ -1020,9 +1022,9 @@ mod tests {
     use malachite_q::Rational;
 
     use crate::number::finite_fields::quaternary_field::*;
-    use crate::ring_structure::elements::IntoErgonomic;
+    use crate::structure::elements::IntoErgonomic;
 
-    use super::super::super::ring_structure::structure::*;
+    use super::super::super::structure::structure::*;
 
     use super::*;
 
@@ -1194,7 +1196,10 @@ mod tests {
 
             let r1 = Polynomial::pseudorem(&f, &g).unwrap().unwrap();
             println!("r1 = {}", r1.to_string());
-            assert_eq!(r1.clone().into_ergonomic(), -15 * x.pow(4) + 3 * x.pow(2) - 9);
+            assert_eq!(
+                r1.clone().into_ergonomic(),
+                -15 * x.pow(4) + 3 * x.pow(2) - 9
+            );
 
             let r2 = Polynomial::pseudorem(&g, &r1).unwrap().unwrap();
             println!("r2 = {}", r2.to_string());

@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     number::algebraic::isolated_roots::real::RealAlgebraic, polynomial::polynomial::*,
-    ring_structure::*,
+    structure::*,
 };
 
 use super::{isolated_roots::complex::ComplexAlgebraic, number_field::*};

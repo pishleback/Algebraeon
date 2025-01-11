@@ -1,8 +1,8 @@
 use malachite_nz::{integer::Integer, natural::Natural};
 
 use crate::polynomial::polynomial::*;
-use crate::ring_structure::factorization::*;
-use crate::ring_structure::structure::*;
+use crate::structure::factorization::*;
+use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
 
 use std::rc::Rc;
@@ -131,7 +131,7 @@ impl<const N: usize> MetaType for Modulo<N> {
     }
 }
 
-impl<const N: usize> RingStructure for CannonicalStructure<Modulo<N>> {
+impl<const N: usize> SemiRingStructure for CannonicalStructure<Modulo<N>> {
     fn zero(&self) -> Self::Set {
         Modulo { x: 0 }
     }
@@ -144,14 +144,6 @@ impl<const N: usize> RingStructure for CannonicalStructure<Modulo<N>> {
         }
     }
 
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        if a.x == 0 {
-            Modulo { x: 0 }
-        } else {
-            Modulo { x: N - a.x }
-        }
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         Modulo { x: (a.x + b.x) % N }
     }
@@ -159,6 +151,16 @@ impl<const N: usize> RingStructure for CannonicalStructure<Modulo<N>> {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         Modulo {
             x: (&a.x * &b.x) % N,
+        }
+    }
+}
+
+impl<const N: usize> RingStructure for CannonicalStructure<Modulo<N>> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        if a.x == 0 {
+            Modulo { x: 0 }
+        } else {
+            Modulo { x: N - a.x }
         }
     }
 }
