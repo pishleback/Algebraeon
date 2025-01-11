@@ -134,7 +134,7 @@ Output:
     ...11001101100100010111
 */
 ```
-Truncating to the last 16 bits it can be verified that, modulo $2^16$, the square of these values is $17$.
+Truncating to the last 16 bits it can be verified that, modulo $2^{16}$, the square of these values is $17$.
 ```
 let a = 0b0010011011101001u16;
 assert_eq!(a.wrapping_mul(a), 17u16);
