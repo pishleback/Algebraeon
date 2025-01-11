@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use algebraeon_sets::structure::MetaType;
+use algebraeon_sets::structure::*;
 use malachite_base::num::arithmetic::traits::UnsignedAbs;
 use malachite_base::num::{
     arithmetic::traits::{DivMod, Pow},
@@ -331,6 +331,10 @@ impl PAdicRational {
             }
         }
     }
+
+    fn shift_by(&mut self, k: isize) {
+        self.rat *= Rational::from(&self.p).int_pow(&Integer::from(k)).unwrap()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -362,11 +366,68 @@ impl From<PAdicAlgebraicRoot> for PAdicAlgebraic {
     }
 }
 impl PAdicAlgebraic {
+    pub fn p(&self) -> &Natural {
+        match self {
+            PAdicAlgebraic::Rational(padic_rational) => &padic_rational.p,
+            PAdicAlgebraic::Algebraic(padic_algebraic_root) => &padic_algebraic_root.root.p,
+        }
+    }
+
+    pub fn shift_by(&mut self, k: isize) {
+        match self {
+            PAdicAlgebraic::Rational(padic_rational) => padic_rational.shift_by(k),
+            PAdicAlgebraic::Algebraic(padic_algebraic_root) => padic_algebraic_root.shift_by(k),
+        }
+    }
+
     fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicDigits<'a> {
         match self {
             PAdicAlgebraic::Rational(rational) => rational.reduce_modulo_valuation(k),
             PAdicAlgebraic::Algebraic(root) => root.reduce_modulo_valuation(k),
         }
+    }
+
+    pub fn string_repr(&mut self, num_digits: usize) -> String {
+        use std::fmt::Write;
+        let seps = self.p() >= &Natural::from(10u32);
+        let (mut digits, mut shift) = self.reduce_modulo_valuation(num_digits as isize).digits();
+        while (digits.len() as isize) < (num_digits as isize) - shift {
+            digits.push(Natural::ZERO);
+        }
+        let mut digits = digits.into_iter().rev().collect::<Vec<_>>();
+        while shift > 0 {
+            digits.push(Natural::ZERO);
+            shift -= 1;
+        }
+        debug_assert!(shift <= 0);
+        let shift = (-shift) as usize;
+        let mut s = String::new();
+        write!(&mut s, "...").unwrap();
+        for (i, d) in digits.into_iter().rev().enumerate().rev() {
+            write!(&mut s, "{}", d).unwrap();
+            if i != 0 {
+                if seps {
+                    if i == shift {
+                        write!(&mut s, ";").unwrap();
+                    } else {
+                        write!(&mut s, ",").unwrap();
+                    }
+                } else {
+                    if i == shift {
+                        write!(&mut s, ".").unwrap();
+                    }
+                }
+            }
+        }
+        s
+    }
+}
+
+impl std::fmt::Display for PAdicAlgebraic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let p = self.p();
+        let n = if p < &Natural::from(10u32) { 6 } else { 3 };
+        write!(f, "{}", self.clone().string_repr(n))
     }
 }
 
@@ -488,6 +549,103 @@ impl Polynomial<Integer> {
         roots
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PAdicAlgebraicStructure {
+    p: Natural,
+}
+
+impl Structure for PAdicAlgebraicStructure {
+    type Set = PAdicAlgebraic;
+}
+
+impl PAdicAlgebraicStructure {
+    pub fn new(p: Natural) -> Self {
+        if !is_prime(&p) {
+            panic!("{} is not prime", p)
+        }
+        Self { p }
+    }
+}
+
+impl PAdicAlgebraicStructure {
+    fn check_is_element(&self, a: &<Self as Structure>::Set) {
+        #[cfg(debug_assertions)]
+        if &self.p != a.p() {
+            panic!(
+                "{}-adic structure cannot use {}-adic elements",
+                self.p,
+                a.p()
+            );
+        }
+    }
+}
+
+impl PartialEqStructure for PAdicAlgebraicStructure {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        self.check_is_element(a);
+        self.check_is_element(b);
+        match (a, b) {
+            (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => a.rat == b.rat,
+            (PAdicAlgebraic::Rational(_), PAdicAlgebraic::Algebraic(_)) => false,
+            (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_)) => false,
+            (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => {
+                if a.k != b.k {
+                    false
+                } else {
+                    a.root.clone().equal_mut(&mut b.root.clone())
+                }
+            }
+        }
+    }
+}
+
+impl EqStructure for PAdicAlgebraicStructure {}
+
+impl SemiRingStructure for PAdicAlgebraicStructure {
+    fn zero(&self) -> Self::Set {
+        PAdicAlgebraic::Rational(PAdicRational {
+            p: self.p.clone(),
+            rat: Rational::ZERO,
+        })
+    }
+
+    fn one(&self) -> Self::Set {
+        PAdicAlgebraic::Rational(PAdicRational {
+            p: self.p.clone(),
+            rat: Rational::ONE,
+        })
+    }
+
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.check_is_element(a);
+        self.check_is_element(b);
+        todo!()
+    }
+
+    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.check_is_element(a);
+        self.check_is_element(b);
+        todo!()
+    }
+}
+
+impl RingStructure for PAdicAlgebraicStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        self.check_is_element(a);
+        todo!()
+    }
+}
+
+impl IntegralDomainStructure for PAdicAlgebraicStructure {
+    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        self.check_is_element(a);
+        self.check_is_element(b);
+        todo!()
+    }
+}
+
+impl FieldStructure for PAdicAlgebraicStructure {}
 
 #[cfg(test)]
 mod tests {
@@ -698,8 +856,8 @@ mod tests {
         println!("{:?}", f);
         let roots = f.all_padic_roots(&Natural::from(2u32));
         assert_eq!(roots.len(), 2);
-        for mut root in roots {
-            println!("{:?}", root.reduce_modulo_valuation(10).digits());
+        for root in roots {
+            println!("{}", root);
         }
     }
 
@@ -711,6 +869,9 @@ mod tests {
         assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 0);
         assert_eq!(f.all_padic_roots(&Natural::from(7u32)).len(), 0);
         assert_eq!(f.all_padic_roots(&Natural::from(727u32)).len(), 6);
+        for root in f.all_padic_roots(&Natural::from(727u32)) {
+            println!("{}", root);
+        }
     }
 
     #[test]
