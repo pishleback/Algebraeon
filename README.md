@@ -83,12 +83,12 @@ Output:
 If you have questions, concerns, bug reports, etc, please file an issue in this repository's Issue Tracker.
 
 # Contributing
-Contributions are welcome. There are two primary ways to contribute:
+Contributions are welcome. The two primary ways to contribute are:
 
-## Using the issue tracker
+### Using the issue tracker
 Use the issue tracker to suggest feature requests, report bugs, and ask questions.
 
-## Changing the code-base
+### Changing the code-base
 You should fork this repository, make changes in your own fork, and then submit a pull request. New code should have associated unit tests that validate implemented features and the presence or lack of defects.
 
 Algebraeon is organized as a [cargo workspace](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). Run `cargo test` in the root directory to build and run all tests.
