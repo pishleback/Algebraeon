@@ -32,6 +32,7 @@ As a taste for the sorts of problems Algebraeon solves, it already implements th
 
 # Example Usage
 ## Factoring a Polynomial
+Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
 ```
 use algebraeon_rings::{
     polynomial::polynomial::*,
@@ -54,6 +55,10 @@ Output:
     f = 1 * ((-1)+λ) * (1+λ+λ^2) * (1+λ+λ^2+λ^3+λ^4) * (1+(-1)λ+λ^3+(-1)λ^4+λ^5+(-1)λ^7+λ^8)
 */
 ```
+so
+$$x^2 - 5x + 6 = (x-2)(x-3)$$
+and
+$$x^{15} = (x-1)(x^2+x+1)(x^4+x^3+x^2+x+1)(x^8-x^7+x^5-x^4+x^3-x+1)$$
 
 ## Jordan Normal Form of a Matrix
 ```
