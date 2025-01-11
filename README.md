@@ -56,9 +56,13 @@ Output:
 */
 ```
 so
-$$x^2 - 5x + 6 = (x-2)(x-3)$$
+```math
+x^2 - 5x + 6 = (x-2)(x-3)
+```
 and
-$$x^{15} = (x-1)(x^2+x+1)(x^4+x^3+x^2+x+1)(x^8-x^7+x^5-x^4+x^3-x+1)$$
+```math
+x^{15}-1 = (x-1)(x^2+x+1)(x^4+x^3+x^2+x+1)(x^8-x^7+x^5-x^4+x^3-x+1)
+```
 
 ## Jordan Normal Form of a Matrix
 ```
