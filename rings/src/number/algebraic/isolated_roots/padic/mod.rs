@@ -1191,6 +1191,44 @@ mod tests {
             )
         );
 
+        println!("a+x = {}", ring.add(&a, &x));
+        debug_assert_eq!(
+            ring.add(&a, &x).reduce_modulo_valuation(6).digits(),
+            (
+                vec![
+                    Natural::from(4u8),
+                    Natural::from(1u8),
+                    Natural::from(0u8),
+                    Natural::from(1u8),
+                    Natural::from(1u8),
+                    Natural::from(3u8),
+                    Natural::from(4u8),
+                    Natural::from(4u8),
+                    Natural::from(1u8),
+                ],
+                -3
+            )
+        );
+
+        println!("b+x = {}", ring.add(&b, &x));
+        debug_assert_eq!(
+            ring.add(&b, &x).reduce_modulo_valuation(6).digits(),
+            (
+                vec![
+                    Natural::from(4u8),
+                    Natural::from(1u8),
+                    Natural::from(0u8),
+                    Natural::from(0u8),
+                    Natural::from(0u8),
+                    Natural::from(4u8),
+                    Natural::from(3u8),
+                    Natural::from(2u8),
+                    Natural::from(2u8),
+                ],
+                -3
+            )
+        );
+
         println!("c+x = {}", ring.add(&c, &x));
         debug_assert_eq!(
             ring.add(&c, &x).reduce_modulo_valuation(6).digits(),
