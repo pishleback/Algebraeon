@@ -683,13 +683,33 @@ impl SemiRingStructure for PAdicAlgebraicStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.check_is_element(a);
         self.check_is_element(b);
-        todo!()
+        match (a, b) {
+            (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
+                PAdicAlgebraic::Rational(PAdicRational {
+                    p: self.p.clone(),
+                    rat: &a.rat + &b.rat,
+                })
+            }
+            (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
+            (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Rational(b)) => todo!(),
+            (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
+        }
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.check_is_element(a);
         self.check_is_element(b);
-        todo!()
+        match (a, b) {
+            (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
+                PAdicAlgebraic::Rational(PAdicRational {
+                    p: self.p.clone(),
+                    rat: &a.rat * &b.rat,
+                })
+            }
+            (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
+            (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Rational(b)) => todo!(),
+            (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
+        }
     }
 }
 
@@ -704,7 +724,17 @@ impl IntegralDomainStructure for PAdicAlgebraicStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.check_is_element(a);
         self.check_is_element(b);
-        todo!()
+        match (a, b) {
+            (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
+                Ok(PAdicAlgebraic::Rational(PAdicRational {
+                    p: self.p.clone(),
+                    rat: Rational::div(&a.rat, &b.rat)?,
+                }))
+            }
+            (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
+            (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Rational(b)) => todo!(),
+            (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
+        }
     }
 
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
@@ -956,6 +986,8 @@ mod tests {
 
     #[test]
     fn test_padic_field_opps() {
+        let ring = PAdicAlgebraicStructure::new(Natural::from(5u32));
+
         let x = Polynomial::<Integer>::var().into_ergonomic();
 
         let a = {
@@ -979,13 +1011,18 @@ mod tests {
             r.into_iter().next().unwrap()
         };
 
+        let x = ring
+            .from_rat(&Rational::from_integers(Integer::from(2), Integer::from(3)))
+            .unwrap();
+
         println!("a = {}", a);
         println!("b = {}", b);
         println!("c = {}", c);
+        println!("x = {}", x);
 
-        println!("-a = {}", a.clone().neg());
+        println!("-a = {}", ring.neg(&a));
         debug_assert_eq!(
-            a.clone().neg().reduce_modulo_valuation(6).digits(),
+            ring.neg(&a).reduce_modulo_valuation(6).digits(),
             (
                 vec![
                     Natural::from(3u8),
@@ -999,9 +1036,9 @@ mod tests {
             )
         );
 
-        println!("-b = {}", b.clone().neg());
+        println!("-b = {}", ring.neg(&b));
         debug_assert_eq!(
-            b.clone().neg().reduce_modulo_valuation(6).digits(),
+            ring.neg(&b).reduce_modulo_valuation(6).digits(),
             (
                 vec![
                     Natural::from(3u8),
@@ -1015,5 +1052,20 @@ mod tests {
             )
         );
 
+        println!("-x = {}", ring.neg(&x));
+        debug_assert_eq!(
+            ring.neg(&x).reduce_modulo_valuation(6).digits(),
+            (
+                vec![
+                    Natural::from(1u8),
+                    Natural::from(3u8),
+                    Natural::from(1u8),
+                    Natural::from(3u8),
+                    Natural::from(1u8),
+                    Natural::from(3u8),
+                ],
+                0
+            )
+        );
     }
 }
