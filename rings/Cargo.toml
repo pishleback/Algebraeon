@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-rings"
-version = "0.0.7"
+version = "0.0.8"
 edition = "2021"
 license = "GPL-3.0-only"
 description = "Algorithms in linear algebra, polynomials, and number theory."
@@ -14,7 +14,7 @@ name = "algebraeon_rings"
 
 [dependencies]
 algebraeon-sets = { version = "0.0.6", path = "../sets" }
-algebraeon-groups = { version = "0.0.6", path = "../groups" }
+algebraeon-groups = { version = "0.0.8", path = "../groups" }
 rand = "0.8.5"
 rayon="1.7.0"
 itertools="0.11.0"
