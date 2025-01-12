@@ -338,14 +338,18 @@ impl PAdicRational {
 }
 
 #[derive(Debug, Clone)]
-struct PAdicDigits<'a> {
+pub struct PAdicDigits<'a> {
     p: &'a Natural,
     value: Natural,
     shift: isize,
 }
 impl<'a> PAdicDigits<'a> {
-    fn digits(&mut self) -> (Vec<Natural>, isize) {
+    pub fn digits(&mut self) -> (Vec<Natural>, isize) {
         (padic_digits(self.p, self.value.clone()), self.shift)
+    }
+
+    pub fn value(&self) -> (&Natural, isize) {
+        (&self.value, self.shift)
     }
 }
 
@@ -373,6 +377,13 @@ impl PAdicAlgebraic {
         }
     }
 
+    pub fn degree(&self) -> usize {
+        match self {
+            PAdicAlgebraic::Rational(_) => 1,
+            PAdicAlgebraic::Algebraic(root) => root.root.poly.degree().unwrap(),
+        }
+    }
+
     pub fn shift_by(&mut self, k: isize) {
         match self {
             PAdicAlgebraic::Rational(padic_rational) => padic_rational.shift_by(k),
@@ -380,7 +391,7 @@ impl PAdicAlgebraic {
         }
     }
 
-    fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicDigits<'a> {
+    pub fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicDigits<'a> {
         match self {
             PAdicAlgebraic::Rational(rational) => rational.reduce_modulo_valuation(k),
             PAdicAlgebraic::Algebraic(root) => root.reduce_modulo_valuation(k),
@@ -550,6 +561,58 @@ impl Polynomial<Integer> {
     }
 }
 
+impl PAdicRational {
+    fn neg_mut(&mut self) {
+        self.rat = -&self.rat;
+    }
+}
+
+impl PAdicIntegerAlgebraicRoot {
+    fn neg_mut(&mut self) {
+        self.poly = Polynomial::compose(
+            &self.poly,
+            &Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(-1)]),
+        )
+        .fav_assoc();
+        self.dpoly = Polynomial::compose(
+            &self.dpoly,
+            &Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(-1)]),
+        )
+        .fav_assoc();
+        self.approx_root = QuotientStructure::new_ring(
+            Integer::structure(),
+            self.p.nat_pow(&Natural::from(self.k)).into(),
+        )
+        .neg(&self.approx_root);
+        #[cfg(debug_assertions)]
+        self.check().unwrap();
+    }
+}
+
+impl PAdicAlgebraicRoot {
+    fn neg_mut(&mut self) {
+        self.root.neg_mut();
+    }
+}
+
+impl PAdicAlgebraic {
+    pub fn neg_mut(&mut self) {
+        match self {
+            PAdicAlgebraic::Rational(padic_rational) => {
+                padic_rational.neg_mut();
+            }
+            PAdicAlgebraic::Algebraic(padic_algebraic_root) => {
+                padic_algebraic_root.neg_mut();
+            }
+        }
+    }
+
+    pub fn neg(mut self) -> Self {
+        self.neg_mut();
+        self
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PAdicAlgebraicStructure {
     p: Natural,
@@ -633,7 +696,7 @@ impl SemiRingStructure for PAdicAlgebraicStructure {
 impl RingStructure for PAdicAlgebraicStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         self.check_is_element(a);
-        todo!()
+        a.clone().neg()
     }
 }
 
@@ -642,6 +705,13 @@ impl IntegralDomainStructure for PAdicAlgebraicStructure {
         self.check_is_element(a);
         self.check_is_element(b);
         todo!()
+    }
+
+    fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
+        Some(PAdicAlgebraic::Rational(PAdicRational {
+            p: self.p.clone(),
+            rat: x.clone(),
+        }))
     }
 }
 
@@ -879,11 +949,71 @@ mod tests {
         let x = Polynomial::<Integer>::var().into_ergonomic();
         let f = (3 * x - 2).into_verbose();
         println!("{:?}", f);
-        for mut root in f.all_padic_roots(&Natural::from(7u32)) {
-            println!("{:?}", root.reduce_modulo_valuation(10).digits());
-        }
         assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 1);
         assert_eq!(f.all_padic_roots(&Natural::from(3u32)).len(), 1);
         assert_eq!(f.all_padic_roots(&Natural::from(5u32)).len(), 1);
+    }
+
+    #[test]
+    fn test_padic_field_opps() {
+        let x = Polynomial::<Integer>::var().into_ergonomic();
+
+        let a = {
+            let f = (x.pow(3) - 3 * x.pow(2) - x.pow(1) + 1).into_verbose();
+            let r = f.all_padic_roots(&Natural::from(5u32));
+            assert_eq!(r.len(), 1);
+            r.into_iter().next().unwrap()
+        };
+
+        let b = {
+            let f = (x.pow(4) + x.pow(2) - 2 * x.pow(1) - 1).into_verbose();
+            let r = f.all_padic_roots(&Natural::from(5u32));
+            assert_eq!(r.len(), 1);
+            r.into_iter().next().unwrap()
+        };
+
+        let c = {
+            let f = (x.pow(5) + x.pow(2) + 2 * x.pow(1) + 1).into_verbose();
+            let r = f.all_padic_roots(&Natural::from(5u32));
+            assert_eq!(r.len(), 1);
+            r.into_iter().next().unwrap()
+        };
+
+        println!("a = {}", a);
+        println!("b = {}", b);
+        println!("c = {}", c);
+
+        println!("-a = {}", a.clone().neg());
+        debug_assert_eq!(
+            a.clone().neg().reduce_modulo_valuation(6).digits(),
+            (
+                vec![
+                    Natural::from(3u8),
+                    Natural::from(0u8),
+                    Natural::from(2u8),
+                    Natural::from(3u8),
+                    Natural::from(3u8),
+                    Natural::from(1u8)
+                ],
+                0
+            )
+        );
+
+        println!("-b = {}", b.clone().neg());
+        debug_assert_eq!(
+            b.clone().neg().reduce_modulo_valuation(6).digits(),
+            (
+                vec![
+                    Natural::from(3u8),
+                    Natural::from(1u8),
+                    Natural::from(3u8),
+                    Natural::from(2u8),
+                    Natural::from(4u8),
+                    Natural::from(3u8)
+                ],
+                0
+            )
+        );
+
     }
 }
