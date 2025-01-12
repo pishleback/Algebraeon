@@ -7,5 +7,5 @@ members = [
     "geometry",
     "drawing",
     "combinatorics",
-    "examples",
+    "examples", "algebraeon",
 ]

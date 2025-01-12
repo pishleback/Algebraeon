@@ -18,6 +18,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 
 [[package]]
+name = "algebraeon"
+version = "0.0.7"
+dependencies = [
+ "algebraeon-geometry",
+ "algebraeon-groups",
+ "algebraeon-rings",
+ "algebraeon-sets",
+]
+
+[[package]]
 name = "algebraeon-combinatorics"
 version = "0.0.0"
 dependencies = [

@@ -1,0 +1,19 @@
+[package]
+name = "algebraeon"
+version = "0.0.7"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Algebraeon computational algebra library re-exports for all components"
+repository = "https://github.com/pishleback/Algebraeon"
+keywords = ["maths", "matrix", "polynomial", "number-theory", "factoring"]
+categories = ["mathematics"]
+readme = "../README.md"
+
+[lib]
+name = "algebraeon"
+
+[dependencies]
+algebraeon-sets = { version = "0.0.6", path = "../sets" }
+algebraeon-groups = { version = "0.0.6", path = "../groups" }
+algebraeon-rings = { version = "0.0.7", path = "../rings" }
+algebraeon-geometry = { version = "0.0.7", path = "../geometry" }
