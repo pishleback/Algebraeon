@@ -9,6 +9,7 @@ use malachite_base::num::{
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
+use crate::number::algebraic::isolated_roots::poly_tools::root_sum_poly;
 use crate::{
     number::natural::primes::is_prime,
     polynomial::polynomial::*,
@@ -334,7 +335,7 @@ impl PAdicIntegerAlgebraicRoot {
 pub struct PAdicAlgebraicRoot {
     // Multiply int_root by p^k to get the p-adic root represented by this struct
     root: PAdicIntegerAlgebraicRoot, // should be non-zero modulo p
-    k: isize,                        // how much to left shift by
+    shift: isize,                    // how much to left shift by
 }
 
 impl From<PAdicIntegerAlgebraicRoot> for PAdicAlgebraicRoot {
@@ -342,15 +343,8 @@ impl From<PAdicIntegerAlgebraicRoot> for PAdicAlgebraicRoot {
         let (root, k) = value.fully_rightshift();
         PAdicAlgebraicRoot {
             root,
-            k: k as isize,
+            shift: k as isize,
         }
-    }
-}
-
-impl PAdicAlgebraicRoot {
-    fn shift_by(mut self, k: isize) -> Self {
-        self.k += k;
-        self
     }
 }
 
@@ -362,24 +356,33 @@ impl PAdicAlgebraicRoot {
         Ok(())
     }
 
-    fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicDigits<'a> {
-        if k < self.k {
-            PAdicDigits {
+    fn shift_by(mut self, k: isize) -> Self {
+        self.shift += k;
+        self
+    }
+
+    fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicTerminatingRational<'a> {
+        if k < self.shift {
+            PAdicTerminatingRational {
                 p: &self.root.p,
                 value: Natural::ZERO,
                 k,
                 shift: 0,
             }
         } else {
-            let num_digits = (k - self.k) as usize;
+            let num_digits = (k - self.shift) as usize;
             let value = self.root.reduce_modulo_valuation(num_digits);
-            PAdicDigits {
+            PAdicTerminatingRational {
                 p: &self.root.p,
                 value,
                 k,
-                shift: self.k,
+                shift: self.shift,
             }
         }
+    }
+
+    fn unwrap(self) -> (PAdicIntegerAlgebraicRoot, isize) {
+        (self.root, self.k)
     }
 }
 
@@ -389,43 +392,43 @@ pub struct PAdicRational {
     rat: Rational,
 }
 impl PAdicRational {
-    fn reduce_modulo_valuation<'a>(&'a self, k: isize) -> PAdicDigits<'a> {
-        if self.rat == Rational::ZERO {
-            PAdicDigits {
+    fn reduce_modulo_valuation<'a>(&'a self, k: isize) -> PAdicTerminatingRational<'a> {
+        match padic_rat_valuation(&self.p, self.rat.clone()) {
+            Some(shift) => {
+                let shifted_rat = &self.rat
+                    * Rational::from(&self.p)
+                        .int_pow(&Integer::from(-shift))
+                        .unwrap();
+                let (n, d) = (shifted_rat.numerator(), shifted_rat.denominator());
+                debug_assert_eq!(padic_int_valuation(&self.p, n.clone()).unwrap(), 0);
+                debug_assert_eq!(padic_int_valuation(&self.p, d.clone()).unwrap(), 0);
+                if k < shift {
+                    PAdicTerminatingRational {
+                        p: &self.p,
+                        value: Natural::ZERO,
+                        k,
+                        shift: 0,
+                    }
+                } else {
+                    let num_digits = (k - shift) as usize;
+                    let pn = Integer::from(&self.p).nat_pow(&Natural::from(num_digits)); // p^{num_digits}
+                    let (g, _, d_inv) = Integer::xgcd(&pn, &d);
+                    debug_assert_eq!(g, Integer::ONE);
+                    let value = pos_int_to_nat(Integer::rem(&(n * d_inv), &pn));
+                    PAdicTerminatingRational {
+                        p: &self.p,
+                        value,
+                        k,
+                        shift,
+                    }
+                }
+            }
+            None => PAdicTerminatingRational {
                 p: &self.p,
                 value: Natural::ZERO,
                 k,
                 shift: 0,
-            }
-        } else {
-            let (n, d) = (self.rat.numerator(), self.rat.denominator());
-            let a_uint = padic_int_valuation(&self.p, n.clone()).unwrap();
-            let b_uint = padic_int_valuation(&self.p, d.clone()).unwrap();
-            let (a, b) = (a_uint as isize, b_uint as isize);
-            let shift = a - b;
-            if k < shift {
-                PAdicDigits {
-                    p: &self.p,
-                    value: Natural::ZERO,
-                    k,
-                    shift: 0,
-                }
-            } else {
-                let num_digits = (k - shift) as usize;
-                let pa = Integer::from(&self.p).nat_pow(&Natural::from(a_uint)); // p^a
-                let pb = Integer::from(&self.p).nat_pow(&Natural::from(b_uint)); // p^b
-                let pn = Integer::from(&self.p).nat_pow(&Natural::from(num_digits)); // p^{num_digits}
-                let (n, d) = (n / &pa, d / &pb);
-                let (g, _, d_inv) = Integer::xgcd(&pn, &d);
-                debug_assert_eq!(g, Integer::ONE);
-                let value = pos_int_to_nat(Integer::rem(&(n * d_inv), &pn));
-                PAdicDigits {
-                    p: &self.p,
-                    value,
-                    k,
-                    shift,
-                }
-            }
+            },
         }
     }
 
@@ -436,14 +439,14 @@ impl PAdicRational {
 }
 
 #[derive(Debug, Clone)]
-pub struct PAdicDigits<'a> {
+pub struct PAdicTerminatingRational<'a> {
     p: &'a Natural, // A prime number
     value: Natural, // A value modulo p^{k-shift}
     k: isize,
     shift: isize, // A power of p
                   //Together represents p^shift * value
 }
-impl<'a> PAdicDigits<'a> {
+impl<'a> PAdicTerminatingRational<'a> {
     pub fn digits(&mut self) -> (Vec<Natural>, isize) {
         let mut digits = padic_digits(self.p, self.value.clone());
         while (digits.len() as isize) < (self.k as isize) - self.shift {
@@ -491,7 +494,7 @@ impl PAdicAlgebraic {
     pub fn valuation(&self) -> Option<isize> {
         match self {
             PAdicAlgebraic::Rational(x) => padic_rat_valuation(&x.p, x.rat.clone()),
-            PAdicAlgebraic::Algebraic(x) => Some(x.k),
+            PAdicAlgebraic::Algebraic(x) => Some(x.shift),
         }
     }
 
@@ -506,7 +509,7 @@ impl PAdicAlgebraic {
         }
     }
 
-    pub fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicDigits<'a> {
+    pub fn reduce_modulo_valuation<'a>(&'a mut self, k: isize) -> PAdicTerminatingRational<'a> {
         match self {
             PAdicAlgebraic::Rational(rational) => rational.reduce_modulo_valuation(k),
             PAdicAlgebraic::Algebraic(root) => root.reduce_modulo_valuation(k),
@@ -692,11 +695,11 @@ impl PAdicAlgebraicRoot {
                 = p^i (p^-i a + b)
                 */
                 let p = Rational::from(&self.root.p);
-                let shifted_rat = rat * p.int_pow(&Integer::from(-self.k)).unwrap();
+                let shifted_rat = rat * p.int_pow(&Integer::from(-self.shift)).unwrap();
                 // Want to add shifted_rat to self.root
-                let shifted_rat_valuation = rat_valuation - self.k;
+                let shifted_rat_valuation = rat_valuation - self.shift;
                 if shifted_rat_valuation < 0 {
-                    self.k += shifted_rat_valuation;
+                    self.shift += shifted_rat_valuation;
                     self.root = self.root.leftshift((-shifted_rat_valuation) as usize);
                     self.root = self.root.add_rat(
                         &(shifted_rat * p.int_pow(&Integer::from(-shifted_rat_valuation)).unwrap()),
@@ -767,7 +770,7 @@ impl PartialEqStructure for PAdicAlgebraicStructure {
             (PAdicAlgebraic::Rational(_), PAdicAlgebraic::Algebraic(_)) => false,
             (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_)) => false,
             (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => {
-                if a.k != b.k {
+                if a.shift != b.shift {
                     false
                 } else {
                     a.root.clone().equal_mut(&mut b.root.clone())
@@ -810,7 +813,17 @@ impl SemiRingStructure for PAdicAlgebraicStructure {
             (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Rational(b)) => {
                 PAdicAlgebraic::Algebraic(a.clone().add_rat(&b.rat))
             }
-            (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
+            (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => {
+                let (a_root, a_shift) = a.unwrap();
+                let (b_root, b_shift) = b.unwrap();
+
+                let poly = root_sum_poly(&a.root.poly, &b.root.poly);
+                println!("poly = {}", poly.factor().unwrap());
+
+                match a.shift.cmp(b.shift) {}
+
+                todo!()
+            }
         }
     }
 
@@ -1247,5 +1260,7 @@ mod tests {
                 -3
             )
         );
+
+        println!("a+b = {}", ring.add(&a, &b));
     }
 }
