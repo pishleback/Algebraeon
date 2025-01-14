@@ -498,7 +498,9 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
         }
     }
 
-    // Compute the subresultant prs and scalar subresultants
+    /// Output: (r, s) where
+    ///     r is the pseudo remainder sequence
+    ///     s is the scalar subresultants
     pub fn pseudo_remainder_subresultant_sequence(
         &self,
         mut a: Polynomial<RS::Set>,
