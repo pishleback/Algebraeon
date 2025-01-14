@@ -114,7 +114,7 @@ mod tests {
             (
                 Polynomial::from_coeffs(vec![Integer::from(0)]),
                 Polynomial::from_coeffs(vec![Integer::from(1)]),
-                Polynomial::from_coeffs(vec![Integer::from(1)]),
+                Polynomial::from_coeffs(vec![Integer::from(0)]),
             ),
             (
                 Polynomial::from_coeffs(vec![Integer::from(1)]),
@@ -184,7 +184,7 @@ mod tests {
             (
                 Polynomial::from_coeffs(vec![Integer::from(0)]),
                 Polynomial::from_coeffs(vec![Integer::from(1)]),
-                Polynomial::from_coeffs(vec![Integer::from(1)]),
+                Polynomial::from_coeffs(vec![Integer::from(0)]),
             ),
             (
                 Polynomial::from_coeffs(vec![Integer::from(1)]),

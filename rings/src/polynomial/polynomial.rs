@@ -339,6 +339,71 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
     }
 }
 
+// #[derive(Debug)]
+// pub struct PseudoRemainderSubresultantSequence<RS: IntegralDomainStructure> {
+//     poly_ring: PolynomialStructure<RS>,
+//     n: usize,
+//     rs: Vec<Polynomial<RS::Set>>,
+//     subresultants: Vec<Polynomial<RS::Set>>,
+//     smallest_nonzero_subresultant_idx: usize,
+// }
+
+// impl<RS: IntegralDomainStructure> PseudoRemainderSubresultantSequence<RS> {
+//     fn new(poly_ring: PolynomialStructure<RS>, n: usize) -> Self {
+//         let subresultants = (0..n).map(|_| poly_ring.zero()).collect();
+//         Self {
+//             poly_ring,
+//             n,
+//             rs: vec![],
+//             subresultants,
+//             smallest_nonzero_subresultant_idx: n,
+//         }
+//     }
+
+//     fn push(&mut self, r: Polynomial<RS::Set>) {
+//         let deg = self.poly_ring.degree(&r).unwrap();
+//         match self.rs.last() {
+//             Some(prev_r) => {
+//                 let prev_deg = self.poly_ring.degree(prev_r).unwrap();
+//                 debug_assert!(deg < prev_deg);
+//                 self.subresultants[prev_deg - 1] = r.clone();
+//                 self.smallest_nonzero_subresultant_idx = prev_deg - 1;
+//                 if deg < prev_deg - 1 {
+//                     self.subresultants[deg] = self.poly_ring.mul(
+//                         &self
+//                             .poly_ring
+//                             .nat_pow(&r, &Natural::from(prev_deg - deg - 1)),
+//                         &r,
+//                     );
+//                     self.smallest_nonzero_subresultant_idx = deg;
+//                 }
+//             }
+//             None => {
+//                 debug_assert_eq!(self.poly_ring.degree(&r).unwrap(), self.n);
+//             }
+//         };
+//         self.rs.push(r);
+//     }
+
+//     pub fn resultant(&self) -> RS::Set {
+//         debug_assert_ne!(self.rs.len(), 0); // Should have added something by the time it comes to using it
+//         self.poly_ring.as_constant(&self.subresultants[0]).unwrap()
+//     }
+
+//     pub fn subresultant_gcd(&self) -> &Polynomial<RS::Set> {
+//         debug_assert_ne!(self.rs.len(), 0); // Should have added something by the time it comes to using it
+//         &self.subresultants[self.smallest_nonzero_subresultant_idx]
+//     }
+
+//     pub fn into_subresultant_gcd(self) -> Polynomial<RS::Set> {
+//         debug_assert_ne!(self.rs.len(), 0); // Should have added something by the time it comes to using it
+//         self.subresultants
+//             .into_iter()
+//             .nth(self.smallest_nonzero_subresultant_idx)
+//             .unwrap()
+//     }
+// }
+
 impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     pub fn try_quorem(
         &self,
@@ -433,88 +498,124 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
         }
     }
 
-    //efficiently compute the gcd of a and b up to scalar multipication using pseudo remainder subresultant sequence
-    //the returned polynomial should the smallest non-zero subresultant polynomial
-    //https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Trivial_pseudo-remainder_sequence
-    pub fn subresultant_gcd(
+    // Compute the subresultant prs and scalar subresultants
+    pub fn pseudo_remainder_subresultant_sequence(
         &self,
         mut a: Polynomial<RS::Set>,
         mut b: Polynomial<RS::Set>,
-    ) -> Polynomial<RS::Set> {
-        match self.degree(&a) {
-            None => b,
-            Some(mut a_deg) => match self.degree(&b) {
-                None => a,
-                Some(mut b_deg) => {
-                    if a_deg < b_deg {
-                        (a, b) = (b, a);
-                        (a_deg, b_deg) = (b_deg, a_deg);
-                    }
-                    let mut beta = {
-                        if (a_deg - b_deg) % 2 == 0 {
-                            self.coeff_ring.from_int(&Integer::from(-1))
-                        } else {
-                            self.coeff_ring.from_int(&Integer::from(1))
-                        }
-                    };
-                    let mut psi = self.coeff_ring.from_int(&Integer::from(-1));
-                    loop {
-                        let d = self.degree(&a).unwrap() - self.degree(&b).unwrap();
-                        let gamma = self.coeff(&b, self.degree(&b).unwrap()).clone();
-                        let r = self
-                            .div(
-                                &self.pseudorem(a, &b).unwrap().unwrap(),
-                                &Polynomial::constant(beta),
-                            )
-                            .unwrap();
-                        (a, b) = (b, r);
-
-                        if self.is_zero(&b) {
-                            break;
-                        }
-
-                        if d == 0 {
-                            //can only happen in the first loop
-                            debug_assert!(self
-                                .coeff_ring
-                                .equal(&psi, &self.coeff_ring.neg(&self.coeff_ring.one())));
-                            psi = self.coeff_ring.one();
-                        } else {
-                            psi = self
-                                .coeff_ring
+    ) -> (Vec<Polynomial<RS::Set>>, Vec<RS::Set>) {
+        match (self.degree(&a), self.degree(&b)) {
+            (None, None) => (vec![], vec![]),
+            (None, Some(_)) => (vec![b], vec![self.coeff_ring().one()]),
+            (Some(_), None) => (vec![a], vec![self.coeff_ring().one()]),
+            (Some(mut a_deg), Some(mut b_deg)) => {
+                if a_deg < b_deg {
+                    (a, b, a_deg, b_deg) = (b, a, b_deg, a_deg);
+                }
+                debug_assert!(a_deg >= b_deg);
+                let mut prs = vec![a.clone(), b.clone()];
+                let mut diff_deg = a_deg - b_deg;
+                let mut beta = self.coeff_ring().nat_pow(
+                    &self.coeff_ring().neg(&self.coeff_ring().one()),
+                    &Natural::from(diff_deg + 1),
+                );
+                let mut r = self.mul_scalar(&self.pseudorem(a, &b).unwrap().unwrap(), &beta);
+                let mut lc_b = self.leading_coeff(&b).unwrap().clone();
+                let mut gamma = self.coeff_ring().nat_pow(&lc_b, &Natural::from(diff_deg));
+                let mut ssres = vec![self.coeff_ring().one(), gamma.clone()];
+                gamma = self.coeff_ring.neg(&gamma);
+                loop {
+                    match self.degree(&r) {
+                        Some(r_deg) => {
+                            prs.push(r.clone());
+                            (a, b, b_deg, diff_deg) = (b, r, r_deg, b_deg - r_deg);
+                            beta = self.coeff_ring.mul(
+                                &self.coeff_ring.neg(&lc_b),
+                                &self.coeff_ring().nat_pow(&gamma, &Natural::from(diff_deg)),
+                            );
+                            r = self
                                 .div(
-                                    &self
-                                        .coeff_ring
-                                        .nat_pow(&self.coeff_ring.neg(&gamma), &Natural::from(d)),
-                                    &self.coeff_ring.nat_pow(&psi, &Natural::from(d - 1)),
+                                    &self.pseudorem(a, &b).unwrap().unwrap(),
+                                    &Polynomial::constant(beta),
                                 )
                                 .unwrap();
+                            lc_b = self.leading_coeff(&b).unwrap().clone();
+                            gamma = if diff_deg > 1 {
+                                self.coeff_ring()
+                                    .div(
+                                        &self.coeff_ring().nat_pow(
+                                            &self.coeff_ring().neg(&lc_b),
+                                            &Natural::from(diff_deg),
+                                        ),
+                                        &self
+                                            .coeff_ring()
+                                            .nat_pow(&gamma, &Natural::from(diff_deg - 1)),
+                                    )
+                                    .unwrap()
+                            } else {
+                                self.coeff_ring().neg(&lc_b)
+                            };
+                            ssres.push(self.coeff_ring().neg(&gamma));
                         }
-                        beta = self.coeff_ring.mul(
-                            &self.coeff_ring.neg(&gamma),
-                            &self.coeff_ring.nat_pow(
-                                &psi,
-                                &Natural::from(self.degree(&a).unwrap() - self.degree(&b).unwrap()),
-                            ),
-                        );
+                        None => {
+                            debug_assert!(self.is_zero(&r));
+                            break;
+                        }
                     }
-                    a
                 }
-            },
+                (prs, ssres)
+            }
         }
     }
 
+    // efficiently compute the gcd of a and b up to scalar multipication using pseudo-remainder subresultant sequence
+    pub fn subresultant_gcd(
+        &self,
+        a: Polynomial<RS::Set>,
+        b: Polynomial<RS::Set>,
+    ) -> Polynomial<RS::Set> {
+        // The GCD (up to scalar mul) is the last subresultant pseudoremainder
+        let (mut prs, _) = self.pseudo_remainder_subresultant_sequence(a, b);
+        prs.pop().unwrap()
+    }
+
     pub fn resultant(&self, a: Polynomial<RS::Set>, b: Polynomial<RS::Set>) -> RS::Set {
-        let subresultant_gcd = self.subresultant_gcd(a, b);
-        match self.as_constant(&subresultant_gcd) {
-            Some(res) => res,
-            None => self.coeff_ring.zero(),
+        if self.is_zero(&a) || self.is_zero(&b) {
+            self.coeff_ring().zero()
+        } else {
+            let (mut prs, mut ssres) = self.pseudo_remainder_subresultant_sequence(a, b);
+            if self.degree(&prs.pop().unwrap()).unwrap() > 0 {
+                self.coeff_ring().zero()
+            } else {
+                ssres.pop().unwrap()
+            }
         }
     }
 
     pub fn is_squarefree(&self, p: &Polynomial<RS::Set>) -> bool {
         let dp = self.derivative(p.clone());
         self.degree(&self.subresultant_gcd(p.clone(), dp)).unwrap() == 0
+    }
+
+    pub fn discriminant(&self, p: Polynomial<RS::Set>) -> Result<RS::Set, &'static str> {
+        match self.degree(&p) {
+            Some(n) => {
+                if n == 0 {
+                    Err("Discriminant of a constant polynomial is undefined.")
+                } else {
+                    let an = self.coeff(&p, n).clone(); // leading coeff
+                    let dp = self.derivative(p.clone());
+                    let disc = self.coeff_ring().div(&self.resultant(p, dp), &an).unwrap();
+                    // multiply by (-1)^{n(n+1)/2}
+                    match n % 4 {
+                        0 | 1 => Ok(disc),
+                        2 | 3 => Ok(self.coeff_ring().neg(&disc)),
+                        _ => unreachable!(),
+                    }
+                }
+            }
+            None => Err("Discriminant of zero polynomial is undefined."),
+        }
     }
 }
 
@@ -947,12 +1048,20 @@ where
         Self::structure().pseudorem(a.clone(), b)
     }
 
+    pub fn pseudo_remainder_subresultant_sequence(a: Self, b: Self) -> (Vec<Self>, Vec<R>) {
+        Self::structure().pseudo_remainder_subresultant_sequence(a, b)
+    }
+
     pub fn subresultant_gcd(a: &Self, b: &Self) -> Self {
         Self::structure().subresultant_gcd(a.clone(), b.clone())
     }
 
     pub fn resultant(a: &Self, b: &Self) -> R {
         Self::structure().resultant(a.clone(), b.clone())
+    }
+
+    pub fn discriminant(self) -> Result<R, &'static str> {
+        Self::structure().discriminant(self)
     }
 
     pub fn interpolate_by_lagrange_basis(points: &Vec<(R, R)>) -> Option<Self> {
@@ -1404,6 +1513,14 @@ mod tests {
             Polynomial::subresultant_gcd(&f, &g).into_ergonomic(),
             7056 - 9408 * x + 3136 * x.pow(2)
         );
+
+        let f = (x.pow(4) + 1).into_verbose();
+        let g = (3 * x.pow(2)).into_verbose();
+        println!(
+            "{:#?}",
+            Polynomial::pseudo_remainder_subresultant_sequence(f.clone(), g.clone())
+        );
+        println!("{:#?}", Polynomial::resultant(&f, &g));
     }
 
     // #[test]
@@ -1413,6 +1530,93 @@ mod tests {
     //     let g = ((x + 1) * (2 * x + 3)).elem();
     //     assert_eq!(squarefree_part_by_yuns(&f), g);
     // }
+
+    #[test]
+    fn test_discriminant() {
+        let x = &Polynomial::<Integer>::var().into_ergonomic();
+        // Constant -> undefined
+        debug_assert!((0 * x.pow(0)).into_verbose().discriminant().is_err());
+        debug_assert!((1 * x.pow(0)).into_verbose().discriminant().is_err());
+        debug_assert!((2 * x.pow(0)).into_verbose().discriminant().is_err());
+
+        // Linear f(x) = ax+b -> disc(f) = 1
+        debug_assert_eq!(
+            (3 * x.pow(1) + 2).into_verbose().discriminant().unwrap(),
+            Integer::from(1)
+        );
+
+        // Quadratic f(x) = ax^2 + bx + c  ->  disc(f) = b^2-4ac
+        debug_assert_eq!(
+            (x.pow(2) + 1).into_verbose().discriminant().unwrap(),
+            Integer::from(-4)
+        );
+        debug_assert_eq!(
+            (3 * x.pow(2) + 1).into_verbose().discriminant().unwrap(),
+            Integer::from(-12)
+        );
+        debug_assert_eq!(
+            (x.pow(2) + 3).into_verbose().discriminant().unwrap(),
+            Integer::from(-12)
+        );
+        debug_assert_eq!(
+            (3 * x.pow(2) + 3).into_verbose().discriminant().unwrap(),
+            Integer::from(-36)
+        );
+        debug_assert_eq!(
+            (x.pow(2) + x.pow(1) + 1)
+                .into_verbose()
+                .discriminant()
+                .unwrap(),
+            Integer::from(1 - 4)
+        );
+        debug_assert_eq!(
+            (x.pow(2) + 2 * x.pow(1) + 1)
+                .into_verbose()
+                .discriminant()
+                .unwrap(),
+            Integer::from(4 - 4)
+        );
+        debug_assert_eq!(
+            (x.pow(2) + 3 * x.pow(1) + 1)
+                .into_verbose()
+                .discriminant()
+                .unwrap(),
+            Integer::from(9 - 4)
+        );
+
+        //Cubic f(x) = ax^3 + bx^2 + cx + d  ->  disc(f) = b^2c^2 - 4ac^3 - 4b^3d - 27a^2d^2 + 18abcd
+        for (a, b, c, d) in [
+            (1, 0, 0, 0),
+            (1, 0, 1, 0),
+            (1, 0, 0, 1),
+            (1, 1, 1, 1),
+            (3, 1, 1, 1),
+            (3, 3, 3, 3),
+            (2, 3, 5, 7),
+            (7, 5, 3, 2),
+        ] {
+            println!(
+                "{}",
+                (a * x.pow(3) + b * x.pow(2) + c * x.pow(1) + d).into_verbose()
+            );
+            println!(
+                "{:?}",
+                (a * x.pow(3) + b * x.pow(2) + c * x.pow(1) + d)
+                    .into_verbose()
+                    .discriminant()
+            );
+            debug_assert_eq!(
+                (a * x.pow(3) + b * x.pow(2) + c * x.pow(1) + d)
+                    .into_verbose()
+                    .discriminant()
+                    .unwrap(),
+                Integer::from(
+                    b * b * c * c - 4 * a * c * c * c - 4 * b * b * b * d - 27 * a * a * d * d
+                        + 18 * a * b * c * d
+                )
+            );
+        }
+    }
 
     #[test]
     fn test_factor_primitive_fof() {
