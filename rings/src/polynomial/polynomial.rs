@@ -1062,6 +1062,10 @@ where
         Self::structure().resultant(a.clone(), b.clone())
     }
 
+    pub fn is_squarefree(&self) -> bool {
+        Self::structure().is_squarefree(self)
+    }
+
     pub fn discriminant(self) -> Result<R, &'static str> {
         Self::structure().discriminant(self)
     }

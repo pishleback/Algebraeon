@@ -1,5 +1,5 @@
-use malachite_base::num::arithmetic::traits::DivMod;
-use malachite_base::num::basic::traits::Zero;
+use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
+use malachite_base::num::basic::traits::{One, Two, Zero};
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
@@ -9,11 +9,57 @@ use crate::{number::natural::primes::*, polynomial::polynomial::*, structure::st
 // Sturm, Thomas & Weispfenning, Volker. (2004). P-adic Root Isolation. Revista de la Real Academia de Ciencias Exactas, Físicas y Naturales. Serie A, Matemáticas.
 // https://www.researchgate.net/profile/Thomas-Sturm-2/publication/2925550_P-adic_Root_Isolation/links/580b8c0708aeef1bfeeb5db8/P-adic-Root-Isolation.pdf?origin=scientificContributions
 
-fn padic_int_valuation(p: &Natural, mut n: Integer) -> Option<Natural> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Valuation {
+    Infinity,
+    Finite(Integer),
+}
+impl PartialOrd for Valuation {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some({
+            match (self, other) {
+                (Valuation::Infinity, Valuation::Infinity) => std::cmp::Ordering::Equal,
+                (Valuation::Infinity, Valuation::Finite(_)) => std::cmp::Ordering::Greater,
+                (Valuation::Finite(_), Valuation::Infinity) => std::cmp::Ordering::Less,
+                (Valuation::Finite(finite_self), Valuation::Finite(finite_other)) => {
+                    finite_self.cmp(finite_other)
+                }
+            }
+        })
+    }
+}
+impl Ord for Valuation {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+impl Valuation {
+    pub fn unwrap_int(self) -> Integer {
+        match self {
+            Valuation::Infinity => panic!("unwrap_int() called on an infinite value"),
+            Valuation::Finite(v) => v,
+        }
+    }
+
+    pub fn unwrap_nat(self) -> Natural {
+        match self {
+            Valuation::Infinity => panic!("unwrap_nat() called on an infinite value"),
+            Valuation::Finite(v) => {
+                if v < Integer::ZERO {
+                    panic!("unwrap_nat() called on a negative finite valuation");
+                } else {
+                    v.unsigned_abs()
+                }
+            }
+        }
+    }
+}
+
+fn padic_int_valuation(p: &Natural, mut n: Integer) -> Valuation {
     debug_assert!(is_prime(p));
     let p = Integer::from(p);
     if n == Natural::ZERO {
-        None
+        Valuation::Infinity
     } else {
         let mut k = 0usize;
         let mut r;
@@ -26,7 +72,7 @@ fn padic_int_valuation(p: &Natural, mut n: Integer) -> Option<Natural> {
                 break;
             }
         }
-        Some(Natural::from(k))
+        Valuation::Finite(Integer::from(k))
     }
 }
 
@@ -35,7 +81,8 @@ mod balancable_pairs {
 
     use super::*;
 
-    /// A balancable pair of a polynomial consists of two of the monomial terms satisfying some conditions:
+    /// A balancable pair of a polynomial consists of two of the monomial terms satisfying some conditions.
+    ///
     /// For a fixed choice of prime $p$, a balancable pair of a polynomial $$f(x) = f_nx^n + ... + f_2x^2 + f_1x + f_0$$ is
     /// a pair of indicies $0 \le i < j \le n$ such that
     /// - $f_i \ne 0$
@@ -48,8 +95,8 @@ mod balancable_pairs {
         n: usize, // n = deg(f)
         i: usize,
         j: usize,
-        vfi: Natural, // v_p(f_i)
-        vfj: Natural, // v_p(f_j)
+        vfi: Integer, // v_p(f_i)
+        vfj: Integer, // v_p(f_j)
         bv: Integer,  // the balancing value
     }
 
@@ -59,29 +106,55 @@ mod balancable_pairs {
         /// If this is the case then the balancing value is called a critical value for $f$.
         /// If $\alpha \in \mathbb{Q}_p$ is such that $f(\alpha) = 0$ then $v_p(\alpha)$ is a critical value for $f$.
         pub fn is_critical(&self) -> bool {
-            let mut min = None;
-            for k in 1..(self.n + 1) {
-                match padic_int_valuation(&self.p, self.f.coeff(k)) {
-                    Some(vfk) => {
-                        let val = Integer::from(vfk) + Integer::from(k) * &self.bv;
-                        if min.is_none() {
-                            min = Some(val);
-                        } else {
-                            if &val < min.as_ref().unwrap() {
-                                min = Some(val);
-                            }
-                        }
+            let min = (1..(self.n + 1))
+                .filter_map(|k| match padic_int_valuation(&self.p, self.f.coeff(k)) {
+                    Valuation::Infinity => None,
+                    Valuation::Finite(vfk) => {
+                        Some(Integer::from(vfk) + Integer::from(k) * &self.bv)
                     }
-                    None => {
-                        // vfk = inf
-                    }
-                }
-            }
-            min.unwrap() == Integer::from(&self.vfi) + Integer::from(self.i) * &self.bv
+                })
+                .min()
+                .unwrap();
+            min == self.crossmul_balancing_value()
         }
 
+        /// $\frac{v_p(f_j) - v_p(f_i)}{j - i}$
         pub fn balancing_value(&self) -> &Integer {
             &self.bv
+        }
+
+        /// $\frac{iv_p(f_j) - jv_p(f_i)}{j - i}$
+        pub fn crossmul_balancing_value(&self) -> Integer {
+            &self.vfi + Integer::from(self.i) * &self.bv
+        }
+
+        /// The polynomial
+        /// $$f_{i,j}(x) = p^{-\frac{iv_p(f_j) - jv_p(f_i)}{j - i}} \sum_{k=0}^n f_k \left(p^{\frac{v_p(f_j) - v_p(f_i)}{j - i}} x\right)^k$$
+        /// It is such that for $\alpha \in \mathbb{Q}_p$
+        /// - $f_{i,j}(\alpha) = 0$ if and only if $f\left(p^{\frac{v_p(f_j) - v_p(f_i)}{j - i}} \alpha\right) = 0$
+        /// - $f_{i,j}^{\prime}(\alpha) = 0$ if and only if $f^{\prime}\left(p^{\frac{v_p(f_j) - v_p(f_i)}{j - i}} \alpha\right) = 0$
+        pub fn normalization(&self) -> Polynomial<Integer> {
+            debug_assert!(self.is_critical());
+            let cmbv = self.crossmul_balancing_value();
+            Polynomial::from_coeffs(
+                (0..(self.n + 1))
+                    .map(|k| {
+                        let p_pow = self.balancing_value() * Integer::from(k) - &cmbv;
+                        // compute f_k*p^p_pow
+                        if p_pow >= Integer::ZERO {
+                            let p_pow = p_pow.unsigned_abs();
+                            self.f.coeff(k) * Integer::from(self.p.nat_pow(&p_pow))
+                        } else {
+                            let neg_p_pow = (-p_pow).unsigned_abs();
+                            Integer::div(
+                                &self.f.coeff(k),
+                                &Integer::from(self.p.nat_pow(&neg_p_pow)),
+                            )
+                            .unwrap()
+                        }
+                    })
+                    .collect(),
+            )
         }
     }
 
@@ -97,11 +170,8 @@ mod balancable_pairs {
             for i in 0..(n + 1) {
                 for j in (i + 1)..(n + 1) {
                     match (&coeff_valuations[i], &coeff_valuations[j]) {
-                        (Some(vfi), Some(vfj)) => {
-                            match Integer::div(
-                                &(Integer::from(vfi) - Integer::from(vfj)),
-                                &Integer::from(j - i),
-                            ) {
+                        (Valuation::Finite(vfi), Valuation::Finite(vfj)) => {
+                            match Integer::div(&(vfi - vfj), &Integer::from(j - i)) {
                                 Ok(bv) => bps.push(BalancablePair {
                                     p: p.clone(),
                                     f: &self,
@@ -227,6 +297,10 @@ mod balancable_pairs {
                 assert_eq!(bp.vfj, Natural::from(0u32));
                 assert_eq!(bp.bv, Integer::from(1));
                 assert!(bp.is_critical());
+                debug_assert_eq!(
+                    bp.normalization(),
+                    (10125 * x.pow(4) - 6 * &x + 1).into_verbose()
+                );
 
                 let bp = bps.next().unwrap();
                 assert_eq!(bp.p, p);
@@ -237,6 +311,10 @@ mod balancable_pairs {
                 assert_eq!(bp.vfj, Natural::from(0u32));
                 assert_eq!(bp.bv, Integer::from(0));
                 assert!(bp.is_critical());
+                debug_assert_eq!(
+                    bp.normalization(),
+                    (81 * x.pow(4) - 6 * &x + 5).into_verbose()
+                );
 
                 assert!(bps.next().is_none());
 
@@ -245,6 +323,177 @@ mod balancable_pairs {
                     HashSet::from([Integer::from(0), Integer::from(1)])
                 );
             }
+        }
+    }
+}
+
+mod isolate {
+    use super::*;
+
+    /// Represent all p-adic integers which differ from `center` by a valuation of at most `valuation_radius`
+    #[derive(Debug)]
+    pub struct PAdicIntegerVal0Ball {
+        center: Integer,
+        valuation_radius: Natural,
+    }
+
+    /// A brute-force algorithm to isolate all roots of f of valuation 0
+    /// Return ([r1, ...], alpha) such that each ri is alpha-close to exactly one valuation 0 root of f and vise-versa
+    pub fn isolatebf0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicIntegerVal0Ball> {
+        debug_assert!(!f.is_zero());
+        debug_assert!(f.is_squarefree());
+        debug_assert!(is_prime(p));
+        let n = f.degree().unwrap();
+        if n == 0 {
+            vec![]
+        } else {
+            let mut roots = vec![];
+            // disc(f) != 0 since f is squarefree
+            let alpha = padic_int_valuation(p, f.clone().discriminant().unwrap()).unwrap_nat();
+            let two_alpha = Natural::TWO * &alpha;
+            let mut i = Natural::ONE;
+            let max_i = p.nat_pow(&(&two_alpha + Natural::ONE));
+            while i < max_i {
+                if &i % p != 0 {
+                    if padic_int_valuation(p, f.evaluate(&Integer::from(&i)))
+                        > Valuation::Finite(Integer::from(&two_alpha))
+                    {
+                        let int_i = Integer::from(&i);
+                        if !roots.iter().any(|alt_i| {
+                            padic_int_valuation(p, &int_i - alt_i)
+                                > Valuation::Finite(Integer::from(&alpha))
+                        }) {
+                            roots.push(int_i)
+                        }
+                    }
+                }
+                i += Natural::ONE;
+            }
+            roots
+                .into_iter()
+                .map(|i| PAdicIntegerVal0Ball {
+                    center: i,
+                    valuation_radius: alpha.clone(),
+                })
+                .collect()
+        }
+    }
+
+    /// Return ([..., (ri, bi), ...], alpha) such that each ri is bi-close to exactly one valuation 0 root of f and vise-versa
+    pub fn isolate0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicIntegerVal0Ball> {
+        debug_assert!(!f.is_zero());
+        debug_assert!(f.is_squarefree());
+        debug_assert!(is_prime(p));
+        let n = f.degree().unwrap();
+        if n == 0 {
+            vec![]
+        } else {
+            let mut roots = vec![];
+            // disc(f) != 0 since f is squarefree
+            let alpha = padic_int_valuation(p, f.clone().discriminant().unwrap()).unwrap_nat();
+            let mut i = Natural::ONE;
+            while &i < p {
+                // i = 1, ..., p-1
+                roots.append(&mut isorefine(p, f, &alpha, &i, &Natural::ZERO));
+                i += Natural::ONE;
+            }
+            roots
+        }
+    }
+    fn isorefine(
+        p: &Natural,
+        f: &Polynomial<Integer>,
+        alpha: &Natural,
+        i: &Natural,
+        beta: &Natural,
+    ) -> Vec<PAdicIntegerVal0Ball> {
+        debug_assert!(!f.is_zero());
+        debug_assert!(f.is_squarefree());
+        debug_assert!(is_prime(p));
+        if padic_int_valuation(p, f.clone().derivative().evaluate(&Integer::from(i)))
+            <= Valuation::Finite(Integer::from(beta))
+        {
+            return isorefine1(p, f, alpha, i, beta);
+        }
+        let mut roots = vec![];
+        if beta < alpha {
+            let beta_plus_one = beta + Natural::ONE;
+            let mut k = Natural::ZERO;
+            while &k < p {
+                // k = 0, ..., p-1
+                roots.append(&mut isorefine(
+                    p,
+                    f,
+                    alpha,
+                    &(i + &k * p.nat_pow(&beta_plus_one)),
+                    &beta_plus_one,
+                ));
+                k += Natural::ONE;
+            }
+        }
+        roots
+    }
+    fn isorefine1(
+        p: &Natural,
+        f: &Polynomial<Integer>,
+        alpha: &Natural,
+        i: &Natural,
+        beta: &Natural,
+    ) -> Vec<PAdicIntegerVal0Ball> {
+        debug_assert!(!f.is_zero());
+        debug_assert!(f.is_squarefree());
+        debug_assert!(is_prime(p));
+        let val_f_at_i = padic_int_valuation(p, f.evaluate(&Integer::from(i)));
+        if !(Valuation::Finite(Integer::from(beta)) < val_f_at_i) {
+            return vec![];
+        }
+        if Valuation::Finite(Integer::from(Natural::TWO * beta)) < val_f_at_i {
+            return vec![PAdicIntegerVal0Ball {
+                center: Integer::from(i),
+                valuation_radius: beta.clone(),
+            }];
+        }
+        let mut roots = vec![];
+        if beta < alpha {
+            let beta_plus_one = beta + Natural::ONE;
+            let mut k = Natural::ONE;
+            while &k < p {
+                // k = 1, ..., p-1
+                roots.append(&mut isorefine1(
+                    p,
+                    f,
+                    alpha,
+                    &(i + &k * p.nat_pow(&beta_plus_one)),
+                    &beta_plus_one,
+                ));
+                k += Natural::ONE;
+            }
+        }
+        roots
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use crate::structure::elements::*;
+
+        use super::*;
+
+        #[test]
+        fn test_isolatebf0() {
+            let x = Polynomial::<Integer>::var().into_ergonomic();
+            let f = (x.pow(2) - 1).into_verbose();
+            let p = Natural::from(2u32);
+            println!("f = {}", f);
+            println!("{:?}", isolatebf0(&p, &f));
+            assert_eq!(isolatebf0(&p, &f).len(), 2);
+        }
+        #[test]
+        fn test_isolate0() {
+            let x = Polynomial::<Integer>::var().into_ergonomic();
+            let f = (x.pow(2) - 1).into_verbose();
+            let p = Natural::from(2u32);
+            println!("f = {}", f);
+            println!("{:?}", isolate0(&p, &f));
         }
     }
 }
@@ -286,32 +535,32 @@ mod tests {
     fn test_padic_valuation() {
         assert_eq!(
             padic_int_valuation(&Natural::from(2u32), Integer::from(0)),
-            None
+            Valuation::Infinity
         );
         assert_eq!(
             padic_int_valuation(&Natural::from(2u32), Integer::from(5)),
-            Some(Natural::from(0u32))
+            Valuation::Finite(Integer::from(0))
         );
         assert_eq!(
             padic_int_valuation(&Natural::from(2u32), Integer::from(-12)),
-            Some(Natural::from(2u32))
+            Valuation::Finite(Integer::from(2))
         );
         assert_eq!(
             padic_int_valuation(&Natural::from(2u32), Integer::from(256)),
-            Some(Natural::from(8u32))
+            Valuation::Finite(Integer::from(8))
         );
 
         assert_eq!(
             padic_int_valuation(&Natural::from(7u32), Integer::from(0)),
-            None
+            Valuation::Infinity
         );
         assert_eq!(
             padic_int_valuation(&Natural::from(7u32), Integer::from(-98)),
-            Some(Natural::from(2u32))
+            Valuation::Finite(Integer::from(2))
         );
         assert_eq!(
             padic_int_valuation(&Natural::from(7u32), Integer::from(42)),
-            Some(Natural::from(1u32))
+            Valuation::Finite(Integer::from(1))
         );
     }
 }
