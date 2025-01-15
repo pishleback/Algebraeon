@@ -1137,40 +1137,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_all_padic_roots_example1() {
-        let x = Polynomial::<Integer>::var().into_ergonomic();
-        let f = (16 * x.pow(2) - 17).into_verbose();
-        println!("{:?}", f);
-        let roots = f.all_padic_roots(&Natural::from(2u32));
-        assert_eq!(roots.len(), 2);
-        for root in roots {
-            println!("{}", root);
-        }
-    }
-
-    #[test]
-    fn test_all_padic_roots_example2() {
-        let x = Polynomial::<Integer>::var().into_ergonomic();
-        let f = (x.pow(6) - 2).into_verbose();
-        println!("{:?}", f);
-        assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 0);
-        assert_eq!(f.all_padic_roots(&Natural::from(7u32)).len(), 0);
-        assert_eq!(f.all_padic_roots(&Natural::from(727u32)).len(), 6);
-        for root in f.all_padic_roots(&Natural::from(727u32)) {
-            println!("{}", root);
-        }
-    }
-
-    #[test]
-    fn test_all_padic_roots_example3() {
-        let x = Polynomial::<Integer>::var().into_ergonomic();
-        let f = (3 * x - 2).into_verbose();
-        println!("{:?}", f);
-        assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 1);
-        assert_eq!(f.all_padic_roots(&Natural::from(3u32)).len(), 1);
-        assert_eq!(f.all_padic_roots(&Natural::from(5u32)).len(), 1);
-    }
 
     #[test]
     fn test_padic_field_opps() {

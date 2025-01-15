@@ -1,3 +1,5 @@
+use core::panic;
+
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
 use malachite_base::num::basic::traits::{One, Two, Zero};
 use malachite_nz::{integer::Integer, natural::Natural};
@@ -345,8 +347,8 @@ mod isolate {
 
     /// Represent all p-adic numbers which differ from s by a valuation up to v
     // In terms of digits, a is correct up to p-adic digit #v with digits labelled as ...3210.-1...
-    #[derive(Debug)]
-    struct PAdicRationalBall {
+    #[derive(Debug, Clone)]
+    pub struct PAdicRationalBall {
         a: Rational,
         v: Integer,
     }
@@ -449,6 +451,7 @@ mod isolate {
         }
         roots
     }
+
     fn isorefine1(
         p: &Natural,
         f: &Polynomial<Integer>,
@@ -493,7 +496,7 @@ mod isolate {
         p: &Natural,
         f: &Polynomial<Integer>,
         r: PAdicRationalBall,
-        target_beta: &Natural,
+        target_beta: &Integer,
     ) -> PAdicRationalBall {
         if target_beta <= &r.v {
             r
@@ -501,19 +504,19 @@ mod isolate {
             refine0_impl(p, f, r, target_beta).unwrap()
         }
     }
+
     fn refine0_impl(
         p: &Natural,
         f: &Polynomial<Integer>,
         r: PAdicRationalBall,
-        target_beta: &Natural,
+        target_beta: &Integer,
     ) -> Option<PAdicRationalBall> {
         let PAdicRationalBall { a: c, v: beta } = &r;
         let vfc = padic_rat_valuation(p, f.apply_map(|coeff| Rational::from(coeff)).evaluate(c));
         if !(Valuation::Finite(beta.clone()) < vfc) {
             return None;
         }
-        if beta >= target_beta && Valuation::Finite(Integer::from(Natural::TWO * target_beta)) < vfc
-        {
+        if beta >= target_beta && Valuation::Finite(Integer::TWO * target_beta) < vfc {
             return Some(r);
         }
         let beta_plus_one = beta + Integer::ONE;
@@ -539,7 +542,7 @@ mod isolate {
         None
     }
 
-    fn isolate(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
+    pub fn isolate(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
         debug_assert!(is_prime(p));
         debug_assert!(!f.is_zero());
         debug_assert!(f.is_squarefree());
@@ -574,7 +577,7 @@ mod isolate {
         roots
     }
 
-    fn refine(
+    pub fn refine(
         p: &Natural,
         f: &Polynomial<Integer>,
         r: &PAdicRationalBall,
@@ -594,9 +597,16 @@ mod isolate {
             unreachable!()
         })();
         let g = bp.normalization();
-        let c = println!("{:?}", bp);
-
-        todo!()
+        let c = d * Rational::from(p).int_pow(&(-&vd)).unwrap();
+        let beta = gamma - &vd;
+        let target_beta = &target_gamma - &vd;
+        let PAdicRationalBall { a: refined_c, v: _ } =
+            refine0(p, &g, PAdicRationalBall { a: c, v: beta }, &target_beta);
+        let refined_d = refined_c * Rational::from(p).int_pow(&vd).unwrap();
+        PAdicRationalBall {
+            a: refined_d,
+            v: target_gamma,
+        }
     }
 
     #[cfg(test)]
@@ -644,23 +654,59 @@ mod isolate {
             for r in isolate(&p, &f) {
                 println!("r = {:?}", r);
                 let s = refine(&p, &f, &r, Integer::from(100));
+                println!("s = {:?}", s);
             }
         }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct PAdicBall {
-    a: Rational,
-    v: Integer,
+enum PAdicAlgebraicValue {
+    Rational(Rational),
+    Algebraic {
+        // An irreducible polynomial of degree >= 2
+        poly: Polynomial<Integer>,
+        // A p-adic isolating ball containing exactly one root of the polynomial
+        approx: isolate::PAdicRationalBall,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub struct PAdicAlgebraic {
+    // A prime number
+    p: Natural,
+    value: PAdicAlgebraicValue,
 }
 
 impl Polynomial<Integer> {
-    fn all_padic_roots_irreducible(&self, p: &Natural) -> Vec<PAdicBall> {
-        todo!()
+    fn all_padic_roots_irreducible(&self, p: &Natural) -> Vec<PAdicAlgebraic> {
+        debug_assert!(self.is_irreducible());
+        let n = self.degree().unwrap();
+        if n == 1 {
+            // Rational root
+            let a = self.coeff(1);
+            let b = self.coeff(0);
+            // f(x) = ax + b
+            // root = -b/a
+            vec![PAdicAlgebraic {
+                p: p.clone(),
+                value: PAdicAlgebraicValue::Rational(-Rational::from_integers(b, a)),
+            }]
+        } else {
+            isolate::isolate(p, self)
+                .into_iter()
+                .map(|root| PAdicAlgebraic {
+                    p: p.clone(),
+                    value: PAdicAlgebraicValue::Algebraic {
+                        poly: self.clone(),
+                        approx: root,
+                    },
+                })
+                .collect()
+        }
     }
 
-    pub fn all_padic_roots(&self, p: &Natural) -> Vec<PAdicBall> {
+    pub fn all_padic_roots(&self, p: &Natural) -> Vec<PAdicAlgebraic> {
         debug_assert!(is_prime(p));
         assert_ne!(self, &Self::zero());
         let factors = self.factor().unwrap();
@@ -680,6 +726,8 @@ impl Polynomial<Integer> {
 
 #[cfg(test)]
 mod tests {
+    use crate::structure::elements::*;
+
     use super::*;
 
     #[test]
@@ -713,5 +761,40 @@ mod tests {
             padic_int_valuation(&Natural::from(7u32), Integer::from(42)),
             Valuation::Finite(Integer::from(1))
         );
+    }
+
+    #[test]
+    fn test_all_padic_roots_example1() {
+        let x = Polynomial::<Integer>::var().into_ergonomic();
+        let f = (16 * x.pow(2) - 17).into_verbose();
+        println!("{:?}", f);
+        let roots = f.all_padic_roots(&Natural::from(2u32));
+        assert_eq!(roots.len(), 2);
+        for root in roots {
+            println!("{:?}", root);
+        }
+    }
+
+    #[test]
+    fn test_all_padic_roots_example2() {
+        let x = Polynomial::<Integer>::var().into_ergonomic();
+        let f = (x.pow(6) - 2).into_verbose();
+        println!("{:?}", f);
+        assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 0);
+        assert_eq!(f.all_padic_roots(&Natural::from(7u32)).len(), 0);
+        assert_eq!(f.all_padic_roots(&Natural::from(727u32)).len(), 6);
+        for root in f.all_padic_roots(&Natural::from(727u32)) {
+            println!("{:?}", root);
+        }
+    }
+
+    #[test]
+    fn test_all_padic_roots_example3() {
+        let x = Polynomial::<Integer>::var().into_ergonomic();
+        let f = (3 * x - 2).into_verbose();
+        println!("{:?}", f);
+        assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 1);
+        assert_eq!(f.all_padic_roots(&Natural::from(3u32)).len(), 1);
+        assert_eq!(f.all_padic_roots(&Natural::from(5u32)).len(), 1);
     }
 }
