@@ -597,7 +597,6 @@ impl std::fmt::Display for PAdicAlgebraic {
 
 impl Polynomial<Integer> {
     fn all_padic_roots_irreducible(&self, p: &Natural) -> Vec<PAdicAlgebraic> {
-        // https://www.researchgate.net/profile/Thomas-Sturm-2/publication/2925550_P-adic_Root_Isolation/links/580b8c0708aeef1bfeeb5db8/P-adic-Root-Isolation.pdf?origin=scientificContributions
         debug_assert!(is_prime(p));
         debug_assert!(self.is_irreducible());
 
