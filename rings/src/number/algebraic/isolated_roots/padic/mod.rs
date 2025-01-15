@@ -55,16 +55,15 @@ impl Valuation {
     }
 }
 
-fn padic_int_valuation(p: &Natural, mut n: Integer) -> Valuation {
+fn padic_nat_valuation(p: &Natural, mut n: Natural) -> Valuation {
     debug_assert!(is_prime(p));
-    let p = Integer::from(p);
     if n == Natural::ZERO {
         Valuation::Infinity
     } else {
         let mut k = 0usize;
         let mut r;
         loop {
-            (n, r) = n.div_mod(&p);
+            (n, r) = n.div_mod(p);
             if r == Natural::ZERO {
                 k += 1;
                 continue;
@@ -73,6 +72,18 @@ fn padic_int_valuation(p: &Natural, mut n: Integer) -> Valuation {
             }
         }
         Valuation::Finite(Integer::from(k))
+    }
+}
+
+fn padic_int_valuation(p: &Natural, n: Integer) -> Valuation {
+    padic_nat_valuation(p, n.unsigned_abs())
+}
+
+fn padic_rat_valuation(p: &Natural, r: Rational) -> Valuation {
+    let (n, d) = r.into_numerator_and_denominator();
+    match padic_nat_valuation(p, n) {
+        Valuation::Infinity => Valuation::Infinity,
+        Valuation::Finite(vn) => Valuation::Finite(vn - padic_nat_valuation(p, d).unwrap_int()),
     }
 }
 
@@ -328,18 +339,21 @@ mod balancable_pairs {
 }
 
 mod isolate {
+    use std::collections::HashSet;
+
     use super::*;
 
-    /// Represent all p-adic integers which differ from `center` by a valuation of at most `valuation_radius`
+    /// Represent all p-adic numbers which differ from s by a valuation up to v
+    // In terms of digits, a is correct up to p-adic digit #v with digits labelled as ...3210.-1...
     #[derive(Debug)]
-    pub struct PAdicIntegerVal0Ball {
-        center: Integer,
-        valuation_radius: Natural,
+    struct PAdicRationalBall {
+        a: Rational,
+        v: Integer,
     }
 
     /// A brute-force algorithm to isolate all roots of f of valuation 0
     /// Return ([r1, ...], alpha) such that each ri is alpha-close to exactly one valuation 0 root of f and vise-versa
-    pub fn isolatebf0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicIntegerVal0Ball> {
+    fn isolatebf0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
         debug_assert!(!f.is_zero());
         debug_assert!(f.is_squarefree());
         debug_assert!(is_prime(p));
@@ -371,16 +385,17 @@ mod isolate {
             }
             roots
                 .into_iter()
-                .map(|i| PAdicIntegerVal0Ball {
-                    center: i,
-                    valuation_radius: alpha.clone(),
+                .map(|i| PAdicRationalBall {
+                    a: Rational::from(i),
+                    v: Integer::from(&alpha),
                 })
                 .collect()
         }
     }
 
-    /// Return ([..., (ri, bi), ...], alpha) such that each ri is bi-close to exactly one valuation 0 root of f and vise-versa
-    pub fn isolate0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicIntegerVal0Ball> {
+    /// Return ([..., (ri, bi), ...], alpha) such that each ri is bi-close to exactly one valuation 0 root of f and vise-versa.
+    /// Computes one p-adic digit at a time.
+    fn isolate0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
         debug_assert!(!f.is_zero());
         debug_assert!(f.is_squarefree());
         debug_assert!(is_prime(p));
@@ -400,13 +415,14 @@ mod isolate {
             roots
         }
     }
+
     fn isorefine(
         p: &Natural,
         f: &Polynomial<Integer>,
         alpha: &Natural,
         i: &Natural,
         beta: &Natural,
-    ) -> Vec<PAdicIntegerVal0Ball> {
+    ) -> Vec<PAdicRationalBall> {
         debug_assert!(!f.is_zero());
         debug_assert!(f.is_squarefree());
         debug_assert!(is_prime(p));
@@ -439,7 +455,7 @@ mod isolate {
         alpha: &Natural,
         i: &Natural,
         beta: &Natural,
-    ) -> Vec<PAdicIntegerVal0Ball> {
+    ) -> Vec<PAdicRationalBall> {
         debug_assert!(!f.is_zero());
         debug_assert!(f.is_squarefree());
         debug_assert!(is_prime(p));
@@ -448,9 +464,9 @@ mod isolate {
             return vec![];
         }
         if Valuation::Finite(Integer::from(Natural::TWO * beta)) < val_f_at_i {
-            return vec![PAdicIntegerVal0Ball {
-                center: Integer::from(i),
-                valuation_radius: beta.clone(),
+            return vec![PAdicRationalBall {
+                a: Rational::from(i),
+                v: Integer::from(beta),
             }];
         }
         let mut roots = vec![];
@@ -472,6 +488,117 @@ mod isolate {
         roots
     }
 
+    /// Refine an isolated root of valuation 0
+    fn refine0(
+        p: &Natural,
+        f: &Polynomial<Integer>,
+        r: PAdicRationalBall,
+        target_beta: &Natural,
+    ) -> PAdicRationalBall {
+        if target_beta <= &r.v {
+            r
+        } else {
+            refine0_impl(p, f, r, target_beta).unwrap()
+        }
+    }
+    fn refine0_impl(
+        p: &Natural,
+        f: &Polynomial<Integer>,
+        r: PAdicRationalBall,
+        target_beta: &Natural,
+    ) -> Option<PAdicRationalBall> {
+        let PAdicRationalBall { a: c, v: beta } = &r;
+        let vfc = padic_rat_valuation(p, f.apply_map(|coeff| Rational::from(coeff)).evaluate(c));
+        if !(Valuation::Finite(beta.clone()) < vfc) {
+            return None;
+        }
+        if beta >= target_beta && Valuation::Finite(Integer::from(Natural::TWO * target_beta)) < vfc
+        {
+            return Some(r);
+        }
+        let beta_plus_one = beta + Integer::ONE;
+        let mut k = Natural::ZERO;
+        while &k < p {
+            // k = 0, ..., p-1
+            match refine0_impl(
+                p,
+                f,
+                PAdicRationalBall {
+                    a: c + Rational::from(&k) * Rational::from(p).int_pow(&beta_plus_one).unwrap(),
+                    v: beta_plus_one.clone(),
+                },
+                target_beta,
+            ) {
+                Some(refined_r) => {
+                    return Some(refined_r);
+                }
+                None => {}
+            }
+            k += Natural::ONE;
+        }
+        None
+    }
+
+    fn isolate(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
+        debug_assert!(is_prime(p));
+        debug_assert!(!f.is_zero());
+        debug_assert!(f.is_squarefree());
+        debug_assert!(f.degree().unwrap() >= 2);
+        // compute a set containing one balanced pair for each critical value of f
+        let critical_balanced_pairs = {
+            let mut critical_balanced_pairs = vec![];
+            let mut critical_values = HashSet::new();
+            for balancable_pair in f.balancable_pairs(p) {
+                if balancable_pair.is_critical() {
+                    let critical_value = balancable_pair.balancing_value();
+                    if !critical_values.contains(critical_value) {
+                        critical_values.insert(critical_value.clone());
+                        critical_balanced_pairs.push(balancable_pair);
+                    }
+                }
+            }
+            critical_balanced_pairs
+        };
+        let mut roots = vec![];
+        for critical_balanced_pair in critical_balanced_pairs {
+            let kappa = critical_balanced_pair.balancing_value();
+            for PAdicRationalBall { a: c, v: beta } in
+                isolate0(p, &critical_balanced_pair.normalization())
+            {
+                roots.push(PAdicRationalBall {
+                    a: Rational::from(p).int_pow(kappa).unwrap() * Rational::from(c),
+                    v: Integer::from(beta) + kappa,
+                });
+            }
+        }
+        roots
+    }
+
+    fn refine(
+        p: &Natural,
+        f: &Polynomial<Integer>,
+        r: &PAdicRationalBall,
+        target_gamma: Integer,
+    ) -> PAdicRationalBall {
+        let PAdicRationalBall { a: d, v: gamma } = &r;
+        // find a balancable pair for f with critical value v(d)
+        let vd = padic_rat_valuation(p, d.clone()).unwrap_int(); // d != 0 since it should come from a finite shift of something of valuation 0
+        let bp = (|| {
+            for bp in f.balancable_pairs(p) {
+                if bp.is_critical() {
+                    if vd == bp.balancing_value().clone() {
+                        return bp;
+                    }
+                }
+            }
+            unreachable!()
+        })();
+        let g = bp.normalization();
+        let c = println!("{:?}", bp);
+
+        todo!()
+    }
+
     #[cfg(test)]
     mod tests {
         use crate::structure::elements::*;
@@ -487,13 +614,37 @@ mod isolate {
             println!("{:?}", isolatebf0(&p, &f));
             assert_eq!(isolatebf0(&p, &f).len(), 2);
         }
+
         #[test]
         fn test_isolate0() {
             let x = Polynomial::<Integer>::var().into_ergonomic();
-            let f = (x.pow(2) - 1).into_verbose();
+            let f = (x.pow(2) - 17).into_verbose();
             let p = Natural::from(2u32);
             println!("f = {}", f);
             println!("{:?}", isolate0(&p, &f));
+            assert_eq!(isolate0(&p, &f).len(), 2);
+        }
+
+        #[test]
+        fn test_isolate() {
+            let x = Polynomial::<Integer>::var().into_ergonomic();
+            let f = (256 * x.pow(2) - 17).into_verbose();
+            let p = Natural::from(2u32);
+            println!("f = {}", f);
+            println!("{:?}", isolate(&p, &f));
+            assert_eq!(isolate(&p, &f).len(), 2);
+        }
+
+        #[test]
+        fn test_refine() {
+            let x = Polynomial::<Integer>::var().into_ergonomic();
+            let f = (256 * x.pow(2) - 17).into_verbose();
+            let p = Natural::from(2u32);
+            println!("f = {}", f);
+            for r in isolate(&p, &f) {
+                println!("r = {:?}", r);
+                let s = refine(&p, &f, &r, Integer::from(100));
+            }
         }
     }
 }
