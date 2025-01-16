@@ -1,4 +1,3 @@
-
 use std::collections::HashSet;
 
 use super::*;
@@ -272,6 +271,13 @@ impl PAdicRationalBall {
 
     pub fn ndigits(&self) -> &Integer {
         &self.v
+    }
+
+    pub fn neg(self) -> Self {
+        Self {
+            a: -self.a,
+            v: self.v,
+        }
     }
 }
 
