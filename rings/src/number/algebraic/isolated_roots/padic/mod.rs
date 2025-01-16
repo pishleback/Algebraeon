@@ -1,5 +1,3 @@
-use core::panic;
-
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
 use malachite_base::num::basic::traits::{One, Two, Zero};
 use malachite_nz::{integer::Integer, natural::Natural};
@@ -345,12 +343,25 @@ mod isolate {
 
     use super::*;
 
-    /// Represent all p-adic numbers which differ from s by a valuation up to v
-    // In terms of digits, a is correct up to p-adic digit #v with digits labelled as ...3210.-1...
+    // Represent all p-adic numbers which differ from s by a valuation up to v
+    // In terms of digits, a is correct in the first v digits
     #[derive(Debug, Clone)]
     pub struct PAdicRationalBall {
         a: Rational,
+        // Note: this value is one larger than what's in the paper
+        // In the paper, v is the valuation coresponding the radius of an _open_ ball
+        // Here v, is the (signed) number of correct p-adic digits i.e. the valuation coresponding the radius of a _closed_ ball
         v: Integer,
+    }
+
+    impl PAdicRationalBall {
+        pub fn center(&self) -> &Rational {
+            &self.a
+        }
+
+        pub fn ndigits(&self) -> &Integer {
+            &self.v
+        }
     }
 
     /// A brute-force algorithm to isolate all roots of f of valuation 0
@@ -389,7 +400,7 @@ mod isolate {
                 .into_iter()
                 .map(|i| PAdicRationalBall {
                     a: Rational::from(i),
-                    v: Integer::from(&alpha),
+                    v: Integer::from(&alpha) + Integer::ONE,
                 })
                 .collect()
         }
@@ -411,7 +422,7 @@ mod isolate {
             let mut i = Natural::ONE;
             while &i < p {
                 // i = 1, ..., p-1
-                roots.append(&mut isorefine(p, f, &alpha, &i, &Natural::ZERO));
+                roots.append(&mut isorefine(p, f, &alpha, &i, &Natural::ONE));
                 i += Natural::ONE;
             }
             roots
@@ -429,12 +440,12 @@ mod isolate {
         debug_assert!(f.is_squarefree());
         debug_assert!(is_prime(p));
         if padic_int_valuation(p, f.clone().derivative().evaluate(&Integer::from(i)))
-            <= Valuation::Finite(Integer::from(beta))
+            < Valuation::Finite(Integer::from(beta))
         {
             return isorefine1(p, f, alpha, i, beta);
         }
         let mut roots = vec![];
-        if beta < alpha {
+        if beta <= alpha {
             let beta_plus_one = beta + Natural::ONE;
             let mut k = Natural::ZERO;
             while &k < p {
@@ -443,7 +454,7 @@ mod isolate {
                     p,
                     f,
                     alpha,
-                    &(i + &k * p.nat_pow(&beta_plus_one)),
+                    &(i + &k * p.nat_pow(&beta)),
                     &beta_plus_one,
                 ));
                 k += Natural::ONE;
@@ -463,17 +474,17 @@ mod isolate {
         debug_assert!(f.is_squarefree());
         debug_assert!(is_prime(p));
         let val_f_at_i = padic_int_valuation(p, f.evaluate(&Integer::from(i)));
-        if !(Valuation::Finite(Integer::from(beta)) < val_f_at_i) {
+        if !(Valuation::Finite(Integer::from(beta)) <= val_f_at_i) {
             return vec![];
         }
-        if Valuation::Finite(Integer::from(Natural::TWO * beta)) < val_f_at_i {
+        if Valuation::Finite(Integer::from(Natural::TWO * beta) - Integer::TWO) < val_f_at_i {
             return vec![PAdicRationalBall {
                 a: Rational::from(i),
                 v: Integer::from(beta),
             }];
         }
         let mut roots = vec![];
-        if beta < alpha {
+        if beta <= alpha {
             let beta_plus_one = beta + Natural::ONE;
             let mut k = Natural::ONE;
             while &k < p {
@@ -482,7 +493,7 @@ mod isolate {
                     p,
                     f,
                     alpha,
-                    &(i + &k * p.nat_pow(&beta_plus_one)),
+                    &(i + &k * p.nat_pow(&beta)),
                     &beta_plus_one,
                 ));
                 k += Natural::ONE;
@@ -495,14 +506,52 @@ mod isolate {
     fn refine0(
         p: &Natural,
         f: &Polynomial<Integer>,
-        r: PAdicRationalBall,
+        mut r: PAdicRationalBall,
         target_beta: &Integer,
     ) -> PAdicRationalBall {
-        if target_beta <= &r.v {
-            r
-        } else {
-            refine0_impl(p, f, r, target_beta).unwrap()
+        debug_assert!(r.ndigits() >= &Integer::ZERO);
+        let mut do_hensel_lift = false;
+        while &r.v < target_beta {
+            let fa = f
+                .apply_map(|coeff| Rational::from(coeff))
+                .evaluate(r.center());
+            let dfa = f
+                .apply_map(|coeff| Rational::from(coeff))
+                .derivative()
+                .evaluate(r.center());
+
+            do_hensel_lift = {
+                match do_hensel_lift {
+                    true => true,
+                    false => {
+                        let vfa = padic_rat_valuation(p, fa.clone());
+                        let vdfa = padic_rat_valuation(p, dfa.clone());
+                        vfa > match vdfa {
+                            Valuation::Infinity => Valuation::Infinity,
+                            Valuation::Finite(vdfa_finite) => {
+                                Valuation::Finite(vdfa_finite * Integer::TWO)
+                            }
+                        }
+                    }
+                }
+            };
+
+            if do_hensel_lift {
+                let new_a = r.a - fa / dfa;
+                let new_v = r.v + Integer::ONE;
+                let new_a = PAdicRational::from_rational(p.clone(), new_a)
+                    .truncate(&new_v)
+                    .rational_value();
+
+                // Hensel lift
+                r = PAdicRationalBall { a: new_a, v: new_v };
+            } else {
+                // Non Hensel lift
+                let rv_plus_one = &r.v + Integer::ONE;
+                r = refine0_impl(p, f, r, &rv_plus_one).unwrap();
+            }
         }
+        r
     }
 
     fn refine0_impl(
@@ -511,12 +560,14 @@ mod isolate {
         r: PAdicRationalBall,
         target_beta: &Integer,
     ) -> Option<PAdicRationalBall> {
+        debug_assert!(r.ndigits() >= &Integer::ZERO);
         let PAdicRationalBall { a: c, v: beta } = &r;
         let vfc = padic_rat_valuation(p, f.apply_map(|coeff| Rational::from(coeff)).evaluate(c));
-        if !(Valuation::Finite(beta.clone()) < vfc) {
+        if !(Valuation::Finite(beta.clone()) <= vfc) {
             return None;
         }
-        if beta >= target_beta && Valuation::Finite(Integer::TWO * target_beta) < vfc {
+        if target_beta < beta && Valuation::Finite(Integer::TWO * target_beta - Integer::TWO) < vfc
+        {
             return Some(r);
         }
         let beta_plus_one = beta + Integer::ONE;
@@ -527,7 +578,7 @@ mod isolate {
                 p,
                 f,
                 PAdicRationalBall {
-                    a: c + Rational::from(&k) * Rational::from(p).int_pow(&beta_plus_one).unwrap(),
+                    a: c + Rational::from(&k) * Rational::from(p).int_pow(&beta).unwrap(),
                     v: beta_plus_one.clone(),
                 },
                 target_beta,
@@ -661,21 +712,335 @@ mod isolate {
 }
 
 #[derive(Debug, Clone)]
-enum PAdicAlgebraicValue {
-    Rational(Rational),
-    Algebraic {
-        // An irreducible polynomial of degree >= 2
-        poly: Polynomial<Integer>,
-        // A p-adic isolating ball containing exactly one root of the polynomial
-        approx: isolate::PAdicRationalBall,
+enum PAdicAlgebraicRootHenselLiftable {
+    No,
+    Yes {
+        // f'(a) where a is the approximate root OR equivelently the lifted root.
+        dpoly_valuation: Integer,
     },
 }
 
 #[derive(Debug, Clone)]
-pub struct PAdicAlgebraic {
+pub struct PAdicAlgebraicRoot {
     // A prime number
     p: Natural,
-    value: PAdicAlgebraicValue,
+    // An irreducible polynomial of degree >= 2
+    poly: Polynomial<Integer>,
+    // A p-adic isolating ball containing exactly one root of the polynomial
+    approx: isolate::PAdicRationalBall,
+}
+
+impl PAdicAlgebraicRoot {
+    fn new(p: Natural, poly: Polynomial<Integer>, approx: isolate::PAdicRationalBall) -> Self {
+        debug_assert!(is_prime(&p));
+        debug_assert!(poly.is_irreducible());
+        Self { p, poly, approx }
+    }
+
+    fn refine(&mut self, ndigits: &Integer) {
+        while self.approx.ndigits() < ndigits {
+            self.approx = isolate::refine(
+                &self.p,
+                &self.poly,
+                &self.approx,
+                self.approx.ndigits() + Integer::ONE,
+            );
+            // verify that the root was lifted correctly
+            debug_assert_eq!(
+                PAdicRational::from_rational(
+                    self.p.clone(),
+                    self.poly
+                        .apply_map(|coeff| Rational::from(coeff))
+                        .evaluate(self.approx.center())
+                )
+                .truncate(self.approx.ndigits())
+                .rational_value(),
+                Rational::ZERO
+            );
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PAdicRational {
+    // A prime number
+    p: Natural,
+    rat: Rational,
+}
+
+impl PAdicRational {
+    pub fn from_rational(p: Natural, rat: Rational) -> Self {
+        debug_assert!(is_prime(&p));
+        Self { p, rat }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum PAdicAlgebraic {
+    Rational(PAdicRational),
+    Algebraic(PAdicAlgebraicRoot),
+}
+
+impl PAdicAlgebraic {
+    pub fn from_rational(p: Natural, rat: Rational) -> Self {
+        Self::Rational(PAdicRational::from_rational(p, rat))
+    }
+
+    pub fn p(&self) -> &Natural {
+        match self {
+            PAdicAlgebraic::Rational(x) => &x.p,
+            PAdicAlgebraic::Algebraic(x) => &x.p,
+        }
+    }
+}
+
+impl std::fmt::Display for PAdicAlgebraic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let p = self.p();
+        let n = Integer::from(if p < &Natural::from(10u32) { 6 } else { 3 });
+        write!(f, "{}", self.clone().truncate(&n).string_repr())
+    }
+}
+
+pub mod truncation {
+    use super::*;
+
+    // Represent value * p^shift with 0 <= value < p^digits
+    #[derive(Debug, Clone)]
+    pub enum Truncated {
+        Zero {
+            p: Natural,
+        },
+        NonZero {
+            p: Natural,
+            value: Natural, // non-zero mod p i.e. valuation 0
+            shift: Integer,
+            num_digits: Natural, // >= 1
+        },
+    }
+
+    impl Truncated {
+        pub fn digits(&self) -> Option<(Vec<Natural>, Integer)> {
+            match self {
+                Truncated::Zero { .. } => None,
+                Truncated::NonZero {
+                    p,
+                    value,
+                    shift,
+                    num_digits,
+                } => Some({
+                    let mut k = Natural::ZERO;
+                    let mut digits = vec![];
+                    let mut v = value.clone();
+                    while &k < num_digits {
+                        let r;
+                        (v, r) = v.div_mod(p);
+                        digits.push(r);
+                        k += Natural::ONE;
+                    }
+                    (digits, shift.clone())
+                }),
+            }
+        }
+
+        pub fn rational_value(&self) -> Rational {
+            match self {
+                Truncated::Zero { .. } => Rational::ZERO,
+                Truncated::NonZero {
+                    p, value, shift, ..
+                } => Rational::from(value) * Rational::from(p).int_pow(shift).unwrap(),
+            }
+        }
+
+        pub fn string_repr(&self) -> String {
+            let p = match self {
+                Truncated::Zero { p } => p,
+                Truncated::NonZero { p, .. } => p,
+            };
+            match self.digits() {
+                None => "0".into(),
+                Some((digits, mut shift)) => {
+                    use std::fmt::Write;
+                    let seps = p >= &Natural::from(10u32);
+                    let mut rev_digits = digits.into_iter().rev().collect::<Vec<_>>();
+                    while shift > 0 {
+                        rev_digits.push(Natural::ZERO);
+                        shift -= Integer::ONE;
+                    }
+                    debug_assert!(shift <= 0);
+                    let shift = (-shift).unsigned_abs();
+                    let mut s = String::new();
+                    write!(&mut s, "...").unwrap();
+                    for (i, d) in rev_digits.into_iter().rev().enumerate().rev() {
+                        write!(&mut s, "{}", d).unwrap();
+                        if i != 0 {
+                            if seps {
+                                if i == shift {
+                                    write!(&mut s, ";").unwrap();
+                                } else {
+                                    write!(&mut s, ",").unwrap();
+                                }
+                            } else {
+                                if i == shift {
+                                    write!(&mut s, ".").unwrap();
+                                }
+                            }
+                        }
+                    }
+                    s
+                }
+            }
+        }
+    }
+
+    impl PAdicRational {
+        pub fn truncate(&self, cutoffv: &Integer) -> Truncated {
+            match padic_rat_valuation(&self.p, self.rat.clone()) {
+                Valuation::Finite(shift) => {
+                    let shifted_rat =
+                        &self.rat * Rational::from(&self.p).int_pow(&-&shift).unwrap();
+                    let (n, d) = (shifted_rat.numerator(), shifted_rat.denominator());
+                    debug_assert_eq!(padic_int_valuation(&self.p, n.clone()).unwrap_nat(), 0);
+                    debug_assert_eq!(padic_int_valuation(&self.p, d.clone()).unwrap_nat(), 0);
+                    if cutoffv <= &shift {
+                        Truncated::Zero { p: self.p.clone() }
+                    } else {
+                        let num_digits = cutoffv - &shift;
+                        debug_assert!(num_digits >= 1);
+                        let num_digits = num_digits.unsigned_abs();
+                        let pn = Integer::from(&self.p).nat_pow(&num_digits); // p^{num_digits}
+                        let (g, _, d_inv) = Integer::xgcd(&pn, &d);
+                        debug_assert_eq!(g, Integer::ONE);
+                        let value = Integer::rem(&(n * d_inv), &pn);
+                        debug_assert!(value > 0);
+                        let value = value.unsigned_abs();
+                        Truncated::NonZero {
+                            p: self.p.clone(),
+                            value,
+                            shift,
+                            num_digits,
+                        }
+                    }
+                }
+                Valuation::Infinity => Truncated::Zero { p: self.p.clone() },
+            }
+        }
+    }
+
+    impl PAdicAlgebraicRoot {
+        pub fn truncate(&mut self, modulus_pow: &Integer) -> Truncated {
+            self.refine(modulus_pow);
+            let rat = self.approx.center();
+            PAdicRational {
+                p: self.p.clone(),
+                rat: rat.clone(),
+            }
+            .truncate(modulus_pow)
+        }
+    }
+
+    impl PAdicAlgebraic {
+        // Truncate modulo p^cutoffv
+        // e.g.
+        //  cutoffv=0 is modulo 1
+        //  cutoffv=1 is modulo p
+        pub fn truncate(&mut self, cutoffv: &Integer) -> Truncated {
+            match self {
+                PAdicAlgebraic::Rational(a) => a.truncate(cutoffv),
+                PAdicAlgebraic::Algebraic(a) => a.truncate(cutoffv),
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_padic_digits() {
+            assert_eq!(
+                PAdicAlgebraic::from_rational(Natural::from(2u32), Rational::ZERO,)
+                    .truncate(&6.into())
+                    .digits(),
+                None
+            );
+
+            assert_eq!(
+                PAdicAlgebraic::from_rational(
+                    Natural::from(2u32),
+                    Rational::from_integers(Integer::from(9), Integer::from(1)),
+                )
+                .truncate(&0.into())
+                .digits(),
+                None
+            );
+
+            assert_eq!(
+                PAdicAlgebraic::from_rational(
+                    Natural::from(2u32),
+                    Rational::from_integers(Integer::from(9), Integer::from(1)),
+                )
+                .truncate(&6.into())
+                .digits(),
+                Some((
+                    vec![
+                        Natural::from(1u32),
+                        Natural::from(0u32),
+                        Natural::from(0u32),
+                        Natural::from(1u32),
+                        Natural::from(0u32),
+                        Natural::from(0u32),
+                    ],
+                    Integer::from(0)
+                ))
+            );
+
+            assert_eq!(
+                PAdicAlgebraic::from_rational(
+                    Natural::from(2u32),
+                    Rational::from_integers(Integer::from(10), Integer::from(1)),
+                )
+                .truncate(&6.into())
+                .digits(),
+                Some((
+                    vec![
+                        Natural::from(1u32),
+                        Natural::from(0u32),
+                        Natural::from(1u32),
+                        Natural::from(0u32),
+                        Natural::from(0u32),
+                    ],
+                    Integer::from(1)
+                ))
+            );
+
+            assert_eq!(
+                PAdicAlgebraic::from_rational(
+                    Natural::from(2u32),
+                    Rational::from_integers(Integer::from(31), Integer::from(36)),
+                )
+                .truncate(&10.into())
+                .digits(),
+                Some((
+                    vec![
+                        Natural::from(1u32),
+                        Natural::from(1u32),
+                        Natural::from(1u32),
+                        Natural::from(0u32),
+                        Natural::from(0u32),
+                        Natural::from(1u32),
+                        Natural::from(1u32),
+                        Natural::from(1u32),
+                        Natural::from(0u32),
+                        Natural::from(0u32),
+                        Natural::from(0u32),
+                        Natural::from(1u32),
+                    ],
+                    Integer::from(-2)
+                ))
+            );
+        }
+    }
 }
 
 impl Polynomial<Integer> {
@@ -688,19 +1053,19 @@ impl Polynomial<Integer> {
             let b = self.coeff(0);
             // f(x) = ax + b
             // root = -b/a
-            vec![PAdicAlgebraic {
+            vec![PAdicAlgebraic::Rational(PAdicRational {
                 p: p.clone(),
-                value: PAdicAlgebraicValue::Rational(-Rational::from_integers(b, a)),
-            }]
+                rat: -Rational::from_integers(b, a),
+            })]
         } else {
             isolate::isolate(p, self)
                 .into_iter()
-                .map(|root| PAdicAlgebraic {
-                    p: p.clone(),
-                    value: PAdicAlgebraicValue::Algebraic {
-                        poly: self.clone(),
-                        approx: root,
-                    },
+                .map(|root| {
+                    PAdicAlgebraic::Algebraic(PAdicAlgebraicRoot::new(
+                        p.clone(),
+                        self.clone(),
+                        root,
+                    ))
                 })
                 .collect()
         }
@@ -767,11 +1132,11 @@ mod tests {
     fn test_all_padic_roots_example1() {
         let x = Polynomial::<Integer>::var().into_ergonomic();
         let f = (16 * x.pow(2) - 17).into_verbose();
-        println!("{:?}", f);
+        println!("f = {}", f);
         let roots = f.all_padic_roots(&Natural::from(2u32));
         assert_eq!(roots.len(), 2);
         for root in roots {
-            println!("{:?}", root);
+            println!("{}", root);
         }
     }
 
@@ -779,12 +1144,12 @@ mod tests {
     fn test_all_padic_roots_example2() {
         let x = Polynomial::<Integer>::var().into_ergonomic();
         let f = (x.pow(6) - 2).into_verbose();
-        println!("{:?}", f);
+        println!("f = {}", f);
         assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 0);
         assert_eq!(f.all_padic_roots(&Natural::from(7u32)).len(), 0);
         assert_eq!(f.all_padic_roots(&Natural::from(727u32)).len(), 6);
         for root in f.all_padic_roots(&Natural::from(727u32)) {
-            println!("{:?}", root);
+            println!("{}", root);
         }
     }
 
