@@ -1,8 +1,8 @@
-use crate::number::algebraic::isolated_roots::complex::*;
 use malachite_nz::{integer::Integer, natural::Natural};
 use malachite_q::Rational;
 
-use super::{ComplexAlgebraic, ComplexAlgebraicRoot};
+use super::*;
+
 
 impl Polynomial<Integer> {
     fn at_fixed_re_or_im_impl<const RE_OR_IM: bool>(

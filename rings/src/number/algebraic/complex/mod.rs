@@ -1,4 +1,4 @@
-use crate::number::algebraic::number_field::*;
+use crate::number::anf::number_field::new_anf;
 use crate::structure::structure::*;
 
 use super::poly_tools::*;

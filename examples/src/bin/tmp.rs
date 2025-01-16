@@ -1,7 +1,7 @@
 #![allow(dead_code, warnings)]
 
 use algebraeon_rings::{
-    number::algebraic::isolated_roots::padic::*,
+    number::algebraic::padic::*,
     polynomial::polynomial::Polynomial,
     structure::{elements::*, structure::*},
 };

@@ -168,7 +168,7 @@ assert_eq!(n, 120);
 
 ## Jordan Normal Form of a Matrix
 ```
-use algebraeon_rings::{linear::matrix::*, number::algebraic::isolated_roots::complex::*};
+use algebraeon_rings::{linear::matrix::*, number::algebraic::complex::*};
 use algebraeon_sets::structure::*;
 use malachite_q::Rational;
 // Construct a matrix

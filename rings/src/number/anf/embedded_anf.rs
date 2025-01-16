@@ -1,16 +1,17 @@
 use std::rc::Rc;
 
 use crate::{
-    number::algebraic::isolated_roots::real::RealAlgebraic, polynomial::polynomial::*,
+    number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
+    polynomial::polynomial::*,
     structure::*,
 };
-
-use super::{isolated_roots::complex::ComplexAlgebraic, number_field::*};
 use algebraeon_sets::structure::*;
 use malachite_base::num::basic::traits::{One, Zero};
 use malachite_nz::integer::Integer;
 use malachite_q::Rational;
 use structure::*;
+
+use super::number_field::{new_anf, ANFStructure};
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
@@ -228,8 +229,6 @@ pub fn anf_multi_primitive_element_theorem(
 mod tests {
     use elements::IntoErgonomic;
 
-    use crate::number::algebraic::isolated_roots::real::RealAlgebraic;
-
     use super::*;
 
     #[test]
@@ -291,9 +290,11 @@ mod tests {
         );
         assert_eq!(
             gen,
-            (sqrt_two.clone().into_ergonomic() + sqrt_three.clone().into_ergonomic()).into_verbose()
+            (sqrt_two.clone().into_ergonomic() + sqrt_three.clone().into_ergonomic())
+                .into_verbose()
         );
-        let oof = (sqrt_two.clone().into_ergonomic() + sqrt_three.clone().into_ergonomic()).into_verbose();
+        let oof = (sqrt_two.clone().into_ergonomic() + sqrt_three.clone().into_ergonomic())
+            .into_verbose();
         println!("{} {}", oof, oof.min_poly());
         println!("x = {}", x);
         println!("y = {}", y);
