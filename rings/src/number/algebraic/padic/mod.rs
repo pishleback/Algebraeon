@@ -15,15 +15,6 @@ use valuation::*;
 mod isolate;
 
 #[derive(Debug, Clone)]
-enum PAdicAlgebraicRootHenselLiftable {
-    No,
-    Yes {
-        // f'(a) where a is the approximate root OR equivelently the lifted root.
-        dpoly_valuation: Integer,
-    },
-}
-
-#[derive(Debug, Clone)]
 pub struct PAdicAlgebraicRoot {
     // A prime number
     p: Natural,
