@@ -5,14 +5,27 @@ use malachite_q::Rational;
 
 use crate::{number::natural::primes::*, polynomial::polynomial::*, structure::structure::*};
 
-// Some algorithms here on p-adic root isolation can be found in
-// Sturm, Thomas & Weispfenning, Volker. (2004). P-adic Root Isolation. Revista de la Real Academia de Ciencias Exactas, Físicas y Naturales. Serie A, Matemáticas.
-// https://www.researchgate.net/profile/Thomas-Sturm-2/publication/2925550_P-adic_Root_Isolation/links/580b8c0708aeef1bfeeb5db8/P-adic-Root-Isolation.pdf?origin=scientificContributions
-
 pub mod valuation;
 use valuation::*;
 
 mod isolate;
+
+#[derive(Debug, Clone)]
+pub struct IsolatingBall {
+    p: Natural,
+    c: Rational,
+    v: Valuation,
+}
+
+impl IsolatingBall {
+    pub fn overlap(x: &Self, y: &Self) -> bool {
+        let p = &x.p;
+        debug_assert_eq!(p, &y.p);
+        debug_assert!(is_prime(p));
+        let vdiff = padic_rat_valuation(p, &x.c - &y.c);
+        vdiff >= x.v && vdiff >= y.v
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct PAdicAlgebraicRoot {
@@ -31,7 +44,7 @@ impl PAdicAlgebraicRoot {
         Self { p, poly, approx }
     }
 
-    fn refine(&mut self, ndigits: &Integer) {
+    pub fn refine(&mut self, ndigits: &Integer) {
         while self.approx.ndigits() < ndigits {
             self.approx = isolate::refine(
                 &self.p,
@@ -53,6 +66,14 @@ impl PAdicAlgebraicRoot {
             );
         }
     }
+
+    pub fn isolating_ball(&self) -> IsolatingBall {
+        IsolatingBall {
+            p: self.p.clone(),
+            c: self.approx.center().clone(),
+            v: Valuation::Finite(self.approx.ndigits().clone()),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -66,6 +87,14 @@ impl PAdicRational {
     pub fn from_rational(p: Natural, rat: Rational) -> Self {
         debug_assert!(is_prime(&p));
         Self { p, rat }
+    }
+
+    pub fn isolating_ball(&self) -> IsolatingBall {
+        IsolatingBall {
+            p: self.p.clone(),
+            c: self.rat.clone(),
+            v: Valuation::Infinity,
+        }
     }
 }
 
@@ -84,6 +113,20 @@ impl PAdicAlgebraic {
         match self {
             PAdicAlgebraic::Rational(x) => &x.p,
             PAdicAlgebraic::Algebraic(x) => &x.p,
+        }
+    }
+
+    pub fn isolating_ball(&self) -> IsolatingBall {
+        match self {
+            PAdicAlgebraic::Rational(x) => x.isolating_ball(),
+            PAdicAlgebraic::Algebraic(x) => x.isolating_ball(),
+        }
+    }
+
+    pub fn refine(&mut self, ndigits: &Integer) {
+        match self {
+            PAdicAlgebraic::Rational(_) => {}
+            PAdicAlgebraic::Algebraic(x) => x.refine(ndigits),
         }
     }
 }
@@ -384,6 +427,8 @@ impl Polynomial<Integer> {
 }
 
 pub mod structure {
+    use crate::number::algebraic::poly_tools::root_sum_poly;
+
     use super::*;
     use algebraeon_sets::structure::*;
 
@@ -427,6 +472,52 @@ pub mod structure {
             );
             self.approx = self.approx.neg();
             self
+        }
+
+        fn add_rat(&self, rat: &PAdicRational) -> Self {
+            let p = self.p.clone();
+            debug_assert_eq!(p, rat.p);
+            let poly = Polynomial::compose(
+                &self.poly.apply_map(|c| Rational::from(c)),
+                &Polynomial::from_coeffs(vec![-&rat.rat, Rational::ONE]),
+            )
+            .primitive_part_fof();
+            let approx = self.approx.clone().add_rat(&rat.rat);
+            Self { p, poly, approx }
+        }
+
+        fn add_mut(a: &mut Self, b: &mut Self) -> PAdicAlgebraic {
+            let p = a.p.clone();
+            debug_assert_eq!(p, b.p);
+            let mut candidates = root_sum_poly(&a.poly, &b.poly)
+                .primitive_squarefree_part()
+                .all_padic_roots(&p);
+            let mut k = Integer::ZERO;
+            while candidates.len() > 1 {
+                a.refine(&k);
+                b.refine(&k);
+                let aball = a.isolating_ball();
+                let bball = b.isolating_ball();
+                let sball = IsolatingBall {
+                    p: p.clone(),
+                    c: aball.c + bball.c,
+                    v: std::cmp::min(aball.v.clone(), bball.v.clone()),
+                };
+                candidates = candidates
+                    .into_iter()
+                    .filter_map(|mut root| {
+                        root.refine(&k);
+                        let rball = root.isolating_ball();
+                        match IsolatingBall::overlap(&rball, &sball) {
+                            true => Some(root),
+                            false => None,
+                        }
+                    })
+                    .collect();
+                k += Integer::ONE;
+            }
+            debug_assert_eq!(candidates.len(), 1);
+            candidates.into_iter().next().unwrap()
         }
     }
 
@@ -512,30 +603,13 @@ pub mod structure {
                     PAdicAlgebraic::Rational(PAdicRational::add(a, b))
                 }
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Algebraic(b)) => {
-                    todo!()
-                    // PAdicAlgebraic::Algebraic(b.clone().add_rat(&a.rat))
+                    PAdicAlgebraic::Algebraic(b.add_rat(a))
                 }
                 (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Rational(b)) => {
-                    todo!()
-                    // PAdicAlgebraic::Algebraic(a.clone().add_rat(&b.rat))
+                    PAdicAlgebraic::Algebraic(a.add_rat(b))
                 }
                 (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => {
-                    todo!()
-                    // let (mut a_root, a_shift) = a.clone().unwrap();
-                    // let (mut b_root, b_shift) = b.clone().unwrap();
-                    // let shift = match a_shift.cmp(&b_shift) {
-                    //     std::cmp::Ordering::Less => {
-                    //         a_root = a_root.leftshift((b_shift - a_shift) as usize);
-                    //         b_shift
-                    //     }
-                    //     std::cmp::Ordering::Equal => a_shift,
-                    //     std::cmp::Ordering::Greater => {
-                    //         b_root = b_root.leftshift((a_shift - b_shift) as usize);
-                    //         a_shift
-                    //     }
-                    // };
-                    // println!("hi");
-                    // PAdicIntegerAlgebraicRoot::add_mut(&mut a_root, &mut b_root).shift_by(shift)
+                    PAdicAlgebraicRoot::add_mut(&mut a.clone(), &mut b.clone())
                 }
             }
         }
@@ -640,6 +714,7 @@ pub mod structure {
             println!("a+c = {}", ring.add(&a, &c));
             println!("d+b = {}", ring.add(&d, &b));
             println!("d+c = {}", ring.add(&d, &c));
+            println!("c+c = {}", ring.add(&c, &c));
 
             /*
 
