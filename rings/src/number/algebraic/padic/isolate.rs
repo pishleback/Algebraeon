@@ -285,6 +285,12 @@ impl PAdicRationalBall {
         }
     }
 
+    pub fn add_rat(self, offset: &Rational) -> Self {
+        Self {
+            a: self.a + offset,
+            v: self.v,
+        }
+    }
 }
 
 /// A brute-force algorithm to isolate all roots of f of valuation 0
