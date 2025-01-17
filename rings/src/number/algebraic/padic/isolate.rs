@@ -284,6 +284,7 @@ impl PAdicRationalBall {
             v: self.v,
         }
     }
+
 }
 
 /// A brute-force algorithm to isolate all roots of f of valuation 0
