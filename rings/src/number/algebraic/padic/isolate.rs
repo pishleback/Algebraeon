@@ -2,6 +2,10 @@ use std::collections::HashSet;
 
 use super::*;
 
+// Some algorithms here on p-adic root isolation can be found in
+// Sturm, Thomas & Weispfenning, Volker. (2004). P-adic Root Isolation. Revista de la Real Academia de Ciencias Exactas, Físicas y Naturales. Serie A, Matemáticas.
+// https://www.researchgate.net/profile/Thomas-Sturm-2/publication/2925550_P-adic_Root_Isolation/links/580b8c0708aeef1bfeeb5db8/P-adic-Root-Isolation.pdf?origin=scientificContributions
+
 mod balancable_pairs {
     use std::collections::HashSet;
 
@@ -32,7 +36,7 @@ mod balancable_pairs {
         /// If this is the case then the balancing value is called a critical value for $f$.
         /// If $\alpha \in \mathbb{Q}_p$ is such that $f(\alpha) = 0$ then $v_p(\alpha)$ is a critical value for $f$.
         pub fn is_critical(&self) -> bool {
-            let min = (1..(self.n + 1))
+            let min = (0..(self.n + 1))
                 .filter_map(|k| match padic_int_valuation(&self.p, self.f.coeff(k)) {
                     Valuation::Infinity => None,
                     Valuation::Finite(vfk) => {
@@ -55,11 +59,12 @@ mod balancable_pairs {
         }
 
         /// The polynomial
-        /// $$f_{i,j}(x) = p^{-\frac{iv_p(f_j) - jv_p(f_i)}{j - i}} \sum_{k=0}^n f_k \left(p^{\frac{v_p(f_j) - v_p(f_i)}{j - i}} x\right)^k$$
+        /// $$f_{i,j}(x) = p^{-\frac{iv_p(f_i) - jv_p(f_j)}{j - i}} \sum_{k=0}^n f_k \left(p^{\frac{v_p(f_i) - v_p(f_j)}{j - i}} x\right)^k$$
         /// It is such that for $\alpha \in \mathbb{Q}_p$
         /// - $f_{i,j}(\alpha) = 0$ if and only if $f\left(p^{\frac{v_p(f_j) - v_p(f_i)}{j - i}} \alpha\right) = 0$
         /// - $f_{i,j}^{\prime}(\alpha) = 0$ if and only if $f^{\prime}\left(p^{\frac{v_p(f_j) - v_p(f_i)}{j - i}} \alpha\right) = 0$
         pub fn normalization(&self) -> Polynomial<Integer> {
+            debug_assert!(self.f.is_irreducible());
             debug_assert!(self.is_critical());
             let cmbv = self.crossmul_balancing_value();
             Polynomial::from_coeffs(
