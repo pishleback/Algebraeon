@@ -427,7 +427,9 @@ impl Polynomial<Integer> {
 }
 
 pub mod structure {
-    use crate::number::algebraic::poly_tools::root_sum_poly;
+    use crate::number::algebraic::poly_tools::{
+        root_product_poly, root_rat_mul_poly, root_sum_poly,
+    };
 
     use super::*;
     use algebraeon_sets::structure::*;
@@ -475,6 +477,12 @@ pub mod structure {
         }
 
         fn add_rat(&self, rat: &PAdicRational) -> Self {
+            /*
+            Let x be the root approximated by a: |x - a| <= v
+            Let b be the rational value
+            Then x+b is approxmated by a+b:
+                |(x+b) - (a+b)| = |x-a| <= v
+            */
             let p = self.p.clone();
             debug_assert_eq!(p, rat.p);
             let poly = Polynomial::compose(
@@ -487,6 +495,15 @@ pub mod structure {
         }
 
         fn add_mut(a: &mut Self, b: &mut Self) -> PAdicAlgebraic {
+            /*
+            Let x be the root approximated by a: |x - a| <= v
+            Let y be the root approximated by b: |y - b| <= w
+            Then x+y is approximated by a+b:
+                |(x + y) - (a + b)|
+                = |(x - a) + (y - b)|
+                <= max(|x - a|, |y - b|)
+                <= max(v, w)
+            */
             let p = a.p.clone();
             debug_assert_eq!(p, b.p);
             let mut candidates = root_sum_poly(&a.poly, &b.poly)
@@ -502,6 +519,82 @@ pub mod structure {
                     p: p.clone(),
                     c: aball.c + bball.c,
                     v: std::cmp::min(aball.v.clone(), bball.v.clone()),
+                };
+                candidates = candidates
+                    .into_iter()
+                    .filter_map(|mut root| {
+                        root.refine(&k);
+                        let rball = root.isolating_ball();
+                        match IsolatingBall::overlap(&rball, &sball) {
+                            true => Some(root),
+                            false => None,
+                        }
+                    })
+                    .collect();
+                k += Integer::ONE;
+            }
+            debug_assert_eq!(candidates.len(), 1);
+            candidates.into_iter().next().unwrap()
+        }
+
+        fn mul_rat(&self, rat: &PAdicRational) -> PAdicAlgebraic {
+            /*
+            Let x be the root approximated by a: |x - a| <= v
+            Let b be the rational value
+            Then xb is approxmated by ab:
+                |(xb) - (ab)|
+                <= |x-a|.|b|
+                = v.|b|
+            */
+            let p = self.p.clone();
+            debug_assert_eq!(p, rat.p);
+            if rat.rat == Rational::ZERO {
+                PAdicAlgebraic::Rational(PAdicRational {
+                    p,
+                    rat: Rational::ZERO,
+                })
+            } else {
+                let poly = root_rat_mul_poly(self.poly.clone(), &rat.rat);
+                let approx = self.approx.clone().mul_rat(&p, &rat.rat);
+                PAdicAlgebraic::Algebraic(Self { p, poly, approx })
+            }
+        }
+
+        fn mul_mut(a: &mut Self, b: &mut Self) -> PAdicAlgebraic {
+            /*
+            Let x be the root approximated by a: |x - a| <= v
+            Let y be the root approximated by b: |y - b| <= w
+            Then xy is approximated by ab:
+                |xy - ab|
+                = |xy - xb + xb - ab|
+                = |x(y - b) + b(x - a)|
+                <= max(|x(y - b)|, |b(x - a)|)
+                = max(|x|.|y-b|, |b|.|x - a|)
+                <= max(|x|.w, |b|.v)
+                <= |b|.v
+                By a symmetric argument it is also <= |a|.w, so
+                |xy - ab| <= max(|b|.v, |a|.w)
+
+            */
+            let p = a.p.clone();
+            debug_assert_eq!(p, b.p);
+            let mut candidates = root_product_poly(&a.poly, &b.poly)
+                .primitive_squarefree_part()
+                .all_padic_roots(&p);
+            let mut k = Integer::ZERO;
+            while candidates.len() > 1 {
+                a.refine(&k);
+                b.refine(&k);
+                let aball = a.isolating_ball();
+                let bball = b.isolating_ball();
+                let v = std::cmp::min(
+                    padic_rat_valuation(&p, bball.c.clone()) * aball.v.clone(),
+                    padic_rat_valuation(&p, aball.c.clone()) * bball.v.clone(),
+                );
+                let sball = IsolatingBall {
+                    p: p.clone(),
+                    c: aball.c * bball.c,
+                    v,
                 };
                 candidates = candidates
                     .into_iter()
@@ -624,9 +717,11 @@ pub mod structure {
                         rat: &a.rat * &b.rat,
                     })
                 }
-                (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
-                (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Rational(b)) => todo!(),
-                (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
+                (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Algebraic(b)) => b.mul_rat(a),
+                (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Rational(b)) => a.mul_rat(b),
+                (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => {
+                    PAdicAlgebraicRoot::mul_mut(&mut a.clone(), &mut b.clone())
+                }
             }
         }
     }
@@ -700,10 +795,16 @@ pub mod structure {
                 Rational::from_integers(Integer::from(2), Integer::from(7)),
             );
 
+            let e = PAdicAlgebraic::from_rational(
+                Natural::from(5u32),
+                Rational::from_integers(Integer::from(-2), Integer::from(1)),
+            );
+
             println!("a = {}", a);
             println!("b = {}", b);
             println!("c = {}", c);
             println!("d = {}", d);
+            println!("e = {}", e);
 
             println!("-a = {}", ring.neg(&a));
             println!("-b = {}", ring.neg(&b));
@@ -715,6 +816,13 @@ pub mod structure {
             println!("d+b = {}", ring.add(&d, &b));
             println!("d+c = {}", ring.add(&d, &c));
             println!("c+c = {}", ring.add(&c, &c));
+
+            println!("a*b = {}", ring.mul(&a, &b));
+            println!("a*c = {}", ring.mul(&a, &c));
+            println!("d*b = {}", ring.mul(&d, &b));
+            println!("d*c = {}", ring.mul(&d, &c));
+            println!("c*c = {}", ring.mul(&c, &c));
+            println!("a*e = {}", ring.mul(&a, &e));
 
             /*
 

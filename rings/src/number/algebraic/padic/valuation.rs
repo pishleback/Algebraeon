@@ -1,3 +1,4 @@
+use std::ops::{Add, Mul};
 
 use super::*;
 
@@ -43,6 +44,100 @@ impl Valuation {
                     v.unsigned_abs()
                 }
             }
+        }
+    }
+}
+
+impl Add<&Valuation> for Valuation {
+    type Output = Valuation;
+    fn add(self, other: &Valuation) -> Self::Output {
+        match (self, other) {
+            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
+        }
+    }
+}
+impl Add<Valuation> for &Valuation {
+    type Output = Valuation;
+    fn add(self, other: Valuation) -> Self::Output {
+        match (self, other) {
+            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
+        }
+    }
+}
+impl Add<Valuation> for Valuation {
+    type Output = Valuation;
+    fn add(self, other: Valuation) -> Self::Output {
+        match (self, other) {
+            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
+        }
+    }
+}
+impl Add<&Valuation> for &Valuation {
+    type Output = Valuation;
+    fn add(self, other: &Valuation) -> Self::Output {
+        match (self, other) {
+            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
+        }
+    }
+}
+
+/*
+Finite * Infinity = Infinity is justified by thinking about the p-adic norm instead where non-zero * zero = zero
+Infinity * Infinity = Infinity is justified in the same way by the p-adic norm since zero * zero = zero
+*/
+impl Mul<&Valuation> for Valuation {
+    type Output = Valuation;
+    fn mul(self, other: &Valuation) -> Self::Output {
+        match (self, other) {
+            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
+        }
+    }
+}
+impl Mul<Valuation> for &Valuation {
+    type Output = Valuation;
+    fn mul(self, other: Valuation) -> Self::Output {
+        match (self, other) {
+            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
+        }
+    }
+}
+impl Mul<Valuation> for Valuation {
+    type Output = Valuation;
+    fn mul(self, other: Valuation) -> Self::Output {
+        match (self, other) {
+            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
+        }
+    }
+}
+impl Mul<&Valuation> for &Valuation {
+    type Output = Valuation;
+    fn mul(self, other: &Valuation) -> Self::Output {
+        match (self, other) {
+            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
 }

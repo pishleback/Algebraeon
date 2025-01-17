@@ -692,7 +692,7 @@ impl SemiRingStructure for CannonicalStructure<ComplexAlgebraic> {
                         cpx.tight_b *= &rat;
                         cpx.tight_c *= &rat;
                         cpx.tight_d *= &rat;
-                        cpx.poly = root_pos_rat_mul_poly(cpx.poly, &rat);
+                        cpx.poly = root_rat_mul_poly(cpx.poly, &rat);
                         #[cfg(debug_assertions)]
                         assert!(cpx.check_invariants().is_ok());
                         ComplexAlgebraic::Complex(cpx)
@@ -700,7 +700,7 @@ impl SemiRingStructure for CannonicalStructure<ComplexAlgebraic> {
                 },
                 RealAlgebraic::Real(mut real) => {
                     identify_complex_root(
-                        root_prod_poly(&cpx.poly, real.poly()),
+                        root_product_poly(&cpx.poly, real.poly()),
                         (0..).map(|i| {
                             if i != 0 {
                                 cpx.refine();
@@ -767,7 +767,7 @@ impl SemiRingStructure for CannonicalStructure<ComplexAlgebraic> {
                 let mut cpx2 = cpx2.clone();
 
                 identify_complex_root(
-                    root_prod_poly(&cpx1.poly, &cpx2.poly),
+                    root_product_poly(&cpx1.poly, &cpx2.poly),
                     (0..).map(|i| {
                         if i != 0 {
                             cpx1.refine();

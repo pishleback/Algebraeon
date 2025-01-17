@@ -25,7 +25,7 @@ pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polyno
     root_sum_poly.primitive_squarefree_part()
 }
 
-pub fn root_prod_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
+pub fn root_product_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));
     let t = Variable::new(String::from("t"));
 
@@ -42,23 +42,18 @@ pub fn root_prod_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polyn
     root_prod_poly.primitive_squarefree_part()
 }
 
-pub fn root_pos_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomial<Integer> {
-    debug_assert!(rat > &Rational::ZERO);
+pub fn root_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomial<Integer> {
+    debug_assert!(rat != &Rational::ZERO);
     debug_assert!(poly.is_irreducible());
     //we are multiplying by a so need to replace f(x) with f(x/a)
     //e.g. f(x) = x-1 and multiply root by 3 then replace f(x) with
     //f(x/3) = 3/x-1 = x-3
     //e.g. f(x) = 1 + x + x^2 replace it with f(d/n * x) = 1 + d/n x + d^2/n^2 x^2 = n^2 + ndx + d^2 x
-
-    // println!("poly = {}", poly);
-    // println!("rat = {}", rat);
-
     let rat_mul_poly = Polynomial::from_coeffs({
         let degree = poly.degree().unwrap();
         let (n, d) = (Rational::numerator(rat), Rational::denominator(rat));
         let mut n_pows = vec![Integer::from(1)];
         let mut d_pows = vec![Integer::from(1)];
-
         {
             let mut n_pow = n.clone();
             let mut d_pow = d.clone();
@@ -69,13 +64,8 @@ pub fn root_pos_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polyn
                 d_pow *= &d;
             }
         }
-
-        // println!("n_pows = {:?}", n_pows);
-        // println!("d_pows = {:?}", d_pows);
-
         debug_assert_eq!(n_pows.len(), degree + 1);
         debug_assert_eq!(d_pows.len(), degree + 1);
-
         let coeffs = poly
             .into_coeffs()
             .iter()
@@ -86,12 +76,7 @@ pub fn root_pos_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polyn
     })
     .primitive_part()
     .unwrap();
-
-    // println!("rat_mul_poly = {}", rat_mul_poly);
-    // println!("rat_mul_poly = {}", rat_mul_poly.factor().unwrap());
-
     debug_assert!(rat_mul_poly.is_irreducible());
-
     rat_mul_poly
 }
 
@@ -244,7 +229,7 @@ mod tests {
             ),
         ] {
             println!();
-            let rpp = root_prod_poly(&f, &g);
+            let rpp = root_product_poly(&f, &g);
             println!("f = {}", Polynomial::to_string(&f));
             println!("g = {}", Polynomial::to_string(&g));
             println!(

@@ -564,7 +564,7 @@ impl SemiRingStructure for CannonicalStructure<RealAlgebraic> {
                     elem.wide_b = UpperBound::Finite(b * rat);
                 }
             }
-            elem.poly = root_pos_rat_mul_poly(elem.poly, rat);
+            elem.poly = root_rat_mul_poly(elem.poly, rat);
             #[cfg(debug_assertions)]
             elem.check_invariants().unwrap();
             elem
@@ -585,7 +585,7 @@ impl SemiRingStructure for CannonicalStructure<RealAlgebraic> {
                 let mut alg2 = alg2.clone();
 
                 identify_real_root(
-                    root_prod_poly(&alg1.poly, &alg2.poly),
+                    root_product_poly(&alg1.poly, &alg2.poly),
                     (0..).map(|i| {
                         if i != 0 {
                             alg1.refine();

@@ -291,6 +291,14 @@ impl PAdicRationalBall {
             v: self.v,
         }
     }
+
+    pub fn mul_rat(self, p: &Natural, scale: &Rational) -> Self {
+        debug_assert_ne!(scale, &Rational::ZERO);
+        Self {
+            a: self.a * scale,
+            v: self.v + padic_rat_valuation(p, scale.clone()).unwrap_int(),
+        }
+    }
 }
 
 /// A brute-force algorithm to isolate all roots of f of valuation 0
