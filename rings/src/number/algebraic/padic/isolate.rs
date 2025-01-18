@@ -1,5 +1,9 @@
 use std::collections::HashSet;
 
+use algebraeon_sets::structure::MetaType;
+
+use crate::structure::quotient::QuotientStructure;
+
 use super::*;
 
 // Some algorithms here on p-adic root isolation can be found in
@@ -353,13 +357,14 @@ fn isolate0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
     if n == 0 {
         vec![]
     } else {
+        let df = f.clone().derivative();
         let mut roots = vec![];
         // disc(f) != 0 since f is squarefree
         let alpha = padic_int_valuation(p, f.clone().discriminant().unwrap()).unwrap_nat();
         let mut i = Natural::ONE;
         while &i < p {
             // i = 1, ..., p-1
-            roots.append(&mut isorefine(p, f, &alpha, &i, &Natural::ONE));
+            roots.append(&mut isorefine(p, f, &df, &alpha, &i, &Natural::ONE));
             i += Natural::ONE;
         }
         roots
@@ -369,6 +374,7 @@ fn isolate0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
 fn isorefine(
     p: &Natural,
     f: &Polynomial<Integer>,
+    df: &Polynomial<Integer>,
     alpha: &Natural,
     i: &Natural,
     beta: &Natural,
@@ -376,9 +382,16 @@ fn isorefine(
     debug_assert!(!f.is_zero());
     debug_assert!(f.is_squarefree());
     debug_assert!(is_prime(p));
-    if padic_int_valuation(p, f.clone().derivative().evaluate(&Integer::from(i)))
-        < Valuation::Finite(Integer::from(beta))
-    {
+    debug_assert_eq!(&f.clone().derivative(), df);
+    let p_tothe_beta = p.nat_pow(&beta);
+    let vdfi = padic_int_valuation(
+        p,
+        PolynomialStructure::new(
+            QuotientStructure::new_ring(Integer::structure(), Integer::from(&p_tothe_beta)).into(),
+        )
+        .evaluate(&df, &Integer::from(i)),
+    );
+    if vdfi < Valuation::Finite(Integer::from(beta)) {
         return isorefine1(p, f, alpha, i, beta);
     }
     let mut roots = vec![];
@@ -390,8 +403,9 @@ fn isorefine(
             roots.append(&mut isorefine(
                 p,
                 f,
+                df,
                 alpha,
-                &(i + &k * p.nat_pow(&beta)),
+                &(i + &k * &p_tothe_beta),
                 &beta_plus_one,
             ));
             k += Natural::ONE;

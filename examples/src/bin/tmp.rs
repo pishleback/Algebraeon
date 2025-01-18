@@ -40,19 +40,10 @@ fn main() {
         Rational::from_integers(Integer::from(2), Integer::from(7)),
     );
 
-    let e = {
-        let f = (x.pow(2) + 19).into_verbose();
-        let mut r = f.all_padic_roots(&Natural::from(5u32)).into_iter();
-        let e1 = r.next().unwrap();
-        let e2 = r.next().unwrap();
-        assert!(r.next().is_none());
-        println!("{:?} {:?}", e1, e2);
-        if e1.clone().truncate(&1.into()).rational_value() == Rational::from(4) {
-            e1
-        } else {
-            e2
-        }
-    };
+    let e = PAdicAlgebraic::from_rational(
+        Natural::from(5u32),
+        Rational::from_integers(Integer::from(-2), Integer::from(1)),
+    );
 
     println!("a = {}", a);
     println!("b = {}", b);
@@ -70,5 +61,18 @@ fn main() {
     println!("a+c = {}", ring.add(&a, &c));
     println!("d+b = {}", ring.add(&d, &b));
     println!("d+c = {}", ring.add(&d, &c));
-    println!("e+e = {}", ring.add(&e, &e));
+    println!("c+c = {}", ring.add(&c, &c));
+
+    println!("a*b = {}", ring.mul(&a, &b));
+    println!("a*c = {}", ring.mul(&a, &c));
+    println!("d*b = {}", ring.mul(&d, &b));
+    println!("d*c = {}", ring.mul(&d, &c));
+    println!("c*c = {}", ring.mul(&c, &c));
+    println!("a*e = {}", ring.mul(&a, &e));
+
+    println!("a^-1 = {}", ring.inv(&a).unwrap());
+    println!("b^-1 = {}", ring.inv(&b).unwrap());
+    println!("c^-1 = {}", ring.inv(&c).unwrap());
+    println!("d^-1 = {}", ring.inv(&d).unwrap());
+    println!("e^-1 = {}", ring.inv(&e).unwrap());
 }

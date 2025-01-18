@@ -455,6 +455,13 @@ pub mod structure {
                 rat: -self.rat,
             }
         }
+
+        fn inv(self) -> Result<Self, RingDivisionError> {
+            Ok(Self {
+                p: self.p,
+                rat: Rational::inv(&self.rat)?,
+            })
+        }
     }
 
     impl PAdicAlgebraicRoot {
@@ -506,9 +513,9 @@ pub mod structure {
             */
             let p = a.p.clone();
             debug_assert_eq!(p, b.p);
-            let mut candidates = root_sum_poly(&a.poly, &b.poly)
-                .primitive_squarefree_part()
-                .all_padic_roots(&p);
+            let rsp = root_sum_poly(&a.poly, &b.poly);
+            let rsppsqfp = rsp.primitive_squarefree_part();
+            let mut candidates = rsppsqfp.all_padic_roots(&p);
             let mut k = Integer::ZERO;
             while candidates.len() > 1 {
                 a.refine(&k);
@@ -611,6 +618,55 @@ pub mod structure {
             }
             debug_assert_eq!(candidates.len(), 1);
             candidates.into_iter().next().unwrap()
+        }
+
+        fn inv_mut(&mut self) -> Result<PAdicAlgebraic, RingDivisionError> {
+            /*
+            Let x be the root approximated by a: |x-a| <= v
+            Then 1/x is approximated by 1/a:
+                |1/x - 1/a|
+                = |(a - x) / xa|
+                = |a-x| / |x|.|a|
+                <= v / |x - a + a|.|a|
+                <= v / max(|x - a|, |a|).|a|
+                <= v / max(v, |a|).|a|
+            */
+            let inv_poly = Polynomial::from_coeffs(
+                self.poly.clone().into_coeffs().into_iter().rev().collect(),
+            )
+            .fav_assoc();
+            debug_assert!(inv_poly.is_irreducible());
+            let p = self.p.clone();
+            let mut candidates = inv_poly.all_padic_roots(&p);
+            let mut k = Integer::ZERO;
+            while candidates.len() > 1 {
+                self.refine(&k);
+                let sball = self.isolating_ball();
+                if !sball.c.is_zero() {
+                    let vc = padic_rat_valuation(&p, sball.c.clone());
+                    #[cfg(debug_assertions)]
+                    vc.clone().unwrap_int();
+                    let iball = IsolatingBall {
+                        p: p.clone(),
+                        c: sball.c.inv().unwrap(),
+                        v: &sball.v - std::cmp::min(&sball.v, &vc) - vc,
+                    };
+                    candidates = candidates
+                        .into_iter()
+                        .filter_map(|mut root| {
+                            root.refine(&k);
+                            let rball = root.isolating_ball();
+                            match IsolatingBall::overlap(&rball, &iball) {
+                                true => Some(root),
+                                false => None,
+                            }
+                        })
+                        .collect();
+                }
+                k += Integer::ONE;
+            }
+            debug_assert_eq!(candidates.len(), 1);
+            Ok(candidates.into_iter().next().unwrap())
         }
     }
 
@@ -733,21 +789,30 @@ pub mod structure {
         }
     }
 
+    impl PAdicAlgebraicStructure {
+        fn inv(&self, a: &PAdicAlgebraic) -> Result<PAdicAlgebraic, RingDivisionError> {
+            self.check_is_element(a);
+            match a {
+                PAdicAlgebraic::Rational(a) => Ok(PAdicAlgebraic::Rational(a.clone().inv()?)),
+                PAdicAlgebraic::Algebraic(a) => Ok(a.clone().inv_mut()?),
+            }
+        }
+    }
+
     impl IntegralDomainStructure for PAdicAlgebraicStructure {
         fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
             self.check_is_element(a);
             self.check_is_element(b);
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
-                    Ok(PAdicAlgebraic::Rational(PAdicRational {
+                    return Ok(PAdicAlgebraic::Rational(PAdicRational {
                         p: self.p.clone(),
                         rat: Rational::div(&a.rat, &b.rat)?,
-                    }))
+                    }));
                 }
-                (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
-                (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Rational(b)) => todo!(),
-                (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => todo!(),
+                _ => {}
             }
+            Ok(self.mul(a, &self.inv(b)?))
         }
 
         fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
@@ -757,6 +822,8 @@ pub mod structure {
             }))
         }
     }
+
+    impl FieldStructure for PAdicAlgebraicStructure {}
 
     #[cfg(test)]
     mod tests {
@@ -801,207 +868,295 @@ pub mod structure {
             );
 
             println!("a = {}", a);
+            assert_eq!(
+                a.clone().truncate(&6.into()).digits(),
+                Some((
+                    vec![2, 4, 2, 1, 1, 3]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("b = {}", b);
+            assert_eq!(
+                b.clone().truncate(&6.into()).digits(),
+                Some((
+                    vec![2, 3, 1, 2, 0, 1]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("c = {}", c);
+            assert_eq!(
+                c.clone().truncate(&6.into()).digits(),
+                Some((
+                    vec![1, 1, 3, 4, 1, 0]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("d = {}", d);
+            assert_eq!(
+                d.clone().truncate(&6.into()).digits(),
+                Some((
+                    vec![1, 2, 1, 4, 2, 3]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("e = {}", e);
+            assert_eq!(
+                e.clone().truncate(&6.into()).digits(),
+                Some((
+                    vec![3, 4, 4, 4, 4, 4]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
 
             println!("-a = {}", ring.neg(&a));
+            assert_eq!(
+                ring.neg(&a).truncate(&6.into()).digits(),
+                Some((
+                    vec![3, 0, 2, 3, 3, 1]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("-b = {}", ring.neg(&b));
+            assert_eq!(
+                ring.neg(&b).truncate(&6.into()).digits(),
+                Some((
+                    vec![3, 1, 3, 2, 4, 3]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("-c = {}", ring.neg(&c));
+            assert_eq!(
+                ring.neg(&c).truncate(&6.into()).digits(),
+                Some((
+                    vec![4, 3, 1, 0, 3, 4]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("-d = {}", ring.neg(&d));
+            assert_eq!(
+                ring.neg(&d).truncate(&6.into()).digits(),
+                Some((
+                    vec![4, 2, 3, 0, 2, 1]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
+            println!("-e = {}", ring.neg(&e));
+            assert_eq!(
+                ring.neg(&e).truncate(&6.into()).digits(),
+                Some((
+                    vec![2, 0, 0, 0, 0, 0]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
 
             println!("a+b = {}", ring.add(&a, &b));
+            assert_eq!(
+                ring.add(&a, &b).truncate(&6.into()).digits(),
+                Some((
+                    vec![4, 2, 4, 3, 1, 4]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("a+c = {}", ring.add(&a, &c));
+            assert_eq!(
+                ring.add(&a, &c).truncate(&6.into()).digits(),
+                Some((
+                    vec![3, 0, 1, 1, 3, 3]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("d+b = {}", ring.add(&d, &b));
+            assert_eq!(
+                ring.add(&d, &b).truncate(&6.into()).digits(),
+                Some((
+                    vec![3, 0, 3, 1, 3, 4]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("d+c = {}", ring.add(&d, &c));
+            assert_eq!(
+                ring.add(&d, &c).truncate(&6.into()).digits(),
+                Some((
+                    vec![2, 3, 4, 3, 4, 3]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
             println!("c+c = {}", ring.add(&c, &c));
+            assert_eq!(
+                ring.add(&c, &c).truncate(&6.into()).digits(),
+                Some((
+                    vec![2, 2, 1, 4, 3, 0]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
 
             println!("a*b = {}", ring.mul(&a, &b));
-            println!("a*c = {}", ring.mul(&a, &c));
-            println!("d*b = {}", ring.mul(&d, &b));
-            println!("d*c = {}", ring.mul(&d, &c));
-            println!("c*c = {}", ring.mul(&c, &c));
-            println!("a*e = {}", ring.mul(&a, &e));
-
-            /*
-
-            let a = {
-                let f = (x.pow(3) - 3 * x.pow(2) - x.pow(1) + 1).into_verbose();
-                let r = f.all_padic_roots(&Natural::from(5u32));
-                assert_eq!(r.len(), 1);
-                r.into_iter().next().unwrap().shift_by(-1)
-            };
-
-            let b = {
-                let f = (x.pow(4) + x.pow(2) - 2 * x.pow(1) - 1).into_verbose();
-                let r = f.all_padic_roots(&Natural::from(5u32));
-                assert_eq!(r.len(), 1);
-                r.into_iter().next().unwrap().shift_by(-1)
-            };
-
-            let c = {
-                let f = (x.pow(5) + x.pow(2) + 2 * x.pow(1) + 1).into_verbose();
-                let r = f.all_padic_roots(&Natural::from(5u32));
-                assert_eq!(r.len(), 1);
-                r.into_iter().next().unwrap().shift_by(-1)
-            };
-
-            let d = a.clone().shift_by(4);
-
-            let x = ring
-                .from_rat(&Rational::from_integers(
-                    Integer::from(2),
-                    Integer::from(3 * 125),
+            assert_eq!(
+                ring.mul(&a, &b).truncate(&6.into()).digits(),
+                Some((
+                    vec![4, 4, 0, 0, 4, 4]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
                 ))
-                .unwrap();
-
-            println!("a = {}", a);
-            println!("b = {}", b);
-            println!("c = {}", c);
-            println!("d = {}", d);
-            println!("x = {}", x);
-
-            println!("-a = {}", ring.neg(&a));
-            debug_assert_eq!(
-                ring.neg(&a).reduce_modulo_valuation(5).digits(),
-                (
-                    vec![
-                        Natural::from(3u8),
-                        Natural::from(0u8),
-                        Natural::from(2u8),
-                        Natural::from(3u8),
-                        Natural::from(3u8),
-                        Natural::from(1u8)
-                    ],
-                    -1
-                )
             );
-            debug_assert_eq!(a.valuation(), Some(-1));
-
-            println!("-b = {}", ring.neg(&b));
-            debug_assert_eq!(
-                ring.neg(&b).reduce_modulo_valuation(5).digits(),
-                (
-                    vec![
-                        Natural::from(3u8),
-                        Natural::from(1u8),
-                        Natural::from(3u8),
-                        Natural::from(2u8),
-                        Natural::from(4u8),
-                        Natural::from(3u8)
-                    ],
-                    -1
-                )
+            println!("a*c = {}", ring.mul(&a, &c));
+            assert_eq!(
+                ring.mul(&a, &c).truncate(&6.into()).digits(),
+                Some((
+                    vec![2, 1, 3, 0, 1, 0]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
             );
-
-            println!("-x = {}", ring.neg(&x));
-            debug_assert_eq!(
-                ring.neg(&x).reduce_modulo_valuation(3).digits(),
-                (
-                    vec![
-                        Natural::from(1u8),
-                        Natural::from(3u8),
-                        Natural::from(1u8),
-                        Natural::from(3u8),
-                        Natural::from(1u8),
-                        Natural::from(3u8),
-                    ],
-                    -3
-                )
+            println!("d*b = {}", ring.mul(&d, &b));
+            assert_eq!(
+                ring.mul(&d, &b).truncate(&6.into()).digits(),
+                Some((
+                    vec![2, 2, 0, 2, 4, 3]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
             );
-
-            println!("a+x = {}", ring.add(&a, &x));
-            debug_assert_eq!(
-                ring.add(&a, &x).reduce_modulo_valuation(6).digits(),
-                (
-                    vec![
-                        Natural::from(4u8),
-                        Natural::from(1u8),
-                        Natural::from(0u8),
-                        Natural::from(1u8),
-                        Natural::from(1u8),
-                        Natural::from(3u8),
-                        Natural::from(4u8),
-                        Natural::from(4u8),
-                        Natural::from(1u8),
-                    ],
-                    -3
-                )
+            println!("d*c = {}", ring.mul(&d, &c));
+            assert_eq!(
+                ring.mul(&d, &c).truncate(&6.into()).digits(),
+                Some((
+                    vec![1, 3, 1, 1, 1, 2]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
+            println!("c*c = {}", ring.mul(&c, &c));
+            assert_eq!(
+                ring.mul(&c, &c).truncate(&6.into()).digits(),
+                Some((
+                    vec![1, 2, 2, 0, 2, 0]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
+            println!("a*e = {}", ring.mul(&a, &e));
+            assert_eq!(
+                ring.mul(&a, &e).truncate(&6.into()).digits(),
+                Some((
+                    vec![1, 1, 4, 1, 2, 3]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
             );
 
-            println!("b+x = {}", ring.add(&b, &x));
-            debug_assert_eq!(
-                ring.add(&b, &x).reduce_modulo_valuation(6).digits(),
-                (
-                    vec![
-                        Natural::from(4u8),
-                        Natural::from(1u8),
-                        Natural::from(0u8),
-                        Natural::from(0u8),
-                        Natural::from(0u8),
-                        Natural::from(4u8),
-                        Natural::from(3u8),
-                        Natural::from(2u8),
-                        Natural::from(2u8),
-                    ],
-                    -3
-                )
+            println!("a^-1 = {}", ring.inv(&a).unwrap());
+            assert_eq!(
+                ring.inv(&a).unwrap().truncate(&6.into()).digits(),
+                Some((
+                    vec![3, 1, 1, 4, 2, 1]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
             );
-
-            println!("c+x = {}", ring.add(&c, &x));
-            debug_assert_eq!(
-                ring.add(&c, &x).reduce_modulo_valuation(6).digits(),
-                (
-                    vec![
-                        Natural::from(4u8),
-                        Natural::from(1u8),
-                        Natural::from(4u8),
-                        Natural::from(2u8),
-                        Natural::from(1u8),
-                        Natural::from(1u8),
-                        Natural::from(0u8),
-                        Natural::from(2u8),
-                        Natural::from(0u8),
-                    ],
-                    -3
-                )
+            println!("b^-1 = {}", ring.inv(&b).unwrap());
+            assert_eq!(
+                ring.inv(&b).unwrap().truncate(&6.into()).digits(),
+                Some((
+                    vec![3, 0, 0, 4, 0, 0]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
             );
-
-            println!("a+b = {}", ring.add(&a, &b));
-            debug_assert_eq!(
-                ring.add(&a, &b).reduce_modulo_valuation(6).digits(),
-                (
-                    vec![
-                        Natural::from(4u8),
-                        Natural::from(2u8),
-                        Natural::from(4u8),
-                        Natural::from(3u8),
-                        Natural::from(1u8),
-                        Natural::from(4u8),
-                        Natural::from(2u8),
-                    ],
-                    -1
-                )
+            println!("c^-1 = {}", ring.inv(&c).unwrap());
+            assert_eq!(
+                ring.inv(&c).unwrap().truncate(&6.into()).digits(),
+                Some((
+                    vec![1, 4, 2, 0, 3, 4]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
             );
-
-            println!("c+d = {}", ring.add(&c, &d));
-            // debug_assert_eq!(
-            //     ring.add(&a, &b).reduce_modulo_valuation(6).digits(),
-            //     (
-            //         vec![
-            //             Natural::from(4u8),
-            //             Natural::from(2u8),
-            //             Natural::from(4u8),
-            //             Natural::from(3u8),
-            //             Natural::from(1u8),
-            //             Natural::from(4u8),
-            //             Natural::from(2u8),
-            //         ],
-            //         -1
-            //     )
-            // );
-            */
+            println!("d^-1 = {}", ring.inv(&d).unwrap());
+            assert_eq!(
+                ring.inv(&d).unwrap().truncate(&6.into()).digits(),
+                Some((
+                    vec![1, 3, 2, 2, 2, 2]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
+            println!("e^-1 = {}", ring.inv(&e).unwrap());
+            assert_eq!(
+                ring.inv(&e).unwrap().truncate(&6.into()).digits(),
+                Some((
+                    vec![2, 2, 2, 2, 2, 2]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                ))
+            );
         }
     }
 }

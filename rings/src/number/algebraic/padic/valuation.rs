@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Sub};
 
 use super::*;
 
@@ -89,6 +89,60 @@ impl Add<&Valuation> for &Valuation {
             (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
             (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
+        }
+    }
+}
+
+/*
+Infinite - Infinite is undefined since it coresponds in valuation land to zero/zero
+Infinite - Finite is Infinite since it coresponds in valuation land to zero/finite
+Finite - Infinite is undefined since it coresponds in valuation land to finite/zero
+*/
+impl Sub<&Valuation> for Valuation {
+    type Output = Valuation;
+    fn sub(self, other: &Valuation) -> Self::Output {
+        match (self, other) {
+            (_, Valuation::Infinity) => {
+                panic!("Can't subtract valuation Infinity")
+            }
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a - b),
+        }
+    }
+}
+impl Sub<Valuation> for &Valuation {
+    type Output = Valuation;
+    fn sub(self, other: Valuation) -> Self::Output {
+        match (self, other) {
+            (_, Valuation::Infinity) => {
+                panic!("Can't subtract valuation Infinity")
+            }
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a - b),
+        }
+    }
+}
+impl Sub<Valuation> for Valuation {
+    type Output = Valuation;
+    fn sub(self, other: Valuation) -> Self::Output {
+        match (self, other) {
+            (_, Valuation::Infinity) => {
+                panic!("Can't subtract valuation Infinity")
+            }
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a - b),
+        }
+    }
+}
+impl Sub<&Valuation> for &Valuation {
+    type Output = Valuation;
+    fn sub(self, other: &Valuation) -> Self::Output {
+        match (self, other) {
+            (_, Valuation::Infinity) => {
+                panic!("Can't subtract valuation Infinity")
+            }
+            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
+            (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a - b),
         }
     }
 }
