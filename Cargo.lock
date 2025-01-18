@@ -19,7 +19,7 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 
 [[package]]
 name = "algebraeon"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
  "algebraeon-geometry",
  "algebraeon-groups",
@@ -72,7 +72,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-geometry"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
  "algebraeon-rings",
  "algebraeon-sets",
@@ -95,7 +95,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-rings"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-sets",
