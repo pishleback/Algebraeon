@@ -7,6 +7,7 @@ use malachite_nz::natural::Natural;
 
 use crate::{
     linear::{matrix::*, subspace::*},
+    number::natural::nat_to_usize,
     polynomial::polynomial::*,
     structure::{factorization::*, structure::*},
 };
@@ -100,11 +101,22 @@ impl<FS: FiniteFieldStructure> SquarefreeFactored<FS> {
         poly_ring: PolynomialStructure<FS>,
         poly: Polynomial<FS::Set>,
     ) -> Self {
-        let unit = poly_ring.coeff_ring().one();
-        Self {
-            poly_ring,
-            unit,
-            squarefree_factors: vec![(poly, Natural::ONE)],
+        debug_assert!(!poly_ring.is_zero(&poly));
+        let deg = poly_ring.degree(&poly).unwrap();
+        if deg == 0 {
+            let unit = poly_ring.as_constant(&poly).unwrap();
+            Self {
+                poly_ring,
+                unit,
+                squarefree_factors: vec![],
+            }
+        } else {
+            let unit = poly_ring.coeff_ring().one();
+            Self {
+                poly_ring,
+                unit,
+                squarefree_factors: vec![(poly, Natural::ONE)],
+            }
         }
     }
 
@@ -374,7 +386,51 @@ where
 {
     /// distinct degree factorization
     pub fn factorize_distinct_degree(&self) -> DistinctDegreeFactored<FS> {
-        todo!()
+        // https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Distinct-degree_factorization
+        let (p, k) = self.poly_ring.coeff_ring().characteristic_and_power();
+        let q = p.nat_pow(&k);
+        let mut distinct_degree_factors = vec![];
+        for (sqfree_poly, sqfree_poly_multiplicity) in &self.squarefree_factors {
+            debug_assert!(self.poly_ring.degree(sqfree_poly).unwrap() >= 1);
+            let mut i = 1;
+            let mut f = sqfree_poly.clone();
+            while self.poly_ring.degree(&f).unwrap() >= 2 * i {
+                let g = self.poly_ring.gcd_by_primitive_subresultant(
+                    f.clone(),
+                    self.poly_ring.add(
+                        &self
+                            .poly_ring
+                            .var_pow(nat_to_usize(&q.nat_pow(&i.into())).unwrap()),
+                        &self.poly_ring.neg(&self.poly_ring.var()),
+                    ),
+                ); // TODO: This GCD is expensive. Use some fancy matrix shenanigans as on wikipedia to speed it up
+                if !self.poly_ring.equal(&g, &self.poly_ring.one()) {
+                    f = self.poly_ring.div(&f, &g).unwrap();
+                    distinct_degree_factors.push((
+                        DistinctDegreeFactor {
+                            irreducible_factor_degree: i,
+                            polynomial: g,
+                        },
+                        sqfree_poly_multiplicity.clone(),
+                    ));
+                }
+                i += 1;
+            }
+            if !self.poly_ring.equal(&f, &self.poly_ring.one()) {
+                distinct_degree_factors.push((
+                    DistinctDegreeFactor {
+                        irreducible_factor_degree: self.poly_ring.degree(&f).unwrap(),
+                        polynomial: f,
+                    },
+                    sqfree_poly_multiplicity.clone(),
+                ));
+            }
+        }
+        DistinctDegreeFactored {
+            poly_ring: self.poly_ring.clone(),
+            unit: self.unit.clone(),
+            distinct_degree_factors: distinct_degree_factors,
+        }
     }
 }
 
@@ -387,7 +443,30 @@ where
     where
         PolynomialStructure<FS>: UniqueFactorizationStructure,
     {
-        todo!()
+        let poly_ring: Rc<_> = self.poly_ring.clone().into();
+        let mut fs = Factored::factored_unit_unchecked(
+            poly_ring.clone(),
+            Polynomial::constant(self.unit.clone()),
+        );
+        for (ddf, mult) in &self.distinct_degree_factors {
+            fs.mul_mut(
+                {
+                    if ddf.irreducible_factor_degree
+                        == self.poly_ring.degree(&ddf.polynomial).unwrap()
+                    {
+                        Factored::factored_irreducible_unchecked(
+                            poly_ring.clone(),
+                            ddf.polynomial.clone(),
+                        )
+                    } else {
+                        todo!()
+                        // Possible modification for F2^k found in comments to question here: https://math.stackexchange.com/questions/1636518/how-do-i-apply-the-cantor-zassenhaus-algorithm-to-mathbbf-2
+                    }
+                }
+                .pow(mult),
+            );
+        }
+        fs
     }
 }
 
@@ -401,6 +480,22 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn test_distinct_degree_factorization() {
+        let x = &Polynomial::<Modulo<2>>::var().into_ergonomic();
+        let p = (1 + x.pow(4) + x.pow(5)).into_verbose();
+        println!("p = {}", p);
+
+        let fs = p
+            .factorize_monic()
+            .unwrap()
+            .factorize_squarefree()
+            .factorize_distinct_degree()
+            .factorize_cantor_zassenhaus();
+
+        println!("{}", fs);
+    }
 
     #[test]
     fn test_factorize_over_f2_example1() {
@@ -431,13 +526,20 @@ mod tests {
     #[test]
     fn test_factorize_over_f2_example2() {
         let x = &Polynomial::<Modulo<2>>::var().into_ergonomic();
-        let p = ((1 + x.pow(4) + x.pow(7)).pow(6) * (1 + x.pow(6) + x.pow(7)).pow(4)).into_verbose();
+        let p =
+            ((1 + x.pow(4) + x.pow(7)).pow(6) * (1 + x.pow(6) + x.pow(7)).pow(4)).into_verbose();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<2>>::structure().into(),
             Polynomial::one(),
             vec![
-                ((1 + x.pow(4) + x.pow(7)).into_verbose(), Natural::from(6u32)),
-                ((1 + x.pow(6) + x.pow(7)).into_verbose(), Natural::from(4u32)),
+                (
+                    (1 + x.pow(4) + x.pow(7)).into_verbose(),
+                    Natural::from(6u32),
+                ),
+                (
+                    (1 + x.pow(6) + x.pow(7)).into_verbose(),
+                    Natural::from(4u32),
+                ),
             ],
         );
 
