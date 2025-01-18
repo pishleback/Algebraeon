@@ -101,6 +101,11 @@ pub fn nth_root_floor(x: &Natural, n: &Natural) -> Natural {
     }
 }
 
+/// Compute the floor of the square root of x
+pub fn sqrt_floor(x: &Natural) -> Natural {
+    nth_root_floor(x, &Natural::TWO)
+}
+
 /// Compute the cil of the nth root of a
 pub fn nth_root_ceil(x: &Natural, n: &Natural) -> Natural {
     let mut a = nth_root_floor(x, n);
@@ -108,6 +113,11 @@ pub fn nth_root_ceil(x: &Natural, n: &Natural) -> Natural {
         a += Natural::ONE;
     }
     a
+}
+
+/// Compute the ceil of the square root of x
+pub fn sqrt_ceil(x: &Natural) -> Natural {
+    nth_root_ceil(x, &Natural::TWO)
 }
 
 /// Return the number of bits needed to store n i.e. ceil(log2(n)) for all non-zero n

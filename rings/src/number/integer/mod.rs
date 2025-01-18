@@ -1,4 +1,4 @@
-use factor::factor_by_try_primes;
+use factor::factor;
 use itertools::Itertools;
 use malachite_base::num::arithmetic::traits::DivMod;
 use malachite_base::num::arithmetic::traits::UnsignedAbs;
@@ -97,7 +97,7 @@ impl UniqueFactorizationStructure for CannonicalStructure<Integer> {
             Some(Factored::new_unchecked(
                 self.clone().into(),
                 unit,
-                factor_by_try_primes(a.unsigned_abs())
+                factor(&a.unsigned_abs())
                     .unwrap()
                     .into_powers()
                     .into_iter()

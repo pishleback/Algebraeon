@@ -1,8 +1,12 @@
-use factor::Factored;
+use factor::{factor_by_try_divisors, Factored};
 use malachite_base::num::arithmetic::traits::PowerOf2;
 
-use malachite_base::num::arithmetic::traits::{Mod, ModPow};
+use malachite_base::num::arithmetic::traits::{DivMod, Mod, ModPow};
 use malachite_base::num::logic::traits::BitIterable;
+use malachite_nz::integer::Integer;
+use malachite_q::Rational;
+
+use crate::structure::quotient::QuotientStructure;
 
 use super::functions::*;
 use super::*;
@@ -42,7 +46,7 @@ impl Iterator for PrimeGenerator {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PrimalityTestResult {
     Zero,
     One,
@@ -50,27 +54,88 @@ pub enum PrimalityTestResult {
     Composite,
 }
 
-pub fn naive_primality_test(n: &Natural) -> PrimalityTestResult {
-    if *n == Natural::ZERO {
-        PrimalityTestResult::Zero
-    } else if *n == Natural::ONE {
-        PrimalityTestResult::One
-    } else {
-        let mut prime_gen = PrimeGenerator::new();
-        loop {
-            let p = prime_gen.next().unwrap();
-            match p.cmp(n) {
-                std::cmp::Ordering::Less => {
-                    continue;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InconclusivePrimalityTestResult {
+    ProbablePrime {
+        heuristic_incorrect_probability: Rational,
+    },
+}
+
+pub fn try_divisors_primality_test(n: Natural) -> PrimalityTestResult {
+    match factor_by_try_divisors(n) {
+        None => PrimalityTestResult::Zero,
+        Some(fs) => {
+            let fs = fs.into_powers();
+            match fs.len() {
+                0 => PrimalityTestResult::One,
+                1 => {
+                    let (_, k) = fs.into_iter().next().unwrap();
+                    debug_assert_ne!(k, Natural::ZERO);
+                    if k == Natural::ONE {
+                        PrimalityTestResult::Prime
+                    } else {
+                        PrimalityTestResult::Composite
+                    }
                 }
-                std::cmp::Ordering::Equal => {
-                    return PrimalityTestResult::Prime;
-                }
-                std::cmp::Ordering::Greater => {
-                    return PrimalityTestResult::Composite;
-                }
+                _ => PrimalityTestResult::Composite,
             }
         }
+    }
+}
+
+/// Perform a Miller-Rabin primality test on n
+pub fn miller_rabin_primality_test(
+    n: &Natural,
+    a_list: Vec<Natural>,
+) -> Result<PrimalityTestResult, InconclusivePrimalityTestResult> {
+    if *n == Natural::ZERO {
+        Ok(PrimalityTestResult::Zero)
+    } else if *n == Natural::ONE {
+        Ok(PrimalityTestResult::One)
+    } else if *n == Natural::TWO {
+        Ok(PrimalityTestResult::Prime)
+    } else if n % Natural::TWO == Natural::ZERO {
+        Ok(PrimalityTestResult::Composite)
+    } else {
+        let mod_n = QuotientStructure::new_ring(Integer::structure(), n.into());
+        debug_assert!(n % Natural::TWO == Natural::ONE); // n is odd
+        for a in &a_list {
+            debug_assert!(Natural::TWO <= *a);
+            debug_assert!(*a <= n - Natural::TWO);
+        }
+        let n_minus_one = n - Natural::ONE;
+        // Express n-1 as 2^s*d where d is odd
+        let mut s = 0usize;
+        let mut d = n_minus_one.clone();
+        loop {
+            let (q, r) = (&d).div_mod(Natural::TWO);
+            if r == Natural::ZERO {
+                s += 1;
+                d = q;
+            } else {
+                break;
+            }
+        }
+        debug_assert_eq!(Natural::TWO.nat_pow(&Natural::from(s)) * &d, n_minus_one);
+        debug_assert!(s >= 1); // n-1 is even
+        for a in &a_list {
+            let mut x = mod_n.nat_pow(&a.into(), &d);
+            let mut y;
+            for _ in 0..s {
+                y = mod_n.mul(&x, &x);
+                if y == Integer::ONE && x != Integer::ONE && x != Integer::from(n) - Integer::ONE {
+                    return Ok(PrimalityTestResult::Composite);
+                }
+                x = y;
+            }
+            if x != Integer::ONE {
+                return Ok(PrimalityTestResult::Composite);
+            }
+        }
+        Err(InconclusivePrimalityTestResult::ProbablePrime {
+            heuristic_incorrect_probability: Rational::from_integers(1.into(), 4.into())
+                .nat_pow(&a_list.len().into()),
+        })
     }
 }
 
@@ -81,8 +146,6 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
         IsPowerTestResult::One => PrimalityTestResult::One,
         IsPowerTestResult::Power(_, _) => PrimalityTestResult::Composite,
         IsPowerTestResult::No => {
-            // println!("n = {:?}", n);
-
             // Select r0 >= 3
             // Use r0 ~ 0.01*log2(n)^2
             let r0 = {
@@ -94,7 +157,6 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     r0
                 }
             };
-            // println!("r0 = {:?}", r0);
 
             // Find the smallest prime r >= r0 such that n is a primitive root modulo r
             let mut prime_gen = PrimeGenerator::new();
@@ -122,7 +184,6 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     }
                 }
             }
-            // println!("r = {:?}", r);
 
             // Select d between 0 and phi(r)-1
             // Use d ~ 0.5*phi(r)
@@ -140,7 +201,6 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     i
                 }
             };
-            // println!("i = {:?}", i);
 
             // Select j between 0 and phi(r) - 1 - d
             // Use j ~ 0.475*phi(r)
@@ -153,11 +213,9 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     j
                 }
             };
-            // println!("j = {:?}", j);
 
             // Select s such that (2s choose i) * (d choose i) * (2s - i choose j) * (phi(r)-1-d choose j) >= n^ceil(sqrt(phi(r)/3))
             // Use the smallest such s found via binary search
-
             let s = {
                 let rhs = pow(
                     n,
@@ -228,7 +286,6 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 }
                 s
             };
-            // println!("s = {:?}", s);
 
             // Let S = {2, 3, ..., s, s + 1}
             let s_set = {
@@ -240,7 +297,6 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 }
                 s_set
             };
-            // println!("S = {:?}", s_set);
 
             // For all b in S check whether gcd(n,b)=1. If not it is easy to tell if n is prime.
             for b in &s_set {
@@ -249,7 +305,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     match g == *n {
                         true => {
                             // b and thus also n=g is small, so we can do a naive test
-                            return naive_primality_test(n);
+                            return try_divisors_primality_test(n.clone());
                         }
                         false => {
                             return PrimalityTestResult::Composite;
@@ -268,7 +324,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                         match g == *n {
                             true => {
                                 // bi*bj-1 and thus also n=g is small, so we can do a naive test
-                                return naive_primality_test(n);
+                                return try_divisors_primality_test(n.clone());
                             }
                             false => {
                                 return PrimalityTestResult::Composite;
@@ -288,7 +344,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                         match g == *n {
                             true => {
                                 // bj-bi and thus also n=g is small, so we can do a naive test
-                                return naive_primality_test(n);
+                                return try_divisors_primality_test(n.clone());
                             }
                             false => {
                                 return PrimalityTestResult::Composite;
@@ -367,17 +423,9 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 // Use fast integer multiplication to compute the polynomial product
                 let m = (Natural::ONE << (coeff_size * r_usize)) - Natural::ONE;
                 let s = (a * b).mod_op(m);
-                // println!("s = {:?}", s);
                 let s = reduce_coeffs(&s);
-                // println!("s = {:?}", s);
                 #[cfg(debug_assertions)]
                 {
-                    // println!("a = {:?}", a);
-                    // println!("b = {:?}", b);
-
-                    // println!("a = {:?}", bigint_to_poly(a.clone()));
-                    // println!("b = {:?}", bigint_to_poly(b.clone()));
-
                     assert_eq!(
                         s,
                         poly_to_bigint(&mul_polys_naive(
@@ -403,7 +451,6 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             };
 
             for b in &s_set {
-                // println!("b = {:?}", b);
                 // (x + b)^n
                 let lhs = {
                     let mut poly = zero_poly();
@@ -431,13 +478,55 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
     }
 }
 
-pub fn is_prime(n: &Natural) -> bool {
-    let result = if n <= &Natural::from(1000u32) {
-        naive_primality_test(n)
+pub fn primality_test(n: &Natural) -> PrimalityTestResult {
+    let small_divisor_limit = Natural::from(1000u32);
+    if n <= &small_divisor_limit {
+        // Determine the primality of n by trying small divisors
+        try_divisors_primality_test(n.clone())
     } else {
-        aks_primality_test(n)
-    };
-    match result {
+        // Try to show n is composite by finding small divisors
+        let mut d = Natural::TWO;
+        while d < small_divisor_limit {
+            if n % &d == Natural::ZERO {
+                return PrimalityTestResult::Composite;
+            }
+            d += Natural::ONE;
+        }
+
+        if n < &Natural::from(3317044064679887385961981u128) {
+            // Can determine primality by using Miller-Rabin on a known small set of bases when n is small enough
+            match miller_rabin_primality_test(
+                n,
+                vec![
+                    2u32.into(),
+                    3u32.into(),
+                    5u32.into(),
+                    7u32.into(),
+                    11u32.into(),
+                    13u32.into(),
+                    17u32.into(),
+                    19u32.into(),
+                    23u32.into(),
+                    29u32.into(),
+                    31u32.into(),
+                    37u32.into(),
+                    41u32.into(),
+                ],
+            ) {
+                Ok(answer) => answer,
+                Err(InconclusivePrimalityTestResult::ProbablePrime { .. }) => {
+                    PrimalityTestResult::Prime
+                }
+            }
+        } else {
+            // Otherwise resort to AKS
+            aks_primality_test(n)
+        }
+    }
+}
+
+pub fn is_prime(n: &Natural) -> bool {
+    match primality_test(n) {
         PrimalityTestResult::Zero => false,
         PrimalityTestResult::One => false,
         PrimalityTestResult::Prime => true,
@@ -450,6 +539,64 @@ mod tests {
     use std::str::FromStr;
 
     use super::*;
+
+    #[test]
+    fn test_miller_rabin_primality_test() {
+        assert_eq!(
+            miller_rabin_primality_test(&0u32.into(), vec![]),
+            Ok(PrimalityTestResult::Zero)
+        );
+        assert_eq!(
+            miller_rabin_primality_test(&1u32.into(), vec![]),
+            Ok(PrimalityTestResult::One)
+        );
+        assert_eq!(
+            miller_rabin_primality_test(&2u32.into(), vec![]),
+            Ok(PrimalityTestResult::Prime)
+        );
+        assert!(miller_rabin_primality_test(
+            &7u32.into(),
+            vec![2u32.into(), 3u32.into(), 4u32.into(), 5u32.into()]
+        )
+        .is_err());
+        assert!(miller_rabin_primality_test(&221u32.into(), vec![174u32.into()]).is_err());
+        assert_eq!(
+            miller_rabin_primality_test(&221u32.into(), vec![137u32.into()]),
+            Ok(PrimalityTestResult::Composite)
+        );
+    }
+
+    #[test]
+    fn test_try_divisors_primality_test() {
+        assert_eq!(
+            try_divisors_primality_test(0u32.into()),
+            PrimalityTestResult::Zero
+        );
+        assert_eq!(
+            try_divisors_primality_test(1u32.into()),
+            PrimalityTestResult::One
+        );
+        assert_eq!(
+            try_divisors_primality_test(2u32.into()),
+            PrimalityTestResult::Prime
+        );
+        assert_eq!(
+            try_divisors_primality_test(3u32.into()),
+            PrimalityTestResult::Prime
+        );
+        assert_eq!(
+            try_divisors_primality_test(4u32.into()),
+            PrimalityTestResult::Composite
+        );
+        assert_eq!(
+            try_divisors_primality_test(5u32.into()),
+            PrimalityTestResult::Prime
+        );
+        assert_eq!(
+            try_divisors_primality_test(6u32.into()),
+            PrimalityTestResult::Composite
+        );
+    }
 
     #[test]
     fn test_aks_primality_test() {
@@ -485,5 +632,11 @@ mod tests {
             aks_primality_test(&Natural::from_str("198741").unwrap()),
             PrimalityTestResult::Composite
         );
+
+        // #[cfg(not(debug_assertions))]
+        // assert_eq!(
+        //     aks_primality_test(&Natural::from_str("10947810912894721490981347547827").unwrap()),
+        //     PrimalityTestResult::Prime
+        // );
     }
 }
