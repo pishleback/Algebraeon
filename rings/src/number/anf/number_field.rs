@@ -14,7 +14,7 @@ use malachite_q::{exhaustive::exhaustive_rationals, Rational};
 pub type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructure<Rational>>, true>;
 
 pub fn new_anf(f: Polynomial<Rational>) -> ANFStructure {
-    ANFStructure::new(PolynomialStructure::new(Rational::structure()).into(), f)
+    ANFStructure::new_unchecked(PolynomialStructure::new(Rational::structure()).into(), f)
 }
 
 //return the splitting field and the roots of f in the splitting field
