@@ -8,7 +8,8 @@ Algebraeon is published under four separate crates.
 # Algebraeon
 Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API is currently highly unstable and subject to change. Algebraeon uses [Malachite](https://www.malachite.rs/) for arbitrary sized integer and rational numbers.
 
-As a taste for the sorts of problems Algebraeon solves, it already implements the following:
+# Algorithms
+Algebraeon currently implements the following algorithms:
  - Euclids algorithm for GCD and the extended version for obtaining Bezout coefficients.
  - Polynomial GCD computations using subresultant pseudo-remainder sequences.
  - AKS algorithm for natural number primality testing.
@@ -22,6 +23,7 @@ As a taste for the sorts of problems Algebraeon solves, it already implements th
    - Kronecker's method for factoring polynomials over the integers (slow).
    - Berlekamp-Zassenhaus algorithm for factoring polynomials over the integers.
    - Berlekamp's algorithm for factoring polynomials over finite fields.
+   - Cantor–Zassenhaus algorithm for factoring polynomials over finite fields.
    - Trager's algorithm for factoring polynomials over algebraic number fields.
  - Expressing symmetric polynomials in terms of elementary symmetric polynomials.
  - Computations with algebraic numbers:
