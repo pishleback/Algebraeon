@@ -3,7 +3,14 @@
 use std::str::FromStr;
 
 use algebraeon_rings::{
-    number::{algebraic::padic::*, natural::{factor::factor_by_try_divisors, primes::{aks_primality_test, is_prime}}},
+    number::{
+        algebraic::padic::*,
+        finite_fields::modulo::Modulo,
+        natural::{
+            factor::factor_by_try_divisors,
+            primes::{aks_primality_test, is_prime},
+        },
+    },
     polynomial::polynomial::Polynomial,
     structure::{elements::*, structure::*},
 };
@@ -13,8 +20,9 @@ use malachite_q::Rational;
 use structure::PAdicAlgebraicStructure;
 
 fn main() {
-    println!(
-        "{:?}",
-        is_prime(&Natural::from_str("10947810912894721490981347547827").unwrap())
-    );
+    let x = &Polynomial::<Modulo<3>>::var().into_ergonomic();
+    let p = x.pow(101) - 1;
+    let p = p.into_verbose();
+    let f = p.factor().unwrap();
+    println!("{} = {}", p, f);
 }
