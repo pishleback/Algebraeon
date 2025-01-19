@@ -71,8 +71,10 @@ impl Display for Monomial {
         } else {
             for VariablePower { var, pow } in &self.prod {
                 write!(f, "{}", &var.name)?;
-                write!(f, "^")?;
-                write!(f, "{}", pow)?;
+                if *pow != 1 {
+                    write!(f, "^")?;
+                    write!(f, "{}", pow)?;
+                }
             }
             Ok(())
         }
@@ -371,9 +373,11 @@ impl<RS: RingStructure + ToStringStructure> ToStringStructure for MultiPolynomia
                 if idx != 0 {
                     s += "+";
                 }
-                s += "(";
-                s += &self.coeff_ring.to_string(&term.coeff);
-                s += ")";
+                if !self.coeff_ring.equal(&term.coeff, &self.coeff_ring.one()) {
+                    s += "(";
+                    s += &self.coeff_ring.to_string(&term.coeff);
+                    s += ")";
+                }
                 s += &term.monomial.to_string();
             }
             s
