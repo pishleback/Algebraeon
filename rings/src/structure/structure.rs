@@ -139,7 +139,7 @@ where
     fn neg(&self) -> Self {
         Self::structure().neg(self)
     }
-    
+
     fn from_int(x: &Integer) -> Self {
         Self::structure().from_int(x)
     }
@@ -667,14 +667,43 @@ impl<FS: FieldStructure> UniqueFactorizationStructure for FS {
     }
 }
 
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+
+struct FiniteFieldRandomElementGenerator<FS: FiniteFieldStructure, R: Rng> {
+    all_elements: Vec<FS::Set>,
+    rng: R,
+}
+
+impl<FS: FiniteFieldStructure, R: Rng> Iterator for FiniteFieldRandomElementGenerator<FS, R> {
+    type Item = FS::Set;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.all_elements.is_empty() {
+            None
+        } else {
+            let idx = self.rng.gen_range(0..self.all_elements.len());
+            Some(self.all_elements[idx].clone())
+        }
+    }
+}
+
 pub trait FiniteFieldStructure: FieldStructure + FiniteUnitsStructure {
-    //return (p, k) where p is a prime and |F| = p^k
+    // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(&self) -> (Natural, Natural);
 
     fn all_elements(&self) -> Vec<Self::Set> {
         let mut elems = vec![self.zero()];
         elems.append(&mut self.all_units());
         elems
+    }
+
+    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Set> {
+        let rng = StdRng::seed_from_u64(seed);
+        FiniteFieldRandomElementGenerator::<Self, StdRng> {
+            all_elements: self.all_elements(),
+            rng,
+        }
     }
 }
 

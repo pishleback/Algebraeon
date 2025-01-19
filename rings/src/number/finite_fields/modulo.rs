@@ -210,7 +210,7 @@ macro_rules! impl_field {
                 Some(
                     self.factorize_monic(p)?
                         .factorize_squarefree()
-                        .factorize_berlekamps(),
+                        .factorize_distinct_degree().factorize_cantor_zassenhaus(),
                 )
             }
         }

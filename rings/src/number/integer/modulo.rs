@@ -23,14 +23,12 @@ impl FiniteFieldStructure for QuotientStructure<CannonicalStructure<Integer>, tr
 impl UniqueFactorizationStructure
     for PolynomialStructure<QuotientStructure<CannonicalStructure<Integer>, true>>
 {
-    fn factor(
-        &self,
-        p: &Self::Set,
-    ) -> Option<crate::structure::factorization::Factored<Self>> {
+    fn factor(&self, p: &Self::Set) -> Option<crate::structure::factorization::Factored<Self>> {
         Some(
             self.factorize_monic(p)?
                 .factorize_squarefree()
-                .factorize_berlekamps(),
+                .factorize_distinct_degree()
+                .factorize_cantor_zassenhaus(),
         )
     }
 }

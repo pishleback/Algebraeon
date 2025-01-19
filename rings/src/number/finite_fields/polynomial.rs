@@ -2,14 +2,14 @@ use std::rc::Rc;
 
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use malachite_base::num::basic::traits::One;
+use malachite_base::num::basic::traits::{One, Two};
 use malachite_nz::natural::Natural;
 
 use crate::{
     linear::{matrix::*, subspace::*},
     number::natural::nat_to_usize,
     polynomial::polynomial::*,
-    structure::{factorization::*, structure::*},
+    structure::{factorization::*, quotient::QuotientStructure, structure::*},
 };
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
@@ -395,6 +395,7 @@ where
             let mut i = 1;
             let mut f = sqfree_poly.clone();
             while self.poly_ring.degree(&f).unwrap() >= 2 * i {
+                debug_assert!(self.poly_ring.is_monic(&f));
                 let g = self.poly_ring.gcd_by_primitive_subresultant(
                     f.clone(),
                     self.poly_ring.add(
@@ -404,6 +405,8 @@ where
                         &self.poly_ring.neg(&self.poly_ring.var()),
                     ),
                 ); // TODO: This GCD is expensive. Use some fancy matrix shenanigans as on wikipedia to speed it up
+                let g = self.poly_ring.factorize_monic(&g).unwrap().monic;
+                debug_assert!(self.poly_ring.is_monic(&g));
                 if !self.poly_ring.equal(&g, &self.poly_ring.one()) {
                     f = self.poly_ring.div(&f, &g).unwrap();
                     distinct_degree_factors.push((
@@ -449,22 +452,93 @@ where
             Polynomial::constant(self.unit.clone()),
         );
         for (ddf, mult) in &self.distinct_degree_factors {
-            fs.mul_mut(
-                {
-                    if ddf.irreducible_factor_degree
-                        == self.poly_ring.degree(&ddf.polynomial).unwrap()
-                    {
-                        Factored::factored_irreducible_unchecked(
-                            poly_ring.clone(),
-                            ddf.polynomial.clone(),
-                        )
-                    } else {
-                        todo!()
-                        // Possible modification for F2^k found in comments to question here: https://math.stackexchange.com/questions/1636518/how-do-i-apply-the-cantor-zassenhaus-algorithm-to-mathbbf-2
-                    }
+            let d = ddf.irreducible_factor_degree;
+            let n = self.poly_ring.degree(&ddf.polynomial).unwrap();
+            debug_assert_eq!(n % d, 0);
+
+            let finite_field = self.poly_ring.coeff_ring();
+            let (p, k) = finite_field.characteristic_and_power();
+            let q = p.nat_pow(&k);
+            let mut prand_elements = finite_field.generate_random_elements(0);
+
+            let mut to_factor = vec![ddf.polynomial.clone()];
+            loop {
+                println!(
+                    "{} {:?}",
+                    d,
+                    to_factor
+                        .iter()
+                        .map(|u| self.poly_ring.degree(u).unwrap())
+                        .collect::<Vec<_>>()
+                );
+                // Any polynomial in to_factor of degree d is irreducible.
+                to_factor = to_factor
+                    .into_iter()
+                    .filter_map(|f| {
+                        if self.poly_ring.degree(&f).unwrap() == d {
+                            fs.mul_mut(
+                                Factored::factored_irreducible_unchecked(poly_ring.clone(), f)
+                                    .pow(mult),
+                            );
+                            None
+                        } else {
+                            Some(f)
+                        }
+                    })
+                    .collect();
+
+                // Is there anything left to factor?
+                if to_factor.is_empty() {
+                    break;
                 }
-                .pow(mult),
-            );
+
+                // Try to factor what's left using Cantor-Zassenhaus
+                // let h be a random polynomial of degree <n
+                let h = Polynomial::<FS::Set>::from_coeffs(
+                    (0..n).map(|_| prand_elements.next().unwrap()).collect(),
+                );
+                let g = if p == Natural::TWO {
+                    // when char = 2 use h + h^2 + h^4 + ... + h^{2^{kd-1}}
+                    // https://math.stackexchange.com/questions/1636518/how-do-i-apply-the-cantor-zassenhaus-algorithm-to-mathbbf-2
+                    let mut sum = self.poly_ring.zero();
+                    let mut square_powers = h.clone();
+                    let mut square_pow = 0usize;
+                    while Natural::from(square_pow) < &k * Natural::from(d) {
+                        self.poly_ring.add_mut(&mut sum, &square_powers);
+                        square_powers = self.poly_ring.mul(&square_powers, &square_powers);
+                        square_pow += 1;
+                    }
+                    sum
+                } else {
+                    // when char != 2 use h^{(q^d-1)/2}-1 mod f
+                    let poly_mod_f = QuotientStructure::new_ring(
+                        self.poly_ring.clone().into(),
+                        ddf.polynomial.clone(),
+                    );
+                    let a = (q.nat_pow(&d.into()) - Natural::ONE) / Natural::TWO;
+                    poly_mod_f.add(
+                        &poly_mod_f.nat_pow(&h, &a),
+                        &poly_mod_f.neg(&poly_mod_f.one()),
+                    )
+                };
+                to_factor = to_factor
+                    .into_iter()
+                    .map(|u| {
+                        let gcd = self
+                            .poly_ring
+                            .factorize_monic(&self.poly_ring.subresultant_gcd(u.clone(), g.clone()))
+                            .unwrap()
+                            .monic;
+                        let gcd_deg = self.poly_ring.degree(&gcd).unwrap();
+                        if gcd_deg == 0 || gcd_deg == self.poly_ring.degree(&u).unwrap() {
+                            vec![u]
+                        } else {
+                            vec![self.poly_ring.div(&u, &gcd).unwrap(), gcd]
+                        }
+                    })
+                    .flatten()
+                    .collect();
+            }
         }
         fs
     }
@@ -482,19 +556,41 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_distinct_degree_factorization() {
+    fn test_distinct_degree_and_cantor_zassenhaus_factorization_f2() {
         let x = &Polynomial::<Modulo<2>>::var().into_ergonomic();
-        let p = (1 + x.pow(4) + x.pow(5)).into_verbose();
-        println!("p = {}", p);
+        let p = (x.pow(3) + x.pow(2) + 2) * (x.pow(3) + 2 * x.pow(2) + 1);
+        let p = p.into_verbose();
 
-        let fs = p
-            .factorize_monic()
-            .unwrap()
-            .factorize_squarefree()
-            .factorize_distinct_degree()
-            .factorize_cantor_zassenhaus();
+        assert!(Factored::equal(
+            &p.factorize_monic()
+                .unwrap()
+                .factorize_squarefree()
+                .factorize_berlekamps(),
+            &p.factorize_monic()
+                .unwrap()
+                .factorize_squarefree()
+                .factorize_distinct_degree()
+                .factorize_cantor_zassenhaus()
+        ));
+    }
 
-        println!("{}", fs);
+    #[test]
+    fn test_distinct_degree_and_cantor_zassenhaus_factorization_f3() {
+        let x = &Polynomial::<Modulo<3>>::var().into_ergonomic();
+        let p = (x.pow(3) + x.pow(2) + 2) * (x.pow(3) + 2 * x.pow(2) + 1);
+        let p = p.into_verbose();
+
+        assert!(Factored::equal(
+            &p.factorize_monic()
+                .unwrap()
+                .factorize_squarefree()
+                .factorize_berlekamps(),
+            &p.factorize_monic()
+                .unwrap()
+                .factorize_squarefree()
+                .factorize_distinct_degree()
+                .factorize_cantor_zassenhaus()
+        ));
     }
 
     #[test]
