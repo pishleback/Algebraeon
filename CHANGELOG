@@ -1,0 +1,23 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+
+## [Unreleased]
+
+### Added
+
+- Cantor–Zassenhaus factorization algorithm over finite fields
+- Distinct degree factorization over finite fields
+
+### Changed
+
+- Quotient structure no longer requires the base ring to implement unique factorization.
+
+## [0.0.9] - 2025-01-18
+
+### Added
+
+- P-adic root isolation.
+- P-adic root arithmetic up to implementing field structure.
