@@ -463,14 +463,14 @@ where
 
             let mut to_factor = vec![ddf.polynomial.clone()];
             loop {
-                println!(
-                    "{} {:?}",
-                    d,
-                    to_factor
-                        .iter()
-                        .map(|u| self.poly_ring.degree(u).unwrap())
-                        .collect::<Vec<_>>()
-                );
+                // println!(
+                //     "{} {:?}",
+                //     d,
+                //     to_factor
+                //         .iter()
+                //         .map(|u| self.poly_ring.degree(u).unwrap())
+                //         .collect::<Vec<_>>()
+                // );
                 // Any polynomial in to_factor of degree d is irreducible.
                 to_factor = to_factor
                     .into_iter()
