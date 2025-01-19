@@ -5,27 +5,14 @@ use algebraeon_sets::structure::*;
 use super::structure::*;
 
 #[derive(Debug, Clone)]
-pub struct QuotientStructure<
-    RS: EuclideanDivisionStructure + UniqueFactorizationStructure,
-    const IS_FIELD: bool,
-> {
+pub struct QuotientStructure<RS: EuclideanDivisionStructure, const IS_FIELD: bool> {
     ring: Rc<RS>,
     modulus: RS::Set,
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>
-    QuotientStructure<RS, IS_FIELD>
-{
-    pub fn new(ring: Rc<RS>, modulus: RS::Set) -> Self {
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> QuotientStructure<RS, IS_FIELD> {
+    pub fn new_unchecked(ring: Rc<RS>, modulus: RS::Set) -> Self {
         assert!(!ring.is_zero(&modulus));
-        if IS_FIELD {
-            if !ring.is_irreducible(&modulus) {
-                panic!(
-                    "The modulus must be irreducible to form a quotient field. Got {:?}.",
-                    modulus
-                );
-            }
-        }
         Self { ring, modulus }
     }
 
@@ -42,19 +29,31 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
     }
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> QuotientStructure<RS, false> {
+impl<RS: EuclideanDivisionStructure> QuotientStructure<RS, false> {
     pub fn new_ring(ring: Rc<RS>, modulus: RS::Set) -> Self {
-        Self::new(ring, modulus)
+        Self::new_unchecked(ring, modulus)
+    }
+}
+
+impl<RS: EuclideanDivisionStructure> QuotientStructure<RS, true> {
+    pub fn new_field_unchecked(ring: Rc<RS>, modulus: RS::Set) -> Self {
+        Self::new_unchecked(ring, modulus)
     }
 }
 
 impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> QuotientStructure<RS, true> {
     pub fn new_field(ring: Rc<RS>, modulus: RS::Set) -> Self {
-        Self::new(ring, modulus)
+        if !ring.is_irreducible(&modulus) {
+            panic!(
+                "The modulus must be irreducible to form a quotient field. Got {:?}.",
+                modulus
+            );
+        }
+        Self::new_unchecked(ring, modulus)
     }
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool> PartialEq
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> PartialEq
     for QuotientStructure<RS, IS_FIELD>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -70,29 +69,24 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
     }
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool> Eq
-    for QuotientStructure<RS, IS_FIELD>
-{
-}
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> Eq for QuotientStructure<RS, IS_FIELD> {}
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool> Structure
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> Structure
     for QuotientStructure<RS, IS_FIELD>
 {
     type Set = RS::Set;
 }
 
-impl<
-        RS: EuclideanDivisionStructure + UniqueFactorizationStructure + ToStringStructure,
-        const IS_FIELD: bool,
-    > ToStringStructure for QuotientStructure<RS, IS_FIELD>
+impl<RS: EuclideanDivisionStructure + ToStringStructure, const IS_FIELD: bool> ToStringStructure
+    for QuotientStructure<RS, IS_FIELD>
 {
     fn to_string(&self, elem: &Self::Set) -> String {
         self.ring.to_string(elem)
     }
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>
-    PartialEqStructure for QuotientStructure<RS, IS_FIELD>
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> PartialEqStructure
+    for QuotientStructure<RS, IS_FIELD>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.ring.is_zero(
@@ -103,13 +97,13 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
     }
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>
-    EqStructure for QuotientStructure<RS, IS_FIELD>
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> EqStructure
+    for QuotientStructure<RS, IS_FIELD>
 {
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>
-    SemiRingStructure for QuotientStructure<RS, IS_FIELD>
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> SemiRingStructure
+    for QuotientStructure<RS, IS_FIELD>
 {
     fn zero(&self) -> Self::Set {
         self.ring.zero()
@@ -128,15 +122,15 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIE
     }
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure, const IS_FIELD: bool>
-    RingStructure for QuotientStructure<RS, IS_FIELD>
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> RingStructure
+    for QuotientStructure<RS, IS_FIELD>
 {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         self.ring.neg(a)
     }
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> IntegralDomainStructure
+impl<RS: EuclideanDivisionStructure + FavoriteAssociateStructure> IntegralDomainStructure
     for QuotientStructure<RS, true>
 {
     fn div(
@@ -165,7 +159,7 @@ impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> IntegralDoma
     }
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> FieldStructure
+impl<RS: EuclideanDivisionStructure + FavoriteAssociateStructure> FieldStructure
     for QuotientStructure<RS, true>
 {
 }
