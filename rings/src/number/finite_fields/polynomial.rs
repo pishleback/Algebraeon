@@ -390,23 +390,79 @@ where
         let (p, k) = self.poly_ring.coeff_ring().characteristic_and_power();
         let q = p.nat_pow(&k);
         let mut distinct_degree_factors = vec![];
-        for (sqfree_poly, sqfree_poly_multiplicity) in &self.squarefree_factors {
-            debug_assert!(self.poly_ring.degree(sqfree_poly).unwrap() >= 1);
+        for (poly, sqfree_poly_multiplicity) in &self.squarefree_factors {
+            // a key step in this algorithm is the computation of g = gcd(f, x^{q^i} - x)
+            // the naive approach isn't great since x^{q^i} gets quite big
+            // instead the GCD can be computed after first reducing x^{q^i} modulo poly, since f divides poly
+            // to quickly compute x^{q^i} we can compute x^{q^1}, x^{q^2}, ... in sucessive loops, each time raising the previous value to the power of q
+            // raising polynomials mod poly to the power of q is a linear map (freshmans dream over finite field)
+            // so the qth power can be obtained by pre-computing the qth power matrix for polynomials mod poly
+
+            let n = self.poly_ring.degree(poly).unwrap();
+            debug_assert!(n >= 1);
+
+            let mod_poly_ring =
+                QuotientStructure::new_ring(self.poly_ring.clone().into(), poly.clone());
+            let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring());
+            let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
+            let qth_power_matrix = Matrix::join_cols(
+                n,
+                (0..n)
+                    .map(|c| {
+                        //compute (x^c)^q mod poly as a length n column vector of coefficients
+                        mod_poly_ring
+                            .to_col_vector(&mod_poly_ring.nat_pow(&self.poly_ring.var_pow(c), &q))
+                    })
+                    .collect(),
+            );
+
             let mut i = 1;
-            let mut f = sqfree_poly.clone();
+            let mut xqi = xq.clone(); // x^{q^i} mod poly
+            let mut f = poly.clone();
             while self.poly_ring.degree(&f).unwrap() >= 2 * i {
                 debug_assert!(self.poly_ring.is_monic(&f));
-                let g = self.poly_ring.gcd_by_primitive_subresultant(
-                    f.clone(),
-                    self.poly_ring.add(
+
+                let g = self
+                    .poly_ring
+                    .factorize_monic(
+                        &self.poly_ring.gcd_by_primitive_subresultant(
+                            f.clone(),
+                            self.poly_ring
+                                .add(&xqi, &self.poly_ring.neg(&self.poly_ring.var())),
+                        ),
+                    )
+                    .unwrap()
+                    .monic;
+                debug_assert!(self.poly_ring.is_monic(&g));
+
+                #[cfg(debug_assertions)]
+                {
+                    debug_assert!(mod_poly_ring.equal(
+                        &xqi,
                         &self
                             .poly_ring
-                            .var_pow(nat_to_usize(&q.nat_pow(&i.into())).unwrap()),
-                        &self.poly_ring.neg(&self.poly_ring.var()),
-                    ),
-                ); // TODO: This GCD is expensive. Use some fancy matrix shenanigans as on wikipedia to speed it up
-                let g = self.poly_ring.factorize_monic(&g).unwrap().monic;
-                debug_assert!(self.poly_ring.is_monic(&g));
+                            .var_pow(nat_to_usize(&q.nat_pow(&i.into())).unwrap())
+                    ));
+                    let g_naive = self
+                        .poly_ring
+                        .factorize_monic(
+                            &self.poly_ring.gcd_by_primitive_subresultant(
+                                f.clone(),
+                                self.poly_ring.add(
+                                    &self
+                                        .poly_ring
+                                        .var_pow(nat_to_usize(&q.nat_pow(&i.into())).unwrap()),
+                                    &self.poly_ring.neg(&self.poly_ring.var()),
+                                ),
+                            ),
+                        )
+                        .unwrap()
+                        .monic;
+                    // This GCD was the naive and expensive way to do it. Use it to verify the fast and fancy way.
+                    debug_assert!(self.poly_ring.is_monic(&g_naive));
+                    debug_assert!(self.poly_ring.equal(&g, &g_naive));
+                }
+
                 if !self.poly_ring.equal(&g, &self.poly_ring.one()) {
                     f = self.poly_ring.div(&f, &g).unwrap();
                     distinct_degree_factors.push((
@@ -418,6 +474,11 @@ where
                     ));
                 }
                 i += 1;
+                xqi = mod_poly_ring.from_col_vector(
+                    mat_structure
+                        .mul(&qth_power_matrix, &mod_poly_ring.to_col_vector(&xqi))
+                        .unwrap(),
+                );
             }
             if !self.poly_ring.equal(&f, &self.poly_ring.one()) {
                 distinct_degree_factors.push((
