@@ -192,6 +192,68 @@ Output:
 */
 ```
 
+## Computing Discriminants
+Algebraeon can find an expression for the discriminant of a polynomial in terms of the polynomials coefficients.
+```
+use algebraeon_rings::polynomial::{
+    multipoly::{MultiPolynomial, Variable},
+    polynomial::Polynomial,
+};
+use malachite_nz::integer::Integer;
+
+let a_var = Variable::new("a");
+let b_var = Variable::new("b");
+let c_var = Variable::new("c");
+let d_var = Variable::new("d");
+let e_var = Variable::new("e");
+
+let a = MultiPolynomial::<Integer>::var(a_var);
+let b = MultiPolynomial::<Integer>::var(b_var);
+let c = MultiPolynomial::<Integer>::var(c_var);
+let d = MultiPolynomial::<Integer>::var(d_var);
+let e = MultiPolynomial::<Integer>::var(e_var);
+
+let p =
+    Polynomial::<MultiPolynomial<Integer>>::from_coeffs(vec![c.clone(), b.clone(), a.clone()]);
+println!("p(λ) = {}", p);
+println!("disc(p) = {}", p.discriminant().unwrap());
+
+println!();
+
+let p = Polynomial::<MultiPolynomial<Integer>>::from_coeffs(vec![
+    d.clone(),
+    c.clone(),
+    b.clone(),
+    a.clone(),
+]);
+println!("p(λ) = {}", p);
+println!("disc(p) = {}", p.discriminant().unwrap());
+
+println!();
+
+let p = Polynomial::<MultiPolynomial<Integer>>::from_coeffs(vec![
+    e.clone(),
+    d.clone(),
+    c.clone(),
+    b.clone(),
+    a.clone(),
+]);
+println!("p(λ) = {}", p);
+println!("disc(p) = {}", p.discriminant().unwrap());
+
+/*
+Output:
+    p(λ) = (c)+(b)λ+(a)λ^2
+    disc(p) = (-4)ac+b^2
+
+    p(λ) = (d)+(c)λ+(b)λ^2+(a)λ^3
+    disc(p) = (-27)a^2d^2+(18)abcd+(-4)ac^3+(-4)b^3d+b^2c^2
+*/
+```
+so
+$$\operatorname{disc}(ax^2 + bx + c) = b^2 - 4ac$$
+$$\operatorname{disc}(ax^3 + bx^2 + cx + d) = b^2c^2 - ac^3 - 4b^3d - 27a^2d^2 + 18abcd$$
+
 
 # Getting Help
 If you have questions, concerns, bug reports, etc, please file an issue in this repository's Issue Tracker.
