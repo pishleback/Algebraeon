@@ -256,7 +256,7 @@ so
 ```
 
 ```math
-\mathop{\text{disc}}(ax^3 + bx^2 + cx + d) = b^2c^2 - ac^3 - 4b^3d - 27a^2d^2 + 18abcd
+\mathop{\text{disc}}(ax^3 + bx^2 + cx + d) = b^2c^2 - 4ac^3 - 4b^3d - 27a^2d^2 + 18abcd
 ```
 
 
