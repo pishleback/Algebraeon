@@ -251,8 +251,13 @@ Output:
 */
 ```
 so
-$$\mathop{disc}(ax^2 + bx + c) = b^2 - 4ac$$
-$$\mathop{disc}(ax^3 + bx^2 + cx + d) = b^2c^2 - ac^3 - 4b^3d - 27a^2d^2 + 18abcd$$
+```math
+\mathop{disc}(ax^2 + bx + c) = b^2 - 4ac
+```
+
+```math
+\mathop{disc}(ax^3 + bx^2 + cx + d) = b^2c^2 - ac^3 - 4b^3d - 27a^2d^2 + 18abcd
+```
 
 
 # Getting Help
