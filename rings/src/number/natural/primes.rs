@@ -1,4 +1,4 @@
-use factor::{factor_by_try_divisors, Factored};
+use factor::Factored;
 use malachite_base::num::arithmetic::traits::PowerOf2;
 
 use malachite_base::num::arithmetic::traits::{DivMod, Mod, ModPow};
@@ -61,25 +61,20 @@ pub enum InconclusivePrimalityTestResult {
     },
 }
 
-pub fn try_divisors_primality_test(n: Natural) -> PrimalityTestResult {
-    match factor_by_try_divisors(n) {
-        None => PrimalityTestResult::Zero,
-        Some(fs) => {
-            let fs = fs.into_powers();
-            match fs.len() {
-                0 => PrimalityTestResult::One,
-                1 => {
-                    let (_, k) = fs.into_iter().next().unwrap();
-                    debug_assert_ne!(k, Natural::ZERO);
-                    if k == Natural::ONE {
-                        PrimalityTestResult::Prime
-                    } else {
-                        PrimalityTestResult::Composite
-                    }
-                }
-                _ => PrimalityTestResult::Composite,
+pub fn try_divisors_primality_test(n: &Natural) -> PrimalityTestResult {
+    if *n == Natural::ZERO {
+        PrimalityTestResult::Zero
+    } else if *n == Natural::ONE {
+        PrimalityTestResult::One
+    } else {
+        let mut d = Natural::TWO;
+        while &d * &d <= *n {
+            if n % &d == 0 {
+                return PrimalityTestResult::Composite;
             }
+            d += Natural::ONE;
         }
+        PrimalityTestResult::Prime
     }
 }
 
@@ -305,7 +300,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     match g == *n {
                         true => {
                             // b and thus also n=g is small, so we can do a naive test
-                            return try_divisors_primality_test(n.clone());
+                            return try_divisors_primality_test(n);
                         }
                         false => {
                             return PrimalityTestResult::Composite;
@@ -324,7 +319,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                         match g == *n {
                             true => {
                                 // bi*bj-1 and thus also n=g is small, so we can do a naive test
-                                return try_divisors_primality_test(n.clone());
+                                return try_divisors_primality_test(n);
                             }
                             false => {
                                 return PrimalityTestResult::Composite;
@@ -344,7 +339,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                         match g == *n {
                             true => {
                                 // bj-bi and thus also n=g is small, so we can do a naive test
-                                return try_divisors_primality_test(n.clone());
+                                return try_divisors_primality_test(n);
                             }
                             false => {
                                 return PrimalityTestResult::Composite;
@@ -482,7 +477,7 @@ pub fn primality_test(n: &Natural) -> PrimalityTestResult {
     let small_divisor_limit = Natural::from(1000u32);
     if n <= &small_divisor_limit {
         // Determine the primality of n by trying small divisors
-        try_divisors_primality_test(n.clone())
+        try_divisors_primality_test(n)
     } else {
         // Try to show n is composite by finding small divisors
         let mut d = Natural::TWO;
@@ -569,31 +564,31 @@ mod tests {
     #[test]
     fn test_try_divisors_primality_test() {
         assert_eq!(
-            try_divisors_primality_test(0u32.into()),
+            try_divisors_primality_test(&0u32.into()),
             PrimalityTestResult::Zero
         );
         assert_eq!(
-            try_divisors_primality_test(1u32.into()),
+            try_divisors_primality_test(&1u32.into()),
             PrimalityTestResult::One
         );
         assert_eq!(
-            try_divisors_primality_test(2u32.into()),
+            try_divisors_primality_test(&2u32.into()),
             PrimalityTestResult::Prime
         );
         assert_eq!(
-            try_divisors_primality_test(3u32.into()),
+            try_divisors_primality_test(&3u32.into()),
             PrimalityTestResult::Prime
         );
         assert_eq!(
-            try_divisors_primality_test(4u32.into()),
+            try_divisors_primality_test(&4u32.into()),
             PrimalityTestResult::Composite
         );
         assert_eq!(
-            try_divisors_primality_test(5u32.into()),
+            try_divisors_primality_test(&5u32.into()),
             PrimalityTestResult::Prime
         );
         assert_eq!(
-            try_divisors_primality_test(6u32.into()),
+            try_divisors_primality_test(&6u32.into()),
             PrimalityTestResult::Composite
         );
     }

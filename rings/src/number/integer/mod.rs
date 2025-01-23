@@ -97,7 +97,7 @@ impl UniqueFactorizationStructure for CannonicalStructure<Integer> {
             Some(Factored::new_unchecked(
                 self.clone().into(),
                 unit,
-                factor(&a.unsigned_abs())
+                factor(a.unsigned_abs())
                     .unwrap()
                     .into_powers()
                     .into_iter()

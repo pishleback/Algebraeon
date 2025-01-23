@@ -1,3 +1,5 @@
+use primes::is_prime;
+
 use super::functions::*;
 use super::*;
 
@@ -14,6 +16,16 @@ impl Factored {
             debug_assert!(*k > 0);
         }
         Self { primes }
+    }
+
+    pub fn one() -> Self {
+        Self {
+            primes: HashMap::new(),
+        }
+    }
+
+    fn mul_prime(&mut self, p: Natural) {
+        *self.primes.entry(p).or_insert(Natural::from(0u8)) += Natural::from(1u8);
     }
 
     pub fn from_prime_unchecked(prime: Natural) -> Self {
@@ -71,10 +83,7 @@ impl Factored {
         } else {
             let phi_n = n_factored.euler_totient();
             let x_mod_n = x.mod_op(&n);
-            for p in factor_by_try_divisors(phi_n.clone())
-                .unwrap()
-                .distinct_prime_factors()
-            {
+            for p in factor(phi_n.clone()).unwrap().distinct_prime_factors() {
                 if (&x_mod_n).mod_pow(&phi_n / p, &n) == Natural::ONE {
                     return IsPrimitiveRootResult::No;
                 }
@@ -84,33 +93,110 @@ impl Factored {
     }
 }
 
-pub fn factor_by_try_divisors(mut n: Natural) -> Option<Factored> {
-    if n == Natural::ZERO {
-        None
-    } else {
-        debug_assert_ne!(n, 0);
-        let mut fs = HashMap::new();
+struct Factorizer {
+    prime_factors: Factored,
+    to_factor: Vec<Natural>,
+}
+
+impl Factorizer {
+    fn new(n: Natural) -> Self {
+        Self {
+            prime_factors: Factored::one(),
+            to_factor: vec![n],
+        }
+    }
+
+    fn new_with_trial_division(mut n: Natural, max_d: &Natural) -> Self {
+        let mut prime_factors = Factored::one();
         let mut d = Natural::TWO;
-        loop {
+        while &d * &d <= n && &d <= max_d {
             while &n % &d == 0 {
-                *fs.entry(d.clone()).or_insert(Natural::from(0u8)) += Natural::from(1u8);
-                n /= &d;
-            }
-            if n == 1 {
-                break;
-            }
-            if &d * &d > n {
-                fs.insert(n.clone(), Natural::ONE);
-                break;
+                prime_factors.mul_prime(d.clone());
+                n = &n / &d;
             }
             d += Natural::ONE;
         }
-        Some(Factored::new_unchecked(fs))
+        Self {
+            prime_factors: prime_factors,
+            to_factor: vec![n],
+        }
+    }
+
+    fn next_to_factor(&mut self) -> Option<Natural> {
+        loop {
+            match self.to_factor.last() {
+                Some(n) => {
+                    if n == &Natural::ONE {
+                        self.to_factor.pop();
+                    } else {
+                        return Some(n.clone());
+                    }
+                }
+                None => {
+                    return None;
+                }
+            }
+        }
+    }
+
+    fn found_factor(&mut self, d: Natural) {
+        let n = self.to_factor.pop().unwrap();
+        debug_assert_ne!(d, 1);
+        debug_assert_ne!(d, n);
+        debug_assert_eq!(&n % &d, 0);
+        self.to_factor.push(&n / d);
+        self.to_factor.push(n);
+    }
+
+    fn found_prime_factor(&mut self, p: Natural) {
+        debug_assert!(is_prime(&p));
+        let n = self.to_factor.pop().unwrap();
+        debug_assert_eq!(&n % &p, 0);
+        if p != n {
+            self.to_factor.push(n / &p);
+        }
+        self.prime_factors.mul_prime(p);
+    }
+
+    fn complete(self) -> Factored {
+        debug_assert!(self.to_factor.is_empty());
+        self.prime_factors
     }
 }
 
-pub fn factor(n: &Natural) -> Option<Factored> {
-    factor_by_try_divisors(n.clone())
+pub fn factor(n: Natural) -> Option<Factored> {
+    if n == Natural::ZERO {
+        None
+    } else {
+        let mut f = Factorizer::new_with_trial_division(n, &Natural::from(10000u32));
+        'MAIN: loop {
+            match f.next_to_factor() {
+                None => {
+                    break;
+                }
+                Some(n) => {
+                    println!("n = {}", n);
+                    debug_assert!(&n >= &Natural::TWO);
+                    if n < 1000000 || true {
+                        // Trial division
+                        let mut d = Natural::TWO;
+                        while &d * &d <= n {
+                            if &n % &d == 0 {
+                                f.found_prime_factor(d);
+                                continue 'MAIN;
+                            }
+                            d += Natural::ONE;
+                        }
+                        f.found_prime_factor(n);
+                    } else {
+                        // Pollard-Rho
+                        todo!()
+                    }
+                }
+            }
+        }
+        Some(f.complete())
+    }
 }
 
 #[cfg(test)]
@@ -118,27 +204,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_factor_natural_by_try_primes() {
-        println!("{:?}", factor_by_try_divisors(Natural::from(12usize)));
-        assert_eq!(
-            factor_by_try_divisors(Natural::from(12usize))
-                .unwrap()
-                .into_powers(),
-            HashMap::from([
-                (Natural::from(2usize), Natural::from(2usize)),
-                (Natural::from(3usize), Natural::from(1usize))
-            ])
-        );
-
-        println!("{:?}", factor_by_try_divisors(Natural::from(100000001usize)));
+    fn test_factor() {
+        println!("{:?}", factor(Natural::from(12usize)));
     }
 
     #[test]
     fn test_euler_totient() {
         assert_eq!(
-            factor_by_try_divisors(Natural::from(12usize))
-                .unwrap()
-                .euler_totient(),
+            factor(Natural::from(12usize)).unwrap().euler_totient(),
             Natural::from(4usize)
         );
     }
@@ -146,43 +219,43 @@ mod tests {
     #[test]
     fn test_is_primitive_root() {
         assert_eq!(
-            factor_by_try_divisors(Natural::from(761usize))
+            factor(Natural::from(761usize))
                 .unwrap()
                 .is_primitive_root(&Natural::from(0usize)),
             IsPrimitiveRootResult::NonUnit,
         );
         assert_eq!(
-            factor_by_try_divisors(Natural::from(761usize))
+            factor(Natural::from(761usize))
                 .unwrap()
                 .is_primitive_root(&Natural::from(1usize)),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factor_by_try_divisors(Natural::from(761usize))
+            factor(Natural::from(761usize))
                 .unwrap()
                 .is_primitive_root(&Natural::from(2usize)),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factor_by_try_divisors(Natural::from(761usize))
+            factor(Natural::from(761usize))
                 .unwrap()
                 .is_primitive_root(&Natural::from(3usize)),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factor_by_try_divisors(Natural::from(761usize))
+            factor(Natural::from(761usize))
                 .unwrap()
                 .is_primitive_root(&Natural::from(4usize)),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factor_by_try_divisors(Natural::from(761usize))
+            factor(Natural::from(761usize))
                 .unwrap()
                 .is_primitive_root(&Natural::from(5usize)),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factor_by_try_divisors(Natural::from(761usize))
+            factor(Natural::from(761usize))
                 .unwrap()
                 .is_primitive_root(&Natural::from(6usize)),
             IsPrimitiveRootResult::Yes,
