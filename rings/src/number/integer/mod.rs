@@ -33,6 +33,15 @@ impl SemiRingStructure for CannonicalStructure<Integer> {
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        use std::io::Write;
+        std::fs::File::create("a.txt")
+            .unwrap()
+            .write_all(format!("{}", a).as_bytes())
+            .unwrap();
+        std::fs::File::create("b.txt")
+            .unwrap()
+            .write_all(format!("{}", b).as_bytes())
+            .unwrap();
         a * b
     }
 }

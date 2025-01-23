@@ -6,6 +6,8 @@ use algebraeon_rings::structure::structure::*;
 use malachite_nz::{integer::Integer, natural::Natural};
 
 fn main() {
+    std::env::set_var("RUST_BACKTRACE", "1");
+
     println!(
         "{}",
         Integer::from_str("2")
