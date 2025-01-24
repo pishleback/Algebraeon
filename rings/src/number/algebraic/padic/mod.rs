@@ -699,7 +699,7 @@ pub mod structure {
 
     impl PAdicAlgebraicStructure {
         fn check_is_element(&self, a: &<Self as Structure>::Set) {
-            #[cfg(debug_assertions)]
+            // #[cfg(debug_assertions)]
             if &self.p != a.p() {
                 panic!(
                     "{}-adic structure cannot use {}-adic elements",
