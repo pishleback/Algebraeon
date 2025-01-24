@@ -2,7 +2,6 @@ use std::fmt::Display;
 use std::rc::Rc;
 
 use itertools::Itertools;
-use malachite_nz::integer::Integer;
 use malachite_nz::natural::Natural;
 
 use crate::linear::matrix::*;
@@ -55,30 +54,30 @@ impl<Set> Polynomial<Set> {
 }
 
 #[derive(Debug, Clone)]
-pub struct PolynomialStructure<RS: RingStructure> {
+pub struct PolynomialStructure<RS: SemiRingStructure> {
     coeff_ring_zero: RS::Set, //so that we can return a refernece to zero when getting polynomial coefficients out of range
     coeff_ring: Rc<RS>,
 }
 
-impl<RS: RingStructure> PolynomialStructure<RS> {
+impl<RS: SemiRingStructure> PolynomialStructure<RS> {
     pub fn coeff_ring(&self) -> Rc<RS> {
         self.coeff_ring.clone()
     }
 }
 
-impl<RS: RingStructure> Structure for PolynomialStructure<RS> {
+impl<RS: SemiRingStructure> Structure for PolynomialStructure<RS> {
     type Set = Polynomial<RS::Set>;
 }
 
-impl<RS: RingStructure> PartialEq for PolynomialStructure<RS> {
+impl<RS: SemiRingStructure> PartialEq for PolynomialStructure<RS> {
     fn eq(&self, other: &Self) -> bool {
         self.coeff_ring == other.coeff_ring
     }
 }
 
-impl<RS: RingStructure> Eq for PolynomialStructure<RS> {}
+impl<RS: SemiRingStructure> Eq for PolynomialStructure<RS> {}
 
-impl<RS: RingStructure + ToStringStructure> ToStringStructure for PolynomialStructure<RS> {
+impl<RS: SemiRingStructure + ToStringStructure> ToStringStructure for PolynomialStructure<RS> {
     fn to_string(&self, elem: &Self::Set) -> String {
         if self.num_coeffs(elem) == 0 {
             "0".into()
@@ -117,7 +116,7 @@ impl<RS: RingStructure + ToStringStructure> ToStringStructure for PolynomialStru
     }
 }
 
-impl<RS: RingStructure> PartialEqStructure for PolynomialStructure<RS> {
+impl<RS: SemiRingStructure> PartialEqStructure for PolynomialStructure<RS> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         for i in 0..std::cmp::max(a.coeffs.len(), b.coeffs.len()) {
             if !self.coeff_ring.equal(self.coeff(a, i), self.coeff(b, i)) {
@@ -128,9 +127,9 @@ impl<RS: RingStructure> PartialEqStructure for PolynomialStructure<RS> {
     }
 }
 
-impl<RS: RingStructure> EqStructure for PolynomialStructure<RS> {}
+impl<RS: SemiRingStructure> EqStructure for PolynomialStructure<RS> {}
 
-impl<RS: RingStructure> SemiRingStructure for PolynomialStructure<RS> {
+impl<RS: SemiRingStructure> SemiRingStructure for PolynomialStructure<RS> {
     fn zero(&self) -> Self::Set {
         Polynomial { coeffs: vec![] }
     }
@@ -175,7 +174,7 @@ impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
     }
 }
 
-impl<RS: RingStructure> PolynomialStructure<RS> {
+impl<RS: SemiRingStructure> PolynomialStructure<RS> {
     pub fn new(coeff_ring: Rc<RS>) -> Self {
         Self {
             coeff_ring_zero: coeff_ring.zero(),
@@ -330,7 +329,7 @@ impl<RS: RingStructure> PolynomialStructure<RS> {
                 p.coeffs[i] = p.coeffs[i + 1].clone();
                 self.coeff_ring.mul_mut(
                     &mut p.coeffs[i],
-                    &self.coeff_ring.from_int(&Integer::from(i + 1)),
+                    &self.coeff_ring.from_nat(&Natural::from(i + 1)),
                 );
             }
             p.coeffs.pop();
@@ -944,7 +943,7 @@ where
 
 impl<R: MetaType> MetaType for Polynomial<R>
 where
-    R::Structure: RingStructure,
+    R::Structure: SemiRingStructure,
 {
     type Structure = PolynomialStructure<R::Structure>;
 
@@ -955,7 +954,7 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: RingStructure<Set = R>,
+    R::Structure: SemiRingStructure<Set = R>,
 {
     fn reduce(self) -> Self {
         Self::structure().reduce_poly(self)
@@ -964,7 +963,7 @@ where
 
 impl<R: MetaType> Display for Polynomial<R>
 where
-    R::Structure: RingStructure + ToStringStructure,
+    R::Structure: SemiRingStructure + ToStringStructure,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Self::structure().to_string(self))
@@ -973,18 +972,18 @@ where
 
 impl<R: MetaType> PartialEq for Polynomial<R>
 where
-    R::Structure: RingStructure,
+    R::Structure: SemiRingStructure,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
     }
 }
 
-impl<R: MetaType> Eq for Polynomial<R> where R::Structure: RingStructure {}
+impl<R: MetaType> Eq for Polynomial<R> where R::Structure: SemiRingStructure {}
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: RingStructure<Set = R>,
+    R::Structure: SemiRingStructure<Set = R>,
 {
     pub fn var() -> Self {
         Self::structure().var()

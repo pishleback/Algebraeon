@@ -33,15 +33,6 @@ impl SemiRingStructure for CannonicalStructure<Integer> {
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        use std::io::Write;
-        std::fs::File::create("a.txt")
-            .unwrap()
-            .write_all(format!("{}", a).as_bytes())
-            .unwrap();
-        std::fs::File::create("b.txt")
-            .unwrap()
-            .write_all(format!("{}", b).as_bytes())
-            .unwrap();
         a * b
     }
 }
@@ -102,13 +93,11 @@ impl UniqueFactorizationStructure for CannonicalStructure<Integer> {
             } else {
                 unit = Integer::from(1);
             }
-
+            let f = factor(a.unsigned_abs()).unwrap();
             Some(Factored::new_unchecked(
                 self.clone().into(),
                 unit,
-                factor(a.unsigned_abs())
-                    .unwrap()
-                    .into_powers()
+                f.into_powers()
                     .into_iter()
                     .map(|(p, k)| (Integer::from(p), k))
                     .collect(),

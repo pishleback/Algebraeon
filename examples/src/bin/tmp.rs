@@ -8,12 +8,7 @@ use malachite_nz::{integer::Integer, natural::Natural};
 fn main() {
     std::env::set_var("RUST_BACKTRACE", "1");
 
-    println!(
-        "{}",
-        Integer::from_str("2")
-            .unwrap()
-            .nat_pow(&Natural::from_str("321985732985472398457").unwrap())
-            .factor()
-            .unwrap()
-    );
+    let x = Integer::from_str("32198573291847394729843798732185472398457").unwrap();
+    let f = x.factor().unwrap();
+    println!("{}", f);
 }

@@ -1,4 +1,7 @@
+use malachite_base::num::arithmetic::traits::AbsDiff;
 use primes::is_prime;
+
+use crate::polynomial::polynomial::Polynomial;
 
 use super::functions::*;
 use super::*;
@@ -93,6 +96,7 @@ impl Factored {
     }
 }
 
+#[derive(Debug)]
 struct Factorizer {
     prime_factors: Factored,
     to_factor: Vec<Natural>,
@@ -144,8 +148,8 @@ impl Factorizer {
         debug_assert_ne!(d, 1);
         debug_assert_ne!(d, n);
         debug_assert_eq!(&n % &d, 0);
-        self.to_factor.push(&n / d);
-        self.to_factor.push(n);
+        self.to_factor.push(&n / &d);
+        self.to_factor.push(d);
     }
 
     fn found_prime_factor(&mut self, p: Natural) {
@@ -175,9 +179,8 @@ pub fn factor(n: Natural) -> Option<Factored> {
                     break;
                 }
                 Some(n) => {
-                    println!("n = {}", n);
                     debug_assert!(&n >= &Natural::TWO);
-                    if n < 1000000 || true {
+                    if n < 1000000 {
                         // Trial division
                         let mut d = Natural::TWO;
                         while &d * &d <= n {
@@ -188,9 +191,37 @@ pub fn factor(n: Natural) -> Option<Factored> {
                             d += Natural::ONE;
                         }
                         f.found_prime_factor(n);
+                    } else if is_prime(&n) {
+                        f.found_prime_factor(n);
                     } else {
                         // Pollard-Rho
-                        todo!()
+
+                        // g(x) = x^2 + 1
+                        let g1 = Polynomial::<Natural>::from_coeffs(vec![
+                            Natural::ONE,
+                            Natural::ZERO,
+                            Natural::ONE,
+                        ]);
+                        // g(g(x))
+                        let g2 = Polynomial::compose(&g1, &g1);
+
+                        'RHO_LOOP: for mut x in (2usize..).map(|n| Natural::from(n)) {
+                            let mut y = x.clone();
+                            loop {
+                                x = g1.evaluate(&x) % &n;
+                                y = g2.evaluate(&y) % &n;
+                                let d = gcd(Natural::abs_diff(x.clone(), &y), n.clone());
+                                if d > 1 {
+                                    debug_assert!(d <= n);
+                                    if d == n {
+                                        continue 'RHO_LOOP;
+                                    } else {
+                                        f.found_factor(d);
+                                        continue 'MAIN;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -73,6 +73,27 @@ pub trait SemiRingStructure: EqStructure {
             ans
         }
     }
+
+    fn from_nat(&self, x: &Natural) -> Self::Set {
+        if *x == 0 {
+            self.zero()
+        } else if *x == 1 {
+            self.one()
+        } else {
+            let two = self.add(&self.one(), &self.one());
+            debug_assert!(*x >= 2);
+            let bits: Vec<bool> = x.bits().collect();
+            let mut ans = self.zero();
+            let mut v = self.one();
+            for i in 0..bits.len() {
+                if bits[i] {
+                    self.add_mut(&mut ans, &v);
+                }
+                self.mul_mut(&mut v, &two);
+            }
+            ans
+        }
+    }
 }
 
 pub trait MetaSemiRing: MetaType
@@ -102,6 +123,10 @@ where
     fn nat_pow(&self, n: &Natural) -> Self {
         Self::structure().nat_pow(self, n)
     }
+
+    fn from_nat(x: &Natural) -> Self {
+        Self::structure().from_nat(x)
+    }
 }
 impl<R: MetaType> MetaSemiRing for R where Self::Structure: SemiRingStructure {}
 
@@ -111,23 +136,8 @@ pub trait RingStructure: SemiRingStructure {
     fn from_int(&self, x: &Integer) -> Self::Set {
         if *x < 0 {
             self.neg(&self.from_int(&-x))
-        } else if *x == 0 {
-            self.zero()
-        } else if *x == 1 {
-            self.one()
         } else {
-            let two = self.add(&self.one(), &self.one());
-            debug_assert!(*x >= 2);
-            let bits: Vec<bool> = x.unsigned_abs().bits().collect();
-            let mut ans = self.zero();
-            let mut v = self.one();
-            for i in 0..bits.len() {
-                if bits[i] {
-                    self.add_mut(&mut ans, &v);
-                }
-                self.mul_mut(&mut v, &two);
-            }
-            ans
+            self.from_nat(x.unsigned_abs_ref())
         }
     }
 }
