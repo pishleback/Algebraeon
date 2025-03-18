@@ -5,7 +5,6 @@ use algebraeon_sets::structure::*;
 
 use crate::number::integer::*;
 use crate::number::natural::*;
-use crate::number::rational::*;
 
 use std::rc::Rc;
 use std::{fmt::Display, hash::Hash};

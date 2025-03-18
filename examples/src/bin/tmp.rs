@@ -2,8 +2,10 @@
 
 use std::str::FromStr;
 
+use algebraeon_rings::number::integer::*;
+use algebraeon_rings::number::natural::*;
+use algebraeon_rings::number::rational::*;
 use algebraeon_rings::structure::structure::*;
-use malachite_nz::{integer::Integer, natural::Natural};
 
 fn main() {
     std::env::set_var("RUST_BACKTRACE", "1");

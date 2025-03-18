@@ -7,8 +7,6 @@ use crate::{
 };
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use malachite_base::num::basic::traits::{One, Zero};
-use malachite_q::exhaustive::exhaustive_rationals;
 
 use crate::number::integer::*;
 use crate::number::natural::*;

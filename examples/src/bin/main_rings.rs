@@ -1,10 +1,12 @@
 #![allow(dead_code, warnings)]
 
+use algebraeon_rings::number::integer::*;
+use algebraeon_rings::number::natural::*;
+use algebraeon_rings::number::rational::*;
 use algebraeon_rings::{
     polynomial::polynomial::*,
     structure::{elements::*, structure::*},
 };
-use malachite_nz::integer::Integer;
 
 fn main() {
     let x = &Polynomial::<Integer>::var().into_ergonomic();

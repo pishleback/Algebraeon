@@ -8,9 +8,7 @@ use crate::linear::matrix::*;
 use super::super::structure::structure::*;
 use algebraeon_sets::structure::*;
 
-use crate::number::integer::*;
 use crate::number::natural::*;
-use crate::number::rational::*;
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {
@@ -1139,6 +1137,9 @@ mod tests {
     use crate::structure::elements::IntoErgonomic;
 
     use super::super::super::structure::structure::*;
+
+    use crate::number::integer::*;
+    use crate::number::rational::*;
 
     use super::*;
 

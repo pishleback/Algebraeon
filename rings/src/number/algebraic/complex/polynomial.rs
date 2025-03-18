@@ -1,7 +1,4 @@
 use super::*;
-use crate::number::integer::*;
-use crate::number::natural::*;
-use crate::number::rational::*;
 
 impl Polynomial<Integer> {
     fn at_fixed_re_or_im_impl<const RE_OR_IM: bool>(
@@ -765,11 +762,8 @@ impl Polynomial<Integer> {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
-    use malachite_base::num::basic::traits::Two;
-
     use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn test_at_fixed_re_and_im() {

@@ -59,7 +59,6 @@ some improvements
 */
 
 use crate::number::integer::*;
-use crate::number::natural::*;
 use crate::number::rational::*;
 use crate::{polynomial::polynomial::*, structure::quotient::*};
 use algebraeon_sets::combinations::LexicographicCombinationsWithRemovals;
@@ -267,8 +266,6 @@ mod dminusone_test {
             f: &Polynomial<Integer>,
             modular_factors: &Vec<Polynomial<Integer>>,
         ) -> Self {
-            use malachite_base::num::arithmetic::traits::{Abs, Mod};
-
             // Probably 2^64
             let machine_range = Natural::from(usize::MAX) + Natural::ONE;
 

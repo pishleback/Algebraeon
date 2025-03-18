@@ -64,9 +64,6 @@ dependencies = [
  "algebraeon-rings",
  "algebraeon-sets",
  "glium",
- "malachite-base",
- "malachite-nz",
- "malachite-q",
  "rand",
 ]
 
@@ -77,9 +74,6 @@ dependencies = [
  "algebraeon-groups",
  "algebraeon-rings",
  "algebraeon-sets",
- "malachite-base",
- "malachite-nz",
- "malachite-q",
 ]
 
 [[package]]

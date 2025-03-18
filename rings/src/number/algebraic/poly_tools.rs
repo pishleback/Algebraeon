@@ -4,7 +4,6 @@ use crate::{
 };
 
 use crate::number::integer::*;
-use crate::number::natural::*;
 use crate::number::rational::*;
 
 pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {

@@ -159,7 +159,6 @@ pub fn is_power_test(n: &Natural) -> IsPowerTestResult {
 }
 
 pub fn gcd(mut x: Natural, mut y: Natural) -> Natural {
-    use malachite_base::num::arithmetic::traits::Mod;
     while y != Natural::ZERO {
         let r = x.rem(&y);
         (x, y) = (y, r)

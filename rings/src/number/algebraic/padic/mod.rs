@@ -1,4 +1,4 @@
-use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
+use malachite_base::num::arithmetic::traits::DivMod;
 
 use crate::{number::natural::primes::*, polynomial::polynomial::*, structure::structure::*};
 

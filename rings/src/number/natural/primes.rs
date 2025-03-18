@@ -1,7 +1,4 @@
 use factor::Factored;
-use malachite_base::num::arithmetic::traits::PowerOf2;
-
-use malachite_base::num::arithmetic::traits::{DivMod, Mod, ModPow};
 use malachite_base::num::logic::traits::BitIterable;
 
 use crate::number::rational::*;

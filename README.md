@@ -39,8 +39,8 @@ Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
 use algebraeon_rings::{
     polynomial::polynomial::*,
     structure::{elements::*, structure::*},
+    number::integer::*
 };
-use malachite_nz::integer::Integer;
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(2) - 5*x + 6).into_verbose();
@@ -73,7 +73,7 @@ a \begin{pmatrix}3 \\ 4 \\ 1\end{pmatrix} + b \begin{pmatrix}2 \\ 1 \\ 2\end{pma
 for integers $a$, $b$ and $c$.
 ```
 use algebraeon_rings::linear::matrix::Matrix;
-use malachite_nz::integer::Integer;
+use algebraeon_rings::number::integer::Integer;
 let x = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
 let y = Matrix::<Integer>::from_rows(vec![vec![5, 5, 3]]);
 let s = x.row_solution_lattice(y);
@@ -99,8 +99,7 @@ for some integer $t$.
 Find all complex roots of the polynomial
 $$f(x) = x^5 + x^2 - x + 1$$
 ```
-use algebraeon_rings::{polynomial::polynomial::*, structure::elements::*};
-use malachite_nz::integer::Integer;
+use algebraeon_rings::{polynomial::polynomial::*, structure::elements::*, number::integer::*};
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(5) + x.pow(2) - x + 1).into_verbose();
@@ -122,8 +121,7 @@ Despite the output, the roots found are _not_ numerical approximations. Rather, 
 ## P-adic Root Finding
 Find the $2$-adic square roots of $17$.
 ```
-use algebraeon_rings::{polynomial::polynomial::*, structure::elements::*};
-use malachite_nz::{integer::Integer, natural::Natural};
+use algebraeon_rings::{polynomial::polynomial::*, structure::elements::*, number::{natural::*, integer::*}};
 let x = Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(2) - 17).into_verbose();
 for mut root in f.all_padic_roots(&Natural::from(2u32)) {
@@ -170,9 +168,8 @@ assert_eq!(n, 120);
 
 ## Jordan Normal Form of a Matrix
 ```
-use algebraeon_rings::{linear::matrix::*, number::algebraic::complex::*};
+use algebraeon_rings::{linear::matrix::*, number::{rational::*, algebraic::complex::*}};
 use algebraeon_sets::structure::*;
-use malachite_q::Rational;
 // Construct a matrix
 let a = Matrix::<Rational>::from_rows(vec![
     vec![5, 4, 2, 1],
@@ -199,7 +196,7 @@ use algebraeon_rings::polynomial::{
     multipoly::{MultiPolynomial, Variable},
     polynomial::Polynomial,
 };
-use malachite_nz::integer::Integer;
+use algebraeon_rings::number::integer::*;
 
 let a_var = Variable::new("a");
 let b_var = Variable::new("b");

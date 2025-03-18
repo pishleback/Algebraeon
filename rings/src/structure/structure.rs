@@ -1,19 +1,14 @@
 use std::{borrow::Borrow, fmt::Debug, rc::Rc};
 
-use malachite_base::num::arithmetic::traits::UnsignedAbs;
 use malachite_base::num::logic::traits::BitIterable;
 
-use crate::number::{integer::*, natural::*};
+use crate::number::{integer::*, natural::*, rational::*};
 use crate::polynomial::polynomial::Polynomial;
 use crate::polynomial::polynomial::PolynomialStructure;
 
 use algebraeon_sets::structure::*;
 
 use super::factorization::*;
-
-use crate::number::integer::*;
-use crate::number::natural::*;
-use crate::number::rational::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RingDivisionError {

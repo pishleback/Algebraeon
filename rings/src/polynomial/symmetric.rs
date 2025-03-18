@@ -266,8 +266,6 @@ mod tests {
     use crate::structure::elements::*;
 
     use crate::number::integer::*;
-    use crate::number::natural::*;
-    use crate::number::rational::*;
 
     #[test]
     fn test_ffosp() {

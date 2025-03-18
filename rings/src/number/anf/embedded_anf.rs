@@ -11,7 +11,6 @@ use structure::*;
 use super::number_field::{new_anf, ANFStructure};
 
 use crate::number::integer::*;
-use crate::number::natural::*;
 use crate::number::rational::*;
 
 #[derive(Debug, Clone)]

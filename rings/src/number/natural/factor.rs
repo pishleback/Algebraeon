@@ -77,8 +77,6 @@ pub enum IsPrimitiveRootResult {
 impl Factored {
     /// Return whether x is a primitive root modulo the value represented by self
     pub fn is_primitive_root(&self, x: &Natural) -> IsPrimitiveRootResult {
-        use malachite_base::num::arithmetic::traits::{Mod, ModPow};
-
         let n_factored = self;
         let n = n_factored.expand();
         if gcd(x.clone(), n.clone()) != Natural::ONE {

@@ -172,8 +172,6 @@ mod tests {
     use super::*;
 
     use crate::number::integer::*;
-    use crate::number::natural::*;
-    use crate::number::rational::*;
 
     #[test]
     fn test() {

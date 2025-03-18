@@ -9,9 +9,6 @@ name = "algebraeon_drawing"
 [dependencies]
 glium = "0.32"
 rand = "0.8.5"
-malachite-base = "0.4.16"
-malachite-nz = "0.4.16"
-malachite-q = "0.4.16"
 algebraeon-sets = { version = "0.0.6", path = "../sets" }
 algebraeon-groups = { version = "0.0.8", path = "../groups" }
 algebraeon-rings = { version = "0.0.10", path = "../rings" }

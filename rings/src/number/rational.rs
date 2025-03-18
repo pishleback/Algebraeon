@@ -13,8 +13,7 @@ use super::natural::*;
 
 use algebraeon_sets::structure::*;
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
-use malachite_q::arithmetic::traits::SimplestRationalInInterval;
-use rayon::collections::binary_heap::Iter;
+use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Rational(malachite_q::Rational);
@@ -347,6 +346,10 @@ impl Rational {
 
     pub fn exhaustive_rationals() -> impl Iterator<Item = Rational> {
         malachite_q::exhaustive::exhaustive_rationals().map(|v| Rational(v))
+    }
+
+    pub fn approximate(self, max_denominator: &Natural) -> Self {
+        Self(self.0.approximate(max_denominator.to_malachite_ref()))
     }
 }
 

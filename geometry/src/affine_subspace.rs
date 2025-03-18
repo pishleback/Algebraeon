@@ -355,8 +355,8 @@ pub fn compose_affine_embeddings<
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_rings::number::rational::*;
     use algebraeon_sets::structure::*;
-    use malachite_q::Rational;
 
     use super::*;
 

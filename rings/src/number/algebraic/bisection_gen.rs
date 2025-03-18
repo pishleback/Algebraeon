@@ -2,10 +2,6 @@
 
 use std::collections::BTreeMap;
 
-use malachite_q::arithmetic::traits::SimplestRationalInInterval;
-
-use crate::number::integer::*;
-use crate::number::natural::*;
 use crate::number::rational::*;
 
 #[derive(Debug, Clone)]

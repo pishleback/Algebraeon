@@ -2,7 +2,6 @@ use std::rc::Rc;
 
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use malachite_base::num::basic::traits::{One, Two};
 
 use crate::{
     linear::{matrix::*, subspace::*},
@@ -11,9 +10,7 @@ use crate::{
     structure::{factorization::*, quotient::QuotientStructure, structure::*},
 };
 
-use crate::number::integer::*;
 use crate::number::natural::*;
-use crate::number::rational::*;
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
 /*
@@ -615,6 +612,8 @@ mod tests {
         number::finite_fields::{modulo::*, quaternary_field::QuaternaryField},
         structure::elements::IntoErgonomic,
     };
+
+    use crate::number::integer::*;
 
     use super::*;
 
