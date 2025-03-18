@@ -1,11 +1,322 @@
 use std::rc::Rc;
-
-
+use std::{
+    ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign},
+    str::FromStr,
+};
 
 use super::super::polynomial::polynomial::*;
 use super::super::structure::factorization::*;
 use super::super::structure::structure::*;
+
+use super::integer::*;
+use super::natural::*;
+
 use algebraeon_sets::structure::*;
+use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Rational(malachite_q::Rational);
+
+impl Rational {
+    pub(crate) fn from_malachite(value: malachite_q::Rational) -> Self {
+        Self(value)
+    }
+    pub(crate) fn to_malachite(self) -> malachite_q::Rational {
+        self.0
+    }
+    pub(crate) fn to_malachite_ref(&self) -> &malachite_q::Rational {
+        &self.0
+    }
+}
+
+impl std::fmt::Display for Rational {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl From<u8> for Rational {
+    fn from(value: u8) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<u16> for Rational {
+    fn from(value: u16) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<u32> for Rational {
+    fn from(value: u32) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<u64> for Rational {
+    fn from(value: u64) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<u128> for Rational {
+    fn from(value: u128) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<usize> for Rational {
+    fn from(value: usize) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<i8> for Rational {
+    fn from(value: i8) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<i16> for Rational {
+    fn from(value: i16) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<i32> for Rational {
+    fn from(value: i32) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<i64> for Rational {
+    fn from(value: i64) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<i128> for Rational {
+    fn from(value: i128) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<isize> for Rational {
+    fn from(value: isize) -> Self {
+        Self(malachite_q::Rational::from(value))
+    }
+}
+impl From<Natural> for Rational {
+    fn from(value: Natural) -> Self {
+        Self(malachite_q::Rational::from(value.to_malachite()))
+    }
+}
+impl From<&Natural> for Rational {
+    fn from(value: &Natural) -> Self {
+        Self(malachite_q::Rational::from(value.to_malachite_ref()))
+    }
+}
+impl From<Integer> for Rational {
+    fn from(value: Integer) -> Self {
+        Self(malachite_q::Rational::from(value.to_malachite()))
+    }
+}
+impl From<&Integer> for Rational {
+    fn from(value: &Integer) -> Self {
+        Self(malachite_q::Rational::from(value.to_malachite_ref()))
+    }
+}
+
+impl FromStr for Rational {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(malachite_q::Rational::from_str(s)?))
+    }
+}
+
+impl Rational {
+    pub const ZERO: Self = Self(malachite_q::Rational::ZERO);
+    pub const ONE: Self = Self(malachite_q::Rational::ONE);
+    pub const TWO: Self = Self(malachite_q::Rational::TWO);
+    pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
+}
+
+impl AddAssign<Rational> for Rational {
+    fn add_assign(&mut self, rhs: Rational) {
+        self.0.add_assign(rhs.0)
+    }
+}
+impl AddAssign<&Rational> for Rational {
+    fn add_assign(&mut self, rhs: &Rational) {
+        self.0.add_assign(&rhs.0)
+    }
+}
+
+impl SubAssign<Rational> for Rational {
+    fn sub_assign(&mut self, rhs: Rational) {
+        self.0.sub_assign(rhs.0)
+    }
+}
+impl SubAssign<&Rational> for Rational {
+    fn sub_assign(&mut self, rhs: &Rational) {
+        self.0.sub_assign(&rhs.0)
+    }
+}
+
+impl MulAssign<Rational> for Rational {
+    fn mul_assign(&mut self, rhs: Rational) {
+        self.0.mul_assign(rhs.0)
+    }
+}
+impl MulAssign<&Rational> for Rational {
+    fn mul_assign(&mut self, rhs: &Rational) {
+        self.0.mul_assign(&rhs.0)
+    }
+}
+
+impl Neg for Rational {
+    type Output = Rational;
+
+    fn neg(self) -> Self::Output {
+        Rational(self.0.neg())
+    }
+}
+impl Neg for &Rational {
+    type Output = Rational;
+
+    fn neg(self) -> Self::Output {
+        Rational((&self.0).neg())
+    }
+}
+
+impl Add<Rational> for Rational {
+    type Output = Rational;
+
+    fn add(self, rhs: Rational) -> Self::Output {
+        Rational(self.0.add(rhs.0))
+    }
+}
+impl Add<&Rational> for Rational {
+    type Output = Rational;
+
+    fn add(self, rhs: &Rational) -> Self::Output {
+        Rational(self.0.add(&rhs.0))
+    }
+}
+impl Add<Rational> for &Rational {
+    type Output = Rational;
+
+    fn add(self, rhs: Rational) -> Self::Output {
+        Rational((&self.0).add(rhs.0))
+    }
+}
+impl Add<&Rational> for &Rational {
+    type Output = Rational;
+
+    fn add(self, rhs: &Rational) -> Self::Output {
+        Rational((&self.0).add(&rhs.0))
+    }
+}
+
+impl Sub<Rational> for Rational {
+    type Output = Rational;
+
+    fn sub(self, rhs: Rational) -> Self::Output {
+        Rational(self.0.sub(rhs.0))
+    }
+}
+impl Sub<&Rational> for Rational {
+    type Output = Rational;
+
+    fn sub(self, rhs: &Rational) -> Self::Output {
+        Rational(self.0.sub(&rhs.0))
+    }
+}
+impl Sub<Rational> for &Rational {
+    type Output = Rational;
+
+    fn sub(self, rhs: Rational) -> Self::Output {
+        Rational((&self.0).sub(rhs.0))
+    }
+}
+impl Sub<&Rational> for &Rational {
+    type Output = Rational;
+
+    fn sub(self, rhs: &Rational) -> Self::Output {
+        Rational((&self.0).sub(&rhs.0))
+    }
+}
+
+impl Mul<Rational> for Rational {
+    type Output = Rational;
+
+    fn mul(self, rhs: Rational) -> Self::Output {
+        Rational(self.0.mul(rhs.0))
+    }
+}
+impl Mul<&Rational> for Rational {
+    type Output = Rational;
+
+    fn mul(self, rhs: &Rational) -> Self::Output {
+        Rational(self.0.mul(&rhs.0))
+    }
+}
+impl Mul<Rational> for &Rational {
+    type Output = Rational;
+
+    fn mul(self, rhs: Rational) -> Self::Output {
+        Rational((&self.0).mul(rhs.0))
+    }
+}
+impl Mul<&Rational> for &Rational {
+    type Output = Rational;
+
+    fn mul(self, rhs: &Rational) -> Self::Output {
+        Rational((&self.0).mul(&rhs.0))
+    }
+}
+
+impl Div<Rational> for Rational {
+    type Output = Rational;
+
+    fn div(self, rhs: Rational) -> Self::Output {
+        Rational(self.0.div(rhs.0))
+    }
+}
+impl Div<&Rational> for Rational {
+    type Output = Rational;
+
+    fn div(self, rhs: &Rational) -> Self::Output {
+        Rational(self.0.div(&rhs.0))
+    }
+}
+impl Div<Rational> for &Rational {
+    type Output = Rational;
+
+    fn div(self, rhs: Rational) -> Self::Output {
+        Rational((&self.0).div(rhs.0))
+    }
+}
+impl Div<&Rational> for &Rational {
+    type Output = Rational;
+
+    fn div(self, rhs: &Rational) -> Self::Output {
+        Rational((&self.0).div(&rhs.0))
+    }
+}
+
+impl Rational {
+    fn numerator(&self) -> Integer {
+        //malachite returns a natural for the numerator for some
+        if self >= &Rational::ZERO {
+            Integer::from(Natural::from_malachite(self.0.numerator_ref().clone()))
+        } else {
+            -Natural::from_malachite(self.0.numerator_ref().clone())
+        }
+    }
+
+    fn denominator(&self) -> Natural {
+        Natural::from_malachite(self.0.denominator_ref().clone())
+    }
+}
+
+impl MetaType for Rational {
+    type Structure = CannonicalStructure<Rational>;
+
+    fn structure() -> std::rc::Rc<Self::Structure> {
+        CannonicalStructure::new().into()
+    }
+}
 
 impl SemiRingStructure for CannonicalStructure<Rational> {
     fn zero(&self) -> Self::Set {
@@ -61,22 +372,19 @@ impl FieldOfFractionsStructure for CannonicalStructure<Rational> {
     }
 
     fn numerator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
-        //malachite returns a natural for the numerator for some
-        if elem >= &0 {
-            Integer::from(elem.numerator_ref())
-        } else {
-            -Integer::from(elem.numerator_ref())
-        }
+        elem.numerator()
     }
 
     fn denominator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
-        Integer::from(elem.denominator_ref())
+        Integer::from(elem.denominator())
     }
 }
 
 impl RealRoundingStructure for CannonicalStructure<Rational> {
     fn floor(&self, x: &Self::Set) -> Integer {
-        <Rational as malachite_base::num::arithmetic::traits::Floor>::floor(x.clone())
+        Integer::from_malachite(
+            <malachite_q::Rational as malachite_base::num::arithmetic::traits::Floor>::floor(x.0.clone()),
+        )
     }
     fn ceil(&self, x: &Self::Set) -> Integer {
         -self.floor(&-x)
@@ -88,7 +396,7 @@ impl RealRoundingStructure for CannonicalStructure<Rational> {
 
 impl RealFromFloatStructure for CannonicalStructure<Rational> {
     fn from_f64_approx(&self, x: f64) -> Self::Set {
-        Rational::try_from_float_simplest(x).unwrap()
+        Rational(malachite_q::Rational::try_from_float_simplest(x).unwrap())
     }
 }
 

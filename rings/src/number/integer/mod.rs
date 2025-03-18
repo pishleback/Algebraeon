@@ -368,7 +368,7 @@ impl Integer{
     }
 
     pub fn unsigned_abs_ref(&self) -> Natural {
-        Natural::from_malachite(self.0.unsigned_abs())
+        Natural::from_malachite((&self.0).unsigned_abs())
     }
 }
 
