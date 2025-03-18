@@ -1,5 +1,6 @@
 //TODO: make structs for intervals and boxes instead of using tuples of rationals
 
+use crate::number::rational::*;
 
 pub fn add_boxes(
     first: (&Rational, &Rational, &Rational, &Rational),

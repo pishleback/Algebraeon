@@ -6,10 +6,14 @@ use super::real::RealAlgebraic;
 use super::{bisection_gen::RationalSimpleBetweenGenerator, rat_to_string};
 use crate::polynomial::polynomial::*;
 use algebraeon_sets::structure::*;
-use malachite_q::{arithmetic::traits::SimplestRationalInInterval};
+use malachite_q::arithmetic::traits::SimplestRationalInInterval;
 use std::{collections::HashSet, fmt::Display, rc::Rc, str::FromStr};
 
 use boxes::*;
+
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
 
 mod boxes;
 pub mod polynomial;
@@ -112,10 +116,13 @@ fn identify_complex_root(
             .into_iter()
             .filter(|idx| match &roots[*idx] {
                 ComplexAlgebraic::Real(RealAlgebraic::Rational(root)) => {
-                    &a < root && root < &b && c < 0 && 0 < d
+                    &a < root && root < &b && c < Rational::ZERO && Rational::ZERO < d
                 }
                 ComplexAlgebraic::Real(RealAlgebraic::Real(root)) => {
-                    &a < root.tight_b() && root.tight_a() < &b && c < 0 && 0 < d
+                    &a < root.tight_b()
+                        && root.tight_a() < &b
+                        && c < Rational::ZERO
+                        && Rational::ZERO < d
                 }
                 ComplexAlgebraic::Complex(root) => {
                     a < root.tight_b && root.tight_a < b && c < root.tight_d && root.tight_c < d
@@ -268,7 +275,7 @@ impl Display for ComplexAlgebraicRoot {
             write!(f, "{}", rat_to_string(m_re))?;
             // write!(f, "±");
             // write!(f, "{}", rat_to_string(self.accuracy_re() / Rational::TWO));
-            if m_im >= 0 {
+            if m_im >= Rational::ZERO {
                 write!(f, "+")?;
             }
             write!(f, "{}", rat_to_string(m_im))?;

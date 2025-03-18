@@ -128,6 +128,27 @@ impl Integer {
     pub const TWO: Self = Self(malachite_nz::integer::Integer::TWO);
 }
 
+impl PartialEq<Natural> for Integer {
+    fn eq(&self, other: &Natural) -> bool {
+        self.0.eq(other.to_malachite_ref())
+    }
+}
+impl PartialEq<&Natural> for Integer {
+    fn eq(&self, other: &&Natural) -> bool {
+        self.eq(*other)
+    }
+}
+impl PartialOrd<Natural> for Integer {
+    fn partial_cmp(&self, other: &Natural) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other.to_malachite_ref())
+    }
+}
+impl PartialOrd<&Natural> for Integer {
+    fn partial_cmp(&self, other: &&Natural) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(*other)
+    }
+}
+
 impl AddAssign<Integer> for Integer {
     fn add_assign(&mut self, rhs: Integer) {
         self.0.add_assign(rhs.0)
@@ -362,7 +383,17 @@ impl DivMod<&Integer> for &Integer {
     }
 }
 
-impl Integer{
+impl Integer {
+    pub fn abs(self) -> Integer {
+        use malachite_base::num::arithmetic::traits::Abs;
+        Self(self.0.abs())
+    }
+
+    pub fn abs_ref(&self) -> Integer {
+        use malachite_base::num::arithmetic::traits::Abs;
+        Self((&self.0).abs())
+    }
+
     pub fn unsigned_abs(self) -> Natural {
         Natural::from_malachite(self.0.unsigned_abs())
     }

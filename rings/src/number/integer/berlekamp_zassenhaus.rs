@@ -58,7 +58,10 @@ some improvements
 
 */
 
-use crate::{number::integer::*, polynomial::polynomial::*, structure::quotient::*};
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
+use crate::{polynomial::polynomial::*, structure::quotient::*};
 use algebraeon_sets::combinations::LexicographicCombinationsWithRemovals;
 use primes::PrimeGenerator;
 
@@ -298,14 +301,13 @@ mod dminusone_test {
                         .iter()
                         .map(|g| {
                             let d = g.degree().unwrap();
-                            let coeff =
-                                (f.leading_coeff().unwrap() * g.coeff(d - 1)).mod_op(modulus);
+                            let coeff = (f.leading_coeff().unwrap() * g.coeff(d - 1)).rem(modulus);
                             DMinusOneTestSemigroupElem {
                                 approx_coeff_lower_bound: nat_to_usize(
                                     &(Rational::from(coeff) * &conversion_mult)
                                         .floor()
                                         .unsigned_abs()
-                                        .mod_op(&machine_range),
+                                        .rem(&machine_range),
                                 )
                                 .unwrap(),
                                 degree: d,
@@ -399,7 +401,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                             modular_factor_product_memory_stack.get_product(&subset),
                         )
                         .apply_map(|c| {
-                            let c = Integer::rem(c, &self.modulus);
+                            let c = c.rem(&self.modulus);
                             if c > Integer::quo(&self.modulus, &Integer::TWO).unwrap() {
                                 c - &self.modulus
                             } else {
@@ -518,7 +520,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                                 ),
                             )
                             .apply_map(|c| {
-                                let c = Integer::rem(c, &modulus);
+                                let c = c.rem(&modulus);
                                 if c > Integer::quo(&modulus, &Integer::TWO).unwrap() {
                                     c - &modulus
                                 } else {

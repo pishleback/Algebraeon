@@ -1,8 +1,11 @@
-
 use super::super::structure::factorization::*;
 use super::super::structure::structure::*;
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
+
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
 
 impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + CharZeroStructure>
     PolynomialStructure<RS>

@@ -10,6 +10,10 @@ use structure::*;
 
 use super::number_field::{new_anf, ANFStructure};
 
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
+
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
     //anf.modulus() == gen.min_poly()
@@ -146,7 +150,7 @@ pub fn anf_pair_primitive_element_theorem(
     }
 
     let mut nontrivial_linear_combinations =
-        malachite_q::exhaustive::exhaustive_rationals().map(|r| (r.numerator(), r.denominator()));
+        Rational::exhaustive_rationals().map(|r| (r.numerator(), Integer::from(r.denominator())));
     nontrivial_linear_combinations.next().unwrap();
     for (x, y) in nontrivial_linear_combinations {
         let gen = ComplexAlgebraic::add(

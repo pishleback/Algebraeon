@@ -1,12 +1,15 @@
 use std::rc::Rc;
 
-
 use crate::structure::factorization::*;
 use crate::structure::quotient::*;
 use crate::structure::structure::*;
 
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
+
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
 
 #[derive(Debug, Clone)]
 enum HenselProduct<

@@ -1,8 +1,11 @@
-
 use crate::polynomial::polynomial::*;
 use crate::structure::factorization::*;
 use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
+
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
 
 use std::rc::Rc;
 use std::{fmt::Display, hash::Hash};
@@ -60,21 +63,21 @@ impl<const N: usize> Modulo<N> {
     }
 }
 
-impl<const N: usize> From<&malachite_nz::integer::Integer> for Modulo<N> {
-    fn from(value: &malachite_nz::integer::Integer) -> Self {
+impl<const N: usize> From<&Integer> for Modulo<N> {
+    fn from(value: &Integer) -> Self {
         let value = value % Integer::from(N);
         let value = value.unsigned_abs_ref();
         Self {
-            x: malachite_base::num::conversion::traits::ExactInto::exact_into(value),
+            x: nat_to_usize(&value).unwrap(),
         }
     }
 }
-impl<const N: usize> From<malachite_nz::integer::Integer> for Modulo<N> {
-    fn from(value: malachite_nz::integer::Integer) -> Self {
+impl<const N: usize> From<Integer> for Modulo<N> {
+    fn from(value: Integer) -> Self {
         let value = value % Integer::from(N);
         let value = value.unsigned_abs_ref();
         Self {
-            x: malachite_base::num::conversion::traits::ExactInto::exact_into(value),
+            x: nat_to_usize(&value).unwrap(),
         }
     }
 }
@@ -209,7 +212,8 @@ macro_rules! impl_field {
                 Some(
                     self.factorize_monic(p)?
                         .factorize_squarefree()
-                        .factorize_distinct_degree().factorize_cantor_zassenhaus(),
+                        .factorize_distinct_degree()
+                        .factorize_cantor_zassenhaus(),
                 )
             }
         }

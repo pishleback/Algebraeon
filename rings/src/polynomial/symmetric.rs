@@ -265,6 +265,10 @@ mod tests {
     use super::*;
     use crate::structure::elements::*;
 
+    use crate::number::integer::*;
+    use crate::number::natural::*;
+    use crate::number::rational::*;
+
     #[test]
     fn test_ffosp() {
         let x_var = Variable::new("x");
@@ -295,7 +299,8 @@ mod tests {
         let y = &MultiPolynomial::<Integer>::var(y_var.clone()).into_ergonomic();
         let z = &MultiPolynomial::<Integer>::var(z_var.clone()).into_ergonomic();
 
-        let f = (x * x * y + x * x * z + y * y * x + y * y * z + z * z * x + z * z * y).into_verbose();
+        let f =
+            (x * x * y + x * x * z + y * y * x + y * y * z + z * z * x + z * z * y).into_verbose();
 
         println!(
             "f={} {}",

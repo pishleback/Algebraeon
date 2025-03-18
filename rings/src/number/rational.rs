@@ -13,6 +13,8 @@ use super::natural::*;
 
 use algebraeon_sets::structure::*;
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
+use malachite_q::arithmetic::traits::SimplestRationalInInterval;
+use rayon::collections::binary_heap::Iter;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Rational(malachite_q::Rational);
@@ -296,7 +298,7 @@ impl Div<&Rational> for &Rational {
 }
 
 impl Rational {
-    fn numerator(&self) -> Integer {
+    pub fn numerator(&self) -> Integer {
         //malachite returns a natural for the numerator for some
         if self >= &Rational::ZERO {
             Integer::from(Natural::from_malachite(self.0.numerator_ref().clone()))
@@ -305,8 +307,46 @@ impl Rational {
         }
     }
 
-    fn denominator(&self) -> Natural {
+    pub fn denominator(&self) -> Natural {
         Natural::from_malachite(self.0.denominator_ref().clone())
+    }
+
+    pub fn from_integers(n: impl Into<Integer>, d: impl Into<Integer>) -> Self {
+        Self(malachite_q::Rational::from_integers(
+            n.into().to_malachite(),
+            d.into().to_malachite(),
+        ))
+    }
+
+    pub fn abs(self) -> Self {
+        use malachite_base::num::arithmetic::traits::Abs;
+        Self(self.0.abs())
+    }
+
+    pub fn abs_ref(&self) -> Self {
+        use malachite_base::num::arithmetic::traits::Abs;
+        Self((&self.0).abs())
+    }
+
+    pub fn into_abs_numerator_and_denominator(self) -> (Natural, Natural) {
+        let (n, d) = self.0.into_numerator_and_denominator();
+        (Natural::from_malachite(n), Natural::from_malachite(d))
+    }
+
+    pub fn simplest_rational_in_closed_interval(a: &Rational, b: &Rational) -> Self {
+        Self(malachite_q::Rational::simplest_rational_in_closed_interval(
+            &a.0, &b.0,
+        ))
+    }
+
+    pub fn simplest_rational_in_open_interval(a: &Rational, b: &Rational) -> Self {
+        Self(malachite_q::Rational::simplest_rational_in_open_interval(
+            &a.0, &b.0,
+        ))
+    }
+
+    pub fn exhaustive_rationals() -> impl Iterator<Item = Rational> {
+        malachite_q::exhaustive::exhaustive_rationals().map(|v| Rational(v))
     }
 }
 
@@ -383,7 +423,9 @@ impl FieldOfFractionsStructure for CannonicalStructure<Rational> {
 impl RealRoundingStructure for CannonicalStructure<Rational> {
     fn floor(&self, x: &Self::Set) -> Integer {
         Integer::from_malachite(
-            <malachite_q::Rational as malachite_base::num::arithmetic::traits::Floor>::floor(x.0.clone()),
+            <malachite_q::Rational as malachite_base::num::arithmetic::traits::Floor>::floor(
+                x.0.clone(),
+            ),
         )
     }
     fn ceil(&self, x: &Self::Set) -> Integer {

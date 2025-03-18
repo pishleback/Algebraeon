@@ -2,6 +2,10 @@ use std::ops::{Add, Mul, Sub};
 
 use super::*;
 
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Valuation {
     Infinity,
@@ -221,7 +225,7 @@ pub fn padic_int_valuation(p: &Natural, n: Integer) -> Valuation {
 }
 
 pub fn padic_rat_valuation(p: &Natural, r: Rational) -> Valuation {
-    let (n, d) = r.into_numerator_and_denominator();
+    let (n, d) = r.into_abs_numerator_and_denominator();
     match padic_nat_valuation(p, n) {
         Valuation::Infinity => Valuation::Infinity,
         Valuation::Finite(vn) => Valuation::Finite(vn - padic_nat_valuation(p, d).unwrap_int()),

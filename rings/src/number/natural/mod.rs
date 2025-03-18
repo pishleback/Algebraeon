@@ -10,7 +10,7 @@ use std::{
 
 use algebraeon_sets::structure::*;
 use malachite_base::num::{
-    arithmetic::traits::{DivMod, PowerOf2},
+    arithmetic::traits::{AbsDiff, DivMod, PowerOf2},
     basic::traits::{One, Two, Zero},
 };
 
@@ -484,6 +484,35 @@ where
     }
 }
 
+impl AbsDiff<Natural> for Natural {
+    type Output = Natural;
+
+    fn abs_diff(self, rhs: Natural) -> Self::Output {
+        Natural(self.0.abs_diff(rhs.0))
+    }
+}
+impl AbsDiff<&Natural> for Natural {
+    type Output = Natural;
+
+    fn abs_diff(self, rhs: &Natural) -> Self::Output {
+        Natural(self.0.abs_diff(&rhs.0))
+    }
+}
+impl AbsDiff<Natural> for &Natural {
+    type Output = Natural;
+
+    fn abs_diff(self, rhs: Natural) -> Self::Output {
+        Natural((&self.0).abs_diff(rhs.0))
+    }
+}
+impl AbsDiff<&Natural> for &Natural {
+    type Output = Natural;
+
+    fn abs_diff(self, rhs: &Natural) -> Self::Output {
+        Natural((&self.0).abs_diff(&rhs.0))
+    }
+}
+
 impl Natural {
     pub fn power_of_2(pow: u64) -> Self {
         Self(malachite_nz::natural::Natural::power_of_2(pow))
@@ -492,6 +521,11 @@ impl Natural {
     pub fn mod_pow(self, exp: impl Borrow<Self>, m: impl Borrow<Self>) -> Self {
         use malachite_base::num::arithmetic::traits::ModPow;
         Self(self.0.mod_pow(&exp.borrow().0, &m.borrow().0))
+    }
+
+    pub fn mod_pow_ref(&self, exp: impl Borrow<Self>, m: impl Borrow<Self>) -> Self {
+        use malachite_base::num::arithmetic::traits::ModPow;
+        Self((&self.0).mod_pow(&exp.borrow().0, &m.borrow().0))
     }
 }
 

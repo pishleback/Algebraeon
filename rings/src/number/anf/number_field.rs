@@ -8,7 +8,11 @@ use crate::{
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use malachite_base::num::basic::traits::{One, Zero};
-use malachite_q::{exhaustive::exhaustive_rationals};
+use malachite_q::exhaustive::exhaustive_rationals;
+
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
 
 pub type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructure<Rational>>, true>;
 
@@ -50,7 +54,7 @@ impl ANFStructure {
             }
 
             let disc = self.discriminant(&guess);
-            debug_assert_eq!(disc.denominator_ref(), &Natural::ONE); //discriminant of algebraic integers is an integer
+            debug_assert_eq!(disc.denominator(), Natural::ONE); //discriminant of algebraic integers is an integer
             let disc = Rational::numerator(&disc);
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
                                                    //    println!("{}", disc);
@@ -70,9 +74,9 @@ impl ANFStructure {
 
             for (p, k) in disc_factors {
                 debug_assert!(p >= Integer::ZERO);
-                let p = nat_to_usize(p.unsigned_abs_ref()).unwrap(); //if p is too big for usize then this algorithm was doomed to take longer than my lifespan anyway
+                let p = nat_to_usize(&p.unsigned_abs_ref()).unwrap(); //if p is too big for usize then this algorithm was doomed to take longer than my lifespan anyway
 
-                if k >= 2 {
+                if k >= Natural::TWO {
                     // println!("p = {}", p);
 
                     for coeffs in (0..n).map(|_i| 0..p).multi_cartesian_product() {
@@ -133,16 +137,16 @@ impl ANFStructure {
     }
 
     pub fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
-        if self.trace(a).denominator_ref() != &Natural::ONE {
+        if self.trace(a).denominator() != Natural::ONE {
             return false;
         }
-        if self.norm(a).denominator_ref() != &Natural::ONE {
+        if self.norm(a).denominator() != Natural::ONE {
             return false;
         }
         self.min_poly(a)
             .coeffs()
             .into_iter()
-            .all(|c| c.denominator_ref() == &Natural::ONE)
+            .all(|c| c.denominator() == Natural::ONE)
     }
 
     //return a scalar multiple of a which is an algebraic integer
@@ -151,7 +155,7 @@ impl ANFStructure {
             self.min_poly(a)
                 .coeffs()
                 .into_iter()
-                .map(|c| Integer::from(c.denominator_ref()))
+                .map(|c| Integer::from(c.denominator()))
                 .collect(),
         );
         let b = Polynomial::mul(&Polynomial::constant(Rational::from(m)), a);
@@ -474,7 +478,7 @@ impl PolynomialStructure<ANFStructure> {
                 //each random alpha has a good probability of generating L by the primitive element theorem
                 let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0);
                 let mut rat_pool = vec![];
-                let mut rat_gen = exhaustive_rationals();
+                let mut rat_gen = Rational::exhaustive_rationals();
                 rat_pool.push(rat_gen.next().unwrap()); //0
                 rat_pool.push(rat_gen.next().unwrap()); //1
                 for rat in rat_gen {
@@ -752,20 +756,20 @@ impl PolynomialStructure<ANFStructure> {
 }
 
 impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
-    fn factor(
-        &self,
-        a: &Self::Set,
-    ) -> Option<crate::structure::factorization::Factored<Self>> {
+    fn factor(&self, a: &Self::Set) -> Option<crate::structure::factorization::Factored<Self>> {
         if self.is_zero(a) {
             None
         } else {
             Some(
-                self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(a.clone(), &|a| {
-                    self.factorize_rational_factorize_first(&a, &|a| {
-                        self.factor_primitive_sqfree_by_reduced_ring(a)
-                        // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
-                    })
-                }),
+                self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
+                    a.clone(),
+                    &|a| {
+                        self.factorize_rational_factorize_first(&a, &|a| {
+                            self.factor_primitive_sqfree_by_reduced_ring(a)
+                            // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
+                        })
+                    },
+                ),
             )
         }
     }

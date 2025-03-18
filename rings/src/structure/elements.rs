@@ -1,7 +1,14 @@
-use std::{ops::{Add, Div, Mul, Neg, Sub}, rc::Rc};
+use std::{
+    ops::{Add, Div, Mul, Neg, Sub},
+    rc::Rc,
+};
 
-use algebraeon_sets::structure::*;
 use super::structure::*;
+use algebraeon_sets::structure::*;
+
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
 
 pub trait IntoErgonomic: MetaType {
     fn into_ergonomic(self) -> StructuredElement<Self::Structure> {
@@ -42,7 +49,6 @@ where
         std::fmt::Display::fmt(&self.elem, f)
     }
 }
-
 
 impl<RS: RingStructure> PartialEq for StructuredElement<RS> {
     fn eq(&self, other: &Self) -> bool {

@@ -1144,6 +1144,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::number::integer::*;
+    use crate::number::rational::*;
 
     use super::*;
 

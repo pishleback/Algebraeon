@@ -16,7 +16,7 @@ impl Factored {
         for (_p, k) in &primes {
             // TODO
             // debug_assert!(is_prime(p));
-            debug_assert!(*k > 0);
+            debug_assert!(k > &Natural::ZERO);
         }
         Self { primes }
     }
@@ -85,9 +85,9 @@ impl Factored {
             IsPrimitiveRootResult::NonUnit
         } else {
             let phi_n = n_factored.euler_totient();
-            let x_mod_n = x.mod_op(&n);
+            let x_mod_n = (&x).rem(&n);
             for p in factor(phi_n.clone()).unwrap().distinct_prime_factors() {
-                if (&x_mod_n).mod_pow(&phi_n / p, &n) == Natural::ONE {
+                if x_mod_n.mod_pow_ref(&phi_n / p, &n) == Natural::ONE {
                     return IsPrimitiveRootResult::No;
                 }
             }
@@ -114,7 +114,7 @@ impl Factorizer {
         let mut prime_factors = Factored::one();
         let mut d = Natural::TWO;
         while &d * &d <= n && &d <= max_d {
-            while &n % &d == 0 {
+            while &n % &d == Natural::ZERO {
                 prime_factors.mul_prime(d.clone());
                 n = &n / &d;
             }
@@ -145,9 +145,9 @@ impl Factorizer {
 
     fn found_factor(&mut self, d: Natural) {
         let n = self.to_factor.pop().unwrap();
-        debug_assert_ne!(d, 1);
+        debug_assert_ne!(d, Natural::ZERO);
         debug_assert_ne!(d, n);
-        debug_assert_eq!(&n % &d, 0);
+        debug_assert_eq!(&n % &d, Natural::ZERO);
         self.to_factor.push(&n / &d);
         self.to_factor.push(d);
     }
@@ -155,7 +155,7 @@ impl Factorizer {
     fn found_prime_factor(&mut self, p: Natural) {
         debug_assert!(is_prime(&p));
         let n = self.to_factor.pop().unwrap();
-        debug_assert_eq!(&n % &p, 0);
+        debug_assert_eq!(&n % &p, Natural::ZERO);
         if p != n {
             self.to_factor.push(n / &p);
         }
@@ -180,11 +180,11 @@ pub fn factor(n: Natural) -> Option<Factored> {
                 }
                 Some(n) => {
                     debug_assert!(&n >= &Natural::TWO);
-                    if n < 1000000 {
+                    if n < Natural::from(1000000u32) {
                         // Trial division
                         let mut d = Natural::TWO;
                         while &d * &d <= n {
-                            if &n % &d == 0 {
+                            if &n % &d == Natural::ZERO {
                                 f.found_prime_factor(d);
                                 continue 'MAIN;
                             }
@@ -211,7 +211,7 @@ pub fn factor(n: Natural) -> Option<Factored> {
                                 x = g1.evaluate(&x) % &n;
                                 y = g2.evaluate(&y) % &n;
                                 let d = gcd(Natural::abs_diff(x.clone(), &y), n.clone());
-                                if d > 1 {
+                                if d > Natural::ONE {
                                     debug_assert!(d <= n);
                                     if d == n {
                                         continue 'RHO_LOOP;

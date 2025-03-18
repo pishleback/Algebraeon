@@ -1,3 +1,6 @@
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
 
 #[derive(Debug, Clone)]
 pub enum LowerBound {

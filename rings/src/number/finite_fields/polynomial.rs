@@ -11,6 +11,10 @@ use crate::{
     structure::{factorization::*, quotient::QuotientStructure, structure::*},
 };
 
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
+
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
 /*
 Factorization over finite fields typically happens in the following steps:
@@ -266,7 +270,7 @@ where
             let p = self.poly_ring.coeff_ring().characteristic_and_power().0;
             let mut reduced_c_coeffs = vec![];
             for (k, coeff) in c.coeffs().into_iter().enumerate() {
-                if Natural::from(k) % &p == 0 {
+                if Natural::from(k) % &p == Natural::ZERO {
                     reduced_c_coeffs.push(coeff.clone());
                 } else {
                     debug_assert!(self.poly_ring.coeff_ring().is_zero(coeff));

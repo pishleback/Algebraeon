@@ -5,6 +5,10 @@ use crate::polynomial::polynomial::*;
 use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
 
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
+
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum QuaternaryField {
@@ -117,7 +121,8 @@ impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Qu
         Some(
             self.factorize_monic(p)?
                 .factorize_squarefree()
-                .factorize_distinct_degree().factorize_cantor_zassenhaus(),
+                .factorize_distinct_degree()
+                .factorize_cantor_zassenhaus(),
         )
     }
 }

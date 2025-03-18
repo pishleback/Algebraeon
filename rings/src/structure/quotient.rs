@@ -171,6 +171,10 @@ mod tests {
 
     use super::*;
 
+    use crate::number::integer::*;
+    use crate::number::natural::*;
+    use crate::number::rational::*;
+
     #[test]
     fn test() {
         let mod5 = QuotientStructure::new_field(Integer::structure(), Integer::from(5));

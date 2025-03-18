@@ -7,6 +7,10 @@ use valuation::*;
 
 mod isolate;
 
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
+
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {
     p: Natural,
@@ -197,11 +201,11 @@ pub mod truncation {
                     use std::fmt::Write;
                     let seps = p >= &Natural::from(10u32);
                     let mut rev_digits = digits.into_iter().rev().collect::<Vec<_>>();
-                    while shift > 0 {
+                    while shift > Integer::ZERO {
                         rev_digits.push(Natural::ZERO);
                         shift -= Integer::ONE;
                     }
-                    debug_assert!(shift <= 0);
+                    debug_assert!(shift <= Integer::ZERO);
                     let shift = (-shift).unsigned_abs();
                     let mut s = String::new();
                     write!(&mut s, "...").unwrap();
@@ -209,13 +213,13 @@ pub mod truncation {
                         write!(&mut s, "{}", d).unwrap();
                         if i != 0 {
                             if seps {
-                                if i == shift {
+                                if Integer::from(i) == shift {
                                     write!(&mut s, ";").unwrap();
                                 } else {
                                     write!(&mut s, ",").unwrap();
                                 }
                             } else {
-                                if i == shift {
+                                if Integer::from(i) == shift {
                                     write!(&mut s, ".").unwrap();
                                 }
                             }
@@ -233,20 +237,29 @@ pub mod truncation {
                 Valuation::Finite(shift) => {
                     let shifted_rat =
                         &self.rat * Rational::from(&self.p).int_pow(&-&shift).unwrap();
-                    let (n, d) = (shifted_rat.numerator(), shifted_rat.denominator());
-                    debug_assert_eq!(padic_int_valuation(&self.p, n.clone()).unwrap_nat(), 0);
-                    debug_assert_eq!(padic_int_valuation(&self.p, d.clone()).unwrap_nat(), 0);
+                    let (n, d) = (
+                        shifted_rat.numerator(),
+                        Integer::from(shifted_rat.denominator()),
+                    );
+                    debug_assert_eq!(
+                        padic_int_valuation(&self.p, n.clone()).unwrap_nat(),
+                        Natural::ZERO
+                    );
+                    debug_assert_eq!(
+                        padic_int_valuation(&self.p, d.clone()).unwrap_nat(),
+                        Natural::ZERO
+                    );
                     if cutoffv <= &shift {
                         Truncated::Zero { p: self.p.clone() }
                     } else {
                         let num_digits = cutoffv - &shift;
-                        debug_assert!(num_digits >= 1);
+                        debug_assert!(num_digits >= Integer::ONE);
                         let num_digits = num_digits.unsigned_abs();
                         let pn = Integer::from(&self.p).nat_pow(&num_digits); // p^{num_digits}
                         let (g, _, d_inv) = Integer::xgcd(&pn, &d);
                         debug_assert_eq!(g, Integer::ONE);
                         let value = Integer::rem(&(n * d_inv), &pn);
-                        debug_assert!(value > 0);
+                        debug_assert!(value > Integer::ZERO);
                         let value = value.unsigned_abs();
                         Truncated::NonZero {
                             p: self.p.clone(),

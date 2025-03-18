@@ -8,6 +8,10 @@ use crate::linear::matrix::*;
 use super::super::structure::structure::*;
 use algebraeon_sets::structure::*;
 
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
+
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {
     //vec![c0, c1, c2, c3, ..., cn] represents the polynomial c0 + c1*x + c2*x^2 + c3*x^3 + ... + cn * x^n
@@ -1624,15 +1628,15 @@ mod tests {
         for (f, exp) in vec![
             (
                 Polynomial::from_coeffs(vec![
-                    Rational::from_signeds(1, 2),
-                    Rational::from_signeds(1, 3),
+                    Rational::from_integers(1, 2),
+                    Rational::from_integers(1, 3),
                 ]),
                 Polynomial::from_coeffs(vec![Integer::from(3), Integer::from(2)]),
             ),
             (
                 Polynomial::from_coeffs(vec![
-                    Rational::from_signeds(4, 1),
-                    Rational::from_signeds(6, 1),
+                    Rational::from_integers(4, 1),
+                    Rational::from_integers(6, 1),
                 ]),
                 Polynomial::from_coeffs(vec![Integer::from(2), Integer::from(3)]),
             ),

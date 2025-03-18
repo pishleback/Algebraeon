@@ -5,6 +5,7 @@ use itertools::Itertools;
 
 use super::super::structure::structure::*;
 use super::subspace::*;
+use crate::number::natural::*;
 use crate::polynomial::polynomial::*;
 use algebraeon_sets::structure::*;
 
@@ -523,13 +524,13 @@ impl<RS: RingStructure> MatrixStructure<RS> {
         use malachite_base::num::logic::traits::BitIterable;
         let n = a.rows();
         assert_eq!(n, a.cols());
-        if *k == 0 {
+        if *k == Natural::ZERO {
             self.ident(n)
-        } else if *k == 1 {
+        } else if *k == Natural::ONE {
             a.clone()
         } else {
-            debug_assert!(*k >= 2);
-            let bits: Vec<_> = k.bits().collect();
+            debug_assert!(*k >= Natural::TWO);
+            let bits: Vec<_> = k.to_malachite_ref().bits().collect();
             let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
                 pows.push(
@@ -2374,7 +2375,8 @@ where
 mod tests {
     use std::str::FromStr;
 
-
+    use crate::number::integer::*;
+    use crate::number::rational::*;
 
     use crate::{
         number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},

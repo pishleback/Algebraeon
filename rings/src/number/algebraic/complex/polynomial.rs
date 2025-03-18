@@ -1,8 +1,7 @@
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
-
 use super::*;
-
+use crate::number::integer::*;
+use crate::number::natural::*;
+use crate::number::rational::*;
 
 impl Polynomial<Integer> {
     fn at_fixed_re_or_im_impl<const RE_OR_IM: bool>(
@@ -15,7 +14,10 @@ impl Polynomial<Integer> {
         //up to rational multiples (its the roots we care about)
         match self.degree() {
             Some(n) => {
-                let (a_numer, a_denom) = (Rational::numerator(a), Rational::denominator(a));
+                let (a_numer, a_denom) = (
+                    Rational::numerator(a),
+                    Integer::from(Rational::denominator(a)),
+                );
                 //multiply everything by a_d^n so that everything is integers
 
                 //compute 1, a, a^2, a^3, ..., a^n (after multiplying everything by a_d)
@@ -304,8 +306,11 @@ impl Polynomial<Integer> {
                 if roots_im.len() == 0 {
                     //the image stays once side of the real axis
                     let val = evaluate_at_rational(im, s);
-                    debug_assert_eq!(val > 0, evaluate_at_rational(im, t) > 0);
-                    if val > 0 {
+                    debug_assert_eq!(
+                        val > Rational::ZERO,
+                        evaluate_at_rational(im, t) > Rational::ZERO
+                    );
+                    if val > Rational::ZERO {
                         Some(vec![Crossing::PosIm]) //this whole line segment is a positive imaginary crossing
                     } else {
                         Some(vec![Crossing::NegIm]) //this whole line segment is a negative imaginary crossing
@@ -320,8 +325,11 @@ impl Polynomial<Integer> {
                 if roots_re.len() == 0 {
                     //the image stays one side of the imaginary axis
                     let val = evaluate_at_rational(re, s);
-                    debug_assert_eq!(val > 0, evaluate_at_rational(re, t) > 0);
-                    if val > 0 {
+                    debug_assert_eq!(
+                        val > Rational::ZERO,
+                        evaluate_at_rational(re, t) > Rational::ZERO
+                    );
+                    if val > Rational::ZERO {
                         Some(vec![Crossing::PosRe]) //this whole line segment is a positive real crossing
                     } else {
                         Some(vec![Crossing::NegRe]) //this whole line segment is a negative real crossing
@@ -373,10 +381,7 @@ impl Polynomial<Integer> {
                 if evaluate_at_rational(&re_sqfr, s) == Rational::from(0) {
                     re_sqfr = Polynomial::div(
                         &re_sqfr,
-                        &Polynomial::from_coeffs(vec![
-                            -Rational::numerator(s),
-                            Rational::denominator(s),
-                        ]),
+                        &Polynomial::from_coeffs(vec![-s.numerator(), s.denominator().into()]),
                     )
                     .unwrap();
                 }
@@ -384,10 +389,7 @@ impl Polynomial<Integer> {
                 if evaluate_at_rational(&re_sqfr, t) == Rational::from(0) {
                     re_sqfr = Polynomial::div(
                         &re_sqfr,
-                        &Polynomial::from_coeffs(vec![
-                            -Rational::numerator(t),
-                            Rational::denominator(t),
-                        ]),
+                        &Polynomial::from_coeffs(vec![-t.numerator(), t.denominator().into()]),
                     )
                     .unwrap();
                 }
@@ -395,20 +397,14 @@ impl Polynomial<Integer> {
                 if evaluate_at_rational(&im_sqfr, s) == Rational::from(0) {
                     im_sqfr = Polynomial::div(
                         &im_sqfr,
-                        &Polynomial::from_coeffs(vec![
-                            -Rational::numerator(s),
-                            Rational::denominator(s),
-                        ]),
+                        &Polynomial::from_coeffs(vec![-s.numerator(), s.denominator().into()]),
                     )
                     .unwrap();
                 }
                 if evaluate_at_rational(&im_sqfr, t) == Rational::from(0) {
                     im_sqfr = Polynomial::div(
                         &im_sqfr,
-                        &Polynomial::from_coeffs(vec![
-                            -Rational::numerator(t),
-                            Rational::denominator(t),
-                        ]),
+                        &Polynomial::from_coeffs(vec![-t.numerator(), t.denominator().into()]),
                     )
                     .unwrap();
                 }
@@ -660,7 +656,7 @@ impl Polynomial<Integer> {
 
             let mut a = Rational::from(-1);
             let mut b = Rational::from(1);
-            let mut c = Rational::from_signeds(1, 2);
+            let mut c = Rational::from_integers(1, 2);
             let mut d = Rational::from(2);
 
             loop {
@@ -677,7 +673,7 @@ impl Polynomial<Integer> {
                 }
                 a *= Rational::from(2);
                 b *= Rational::from(2);
-                c *= Rational::from_signeds(1, 2);
+                c *= Rational::from_integers(1, 2);
                 d *= Rational::from(2);
             }
 
@@ -807,7 +803,7 @@ mod tests {
             ])
         );
 
-        let (vert_re_f, vert_im_f) = Polynomial::at_fixed_re(&f, &Rational::from_signeds(1, 2));
+        let (vert_re_f, vert_im_f) = Polynomial::at_fixed_re(&f, &Rational::from_integers(1, 2));
         println!("re = {}", Polynomial::to_string(&vert_re_f));
         println!("im = {}", Polynomial::to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
@@ -845,7 +841,7 @@ mod tests {
             &Polynomial::from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(6),])
         );
 
-        let (vert_re_f, vert_im_f) = Polynomial::at_fixed_im(&f, &Rational::from_signeds(1, 2));
+        let (vert_re_f, vert_im_f) = Polynomial::at_fixed_im(&f, &Rational::from_integers(1, 2));
         println!("re = {}", Polynomial::to_string(&vert_re_f));
         println!("im = {}", Polynomial::to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1

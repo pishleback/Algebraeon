@@ -1,6 +1,7 @@
-
-
-use crate::{number::integer::*, number::natural::functions::*, polynomial::polynomial::*};
+use crate::{
+    number::integer::*, number::natural::functions::*, number::rational::*,
+    polynomial::polynomial::*,
+};
 
 impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
@@ -26,7 +27,7 @@ impl Polynomial<Integer> {
         let deg = self.degree()?;
         let mut bound = Natural::ZERO;
         for coeff in self.coeffs() {
-            bound += coeff.unsigned_abs();
+            bound += coeff.unsigned_abs_ref();
         }
         bound *= choose_usize(deg, deg / 2);
         Some(bound)
@@ -57,13 +58,13 @@ mod tests {
     use crate::structure::elements::IntoErgonomic;
 
     use super::*;
-    
 
     #[test]
     fn test_zassenhaus_against_kroneckers() {
         let x = &Polynomial::<Integer>::var().into_ergonomic();
 
-        let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_verbose();
+        let f =
+            ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_verbose();
         let fs = f.clone().factorize_by_kroneckers_method().unwrap();
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());

@@ -1,8 +1,8 @@
 use std::{fmt::Display, rc::Rc};
 
-use algebraeon_sets::structure::*;
-use crate::number::natural::*;
 use super::structure::*;
+use crate::number::natural::*;
+use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct Factored<RS: UniqueFactorizationStructure> {
@@ -330,6 +330,10 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationStructure>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::number::integer::*;
+    use crate::number::natural::*;
+    use crate::number::rational::*;
 
     #[test]
     fn factorization_invariants() {
