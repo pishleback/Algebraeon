@@ -35,6 +35,7 @@ version = "0.1.2"
 dependencies = [
  "algebraeon-geometry",
  "algebraeon-groups",
+ "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
 ]
@@ -70,10 +71,7 @@ dependencies = [
 name = "algebraeon-examples"
 version = "0.0.0"
 dependencies = [
- "algebraeon-groups",
- "algebraeon-nzq",
- "algebraeon-rings",
- "algebraeon-sets",
+ "algebraeon",
 ]
 
 [[package]]

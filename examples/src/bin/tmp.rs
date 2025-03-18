@@ -2,10 +2,10 @@
 
 use std::str::FromStr;
 
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::rational::*;
-use algebraeon_rings::structure::structure::*;
+use algebraeon::nzq::integer::*;
+use algebraeon::nzq::natural::*;
+use algebraeon::nzq::rational::*;
+use algebraeon::rings::structure::structure::*;
 
 fn main() {
     unsafe {

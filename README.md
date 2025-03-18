@@ -33,14 +33,21 @@ Algebraeon currently implements the following algorithms:
  - Todd-Coxeter algorithm for the enumeration of finite index cosets of a finitely generated groups.
 
 # Example Usage
+Add
+```ignore
+[dependencies]
+algebraeon = "0.1.2"
+```
+to your `cargo.toml` to make Algebraeon avalible.
+
 ## Factoring Polynomials
 Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
 ```
-use algebraeon_rings::{
+use algebraeon::rings::{
     polynomial::polynomial::*,
     structure::{elements::*, structure::*},
 };
-use algebraeon_nzq::integer::*;
+use algebraeon::nzq::integer::*;
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(2) - 5*x + 6).into_verbose();
@@ -72,8 +79,8 @@ a \begin{pmatrix}3 \\ 4 \\ 1\end{pmatrix} + b \begin{pmatrix}2 \\ 1 \\ 2\end{pma
 ```
 for integers $a$, $b$ and $c$.
 ```
-use algebraeon_rings::linear::matrix::Matrix;
-use algebraeon_nzq::integer::*;
+use algebraeon::rings::linear::matrix::Matrix;
+use algebraeon::nzq::integer::*;
 let x = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
 let y = Matrix::<Integer>::from_rows(vec![vec![5, 5, 3]]);
 let s = x.row_solution_lattice(y);
@@ -99,8 +106,8 @@ for some integer $t$.
 Find all complex roots of the polynomial
 $$f(x) = x^5 + x^2 - x + 1$$
 ```
-use algebraeon_rings::{polynomial::polynomial::*, structure::elements::*};
-use algebraeon_nzq::integer::*;
+use algebraeon::rings::{polynomial::polynomial::*, structure::elements::*};
+use algebraeon::nzq::integer::*;
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(5) + x.pow(2) - x + 1).into_verbose();
@@ -122,9 +129,9 @@ Despite the output, the roots found are _not_ numerical approximations. Rather, 
 ## P-adic Root Finding
 Find the $2$-adic square roots of $17$.
 ```
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::integer::*;
-use algebraeon_rings::{polynomial::polynomial::*, structure::elements::*};
+use algebraeon::nzq::natural::*;
+use algebraeon::nzq::integer::*;
+use algebraeon::rings::{polynomial::polynomial::*, structure::elements::*};
 let x = Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(2) - 17).into_verbose();
 for mut root in f.all_padic_roots(&Natural::from(2u32)) {
@@ -151,7 +158,7 @@ G = \langle a, b, c : a^2 = b^2 = c^2 = (ab)^3 = (bc)^5 = (ac)^2 = e \rangle
 ```
 Using Algebraeon, $G$ is found to be a finite group of order $120$.
 ```
-use algebraeon_groups::free_group::todd_coxeter::*;
+use algebraeon::groups::free_group::todd_coxeter::*;
 let mut g = FinitelyGeneratedGroupPresentation::new();
 // Add the 3 generators
 let a = g.add_generator();
@@ -171,9 +178,9 @@ assert_eq!(n, 120);
 
 ## Jordan Normal Form of a Matrix
 ```
-use algebraeon_nzq::rational::*;
-use algebraeon_rings::{linear::matrix::*, number::algebraic::complex::*};
-use algebraeon_sets::structure::*;
+use algebraeon::nzq::rational::*;
+use algebraeon::rings::{linear::matrix::*, number::algebraic::complex::*};
+use algebraeon::sets::structure::*;
 // Construct a matrix
 let a = Matrix::<Rational>::from_rows(vec![
     vec![5, 4, 2, 1],
@@ -196,11 +203,11 @@ Output:
 ## Computing Discriminants
 Algebraeon can find an expression for the discriminant of a polynomial in terms of the polynomials coefficients.
 ```
-use algebraeon_rings::polynomial::{
+use algebraeon::rings::polynomial::{
     multipoly::{MultiPolynomial, Variable},
     polynomial::Polynomial,
 };
-use algebraeon_nzq::integer::*;
+use algebraeon::nzq::integer::*;
 
 let a_var = Variable::new("a");
 let b_var = Variable::new("b");

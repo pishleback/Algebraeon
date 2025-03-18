@@ -1,9 +1,9 @@
 #![allow(dead_code, warnings)]
 
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::rational::*;
-use algebraeon_rings::{
+use algebraeon::nzq::integer::*;
+use algebraeon::nzq::natural::*;
+use algebraeon::nzq::rational::*;
+use algebraeon::rings::{
     polynomial::polynomial::*,
     structure::{elements::*, structure::*},
 };

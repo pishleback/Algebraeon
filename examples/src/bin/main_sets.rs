@@ -1,4 +1,4 @@
-use algebraeon_sets::combinations::*;
+use algebraeon::sets::combinations::*;
 
 fn main() {
     let mut c = LexicographicCombinationsWithRemovals::new(7, 3);
