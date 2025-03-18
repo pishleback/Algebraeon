@@ -13,10 +13,10 @@ readme = "../README.md"
 name = "algebraeon_examples"
 
 [dependencies]
-algebraeon-sets = { version = "0.1.0", path = "../sets" }
-algebraeon-groups = { version = "0.1.0", path = "../groups" }
-algebraeon-rings = { version = "0.1.0", path = "../rings" }
-algebraeon-nzq = { version = "0.1.0", path = "../nzq" }
+algebraeon-sets = { version = "0.1.2", path = "../sets" }
+algebraeon-groups = { version = "0.1.2", path = "../groups" }
+algebraeon-rings = { version = "0.1.2", path = "../rings" }
+algebraeon-nzq = { version = "0.1.2", path = "../nzq" }
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]

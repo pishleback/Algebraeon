@@ -13,7 +13,7 @@ readme = "../README.md"
 name = "algebraeon"
 
 [dependencies]
-algebraeon-sets = { version = "0.1.0", path = "../sets" }
-algebraeon-groups = { version = "0.1.0", path = "../groups" }
-algebraeon-rings = { version = "0.1.0", path = "../rings" }
-algebraeon-geometry = { version = "0.1.0", path = "../geometry" }
+algebraeon-sets = { version = "0.1.2", path = "../sets" }
+algebraeon-groups = { version = "0.1.2", path = "../groups" }
+algebraeon-rings = { version = "0.1.2", path = "../rings" }
+algebraeon-geometry = { version = "0.1.2", path = "../geometry" }

@@ -13,7 +13,7 @@ readme = "../README.md"
 name = "algebraeon_nzq"
 
 [dependencies]
-algebraeon-sets = { version = "0.1.0", path = "../sets" }
+algebraeon-sets = { version = "0.1.2", path = "../sets" }
 malachite-base = "0.5.1"
 malachite-nz = "0.5.1"
 malachite-q = "0.5.1"
