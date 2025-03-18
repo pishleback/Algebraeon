@@ -1,8 +1,5 @@
 use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, rc::Rc};
 
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
-
 pub trait Structure: Clone + Debug + PartialEq + Eq {
     type Set: Clone + Debug;
 }

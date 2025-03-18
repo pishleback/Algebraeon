@@ -122,11 +122,6 @@ dependencies = [
 [[package]]
 name = "algebraeon-sets"
 version = "0.0.6"
-dependencies = [
- "malachite-base",
- "malachite-nz",
- "malachite-q",
-]
 
 [[package]]
 name = "arrayref"

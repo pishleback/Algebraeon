@@ -870,7 +870,6 @@ impl Polynomial<Integer> {
         include_b: bool,
     ) -> Vec<RealAlgebraic> {
         debug_assert!(self.is_irreducible());
-
         self.clone()
             .real_roots_squarefree(opt_a, opt_b, include_a, include_b)
             .to_real_roots()

@@ -35,7 +35,6 @@ impl Polynomial<Integer> {
 
     //https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots#Lagrange's_and_Cauchy's_bounds
     pub fn cauchys_root_bound(&self) -> Option<Rational> {
-        use malachite_base::num::arithmetic::traits::Abs;
         let d = self.degree()?;
         if d == 0 {
             None

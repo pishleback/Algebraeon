@@ -465,6 +465,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
         Some(
             Polynomial::<Integer>::structure()
                 .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(poly, &|f| {
+                    println!("f = {:?}", f);
                     if f.degree().unwrap() == 0 {
                         Factored::factored_unit_unchecked(Polynomial::<Integer>::structure(), f)
                     } else {
