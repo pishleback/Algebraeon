@@ -1526,9 +1526,10 @@ impl<FS: ComplexConjugateStructure + FieldStructure> MatrixStructure<FS> {
 
         for i in 0..mat.rows() {
             for j in (i + 1)..mat.rows() {
-                debug_assert!(self
-                    .ring()
-                    .is_zero(&self.inner_product(&mat.get_row(i), &mat.get_row(j)),));
+                debug_assert!(
+                    self.ring()
+                        .is_zero(&self.inner_product(&mat.get_row(i), &mat.get_row(j)),)
+                );
             }
         }
 
@@ -1583,12 +1584,14 @@ impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructu
             row_opp.apply(&mut mat);
         }
 
-        debug_assert!(self.equal(
-            &self.ident(mat.rows()),
-            &self
-                .mul(&mat, &self.conjugate(&mat.transpose_ref()))
-                .unwrap()
-        ));
+        debug_assert!(
+            self.equal(
+                &self.ident(mat.rows()),
+                &self
+                    .mul(&mat, &self.conjugate(&mat.transpose_ref()))
+                    .unwrap()
+            )
+        );
 
         (lt, mat)
     }
@@ -1970,15 +1973,17 @@ where
         // ac_mat_structure.pprint(&jnf_basis);
 
         //check that B^-1 M B = JNF
-        debug_assert!(ac_mat_structure.equal(
-            &ac_mat_structure
-                .mul(
-                    &ac_mat_structure.inv(jnf_basis.clone()).unwrap(),
-                    &ac_mat_structure.mul(&ac_mat, &jnf_basis).unwrap(),
-                )
-                .unwrap(),
-            &jnf.matrix()
-        ));
+        debug_assert!(
+            ac_mat_structure.equal(
+                &ac_mat_structure
+                    .mul(
+                        &ac_mat_structure.inv(jnf_basis.clone()).unwrap(),
+                        &ac_mat_structure.mul(&ac_mat, &jnf_basis).unwrap(),
+                    )
+                    .unwrap(),
+                &jnf.matrix()
+            )
+        );
         // println!("jnf");
         // ac_mat_structure.pprint(&jnf);
 

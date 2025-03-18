@@ -49,9 +49,9 @@ pub struct HenselFactorization<
 }
 
 impl<
-        const LIFTED_BEZOUT_COEFFS: bool,
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselProduct<LIFTED_BEZOUT_COEFFS, RS>
+    const LIFTED_BEZOUT_COEFFS: bool,
+    RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+> HenselProduct<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(
         &self,
@@ -176,9 +176,8 @@ impl<
     }
 }
 
-impl<
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselProduct<true, RS>
+impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure>
+    HenselProduct<true, RS>
 {
     fn dont_lift_bezout_coeffs(self) -> HenselProduct<false, RS> {
         match self {
@@ -281,9 +280,8 @@ fn compute_lift_factors<
     (delta_f, delta_g, lifted_f, lifted_g)
 }
 
-impl<
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselProduct<false, RS>
+impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure>
+    HenselProduct<false, RS>
 {
     fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
         match self {
@@ -310,9 +308,8 @@ impl<
     }
 }
 
-impl<
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselProduct<true, RS>
+impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure>
+    HenselProduct<true, RS>
 {
     fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
         match self {
@@ -380,9 +377,9 @@ impl<
 }
 
 impl<
-        const LIFTED_BEZOUT_COEFFS: bool,
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>
+    const LIFTED_BEZOUT_COEFFS: bool,
+    RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+> HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(&self, ring: &RS, i: &RS::Set, n: &Natural) -> Result<(), &'static str> {
         // let poly_ring = PolynomialStructure::new(ring.clone().into());
@@ -435,9 +432,8 @@ impl<
     }
 }
 
-impl<
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorizationImpl<true, RS>
+impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure>
+    HenselFactorizationImpl<true, RS>
 {
     fn dont_lift_bezout_coeffs(self) -> HenselFactorizationImpl<false, RS> {
         HenselFactorizationImpl {
@@ -447,18 +443,16 @@ impl<
     }
 }
 
-impl<
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorizationImpl<false, RS>
+impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure>
+    HenselFactorizationImpl<false, RS>
 {
     fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
         self.factorization.linear_lift(ring, i, n, &self.h);
     }
 }
 
-impl<
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorizationImpl<true, RS>
+impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure>
+    HenselFactorizationImpl<true, RS>
 {
     fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
         self.factorization.quadratic_lift(ring, i, n, &self.h);
@@ -466,9 +460,9 @@ impl<
 }
 
 impl<
-        const LIFTED_BEZOUT_COEFFS: bool,
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorization<LIFTED_BEZOUT_COEFFS, RS>
+    const LIFTED_BEZOUT_COEFFS: bool,
+    RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
+> HenselFactorization<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(&self) -> Result<(), &'static str> {
         self.factorization
@@ -527,9 +521,8 @@ impl<
     }
 }
 
-impl<
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorization<true, RS>
+impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure>
+    HenselFactorization<true, RS>
 {
     pub fn dont_lift_bezout_coeffs(self) -> HenselFactorization<false, RS> {
         HenselFactorization {
@@ -541,9 +534,8 @@ impl<
     }
 }
 
-impl<
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorization<false, RS>
+impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure>
+    HenselFactorization<false, RS>
 {
     pub fn linear_lift(&mut self) {
         self.factorization
@@ -552,9 +544,8 @@ impl<
     }
 }
 
-impl<
-        RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure,
-    > HenselFactorization<true, RS>
+impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + UniqueFactorizationStructure>
+    HenselFactorization<true, RS>
 {
     pub fn quadratic_lift(&mut self) {
         self.factorization
@@ -563,9 +554,8 @@ impl<
     }
 }
 
-impl<
-        RS: UniqueFactorizationStructure + EuclideanDivisionStructure + GreatestCommonDivisorStructure,
-    > Factored<PolynomialStructure<QuotientStructure<RS, true>>>
+impl<RS: UniqueFactorizationStructure + EuclideanDivisionStructure + GreatestCommonDivisorStructure>
+    Factored<PolynomialStructure<QuotientStructure<RS, true>>>
 where
     PolynomialStructure<QuotientStructure<RS, true>>:
         Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,

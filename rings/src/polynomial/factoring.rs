@@ -139,12 +139,12 @@ where
 }
 
 impl<
-        RS: UniqueFactorizationStructure
-            + GreatestCommonDivisorStructure
-            + CharZeroStructure
-            + FiniteUnitsStructure
-            + 'static,
-    > PolynomialStructure<RS>
+    RS: UniqueFactorizationStructure
+        + GreatestCommonDivisorStructure
+        + CharZeroStructure
+        + FiniteUnitsStructure
+        + 'static,
+> PolynomialStructure<RS>
 where
     PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + GreatestCommonDivisorStructure,
 {

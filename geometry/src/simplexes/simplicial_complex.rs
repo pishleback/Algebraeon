@@ -12,11 +12,8 @@ pub struct SCSpxInfo<
     label: T,
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > std::fmt::Debug for SCSpxInfo<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    std::fmt::Debug for SCSpxInfo<FS, SP, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SCSpxInfo")
@@ -37,11 +34,8 @@ pub struct LabelledSimplicialComplex<
 
 pub type SimplicialComplex<FS, SP> = LabelledSimplicialComplex<FS, SP, ()>;
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > std::fmt::Debug for LabelledSimplicialComplex<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    std::fmt::Debug for LabelledSimplicialComplex<FS, SP, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SimplicialComplex")
@@ -50,11 +44,8 @@ impl<
     }
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledSimplexCollection<FS, SP, T> for LabelledSimplicialComplex<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    LabelledSimplexCollection<FS, SP, T> for LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
 {
@@ -137,11 +128,8 @@ where
     }
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledSimplicialComplex<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
 {
@@ -213,8 +201,8 @@ where
                             simplexes.insert(simplex, InteriorBoundaryLabel::Interior);
                         }
                         _ => panic!(
-                        "rank n-1 simplex should be in the boundary of at most 2 rank n simplices"
-                    ),
+                            "rank n-1 simplex should be in the boundary of at most 2 rank n simplices"
+                        ),
                     }
                 } else {
                     //rank < n-1 simplex is part of the interior iff it is part of the boundary of at least one simplex and every such simplex is part of the interior
@@ -327,11 +315,8 @@ where
     None
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledSimplicialComplex<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
 {

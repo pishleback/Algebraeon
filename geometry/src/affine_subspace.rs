@@ -24,10 +24,10 @@ pub struct EmbeddedAffineSubspace<
 }
 
 impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        ESP: Borrow<AffineSpace<FS>> + From<AffineSpace<FS>> + Clone,
-    > EmbeddedAffineSubspace<FS, SP, ESP>
+    FS: OrderedRingStructure + FieldStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+    ESP: Borrow<AffineSpace<FS>> + From<AffineSpace<FS>> + Clone,
+> EmbeddedAffineSubspace<FS, SP, ESP>
 {
     pub fn new_affine_span(
         ambient_space: SP,
@@ -116,10 +116,10 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        ESP: Borrow<AffineSpace<FS>> + Clone,
-    > EmbeddedAffineSubspace<FS, SP, ESP>
+    FS: OrderedRingStructure + FieldStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+    ESP: Borrow<AffineSpace<FS>> + Clone,
+> EmbeddedAffineSubspace<FS, SP, ESP>
 {
     pub fn ordered_field(&self) -> Rc<FS> {
         self.ambient_space.borrow().ordered_field()
@@ -292,6 +292,19 @@ impl<
                 // step 2: take the hyperplanes formed by removing exactly one of each of the added elementary basis vectors at a time
                 let hyperplanes = (0..extension_elementary_basis_vectors.len())
                     .map(|i| {
+                        let ref_point = {
+                            //root + e_k
+                            let k = extension_elementary_basis_vectors[i];
+                            Vector::construct(ambient_space.clone(), |l| {
+                                ordered_field.add(
+                                    root.coordinate(l),
+                                    &match l == k {
+                                        false => ordered_field.zero(),
+                                        true => ordered_field.one(),
+                                    },
+                                )
+                            })
+                        };
                         OrientedSimplex::new_with_positive_point(
                             ambient_space.clone(),
                             {
@@ -315,19 +328,7 @@ impl<
                                 }
                                 points
                             },
-                            {
-                                //root + e_k
-                                let k = extension_elementary_basis_vectors[i];
-                                &Vector::construct(ambient_space.clone(), |l| {
-                                    ordered_field.add(
-                                        root.coordinate(l),
-                                        &match l == k {
-                                            false => ordered_field.zero(),
-                                            true => ordered_field.one(),
-                                        },
-                                    )
-                                })
-                            },
+                            &ref_point,
                         )
                         .unwrap()
                         .into_oriented_hyperplane()

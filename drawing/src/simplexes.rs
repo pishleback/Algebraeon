@@ -6,17 +6,17 @@ use algebraeon_rings::structure::structure::{
 };
 
 use algebraeon_geometry::{
+    AffineSpace,
     simplexes::{
         LabelledSimplexCollection, LabelledSimplicialComplex, LabelledSimplicialDisjointUnion,
         PartialSimplicialComplex, Simplex,
     },
-    AffineSpace,
 };
 
 impl<
-        FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-    > Drawable for Simplex<FS, SP>
+    FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+> Drawable for Simplex<FS, SP>
 {
     fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
         let space = self.ambient_space();
@@ -72,10 +72,10 @@ impl<
 }
 
 impl<
-        FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > Drawable for LabelledSimplicialComplex<FS, SP, T>
+    FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+    T: Eq + Clone,
+> Drawable for LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: std::hash::Hash,
 {
@@ -87,9 +87,9 @@ where
 }
 
 impl<
-        FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-    > Drawable for PartialSimplicialComplex<FS, SP>
+    FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+> Drawable for PartialSimplicialComplex<FS, SP>
 where
     FS::Set: std::hash::Hash,
 {
@@ -101,10 +101,10 @@ where
 }
 
 impl<
-        FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > Drawable for LabelledSimplicialDisjointUnion<FS, SP, T>
+    FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+    SP: Borrow<AffineSpace<FS>> + Clone,
+    T: Eq + Clone,
+> Drawable for LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: std::hash::Hash,
 {

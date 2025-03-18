@@ -1,4 +1,4 @@
-use glium::{backend::Facade, glutin::event::Event, Display};
+use glium::{Display, backend::Facade, glutin::event::Event};
 use std::time::Instant;
 
 pub mod canvas2d;

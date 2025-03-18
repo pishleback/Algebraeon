@@ -960,9 +960,10 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
                                 .row_hermite_algorithm(int_metamat);
                         // MatrixStructure::new(self.ring).pprint(&int_metamat_h);
                         if self.ring.is_unit(int_metamat_h.at(0, 0).unwrap()) {
-                            debug_assert!(self
-                                .ring
-                                .equal(int_metamat_h.at(0, 0).unwrap(), &self.ring.one()));
+                            debug_assert!(
+                                self.ring
+                                    .equal(int_metamat_h.at(0, 0).unwrap(), &self.ring.one())
+                            );
                         }
                         if self
                             .ring

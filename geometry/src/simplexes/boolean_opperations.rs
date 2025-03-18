@@ -60,11 +60,8 @@ where
     }
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledSimplicialDisjointUnion<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: Hash,
 {

@@ -649,8 +649,10 @@ impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
                                 UpperBound::Inf => LowerBound::Finite(Rational::from(0)),
                                 UpperBound::Finite(x) => match Rational::inv(&x) {
                                     Ok(x_inv) => LowerBound::Finite(x_inv),
-                                    Err(RingDivisionError::DivideByZero) => panic!("wide upper bound of strictly positive root should be strictly positive i.e. non-zero"),
-                                    Err(_) => panic!()
+                                    Err(RingDivisionError::DivideByZero) => panic!(
+                                        "wide upper bound of strictly positive root should be strictly positive i.e. non-zero"
+                                    ),
+                                    Err(_) => panic!(),
                                 },
                             }
                         },

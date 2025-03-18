@@ -541,7 +541,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                                         return FindFactorResult::Composite(
                                             possible_factor,
                                             other_factor,
-                                        )
+                                        );
                                     }
                                     Err(RingDivisionError::NotDivisible) => {}
                                     Err(RingDivisionError::DivideByZero) => unreachable!(),

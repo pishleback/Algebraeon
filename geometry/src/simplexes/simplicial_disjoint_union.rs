@@ -16,11 +16,8 @@ pub struct LabelledSimplicialDisjointUnion<
 
 pub type SimplicialDisjointUnion<FS, SP> = LabelledSimplicialDisjointUnion<FS, SP, ()>;
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > From<&LabelledSimplicialComplex<FS, SP, T>> for LabelledSimplicialDisjointUnion<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    From<&LabelledSimplicialComplex<FS, SP, T>> for LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: Hash,
 {
@@ -36,11 +33,8 @@ where
     }
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > From<&LabelledPartialSimplicialComplex<FS, SP, T>>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    From<&LabelledPartialSimplicialComplex<FS, SP, T>>
     for LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: Hash,
@@ -57,11 +51,8 @@ where
     }
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledSimplexCollection<FS, SP, T> for LabelledSimplicialDisjointUnion<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    LabelledSimplexCollection<FS, SP, T> for LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: Hash,
 {
@@ -103,11 +94,8 @@ where
     }
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledSimplicialDisjointUnion<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: Hash,
 {

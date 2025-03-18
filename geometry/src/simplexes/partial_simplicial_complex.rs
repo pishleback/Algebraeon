@@ -24,11 +24,8 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledSimplexCollection<FS, SP, T> for LabelledPartialSimplicialComplex<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    LabelledSimplexCollection<FS, SP, T> for LabelledPartialSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
 {
@@ -69,11 +66,8 @@ where
     }
 }
 
-impl<
-        FS: OrderedRingStructure + FieldStructure,
-        SP: Borrow<AffineSpace<FS>> + Clone,
-        T: Eq + Clone,
-    > LabelledPartialSimplicialComplex<FS, SP, T>
+impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+    LabelledPartialSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
 {

@@ -108,14 +108,16 @@ where
                     return Err("0D convex hull should have one null facet");
                 }
                 if self.interior
-                    != vec![Simplex::new(
-                        self.subspace.embedded_space(),
-                        vec![Vector::construct(
+                    != vec![
+                        Simplex::new(
                             self.subspace.embedded_space(),
-                            |_| unreachable!(),
-                        )],
-                    )
-                    .unwrap()]
+                            vec![Vector::construct(
+                                self.subspace.embedded_space(),
+                                |_| unreachable!(),
+                            )],
+                        )
+                        .unwrap(),
+                    ]
                 {
                     return Err("0D convex hull should have one point for its interior");
                 }
@@ -166,7 +168,9 @@ where
                 for pt in &all_pts {
                     match facet.classify_point(pt) {
                         OrientationSide::Negative => {
-                            return Err("Every point must be on the positive or neutral side of every facet");
+                            return Err(
+                                "Every point must be on the positive or neutral side of every facet",
+                            );
                         }
                         OrientationSide::Neutral | OrientationSide::Positive => {}
                     }

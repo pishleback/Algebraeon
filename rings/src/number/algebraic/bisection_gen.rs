@@ -68,15 +68,15 @@ mod tests {
     fn test_bisection_gen() {
         let a = Rational::from_str("1/4").unwrap();
         let b = Rational::from_str("1").unwrap();
-        let mut gen = RationalSimpleBetweenGenerator::new_between(a, b);
+        let mut g = RationalSimpleBetweenGenerator::new_between(a, b);
 
-        assert_eq!(gen.next(), Some(Rational::from_str("1/2").unwrap()));
-        assert_eq!(gen.next(), Some(Rational::from_str("2/3").unwrap()));
-        assert_eq!(gen.next(), Some(Rational::from_str("3/4").unwrap()));
-        assert_eq!(gen.next(), Some(Rational::from_str("4/5").unwrap()));
-        assert_eq!(gen.next(), Some(Rational::from_str("1/3").unwrap()));
-        assert_eq!(gen.next(), Some(Rational::from_str("5/6").unwrap()));
-        assert_eq!(gen.next(), Some(Rational::from_str("6/7").unwrap()));
-        assert_eq!(gen.next(), Some(Rational::from_str("2/5").unwrap()));
+        assert_eq!(g.next(), Some(Rational::from_str("1/2").unwrap()));
+        assert_eq!(g.next(), Some(Rational::from_str("2/3").unwrap()));
+        assert_eq!(g.next(), Some(Rational::from_str("3/4").unwrap()));
+        assert_eq!(g.next(), Some(Rational::from_str("4/5").unwrap()));
+        assert_eq!(g.next(), Some(Rational::from_str("1/3").unwrap()));
+        assert_eq!(g.next(), Some(Rational::from_str("5/6").unwrap()));
+        assert_eq!(g.next(), Some(Rational::from_str("6/7").unwrap()));
+        assert_eq!(g.next(), Some(Rational::from_str("2/5").unwrap()));
     }
 }

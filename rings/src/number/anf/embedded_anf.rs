@@ -8,7 +8,7 @@ use crate::{
 use algebraeon_sets::structure::*;
 use structure::*;
 
-use super::number_field::{new_anf, ANFStructure};
+use super::number_field::{ANFStructure, new_anf};
 
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;
@@ -17,7 +17,7 @@ use algebraeon_nzq::rational::*;
 pub struct EmbeddedAnf {
     //anf.modulus() == gen.min_poly()
     anf: Rc<ANFStructure>,
-    gen: ComplexAlgebraic,
+    generator: ComplexAlgebraic,
 }
 
 impl ANFStructure {
@@ -26,9 +26,9 @@ impl ANFStructure {
             .primitive_part_fof()
             .all_complex_roots()
             .into_iter()
-            .map(|gen| EmbeddedAnf {
+            .map(|generator| EmbeddedAnf {
                 anf: self.clone().into(),
-                gen,
+                generator,
             })
             .collect()
     }
@@ -42,7 +42,7 @@ impl ComplexAlgebraic {
     pub fn embedded_generated_algebraic_number_field(self) -> EmbeddedAnf {
         EmbeddedAnf {
             anf: self.abstract_generated_algebraic_number_field().into(),
-            gen: self,
+            generator: self,
         }
     }
 }
@@ -152,7 +152,7 @@ pub fn anf_pair_primitive_element_theorem(
         Rational::exhaustive_rationals().map(|r| (r.numerator(), Integer::from(r.denominator())));
     nontrivial_linear_combinations.next().unwrap();
     for (x, y) in nontrivial_linear_combinations {
-        let gen = ComplexAlgebraic::add(
+        let generator = ComplexAlgebraic::add(
             &ComplexAlgebraic::mul(
                 &ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::from(x.clone()))),
                 a,
@@ -163,9 +163,9 @@ pub fn anf_pair_primitive_element_theorem(
             ),
         );
 
-        match as_poly_expr(a, &gen) {
+        match as_poly_expr(a, &generator) {
             Some(a_rel_gen) => {
-                let anf = new_anf(gen.min_poly());
+                let anf = new_anf(generator.min_poly());
                 //gen = xa + yb
                 //so b = (gen - xa) / y
                 let b_rel_gen = anf.mul(
@@ -177,11 +177,11 @@ pub fn anf_pair_primitive_element_theorem(
                 );
                 #[cfg(debug_assertions)]
                 {
-                    let mut gen_mut = gen.clone();
+                    let mut gen_mut = generator.clone();
                     assert_eq!(a, &gen_mut.apply_poly(&a_rel_gen));
                     assert_eq!(b, &gen_mut.apply_poly(&b_rel_gen));
                 }
-                return (gen, x, y, a_rel_gen, b_rel_gen);
+                return (generator, x, y, a_rel_gen, b_rel_gen);
             }
             None => {}
         }
@@ -281,15 +281,15 @@ mod tests {
         println!("{}", sqrt_three);
         println!("{}", sqrt_six);
 
-        let (gen, _, _, x, y) = anf_pair_primitive_element_theorem(&sqrt_two, &sqrt_three);
+        let (generator, _, _, x, y) = anf_pair_primitive_element_theorem(&sqrt_two, &sqrt_three);
         println!(
             "gen = {} min_poly = {} deg = {}",
-            gen,
-            gen.min_poly(),
-            gen.min_poly().degree().unwrap()
+            generator,
+            generator.min_poly(),
+            generator.min_poly().degree().unwrap()
         );
         assert_eq!(
-            gen,
+            generator,
             (sqrt_two.clone().into_ergonomic() + sqrt_three.clone().into_ergonomic())
                 .into_verbose()
         );

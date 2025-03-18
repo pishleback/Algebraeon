@@ -120,8 +120,8 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         }
 
         add_elem!(Self::identity());
-        for gen in generators {
-            add_elem!(gen);
+        for g in generators {
+            add_elem!(g);
         }
         while !to_mul.is_empty() {
             let (i, j) = to_mul.pop().unwrap().clone();

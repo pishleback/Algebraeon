@@ -1,6 +1,6 @@
 use glium::{
-    backend::Facade, glutin::event::Event, implement_vertex, uniform, Display, Program, Surface,
-    VertexBuffer,
+    Display, Program, Surface, VertexBuffer, backend::Facade, glutin::event::Event,
+    implement_vertex, uniform,
 };
 
 #[derive(Debug)]

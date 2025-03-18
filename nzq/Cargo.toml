@@ -1,7 +1,7 @@
 [package]
 name = "algebraeon-nzq"
 version = "0.1.1"
-edition = "2021"
+edition = "2024"
 license = "GPL-3.0-only"
 description = "natural numbers, integers and rationals for algebraeon"
 repository = "https://github.com/pishleback/Algebraeon"
@@ -14,9 +14,9 @@ name = "algebraeon_nzq"
 
 [dependencies]
 algebraeon-sets = { version = "0.1.0", path = "../sets" }
-malachite-base = "0.4.22"
-malachite-nz = "0.4.22"
-malachite-q = "0.4.22"
+malachite-base = "0.5.1"
+malachite-nz = "0.5.1"
+malachite-q = "0.5.1"
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]

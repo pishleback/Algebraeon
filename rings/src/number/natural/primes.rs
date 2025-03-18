@@ -142,11 +142,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             let r0 = {
                 let aprox_log2_n = bitcount(n) - 1;
                 let r0 = (&aprox_log2_n * &aprox_log2_n) / 100;
-                if r0 < 3 {
-                    3
-                } else {
-                    r0
-                }
+                if r0 < 3 { 3 } else { r0 }
             };
 
             // Find the smallest prime r >= r0 such that n is a primitive root modulo r
@@ -186,11 +182,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             // Use i ~ 0.475*phi(r)
             let i = {
                 let i = (Natural::from(475usize) * &phi_r) / Natural::from(1000usize);
-                if i > d {
-                    d.clone()
-                } else {
-                    i
-                }
+                if i > d { d.clone() } else { i }
             };
 
             // Select j between 0 and phi(r) - 1 - d
@@ -198,11 +190,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             let j = {
                 let j = (Natural::from(475usize) * &phi_r) / Natural::from(1000usize);
                 let max = &phi_r - Natural::ONE - &d;
-                if j > max {
-                    max
-                } else {
-                    j
-                }
+                if j > max { max } else { j }
             };
 
             // Select s such that (2s choose i) * (d choose i) * (2s - i choose j) * (phi(r)-1-d choose j) >= n^ceil(sqrt(phi(r)/3))
@@ -543,11 +531,13 @@ mod tests {
             miller_rabin_primality_test(&2u32.into(), vec![]),
             Ok(PrimalityTestResult::Prime)
         );
-        assert!(miller_rabin_primality_test(
-            &7u32.into(),
-            vec![2u32.into(), 3u32.into(), 4u32.into(), 5u32.into()]
-        )
-        .is_err());
+        assert!(
+            miller_rabin_primality_test(
+                &7u32.into(),
+                vec![2u32.into(), 3u32.into(), 4u32.into(), 5u32.into()]
+            )
+            .is_err()
+        );
         assert!(miller_rabin_primality_test(&221u32.into(), vec![174u32.into()]).is_err());
         assert_eq!(
             miller_rabin_primality_test(&221u32.into(), vec![137u32.into()]),

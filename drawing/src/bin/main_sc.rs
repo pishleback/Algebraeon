@@ -2,8 +2,8 @@
 
 use std::rc::Rc;
 
-use algebraeon_drawing::canvas::canvas2d::*;
 use algebraeon_drawing::canvas::Canvas;
+use algebraeon_drawing::canvas::canvas2d::*;
 use algebraeon_geometry::simplexes::ConvexHull;
 use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
 use algebraeon_geometry::simplexes::OrientationSide;

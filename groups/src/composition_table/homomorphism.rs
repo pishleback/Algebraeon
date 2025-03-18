@@ -208,8 +208,8 @@ pub fn find_isomorphism<'a, 'b>(
         //TODO: compute a smaller subset of possible image points
         //e.g. each gen can only map to something of the same order
         let mut gen_image_options: Vec<Vec<usize>> = vec![];
-        for gen in domain_gens {
-            match range_elem_profiles.get(&domain_elem_profiles[*gen]) {
+        for g in domain_gens {
+            match range_elem_profiles.get(&domain_elem_profiles[*g]) {
                 Some(r_elems) => gen_image_options.push(r_elems.clone()),
                 None => {
                     return Err(()); //there is no isomorphism

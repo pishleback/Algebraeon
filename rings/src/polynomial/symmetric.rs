@@ -59,13 +59,15 @@ where
             }
             2 => {
                 // (1 2)
-                vec![(0..n)
-                    .map(|i| match i {
-                        0 => 1,
-                        1 => 0,
-                        x => x,
-                    })
-                    .collect()]
+                vec![
+                    (0..n)
+                        .map(|i| match i {
+                            0 => 1,
+                            1 => 0,
+                            x => x,
+                        })
+                        .collect(),
+                ]
             }
             n => {
                 // (1 2) and (1 2 ... n)

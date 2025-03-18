@@ -436,12 +436,14 @@ where
 
                 #[cfg(debug_assertions)]
                 {
-                    debug_assert!(mod_poly_ring.equal(
-                        &xqi,
-                        &self
-                            .poly_ring
-                            .var_pow(nat_to_usize(&q.nat_pow(&i.into())).unwrap())
-                    ));
+                    debug_assert!(
+                        mod_poly_ring.equal(
+                            &xqi,
+                            &self
+                                .poly_ring
+                                .var_pow(nat_to_usize(&q.nat_pow(&i.into())).unwrap())
+                        )
+                    );
                     let g_naive = self
                         .poly_ring
                         .factorize_monic(

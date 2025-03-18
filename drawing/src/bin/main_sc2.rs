@@ -1,7 +1,7 @@
 #![allow(dead_code, warnings, unused)]
 
-use algebraeon_drawing::canvas::canvas2d::*;
 use algebraeon_drawing::canvas::Canvas;
+use algebraeon_drawing::canvas::canvas2d::*;
 use algebraeon_geometry::simplexes::ConvexHull;
 use algebraeon_geometry::simplexes::OrientationSide;
 use algebraeon_geometry::simplexes::OrientedSimplex;

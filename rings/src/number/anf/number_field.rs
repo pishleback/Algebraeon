@@ -54,7 +54,7 @@ impl ANFStructure {
             debug_assert_eq!(disc.denominator(), Natural::ONE); //discriminant of algebraic integers is an integer
             let disc = Rational::numerator(&disc);
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
-                                                   //    println!("{}", disc);
+            //    println!("{}", disc);
             let (_sign, mut disc_factors) = disc.factor().unwrap().unit_and_factors();
             // If p is a prime such that p^2 divides Disc
             // then can find an alg int of the form
@@ -180,15 +180,17 @@ fn double_poly_to_row(
     for c in a.coeffs() {
         debug_assert!(c.num_coeffs() <= inner_poly_len);
     }
-    Matrix::from_rows(vec![(0..outer_poly_len)
-        .map(|i| a.coeff(i))
-        .map(|c| {
-            (0..inner_poly_len)
-                .map(|j| c.coeff(j).clone())
-                .collect_vec()
-        })
-        .flatten()
-        .collect_vec()])
+    Matrix::from_rows(vec![
+        (0..outer_poly_len)
+            .map(|i| a.coeff(i))
+            .map(|c| {
+                (0..inner_poly_len)
+                    .map(|j| c.coeff(j).clone())
+                    .collect_vec()
+            })
+            .flatten()
+            .collect_vec(),
+    ])
 }
 
 fn row_to_double_poly(
@@ -603,10 +605,10 @@ impl PolynomialStructure<ANFStructure> {
             // println!("q = {}", q);
             // println!("q = {}", q.factor().unwrap());
 
-            let gen = Polynomial::constant(self.coeff_ring().generator());
+            let generator = Polynomial::constant(self.coeff_ring().generator());
             let x = self.var();
 
-            let gen_in_la = l_to_la(gen);
+            let gen_in_la = l_to_la(generator);
             let x_in_la = l_to_la(x);
             // println!("gen in la = {}", gen_in_la);
             // println!("x in la {}", &x_in_la);

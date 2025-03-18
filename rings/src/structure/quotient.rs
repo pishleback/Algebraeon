@@ -142,12 +142,14 @@ impl<RS: EuclideanDivisionStructure + FavoriteAssociateStructure> IntegralDomain
             Err(RingDivisionError::DivideByZero)
         } else {
             let (g, a, b) = self.ring.euclidean_xgcd(bot.clone(), self.modulus.clone());
-            debug_assert!(self.ring.equal(
-                &g,
-                &self
-                    .ring
-                    .add(&self.ring.mul(&a, &bot), &self.ring.mul(&b, &self.modulus))
-            ));
+            debug_assert!(
+                self.ring.equal(
+                    &g,
+                    &self
+                        .ring
+                        .add(&self.ring.mul(&a, &bot), &self.ring.mul(&b, &self.modulus))
+                )
+            );
             //g = a * bot mod N and g divides N
             //want ?*bot = top
             match self.ring.div(top, &g) {
