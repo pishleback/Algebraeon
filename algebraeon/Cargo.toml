@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon"
-version = "0.0.10"
+version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-only"
 description = "Algebraeon computational algebra library re-exports for all components"
@@ -13,7 +13,7 @@ readme = "../README.md"
 name = "algebraeon"
 
 [dependencies]
-algebraeon-sets = { version = "0.0.6", path = "../sets" }
-algebraeon-groups = { version = "0.0.8", path = "../groups" }
-algebraeon-rings = { version = "0.0.10", path = "../rings" }
-algebraeon-geometry = { version = "0.0.10", path = "../geometry" }
+algebraeon-sets = { version = "0.1.0", path = "../sets" }
+algebraeon-groups = { version = "0.1.0", path = "../groups" }
+algebraeon-rings = { version = "0.1.0", path = "../rings" }
+algebraeon-geometry = { version = "0.1.0", path = "../geometry" }

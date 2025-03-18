@@ -31,7 +31,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon"
-version = "0.0.10"
+version = "0.1.0"
 dependencies = [
  "algebraeon-geometry",
  "algebraeon-groups",
@@ -78,7 +78,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-geometry"
-version = "0.0.10"
+version = "0.1.0"
 dependencies = [
  "algebraeon-nzq",
  "algebraeon-rings",
@@ -88,7 +88,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-groups"
-version = "0.0.8"
+version = "0.1.0"
 dependencies = [
  "algebraeon-nzq",
  "itertools",
@@ -97,7 +97,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-nzq"
-version = "0.0.8"
+version = "0.1.0"
 dependencies = [
  "algebraeon-sets",
  "malachite-base",
@@ -107,7 +107,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-rings"
-version = "0.0.10"
+version = "0.1.0"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-nzq",
@@ -119,7 +119,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-sets"
-version = "0.0.6"
+version = "0.1.0"
 
 [[package]]
 name = "arrayref"
