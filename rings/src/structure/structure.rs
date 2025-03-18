@@ -2,10 +2,8 @@ use std::{borrow::Borrow, fmt::Debug, rc::Rc};
 
 use malachite_base::num::arithmetic::traits::UnsignedAbs;
 use malachite_base::num::logic::traits::BitIterable;
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
 
-use crate::number::natural::nat_to_usize;
+use crate::number::{natural::*, integer::*};
 use crate::polynomial::polynomial::Polynomial;
 use crate::polynomial::polynomial::PolynomialStructure;
 
@@ -51,13 +49,13 @@ pub trait SemiRingStructure: EqStructure {
     }
 
     fn nat_pow(&self, a: &Self::Set, n: &Natural) -> Self::Set {
-        if *n == 0 {
+        if *n == Natural::ZERO {
             self.one()
-        } else if *n == 1 {
+        } else if *n == Natural::ONE {
             a.clone()
         } else {
-            debug_assert!(*n >= 2);
-            let bits: Vec<_> = n.bits().collect();
+            debug_assert!(*n >= Natural::TWO);
+            let bits: Vec<_> = n.malachite_natural_ref().bits().collect();
             let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
                 pows.push(self.mul(&pows.last().unwrap(), &pows.last().unwrap()));
@@ -75,14 +73,14 @@ pub trait SemiRingStructure: EqStructure {
     }
 
     fn from_nat(&self, x: &Natural) -> Self::Set {
-        if *x == 0 {
+        if *x == Natural::ZERO {
             self.zero()
-        } else if *x == 1 {
+        } else if *x == Natural::ONE{
             self.one()
         } else {
             let two = self.add(&self.one(), &self.one());
-            debug_assert!(*x >= 2);
-            let bits: Vec<bool> = x.bits().collect();
+            debug_assert!(*x >= Natural::TWO);
+            let bits: Vec<bool> = x.malachite_natural_ref().bits().collect();
             let mut ans = self.zero();
             let mut v = self.one();
             for i in 0..bits.len() {
@@ -137,7 +135,7 @@ pub trait RingStructure: SemiRingStructure {
         if *x < 0 {
             self.neg(&self.from_int(&-x))
         } else {
-            self.from_nat(x.unsigned_abs_ref())
+            self.from_nat(&x.unsigned_abs())
         }
     }
 }
@@ -535,7 +533,7 @@ pub trait MetaEuclideanDivision: MetaIntegralDomain
 where
     Self::Structure: EuclideanDivisionStructure,
 {
-    fn norm(&self) -> Option<malachite_nz::natural::Natural> {
+    fn norm(&self) -> Option<Natural> {
         Self::structure().norm(self)
     }
 

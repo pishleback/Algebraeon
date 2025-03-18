@@ -2,9 +2,6 @@ use crate::{
     polynomial::{multipoly::*, polynomial::*},
     structure::structure::*,
 };
-use malachite_base::num::basic::traits::Zero;
-use malachite_nz::integer::Integer;
-use malachite_q::Rational;
 
 pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));

@@ -265,7 +265,6 @@ mod dminusone_test {
             modular_factors: &Vec<Polynomial<Integer>>,
         ) -> Self {
             use malachite_base::num::arithmetic::traits::{Abs, Mod};
-            use malachite_q::Rational;
 
             // Probably 2^64
             let machine_range = Natural::from(usize::MAX) + Natural::ONE;

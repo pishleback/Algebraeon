@@ -1,4 +1,3 @@
-use malachite_q::Rational;
 
 pub mod bisection_gen;
 pub mod complex;

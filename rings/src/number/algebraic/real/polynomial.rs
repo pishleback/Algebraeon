@@ -1,5 +1,3 @@
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
 
 use super::*;
 

@@ -6,9 +6,7 @@ use super::real::RealAlgebraic;
 use super::{bisection_gen::RationalSimpleBetweenGenerator, rat_to_string};
 use crate::polynomial::polynomial::*;
 use algebraeon_sets::structure::*;
-use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::{arithmetic::traits::SimplestRationalInInterval, Rational};
+use malachite_q::{arithmetic::traits::SimplestRationalInInterval};
 use std::{collections::HashSet, fmt::Display, rc::Rc, str::FromStr};
 
 use boxes::*;

@@ -6,9 +6,6 @@ use crate::{
     structure::*,
 };
 use algebraeon_sets::structure::*;
-use malachite_base::num::basic::traits::{One, Zero};
-use malachite_nz::integer::Integer;
-use malachite_q::Rational;
 use structure::*;
 
 use super::number_field::{new_anf, ANFStructure};

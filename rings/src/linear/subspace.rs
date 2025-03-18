@@ -1144,8 +1144,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
-    use malachite_q::Rational;
 
     use super::*;
 

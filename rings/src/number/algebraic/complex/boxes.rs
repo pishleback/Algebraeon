@@ -1,7 +1,5 @@
 //TODO: make structs for intervals and boxes instead of using tuples of rationals
 
-use malachite_base::num::basic::traits::Zero;
-use malachite_q::Rational;
 
 pub fn add_boxes(
     first: (&Rational, &Rational, &Rational, &Rational),

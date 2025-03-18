@@ -2,7 +2,6 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 
 use itertools::Itertools;
-use malachite_nz::natural::Natural;
 
 use super::super::structure::structure::*;
 use super::subspace::*;
@@ -2375,8 +2374,7 @@ where
 mod tests {
     use std::str::FromStr;
 
-    use malachite_nz::integer::Integer;
-    use malachite_q::Rational;
+
 
     use crate::{
         number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},

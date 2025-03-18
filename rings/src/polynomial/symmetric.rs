@@ -261,7 +261,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
 
     use super::*;
     use crate::structure::elements::*;

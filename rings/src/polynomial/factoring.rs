@@ -1,4 +1,3 @@
-use malachite_nz::natural::Natural;
 
 use super::super::structure::factorization::*;
 use super::super::structure::structure::*;
@@ -370,8 +369,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
-    use malachite_q::Rational;
 
     use crate::structure::elements::IntoErgonomic;
 

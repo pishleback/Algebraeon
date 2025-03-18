@@ -3,8 +3,6 @@ use malachite_base::num::arithmetic::traits::PowerOf2;
 
 use malachite_base::num::arithmetic::traits::{DivMod, Mod, ModPow};
 use malachite_base::num::logic::traits::BitIterable;
-use malachite_nz::integer::Integer;
-use malachite_q::Rational;
 
 use crate::structure::quotient::QuotientStructure;
 
@@ -33,7 +31,7 @@ impl Iterator for PrimeGenerator {
         'next_loop: loop {
             //todo: only check primes up to sqrt n
             for p in &self.primes {
-                if &self.n % p == 0 {
+                if &self.n % p == Natural::ZERO {
                     self.n += Natural::from(1u8);
                     continue 'next_loop;
                 }
@@ -69,7 +67,7 @@ pub fn try_divisors_primality_test(n: &Natural) -> PrimalityTestResult {
     } else {
         let mut d = Natural::TWO;
         while &d * &d <= *n {
-            if n % &d == 0 {
+            if n % &d == Natural::ZERO {
                 return PrimalityTestResult::Composite;
             }
             d += Natural::ONE;
@@ -118,7 +116,7 @@ pub fn miller_rabin_primality_test(
             let mut y;
             for _ in 0..s {
                 y = mod_n.mul(&x, &x);
-                if y == Integer::ONE && x != Integer::ONE && x != Integer::from(n) - Integer::ONE {
+                if y == Integer::ONE && x != Integer::ONE && x != Integer::from(n.malachite_natural_ref()) - Integer::ONE {
                     return Ok(PrimalityTestResult::Composite);
                 }
                 x = y;
@@ -158,7 +156,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             let mut r;
             loop {
                 r = prime_gen.next().unwrap();
-                if r < r0 {
+                if r < Natural::from(r0) {
                     continue;
                 }
                 match Factored::from_prime_unchecked(r.clone()).is_primitive_root(n) {
@@ -275,7 +273,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 #[cfg(debug_assertions)]
                 {
                     assert!(lhs(&s) >= rhs);
-                    if s > 1 {
+                    if s > Natural::ONE {
                         assert!(lhs(&(&s - Natural::ONE)) < rhs);
                     }
                 }
@@ -286,7 +284,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             let s_set = {
                 let mut s_set = vec![];
                 let mut b = Natural::TWO;
-                while s_set.len() < s {
+                while Natural::from(s_set.len()) < s {
                     s_set.push(b.clone());
                     b += Natural::ONE;
                 }
@@ -351,7 +349,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
 
             // For all b in S check whether b^(n-1)=1 mod n
             for b in &s_set {
-                if b.mod_op(n).mod_pow(n - Natural::ONE, n) != Natural::ONE {
+                if b.rem(n).mod_pow(n - Natural::ONE, n) != Natural::ONE {
                     return PrimalityTestResult::Composite;
                 }
             }
@@ -397,7 +395,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 let mut s = zero_poly();
                 for i in 0..r_usize {
                     for j in 0..r_usize {
-                        s[(i + j) % r_usize] = (&s[(i + j) % r_usize] + &a[i] * &b[j]).mod_op(n);
+                        s[(i + j) % r_usize] = (&s[(i + j) % r_usize] + &a[i] * &b[j]) %n;
                     }
                 }
                 s
@@ -408,7 +406,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 let mut b = Natural::ZERO;
                 for i in 0..r_usize {
                     let coeff =
-                        ((&*a & (&coeff_mask << (i * coeff_size))) >> (i * coeff_size)).mod_op(n);
+                        ((&*a & (&coeff_mask << (i * coeff_size))) >> (i * coeff_size)) % n;
                     b |= coeff << (coeff_size * i);
                 }
                 b

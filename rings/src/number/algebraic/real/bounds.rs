@@ -1,4 +1,3 @@
-use malachite_q::Rational;
 
 #[derive(Debug, Clone)]
 pub enum LowerBound {

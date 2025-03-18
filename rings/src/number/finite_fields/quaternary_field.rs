@@ -1,8 +1,6 @@
 use std::fmt::Display;
 use std::rc::Rc;
 
-use malachite_nz::natural::Natural;
-
 use crate::polynomial::polynomial::*;
 use crate::structure::structure::*;
 use algebraeon_sets::structure::*;

@@ -2,9 +2,6 @@ use crate::{number::anf::number_field::new_anf, polynomial::polynomial::*, struc
 use algebraeon_sets::structure::*;
 use bounds::*;
 use interval::*;
-use malachite_base::num::basic::traits::{One, Two, Zero};
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
 use polynomial::*;
 use std::{fmt::Display, rc::Rc};
 

@@ -8,8 +8,7 @@ use crate::{
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use malachite_base::num::basic::traits::{One, Zero};
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::{exhaustive::exhaustive_rationals, Rational};
+use malachite_q::{exhaustive::exhaustive_rationals};
 
 pub type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructure<Rational>>, true>;
 

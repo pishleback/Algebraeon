@@ -1,4 +1,3 @@
-use malachite_nz::{integer::Integer, natural::Natural};
 
 use crate::polynomial::polynomial::*;
 use crate::structure::factorization::*;

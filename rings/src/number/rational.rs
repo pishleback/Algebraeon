@@ -1,10 +1,6 @@
 use std::rc::Rc;
 
-use malachite_base::num::basic::traits::One;
-use malachite_base::num::basic::traits::OneHalf;
-use malachite_base::num::basic::traits::Zero;
-use malachite_nz::integer::Integer;
-use malachite_q::Rational;
+
 
 use super::super::polynomial::polynomial::*;
 use super::super::structure::factorization::*;

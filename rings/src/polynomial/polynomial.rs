@@ -2,7 +2,6 @@ use std::fmt::Display;
 use std::rc::Rc;
 
 use itertools::Itertools;
-use malachite_nz::natural::Natural;
 
 use crate::linear::matrix::*;
 
@@ -1132,9 +1131,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
-    use malachite_q::Rational;
-
     use crate::number::finite_fields::quaternary_field::*;
     use crate::structure::elements::IntoErgonomic;
 

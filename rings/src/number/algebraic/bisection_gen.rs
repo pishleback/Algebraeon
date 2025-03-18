@@ -2,8 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use malachite_base::num::basic::traits::{One, Two, Zero};
-use malachite_q::{arithmetic::traits::SimplestRationalInInterval, Rational};
+use malachite_q::{arithmetic::traits::SimplestRationalInInterval};
 
 #[derive(Debug, Clone)]
 pub struct RationalSimpleBetweenGenerator {

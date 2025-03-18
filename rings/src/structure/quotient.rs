@@ -166,8 +166,6 @@ impl<RS: EuclideanDivisionStructure + FavoriteAssociateStructure> FieldStructure
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
-
     use super::super::super::structure::structure::*;
     use algebraeon_sets::structure::*;
 

@@ -6,8 +6,6 @@ use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::atomic::AtomicUsize;
 
-use malachite_nz::natural::Natural;
-
 use super::super::structure::structure::*;
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
@@ -745,8 +743,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
-
     use crate::structure::elements::IntoErgonomic;
 
     use super::*;

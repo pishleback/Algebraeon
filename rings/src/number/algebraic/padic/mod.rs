@@ -1,7 +1,4 @@
 use malachite_base::num::arithmetic::traits::{DivMod, UnsignedAbs};
-use malachite_base::num::basic::traits::{One, Two, Zero};
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
 
 use crate::{number::natural::primes::*, polynomial::polynomial::*, structure::structure::*};
 

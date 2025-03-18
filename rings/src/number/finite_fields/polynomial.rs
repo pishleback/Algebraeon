@@ -3,7 +3,6 @@ use std::rc::Rc;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use malachite_base::num::basic::traits::{One, Two};
-use malachite_nz::natural::Natural;
 
 use crate::{
     linear::{matrix::*, subspace::*},
@@ -607,7 +606,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
 
     use crate::{
         number::finite_fields::{modulo::*, quaternary_field::QuaternaryField},

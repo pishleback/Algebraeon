@@ -7,5 +7,9 @@ members = [
     "geometry",
     "drawing",
     "combinatorics",
-    "examples", "algebraeon",
+    "examples", 
+    "algebraeon",
 ]
+
+# To publish
+# cargo ws publish --no-individual-tags

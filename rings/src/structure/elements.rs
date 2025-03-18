@@ -1,7 +1,6 @@
 use std::{ops::{Add, Div, Mul, Neg, Sub}, rc::Rc};
 
 use algebraeon_sets::structure::*;
-use malachite_nz::integer::Integer;
 use super::structure::*;
 
 pub trait IntoErgonomic: MetaType {
@@ -491,7 +490,6 @@ impl_int_ops!(Integer);
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
 
     use super::super::super::polynomial::polynomial::*;
 
