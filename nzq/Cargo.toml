@@ -14,9 +14,9 @@ name = "algebraeon_nzq"
 
 [dependencies]
 algebraeon-sets = { version = "0.1.0", path = "../sets" }
-malachite-base = "0.4.16"
-malachite-nz = "0.4.16"
-malachite-q = "0.4.16"
+malachite-base = "0.4.22"
+malachite-nz = "0.4.22"
+malachite-q = "0.4.22"
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]
