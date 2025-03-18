@@ -49,8 +49,6 @@ dependencies = [
  "derivative",
  "itertools",
  "malachite-base",
- "malachite-nz",
- "malachite-q",
  "static_assertions",
 ]
 
@@ -61,6 +59,7 @@ dependencies = [
  "algebraeon-combinatorics",
  "algebraeon-geometry",
  "algebraeon-groups",
+ "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
  "glium",
@@ -72,6 +71,7 @@ name = "algebraeon-examples"
 version = "0.0.0"
 dependencies = [
  "algebraeon-groups",
+ "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
 ]
@@ -80,6 +80,7 @@ dependencies = [
 name = "algebraeon-geometry"
 version = "0.0.10"
 dependencies = [
+ "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
  "itertools",
@@ -89,11 +90,19 @@ dependencies = [
 name = "algebraeon-groups"
 version = "0.0.8"
 dependencies = [
+ "algebraeon-nzq",
  "itertools",
+ "rayon",
+]
+
+[[package]]
+name = "algebraeon-nzq"
+version = "0.0.8"
+dependencies = [
+ "algebraeon-sets",
  "malachite-base",
  "malachite-nz",
  "malachite-q",
- "rayon",
 ]
 
 [[package]]
@@ -101,11 +110,9 @@ name = "algebraeon-rings"
 version = "0.0.10"
 dependencies = [
  "algebraeon-groups",
+ "algebraeon-nzq",
  "algebraeon-sets",
  "itertools",
- "malachite-base",
- "malachite-nz",
- "malachite-q",
  "rand",
  "rayon",
 ]

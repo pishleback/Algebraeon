@@ -10,8 +10,8 @@ use structure::*;
 
 use super::number_field::{new_anf, ANFStructure};
 
-use crate::number::integer::*;
-use crate::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::rational::*;
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {

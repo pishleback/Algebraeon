@@ -1,6 +1,6 @@
 //TODO: make structs for intervals and boxes instead of using tuples of rationals
 
-use crate::number::rational::*;
+use algebraeon_nzq::rational::*;
 
 pub fn add_intervals(
     first: (&Rational, &Rational),

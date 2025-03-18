@@ -6,9 +6,9 @@ use crate::structure::quotient::QuotientStructure;
 
 use super::*;
 
-use crate::number::integer::*;
-use crate::number::natural::*;
-use crate::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 
 // Some algorithms here on p-adic root isolation can be found in
 // Sturm, Thomas & Weispfenning, Volker. (2004). P-adic Root Isolation. Revista de la Real Academia de Ciencias Exactas, Físicas y Naturales. Serie A, Matemáticas.

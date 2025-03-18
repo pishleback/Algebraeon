@@ -1,10 +1,9 @@
-use malachite_base::num::arithmetic::traits::AbsDiff;
-use primes::is_prime;
-
-use crate::polynomial::polynomial::Polynomial;
-
 use super::functions::*;
 use super::*;
+use crate::polynomial::polynomial::Polynomial;
+use algebraeon_nzq::traits::AbsDiff;
+use primes::is_prime;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Factored {
@@ -83,7 +82,7 @@ impl Factored {
             IsPrimitiveRootResult::NonUnit
         } else {
             let phi_n = n_factored.euler_totient();
-            let x_mod_n = (&x).rem(&n);
+            let x_mod_n = x % &n;
             for p in factor(phi_n.clone()).unwrap().distinct_prime_factors() {
                 if x_mod_n.mod_pow_ref(&phi_n / p, &n) == Natural::ONE {
                     return IsPrimitiveRootResult::No;

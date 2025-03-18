@@ -58,11 +58,17 @@ some improvements
 
 */
 
-use crate::number::integer::*;
-use crate::number::rational::*;
+use crate::number::natural::primes::*;
+use crate::structure::factorization::*;
+use crate::structure::structure::*;
 use crate::{polynomial::polynomial::*, structure::quotient::*};
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 use algebraeon_sets::combinations::LexicographicCombinationsWithRemovals;
-use primes::PrimeGenerator;
+use algebraeon_sets::structure::*;
+use itertools::Itertools;
+use std::ops::Rem;
 
 fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()

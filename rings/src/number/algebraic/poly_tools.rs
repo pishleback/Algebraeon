@@ -3,8 +3,8 @@ use crate::{
     structure::structure::*,
 };
 
-use crate::number::integer::*;
-use crate::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::rational::*;
 
 pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));

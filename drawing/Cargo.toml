@@ -14,3 +14,4 @@ algebraeon-groups = { version = "0.0.8", path = "../groups" }
 algebraeon-rings = { version = "0.0.10", path = "../rings" }
 algebraeon-geometry = { version = "0.0.10", path = "../geometry" }
 algebraeon-combinatorics = { version = "0.0.0", path = "../combinatorics" }
+algebraeon-nzq = { version = "0.0.8", path = "../nzq" }

@@ -1,8 +1,8 @@
-use factor::Factored;
-use malachite_base::num::logic::traits::BitIterable;
-
-use crate::number::rational::*;
 use crate::structure::quotient::QuotientStructure;
+use algebraeon_nzq::rational::*;
+use algebraeon_nzq::traits::DivMod;
+use factor::Factored;
+use std::ops::Rem;
 
 use super::functions::*;
 use super::*;
@@ -377,7 +377,6 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             };
             #[cfg(debug_assertions)]
             let bigint_to_poly = |mut p_bigint: Natural| -> Vec<Natural> {
-                use malachite_base::num::arithmetic::traits::DivMod;
                 let mut p = zero_poly();
                 let coeff_modulus = Natural::ONE << coeff_size;
                 let mut coeff;
@@ -431,7 +430,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
 
             let nthpow_poly = |mut poly: Natural, k: &Natural| -> Natural {
                 let mut s = poly_to_bigint(&one_poly());
-                for k_bit in k.to_malachite_ref().bits() {
+                for k_bit in k.bits() {
                     if k_bit {
                         s = mul_polys(&s, &poly);
                     }

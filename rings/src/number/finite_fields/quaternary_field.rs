@@ -5,7 +5,7 @@ use crate::polynomial::polynomial::*;
 use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
 
-use crate::number::natural::*;
+use algebraeon_nzq::natural::*;
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

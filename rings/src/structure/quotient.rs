@@ -171,7 +171,7 @@ mod tests {
 
     use super::*;
 
-    use crate::number::integer::*;
+    use algebraeon_nzq::integer::*;
 
     #[test]
     fn test() {

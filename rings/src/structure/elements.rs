@@ -6,7 +6,7 @@ use std::{
 use super::structure::*;
 use algebraeon_sets::structure::*;
 
-use crate::number::integer::*;
+use algebraeon_nzq::integer::*;
 
 pub trait IntoErgonomic: MetaType {
     fn into_ergonomic(self) -> StructuredElement<Self::Structure> {

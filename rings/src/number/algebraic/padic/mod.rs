@@ -1,5 +1,3 @@
-use malachite_base::num::arithmetic::traits::DivMod;
-
 use crate::{number::natural::primes::*, polynomial::polynomial::*, structure::structure::*};
 
 pub mod valuation;
@@ -7,9 +5,9 @@ use valuation::*;
 
 mod isolate;
 
-use crate::number::integer::*;
-use crate::number::natural::*;
-use crate::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {
@@ -141,6 +139,8 @@ impl std::fmt::Display for PAdicAlgebraic {
 }
 
 pub mod truncation {
+    use algebraeon_nzq::traits::DivMod;
+
     use super::*;
 
     // Represent value * p^shift with 0 <= value < p^digits

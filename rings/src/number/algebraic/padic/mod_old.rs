@@ -6,7 +6,7 @@ use malachite_base::num::{
     arithmetic::traits::{DivMod, Mod, Pow},
 };
 
-use crate::number::algebraic::isolated_roots::poly_tools::root_sum_poly;
+use algebraeon_nzq::algebraic::isolated_roots::poly_tools::root_sum_poly;
 use crate::{
     number::natural::primes::is_prime,
     polynomial::polynomial::*,

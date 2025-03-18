@@ -1,7 +1,4 @@
-use crate::{
-    number::integer::*, number::natural::functions::*, number::rational::*,
-    polynomial::polynomial::*,
-};
+use crate::{number::integer::*, number::natural::functions::*, polynomial::polynomial::*};
 
 impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {

@@ -1,8 +1,8 @@
 use super::*;
 
-use crate::number::integer::*;
-use crate::number::natural::*;
-use crate::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 
 fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
     debug_assert_eq!(poly.degree().unwrap(), 1);

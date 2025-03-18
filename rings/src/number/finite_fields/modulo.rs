@@ -3,8 +3,8 @@ use crate::structure::factorization::*;
 use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
 
-use crate::number::integer::*;
-use crate::number::natural::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
 
 use std::rc::Rc;
 use std::{fmt::Display, hash::Hash};

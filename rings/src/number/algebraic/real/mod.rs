@@ -13,9 +13,9 @@ mod bounds;
 mod interval;
 pub mod polynomial;
 
-use crate::number::integer::*;
-use crate::number::natural::*;
-use crate::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 
 #[derive(Debug, Clone)]
 pub struct RealAlgebraicRoot {

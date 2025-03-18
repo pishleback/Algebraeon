@@ -2,9 +2,10 @@ use std::ops::{Add, Mul, Sub};
 
 use super::*;
 
-use crate::number::integer::*;
-use crate::number::natural::*;
-use crate::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
+use algebraeon_nzq::traits::DivMod;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Valuation {

@@ -1,16 +1,15 @@
 use super::embedded_anf::anf_multi_primitive_element_theorem;
 use crate::{
     linear::matrix::*,
-    number::natural::nat_to_usize,
     polynomial::{multipoly::*, polynomial::*, symmetric::ss_num},
     structure::{factorization::Factored, quotient::*, structure::*},
 };
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
-use crate::number::integer::*;
-use crate::number::natural::*;
-use crate::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 
 pub type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructure<Rational>>, true>;
 

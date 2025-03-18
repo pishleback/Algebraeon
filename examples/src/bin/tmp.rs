@@ -2,9 +2,9 @@
 
 use std::str::FromStr;
 
-use algebraeon_rings::number::integer::*;
-use algebraeon_rings::number::natural::*;
-use algebraeon_rings::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 use algebraeon_rings::structure::structure::*;
 
 fn main() {

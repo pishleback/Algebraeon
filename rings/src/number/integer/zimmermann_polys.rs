@@ -2,8 +2,8 @@
 
 use std::str::FromStr;
 
-use crate::number::integer::*;
 use crate::{polynomial::polynomial::*, structure::elements::IntoErgonomic};
+use algebraeon_nzq::integer::*;
 
 // https://homepages.loria.fr/PZimmermann/mupad/
 

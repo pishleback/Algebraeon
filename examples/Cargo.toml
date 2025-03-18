@@ -16,6 +16,7 @@ name = "algebraeon_examples"
 algebraeon-sets = { version = "0.0.6", path = "../sets" }
 algebraeon-groups = { version = "0.0.8", path = "../groups" }
 algebraeon-rings = { version = "0.0.10", path = "../rings" }
+algebraeon-nzq = { version = "0.0.8", path = "../nzq" }
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]

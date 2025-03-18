@@ -1,0 +1,19 @@
+[package]
+name = "algebraeon-nzq"
+version = "0.0.8"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "natural numbers, integers and rationals for algebraeon"
+repository = "https://github.com/pishleback/Algebraeon"
+keywords = ["maths", "naturals", "integers", "rationals"]
+categories = ["mathematics"]
+readme = "../README.md"
+
+[lib]
+name = "algebraeon_nzq"
+
+[dependencies]
+algebraeon-sets = { version = "0.0.6", path = "../sets" }
+malachite-base = "0.4.16"
+malachite-nz = "0.4.16"
+malachite-q = "0.4.16"

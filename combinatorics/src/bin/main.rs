@@ -14,9 +14,6 @@ use algebraeon_rings::polynomial::polynomial::*;
 use algebraeon_rings::structure::elements::*;
 use algebraeon_rings::structure::quotient::*;
 use algebraeon_rings::structure::structure::*;
-use malachite_nz::integer::Integer;
-use malachite_nz::natural::Natural;
-use malachite_q::Rational;
 
 fn main() {
     let a = algebraeon_combinatorics::modular_permutations::modular_permutation::<24>(|x| {

@@ -1,10 +1,8 @@
 use std::{borrow::Borrow, fmt::Debug, rc::Rc};
 
-use malachite_base::num::logic::traits::BitIterable;
-
-use crate::number::{integer::*, natural::*, rational::*};
 use crate::polynomial::polynomial::Polynomial;
 use crate::polynomial::polynomial::PolynomialStructure;
+use algebraeon_nzq::{integer::*, natural::*, rational::*};
 
 use algebraeon_sets::structure::*;
 
@@ -54,7 +52,7 @@ pub trait SemiRingStructure: EqStructure {
             a.clone()
         } else {
             debug_assert!(*n >= Natural::TWO);
-            let bits: Vec<_> = n.to_malachite_ref().bits().collect();
+            let bits: Vec<_> = n.bits().collect();
             let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
                 pows.push(self.mul(&pows.last().unwrap(), &pows.last().unwrap()));
@@ -79,7 +77,7 @@ pub trait SemiRingStructure: EqStructure {
         } else {
             let two = self.add(&self.one(), &self.one());
             debug_assert!(*x >= Natural::TWO);
-            let bits: Vec<bool> = x.to_malachite_ref().bits().collect();
+            let bits: Vec<bool> = x.bits().collect();
             let mut ans = self.zero();
             let mut v = self.one();
             for i in 0..bits.len() {

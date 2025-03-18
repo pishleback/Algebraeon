@@ -10,9 +10,9 @@ use std::{collections::HashSet, fmt::Display, rc::Rc, str::FromStr};
 
 use boxes::*;
 
-use crate::number::integer::*;
-use crate::number::natural::*;
-use crate::number::rational::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 
 mod boxes;
 pub mod polynomial;

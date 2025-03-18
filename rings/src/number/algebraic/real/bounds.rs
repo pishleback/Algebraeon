@@ -1,4 +1,4 @@
-use crate::number::rational::*;
+use algebraeon_nzq::rational::*;
 
 #[derive(Debug, Clone)]
 pub enum LowerBound {

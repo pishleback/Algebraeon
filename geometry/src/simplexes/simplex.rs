@@ -541,7 +541,7 @@ pub fn simplex_intersect_negative_side_hyperplane<
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_rings::number::rational::*;
+    use algebraeon_nzq::rational::*;
     use algebraeon_sets::structure::*;
 
     use super::*;

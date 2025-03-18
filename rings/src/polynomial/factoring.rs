@@ -3,7 +3,7 @@ use super::super::structure::structure::*;
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
 
-use crate::number::natural::*;
+use algebraeon_nzq::natural::*;
 
 impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + CharZeroStructure>
     PolynomialStructure<RS>
@@ -372,8 +372,8 @@ where
 mod tests {
     use crate::structure::elements::IntoErgonomic;
 
-    use crate::number::integer::*;
-    use crate::number::rational::*;
+    use algebraeon_nzq::integer::*;
+    use algebraeon_nzq::rational::*;
 
     use super::*;
 

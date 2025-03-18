@@ -5,12 +5,11 @@ use itertools::Itertools;
 
 use crate::{
     linear::{matrix::*, subspace::*},
-    number::natural::nat_to_usize,
     polynomial::polynomial::*,
     structure::{factorization::*, quotient::QuotientStructure, structure::*},
 };
 
-use crate::number::natural::*;
+use algebraeon_nzq::natural::*;
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
 /*
@@ -613,7 +612,7 @@ mod tests {
         structure::elements::IntoErgonomic,
     };
 
-    use crate::number::integer::*;
+    use algebraeon_nzq::integer::*;
 
     use super::*;
 

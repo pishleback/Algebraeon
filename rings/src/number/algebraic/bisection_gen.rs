@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::number::rational::*;
+use algebraeon_nzq::rational::*;
 
 #[derive(Debug, Clone)]
 pub struct RationalSimpleBetweenGenerator {

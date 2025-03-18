@@ -795,7 +795,7 @@ where
 }
 #[cfg(test)]
 mod tests {
-    use algebraeon_rings::number::rational::*;
+    use algebraeon_nzq::rational::*;
     use algebraeon_sets::structure::*;
 
     use super::*;

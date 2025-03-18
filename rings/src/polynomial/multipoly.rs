@@ -10,7 +10,7 @@ use super::super::structure::structure::*;
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
 
-use crate::number::natural::*;
+use algebraeon_nzq::natural::*;
 
 #[derive(Debug, Hash, Clone)]
 pub struct Variable {
@@ -747,7 +747,7 @@ where
 mod tests {
     use crate::structure::elements::IntoErgonomic;
 
-    use crate::number::integer::*;
+    use algebraeon_nzq::integer::*;
 
     use super::*;
 

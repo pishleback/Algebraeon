@@ -265,7 +265,7 @@ mod tests {
     use super::*;
     use crate::structure::elements::*;
 
-    use crate::number::integer::*;
+    use algebraeon_nzq::integer::*;
 
     #[test]
     fn test_ffosp() {
