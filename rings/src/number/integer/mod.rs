@@ -288,28 +288,32 @@ impl Rem<Integer> for Integer {
     type Output = Integer;
 
     fn rem(self, rhs: Integer) -> Self::Output {
-        Integer(self.0.rem(rhs.0))
+        use malachite_base::num::arithmetic::traits::Mod;
+        Integer(self.0.mod_op(rhs.0))
     }
 }
 impl Rem<&Integer> for Integer {
     type Output = Integer;
 
     fn rem(self, rhs: &Integer) -> Self::Output {
-        Integer(self.0.rem(&rhs.0))
+        use malachite_base::num::arithmetic::traits::Mod;
+        Integer(self.0.mod_op(&rhs.0))
     }
 }
 impl Rem<Integer> for &Integer {
     type Output = Integer;
 
     fn rem(self, rhs: Integer) -> Self::Output {
-        Integer((&self.0).rem(rhs.0))
+        use malachite_base::num::arithmetic::traits::Mod;
+        Integer((&self.0).mod_op(rhs.0))
     }
 }
 impl Rem<&Integer> for &Integer {
     type Output = Integer;
 
     fn rem(self, rhs: &Integer) -> Self::Output {
-        Integer((&self.0).rem(&rhs.0))
+        use malachite_base::num::arithmetic::traits::Mod;
+        Integer((&self.0).mod_op(&rhs.0))
     }
 }
 
