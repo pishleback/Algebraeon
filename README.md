@@ -279,3 +279,4 @@ A suggested workflow for testing new features:
  - Create a new binary in `examples/src/bin`, for example `my_main.rs`.
  - To run, use `cargo run --bin my_main.rs` in the root directory.
  - Test any changes to the codebase with unit tests and/or using `my_main.rs`.
+
