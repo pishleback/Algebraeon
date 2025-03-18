@@ -441,7 +441,7 @@ where
                             &xqi,
                             &self
                                 .poly_ring
-                                .var_pow(nat_to_usize(&q.nat_pow(&i.into())).unwrap())
+                                .var_pow(q.nat_pow(&i.into()).try_into().unwrap())
                         )
                     );
                     let g_naive = self
@@ -452,7 +452,7 @@ where
                                 self.poly_ring.add(
                                     &self
                                         .poly_ring
-                                        .var_pow(nat_to_usize(&q.nat_pow(&i.into())).unwrap()),
+                                        .var_pow(q.nat_pow(&i.into()).try_into().unwrap()),
                                     &self.poly_ring.neg(&self.poly_ring.var()),
                                 ),
                             ),

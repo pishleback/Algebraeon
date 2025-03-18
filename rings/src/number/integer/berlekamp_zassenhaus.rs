@@ -292,12 +292,12 @@ mod dminusone_test {
                 Rational::from(f.leading_coeff().unwrap().abs()) * f.cauchys_root_bound().unwrap();
 
             Self {
-                factor_dminusone_coeff_bound_divby_gdeg: nat_to_usize(
-                    &(&factor_dminusone_coeff_bound_divby_gdeg * &conversion_mult)
-                        .ceil()
-                        .unsigned_abs(),
-                )
-                .unwrap_or(usize::MAX),
+                factor_dminusone_coeff_bound_divby_gdeg: (factor_dminusone_coeff_bound_divby_gdeg
+                    * &conversion_mult)
+                    .ceil()
+                    .unsigned_abs()
+                    .try_into()
+                    .unwrap_or(usize::MAX),
                 memory_stack: MemoryStack::new(
                     DMinusOneTestSemigroup {},
                     modular_factors
@@ -306,13 +306,13 @@ mod dminusone_test {
                             let d = g.degree().unwrap();
                             let coeff = (f.leading_coeff().unwrap() * g.coeff(d - 1)).rem(modulus);
                             DMinusOneTestSemigroupElem {
-                                approx_coeff_lower_bound: nat_to_usize(
-                                    &(Rational::from(coeff) * &conversion_mult)
-                                        .floor()
-                                        .unsigned_abs()
-                                        .rem(&machine_range),
-                                )
-                                .unwrap(),
+                                approx_coeff_lower_bound: (Rational::from(coeff)
+                                    * &conversion_mult)
+                                    .floor()
+                                    .unsigned_abs()
+                                    .rem(&machine_range)
+                                    .try_into()
+                                    .unwrap(),
                                 degree: d,
                             }
                         })

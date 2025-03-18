@@ -22,20 +22,3 @@ impl SemiRingStructure for CannonicalStructure<Natural> {
         a * b
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_nat_to_usize() {
-        assert_eq!(nat_to_usize(&Natural::from(0u8)).unwrap(), 0);
-        assert_eq!(nat_to_usize(&Natural::from(1u8)).unwrap(), 1);
-        assert_eq!(nat_to_usize(&Natural::from(2u8)).unwrap(), 2);
-
-        // use malachite_base::num::arithmetic::traits::ModPow;
-
-        // let a = malachite_nz::natural::Natural::from(1u8);
-        // let c = a.mod_pow(a);
-    }
-}

@@ -535,6 +535,33 @@ impl Natural {
     }
 }
 
+impl TryInto<usize> for Natural {
+    type Error = ();
+
+    fn try_into(self) -> Result<usize, Self::Error> {
+        (&self).try_into()
+    }
+}
+impl TryInto<usize> for &Natural {
+    type Error = ();
+
+    fn try_into(self) -> Result<usize, Self::Error> {
+        let limbs = self.0.to_limbs_asc();
+        if limbs.len() == 0 {
+            Ok(0)
+        } else if limbs.len() == 1 {
+            let n = limbs[0];
+            if Natural::from(n) > Natural::from(usize::MAX) {
+                Err(())
+            } else {
+                Ok(n as usize)
+            }
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl MetaType for Natural {
     type Structure = CannonicalStructure<Natural>;
 
@@ -543,18 +570,23 @@ impl MetaType for Natural {
     }
 }
 
-pub fn nat_to_usize(n: &Natural) -> Result<usize, ()> {
-    let limbs = n.0.to_limbs_asc();
-    if limbs.len() == 0 {
-        Ok(0)
-    } else if limbs.len() == 1 {
-        let n = limbs[0];
-        if Natural::from(n) > Natural::from(usize::MAX) {
-            Err(())
-        } else {
-            Ok(n as usize)
-        }
-    } else {
-        Err(())
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_nat_to_usize() {
+        assert_eq!(
+            <&Natural as TryInto<usize>>::try_into(&Natural::from(0u8)).unwrap(),
+            0
+        );
+        assert_eq!(
+            <&Natural as TryInto<usize>>::try_into(&Natural::from(1u8)).unwrap(),
+            1
+        );
+        assert_eq!(
+            <&Natural as TryInto<usize>>::try_into(&Natural::from(2u8)).unwrap(),
+            2
+        );
     }
 }

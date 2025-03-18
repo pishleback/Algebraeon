@@ -344,7 +344,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             // In order to make use of fast integer algorithms, we encode polynomials as big integers thought of as r-length arrays of numbers each at most n^2
             // Thus each block of a polynomial bigint shall have length coeff_size := bitcount(r*n^2)
 
-            let r_usize = nat_to_usize(&r).unwrap();
+            let r_usize = (&r).try_into().unwrap();
             let coeff_size = bitcount(n * n * &r);
             let coeff_mask = (Natural::ONE << coeff_size) - Natural::ONE;
 
@@ -440,7 +440,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 let rhs = {
                     let mut poly = zero_poly();
                     poly[0] = b.clone(); //this is ok since r >= 3
-                    poly[nat_to_usize(&n.rem(&r)).unwrap()] += Natural::ONE;
+                    poly[<Natural as TryInto<usize>>::try_into(n % &r).unwrap()] += Natural::ONE;
                     poly_to_bigint(&poly)
                 };
 

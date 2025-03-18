@@ -67,7 +67,7 @@ impl<const N: usize> From<&Integer> for Modulo<N> {
         let value = value % Integer::from(N);
         let value = value.unsigned_abs_ref();
         Self {
-            x: nat_to_usize(&value).unwrap(),
+            x: value.try_into().unwrap(),
         }
     }
 }
@@ -76,7 +76,7 @@ impl<const N: usize> From<Integer> for Modulo<N> {
         let value = value % Integer::from(N);
         let value = value.unsigned_abs_ref();
         Self {
-            x: nat_to_usize(&value).unwrap(),
+            x: value.try_into().unwrap(),
         }
     }
 }

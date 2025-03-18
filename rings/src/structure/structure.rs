@@ -946,7 +946,7 @@ where
             .1
         {
             for root in self.all_roots_list(&factor).unwrap() {
-                root_powers.push((root, nat_to_usize(&k).unwrap()))
+                root_powers.push((root, (&k).try_into().unwrap()))
             }
         }
         Some(root_powers)

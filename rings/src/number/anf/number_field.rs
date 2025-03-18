@@ -71,7 +71,7 @@ impl ANFStructure {
 
             for (p, k) in disc_factors {
                 debug_assert!(p >= Integer::ZERO);
-                let p = nat_to_usize(&p.unsigned_abs_ref()).unwrap(); //if p is too big for usize then this algorithm was doomed to take longer than my lifespan anyway
+                let p = p.unsigned_abs_ref().try_into().unwrap(); //if p is too big for usize then this algorithm was doomed to take longer than my lifespan anyway
 
                 if k >= Natural::TWO {
                     // println!("p = {}", p);
