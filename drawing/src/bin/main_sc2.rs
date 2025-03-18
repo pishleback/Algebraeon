@@ -1,8 +1,5 @@
 #![allow(dead_code, warnings, unused)]
 
-use malachite_nz::integer::Integer;
-use malachite_nz::natural::Natural;
-use malachite_q::Rational;
 use algebraeon_drawing::canvas::canvas2d::*;
 use algebraeon_drawing::canvas::Canvas;
 use algebraeon_geometry::simplexes::ConvexHull;
@@ -10,6 +7,9 @@ use algebraeon_geometry::simplexes::OrientationSide;
 use algebraeon_geometry::simplexes::OrientedSimplex;
 use algebraeon_geometry::simplexes::Simplex;
 use algebraeon_geometry::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 use algebraeon_sets::structure::*;
 use simplexes::LabelledSimplexCollection;
 

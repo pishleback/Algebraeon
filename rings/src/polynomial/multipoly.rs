@@ -6,11 +6,11 @@ use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::atomic::AtomicUsize;
 
-use malachite_nz::natural::Natural;
-
 use super::super::structure::structure::*;
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
+
+use algebraeon_nzq::natural::*;
 
 #[derive(Debug, Hash, Clone)]
 pub struct Variable {
@@ -745,9 +745,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
-
     use crate::structure::elements::IntoErgonomic;
+
+    use algebraeon_nzq::integer::*;
 
     use super::*;
 

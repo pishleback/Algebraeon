@@ -10,14 +10,13 @@ use algebraeon_geometry::simplexes::OrientationSide;
 use algebraeon_geometry::simplexes::OrientedSimplex;
 use algebraeon_geometry::simplexes::Simplex;
 use algebraeon_geometry::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 use algebraeon_rings::number::algebraic::real::RealAlgebraic;
 use algebraeon_rings::structure::structure::PositiveRealNthRootStructure;
 use algebraeon_rings::structure::structure::RingStructure;
 use algebraeon_sets::structure::*;
-use malachite_nz::integer::Integer;
-use malachite_nz::natural::Natural;
-use malachite_q::arithmetic::traits::Approximate;
-use malachite_q::Rational;
 use rand::Rng;
 use simplexes::LabelledSimplexCollection;
 

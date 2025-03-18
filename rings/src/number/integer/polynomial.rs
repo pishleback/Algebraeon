@@ -1,6 +1,3 @@
-use malachite_nz::integer::Integer;
-use malachite_q::Rational;
-
 use crate::{number::integer::*, number::natural::functions::*, polynomial::polynomial::*};
 
 impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {
@@ -27,7 +24,7 @@ impl Polynomial<Integer> {
         let deg = self.degree()?;
         let mut bound = Natural::ZERO;
         for coeff in self.coeffs() {
-            bound += coeff.unsigned_abs();
+            bound += coeff.unsigned_abs_ref();
         }
         bound *= choose_usize(deg, deg / 2);
         Some(bound)
@@ -35,7 +32,6 @@ impl Polynomial<Integer> {
 
     //https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots#Lagrange's_and_Cauchy's_bounds
     pub fn cauchys_root_bound(&self) -> Option<Rational> {
-        use malachite_base::num::arithmetic::traits::Abs;
         let d = self.degree()?;
         if d == 0 {
             None
@@ -58,13 +54,13 @@ mod tests {
     use crate::structure::elements::IntoErgonomic;
 
     use super::*;
-    
 
     #[test]
     fn test_zassenhaus_against_kroneckers() {
         let x = &Polynomial::<Integer>::var().into_ergonomic();
 
-        let f = ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_verbose();
+        let f =
+            ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_verbose();
         let fs = f.clone().factorize_by_kroneckers_method().unwrap();
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());

@@ -6,6 +6,10 @@ use crate::structure::quotient::QuotientStructure;
 
 use super::*;
 
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
+
 // Some algorithms here on p-adic root isolation can be found in
 // Sturm, Thomas & Weispfenning, Volker. (2004). P-adic Root Isolation. Revista de la Real Academia de Ciencias Exactas, Físicas y Naturales. Serie A, Matemáticas.
 // https://www.researchgate.net/profile/Thomas-Sturm-2/publication/2925550_P-adic_Root_Isolation/links/580b8c0708aeef1bfeeb5db8/P-adic-Root-Isolation.pdf?origin=scientificContributions
@@ -322,7 +326,7 @@ fn isolatebf0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
         let mut i = Natural::ONE;
         let max_i = p.nat_pow(&(&two_alpha + Natural::ONE));
         while i < max_i {
-            if &i % p != 0 {
+            if &i % p != Natural::ZERO {
                 if padic_int_valuation(p, f.evaluate(&Integer::from(&i)))
                     > Valuation::Finite(Integer::from(&two_alpha))
                 {

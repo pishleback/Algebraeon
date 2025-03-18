@@ -1,10 +1,9 @@
-use crate::{number::anf::number_field::new_anf, polynomial::polynomial::*, structure::structure::*};
+use crate::{
+    number::anf::number_field::new_anf, polynomial::polynomial::*, structure::structure::*,
+};
 use algebraeon_sets::structure::*;
 use bounds::*;
 use interval::*;
-use malachite_base::num::basic::traits::{One, Two, Zero};
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
 use polynomial::*;
 use std::{fmt::Display, rc::Rc};
 
@@ -13,6 +12,10 @@ use super::{bisection_gen::RationalSimpleBetweenGenerator, poly_tools::*, rat_to
 mod bounds;
 mod interval;
 pub mod polynomial;
+
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 
 #[derive(Debug, Clone)]
 pub struct RealAlgebraicRoot {
@@ -29,7 +32,7 @@ pub struct RealAlgebraicRoot {
 
 impl std::hash::Hash for RealAlgebraicRoot {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        debug_assert!(self.poly.leading_coeff().unwrap() > 0);
+        debug_assert!(self.poly.leading_coeff().unwrap() > Integer::ZERO);
         self.poly.hash(state);
     }
 }
@@ -793,7 +796,7 @@ mod tests {
             for root in roots {
                 let root2 = RealAlgebraic::add(
                     &root,
-                    &RealAlgebraic::from_rat(&Rational::from_signeds(1, 2)).unwrap(),
+                    &RealAlgebraic::from_rat(&Rational::from_integers(1, 2)).unwrap(),
                 );
                 root2.check_invariants().unwrap();
             }
@@ -840,7 +843,7 @@ mod tests {
         let a = RealAlgebraic::product(roots.iter().collect());
         assert_eq!(
             a,
-            RealAlgebraic::from_rat(&Rational::from_signeds(-100, 7)).unwrap()
+            RealAlgebraic::from_rat(&Rational::from_integers(-100, 7)).unwrap()
         );
     }
 
@@ -927,7 +930,7 @@ mod tests {
             match &mut root {
                 RealAlgebraic::Rational(_a) => {}
                 RealAlgebraic::Real(a) => {
-                    a.refine_to_accuracy(&Rational::from_signeds(1, i64::MAX))
+                    a.refine_to_accuracy(&Rational::from_integers(1, i64::MAX))
                 }
             }
             println!("    {} {:?}", root.to_string(), root);

@@ -14,13 +14,11 @@ name = "algebraeon_rings"
 
 [dependencies]
 algebraeon-sets = { version = "0.0.6", path = "../sets" }
+algebraeon-nzq = { version = "0.0.8", path = "../nzq" }
 algebraeon-groups = { version = "0.0.8", path = "../groups" }
 rand = "0.8.5"
 rayon="1.7.0"
 itertools="0.11.0"
-malachite-base = "0.4.16"
-malachite-nz = "0.4.16"
-malachite-q = "0.4.16"
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]

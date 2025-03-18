@@ -1,8 +1,12 @@
-use std::{ops::{Add, Div, Mul, Neg, Sub}, rc::Rc};
+use std::{
+    ops::{Add, Div, Mul, Neg, Sub},
+    rc::Rc,
+};
 
-use algebraeon_sets::structure::*;
-use malachite_nz::integer::Integer;
 use super::structure::*;
+use algebraeon_sets::structure::*;
+
+use algebraeon_nzq::integer::*;
 
 pub trait IntoErgonomic: MetaType {
     fn into_ergonomic(self) -> StructuredElement<Self::Structure> {
@@ -43,7 +47,6 @@ where
         std::fmt::Display::fmt(&self.elem, f)
     }
 }
-
 
 impl<RS: RingStructure> PartialEq for StructuredElement<RS> {
     fn eq(&self, other: &Self) -> bool {
@@ -491,7 +494,6 @@ impl_int_ops!(Integer);
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
 
     use super::super::super::polynomial::polynomial::*;
 

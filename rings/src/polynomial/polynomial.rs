@@ -2,12 +2,13 @@ use std::fmt::Display;
 use std::rc::Rc;
 
 use itertools::Itertools;
-use malachite_nz::natural::Natural;
 
 use crate::linear::matrix::*;
 
 use super::super::structure::structure::*;
 use algebraeon_sets::structure::*;
+
+use algebraeon_nzq::natural::*;
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {
@@ -1132,13 +1133,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
-    use malachite_q::Rational;
-
     use crate::number::finite_fields::quaternary_field::*;
     use crate::structure::elements::IntoErgonomic;
 
     use super::super::super::structure::structure::*;
+
+    use algebraeon_nzq::integer::*;
+    use algebraeon_nzq::rational::*;
 
     use super::*;
 
@@ -1628,15 +1629,15 @@ mod tests {
         for (f, exp) in vec![
             (
                 Polynomial::from_coeffs(vec![
-                    Rational::from_signeds(1, 2),
-                    Rational::from_signeds(1, 3),
+                    Rational::from_integers(1, 2),
+                    Rational::from_integers(1, 3),
                 ]),
                 Polynomial::from_coeffs(vec![Integer::from(3), Integer::from(2)]),
             ),
             (
                 Polynomial::from_coeffs(vec![
-                    Rational::from_signeds(4, 1),
-                    Rational::from_signeds(6, 1),
+                    Rational::from_integers(4, 1),
+                    Rational::from_integers(6, 1),
                 ]),
                 Polynomial::from_coeffs(vec![Integer::from(2), Integer::from(3)]),
             ),

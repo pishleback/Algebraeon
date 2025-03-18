@@ -2,9 +2,9 @@ use crate::{
     polynomial::{multipoly::*, polynomial::*},
     structure::structure::*,
 };
-use malachite_base::num::basic::traits::Zero;
-use malachite_nz::integer::Integer;
-use malachite_q::Rational;
+
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::rational::*;
 
 pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));
@@ -51,7 +51,10 @@ pub fn root_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomia
     //e.g. f(x) = 1 + x + x^2 replace it with f(d/n * x) = 1 + d/n x + d^2/n^2 x^2 = n^2 + ndx + d^2 x
     let rat_mul_poly = Polynomial::from_coeffs({
         let degree = poly.degree().unwrap();
-        let (n, d) = (Rational::numerator(rat), Rational::denominator(rat));
+        let (n, d) = (
+            Rational::numerator(rat),
+            Integer::from(Rational::denominator(rat)),
+        );
         let mut n_pows = vec![Integer::from(1)];
         let mut d_pows = vec![Integer::from(1)];
         {

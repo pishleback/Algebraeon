@@ -1,13 +1,8 @@
 use std::{borrow::Borrow, fmt::Debug, rc::Rc};
 
-use malachite_base::num::arithmetic::traits::UnsignedAbs;
-use malachite_base::num::logic::traits::BitIterable;
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
-
-use crate::number::natural::nat_to_usize;
 use crate::polynomial::polynomial::Polynomial;
 use crate::polynomial::polynomial::PolynomialStructure;
+use algebraeon_nzq::{integer::*, natural::*, rational::*};
 
 use algebraeon_sets::structure::*;
 
@@ -51,12 +46,12 @@ pub trait SemiRingStructure: EqStructure {
     }
 
     fn nat_pow(&self, a: &Self::Set, n: &Natural) -> Self::Set {
-        if *n == 0 {
+        if *n == Natural::ZERO {
             self.one()
-        } else if *n == 1 {
+        } else if *n == Natural::ONE {
             a.clone()
         } else {
-            debug_assert!(*n >= 2);
+            debug_assert!(*n >= Natural::TWO);
             let bits: Vec<_> = n.bits().collect();
             let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
@@ -75,13 +70,13 @@ pub trait SemiRingStructure: EqStructure {
     }
 
     fn from_nat(&self, x: &Natural) -> Self::Set {
-        if *x == 0 {
+        if *x == Natural::ZERO {
             self.zero()
-        } else if *x == 1 {
+        } else if *x == Natural::ONE {
             self.one()
         } else {
             let two = self.add(&self.one(), &self.one());
-            debug_assert!(*x >= 2);
+            debug_assert!(*x >= Natural::TWO);
             let bits: Vec<bool> = x.bits().collect();
             let mut ans = self.zero();
             let mut v = self.one();
@@ -134,10 +129,10 @@ pub trait RingStructure: SemiRingStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
     fn from_int(&self, x: &Integer) -> Self::Set {
-        if *x < 0 {
+        if *x < Integer::ZERO {
             self.neg(&self.from_int(&-x))
         } else {
-            self.from_nat(x.unsigned_abs_ref())
+            self.from_nat(&x.clone().unsigned_abs())
         }
     }
 }
@@ -175,7 +170,7 @@ pub trait IntegralDomainStructure: RingStructure {
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
         match self.div(
             &self.from_int(&x.numerator()),
-            &self.from_int(&x.denominator()),
+            &self.from_nat(&x.denominator()),
         ) {
             Ok(d) => Some(d),
             Err(RingDivisionError::NotDivisible) => None,
@@ -185,12 +180,12 @@ pub trait IntegralDomainStructure: RingStructure {
 
     fn int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
         // println!("{:?} {:?}", elem, n);
-        if *n == 0 {
+        if *n == Integer::ZERO {
             Some(self.one())
         } else if self.is_zero(a) {
             Some(self.zero())
-        } else if *n > 0 {
-            Some(self.nat_pow(a, &n.unsigned_abs()))
+        } else if *n > Integer::ZERO {
+            Some(self.nat_pow(a, &n.clone().unsigned_abs()))
         } else {
             match self.inv(a) {
                 Ok(self_inv) => Some(self.nat_pow(&self_inv, &(-n).unsigned_abs())),
@@ -535,7 +530,7 @@ pub trait MetaEuclideanDivision: MetaIntegralDomain
 where
     Self::Structure: EuclideanDivisionStructure,
 {
-    fn norm(&self) -> Option<malachite_nz::natural::Natural> {
+    fn norm(&self) -> Option<Natural> {
         Self::structure().norm(self)
     }
 
@@ -605,7 +600,7 @@ impl<RS: CharZeroStructure + 'static> InfiniteStructure for RS {
 
             fn next(&mut self) -> Option<Self::Item> {
                 let next = self.next.clone();
-                if 0 < next {
+                if Integer::ZERO < next {
                     self.next = -self.next.clone();
                 } else {
                     self.next = Integer::from(1) - self.next.clone();

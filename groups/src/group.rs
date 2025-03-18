@@ -1,13 +1,12 @@
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use itertools::Itertools;
 use std::{
     borrow::Borrow,
     collections::{HashMap, HashSet},
     fmt::Debug,
     hash::Hash,
 };
-
-use itertools::Itertools;
-use malachite_base::num::{arithmetic::traits::UnsignedAbs, logic::traits::BitIterable};
-use malachite_nz::{integer::Integer, natural::Natural};
 
 pub trait Group: Debug + Clone + PartialEq + Eq {
     fn identity() -> Self;
@@ -41,12 +40,12 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
     }
 
     fn nat_pow(&self, n: &Natural) -> Self {
-        if *n == 0 {
+        if *n == Natural::ZERO {
             Self::identity()
-        } else if *n == 1 {
+        } else if *n == Natural::ONE {
             self.clone()
         } else {
-            debug_assert!(*n >= 2);
+            debug_assert!(*n >= Natural::TWO);
             let bits: Vec<_> = n.bits().collect();
             let mut pows = vec![self.clone()];
             while pows.len() < bits.len() {
@@ -68,10 +67,10 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
     }
 
     fn int_pow(&self, n: &Integer) -> Self {
-        if *n == 0 {
+        if *n == Integer::ZERO {
             Self::identity()
-        } else if *n > 0 {
-            self.nat_pow(&n.unsigned_abs())
+        } else if *n > Integer::ZERO {
+            self.nat_pow(&n.unsigned_abs_ref())
         } else {
             self.nat_pow(&(-n).unsigned_abs()).inverse()
         }

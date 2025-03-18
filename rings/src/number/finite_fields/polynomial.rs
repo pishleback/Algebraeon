@@ -2,15 +2,14 @@ use std::rc::Rc;
 
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use malachite_base::num::basic::traits::{One, Two};
-use malachite_nz::natural::Natural;
 
 use crate::{
     linear::{matrix::*, subspace::*},
-    number::natural::nat_to_usize,
     polynomial::polynomial::*,
     structure::{factorization::*, quotient::QuotientStructure, structure::*},
 };
+
+use algebraeon_nzq::natural::*;
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
 /*
@@ -267,7 +266,7 @@ where
             let p = self.poly_ring.coeff_ring().characteristic_and_power().0;
             let mut reduced_c_coeffs = vec![];
             for (k, coeff) in c.coeffs().into_iter().enumerate() {
-                if Natural::from(k) % &p == 0 {
+                if Natural::from(k) % &p == Natural::ZERO {
                     reduced_c_coeffs.push(coeff.clone());
                 } else {
                     debug_assert!(self.poly_ring.coeff_ring().is_zero(coeff));
@@ -607,12 +606,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
 
     use crate::{
         number::finite_fields::{modulo::*, quaternary_field::QuaternaryField},
         structure::elements::IntoErgonomic,
     };
+
+    use algebraeon_nzq::integer::*;
 
     use super::*;
 

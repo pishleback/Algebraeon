@@ -261,10 +261,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
 
     use super::*;
     use crate::structure::elements::*;
+
+    use algebraeon_nzq::integer::*;
 
     #[test]
     fn test_ffosp() {
@@ -296,7 +297,8 @@ mod tests {
         let y = &MultiPolynomial::<Integer>::var(y_var.clone()).into_ergonomic();
         let z = &MultiPolynomial::<Integer>::var(z_var.clone()).into_ergonomic();
 
-        let f = (x * x * y + x * x * z + y * y * x + y * y * z + z * z * x + z * z * y).into_verbose();
+        let f =
+            (x * x * y + x * x * z + y * y * x + y * y * z + z * z * x + z * z * y).into_verbose();
 
         println!(
             "f={} {}",

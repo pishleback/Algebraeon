@@ -1,11 +1,11 @@
 use std::fmt::Display;
 use std::rc::Rc;
 
-use malachite_nz::natural::Natural;
-
 use crate::polynomial::polynomial::*;
 use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
+
+use algebraeon_nzq::natural::*;
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -119,7 +119,8 @@ impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Qu
         Some(
             self.factorize_monic(p)?
                 .factorize_squarefree()
-                .factorize_distinct_degree().factorize_cantor_zassenhaus(),
+                .factorize_distinct_degree()
+                .factorize_cantor_zassenhaus(),
         )
     }
 }

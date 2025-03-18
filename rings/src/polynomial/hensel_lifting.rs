@@ -1,15 +1,13 @@
 use std::rc::Rc;
 
-use malachite_base::num::basic::traits::One;
-use malachite_base::num::basic::traits::Two;
-use malachite_nz::natural::Natural;
-
 use crate::structure::factorization::*;
 use crate::structure::quotient::*;
 use crate::structure::structure::*;
 
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
+
+use algebraeon_nzq::natural::*;
 
 #[derive(Debug, Clone)]
 enum HenselProduct<
@@ -605,7 +603,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
+    use algebraeon_nzq::integer::*;
 
     use super::*;
 

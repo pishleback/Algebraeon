@@ -1,17 +1,15 @@
-
 //TODO: parse these from files instead
-
 
 use std::str::FromStr;
 
 use crate::{polynomial::polynomial::*, structure::elements::IntoErgonomic};
-use malachite_nz::integer::Integer;
+use algebraeon_nzq::integer::*;
 
 // https://homepages.loria.fr/PZimmermann/mupad/
 
-pub fn p1() -> Polynomial<Integer>{
+pub fn p1() -> Polynomial<Integer> {
     let x = &Polynomial::<Integer>::var().into_ergonomic();
-     (x.pow(156)
+    (x.pow(156)
      + Integer::from_str("-28293184124737694080").unwrap() * x.pow(150)
      + Integer::from_str("-50111580155260460844584241578962989056").unwrap() * x.pow(144)
      + Integer::from_str("2000741892753026115892243757690184900091769801141945106432").unwrap() * x.pow(138)

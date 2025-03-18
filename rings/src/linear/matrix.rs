@@ -2,11 +2,11 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 
 use itertools::Itertools;
-use malachite_nz::natural::Natural;
 
 use super::super::structure::structure::*;
 use super::subspace::*;
 use crate::polynomial::polynomial::*;
+use algebraeon_nzq::natural::*;
 use algebraeon_sets::structure::*;
 
 #[derive(Debug)]
@@ -521,15 +521,14 @@ impl<RS: RingStructure> MatrixStructure<RS> {
     }
 
     pub fn nat_pow(&self, a: &Matrix<RS::Set>, k: &Natural) -> Matrix<RS::Set> {
-        use malachite_base::num::logic::traits::BitIterable;
         let n = a.rows();
         assert_eq!(n, a.cols());
-        if *k == 0 {
+        if *k == Natural::ZERO {
             self.ident(n)
-        } else if *k == 1 {
+        } else if *k == Natural::ONE {
             a.clone()
         } else {
-            debug_assert!(*k >= 2);
+            debug_assert!(*k >= Natural::TWO);
             let bits: Vec<_> = k.bits().collect();
             let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
@@ -2375,8 +2374,8 @@ where
 mod tests {
     use std::str::FromStr;
 
-    use malachite_nz::integer::Integer;
-    use malachite_q::Rational;
+    use algebraeon_nzq::integer::*;
+    use algebraeon_nzq::rational::*;
 
     use crate::{
         number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},

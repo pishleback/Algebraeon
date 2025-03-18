@@ -1,7 +1,8 @@
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
-
 use super::*;
+
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_nzq::rational::*;
 
 fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
     debug_assert_eq!(poly.degree().unwrap(), 1);
@@ -592,7 +593,7 @@ impl Polynomial<Integer> {
             .collect::<Vec<_>>();
         let mut v = 0;
         for i in 0..nonzero_coeffs.len() - 1 {
-            if (nonzero_coeffs[i] < &0) != (nonzero_coeffs[i + 1] < &0) {
+            if (nonzero_coeffs[i] < &Integer::ZERO) != (nonzero_coeffs[i + 1] < &Integer::ZERO) {
                 v += 1;
             }
         }
@@ -630,7 +631,7 @@ impl Polynomial<Integer> {
                 //bisect
                 //q_small(x) = 2^n q(x/2)
                 let q_small = q.apply_map_with_powers(|(i, coeff)| {
-                    coeff * Integer::from(2) << (q.degree().unwrap() - i)
+                    coeff * Integer::from(Natural::TWO << (q.degree().unwrap() - i))
                 });
                 l.push((
                     (c.clone() << 1) + Natural::from(1u8),
@@ -716,7 +717,7 @@ impl Polynomial<Integer> {
                 //compute a bound M on the absolute value of any root
                 //m = (Cauchy's bound + 1) https://captainblack.wordpress.com/2009/03/08/cauchys-upper-bound-for-the-roots-of-a-polynomial/
                 let m = Rational::from(2)
-                    + Rational::from_naturals(
+                    + Rational::from_integers(
                         itertools::max((0..d).map(|i| self.coeff(i).unsigned_abs_ref().clone()))
                             .unwrap(),
                         self.coeff(d).unsigned_abs_ref().clone(),
@@ -751,10 +752,7 @@ impl Polynomial<Integer> {
             if evaluate_at_rational(&self, a) == Rational::from(0) {
                 poly_no_endroots = Self::div(
                     &poly_no_endroots,
-                    &Polynomial::from_coeffs(vec![
-                        -Rational::numerator(a),
-                        Rational::denominator(a),
-                    ]),
+                    &Polynomial::from_coeffs(vec![-a.numerator(), a.denominator().into()]),
                 )
                 .unwrap();
                 if include_a {
@@ -765,10 +763,7 @@ impl Polynomial<Integer> {
             if evaluate_at_rational(&self, b) == Rational::from(0) {
                 poly_no_endroots = Self::div(
                     &poly_no_endroots,
-                    &Polynomial::from_coeffs(vec![
-                        -Rational::numerator(b),
-                        Rational::denominator(b),
-                    ]),
+                    &Polynomial::from_coeffs(vec![-b.numerator(), b.denominator().into()]),
                 )
                 .unwrap();
                 if include_b {
@@ -794,10 +789,10 @@ impl Polynomial<Integer> {
 
             'interval_loop: for (c, k, h) in trans_poly.isolate_real_roots_by_collin_akritas() {
                 let d = Natural::from(1u8) << k;
-                let mut interval_a = (b - a) * Rational::from_naturals(c.clone(), d.clone()) + a;
+                let mut interval_a = (b - a) * Rational::from_integers(c.clone(), d.clone()) + a;
                 if h {
                     let mut interval_b =
-                        (b - a) * Rational::from_naturals(&c + Natural::from(1u8), d.clone()) + a;
+                        (b - a) * Rational::from_integers(&c + Natural::from(1u8), d.clone()) + a;
 
                     //at the moment, interval_a and interval_b might be rational roots
                     //we need to strink them a little bit if so
@@ -875,7 +870,6 @@ impl Polynomial<Integer> {
         include_b: bool,
     ) -> Vec<RealAlgebraic> {
         debug_assert!(self.is_irreducible());
-
         self.clone()
             .real_roots_squarefree(opt_a, opt_b, include_a, include_b)
             .to_real_roots()
@@ -921,7 +915,7 @@ pub fn nth_root(x: &RealAlgebraic, n: usize) -> Result<RealAlgebraic, ()> {
             std::cmp::Ordering::Greater => {
                 let poly = match x {
                     RealAlgebraic::Rational(rat) => {
-                        Polynomial::from_coeffs(vec![-rat.numerator(), rat.denominator()])
+                        Polynomial::from_coeffs(vec![-rat.numerator(), rat.denominator().into()])
                     }
                     RealAlgebraic::Real(real) => real.poly.clone(),
                 };

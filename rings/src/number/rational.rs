@@ -1,14 +1,10 @@
 use std::rc::Rc;
 
-use malachite_base::num::basic::traits::One;
-use malachite_base::num::basic::traits::OneHalf;
-use malachite_base::num::basic::traits::Zero;
-use malachite_nz::integer::Integer;
-use malachite_q::Rational;
-
 use super::super::polynomial::polynomial::*;
 use super::super::structure::factorization::*;
 use super::super::structure::structure::*;
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::rational::*;
 use algebraeon_sets::structure::*;
 
 impl SemiRingStructure for CannonicalStructure<Rational> {
@@ -65,25 +61,20 @@ impl FieldOfFractionsStructure for CannonicalStructure<Rational> {
     }
 
     fn numerator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
-        //malachite returns a natural for the numerator for some
-        if elem >= &0 {
-            Integer::from(elem.numerator_ref())
-        } else {
-            -Integer::from(elem.numerator_ref())
-        }
+        elem.numerator()
     }
 
     fn denominator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
-        Integer::from(elem.denominator_ref())
+        Integer::from(elem.denominator())
     }
 }
 
 impl RealRoundingStructure for CannonicalStructure<Rational> {
     fn floor(&self, x: &Self::Set) -> Integer {
-        <Rational as malachite_base::num::arithmetic::traits::Floor>::floor(x.clone())
+        x.floor_ref()
     }
     fn ceil(&self, x: &Self::Set) -> Integer {
-        -self.floor(&-x)
+        x.ceil_ref()
     }
     fn round(&self, x: &Self::Set) -> Integer {
         self.floor(&(x + Rational::ONE_HALF))

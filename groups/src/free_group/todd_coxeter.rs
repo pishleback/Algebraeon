@@ -320,7 +320,11 @@ the list of generators for this finitely generated group"
     }
 
     /// Add a new relation among the generators of the finitely generated group of the form rel1=rel2
-    pub fn add_two_sided_relation(&mut self, rel1: FinitelyGeneratedGroupElement, rel2: FinitelyGeneratedGroupElement) {
+    pub fn add_two_sided_relation(
+        &mut self,
+        rel1: FinitelyGeneratedGroupElement,
+        rel2: FinitelyGeneratedGroupElement,
+    ) {
         self.add_relation(rel1 * rel2.inv());
     }
 

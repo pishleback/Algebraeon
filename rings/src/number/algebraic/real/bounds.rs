@@ -1,4 +1,4 @@
-use malachite_q::Rational;
+use algebraeon_nzq::rational::*;
 
 #[derive(Debug, Clone)]
 pub enum LowerBound {

@@ -1,10 +1,8 @@
 use std::{fmt::Display, rc::Rc};
 
-use algebraeon_sets::structure::*;
-use malachite_base::num::basic::traits::{One, Zero};
-use malachite_nz::natural::Natural;
-
 use super::structure::*;
+use algebraeon_nzq::natural::*;
+use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct Factored<RS: UniqueFactorizationStructure> {
@@ -38,7 +36,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
             return Err("unit must be a unit");
         }
         for (p, k) in &self.factors {
-            if k == &0 {
+            if k == &Natural::ZERO {
                 return Err("prime powers must not be zero");
             }
             if !self.ring.is_fav_assoc(p) {
@@ -178,7 +176,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
     pub fn is_irreducible(&self) -> bool {
         if self.factors.len() == 1 {
             let (_p, k) = self.factors.iter().next().unwrap();
-            if k == &1 {
+            if k == &Natural::ONE {
                 return true;
             }
         }
@@ -244,7 +242,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
     }
 
     pub fn factored_irreducible_power_unchecked(ring: Rc<RS>, elem: RS::Set, k: Natural) -> Self {
-        debug_assert!(k >= 1);
+        debug_assert!(k >= Natural::ONE);
         let (unit, assoc) = ring.factor_fav_assoc(&elem);
         Factored {
             ring,
@@ -331,9 +329,9 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationStructure>(
 
 #[cfg(test)]
 mod tests {
-    use malachite_nz::integer::Integer;
-
     use super::*;
+
+    use algebraeon_nzq::integer::*;
 
     #[test]
     fn factorization_invariants() {

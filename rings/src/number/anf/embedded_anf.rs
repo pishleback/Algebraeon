@@ -6,12 +6,12 @@ use crate::{
     structure::*,
 };
 use algebraeon_sets::structure::*;
-use malachite_base::num::basic::traits::{One, Zero};
-use malachite_nz::integer::Integer;
-use malachite_q::Rational;
 use structure::*;
 
 use super::number_field::{new_anf, ANFStructure};
+
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::rational::*;
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
@@ -149,7 +149,7 @@ pub fn anf_pair_primitive_element_theorem(
     }
 
     let mut nontrivial_linear_combinations =
-        malachite_q::exhaustive::exhaustive_rationals().map(|r| (r.numerator(), r.denominator()));
+        Rational::exhaustive_rationals().map(|r| (r.numerator(), Integer::from(r.denominator())));
     nontrivial_linear_combinations.next().unwrap();
     for (x, y) in nontrivial_linear_combinations {
         let gen = ComplexAlgebraic::add(

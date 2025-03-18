@@ -54,13 +54,12 @@ pub fn choose(a: impl Borrow<Natural>, b: impl Borrow<Natural>) -> Natural {
 }
 
 pub fn pow(x: &Natural, n: &Natural) -> Natural {
-    use malachite_base::num::logic::traits::BitIterable;
-    if *n == 0 {
+    if *n == Natural::ZERO {
         Natural::ONE
-    } else if *n == 1 {
+    } else if *n == Natural::ONE {
         x.clone()
     } else {
-        debug_assert!(*n >= 2);
+        debug_assert!(*n >= Natural::TWO);
         let bits: Vec<_> = n.bits().collect();
         let mut pows = vec![x.clone()];
         while pows.len() < bits.len() {
@@ -122,7 +121,6 @@ pub fn sqrt_ceil(x: &Natural) -> Natural {
 
 /// Return the number of bits needed to store n i.e. ceil(log2(n)) for all non-zero n
 pub fn bitcount(n: impl Borrow<Natural>) -> usize {
-    use malachite_base::num::logic::traits::BitIterable;
     n.borrow().bits().len()
 }
 
@@ -159,9 +157,8 @@ pub fn is_power_test(n: &Natural) -> IsPowerTestResult {
 }
 
 pub fn gcd(mut x: Natural, mut y: Natural) -> Natural {
-    use malachite_base::num::arithmetic::traits::Mod;
     while y != Natural::ZERO {
-        let r = x.mod_op(&y);
+        let r = x % &y;
         (x, y) = (y, r)
     }
     x
@@ -357,7 +354,7 @@ mod tests {
                 let r = nth_root_floor(&x, &n);
                 println!("{}th root of {} is {}", &n, &x, &r);
                 assert!(pow(&r, &n) <= x);
-                assert!(x == 0 || pow(&(r + Natural::ONE), &n) > x);
+                assert!(x == Natural::ZERO || pow(&(r + Natural::ONE), &n) > x);
             }
         }
     }

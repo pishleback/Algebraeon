@@ -1,16 +1,8 @@
-use factor::factor;
-use itertools::Itertools;
-use malachite_base::num::arithmetic::traits::DivMod;
-use malachite_base::num::arithmetic::traits::UnsignedAbs;
-use malachite_base::num::basic::traits::One;
-use malachite_base::num::basic::traits::Two;
-use malachite_base::num::basic::traits::Zero;
-use malachite_nz::integer::Integer;
-use malachite_nz::natural::Natural;
+use algebraeon_nzq::traits::DivMod;
 
-use crate::number::natural::*;
 use crate::structure::factorization::*;
 use crate::structure::structure::*;
+use algebraeon_nzq::natural::*;
 
 use algebraeon_sets::structure::*;
 
@@ -18,6 +10,11 @@ pub mod berlekamp_zassenhaus;
 pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
+
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::rational::*;
+
+use super::natural::factor::factor;
 
 impl SemiRingStructure for CannonicalStructure<Integer> {
     fn zero(&self) -> Self::Set {
@@ -72,9 +69,9 @@ impl FiniteUnitsStructure for CannonicalStructure<Integer> {
 
 impl FavoriteAssociateStructure for CannonicalStructure<Integer> {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
-        if a == &0 {
+        if a == &Integer::ZERO {
             (Integer::ONE, Integer::ZERO)
-        } else if a < &0 {
+        } else if a < &Integer::ZERO {
             (-Integer::ONE, -a)
         } else {
             (Integer::ONE, a.clone())
@@ -84,16 +81,16 @@ impl FavoriteAssociateStructure for CannonicalStructure<Integer> {
 
 impl UniqueFactorizationStructure for CannonicalStructure<Integer> {
     fn factor(&self, a: &Self::Set) -> Option<Factored<Self>> {
-        if a == &0 {
+        if a == &Integer::ZERO {
             None
         } else {
             let unit;
-            if a < &0 {
+            if a < &Integer::ZERO {
                 unit = Integer::from(-1);
             } else {
                 unit = Integer::from(1);
             }
-            let f = factor(a.unsigned_abs()).unwrap();
+            let f = factor(a.unsigned_abs_ref()).unwrap();
             Some(Factored::new_unchecked(
                 self.clone().into(),
                 unit,
@@ -111,7 +108,7 @@ impl EuclideanDivisionStructure for CannonicalStructure<Integer> {
         if elem == &Integer::ZERO {
             None
         } else {
-            Some(elem.unsigned_abs())
+            Some(elem.unsigned_abs_ref())
         }
     }
 
@@ -144,15 +141,6 @@ impl RealSubsetStructure for CannonicalStructure<Integer> {}
 
 impl RealToFloatStructure for CannonicalStructure<Integer> {
     fn as_f64(&self, x: &Self::Set) -> f64 {
-        if x < &0 {
-            -self.as_f64(&-x)
-        } else {
-            let limbs = x.clone().into_twos_complement_limbs_asc();
-            let mut flt = 0.0;
-            for (i, k) in limbs.into_iter().enumerate() {
-                flt += (k as f64) * (2.0 as f64).powf(i as f64 * 64.0);
-            }
-            flt
-        }
+        x.into()
     }
 }

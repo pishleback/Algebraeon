@@ -1,14 +1,12 @@
-use std::collections::HashMap;
-
-use algebraeon_sets::structure::*;
-use malachite_base::num::basic::traits::{One, Two, Zero};
-use malachite_nz::natural::Natural;
-
 use crate::structure::structure::*;
+use algebraeon_sets::structure::*;
 
 pub mod factor;
 pub mod functions;
 pub mod primes;
+
+use algebraeon_nzq::integer::*;
+use algebraeon_nzq::natural::*;
 
 impl SemiRingStructure for CannonicalStructure<Natural> {
     fn zero(&self) -> Self::Set {
@@ -25,22 +23,6 @@ impl SemiRingStructure for CannonicalStructure<Natural> {
     }
 }
 
-pub(crate) fn nat_to_usize(n: &Natural) -> Result<usize, ()> {
-    let limbs = n.to_limbs_asc();
-    if limbs.len() == 0 {
-        Ok(0)
-    } else if limbs.len() == 1 {
-        let n = limbs[0];
-        if Natural::from(n) > Natural::from(usize::MAX) {
-            Err(())
-        } else {
-            Ok(n as usize)
-        }
-    } else {
-        Err(())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,5 +32,10 @@ mod tests {
         assert_eq!(nat_to_usize(&Natural::from(0u8)).unwrap(), 0);
         assert_eq!(nat_to_usize(&Natural::from(1u8)).unwrap(), 1);
         assert_eq!(nat_to_usize(&Natural::from(2u8)).unwrap(), 2);
+
+        // use malachite_base::num::arithmetic::traits::ModPow;
+
+        // let a = malachite_nz::natural::Natural::from(1u8);
+        // let c = a.mod_pow(a);
     }
 }

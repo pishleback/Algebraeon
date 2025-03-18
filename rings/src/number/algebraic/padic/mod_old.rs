@@ -4,12 +4,9 @@ use algebraeon_sets::structure::*;
 use malachite_base::num::arithmetic::traits::UnsignedAbs;
 use malachite_base::num::{
     arithmetic::traits::{DivMod, Mod, Pow},
-    basic::traits::{One, Zero},
 };
-use malachite_nz::{integer::Integer, natural::Natural};
-use malachite_q::Rational;
 
-use crate::number::algebraic::isolated_roots::poly_tools::root_sum_poly;
+use algebraeon_nzq::algebraic::isolated_roots::poly_tools::root_sum_poly;
 use crate::{
     number::natural::primes::is_prime,
     polynomial::polynomial::*,
