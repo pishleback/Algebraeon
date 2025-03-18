@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.2] - 2025-03-18
+ - Updated to rust 2024
+ - Created algebraeon-nzq with new Natural, Integer and Rational types wrapping the malachite equivalents.
+
+## [0.1.1] - 2025-03-18
+ - Faffing about trying to get things building for crates.io
+
+## [0.1.0] - 2025-03-18
+ - Faffing about trying to get things building for crates.io
+
+
 ### Fixed
 
  - Nicer formatting of multivariable polynomial strings by omitting coefficients and powers equal to 1
