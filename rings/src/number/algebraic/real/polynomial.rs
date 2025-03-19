@@ -3,6 +3,7 @@ use super::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
+use algebraeon_nzq::traits::Abs;
 
 fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
     debug_assert_eq!(poly.degree().unwrap(), 1);
@@ -718,9 +719,8 @@ impl Polynomial<Integer> {
                 //m = (Cauchy's bound + 1) https://captainblack.wordpress.com/2009/03/08/cauchys-upper-bound-for-the-roots-of-a-polynomial/
                 let m = Rational::from(2)
                     + Rational::from_integers(
-                        itertools::max((0..d).map(|i| self.coeff(i).unsigned_abs_ref().clone()))
-                            .unwrap(),
-                        self.coeff(d).unsigned_abs_ref().clone(),
+                        itertools::max((0..d).map(|i| self.coeff(i).abs().clone())).unwrap(),
+                        self.coeff(d).abs().clone(),
                     );
 
                 debug_assert!(m > Rational::ZERO);

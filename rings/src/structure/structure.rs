@@ -2,7 +2,7 @@ use std::{borrow::Borrow, fmt::Debug, rc::Rc};
 
 use crate::polynomial::polynomial::Polynomial;
 use crate::polynomial::polynomial::PolynomialStructure;
-use algebraeon_nzq::{integer::*, natural::*, rational::*};
+use algebraeon_nzq::{integer::*, natural::*, rational::*, traits::*};
 
 use algebraeon_sets::structure::*;
 
@@ -132,7 +132,7 @@ pub trait RingStructure: SemiRingStructure {
         if *x < Integer::ZERO {
             self.neg(&self.from_int(&-x))
         } else {
-            self.from_nat(&x.clone().unsigned_abs())
+            self.from_nat(&x.abs())
         }
     }
 }
@@ -169,8 +169,8 @@ pub trait IntegralDomainStructure: RingStructure {
 
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
         match self.div(
-            &self.from_int(&x.numerator()),
-            &self.from_nat(&x.denominator()),
+            &self.from_int(&Fraction::numerator(x)),
+            &self.from_nat(&Fraction::denominator(x)),
         ) {
             Ok(d) => Some(d),
             Err(RingDivisionError::NotDivisible) => None,
@@ -185,10 +185,10 @@ pub trait IntegralDomainStructure: RingStructure {
         } else if self.is_zero(a) {
             Some(self.zero())
         } else if *n > Integer::ZERO {
-            Some(self.nat_pow(a, &n.clone().unsigned_abs()))
+            Some(self.nat_pow(a, &n.abs()))
         } else {
             match self.inv(a) {
-                Ok(self_inv) => Some(self.nat_pow(&self_inv, &(-n).unsigned_abs())),
+                Ok(self_inv) => Some(self.nat_pow(&self_inv, &n.abs())),
                 Err(RingDivisionError::NotDivisible) => None,
                 Err(RingDivisionError::DivideByZero) => panic!(),
             }

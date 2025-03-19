@@ -1,5 +1,6 @@
 use crate::integer::*;
 use crate::natural::*;
+use crate::traits::*;
 use algebraeon_sets::structure::*;
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
@@ -289,35 +290,94 @@ impl Div<&Rational> for &Rational {
     }
 }
 
-impl Rational {
-    pub fn numerator(&self) -> Integer {
-        //malachite returns a natural for the numerator for some
+impl Abs for Rational {
+    type Output = Rational;
+
+    fn abs(self) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Abs;
+        Rational(self.0.abs())
+    }
+}
+
+impl Abs for &Rational {
+    type Output = Rational;
+
+    fn abs(self) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Abs;
+        Rational((&self.0).abs())
+    }
+}
+
+impl Fraction for Rational {
+    type NumeratorOutput = Integer;
+    type DenominatorOutput = Natural;
+
+    fn numerator(self) -> Self::NumeratorOutput {
+        (&self).numerator()
+    }
+    fn denominator(self) -> Self::DenominatorOutput {
+        (&self).denominator()
+    }
+}
+
+impl Fraction for &Rational {
+    type NumeratorOutput = Integer;
+    type DenominatorOutput = Natural;
+
+    fn numerator(self) -> Self::NumeratorOutput {
         if self >= &Rational::ZERO {
             Integer::from(Natural::from_malachite(self.0.numerator_ref().clone()))
         } else {
             -Natural::from_malachite(self.0.numerator_ref().clone())
         }
     }
-
-    pub fn denominator(&self) -> Natural {
+    fn denominator(self) -> Self::DenominatorOutput {
         Natural::from_malachite(self.0.denominator_ref().clone())
     }
+}
 
+impl Floor for Rational {
+    type Output = Integer;
+
+    fn floor(self) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Floor;
+        Integer::from_malachite(self.0.floor())
+    }
+}
+
+impl Floor for &Rational {
+    type Output = Integer;
+
+    fn floor(self) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Floor;
+        Integer::from_malachite((&self.0).floor())
+    }
+}
+
+impl Ceil for Rational {
+    type Output = Integer;
+
+    fn ceil(self) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Ceiling;
+        Integer::from_malachite(self.0.ceiling())
+    }
+}
+
+impl Ceil for &Rational {
+    type Output = Integer;
+
+    fn ceil(self) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Ceiling;
+        Integer::from_malachite((&self.0).ceiling())
+    }
+}
+
+impl Rational {
     pub fn from_integers(n: impl Into<Integer>, d: impl Into<Integer>) -> Self {
         Self(malachite_q::Rational::from_integers(
             n.into().to_malachite(),
             d.into().to_malachite(),
         ))
-    }
-
-    pub fn abs(self) -> Self {
-        use malachite_base::num::arithmetic::traits::Abs;
-        Self(self.0.abs())
-    }
-
-    pub fn abs_ref(&self) -> Self {
-        use malachite_base::num::arithmetic::traits::Abs;
-        Self((&self.0).abs())
     }
 
     pub fn into_abs_numerator_and_denominator(self) -> (Natural, Natural) {
@@ -343,24 +403,6 @@ impl Rational {
 
     pub fn approximate(self, max_denominator: &Natural) -> Self {
         Self(self.0.approximate(max_denominator.to_malachite_ref()))
-    }
-
-    pub fn floor(self) -> Integer {
-        use malachite_base::num::arithmetic::traits::Floor;
-        Integer::from_malachite(self.0.floor())
-    }
-    pub fn floor_ref(&self) -> Integer {
-        use malachite_base::num::arithmetic::traits::Floor;
-        Integer::from_malachite((&self.0).floor())
-    }
-
-    pub fn ceil(self) -> Integer {
-        use malachite_base::num::arithmetic::traits::Ceiling;
-        Integer::from_malachite(self.0.ceiling())
-    }
-    pub fn ceil_ref(&self) -> Integer {
-        use malachite_base::num::arithmetic::traits::Ceiling;
-        Integer::from_malachite((&self.0).ceiling())
     }
 
     pub fn try_from_float_simplest(x: f64) -> Result<Self, ()> {

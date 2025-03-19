@@ -5,6 +5,7 @@ use super::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
+use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,7 +47,7 @@ impl Valuation {
                 if v < Integer::ZERO {
                     panic!("unwrap_nat() called on a negative finite valuation");
                 } else {
-                    v.unsigned_abs()
+                    v.abs()
                 }
             }
         }
@@ -222,7 +223,7 @@ pub fn padic_nat_valuation(p: &Natural, mut n: Natural) -> Valuation {
 }
 
 pub fn padic_int_valuation(p: &Natural, n: Integer) -> Valuation {
-    padic_nat_valuation(p, n.unsigned_abs())
+    padic_nat_valuation(p, n.abs())
 }
 
 pub fn padic_rat_valuation(p: &Natural, r: Rational) -> Valuation {

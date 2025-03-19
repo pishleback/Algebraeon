@@ -239,6 +239,8 @@ impl<SG: SemigroupStructure> MemoryStack<SG> {
 /// The (d-1)st coefficients of the modular factors can be quickly summed and checked whether they are in the possible range for true factors.
 /// Even better, this summing can be translated to machine arithmetic taking advantage of the wrapping behavour of binary addition. This is at the cost of a slight lossening of the bound on the (d-1)st coefficient.
 mod dminusone_test {
+    use algebraeon_nzq::traits::Abs;
+
     use super::*;
 
     #[derive(Debug, Clone)]
@@ -295,7 +297,7 @@ mod dminusone_test {
                 factor_dminusone_coeff_bound_divby_gdeg: (factor_dminusone_coeff_bound_divby_gdeg
                     * &conversion_mult)
                     .ceil()
-                    .unsigned_abs()
+                    .abs()
                     .try_into()
                     .unwrap_or(usize::MAX),
                 memory_stack: MemoryStack::new(
@@ -309,7 +311,7 @@ mod dminusone_test {
                                 approx_coeff_lower_bound: (Rational::from(coeff)
                                     * &conversion_mult)
                                     .floor()
-                                    .unsigned_abs()
+                                    .abs()
                                     .rem(&machine_range)
                                     .try_into()
                                     .unwrap(),

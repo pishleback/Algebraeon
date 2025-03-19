@@ -17,6 +17,8 @@ use algebraeon_nzq::rational::*;
 mod balancable_pairs {
     use std::collections::HashSet;
 
+    use algebraeon_nzq::traits::Abs;
+
     use super::*;
 
     /// A balancable pair of a polynomial consists of two of the monomial terms satisfying some conditions.
@@ -81,10 +83,10 @@ mod balancable_pairs {
                         let p_pow = self.balancing_value() * Integer::from(k) - &cmbv;
                         // compute f_k*p^p_pow
                         if p_pow >= Integer::ZERO {
-                            let p_pow = p_pow.unsigned_abs();
+                            let p_pow = p_pow.abs();
                             self.f.coeff(k) * Integer::from(self.p.nat_pow(&p_pow))
                         } else {
-                            let neg_p_pow = (-p_pow).unsigned_abs();
+                            let neg_p_pow = (-p_pow).abs();
                             Integer::div(
                                 &self.f.coeff(k),
                                 &Integer::from(self.p.nat_pow(&neg_p_pow)),

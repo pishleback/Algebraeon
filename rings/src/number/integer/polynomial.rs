@@ -24,7 +24,7 @@ impl Polynomial<Integer> {
         let deg = self.degree()?;
         let mut bound = Natural::ZERO;
         for coeff in self.coeffs() {
-            bound += coeff.unsigned_abs_ref();
+            bound += coeff.abs();
         }
         bound *= choose_usize(deg, deg / 2);
         Some(bound)

@@ -139,7 +139,7 @@ impl std::fmt::Display for PAdicAlgebraic {
 }
 
 pub mod truncation {
-    use algebraeon_nzq::traits::DivMod;
+    use algebraeon_nzq::traits::{Abs, DivMod};
 
     use super::*;
 
@@ -206,7 +206,7 @@ pub mod truncation {
                         shift -= Integer::ONE;
                     }
                     debug_assert!(shift <= Integer::ZERO);
-                    let shift = (-shift).unsigned_abs();
+                    let shift = (-shift).abs();
                     let mut s = String::new();
                     write!(&mut s, "...").unwrap();
                     for (i, d) in rev_digits.into_iter().rev().enumerate().rev() {
@@ -254,13 +254,13 @@ pub mod truncation {
                     } else {
                         let num_digits = cutoffv - &shift;
                         debug_assert!(num_digits >= Integer::ONE);
-                        let num_digits = num_digits.unsigned_abs();
+                        let num_digits = num_digits.abs();
                         let pn = Integer::from(&self.p).nat_pow(&num_digits); // p^{num_digits}
                         let (g, _, d_inv) = Integer::xgcd(&pn, &d);
                         debug_assert_eq!(g, Integer::ONE);
                         let value = Integer::rem(&(n * d_inv), &pn);
                         debug_assert!(value > Integer::ZERO);
-                        let value = value.unsigned_abs();
+                        let value = value.abs();
                         Truncated::NonZero {
                             p: self.p.clone(),
                             value,

@@ -1,5 +1,6 @@
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
+use algebraeon_nzq::traits::Abs;
 use itertools::Itertools;
 use std::{
     borrow::Borrow,
@@ -70,9 +71,9 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         if *n == Integer::ZERO {
             Self::identity()
         } else if *n > Integer::ZERO {
-            self.nat_pow(&n.unsigned_abs_ref())
+            self.nat_pow(&n.abs())
         } else {
-            self.nat_pow(&(-n).unsigned_abs()).inverse()
+            self.nat_pow(&n.abs()).inverse()
         }
     }
 

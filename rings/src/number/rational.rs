@@ -5,6 +5,7 @@ use super::super::structure::factorization::*;
 use super::super::structure::structure::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;
+use algebraeon_nzq::traits::*;
 use algebraeon_sets::structure::*;
 
 impl SemiRingStructure for CannonicalStructure<Rational> {
@@ -61,20 +62,20 @@ impl FieldOfFractionsStructure for CannonicalStructure<Rational> {
     }
 
     fn numerator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
-        elem.numerator()
+        Fraction::numerator(elem)
     }
 
     fn denominator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
-        Integer::from(elem.denominator())
+        Integer::from(Fraction::denominator(elem))
     }
 }
 
 impl RealRoundingStructure for CannonicalStructure<Rational> {
     fn floor(&self, x: &Self::Set) -> Integer {
-        x.floor_ref()
+        Floor::floor(x)
     }
     fn ceil(&self, x: &Self::Set) -> Integer {
-        x.ceil_ref()
+        Ceil::ceil(x)
     }
     fn round(&self, x: &Self::Set) -> Integer {
         self.floor(&(x + Rational::ONE_HALF))

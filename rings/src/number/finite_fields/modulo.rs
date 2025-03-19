@@ -1,6 +1,7 @@
 use crate::polynomial::polynomial::*;
 use crate::structure::factorization::*;
 use crate::structure::structure::*;
+use algebraeon_nzq::traits::Abs;
 use algebraeon_sets::structure::*;
 
 use algebraeon_nzq::integer::*;
@@ -65,7 +66,7 @@ impl<const N: usize> Modulo<N> {
 impl<const N: usize> From<&Integer> for Modulo<N> {
     fn from(value: &Integer) -> Self {
         let value = value % Integer::from(N);
-        let value = value.unsigned_abs_ref();
+        let value = value.abs();
         Self {
             x: value.try_into().unwrap(),
         }
@@ -74,7 +75,7 @@ impl<const N: usize> From<&Integer> for Modulo<N> {
 impl<const N: usize> From<Integer> for Modulo<N> {
     fn from(value: Integer) -> Self {
         let value = value % Integer::from(N);
-        let value = value.unsigned_abs_ref();
+        let value = value.abs();
         Self {
             x: value.try_into().unwrap(),
         }

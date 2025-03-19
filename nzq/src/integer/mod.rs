@@ -398,23 +398,17 @@ impl DivMod<&Integer> for &Integer {
     }
 }
 
-impl Integer {
-    pub fn abs(self) -> Integer {
-        use malachite_base::num::arithmetic::traits::Abs;
-        Self(self.0.abs())
-    }
-
-    pub fn abs_ref(&self) -> Integer {
-        use malachite_base::num::arithmetic::traits::Abs;
-        Self((&self.0).abs())
-    }
-
-    pub fn unsigned_abs(self) -> Natural {
+impl Abs for Integer {
+    type Output = Natural;
+    fn abs(self) -> Self::Output {
         use malachite_base::num::arithmetic::traits::UnsignedAbs;
         Natural::from_malachite(self.0.unsigned_abs())
     }
+}
 
-    pub fn unsigned_abs_ref(&self) -> Natural {
+impl Abs for &Integer {
+    type Output = Natural;
+    fn abs(self) -> Self::Output {
         use malachite_base::num::arithmetic::traits::UnsignedAbs;
         Natural::from_malachite((&self.0).unsigned_abs())
     }

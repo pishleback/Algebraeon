@@ -1,3 +1,4 @@
+use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
 
 use crate::structure::factorization::*;
@@ -90,7 +91,7 @@ impl UniqueFactorizationStructure for CannonicalStructure<Integer> {
             } else {
                 unit = Integer::from(1);
             }
-            let f = factor(a.unsigned_abs_ref()).unwrap();
+            let f = factor(a.abs()).unwrap();
             Some(Factored::new_unchecked(
                 self.clone().into(),
                 unit,
@@ -108,7 +109,7 @@ impl EuclideanDivisionStructure for CannonicalStructure<Integer> {
         if elem == &Integer::ZERO {
             None
         } else {
-            Some(elem.unsigned_abs_ref())
+            Some(elem.abs())
         }
     }
 

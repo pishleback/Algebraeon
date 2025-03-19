@@ -7,9 +7,9 @@ use crate::{
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
-use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
+use algebraeon_nzq::{integer::*, traits::Abs};
 
 pub type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructure<Rational>>, true>;
 
@@ -71,7 +71,7 @@ impl ANFStructure {
 
             for (p, k) in disc_factors {
                 debug_assert!(p >= Integer::ZERO);
-                let p = p.unsigned_abs_ref().try_into().unwrap(); //if p is too big for usize then this algorithm was doomed to take longer than my lifespan anyway
+                let p = p.abs().try_into().unwrap(); //if p is too big for usize then this algorithm was doomed to take longer than my lifespan anyway
 
                 if k >= Natural::TWO {
                     // println!("p = {}", p);
