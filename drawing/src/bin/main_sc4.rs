@@ -34,10 +34,10 @@ fn main() {
     let space = AffineSpace::new_linear(field.clone(), 2);
 
     let sqrt2 = field
-        .nth_root(&field.from_int(&Integer::from(2)), 2)
+        .nth_root(&field.from_int(Integer::from(2)), 2)
         .unwrap();
     let sqrt3 = field
-        .nth_root(&field.from_int(&Integer::from(3)), 2)
+        .nth_root(&field.from_int(Integer::from(3)), 2)
         .unwrap();
 
     let a = ConvexHull::new(
@@ -46,20 +46,20 @@ fn main() {
             Vector::new(
                 &space,
                 vec![
-                    field.from_int(&Integer::from(0)),
-                    field.from_int(&Integer::from(0)),
+                    field.from_int(Integer::from(0)),
+                    field.from_int(Integer::from(0)),
                 ],
             ),
             Vector::new(
                 &space,
                 vec![
-                    field.from_int(&Integer::from(0)),
-                    field.from_int(&Integer::from(1)),
+                    field.from_int(Integer::from(0)),
+                    field.from_int(Integer::from(1)),
                 ],
             ),
             Vector::new(
                 &space,
-                vec![sqrt3.clone(), field.from_int(&Integer::from(0))],
+                vec![sqrt3.clone(), field.from_int(Integer::from(0))],
             ),
         ],
     )
@@ -72,17 +72,17 @@ fn main() {
             Vector::new(
                 &space,
                 vec![
-                    field.from_int(&Integer::from(0)),
-                    field.from_int(&Integer::from(0)),
+                    field.from_int(Integer::from(0)),
+                    field.from_int(Integer::from(0)),
                 ],
             ),
             Vector::new(
                 &space,
-                vec![sqrt2.clone(), field.from_int(&Integer::from(1))],
+                vec![sqrt2.clone(), field.from_int(Integer::from(1))],
             ),
             Vector::new(
                 &space,
-                vec![sqrt2.clone(), field.from_int(&Integer::from(0))],
+                vec![sqrt2.clone(), field.from_int(Integer::from(0))],
             ),
         ],
     )

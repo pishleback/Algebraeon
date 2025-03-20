@@ -433,7 +433,7 @@ mod tests {
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
-                    (Polynomial::from_int(&Integer::from(2)), Natural::from(1u8)),
+                    (Polynomial::from_int(Integer::from(2)), Natural::from(1u8)),
                     ((1 + x).into_verbose(), Natural::from(1u8))
                 ]
             )
@@ -446,8 +446,8 @@ mod tests {
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
-                    (Polynomial::from_int(&Integer::from(2)), Natural::from(2u8)),
-                    (Polynomial::from_int(&Integer::from(3)), Natural::from(1u8)),
+                    (Polynomial::from_int(Integer::from(2)), Natural::from(2u8)),
+                    (Polynomial::from_int(Integer::from(3)), Natural::from(1u8)),
                     ((2 + 3 * x).into_verbose(), Natural::from(1u8)),
                     ((x - 1).into_verbose(), Natural::from(2u8))
                 ]

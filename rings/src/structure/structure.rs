@@ -69,14 +69,15 @@ pub trait SemiRingStructure: EqStructure {
         }
     }
 
-    fn from_nat(&self, x: &Natural) -> Self::Set {
-        if *x == Natural::ZERO {
+    fn from_nat(&self, x: impl Into<Natural>) -> Self::Set {
+        let x = x.into();
+        if x == Natural::ZERO {
             self.zero()
-        } else if *x == Natural::ONE {
+        } else if x == Natural::ONE {
             self.one()
         } else {
             let two = self.add(&self.one(), &self.one());
-            debug_assert!(*x >= Natural::TWO);
+            debug_assert!(x >= Natural::TWO);
             let bits: Vec<bool> = x.bits().collect();
             let mut ans = self.zero();
             let mut v = self.one();
@@ -119,7 +120,7 @@ where
         Self::structure().nat_pow(self, n)
     }
 
-    fn from_nat(x: &Natural) -> Self {
+    fn from_nat(x: impl Into<Natural>) -> Self {
         Self::structure().from_nat(x)
     }
 }
@@ -128,11 +129,12 @@ impl<R: MetaType> MetaSemiRing for R where Self::Structure: SemiRingStructure {}
 pub trait RingStructure: SemiRingStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
-    fn from_int(&self, x: &Integer) -> Self::Set {
-        if *x < Integer::ZERO {
-            self.neg(&self.from_int(&-x))
+    fn from_int(&self, x: impl Into<Integer>) -> Self::Set {
+        let x = x.into();
+        if x < Integer::ZERO {
+            self.neg(&self.from_int(-x))
         } else {
-            self.from_nat(&x.abs())
+            self.from_nat(x.abs())
         }
     }
 }
@@ -145,7 +147,7 @@ where
         Self::structure().neg(self)
     }
 
-    fn from_int(x: &Integer) -> Self {
+    fn from_int(x: impl Into<Integer>) -> Self {
         Self::structure().from_int(x)
     }
 }
@@ -169,8 +171,8 @@ pub trait IntegralDomainStructure: RingStructure {
 
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
         match self.div(
-            &self.from_int(&Fraction::numerator(x)),
-            &self.from_nat(&Fraction::denominator(x)),
+            &self.from_int(Fraction::numerator(x)),
+            &self.from_nat(Fraction::denominator(x)),
         ) {
             Ok(d) => Some(d),
             Err(RingDivisionError::NotDivisible) => None,
@@ -179,7 +181,6 @@ pub trait IntegralDomainStructure: RingStructure {
     }
 
     fn int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
-        // println!("{:?} {:?}", elem, n);
         if *n == Integer::ZERO {
             Some(self.one())
         } else if self.is_zero(a) {
@@ -605,7 +606,7 @@ impl<RS: CharZeroStructure + 'static> InfiniteStructure for RS {
                 } else {
                     self.next = Integer::from(1) - self.next.clone();
                 }
-                Some(self.ring.from_int(&next))
+                Some(self.ring.from_int(next))
             }
         }
 

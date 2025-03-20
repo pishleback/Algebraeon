@@ -1,4 +1,4 @@
-use crate::{polynomial::polynomial::*, structure::quotient::*};
+use crate::structure::quotient::*;
 
 use super::*;
 
@@ -17,18 +17,5 @@ impl FiniteUnitsStructure for QuotientStructure<CannonicalStructure<Integer>, tr
 impl FiniteFieldStructure for QuotientStructure<CannonicalStructure<Integer>, true> {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (self.modulus().abs(), Natural::ONE)
-    }
-}
-
-impl UniqueFactorizationStructure
-    for PolynomialStructure<QuotientStructure<CannonicalStructure<Integer>, true>>
-{
-    fn factor(&self, p: &Self::Set) -> Option<crate::structure::factorization::Factored<Self>> {
-        Some(
-            self.factorize_monic(p)?
-                .factorize_squarefree()
-                .factorize_distinct_degree()
-                .factorize_cantor_zassenhaus(),
-        )
     }
 }

@@ -125,7 +125,7 @@ pub fn miller_rabin_primality_test(
         }
         Err(InconclusivePrimalityTestResult::ProbablePrime {
             heuristic_incorrect_probability: Rational::from_integers(1, 4)
-                .nat_pow(&a_list.len().into()),
+                .nat_pow(&Natural::from(a_list.len())),
         })
     }
 }

@@ -770,7 +770,7 @@ mod tests {
         let p = (1 + x.pow(27) + 8 * x.pow(30)).into_verbose();
         let ans = Factored::new_unchecked(
             Polynomial::<Modulo<31>>::structure().into(),
-            Polynomial::constant(Modulo::from_int(&Integer::from(8))),
+            Polynomial::constant(Modulo::from_int(Integer::from(8))),
             vec![
                 ((12 + x.pow(3)).into_verbose(), Natural::from(1u32)),
                 (

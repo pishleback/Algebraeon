@@ -1,7 +1,6 @@
 use std::fmt::Display;
 use std::rc::Rc;
 
-use crate::polynomial::polynomial::*;
 use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
 
@@ -111,17 +110,6 @@ impl FiniteUnitsStructure for CannonicalStructure<QuaternaryField> {
 impl FiniteFieldStructure for CannonicalStructure<QuaternaryField> {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (Natural::from(2u8), Natural::from(2u8))
-    }
-}
-
-impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<QuaternaryField>> {
-    fn factor(&self, p: &Self::Set) -> Option<crate::structure::factorization::Factored<Self>> {
-        Some(
-            self.factorize_monic(p)?
-                .factorize_squarefree()
-                .factorize_distinct_degree()
-                .factorize_cantor_zassenhaus(),
-        )
     }
 }
 

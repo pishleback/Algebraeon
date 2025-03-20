@@ -330,7 +330,7 @@ impl<RS: SemiRingStructure> PolynomialStructure<RS> {
                 p.coeffs[i] = p.coeffs[i + 1].clone();
                 self.coeff_ring.mul_mut(
                     &mut p.coeffs[i],
-                    &self.coeff_ring.from_nat(&Natural::from(i + 1)),
+                    &self.coeff_ring.from_nat(Natural::from(i + 1)),
                 );
             }
             p.coeffs.pop();
@@ -1147,7 +1147,7 @@ mod tests {
     fn test_constant_var_pow() {
         let ring = Polynomial::<Integer>::structure();
         let p = ring.constant_var_pow(Integer::from(2), 7);
-        let q = ring.mul(&ring.from_int(&Integer::from(2)), &ring.var_pow(7));
+        let q = ring.mul(&ring.from_int(Integer::from(2)), &ring.var_pow(7));
         assert_eq!(p, q);
     }
 

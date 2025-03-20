@@ -239,7 +239,7 @@ macro_rules! impl_int_ops {
 
             fn add(self, rhs: $I) -> Self::Output {
                 let ring = self.structure().clone();
-                self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+                self + StructuredElement::new(ring.clone(), ring.from_int(Integer::from(rhs)))
             }
         }
 
@@ -250,7 +250,7 @@ macro_rules! impl_int_ops {
                 let ring = self.structure().clone();
                 self + StructuredElement::new(
                     ring.clone(),
-                    ring.from_int(&Integer::from(rhs.clone())),
+                    ring.from_int(Integer::from(rhs.clone())),
                 )
             }
         }
@@ -260,7 +260,7 @@ macro_rules! impl_int_ops {
 
             fn add(self, rhs: $I) -> Self::Output {
                 let ring = self.structure().clone();
-                self + StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+                self + StructuredElement::new(ring.clone(), ring.from_int(Integer::from(rhs)))
             }
         }
 
@@ -271,7 +271,7 @@ macro_rules! impl_int_ops {
                 let ring = self.structure();
                 self + StructuredElement::new(
                     ring.clone(),
-                    ring.from_int(&Integer::from(rhs.clone())),
+                    ring.from_int(Integer::from(rhs.clone())),
                 )
             }
         }
@@ -281,7 +281,7 @@ macro_rules! impl_int_ops {
 
             fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) + rhs
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self))) + rhs
             }
         }
 
@@ -290,7 +290,7 @@ macro_rules! impl_int_ops {
 
             fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) + rhs
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self))) + rhs
             }
         }
 
@@ -299,7 +299,7 @@ macro_rules! impl_int_ops {
 
             fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self.clone())))
                     + rhs
             }
         }
@@ -309,7 +309,7 @@ macro_rules! impl_int_ops {
 
             fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self.clone())))
                     + rhs
             }
         }
@@ -320,7 +320,7 @@ macro_rules! impl_int_ops {
 
             fn sub(self, rhs: $I) -> Self::Output {
                 let ring = self.structure().clone();
-                self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+                self - StructuredElement::new(ring.clone(), ring.from_int(Integer::from(rhs)))
             }
         }
 
@@ -331,7 +331,7 @@ macro_rules! impl_int_ops {
                 let ring = self.structure().clone();
                 self - StructuredElement::new(
                     ring.clone(),
-                    ring.from_int(&Integer::from(rhs.clone())),
+                    ring.from_int(Integer::from(rhs.clone())),
                 )
             }
         }
@@ -341,7 +341,7 @@ macro_rules! impl_int_ops {
 
             fn sub(self, rhs: $I) -> Self::Output {
                 let ring = self.structure().clone();
-                self - StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+                self - StructuredElement::new(ring.clone(), ring.from_int(Integer::from(rhs)))
             }
         }
 
@@ -352,7 +352,7 @@ macro_rules! impl_int_ops {
                 let ring = self.structure().clone();
                 self - StructuredElement::new(
                     ring.clone(),
-                    ring.from_int(&Integer::from(rhs.clone())),
+                    ring.from_int(Integer::from(rhs.clone())),
                 )
             }
         }
@@ -362,7 +362,7 @@ macro_rules! impl_int_ops {
 
             fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) - rhs
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self))) - rhs
             }
         }
 
@@ -371,7 +371,7 @@ macro_rules! impl_int_ops {
 
             fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) - rhs
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self))) - rhs
             }
         }
 
@@ -380,7 +380,7 @@ macro_rules! impl_int_ops {
 
             fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self.clone())))
                     - rhs
             }
         }
@@ -390,7 +390,7 @@ macro_rules! impl_int_ops {
 
             fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self.clone())))
                     - rhs
             }
         }
@@ -401,7 +401,7 @@ macro_rules! impl_int_ops {
 
             fn mul(self, rhs: $I) -> Self::Output {
                 let ring = self.structure().clone();
-                self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+                self * StructuredElement::new(ring.clone(), ring.from_int(Integer::from(rhs)))
             }
         }
 
@@ -412,7 +412,7 @@ macro_rules! impl_int_ops {
                 let ring = self.structure().clone();
                 self * StructuredElement::new(
                     ring.clone(),
-                    ring.from_int(&Integer::from(rhs.clone())),
+                    ring.from_int(Integer::from(rhs.clone())),
                 )
             }
         }
@@ -422,7 +422,7 @@ macro_rules! impl_int_ops {
 
             fn mul(self, rhs: $I) -> Self::Output {
                 let ring = self.structure().clone();
-                self * StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(rhs)))
+                self * StructuredElement::new(ring.clone(), ring.from_int(Integer::from(rhs)))
             }
         }
 
@@ -433,7 +433,7 @@ macro_rules! impl_int_ops {
                 let ring = self.structure().clone();
                 self * StructuredElement::new(
                     ring.clone(),
-                    ring.from_int(&Integer::from(rhs.clone())),
+                    ring.from_int(Integer::from(rhs.clone())),
                 )
             }
         }
@@ -443,7 +443,7 @@ macro_rules! impl_int_ops {
 
             fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) * rhs
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self))) * rhs
             }
         }
 
@@ -452,7 +452,7 @@ macro_rules! impl_int_ops {
 
             fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self))) * rhs
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self))) * rhs
             }
         }
 
@@ -461,7 +461,7 @@ macro_rules! impl_int_ops {
 
             fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self.clone())))
                     * rhs
             }
         }
@@ -471,7 +471,7 @@ macro_rules! impl_int_ops {
 
             fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
                 let ring = rhs.structure().clone();
-                StructuredElement::new(ring.clone(), ring.from_int(&Integer::from(self.clone())))
+                StructuredElement::new(ring.clone(), ring.from_int(Integer::from(self.clone())))
                     * rhs
             }
         }

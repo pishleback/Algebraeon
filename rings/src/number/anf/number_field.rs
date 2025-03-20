@@ -14,11 +14,16 @@ use algebraeon_nzq::{integer::*, traits::Abs};
 pub type AlgebraicNumberFieldStructure = FieldExtensionStructure<CannonicalStructure<Rational>>;
 
 pub fn new_anf(f: Polynomial<Rational>) -> AlgebraicNumberFieldStructure {
-    AlgebraicNumberFieldStructure::new_unchecked(PolynomialStructure::new(Rational::structure()).into(), f)
+    AlgebraicNumberFieldStructure::new_unchecked(
+        PolynomialStructure::new(Rational::structure()).into(),
+        f,
+    )
 }
 
 //return the splitting field and the roots of f in the splitting field
-pub fn splitting_field_anf(f: &Polynomial<Rational>) -> (AlgebraicNumberFieldStructure, Vec<Polynomial<Rational>>) {
+pub fn splitting_field_anf(
+    f: &Polynomial<Rational>,
+) -> (AlgebraicNumberFieldStructure, Vec<Polynomial<Rational>>) {
     let roots = f.primitive_part_fof().all_complex_roots();
     let (g, roots_rel_g) = anf_multi_primitive_element_theorem(roots.iter().collect());
     (new_anf(g.min_poly()), roots_rel_g)
@@ -347,7 +352,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             //q(x) = p(x - kθ)
             let q = p.apply_map(|c| Polynomial::constant(c.clone())).evaluate(
                 &Polynomial::from_coeffs(vec![
-                    anf.mul(&anf.from_int(&-Integer::from(k)), &theta),
+                    anf.mul(&anf.from_int(-Integer::from(k)), &theta),
                     anf.one(),
                 ]),
             );
@@ -377,7 +382,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
                     p.clone(),
                     ti.apply_map(|c| Polynomial::constant(Polynomial::constant(c.clone())))
                         .evaluate(&Polynomial::from_coeffs(vec![
-                            anf.mul(&anf.from_int(&Integer::from(k)), &theta),
+                            anf.mul(&anf.from_int(Integer::from(k)), &theta),
                             anf.one(),
                         ])),
                 ),

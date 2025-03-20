@@ -1,5 +1,3 @@
-use crate::polynomial::polynomial::*;
-use crate::structure::factorization::*;
 use crate::structure::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_sets::structure::*;
@@ -205,16 +203,6 @@ macro_rules! impl_field {
         impl FiniteFieldStructure for CannonicalStructure<Modulo<$N>> {
             fn characteristic_and_power(&self) -> (Natural, Natural) {
                 (Natural::from($N as usize), Natural::from(1u8))
-            }
-        }
-        impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Modulo<$N>>> {
-            fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
-                Some(
-                    self.factorize_monic(p)?
-                        .factorize_squarefree()
-                        .factorize_distinct_degree()
-                        .factorize_cantor_zassenhaus(),
-                )
             }
         }
     };
