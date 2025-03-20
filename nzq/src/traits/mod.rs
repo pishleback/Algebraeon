@@ -21,12 +21,10 @@ pub trait Fraction {
     fn denominator(self) -> Self::DenominatorOutput;
 }
 
-
 pub trait Floor {
     type Output;
     fn floor(self) -> Self::Output;
 }
-
 
 pub trait Ceil {
     type Output;

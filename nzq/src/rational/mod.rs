@@ -126,6 +126,48 @@ impl Rational {
     pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
 }
 
+impl PartialEq<Natural> for Rational {
+    fn eq(&self, other: &Natural) -> bool {
+        self.0.eq(other.to_malachite_ref())
+    }
+}
+impl PartialEq<&Natural> for Rational {
+    fn eq(&self, other: &&Natural) -> bool {
+        self.eq(*other)
+    }
+}
+impl PartialOrd<Natural> for Rational {
+    fn partial_cmp(&self, other: &Natural) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other.to_malachite_ref())
+    }
+}
+impl PartialOrd<&Natural> for Rational {
+    fn partial_cmp(&self, other: &&Natural) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(*other)
+    }
+}
+
+impl PartialEq<Integer> for Rational {
+    fn eq(&self, other: &Integer) -> bool {
+        self.0.eq(other.to_malachite_ref())
+    }
+}
+impl PartialEq<&Integer> for Rational {
+    fn eq(&self, other: &&Integer) -> bool {
+        self.eq(*other)
+    }
+}
+impl PartialOrd<Integer> for Rational {
+    fn partial_cmp(&self, other: &Integer) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other.to_malachite_ref())
+    }
+}
+impl PartialOrd<&Integer> for Rational {
+    fn partial_cmp(&self, other: &&Integer) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(*other)
+    }
+}
+
 impl AddAssign<Rational> for Rational {
     fn add_assign(&mut self, rhs: Rational) {
         self.0.add_assign(rhs.0)
