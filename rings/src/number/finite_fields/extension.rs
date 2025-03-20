@@ -81,25 +81,5 @@ mod tests {
             c += 1;
         }
         assert_eq!(c, 9);
-
-        let f9_poly = PolynomialStructure::new(f9.clone().into());
-        let poly = Polynomial::from_coeffs(
-            vec![
-                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 1, 5, 1, 1, 24, 14, 12, 4, 4, 34, 234, 23, 423,
-                4, 234, 7, 4,
-            ]
-            .into_iter()
-            .map(|c| f9.from_int(c))
-            .collect(),
-        );
-        println!(
-            "{}",
-            f9_poly
-                .factorize_monic(&poly)
-                .unwrap()
-                .factorize_squarefree()
-                .factorize_distinct_degree()
-                .factorize_cantor_zassenhaus()
-        );
     }
 }
