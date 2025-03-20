@@ -5,6 +5,8 @@ use crate::{
 };
 use algebraeon_sets::structure::*;
 
+pub type FieldExtensionStructure<FS> = QuotientStructure<PolynomialStructure<FS>, true>;
+
 impl<FS: FieldStructure, const IS_FIELD: bool> QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
 where
     PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>>,

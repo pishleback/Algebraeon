@@ -8,7 +8,7 @@ use crate::{
 use algebraeon_sets::structure::*;
 use structure::*;
 
-use super::number_field::{ANFStructure, new_anf};
+use super::number_field::{AlgebraicNumberFieldStructure, new_anf};
 
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;
@@ -16,11 +16,11 @@ use algebraeon_nzq::rational::*;
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
     //anf.modulus() == gen.min_poly()
-    anf: Rc<ANFStructure>,
+    anf: Rc<AlgebraicNumberFieldStructure>,
     generator: ComplexAlgebraic,
 }
 
-impl ANFStructure {
+impl AlgebraicNumberFieldStructure {
     pub fn all_complex_embeddings(&self) -> Vec<EmbeddedAnf> {
         self.modulus()
             .primitive_part_fof()
@@ -35,7 +35,7 @@ impl ANFStructure {
 }
 
 impl ComplexAlgebraic {
-    pub fn abstract_generated_algebraic_number_field(&self) -> ANFStructure {
+    pub fn abstract_generated_algebraic_number_field(&self) -> AlgebraicNumberFieldStructure {
         new_anf(self.min_poly())
     }
 

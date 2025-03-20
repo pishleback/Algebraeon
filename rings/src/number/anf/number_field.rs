@@ -1,7 +1,7 @@
 use super::embedded_anf::anf_multi_primitive_element_theorem;
 use crate::{
     linear::matrix::*,
-    polynomial::{multipoly::*, polynomial::*, symmetric::ss_num},
+    polynomial::{multipoly::*, polynomial::*, quotient::*, symmetric::ss_num},
     structure::{factorization::Factored, quotient::*, structure::*},
 };
 use algebraeon_sets::structure::*;
@@ -11,20 +11,20 @@ use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
 use algebraeon_nzq::{integer::*, traits::Abs};
 
-pub type ANFStructure = QuotientStructure<PolynomialStructure<CannonicalStructure<Rational>>, true>;
+pub type AlgebraicNumberFieldStructure = FieldExtensionStructure<CannonicalStructure<Rational>>;
 
-pub fn new_anf(f: Polynomial<Rational>) -> ANFStructure {
-    ANFStructure::new_unchecked(PolynomialStructure::new(Rational::structure()).into(), f)
+pub fn new_anf(f: Polynomial<Rational>) -> AlgebraicNumberFieldStructure {
+    AlgebraicNumberFieldStructure::new_unchecked(PolynomialStructure::new(Rational::structure()).into(), f)
 }
 
 //return the splitting field and the roots of f in the splitting field
-pub fn splitting_field_anf(f: &Polynomial<Rational>) -> (ANFStructure, Vec<Polynomial<Rational>>) {
+pub fn splitting_field_anf(f: &Polynomial<Rational>) -> (AlgebraicNumberFieldStructure, Vec<Polynomial<Rational>>) {
     let roots = f.primitive_part_fof().all_complex_roots();
     let (g, roots_rel_g) = anf_multi_primitive_element_theorem(roots.iter().collect());
     (new_anf(g.min_poly()), roots_rel_g)
 }
 
-impl ANFStructure {
+impl AlgebraicNumberFieldStructure {
     pub fn trace_form_matrix(&self, elems: &Vec<Polynomial<Rational>>) -> Matrix<Rational> {
         let n = self.degree();
         assert_eq!(n, elems.len());
@@ -161,10 +161,10 @@ impl ANFStructure {
     }
 }
 
-impl CharZeroStructure for ANFStructure {}
+impl CharZeroStructure for AlgebraicNumberFieldStructure {}
 
 struct RingOfIntegers {
-    anf: ANFStructure,
+    anf: AlgebraicNumberFieldStructure,
     basis: Vec<Polynomial<Rational>>,
 }
 
@@ -217,7 +217,7 @@ fn row_to_double_poly(
     Polynomial::from_coeffs(coeffs)
 }
 
-impl PolynomialStructure<ANFStructure> {
+impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     /*
         input:  A polynomial f(x) over an algebraic number field K, return
         output: The polynomial \prod_{i=1}^n \sigma_i(f) over \mathbb{Q}
@@ -754,7 +754,7 @@ impl PolynomialStructure<ANFStructure> {
     }
 }
 
-impl UniqueFactorizationStructure for PolynomialStructure<ANFStructure> {
+impl UniqueFactorizationStructure for PolynomialStructure<AlgebraicNumberFieldStructure> {
     fn factor(&self, a: &Self::Set) -> Option<crate::structure::factorization::Factored<Self>> {
         if self.is_zero(a) {
             None
