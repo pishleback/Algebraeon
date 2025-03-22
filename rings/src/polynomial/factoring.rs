@@ -138,15 +138,10 @@ where
     }
 }
 
-impl<
-    RS: UniqueFactorizationStructure
-        + GreatestCommonDivisorStructure
-        + CharZeroStructure
-        + FiniteUnitsStructure
-        + 'static,
-> PolynomialStructure<RS>
+impl<RS: UniqueFactorizationStructure + CharZeroStructure + FiniteUnitsStructure + 'static>
+    PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + GreatestCommonDivisorStructure,
+    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>,
 {
     fn find_factor_primitive_by_kroneckers_algorithm(
         &self,
@@ -233,8 +228,64 @@ where
             FindFactorResult::Irreducible
         }
     }
+}
 
-    pub fn factorize_by_kroneckers_method(&self, f: &Polynomial<RS::Set>) -> Option<Factored<Self>>
+impl<
+    RS: UniqueFactorizationStructure
+        + GreatestCommonDivisorStructure
+        + CharZeroStructure
+        + FiniteUnitsStructure
+        + 'static,
+> PolynomialStructure<RS>
+where
+    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>,
+{
+    pub fn factorize_by_kroneckers_method(
+        &self,
+        f: Polynomial<RS::Set>,
+    ) -> Option<Factored<Self>>
+    where
+        Self: UniqueFactorizationStructure,
+    {
+        if self.is_zero(&f) {
+            None
+        } else {
+            let (g, f_prim) = self.factor_primitive(f).unwrap();
+            let g_factored = self.coeff_ring().factor(&g).unwrap();
+            let (g_unit, g_factors) = g_factored.unit_and_factors();
+            let g_factored = Factored::new_unchecked(
+                self.clone().into(),
+                Polynomial::constant(g_unit),
+                g_factors
+                    .into_iter()
+                    .map(|(g_factor, power)| (Polynomial::constant(g_factor), power))
+                    .collect(),
+            );
+
+            let mut factored = factorize_by_find_factor(self, f_prim, &|f| {
+                self.find_factor_primitive_by_kroneckers_algorithm(&f)
+            });
+            factored.mul_mut(g_factored);
+
+            Some(factored)
+        }
+    }
+}
+
+impl<
+    RS: UniqueFactorizationStructure
+        + GreatestCommonDivisorStructure
+        + CharZeroStructure
+        + FiniteUnitsStructure
+        + 'static,
+> PolynomialStructure<RS>
+where
+    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + GreatestCommonDivisorStructure,
+{
+    pub fn factorize_by_yuns_and_kroneckers_method(
+        &self,
+        f: &Polynomial<RS::Set>,
+    ) -> Option<Factored<Self>>
     where
         Self: UniqueFactorizationStructure,
     {
@@ -269,7 +320,7 @@ where
     pub fn factorize_by_kroneckers_method(
         &self,
     ) -> Option<Factored<PolynomialStructure<R::Structure>>> {
-        Self::structure().factorize_by_kroneckers_method(self)
+        Self::structure().factorize_by_yuns_and_kroneckers_method(self)
     }
 }
 

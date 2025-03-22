@@ -6,6 +6,8 @@ use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::atomic::AtomicUsize;
 
+use crate::structure::factorization::Factored;
+
 use super::super::structure::structure::*;
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
@@ -542,6 +544,139 @@ impl<RS: IntegralDomainStructure> IntegralDomainStructure for MultiPolynomialStr
             match poly_ring.div(&a_poly, &b_poly) {
                 Ok(c_poly) => Ok(poly_ring.evaluate(&c_poly, &self.var(var.clone()))),
                 Err(e) => Err(e),
+            }
+        }
+    }
+}
+
+impl<RS: FavoriteAssociateStructure> FavoriteAssociateStructure for MultiPolynomialStructure<RS> {
+    fn factor_fav_assoc(&self, mpoly: &Self::Set) -> (Self::Set, Self::Set) {
+        match mpoly.terms.first() {
+            None => {
+                debug_assert!(self.is_zero(mpoly));
+                (self.one(), self.zero())
+            }
+            Some(first_term) => {
+                debug_assert!(!self.is_zero(mpoly));
+                let (unit, _) = self.coeff_ring().factor_fav_assoc(&first_term.coeff);
+                let unit_inv = MultiPolynomial::constant(self.coeff_ring().inv(&unit).unwrap());
+                let unit = MultiPolynomial::constant(unit);
+                (unit, self.mul(&unit_inv, mpoly))
+            }
+        }
+    }
+}
+
+impl<RS: CharZeroStructure> CharZeroStructure for MultiPolynomialStructure<RS> {}
+
+impl<RS: FiniteUnitsStructure> FiniteUnitsStructure for MultiPolynomialStructure<RS> {
+    fn all_units(&self) -> Vec<Self::Set> {
+        self.coeff_ring()
+            .all_units()
+            .into_iter()
+            .map(|u| MultiPolynomial::constant(u))
+            .collect()
+    }
+}
+
+impl<
+    RS: UniqueFactorizationStructure
+        + GreatestCommonDivisorStructure
+        + CharZeroStructure
+        + FiniteUnitsStructure
+        + 'static,
+> GreatestCommonDivisorStructure for PolynomialStructure<MultiPolynomialStructure<RS>>
+where
+    MultiPolynomialStructure<RS>: UniqueFactorizationStructure + GreatestCommonDivisorStructure,
+{
+    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
+        self.subresultant_gcd(x.clone(), y.clone())
+    }
+}
+
+impl<
+    RS: UniqueFactorizationStructure
+        + GreatestCommonDivisorStructure
+        + CharZeroStructure
+        + FiniteUnitsStructure
+        + 'static,
+> GreatestCommonDivisorStructure for MultiPolynomialStructure<RS>
+where
+    PolynomialStructure<MultiPolynomialStructure<RS>>:
+        Structure<Set = Polynomial<MultiPolynomial<RS::Set>>>,
+{
+    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
+        // defer to Ring or Poly<MultiPoly<Ring>>
+        println!("x = {:#?}", x);
+        println!("y = {:#?}", y);
+        todo!()
+    }
+}
+
+impl<
+    RS: UniqueFactorizationStructure
+        + GreatestCommonDivisorStructure
+        + CharZeroStructure
+        + FiniteUnitsStructure
+        + 'static,
+> UniqueFactorizationStructure for PolynomialStructure<MultiPolynomialStructure<RS>>
+where
+    MultiPolynomialStructure<RS>: UniqueFactorizationStructure + GreatestCommonDivisorStructure,
+{
+    fn factor(&self, a: &Self::Set) -> Option<Factored<Self>> {
+        self.factorize_by_yuns_and_kroneckers_method(a)
+    }
+}
+
+impl<
+    RS: UniqueFactorizationStructure
+        + GreatestCommonDivisorStructure
+        + CharZeroStructure
+        + FiniteUnitsStructure
+        + 'static,
+> UniqueFactorizationStructure for MultiPolynomialStructure<RS>
+where
+    PolynomialStructure<MultiPolynomialStructure<RS>>:
+        Structure<Set = Polynomial<MultiPolynomial<RS::Set>>>,
+{
+    fn factor(&self, mpoly: &Self::Set) -> Option<Factored<Self>> {
+        println!("{:?}", mpoly);
+        if self.is_zero(mpoly) {
+            None
+        } else {
+            match mpoly.free_vars().into_iter().next() {
+                Some(free_var) => {
+                    let poly_over_self = PolynomialStructure::new(self.clone().into());
+                    let expanded_poly = self.expand(mpoly, &free_var);
+                    let free_var = self.var(free_var);
+                    let (unit, factors) = poly_over_self
+                        .factor(&expanded_poly)
+                        .unwrap()
+                        .unit_and_factors();
+                    Some(Factored::new_unchecked(
+                        self.clone().into(),
+                        poly_over_self.evaluate(&unit, &free_var),
+                        factors
+                            .into_iter()
+                            .map(|(factor, power)| {
+                                (poly_over_self.evaluate(&factor, &free_var), power)
+                            })
+                            .collect(),
+                    ))
+                }
+                None => {
+                    let value = self.as_constant(mpoly).unwrap();
+                    let factored = self.coeff_ring().factor(&value)?;
+                    let (unit, factors) = factored.unit_and_factors();
+                    Some(Factored::new_unchecked(
+                        self.clone().into(),
+                        MultiPolynomial::constant(unit),
+                        factors
+                            .into_iter()
+                            .map(|(factor, power)| (MultiPolynomial::constant(factor), power))
+                            .collect(),
+                    ))
+                }
             }
         }
     }

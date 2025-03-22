@@ -145,3 +145,51 @@ impl RealToFloatStructure for CannonicalStructure<Integer> {
         x.into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn integer_gcd() {
+        assert_eq!(
+            Integer::euclidean_gcd(Integer::from(0), Integer::from(0)),
+            Integer::from(0)
+        );
+
+        assert_eq!(
+            Integer::euclidean_gcd(Integer::from(12), Integer::from(0)),
+            Integer::from(12)
+        );
+
+        assert_eq!(
+            Integer::euclidean_gcd(Integer::from(0), Integer::from(12)),
+            Integer::from(12)
+        );
+
+        assert_eq!(
+            Integer::euclidean_gcd(Integer::from(12), Integer::from(18)),
+            Integer::from(6)
+        );
+
+        assert_eq!(
+            Integer::gcd_by_factor(&Integer::from(0), &Integer::from(0)),
+            Integer::from(0)
+        );
+
+        assert_eq!(
+            Integer::gcd_by_factor(&Integer::from(12), &Integer::from(0)),
+            Integer::from(12)
+        );
+
+        assert_eq!(
+            Integer::gcd_by_factor(&Integer::from(0), &Integer::from(12)),
+            Integer::from(12)
+        );
+
+        assert_eq!(
+            Integer::gcd_by_factor(&Integer::from(12), &Integer::from(18)),
+            Integer::from(6)
+        );
+    }
+}

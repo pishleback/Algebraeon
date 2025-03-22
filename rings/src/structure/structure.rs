@@ -292,7 +292,7 @@ pub trait FavoriteAssociateStructure: IntegralDomainStructure {
     //For associate class of elements, choose a unique representative
     //write self=unit*assoc and return (unit, assoc)
     //0 is required to return (1, 0)
-    //every unit u is required to return (u, 1)
+    //every unit u is required to return (u, 1) i.e. 1 is the favorite associate of every unit
 
     //it seems to happen that the product of favorite associates is another favorite associate. Should this be a requirement?
 
@@ -348,6 +348,7 @@ pub trait GreatestCommonDivisorStructure: FavoriteAssociateStructure {
         lcm
     }
 }
+
 pub trait MetaGreatestCommonDivisor: MetaFavoriteAssociate
 where
     Self::Structure: GreatestCommonDivisorStructure,
@@ -383,6 +384,15 @@ pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {
             Some(factored) => factored.is_irreducible(),
         }
     }
+
+    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        match (self.factor(a), self.factor(b)) {
+            (Some(factored_a), Some(factored_b)) => Factored::gcd(factored_a, factored_b),
+            (None, Some(_)) => b.clone(),
+            (Some(_), None) => a.clone(),
+            (None, None) => self.zero(),
+        }
+    }
 }
 pub trait MetaUniqueFactorization: MetaFavoriteAssociate
 where
@@ -394,6 +404,10 @@ where
 
     fn is_irreducible(&self) -> bool {
         Self::structure().is_irreducible(self)
+    }
+
+    fn gcd_by_factor(a: &Self, b: &Self) -> Self {
+        Self::structure().gcd_by_factor(a, b)
     }
 }
 impl<R: MetaRing> MetaUniqueFactorization for R where

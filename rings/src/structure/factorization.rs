@@ -296,6 +296,24 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         }
         Some(count)
     }
+
+    pub fn gcd(mut a: Self, b: Self) -> RS::Set {
+        let ring = common_structure(&a.ring, &b.ring);
+        a.factors = a
+            .factors
+            .into_iter()
+            .filter_map(|(p, pk)| {
+                for (q, qk) in &b.factors {
+                    if ring.equal(&p, q) {
+                        return Some((p, std::cmp::min(pk, qk.clone())));
+                    }
+                }
+                None
+            })
+            .collect();
+        a.unit = ring.one();
+        a.expand()
+    }
 }
 
 #[derive(Debug)]
