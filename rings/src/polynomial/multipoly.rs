@@ -1,3 +1,8 @@
+use super::super::structure::structure::*;
+use super::polynomial::*;
+use crate::structure::factorization::Factored;
+use algebraeon_nzq::natural::*;
+use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -5,14 +10,6 @@ use std::fmt::Display;
 use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::atomic::AtomicUsize;
-
-use crate::structure::factorization::Factored;
-
-use super::super::structure::structure::*;
-use super::polynomial::*;
-use algebraeon_sets::structure::*;
-
-use algebraeon_nzq::natural::*;
 
 #[derive(Debug, Hash, Clone)]
 pub struct Variable {
@@ -579,37 +576,36 @@ impl<RS: FiniteUnitsStructure> FiniteUnitsStructure for MultiPolynomialStructure
     }
 }
 
-impl<
-    RS: UniqueFactorizationStructure
-        + GreatestCommonDivisorStructure
-        + CharZeroStructure
-        + FiniteUnitsStructure
-        + 'static,
-> GreatestCommonDivisorStructure for PolynomialStructure<MultiPolynomialStructure<RS>>
-where
-    MultiPolynomialStructure<RS>: UniqueFactorizationStructure + GreatestCommonDivisorStructure,
+impl<RS: FavoriteAssociateStructure> GreatestCommonDivisorStructure
+    for PolynomialStructure<MultiPolynomialStructure<RS>>
 {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         self.subresultant_gcd(x.clone(), y.clone())
     }
 }
 
-impl<
-    RS: UniqueFactorizationStructure
-        + GreatestCommonDivisorStructure
-        + CharZeroStructure
-        + FiniteUnitsStructure
-        + 'static,
-> GreatestCommonDivisorStructure for MultiPolynomialStructure<RS>
+impl<RS: GreatestCommonDivisorStructure> GreatestCommonDivisorStructure
+    for MultiPolynomialStructure<RS>
 where
     PolynomialStructure<MultiPolynomialStructure<RS>>:
         Structure<Set = Polynomial<MultiPolynomial<RS::Set>>>,
 {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
-        // defer to Ring or Poly<MultiPoly<Ring>>
-        println!("x = {:#?}", x);
-        println!("y = {:#?}", y);
-        todo!()
+        match x.free_vars().into_iter().chain(y.free_vars()).next() {
+            Some(free_var) => {
+                let poly_over_self = PolynomialStructure::new(self.clone().into());
+                let x_poly = self.expand(x, &free_var);
+                let y_poly = self.expand(y, &free_var);
+                let g_poly = poly_over_self.gcd(&x_poly, &y_poly);
+                poly_over_self.evaluate(&g_poly, &self.var(free_var))
+            }
+            None => {
+                let x = self.as_constant(x).unwrap();
+                let y = self.as_constant(y).unwrap();
+                let g = self.coeff_ring().gcd(&x, &y);
+                MultiPolynomial::constant(g)
+            }
+        }
     }
 }
 
