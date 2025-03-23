@@ -1618,7 +1618,7 @@ impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructu
 pub struct JordanBlock<FS: AlgebraicClosureStructure>
 where
     PolynomialStructure<FS::BFS>:
-        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
     eigenvalue: FS::Set,
     blocksize: usize,
@@ -1627,7 +1627,7 @@ where
 impl<FS: AlgebraicClosureStructure> JordanBlock<FS>
 where
     PolynomialStructure<FS::BFS>:
-        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
     pub fn matrix(&self, field: &FS) -> Matrix<FS::Set> {
         // let base_field = field.base_field();
@@ -1647,7 +1647,7 @@ where
 pub struct JordanNormalForm<FS: AlgebraicClosureStructure>
 where
     PolynomialStructure<FS::BFS>:
-        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
     field: Rc<FS>,
     blocks: Vec<JordanBlock<FS>>,
@@ -1656,7 +1656,7 @@ where
 impl<FS: AlgebraicClosureStructure> JordanNormalForm<FS>
 where
     PolynomialStructure<FS::BFS>:
-        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
     pub fn matrix(&self) -> Matrix<FS::Set> {
         let ac_mat_structure = MatrixStructure::new(self.field.clone());
@@ -1672,7 +1672,7 @@ where
 impl<FS: AlgebraicClosureStructure> MatrixStructure<FS>
 where
     PolynomialStructure<FS::BFS>:
-        UniqueFactorizationStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
 {
     pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as Structure>::Set>) -> Vec<FS::Set> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());

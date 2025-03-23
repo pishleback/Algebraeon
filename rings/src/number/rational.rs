@@ -88,7 +88,7 @@ impl RealFromFloatStructure for CannonicalStructure<Rational> {
     }
 }
 
-impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Rational>> {
+impl FactorableStructure for PolynomialStructure<CannonicalStructure<Rational>> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
         self.factorize_by_factorize_primitive_part(p)
     }

@@ -1,4 +1,7 @@
-use crate::{number::integer::*, number::natural::functions::*, polynomial::polynomial::*};
+use crate::{
+    number::{integer::*, natural::functions::*},
+    polynomial::{multipoly::MultiPolynomialStructure, polynomial::*},
+};
 
 impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
@@ -6,7 +9,7 @@ impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<
     }
 }
 
-impl UniqueFactorizationStructure for PolynomialStructure<CannonicalStructure<Integer>> {
+impl FactorableStructure for PolynomialStructure<CannonicalStructure<Integer>> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
         use berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm;
         // self.factorize_by_kroneckers_method(p)
@@ -44,6 +47,21 @@ impl Polynomial<Integer> {
                         .unwrap(),
             )
         }
+    }
+}
+
+impl FactorableStructure
+    for PolynomialStructure<MultiPolynomialStructure<CannonicalStructure<Integer>>>
+{
+    fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
+        // compile_error!("don't want both of these");
+        self.factor_by_foo(p)
+    }
+}
+
+impl FactorableStructure for MultiPolynomialStructure<CannonicalStructure<Integer>> {
+    fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
+        self.factor_by_foo(p)
     }
 }
 

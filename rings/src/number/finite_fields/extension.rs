@@ -46,7 +46,7 @@ pub fn new_finite_field_extension<FS: FiniteFieldStructure>(
     poly: <PolynomialStructure<FS> as Structure>::Set,
 ) -> FieldExtensionStructure<FS>
 where
-    PolynomialStructure<FS>: UniqueFactorizationStructure,
+    PolynomialStructure<FS>: FactorableStructure,
 {
     FieldExtensionStructure::<FS>::new_field(
         PolynomialStructure::new(finite_field.into()).into(),

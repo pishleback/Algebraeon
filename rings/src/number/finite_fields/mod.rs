@@ -5,7 +5,7 @@ pub mod modulo;
 pub mod polynomial;
 pub mod quaternary_field;
 
-impl<FS: FiniteFieldStructure> UniqueFactorizationStructure for PolynomialStructure<FS> {
+impl<FS: FiniteFieldStructure> FactorableStructure for PolynomialStructure<FS> {
     fn factor(&self, p: &Self::Set) -> Option<crate::structure::factorization::Factored<Self>> {
         Some(
             self.factorize_monic(p)?

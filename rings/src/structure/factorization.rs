@@ -30,7 +30,7 @@ where
     }
 }
 
-impl<RS: UniqueFactorizationStructure> Factored<RS> {
+impl<RS: FactorableStructure> Factored<RS> {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
         if !self.ring.is_unit(&self.unit) {
             return Err("unit must be a unit");
@@ -53,7 +53,9 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         }
         Ok(())
     }
+}
 
+impl<RS: UniqueFactorizationStructure> Factored<RS> {
     pub fn ring(&self) -> Rc<RS> {
         self.ring.clone()
     }

@@ -80,7 +80,9 @@ impl FavoriteAssociateStructure for CannonicalStructure<Integer> {
     }
 }
 
-impl UniqueFactorizationStructure for CannonicalStructure<Integer> {
+impl UniqueFactorizationStructure for CannonicalStructure<Integer> {}
+
+impl FactorableStructure for CannonicalStructure<Integer> {
     fn factor(&self, a: &Self::Set) -> Option<Factored<Self>> {
         if a == &Integer::ZERO {
             None

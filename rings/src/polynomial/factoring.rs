@@ -5,12 +5,11 @@ use algebraeon_sets::structure::*;
 
 use algebraeon_nzq::natural::*;
 
-impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + CharZeroStructure>
+impl<RS: FactorableStructure + GreatestCommonDivisorStructure + CharZeroStructure>
     PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>
-        + GreatestCommonDivisorStructure
-        + UniqueFactorizationStructure,
+    PolynomialStructure<RS>:
+        Structure<Set = Polynomial<RS::Set>> + GreatestCommonDivisorStructure + FactorableStructure,
 {
     /// Reduce a factorization problem for polynomials over a ring of characteristic 0 to a factorization of primitive squarefree polynomials over the ring
     //https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
@@ -66,7 +65,7 @@ where
     }
 }
 
-impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + FiniteUnitsStructure>
+impl<RS: FactorableStructure + GreatestCommonDivisorStructure + FiniteUnitsStructure>
     PolynomialStructure<RS>
 where
     PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>,
@@ -76,7 +75,7 @@ where
         mut f: Polynomial<RS::Set>,
     ) -> (Factored<PolynomialStructure<RS>>, Polynomial<RS::Set>)
     where
-        PolynomialStructure<RS>: UniqueFactorizationStructure,
+        PolynomialStructure<RS>: FactorableStructure,
     {
         debug_assert!(self.is_primitive(f.clone()));
 
@@ -139,7 +138,7 @@ where
     }
 }
 
-impl<RS: UniqueFactorizationStructure + CharZeroStructure + FiniteUnitsStructure + 'static>
+impl<RS: FactorableStructure + CharZeroStructure + FiniteUnitsStructure + 'static>
     PolynomialStructure<RS>
 where
     PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>,
@@ -232,7 +231,7 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationStructure
+    RS: FactorableStructure
         + GreatestCommonDivisorStructure
         + CharZeroStructure
         + FiniteUnitsStructure
@@ -243,7 +242,7 @@ where
 {
     pub fn factorize_by_kroneckers_method(&self, f: Polynomial<RS::Set>) -> Option<Factored<Self>>
     where
-        Self: UniqueFactorizationStructure,
+        Self: FactorableStructure,
     {
         if self.is_zero(&f) {
             None
@@ -271,7 +270,7 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationStructure
+    RS: FactorableStructure
         + GreatestCommonDivisorStructure
         + CharZeroStructure
         + FiniteUnitsStructure
@@ -285,7 +284,7 @@ where
         f: &Polynomial<RS::Set>,
     ) -> Option<Factored<Self>>
     where
-        Self: UniqueFactorizationStructure,
+        Self: FactorableStructure,
     {
         if self.is_zero(f) {
             None
@@ -306,14 +305,13 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: UniqueFactorizationStructure
+    R::Structure: FactorableStructure
         + GreatestCommonDivisorStructure
         + CharZeroStructure
         + FiniteUnitsStructure
         + 'static,
-    PolynomialStructure<R::Structure>: Structure<Set = Polynomial<R>>
-        + GreatestCommonDivisorStructure
-        + UniqueFactorizationStructure,
+    PolynomialStructure<R::Structure>:
+        Structure<Set = Polynomial<R>> + GreatestCommonDivisorStructure + FactorableStructure,
 {
     pub fn factorize_by_kroneckers_method(
         &self,
@@ -324,9 +322,9 @@ where
 
 impl<Fof: FieldOfFractionsStructure> PolynomialStructure<Fof>
 where
-    Self: Structure<Set = Polynomial<Fof::Set>> + UniqueFactorizationStructure,
+    Self: Structure<Set = Polynomial<Fof::Set>> + FactorableStructure,
     PolynomialStructure<Fof::RS>:
-        Structure<Set = Polynomial<<Fof::RS as Structure>::Set>> + UniqueFactorizationStructure,
+        Structure<Set = Polynomial<<Fof::RS as Structure>::Set>> + FactorableStructure,
     Fof::RS: GreatestCommonDivisorStructure,
 {
     pub fn factorize_by_factorize_primitive_part(
@@ -392,7 +390,7 @@ where
         f: Polynomial<RS::Set>,
     ) -> Option<Factored<PolynomialStructure<RS>>>
     where
-        Self: UniqueFactorizationStructure,
+        Self: FactorableStructure,
     {
         if self.is_zero(&f) {
             None
@@ -407,8 +405,7 @@ where
 impl<F: MetaType> Polynomial<F>
 where
     F::Structure: FieldStructure + FiniteUnitsStructure,
-    PolynomialStructure<F::Structure>:
-        Structure<Set = Polynomial<F>> + UniqueFactorizationStructure,
+    PolynomialStructure<F::Structure>: Structure<Set = Polynomial<F>> + FactorableStructure,
 {
     pub fn factorize_by_trying_all_factors(
         &self,

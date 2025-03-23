@@ -759,7 +759,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     }
 }
 
-impl UniqueFactorizationStructure for PolynomialStructure<AlgebraicNumberFieldStructure> {
+impl FactorableStructure for PolynomialStructure<AlgebraicNumberFieldStructure> {
     fn factor(&self, a: &Self::Set) -> Option<crate::structure::factorization::Factored<Self>> {
         if self.is_zero(a) {
             None

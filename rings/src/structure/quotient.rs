@@ -41,7 +41,7 @@ impl<RS: EuclideanDivisionStructure> QuotientStructure<RS, true> {
     }
 }
 
-impl<RS: EuclideanDivisionStructure + UniqueFactorizationStructure> QuotientStructure<RS, true> {
+impl<RS: EuclideanDivisionStructure + FactorableStructure> QuotientStructure<RS, true> {
     pub fn new_field(ring: Rc<RS>, modulus: RS::Set) -> Self {
         if !ring.is_irreducible(&modulus) {
             panic!(

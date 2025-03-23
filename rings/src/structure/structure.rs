@@ -374,7 +374,9 @@ impl<R: MetaRing> MetaGreatestCommonDivisor for R where
 {
 }
 
-pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {
+pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {}
+
+pub trait FactorableStructure: UniqueFactorizationStructure {
     //a UFD with an explicit algorithm to compute unique factorizations
     fn factor(&self, a: &Self::Set) -> Option<super::factorization::Factored<Self>>;
 
@@ -394,9 +396,10 @@ pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {
         }
     }
 }
+
 pub trait MetaUniqueFactorization: MetaFavoriteAssociate
 where
-    Self::Structure: UniqueFactorizationStructure,
+    Self::Structure: FactorableStructure,
 {
     fn factor(&self) -> Option<Factored<Self::Structure>> {
         Self::structure().factor(self)
@@ -410,10 +413,7 @@ where
         Self::structure().gcd_by_factor(a, b)
     }
 }
-impl<R: MetaRing> MetaUniqueFactorization for R where
-    Self::Structure: UniqueFactorizationStructure<Set = R>
-{
-}
+impl<R: MetaRing> MetaUniqueFactorization for R where Self::Structure: FactorableStructure<Set = R> {}
 
 pub trait BezoutDomainStructure: GreatestCommonDivisorStructure {
     //any gcds should be the standard associate representative
@@ -673,7 +673,9 @@ impl<FS: FieldStructure> BezoutDomainStructure for FS {
     }
 }
 
-impl<FS: FieldStructure> UniqueFactorizationStructure for FS {
+impl<FS: FieldStructure> UniqueFactorizationStructure for FS {}
+
+impl<FS: FieldStructure> FactorableStructure for FS {
     fn factor(&self, a: &Self::Set) -> Option<super::factorization::Factored<Self>> {
         if self.is_zero(a) {
             None
@@ -926,7 +928,7 @@ impl<R: MetaType> MetaPositiveRealNthRoot for R where
 pub trait AlgebraicClosureStructure: FieldStructure
 where
     PolynomialStructure<Self::BFS>:
-        UniqueFactorizationStructure + Structure<Set = Polynomial<<Self::BFS as Structure>::Set>>,
+        FactorableStructure + Structure<Set = Polynomial<<Self::BFS as Structure>::Set>>,
 {
     type BFS: FieldStructure; //base field structure
 

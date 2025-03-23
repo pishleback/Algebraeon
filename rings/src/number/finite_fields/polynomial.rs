@@ -173,7 +173,7 @@ impl<FS: FiniteFieldStructure> DistinctDegreeFactored<FS> {
 
 impl<FS: FiniteFieldStructure> Factored<PolynomialStructure<FS>>
 where
-    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>> + UniqueFactorizationStructure,
+    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>> + FactorableStructure,
 {
     pub fn into_distinct_degree_factored(self) -> DistinctDegreeFactored<FS> {
         let poly_ring = (*self.ring()).clone();
@@ -360,7 +360,7 @@ where
     /// use Berlekamps algorithm for a full factorization from a squarefree
     pub fn factorize_berlekamps(&self) -> Factored<PolynomialStructure<FS>>
     where
-        PolynomialStructure<FS>: UniqueFactorizationStructure,
+        PolynomialStructure<FS>: FactorableStructure,
     {
         let mut factors = Factored::new_unchecked(
             Rc::new(self.poly_ring.clone()),
@@ -506,7 +506,7 @@ where
     /// Cantor–Zassenhaus algorithm for equal degree factorization
     pub fn factorize_cantor_zassenhaus(&self) -> Factored<PolynomialStructure<FS>>
     where
-        PolynomialStructure<FS>: UniqueFactorizationStructure,
+        PolynomialStructure<FS>: FactorableStructure,
     {
         let poly_ring: Rc<_> = self.poly_ring.clone().into();
         let mut fs = Factored::factored_unit_unchecked(

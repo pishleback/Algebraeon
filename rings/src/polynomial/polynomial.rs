@@ -46,11 +46,22 @@ impl<Set> Polynomial<Set> {
         Polynomial::from_coeffs(self.coeffs.iter().map(f).collect())
     }
 
+    pub fn apply_map_into<ImgSet>(self, f: impl Fn(Set) -> ImgSet) -> Polynomial<ImgSet> {
+        Polynomial::from_coeffs(self.coeffs.into_iter().map(f).collect())
+    }
+
     pub fn apply_map_with_powers<ImgSet>(
         &self,
         f: impl Fn((usize, &Set)) -> ImgSet,
     ) -> Polynomial<ImgSet> {
         Polynomial::from_coeffs(self.coeffs.iter().enumerate().map(f).collect())
+    }
+
+    pub fn apply_map_into_with_powers<ImgSet>(
+        self,
+        f: impl Fn((usize, Set)) -> ImgSet,
+    ) -> Polynomial<ImgSet> {
+        Polynomial::from_coeffs(self.coeffs.into_iter().enumerate().map(f).collect())
     }
 }
 
@@ -627,7 +638,7 @@ impl<RS: IntegralDomainStructure> IntegralDomainStructure for PolynomialStructur
     }
 }
 
-// impl<R: UniqueFactorizationDomain> UniqueFactorizationDomain for Polynomial<R> {}
+impl<RS: UniqueFactorizationStructure> UniqueFactorizationStructure for PolynomialStructure<RS> {}
 
 impl<RS: GreatestCommonDivisorStructure> PolynomialStructure<RS> {
     pub fn factor_primitive(
