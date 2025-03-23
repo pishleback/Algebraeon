@@ -5,7 +5,7 @@ Algebraeon is a computer algebra system written purely in Rust. It implements al
 Add
 ```ignore
 [dependencies]
-algebraeon = "0.1.2"
+algebraeon = "0.1.3"
 ```
 to your `cargo.toml` to make Algebraeon avalible.
 
