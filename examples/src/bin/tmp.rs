@@ -20,15 +20,10 @@ fn main() {
     let x_var = Variable::new("x");
     let y_var = Variable::new("y");
 
-    let x = MultiPolynomial::<Integer>::var(x_var.clone()).into_ergonomic();
-    let y = MultiPolynomial::<Integer>::var(y_var.clone()).into_ergonomic();
+    let x = &MultiPolynomial::<Integer>::var(x_var.clone()).into_ergonomic();
+    let y = &MultiPolynomial::<Integer>::var(y_var.clone()).into_ergonomic();
 
-    let f = ((y.pow(2) - x.pow(2)) * 24).into_verbose();
-    let (u, g) = f.factor_fav_assoc();
-
-    println!("f = {}", f);
-    println!("u g = {} {}", u, g);
-
+    let f = (24 * (x - y)).into_verbose();
     println!("{}", f.factor().unwrap());
 
     // let x = Integer::from_str("32198573291847394729843798732185472398457").unwrap();

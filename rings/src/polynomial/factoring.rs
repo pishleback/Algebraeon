@@ -44,13 +44,14 @@ where
         let mut f = prim;
         let f_prime = self.derivative(f.clone());
         let mut i: usize = 1;
-        let a = self.gcd_by_primitive_subresultant(f.clone(), f_prime.clone());
+        let mut a = self.gcd_by_primitive_subresultant(f.clone(), f_prime.clone());
         let mut b = self.div(&f, &a).unwrap();
         let mut c = self.div(&f_prime, &a).unwrap();
         let mut d = self.add(&self.neg(&self.derivative(b.clone())), &c);
 
         while self.degree(&f).unwrap() != 0 {
-            let a = self.gcd(&b, &d);
+            a = self.gcd(&b, &d);
+
             //a^i is a power of a squarefree factor of f
             factors.mul_mut(primitive_sqfree_factorize(a.clone()).pow(&Natural::from(i)));
             f = self.div(&f, &self.nat_pow(&a, &Natural::from(i))).unwrap();
@@ -240,10 +241,7 @@ impl<
 where
     PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>,
 {
-    pub fn factorize_by_kroneckers_method(
-        &self,
-        f: Polynomial<RS::Set>,
-    ) -> Option<Factored<Self>>
+    pub fn factorize_by_kroneckers_method(&self, f: Polynomial<RS::Set>) -> Option<Factored<Self>>
     where
         Self: UniqueFactorizationStructure,
     {

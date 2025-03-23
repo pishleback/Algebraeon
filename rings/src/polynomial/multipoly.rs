@@ -576,11 +576,11 @@ impl<RS: FiniteUnitsStructure> FiniteUnitsStructure for MultiPolynomialStructure
     }
 }
 
-impl<RS: FavoriteAssociateStructure> GreatestCommonDivisorStructure
+impl<RS: GreatestCommonDivisorStructure> GreatestCommonDivisorStructure
     for PolynomialStructure<MultiPolynomialStructure<RS>>
 {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
-        self.subresultant_gcd(x.clone(), y.clone())
+        self.gcd_by_primitive_subresultant(x.clone(), y.clone())
     }
 }
 
@@ -636,7 +636,6 @@ where
         Structure<Set = Polynomial<MultiPolynomial<RS::Set>>>,
 {
     fn factor(&self, mpoly: &Self::Set) -> Option<Factored<Self>> {
-        println!("{:?}", mpoly);
         if self.is_zero(mpoly) {
             None
         } else {
@@ -1022,5 +1021,38 @@ mod tests {
         println!("fg/f = {}", (&f * &g) / &f);
 
         assert_eq!((&f * &g) / &f, g);
+    }
+
+    #[test]
+    fn test_gcd_and_factor() {
+        let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).into_ergonomic();
+        let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).into_ergonomic();
+
+        let a = y - x;
+        let b = y.pow(2) - x.pow(3);
+        let c = y.pow(3) * x + 5 + y;
+        let d = x.pow(5) * y.pow(4) - 1;
+        let e = y.pow(4) - x.pow(4);
+        let f = 24 * (y - x);
+
+        assert!(a.clone().into_verbose().is_irreducible());
+        assert!(b.clone().into_verbose().is_irreducible());
+        assert!(c.clone().into_verbose().is_irreducible());
+        assert!(d.clone().into_verbose().is_irreducible());
+        assert!(!e.clone().into_verbose().is_irreducible());
+        assert!(!f.clone().into_verbose().is_irreducible());
+
+        assert!(MultiPolynomial::are_associate(
+            &b.clone().into_verbose(),
+            &MultiPolynomial::gcd(&(&a * &b).into_verbose(), &(&b * &c).into_verbose())
+        ));
+
+        assert!(MultiPolynomial::are_associate(
+            &(&b * &c).into_verbose(),
+            &MultiPolynomial::gcd(
+                &(&a * &b * &c).into_verbose(),
+                &(&b * &c * &d).into_verbose()
+            )
+        ));
     }
 }

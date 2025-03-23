@@ -669,15 +669,14 @@ impl<RS: GreatestCommonDivisorStructure> PolynomialStructure<RS> {
         } else if self.is_zero(&b) {
             a
         } else {
-            let (a_unit, a_prim) = self.factor_primitive(a).unwrap();
-            let (b_unit, b_prim) = self.factor_primitive(b).unwrap();
-            let g_unit = self.coeff_ring.gcd(&a_unit, &b_unit);
+            let (a_content, a_prim) = self.factor_primitive(a).unwrap();
+            let (b_content, b_prim) = self.factor_primitive(b).unwrap();
+            let g_content = self.coeff_ring.gcd(&a_content, &b_content);
             let g_prim = self
                 .factor_primitive(self.subresultant_gcd(a_prim, b_prim))
                 .unwrap()
                 .1;
-            let g = self.mul(&Polynomial::constant(g_unit), &g_prim);
-            self.primitive_part(g).unwrap()
+            self.mul(&Polynomial::constant(g_content), &g_prim)
         }
     }
 }
