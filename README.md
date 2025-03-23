@@ -95,6 +95,31 @@ Output:
 ```
 Despite the output, the roots found are _not_ numerical approximations. Rather, they are stored internally as exact algebraic numbers by using isolating boxes in the complex plane.
 
+## Factoring Multivariable Polynomials
+Factor the following multivariable polynomial with integer coefficients
+```math
+f(x, y) = 6x^4 - 6x^3y^2 + 6xy - 6x - 6y^3 + 6y^2
+```
+```
+use algebraeon::{nzq::integer::*, rings::{polynomial::multipoly::*, structure::{elements::*, structure::*}}};
+
+let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).into_ergonomic();
+let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).into_ergonomic();
+
+let f = (6 * (x.pow(4) - x.pow(3) * y.pow(2) + x * y - x - y.pow(3) + y.pow(2))).into_verbose();
+println!("f(x, y) = {}", f.factor().unwrap());
+
+/*
+Output:
+    f(x, y) = 1 * ((3)1) * ((2)1) * (x+(-1)y^2) * (x^3+y+(-1)1)
+*/
+```
+so the factorization of $f(x, y)$ is
+```math
+f(x, y) = 2 \times 3 \times (x^3 + y - 1) \times (y^2 - x)
+```
+
+
 ## P-adic Root Finding
 Find the $2$-adic square roots of $17$.
 ```
