@@ -723,9 +723,9 @@ where
         } else {
             match mpoly.free_vars().into_iter().next() {
                 Some(free_var) => {
-                    // If mpoly is homogeneous we can eliminate a variable right away
                     match mpoly.homogeneous_of_degree() {
                         HomogeneousOfDegreeResult::Homogeneous(_) => {
+                            // If mpoly is homogeneous we can eliminate a variable right away
                             let dehom_mpoly = self.partial_evaluate(
                                 mpoly,
                                 HashMap::from([(free_var.clone(), self.coeff_ring().one())]),

@@ -903,6 +903,13 @@ impl Polynomial<Integer> {
     }
 }
 
+impl Polynomial<Rational> {
+    pub fn all_real_roots(&self) -> Vec<RealAlgebraic> {
+        assert_ne!(self, &Self::zero());
+        self.primitive_part_fof().all_real_roots()
+    }
+}
+
 pub fn nth_root(x: &RealAlgebraic, n: usize) -> Result<RealAlgebraic, ()> {
     if n == 0 {
         panic!()

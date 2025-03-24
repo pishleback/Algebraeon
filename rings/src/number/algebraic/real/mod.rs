@@ -743,12 +743,8 @@ mod tests {
     #[test]
     fn test_real_neg() {
         {
-            let f = Polynomial::from_coeffs(vec![
-                Integer::from(-2),
-                Integer::from(0),
-                Integer::from(1),
-            ]);
-            let roots = Polynomial::all_real_roots(&f);
+            let f = Polynomial::<Integer>::from_coeffs(vec![-2, 0, 1]);
+            let roots = f.all_real_roots();
 
             assert_eq!(roots.len(), 2);
             let a = &roots[0];
@@ -770,17 +766,8 @@ mod tests {
             assert_eq!(b, &a_neg);
         }
         {
-            let f = Polynomial::from_coeffs(vec![
-                Integer::from(-1),
-                Integer::from(0),
-                Integer::from(0),
-                Integer::from(0),
-                Integer::from(0),
-                Integer::from(0),
-                Integer::from(3),
-                Integer::from(1),
-            ]);
-            let roots = Polynomial::all_real_roots(&f);
+            let f = Polynomial::<Integer>::from_coeffs(vec![-1, 0, 0, 0, 0, 0, 3, 1]);
+            let roots = f.all_real_roots();
 
             assert_eq!(roots.len(), 3);
             for root in roots {
@@ -789,12 +776,8 @@ mod tests {
         }
         {
             //example where f(g(x)) is not primitive even though f and g are
-            let f = Polynomial::from_coeffs(vec![
-                Integer::from(-4),
-                Integer::from(-1),
-                Integer::from(1),
-            ]);
-            let roots = Polynomial::all_real_roots(&f);
+            let f = Polynomial::<Integer>::from_coeffs(vec![-4, -1, 1]);
+            let roots = f.all_real_roots();
             for root in roots {
                 let root2 = RealAlgebraic::add(
                     &root,
@@ -807,41 +790,28 @@ mod tests {
 
     #[test]
     fn test_real_add() {
-        let f =
-            Polynomial::from_coeffs(vec![Integer::from(-2), Integer::from(0), Integer::from(3)]);
-        let roots = Polynomial::all_real_roots(&f);
+        let f = Polynomial::<Integer>::from_coeffs(vec![-2, 0, 3]);
+        let roots = f.all_real_roots();
         let a = RealAlgebraic::sum(roots.iter().collect());
         assert_eq!(a, RealAlgebraic::zero());
 
-        let f = Polynomial::from_coeffs(vec![
-            Integer::from(-7),
-            Integer::from(0),
-            Integer::from(100),
-        ]);
-        let roots = Polynomial::all_real_roots(&f);
+        let f = Polynomial::<Integer>::from_coeffs(vec![-7, 0, 100]);
+        let roots = f.all_real_roots();
         let a = RealAlgebraic::sum(roots.iter().collect());
         assert_eq!(a, RealAlgebraic::zero());
 
-        let f = Polynomial::from_coeffs(vec![
-            Integer::from(-100),
-            Integer::from(0),
-            Integer::from(7),
-        ]);
-        let roots = Polynomial::all_real_roots(&f);
+        let f = Polynomial::<Integer>::from_coeffs(vec![-100, 0, 7]);
+        let roots = f.all_real_roots();
         let a = RealAlgebraic::sum(roots.iter().collect());
         assert_eq!(a, RealAlgebraic::zero());
     }
 
     #[test]
     fn test_real_mul() {
-        let f = Polynomial::from_coeffs(vec![
-            Integer::from(-100),
-            Integer::from(0),
-            Integer::from(7),
-        ]);
+        let f = Polynomial::<Integer>::from_coeffs(vec![-100, 0, 7]);
         // (x-a)(x-b) = x^2 - 100/7
         // so ab=-100/7
-        let roots = Polynomial::all_real_roots(&f);
+        let roots = f.all_real_roots();
         let a = RealAlgebraic::product(roots.iter().collect());
         assert_eq!(
             a,

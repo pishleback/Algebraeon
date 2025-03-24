@@ -54,7 +54,11 @@ impl Polynomial<Integer> {
 
 impl FactorableStructure for MultiPolynomialStructure<CannonicalStructure<Integer>> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
-        self.factor_by_yuns_and_kroneckers_inductively(Rc::new(Integer::factor), Rc::new(Polynomial::factor), p)
+        self.factor_by_yuns_and_kroneckers_inductively(
+            Rc::new(Integer::factor),
+            Rc::new(Polynomial::factor),
+            p,
+        )
     }
 }
 

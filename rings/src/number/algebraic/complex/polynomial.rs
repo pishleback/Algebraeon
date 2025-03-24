@@ -760,6 +760,13 @@ impl Polynomial<Integer> {
     }
 }
 
+impl Polynomial<Rational> {
+    pub fn all_complex_roots(&self) -> Vec<ComplexAlgebraic> {
+        assert_ne!(self, &Self::zero());
+        self.primitive_part_fof().all_complex_roots()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

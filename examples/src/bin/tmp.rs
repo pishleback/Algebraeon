@@ -1,9 +1,9 @@
 #![allow(dead_code, warnings)]
 
 use algebraeon::{
-    nzq::integer::*,
+    nzq::{integer::*, rational::*},
     rings::{
-        polynomial::multipoly::*,
+        polynomial::{multipoly::*, polynomial::Polynomial},
         structure::{elements::*, structure::*},
     },
 };
@@ -13,9 +13,12 @@ fn main() {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
 
-    let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).into_ergonomic();
-    let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).into_ergonomic();
+    let x = &Polynomial::<Rational>::var().into_ergonomic();
+    let f = (x.pow(3) - x + 1).into_verbose();
 
-    let f = (x.pow(5) - y.pow(5)).into_verbose();
     println!("f = {}", f.factor().unwrap());
+
+    for root in f.all_complex_roots() {
+        println!("{}", root);
+    }
 }

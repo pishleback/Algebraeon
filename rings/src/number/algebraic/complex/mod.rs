@@ -1008,15 +1008,8 @@ mod tests {
 
     #[test]
     fn test_all_complex_roots() {
-        let f = Polynomial::from_coeffs(vec![
-            Integer::from(-1),
-            Integer::from(-1),
-            Integer::from(0),
-            Integer::from(0),
-            Integer::from(0),
-            Integer::from(1),
-        ]);
-        let roots = Polynomial::all_complex_roots(&f);
+        let f = Polynomial::<Integer>::from_coeffs(vec![-1, -1, 0, 0, 0, 1]);
+        let roots = f.all_complex_roots();
         assert_eq!(roots.len(), Polynomial::degree(&f).unwrap());
         for root in &roots {
             root.check_invariants().unwrap();
@@ -1041,23 +1034,13 @@ mod tests {
 
     #[test]
     fn test_complex_root_sum() {
-        let f = Polynomial::from_coeffs(vec![
-            Integer::from(1),
-            Integer::from(0),
-            Integer::from(0),
-            Integer::from(1),
-        ]);
+        let f = Polynomial::<Integer>::from_coeffs(vec![1, 0, 0, 1]);
         let roots = f.all_complex_roots();
         let s = ComplexAlgebraic::sum(roots.iter().collect());
         println!("{:?}", s);
         assert_eq!(s, ComplexAlgebraic::zero());
 
-        let f = Polynomial::from_coeffs(vec![
-            Integer::from(7),
-            Integer::from(-3),
-            Integer::from(42),
-            Integer::from(9),
-        ]);
+        let f = Polynomial::<Integer>::from_coeffs(vec![7, -3, 42, 9]);
         println!("f = {}", f);
         let roots = f.all_complex_roots();
         for root in &roots {
@@ -1076,23 +1059,13 @@ mod tests {
 
     #[test]
     fn test_complex_mul() {
-        let f = Polynomial::from_coeffs(vec![
-            Integer::from(1),
-            Integer::from(0),
-            Integer::from(0),
-            Integer::from(1),
-        ]);
+        let f = Polynomial::<Integer>::from_coeffs(vec![1, 0, 0, 1]);
         let roots = f.all_complex_roots();
         let s = ComplexAlgebraic::product(roots.iter().collect());
         println!("{:?}", s);
         assert_eq!(s, ComplexAlgebraic::one().neg());
 
-        let f = Polynomial::from_coeffs(vec![
-            Integer::from(7),
-            Integer::from(-3),
-            Integer::from(42),
-            Integer::from(9),
-        ]);
+        let f = Polynomial::<Integer>::from_coeffs(vec![7, -3, 42, 9]);
         println!("f = {}", f);
         let roots = f.all_complex_roots();
         for root in &roots {
