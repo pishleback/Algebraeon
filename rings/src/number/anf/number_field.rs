@@ -320,7 +320,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
             debug_assert_eq!(elem_sym_vars.len(), n);
             sym_elem.evaluate(
-                &(0..n)
+                (0..n)
                     .map(|i| (elem_sym_vars[i].clone(), &e_vals[i]))
                     .collect(),
             )

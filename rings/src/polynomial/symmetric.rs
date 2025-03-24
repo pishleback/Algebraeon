@@ -133,7 +133,7 @@ where
         // println!("r_sym = {}", self.elem_to_string(&r_sym));
         let r = MultiPolynomialStructure::new(self.clone().into()).evaluate(
             &r_sym.apply_map(|x| MultiPolynomial::constant(x.clone())),
-            &(0..first_vars.len())
+            (0..first_vars.len())
                 .map(|i| (e[i].clone(), self.elementary_symmetric(i + 1, vars)))
                 .collect(),
         );
@@ -209,7 +209,7 @@ where
         {
             let poly_check = MultiPolynomialStructure::new(self.clone().into()).evaluate(
                 &poly_sym.apply_map(|x| MultiPolynomial::constant(x.clone())),
-                &(0..e.len())
+                (0..e.len())
                     .map(|i| (e[i].clone(), self.elementary_symmetric(i + 1, &vars_clone)))
                     .collect(),
             );

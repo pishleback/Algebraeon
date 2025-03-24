@@ -362,6 +362,34 @@ impl<R: Clone> MultiPolynomial<R> {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HomogeneousOfDegreeResult {
+    No,
+    Zero,
+    Homogeneous(usize),
+}
+
+impl<R: Clone> MultiPolynomial<R> {
+    pub fn homogeneous_of_degree(&self) -> HomogeneousOfDegreeResult {
+        let mut terms = self.terms.iter().collect::<Vec<_>>();
+        match terms.pop() {
+            Some(first_term) => {
+                let d = first_term.degree();
+                for term in terms {
+                    if d != term.degree() {
+                        return HomogeneousOfDegreeResult::No;
+                    }
+                }
+                HomogeneousOfDegreeResult::Homogeneous(d)
+            }
+            None => {
+                // Zero polynomial is homogeneous of degree infinity
+                HomogeneousOfDegreeResult::Zero
+            }
+        }
+    }
+}
+
 impl<RS: RingStructure + ToStringStructure> ToStringStructure for MultiPolynomialStructure<RS> {
     fn to_string(&self, p: &Self::Set) -> String {
         if p.terms.len() == 0 {
@@ -629,7 +657,7 @@ where
         + UniqueFactorizationStructure
         + GreatestCommonDivisorStructure,
 {
-    pub fn factor_by_foo(
+    pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
         factor_poly: impl Fn(&Polynomial<RS::Set>) -> Option<Factored<PolynomialStructure<RS>>>,
         factor_multipoly_coeff: impl Fn(
@@ -684,7 +712,7 @@ where
     PolynomialStructure<MultiPolynomialStructure<RS>>:
         Structure<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationStructure,
 {
-    pub fn factor_by_foo(
+    pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
         factor_coeff: Rc<dyn Fn(&RS::Set) -> Option<Factored<RS>>>,
         factor_poly: Rc<dyn Fn(&Polynomial<RS::Set>) -> Option<Factored<PolynomialStructure<RS>>>>,
@@ -695,29 +723,69 @@ where
         } else {
             match mpoly.free_vars().into_iter().next() {
                 Some(free_var) => {
-                    let poly_over_self = PolynomialStructure::new(self.clone().into());
-                    let expanded_poly = self.expand(mpoly, &free_var);
-                    let free_var = self.var(free_var);
-                    let (unit, factors) = poly_over_self
-                        .factor_by_foo(
-                            factor_poly.as_ref(),
-                            |c| self.factor_by_foo(factor_coeff.clone(), factor_poly.clone(), c),
-                            &expanded_poly,
-                        )
-                        .unwrap()
-                        .unit_and_factors();
-                    Some(Factored::new_unchecked(
-                        self.clone().into(),
-                        poly_over_self.evaluate(&unit, &free_var),
-                        factors
-                            .into_iter()
-                            .map(|(factor, power)| {
-                                (poly_over_self.evaluate(&factor, &free_var), power)
-                            })
-                            .collect(),
-                    ))
+                    // If mpoly is homogeneous we can eliminate a variable right away
+                    match mpoly.homogeneous_of_degree() {
+                        HomogeneousOfDegreeResult::Homogeneous(_) => {
+                            let dehom_mpoly = self.partial_evaluate(
+                                mpoly,
+                                HashMap::from([(free_var.clone(), self.coeff_ring().one())]),
+                            );
+                            let (unit, factors) = self
+                                .factor_by_yuns_and_kroneckers_inductively(
+                                    factor_coeff.clone(),
+                                    factor_poly.clone(),
+                                    &dehom_mpoly,
+                                )
+                                .unwrap()
+                                .unit_and_factors();
+                            Some(Factored::new_unchecked(
+                                self.clone().into(),
+                                self.homogenize(&unit, &free_var),
+                                factors
+                                    .into_iter()
+                                    .map(|(factor, power)| {
+                                        (self.homogenize(&factor, &free_var), power)
+                                    })
+                                    .collect(),
+                            ))
+                        }
+                        HomogeneousOfDegreeResult::No => {
+                            // Not homogeneous but
+                            // There exists a free variable
+                            // So turn ourself into a polynomial with respect to that free variable
+                            let poly_over_self = PolynomialStructure::new(self.clone().into());
+                            let expanded_poly = self.expand(mpoly, &free_var);
+                            let free_var = self.var(free_var);
+                            let (unit, factors) = poly_over_self
+                                .factor_by_yuns_and_kroneckers_inductively(
+                                    factor_poly.as_ref(),
+                                    |c| {
+                                        self.factor_by_yuns_and_kroneckers_inductively(
+                                            factor_coeff.clone(),
+                                            factor_poly.clone(),
+                                            c,
+                                        )
+                                    },
+                                    &expanded_poly,
+                                )
+                                .unwrap()
+                                .unit_and_factors();
+                            Some(Factored::new_unchecked(
+                                self.clone().into(),
+                                poly_over_self.evaluate(&unit, &free_var),
+                                factors
+                                    .into_iter()
+                                    .map(|(factor, power)| {
+                                        (poly_over_self.evaluate(&factor, &free_var), power)
+                                    })
+                                    .collect(),
+                            ))
+                        }
+                        HomogeneousOfDegreeResult::Zero => unreachable!(),
+                    }
                 }
                 None => {
+                    // Just an element of the coefficient ring
                     let value = self.as_constant(mpoly).unwrap();
                     let factored = factor_coeff(&value)?;
                     let (unit, factors) = factored.unit_and_factors();
@@ -850,10 +918,32 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
         Polynomial::from_coeffs(coeffs)
     }
 
+    pub fn partial_evaluate(
+        &self,
+        poly: &MultiPolynomial<RS::Set>,
+        values: HashMap<Variable, impl Borrow<RS::Set>>,
+    ) -> MultiPolynomial<RS::Set> {
+        let mut values = values
+            .into_iter()
+            .map(|(v, a)| (v, MultiPolynomial::constant(a.borrow().clone())))
+            .collect::<HashMap<_, _>>();
+
+        let free_vars = poly.free_vars();
+        for free_var in free_vars {
+            if !values.contains_key(&free_var) {
+                values.insert(free_var.clone(), self.var(free_var));
+            }
+        }
+        MultiPolynomialStructure::new(self.clone().into()).evaluate(
+            &poly.apply_map(|x| MultiPolynomial::constant(x.clone())),
+            values,
+        )
+    }
+
     pub fn evaluate(
         &self,
         poly: &MultiPolynomial<RS::Set>,
-        values: &HashMap<Variable, impl Borrow<RS::Set>>,
+        values: HashMap<Variable, impl Borrow<RS::Set>>,
     ) -> RS::Set {
         self.coeff_ring().sum(
             poly.terms
@@ -926,7 +1016,7 @@ where
         Self::structure().expand(self, v)
     }
 
-    pub fn evaluate(&self, values: &HashMap<Variable, &R>) -> R {
+    pub fn evaluate(&self, values: HashMap<Variable, impl Borrow<R>>) -> R {
         Self::structure().evaluate(self, values)
     }
 }

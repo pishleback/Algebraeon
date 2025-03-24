@@ -16,6 +16,6 @@ fn main() {
     let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).into_ergonomic();
     let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).into_ergonomic();
 
-    let f = (x.pow(120) - 1).into_verbose();
+    let f = (x.pow(5) - y.pow(5)).into_verbose();
     println!("f = {}", f.factor().unwrap());
 }
