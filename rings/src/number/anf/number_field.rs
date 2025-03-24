@@ -13,20 +13,20 @@ use algebraeon_nzq::{integer::*, traits::Abs};
 
 pub type AlgebraicNumberFieldStructure = FieldExtensionStructure<CannonicalStructure<Rational>>;
 
-pub fn new_anf(f: Polynomial<Rational>) -> AlgebraicNumberFieldStructure {
-    AlgebraicNumberFieldStructure::new_field(
-        PolynomialStructure::new(Rational::structure()).into(),
-        f,
-    )
-}
+impl Polynomial<Rational> {
+    pub fn algebraic_number_field(self) -> AlgebraicNumberFieldStructure {
+        AlgebraicNumberFieldStructure::new_field(
+            PolynomialStructure::new(Rational::structure()).into(),
+            self,
+        )
+    }
 
-//return the splitting field and the roots of f in the splitting field
-pub fn splitting_field_anf(
-    f: &Polynomial<Rational>,
-) -> (AlgebraicNumberFieldStructure, Vec<Polynomial<Rational>>) {
-    let roots = f.primitive_part_fof().all_complex_roots();
-    let (g, roots_rel_g) = anf_multi_primitive_element_theorem(roots.iter().collect());
-    (new_anf(g.min_poly()), roots_rel_g)
+    //return the splitting field and the roots of f in the splitting field
+    pub fn splitting_field(&self) -> (AlgebraicNumberFieldStructure, Vec<Polynomial<Rational>>) {
+        let roots = self.primitive_part_fof().all_complex_roots();
+        let (g, roots_rel_g) = anf_multi_primitive_element_theorem(roots.iter().collect());
+        (g.min_poly().algebraic_number_field(), roots_rel_g)
+    }
 }
 
 impl AlgebraicNumberFieldStructure {
@@ -789,7 +789,7 @@ mod tests {
     #[test]
     fn test_anf_to_and_from_vector() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = new_anf((x.pow(5) - x + 1).into_verbose());
+        let anf = (x.pow(5) - x + 1).into_verbose().algebraic_number_field();
         let alpha = (x.pow(9) + 5).into_verbose();
 
         println!("{}", alpha);
@@ -823,7 +823,7 @@ mod tests {
     #[test]
     fn test_anf_poly_factor_count() {
         let y = &Polynomial::<Rational>::var().into_ergonomic();
-        let k = new_anf((y.pow(2) - 3).into_verbose());
+        let k = (y.pow(2) - 3).into_verbose().algebraic_number_field();
         let k_poly = PolynomialStructure::new(k.clone().into());
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
@@ -836,7 +836,9 @@ mod tests {
         );
 
         let y = &Polynomial::<Rational>::var().into_ergonomic();
-        let k = new_anf((y.pow(4) - y.pow(2) + 1).into_verbose());
+        let k = (y.pow(4) - y.pow(2) + 1)
+            .into_verbose()
+            .algebraic_number_field();
         let k_poly = PolynomialStructure::new(k.clone().into());
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
@@ -848,7 +850,7 @@ mod tests {
             4
         );
 
-        let k = new_anf((y.pow(3) - y + 1).into_verbose());
+        let k = (y.pow(3) - y + 1).into_verbose().algebraic_number_field();
         let k_poly = PolynomialStructure::new(k.clone().into());
         debug_assert_eq!(
             k_poly
@@ -859,7 +861,9 @@ mod tests {
             2
         );
 
-        let k = new_anf((y.pow(4) - y.pow(2) + 1).into_verbose());
+        let k = (y.pow(4) - y.pow(2) + 1)
+            .into_verbose()
+            .algebraic_number_field();
         let k_poly = PolynomialStructure::new(k.clone().into());
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(

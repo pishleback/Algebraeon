@@ -3,7 +3,6 @@
 use algebraeon::{
     nzq::{integer::*, rational::*},
     rings::{
-        number::anf::number_field::new_anf,
         polynomial::{multipoly::*, polynomial::Polynomial},
         structure::{elements::*, structure::*},
     },
@@ -15,7 +14,10 @@ fn main() {
     }
 
     let x = &Polynomial::<Rational>::var().into_ergonomic();
-    let f = (x.pow(5) - x + 1).into_verbose();
-    let anf = new_anf(f);
-    println!("(r, s) = {:?}", anf.signature());
+    let p = (x.pow(4) - x + 1).into_verbose();
+    let (f, roots) = p.splitting_field();
+    println!("{}", f.modulus());
+    for r in roots {
+        println!("{}", r);
+    }
 }

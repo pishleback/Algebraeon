@@ -1,18 +1,14 @@
-use crate::number::anf::number_field::new_anf;
-use crate::structure::structure::*;
-
 use super::poly_tools::*;
 use super::real::RealAlgebraic;
 use super::{bisection_gen::RationalSimpleBetweenGenerator, rat_to_string};
 use crate::polynomial::polynomial::*;
-use algebraeon_sets::structure::*;
-use std::{collections::HashSet, fmt::Display, rc::Rc, str::FromStr};
-
-use boxes::*;
-
+use crate::structure::structure::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
+use algebraeon_sets::structure::*;
+use boxes::*;
+use std::{collections::HashSet, fmt::Display, rc::Rc, str::FromStr};
 
 mod boxes;
 pub mod polynomial;
@@ -464,7 +460,9 @@ impl ComplexAlgebraicRoot {
         match poly.as_constant() {
             Some(rat) => ComplexAlgebraic::Real(RealAlgebraic::Rational(rat)),
             None => {
-                let ans_poly = new_anf(self.min_poly())
+                let ans_poly = self
+                    .min_poly()
+                    .algebraic_number_field()
                     .min_poly(&poly)
                     .primitive_part_fof();
 

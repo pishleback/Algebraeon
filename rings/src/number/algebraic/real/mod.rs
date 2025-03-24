@@ -1,6 +1,4 @@
-use crate::{
-    number::anf::number_field::new_anf, polynomial::polynomial::*, structure::structure::*,
-};
+use crate::{polynomial::polynomial::*, structure::structure::*};
 use algebraeon_sets::structure::*;
 use bounds::*;
 use interval::*;
@@ -319,7 +317,9 @@ impl RealAlgebraicRoot {
         match poly.as_constant() {
             Some(rat) => RealAlgebraic::Rational(rat),
             None => {
-                let ans_poly = new_anf(self.min_poly())
+                let ans_poly = self
+                    .min_poly()
+                    .algebraic_number_field()
                     .min_poly(&poly)
                     .primitive_part_fof();
 

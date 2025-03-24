@@ -8,7 +8,7 @@ use crate::{
 use algebraeon_sets::structure::*;
 use structure::*;
 
-use super::number_field::{AlgebraicNumberFieldStructure, new_anf};
+use super::number_field::AlgebraicNumberFieldStructure;
 
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;
@@ -46,7 +46,7 @@ impl AlgebraicNumberFieldStructure {
 
 impl ComplexAlgebraic {
     pub fn abstract_generated_algebraic_number_field(&self) -> AlgebraicNumberFieldStructure {
-        new_anf(self.min_poly())
+        self.min_poly().algebraic_number_field()
     }
 
     pub fn embedded_generated_algebraic_number_field(self) -> EmbeddedAnf {
@@ -109,7 +109,7 @@ pub fn as_poly_expr(
     //loop through the linear factors (x - a) and check if a = target
 
     //let K = Q[generator]
-    let gen_anf = new_anf(generator.min_poly());
+    let gen_anf = generator.min_poly().algebraic_number_field();
     let gen_anf_poly = PolynomialStructure::new(gen_anf.clone().into());
 
     //the minimal polynomial of target in K[x]
@@ -175,7 +175,7 @@ pub fn anf_pair_primitive_element_theorem(
 
         match as_poly_expr(a, &generator) {
             Some(a_rel_gen) => {
-                let anf = new_anf(generator.min_poly());
+                let anf = generator.min_poly().algebraic_number_field();
                 //gen = xa + yb
                 //so b = (gen - xa) / y
                 let b_rel_gen = anf.mul(
@@ -216,7 +216,7 @@ pub fn anf_multi_primitive_element_theorem(
     let mut p = vec![Polynomial::var()];
     for num in nums {
         let (new_g, _x, _y, old_g_poly, num_poly) = anf_pair_primitive_element_theorem(&g, num);
-        let new_g_anf = new_anf(new_g.min_poly());
+        let new_g_anf = new_g.min_poly().algebraic_number_field();
         p = p
             .into_iter()
             .map(|old_p| new_g_anf.reduce(&Polynomial::compose(&old_p, &old_g_poly)))
