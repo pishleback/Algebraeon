@@ -7,7 +7,7 @@ Add
 [dependencies]
 algebraeon = "0.1.3"
 ```
-to your `cargo.toml` to make Algebraeon avalible.
+to your `cargo.toml` to make Algebraeon avalible. Copy an example below to get started.
 
 ## Factoring Polynomials
 Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
