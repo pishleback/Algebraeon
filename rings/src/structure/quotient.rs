@@ -43,6 +43,7 @@ impl<RS: EuclideanDivisionStructure> QuotientStructure<RS, true> {
 
 impl<RS: EuclideanDivisionStructure + FactorableStructure> QuotientStructure<RS, true> {
     pub fn new_field(ring: Rc<RS>, modulus: RS::Set) -> Self {
+        #[cfg(debug_assertions)]
         if !ring.is_irreducible(&modulus) {
             panic!(
                 "The modulus must be irreducible to form a quotient field. Got {:?}.",

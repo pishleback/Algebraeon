@@ -14,7 +14,7 @@ use algebraeon_nzq::{integer::*, traits::Abs};
 pub type AlgebraicNumberFieldStructure = FieldExtensionStructure<CannonicalStructure<Rational>>;
 
 pub fn new_anf(f: Polynomial<Rational>) -> AlgebraicNumberFieldStructure {
-    AlgebraicNumberFieldStructure::new_unchecked(
+    AlgebraicNumberFieldStructure::new_field(
         PolynomialStructure::new(Rational::structure()).into(),
         f,
     )
