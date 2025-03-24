@@ -5,17 +5,19 @@ use algebraeon_sets::structure::*;
 
 use algebraeon_nzq::natural::*;
 
-impl<RS: FactorableStructure + GreatestCommonDivisorStructure + CharZeroStructure>
+impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + CharZeroStructure>
     PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>:
-        Structure<Set = Polynomial<RS::Set>> + GreatestCommonDivisorStructure + FactorableStructure,
+    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>
+        + GreatestCommonDivisorStructure
+        + UniqueFactorizationStructure,
 {
     /// Reduce a factorization problem for polynomials over a ring of characteristic 0 to a factorization of primitive squarefree polynomials over the ring
     //https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
     pub fn factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
         &self,
         f: Polynomial<RS::Set>,
+        factor_coeff: impl Fn(&RS::Set) -> Option<Factored<RS>>,
         primitive_sqfree_factorize: &impl Fn(Polynomial<RS::Set>) -> Factored<PolynomialStructure<RS>>,
     ) -> Factored<PolynomialStructure<RS>> {
         debug_assert!(!self.is_zero(&f));
@@ -25,11 +27,7 @@ where
 
         let (content, prim) = self.factor_primitive(f.clone()).unwrap();
 
-        let (content_unit, content_factors) = self
-            .coeff_ring()
-            .factor(&content)
-            .unwrap()
-            .unit_and_factors();
+        let (content_unit, content_factors) = factor_coeff(&content).unwrap().unit_and_factors();
 
         let mut factors = Factored::new_unchecked(
             self.clone().into(),
@@ -68,15 +66,12 @@ where
 impl<RS: FactorableStructure + GreatestCommonDivisorStructure + FiniteUnitsStructure>
     PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>,
+    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
 {
     fn factor_primitive_linear_part(
         &self,
         mut f: Polynomial<RS::Set>,
-    ) -> (Factored<PolynomialStructure<RS>>, Polynomial<RS::Set>)
-    where
-        PolynomialStructure<RS>: FactorableStructure,
-    {
+    ) -> (Factored<PolynomialStructure<RS>>, Polynomial<RS::Set>) {
         debug_assert!(self.is_primitive(f.clone()));
 
         /*
@@ -138,7 +133,7 @@ where
     }
 }
 
-impl<RS: FactorableStructure + CharZeroStructure + FiniteUnitsStructure + 'static>
+impl<RS: UniqueFactorizationStructure + CharZeroStructure + FiniteUnitsStructure + 'static>
     PolynomialStructure<RS>
 where
     PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>,
@@ -146,6 +141,7 @@ where
     fn find_factor_primitive_by_kroneckers_algorithm(
         &self,
         f: &Polynomial<RS::Set>,
+        factor_coeff: impl Fn(&RS::Set) -> Option<Factored<RS>>,
     ) -> FindFactorResult<PolynomialStructure<RS>> {
         /*
         Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
@@ -172,7 +168,7 @@ where
                 let x = elem_gen.next().unwrap();
                 let y = self.evaluate(&f, &x);
                 if !self.coeff_ring().is_zero(&y) {
-                    f_points.push((x, self.coeff_ring().factor(&y).unwrap()));
+                    f_points.push((x, factor_coeff(&y).unwrap()));
                 }
             }
 
@@ -231,24 +227,25 @@ where
 }
 
 impl<
-    RS: FactorableStructure
+    RS: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
         + CharZeroStructure
         + FiniteUnitsStructure
         + 'static,
 > PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>,
+    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
 {
-    pub fn factorize_by_kroneckers_method(&self, f: Polynomial<RS::Set>) -> Option<Factored<Self>>
-    where
-        Self: FactorableStructure,
-    {
+    pub fn factorize_by_kroneckers_method(
+        &self,
+        f: Polynomial<RS::Set>,
+        factor_coeff: impl Fn(&RS::Set) -> Option<Factored<RS>>,
+    ) -> Option<Factored<Self>> {
         if self.is_zero(&f) {
             None
         } else {
             let (g, f_prim) = self.factor_primitive(f).unwrap();
-            let g_factored = self.coeff_ring().factor(&g).unwrap();
+            let g_factored = factor_coeff(&g).unwrap();
             let (g_unit, g_factors) = g_factored.unit_and_factors();
             let g_factored = Factored::new_unchecked(
                 self.clone().into(),
@@ -258,9 +255,8 @@ where
                     .map(|(g_factor, power)| (Polynomial::constant(g_factor), power))
                     .collect(),
             );
-
             let mut factored = factorize_by_find_factor(self, f_prim, &|f| {
-                self.find_factor_primitive_by_kroneckers_algorithm(&f)
+                self.find_factor_primitive_by_kroneckers_algorithm(&f, |c| factor_coeff(c))
             });
             factored.mul_mut(g_factored);
 
@@ -270,31 +266,34 @@ where
 }
 
 impl<
-    RS: FactorableStructure
+    RS: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
         + CharZeroStructure
         + FiniteUnitsStructure
         + 'static,
 > PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + GreatestCommonDivisorStructure,
+    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>
+        + GreatestCommonDivisorStructure
+        + UniqueFactorizationStructure,
 {
     pub fn factorize_by_yuns_and_kroneckers_method(
         &self,
         f: &Polynomial<RS::Set>,
-    ) -> Option<Factored<Self>>
-    where
-        Self: FactorableStructure,
-    {
+        factor_coeff: impl Fn(&RS::Set) -> Option<Factored<RS>>,
+    ) -> Option<Factored<Self>> {
         if self.is_zero(f) {
             None
         } else {
             Some(
                 self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
                     f.clone(),
+                    &factor_coeff,
                     &|f| {
                         factorize_by_find_factor(self, f, &|f| {
-                            self.find_factor_primitive_by_kroneckers_algorithm(&f)
+                            self.find_factor_primitive_by_kroneckers_algorithm(&f, |c| {
+                                factor_coeff(c)
+                            })
                         })
                     },
                 ),
@@ -305,24 +304,26 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: FactorableStructure
+    R::Structure: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
         + CharZeroStructure
         + FiniteUnitsStructure
         + 'static,
-    PolynomialStructure<R::Structure>:
-        Structure<Set = Polynomial<R>> + GreatestCommonDivisorStructure + FactorableStructure,
+    PolynomialStructure<R::Structure>: Structure<Set = Polynomial<R>>
+        + GreatestCommonDivisorStructure
+        + UniqueFactorizationStructure,
 {
     pub fn factorize_by_kroneckers_method(
         &self,
+        factor_coeff: impl Fn(&R) -> Option<Factored<R::Structure>>,
     ) -> Option<Factored<PolynomialStructure<R::Structure>>> {
-        Self::structure().factorize_by_yuns_and_kroneckers_method(self)
+        Self::structure().factorize_by_yuns_and_kroneckers_method(self, factor_coeff)
     }
 }
 
 impl<Fof: FieldOfFractionsStructure> PolynomialStructure<Fof>
 where
-    Self: Structure<Set = Polynomial<Fof::Set>> + FactorableStructure,
+    Self: Structure<Set = Polynomial<Fof::Set>> + UniqueFactorizationStructure,
     PolynomialStructure<Fof::RS>:
         Structure<Set = Polynomial<<Fof::RS as Structure>::Set>> + FactorableStructure,
     Fof::RS: GreatestCommonDivisorStructure,
@@ -355,7 +356,7 @@ where
 
 impl<RS: FieldStructure + FiniteUnitsStructure> PolynomialStructure<RS>
 where
-    Self: Structure<Set = Polynomial<RS::Set>>,
+    Self: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
 {
     fn find_factor_by_trying_all_factors(
         &self,
@@ -388,10 +389,7 @@ where
     pub fn factorize_by_trying_all_factors(
         &self,
         f: Polynomial<RS::Set>,
-    ) -> Option<Factored<PolynomialStructure<RS>>>
-    where
-        Self: FactorableStructure,
-    {
+    ) -> Option<Factored<PolynomialStructure<RS>>> {
         if self.is_zero(&f) {
             None
         } else {
@@ -405,7 +403,8 @@ where
 impl<F: MetaType> Polynomial<F>
 where
     F::Structure: FieldStructure + FiniteUnitsStructure,
-    PolynomialStructure<F::Structure>: Structure<Set = Polynomial<F>> + FactorableStructure,
+    PolynomialStructure<F::Structure>:
+        Structure<Set = Polynomial<F>> + UniqueFactorizationStructure,
 {
     pub fn factorize_by_trying_all_factors(
         &self,
@@ -430,7 +429,7 @@ mod tests {
         //primitive cases
         let f = ((1 + x).pow(2)).into_verbose();
         assert!(Factored::equal(
-            &f.factorize_by_kroneckers_method().unwrap(),
+            &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
@@ -439,7 +438,7 @@ mod tests {
         ));
 
         let f = (-1 - 2 * x).into_verbose();
-        let fs1 = f.factorize_by_kroneckers_method().unwrap();
+        let fs1 = f.factorize_by_kroneckers_method(Integer::factor).unwrap();
         let fs2 = &Factored::new_unchecked(
             Polynomial::<Integer>::structure().into(),
             Polynomial::neg(&Polynomial::one()),
@@ -450,7 +449,7 @@ mod tests {
 
         let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).into_verbose();
         assert!(Factored::equal(
-            &f.factorize_by_kroneckers_method().unwrap(),
+            &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
@@ -463,7 +462,7 @@ mod tests {
 
         let f = (1 + x + x.pow(2)).pow(2).into_verbose();
         assert!(Factored::equal(
-            &f.factorize_by_kroneckers_method().unwrap(),
+            &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
@@ -474,7 +473,7 @@ mod tests {
         //non-primitive cases
         let f = (2 + 2 * x).into_verbose();
         assert!(Factored::equal(
-            &f.factorize_by_kroneckers_method().unwrap(),
+            &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
@@ -487,7 +486,7 @@ mod tests {
 
         let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).into_verbose();
         assert!(Factored::equal(
-            &f.factorize_by_kroneckers_method().unwrap(),
+            &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
@@ -502,7 +501,7 @@ mod tests {
 
         let f = Polynomial::<Integer>::one();
         assert!(Factored::equal(
-            &f.factorize_by_kroneckers_method().unwrap(),
+            &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
@@ -512,7 +511,7 @@ mod tests {
 
         let f = ((x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_verbose();
         assert!(Factored::equal(
-            &f.factorize_by_kroneckers_method().unwrap(),
+            &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
             &Factored::new_unchecked(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),

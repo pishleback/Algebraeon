@@ -615,7 +615,7 @@ impl<RS: UniqueFactorizationStructure> UniqueFactorizationStructure
 }
 
 impl<
-    RS: FactorableStructure
+    RS: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
         + CharZeroStructure
         + FiniteUnitsStructure
@@ -623,13 +623,20 @@ impl<
 > PolynomialStructure<MultiPolynomialStructure<RS>>
 where
     PolynomialStructure<MultiPolynomialStructure<RS>>:
-        Structure<Set = Polynomial<MultiPolynomial<RS::Set>>> + FactorableStructure,
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + FactorableStructure,
+        Structure<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationStructure,
+    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
     MultiPolynomialStructure<RS>: Structure<Set = MultiPolynomial<RS::Set>>
-        + FactorableStructure
+        + UniqueFactorizationStructure
         + GreatestCommonDivisorStructure,
 {
-    pub fn factor_by_foo(&self, mpoly: &<Self as Structure>::Set) -> Option<Factored<Self>> {
+    pub fn factor_by_foo(
+        &self,
+        factor_poly: impl Fn(&Polynomial<RS::Set>) -> Option<Factored<PolynomialStructure<RS>>>,
+        factor_multipoly_coeff: impl Fn(
+            &MultiPolynomial<RS::Set>,
+        ) -> Option<Factored<MultiPolynomialStructure<RS>>>,
+        mpoly: &<Self as Structure>::Set,
+    ) -> Option<Factored<PolynomialStructure<MultiPolynomialStructure<RS>>>> {
         match |mpoly: &<Self as Structure>::Set| -> Option<Polynomial<RS::Set>> {
             let mut const_coeffs = vec![];
             for coeff in mpoly.coeffs() {
@@ -641,8 +648,7 @@ where
             // It is a polynomial with multipolynomial coefficients where all coefficients are constant
             // So we can defer to a univariate factoring algorithm
             Some(poly) => {
-                let poly_ring = PolynomialStructure::new(self.coeff_ring().coeff_ring());
-                let (unit, factors) = poly_ring.factor(&poly)?.unit_and_factors();
+                let (unit, factors) = factor_poly(&poly)?.unit_and_factors();
                 Some(Factored::new_unchecked(
                     self.clone().into(),
                     unit.apply_map_into(|c| MultiPolynomial::constant(c)),
@@ -657,25 +663,33 @@ where
                         .collect(),
                 ))
             }
-            None => self.factorize_by_yuns_and_kroneckers_method(mpoly),
+            None => {
+                self.factorize_by_yuns_and_kroneckers_method(mpoly, |c| factor_multipoly_coeff(c))
+            }
         }
     }
 }
 
 impl<
-    RS: FactorableStructure
+    RS: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
         + CharZeroStructure
         + FiniteUnitsStructure
         + 'static,
 > MultiPolynomialStructure<RS>
 where
-    MultiPolynomialStructure<RS>: Structure<Set = MultiPolynomial<RS::Set>> + FactorableStructure,
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + FactorableStructure,
+    MultiPolynomialStructure<RS>:
+        Structure<Set = MultiPolynomial<RS::Set>> + UniqueFactorizationStructure,
+    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
     PolynomialStructure<MultiPolynomialStructure<RS>>:
-        Structure<Set = Polynomial<MultiPolynomial<RS::Set>>> + FactorableStructure,
+        Structure<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationStructure,
 {
-    pub fn factor_by_foo(&self, mpoly: &<Self as Structure>::Set) -> Option<Factored<Self>> {
+    pub fn factor_by_foo(
+        &self,
+        factor_coeff: Rc<dyn Fn(&RS::Set) -> Option<Factored<RS>>>,
+        factor_poly: Rc<dyn Fn(&Polynomial<RS::Set>) -> Option<Factored<PolynomialStructure<RS>>>>,
+        mpoly: &<Self as Structure>::Set,
+    ) -> Option<Factored<MultiPolynomialStructure<RS>>> {
         if self.is_zero(mpoly) {
             None
         } else {
@@ -685,7 +699,11 @@ where
                     let expanded_poly = self.expand(mpoly, &free_var);
                     let free_var = self.var(free_var);
                     let (unit, factors) = poly_over_self
-                        .factor_by_foo(&expanded_poly)
+                        .factor_by_foo(
+                            factor_poly.as_ref(),
+                            |c| self.factor_by_foo(factor_coeff.clone(), factor_poly.clone(), c),
+                            &expanded_poly,
+                        )
                         .unwrap()
                         .unit_and_factors();
                     Some(Factored::new_unchecked(
@@ -701,7 +719,7 @@ where
                 }
                 None => {
                     let value = self.as_constant(mpoly).unwrap();
-                    let factored = self.coeff_ring().factor(&value)?;
+                    let factored = factor_coeff(&value)?;
                     let (unit, factors) = factored.unit_and_factors();
                     Some(Factored::new_unchecked(
                         self.clone().into(),

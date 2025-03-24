@@ -150,12 +150,12 @@ mod tests {
             println!(
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
-                exp.factorize_by_kroneckers_method()
+                exp.factorize_by_kroneckers_method(Integer::factor)
             );
             println!(
                 "rsp = {}    rsp_factored = {:?}",
                 Polynomial::to_string(&rsp),
-                rsp.factorize_by_kroneckers_method()
+                rsp.factorize_by_kroneckers_method(Integer::factor)
             );
             assert!(Polynomial::are_associate(&exp, &rsp));
         }
@@ -238,12 +238,12 @@ mod tests {
             println!(
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
-                exp.factorize_by_kroneckers_method()
+                exp.factorize_by_kroneckers_method(Integer::factor)
             );
             println!(
                 "rpp = {}    rpp_factored = {:?}",
                 Polynomial::to_string(&rpp),
-                rpp.factorize_by_kroneckers_method()
+                rpp.factorize_by_kroneckers_method(Integer::factor)
             );
             assert!(Polynomial::are_associate(&exp, &rpp));
         }

@@ -767,6 +767,7 @@ impl FactorableStructure for PolynomialStructure<AlgebraicNumberFieldStructure> 
             Some(
                 self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
                     a.clone(),
+                    |c| self.coeff_ring().factor(c),
                     &|a| {
                         self.factorize_rational_factorize_first(&a, &|a| {
                             self.factor_primitive_sqfree_by_reduced_ring(a)
