@@ -1,7 +1,7 @@
 use crate::structure::quotient::QuotientStructure;
 use algebraeon_nzq::rational::*;
 use algebraeon_nzq::traits::DivMod;
-use factor::Factored;
+use factored::Factored;
 use std::ops::Rem;
 
 use super::functions::*;
@@ -154,7 +154,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     continue;
                 }
                 match Factored::from_prime_unchecked(r.clone()).is_primitive_root(n) {
-                    factor::IsPrimitiveRootResult::NonUnit => {
+                    factored::IsPrimitiveRootResult::NonUnit => {
                         // n is divisible by r
                         match *n == r {
                             true => {
@@ -165,8 +165,8 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                             }
                         }
                     }
-                    factor::IsPrimitiveRootResult::No => {}
-                    factor::IsPrimitiveRootResult::Yes => {
+                    factored::IsPrimitiveRootResult::No => {}
+                    factored::IsPrimitiveRootResult::Yes => {
                         break;
                     }
                 }
@@ -496,8 +496,15 @@ pub fn primality_test(n: &Natural) -> PrimalityTestResult {
                 }
             }
         } else {
-            // Otherwise resort to AKS
-            aks_primality_test(n)
+            // aks_primality_test(n) // This would always work but its too slow
+            // Instead resort to 1000 miller rabin tests giving a heuristic chance of ~ 1 in 2^2000 of being wrong
+
+            match miller_rabin_primality_test(n, (2u32..1000).map(|a| a.into()).collect()) {
+                Ok(answer) => answer,
+                Err(InconclusivePrimalityTestResult::ProbablePrime { .. }) => {
+                    PrimalityTestResult::Prime
+                }
+            }
         }
     }
 }

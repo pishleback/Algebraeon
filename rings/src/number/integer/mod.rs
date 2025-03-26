@@ -15,7 +15,7 @@ pub mod zimmermann_polys;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;
 
-use super::natural::factor::factor;
+use super::natural::factored::factor;
 
 impl SemiRingStructure for CannonicalStructure<Integer> {
     fn zero(&self) -> Self::Set {
@@ -99,7 +99,7 @@ impl FactorableStructure for CannonicalStructure<Integer> {
                 unit,
                 f.into_powers()
                     .into_iter()
-                    .map(|(p, k)| (Integer::from(p), k))
+                    .map(|(p, k)| (Integer::from(p), Natural::from(k)))
                     .collect(),
             ))
         }

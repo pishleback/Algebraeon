@@ -1,10 +1,10 @@
 #![allow(dead_code, warnings)]
 
+use std::str::FromStr;
 use algebraeon::{
-    nzq::{integer::*, rational::*},
+    nzq::{integer::*, natural::*, rational::*},
     rings::{
-        polynomial::{multipoly::*, polynomial::Polynomial},
-        structure::{elements::*, structure::*},
+        number::natural::factored::factor, polynomial::{multipoly::*, polynomial::Polynomial}, structure::{elements::*, structure::*}
     },
 };
 
@@ -13,11 +13,7 @@ fn main() {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
 
-    let x = &Polynomial::<Rational>::var().into_ergonomic();
-    let p = (x.pow(4) - x + 1).into_verbose();
-    let (f, roots) = p.splitting_field();
-    println!("{}", f.modulus());
-    for r in roots {
-        println!("{}", r);
-    }
+    let n = Natural::from_str("3029750799235790328974398724798327893798253709351343459177777").unwrap();
+    println!("{}", n);
+    println!("{:?}", factor(n));
 }

@@ -1,7 +1,7 @@
 use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
 
-pub mod factor;
+pub mod factored;
 pub mod functions;
 pub mod primes;
 
