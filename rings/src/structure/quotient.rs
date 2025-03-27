@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{borrow::Borrow, rc::Rc};
 
 use algebraeon_sets::structure::*;
 
@@ -24,8 +24,8 @@ impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> QuotientStructure<RS,
         &self.modulus
     }
 
-    pub fn reduce(&self, a: &RS::Set) -> RS::Set {
-        self.ring.rem(a, &self.modulus)
+    pub fn reduce(&self, a: impl Borrow<RS::Set>) -> RS::Set {
+        self.ring.rem(a.borrow(), &self.modulus)
     }
 }
 
@@ -131,11 +131,28 @@ impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> RingStructure
     }
 }
 
-impl<RS: EuclideanDivisionStructure + FavoriteAssociateStructure> UnitsStructure
-    for QuotientStructure<RS, true>
+impl<RS: EuclideanDivisionStructure + FavoriteAssociateStructure, const IS_FIELD: bool>
+    UnitsStructure for QuotientStructure<RS, IS_FIELD>
 {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        self.div(&self.one(), a)
+    fn inv(&self, x: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        if self.is_zero(x) {
+            Err(RingDivisionError::DivideByZero)
+        } else {
+            let (g, a, b) = self.ring.euclidean_xgcd(x.clone(), self.modulus.clone());
+            debug_assert!(
+                self.ring.equal(
+                    &g,
+                    &self
+                        .ring
+                        .add(&self.ring.mul(&a, &x), &self.ring.mul(&b, &self.modulus))
+                )
+            );
+            if self.equal(&g, &self.one()) {
+                Ok(self.reduce(a))
+            } else {
+                Err(RingDivisionError::NotDivisible)
+            }
+        }
     }
 }
 
@@ -147,26 +164,31 @@ impl<RS: EuclideanDivisionStructure + FavoriteAssociateStructure> IntegralDomain
         top: &Self::Set,
         bot: &Self::Set,
     ) -> Result<Self::Set, super::structure::RingDivisionError> {
-        if self.is_zero(bot) {
-            Err(RingDivisionError::DivideByZero)
-        } else {
-            let (g, a, b) = self.ring.euclidean_xgcd(bot.clone(), self.modulus.clone());
-            debug_assert!(
-                self.ring.equal(
-                    &g,
-                    &self
-                        .ring
-                        .add(&self.ring.mul(&a, &bot), &self.ring.mul(&b, &self.modulus))
-                )
-            );
-            //g = a * bot mod N and g divides N
-            //want ?*bot = top
-            match self.ring.div(top, &g) {
-                Ok(d) => Ok(self.ring.rem(&self.ring.mul(&a, &d), &self.modulus)),
-                Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-                Err(RingDivisionError::DivideByZero) => unreachable!(),
-            }
+        match self.inv(bot) {
+            Ok(bot_inv) => Ok(self.mul(top, &bot_inv)),
+            Err(err) => Err(err),
         }
+
+        // if self.is_zero(bot) {
+        //     Err(RingDivisionError::DivideByZero)
+        // } else {
+        //     let (g, a, b) = self.ring.euclidean_xgcd(bot.clone(), self.modulus.clone());
+        //     debug_assert!(
+        //         self.ring.equal(
+        //             &g,
+        //             &self
+        //                 .ring
+        //                 .add(&self.ring.mul(&a, &bot), &self.ring.mul(&b, &self.modulus))
+        //         )
+        //     );
+        //     //g = a * bot mod N and g divides N
+        //     //want ?*bot = top
+        //     match self.ring.div(top, &g) {
+        //         Ok(d) => Ok(self.ring.rem(&self.ring.mul(&a, &d), &self.modulus)),
+        //         Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
+        //         Err(RingDivisionError::DivideByZero) => unreachable!(),
+        //     }
+        // }
     }
 }
 

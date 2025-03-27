@@ -5,7 +5,7 @@ use algebraeon_nzq::traits::AbsDiff;
 use primes::is_prime;
 use std::collections::HashMap;
 
-// mod ecm;
+mod ecm;
 
 #[derive(Debug, Clone)]
 pub struct Factored {
@@ -281,7 +281,7 @@ pub fn factor(n: Natural) -> Option<Factored> {
     } else {
         let mut f = Factorizer::new(n);
         // Trial division
-        f.partially_factor_by_method(|n| (trial_division(n.n, 100000), true));
+        f.partially_factor_by_method(|n| (trial_division(n.n, 1000000000000), true));
 
         // // Pollard-Rho
         // for x in [2u32, 3, 4] {
@@ -293,12 +293,12 @@ pub fn factor(n: Natural) -> Option<Factored> {
         // }
 
         // ECM
-        // f.partially_factor_by_method(|n| {
-        //     (
-        //         exclude_prime_inputs(n, |n| ecm::factor_by_lenstra_elliptic_curve(n)),
-        //         false,
-        //     )
-        // });
+        f.partially_factor_by_method(|n| {
+            (
+                exclude_prime_inputs(n, |n| ecm::factor_by_lenstra_elliptic_curve(n)),
+                false,
+            )
+        });
 
         Some(f.complete())
     }

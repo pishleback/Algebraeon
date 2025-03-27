@@ -530,7 +530,7 @@ impl Natural {
         Self((&self.0).mod_pow(&exp.borrow().0, &m.borrow().0))
     }
 
-    pub fn bits<'a>(&'a self) -> impl Iterator<Item = bool> + ExactSizeIterator + 'a {
+    pub fn bits<'a>(&'a self) -> impl Iterator<Item = bool> + ExactSizeIterator + DoubleEndedIterator + 'a {
         use malachite_base::num::logic::traits::BitIterable;
         self.0.bits()
     }

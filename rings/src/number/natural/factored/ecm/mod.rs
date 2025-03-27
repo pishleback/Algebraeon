@@ -27,8 +27,7 @@ SOFTWARE.
 use super::*;
 use algebraeon_nzq::natural::Natural;
 
-pub mod factor;
-pub mod int_utils;
+// pub mod factor;
 pub mod point;
 
 pub fn factor_by_lenstra_elliptic_curve(n: Natural) -> Vec<Factor> {
