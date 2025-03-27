@@ -25,14 +25,13 @@ SOFTWARE.
 */
 
 use super::*;
-use algebraeon_nzq::{natural::Natural, traits::Abs};
+use algebraeon_nzq::natural::Natural;
 
 pub mod factor;
 pub mod point;
 
 pub fn factor_by_lenstra_elliptic_curve(n: Natural) -> Vec<Factor> {
-    println!("ecm(n) = {}", n);
     debug_assert!(!is_prime(&n));
-    let d = factor::ecm(&n).abs();
+    let d = factor::ecm(&n);
     vec![Factor::Composite(n / &d), Factor::Composite(d)]
 }

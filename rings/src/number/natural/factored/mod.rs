@@ -217,8 +217,6 @@ fn trial_division(mut n: Natural, max_d: usize) -> Vec<Factor> {
 fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> {
     debug_assert!(!is_prime(&n));
 
-    println!("{}", n);
-
     // g(x) = x^2 + 1
     let g1 = Polynomial::<Natural>::from_coeffs(vec![Natural::ONE, Natural::ZERO, Natural::ONE]);
     // g(g(x))
@@ -281,13 +279,13 @@ pub fn factor(n: Natural) -> Option<Factored> {
     } else {
         let mut f = Factorizer::new(n);
         // Trial division
-        f.partially_factor_by_method(|n| (trial_division(n.n, 10), true));
+        f.partially_factor_by_method(|n| (trial_division(n.n, 100000), true));
 
         // // Pollard-Rho
         // for x in [2u32, 3, 4] {
         //     f.partially_factor_by_method(|n| {
         //         terminate_once_trivial(n, |n| {
-        //             exclude_prime_inputs(n, |n| pollard_rho(n, Natural::from(x), 10000))
+        //             exclude_prime_inputs(n, |n| pollard_rho(n, Natural::from(x), 100000))
         //         })
         //     });
         // }

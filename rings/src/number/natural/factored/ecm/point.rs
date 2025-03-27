@@ -1,7 +1,4 @@
-use algebraeon_nzq::{integer::Integer, natural::Natural};
-use algebraeon_sets::structure::*;
-
-use crate::structure::{quotient::QuotientStructure, structure::*};
+use algebraeon_nzq::natural::Natural;
 
 /// Montgomery form of Points in an elliptic curve.
 ///
@@ -18,27 +15,16 @@ use crate::structure::{quotient::QuotientStructure, structure::*};
 /// References
 /// ----------
 /// - http://www.hyperelliptic.org/tanja/SHARCS/talks06/Gaj.pdf
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Point {
     /// X coordinate of the Point
-    pub x_cord: Integer,
+    pub x_cord: Natural,
     /// Z coordinate of the Point
-    pub z_cord: Integer,
+    pub z_cord: Natural,
     /// Parameter of the elliptic curve in Montgomery form
-    pub a_24: Integer,
+    pub a_24: Natural,
     /// modulus
-    pub modulus: QuotientStructure<CannonicalStructure<Integer>, false>,
-}
-
-impl Default for Point {
-    fn default() -> Self {
-        Self {
-            x_cord: Default::default(),
-            z_cord: Default::default(),
-            a_24: Default::default(),
-            modulus: QuotientStructure::new_ring(Integer::structure(), Integer::one()),
-        }
-    }
+    pub modulus: Natural,
 }
 
 impl Point {
@@ -50,12 +36,7 @@ impl Point {
     /// - `z_cord`: Z coordinate of the Point
     /// - `a_24`: Parameter of the elliptic curve in Montgomery form
     /// - `mod`: modulus
-    pub fn new(
-        x_cord: Integer,
-        z_cord: Integer,
-        a_24: Integer,
-        modulus: QuotientStructure<CannonicalStructure<Integer>, false>,
-    ) -> Point {
+    pub fn new(x_cord: Natural, z_cord: Natural, a_24: Natural, modulus: Natural) -> Point {
         Point {
             x_cord,
             z_cord,
@@ -77,25 +58,24 @@ impl Point {
     /// - `Q`: Point on the curve in Montgomery form.
     /// - `diff`: `self - Q`
     pub fn add(&self, q: &Point, diff: &Point) -> Point {
-        let u = Integer::from(&self.x_cord - &self.z_cord) * Integer::from(&q.x_cord + &q.z_cord);
-        let v = Integer::from(&self.x_cord + &self.z_cord) * Integer::from(&q.x_cord - &q.z_cord);
-        let add = Integer::from(&u + &v);
-        let subt = u - v;
-        let x_cord = self.modulus.reduce(&diff.z_cord * &add * &add);
-        let z_cord = self.modulus.reduce(&diff.x_cord * &subt * &subt);
+        let u = (&self.modulus + &self.x_cord - &self.z_cord) * (&q.x_cord + &q.z_cord);
+        let v = (&self.x_cord + &self.z_cord) * (&self.modulus + &q.x_cord - &q.z_cord);
+        let add = &u + &v;
+        let subt = u + (-v) % &self.modulus;
+        let x_cord = (&diff.z_cord * &add * &add) % &self.modulus;
+        let z_cord = (&diff.x_cord * &subt * &subt) % &self.modulus;
 
         Point::new(x_cord, z_cord, self.a_24.clone(), self.modulus.clone())
     }
 
     /// Doubles a point in an elliptic curve in Montgomery form.
     pub fn double(&self) -> Point {
-        let u =
-            Integer::from(&self.x_cord + &self.z_cord) * Integer::from(&self.x_cord + &self.z_cord);
-        let v =
-            Integer::from(&self.x_cord - &self.z_cord) * Integer::from(&self.x_cord - &self.z_cord);
-        let diff = Integer::from(&u - &v);
-        let x_cord = self.modulus.reduce(u * &v);
-        let z_cord = self.modulus.reduce((v + &self.a_24 * &diff) * diff);
+        let u = (&self.x_cord + &self.z_cord) * (&self.x_cord + &self.z_cord);
+        let v = (&self.modulus + &self.x_cord - &self.z_cord)
+            * (&self.modulus + &self.x_cord - &self.z_cord);
+        let diff = &u + (-&v) % &self.modulus;
+        let x_cord = (u * &v) % &self.modulus;
+        let z_cord = ((v + &self.a_24 * &diff) * diff) % &self.modulus;
 
         Point::new(x_cord, z_cord, self.a_24.clone(), self.modulus.clone())
     }
@@ -134,118 +114,111 @@ impl PartialEq for Point {
         if modulus != &other.modulus {
             return false;
         }
-        modulus.equal(
-            &(modulus.inv(&self.z_cord).unwrap() * &self.x_cord),
-            &(modulus.inv(&other.z_cord).unwrap() * &other.x_cord),
-        )
+
+        (self.z_cord.mod_inv_ref(modulus).unwrap() * &self.x_cord) % modulus
+            == (other.z_cord.mod_inv_ref(modulus).unwrap() * &other.x_cord) % modulus
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::MetaType;
-
     use super::*;
 
     #[test]
     fn test_point_add() {
-        let mod_29 = QuotientStructure::new_ring(Integer::structure(), Integer::from(29));
-
-        let p1 = Point::new(11.into(), 16.into(), 7.into(), mod_29.clone());
-        let p2 = Point::new(13.into(), 10.into(), 7.into(), mod_29.clone());
+        let p1 = Point::new(11u32.into(), 16u32.into(), 7u32.into(), 29u32.into());
+        let p2 = Point::new(13u32.into(), 10u32.into(), 7u32.into(), 29u32.into());
         let p3 = p2.add(&p1, &p1);
 
-        assert_eq!(p3.x_cord, Integer::from(23));
-        assert_eq!(p3.z_cord, Integer::from(17));
+        assert_eq!(p3.x_cord, Natural::from(23u32));
+        assert_eq!(p3.z_cord, Natural::from(17u32));
     }
 
     #[test]
     fn test_point_double() {
-        let mod_29 = QuotientStructure::new_ring(Integer::structure(), Integer::from(29));
-
-        let p1 = Point::new(11.into(), 16.into(), 7.into(), mod_29.clone());
+        let p1 = Point::new(11u32.into(), 16u32.into(), 7u32.into(), 29u32.into());
         let p2 = p1.double();
 
-        assert_eq!(p2.x_cord, Integer::from(13));
-        assert_eq!(p2.z_cord, Integer::from(10));
+        assert_eq!(p2.x_cord, Natural::from(13u32));
+        assert_eq!(p2.z_cord, Natural::from(10u32));
     }
 
     #[test]
     fn test_point_mont_ladder() {
-        let mod_29 = QuotientStructure::new_ring(Integer::structure(), Integer::from(29));
-
-        let p1 = Point::new(11.into(), 16.into(), 7.into(), mod_29.clone());
+        let p1 = Point::new(11u32.into(), 16u32.into(), 7u32.into(), 29u32.into());
         let p3 = p1.mont_ladder(&3u32.into());
 
-        assert_eq!(p3.x_cord, Integer::from(23));
-        assert_eq!(p3.z_cord, Integer::from(17));
+        assert_eq!(p3.x_cord, Natural::from(23u32));
+        assert_eq!(p3.z_cord, Natural::from(17u32));
     }
 
     #[test]
     fn test_point() {
-        let mod_101 = QuotientStructure::new_ring(Integer::structure(), Integer::from(101));
+        let a: Natural = 10u32.into();
+        let a_24: Natural =
+            (a + Natural::from(2u32)) * Natural::from(4u32).mod_inv(&101u32.into()).unwrap();
 
-        let a: Integer = 10.into();
-        let a_24: Integer = (a + Integer::from(2)) * mod_101.inv(&Integer::from(4)).unwrap();
-
-        let p1 = Point::new(10.into(), 17.into(), a_24.clone(), mod_101.clone());
+        let p1 = Point::new(10u32.into(), 17u32.into(), a_24.clone(), 101u32.into());
         let p2 = p1.double();
         assert_eq!(
             p2,
-            Point::new(68.into(), 56.into(), a_24.clone(), mod_101.clone())
+            Point::new(68u32.into(), 56u32.into(), a_24.clone(), 101u32.into())
         );
         let p4 = p2.double();
         assert_eq!(
             p4,
-            Point::new(22.into(), 64.into(), a_24.clone(), mod_101.clone())
+            Point::new(22u32.into(), 64u32.into(), a_24.clone(), 101u32.into())
         );
         let p8 = p4.double();
         assert_eq!(
             p8,
-            Point::new(71.into(), 95.into(), a_24.clone(), mod_101.clone())
+            Point::new(71u32.into(), 95u32.into(), a_24.clone(), 101u32.into())
         );
         let p16 = p8.double();
         assert_eq!(
             p16,
-            Point::new(5.into(), 16.into(), a_24.clone(), mod_101.clone())
+            Point::new(5u32.into(), 16u32.into(), a_24.clone(), 101u32.into())
         );
         let p32 = p16.double();
         assert_eq!(
             p32,
-            Point::new(33.into(), 96.into(), a_24.clone(), mod_101.clone())
+            Point::new(33u32.into(), 96u32.into(), a_24.clone(), 101u32.into())
         );
 
         // p3 = p2 + p1
         let p3 = p2.add(&p1, &p1);
         assert_eq!(
             p3,
-            Point::new(1.into(), 61.into(), a_24.clone(), mod_101.clone())
+            Point::new(1u32.into(), 61u32.into(), a_24.clone(), 101u32.into())
         );
         // p5 = p3 + p2 or p4 + p1
         let p5 = p3.add(&p2, &p1);
         assert_eq!(
             p5,
-            Point::new(49.into(), 90.into(), a_24.clone(), mod_101.clone())
+            Point::new(49u32.into(), 90u32.into(), a_24.clone(), 101u32.into())
         );
         assert_eq!(p5, p4.add(&p1, &p3));
         // # p6 = 2*p3
         let p6 = p3.double();
         assert_eq!(
             p6,
-            Point::new(87.into(), 43.into(), a_24.clone(), mod_101.clone())
+            Point::new(87u32.into(), 43u32.into(), a_24.clone(), 101u32.into())
         );
         assert_eq!(p6, p4.add(&p2, &p2));
         // # p7 = p5 + p2
         let p7 = p5.add(&p2, &p3);
         assert_eq!(
             p7,
-            Point::new(69.into(), 23.into(), a_24.clone(), mod_101.clone())
+            Point::new(69u32.into(), 23u32.into(), a_24.clone(), 101u32.into())
         );
         assert_eq!(p7, p4.add(&p3, &p1));
         assert_eq!(p7, p6.add(&p1, &p5));
         // # p9 = p5 + p4
         let p9 = p5.add(&p4, &p1);
-        assert_eq!(p9, Point::new(56.into(), 99.into(), a_24, mod_101));
+        assert_eq!(
+            p9,
+            Point::new(56u32.into(), 99u32.into(), a_24, 101u32.into())
+        );
         assert_eq!(p9, p6.add(&p3, &p3));
         assert_eq!(p9, p7.add(&p2, &p5));
         assert_eq!(p9, p8.add(&p1, &p7));

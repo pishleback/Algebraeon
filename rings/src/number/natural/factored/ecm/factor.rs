@@ -1,154 +1,196 @@
+use std::collections::HashSet;
+
 use algebraeon_nzq::{
-    integer::Integer,
     natural::{Natural, primes},
     random::Rng,
 };
-use algebraeon_sets::structure::MetaType;
 
 use crate::{
-    number::natural::primes::is_prime,
-    structure::{
-        quotient::QuotientStructure,
-        structure::{MetaGreatestCommonDivisor, UnitsStructure},
-    },
+    number::natural::{functions::gcd, primes::is_prime},
+    structure::structure::MetaSemiRing,
 };
 
 use super::point::Point;
 
-/// Returns one factor of n using Lenstra's 2 Stage Elliptic curve Factorization
-/// with Suyama's Parameterization. Here Montgomery arithmetic is used for fast
-/// computation of addition and doubling of points in elliptic curve.
-///
-/// This ECM method considers elliptic curves in Montgomery form (E : b*y^2*z = x^3 + a*x^2*z + x*z^2)
-/// and involves elliptic curve operations (mod N), where the elements in Z are reduced (mod N).
-/// Since N is not a prime, E over FF(N) is not really an elliptic curve but we can still do point additions
-/// and doubling as if FF(N) was a field.
-///
-/// Stage 1: The basic algorithm involves taking a random point (P) on an elliptic curve in FF(N).
-/// The compute k*P using Montgomery ladder algorithm.
-/// Let q be an unknown factor of N. Then the order of the curve E, |E(FF(q))|,
-/// might be a smooth number that divides k. Then we have k = l * |E(FF(q))|
-/// for some l. For any point belonging to the curve E, |E(FF(q))|*P = O,
-/// hence k*P = l*|E(FF(q))|*P. Thus kP.z_cord = 0 (mod q), and the unknown factor of N (q)
-/// can be recovered by taking gcd(kP.z_cord, N).
-///
-/// Stage 2: This is a continuation of Stage 1 if k*P != O. The idea is to utilize
-/// the fact that even if kP != 0, the value of k might miss just one large prime divisor
-/// of |E(FF(q))|. In this case, we only need to compute the scalar multiplication by p
-/// to get p*k*P = O. Here a second bound B2 restricts the size of possible values of p.
-///
-/// Parameters:
-///
-/// - `n`: Number to be factored.
-/// - `B1`: Stage 1 Bound.
-/// - `B2`: Stage 2 Bound.
-/// - `max_curve`: Maximum number of curves generated.
-/// - `rgen`: Random number generator.
+/*
+Returns one factor of n using
+Lenstra's 2 Stage Elliptic curve Factorization
+with Suyama's Parameterization. Here Montgomery
+arithmetic is used for fast computation of addition
+and doubling of points in elliptic curve.
+
+Explanation
+===========
+
+This ECM method considers elliptic curves in Montgomery
+form (E : b*y**2*z = x**3 + a*x**2*z + x*z**2) and involves
+elliptic curve operations (mod N), where the elements in
+Z are reduced (mod N). Since N is not a prime, E over FF(N)
+is not really an elliptic curve but we can still do point additions
+and doubling as if FF(N) was a field.
+
+Stage 1 : The basic algorithm involves taking a random point (P) on an
+elliptic curve in FF(N). The compute k*P using Montgomery ladder algorithm.
+Let q be an unknown factor of N. Then the order of the curve E, |E(FF(q))|,
+might be a smooth number that divides k. Then we have k = l * |E(FF(q))|
+for some l. For any point belonging to the curve E, |E(FF(q))|*P = O,
+hence k*P = l*|E(FF(q))|*P. Thus kP.z_cord = 0 (mod q), and the unknownn
+factor of N (q) can be recovered by taking gcd(kP.z_cord, N).
+
+Stage 2 : This is a continuation of Stage 1 if k*P != O. The idea utilize
+the fact that even if kP != 0, the value of k might miss just one large
+prime divisor of |E(FF(q))|. In this case we only need to compute the
+scalar multiplication by p to get p*k*P = O. Here a second bound B2
+restrict the size of possible values of p.
+
+Parameters
+==========
+
+n : Number to be Factored
+B1 : Stage 1 Bound. Must be an even number.
+B2 : Stage 2 Bound. Must be an even number.
+max_curve : Maximum number of curves generated
+
+Returns
+=======
+
+integer | None : ``n`` (if it is prime) else a non-trivial divisor of ``n``. ``None`` if not found
+
+References
+==========
+
+.. [1] Carl Pomerance, Richard Crandall, Prime Numbers: A Computational Perspective,
+        2nd Edition (2005), page 344, ISBN:978-0387252827
+*/
 pub fn ecm_one_factor(
     n: &Natural,
     b1: usize,
     b2: usize,
     max_curve: usize,
-    rgen: &mut Rng,
-) -> Result<Integer, ()> {
+    rng: &mut Rng,
+) -> Result<Natural, ()> {
     debug_assert_eq!(b1 % 2, 0);
     debug_assert_eq!(b2 % 2, 0);
 
     debug_assert!(!is_prime(n));
 
-    let mut curve = 0;
-    let d = (b2 as f64).sqrt() as usize;
-    let two_d = 2 * d;
-    let mut beta: Vec<Integer> = vec![Integer::default(); d + 1];
-    let mut s: Vec<Point> = vec![Point::default(); d + 1];
+    println!("n = {} b1 = {} b2 = {}", n, b1, b2);
 
-    let mod_n = QuotientStructure::new_ring(Integer::structure(), Integer::from(n));
-    let cubed_mod_n = |x: &Integer| mod_n.reduce(mod_n.reduce(x * x) * x);
+    let b1: usize = 10000;
+    let b2: usize = 100000;
 
-    while curve <= max_curve {
-        println!("curve = {}", curve);
+    // When calculating T, if (B1 - 2*D) is negative, it cannot be calculated.
+    let big_d = std::cmp::min(b2.isqrt(), b1 / 2 - 1);
+    println!("D = {}", big_d);
+    let mut beta = vec![Natural::default(); big_d];
+    let mut s = vec![Point::default(); big_d];
+    let mut k = Natural::ONE;
+    for p in primes().take_while(|&p| p <= b1) {
+        k *= Natural::from(p).nat_pow(&b1.ilog(p).into());
+    }
+    // Pre-calculate the prime numbers to be used in stage 2.
+    // Using the fact that the x-coordinates of point P and its
+    // inverse -P coincide, the number of primes to be checked
+    // in stage 2 can be reduced.
 
-        curve += 1;
+    println!("got k");
+
+    let mut deltas_list = vec![];
+    for r in (b1 + 2 * big_d..b2 + 2 * big_d).step_by(4 * big_d) {
+        let mut deltas = HashSet::new();
+        for q in primes()
+            .take_while(|&q| q < r + 2 * big_d)
+            .filter(|&q| r - 2 * big_d < q)
+        {
+            deltas.insert((q.abs_diff(r) - 1) / 2);
+        }
+        // d in deltas iff r+(2d+1) and/or r-(2d+1) is prime
+        deltas_list.push(deltas.into_iter().collect::<Vec<_>>())
+    }
+
+    println!("got deltas");
+
+    debug_assert!(n >= &Natural::from(7u32));
+
+    for c in 0..max_curve {
+        println!("c = {}", c);
 
         // Suyama's Parametrization
-        let sigma = Integer::from((n - Natural::ONE).random_below(rgen));
-        let u = mod_n.reduce(&sigma * &sigma - Integer::from(5));
-        let v = mod_n.reduce(Integer::from(4) * sigma);
-        let diff = &v - &u;
-        let u_3 = cubed_mod_n(&u);
-        let v_3 = cubed_mod_n(&v);
-
-        let b = Integer::from(4) * &u_3 * &v;
-        let c = match mod_n.inv(&b) {
-            Ok(c) => mod_n
-                .reduce(cubed_mod_n(&diff) * (Integer::from(4) * &u + &v) * c - Integer::from(2)),
-            _ => return Ok(Integer::gcd(&b, &Integer::from(n))),
+        // random sigma in the range [6, n-1]
+        let sigma = (n - Natural::from(7u32)).random_below(rng) + Natural::from(6u32);
+        let u = (&sigma * &sigma - Natural::from(5u32)) % n;
+        let v = (&sigma * Natural::from(4u32)) % n;
+        let u3 = (&u * &u * &u) % n;
+        let diff = &v + (-&u) % n;
+        // We use the elliptic curve y**2 = x**3 + a*x**2 + x
+        // where a = pow(v - u, 3, n)*(3*u + v)*invert(4*u_3*v, n) - 2
+        // However, we do not declare a because it is more convenient
+        // to use a24 = (a + 2)*invert(4, n) in the calculation.
+        let u3_16_v = Natural::from(16u32) * &u3 * &v;
+        let a24 = match u3_16_v.mod_inv(n) {
+            Ok(u3_16_v_inv) => {
+                (&diff * &diff * &diff * (Natural::from(3u32) * &u + &v) * u3_16_v_inv) % n
+            }
+            Err(()) => {
+                let g = gcd(Natural::from(2u32) * u3 * v, n.clone());
+                debug_assert_ne!(g, Natural::ONE);
+                if &g == n {
+                    continue;
+                } else {
+                    return Ok(g);
+                }
+            }
         };
+        let v3 = (&v * &v * &v) % n;
 
-        let a24 = (c + Integer::TWO) * mod_n.inv(&Integer::from(4)).unwrap();
-        let mut q = Point::new(u_3, v_3, a24, mod_n.clone());
-        // for loop does q = q^k for k a product of small powers of primes less than b1
-        for p in primes().take_while(|&p| p <= b1) {
-            q = q.mont_ladder(&Natural::from(p.pow(b1.ilog(p))));
-        }
-        println!("awooga");
-        let g = Integer::gcd(&q.z_cord, &Integer::from(n));
+        let q = Point::new(u3, v3, a24, n.clone());
+        let q = q.mont_ladder(&k);
+        let g = gcd(q.z_cord.clone(), n.clone());
 
-        // Stage 1 factor
-        if &g != n && g != Integer::ONE {
+        if g != Natural::ONE && g != *n {
+            // Stage 1 factor found
             return Ok(g);
-        }
-
-        // Stage 1 failure. Q.z = 0, Try another curve
-        if &g == n {
+        } else if g == *n {
+            // Stage 1 failure. Q.z = 0, Try another curve
             continue;
         }
 
         // Stage 2 - Improved Standard Continuation
-        s[1] = q.double();
-        s[2] = s[1].double();
-        beta[1] = mod_n.reduce(&s[1].x_cord * &s[1].z_cord);
-        beta[2] = mod_n.reduce(&s[2].x_cord * &s[2].z_cord);
-
-        for d in 3..=(d) {
-            s[d] = s[d - 1].add(&s[1], &s[d - 2]);
-            beta[d] = mod_n.reduce(&s[d].x_cord * &s[d].z_cord);
+        s[0] = q.clone();
+        let q2 = q.double();
+        s[1] = q2.add(&q, &q);
+        beta[0] = (&s[0].x_cord * &s[0].z_cord) % n;
+        beta[1] = (&s[1].x_cord * &s[1].z_cord) % n;
+        for d in 2..big_d {
+            s[d] = s[d - 1].add(&q2, &s[d - 2]);
+            beta[d] = (&s[d].x_cord * &s[d].z_cord) % n;
         }
+        // i.e., S[i] = Q.mont_ladder(2*i + 1)
 
-        println!("yay");
-
-        let mut g = Integer::from(1);
-        let b = b1 - 1;
-        let mut t = q.mont_ladder(&Natural::from(b - two_d));
-        let mut r = q.mont_ladder(&Natural::from(b));
-
-        println!("middle yay");
-
-        let mut primes = primes().skip_while(|&q| q < b);
-        for rr in (b..b2).step_by(two_d) {
-            let alpha = mod_n.reduce(&r.x_cord * &r.z_cord);
-            for q in primes.by_ref().take_while(|&q| q <= rr + two_d) {
-                let delta = (q - rr) / 2;
-                let f = Integer::from(&r.x_cord - &s[d].x_cord)
-                    * Integer::from(&r.z_cord + &s[d].z_cord)
-                    - &alpha
-                    + &beta[delta];
-                g = mod_n.reduce(g * f);
+        let mut g = Natural::ONE;
+        let w = q.mont_ladder(&(4 * big_d).into());
+        let mut t = q.mont_ladder(&(b1 - 2 * big_d).into());
+        let mut r = q.mont_ladder(&(b1 + 2 * big_d).into());
+        for deltas in &deltas_list {
+            // R = Q.mont_ladder(r) where r in range(B1 + 2*D, B2 + 2*D, 4*D)
+            let alpha = (&r.x_cord * &r.z_cord) % n;
+            for delta in deltas {
+                // We want to calculate
+                // f = R.x_cord * S[delta].z_cord - S[delta].x_cord * R.z_cord
+                let f = (&r.x_cord + (-&s[*delta].x_cord) % n) * (&r.z_cord + &s[*delta].z_cord)
+                    + (-&alpha) % n
+                    + &beta[*delta];
+                g = (g * f) % n;
             }
-            // Swap
-            std::mem::swap(&mut t, &mut r);
-            r = r.add(&s[d], &t);
+            (t, r) = (r.clone(), r.add(&w, &t));
         }
-        println!("more yay");
-        g = Integer::gcd(&g, &Integer::from(n));
-
-        // Stage 2 Factor found
-        if &g != n && g != Integer::ONE {
+        g = gcd(g, n.clone());
+        if g != Natural::ONE && g != *n {
+            // Stage 2 Factor found
             return Ok(g);
         }
     }
 
-    // ECM failed, Increase the bounds
     Err(())
 }
 
@@ -179,11 +221,10 @@ fn optimal_params(digits: usize) -> (usize, usize, usize) {
 /// # Parameters
 ///
 /// - `n`: Number to be factored.
-pub fn ecm(n: &Natural) -> Integer {
-    let optimal_params = optimal_params(n.to_string().len());
+pub fn ecm(n: &Natural) -> Natural {
+    let mut optimal_params = optimal_params(n.to_string().len());
     let mut rgen = Rng::new();
     loop {
-        println!("{:?}", optimal_params);
         match ecm_one_factor(
             n,
             optimal_params.0,
@@ -192,10 +233,11 @@ pub fn ecm(n: &Natural) -> Integer {
             &mut rgen,
         ) {
             Ok(d) => {
-                println!("found d = {}", d);
                 return d;
             }
             Err(()) => {
+                optimal_params.0 *= 2;
+                optimal_params.1 *= 2;
                 continue;
             }
         }

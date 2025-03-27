@@ -14,8 +14,6 @@ use std::{
     str::FromStr,
 };
 
-pub mod modulo;
-
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Natural(malachite_nz::natural::Natural);
 
@@ -528,6 +526,34 @@ impl Natural {
     pub fn mod_pow_ref(&self, exp: impl Borrow<Self>, m: impl Borrow<Self>) -> Self {
         use malachite_base::num::arithmetic::traits::ModPow;
         Self((&self.0).mod_pow(&exp.borrow().0, &m.borrow().0))
+    }
+
+    pub fn mod_inv(self, modulus: &Natural) -> Result<Self, ()> {
+        use malachite_base::num::arithmetic::traits::ExtendedGcd;
+        if modulus.0 == malachite_nz::natural::Natural::ZERO {
+            Err(())
+        } else {
+            let (g, a, _b) = self.0.extended_gcd(&modulus.0);
+            if g == malachite_nz::natural::Natural::ONE {
+                Ok(Integer::from_malachite(a) % modulus)
+            } else {
+                Err(())
+            }
+        }
+    }
+
+    pub fn mod_inv_ref(&self, modulus: &Natural) -> Result<Self, ()> {
+        use malachite_base::num::arithmetic::traits::ExtendedGcd;
+        if modulus.0 == malachite_nz::natural::Natural::ZERO {
+            Err(())
+        } else {
+            let (g, a, _b) = (&self.0).extended_gcd(&modulus.0);
+            if g == malachite_nz::natural::Natural::ONE {
+                Ok(Integer::from_malachite(a) % modulus)
+            } else {
+                Err(())
+            }
+        }
     }
 
     pub fn bits<'a>(
