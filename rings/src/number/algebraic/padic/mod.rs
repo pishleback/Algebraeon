@@ -799,7 +799,7 @@ pub mod structure {
         }
     }
 
-    impl PAdicAlgebraicStructure {
+    impl UnitsStructure for PAdicAlgebraicStructure {
         fn inv(&self, a: &PAdicAlgebraic) -> Result<PAdicAlgebraic, RingDivisionError> {
             self.check_is_element(a);
             match a {

@@ -41,6 +41,12 @@ impl RingStructure for CannonicalStructure<Integer> {
     }
 }
 
+impl UnitsStructure for CannonicalStructure<Integer> {
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        self.div(&self.one(), a)
+    }
+}
+
 impl IntegralDomainStructure for CannonicalStructure<Integer> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.quorem(a, b) {

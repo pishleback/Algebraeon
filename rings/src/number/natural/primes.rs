@@ -9,34 +9,34 @@ use super::*;
 
 #[derive(Debug)]
 pub struct PrimeGenerator {
-    n: Natural,
-    primes: Vec<Natural>,
+    n: usize,
+    primes: Vec<usize>,
 }
 
 impl PrimeGenerator {
     pub fn new() -> Self {
         Self {
-            n: Natural::from(2u8),
+            n: 2,
             primes: vec![],
         }
     }
 }
 
 impl Iterator for PrimeGenerator {
-    type Item = Natural;
+    type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
         'next_loop: loop {
             //todo: only check primes up to sqrt n
             for p in &self.primes {
-                if &self.n % p == Natural::ZERO {
-                    self.n += Natural::from(1u8);
+                if &self.n % p == 0 {
+                    self.n += 1;
                     continue 'next_loop;
                 }
             }
-            let next_p = self.n.clone();
-            self.n += Natural::from(1u8);
-            self.primes.push(next_p.clone());
+            let next_p = self.n;
+            self.n += 1;
+            self.primes.push(next_p);
             return Some(next_p);
         }
     }
@@ -149,7 +149,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             let mut prime_gen = PrimeGenerator::new();
             let mut r;
             loop {
-                r = prime_gen.next().unwrap();
+                r = Natural::from(prime_gen.next().unwrap());
                 if r < Natural::from(r0) {
                     continue;
                 }

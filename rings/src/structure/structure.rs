@@ -163,11 +163,32 @@ where
 }
 impl<R: MetaType> MetaRingEq for R where Self::Structure: RingStructure + EqStructure {}
 
-pub trait IntegralDomainStructure: RingStructure {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        self.div(&self.one(), a)
+pub trait UnitsStructure: RingStructure {
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError>;
+
+    fn is_unit(&self, a: &Self::Set) -> bool {
+        match self.inv(a) {
+            Ok(_inv) => true,
+            Err(RingDivisionError::DivideByZero) => false,
+            Err(RingDivisionError::NotDivisible) => false,
+        }
     }
+}
+pub trait MetaUnitsStructure: MetaRing
+where
+    Self::Structure: UnitsStructure,
+{
+    fn inv(&self) -> Result<Self, RingDivisionError> {
+        Self::structure().inv(self)
+    }
+    fn is_unit(&self) -> bool {
+        Self::structure().is_unit(self)
+    }
+}
+impl<R: MetaRing> MetaUnitsStructure for R where Self::Structure: UnitsStructure<Set = R> {}
+
+pub trait IntegralDomainStructure: UnitsStructure {
+    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
         match self.div(
@@ -210,13 +231,6 @@ pub trait IntegralDomainStructure: RingStructure {
             self.div(a, b).is_ok() && self.div(b, a).is_ok()
         }
     }
-    fn is_unit(&self, a: &Self::Set) -> bool {
-        match self.div(&self.one(), &a) {
-            Ok(_inv) => true,
-            Err(RingDivisionError::DivideByZero) => false,
-            Err(RingDivisionError::NotDivisible) => false,
-        }
-    }
 }
 pub trait MetaIntegralDomain: MetaRing
 where
@@ -224,9 +238,6 @@ where
 {
     fn div(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
         Self::structure().div(a, b)
-    }
-    fn inv(&self) -> Result<Self, RingDivisionError> {
-        Self::structure().inv(self)
     }
 
     fn from_rat(x: &Rational) -> Option<Self> {
@@ -242,9 +253,6 @@ where
     }
     fn are_associate(a: &Self, b: &Self) -> bool {
         Self::structure().are_associate(a, b)
-    }
-    fn is_unit(&self) -> bool {
-        Self::structure().is_unit(self)
     }
 }
 impl<R: MetaRing> MetaIntegralDomain for R where Self::Structure: IntegralDomainStructure<Set = R> {}

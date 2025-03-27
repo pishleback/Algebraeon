@@ -79,6 +79,12 @@ impl RingStructure for CannonicalStructure<QuaternaryField> {
     }
 }
 
+impl UnitsStructure for CannonicalStructure<QuaternaryField> {
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        self.div(&self.one(), a)
+    }
+}
+
 impl IntegralDomainStructure for CannonicalStructure<QuaternaryField> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match (&a, &b) {

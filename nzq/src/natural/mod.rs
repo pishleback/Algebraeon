@@ -1,3 +1,4 @@
+use crate::integer::*;
 use crate::traits::*;
 use algebraeon_sets::structure::*;
 use malachite_base::num::{
@@ -13,9 +14,9 @@ use std::{
     str::FromStr,
 };
 
-use crate::integer::*;
+pub mod modulo;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Natural(malachite_nz::natural::Natural);
 
 impl Natural {

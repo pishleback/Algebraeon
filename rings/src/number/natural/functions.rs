@@ -142,7 +142,7 @@ pub fn is_power_test(n: &Natural) -> IsPowerTestResult {
         // So we only need to check n isn't a kth power up to k = bitcount(n)+1
         // We also only need to check for prime k
         let max_k = Natural::from(bitcount(n) + 1);
-        for k in PrimeGenerator::new() {
+        for k in PrimeGenerator::new().map(|k| Natural::from(k)) {
             if k > max_k {
                 return IsPowerTestResult::No;
             } else {

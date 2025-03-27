@@ -9,7 +9,7 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Rational(malachite_q::Rational);
 
 impl Rational {

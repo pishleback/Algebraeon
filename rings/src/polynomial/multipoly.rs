@@ -539,6 +539,12 @@ impl<RS: RingStructure> RingStructure for MultiPolynomialStructure<RS> {
     }
 }
 
+impl<RS: IntegralDomainStructure> UnitsStructure for MultiPolynomialStructure<RS> {
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        self.div(&self.one(), a)
+    }
+}
+
 impl<RS: IntegralDomainStructure> IntegralDomainStructure for MultiPolynomialStructure<RS> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let mut vars = HashSet::new();

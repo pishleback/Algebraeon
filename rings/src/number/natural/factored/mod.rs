@@ -5,6 +5,8 @@ use algebraeon_nzq::traits::AbsDiff;
 use primes::is_prime;
 use std::collections::HashMap;
 
+// mod ecm;
+
 #[derive(Debug, Clone)]
 pub struct Factored {
     primes: HashMap<Natural, usize>,
@@ -274,16 +276,30 @@ fn exclude_prime_inputs(n: ToFactor, algorithm: impl Fn(Natural) -> Vec<Factor>)
 pub fn factor(n: Natural) -> Option<Factored> {
     if n == Natural::ZERO {
         None
+    } else if n == Natural::ONE {
+        Some(Factored::one())
     } else {
         let mut f = Factorizer::new(n);
-        f.partially_factor_by_method(|n| (trial_division(n.n, 1000000), true));
-        for x in [2u32, 3, 4] {
-            f.partially_factor_by_method(|n| {
-                terminate_once_trivial(n, |n| {
-                    exclude_prime_inputs(n, |n| pollard_rho(n, Natural::from(x), 100000))
-                })
-            });
-        }
+        // Trial division
+        f.partially_factor_by_method(|n| (trial_division(n.n, 100000), true));
+
+        // // Pollard-Rho
+        // for x in [2u32, 3, 4] {
+        //     f.partially_factor_by_method(|n| {
+        //         terminate_once_trivial(n, |n| {
+        //             exclude_prime_inputs(n, |n| pollard_rho(n, Natural::from(x), 10000))
+        //         })
+        //     });
+        // }
+
+        // ECM
+        // f.partially_factor_by_method(|n| {
+        //     (
+        //         exclude_prime_inputs(n, |n| ecm::factor_by_lenstra_elliptic_curve(n)),
+        //         false,
+        //     )
+        // });
+
         Some(f.complete())
     }
 }

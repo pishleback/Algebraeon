@@ -167,6 +167,11 @@ impl<const N: usize> RingStructure for CannonicalStructure<Modulo<N>> {
 
 macro_rules! impl_field {
     ($N: literal) => {
+        impl UnitsStructure for CannonicalStructure<Modulo<$N>> {
+            fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+                self.div(&self.one(), a)
+            }
+        }
         impl IntegralDomainStructure for CannonicalStructure<Modulo<$N>> {
             fn div(
                 &self,

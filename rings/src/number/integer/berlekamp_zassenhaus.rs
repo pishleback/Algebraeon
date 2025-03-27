@@ -101,7 +101,7 @@ impl BerlekampAassenhausAlgorithmState {
 
     fn next_prime(&mut self) -> BerlekampZassenhausAlgorithmStateAtPrime {
         loop {
-            let p = self.prime_gen.next().unwrap();
+            let p = Natural::from(self.prime_gen.next().unwrap());
             if let Some(state_at_p) =
                 BerlekampZassenhausAlgorithmStateAtPrime::new_at_prime(self, p)
             {
@@ -499,7 +499,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     } else {
         let prime_gen = PrimeGenerator::new();
         for p in prime_gen {
-            let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(&p));
+            let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(p));
             let poly_mod_p = PolynomialStructure::new(mod_p.into());
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap();

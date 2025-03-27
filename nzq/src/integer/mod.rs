@@ -7,7 +7,7 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Integer(malachite_nz::integer::Integer);
 
 impl Integer {
@@ -321,6 +321,35 @@ impl Rem<&Integer> for &Integer {
     fn rem(self, rhs: &Integer) -> Self::Output {
         use malachite_base::num::arithmetic::traits::Mod;
         Integer((&self.0).mod_op(&rhs.0))
+    }
+}
+
+impl Rem<Natural> for Integer {
+    type Output = Natural;
+
+    fn rem(self, rhs: Natural) -> Self::Output {
+        self.rem(Integer::from(rhs)).abs()
+    }
+}
+impl Rem<&Natural> for Integer {
+    type Output = Natural;
+
+    fn rem(self, rhs: &Natural) -> Self::Output {
+        self.rem(Integer::from(rhs)).abs()
+    }
+}
+impl Rem<Natural> for &Integer {
+    type Output = Natural;
+
+    fn rem(self, rhs: Natural) -> Self::Output {
+        self.rem(Integer::from(rhs)).abs()
+    }
+}
+impl Rem<&Natural> for &Integer {
+    type Output = Natural;
+
+    fn rem(self, rhs: &Natural) -> Self::Output {
+        self.rem(Integer::from(rhs)).abs()
     }
 }
 

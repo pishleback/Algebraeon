@@ -131,6 +131,14 @@ impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> RingStructure
     }
 }
 
+impl<RS: EuclideanDivisionStructure + FavoriteAssociateStructure> UnitsStructure
+    for QuotientStructure<RS, true>
+{
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        self.div(&self.one(), a)
+    }
+}
+
 impl<RS: EuclideanDivisionStructure + FavoriteAssociateStructure> IntegralDomainStructure
     for QuotientStructure<RS, true>
 {
