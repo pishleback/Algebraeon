@@ -1,7 +1,7 @@
 use algebraeon_nzq::{integer::Integer, natural::Natural};
-use algebraeon_sets::structure::{CannonicalStructure, PartialEqStructure};
+use algebraeon_sets::structure::*;
 
-use crate::structure::{quotient::QuotientStructure, structure::UnitsStructure};
+use crate::structure::{quotient::QuotientStructure, structure::*};
 
 /// Montgomery form of Points in an elliptic curve.
 ///
@@ -28,6 +28,17 @@ pub struct Point {
     pub a_24: Integer,
     /// modulus
     pub modulus: QuotientStructure<CannonicalStructure<Integer>, false>,
+}
+
+impl Default for Point {
+    fn default() -> Self {
+        Self {
+            x_cord: Default::default(),
+            z_cord: Default::default(),
+            a_24: Default::default(),
+            modulus: QuotientStructure::new_ring(Integer::structure(), Integer::one()),
+        }
+    }
 }
 
 impl Point {

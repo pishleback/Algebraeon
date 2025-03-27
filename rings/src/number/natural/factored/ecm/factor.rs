@@ -1,9 +1,19 @@
-use algebraeon_nzq::{integer::Integer, natural::Natural};
+use algebraeon_nzq::{
+    integer::Integer,
+    natural::{Natural, primes},
+    random::Rng,
+};
+use algebraeon_sets::structure::MetaType;
 
-use crate::number::natural::primes::{PrimeGenerator, is_prime};
+use crate::{
+    number::natural::primes::is_prime,
+    structure::{
+        quotient::QuotientStructure,
+        structure::{MetaGreatestCommonDivisor, UnitsStructure},
+    },
+};
 
 use super::point::Point;
-use std::collections::HashMap;
 
 /// Returns one factor of n using Lenstra's 2 Stage Elliptic curve Factorization
 /// with Suyama's Parameterization. Here Montgomery arithmetic is used for fast
@@ -34,9 +44,15 @@ use std::collections::HashMap;
 /// - `B2`: Stage 2 Bound.
 /// - `max_curve`: Maximum number of curves generated.
 /// - `rgen`: Random number generator.
-pub fn ecm_one_factor(n: &Natural, b1: usize, b2: usize, max_curve: usize) -> Result<Integer, ()> {
-    debug_assert_ne!(b1 % 2, 0);
-    debug_assert_ne!(b2 % 2, 0);
+pub fn ecm_one_factor(
+    n: &Natural,
+    b1: usize,
+    b2: usize,
+    max_curve: usize,
+    rgen: &mut Rng,
+) -> Result<Integer, ()> {
+    debug_assert_eq!(b1 % 2, 0);
+    debug_assert_eq!(b2 % 2, 0);
 
     debug_assert!(!is_prime(n));
 
@@ -45,40 +61,41 @@ pub fn ecm_one_factor(n: &Natural, b1: usize, b2: usize, max_curve: usize) -> Re
     let two_d = 2 * d;
     let mut beta: Vec<Integer> = vec![Integer::default(); d + 1];
     let mut s: Vec<Point> = vec![Point::default(); d + 1];
-    let mut k = Integer::from(1);
-    let three = Integer::from(3);
 
-    for p in PrimeGenerator::new().take_while(|&p| p <= b1) {
-        k *= p.pow(b1.ilog(p));
-    }
+    let mod_n = QuotientStructure::new_ring(Integer::structure(), Integer::from(n));
+    let cubed_mod_n = |x: &Integer| mod_n.reduce(mod_n.reduce(x * x) * x);
 
     while curve <= max_curve {
+        println!("curve = {}", curve);
+
         curve += 1;
 
         // Suyama's Parametrization
-        let sigma = (n - Integer::from(1)).random_below(rgen);
-        let u = (&sigma * &sigma - Integer::from(5)) % n;
-        let v: Integer = (4 * sigma) % n;
-        let diff = Integer::from(&v - &u);
-        let u_3 = u.clone().pow_mod(&three, n).unwrap();
-        let v_3 = v.clone().pow_mod(&three, n).unwrap();
+        let sigma = Integer::from((n - Natural::ONE).random_below(rgen));
+        let u = mod_n.reduce(&sigma * &sigma - Integer::from(5));
+        let v = mod_n.reduce(Integer::from(4) * sigma);
+        let diff = &v - &u;
+        let u_3 = cubed_mod_n(&u);
+        let v_3 = cubed_mod_n(&v);
 
-        let c = match (Integer::from(4) * &u_3 * &v).invert(n) {
-            Ok(c) => {
-                (diff.pow_mod(&three, n).unwrap() * (Integer::from(4) * &u + &v) * c
-                    - Integer::from(2))
-                    % n
-            }
-            _ => return Ok((Integer::from(4) * u_3 * v).gcd(n)),
+        let b = Integer::from(4) * &u_3 * &v;
+        let c = match mod_n.inv(&b) {
+            Ok(c) => mod_n
+                .reduce(cubed_mod_n(&diff) * (Integer::from(4) * &u + &v) * c - Integer::from(2)),
+            _ => return Ok(Integer::gcd(&b, &Integer::from(n))),
         };
 
-        let a24 = (c + 2) * Integer::from(4).invert(n).unwrap() % n;
-        let q = Point::new(u_3, v_3, a24, n.clone());
-        let q = q.mont_ladder(&k);
-        let g = q.z_cord.clone().gcd(n);
+        let a24 = (c + Integer::TWO) * mod_n.inv(&Integer::from(4)).unwrap();
+        let mut q = Point::new(u_3, v_3, a24, mod_n.clone());
+        // for loop does q = q^k for k a product of small powers of primes less than b1
+        for p in primes().take_while(|&p| p <= b1) {
+            q = q.mont_ladder(&Natural::from(p.pow(b1.ilog(p))));
+        }
+        println!("awooga");
+        let g = Integer::gcd(&q.z_cord, &Integer::from(n));
 
         // Stage 1 factor
-        if &g != n && g != 1 {
+        if &g != n && g != Integer::ONE {
             return Ok(g);
         }
 
@@ -90,44 +107,49 @@ pub fn ecm_one_factor(n: &Natural, b1: usize, b2: usize, max_curve: usize) -> Re
         // Stage 2 - Improved Standard Continuation
         s[1] = q.double();
         s[2] = s[1].double();
-        beta[1] = Integer::from(&s[1].x_cord * &s[1].z_cord) % n;
-        beta[2] = Integer::from(&s[2].x_cord * &s[2].z_cord) % n;
+        beta[1] = mod_n.reduce(&s[1].x_cord * &s[1].z_cord);
+        beta[2] = mod_n.reduce(&s[2].x_cord * &s[2].z_cord);
 
         for d in 3..=(d) {
             s[d] = s[d - 1].add(&s[1], &s[d - 2]);
-            beta[d] = Integer::from(&s[d].x_cord * &s[d].z_cord) % n;
+            beta[d] = mod_n.reduce(&s[d].x_cord * &s[d].z_cord);
         }
+
+        println!("yay");
 
         let mut g = Integer::from(1);
         let b = b1 - 1;
-        let mut t = q.mont_ladder(&Integer::from(b - two_d));
-        let mut r = q.mont_ladder(&Integer::from(b));
+        let mut t = q.mont_ladder(&Natural::from(b - two_d));
+        let mut r = q.mont_ladder(&Natural::from(b));
 
-        let mut primes = Primes::all().skip_while(|&q| q < b);
+        println!("middle yay");
+
+        let mut primes = primes().skip_while(|&q| q < b);
         for rr in (b..b2).step_by(two_d) {
-            let alpha = Integer::from(&r.x_cord * &r.z_cord) % n;
+            let alpha = mod_n.reduce(&r.x_cord * &r.z_cord);
             for q in primes.by_ref().take_while(|&q| q <= rr + two_d) {
                 let delta = (q - rr) / 2;
                 let f = Integer::from(&r.x_cord - &s[d].x_cord)
                     * Integer::from(&r.z_cord + &s[d].z_cord)
                     - &alpha
                     + &beta[delta];
-                g = (g * f) % n;
+                g = mod_n.reduce(g * f);
             }
             // Swap
             std::mem::swap(&mut t, &mut r);
             r = r.add(&s[d], &t);
         }
-        g = g.gcd(n);
+        println!("more yay");
+        g = Integer::gcd(&g, &Integer::from(n));
 
         // Stage 2 Factor found
-        if &g != n && g != 1 {
+        if &g != n && g != Integer::ONE {
             return Ok(g);
         }
     }
 
     // ECM failed, Increase the bounds
-    Err(Error::ECMFailed)
+    Err(())
 }
 
 /// Optimal params retrieved from <https://gitlab.inria.fr/zimmerma/ecm>
@@ -157,212 +179,223 @@ fn optimal_params(digits: usize) -> (usize, usize, usize) {
 /// # Parameters
 ///
 /// - `n`: Number to be factored.
-pub fn ecm(n: &Natural) -> Result<HashMap<Integer, usize>, Error> {
+pub fn ecm(n: &Natural) -> Integer {
     let optimal_params = optimal_params(n.to_string().len());
-
-    ecm_with_params(
-        n,
-        optimal_params.0,
-        optimal_params.1,
-        optimal_params.2,
-        1234,
-    )
-}
-
-/// Performs factorization using Lenstra's Elliptic curve method.
-///
-/// This function repeatedly calls `ecm_one_factor` to compute the factors
-/// of n. First all the small factors are taken out using trial division.
-/// Then `ecm_one_factor` is used to compute one factor at a time.
-///
-/// # Parameters
-///
-/// - `n`: Number to be factored.
-/// - `B1`: Stage 1 Bound.
-/// - `B2`: Stage 2 Bound.
-/// - `max_curve`: Maximum number of curves generated.
-/// - `seed`: Initialize pseudorandom generator.
-pub fn ecm_with_params(
-    n: &Integer,
-    b1: usize,
-    b2: usize,
-    max_curve: usize,
-    seed: usize,
-) -> Result<HashMap<Integer, usize>, Error> {
-    let mut factors = HashMap::new();
-
-    let mut n: Integer = n.clone();
-    for prime in Primes::all().take(100_000) {
-        if n.is_divisible_u(prime as u32) {
-            let prime = Integer::from(prime);
-            while n.is_divisible(&prime) {
-                n /= &prime;
-                *factors.entry(prime.clone()).or_insert(0) += 1;
+    let mut rgen = Rng::new();
+    loop {
+        println!("{:?}", optimal_params);
+        match ecm_one_factor(
+            n,
+            optimal_params.0,
+            optimal_params.1,
+            optimal_params.2,
+            &mut rgen,
+        ) {
+            Ok(d) => {
+                println!("found d = {}", d);
+                return d;
+            }
+            Err(()) => {
+                continue;
             }
         }
     }
-
-    let mut rand_state = RandState::new();
-    rand_state.seed(&seed.into());
-
-    while n != 1 {
-        let factor = ecm_one_factor(&n, b1, b2, max_curve, &mut rand_state).unwrap_or(n.clone());
-
-        while n.is_divisible(&factor) {
-            n /= &factor;
-            *factors.entry(factor.clone()).or_insert(0) += 1;
-        }
-    }
-
-    Ok(factors)
 }
 
-#[cfg(test)]
-mod tests {
-    use std::str::FromStr;
+// /// Performs factorization using Lenstra's Elliptic curve method.
+// ///
+// /// This function repeatedly calls `ecm_one_factor` to compute the factors
+// /// of n. First all the small factors are taken out using trial division.
+// /// Then `ecm_one_factor` is used to compute one factor at a time.
+// ///
+// /// # Parameters
+// ///
+// /// - `n`: Number to be factored.
+// /// - `B1`: Stage 1 Bound.
+// /// - `B2`: Stage 2 Bound.
+// /// - `max_curve`: Maximum number of curves generated.
+// /// - `seed`: Initialize pseudorandom generator.
+// pub fn ecm_with_params(
+//     n: &Integer,
+//     b1: usize,
+//     b2: usize,
+//     max_curve: usize,
+//     seed: usize,
+// ) -> Result<HashMap<Integer, usize>, Error> {
+//     let mut factors = HashMap::new();
 
-    use super::*;
+//     let mut n: Integer = n.clone();
+//     for prime in Primes::all().take(100_000) {
+//         if n.is_divisible_u(prime as u32) {
+//             let prime = Integer::from(prime);
+//             while n.is_divisible(&prime) {
+//                 n /= &prime;
+//                 *factors.entry(prime.clone()).or_insert(0) += 1;
+//             }
+//         }
+//     }
 
-    fn ecm(n: &Integer) -> Result<HashMap<Integer, usize>, Error> {
-        super::ecm(n)
-    }
+//     let mut rand_state = RandState::new();
+//     rand_state.seed(&seed.into());
 
-    #[test]
-    fn sympy_1() {
-        assert_eq!(
-            ecm(&Integer::from_str("398883434337287").unwrap()).unwrap(),
-            HashMap::from([
-                (Integer::from_str("99476569").unwrap(), 1),
-                (Integer::from_str("4009823").unwrap(), 1),
-            ])
-        );
-    }
+//     while n != 1 {
+//         let factor = ecm_one_factor(&n, b1, b2, max_curve, &mut rand_state).unwrap_or(n.clone());
 
-    #[test]
-    fn sympy_2() {
-        assert_eq!(
-            ecm(&Integer::from_str("46167045131415113").unwrap()).unwrap(),
-            HashMap::from([
-                (Integer::from_str("43").unwrap(), 1),
-                (Integer::from_str("2634823").unwrap(), 1),
-                (Integer::from_str("407485517").unwrap(), 1),
-            ])
-        );
-    }
+//         while n.is_divisible(&factor) {
+//             n /= &factor;
+//             *factors.entry(factor.clone()).or_insert(0) += 1;
+//         }
+//     }
 
-    #[test]
-    fn sympy_3() {
-        assert_eq!(
-            ecm(&Integer::from_str("64211816600515193").unwrap()).unwrap(),
-            HashMap::from([
-                (Integer::from_str("281719").unwrap(), 1),
-                (Integer::from_str("359641").unwrap(), 1),
-                (Integer::from_str("633767").unwrap(), 1),
-            ])
-        );
-    }
+//     Ok(factors)
+// }
 
-    #[test]
-    fn sympy_4() {
-        assert_eq!(
-            ecm(&Integer::from_str("168541512131094651323").unwrap()).unwrap(),
-            HashMap::from([
-                (Integer::from_str("79").unwrap(), 1),
-                (Integer::from_str("113").unwrap(), 1),
-                (Integer::from_str("11011069").unwrap(), 1),
-                (Integer::from_str("1714635721").unwrap(), 1),
-            ])
-        );
-    }
+// #[cfg(test)]
+// mod tests {
+//     use std::str::FromStr;
 
-    #[test]
-    fn sympy_5() {
-        assert_eq!(
-            ecm(&Integer::from_str("631211032315670776841").unwrap()).unwrap(),
-            HashMap::from([
-                (Integer::from_str("9312934919").unwrap(), 1),
-                (Integer::from_str("67777885039").unwrap(), 1),
-            ])
-        );
-    }
+//     use super::*;
 
-    #[test]
-    fn sympy_6() {
-        assert_eq!(
-            ecm(&Integer::from_str("4132846513818654136451").unwrap()).unwrap(),
-            HashMap::from([
-                (Integer::from_str("47").unwrap(), 1),
-                (Integer::from_str("160343").unwrap(), 1),
-                (Integer::from_str("2802377").unwrap(), 1),
-                (Integer::from_str("195692803").unwrap(), 1),
-            ])
-        );
-    }
+//     fn ecm(n: &Integer) -> Result<HashMap<Integer, usize>, Error> {
+//         super::ecm(n)
+//     }
 
-    #[test]
-    fn sympy_7() {
-        assert_eq!(
-            ecm(&Integer::from_str("4516511326451341281684513").unwrap()).unwrap(),
-            HashMap::from([
-                (Integer::from_str("3").unwrap(), 2),
-                (Integer::from_str("39869").unwrap(), 1),
-                (Integer::from_str("131743543").unwrap(), 1),
-                (Integer::from_str("95542348571").unwrap(), 1),
-            ])
-        );
-    }
+//     #[test]
+//     fn sympy_1() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("398883434337287").unwrap()).unwrap(),
+//             HashMap::from([
+//                 (Integer::from_str("99476569").unwrap(), 1),
+//                 (Integer::from_str("4009823").unwrap(), 1),
+//             ])
+//         );
+//     }
 
-    #[test]
-    fn sympy_8() {
-        assert_eq!(
-            ecm(&Integer::from_str("3146531246531241245132451321").unwrap(),).unwrap(),
-            HashMap::from([
-                (Integer::from_str("3").unwrap(), 1),
-                (Integer::from_str("100327907731").unwrap(), 1),
-                (Integer::from_str("10454157497791297").unwrap(), 1),
-            ])
-        );
-    }
+//     #[test]
+//     fn sympy_2() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("46167045131415113").unwrap()).unwrap(),
+//             HashMap::from([
+//                 (Integer::from_str("43").unwrap(), 1),
+//                 (Integer::from_str("2634823").unwrap(), 1),
+//                 (Integer::from_str("407485517").unwrap(), 1),
+//             ])
+//         );
+//     }
 
-    #[test]
-    fn sympy_9() {
-        assert_eq!(
-            ecm(&Integer::from_str("4269021180054189416198169786894227").unwrap()).unwrap(),
-            HashMap::from([
-                (Integer::from_str("184039").unwrap(), 1),
-                (Integer::from_str("241603").unwrap(), 1),
-                (Integer::from_str("333331").unwrap(), 1),
-                (Integer::from_str("477973").unwrap(), 1),
-                (Integer::from_str("618619").unwrap(), 1),
-                (Integer::from_str("974123").unwrap(), 1),
-            ])
-        );
-    }
+//     #[test]
+//     fn sympy_3() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("64211816600515193").unwrap()).unwrap(),
+//             HashMap::from([
+//                 (Integer::from_str("281719").unwrap(), 1),
+//                 (Integer::from_str("359641").unwrap(), 1),
+//                 (Integer::from_str("633767").unwrap(), 1),
+//             ])
+//         );
+//     }
 
-    #[test]
-    fn same_factors() {
-        assert_eq!(
-            ecm(&Integer::from_str("7853316850129").unwrap()).unwrap(),
-            HashMap::from([(Integer::from_str("2802377").unwrap(), 2)])
-        );
-    }
+//     #[test]
+//     fn sympy_4() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("168541512131094651323").unwrap()).unwrap(),
+//             HashMap::from([
+//                 (Integer::from_str("79").unwrap(), 1),
+//                 (Integer::from_str("113").unwrap(), 1),
+//                 (Integer::from_str("11011069").unwrap(), 1),
+//                 (Integer::from_str("1714635721").unwrap(), 1),
+//             ])
+//         );
+//     }
 
-    #[test]
-    fn small_prime() {
-        assert_eq!(
-            ecm(&Integer::from(17)).unwrap(),
-            HashMap::from([(Integer::from(17), 1)])
-        );
-    }
+//     #[test]
+//     fn sympy_5() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("631211032315670776841").unwrap()).unwrap(),
+//             HashMap::from([
+//                 (Integer::from_str("9312934919").unwrap(), 1),
+//                 (Integer::from_str("67777885039").unwrap(), 1),
+//             ])
+//         );
+//     }
 
-    #[test]
-    fn big_prime() {
-        assert_eq!(
-            ecm(&Integer::from_str("21472883178031195225853317139").unwrap()).unwrap(),
-            HashMap::from([(
-                Integer::from_str("21472883178031195225853317139").unwrap(),
-                1
-            )])
-        );
-    }
-}
+//     #[test]
+//     fn sympy_6() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("4132846513818654136451").unwrap()).unwrap(),
+//             HashMap::from([
+//                 (Integer::from_str("47").unwrap(), 1),
+//                 (Integer::from_str("160343").unwrap(), 1),
+//                 (Integer::from_str("2802377").unwrap(), 1),
+//                 (Integer::from_str("195692803").unwrap(), 1),
+//             ])
+//         );
+//     }
+
+//     #[test]
+//     fn sympy_7() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("4516511326451341281684513").unwrap()).unwrap(),
+//             HashMap::from([
+//                 (Integer::from_str("3").unwrap(), 2),
+//                 (Integer::from_str("39869").unwrap(), 1),
+//                 (Integer::from_str("131743543").unwrap(), 1),
+//                 (Integer::from_str("95542348571").unwrap(), 1),
+//             ])
+//         );
+//     }
+
+//     #[test]
+//     fn sympy_8() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("3146531246531241245132451321").unwrap(),).unwrap(),
+//             HashMap::from([
+//                 (Integer::from_str("3").unwrap(), 1),
+//                 (Integer::from_str("100327907731").unwrap(), 1),
+//                 (Integer::from_str("10454157497791297").unwrap(), 1),
+//             ])
+//         );
+//     }
+
+//     #[test]
+//     fn sympy_9() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("4269021180054189416198169786894227").unwrap()).unwrap(),
+//             HashMap::from([
+//                 (Integer::from_str("184039").unwrap(), 1),
+//                 (Integer::from_str("241603").unwrap(), 1),
+//                 (Integer::from_str("333331").unwrap(), 1),
+//                 (Integer::from_str("477973").unwrap(), 1),
+//                 (Integer::from_str("618619").unwrap(), 1),
+//                 (Integer::from_str("974123").unwrap(), 1),
+//             ])
+//         );
+//     }
+
+//     #[test]
+//     fn same_factors() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("7853316850129").unwrap()).unwrap(),
+//             HashMap::from([(Integer::from_str("2802377").unwrap(), 2)])
+//         );
+//     }
+
+//     #[test]
+//     fn small_prime() {
+//         assert_eq!(
+//             ecm(&Integer::from(17)).unwrap(),
+//             HashMap::from([(Integer::from(17), 1)])
+//         );
+//     }
+
+//     #[test]
+//     fn big_prime() {
+//         assert_eq!(
+//             ecm(&Integer::from_str("21472883178031195225853317139").unwrap()).unwrap(),
+//             HashMap::from([(
+//                 Integer::from_str("21472883178031195225853317139").unwrap(),
+//                 1
+//             )])
+//         );
+//     }
+// }

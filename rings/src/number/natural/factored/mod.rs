@@ -281,7 +281,7 @@ pub fn factor(n: Natural) -> Option<Factored> {
     } else {
         let mut f = Factorizer::new(n);
         // Trial division
-        f.partially_factor_by_method(|n| (trial_division(n.n, 1000000000000), true));
+        f.partially_factor_by_method(|n| (trial_division(n.n, 10), true));
 
         // // Pollard-Rho
         // for x in [2u32, 3, 4] {
