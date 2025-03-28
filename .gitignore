@@ -6,4 +6,4 @@
 /geometry/target
 /drawing/target
 .vscode/launch.json
-/examples/src/bin/tmp.rs
+/examples/src/bin/*
