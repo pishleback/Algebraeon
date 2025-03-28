@@ -15,9 +15,9 @@ members = [
 # https://github.com/pksunkara/cargo-workspaces
 # To publish
 # Update CHANGELOG
+# Bump versions
+#   cargo ws version --no-individual-tags --exact --force *
 # Check all ok:
 #   cargo ws publish --no-individual-tags --from-git --dry-run
-# Bump versions
-#   cargo ws version --no-individual-tags
 # Publish
 #   cargo ws publish --no-individual-tags --from-git
