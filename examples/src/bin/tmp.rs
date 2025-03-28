@@ -15,7 +15,7 @@ fn main() {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
 
-    let n = Natural::from_str("89754902345089754074587943578934757489025340982435043289079823459780598711")
+    let n = Natural::from_str("897549023459823459780598534711111")
         .unwrap();
     println!("{}", n);
     println!("{:?}", factor(n));
