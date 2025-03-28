@@ -1,4 +1,2 @@
-pub mod combinations;
-pub mod partition;
+pub mod combinatorics;
 pub mod structure;
-pub mod subset;

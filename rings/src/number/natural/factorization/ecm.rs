@@ -31,7 +31,10 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 
-use crate::{number::natural::{factorization::primes::is_prime, functions::gcd}, structure::structure::MetaSemiRing};
+use crate::{
+    number::natural::{factorization::primes::is_prime, functions::gcd},
+    structure::structure::MetaSemiRing,
+};
 use algebraeon_nzq::{
     natural::{Natural, primes},
     random::Rng,

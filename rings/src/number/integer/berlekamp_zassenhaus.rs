@@ -64,7 +64,7 @@ use crate::{polynomial::polynomial::*, structure::quotient::*};
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
-use algebraeon_sets::combinations::LexicographicCombinationsWithRemovals;
+use algebraeon_sets::combinatorics::LexicographicCombinationsWithRemovals;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use std::ops::Rem;

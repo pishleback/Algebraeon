@@ -5,9 +5,9 @@ use algebraeon_nzq::traits::AbsDiff;
 pub use factored::*;
 use primes::is_prime;
 
-pub mod primes;
 pub mod ecm;
 pub mod factored;
+pub mod primes;
 
 #[derive(Debug, Clone)]
 pub enum Factor {
