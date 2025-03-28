@@ -32,6 +32,12 @@ impl RingStructure for CannonicalStructure<Rational> {
     }
 }
 
+impl UnitsStructure for CannonicalStructure<Rational> {
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        self.div(&self.one(), a)
+    }
+}
+
 impl IntegralDomainStructure for CannonicalStructure<Rational> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if b == &Rational::ZERO {

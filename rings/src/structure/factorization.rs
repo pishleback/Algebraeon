@@ -436,9 +436,11 @@ mod tests {
     #[test]
     fn test_count_divisors() {
         for a in 1..25 {
+            println!("a = {}", a);
             let b = Integer::from(a);
+            println!("b = {}", b);
             let fs = Integer::structure().factor(&b).unwrap();
-            println!("{}", fs);
+            println!("fs = {}", fs);
             assert_eq!(
                 fs.count_divisors().unwrap(),
                 Natural::from(fs.divisors().collect::<Vec<Integer>>().len())

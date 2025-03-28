@@ -613,14 +613,7 @@ impl RingStructure for CannonicalStructure<RealAlgebraic> {
     }
 }
 
-impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        match self.inv(b) {
-            Ok(b_inv) => Ok(self.mul(a, &b_inv)),
-            Err(err) => Err(err),
-        }
-    }
-
+impl UnitsStructure for CannonicalStructure<RealAlgebraic> {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let mut a = a.clone();
         match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {
@@ -687,6 +680,15 @@ impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
                     Ok(ans)
                 }
             },
+        }
+    }
+}
+
+impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
+    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        match self.inv(b) {
+            Ok(b_inv) => Ok(self.mul(a, &b_inv)),
+            Err(err) => Err(err),
         }
     }
 }

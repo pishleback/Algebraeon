@@ -7,7 +7,26 @@ Add
 [dependencies]
 algebraeon = "0.1.3"
 ```
-to your `cargo.toml` to make Algebraeon avalible. Copy an example below to get started.
+to your `cargo.toml` to make Algebraeon available. Copy an example below to get started.
+
+## Factoring Integers
+Factoring large integers
+
+```
+use std::str::FromStr;
+use algebraeon::{nzq::natural::Natural, rings::number::natural::factorization::factor};
+
+let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
+let f = factor(n.clone()).unwrap();
+println!("{} = {}", n, f);
+/*
+Output:
+    706000565581575429997696139445280900 = 2^2 × 5^2 × 6988699669998001 × 1010203040506070809
+*/
+```
+
+Algebraeon implements [Lenstra elliptic-curve factorization]{https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization}, the third-fastest known factoring algorithm known, for quickly finding prime factors with around 20 digits.
+
 
 ## Factoring Polynomials
 Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.

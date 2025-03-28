@@ -1,3 +1,4 @@
+use crate::integer::*;
 use crate::traits::*;
 use algebraeon_sets::structure::*;
 use malachite_base::num::{
@@ -13,9 +14,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::integer::*;
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Natural(malachite_nz::natural::Natural);
 
 impl Natural {
@@ -529,10 +528,45 @@ impl Natural {
         Self((&self.0).mod_pow(&exp.borrow().0, &m.borrow().0))
     }
 
-    pub fn bits<'a>(&'a self) -> impl Iterator<Item = bool> + ExactSizeIterator + 'a {
+    pub fn mod_inv(self, modulus: &Natural) -> Result<Self, ()> {
+        use malachite_base::num::arithmetic::traits::ExtendedGcd;
+        if modulus.0 == malachite_nz::natural::Natural::ZERO {
+            Err(())
+        } else {
+            let (g, a, _b) = self.0.extended_gcd(&modulus.0);
+            if g == malachite_nz::natural::Natural::ONE {
+                Ok(Integer::from_malachite(a) % modulus)
+            } else {
+                Err(())
+            }
+        }
+    }
+
+    pub fn mod_inv_ref(&self, modulus: &Natural) -> Result<Self, ()> {
+        use malachite_base::num::arithmetic::traits::ExtendedGcd;
+        if modulus.0 == malachite_nz::natural::Natural::ZERO {
+            Err(())
+        } else {
+            let (g, a, _b) = (&self.0).extended_gcd(&modulus.0);
+            if g == malachite_nz::natural::Natural::ONE {
+                Ok(Integer::from_malachite(a) % modulus)
+            } else {
+                Err(())
+            }
+        }
+    }
+
+    pub fn bits<'a>(
+        &'a self,
+    ) -> impl Iterator<Item = bool> + ExactSizeIterator + DoubleEndedIterator + 'a {
         use malachite_base::num::logic::traits::BitIterable;
         self.0.bits()
     }
+}
+
+pub fn primes() -> impl Iterator<Item = usize> {
+    use malachite_base::num::factorization::traits::Primes;
+    usize::primes()
 }
 
 impl TryInto<usize> for Natural {

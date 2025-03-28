@@ -1,9 +1,8 @@
 use crate::structure::structure::*;
 use algebraeon_sets::structure::*;
 
-pub mod factor;
+pub mod factorization;
 pub mod functions;
-pub mod primes;
 
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;

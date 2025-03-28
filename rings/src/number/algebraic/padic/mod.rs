@@ -1,4 +1,4 @@
-use crate::{number::natural::primes::*, polynomial::polynomial::*, structure::structure::*};
+use crate::{number::natural::factorization::primes::*, polynomial::polynomial::*, structure::structure::*};
 
 pub mod valuation;
 use valuation::*;
@@ -799,7 +799,7 @@ pub mod structure {
         }
     }
 
-    impl PAdicAlgebraicStructure {
+    impl UnitsStructure for PAdicAlgebraicStructure {
         fn inv(&self, a: &PAdicAlgebraic) -> Result<PAdicAlgebraic, RingDivisionError> {
             self.check_is_element(a);
             match a {

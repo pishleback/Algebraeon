@@ -632,6 +632,12 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     }
 }
 
+impl<RS: IntegralDomainStructure> UnitsStructure for PolynomialStructure<RS> {
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        self.div(&self.one(), a)
+    }
+}
+
 impl<RS: IntegralDomainStructure> IntegralDomainStructure for PolynomialStructure<RS> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div_impl(a, b)

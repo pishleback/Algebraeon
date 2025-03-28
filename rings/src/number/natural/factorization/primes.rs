@@ -1,46 +1,10 @@
 use crate::structure::quotient::QuotientStructure;
 use algebraeon_nzq::rational::*;
 use algebraeon_nzq::traits::DivMod;
-use factor::Factored;
+use factorization::Factored;
 use std::ops::Rem;
 
-use super::functions::*;
 use super::*;
-
-#[derive(Debug)]
-pub struct PrimeGenerator {
-    n: Natural,
-    primes: Vec<Natural>,
-}
-
-impl PrimeGenerator {
-    pub fn new() -> Self {
-        Self {
-            n: Natural::from(2u8),
-            primes: vec![],
-        }
-    }
-}
-
-impl Iterator for PrimeGenerator {
-    type Item = Natural;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        'next_loop: loop {
-            //todo: only check primes up to sqrt n
-            for p in &self.primes {
-                if &self.n % p == Natural::ZERO {
-                    self.n += Natural::from(1u8);
-                    continue 'next_loop;
-                }
-            }
-            let next_p = self.n.clone();
-            self.n += Natural::from(1u8);
-            self.primes.push(next_p.clone());
-            return Some(next_p);
-        }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PrimalityTestResult {
@@ -146,15 +110,15 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             };
 
             // Find the smallest prime r >= r0 such that n is a primitive root modulo r
-            let mut prime_gen = PrimeGenerator::new();
+            let mut prime_gen = primes();
             let mut r;
             loop {
-                r = prime_gen.next().unwrap();
+                r = Natural::from(prime_gen.next().unwrap());
                 if r < Natural::from(r0) {
                     continue;
                 }
                 match Factored::from_prime_unchecked(r.clone()).is_primitive_root(n) {
-                    factor::IsPrimitiveRootResult::NonUnit => {
+                    factorization::IsPrimitiveRootResult::NonUnit => {
                         // n is divisible by r
                         match *n == r {
                             true => {
@@ -165,8 +129,8 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                             }
                         }
                     }
-                    factor::IsPrimitiveRootResult::No => {}
-                    factor::IsPrimitiveRootResult::Yes => {
+                    factorization::IsPrimitiveRootResult::No => {}
+                    factorization::IsPrimitiveRootResult::Yes => {
                         break;
                     }
                 }
@@ -496,8 +460,15 @@ pub fn primality_test(n: &Natural) -> PrimalityTestResult {
                 }
             }
         } else {
-            // Otherwise resort to AKS
-            aks_primality_test(n)
+            // aks_primality_test(n) // This would always work but its too slow
+            // Instead resort to 1000 miller rabin tests giving a heuristic chance of ~ 1 in 2^2000 of being wrong
+
+            match miller_rabin_primality_test(n, (2u32..1000).map(|a| a.into()).collect()) {
+                Ok(answer) => answer,
+                Err(InconclusivePrimalityTestResult::ProbablePrime { .. }) => {
+                    PrimalityTestResult::Prime
+                }
+            }
         }
     }
 }

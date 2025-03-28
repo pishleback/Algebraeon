@@ -818,7 +818,7 @@ impl RingStructure for CannonicalStructure<ComplexAlgebraic> {
     }
 }
 
-impl IntegralDomainStructure for CannonicalStructure<ComplexAlgebraic> {
+impl UnitsStructure for CannonicalStructure<ComplexAlgebraic> {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         // println!("inv {:?}", a);
         // a.check_invariants().unwrap();
@@ -928,7 +928,9 @@ impl IntegralDomainStructure for CannonicalStructure<ComplexAlgebraic> {
             }
         }
     }
+}
 
+impl IntegralDomainStructure for CannonicalStructure<ComplexAlgebraic> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         Ok(self.mul(a, &self.inv(b)?))
     }

@@ -165,6 +165,22 @@ impl<const N: usize> RingStructure for CannonicalStructure<Modulo<N>> {
     }
 }
 
+impl<const N: usize> UnitsStructure for CannonicalStructure<Modulo<N>> {
+    fn inv(&self, x: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        if x == &self.zero() {
+            Err(RingDivisionError::DivideByZero)
+        } else {
+            let (g, a, b) = xgcd(x.x, N);
+            debug_assert_eq!(g as isize, a * x.x as isize + b * N as isize);
+            if g == 1 {
+                Ok(Modulo { x: modulo(a, N) })
+            } else {
+                Err(RingDivisionError::NotDivisible)
+            }
+        }
+    }
+}
+
 macro_rules! impl_field {
     ($N: literal) => {
         impl IntegralDomainStructure for CannonicalStructure<Modulo<$N>> {
@@ -173,20 +189,9 @@ macro_rules! impl_field {
                 top: &Self::Set,
                 bot: &Self::Set,
             ) -> Result<Self::Set, RingDivisionError> {
-                if bot == &self.zero() {
-                    Err(RingDivisionError::DivideByZero)
-                } else {
-                    let (g, a, b) = xgcd(bot.x, $N);
-                    debug_assert_eq!(g as isize, a * bot.x as isize + b * $N as isize);
-                    //g = a * bot mod N and g divides N
-                    //want ?*bot = top
-                    if top.x % g == 0 {
-                        Ok(Modulo {
-                            x: (modulo(a, $N) * (top.x / g)) % $N,
-                        })
-                    } else {
-                        Err(RingDivisionError::NotDivisible)
-                    }
+                match self.inv(bot) {
+                    Ok(bot_inv) => Ok(self.mul(top, &bot_inv)),
+                    Err(err) => Err(err),
                 }
             }
         }
