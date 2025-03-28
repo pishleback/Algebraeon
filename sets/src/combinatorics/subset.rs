@@ -1,9 +1,24 @@
-//all size k subsets of n
-pub fn subsets(n: usize, k: usize) -> Vec<Vec<usize>> {
+/// Returns all size k subsets of {0, 1, ..., n-1}.
+/// ```
+/// use algebraeon_sets::combinatorics::subsets;
+/// assert_eq!(subsets(5, 3).collect::<Vec<_>>(), vec![
+///     vec![0, 1, 2],
+///     vec![0, 1, 3],
+///     vec![0, 1, 4],
+///     vec![0, 2, 3],
+///     vec![0, 2, 4],
+///     vec![0, 3, 4],
+///     vec![1, 2, 3],
+///     vec![1, 2, 4],
+///     vec![1, 3, 4],
+///     vec![2, 3, 4],
+/// ]);
+/// ```
+pub fn subsets(n: usize, k: usize) -> impl Iterator<Item = Vec<usize>> {
     if k == 0 {
-        vec![vec![]]
+        vec![vec![]].into_iter()
     } else if k > n {
-        return vec![];
+        vec![].into_iter()
     } else {
         //a size k subsets of n is the same as
         //some element of n and a size k-1 subset of everything after that element
@@ -17,15 +32,17 @@ pub fn subsets(n: usize, k: usize) -> Vec<Vec<usize>> {
                 ss.push(s);
             }
         }
-        ss
+        ss.into_iter()
     }
 }
 
-pub fn subsets_vec<T: Clone>(items: Vec<T>, k: usize) -> Vec<Vec<T>> {
+/// Returns all size k subsets of items.
+pub fn subsets_vec<'a, T: 'a + Clone>(
+    items: Vec<T>,
+    k: usize,
+) -> impl 'a + Iterator<Item = Vec<T>> {
     subsets(items.len(), k)
-        .into_iter()
-        .map(|subset| subset.into_iter().map(|idx| items[idx].clone()).collect())
-        .collect()
+        .map(move |subset| subset.into_iter().map(|idx| items[idx].clone()).collect())
 }
 
 #[cfg(test)]
@@ -34,7 +51,7 @@ mod tests {
 
     #[test]
     pub fn run() {
-        println!("{:?}", subsets(5, 3));
-        assert_eq!(subsets(5, 3).len(), 10)
+        println!("{:?}", subsets(5, 3).collect::<Vec<_>>());
+        assert_eq!(subsets(5, 3).collect::<Vec<_>>().len(), 10)
     }
 }
