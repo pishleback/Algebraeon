@@ -1,3 +1,5 @@
+//! Contains combinatorial counting and enumeration algorithms.
+
 mod combinations;
 mod partition;
 mod subset;
