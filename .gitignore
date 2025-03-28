@@ -6,5 +6,5 @@
 /geometry/target
 /drawing/target
 .vscode/launch.json
-/CLA.md
+/CLA
 /.github/workflows/cla.yml
