@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-groups"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "Algorithms in group theory."
@@ -13,6 +13,6 @@ readme = "../README.md"
 name = "algebraeon_groups"
 
 [dependencies]
-algebraeon-nzq = { version = "0.1.3", path = "../nzq" }
+algebraeon-nzq = { version = "0.1.5", path = "../nzq" }
 itertools="0.11.0"
 rayon="1.7.0"
