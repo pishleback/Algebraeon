@@ -4,43 +4,7 @@ use algebraeon_nzq::traits::DivMod;
 use factorization::Factored;
 use std::ops::Rem;
 
-use super::functions::*;
 use super::*;
-
-#[derive(Debug)]
-pub struct PrimeGenerator {
-    n: usize,
-    primes: Vec<usize>,
-}
-
-impl PrimeGenerator {
-    pub fn new() -> Self {
-        Self {
-            n: 2,
-            primes: vec![],
-        }
-    }
-}
-
-impl Iterator for PrimeGenerator {
-    type Item = usize;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        'next_loop: loop {
-            //todo: only check primes up to sqrt n
-            for p in &self.primes {
-                if &self.n % p == 0 {
-                    self.n += 1;
-                    continue 'next_loop;
-                }
-            }
-            let next_p = self.n;
-            self.n += 1;
-            self.primes.push(next_p);
-            return Some(next_p);
-        }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PrimalityTestResult {
@@ -146,7 +110,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             };
 
             // Find the smallest prime r >= r0 such that n is a primitive root modulo r
-            let mut prime_gen = PrimeGenerator::new();
+            let mut prime_gen = primes();
             let mut r;
             loop {
                 r = Natural::from(prime_gen.next().unwrap());

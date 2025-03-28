@@ -378,7 +378,7 @@ mod tests {
         );
         assert_eq!(
             is_power_test(&Natural::from(9usize)),
-            IsPowerTestResult::Power(Natural::from(3usize), 4)
+            IsPowerTestResult::Power(Natural::from(3usize), 2)
         );
         assert_eq!(
             is_power_test(&Natural::from(10usize)),

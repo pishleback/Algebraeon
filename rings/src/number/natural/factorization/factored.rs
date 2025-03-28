@@ -1,15 +1,42 @@
-use crate::number::natural::{
-    functions::{gcd, pow},
-    primes::is_prime,
-};
 use algebraeon_nzq::natural::Natural;
+use itertools::Itertools;
 use std::collections::HashMap;
+
+use crate::number::natural::{
+    factorization::primes::is_prime,
+    functions::{gcd, pow},
+};
 
 use super::factor;
 
 #[derive(Debug, Clone)]
 pub struct Factored {
     primes: HashMap<Natural, usize>,
+}
+
+impl std::fmt::Display for Factored {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.primes.is_empty() {
+            write!(f, "1")?;
+        } else {
+            for (i, (p, &k)) in self
+                .primes
+                .iter()
+                .sorted_by_cached_key(|(p, _k)| (*p).clone())
+                .enumerate()
+            {
+                if i != 0 {
+                    write!(f, " × ")?;
+                }
+                write!(f, "{}", p)?;
+                if k != 1 {
+                    write!(f, "^")?;
+                    write!(f, "{}", k)?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 impl Factored {

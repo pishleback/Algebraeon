@@ -58,7 +58,6 @@ some improvements
 
 */
 
-use crate::number::natural::primes::*;
 use crate::structure::factorization::*;
 use crate::structure::structure::*;
 use crate::{polynomial::polynomial::*, structure::quotient::*};
@@ -74,13 +73,12 @@ fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
 }
 
-#[derive(Debug)]
 struct BerlekampAassenhausAlgorithmState {
     poly: Polynomial<Integer>,
     degree: usize,
     factor_coeff_bound: Natural,
     minimum_modolus: Natural,
-    prime_gen: PrimeGenerator,
+    prime_gen: Box<dyn Iterator<Item = usize>>,
 }
 
 impl BerlekampAassenhausAlgorithmState {
@@ -89,7 +87,7 @@ impl BerlekampAassenhausAlgorithmState {
         debug_assert_ne!(degree, 0);
         let factor_coeff_bound = compute_polynomial_factor_bound(&poly);
         let minimum_modolus = Natural::TWO * &factor_coeff_bound;
-        let prime_gen = PrimeGenerator::new();
+        let prime_gen = Box::new(primes());
         Self {
             poly,
             degree,
@@ -497,7 +495,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     if f_deg == 1 {
         FindFactorResult::Irreducible
     } else {
-        let prime_gen = PrimeGenerator::new();
+        let prime_gen = primes();
         for p in prime_gen {
             let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(p));
             let poly_mod_p = PolynomialStructure::new(mod_p.into());
