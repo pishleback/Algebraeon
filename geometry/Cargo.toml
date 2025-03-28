@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-geometry"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "Algorithms for working with geometric shapes"
@@ -14,6 +14,6 @@ name = "algebraeon_geometry"
 
 [dependencies]
 itertools="0.11.0"
-algebraeon-sets = { version = "=0.1.6", path = "../sets" }
-algebraeon-rings = { version = "=0.1.6", path = "../rings" }
-algebraeon-nzq = { version = "=0.1.6", path = "../nzq" }
+algebraeon-sets = { version = "=0.1.7", path = "../sets" }
+algebraeon-rings = { version = "=0.1.7", path = "../rings" }
+algebraeon-nzq = { version = "=0.1.7", path = "../nzq" }
