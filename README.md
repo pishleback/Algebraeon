@@ -10,7 +10,7 @@ algebraeon = "0.1.3"
 to your `cargo.toml` to make Algebraeon available. Copy an example below to get started.
 
 ## Factoring Integers
-Factoring large integers
+To factor large integers using Algebraeon
 
 ```
 use std::str::FromStr;
