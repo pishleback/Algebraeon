@@ -63,7 +63,7 @@ use crate::structure::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
-use algebraeon_sets::combinatorics::LexicographicCombinationsWithRemovals;
+use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use std::ops::Rem;
@@ -382,7 +382,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         // Only half of the cardinalities need to be checked since complimentary subsets need not be checked
         // Keep searching for cardinalities up to and including half the number of remaining modular factors
         while k <= m / 2 {
-            let mut k_combinations = LexicographicCombinationsWithRemovals::new(n, k);
+            let mut k_combinations = LexicographicSubsetsWithRemovals::new(n, k);
             if 2 * k == m {
                 // When m is even and k = m/2 we only need to iterate over half the subsets of size k
                 k_combinations.exclude(n - 1); // Since modular factor n-1 is checked last in the lexographic ordering, this trick works
