@@ -6,7 +6,7 @@ use itertools::Itertools;
 use crate::{
     linear::{matrix::*, subspace::*},
     polynomial::polynomial::*,
-    structure::{factorization::*, quotient::QuotientStructure, structure::*},
+    structure::*,
 };
 
 use algebraeon_nzq::natural::*;
@@ -608,15 +608,9 @@ where
 
 #[cfg(test)]
 mod tests {
-
-    use crate::{
-        number::finite_fields::{modulo::*, quaternary_field::QuaternaryField},
-        structure::elements::IntoErgonomic,
-    };
-
-    use algebraeon_nzq::integer::*;
-
     use super::*;
+    use crate::number::finite_fields::{modulo::*, quaternary_field::QuaternaryField};
+    use algebraeon_nzq::integer::*;
 
     #[test]
     fn test_distinct_degree_and_cantor_zassenhaus_factorization_f2() {

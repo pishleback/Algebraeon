@@ -1,4 +1,4 @@
-use crate::structure::structure::*;
+use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_sets::structure::*;
 

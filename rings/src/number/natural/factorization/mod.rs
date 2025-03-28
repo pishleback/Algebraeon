@@ -106,7 +106,7 @@ impl ToFactor {
 
 #[derive(Debug)]
 struct Factorizer {
-    prime_factors: Factored,
+    prime_factors: FactoredNatural,
     to_factor: Vec<ToFactor>,
 }
 
@@ -114,7 +114,7 @@ impl Factorizer {
     fn new(n: Natural) -> Self {
         debug_assert_ne!(n, Natural::ZERO);
         Self {
-            prime_factors: Factored::one(),
+            prime_factors: FactoredNatural::one(),
             to_factor: vec![ToFactor::new_composite(n)],
         }
     }
@@ -161,7 +161,7 @@ impl Factorizer {
         }
     }
 
-    fn complete(self) -> Factored {
+    fn complete(self) -> FactoredNatural {
         assert!(self.to_factor.is_empty());
         self.prime_factors
     }
@@ -200,11 +200,11 @@ fn exclude_prime_inputs(n: ToFactor, algorithm: impl Fn(Natural) -> Vec<Factor>)
     algorithm(n.n)
 }
 
-pub fn factor(n: Natural) -> Option<Factored> {
+pub fn factor(n: Natural) -> Option<FactoredNatural> {
     if n == Natural::ZERO {
         None
     } else if n == Natural::ONE {
-        Some(Factored::one())
+        Some(FactoredNatural::one())
     } else {
         let mut f = Factorizer::new(n);
         // Trial division

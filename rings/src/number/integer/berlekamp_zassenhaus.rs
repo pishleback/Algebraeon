@@ -58,9 +58,8 @@ some improvements
 
 */
 
-use crate::structure::factorization::*;
-use crate::structure::structure::*;
-use crate::{polynomial::polynomial::*, structure::quotient::*};
+use crate::polynomial::polynomial::*;
+use crate::structure::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;

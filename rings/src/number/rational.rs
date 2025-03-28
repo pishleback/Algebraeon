@@ -1,8 +1,7 @@
 use std::rc::Rc;
 
-use super::super::polynomial::polynomial::*;
-use super::super::structure::factorization::*;
-use super::super::structure::structure::*;
+use crate::polynomial::polynomial::PolynomialStructure;
+use crate::structure::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;
 use algebraeon_nzq::traits::*;

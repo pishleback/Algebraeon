@@ -1,8 +1,8 @@
 use std::borrow::Borrow;
 use std::rc::Rc;
 
-use super::super::structure::structure::*;
 use super::matrix::*;
+use crate::structure::*;
 use algebraeon_sets::structure::*;
 
 //return a metamatrix whose rows are a basis for the joint row span of all the passed metamatricies

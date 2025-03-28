@@ -1,4 +1,4 @@
-use crate::{polynomial::polynomial::*, structure::structure::*};
+use crate::{polynomial::polynomial::*, structure::*};
 use algebraeon_sets::structure::*;
 use bounds::*;
 use interval::*;
@@ -738,7 +738,7 @@ impl RealRoundingStructure for CannonicalStructure<RealAlgebraic> {
 #[cfg(test)]
 mod tests {
 
-    use crate::structure::elements::IntoErgonomic;
+    use crate::structure::IntoErgonomic;
 
     use super::*;
 

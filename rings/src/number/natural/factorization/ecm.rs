@@ -33,7 +33,7 @@ DAMAGE.
 
 use crate::{
     number::natural::{factorization::primes::is_prime, functions::gcd},
-    structure::structure::MetaSemiRing,
+    structure::MetaSemiRing,
 };
 use algebraeon_nzq::{
     natural::{Natural, primes},

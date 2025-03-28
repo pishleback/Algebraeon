@@ -1,7 +1,7 @@
 use std::borrow::Borrow;
 
 use crate::canvas::canvas2d::Drawable;
-use algebraeon_rings::structure::structure::{
+use algebraeon_rings::structure::{
     FieldStructure, OrderedRingStructure, RealToFloatStructure,
 };
 

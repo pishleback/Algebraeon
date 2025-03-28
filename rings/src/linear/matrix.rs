@@ -3,9 +3,9 @@ use std::rc::Rc;
 
 use itertools::Itertools;
 
-use super::super::structure::structure::*;
 use super::subspace::*;
 use crate::polynomial::polynomial::*;
+use crate::structure::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_sets::structure::*;
 
@@ -2382,10 +2382,7 @@ mod tests {
     use algebraeon_nzq::integer::*;
     use algebraeon_nzq::rational::*;
 
-    use crate::{
-        number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
-        structure::elements::*,
-    };
+    use crate::number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic};
 
     use super::*;
 

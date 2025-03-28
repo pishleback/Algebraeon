@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::rc::Rc;
 
-use crate::structure::structure::*;
+use crate::structure::*;
 use algebraeon_sets::structure::*;
 
 use algebraeon_nzq::natural::*;

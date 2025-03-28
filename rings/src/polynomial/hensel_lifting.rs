@@ -1,8 +1,6 @@
 use std::rc::Rc;
 
-use crate::structure::factorization::*;
-use crate::structure::quotient::*;
-use crate::structure::structure::*;
+use crate::structure::*;
 
 use super::polynomial::*;
 use algebraeon_sets::structure::*;

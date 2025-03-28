@@ -10,11 +10,11 @@ use crate::number::natural::{
 use super::factor;
 
 #[derive(Debug, Clone)]
-pub struct Factored {
+pub struct FactoredNatural {
     primes: HashMap<Natural, usize>,
 }
 
-impl std::fmt::Display for Factored {
+impl std::fmt::Display for FactoredNatural {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.primes.is_empty() {
             write!(f, "1")?;
@@ -39,7 +39,7 @@ impl std::fmt::Display for Factored {
     }
 }
 
-impl Factored {
+impl FactoredNatural {
     pub fn new_unchecked(primes: HashMap<Natural, usize>) -> Self {
         for (p, k) in &primes {
             debug_assert!(is_prime(p));
@@ -102,7 +102,7 @@ pub enum IsPrimitiveRootResult {
     No,
     Yes,
 }
-impl Factored {
+impl FactoredNatural {
     /// Return whether x is a primitive root modulo the value represented by self
     pub fn is_primitive_root(&self, x: &Natural) -> IsPrimitiveRootResult {
         let n_factored = self;

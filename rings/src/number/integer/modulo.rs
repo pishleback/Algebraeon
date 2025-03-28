@@ -1,5 +1,3 @@
-use crate::structure::quotient::*;
-
 use super::*;
 
 impl FiniteUnitsStructure for QuotientStructure<CannonicalStructure<Integer>, true> {

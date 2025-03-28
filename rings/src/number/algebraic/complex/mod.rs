@@ -2,7 +2,7 @@ use super::poly_tools::*;
 use super::real::RealAlgebraic;
 use super::{bisection_gen::RationalSimpleBetweenGenerator, rat_to_string};
 use crate::polynomial::polynomial::*;
-use crate::structure::structure::*;
+use crate::structure::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
@@ -972,7 +972,6 @@ impl ComplexAlgebraic {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::elements::*;
 
     #[test]
     fn test_apply_poly() {

@@ -66,7 +66,7 @@ impl FactorableStructure for MultiPolynomialStructure<CannonicalStructure<Intege
 mod tests {
     use berlekamp_zassenhaus::*;
 
-    use crate::structure::elements::IntoErgonomic;
+    use crate::structure::IntoErgonomic;
 
     use super::*;
 

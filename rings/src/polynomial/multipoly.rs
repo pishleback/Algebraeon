@@ -1,6 +1,5 @@
-use super::super::structure::structure::*;
 use super::polynomial::*;
-use crate::structure::factorization::Factored;
+use crate::structure::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
@@ -1029,7 +1028,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::elements::IntoErgonomic;
+    use crate::structure::IntoErgonomic;
 
     use algebraeon_nzq::integer::*;
 

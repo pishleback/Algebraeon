@@ -13,7 +13,7 @@ use algebraeon_geometry::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
-use algebraeon_rings::structure::structure::*;
+use algebraeon_rings::structure::*;
 use algebraeon_sets::structure::*;
 use rand::Rng;
 use simplexes::LabelledSimplexCollection;

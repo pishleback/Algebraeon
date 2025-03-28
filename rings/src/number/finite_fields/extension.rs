@@ -1,6 +1,6 @@
 use crate::{
     polynomial::{polynomial::*, quotient::*},
-    structure::structure::*,
+    structure::*,
 };
 use algebraeon_nzq::natural::*;
 use algebraeon_sets::structure::*;

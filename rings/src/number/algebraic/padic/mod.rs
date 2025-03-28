@@ -1,6 +1,4 @@
-use crate::{
-    number::natural::factorization::primes::*, polynomial::polynomial::*, structure::structure::*,
-};
+use crate::{number::natural::factorization::primes::*, polynomial::polynomial::*, structure::*};
 
 pub mod valuation;
 use valuation::*;
@@ -839,8 +837,6 @@ pub mod structure {
 
     #[cfg(test)]
     mod tests {
-        use crate::structure::elements::*;
-
         use super::*;
 
         #[test]
@@ -1175,8 +1171,6 @@ pub mod structure {
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::elements::*;
-
     use super::*;
 
     #[test]

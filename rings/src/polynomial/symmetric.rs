@@ -2,7 +2,7 @@ use std::{borrow::Borrow, collections::HashSet};
 
 use itertools::Itertools;
 
-use crate::structure::structure::*;
+use crate::structure::*;
 use algebraeon_sets::structure::*;
 
 use super::multipoly::*;
@@ -265,7 +265,6 @@ where
 mod tests {
 
     use super::*;
-    use crate::structure::elements::*;
 
     use algebraeon_nzq::integer::*;
 

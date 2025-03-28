@@ -1,7 +1,5 @@
-use crate::structure::quotient::QuotientStructure;
 use algebraeon_nzq::rational::*;
 use algebraeon_nzq::traits::DivMod;
-use factorization::Factored;
 use std::ops::Rem;
 
 use super::*;
@@ -117,7 +115,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 if r < Natural::from(r0) {
                     continue;
                 }
-                match Factored::from_prime_unchecked(r.clone()).is_primitive_root(n) {
+                match FactoredNatural::from_prime_unchecked(r.clone()).is_primitive_root(n) {
                     factorization::IsPrimitiveRootResult::NonUnit => {
                         // n is divisible by r
                         match *n == r {

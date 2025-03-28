@@ -1,17 +1,14 @@
 use std::rc::Rc;
 
+use super::number_field::AlgebraicNumberFieldStructure;
+use crate::structure::*;
 use crate::{
     number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
     polynomial::polynomial::*,
-    structure::*,
 };
-use algebraeon_sets::structure::*;
-use structure::*;
-
-use super::number_field::AlgebraicNumberFieldStructure;
-
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;
+use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
@@ -237,7 +234,7 @@ pub fn anf_multi_primitive_element_theorem(
 
 #[cfg(test)]
 mod tests {
-    use elements::IntoErgonomic;
+    use crate::structure::IntoErgonomic;
 
     use super::*;
 

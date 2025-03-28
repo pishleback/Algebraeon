@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use algebraeon_sets::structure::MetaType;
 
-use crate::structure::quotient::QuotientStructure;
+use crate::structure::QuotientStructure;
 
 use super::*;
 
@@ -150,8 +150,6 @@ mod balancable_pairs {
 
     #[cfg(test)]
     mod tests {
-        use crate::structure::elements::*;
-
         use super::*;
 
         #[test]
@@ -618,8 +616,6 @@ pub fn refine(
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::elements::*;
-
     use super::*;
 
     #[test]

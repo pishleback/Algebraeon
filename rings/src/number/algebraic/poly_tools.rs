@@ -1,6 +1,6 @@
 use crate::{
     polynomial::{multipoly::*, polynomial::*},
-    structure::structure::*,
+    structure::*,
 };
 
 use algebraeon_nzq::integer::*;

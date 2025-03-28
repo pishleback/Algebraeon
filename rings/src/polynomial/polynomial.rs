@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::linear::matrix::*;
 
-use super::super::structure::structure::*;
+use super::super::structure::*;
 use algebraeon_sets::structure::*;
 
 use algebraeon_nzq::natural::*;
@@ -1150,9 +1150,6 @@ where
 #[cfg(test)]
 mod tests {
     use crate::number::finite_fields::quaternary_field::*;
-    use crate::structure::elements::IntoErgonomic;
-
-    use super::super::super::structure::structure::*;
 
     use algebraeon_nzq::integer::*;
     use algebraeon_nzq::rational::*;

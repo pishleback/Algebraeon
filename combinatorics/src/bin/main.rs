@@ -11,9 +11,7 @@ use algebraeon_rings::number::finite_fields::modulo::*;
 use algebraeon_rings::polynomial::multipoly::*;
 use algebraeon_rings::polynomial::polynomial::*;
 use algebraeon_rings::polynomial::polynomial::*;
-use algebraeon_rings::structure::elements::*;
-use algebraeon_rings::structure::quotient::*;
-use algebraeon_rings::structure::structure::*;
+use algebraeon_rings::structure::*;
 
 fn main() {
     let a = algebraeon_combinatorics::modular_permutations::modular_permutation::<24>(|x| {

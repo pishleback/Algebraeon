@@ -2,7 +2,7 @@ use super::embedded_anf::anf_multi_primitive_element_theorem;
 use crate::{
     linear::matrix::*,
     polynomial::{multipoly::*, polynomial::*, quotient::*, symmetric::ss_num},
-    structure::{factorization::Factored, quotient::*, structure::*},
+    structure::*,
 };
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
@@ -334,7 +334,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
         p: &<Self as Structure>::Set,
-    ) -> crate::structure::factorization::Factored<Self> {
+    ) -> crate::structure::Factored<Self> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
         debug_assert!(!self.is_zero(p));
@@ -760,7 +760,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 }
 
 impl FactorableStructure for PolynomialStructure<AlgebraicNumberFieldStructure> {
-    fn factor(&self, a: &Self::Set) -> Option<crate::structure::factorization::Factored<Self>> {
+    fn factor(&self, a: &Self::Set) -> Option<crate::structure::Factored<Self>> {
         if self.is_zero(a) {
             None
         } else {
@@ -782,7 +782,7 @@ impl FactorableStructure for PolynomialStructure<AlgebraicNumberFieldStructure> 
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::elements::IntoErgonomic;
+    use crate::structure::IntoErgonomic;
 
     use super::*;
 

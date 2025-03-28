@@ -1,8 +1,5 @@
 use super::polynomial::*;
-use crate::{
-    linear::matrix::*,
-    structure::{quotient::*, structure::*},
-};
+use crate::{linear::matrix::*, structure::*};
 use algebraeon_sets::structure::*;
 
 pub type FieldExtensionStructure<FS> = QuotientStructure<PolynomialStructure<FS>, true>;
