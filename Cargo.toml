@@ -12,9 +12,12 @@ members = [
     "algebraeon",
 ]
 
+# https://github.com/pksunkara/cargo-workspaces
 # To publish
 # Update CHANGELOG
 # Check all ok:
-#   cargo ws publish --no-individual-tags --dry-run
+#   cargo ws publish --no-individual-tags --from-git --dry-run
+# Bump versions
+#   cargo ws version --no-individual-tags
 # Publish
-#   cargo ws publish --no-individual-tags
+#   cargo ws publish --no-individual-tags --from-git
