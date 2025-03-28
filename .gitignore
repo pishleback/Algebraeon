@@ -5,4 +5,5 @@
 /combinatorics/target
 /geometry/target
 /drawing/target
+/examples/src/bin/tmp.rs
 .vscode/launch.json
