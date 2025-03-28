@@ -13,4 +13,8 @@ members = [
 ]
 
 # To publish
-# cargo ws publish --no-individual-tags --dry-run
+# Update CHANGELOG
+# Check all ok:
+#   cargo ws publish --no-individual-tags --dry-run
+# Publish
+#   cargo ws publish --no-individual-tags
