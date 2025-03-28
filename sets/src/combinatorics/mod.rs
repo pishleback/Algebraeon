@@ -1,14 +1,14 @@
 //! Contains combinatorial counting and enumeration algorithms.
 
-mod partition;
-mod subset;
+mod partitions;
+mod combinations;
 
-pub use partition::partitions;
-pub use partition::partitions_sized;
-pub use partition::partitions_sized_zero;
-pub use partition::predicated_partitions;
-pub use partition::predicated_partitions_sized;
-pub use partition::predicated_partitions_sized_zero;
-pub use subset::LexicographicSubsetsWithRemovals;
-pub use subset::subsets;
-pub use subset::subsets_vec;
+pub use partitions::partitions;
+pub use partitions::partitions_sized;
+pub use partitions::partitions_sized_zero;
+pub use partitions::predicated_partitions;
+pub use partitions::predicated_partitions_sized;
+pub use partitions::predicated_partitions_sized_zero;
+pub use combinations::LexicographicCombinationsWithRemovals;
+pub use combinations::combinations;
+pub use combinations::subsets;

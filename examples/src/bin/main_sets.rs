@@ -1,7 +1,7 @@
 use algebraeon::sets::combinatorics::*;
 
 fn main() {
-    let mut c = LexicographicSubsetsWithRemovals::new(7, 3);
+    let mut c = LexicographicCombinationsWithRemovals::new(7, 3);
     for _ in 0..19 {
         let x = c.next().unwrap();
         println!("{:?}", x);

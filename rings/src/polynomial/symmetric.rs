@@ -102,7 +102,7 @@ where
     ) -> MultiPolynomial<RS::Set> {
         let mp_ring = MultiPolynomialStructure::new(self.coeff_ring().clone());
         let mut e = mp_ring.zero();
-        for vs in algebraeon_sets::combinatorics::subsets_vec(vars.iter().collect(), n) {
+        for vs in algebraeon_sets::combinatorics::subsets(vars.iter().collect(), n) {
             let mut p = mp_ring.one();
             for v in vs {
                 mp_ring.mul_mut(&mut p, &mp_ring.var(v.borrow().clone()));
