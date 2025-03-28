@@ -1,8 +1,5 @@
-use std::borrow::Borrow;
-
-use primes::PrimeGenerator;
-
 use super::*;
+use std::borrow::Borrow;
 
 pub fn factorial(n: impl Borrow<Natural>) -> Natural {
     let mut k = Natural::from(1u8);
@@ -128,10 +125,11 @@ pub fn bitcount(n: impl Borrow<Natural>) -> usize {
 pub enum IsPowerTestResult {
     Zero,
     One,
-    Power(Natural, Natural),
+    Power(Natural, usize),
     No,
 }
 
+/// Returns n=a^p where a is as large as possible and p is prime
 pub fn is_power_test(n: &Natural) -> IsPowerTestResult {
     if *n == Natural::ZERO {
         IsPowerTestResult::Zero
@@ -141,18 +139,14 @@ pub fn is_power_test(n: &Natural) -> IsPowerTestResult {
         // The largest power n can possibly be is when n is a power of 2 and n = 2^{bitcount(n)+1}
         // So we only need to check n isn't a kth power up to k = bitcount(n)+1
         // We also only need to check for prime k
-        let max_k = Natural::from(bitcount(n) + 1);
-        for k in PrimeGenerator::new().map(|k| Natural::from(k)) {
-            if k > max_k {
-                return IsPowerTestResult::No;
-            } else {
-                let a = nth_root_floor(n, &k);
-                if *n == pow(&a, &k) {
-                    return IsPowerTestResult::Power(a, k);
-                }
+        let max_k = bitcount(n) + 1;
+        for k in primes().take_while(|&k| k <= max_k) {
+            let a = nth_root_floor(n, &k.into());
+            if *n == pow(&a, &k.into()) {
+                return IsPowerTestResult::Power(a, k);
             }
         }
-        unreachable!()
+        return IsPowerTestResult::No;
     }
 }
 
@@ -373,18 +367,18 @@ mod tests {
         assert_eq!(is_power_test(&Natural::from(3usize)), IsPowerTestResult::No);
         assert_eq!(
             is_power_test(&Natural::from(4usize)),
-            IsPowerTestResult::Power(Natural::from(2usize), Natural::from(2usize))
+            IsPowerTestResult::Power(Natural::from(2usize), 2)
         );
         assert_eq!(is_power_test(&Natural::from(5usize)), IsPowerTestResult::No);
         assert_eq!(is_power_test(&Natural::from(6usize)), IsPowerTestResult::No);
         assert_eq!(is_power_test(&Natural::from(7usize)), IsPowerTestResult::No);
         assert_eq!(
             is_power_test(&Natural::from(8usize)),
-            IsPowerTestResult::Power(Natural::from(2usize), Natural::from(3usize))
+            IsPowerTestResult::Power(Natural::from(2usize), 3)
         );
         assert_eq!(
             is_power_test(&Natural::from(9usize)),
-            IsPowerTestResult::Power(Natural::from(3usize), Natural::from(2usize))
+            IsPowerTestResult::Power(Natural::from(3usize), 4)
         );
         assert_eq!(
             is_power_test(&Natural::from(10usize)),

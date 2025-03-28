@@ -2,103 +2,78 @@ use super::functions::*;
 use super::*;
 use crate::polynomial::polynomial::Polynomial;
 use algebraeon_nzq::traits::AbsDiff;
+pub use factored::*;
 use primes::is_prime;
-use std::collections::HashMap;
 
-mod ecm;
+pub mod ecm;
+pub mod factored;
 
 #[derive(Debug, Clone)]
-pub struct Factored {
-    primes: HashMap<Natural, usize>,
-}
-
-impl Factored {
-    pub fn new_unchecked(primes: HashMap<Natural, usize>) -> Self {
-        for (p, k) in &primes {
-            debug_assert!(is_prime(p));
-            debug_assert!(k > &0);
-        }
-        Self { primes }
-    }
-
-    pub fn one() -> Self {
-        Self {
-            primes: HashMap::new(),
-        }
-    }
-
-    fn mul_prime(&mut self, p: Natural) {
-        *self.primes.entry(p).or_insert(0) += 1;
-    }
-
-    pub fn from_prime_unchecked(prime: Natural) -> Self {
-        Self::new_unchecked(HashMap::from([(prime, 1)]))
-    }
-
-    pub fn powers(&self) -> &HashMap<Natural, usize> {
-        &self.primes
-    }
-
-    pub fn into_powers(self) -> HashMap<Natural, usize> {
-        self.primes
-    }
-
-    pub fn expand(&self) -> Natural {
-        let mut t = Natural::ONE;
-        for (p, k) in &self.primes {
-            t *= pow(p, &(*k).into());
-        }
-        t
-    }
-
-    pub fn euler_totient(&self) -> Natural {
-        let mut t = Natural::ONE;
-        for (p, k) in &self.primes {
-            t *= (p - &Natural::ONE) * pow(p, &(k - 1).into());
-        }
-        t
-    }
-
-    pub fn distinct_prime_factors(&self) -> Vec<&Natural> {
-        let mut primes = vec![];
-        for (p, _) in &self.primes {
-            primes.push(p);
-        }
-        primes
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum IsPrimitiveRootResult {
-    NonUnit,
-    No,
-    Yes,
-}
-impl Factored {
-    /// Return whether x is a primitive root modulo the value represented by self
-    pub fn is_primitive_root(&self, x: &Natural) -> IsPrimitiveRootResult {
-        let n_factored = self;
-        let n = n_factored.expand();
-        if gcd(x.clone(), n.clone()) != Natural::ONE {
-            IsPrimitiveRootResult::NonUnit
-        } else {
-            let phi_n = n_factored.euler_totient();
-            let x_mod_n = x % &n;
-            for p in factor(phi_n.clone()).unwrap().distinct_prime_factors() {
-                if x_mod_n.mod_pow_ref(&phi_n / p, &n) == Natural::ONE {
-                    return IsPrimitiveRootResult::No;
-                }
-            }
-            IsPrimitiveRootResult::Yes
-        }
-    }
-}
-
-#[derive(Debug)]
-enum Factor {
+pub enum Factor {
     Prime(Natural),
     Composite(Natural),
     StrictlyComposite(Natural),
+}
+
+fn trivial_factor(n: ToFactor) -> Vec<Factor> {
+    match n.t {
+        ToFactorType::Composite => {
+            if is_prime(&n.n) {
+                vec![Factor::Prime(n.n)]
+            } else {
+                vec![Factor::Composite(n.n)]
+            }
+        }
+        ToFactorType::StrictlyComposite => vec![Factor::StrictlyComposite(n.n)],
+    }
+}
+
+pub fn trial_division(mut n: Natural, max_d: usize) -> Vec<Factor> {
+    let mut factors = vec![];
+    let mut d = 2usize;
+    while Natural::from(d * d) <= n {
+        debug_assert_ne!(Natural::from(d), n);
+        if d > max_d {
+            factors.push(Factor::Composite(n));
+            return factors;
+        }
+        let d_nat = d.into();
+        while &n % &d_nat == Natural::ZERO {
+            factors.push(Factor::Prime(d_nat.clone()));
+            n = &n / &d_nat;
+        }
+        if n == Natural::ONE {
+            return factors;
+        }
+        d += 1;
+    }
+    factors.push(Factor::Prime(n));
+    factors
+}
+
+pub fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> {
+    debug_assert!(!is_prime(&n));
+
+    // g(x) = x^2 + 1
+    let g1 = Polynomial::<Natural>::from_coeffs(vec![Natural::ONE, Natural::ZERO, Natural::ONE]);
+    // g(g(x))
+    let g2 = Polynomial::compose(&g1, &g1);
+
+    let mut y = x.clone();
+    for _ in 0..max_steps {
+        x = g1.evaluate(&x) % &n;
+        y = g2.evaluate(&y) % &n;
+        let d = gcd(Natural::abs_diff(x.clone(), &y), n.clone());
+        if d > Natural::ONE {
+            debug_assert!(d <= n);
+            if d == n {
+                return vec![Factor::StrictlyComposite(n)];
+            } else {
+                return vec![Factor::Composite(n / &d), Factor::Composite(d)];
+            }
+        }
+    }
+    return vec![Factor::StrictlyComposite(n)];
 }
 
 #[derive(Debug, Clone)]
@@ -191,54 +166,6 @@ impl Factorizer {
     }
 }
 
-fn trial_division(mut n: Natural, max_d: usize) -> Vec<Factor> {
-    let mut factors = vec![];
-    let mut d = 2usize;
-    while Natural::from(d * d) <= n {
-        debug_assert_ne!(Natural::from(d), n);
-        if d > max_d {
-            factors.push(Factor::Composite(n));
-            return factors;
-        }
-        let d_nat = d.into();
-        while &n % &d_nat == Natural::ZERO {
-            factors.push(Factor::Prime(d_nat.clone()));
-            n = &n / &d_nat;
-        }
-        if n == Natural::ONE {
-            return factors;
-        }
-        d += 1;
-    }
-    factors.push(Factor::Prime(n));
-    factors
-}
-
-fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> {
-    debug_assert!(!is_prime(&n));
-
-    // g(x) = x^2 + 1
-    let g1 = Polynomial::<Natural>::from_coeffs(vec![Natural::ONE, Natural::ZERO, Natural::ONE]);
-    // g(g(x))
-    let g2 = Polynomial::compose(&g1, &g1);
-
-    let mut y = x.clone();
-    for _ in 0..max_steps {
-        x = g1.evaluate(&x) % &n;
-        y = g2.evaluate(&y) % &n;
-        let d = gcd(Natural::abs_diff(x.clone(), &y), n.clone());
-        if d > Natural::ONE {
-            debug_assert!(d <= n);
-            if d == n {
-                return vec![Factor::StrictlyComposite(n)];
-            } else {
-                return vec![Factor::Composite(n / &d), Factor::Composite(d)];
-            }
-        }
-    }
-    return vec![Factor::StrictlyComposite(n)];
-}
-
 fn terminate_once_trivial(
     n: ToFactor,
     algorithm: impl Fn(ToFactor) -> Vec<Factor>,
@@ -268,6 +195,7 @@ fn exclude_prime_inputs(n: ToFactor, algorithm: impl Fn(Natural) -> Vec<Factor>)
         }
         ToFactorType::StrictlyComposite => {}
     }
+    debug_assert!(!is_prime(&n.n));
     algorithm(n.n)
 }
 
@@ -281,19 +209,35 @@ pub fn factor(n: Natural) -> Option<Factored> {
         // Trial division
         f.partially_factor_by_method(|n| (trial_division(n.n, 100000), true));
 
-        // // Pollard-Rho
-        // for x in [2u32, 3, 4] {
-        //     f.partially_factor_by_method(|n| {
-        //         terminate_once_trivial(n, |n| {
-        //             exclude_prime_inputs(n, |n| pollard_rho(n, Natural::from(x), 100000))
-        //         })
-        //     });
-        // }
+        // Pollard-Rho
+        for x in [2u32, 3, 4] {
+            f.partially_factor_by_method(|n| {
+                terminate_once_trivial(n, |n| {
+                    if bitcount(&n.n) < 100 {
+                        exclude_prime_inputs(n, |n| pollard_rho(n, Natural::from(x), 10000))
+                    } else {
+                        trivial_factor(n)
+                    }
+                })
+            });
+        }
 
         // ECM
         f.partially_factor_by_method(|n| {
             (
-                exclude_prime_inputs(n, |n| ecm::factor_by_lenstra_elliptic_curve(n)),
+                exclude_prime_inputs(n, |n| {
+                    let mut rng = algebraeon_nzq::random::Rng::new();
+                    for fith_target_factor_digits in vec![2, 3, 2, 4, 2, 3].into_iter().cycle() {
+                        if let Ok(d) = ecm::ecm_one_factor_target_digits(
+                            &n,
+                            fith_target_factor_digits,
+                            &mut rng,
+                        ) {
+                            return vec![Factor::Composite(n / &d), Factor::Composite(d)];
+                        }
+                    }
+                    unreachable!()
+                }),
                 false,
             )
         });
@@ -304,6 +248,8 @@ pub fn factor(n: Natural) -> Option<Factored> {
 
 #[cfg(test)]
 mod tests {
+    use crate::number::natural::factorization::factored::IsPrimitiveRootResult;
+
     use super::*;
 
     #[test]

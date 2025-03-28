@@ -15,7 +15,7 @@ pub mod zimmermann_polys;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;
 
-use super::natural::factored::factor;
+use super::natural::factorization::factor;
 
 impl SemiRingStructure for CannonicalStructure<Integer> {
     fn zero(&self) -> Self::Set {
