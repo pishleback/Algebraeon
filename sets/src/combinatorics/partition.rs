@@ -88,6 +88,22 @@ impl<P: Fn(usize) -> bool + Copy> Iterator for PartitionIterator<P> {
     }
 }
 
+/// Returns all partitions of n into exactly x parts such that each part in the partition satisfies the predicate and all parts are non-zero.
+/// ```
+/// use algebraeon_sets::combinatorics::predicated_partitions_sized_zero;
+/// assert_eq!(predicated_partitions_sized_zero(6, 2, |k| k % 2 == 1).collect::<Vec<_>>(), vec![
+///     vec![1, 5],
+///     vec![3, 3],
+/// ]);
+/// ```
+/// ```
+/// use algebraeon_sets::combinatorics::predicated_partitions_sized_zero;
+/// assert_eq!(predicated_partitions_sized_zero(6, 3, |k| k <= 3).collect::<Vec<_>>(), vec![
+///     vec![0, 3, 3],
+///     vec![1, 2, 3],
+///     vec![2, 2, 2],
+/// ]);
+/// ```
 pub fn predicated_partitions_sized<P: Fn(usize) -> bool + Copy>(
     n: usize,
     x: usize,
@@ -96,6 +112,22 @@ pub fn predicated_partitions_sized<P: Fn(usize) -> bool + Copy>(
     PartitionIterator::new(n, x, predicate)
 }
 
+/// Returns all partitions of n into exactly x parts such that each part in the partition satisfies the predicate where parts may be zero.
+/// ```
+/// use algebraeon_sets::combinatorics::predicated_partitions_sized_zero;
+/// assert_eq!(predicated_partitions_sized_zero(6, 2, |k| k % 2 == 1).collect::<Vec<_>>(), vec![
+///     vec![1, 5],
+///     vec![3, 3],
+/// ]);
+/// ```
+/// ```
+/// use algebraeon_sets::combinatorics::predicated_partitions_sized_zero;
+/// assert_eq!(predicated_partitions_sized_zero(6, 3, |k| k <= 3).collect::<Vec<_>>(), vec![
+///     vec![0, 3, 3],
+///     vec![1, 2, 3],
+///     vec![2, 2, 2],
+/// ]);
+/// ```
 pub fn predicated_partitions_sized_zero<P: Fn(usize) -> bool + Copy>(
     n: usize,
     x: usize,
@@ -105,6 +137,24 @@ pub fn predicated_partitions_sized_zero<P: Fn(usize) -> bool + Copy>(
         .map(|part| part.into_iter().map(|k| k - 1).collect::<Vec<usize>>())
 }
 
+/// Returns all partitions of n such that each part in the partition satisfies the predicate.
+/// ```
+/// use algebraeon_sets::combinatorics::predicated_partitions;
+/// assert_eq!(predicated_partitions(6, |k| k % 2 == 1).collect::<Vec<_>>(), vec![
+///     vec![1, 5],
+///     vec![3, 3],
+///     vec![1, 1, 1, 3],
+///     vec![1, 1, 1, 1, 1, 1],
+/// ]);
+/// ```
+/// ```
+/// use algebraeon_sets::combinatorics::predicated_partitions;
+/// assert_eq!(predicated_partitions(4, |k| k <= 2).collect::<Vec<_>>(), vec![
+///     vec![2, 2],
+///     vec![1, 1, 2],
+///     vec![1, 1, 1, 1],
+/// ]);
+/// ```
 pub fn predicated_partitions<P: Fn(usize) -> bool + Copy>(
     n: usize,
     predicate: P,
@@ -112,14 +162,46 @@ pub fn predicated_partitions<P: Fn(usize) -> bool + Copy>(
     (1..n + 1).flat_map(move |x| predicated_partitions_sized::<P>(n, x, predicate))
 }
 
+/// Returns all partitions of n into exactly x parts where all parts are non-zero.
+/// ```
+/// use algebraeon_sets::combinatorics::partitions_sized;
+/// assert_eq!(partitions_sized(8, 3).collect::<Vec<_>>(), vec![
+///     vec![1, 1, 6],
+///     vec![1, 2, 5],
+///     vec![1, 3, 4],
+///     vec![2, 2, 4],
+///     vec![2, 3, 3],
+/// ]);
+/// ```
 pub fn partitions_sized(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
     predicated_partitions_sized(n, x, |_| true)
 }
 
+/// Returns all partitions of n into exactly x parts where parts may be zero.
+/// ```
+/// use algebraeon_sets::combinatorics::partitions_sized_zero;
+/// assert_eq!(partitions_sized_zero(4, 3).collect::<Vec<_>>(), vec![
+///     vec![0, 0, 4],
+///     vec![0, 1, 3],
+///     vec![0, 2, 2],
+///     vec![1, 1, 2],
+/// ]);
+/// ```
 pub fn partitions_sized_zero(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
     predicated_partitions_sized_zero(n, x, |_| true)
 }
 
+/// Returns all partitions of n.
+/// ```
+/// use algebraeon_sets::combinatorics::partitions;
+/// assert_eq!(partitions(4).collect::<Vec<_>>(), vec![
+///     vec![4],
+///     vec![1, 3],
+///     vec![2, 2],
+///     vec![1, 1, 2],
+///     vec![1, 1, 1, 1]
+/// ]);
+/// ```
 pub fn partitions(n: usize) -> impl Iterator<Item = Vec<usize>> {
     predicated_partitions(n, |_| true)
 }
@@ -151,8 +233,11 @@ mod tests {
         }
         println!("end");
 
-        // for x in (0..5).map(|i| (0..3)).multi_cartesian_product() {
-        //     println!("{:?}", x);
-        // }
+        let parts = partitions(6);
+        println!("start");
+        for part in parts {
+            println!("{:?}", part);
+        }
+        println!("end");
     }
 }
