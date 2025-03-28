@@ -128,7 +128,7 @@ pub fn combinations(n: usize, k: usize) -> impl Iterator<Item = Vec<usize>> {
 }
 
 /// Returns all size k subsets of items.
-/// /// ```
+/// ```
 /// use algebraeon_sets::combinatorics::subsets;
 /// assert_eq!(subsets(vec!["a", "b", "c"], 2).collect::<Vec<_>>(), vec![
 ///     vec!["a", "b"],
