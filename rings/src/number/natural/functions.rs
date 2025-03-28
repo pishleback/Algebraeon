@@ -43,11 +43,6 @@ pub fn choose(a: impl Borrow<Natural>, b: impl Borrow<Natural>) -> Natural {
         }
         t / factorial(b.borrow())
     }
-
-    // choose_usize(
-    //     nat_to_usize(a.borrow()).unwrap(),
-    //     nat_to_usize(b.borrow()).unwrap(),
-    // )
 }
 
 pub fn pow(x: &Natural, n: &Natural) -> Natural {
