@@ -1,6 +1,6 @@
 use super::functions::*;
 use super::*;
-use crate::polynomial::polynomial::Polynomial;
+use crate::polynomial::Polynomial;
 use algebraeon_nzq::traits::AbsDiff;
 pub use factored::*;
 use primes::is_prime;

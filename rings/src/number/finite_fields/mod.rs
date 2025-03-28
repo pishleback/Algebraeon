@@ -1,4 +1,4 @@
-use crate::{polynomial::polynomial::*, structure::*};
+use crate::{polynomial::*, structure::*};
 
 pub mod extension;
 pub mod modulo;

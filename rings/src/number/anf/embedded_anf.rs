@@ -4,7 +4,7 @@ use super::number_field::AlgebraicNumberFieldStructure;
 use crate::structure::*;
 use crate::{
     number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
-    polynomial::polynomial::*,
+    polynomial::*,
 };
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;

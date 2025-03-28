@@ -495,7 +495,7 @@ impl_int_ops!(Integer);
 #[cfg(test)]
 mod tests {
 
-    use super::super::super::polynomial::polynomial::*;
+    use crate::polynomial::*;
 
     use super::*;
 

@@ -1,4 +1,4 @@
-use crate::{number::natural::factorization::primes::*, polynomial::polynomial::*, structure::*};
+use crate::{number::natural::factorization::primes::*, polynomial::*, structure::*};
 
 pub mod valuation;
 use valuation::*;

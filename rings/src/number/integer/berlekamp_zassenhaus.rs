@@ -58,7 +58,7 @@ some improvements
 
 */
 
-use crate::polynomial::polynomial::*;
+use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;

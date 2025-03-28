@@ -4,7 +4,7 @@ use std::rc::Rc;
 use itertools::Itertools;
 
 use super::subspace::*;
-use crate::polynomial::polynomial::*;
+use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_sets::structure::*;

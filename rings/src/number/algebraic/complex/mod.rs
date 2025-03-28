@@ -1,7 +1,7 @@
 use super::poly_tools::*;
 use super::real::RealAlgebraic;
 use super::{bisection_gen::RationalSimpleBetweenGenerator, rat_to_string};
-use crate::polynomial::polynomial::*;
+use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;

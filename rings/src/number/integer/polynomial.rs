@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     number::{integer::*, natural::functions::*},
-    polynomial::{multipoly::MultiPolynomialStructure, polynomial::*},
+    polynomial::*,
 };
 
 impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {

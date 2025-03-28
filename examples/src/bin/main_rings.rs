@@ -3,7 +3,7 @@
 use algebraeon::nzq::integer::*;
 use algebraeon::nzq::natural::*;
 use algebraeon::nzq::rational::*;
-use algebraeon::rings::{polynomial::polynomial::*, structure::*};
+use algebraeon::rings::{polynomial::*, structure::*};
 
 fn main() {
     let x = &Polynomial::<Integer>::var().into_ergonomic();

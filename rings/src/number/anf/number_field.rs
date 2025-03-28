@@ -1,9 +1,5 @@
 use super::embedded_anf::anf_multi_primitive_element_theorem;
-use crate::{
-    linear::matrix::*,
-    polynomial::{multipoly::*, polynomial::*, quotient::*, symmetric::ss_num},
-    structure::*,
-};
+use crate::{linear::matrix::*, polynomial::*, structure::*};
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 

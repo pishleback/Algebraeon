@@ -1,7 +1,6 @@
 use std::{borrow::Borrow, fmt::Debug, rc::Rc};
 
-use crate::polynomial::polynomial::Polynomial;
-use crate::polynomial::polynomial::PolynomialStructure;
+use crate::polynomial::*;
 use algebraeon_nzq::{integer::*, natural::*, rational::*, traits::*};
 
 use algebraeon_sets::structure::*;

@@ -1,14 +1,11 @@
 use std::collections::HashSet;
 
-use algebraeon_sets::structure::MetaType;
-
-use crate::structure::QuotientStructure;
-
 use super::*;
-
+use crate::structure::QuotientStructure;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::natural::*;
 use algebraeon_nzq::rational::*;
+use algebraeon_sets::structure::MetaType;
 
 // Some algorithms here on p-adic root isolation can be found in
 // Sturm, Thomas & Weispfenning, Volker. (2004). P-adic Root Isolation. Revista de la Real Academia de Ciencias Exactas, Físicas y Naturales. Serie A, Matemáticas.

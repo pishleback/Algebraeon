@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::{
     linear::{matrix::*, subspace::*},
-    polynomial::polynomial::*,
+    polynomial::*,
     structure::*,
 };
 

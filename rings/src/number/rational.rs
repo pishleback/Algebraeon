@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::polynomial::polynomial::PolynomialStructure;
+use crate::polynomial::PolynomialStructure;
 use crate::structure::*;
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;

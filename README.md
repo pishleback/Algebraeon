@@ -31,10 +31,7 @@ Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedi
 ## Factoring Polynomials
 Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
 ```
-use algebraeon::rings::{
-    polynomial::polynomial::*,
-    structure::*,
-};
+use algebraeon::rings::{polynomial::*, structure::*};
 use algebraeon::nzq::integer::*;
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
@@ -94,7 +91,7 @@ for some integer $t$.
 Find all complex roots of the polynomial
 $$f(x) = x^5 + x^2 - x + 1$$
 ```
-use algebraeon::rings::{polynomial::polynomial::*, structure::*};
+use algebraeon::rings::{polynomial::*, structure::*};
 use algebraeon::nzq::integer::*;
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
@@ -120,7 +117,7 @@ Factor the following multivariable polynomial with integer coefficients
 f(x, y) = 6x^4 - 6x^3y^2 + 6xy - 6x - 6y^3 + 6y^2
 ```
 ```
-use algebraeon::{nzq::integer::*, rings::{polynomial::multipoly::*, structure::*}};
+use algebraeon::{nzq::integer::*, rings::{polynomial::*, structure::*}};
 
 let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).into_ergonomic();
 let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).into_ergonomic();
@@ -144,7 +141,7 @@ Find the $2$-adic square roots of $17$.
 ```
 use algebraeon::nzq::natural::*;
 use algebraeon::nzq::integer::*;
-use algebraeon::rings::{polynomial::polynomial::*, structure::*};
+use algebraeon::rings::{polynomial::*, structure::*};
 let x = Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(2) - 17).into_verbose();
 for mut root in f.all_padic_roots(&Natural::from(2u32)) {
@@ -216,10 +213,7 @@ Output:
 ## Computing Discriminants
 Algebraeon can find an expression for the discriminant of a polynomial in terms of the polynomials coefficients.
 ```
-use algebraeon::rings::polynomial::{
-    multipoly::{MultiPolynomial, Variable},
-    polynomial::Polynomial,
-};
+use algebraeon::rings::polynomial::*;
 use algebraeon::nzq::integer::*;
 
 let a_var = Variable::new("a");

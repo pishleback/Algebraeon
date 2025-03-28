@@ -1,7 +1,4 @@
-use crate::{
-    polynomial::{multipoly::*, polynomial::*},
-    structure::*,
-};
+use crate::{polynomial::*, structure::*};
 
 use algebraeon_nzq::integer::*;
 use algebraeon_nzq::rational::*;

@@ -1,4 +1,4 @@
-use crate::{polynomial::polynomial::*, structure::*};
+use crate::{polynomial::*, structure::*};
 use algebraeon_sets::structure::*;
 use bounds::*;
 use interval::*;
