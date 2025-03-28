@@ -4,8 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
-## [Unversioned]
- - Reorganized algebraeon-sets.
+## [Unreleased]
+
+## [0.1.7] - 2025-03-2025
+ - Lots of reorganizing where things are.
+ - Added docs and examples to sets::combinatorics
 
 ## [0.1.6] - 2025-03-2025
 Got `cargo ws` to work. Same as 0.1.4
