@@ -332,3 +332,5 @@ A suggested workflow for testing new features:
  - To run, use `cargo run --bin my_main` in the root directory.
  - Test any changes to the codebase with unit tests and/or using `my_main.rs`.
 
+## CLA
+Anyone who contributes code is required to sign the CLA. You can sign the CLA when you submit a pull request. The CLA allows for us to relicense future versions of Algebraeon, including your contribution, under any licences the Free Software Foundation classifies as Free Software Licence and which are approved by the Open Source Initiative as Open Source licences. It does not allow us to relicense of your contribution under any other more restrictive licences.
