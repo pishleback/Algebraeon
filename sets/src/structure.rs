@@ -62,30 +62,6 @@ impl<T: MetaType + PartialEq> PartialEqStructure for CannonicalStructure<T> {
 pub trait EqStructure: PartialEqStructure {}
 impl<T: MetaType + Eq> EqStructure for CannonicalStructure<T> {}
 
-// impl MetaType for Natural {
-//     type Structure = CannonicalStructure<Natural>;
-
-//     fn structure() -> Rc<Self::Structure> {
-//         CannonicalStructure::new().into()
-//     }
-// }
-
-// impl MetaType for Integer {
-//     type Structure = CannonicalStructure<Integer>;
-
-//     fn structure() -> Rc<Self::Structure> {
-//         CannonicalStructure::new().into()
-//     }
-// }
-
-// impl MetaType for Rational {
-//     type Structure = CannonicalStructure<Rational>;
-
-//     fn structure() -> Rc<Self::Structure> {
-//         CannonicalStructure::new().into()
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -121,15 +97,15 @@ mod tests {
     #[test]
     fn foo() {
         #[derive(Debug, Clone, PartialEq, Eq)]
-        struct Scary {
+        struct A {
             t: usize,
         }
 
-        impl Structure for Scary {
+        impl Structure for A {
             type Set = usize;
         }
 
-        impl ToStringStructure for Scary {
+        impl ToStringStructure for A {
             fn to_string(&self, elem: &Self::Set) -> String {
                 elem.to_string()
             }
