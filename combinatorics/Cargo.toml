@@ -12,5 +12,5 @@ itertools = "0.11.0"
 malachite-base = "0.4.16"
 static_assertions = "1.1.0"
 algebraeon-sets = { version = "0.1.2", path = "../sets" }
-algebraeon-groups = { version = "0.1.2", path = "../groups" }
-algebraeon-rings = { version = "0.1.2", path = "../rings" }
+algebraeon-groups = { version = "0.1.3", path = "../groups" }
+algebraeon-rings = { version = "0.1.3", path = "../rings" }
