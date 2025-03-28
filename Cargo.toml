@@ -13,4 +13,4 @@ members = [
 ]
 
 # To publish
-# cargo ws publish --no-individual-tags
+# cargo ws publish --no-individual-tags --dry-run
