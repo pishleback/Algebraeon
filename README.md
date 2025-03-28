@@ -323,7 +323,7 @@ Contributions are welcome. There are two primary ways to contribute:
 Use the issue tracker to suggest feature requests, report bugs, and ask questions.
 
 ## Changing the code-base
-You should fork this repository, make changes in your own fork, and then submit a pull request. New code should have associated unit tests that validate implemented features and the presence or lack of defects.
+You should fork this repository, make changes, and submit a pull request. Submitted code should, where applicable, have associated unit tests.
 
 Algebraeon is organized as a [cargo workspace](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). Run `cargo test` in the root directory to build and run all tests.
 
