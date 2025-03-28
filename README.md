@@ -10,7 +10,7 @@ algebraeon = "0.1.3"
 to your `cargo.toml` to make Algebraeon available. Copy an example below to get started.
 
 ## Factoring Integers
-Factoring large integers
+To factor large integers using Algebraeon
 
 ```
 use std::str::FromStr;
@@ -25,7 +25,7 @@ Output:
 */
 ```
 
-Algebraeon implements [Lenstra elliptic-curve factorization]{https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization}, the third-fastest known factoring algorithm known, for quickly finding prime factors with around 20 digits.
+Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization), the third-fastest known factoring algorithm known, for quickly finding prime factors with around 20 digits.
 
 
 ## Factoring Polynomials
@@ -323,7 +323,7 @@ Contributions are welcome. There are two primary ways to contribute:
 Use the issue tracker to suggest feature requests, report bugs, and ask questions.
 
 ## Changing the code-base
-You should fork this repository, make changes in your own fork, and then submit a pull request. New code should have associated unit tests that validate implemented features and the presence or lack of defects.
+You should fork this repository, make changes, and submit a pull request. Submitted code should, where applicable, have associated unit tests.
 
 Algebraeon is organized as a [cargo workspace](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). Run `cargo test` in the root directory to build and run all tests.
 
@@ -332,3 +332,5 @@ A suggested workflow for testing new features:
  - To run, use `cargo run --bin my_main` in the root directory.
  - Test any changes to the codebase with unit tests and/or using `my_main.rs`.
 
+## CLA
+Anyone who contributes code is required to sign the CLA. You can sign the CLA when you submit a pull request. The CLA allows for us to relicense future versions of Algebraeon, including your contribution, under any licences the Free Software Foundation classifies as Free Software Licence and which are approved by the Open Source Initiative as Open Source licences. It does not allow us to relicense of your contribution under any other more restrictive licences.
