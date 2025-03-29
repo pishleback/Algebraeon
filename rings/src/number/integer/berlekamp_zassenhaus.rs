@@ -60,10 +60,9 @@ some improvements
 
 use crate::polynomial::*;
 use crate::structure::*;
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::rational::*;
+use algebraeon_nzq::*;
 use algebraeon_sets::combinatorics::LexicographicCombinationsWithRemovals;
+use algebraeon_sets::number_theory::primes;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use std::ops::Rem;

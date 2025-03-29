@@ -1,5 +1,6 @@
-use algebraeon_nzq::rational::*;
 use algebraeon_nzq::traits::DivMod;
+use algebraeon_nzq::*;
+use algebraeon_sets::number_theory::primes;
 use std::ops::Rem;
 
 use super::*;

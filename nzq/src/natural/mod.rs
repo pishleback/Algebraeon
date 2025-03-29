@@ -1,3 +1,5 @@
+//! The Natural type and operations.
+
 use crate::integer::*;
 use crate::traits::*;
 use algebraeon_sets::structure::*;
@@ -562,11 +564,6 @@ impl Natural {
         use malachite_base::num::logic::traits::BitIterable;
         self.0.bits()
     }
-}
-
-pub fn primes() -> impl Iterator<Item = usize> {
-    use malachite_base::num::factorization::traits::Primes;
-    usize::primes()
 }
 
 impl TryInto<usize> for Natural {

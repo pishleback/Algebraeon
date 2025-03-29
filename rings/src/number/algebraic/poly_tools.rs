@@ -1,7 +1,5 @@
 use crate::{polynomial::*, structure::*};
-
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::rational::*;
+use algebraeon_nzq::*;
 
 pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));

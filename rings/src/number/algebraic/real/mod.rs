@@ -1,19 +1,15 @@
+use super::{bisection_gen::RationalSimpleBetweenGenerator, poly_tools::*};
 use crate::{polynomial::*, structure::*};
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use bounds::*;
 use interval::*;
 use polynomial::*;
 use std::{fmt::Display, rc::Rc};
 
-use super::{bisection_gen::RationalSimpleBetweenGenerator, poly_tools::*, rat_to_string};
-
 mod bounds;
 mod interval;
 pub mod polynomial;
-
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::rational::*;
 
 #[derive(Debug, Clone)]
 pub struct RealAlgebraicRoot {
@@ -145,9 +141,9 @@ impl Display for RealAlgebraicRoot {
             let m = (&root.tight_a + &root.tight_b) / Rational::TWO;
 
             write!(f, "≈")?;
-            write!(f, "{}", rat_to_string(m))?;
+            write!(f, "{}", m.decimal_string_approx())?;
             // write!(f, "±");
-            // write!(f, "{}", rat_to_string(self.accuracy() / Rational::TWO));
+            // write!(f, "{}", decimal_string_approx(self.accuracy() / Rational::TWO));
         }
         Ok(())
     }

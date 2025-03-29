@@ -1,6 +1,6 @@
 use super::polynomial::*;
 use crate::structure::*;
-use algebraeon_nzq::natural::*;
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
 use std::collections::HashMap;
@@ -1030,7 +1030,7 @@ where
 mod tests {
     use crate::structure::IntoErgonomic;
 
-    use algebraeon_nzq::integer::*;
+    use algebraeon_nzq::*;
 
     use super::*;
 

@@ -11,3 +11,6 @@ readme = "../README.md"
 
 [lib]
 name = "algebraeon_sets"
+
+[dependencies]
+malachite-base = "0.5.1"

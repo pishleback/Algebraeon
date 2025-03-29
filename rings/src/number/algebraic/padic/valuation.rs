@@ -1,12 +1,6 @@
-use std::ops::{Add, Mul, Sub};
-
 use super::*;
-
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::rational::*;
-use algebraeon_nzq::traits::Abs;
-use algebraeon_nzq::traits::DivMod;
+use algebraeon_nzq::traits::{Abs, DivMod};
+use std::ops::{Add, Mul, Sub};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Valuation {

@@ -1,3 +1,5 @@
+//! Traits for operations on numbers not covered by the standard library.
+
 pub trait DivMod<T> {
     type DivOutput;
     type ModOutput;

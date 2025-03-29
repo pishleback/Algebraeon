@@ -5,7 +5,7 @@ use crate::structure::*;
 use super::polynomial::*;
 use algebraeon_sets::structure::*;
 
-use algebraeon_nzq::natural::*;
+use algebraeon_nzq::*;
 
 #[derive(Debug, Clone)]
 enum HenselProduct<
@@ -591,7 +591,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::integer::*;
+    use algebraeon_nzq::*;
 
     use super::*;
 

@@ -1,11 +1,9 @@
 use crate::structure::*;
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 pub mod factorization;
 pub mod functions;
-
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
 
 impl SemiRingStructure for CannonicalStructure<Natural> {
     fn zero(&self) -> Self::Set {

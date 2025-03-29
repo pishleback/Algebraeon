@@ -1,11 +1,9 @@
+use super::bisection_gen::RationalSimpleBetweenGenerator;
 use super::poly_tools::*;
 use super::real::RealAlgebraic;
-use super::{bisection_gen::RationalSimpleBetweenGenerator, rat_to_string};
 use crate::polynomial::*;
 use crate::structure::*;
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::rational::*;
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use boxes::*;
 use std::{collections::HashSet, fmt::Display, rc::Rc, str::FromStr};
@@ -267,15 +265,15 @@ impl Display for ComplexAlgebraicRoot {
             let m_im = (&root.tight_c + &root.tight_d) / Rational::TWO;
 
             write!(f, "≈")?;
-            write!(f, "{}", rat_to_string(m_re))?;
+            write!(f, "{}", m_re.decimal_string_approx())?;
             // write!(f, "±");
-            // write!(f, "{}", rat_to_string(self.accuracy_re() / Rational::TWO));
+            // write!(f, "{}", decimal_string_approx(self.accuracy_re() / Rational::TWO));
             if m_im >= Rational::ZERO {
                 write!(f, "+")?;
             }
-            write!(f, "{}", rat_to_string(m_im))?;
+            write!(f, "{}", m_im.decimal_string_approx())?;
             // write!(f, "±");
-            // write!(f, "{}", rat_to_string(self.accuracy_im() / Rational::TWO));
+            // write!(f, "{}", decimal_string_approx(self.accuracy_im() / Rational::TWO));
             write!(f, "i")?;
         }
         Ok(())
@@ -858,8 +856,8 @@ impl UnitsStructure for CannonicalStructure<ComplexAlgebraic> {
 
                     // println!(
                     //     "w = {} + {} i",
-                    //     rat_to_string(w_re.clone()),
-                    //     rat_to_string(w_im.clone())
+                    //     decimal_string_approx(w_re.clone()),
+                    //     decimal_string_approx(w_im.clone())
                     // );
 
                     //refine until eps < |a|
@@ -889,13 +887,13 @@ impl UnitsStructure for CannonicalStructure<ComplexAlgebraic> {
 
                     // println!(
                     //     "w_inv = {} + {} i",
-                    //     rat_to_string(w_recip_re),
-                    //     rat_to_string(w_recip_im)
+                    //     decimal_string_approx(w_recip_re),
+                    //     decimal_string_approx(w_recip_im)
                     // );
                     // println!(
                     //     "eps = {}  delta = {}",
-                    //     rat_to_string(eps),
-                    //     rat_to_string(delta)
+                    //     decimal_string_approx(eps),
+                    //     decimal_string_approx(delta)
                     // );
 
                     match inv_poly.count_complex_roots(

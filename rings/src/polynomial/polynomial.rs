@@ -8,7 +8,7 @@ use crate::linear::matrix::*;
 use super::super::structure::*;
 use algebraeon_sets::structure::*;
 
-use algebraeon_nzq::natural::*;
+use algebraeon_nzq::*;
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {
@@ -1149,12 +1149,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::number::finite_fields::quaternary_field::*;
-
-    use algebraeon_nzq::integer::*;
-    use algebraeon_nzq::rational::*;
-
     use super::*;
+    use crate::number::finite_fields::quaternary_field::*;
 
     #[test]
     fn test_constant_var_pow() {

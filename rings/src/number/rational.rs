@@ -1,11 +1,9 @@
-use std::rc::Rc;
-
 use crate::polynomial::PolynomialStructure;
 use crate::structure::*;
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::rational::*;
 use algebraeon_nzq::traits::*;
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use std::rc::Rc;
 
 impl SemiRingStructure for CannonicalStructure<Rational> {
     fn zero(&self) -> Self::Set {

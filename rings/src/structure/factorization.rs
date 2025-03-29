@@ -1,7 +1,7 @@
 use std::{fmt::Display, rc::Rc};
 
 use super::structure::*;
-use algebraeon_nzq::natural::*;
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
@@ -350,8 +350,6 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationStructure>(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use algebraeon_nzq::integer::*;
 
     #[test]
     fn factorization_invariants() {

@@ -356,7 +356,7 @@ pub fn compose_affine_embeddings<
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::rational::*;
+    use algebraeon_nzq::Rational;
     use algebraeon_sets::structure::*;
 
     use super::*;

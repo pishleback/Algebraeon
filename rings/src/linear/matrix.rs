@@ -6,7 +6,7 @@ use itertools::Itertools;
 use super::subspace::*;
 use crate::polynomial::*;
 use crate::structure::*;
-use algebraeon_nzq::natural::*;
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 #[derive(Debug)]
@@ -2377,14 +2377,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
-    use algebraeon_nzq::integer::*;
-    use algebraeon_nzq::rational::*;
-
-    use crate::number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic};
-
     use super::*;
+    use crate::number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic};
+    use algebraeon_nzq::*;
 
     #[test]
     fn test_join_rows() {

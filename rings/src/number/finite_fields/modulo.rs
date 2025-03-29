@@ -1,10 +1,7 @@
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
-
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
-
 use std::rc::Rc;
 use std::{fmt::Display, hash::Hash};
 

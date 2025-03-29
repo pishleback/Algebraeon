@@ -204,7 +204,7 @@ mod tests {
 
     use super::*;
 
-    use algebraeon_nzq::integer::*;
+    use algebraeon_nzq::*;
 
     #[test]
     fn test() {

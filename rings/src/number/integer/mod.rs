@@ -1,20 +1,14 @@
+use super::natural::factorization::factor;
+use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
-
-use crate::structure::*;
-use algebraeon_nzq::natural::*;
-
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 pub mod berlekamp_zassenhaus;
 pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
-
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::rational::*;
-
-use super::natural::factorization::factor;
 
 impl SemiRingStructure for CannonicalStructure<Integer> {
     fn zero(&self) -> Self::Set {

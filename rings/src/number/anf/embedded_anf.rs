@@ -1,14 +1,12 @@
-use std::rc::Rc;
-
 use super::number_field::AlgebraicNumberFieldStructure;
 use crate::structure::*;
 use crate::{
     number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
     polynomial::*,
 };
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::rational::*;
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {

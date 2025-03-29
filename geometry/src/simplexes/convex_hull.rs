@@ -799,10 +799,9 @@ where
 }
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::rational::*;
-    use algebraeon_sets::structure::*;
-
     use super::*;
+    use algebraeon_nzq::Rational;
+    use algebraeon_sets::structure::*;
 
     #[test]
     fn construct_convex_hull() {

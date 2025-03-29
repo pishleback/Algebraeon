@@ -1,8 +1,4 @@
 use super::*;
-
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::rational::*;
 use algebraeon_nzq::traits::Abs;
 
 fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {

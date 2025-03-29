@@ -1,4 +1,5 @@
 use super::*;
+use algebraeon_sets::number_theory::primes;
 use std::borrow::Borrow;
 
 pub fn factorial(n: impl Borrow<Natural>) -> Natural {

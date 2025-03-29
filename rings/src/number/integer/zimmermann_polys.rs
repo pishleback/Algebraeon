@@ -3,7 +3,7 @@
 use std::str::FromStr;
 
 use crate::{polynomial::*, structure::IntoErgonomic};
-use algebraeon_nzq::integer::*;
+use algebraeon_nzq::*;
 
 // https://homepages.loria.fr/PZimmermann/mupad/
 

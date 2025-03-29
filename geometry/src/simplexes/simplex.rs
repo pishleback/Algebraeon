@@ -1,6 +1,5 @@
-use itertools::Itertools;
-
 use super::*;
+use itertools::Itertools;
 
 #[derive(Clone)]
 pub struct Simplex<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> {
@@ -541,10 +540,9 @@ pub fn simplex_intersect_negative_side_hyperplane<
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::rational::*;
-    use algebraeon_sets::structure::*;
-
     use super::*;
+    use algebraeon_nzq::Rational;
+    use algebraeon_sets::structure::*;
 
     #[test]
     fn make_simplex() {

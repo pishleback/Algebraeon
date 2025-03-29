@@ -1,13 +1,9 @@
 use crate::{number::natural::factorization::primes::*, polynomial::*, structure::*};
-
-pub mod valuation;
+use algebraeon_nzq::*;
 use valuation::*;
 
 mod isolate;
-
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::rational::*;
+pub mod valuation;
 
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {

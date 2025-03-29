@@ -1,11 +1,8 @@
 use super::embedded_anf::anf_multi_primitive_element_theorem;
 use crate::{linear::matrix::*, polynomial::*, structure::*};
+use algebraeon_nzq::{Integer, Natural, Rational, traits::Abs};
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-
-use algebraeon_nzq::natural::*;
-use algebraeon_nzq::rational::*;
-use algebraeon_nzq::{integer::*, traits::Abs};
 
 pub type AlgebraicNumberFieldStructure = FieldExtensionStructure<CannonicalStructure<Rational>>;
 

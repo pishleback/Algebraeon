@@ -1,6 +1,5 @@
-use algebraeon_nzq::integer::*;
-use algebraeon_nzq::natural::*;
 use algebraeon_nzq::traits::Abs;
+use algebraeon_nzq::*;
 use itertools::Itertools;
 use std::{
     borrow::Borrow,

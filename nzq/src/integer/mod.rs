@@ -1,3 +1,5 @@
+//! The Integer type and operations.
+
 use crate::natural::*;
 use crate::traits::*;
 use algebraeon_sets::structure::*;

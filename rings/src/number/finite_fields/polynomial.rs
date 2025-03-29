@@ -1,15 +1,12 @@
-use std::rc::Rc;
-
-use algebraeon_sets::structure::*;
-use itertools::Itertools;
-
 use crate::{
     linear::{matrix::*, subspace::*},
     polynomial::*,
     structure::*,
 };
-
-use algebraeon_nzq::natural::*;
+use algebraeon_nzq::*;
+use algebraeon_sets::structure::*;
+use itertools::Itertools;
+use std::rc::Rc;
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
 /*
@@ -610,7 +607,6 @@ where
 mod tests {
     use super::*;
     use crate::number::finite_fields::{modulo::*, quaternary_field::QuaternaryField};
-    use algebraeon_nzq::integer::*;
 
     #[test]
     fn test_distinct_degree_and_cantor_zassenhaus_factorization_f2() {

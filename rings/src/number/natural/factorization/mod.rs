@@ -227,7 +227,7 @@ pub fn factor(n: Natural) -> Option<FactoredNatural> {
         f.partially_factor_by_method(|n| {
             (
                 exclude_prime_inputs(n, |n| {
-                    let mut rng = algebraeon_nzq::random::Rng::new();
+                    let mut rng = algebraeon_nzq::Rng::new(0);
                     for fith_target_factor_digits in vec![2, 3, 2, 4, 2, 3].into_iter().cycle() {
                         if let Ok(d) = ecm::ecm_one_factor_target_digits(
                             &n,

@@ -4,7 +4,7 @@ use std::rc::Rc;
 use crate::structure::*;
 use algebraeon_sets::structure::*;
 
-use algebraeon_nzq::natural::*;
+use algebraeon_nzq::*;
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

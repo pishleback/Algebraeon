@@ -1,3 +1,5 @@
+//! The Rational type and operations.
+
 use crate::integer::*;
 use crate::natural::*;
 use crate::traits::*;
@@ -453,6 +455,25 @@ impl Rational {
             Err(_) => Err(()),
         }
     }
+
+    pub fn decimal_string_approx(&self) -> String {
+        if self == &Rational::ZERO {
+            return "0".into();
+        }
+        let neg = self < &Rational::ZERO;
+        let (mant, exp, _): (f64, _, _) = self
+            .to_malachite_ref()
+            .sci_mantissa_and_exponent_round_ref(
+                malachite_base::rounding_modes::RoundingMode::Nearest,
+            )
+            .unwrap();
+        let mut b = (2.0 as f64).powf(exp as f64) * mant;
+        if neg {
+            b = -b;
+        }
+        b = (1000.0 * b).round() / 1000.0;
+        b.to_string()
+    }
 }
 
 impl MetaType for Rational {
@@ -461,21 +482,4 @@ impl MetaType for Rational {
     fn structure() -> std::rc::Rc<Self::Structure> {
         CannonicalStructure::new().into()
     }
-}
-
-pub fn rat_to_string(a: Rational) -> String {
-    if a == Rational::ZERO {
-        return "0".into();
-    }
-    let neg = a < Rational::from(0);
-    let (mant, exp, _): (f64, _, _) = a
-        .to_malachite()
-        .sci_mantissa_and_exponent_round(malachite_base::rounding_modes::RoundingMode::Nearest)
-        .unwrap();
-    let mut b = (2.0 as f64).powf(exp as f64) * mant;
-    if neg {
-        b = -b;
-    }
-    b = (1000.0 * b).round() / 1000.0;
-    b.to_string()
 }

@@ -35,10 +35,8 @@ use crate::{
     number::natural::{factorization::primes::is_prime, functions::gcd},
     structure::MetaSemiRing,
 };
-use algebraeon_nzq::{
-    natural::{Natural, primes},
-    random::Rng,
-};
+use algebraeon_nzq::{Natural, Rng};
+use algebraeon_sets::number_theory::primes;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;
 
@@ -362,7 +360,7 @@ pub fn ecm_one_factor_raw(
 
     // Search over the curves in parallel
     let result = (0..max_curve)
-        .map(|_| (n - Natural::from(7u32)).random_below(rng) + Natural::from(6u32))
+        .map(|_| rng.random_below(n - Natural::from(7u32)) + Natural::from(6u32))
         .collect::<Vec<_>>()
         .into_par_iter()
         .find_map_any(|sigma| {

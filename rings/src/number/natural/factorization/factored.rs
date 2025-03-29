@@ -1,4 +1,4 @@
-use algebraeon_nzq::natural::Natural;
+use algebraeon_nzq::Natural;
 use itertools::Itertools;
 use std::collections::HashMap;
 

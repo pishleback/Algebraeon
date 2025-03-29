@@ -1,11 +1,8 @@
-use std::{borrow::Borrow, fmt::Debug, rc::Rc};
-
-use crate::polynomial::*;
-use algebraeon_nzq::{integer::*, natural::*, rational::*, traits::*};
-
-use algebraeon_sets::structure::*;
-
 use super::factorization::*;
+use crate::polynomial::*;
+use algebraeon_nzq::{Integer, Natural, Rational, traits::*};
+use algebraeon_sets::structure::*;
+use std::{borrow::Borrow, fmt::Debug, rc::Rc};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RingDivisionError {

@@ -1145,10 +1145,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::integer::*;
-    use algebraeon_nzq::rational::*;
-
     use super::*;
+    use algebraeon_nzq::*;
 
     #[test]
     fn linear_lattice_invariant() {
