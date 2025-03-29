@@ -4,7 +4,7 @@ use std::borrow::Borrow;
 
 use super::natural::*;
 
-/// An object for generating pseudo-random numbers.
+/// For generating pseudo-random numbers.
 pub struct Rng {
     rng: malachite_base::num::random::RandomPrimitiveInts<u64>,
 }
