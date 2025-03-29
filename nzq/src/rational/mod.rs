@@ -11,6 +11,7 @@ use std::{
     str::FromStr,
 };
 
+/// Represent a rational number - a number of the form `a`/`b` where `a` is an integer and `b` is a non-zero integer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Rational(malachite_q::Rational);
 
