@@ -1,5 +1,9 @@
 # Algebraeon
-Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API is currently highly unstable and subject to change. Algebraeon uses [Malachite](https://www.malachite.rs/) for arbitrary sized integer and rational numbers.
+Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API is highly unstable and subject to change. 
+
+The documentation for the latest release can be found [here](https://docs.rs/algebraeon/latest/algebraeon/).
+
+Algebraeon uses [Malachite](https://www.malachite.rs/) for arbitrary sized integer and rational numbers.
 
 # Usage
 Add
