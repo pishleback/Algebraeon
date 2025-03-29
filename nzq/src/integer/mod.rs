@@ -9,6 +9,7 @@ use std::{
     str::FromStr,
 };
 
+/// Represent an integer {..., -2, -1, 0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Integer(malachite_nz::integer::Integer);
 
