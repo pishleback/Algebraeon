@@ -2379,7 +2379,7 @@ where
 mod tests {
     use super::*;
     use crate::number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic};
-    use algebraeon_nzq::*;
+    use std::str::FromStr;
 
     #[test]
     fn test_join_rows() {
