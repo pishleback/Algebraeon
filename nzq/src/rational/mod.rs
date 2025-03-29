@@ -417,6 +417,10 @@ impl Ceil for &Rational {
 }
 
 impl Rational {
+    /// Construct a rational number `n`/`d` from a pair of integers `n` and `d`.
+    ///
+    /// # Panics
+    /// When `d` = 0
     pub fn from_integers(n: impl Into<Integer>, d: impl Into<Integer>) -> Self {
         Self(malachite_q::Rational::from_integers(
             n.into().to_malachite(),
@@ -424,6 +428,7 @@ impl Rational {
         ))
     }
 
+    /// Return (`n`, `d`) where |`self`| = `n`/`d` and `n` is coprime to `d`.
     pub fn into_abs_numerator_and_denominator(self) -> (Natural, Natural) {
         let (n, d) = self.0.into_numerator_and_denominator();
         (Natural::from_malachite(n), Natural::from_malachite(d))
@@ -441,12 +446,13 @@ impl Rational {
         ))
     }
 
-    pub fn exhaustive_rationals() -> impl Iterator<Item = Rational> {
-        malachite_q::exhaustive::exhaustive_rationals().map(|v| Rational(v))
-    }
-
     pub fn approximate(self, max_denominator: &Natural) -> Self {
         Self(self.0.approximate(max_denominator.to_malachite_ref()))
+    }
+
+    /// An iterator over all rational numbers.
+    pub fn exhaustive_rationals() -> impl Iterator<Item = Rational> {
+        malachite_q::exhaustive::exhaustive_rationals().map(|v| Rational(v))
     }
 
     pub fn try_from_float_simplest(x: f64) -> Result<Self, ()> {
