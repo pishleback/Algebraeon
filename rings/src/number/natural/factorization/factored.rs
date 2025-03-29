@@ -1,4 +1,4 @@
-use algebraeon_nzq::Natural;
+use algebraeon_nzq::{Natural, traits::ModPow};
 use itertools::Itertools;
 use std::collections::HashMap;
 
@@ -113,7 +113,7 @@ impl FactoredNatural {
             let phi_n = n_factored.euler_totient();
             let x_mod_n = x % &n;
             for p in factor(phi_n.clone()).unwrap().distinct_prime_factors() {
-                if x_mod_n.mod_pow_ref(&phi_n / p, &n) == Natural::ONE {
+                if (&x_mod_n).mod_pow(&phi_n / p, &n) == Natural::ONE {
                     return IsPrimitiveRootResult::No;
                 }
             }

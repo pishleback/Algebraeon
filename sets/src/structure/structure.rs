@@ -1,22 +1,20 @@
 use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, rc::Rc};
 
+/// Instances of a type implementing this trait represent
+/// a set of elements of type `Self::Set` with some
+/// structure, for example, the structure of a ring.
 pub trait Structure: Clone + Debug + PartialEq + Eq {
     type Set: Clone + Debug;
+}
+
+pub trait MetaType: Clone + Debug {
+    type Structure: Structure<Set = Self>;
+    fn structure() -> Rc<Self::Structure>;
 }
 
 #[derive(Debug, Clone)]
 pub struct CannonicalStructure<T: MetaType> {
     _ghost: std::marker::PhantomData<T>,
-}
-impl<T: MetaType> PartialEq for CannonicalStructure<T> {
-    fn eq(&self, _: &Self) -> bool {
-        true
-    }
-}
-impl<T: MetaType> Eq for CannonicalStructure<T> {}
-pub trait MetaType: Clone + Debug {
-    type Structure: Structure<Set = Self>;
-    fn structure() -> Rc<Self::Structure>;
 }
 
 impl<T: MetaType> CannonicalStructure<T> {
@@ -26,9 +24,18 @@ impl<T: MetaType> CannonicalStructure<T> {
         }
     }
 }
+
 impl<T: MetaType> Structure for CannonicalStructure<T> {
     type Set = T;
 }
+
+impl<T: MetaType> PartialEq for CannonicalStructure<T> {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl<T: MetaType> Eq for CannonicalStructure<T> {}
 
 pub fn common_structure<S: Structure>(
     structure1: impl Borrow<Rc<S>>,

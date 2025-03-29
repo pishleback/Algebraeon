@@ -35,7 +35,7 @@ use crate::{
     number::natural::{factorization::primes::is_prime, functions::gcd},
     structure::MetaSemiRing,
 };
-use algebraeon_nzq::{Natural, Rng};
+use algebraeon_nzq::{Natural, Rng, traits::ModInv};
 use algebraeon_sets::number_theory::primes;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;
@@ -155,8 +155,8 @@ impl PartialEq for Point {
             return false;
         }
 
-        (self.z_cord.mod_inv_ref(modulus).unwrap() * &self.x_cord) % modulus
-            == (other.z_cord.mod_inv_ref(modulus).unwrap() * &other.x_cord) % modulus
+        ((&self.z_cord).mod_inv(modulus).unwrap() * &self.x_cord) % modulus
+            == ((&other.z_cord).mod_inv(modulus).unwrap() * &other.x_cord) % modulus
     }
 }
 
@@ -374,10 +374,10 @@ pub fn ecm_one_factor_raw(
             // to use a24 = (a + 2)*invert(4, n) in the calculation.
             let u3_16_v = Natural::from(16u32) * &u3 * &v;
             let a24 = match u3_16_v.mod_inv(n) {
-                Ok(u3_16_v_inv) => {
+                Some(u3_16_v_inv) => {
                     (&diff * &diff * &diff * (Natural::from(3u32) * &u + &v) * u3_16_v_inv) % n
                 }
-                Err(()) => {
+                None => {
                     let g = gcd(Natural::from(2u32) * u3 * v, n.clone());
                     debug_assert_ne!(g, Natural::ONE);
                     if &g == n {

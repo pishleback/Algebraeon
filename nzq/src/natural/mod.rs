@@ -16,6 +16,7 @@ use std::{
     str::FromStr,
 };
 
+/// Represents a natural number {0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Natural(malachite_nz::natural::Natural);
 
@@ -515,49 +516,63 @@ impl AbsDiff<&Natural> for &Natural {
     }
 }
 
+impl<Exponent: Borrow<Natural>, Modulus: Borrow<Natural>> ModPow<Exponent, Modulus> for Natural {
+    type Output = Natural;
+    fn mod_pow(self, exp: Exponent, m: Modulus) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::ModPow;
+        Natural((self.0 % &m.borrow().0).mod_pow(&exp.borrow().0, &m.borrow().0))
+    }
+}
+
+impl<Exponent: Borrow<Natural>, Modulus: Borrow<Natural>> ModPow<Exponent, Modulus> for &Natural {
+    type Output = Natural;
+    fn mod_pow(self, exp: Exponent, m: Modulus) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::ModPow;
+        Natural((&self.0 % &m.borrow().0).mod_pow(&exp.borrow().0, &m.borrow().0))
+    }
+}
+
+impl<Modulus: Borrow<Natural>> ModInv<Modulus> for Natural {
+    type Output = Option<Natural>;
+    fn mod_inv(self, m: Modulus) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::ModInverse;
+        Some(Natural(
+            (self.0 % &m.borrow().0).mod_inverse(&m.borrow().0)?,
+        ))
+    }
+}
+
+impl<Modulus: Borrow<Natural>> ModInv<Modulus> for &Natural {
+    type Output = Option<Natural>;
+    fn mod_inv(self, m: Modulus) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::ModInverse;
+        Some(Natural(
+            (&self.0 % &m.borrow().0).mod_inverse(&m.borrow().0)?,
+        ))
+    }
+}
+
 impl Natural {
+    /// 2 raised to the power of `pow`.
+    /// ```
+    /// use algebraeon_nzq::Natural;
+    /// assert_eq!(
+    ///     Natural::from(32u32),
+    ///     Natural::power_of_2(5)
+    /// );
+    /// ```
     pub fn power_of_2(pow: u64) -> Self {
         Self(malachite_nz::natural::Natural::power_of_2(pow))
     }
 
-    pub fn mod_pow(self, exp: impl Borrow<Self>, m: impl Borrow<Self>) -> Self {
-        use malachite_base::num::arithmetic::traits::ModPow;
-        Self(self.0.mod_pow(&exp.borrow().0, &m.borrow().0))
-    }
-
-    pub fn mod_pow_ref(&self, exp: impl Borrow<Self>, m: impl Borrow<Self>) -> Self {
-        use malachite_base::num::arithmetic::traits::ModPow;
-        Self((&self.0).mod_pow(&exp.borrow().0, &m.borrow().0))
-    }
-
-    pub fn mod_inv(self, modulus: &Natural) -> Result<Self, ()> {
-        use malachite_base::num::arithmetic::traits::ExtendedGcd;
-        if modulus.0 == malachite_nz::natural::Natural::ZERO {
-            Err(())
-        } else {
-            let (g, a, _b) = self.0.extended_gcd(&modulus.0);
-            if g == malachite_nz::natural::Natural::ONE {
-                Ok(Integer::from_malachite(a) % modulus)
-            } else {
-                Err(())
-            }
-        }
-    }
-
-    pub fn mod_inv_ref(&self, modulus: &Natural) -> Result<Self, ()> {
-        use malachite_base::num::arithmetic::traits::ExtendedGcd;
-        if modulus.0 == malachite_nz::natural::Natural::ZERO {
-            Err(())
-        } else {
-            let (g, a, _b) = (&self.0).extended_gcd(&modulus.0);
-            if g == malachite_nz::natural::Natural::ONE {
-                Ok(Integer::from_malachite(a) % modulus)
-            } else {
-                Err(())
-            }
-        }
-    }
-
+    /// An iterator over the bits in the binary expansion.
+    /// ```
+    /// use algebraeon_nzq::Natural;
+    /// assert_eq!(
+    ///     Natural::from(11u32).bits().collect::<Vec<_>>(),
+    ///     vec![true, true, false, true],
+    /// );
+    /// ```
     pub fn bits<'a>(
         &'a self,
     ) -> impl Iterator<Item = bool> + ExactSizeIterator + DoubleEndedIterator + 'a {
