@@ -6,13 +6,15 @@ use super::generating_set::*;
 use super::group::*;
 
 #[derive(Clone)]
-pub struct Homomorphism<DomainT: Borrow<Group> + Clone, RangeT: Borrow<Group> + Clone> {
+pub struct Homomorphism<DomainT: Borrow<FiniteGroup> + Clone, RangeT: Borrow<FiniteGroup> + Clone> {
     domain: DomainT,
     range: RangeT,
-    func: Vec<usize>, //func : domain -> range    y = funx[x]
+    func: Vec<usize>, //func : domain -> range    y = func[x]
 }
 
-impl<DomainT: Borrow<Group> + Clone, RangeT: Borrow<Group> + Clone> Homomorphism<DomainT, RangeT> {
+impl<DomainT: Borrow<FiniteGroup> + Clone, RangeT: Borrow<FiniteGroup> + Clone>
+    Homomorphism<DomainT, RangeT>
+{
     pub fn check_state(&self) -> Result<(), &'static str> {
         //is function
         if self.func.len() != self.domain.borrow().size() {
@@ -82,14 +84,17 @@ impl<DomainT: Borrow<Group> + Clone, RangeT: Borrow<Group> + Clone> Homomorphism
 }
 
 #[derive(Clone)]
-pub struct Isomorphism<LeftGrpT: Borrow<Group> + Clone, RightGrpT: Borrow<Group> + Clone> {
+pub struct Isomorphism<
+    LeftGrpT: Borrow<FiniteGroup> + Clone,
+    RightGrpT: Borrow<FiniteGroup> + Clone,
+> {
     left_group: LeftGrpT,
     right_group: RightGrpT,
     left_func: Vec<usize>,
     right_func: Vec<usize>,
 }
 
-impl<LeftGrpT: Borrow<Group> + Clone, RightGrpT: Borrow<Group> + Clone>
+impl<LeftGrpT: Borrow<FiniteGroup> + Clone, RightGrpT: Borrow<FiniteGroup> + Clone>
     Isomorphism<LeftGrpT, RightGrpT>
 {
     pub fn check_state(&self) -> Result<(), &'static str> {
@@ -136,9 +141,9 @@ impl<LeftGrpT: Borrow<Group> + Clone, RightGrpT: Borrow<Group> + Clone>
 //return an isomorphism from domain to range if one exists
 //return None if no isomorphism exists
 pub fn find_isomorphism<'a, 'b>(
-    domain: &'a Group,
-    range: &'b Group,
-) -> Option<Isomorphism<&'a Group, &'b Group>> {
+    domain: &'a FiniteGroup,
+    range: &'b FiniteGroup,
+) -> Option<Isomorphism<&'a FiniteGroup, &'b FiniteGroup>> {
     let group_size = domain.size();
     if group_size != range.size() {
         return None;
@@ -154,7 +159,7 @@ pub fn find_isomorphism<'a, 'b>(
     }
 
     impl ElementProfile {
-        fn new(x: usize, group: &Group) -> Self {
+        fn new(x: usize, group: &FiniteGroup) -> Self {
             debug_assert!(x < group.size());
             ElementProfile {
                 order: group.order(x).unwrap(),
@@ -198,7 +203,7 @@ pub fn find_isomorphism<'a, 'b>(
     }
 
     fn find_new_gen_info<'c>(
-        domain: &'c Group,
+        domain: &'c FiniteGroup,
         domain_elem_profiles: &Vec<ElementProfile>,
         range_elem_profiles: &HashMap<ElementProfile, Vec<usize>>,
     ) -> Result<GenInfo<'c>, ()> {

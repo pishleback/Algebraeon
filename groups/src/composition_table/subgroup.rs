@@ -46,7 +46,7 @@ impl<'a> Subgroup<'a> {
         self.subset.size()
     }
 
-    pub fn to_group(&self) -> Group {
+    pub fn to_group(&self) -> FiniteGroup {
         let sg_elems: Vec<usize> = self.subset.elems().clone().into_iter().collect();
         let k = sg_elems.len();
         let mut group_to_subgroup: Vec<Option<usize>> = vec![None; self.subset.group().size()];
@@ -54,7 +54,7 @@ impl<'a> Subgroup<'a> {
             group_to_subgroup[*x] = Some(i);
         }
         //TODO: add a test that this group has valid structure
-        Group::new_unchecked(
+        FiniteGroup::new_unchecked(
             self.size(),
             group_to_subgroup[self.subset.group().ident()].unwrap(),
             (0..k)
@@ -75,7 +75,7 @@ impl<'a> Subgroup<'a> {
         )
     }
 
-    pub fn left_cosets(&self) -> Partition {
+    pub fn left_cosets(&self) -> GroupPartition {
         let mut cosets: Vec<BTreeSet<usize>> = vec![];
         let mut coset_lookup = vec![0; self.subset.group().size()];
         let mut missing: HashSet<usize> = self.subset.group().elems().collect();
@@ -88,13 +88,13 @@ impl<'a> Subgroup<'a> {
             }
             cosets.push(coset);
         }
-        Partition {
+        GroupPartition {
             group: self.subset.group(),
-            state: PartitionState::new_unchecked(cosets, coset_lookup),
+            state: SetPartition::new_unchecked(cosets, coset_lookup),
         }
     }
 
-    pub fn right_cosets(&self) -> Partition {
+    pub fn right_cosets(&self) -> GroupPartition {
         let mut cosets: Vec<BTreeSet<usize>> = vec![];
         let mut coset_lookup = vec![0; self.subset.group().size()];
         let mut missing: HashSet<usize> = self.subset.group().elems().collect();
@@ -107,9 +107,9 @@ impl<'a> Subgroup<'a> {
             }
             cosets.push(coset);
         }
-        Partition {
+        GroupPartition {
             group: self.subset.group(),
-            state: PartitionState::new_unchecked(cosets, coset_lookup),
+            state: SetPartition::new_unchecked(cosets, coset_lookup),
         }
     }
 
@@ -202,7 +202,7 @@ mod subgroup_tests {
         assert_eq!(cosets.size(), 3);
         assert!(
             cosets
-                == Partition::from_subsets(
+                == GroupPartition::from_subsets(
                     &grp,
                     vec![
                         vec![
@@ -251,7 +251,7 @@ mod subgroup_tests {
         assert_eq!(cosets.size(), 3);
         assert!(
             cosets
-                == Partition::from_subsets(
+                == GroupPartition::from_subsets(
                     &grp,
                     vec![
                         vec![

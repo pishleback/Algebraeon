@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
-use crate::group::Group;
+use crate::structure::Group;
 
 use super::c2::C2;
 
@@ -148,7 +148,7 @@ impl<const N: usize> Permutation<N> {
     }
 
     pub fn symmetric_composition_table() -> (
-        crate::composition_table::group::Group,
+        crate::composition_table::group::FiniteGroup,
         Vec<Self>,
         HashMap<Self, usize>,
     ) {
@@ -156,7 +156,7 @@ impl<const N: usize> Permutation<N> {
     }
 
     pub fn alternating_composition_table() -> (
-        crate::composition_table::group::Group,
+        crate::composition_table::group::FiniteGroup,
         Vec<Self>,
         HashMap<Self, usize>,
     ) {

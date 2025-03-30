@@ -4,13 +4,13 @@ use super::group::*;
 use super::subset::*;
 
 #[derive(Clone, Debug)]
-pub struct PartitionState {
+pub struct SetPartition {
     classes: Vec<BTreeSet<usize>>, //vector of conjugacy classes
-    lookup: Vec<usize>,            //for each element, the index of its conjugacy class
+    lookup: Vec<usize>,            //for each element, the index of its part class
 }
 
-impl PartitionState {
-    pub fn check_state(&self, group: &Group) -> Result<(), &'static str> {
+impl SetPartition {
+    pub fn check_state(&self, group: &FiniteGroup) -> Result<(), &'static str> {
         //is a partition
         let mut accounted_elems: HashSet<usize> = HashSet::new();
         for class in &self.classes {
@@ -52,14 +52,14 @@ impl PartitionState {
     }
 }
 
-pub struct Partition<'a> {
-    pub group: &'a Group,
-    pub state: PartitionState,
+pub struct GroupPartition<'a> {
+    pub group: &'a FiniteGroup,
+    pub state: SetPartition,
     // is_left_cosets: Option<bool>,
     // is_right_cosets: Option<bool>,
 }
 
-impl<'a> PartialEq for Partition<'a> {
+impl<'a> PartialEq for GroupPartition<'a> {
     fn eq(&self, other: &Self) -> bool {
         let grp = self.group;
         if !std::ptr::eq(grp, other.group) {
@@ -89,9 +89,9 @@ impl<'a> PartialEq for Partition<'a> {
     }
 }
 
-impl<'a> Eq for Partition<'a> {}
+impl<'a> Eq for GroupPartition<'a> {}
 
-impl<'a> Partition<'a> {
+impl<'a> GroupPartition<'a> {
     pub fn check_state(&self) -> Result<(), &'static str> {
         match self.state.check_state(self.group) {
             Err(msg) => {
@@ -133,7 +133,7 @@ impl<'a> Partition<'a> {
         self.is_left_cosets() && self.is_right_cosets()
     }
 
-    pub fn from_subsets(group: &'a Group, subsets: Vec<BTreeSet<usize>>) -> Result<Self, ()> {
+    pub fn from_subsets(group: &'a FiniteGroup, subsets: Vec<BTreeSet<usize>>) -> Result<Self, ()> {
         let classes = subsets;
         let mut lookup = vec![0; group.size()];
         for (class_idx, class) in classes.iter().enumerate() {
@@ -146,7 +146,7 @@ impl<'a> Partition<'a> {
         }
         let partition = Self {
             group,
-            state: PartitionState { classes, lookup },
+            state: SetPartition { classes, lookup },
         };
         match partition.check_state() {
             Ok(_) => {}
@@ -159,7 +159,7 @@ impl<'a> Partition<'a> {
 }
 
 pub struct Congruence<'a> {
-    pub partition: Partition<'a>,
+    pub partition: GroupPartition<'a>,
 }
 
 impl<'a> Congruence<'a> {
@@ -183,10 +183,10 @@ impl<'a> Congruence<'a> {
         self.partition.size()
     }
 
-    pub fn quotient_group(&self) -> Group {
+    pub fn quotient_group(&self) -> FiniteGroup {
         let n = self.size();
 
-        Group::new_unchecked(
+        FiniteGroup::new_unchecked(
             n,
             self.partition.state.lookup[self.partition.group.ident()],
             {
@@ -226,7 +226,7 @@ mod partition_tests {
         let grp = examples::cyclic_group_structure(6);
 
         //elements too big
-        let p = PartitionState {
+        let p = SetPartition {
             classes: vec![
                 vec![0, 1, 2, 3].into_iter().collect(),
                 vec![4, 5, 6].into_iter().collect(),
@@ -239,7 +239,7 @@ mod partition_tests {
         }
 
         //not a covering set
-        let p = PartitionState {
+        let p = SetPartition {
             classes: vec![
                 vec![0, 2].into_iter().collect(),
                 vec![3, 5].into_iter().collect(),
@@ -252,7 +252,7 @@ mod partition_tests {
         }
 
         //not disjoint
-        let p = PartitionState {
+        let p = SetPartition {
             classes: vec![
                 vec![0, 1, 2, 3].into_iter().collect(),
                 vec![2, 3, 4, 5].into_iter().collect(),
@@ -265,7 +265,7 @@ mod partition_tests {
         }
 
         //lookup values too big
-        let p = PartitionState {
+        let p = SetPartition {
             classes: vec![
                 vec![0, 1, 2].into_iter().collect(),
                 vec![3, 4, 5].into_iter().collect(),
@@ -278,7 +278,7 @@ mod partition_tests {
         }
 
         //incorrect lookup values
-        let p = PartitionState {
+        let p = SetPartition {
             classes: vec![
                 vec![0, 1, 2].into_iter().collect(),
                 vec![3, 4, 5].into_iter().collect(),

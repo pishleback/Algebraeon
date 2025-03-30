@@ -4,7 +4,7 @@ use super::group::*;
 use super::homomorphism::*;
 
 pub struct GeneratingSet<'a> {
-    group: &'a Group,
+    group: &'a FiniteGroup,
     gens: Vec<usize>,       //subset of group which generates it
     elems: Vec<Vec<usize>>, //each element of group written as a product of gens
 }
@@ -46,8 +46,8 @@ impl<'a> GeneratingSet<'a> {
     pub fn generated_homomorphism<'b>(
         &self,
         partial_func: &Vec<usize>,
-        range_group: &'b Group,
-    ) -> Result<Option<Homomorphism<&'a Group, &'b Group>>, &'static str> {
+        range_group: &'b FiniteGroup,
+    ) -> Result<Option<Homomorphism<&'a FiniteGroup, &'b FiniteGroup>>, &'static str> {
         if partial_func.len() != self.gens.len() {
             return Err("partial func entries should corespond to images for each generator");
         }
@@ -84,7 +84,7 @@ impl<'a> GeneratingSet<'a> {
     }
 }
 
-impl Group {
+impl FiniteGroup {
     fn try_find_generating_set(&self, max_size: Option<usize>) -> Result<GeneratingSet, ()> {
         let mut missing = HashSet::new();
         for x in self.elems() {

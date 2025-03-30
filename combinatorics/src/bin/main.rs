@@ -5,7 +5,7 @@ use std::str::FromStr;
 use std::task::Poll;
 
 use algebraeon_groups::examples::symmetric::*;
-use algebraeon_groups::group::*;
+use algebraeon_groups::structure::*;
 use algebraeon_rings::linear::matrix::*;
 use algebraeon_rings::number::finite_fields::modulo::*;
 use algebraeon_rings::polynomial::*;

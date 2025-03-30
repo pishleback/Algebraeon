@@ -44,7 +44,7 @@ impl<'a> NormalSubgroup<'a> {
         } //should be the same as right cosets
     }
 
-    pub fn quotient_group(&self) -> Group {
+    pub fn quotient_group(&self) -> FiniteGroup {
         self.cosets().quotient_group()
     }
 }

@@ -9,17 +9,17 @@ use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
 
-pub struct Group {
+pub struct FiniteGroup {
     n: usize,
     ident: usize,
     inv: Vec<usize>,
     mul: Vec<Vec<usize>>,
-    conjugacy_classes: Option<PartitionState>,
+    conjugacy_classes: Option<SetPartition>,
     is_abelian: Option<bool>,
     is_simple: Option<bool>,
 }
 
-impl Group {
+impl FiniteGroup {
     pub fn check_state(&self) -> Result<(), &'static str> {
         //check ident
         if !(self.ident < self.n) {
@@ -108,7 +108,7 @@ impl Group {
         inv: Vec<usize>,
         mul: Vec<Vec<usize>>,
     ) -> Result<Self, &'static str> {
-        let grp = Group {
+        let grp = FiniteGroup {
             n,
             ident,
             inv,
@@ -261,7 +261,7 @@ impl Group {
         }
     }
 
-    fn compute_conjugacy_classes(&self) -> PartitionState {
+    fn compute_conjugacy_classes(&self) -> SetPartition {
         let mut unclassified_elems = HashSet::<_>::from_iter(self.elems());
         let mut classes = vec![];
         let mut lookup = vec![0; self.n];
@@ -277,7 +277,7 @@ impl Group {
             }
             classes.push(class);
         }
-        PartitionState::new_unchecked(classes, lookup)
+        SetPartition::new_unchecked(classes, lookup)
     }
 
     pub fn cache_conjugacy_classes(&mut self) {
@@ -295,8 +295,8 @@ impl Group {
         }
     }
 
-    pub fn conjugacy_classes(&self) -> Partition {
-        Partition {
+    pub fn conjugacy_classes(&self) -> GroupPartition {
+        GroupPartition {
             group: self,
             state: match &self.conjugacy_classes {
                 Some(state) => state.clone(),
@@ -373,14 +373,14 @@ impl Group {
     }
 }
 
-pub fn direct_product_structure(group_one: &Group, group_two: &Group) -> Group {
+pub fn direct_product_structure(group_one: &FiniteGroup, group_two: &FiniteGroup) -> FiniteGroup {
     let m = group_one.n;
     let n = group_two.n;
 
     let single_to_pair = |i: usize| -> (usize, usize) { (i % m, i / m) };
     let pair_to_single = |i: usize, j: usize| -> usize { i + j * m };
 
-    Group {
+    FiniteGroup {
         n: m * n,
         ident: pair_to_single(group_one.ident, group_two.ident),
         inv: (0..m * n)
@@ -411,12 +411,12 @@ pub mod examples {
 
     use super::*;
 
-    pub fn trivial_group_structure() -> Group {
+    pub fn trivial_group_structure() -> FiniteGroup {
         cyclic_group_structure(1)
     }
 
-    pub fn cyclic_group_structure(n: usize) -> Group {
-        Group::from_raw_model_unchecked(
+    pub fn cyclic_group_structure(n: usize) -> FiniteGroup {
+        FiniteGroup::from_raw_model_unchecked(
             (0..n).collect(),
             || 0,
             |x: usize| (n - x) % n,
@@ -426,11 +426,11 @@ pub mod examples {
         )
     }
 
-    pub fn klein_four_structure() -> Group {
+    pub fn klein_four_structure() -> FiniteGroup {
         direct_product_structure(&cyclic_group_structure(2), &cyclic_group_structure(2))
     }
 
-    pub fn dihedral_group_structure(n: usize) -> Group {
+    pub fn dihedral_group_structure(n: usize) -> FiniteGroup {
         // dihedral group using the presentation
         // <a b : a^2 = b^2 = (ab)^n = e>
         assert!(1 <= n);
@@ -447,7 +447,7 @@ pub mod examples {
         grp
     }
 
-    pub fn quaternion_group_structure() -> Group {
+    pub fn quaternion_group_structure() -> FiniteGroup {
         // quaternion group using the presentation
         // <-1 i j k : (-1)^2 = 1  i^2 = j^2 = k^2 = ijk = -1>
         let mut grp = FinitelyGeneratedGroupPresentation::new();
@@ -466,11 +466,11 @@ pub mod examples {
         grp
     }
 
-    pub fn symmetric_group_structure(n: usize) -> Group {
+    pub fn symmetric_group_structure(n: usize) -> FiniteGroup {
         super::super::super::permutation::Permutation::symmetric_composition_table(n).0
     }
 
-    pub fn alternating_group_structure(n: usize) -> Group {
+    pub fn alternating_group_structure(n: usize) -> FiniteGroup {
         super::super::super::permutation::Permutation::alternating_composition_table(n).0
     }
 }

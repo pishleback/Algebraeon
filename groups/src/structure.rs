@@ -79,7 +79,7 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
     fn generated_finite_subgroup_table(
         generators: Vec<Self>,
     ) -> (
-        crate::composition_table::group::Group,
+        crate::composition_table::group::FiniteGroup,
         Vec<Self>,
         HashMap<Self, usize>,
     )
@@ -139,7 +139,8 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
             .map(|elem| *elem_to_idx.get(&Self::inverse_ref(elem)).unwrap())
             .collect_vec();
 
-        let grp = crate::composition_table::group::Group::new_unchecked(n, 0, inv, mul, None, None);
+        let grp =
+            crate::composition_table::group::FiniteGroup::new_unchecked(n, 0, inv, mul, None, None);
 
         #[cfg(debug_assertions)]
         grp.check_state().unwrap();

@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use itertools::Itertools;
 
-use super::{examples::c2::C2, group::Group};
+use super::{examples::c2::C2, structure::Group};
 
 #[derive(Debug, Clone)]
 pub struct Cycle {
@@ -152,7 +152,7 @@ impl Permutation {
     pub fn symmetric_composition_table(
         n: usize,
     ) -> (
-        crate::composition_table::group::Group,
+        crate::composition_table::group::FiniteGroup,
         Vec<Self>,
         HashMap<Self, usize>,
     ) {
@@ -166,7 +166,7 @@ impl Permutation {
     pub fn alternating_composition_table(
         n: usize,
     ) -> (
-        crate::composition_table::group::Group,
+        crate::composition_table::group::FiniteGroup,
         Vec<Self>,
         HashMap<Self, usize>,
     ) {

@@ -6,7 +6,7 @@ use super::subgroup::*;
 use std::hash::Hash;
 
 pub struct Subset<'a> {
-    group: &'a Group,
+    group: &'a FiniteGroup,
     elems: BTreeSet<usize>,
 }
 
@@ -21,11 +21,11 @@ impl<'a> Subset<'a> {
         Ok(())
     }
 
-    pub fn new_unchecked(group: &'a Group, elems: BTreeSet<usize>) -> Self {
+    pub fn new_unchecked(group: &'a FiniteGroup, elems: BTreeSet<usize>) -> Self {
         Self { group, elems }
     }
 
-    pub fn group(&self) -> &Group {
+    pub fn group(&self) -> &FiniteGroup {
         &self.group
     }
 
