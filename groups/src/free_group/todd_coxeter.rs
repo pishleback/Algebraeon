@@ -4,7 +4,7 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{structure::Group, permutation::*};
+use crate::{permutation::*, structure::Group};
 
 #[derive(Clone, Copy)]
 enum Neighbor {
@@ -19,7 +19,7 @@ struct SchreierGraph {
 }
 
 impl SchreierGraph {
-    pub fn new(num_gens: usize) -> Self {
+    fn new(num_gens: usize) -> Self {
         Self {
             num_gens,
             idents: vec![],
@@ -343,7 +343,9 @@ the list of generators for this finitely generated group"
         }
     }
 
-    pub fn into_finite_group(&self) -> super::super::composition_table::group::FiniteGroup {
+    pub fn into_finite_group(
+        &self,
+    ) -> super::super::composition_table::group::FiniteGroupMultiplicationTable {
         let num_gens = self.generators.len();
         let (n, gen_perms) = self.enumerate_elements();
         let inv_gen_perms = gen_perms
@@ -391,7 +393,7 @@ the list of generators for this finitely generated group"
             }
         }
 
-        super::super::composition_table::group::FiniteGroup::new_unchecked(
+        super::super::composition_table::group::FiniteGroupMultiplicationTable::new_unchecked(
             n,
             0,
             (0..n)

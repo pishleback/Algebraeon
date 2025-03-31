@@ -16,7 +16,7 @@ pub enum IsomorphismClass {
     Unknown(usize),
 }
 
-pub fn isomorphism_class(group: &FiniteGroup) -> IsomorphismClass {
+pub fn isomorphism_class(group: &FiniteGroupMultiplicationTable) -> IsomorphismClass {
     IsomorphismClass::from_group(group)
 }
 
@@ -50,7 +50,7 @@ impl IsomorphismClass {
         Ok(())
     }
 
-    pub fn from_group(group: &FiniteGroup) -> Self {
+    pub fn from_group(group: &FiniteGroupMultiplicationTable) -> Self {
         let n = group.size();
 
         //trivial
@@ -144,7 +144,7 @@ impl IsomorphismClass {
         IsomorphismClass::Unknown(n)
     }
 
-    pub fn to_group(&self) -> Result<FiniteGroup, ()> {
+    pub fn to_group(&self) -> Result<FiniteGroupMultiplicationTable, ()> {
         match self {
             Self::Trivial => Ok(examples::cyclic_group_structure(1)),
             Self::Cyclic(n) => Ok(examples::cyclic_group_structure(*n)),

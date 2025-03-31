@@ -6,13 +6,13 @@ use super::generating_set::*;
 use super::group::*;
 
 #[derive(Clone)]
-pub struct Homomorphism<DomainT: Borrow<FiniteGroup> + Clone, RangeT: Borrow<FiniteGroup> + Clone> {
+pub struct Homomorphism<DomainT: Borrow<FiniteGroupMultiplicationTable> + Clone, RangeT: Borrow<FiniteGroupMultiplicationTable> + Clone> {
     domain: DomainT,
     range: RangeT,
     func: Vec<usize>, //func : domain -> range    y = func[x]
 }
 
-impl<DomainT: Borrow<FiniteGroup> + Clone, RangeT: Borrow<FiniteGroup> + Clone>
+impl<DomainT: Borrow<FiniteGroupMultiplicationTable> + Clone, RangeT: Borrow<FiniteGroupMultiplicationTable> + Clone>
     Homomorphism<DomainT, RangeT>
 {
     pub fn check_state(&self) -> Result<(), &'static str> {
@@ -85,8 +85,8 @@ impl<DomainT: Borrow<FiniteGroup> + Clone, RangeT: Borrow<FiniteGroup> + Clone>
 
 #[derive(Clone)]
 pub struct Isomorphism<
-    LeftGrpT: Borrow<FiniteGroup> + Clone,
-    RightGrpT: Borrow<FiniteGroup> + Clone,
+    LeftGrpT: Borrow<FiniteGroupMultiplicationTable> + Clone,
+    RightGrpT: Borrow<FiniteGroupMultiplicationTable> + Clone,
 > {
     left_group: LeftGrpT,
     right_group: RightGrpT,
@@ -94,7 +94,7 @@ pub struct Isomorphism<
     right_func: Vec<usize>,
 }
 
-impl<LeftGrpT: Borrow<FiniteGroup> + Clone, RightGrpT: Borrow<FiniteGroup> + Clone>
+impl<LeftGrpT: Borrow<FiniteGroupMultiplicationTable> + Clone, RightGrpT: Borrow<FiniteGroupMultiplicationTable> + Clone>
     Isomorphism<LeftGrpT, RightGrpT>
 {
     pub fn check_state(&self) -> Result<(), &'static str> {
@@ -141,9 +141,9 @@ impl<LeftGrpT: Borrow<FiniteGroup> + Clone, RightGrpT: Borrow<FiniteGroup> + Clo
 //return an isomorphism from domain to range if one exists
 //return None if no isomorphism exists
 pub fn find_isomorphism<'a, 'b>(
-    domain: &'a FiniteGroup,
-    range: &'b FiniteGroup,
-) -> Option<Isomorphism<&'a FiniteGroup, &'b FiniteGroup>> {
+    domain: &'a FiniteGroupMultiplicationTable,
+    range: &'b FiniteGroupMultiplicationTable,
+) -> Option<Isomorphism<&'a FiniteGroupMultiplicationTable, &'b FiniteGroupMultiplicationTable>> {
     let group_size = domain.size();
     if group_size != range.size() {
         return None;
@@ -159,7 +159,7 @@ pub fn find_isomorphism<'a, 'b>(
     }
 
     impl ElementProfile {
-        fn new(x: usize, group: &FiniteGroup) -> Self {
+        fn new(x: usize, group: &FiniteGroupMultiplicationTable) -> Self {
             debug_assert!(x < group.size());
             ElementProfile {
                 order: group.order(x).unwrap(),
@@ -203,7 +203,7 @@ pub fn find_isomorphism<'a, 'b>(
     }
 
     fn find_new_gen_info<'c>(
-        domain: &'c FiniteGroup,
+        domain: &'c FiniteGroupMultiplicationTable,
         domain_elem_profiles: &Vec<ElementProfile>,
         range_elem_profiles: &HashMap<ElementProfile, Vec<usize>>,
     ) -> Result<GenInfo<'c>, ()> {

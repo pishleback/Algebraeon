@@ -1,13 +1,11 @@
-use std::collections::BTreeSet;
-
 use super::group::*;
 use super::normal_subgroup::*;
 use super::subgroup::*;
-use std::hash::Hash;
+use std::collections::HashSet;
 
 pub struct Subset<'a> {
-    group: &'a FiniteGroup,
-    elems: BTreeSet<usize>,
+    group: &'a FiniteGroupMultiplicationTable,
+    elems: HashSet<usize>,
 }
 
 impl<'a> Subset<'a> {
@@ -21,15 +19,15 @@ impl<'a> Subset<'a> {
         Ok(())
     }
 
-    pub fn new_unchecked(group: &'a FiniteGroup, elems: BTreeSet<usize>) -> Self {
+    pub fn new_unchecked(group: &'a FiniteGroupMultiplicationTable, elems: HashSet<usize>) -> Self {
         Self { group, elems }
     }
 
-    pub fn group(&self) -> &FiniteGroup {
+    pub fn group(&self) -> &FiniteGroupMultiplicationTable {
         &self.group
     }
 
-    pub fn elems(&self) -> &BTreeSet<usize> {
+    pub fn elems(&self) -> &HashSet<usize> {
         &self.elems
     }
 
@@ -95,7 +93,7 @@ impl<'a> Subset<'a> {
         }
 
         //generate subgroup by adding all generated elements
-        let mut sg = BTreeSet::new();
+        let mut sg = HashSet::new();
         sg.insert(self.group.ident());
 
         let mut boundary = vec![self.group.ident()];
@@ -129,10 +127,10 @@ impl<'a> Subset<'a> {
             }
         }
 
-        let conj_info = self.group.conjugacy_classes().state;
+        let conj_info = self.group.conjugacy_classes().partition;
 
         //generate subgroup by adding all generated elements
-        let mut sg = BTreeSet::new();
+        let mut sg = HashSet::new();
         sg.insert(self.group.ident());
 
         let mut boundary = vec![self.group.ident()];
@@ -140,7 +138,7 @@ impl<'a> Subset<'a> {
         while boundary.len() > 0 {
             for x in &boundary {
                 for g in &self.elems {
-                    for y in conj_info.project(self.group.mul(*x, *g)) {
+                    for y in conj_info.class_containing(self.group.mul(*x, *g)) {
                         if !sg.contains(y) {
                             sg.insert(*y);
                             next_boundary.push(*y);
@@ -162,7 +160,7 @@ impl<'a> Subset<'a> {
 
 impl<'a> IntoIterator for Subset<'a> {
     type Item = usize;
-    type IntoIter = <BTreeSet<usize> as IntoIterator>::IntoIter;
+    type IntoIter = <HashSet<usize> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.elems.into_iter()
@@ -177,11 +175,11 @@ impl<'a> PartialEq for Subset<'a> {
 
 impl<'a> Eq for Subset<'a> {}
 
-impl<'a> Hash for Subset<'a> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.elems.hash(state);
-    }
-}
+// impl<'a> Hash for Subset<'a> {
+//     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+//         self.elems.hash(state);
+//     }
+// }
 
 impl<'a> Clone for Subset<'a> {
     fn clone(&self) -> Self {

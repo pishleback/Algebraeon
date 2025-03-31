@@ -89,6 +89,7 @@ name = "algebraeon-groups"
 version = "0.1.7"
 dependencies = [
  "algebraeon-nzq",
+ "algebraeon-sets",
  "itertools",
  "rayon",
 ]
@@ -119,6 +120,7 @@ dependencies = [
 name = "algebraeon-sets"
 version = "0.1.7"
 dependencies = [
+ "indexmap",
  "malachite-base 0.5.1",
 ]
 

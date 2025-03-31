@@ -1,6 +1,8 @@
 use std::collections::BTreeSet;
 use std::collections::HashSet;
 
+use algebraeon_sets::combinatorics::Partition;
+
 use super::group::*;
 use super::normal_subgroup::*;
 use super::partition::*;
@@ -22,7 +24,11 @@ impl<'a> Eq for Subgroup<'a> {}
 
 impl<'a> Hash for Subgroup<'a> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.subset.hash(state);
+        self.subset
+            .elems()
+            .iter()
+            .collect::<BTreeSet<_>>()
+            .hash(state);
     }
 }
 
@@ -46,7 +52,7 @@ impl<'a> Subgroup<'a> {
         self.subset.size()
     }
 
-    pub fn to_group(&self) -> FiniteGroup {
+    pub fn to_group(&self) -> FiniteGroupMultiplicationTable {
         let sg_elems: Vec<usize> = self.subset.elems().clone().into_iter().collect();
         let k = sg_elems.len();
         let mut group_to_subgroup: Vec<Option<usize>> = vec![None; self.subset.group().size()];
@@ -54,7 +60,7 @@ impl<'a> Subgroup<'a> {
             group_to_subgroup[*x] = Some(i);
         }
         //TODO: add a test that this group has valid structure
-        FiniteGroup::new_unchecked(
+        FiniteGroupMultiplicationTable::new_unchecked(
             self.size(),
             group_to_subgroup[self.subset.group().ident()].unwrap(),
             (0..k)
@@ -76,7 +82,7 @@ impl<'a> Subgroup<'a> {
     }
 
     pub fn left_cosets(&self) -> GroupPartition {
-        let mut cosets: Vec<BTreeSet<usize>> = vec![];
+        let mut cosets: Vec<HashSet<usize>> = vec![];
         let mut coset_lookup = vec![0; self.subset.group().size()];
         let mut missing: HashSet<usize> = self.subset.group().elems().collect();
         while missing.len() > 0 {
@@ -90,12 +96,12 @@ impl<'a> Subgroup<'a> {
         }
         GroupPartition {
             group: self.subset.group(),
-            state: SetPartition::new_unchecked(cosets, coset_lookup),
+            partition: Partition::new_unchecked(cosets, coset_lookup),
         }
     }
 
     pub fn right_cosets(&self) -> GroupPartition {
-        let mut cosets: Vec<BTreeSet<usize>> = vec![];
+        let mut cosets: Vec<HashSet<usize>> = vec![];
         let mut coset_lookup = vec![0; self.subset.group().size()];
         let mut missing: HashSet<usize> = self.subset.group().elems().collect();
         while missing.len() > 0 {
@@ -109,7 +115,7 @@ impl<'a> Subgroup<'a> {
         }
         GroupPartition {
             group: self.subset.group(),
-            state: SetPartition::new_unchecked(cosets, coset_lookup),
+            partition: Partition::new_unchecked(cosets, coset_lookup),
         }
     }
 
@@ -247,6 +253,7 @@ mod subgroup_tests {
         };
         sg.check_state().unwrap();
         let cosets = sg.right_cosets();
+        println!("{:#?}", cosets);
         cosets.check_state().unwrap();
         assert_eq!(cosets.size(), 3);
         assert!(

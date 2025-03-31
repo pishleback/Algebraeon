@@ -13,4 +13,5 @@ readme = "../README.md"
 name = "algebraeon_sets"
 
 [dependencies]
+indexmap = "2.8.0"
 malachite-base = "0.5.1"

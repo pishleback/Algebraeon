@@ -148,7 +148,7 @@ impl<const N: usize> Permutation<N> {
     }
 
     pub fn symmetric_composition_table() -> (
-        crate::composition_table::group::FiniteGroup,
+        crate::composition_table::group::FiniteGroupMultiplicationTable,
         Vec<Self>,
         HashMap<Self, usize>,
     ) {
@@ -156,7 +156,7 @@ impl<const N: usize> Permutation<N> {
     }
 
     pub fn alternating_composition_table() -> (
-        crate::composition_table::group::FiniteGroup,
+        crate::composition_table::group::FiniteGroupMultiplicationTable,
         Vec<Self>,
         HashMap<Self, usize>,
     ) {

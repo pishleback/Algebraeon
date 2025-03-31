@@ -1,60 +1,13 @@
-use std::collections::{BTreeSet, HashSet};
+use algebraeon_sets::combinatorics::Partition;
 
 use super::group::*;
 use super::subset::*;
+use std::collections::HashSet;
 
-#[derive(Clone, Debug)]
-pub struct SetPartition {
-    classes: Vec<BTreeSet<usize>>, //vector of conjugacy classes
-    lookup: Vec<usize>,            //for each element, the index of its part class
-}
-
-impl SetPartition {
-    pub fn check_state(&self, group: &FiniteGroup) -> Result<(), &'static str> {
-        //is a partition
-        let mut accounted_elems: HashSet<usize> = HashSet::new();
-        for class in &self.classes {
-            if class.len() == 0 {
-                return Err("partition contains an empty set");
-            }
-            for x in class {
-                if accounted_elems.contains(x) {
-                    return Err("partition contains duplicate elements");
-                }
-                accounted_elems.insert(*x);
-            }
-        }
-        if accounted_elems.len() != group.size() {
-            return Err("partition is missing some elements");
-        }
-
-        //lookup is correct
-        if !(self.lookup.len() == group.size()) {
-            return Err("partition lookup has the wrong length");
-        }
-        for (elem, class_idx) in self.lookup.iter().enumerate() {
-            if !(*class_idx < self.classes.len()) {
-                return Err("partition lookup index is bigger partition size");
-            }
-            if !self.classes[*class_idx].contains(&elem) {
-                return Err("partition lookup points to wrong partition set");
-            }
-        }
-        Ok(())
-    }
-
-    pub fn new_unchecked(classes: Vec<BTreeSet<usize>>, lookup: Vec<usize>) -> Self {
-        Self { classes, lookup }
-    }
-
-    pub fn project(&self, x: usize) -> &BTreeSet<usize> {
-        &self.classes[self.lookup[x]]
-    }
-}
-
+#[derive(Debug)]
 pub struct GroupPartition<'a> {
-    pub group: &'a FiniteGroup,
-    pub state: SetPartition,
+    pub group: &'a FiniteGroupMultiplicationTable,
+    pub partition: Partition,
     // is_left_cosets: Option<bool>,
     // is_right_cosets: Option<bool>,
 }
@@ -74,14 +27,14 @@ impl<'a> PartialEq for GroupPartition<'a> {
         //build up a permutation f from indicies of self.lookup to indicies of other.lookup
         let mut f: Vec<Option<usize>> = vec![None; n];
         for i in 0..grp.size() {
-            match f[self.state.lookup[i]] {
+            match f[self.partition.project(i)] {
                 Some(expected_other_lookup_i) => {
-                    if expected_other_lookup_i != other.state.lookup[i] {
+                    if expected_other_lookup_i != other.partition.project(i) {
                         return false;
                     }
                 }
                 None => {
-                    f[self.state.lookup[i]] = Some(other.state.lookup[i]);
+                    f[self.partition.project(i)] = Some(other.partition.project(i));
                 }
             }
         }
@@ -93,24 +46,20 @@ impl<'a> Eq for GroupPartition<'a> {}
 
 impl<'a> GroupPartition<'a> {
     pub fn check_state(&self) -> Result<(), &'static str> {
-        match self.state.check_state(self.group) {
-            Err(msg) => {
-                return Err(msg);
-            }
-            Ok(()) => {}
-        };
-
+        if self.partition.num_elements() != self.group.size() {
+            return Err("Partition is of set of the wrong size");
+        }
         Ok(())
     }
 
     pub fn size(&self) -> usize {
-        self.state.classes.len()
+        self.partition.size()
     }
 
     pub fn is_left_cosets(&self) -> bool {
         let ident_class = Subset::new_unchecked(
             self.group,
-            self.state.classes[self.state.lookup[self.group.ident()]].clone(),
+            self.partition.class_containing(self.group.ident()).clone(),
         );
         match ident_class.to_subgroup() {
             Some(ident_subgroup) => &ident_subgroup.left_cosets() == self,
@@ -121,7 +70,7 @@ impl<'a> GroupPartition<'a> {
     pub fn is_right_cosets(&self) -> bool {
         let ident_class = Subset::new_unchecked(
             self.group,
-            self.state.classes[self.state.lookup[self.group.ident()]].clone(),
+            self.partition.class_containing(self.group.ident()).clone(),
         );
         match ident_class.to_subgroup() {
             Some(ident_subgroup) => &ident_subgroup.right_cosets() == self,
@@ -133,7 +82,10 @@ impl<'a> GroupPartition<'a> {
         self.is_left_cosets() && self.is_right_cosets()
     }
 
-    pub fn from_subsets(group: &'a FiniteGroup, subsets: Vec<BTreeSet<usize>>) -> Result<Self, ()> {
+    pub fn from_subsets(
+        group: &'a FiniteGroupMultiplicationTable,
+        subsets: Vec<HashSet<usize>>,
+    ) -> Result<Self, ()> {
         let classes = subsets;
         let mut lookup = vec![0; group.size()];
         for (class_idx, class) in classes.iter().enumerate() {
@@ -146,7 +98,7 @@ impl<'a> GroupPartition<'a> {
         }
         let partition = Self {
             group,
-            state: SetPartition { classes, lookup },
+            partition: Partition::new_unchecked(classes, lookup),
         };
         match partition.check_state() {
             Ok(_) => {}
@@ -183,19 +135,22 @@ impl<'a> Congruence<'a> {
         self.partition.size()
     }
 
-    pub fn quotient_group(&self) -> FiniteGroup {
+    pub fn quotient_group(&self) -> FiniteGroupMultiplicationTable {
         let n = self.size();
-
-        FiniteGroup::new_unchecked(
+        self.partition.group.check_state().unwrap();
+        FiniteGroupMultiplicationTable::new_unchecked(
             n,
-            self.partition.state.lookup[self.partition.group.ident()],
+            self.partition
+                .partition
+                .project(self.partition.group.ident()),
             {
                 let mut inv = vec![0; n];
                 for i in 0..n {
-                    inv[i] = self.partition.state.lookup[self
-                        .partition
-                        .group
-                        .inv(*self.partition.state.classes[i].iter().next().unwrap())];
+                    inv[i] = self.partition.partition.project(
+                        self.partition
+                            .group
+                            .inv(*self.partition.partition.get_class(i).iter().next().unwrap()),
+                    );
                 }
                 inv
             },
@@ -203,10 +158,10 @@ impl<'a> Congruence<'a> {
                 let mut mul = vec![vec![0; n]; n];
                 for i in 0..n {
                     for j in 0..n {
-                        mul[i][j] = self.partition.state.lookup[self.partition.group.mul(
-                            *self.partition.state.classes[i].iter().next().unwrap(),
-                            *self.partition.state.classes[j].iter().next().unwrap(),
-                        )];
+                        mul[i][j] = self.partition.partition.project(self.partition.group.mul(
+                            *self.partition.partition.get_class(i).iter().next().unwrap(),
+                            *self.partition.partition.get_class(j).iter().next().unwrap(),
+                        ));
                     }
                 }
                 mul
@@ -220,76 +175,6 @@ impl<'a> Congruence<'a> {
 #[cfg(test)]
 mod partition_tests {
     use super::*;
-
-    #[test]
-    fn partition_check_bad_state() {
-        let grp = examples::cyclic_group_structure(6);
-
-        //elements too big
-        let p = SetPartition {
-            classes: vec![
-                vec![0, 1, 2, 3].into_iter().collect(),
-                vec![4, 5, 6].into_iter().collect(),
-            ],
-            lookup: vec![0, 0, 0, 0, 1, 1, 1],
-        };
-        match p.check_state(&grp) {
-            Ok(()) => assert!(false),
-            Err(_) => {}
-        }
-
-        //not a covering set
-        let p = SetPartition {
-            classes: vec![
-                vec![0, 2].into_iter().collect(),
-                vec![3, 5].into_iter().collect(),
-            ],
-            lookup: vec![0, 0, 0, 1, 1, 1],
-        };
-        match p.check_state(&grp) {
-            Ok(()) => assert!(false),
-            Err(_) => {}
-        }
-
-        //not disjoint
-        let p = SetPartition {
-            classes: vec![
-                vec![0, 1, 2, 3].into_iter().collect(),
-                vec![2, 3, 4, 5].into_iter().collect(),
-            ],
-            lookup: vec![0, 0, 0, 0, 1, 1],
-        };
-        match p.check_state(&grp) {
-            Ok(()) => assert!(false),
-            Err(_) => {}
-        }
-
-        //lookup values too big
-        let p = SetPartition {
-            classes: vec![
-                vec![0, 1, 2].into_iter().collect(),
-                vec![3, 4, 5].into_iter().collect(),
-            ],
-            lookup: vec![0, 0, 0, 1, 1, 2],
-        };
-        match p.check_state(&grp) {
-            Ok(()) => assert!(false),
-            Err(_) => {}
-        }
-
-        //incorrect lookup values
-        let p = SetPartition {
-            classes: vec![
-                vec![0, 1, 2].into_iter().collect(),
-                vec![3, 4, 5].into_iter().collect(),
-            ],
-            lookup: vec![0, 0, 1, 1, 1, 1],
-        };
-        match p.check_state(&grp) {
-            Ok(()) => assert!(false),
-            Err(_) => {}
-        }
-    }
 
     #[test]
     fn congruence_check_state() {

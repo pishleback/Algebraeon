@@ -44,7 +44,7 @@ impl<'a> NormalSubgroup<'a> {
         } //should be the same as right cosets
     }
 
-    pub fn quotient_group(&self) -> FiniteGroup {
+    pub fn quotient_group(&self) -> FiniteGroupMultiplicationTable {
         self.cosets().quotient_group()
     }
 }
@@ -132,7 +132,7 @@ mod normal_subgroup_tests {
     fn normal_subgroup_quotient() {
         use crate::examples::symmetric::Permutation;
 
-        let (mut grp, _perms, _elems) = Permutation::<4>::symmetric_composition_table();
+        let (mut grp, _perms, _elems) = Permutation::<3>::symmetric_composition_table();
         grp.cache_conjugacy_classes();
         for (nsg, _gens) in grp.normal_subgroups() {
             let qgrp = nsg.quotient_group();

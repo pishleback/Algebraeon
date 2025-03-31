@@ -2,24 +2,25 @@ use super::normal_subgroup::*;
 use super::partition::*;
 use super::subgroup::*;
 use super::subset::*;
+use algebraeon_sets::combinatorics::Partition;
 use rayon::prelude::*;
-use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
 
-pub struct FiniteGroup {
+#[derive(Debug)]
+pub struct FiniteGroupMultiplicationTable {
     n: usize,
     ident: usize,
     inv: Vec<usize>,
     mul: Vec<Vec<usize>>,
-    conjugacy_classes: Option<SetPartition>,
+    conjugacy_classes: Option<Partition>,
     is_abelian: Option<bool>,
     is_simple: Option<bool>,
 }
 
-impl FiniteGroup {
+impl FiniteGroupMultiplicationTable {
     pub fn check_state(&self) -> Result<(), &'static str> {
         //check ident
         if !(self.ident < self.n) {
@@ -81,14 +82,6 @@ impl FiniteGroup {
             None => {}
         };
 
-        //cached conjugacy classes (if present)
-        match &self.conjugacy_classes {
-            Some(conj_state) => {
-                conj_state.check_state(self).unwrap();
-            }
-            None => {}
-        };
-
         //check is_simple
         match &self.is_simple {
             Some(is_simple) => {
@@ -108,7 +101,7 @@ impl FiniteGroup {
         inv: Vec<usize>,
         mul: Vec<Vec<usize>>,
     ) -> Result<Self, &'static str> {
-        let grp = FiniteGroup {
+        let grp = FiniteGroupMultiplicationTable {
             n,
             ident,
             inv,
@@ -261,13 +254,13 @@ impl FiniteGroup {
         }
     }
 
-    fn compute_conjugacy_classes(&self) -> SetPartition {
+    fn compute_conjugacy_classes(&self) -> Partition {
         let mut unclassified_elems = HashSet::<_>::from_iter(self.elems());
         let mut classes = vec![];
         let mut lookup = vec![0; self.n];
         while unclassified_elems.len() > 0 {
             let x = unclassified_elems.iter().next().unwrap();
-            let mut class = BTreeSet::new();
+            let mut class = HashSet::new();
             for g in self.elems() {
                 class.insert(self.mul[self.mul[g][*x]][self.inv[g]]);
             }
@@ -277,7 +270,7 @@ impl FiniteGroup {
             }
             classes.push(class);
         }
-        SetPartition::new_unchecked(classes, lookup)
+        Partition::new_unchecked(classes, lookup)
     }
 
     pub fn cache_conjugacy_classes(&mut self) {
@@ -290,7 +283,10 @@ impl FiniteGroup {
         }
         self.cache_conjugacy_classes();
         match &self.conjugacy_classes {
-            Some(conj_state) => Ok(Subset::new_unchecked(self, conj_state.project(x).clone())),
+            Some(conj_state) => Ok(Subset::new_unchecked(
+                self,
+                conj_state.class_containing(x).clone(),
+            )),
             None => panic!(),
         }
     }
@@ -298,7 +294,7 @@ impl FiniteGroup {
     pub fn conjugacy_classes(&self) -> GroupPartition {
         GroupPartition {
             group: self,
-            state: match &self.conjugacy_classes {
+            partition: match &self.conjugacy_classes {
                 Some(state) => state.clone(),
                 None => self.compute_conjugacy_classes(),
             },
@@ -312,7 +308,7 @@ impl FiniteGroup {
         let mut distinguished_gens = vec![];
         let mut subgroups: HashMap<Subgroup, Subset> = HashMap::new();
         for x in self.elems() {
-            let singleton_x_subset = Subset::new_unchecked(&self, BTreeSet::from_iter(vec![x]));
+            let singleton_x_subset = Subset::new_unchecked(&self, HashSet::from_iter(vec![x]));
             let cyclic_sg = match only_normal {
                 false => singleton_x_subset.generated_subgroup().unwrap(),
                 true => singleton_x_subset.normal_closure().unwrap().to_subgroup(),
@@ -373,14 +369,17 @@ impl FiniteGroup {
     }
 }
 
-pub fn direct_product_structure(group_one: &FiniteGroup, group_two: &FiniteGroup) -> FiniteGroup {
+pub fn direct_product_structure(
+    group_one: &FiniteGroupMultiplicationTable,
+    group_two: &FiniteGroupMultiplicationTable,
+) -> FiniteGroupMultiplicationTable {
     let m = group_one.n;
     let n = group_two.n;
 
     let single_to_pair = |i: usize| -> (usize, usize) { (i % m, i / m) };
     let pair_to_single = |i: usize, j: usize| -> usize { i + j * m };
 
-    FiniteGroup {
+    FiniteGroupMultiplicationTable {
         n: m * n,
         ident: pair_to_single(group_one.ident, group_two.ident),
         inv: (0..m * n)
@@ -411,12 +410,12 @@ pub mod examples {
 
     use super::*;
 
-    pub fn trivial_group_structure() -> FiniteGroup {
+    pub fn trivial_group_structure() -> FiniteGroupMultiplicationTable {
         cyclic_group_structure(1)
     }
 
-    pub fn cyclic_group_structure(n: usize) -> FiniteGroup {
-        FiniteGroup::from_raw_model_unchecked(
+    pub fn cyclic_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
+        FiniteGroupMultiplicationTable::from_raw_model_unchecked(
             (0..n).collect(),
             || 0,
             |x: usize| (n - x) % n,
@@ -426,11 +425,11 @@ pub mod examples {
         )
     }
 
-    pub fn klein_four_structure() -> FiniteGroup {
+    pub fn klein_four_structure() -> FiniteGroupMultiplicationTable {
         direct_product_structure(&cyclic_group_structure(2), &cyclic_group_structure(2))
     }
 
-    pub fn dihedral_group_structure(n: usize) -> FiniteGroup {
+    pub fn dihedral_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
         // dihedral group using the presentation
         // <a b : a^2 = b^2 = (ab)^n = e>
         assert!(1 <= n);
@@ -447,7 +446,7 @@ pub mod examples {
         grp
     }
 
-    pub fn quaternion_group_structure() -> FiniteGroup {
+    pub fn quaternion_group_structure() -> FiniteGroupMultiplicationTable {
         // quaternion group using the presentation
         // <-1 i j k : (-1)^2 = 1  i^2 = j^2 = k^2 = ijk = -1>
         let mut grp = FinitelyGeneratedGroupPresentation::new();
@@ -466,11 +465,11 @@ pub mod examples {
         grp
     }
 
-    pub fn symmetric_group_structure(n: usize) -> FiniteGroup {
+    pub fn symmetric_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
         super::super::super::permutation::Permutation::symmetric_composition_table(n).0
     }
 
-    pub fn alternating_group_structure(n: usize) -> FiniteGroup {
+    pub fn alternating_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
         super::super::super::permutation::Permutation::alternating_composition_table(n).0
     }
 }
