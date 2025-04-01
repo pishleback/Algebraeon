@@ -214,7 +214,7 @@ pub fn factor(n: Natural) -> Option<FactoredNatural> {
         for x in [2u32, 3, 4] {
             f.partially_factor_by_method(|n| {
                 terminate_once_trivial(n, |n| {
-                    if bitcount(&n.n) < 100 {
+                    if n.n.bitcount() < 100 {
                         exclude_prime_inputs(n, |n| pollard_rho(n, Natural::from(x), 10000))
                     } else {
                         trivial_factor(n)

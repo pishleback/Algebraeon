@@ -31,11 +31,8 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 
-use crate::{
-    number::natural::{factorization::primes::is_prime, functions::gcd},
-    structure::MetaSemiRing,
-};
-use algebraeon_nzq::{Natural, Rng, traits::ModInv};
+use crate::{number::natural::factorization::primes::is_prime, structure::MetaSemiRing};
+use algebraeon_nzq::{Natural, Rng, gcd, traits::ModInv};
 use algebraeon_sets::number_theory::primes;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;

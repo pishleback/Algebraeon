@@ -139,8 +139,9 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
             .map(|elem| *elem_to_idx.get(&Self::inverse_ref(elem)).unwrap())
             .collect_vec();
 
-        let grp =
-            crate::composition_table::group::FiniteGroupMultiplicationTable::new_unchecked(n, 0, inv, mul, None, None);
+        let grp = crate::composition_table::group::FiniteGroupMultiplicationTable::new_unchecked(
+            n, 0, inv, mul, None, None,
+        );
 
         #[cfg(debug_assertions)]
         grp.check_state().unwrap();

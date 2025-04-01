@@ -1,11 +1,8 @@
-use algebraeon_nzq::{Natural, traits::ModPow};
+use algebraeon_nzq::{Natural, gcd, traits::ModPow};
 use itertools::Itertools;
 use std::collections::HashMap;
 
-use crate::number::natural::{
-    factorization::primes::is_prime,
-    functions::{gcd, pow},
-};
+use crate::number::natural::factorization::primes::is_prime;
 
 use super::factor;
 
@@ -74,7 +71,7 @@ impl FactoredNatural {
     pub fn expand(&self) -> Natural {
         let mut t = Natural::ONE;
         for (p, k) in &self.primes {
-            t *= pow(p, &(*k).into());
+            t *= p.pow(&(*k).into());
         }
         t
     }
@@ -82,7 +79,7 @@ impl FactoredNatural {
     pub fn euler_totient(&self) -> Natural {
         let mut t = Natural::ONE;
         for (p, k) in &self.primes {
-            t *= (p - &Natural::ONE) * pow(p, &(k - 1).into());
+            t *= (p - &Natural::ONE) * p.pow(&(k - 1).into());
         }
         t
     }

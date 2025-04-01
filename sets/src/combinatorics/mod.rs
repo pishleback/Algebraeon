@@ -3,6 +3,7 @@
 mod combinations;
 mod number_partitions;
 mod set_partitions;
+mod twelvefold_way;
 // TODO: subsets
 
 pub use combinations::LexicographicCombinationsWithRemovals;
@@ -15,3 +16,4 @@ pub use number_partitions::predicated_partitions;
 pub use number_partitions::predicated_partitions_sized;
 pub use number_partitions::predicated_partitions_sized_zero;
 pub use set_partitions::Partition;
+pub use twelvefold_way::{FunctionType, TwelvefoldWay};

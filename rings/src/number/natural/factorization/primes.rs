@@ -104,7 +104,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             // Select r0 >= 3
             // Use r0 ~ 0.01*log2(n)^2
             let r0 = {
-                let aprox_log2_n = bitcount(n) - 1;
+                let aprox_log2_n = n.bitcount() - 1;
                 let r0 = (&aprox_log2_n * &aprox_log2_n) / 100;
                 if r0 < 3 { 3 } else { r0 }
             };
@@ -160,10 +160,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             // Select s such that (2s choose i) * (d choose i) * (2s - i choose j) * (phi(r)-1-d choose j) >= n^ceil(sqrt(phi(r)/3))
             // Use the smallest such s found via binary search
             let s = {
-                let rhs = pow(
-                    n,
-                    &nth_root_ceil(&(&phi_r / Natural::from(3usize)), &Natural::TWO),
-                );
+                let rhs = n.pow(&(&phi_r / Natural::from(3usize)).sqrt_ceil());
                 // println!("rhs = {:?}", rhs);
 
                 let lhs = |s: &Natural| -> Natural {
@@ -309,7 +306,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             // Thus each block of a polynomial bigint shall have length coeff_size := bitcount(r*n^2)
 
             let r_usize = (&r).try_into().unwrap();
-            let coeff_size = bitcount(n * n * &r);
+            let coeff_size = (n * n * &r).bitcount();
             let coeff_mask = (Natural::ONE << coeff_size) - Natural::ONE;
 
             // Convert between polynomials and big integers by x <-> 2^k

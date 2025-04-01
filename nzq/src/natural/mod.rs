@@ -16,6 +16,10 @@ use std::{
     str::FromStr,
 };
 
+mod functions;
+pub use functions::choose;
+pub use functions::gcd;
+
 /// Represents a natural number {0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Natural(malachite_nz::natural::Natural);
@@ -578,6 +582,11 @@ impl Natural {
     ) -> impl Iterator<Item = bool> + ExactSizeIterator + DoubleEndedIterator + 'a {
         use malachite_base::num::logic::traits::BitIterable;
         self.0.bits()
+    }
+
+    /// Return the number of bits needed to store n i.e. ceil(log2(n)) for all non-zero n
+    pub fn bitcount(&self) -> usize {
+        self.bits().len()
     }
 }
 

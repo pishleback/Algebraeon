@@ -1,9 +1,5 @@
+use crate::{number::integer::*, polynomial::*};
 use std::rc::Rc;
-
-use crate::{
-    number::{integer::*, natural::functions::*},
-    polynomial::*,
-};
 
 impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
@@ -31,7 +27,7 @@ impl Polynomial<Integer> {
         for coeff in self.coeffs() {
             bound += coeff.abs();
         }
-        bound *= choose_usize(deg, deg / 2);
+        bound *= choose(Natural::from(deg), Natural::from(deg / 2));
         Some(bound)
     }
 
