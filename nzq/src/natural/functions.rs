@@ -25,8 +25,8 @@ impl Natural {
         let mut i = Natural::ZERO;
         let mut f = Natural::ONE;
         while &i < self {
-            f *= &i;
             i += Natural::ONE;
+            f *= &i;
         }
         f
     }
