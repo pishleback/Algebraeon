@@ -1,5 +1,5 @@
-pub fn compositions_sized(n: usize, x: usize) -> Box<dyn Iterator<Item = Vec<usize>>> {
-    if n == 0 && x == 0 {
+pub fn compositions_sized(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    let c: Box<dyn Iterator<Item = Vec<usize>>> = if n == 0 && x == 0 {
         Box::new(vec![vec![]].into_iter())
     } else if n == 0 || x == 0 {
         Box::new(vec![].into_iter())
@@ -13,7 +13,8 @@ pub fn compositions_sized(n: usize, x: usize) -> Box<dyn Iterator<Item = Vec<usi
             }
             c
         }))
-    }
+    };
+    c
 }
 
 pub fn compositions_sized_zero(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
