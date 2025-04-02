@@ -47,7 +47,12 @@ impl<'a> GeneratingSet<'a> {
         &self,
         partial_func: &Vec<usize>,
         range_group: &'b FiniteGroupMultiplicationTable,
-    ) -> Result<Option<Homomorphism<&'a FiniteGroupMultiplicationTable, &'b FiniteGroupMultiplicationTable>>, &'static str> {
+    ) -> Result<
+        Option<
+            Homomorphism<&'a FiniteGroupMultiplicationTable, &'b FiniteGroupMultiplicationTable>,
+        >,
+        &'static str,
+    > {
         if partial_func.len() != self.gens.len() {
             return Err("partial func entries should corespond to images for each generator");
         }

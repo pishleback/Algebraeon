@@ -48,7 +48,7 @@ dependencies = [
  "algebraeon-rings",
  "algebraeon-sets",
  "derivative",
- "itertools",
+ "itertools 0.11.0",
  "malachite-base 0.4.22",
  "static_assertions",
 ]
@@ -81,7 +81,7 @@ dependencies = [
  "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
- "itertools",
+ "itertools 0.11.0",
 ]
 
 [[package]]
@@ -90,7 +90,7 @@ version = "0.1.7"
 dependencies = [
  "algebraeon-nzq",
  "algebraeon-sets",
- "itertools",
+ "itertools 0.11.0",
  "rayon",
 ]
 
@@ -111,7 +111,7 @@ dependencies = [
  "algebraeon-groups",
  "algebraeon-nzq",
  "algebraeon-sets",
- "itertools",
+ "itertools 0.11.0",
  "rand",
  "rayon",
 ]
@@ -121,6 +121,7 @@ name = "algebraeon-sets"
 version = "0.1.7"
 dependencies = [
  "indexmap",
+ "itertools 0.14.0",
  "malachite-base 0.5.1",
 ]
 
@@ -821,6 +822,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "jni-sys"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -912,7 +922,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ea0ed76adf7defc1a92240b5c36d5368cfe9251640dcce5bd2d0b7c1fd87aeb"
 dependencies = [
  "hashbrown 0.14.5",
- "itertools",
+ "itertools 0.11.0",
  "libm",
  "ryu",
 ]
@@ -925,7 +935,7 @@ checksum = "5063891d2cec8fd20cabccbd3fc277bf8d5666f481fb3f79d999559b39a62713"
 dependencies = [
  "getrandom",
  "hashbrown 0.15.2",
- "itertools",
+ "itertools 0.11.0",
  "libm",
  "rand",
  "rand_chacha",
@@ -939,7 +949,7 @@ version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "175263cd5b846c552b9afb9d4b03ca465b4ad10717d789cad7dac24441c4fcbe"
 dependencies = [
- "itertools",
+ "itertools 0.11.0",
  "libm",
  "malachite-base 0.5.1",
 ]
@@ -950,7 +960,7 @@ version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5261ba8feb1ad20cddab3d625af28206c663c08014b2e5c5f9bd54b0f230234f"
 dependencies = [
- "itertools",
+ "itertools 0.11.0",
  "malachite-base 0.5.1",
  "malachite-nz",
 ]

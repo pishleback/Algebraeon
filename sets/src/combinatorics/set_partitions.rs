@@ -107,6 +107,72 @@ impl Partition {
     }
 }
 
+// #[derive(Debug, Clone)]
+// struct PartitionsFixedParts {
+//     n: usize,
+//     x: usize,
+//     finished: bool,
+//     labels: Vec<usize>,
+//     max_left: Vec<usize>,
+// }
+
+// impl PartitionsFixedParts {
+//     fn new(n: usize, x: usize) -> Self {
+//         let mut labels = vec![0; n];
+//         if n < x {
+//             Self {
+//                 n,
+//                 x,
+//                 finished: true,
+//                 max_left: vec![],
+//                 labels: vec![],
+//             }
+//         } else {
+//             for i in 1..x {
+//                 labels[i + n - x] = i
+//             }
+//             let mut max_left = vec![0];
+//             for i in 0..(n - 1) {
+//                 max_left.push(labels[i]);
+//             }
+//             Self {
+//                 n,
+//                 x,
+//                 finished: false,
+//                 labels,
+//                 max_left,
+//             }
+//         }
+//     }
+// }
+
+// impl Iterator for PartitionsFixedParts {
+//     type Item = Vec<usize>;
+
+//     fn next(&mut self) -> Option<Self::Item> {
+//         todo!()
+//         // let next = match self.finished {
+//         //     true => None,
+//         //     false => Some(self.labels.clone()),
+//         // };
+
+//         // println!("{:?}", self);
+
+//         // for i in (0..self.n).rev() {
+//         //     println!("{:?}", i);
+//         //     if self.max_left[i] >= self.labels[i] && self.labels[i] + 1 < self.x {
+//         //         self.labels[i] += 1;
+//         //         for j in (i+1)..self.n {
+//         //             self.labels[j] = 0;
+//         //         }
+//         //         break;
+//         //     }
+//         // }
+
+//         // next
+//     }
+// }
+
 #[cfg(test)]
 mod partition_tests {
     use super::*;
@@ -173,4 +239,13 @@ mod partition_tests {
         assert_eq!(p.num_elements(), 6);
         assert_eq!(p.num_classes(), 2);
     }
+
+    // #[test]
+    // fn generate_set_partitions() {
+    //     let p = PartitionsFixedParts::new(10, 4);
+    //     println!("{:?}", p);
+    //     for x in p {
+    //         println!("{:?}", x);
+    //     }
+    // }
 }

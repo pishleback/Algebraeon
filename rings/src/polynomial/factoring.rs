@@ -1,7 +1,7 @@
 use super::polynomial::*;
 use crate::structure::*;
-use algebraeon_sets::structure::*;
 use algebraeon_nzq::*;
+use algebraeon_sets::structure::*;
 
 impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + CharZeroStructure>
     PolynomialStructure<RS>
@@ -413,9 +413,9 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::structure::IntoErgonomic;
     use algebraeon_nzq::*;
-    use super::*;
 
     #[test]
     fn test_factor_by_kroneckers_method_over_integers() {

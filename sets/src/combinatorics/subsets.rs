@@ -1,6 +1,6 @@
 /// Provides an iterator over the k-element subsets of {0, 1, ..., n-1} in lexographic order such that some elements of {0, 1, ..., n-1} can be excluded from future subsets at any point during the iteration.
 #[derive(Debug)]
-pub struct LexicographicCombinationsWithRemovals {
+pub struct LexicographicSubsetsWithRemovals {
     n: usize,
     all_items_idx: Vec<Option<usize>>,
     remaining_items: Vec<usize>,
@@ -8,7 +8,7 @@ pub struct LexicographicCombinationsWithRemovals {
     finished: bool,
 }
 
-impl LexicographicCombinationsWithRemovals {
+impl LexicographicSubsetsWithRemovals {
     /// Constructor
     pub fn new(n: usize, k: usize) -> Self {
         Self {
@@ -65,7 +65,7 @@ impl LexicographicCombinationsWithRemovals {
     }
 }
 
-impl Iterator for LexicographicCombinationsWithRemovals {
+impl Iterator for LexicographicSubsetsWithRemovals {
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -108,8 +108,8 @@ impl Iterator for LexicographicCombinationsWithRemovals {
 
 /// Returns all size k subsets of {0, 1, ..., n-1}.
 /// ```
-/// use algebraeon_sets::combinatorics::combinations;
-/// assert_eq!(combinations(5, 3).collect::<Vec<_>>(), vec![
+/// use algebraeon_sets::combinatorics::subsets;
+/// assert_eq!(subsets(5, 3).collect::<Vec<_>>(), vec![
 ///     vec![0, 1, 2],
 ///     vec![0, 1, 3],
 ///     vec![0, 1, 4],
@@ -122,22 +122,24 @@ impl Iterator for LexicographicCombinationsWithRemovals {
 ///     vec![2, 3, 4],
 /// ]);
 /// ```
-pub fn combinations(n: usize, k: usize) -> impl Iterator<Item = Vec<usize>> {
-    println!("{} {}", n, k);
-    LexicographicCombinationsWithRemovals::new(n, k)
+pub fn subsets(n: usize, k: usize) -> impl Iterator<Item = Vec<usize>> {
+    LexicographicSubsetsWithRemovals::new(n, k)
 }
 
 /// Returns all size k subsets of items.
 /// ```
-/// use algebraeon_sets::combinatorics::subsets;
-/// assert_eq!(subsets(vec!["a", "b", "c"], 2).collect::<Vec<_>>(), vec![
+/// use algebraeon_sets::combinatorics::subsets_of_vec;
+/// assert_eq!(subsets_of_vec(vec!["a", "b", "c"], 2).collect::<Vec<_>>(), vec![
 ///     vec!["a", "b"],
 ///     vec!["a", "c"],
 ///     vec!["b", "c"],
 /// ]);
 /// ```
-pub fn subsets<'a, T: 'a + Clone>(items: Vec<T>, k: usize) -> impl 'a + Iterator<Item = Vec<T>> {
-    combinations(items.len(), k)
+pub fn subsets_of_vec<'a, T: 'a + Clone>(
+    items: Vec<T>,
+    k: usize,
+) -> impl 'a + Iterator<Item = Vec<T>> {
+    subsets(items.len(), k)
         .map(move |subset| subset.into_iter().map(|idx| items[idx].clone()).collect())
 }
 
@@ -147,22 +149,22 @@ mod tests {
 
     #[test]
     pub fn lexographic_subsets_with_removals_test_edge_cases() {
-        let x = combinations(0, 1).collect::<Vec<_>>();
+        let x = subsets(0, 1).collect::<Vec<_>>();
         println!("{:?}", x);
         assert_eq!(x.len(), 0);
 
-        let x = combinations(3, 5).collect::<Vec<_>>();
+        let x = subsets(3, 5).collect::<Vec<_>>();
         println!("{:?}", x);
         assert_eq!(x.len(), 0);
 
-        let x = combinations(3, 3).collect::<Vec<_>>();
+        let x = subsets(3, 3).collect::<Vec<_>>();
         println!("{:?}", x);
         assert_eq!(x.len(), 1);
     }
 
     #[test]
     pub fn lexographic_subsets_with_removals_test_1() {
-        let mut c = LexicographicCombinationsWithRemovals::new(7, 3);
+        let mut c = LexicographicSubsetsWithRemovals::new(7, 3);
         for _ in 0..19 {
             let x = c.next().unwrap();
             println!("{:?}", x);
@@ -183,7 +185,7 @@ mod tests {
 
     #[test]
     pub fn lexographic_subsets_with_removals_test_2() {
-        let mut c = LexicographicCombinationsWithRemovals::new(7, 3);
+        let mut c = LexicographicSubsetsWithRemovals::new(7, 3);
         c.exclude(0);
         c.exclude(1);
         c.exclude(2);
@@ -194,7 +196,7 @@ mod tests {
 
     #[test]
     pub fn run() {
-        println!("{:?}", combinations(5, 3).collect::<Vec<_>>());
-        assert_eq!(combinations(5, 3).collect::<Vec<_>>().len(), 10)
+        println!("{:?}", subsets(5, 3).collect::<Vec<_>>());
+        assert_eq!(subsets(5, 3).collect::<Vec<_>>().len(), 10)
     }
 }

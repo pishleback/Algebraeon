@@ -6,14 +6,19 @@ use super::generating_set::*;
 use super::group::*;
 
 #[derive(Clone)]
-pub struct Homomorphism<DomainT: Borrow<FiniteGroupMultiplicationTable> + Clone, RangeT: Borrow<FiniteGroupMultiplicationTable> + Clone> {
+pub struct Homomorphism<
+    DomainT: Borrow<FiniteGroupMultiplicationTable> + Clone,
+    RangeT: Borrow<FiniteGroupMultiplicationTable> + Clone,
+> {
     domain: DomainT,
     range: RangeT,
     func: Vec<usize>, //func : domain -> range    y = func[x]
 }
 
-impl<DomainT: Borrow<FiniteGroupMultiplicationTable> + Clone, RangeT: Borrow<FiniteGroupMultiplicationTable> + Clone>
-    Homomorphism<DomainT, RangeT>
+impl<
+    DomainT: Borrow<FiniteGroupMultiplicationTable> + Clone,
+    RangeT: Borrow<FiniteGroupMultiplicationTable> + Clone,
+> Homomorphism<DomainT, RangeT>
 {
     pub fn check_state(&self) -> Result<(), &'static str> {
         //is function
@@ -94,8 +99,10 @@ pub struct Isomorphism<
     right_func: Vec<usize>,
 }
 
-impl<LeftGrpT: Borrow<FiniteGroupMultiplicationTable> + Clone, RightGrpT: Borrow<FiniteGroupMultiplicationTable> + Clone>
-    Isomorphism<LeftGrpT, RightGrpT>
+impl<
+    LeftGrpT: Borrow<FiniteGroupMultiplicationTable> + Clone,
+    RightGrpT: Borrow<FiniteGroupMultiplicationTable> + Clone,
+> Isomorphism<LeftGrpT, RightGrpT>
 {
     pub fn check_state(&self) -> Result<(), &'static str> {
         let left_hom = Homomorphism {
