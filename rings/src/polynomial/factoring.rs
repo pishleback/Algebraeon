@@ -415,7 +415,6 @@ where
 mod tests {
     use super::*;
     use crate::structure::IntoErgonomic;
-    use algebraeon_nzq::*;
 
     #[test]
     fn test_factor_by_kroneckers_method_over_integers() {
