@@ -1,6 +1,5 @@
-use std::collections::{HashMap, HashSet};
-
 use indexmap::IndexMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug)]
 pub struct Partition {
@@ -107,71 +106,155 @@ impl Partition {
     }
 }
 
-// #[derive(Debug, Clone)]
-// struct PartitionsFixedParts {
-//     n: usize,
-//     x: usize,
-//     finished: bool,
-//     labels: Vec<usize>,
-//     max_left: Vec<usize>,
-// }
+#[derive(Debug, Clone)]
+pub struct Element {
+    x: usize,
+    cum_x: usize,
+    pivot: bool,
+}
 
-// impl PartitionsFixedParts {
-//     fn new(n: usize, x: usize) -> Self {
-//         let mut labels = vec![0; n];
-//         if n < x {
-//             Self {
-//                 n,
-//                 x,
-//                 finished: true,
-//                 max_left: vec![],
-//                 labels: vec![],
-//             }
-//         } else {
-//             for i in 1..x {
-//                 labels[i + n - x] = i
-//             }
-//             let mut max_left = vec![0];
-//             for i in 0..(n - 1) {
-//                 max_left.push(labels[i]);
-//             }
-//             Self {
-//                 n,
-//                 x,
-//                 finished: false,
-//                 labels,
-//                 max_left,
-//             }
-//         }
-//     }
-// }
+#[derive(Debug, Clone)]
+pub struct LexographicPartitionsNumPartsInRange {
+    // how many elements in the set
+    n: usize,
+    // min and max number of parts in the partition
+    min_x: usize,
+    max_x: usize,
+    elements: Vec<Element>,
+    finished: bool,
+}
 
-// impl Iterator for PartitionsFixedParts {
-//     type Item = Vec<usize>;
+impl LexographicPartitionsNumPartsInRange {
+    fn check(&self) -> Result<(), ()> {
+        // check invariants
+        if !self.finished {
+            assert_eq!(self.elements.len(), self.n);
+            assert_eq!(self.elements[0].x, 0);
+            assert_eq!(self.elements[0].cum_x, 0);
+            assert_eq!(self.elements[0].pivot, true);
+            let mut cum_max = 0;
+            for i in 1..self.n {
+                if self.elements[i].x <= cum_max {
+                    assert_eq!(self.elements[i].cum_x, cum_max);
+                    assert_eq!(self.elements[i].pivot, false);
+                } else if self.elements[i].x == cum_max + 1 {
+                    cum_max += 1;
+                    assert_eq!(self.elements[i].cum_x, cum_max);
+                    assert_eq!(self.elements[i].pivot, true);
+                } else {
+                    panic!();
+                }
+            }
+            cum_max += 1;
+            assert!(self.min_x <= cum_max);
+            assert!(cum_max <= self.max_x);
+        }
+        Ok(())
+    }
 
-//     fn next(&mut self) -> Option<Self::Item> {
-//         todo!()
-//         // let next = match self.finished {
-//         //     true => None,
-//         //     false => Some(self.labels.clone()),
-//         // };
+    pub fn new(n: usize, min_x: usize, max_x: usize) -> Self {
+        let mut elements = vec![];
+        for i in 0..n {
+            elements.push(Element {
+                x: 0,
+                cum_x: 0,
+                pivot: i == 0,
+            })
+        }
+        let mut s = Self {
+            n,
+            min_x,
+            max_x,
+            elements,
+            finished: false,
+        };
+        if (n == 0 && min_x > 0) || (n > 0 && max_x == 0) || (n < min_x) || (min_x > max_x) {
+            s.finished = true;
+        }
+        if n > 0 {
+            s.reset_tail(0);
+        }
+        s
+    }
 
-//         // println!("{:?}", self);
+    fn reset_tail(&mut self, j: usize) {
+        let cum_max_j = self.elements[j].cum_x;
+        // if !self.elements[j].pivot {
+        //     self.elements[j].part = 0;
+        // }
+        for i in (j + 1)..self.n {
+            let rev_i = self.n - i;
+            let x = if rev_i <= self.min_x {
+                let x = self.min_x - rev_i;
+                if x > cum_max_j { x } else { 0 }
+            } else {
+                0
+            };
+            self.elements[i] = Element {
+                x,
+                cum_x: if x == 0 { cum_max_j } else { x },
+                pivot: x != 0,
+            };
+        }
+        #[cfg(debug_assertions)]
+        self.check().unwrap();
+    }
+}
 
-//         // for i in (0..self.n).rev() {
-//         //     println!("{:?}", i);
-//         //     if self.max_left[i] >= self.labels[i] && self.labels[i] + 1 < self.x {
-//         //         self.labels[i] += 1;
-//         //         for j in (i+1)..self.n {
-//         //             self.labels[j] = 0;
-//         //         }
-//         //         break;
-//         //     }
-//         // }
+impl Iterator for LexographicPartitionsNumPartsInRange {
+    type Item = Vec<usize>;
 
-//         // next
-//     }
-// }
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.finished {
+            None
+        } else {
+            let next = (0..self.n).map(|i| self.elements[i].x).collect();
+            'SEARCH: {
+                for i in (0..self.n).rev() {
+                    if !self.elements[i].pivot {
+                        let max = self.elements[i].cum_x;
+                        let x = &mut self.elements[i].x;
+                        if *x + 1 < self.max_x {
+                            if *x < max {
+                                *x += 1;
+                                self.reset_tail(i);
+                                break 'SEARCH;
+                            } else if *x == max {
+                                *x += 1;
+                                self.elements[i].cum_x += 1;
+                                self.elements[i].pivot = true;
+                                self.reset_tail(i);
+                                break 'SEARCH;
+                            }
+                        }
+                    }
+                }
+                self.finished = true;
+            }
+            Some(next)
+        }
+    }
+}
+
+pub fn set_partitions_eq(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    LexographicPartitionsNumPartsInRange::new(n, x, x)
+}
+
+pub fn set_partitions_le(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    LexographicPartitionsNumPartsInRange::new(n, 0, x)
+}
+
+pub fn set_partitions_ge(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    LexographicPartitionsNumPartsInRange::new(n, x, n)
+}
+
+pub fn set_partitions_range(
+    n: usize,
+    min_x: usize,
+    max_x: usize,
+) -> impl Iterator<Item = Vec<usize>> {
+    LexographicPartitionsNumPartsInRange::new(n, min_x, max_x)
+}
 
 #[cfg(test)]
 mod partition_tests {
@@ -240,12 +323,113 @@ mod partition_tests {
         assert_eq!(p.num_classes(), 2);
     }
 
-    // #[test]
-    // fn generate_set_partitions() {
-    //     let p = PartitionsFixedParts::new(10, 4);
-    //     println!("{:?}", p);
-    //     for x in p {
-    //         println!("{:?}", x);
-    //     }
-    // }
+    #[test]
+    fn generate_set_partitions() {
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(0, 0, 0)
+                .collect::<Vec<_>>()
+                .len(),
+            1
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(0, 1, 1)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(0, 2, 2)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(0, 3, 3)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(1, 0, 0)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(1, 1, 1)
+                .collect::<Vec<_>>()
+                .len(),
+            1
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(1, 2, 2)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(1, 3, 3)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(2, 0, 0)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(2, 1, 1)
+                .collect::<Vec<_>>()
+                .len(),
+            1
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(2, 2, 2)
+                .collect::<Vec<_>>()
+                .len(),
+            1
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(2, 3, 3)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(3, 0, 0)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(3, 1, 1)
+                .collect::<Vec<_>>()
+                .len(),
+            1
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(3, 2, 2)
+                .collect::<Vec<_>>()
+                .len(),
+            3
+        );
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(3, 3, 3)
+                .collect::<Vec<_>>()
+                .len(),
+            1
+        );
+
+        assert_eq!(
+            LexographicPartitionsNumPartsInRange::new(4, 5, 3)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+    }
 }
