@@ -12,7 +12,7 @@ Add
 
 ```ignore
 [dependencies]
-algebraeon = "0.1.7"
+algebraeon = "0.0.10"
 ```
 
 to your `cargo.toml` to make Algebraeon available. Copy an example below to get started.
