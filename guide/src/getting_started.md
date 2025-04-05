@@ -9,4 +9,4 @@ Run `cargo add algebraeon` in the root of your rust project to add the latest ve
 algebraeon = "0.0.11"
 ```
 
-Copy one of the example below to get started.
+Copy one of the example in the next section to get started.
