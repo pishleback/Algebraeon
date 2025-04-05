@@ -1,4 +1,4 @@
-name: Deploy User Guide
+name: Deploy user guide
 on:
   push:
     branches:
