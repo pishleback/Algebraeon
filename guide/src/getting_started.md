@@ -1,2 +1,12 @@
 # Getting Started
-How to get it set up and stuff
+
+## As a Library
+
+Run `cargo add algebraeon` in the root of your rust project to add the latest version of Algebraeon to your dependencies in your `Cargo.toml`
+
+```ignore
+[dependencies]
+algebraeon = "0.0.11"
+```
+
+Copy one of the example below to get started.
