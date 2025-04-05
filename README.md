@@ -8,14 +8,14 @@ Algebraeon uses [Malachite](https://www.malachite.rs/) for arbitrary sized integ
 
 # Usage
 
-Add
+Run `cargo add algebraeon` in the root of your rust project to add the latest version of Algebraeon to your dependencies in your `Cargo.toml`
 
 ```ignore
 [dependencies]
-algebraeon = "0.0.10"
+algebraeon = "0.0.11"
 ```
 
-to your `cargo.toml` to make Algebraeon available. Copy an example below to get started.
+Copy an example below to get started.
 
 ## Factoring Integers
 
