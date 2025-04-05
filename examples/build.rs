@@ -17,7 +17,14 @@ fn main() -> io::Result<()> {
     for md_path in md_files {
         let md_name = md_path.file_stem().unwrap().to_str().unwrap();
         let rel_path = md_path.to_str().unwrap();
-        let path = String::from(manifest_dir.join( rel_path).canonicalize().unwrap().to_str().unwrap());
+        let path = String::from(
+            manifest_dir
+                .join(rel_path)
+                .canonicalize()
+                .unwrap()
+                .to_str()
+                .unwrap(),
+        );
         let path = path.replace('\\', "\\\\"); // escape Windows paths
         writeln!(
             doc_file,

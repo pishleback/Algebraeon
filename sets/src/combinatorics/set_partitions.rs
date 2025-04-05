@@ -1,5 +1,5 @@
 use indexmap::IndexMap;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 #[derive(Clone, Debug)]
 pub struct Partition {
@@ -8,7 +8,9 @@ pub struct Partition {
 }
 
 impl Partition {
+    #[cfg(debug_assertions)]
     fn check_state(&self) -> Result<(), &'static str> {
+        use std::collections::HashMap;
         let mut present = HashMap::new();
         let n = self.lookup.len();
         for (idx, part) in self.partition.iter().enumerate() {
@@ -125,6 +127,7 @@ pub struct LexographicPartitionsNumPartsInRange {
 }
 
 impl LexographicPartitionsNumPartsInRange {
+    #[cfg(debug_assertions)]
     fn check(&self) -> Result<(), ()> {
         // check invariants
         if !self.finished {
