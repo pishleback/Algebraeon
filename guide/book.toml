@@ -1,0 +1,6 @@
+[book]
+authors = ["Michael"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Algebraeon User Guide"

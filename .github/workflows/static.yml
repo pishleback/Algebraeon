@@ -26,15 +26,14 @@ jobs:
         run: |
           # This assumes your book is in the root of your repository.
           # Just add a `cd` here if you need to change to another directory.
-          cd docs
-          mdbook build
+          mdbook build guide
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload entire repository
-          path: 'docs/book'
+          path: 'guide/book'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
