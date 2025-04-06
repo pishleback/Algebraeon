@@ -1,5 +1,5 @@
 use super::{
-    embedded_anf::anf_multi_primitive_element_theorem, ring_of_integers::RingOfIntegersStructure,
+    embedded_anf::anf_multi_primitive_element_theorem, ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
 };
 use crate::{linear::matrix::*, polynomial::*, structure::*};
 use algebraeon_nzq::{Integer, Natural, Rational, traits::Abs};
@@ -133,9 +133,9 @@ impl AlgebraicNumberFieldStructure {
         }
     }
 
-    pub fn ring_of_integers(&self) -> RingOfIntegersStructure {
+    pub fn ring_of_integers(&self) -> RingOfIntegersWithIntegralBasisStructure {
         let (integral_basis, discriminant) = self.compute_integral_basis_and_discriminant();
-        RingOfIntegersStructure::new(self.clone(), integral_basis, discriminant)
+        RingOfIntegersWithIntegralBasisStructure::new(self.clone(), integral_basis, discriminant)
     }
 
     pub fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
