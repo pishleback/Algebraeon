@@ -6,6 +6,118 @@ See the [user guide](https://pishleback.github.io/Algebraeon/) to get started.
 
 Algebraeon is hosted on crates.io [here](https://crates.io/crates/algebraeon) and the formal documentation can be found [here](https://docs.rs/algebraeon/latest/algebraeon/).
 
+# Examples
+
+
+## Factoring Integers
+
+To factor large integers using Algebraeon
+
+```
+use std::str::FromStr;
+use algebraeon::{nzq::Natural, rings::number::natural::factorization::factor};
+
+let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
+let f = factor(n.clone()).unwrap();
+println!("{} = {}", n, f);
+/*
+Output:
+    706000565581575429997696139445280900 = 2^2 × 5^2 × 6988699669998001 × 1010203040506070809
+*/
+```
+
+Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization), the third-fastest known factoring algorithm known, for quickly finding prime factors with around 20 digits.
+
+## Factoring Polynomials
+
+Factor the polynomials \\(x^2 - 5x + 6\\) and \\(x^{15} - 1\\).
+
+```
+use algebraeon::rings::{polynomial::*, structure::*};
+use algebraeon::nzq::Integer;
+
+let x = &Polynomial::<Integer>::var().into_ergonomic();
+let f = (x.pow(2) - 5*x + 6).into_verbose();
+println!("f(λ) = {}", f.factor().unwrap());
+/*
+Output:
+    f(λ) = 1 * ((-2)+λ) * ((-3)+λ)
+*/
+
+let f = (x.pow(15) - 1).into_verbose();
+println!("f(λ) = {}", f.factor().unwrap());
+/*
+Output:
+    f(λ) = 1 * ((-1)+λ) * (1+λ+λ^2) * (1+λ+λ^2+λ^3+λ^4) * (1+(-1)λ+λ^3+(-1)λ^4+λ^5+(-1)λ^7+λ^8)
+*/
+```
+
+so
+
+\\[x^2 - 5x + 6 = (x-2)(x-3)\\]
+
+\\[x^{15}-1 = (x-1)(x^2+x+1)(x^4+x^3+x^2+x+1)(x^8-x^7+x^5-x^4+x^3-x+1)\\]
+
+## Linear Systems of Equations
+
+Find the general solution to the linear system
+
+\\[a \begin{pmatrix}3 \\\\ 4 \\\\ 1\end{pmatrix} + b \begin{pmatrix}2 \\\\ 1 \\\\ 2\end{pmatrix} + c \begin{pmatrix}1 \\\\ 3 \\\\ -1\end{pmatrix} = \begin{pmatrix}5 \\\\ 5 \\\\ 3\end{pmatrix}\\]
+
+for integers \\(a\\), \\(b\\) and \\(c\\).
+
+```
+use algebraeon::rings::linear::matrix::Matrix;
+use algebraeon::nzq::Integer;
+let x = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
+let y = Matrix::<Integer>::from_rows(vec![vec![5, 5, 3]]);
+let s = x.row_solution_lattice(y);
+s.pprint();
+/*
+Output:
+    Start Affine Lattice
+    Offset
+    ( 2    0    -1 )
+    Start Linear Lattice
+    ( 1    -1    -1 )
+    End Linear Lattice
+    End Affine Lattice
+*/
+```
+
+so the general solution is all \\(a\\), \\(b\\), \\(c\\) such that
+
+\\[\begin{pmatrix}a \\\\ b \\\\ c\end{pmatrix} = \begin{pmatrix}2 \\\\ 0 \\\\ -1\end{pmatrix} + t\begin{pmatrix}1 \\\\ -1 \\\\ -1\end{pmatrix}\\]
+
+for some integer \\(t\\).
+
+## Complex Root Isolation
+
+Find all complex roots of the polynomial
+\\[f(x) = x^5 + x^2 - x + 1\\]
+
+```
+use algebraeon::rings::{polynomial::*, structure::*};
+use algebraeon::nzq::Integer;
+
+let x = &Polynomial::<Integer>::var().into_ergonomic();
+let f = (x.pow(5) + x.pow(2) - x + 1).into_verbose();
+// Find the complex roots of f(x)
+for root in f.all_complex_roots() {
+    println!("root {} of degree {}", root, root.degree());
+}
+/*
+Output:
+    root ≈-1.328 of degree 3
+    root ≈0.662-0.559i of degree 3
+    root ≈0.662+0.559i of degree 3
+    root -i of degree 2
+    root i of degree 2
+*/
+```
+
+Despite the output, the roots found are _not_ numerical approximations. Rather, they are stored internally as exact algebraic numbers by using isolating boxes in the complex plane.
+
 # Contributing
 
 Contributions are welcome. There are two primary ways to contribute:
