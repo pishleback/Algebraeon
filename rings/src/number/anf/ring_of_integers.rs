@@ -3,7 +3,7 @@ use crate::{
     linear::matrix::Matrix,
     polynomial::Polynomial,
     structure::{
-        FiniteUnitsStructure, IntegralDomainStructure, RingStructure, SemiRingStructure,
+        IntegralDomainStructure, RingDivisionError, RingStructure, SemiRingStructure,
         UnitsStructure,
     },
 };
@@ -233,7 +233,19 @@ impl RingStructure for RingOfIntegersWithIntegralBasisStructure {
 
 impl UnitsStructure for RingOfIntegersWithIntegralBasisStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
-        todo!()
+        if self.is_zero(a) {
+            Err(RingDivisionError::DivideByZero)
+        } else {
+            if let Some(a_inv) = self.anf_to_roi(
+                self.algebraic_number_field
+                    .inv(&self.roi_to_anf(a))
+                    .unwrap(),
+            ) {
+                Ok(a_inv)
+            } else {
+                Err(RingDivisionError::NotDivisible)
+            }
+        }
     }
 }
 
@@ -243,15 +255,19 @@ impl IntegralDomainStructure for RingOfIntegersWithIntegralBasisStructure {
         a: &Self::Set,
         b: &Self::Set,
     ) -> Result<Self::Set, crate::structure::RingDivisionError> {
-        todo!()
+        match self.inv(b) {
+            Ok(b_inv) => Ok(self.mul(a, &b_inv)),
+            Err(err) => Err(err),
+        }
     }
 }
 
-impl FiniteUnitsStructure for RingOfIntegersWithIntegralBasisStructure {
-    fn all_units(&self) -> Vec<Self::Set> {
-        todo!()
-    }
-}
+// TODO:
+// impl FiniteUnitsStructure for RingOfIntegersWithIntegralBasisStructure {
+//     fn all_units(&self) -> Vec<Self::Set> {
+//         todo!()
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -322,8 +338,6 @@ mod tests {
         {
             let alpha = roi.anf_to_roi((2 + 3 * &x).into_verbose()).unwrap();
             let beta = roi.anf_to_roi((-1 + 2 * &x).into_verbose()).unwrap();
-            println!("{:?}", alpha);
-            println!("{:?}", beta);
 
             {
                 let gamma = roi.anf_to_roi((1 + 5 * &x).into_verbose()).unwrap();
@@ -342,6 +356,13 @@ mod tests {
                 let gamma = roi.anf_to_roi((-2 - 3 * &x).into_verbose()).unwrap();
                 // -(2 + 3x) = -2 - 3x
                 assert_eq!(roi.neg(&alpha), gamma);
+            }
+
+            {
+                assert_eq!(roi.inv(&roi.neg(&roi.one())).unwrap(), roi.neg(&roi.one()));
+                assert_eq!(roi.inv(&roi.one()).unwrap(), roi.one());
+                assert!(roi.inv(&alpha).is_err());
+                assert!(roi.inv(&beta).is_err());
             }
         }
 
