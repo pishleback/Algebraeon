@@ -20,15 +20,19 @@ impl IdealStructure for RingOfIntegersWithIntegralBasisStructure {
 }
 
 impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
-    fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) {
+    fn ideal_contains(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool {
         todo!()
     }
 
-    fn ideal_add(&self, a: &Self::Ideal, b: &Self::Ideal) {
+    fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
         todo!()
     }
 
-    fn ideal_mul(&self, a: &Self::Ideal, b: &Self::Ideal) {
+    fn ideal_add(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
+        todo!()
+    }
+
+    fn ideal_mul(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
         todo!()
     }
 }

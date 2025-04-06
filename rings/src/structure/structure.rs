@@ -264,9 +264,13 @@ where
 impl<R: MetaRing> MetaIdealStructure for R where Self::Structure: IdealStructure<Set = R> {}
 
 pub trait IdealArithmeticStructure: IdealStructure {
-    fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal);
-    fn ideal_add(&self, a: &Self::Ideal, b: &Self::Ideal);
-    fn ideal_mul(&self, a: &Self::Ideal, b: &Self::Ideal);
+    fn ideal_equal(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool {
+        self.ideal_contains(a, b) && self.ideal_contains(b, a)
+    }
+    fn ideal_contains(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool;
+    fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
+    fn ideal_add(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
+    fn ideal_mul(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
 }
 pub trait MetaIdealArithmeticStructure: MetaIdealStructure
 where
