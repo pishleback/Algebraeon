@@ -3,7 +3,7 @@
 - [Introduction](./introduction.md)
 - [Getting Started](./getting_started.md)
 - [Examples](./examples.md)
-- [Combinatorics]()
+<!-- - [Combinatorics]()
 - - [Number Partitions]()
 - - [Number Compositions]()
 - - [Set Partitions]()
@@ -26,4 +26,4 @@
 - [Groups]()
 - - [Finite Groups]()
 - - [Finitely Generated Groups]()
-- - [Permutations]()
+- - [Permutations]() -->
