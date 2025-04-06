@@ -58,6 +58,7 @@ pub struct RingOfIntegersWithIntegralBasisElement {
 
 impl RingOfIntegersWithIntegralBasisStructure {
     pub fn roi_to_anf(&self, elem: RingOfIntegersWithIntegralBasisElement) -> Polynomial<Rational> {
+        debug_assert_eq!(elem.coefficients.len(), self.degree());
         todo!()
     }
 
@@ -131,5 +132,76 @@ impl IntegralDomainStructure for RingOfIntegersWithIntegralBasisStructure {
 impl FiniteUnitsStructure for RingOfIntegersWithIntegralBasisStructure {
     fn all_units(&self) -> Vec<Self::Set> {
         todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        polynomial::PolynomialStructure,
+        structure::{IntoErgonomic, MetaSemiRing},
+    };
+
+    #[test]
+    fn ring_of_integer_arithmetic() {
+        let x = Polynomial::<Rational>::var().into_ergonomic();
+
+        // Take the integral basis (0 + x, 1/2 + 1/2x)
+        let a = Polynomial::<Rational>::from_coeffs(vec![Rational::ZERO, Rational::ONE]);
+        let b = Polynomial::<Rational>::from_coeffs(vec![Rational::ONE_HALF, Rational::ONE_HALF]);
+
+        let anf = (x.pow(2) + 7).into_verbose().algebraic_number_field();
+        let roi = RingOfIntegersWithIntegralBasisStructure::new(
+            anf.clone(),
+            vec![a.clone(), b.clone()],
+            Integer::from(-7),
+        );
+
+        {
+            assert_eq!(
+                roi.roi_to_anf(RingOfIntegersWithIntegralBasisElement {
+                    coefficients: vec![Integer::from(1), Integer::from(4)]
+                }),
+                (2 + 3 * x).into_verbose()
+            );
+        }
+
+        {
+            assert!(
+                roi.anf_to_roi(Polynomial::<Rational>::from_coeffs(vec![
+                    Rational::ONE_HALF,
+                    Rational::ONE,
+                ]))
+                .is_none()
+            );
+
+            let c = roi
+                .anf_to_roi(Polynomial::<Rational>::from_coeffs(vec![
+                    Rational::from(2),
+                    Rational::from(3),
+                ]))
+                .unwrap()
+                .coefficients;
+            assert_eq!(c.len(), 2);
+            assert_eq!(c[0], Integer::from(1));
+            assert_eq!(c[1], Integer::from(4));
+        }
+
+        {
+            // 0 = 0 * (0+x) + 0 * (1/2 + 1/2x)
+            let zero = roi.zero().coefficients;
+            assert_eq!(zero.len(), 2);
+            assert_eq!(zero[0], Integer::ZERO);
+            assert_eq!(zero[1], Integer::ZERO);
+        }
+
+        {
+            // 1 = -1 * (0+x) + 2 * (1/2 + 1/2x)
+            let one = roi.one().coefficients;
+            assert_eq!(one.len(), 2);
+            assert_eq!(one[0], Integer::from(-1));
+            assert_eq!(one[1], Integer::from(2));
+        }
     }
 }
