@@ -8,7 +8,6 @@ Algebraeon is hosted on crates.io [here](https://crates.io/crates/algebraeon) an
 
 # Examples
 
-
 ## Factoring Integers
 
 To factor large integers using Algebraeon
@@ -30,7 +29,7 @@ Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedi
 
 ## Factoring Polynomials
 
-Factor the polynomials \\(x^2 - 5x + 6\\) and \\(x^{15} - 1\\).
+Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
 
 ```
 use algebraeon::rings::{polynomial::*, structure::*};
@@ -54,17 +53,23 @@ Output:
 
 so
 
-\\[x^2 - 5x + 6 = (x-2)(x-3)\\]
+```math
+x^2 - 5x + 6 = (x-2)(x-3)
+```
 
-\\[x^{15}-1 = (x-1)(x^2+x+1)(x^4+x^3+x^2+x+1)(x^8-x^7+x^5-x^4+x^3-x+1)\\]
+```math
+x^{15}-1 = (x-1)(x^2+x+1)(x^4+x^3+x^2+x+1)(x^8-x^7+x^5-x^4+x^3-x+1)
+```
 
 ## Linear Systems of Equations
 
 Find the general solution to the linear system
 
-\\[a \begin{pmatrix}3 \\\\ 4 \\\\ 1\end{pmatrix} + b \begin{pmatrix}2 \\\\ 1 \\\\ 2\end{pmatrix} + c \begin{pmatrix}1 \\\\ 3 \\\\ -1\end{pmatrix} = \begin{pmatrix}5 \\\\ 5 \\\\ 3\end{pmatrix}\\]
+```math
+a \begin{pmatrix}3 \\ 4 \\ 1\end{pmatrix} + b \begin{pmatrix}2 \\ 1 \\ 2\end{pmatrix} + c \begin{pmatrix}1 \\ 3 \\ -1\end{pmatrix} = \begin{pmatrix}5 \\ 5 \\ 3\end{pmatrix}
+```
 
-for integers \\(a\\), \\(b\\) and \\(c\\).
+for integers $a$, $b$ and $c$.
 
 ```
 use algebraeon::rings::linear::matrix::Matrix;
@@ -85,16 +90,18 @@ Output:
 */
 ```
 
-so the general solution is all \\(a\\), \\(b\\), \\(c\\) such that
+so the general solution is all $a$, $b$, $c$ such that
 
-\\[\begin{pmatrix}a \\\\ b \\\\ c\end{pmatrix} = \begin{pmatrix}2 \\\\ 0 \\\\ -1\end{pmatrix} + t\begin{pmatrix}1 \\\\ -1 \\\\ -1\end{pmatrix}\\]
+```math
+\begin{pmatrix}a \\ b \\ c\end{pmatrix} = \begin{pmatrix}2 \\ 0 \\ -1\end{pmatrix} + t\begin{pmatrix}1 \\ -1 \\ -1\end{pmatrix}
+```
 
-for some integer \\(t\\).
+for some integer $t$.
 
 ## Complex Root Isolation
 
 Find all complex roots of the polynomial
-\\[f(x) = x^5 + x^2 - x + 1\\]
+$$f(x) = x^5 + x^2 - x + 1$$
 
 ```
 use algebraeon::rings::{polynomial::*, structure::*};
