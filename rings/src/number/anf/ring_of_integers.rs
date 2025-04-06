@@ -22,7 +22,9 @@ pub struct RingOfIntegersWithIntegralBasisStructure {
 
 impl PartialEq for RingOfIntegersWithIntegralBasisStructure {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other)
+        self.algebraic_number_field == other.algebraic_number_field
+            && self.integral_basis == other.integral_basis
+            && self.discriminant == other.discriminant
     }
 }
 impl Eq for RingOfIntegersWithIntegralBasisStructure {}

@@ -253,6 +253,31 @@ where
 }
 impl<R: MetaRing> MetaIntegralDomain for R where Self::Structure: IntegralDomainStructure<Set = R> {}
 
+pub trait IdealStructure: IntegralDomainStructure {
+    type Ideal;
+}
+pub trait MetaIdealStructure: MetaIntegralDomain
+where
+    Self::Structure: IdealStructure,
+{
+}
+impl<R: MetaRing> MetaIdealStructure for R where Self::Structure: IdealStructure<Set = R> {}
+
+pub trait IdealArithmeticStructure: IdealStructure {
+    fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal);
+    fn ideal_add(&self, a: &Self::Ideal, b: &Self::Ideal);
+    fn ideal_mul(&self, a: &Self::Ideal, b: &Self::Ideal);
+}
+pub trait MetaIdealArithmeticStructure: MetaIdealStructure
+where
+    Self::Structure: IdealArithmeticStructure,
+{
+}
+impl<R: MetaRing> MetaIdealArithmeticStructure for R where
+    Self::Structure: IdealArithmeticStructure<Set = R>
+{
+}
+
 pub trait OrderedRingStructure: IntegralDomainStructure {
     // <= satisfying translation invariance and multiplication by positive scalar
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering;
