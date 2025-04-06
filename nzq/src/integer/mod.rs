@@ -1,5 +1,6 @@
 //! The Integer type and operations.
 
+use crate::Rational;
 use crate::natural::*;
 use crate::traits::*;
 use algebraeon_sets::structure::*;
@@ -101,6 +102,27 @@ impl From<&Natural> for Integer {
         Self(malachite_nz::integer::Integer::from(
             value.to_malachite_ref(),
         ))
+    }
+}
+
+impl TryFrom<Rational> for Integer {
+    type Error = ();
+    fn try_from(value: Rational) -> Result<Self, Self::Error> {
+        if let Ok(value) = malachite_nz::integer::Integer::try_from(value.to_malachite()) {
+            Ok(Integer::from_malachite(value))
+        } else {
+            Err(())
+        }
+    }
+}
+impl TryFrom<&Rational> for Integer {
+    type Error = ();
+    fn try_from(value: &Rational) -> Result<Self, Self::Error> {
+        if let Ok(value) = malachite_nz::integer::Integer::try_from(value.to_malachite_ref()) {
+            Ok(Integer::from_malachite(value))
+        } else {
+            Err(())
+        }
     }
 }
 

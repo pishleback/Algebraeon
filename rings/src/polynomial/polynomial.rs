@@ -1018,6 +1018,10 @@ where
         Self::structure().leading_coeff(self).cloned()
     }
 
+    pub fn mul_scalar(&self, x: &R) -> Self {
+        Self::structure().mul_scalar(self, x)
+    }
+
     pub fn evaluate(&self, x: &R) -> R {
         Self::structure().evaluate(self, x)
     }

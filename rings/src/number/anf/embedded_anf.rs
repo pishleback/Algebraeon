@@ -244,7 +244,7 @@ mod tests {
             println!(
                 "{:?}",
                 root.abstract_generated_algebraic_number_field()
-                    .compute_integral_basis()
+                    .compute_integral_basis_and_discriminant()
             );
         }
     }
