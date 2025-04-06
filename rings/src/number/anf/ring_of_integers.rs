@@ -1,5 +1,6 @@
 use super::number_field::AlgebraicNumberFieldStructure;
 use crate::{
+    linear::matrix::Matrix,
     polynomial::Polynomial,
     structure::{
         FiniteUnitsStructure, IntegralDomainStructure, RingStructure, SemiRingStructure,
@@ -14,6 +15,9 @@ pub struct RingOfIntegersWithIntegralBasisStructure {
     algebraic_number_field: AlgebraicNumberFieldStructure,
     integral_basis: Vec<Polynomial<Rational>>,
     discriminant: Integer,
+    // The below just aid in the efficiency of calculations
+    one: Option<RingOfIntegersWithIntegralBasisElement>, // store 1
+    mul_crossterms: Option<Vec<Vec<RingOfIntegersWithIntegralBasisElement>>>,
 }
 
 impl PartialEq for RingOfIntegersWithIntegralBasisStructure {
@@ -29,6 +33,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         integral_basis: Vec<Polynomial<Rational>>,
         discriminant: Integer,
     ) -> Self {
+        debug_assert_eq!(integral_basis.len(), algebraic_number_field.degree());
         debug_assert_eq!(
             algebraic_number_field.discriminant(&integral_basis),
             discriminant
@@ -39,15 +44,39 @@ impl RingOfIntegersWithIntegralBasisStructure {
         for a in &integral_basis {
             debug_assert!(algebraic_number_field.is_algebraic_integer(a))
         }
-        Self {
+        let mut roi = Self {
             algebraic_number_field,
             integral_basis,
             discriminant,
-        }
+            one: None,
+            mul_crossterms: None,
+        };
+        let n = roi.degree();
+        roi.one = Some(roi.anf_to_roi(roi.algebraic_number_field.one()).unwrap());
+        roi.mul_crossterms = Some(
+            (0..n)
+                .map(|j| {
+                    (0..(j + 1))
+                        .map(|i| {
+                            roi.anf_to_roi(
+                                roi.algebraic_number_field
+                                    .mul(&roi.integral_basis[i], &roi.integral_basis[j]),
+                            )
+                            .unwrap()
+                        })
+                        .collect()
+                })
+                .collect(),
+        );
+        roi
     }
 
     pub fn degree(&self) -> usize {
-        self.algebraic_number_field.degree()
+        debug_assert_eq!(
+            self.integral_basis.len(),
+            self.algebraic_number_field.degree()
+        );
+        self.integral_basis.len()
     }
 }
 
@@ -56,17 +85,76 @@ pub struct RingOfIntegersWithIntegralBasisElement {
     coefficients: Vec<Integer>,
 }
 
+impl RingOfIntegersWithIntegralBasisElement {
+    pub fn scalar_mul(self, a: &Integer) -> Self {
+        Self {
+            coefficients: self.coefficients.into_iter().map(|c| c * a).collect(),
+        }
+    }
+
+    pub fn scalar_mul_ref(&self, a: &Integer) -> Self {
+        Self {
+            coefficients: self.coefficients.iter().map(|c| c * a).collect(),
+        }
+    }
+
+    pub fn neg(self) -> Self {
+        Self {
+            coefficients: self.coefficients.into_iter().map(|c| -c).collect(),
+        }
+    }
+
+    pub fn neg_ref(&self) -> Self {
+        Self {
+            coefficients: self.coefficients.iter().map(|c| -c).collect(),
+        }
+    }
+}
+
 impl RingOfIntegersWithIntegralBasisStructure {
-    pub fn roi_to_anf(&self, elem: RingOfIntegersWithIntegralBasisElement) -> Polynomial<Rational> {
-        debug_assert_eq!(elem.coefficients.len(), self.degree());
-        todo!()
+    pub fn roi_to_anf(
+        &self,
+        elem: &RingOfIntegersWithIntegralBasisElement,
+    ) -> Polynomial<Rational> {
+        let n = self.degree();
+        debug_assert_eq!(elem.coefficients.len(), n);
+        self.algebraic_number_field.sum(
+            (0..n)
+                .map(|i| self.integral_basis[i].mul_scalar(&Rational::from(&elem.coefficients[i])))
+                .collect(),
+        )
     }
 
     pub fn anf_to_roi(
         &self,
         elem: Polynomial<Rational>,
     ) -> Option<RingOfIntegersWithIntegralBasisElement> {
-        todo!()
+        let n = self.degree();
+        let y = self.algebraic_number_field.to_col_vector(&elem);
+        let m = Matrix::join_cols(
+            n,
+            (0..n)
+                .map(|i| {
+                    self.algebraic_number_field
+                        .to_col_vector(&self.integral_basis[i])
+                })
+                .collect(),
+        );
+        if let Some(s) = m.col_solve(y) {
+            debug_assert_eq!(s.rows(), n);
+            debug_assert_eq!(s.cols(), 1);
+            if let Ok(coefficients) = (0..n)
+                .map(|i| Integer::try_from(s.at(i, 0).unwrap()))
+                .collect()
+            {
+                Some(RingOfIntegersWithIntegralBasisElement { coefficients })
+            } else {
+                None
+            }
+        } else {
+            // the integral basis is a basis of the anf as a rational vector space
+            unreachable!()
+        }
     }
 }
 
@@ -89,7 +177,10 @@ impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 
     fn one(&self) -> Self::Set {
-        todo!()
+        match &self.one {
+            Some(one) => one.clone(),
+            None => self.anf_to_roi(self.algebraic_number_field.one()).unwrap(),
+        }
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -103,13 +194,40 @@ impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        todo!()
+        let n = self.degree();
+        debug_assert_eq!(a.coefficients.len(), n);
+        debug_assert_eq!(b.coefficients.len(), n);
+        match &self.mul_crossterms {
+            Some(mul_crossterms) => {
+                // Used cached cross-terms
+                let mut t = self.zero();
+                for mut i in 0..n {
+                    for mut j in 0..n {
+                        let c = &a.coefficients[i] * &b.coefficients[j];
+                        // Sort i and j for indexing into mul_crossterms which is a triangular array
+                        if j > i {
+                            (i, j) = (j, i)
+                        }
+                        t = self.add(&t, &mul_crossterms[i][j].clone().scalar_mul(&c));
+                    }
+                }
+                t
+            }
+            None => {
+                // Compute using anf mul
+                self.anf_to_roi(
+                    self.algebraic_number_field
+                        .mul(&self.roi_to_anf(a), &self.roi_to_anf(b)),
+                )
+                .unwrap()
+            }
+        }
     }
 }
 
 impl RingStructure for RingOfIntegersWithIntegralBasisStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        todo!()
+        a.neg_ref()
     }
 }
 
@@ -138,10 +256,7 @@ impl FiniteUnitsStructure for RingOfIntegersWithIntegralBasisStructure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        polynomial::PolynomialStructure,
-        structure::{IntoErgonomic, MetaSemiRing},
-    };
+    use crate::structure::IntoErgonomic;
 
     #[test]
     fn ring_of_integer_arithmetic() {
@@ -160,10 +275,10 @@ mod tests {
 
         {
             assert_eq!(
-                roi.roi_to_anf(RingOfIntegersWithIntegralBasisElement {
+                roi.roi_to_anf(&RingOfIntegersWithIntegralBasisElement {
                     coefficients: vec![Integer::from(1), Integer::from(4)]
                 }),
-                (2 + 3 * x).into_verbose()
+                (2 + 3 * &x).into_verbose()
             );
         }
 
@@ -203,5 +318,33 @@ mod tests {
             assert_eq!(one[0], Integer::from(-1));
             assert_eq!(one[1], Integer::from(2));
         }
+
+        {
+            let alpha = roi.anf_to_roi((2 + 3 * &x).into_verbose()).unwrap();
+            let beta = roi.anf_to_roi((-1 + 2 * &x).into_verbose()).unwrap();
+            println!("{:?}", alpha);
+            println!("{:?}", beta);
+
+            {
+                let gamma = roi.anf_to_roi((1 + 5 * &x).into_verbose()).unwrap();
+                // (2 + 3x) + (-1 + 2x) = 1 + 5x
+                assert_eq!(roi.add(&alpha, &beta), gamma);
+            }
+
+            {
+                let gamma = roi.anf_to_roi((-44 + &x).into_verbose()).unwrap();
+                // x^2 = -7 so
+                // (2 + 3x) * (-1 + 2x) = -44 + x
+                assert_eq!(roi.mul(&alpha, &beta), gamma);
+            }
+
+            {
+                let gamma = roi.anf_to_roi((-2 - 3 * &x).into_verbose()).unwrap();
+                // -(2 + 3x) = -2 - 3x
+                assert_eq!(roi.neg(&alpha), gamma);
+            }
+        }
+
+        println!("{:?}", roi);
     }
 }
