@@ -8,7 +8,7 @@ pub struct Partition {
 }
 
 impl Partition {
-    #[cfg(debug_assertions)]
+    #[cfg(any(debug_assertions, test))]
     fn check_state(&self) -> Result<(), &'static str> {
         use std::collections::HashMap;
         let mut present = HashMap::new();
