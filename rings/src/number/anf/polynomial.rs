@@ -248,7 +248,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
         /*
             input: A squarefree polynomial p(x) over K which we want to factor over K = Q[θ]
-            output: A factorisation of p(x) over K = Q[θ]
+            output: A factorization of p(x) over K = Q[θ]
             idea:
                 Let L = K[x] / p(x)
                 Note that L is a reduced ring
