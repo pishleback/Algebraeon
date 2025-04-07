@@ -9,6 +9,7 @@ pub mod berlekamp_zassenhaus;
 pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
+pub mod ideal;
 
 impl SemiRingStructure for CannonicalStructure<Integer> {
     fn zero(&self) -> Self::Set {

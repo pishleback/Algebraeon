@@ -123,6 +123,10 @@ pub fn gcd(mut x: Natural, mut y: Natural) -> Natural {
     x
 }
 
+pub fn lcm(x: Natural, y: Natural) -> Natural {
+    (&x * &y) / gcd(x, y)
+}
+
 // fn stirling_partition_number(n: &Natural, x: &Natural) -> Natural {
 //     todo!()
 // }

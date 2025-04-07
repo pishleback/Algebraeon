@@ -22,7 +22,9 @@ pub struct RingOfIntegersWithIntegralBasisStructure {
 
 impl PartialEq for RingOfIntegersWithIntegralBasisStructure {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other)
+        self.algebraic_number_field == other.algebraic_number_field
+            && self.integral_basis == other.integral_basis
+            && self.discriminant == other.discriminant
     }
 }
 impl Eq for RingOfIntegersWithIntegralBasisStructure {}
@@ -78,6 +80,15 @@ impl RingOfIntegersWithIntegralBasisStructure {
         );
         self.integral_basis.len()
     }
+
+    pub fn basis_element(&self, i: usize) -> &Polynomial<Rational> {
+        assert!(i < self.degree());
+        &self.integral_basis[i]
+    }
+
+    pub fn anf(&self) -> &AlgebraicNumberFieldStructure {
+        &self.algebraic_number_field
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -86,6 +97,48 @@ pub struct RingOfIntegersWithIntegralBasisElement {
 }
 
 impl RingOfIntegersWithIntegralBasisElement {
+    pub fn basis_element(n: usize, i: usize) -> Self {
+        Self {
+            coefficients: (0..n)
+                .map(|j| if i == j { Integer::ONE } else { Integer::ZERO })
+                .collect(),
+        }
+    }
+
+    pub fn into_col(self) -> Matrix<Integer> {
+        Matrix::from_cols(vec![self.coefficients])
+    }
+
+    pub fn from_col(m: &Matrix<Integer>) -> Self {
+        debug_assert_eq!(m.cols(), 1);
+        let n = m.rows();
+        Self {
+            coefficients: (0..n).map(|i| m.at(i, 0).unwrap().clone()).collect(),
+        }
+    }
+
+    pub fn into_row(self) -> Matrix<Integer> {
+        Matrix::from_cols(vec![self.coefficients])
+    }
+
+    pub fn from_row(m: &Matrix<Integer>) -> Self {
+        debug_assert_eq!(m.rows(), 1);
+        let n = m.cols();
+        Self {
+            coefficients: (0..n).map(|i| m.at(0, i).unwrap().clone()).collect(),
+        }
+    }
+
+    pub fn into_coefficients(self) -> Vec<Integer> {
+        self.coefficients
+    }
+
+    pub fn from_coefficients(coefficients: Vec<Integer>) -> Self {
+        Self {
+            coefficients: coefficients,
+        }
+    }
+
     pub fn scalar_mul(self, a: &Integer) -> Self {
         Self {
             coefficients: self.coefficients.into_iter().map(|c| c * a).collect(),
