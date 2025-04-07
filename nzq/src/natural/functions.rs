@@ -124,7 +124,8 @@ pub fn gcd(mut x: Natural, mut y: Natural) -> Natural {
 }
 
 pub fn lcm(x: Natural, y: Natural) -> Natural {
-    (&x * &y) / gcd(x, y)
+    let g = gcd(x.clone(), y.clone());
+    x * (y / g)
 }
 
 // fn stirling_partition_number(n: &Natural, x: &Natural) -> Natural {
