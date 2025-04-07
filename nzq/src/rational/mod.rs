@@ -113,6 +113,11 @@ impl From<&Integer> for Rational {
         Self(malachite_q::Rational::from(value.to_malachite_ref()))
     }
 }
+impl From<&Rational> for Rational {
+    fn from(value: &Rational) -> Self {
+        value.clone()
+    }
+}
 
 impl FromStr for Rational {
     type Err = ();

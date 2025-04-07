@@ -19,6 +19,7 @@ use std::{
 mod functions;
 pub use functions::choose;
 pub use functions::gcd;
+pub use functions::lcm;
 
 /// Represents a natural number {0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -70,6 +71,11 @@ impl From<u128> for Natural {
 impl From<usize> for Natural {
     fn from(value: usize) -> Self {
         Self(malachite_nz::natural::Natural::from(value))
+    }
+}
+impl From<&Natural> for Natural {
+    fn from(value: &Natural) -> Self {
+        value.clone()
     }
 }
 
