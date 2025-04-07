@@ -80,6 +80,15 @@ impl RingOfIntegersWithIntegralBasisStructure {
         );
         self.integral_basis.len()
     }
+
+    pub fn basis_element(&self, i: usize) -> &Polynomial<Rational> {
+        assert!(i < self.degree());
+        &self.integral_basis[i]
+    }
+
+    pub fn anf(&self) -> &AlgebraicNumberFieldStructure {
+        &self.algebraic_number_field
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -88,6 +97,14 @@ pub struct RingOfIntegersWithIntegralBasisElement {
 }
 
 impl RingOfIntegersWithIntegralBasisElement {
+    pub fn basis_element(n: usize, i: usize) -> Self {
+        Self {
+            coefficients: (0..n)
+                .map(|j| if i == j { Integer::ONE } else { Integer::ZERO })
+                .collect(),
+        }
+    }
+
     pub fn into_col(self) -> Matrix<Integer> {
         Matrix::from_cols(vec![self.coefficients])
     }
