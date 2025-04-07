@@ -104,6 +104,11 @@ impl From<&Natural> for Integer {
         ))
     }
 }
+impl From<&Integer> for Integer {
+    fn from(value: &Integer) -> Self {
+        value.clone()
+    }
+}
 
 impl TryFrom<Rational> for Integer {
     type Error = ();
