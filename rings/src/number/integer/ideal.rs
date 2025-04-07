@@ -19,7 +19,7 @@ impl IdealArithmeticStructure for CannonicalStructure<Integer> {
         b % a == Natural::ZERO
     }
 
-    fn ideal_intersection(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
+    fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
         lcm(a.clone(), b.clone())
     }
 
@@ -69,7 +69,7 @@ mod tests {
         ));
 
         assert!(Integer::ideal_equal(
-            &Integer::ideal_intersection(&Natural::from(6u32), &Natural::from(15u32)),
+            &Integer::ideal_intersect(&Natural::from(6u32), &Natural::from(15u32)),
             &Natural::from(30u32)
         ));
 

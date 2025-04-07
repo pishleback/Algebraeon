@@ -290,7 +290,7 @@ pub trait IdealArithmeticStructure: IdealStructure {
     /// Does a contain b i.e. does a divide b
     fn ideal_contains(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool;
     /// Intersection of ideals
-    fn ideal_intersection(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
+    fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
     // Sum of two ideals
     fn ideal_add(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
     // Sum of many ideals
@@ -347,11 +347,11 @@ where
         Self::structure().ideal_contains(a, b)
     }
     /// Intersection of ideals
-    fn ideal_intersection(
+    fn ideal_intersect(
         a: &<Self::Structure as IdealStructure>::Ideal,
         b: &<Self::Structure as IdealStructure>::Ideal,
     ) -> <Self::Structure as IdealStructure>::Ideal {
-        Self::structure().ideal_intersection(a, b)
+        Self::structure().ideal_intersect(a, b)
     }
     // Sum of two ideals
     fn ideal_add(

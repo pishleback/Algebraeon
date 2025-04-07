@@ -88,13 +88,20 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             .contains_sublattice(&a.lattice, &b.lattice)
     }
 
-    fn ideal_intersection(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
+    fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
         #[cfg(debug_assertions)]
         {
             self.check_ideal(a);
             self.check_ideal(b);
         }
-        todo!()
+        Self::Ideal {
+            lattice: LinearLatticeStructure::new(Integer::structure()).intersect_pair(
+                self.degree(),
+                1,
+                &a.lattice,
+                &b.lattice,
+            ),
+        }
     }
 
     fn ideal_add(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
@@ -103,7 +110,14 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             self.check_ideal(a);
             self.check_ideal(b);
         }
-        todo!()
+        Self::Ideal {
+            lattice: LinearLatticeStructure::new(Integer::structure()).sum_pair(
+                self.degree(),
+                1,
+                &a.lattice,
+                &b.lattice,
+            ),
+        }
     }
 
     fn ideal_mul(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
@@ -112,7 +126,28 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             self.check_ideal(a);
             self.check_ideal(b);
         }
-        todo!()
+        let n = self.degree();
+
+        let a_basis = a
+            .lattice
+            .basis_matrices()
+            .into_iter()
+            .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+            .collect::<Vec<_>>();
+        let b_basis = b
+            .lattice
+            .basis_matrices()
+            .into_iter()
+            .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+            .collect::<Vec<_>>();
+
+        let mut span = vec![];
+        for i in 0..n {
+            for j in 0..n {
+                span.push(self.mul(&a_basis[i], &b_basis[j]));
+            }
+        }
+        Self::Ideal::from_integer_span(n, span)
     }
 }
 
@@ -137,19 +172,71 @@ mod tests {
             Integer::from(8),
         );
 
-        // 1 + sqrt(2)
-        let alpha = roi.anf_to_roi((&x + 1).into_verbose()).unwrap();
+        {
+            // 1 + sqrt(2)
+            let alpha = roi.anf_to_roi((&x + 1).into_verbose()).unwrap();
 
-        // (a + b sqrt(2)) * (1 + sqrt(2)) = a(1 + sqrt(2)) + b(2 + sqrt(2))
-        assert!(roi.ideal_equal(
-            &roi.principal_ideal(&alpha),
-            &RingOfIntegersIdeal::from_integer_basis(
-                2,
-                vec![
-                    roi.anf_to_roi((1 + &x).into_verbose()).unwrap(),
-                    roi.anf_to_roi((2 + &x).into_verbose()).unwrap()
-                ]
-            )
-        ));
+            // (a + b sqrt(2)) * (1 + sqrt(2)) = a(1 + sqrt(2)) + b(2 + sqrt(2))
+            assert!(roi.ideal_equal(
+                &roi.principal_ideal(&alpha),
+                &RingOfIntegersIdeal::from_integer_basis(
+                    2,
+                    vec![
+                        roi.anf_to_roi((1 + &x).into_verbose()).unwrap(),
+                        roi.anf_to_roi((2 + &x).into_verbose()).unwrap()
+                    ]
+                )
+            ));
+        }
+
+        {
+            // 6
+            let alpha = roi.anf_to_roi((6 * x.pow(0)).into_verbose()).unwrap();
+            // 15
+            let beta = roi.anf_to_roi((15 * x.pow(0)).into_verbose()).unwrap();
+
+            let alpha_ideal = roi.principal_ideal(&alpha);
+            let beta_ideal = roi.principal_ideal(&beta);
+
+            let alpha_beta_add = roi.ideal_add(&alpha_ideal, &beta_ideal);
+            let alpha_beta_intersect = roi.ideal_intersect(&alpha_ideal, &beta_ideal);
+            let alpha_beta_mul = roi.ideal_mul(&alpha_ideal, &beta_ideal);
+
+            // sum is 3
+            assert!(roi.ideal_equal(
+                &alpha_beta_add,
+                &RingOfIntegersIdeal::from_integer_basis(
+                    2,
+                    vec![
+                        roi.anf_to_roi((3 * x.pow(0)).into_verbose()).unwrap(),
+                        roi.anf_to_roi((3 * x.pow(1)).into_verbose()).unwrap()
+                    ]
+                )
+            ));
+
+            // intersection is 30
+            assert!(roi.ideal_equal(
+                &alpha_beta_intersect,
+                &RingOfIntegersIdeal::from_integer_basis(
+                    2,
+                    vec![
+                        roi.anf_to_roi((30 * x.pow(0)).into_verbose()).unwrap(),
+                        roi.anf_to_roi((30 * x.pow(1)).into_verbose()).unwrap()
+                    ]
+                )
+            ));
+
+            // product is 90
+            assert!(roi.ideal_equal(
+                &alpha_beta_mul,
+                &RingOfIntegersIdeal::from_integer_basis(
+                    2,
+                    vec![
+                        roi.anf_to_roi((90 * x.pow(0)).into_verbose()).unwrap(),
+                        roi.anf_to_roi((90 * x.pow(1)).into_verbose()).unwrap()
+                    ]
+                )
+            ));
+        }
     }
 }
