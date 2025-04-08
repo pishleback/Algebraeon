@@ -1,14 +1,9 @@
-use std::fmt::Display;
-use std::rc::Rc;
-
-use itertools::Itertools;
-
-use crate::linear::matrix::*;
-
 use super::super::structure::*;
-use algebraeon_sets::structure::*;
-
+use crate::linear::matrix::*;
 use algebraeon_nzq::*;
+use algebraeon_sets::structure::*;
+use itertools::Itertools;
+use std::fmt::Display;
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {

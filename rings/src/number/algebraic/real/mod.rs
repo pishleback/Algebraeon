@@ -5,7 +5,7 @@ use algebraeon_sets::structure::*;
 use bounds::*;
 use interval::*;
 use polynomial::*;
-use std::{fmt::Display, rc::Rc};
+use std::fmt::Display;
 
 mod bounds;
 mod interval;
