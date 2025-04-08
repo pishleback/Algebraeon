@@ -599,11 +599,16 @@ where
     }
 }
 
-pub trait CharZeroStructure: RingStructure {}
+pub trait CharZeroStructure: RingStructure {
+    fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
+}
 pub trait MetaCharZero: MetaRing
 where
     Self::Structure: CharZeroStructure,
 {
+    fn try_to_int(&self) -> Option<Integer> {
+        Self::structure().try_to_int(self)
+    }
 }
 impl<R: MetaType> MetaCharZero for R where Self::Structure: CharZeroStructure<Set = R> {}
 
@@ -732,7 +737,6 @@ pub trait FiniteFieldStructure: FieldStructure + FiniteUnitsStructure {
         }
     }
 }
-
 
 // impl<FS: FieldOfFractionsStructure> RealToFloatStructure for FS
 // where

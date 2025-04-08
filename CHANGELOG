@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
  - Ideal sum, product, intersection, containment, equality for integers and rings of integers.
  - Split Structure into SetStructure for sets and Structure.
  - Structures for morphisms, functions, injective functions, ring homomorphisms, principal subring, field of fractions inclusion...
+ - Added try_to_int to CharZeroStructure.
 
 ## [0.0.11] - 2025-03-2025
 

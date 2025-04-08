@@ -1,4 +1,4 @@
-use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
+use crate::polynomial::{PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
@@ -41,6 +41,14 @@ impl IntegralDomainStructure for CannonicalStructure<Rational> {
         } else {
             Ok(a / b)
         }
+    }
+}
+
+impl CharZeroStructure for CannonicalStructure<Rational> {
+    fn try_to_int(&self, x: &Rational) -> Option<Integer> {
+        let (n, d) = x.numerator_and_denominator();
+        debug_assert_ne!(&d, &Natural::ZERO);
+        if d == Natural::ONE { Some(n) } else { None }
     }
 }
 
@@ -97,51 +105,6 @@ impl FactorableStructure for PolynomialStructure<CannonicalStructure<Rational>> 
             self,
             p,
         )
-    }
-}
-
-impl Polynomial<Rational> {
-    pub fn factor_primitive_fof(&self) -> (Rational, Polynomial<Integer>) {
-        todo!()
-    }
-
-    pub fn primitive_part_fof(&self) -> Polynomial<Integer> {
-        todo!()
-    }
-}
-
-#[cfg(test)]
-mod poly_tests {
-    use super::*;
-
-    #[test]
-    fn test_factor_primitive_fof() {
-        for (f, exp) in vec![
-            (
-                Polynomial::from_coeffs(vec![
-                    Rational::from_integers(1, 2),
-                    Rational::from_integers(1, 3),
-                ]),
-                Polynomial::from_coeffs(vec![Integer::from(3), Integer::from(2)]),
-            ),
-            (
-                Polynomial::from_coeffs(vec![
-                    Rational::from_integers(4, 1),
-                    Rational::from_integers(6, 1),
-                ]),
-                Polynomial::from_coeffs(vec![Integer::from(2), Integer::from(3)]),
-            ),
-        ] {
-            let (mul, ans) = f.factor_primitive_fof();
-            assert!(Polynomial::are_associate(&ans, &exp));
-            assert_eq!(
-                Polynomial::mul(
-                    &ans.apply_map(|c| Rational::from(c)),
-                    &Polynomial::constant(mul)
-                ),
-                f
-            );
-        }
     }
 }
 

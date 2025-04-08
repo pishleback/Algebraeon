@@ -6,10 +6,10 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 pub mod berlekamp_zassenhaus;
+pub mod ideal;
 pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
-pub mod ideal;
 
 impl SemiRingStructure for CannonicalStructure<Integer> {
     fn zero(&self) -> Self::Set {
@@ -136,7 +136,11 @@ impl BezoutDomainStructure for CannonicalStructure<Integer> {
     }
 }
 
-impl CharZeroStructure for CannonicalStructure<Integer> {}
+impl CharZeroStructure for CannonicalStructure<Integer> {
+    fn try_to_int(&self, x: &Integer) -> Option<Integer> {
+        Some(x.clone())
+    }
+}
 
 impl ComplexSubsetStructure for CannonicalStructure<Integer> {}
 

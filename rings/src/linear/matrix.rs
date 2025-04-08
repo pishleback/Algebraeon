@@ -1383,45 +1383,40 @@ impl<RS: GreatestCommonDivisorStructure> MatrixStructure<RS> {
     }
 }
 
-// struct FieldOfFractionsExtension<RS: IntegralDomainStructure, FS: FieldOfFractionsStructure<RS>> {
-//     ring: RS,
-//     field: FS,
-// }
+pub fn factor_primitive_fof<
+    Ring: GreatestCommonDivisorStructure,
+    Field: FieldStructure,
+    Fof: FieldOfFractionsInclusionStructure<Ring, Field>,
+>(
+    fof_inclusion: &Fof,
+    mat: &Matrix<Field::Set>,
+) -> (Field::Set, Matrix<Ring::Set>) {
+    let ring = fof_inclusion.domain();
+    let field = fof_inclusion.range();
+    let mat_ring = MatrixStructure::new(ring.clone().into());
 
-/*
+    let div = ring.lcm_list(
+        mat.entries_list()
+            .into_iter()
+            .map(|c| fof_inclusion.denominator(&c))
+            .collect(),
+    );
 
-impl<RS: GreatestCommonDivisorStructure, FS: FieldOfFractionsStructure<RS>> MatrixStructure<FS> {
-    pub fn factor_primitive_fof(
-        &self,
-        mat: &Matrix<FS::Set>,
-    ) -> (FS::Set, Matrix<<FS::RS as SetStructure>::Set>) {
-        let div = self.ring.base_ring_structure().lcm_list(
-            mat.entries_list()
-                .into_iter()
-                .map(|c| self.ring.denominator(&c))
-                .collect(),
-        );
+    let (mul, prim) = mat_ring
+        .factor_primitive(mat.apply_map(|c| {
+            fof_inclusion
+                .try_preimage(&field.mul(&fof_inclusion.image(&div), c))
+                .unwrap()
+        }))
+        .unwrap();
 
-        let (mul, prim) = MatrixStructure::new(self.ring.base_ring_structure())
-            .factor_primitive(mat.apply_map(|c| {
-                self.ring
-                    .as_base_ring(self.ring.mul(&self.ring.from_base_ring(div.clone()), c))
-                    .unwrap()
-            }))
-            .unwrap();
-
-        (
-            self.ring
-                .div(
-                    &self.ring.from_base_ring(mul),
-                    &self.ring.from_base_ring(div),
-                )
-                .unwrap(),
-            prim,
-        )
-    }
+    (
+        field
+            .div(&fof_inclusion.image(&mul), &fof_inclusion.image(&div))
+            .unwrap(),
+        prim,
+    )
 }
-*/
 
 impl<FS: FieldStructure> MatrixStructure<FS> {
     pub fn presentation_matrix(
@@ -2229,22 +2224,19 @@ where
     }
 }
 
-/*
-impl<F: MetaType> Matrix<F>
+impl<Field: MetaType> Matrix<Field>
 where
-    F::Structure: FieldOfFractionsStructure,
-    <F::Structure as FieldOfFractionsStructure>::RS: GreatestCommonDivisorStructure,
+    Field::Structure: FieldStructure,
+    PrincipalSubringInclusion<Field::Structure>:
+        FieldOfFractionsInclusionStructure<CannonicalStructure<Integer>, Field::Structure>,
 {
-    pub fn factor_primitive_fof(
-        &self,
-    ) -> (
-        F,
-        Matrix<<<F::Structure as FieldOfFractionsStructure>::RS as SetStructure>::Set>,
-    ) {
-        Self::structure().factor_primitive_fof(self)
+    pub fn factor_primitive_fof(&self) -> (Field, Matrix<Integer>) {
+        factor_primitive_fof(
+            &PrincipalSubringInclusion::new(Field::structure().as_ref().clone()),
+            self,
+        )
     }
 }
-    */
 
 impl<F: MetaType> Matrix<F>
 where

@@ -39,14 +39,14 @@ impl<Ring: RingStructure> FunctionStructure<CannonicalStructure<Integer>, Ring>
     }
 }
 
-impl<Ring: RingStructure> InjectiveFunctionStructure<CannonicalStructure<Integer>, Ring>
+impl<Ring: CharZeroStructure> InjectiveFunctionStructure<CannonicalStructure<Integer>, Ring>
     for PrincipalSubringInclusion<Ring>
 {
     fn try_preimage(
         &self,
         x: &<Ring as SetStructure>::Set,
     ) -> Option<<CannonicalStructure<Integer> as SetStructure>::Set> {
-        todo!()
+        self.range().try_to_int(x)
     }
 }
 

@@ -691,7 +691,14 @@ impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
 
 impl FieldStructure for CannonicalStructure<RealAlgebraic> {}
 
-impl CharZeroStructure for CannonicalStructure<RealAlgebraic> {}
+impl CharZeroStructure for CannonicalStructure<RealAlgebraic> {
+    fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
+        match alg {
+            RealAlgebraic::Rational(rat) => rat.try_to_int(),
+            RealAlgebraic::Real(_) => None,
+        }
+    }
+}
 
 impl ComplexSubsetStructure for CannonicalStructure<RealAlgebraic> {}
 

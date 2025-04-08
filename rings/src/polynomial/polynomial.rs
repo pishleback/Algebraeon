@@ -352,7 +352,6 @@ impl<RS: SemiRingStructure> PolynomialStructure<RS> {
     }
 }
 
-
 impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     pub fn try_quorem(
         &self,
@@ -684,7 +683,11 @@ impl<RS: FavoriteAssociateStructure + IntegralDomainStructure> FavoriteAssociate
     }
 }
 
-impl<RS: CharZeroStructure> CharZeroStructure for PolynomialStructure<RS> {}
+impl<RS: CharZeroStructure> CharZeroStructure for PolynomialStructure<RS> {
+    fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
+        self.coeff_ring().try_to_int(&self.as_constant(x)?)
+    }
+}
 
 impl<RS: IntegralDomainStructure + FiniteUnitsStructure> FiniteUnitsStructure
     for PolynomialStructure<RS>
@@ -848,6 +851,61 @@ impl<RS: BezoutDomainStructure> PolynomialStructure<RS> {
             )),
             None => None,
         }
+    }
+}
+
+pub fn factor_primitive_fof<
+    Ring: GreatestCommonDivisorStructure,
+    Field: FieldStructure,
+    Fof: FieldOfFractionsInclusionStructure<Ring, Field>,
+>(
+    fof_inclusion: &Fof,
+    p: &Polynomial<Field::Set>,
+) -> (Field::Set, Polynomial<Ring::Set>)
+
+{
+    let ring = fof_inclusion.domain();
+    let field = fof_inclusion.range();
+    let poly_ring = PolynomialStructure::new(ring.clone().into());
+
+    let div = fof_inclusion.domain().lcm_list(
+        p.coeffs()
+            .into_iter()
+            .map(|c| fof_inclusion.denominator(&c))
+            .collect(),
+    );
+
+    let (mul, prim) = poly_ring
+        .factor_primitive(p.apply_map(|c| {
+            fof_inclusion
+                .try_preimage(&field.mul(&fof_inclusion.image(&div), c))
+                .unwrap()
+        }))
+        .unwrap();
+
+    (
+        field
+            .div(&fof_inclusion.image(&mul), &fof_inclusion.image(&div))
+            .unwrap(),
+        prim,
+    )
+}
+
+impl<Field: MetaType> Polynomial<Field>
+where
+    Field::Structure: FieldStructure,
+    PrincipalSubringInclusion<Field::Structure>:
+        FieldOfFractionsInclusionStructure<CannonicalStructure<Integer>, Field::Structure>,
+{
+    pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {
+        factor_primitive_fof(
+            &PrincipalSubringInclusion::new(Self::structure().coeff_ring().as_ref().clone()),
+            self,
+        )
+    }
+
+    pub fn primitive_part_fof(&self) -> Polynomial<Integer> {
+        self.factor_primitive_fof().1
     }
 }
 
@@ -1022,7 +1080,6 @@ where
         Self::structure().primitive_squarefree_part(self.clone())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -1506,6 +1563,36 @@ mod tests {
                     b * b * c * c - 4 * a * c * c * c - 4 * b * b * b * d - 27 * a * a * d * d
                         + 18 * a * b * c * d
                 )
+            );
+        }
+    }
+
+    #[test]
+    fn test_factor_primitive_fof() {
+        for (f, exp) in vec![
+            (
+                Polynomial::from_coeffs(vec![
+                    Rational::from_integers(1, 2),
+                    Rational::from_integers(1, 3),
+                ]),
+                Polynomial::from_coeffs(vec![Integer::from(3), Integer::from(2)]),
+            ),
+            (
+                Polynomial::from_coeffs(vec![
+                    Rational::from_integers(4, 1),
+                    Rational::from_integers(6, 1),
+                ]),
+                Polynomial::from_coeffs(vec![Integer::from(2), Integer::from(3)]),
+            ),
+        ] {
+            let (mul, ans) = f.factor_primitive_fof();
+            assert!(Polynomial::are_associate(&ans, &exp));
+            assert_eq!(
+                Polynomial::mul(
+                    &ans.apply_map(|c| Rational::from(c)),
+                    &Polynomial::constant(mul)
+                ),
+                f
             );
         }
     }

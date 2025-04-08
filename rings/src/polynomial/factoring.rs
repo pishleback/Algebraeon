@@ -334,7 +334,7 @@ where
     PolynomialStructure<Ring>: SetStructure<Set = Polynomial<Ring::Set>> + FactorableStructure,
     Ring: GreatestCommonDivisorStructure,
 {
-    let (unit, prim) = poly_ring.factor_primitive_fof(f);
+    let (unit, prim) = factor_primitive_fof(fof_inclusion, f);
     let (prim_unit, prim_factors) = PolynomialStructure::new(fof_inclusion.domain().clone().into())
         .factor(&prim)?
         .unit_and_factors();

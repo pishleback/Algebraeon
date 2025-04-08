@@ -599,7 +599,11 @@ impl<RS: FavoriteAssociateStructure> FavoriteAssociateStructure for MultiPolynom
     }
 }
 
-impl<RS: CharZeroStructure> CharZeroStructure for MultiPolynomialStructure<RS> {}
+impl<RS: CharZeroStructure> CharZeroStructure for MultiPolynomialStructure<RS> {
+    fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
+        self.coeff_ring().try_to_int(&self.as_constant(x)?)
+    }
+}
 
 impl<RS: FiniteUnitsStructure> FiniteUnitsStructure for MultiPolynomialStructure<RS> {
     fn all_units(&self) -> Vec<Self::Set> {
