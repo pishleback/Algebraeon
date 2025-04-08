@@ -2,7 +2,7 @@ use super::{
     embedded_anf::anf_multi_primitive_element_theorem, ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
 };
 use crate::{linear::matrix::*, polynomial::*, structure::*};
-use algebraeon_nzq::{Integer, Natural, Rational, traits::Abs};
+use algebraeon_nzq::{traits::{Abs, Fraction}, Integer, Natural, Rational};
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
@@ -52,7 +52,7 @@ impl AlgebraicNumberFieldStructure {
 
             let disc = self.discriminant(&guess);
             debug_assert_eq!(disc.denominator(), Natural::ONE); //discriminant of algebraic integers is an integer
-            let disc = Rational::numerator(&disc);
+            let disc = Rational::numerator(disc);
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
             //    println!("{}", disc);
             let (_sign, mut disc_factors) = disc.factor().unwrap().unit_and_factors();

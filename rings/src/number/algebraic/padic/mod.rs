@@ -135,7 +135,7 @@ impl std::fmt::Display for PAdicAlgebraic {
 }
 
 pub mod truncation {
-    use algebraeon_nzq::traits::{Abs, DivMod};
+    use algebraeon_nzq::traits::{Abs, DivMod, Fraction};
 
     use super::*;
 
@@ -233,10 +233,8 @@ pub mod truncation {
                 Valuation::Finite(shift) => {
                     let shifted_rat =
                         &self.rat * Rational::from(&self.p).int_pow(&-&shift).unwrap();
-                    let (n, d) = (
-                        shifted_rat.numerator(),
-                        Integer::from(shifted_rat.denominator()),
-                    );
+                    let (n, d) = shifted_rat.numerator_and_denominator();
+                    let d = Integer::from(d);
                     debug_assert_eq!(
                         padic_int_valuation(&self.p, n.clone()).unwrap_nat(),
                         Natural::ZERO
@@ -689,6 +687,8 @@ pub mod structure {
     pub struct PAdicAlgebraicStructure {
         p: Natural,
     }
+
+    impl Structure for PAdicAlgebraicStructure {}
 
     impl SetStructure for PAdicAlgebraicStructure {
         type Set = PAdicAlgebraic;

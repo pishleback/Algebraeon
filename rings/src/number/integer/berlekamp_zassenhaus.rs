@@ -246,6 +246,7 @@ mod dminusone_test {
     }
     #[derive(Debug, Clone, PartialEq, Eq)]
     struct DMinusOneTestSemigroup {}
+    impl Structure for DMinusOneTestSemigroup {}
     impl SetStructure for DMinusOneTestSemigroup {
         type Set = DMinusOneTestSemigroupElem;
     }

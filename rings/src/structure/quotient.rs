@@ -72,6 +72,11 @@ impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> PartialEq
 
 impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> Eq for QuotientStructure<RS, IS_FIELD> {}
 
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> Structure
+    for QuotientStructure<RS, IS_FIELD>
+{
+}
+
 impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> SetStructure
     for QuotientStructure<RS, IS_FIELD>
 {

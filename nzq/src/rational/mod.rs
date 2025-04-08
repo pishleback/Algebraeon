@@ -362,11 +362,15 @@ impl Fraction for Rational {
     type NumeratorOutput = Integer;
     type DenominatorOutput = Natural;
 
-    fn numerator(self) -> Self::NumeratorOutput {
-        (&self).numerator()
-    }
-    fn denominator(self) -> Self::DenominatorOutput {
-        (&self).denominator()
+    fn numerator_and_denominator(self) -> (Integer, Natural) {
+        let pos = self >= Rational::ZERO;
+        let (n, d) = self.to_malachite().into_numerator_and_denominator();
+        let (n, d) = (Natural::from_malachite(n), Natural::from_malachite(d));
+        if pos {
+            (Integer::from(n), d)
+        } else {
+            (-Integer::from(n), d)
+        }
     }
 }
 
@@ -374,15 +378,18 @@ impl Fraction for &Rational {
     type NumeratorOutput = Integer;
     type DenominatorOutput = Natural;
 
-    fn numerator(self) -> Self::NumeratorOutput {
-        if self >= &Rational::ZERO {
-            Integer::from(Natural::from_malachite(self.0.numerator_ref().clone()))
+    fn numerator_and_denominator(self) -> (Integer, Natural) {
+        let pos = self >= &Rational::ZERO;
+        let (n, d) = self.to_malachite_ref().numerator_and_denominator_ref();
+        let (n, d) = (
+            Natural::from_malachite(n.clone()),
+            Natural::from_malachite(d.clone()),
+        );
+        if pos {
+            (Integer::from(n), d)
         } else {
-            -Natural::from_malachite(self.0.numerator_ref().clone())
+            (-Integer::from(n), d)
         }
-    }
-    fn denominator(self) -> Self::DenominatorOutput {
-        Natural::from_malachite(self.0.denominator_ref().clone())
     }
 }
 
@@ -493,5 +500,18 @@ impl MetaType for Rational {
 
     fn structure() -> std::rc::Rc<Self::Structure> {
         CannonicalStructure::new().into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rational_numerator_and_denominator() {
+        let x = Rational::from_str("-2/3").unwrap();
+        let (n, d) = ((&x).numerator(), (&x).denominator());
+        assert_eq!(n, Integer::from(-2));
+        assert_eq!(d, Natural::from(3u32));
     }
 }

@@ -4,6 +4,7 @@ use crate::{
     number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
     polynomial::*,
 };
+use algebraeon_nzq::traits::Fraction;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use std::rc::Rc;
@@ -153,8 +154,10 @@ pub fn anf_pair_primitive_element_theorem(
         None => {}
     }
 
-    let mut nontrivial_linear_combinations =
-        Rational::exhaustive_rationals().map(|r| (r.numerator(), Integer::from(r.denominator())));
+    let mut nontrivial_linear_combinations = Rational::exhaustive_rationals().map(|r| {
+        let (n, d) = r.numerator_and_denominator();
+        (n, Integer::from(d))
+    });
     nontrivial_linear_combinations.next().unwrap();
     for (x, y) in nontrivial_linear_combinations {
         let generator = ComplexAlgebraic::add(

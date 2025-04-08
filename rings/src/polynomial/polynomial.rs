@@ -77,6 +77,8 @@ impl<RS: SemiRingStructure> PolynomialStructure<RS> {
     }
 }
 
+impl<RS: SemiRingStructure> Structure for PolynomialStructure<RS> {}
+
 impl<RS: SemiRingStructure> SetStructure for PolynomialStructure<RS> {
     type Set = Polynomial<RS::Set>;
 }
@@ -913,51 +915,6 @@ impl<RS: BezoutDomainStructure> PolynomialStructure<RS> {
     }
 }
 
-impl<FS: FieldOfFractionsStructure> PolynomialStructure<FS>
-where
-    FS::RS: GreatestCommonDivisorStructure,
-{
-    pub fn factor_primitive_fof(
-        &self,
-        p: &Polynomial<FS::Set>,
-    ) -> (FS::Set, Polynomial<<FS::RS as SetStructure>::Set>) {
-        let div = self.coeff_ring.base_ring_structure().lcm_list(
-            p.coeffs()
-                .into_iter()
-                .map(|c| self.coeff_ring.denominator(&c))
-                .collect(),
-        );
-
-        let (mul, prim) = PolynomialStructure::new(self.coeff_ring.base_ring_structure())
-            .factor_primitive(p.apply_map(|c| {
-                self.coeff_ring
-                    .as_base_ring(
-                        self.coeff_ring
-                            .mul(&self.coeff_ring.from_base_ring(div.clone()), c),
-                    )
-                    .unwrap()
-            }))
-            .unwrap();
-
-        (
-            self.coeff_ring
-                .div(
-                    &self.coeff_ring.from_base_ring(mul),
-                    &self.coeff_ring.from_base_ring(div),
-                )
-                .unwrap(),
-            prim,
-        )
-    }
-
-    pub fn primitive_part_fof(
-        &self,
-        p: &Polynomial<FS::Set>,
-    ) -> Polynomial<<FS::RS as SetStructure>::Set> {
-        self.factor_primitive_fof(p).1
-    }
-}
-
 impl<R: MetaType> MetaType for Polynomial<R>
 where
     R::Structure: SemiRingStructure,
@@ -1130,26 +1087,6 @@ where
     }
 }
 
-impl<F: MetaType> Polynomial<F>
-where
-    F::Structure: FieldOfFractionsStructure,
-    <F::Structure as FieldOfFractionsStructure>::RS: GreatestCommonDivisorStructure,
-{
-    pub fn factor_primitive_fof(
-        &self,
-    ) -> (
-        F,
-        Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as SetStructure>::Set>,
-    ) {
-        Self::structure().factor_primitive_fof(self)
-    }
-
-    pub fn primitive_part_fof(
-        &self,
-    ) -> Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as SetStructure>::Set> {
-        Self::structure().primitive_part_fof(self)
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -1633,36 +1570,6 @@ mod tests {
                     b * b * c * c - 4 * a * c * c * c - 4 * b * b * b * d - 27 * a * a * d * d
                         + 18 * a * b * c * d
                 )
-            );
-        }
-    }
-
-    #[test]
-    fn test_factor_primitive_fof() {
-        for (f, exp) in vec![
-            (
-                Polynomial::from_coeffs(vec![
-                    Rational::from_integers(1, 2),
-                    Rational::from_integers(1, 3),
-                ]),
-                Polynomial::from_coeffs(vec![Integer::from(3), Integer::from(2)]),
-            ),
-            (
-                Polynomial::from_coeffs(vec![
-                    Rational::from_integers(4, 1),
-                    Rational::from_integers(6, 1),
-                ]),
-                Polynomial::from_coeffs(vec![Integer::from(2), Integer::from(3)]),
-            ),
-        ] {
-            let (mul, ans) = f.factor_primitive_fof();
-            assert!(Polynomial::are_associate(&ans, &exp));
-            assert_eq!(
-                Polynomial::mul(
-                    &ans.apply_map(|c| Rational::from(c)),
-                    &Polynomial::constant(mul)
-                ),
-                f
             );
         }
     }

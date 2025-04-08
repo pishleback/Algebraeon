@@ -1,9 +1,8 @@
-use crate::polynomial::PolynomialStructure;
+use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
-use std::rc::Rc;
 
 impl SemiRingStructure for CannonicalStructure<Rational> {
     fn zero(&self) -> Self::Set {
@@ -59,27 +58,17 @@ impl RealSubsetStructure for CannonicalStructure<Rational> {}
 
 impl RealToFloatStructure for CannonicalStructure<Rational> {
     fn as_f64(&self, x: &Rational) -> f64 {
-        let base_ring = self.base_ring_structure();
-        RealToFloatStructure::as_f64(base_ring.as_ref(), &self.numerator(x))
-            / RealToFloatStructure::as_f64(base_ring.as_ref(), &self.denominator(x))
+        let fof = PrincipalSubringInclusion::new(self.clone());
+        RealToFloatStructure::as_f64(Integer::structure().as_ref(), &fof.numerator(x))
+            / RealToFloatStructure::as_f64(Integer::structure().as_ref(), &fof.denominator(x))
     }
 }
 
-impl FieldOfFractionsStructure<CannonicalStructure<Integer>> for CannonicalStructure<Rational> {
-    fn base_ring_structure(&self) -> Rc<CannonicalStructure<Integer>> {
-        Integer::structure()
-    }
-
-    fn from_base_ring(&self, elem: Integer) -> Self::Set {
-        Rational::from(elem)
-    }
-
-    fn numerator(&self, elem: &Self::Set) -> Integer {
-        Fraction::numerator(elem)
-    }
-
-    fn denominator(&self, elem: &Self::Set) -> Integer {
-        Integer::from(Fraction::denominator(elem))
+impl FieldOfFractionsInclusionStructure<CannonicalStructure<Integer>, CannonicalStructure<Rational>>
+    for PrincipalSubringInclusion<CannonicalStructure<Rational>>
+{
+    fn numerator_and_denominator(&self, a: &Rational) -> (Integer, Integer) {
+        (a.numerator(), a.denominator().into())
     }
 }
 
@@ -103,7 +92,56 @@ impl RealFromFloatStructure for CannonicalStructure<Rational> {
 
 impl FactorableStructure for PolynomialStructure<CannonicalStructure<Rational>> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
-        self.factorize_by_factorize_primitive_part(p)
+        factorize_by_factorize_primitive_part(
+            &PrincipalSubringInclusion::new(self.coeff_ring().as_ref().clone()),
+            self,
+            p,
+        )
+    }
+}
+
+impl Polynomial<Rational> {
+    pub fn factor_primitive_fof(&self) -> (Rational, Polynomial<Integer>) {
+        todo!()
+    }
+
+    pub fn primitive_part_fof(&self) -> Polynomial<Integer> {
+        todo!()
+    }
+}
+
+#[cfg(test)]
+mod poly_tests {
+    use super::*;
+
+    #[test]
+    fn test_factor_primitive_fof() {
+        for (f, exp) in vec![
+            (
+                Polynomial::from_coeffs(vec![
+                    Rational::from_integers(1, 2),
+                    Rational::from_integers(1, 3),
+                ]),
+                Polynomial::from_coeffs(vec![Integer::from(3), Integer::from(2)]),
+            ),
+            (
+                Polynomial::from_coeffs(vec![
+                    Rational::from_integers(4, 1),
+                    Rational::from_integers(6, 1),
+                ]),
+                Polynomial::from_coeffs(vec![Integer::from(2), Integer::from(3)]),
+            ),
+        ] {
+            let (mul, ans) = f.factor_primitive_fof();
+            assert!(Polynomial::are_associate(&ans, &exp));
+            assert_eq!(
+                Polynomial::mul(
+                    &ans.apply_map(|c| Rational::from(c)),
+                    &Polynomial::constant(mul)
+                ),
+                f
+            );
+        }
     }
 }
 

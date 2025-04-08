@@ -5,6 +5,7 @@ mod polynomial;
 mod quotient;
 mod symmetric;
 
+pub use factoring::*;
 pub use hensel_lifting::*;
 pub use multipoly::*;
 pub use polynomial::*;

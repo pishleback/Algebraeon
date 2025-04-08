@@ -389,6 +389,8 @@ impl<R: Clone> MultiPolynomial<R> {
     }
 }
 
+impl<RS: RingStructure> Structure for MultiPolynomialStructure<RS> {}
+
 impl<RS: RingStructure + ToStringStructure> ToStringStructure for MultiPolynomialStructure<RS> {
     fn to_string(&self, p: &Self::Set) -> String {
         if p.terms.len() == 0 {

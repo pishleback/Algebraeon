@@ -248,6 +248,8 @@ pub struct MatrixStructure<RS: SetStructure> {
     ring: Rc<RS>,
 }
 
+impl<RS: SetStructure> Structure for MatrixStructure<RS> {}
+
 impl<RS: SetStructure> SetStructure for MatrixStructure<RS> {
     type Set = Matrix<RS::Set>;
 }
@@ -1386,6 +1388,8 @@ impl<RS: GreatestCommonDivisorStructure> MatrixStructure<RS> {
 //     field: FS,
 // }
 
+/*
+
 impl<RS: GreatestCommonDivisorStructure, FS: FieldOfFractionsStructure<RS>> MatrixStructure<FS> {
     pub fn factor_primitive_fof(
         &self,
@@ -1417,6 +1421,7 @@ impl<RS: GreatestCommonDivisorStructure, FS: FieldOfFractionsStructure<RS>> Matr
         )
     }
 }
+*/
 
 impl<FS: FieldStructure> MatrixStructure<FS> {
     pub fn presentation_matrix(
@@ -1994,7 +1999,10 @@ where
         (jnf, jnf_basis)
     }
 
-    pub fn jordan_normal_form(&self, mat: &Matrix<<FS::BFS as SetStructure>::Set>) -> Matrix<FS::Set> {
+    pub fn jordan_normal_form(
+        &self,
+        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
+    ) -> Matrix<FS::Set> {
         self.jordan_algorithm(mat).0.matrix()
     }
 
@@ -2221,6 +2229,7 @@ where
     }
 }
 
+/*
 impl<F: MetaType> Matrix<F>
 where
     F::Structure: FieldOfFractionsStructure,
@@ -2235,6 +2244,7 @@ where
         Self::structure().factor_primitive_fof(self)
     }
 }
+    */
 
 impl<F: MetaType> Matrix<F>
 where

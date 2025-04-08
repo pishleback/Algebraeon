@@ -319,37 +319,39 @@ where
     }
 }
 
-impl<Fof: FieldOfFractionsStructure> PolynomialStructure<Fof>
+pub fn factorize_by_factorize_primitive_part<
+    Ring: RingStructure,
+    Field: FieldStructure,
+    Fof: FieldOfFractionsInclusionStructure<Ring, Field>,
+>(
+    fof_inclusion: &Fof,
+    poly_ring: &PolynomialStructure<Field>,
+    f: &Polynomial<Field::Set>,
+) -> Option<Factored<PolynomialStructure<Field>>>
 where
-    Self: SetStructure<Set = Polynomial<Fof::Set>> + UniqueFactorizationStructure,
-    PolynomialStructure<Fof::RS>:
-        SetStructure<Set = Polynomial<<Fof::RS as SetStructure>::Set>> + FactorableStructure,
-    Fof::RS: GreatestCommonDivisorStructure,
+    PolynomialStructure<Field>:
+        SetStructure<Set = Polynomial<Field::Set>> + UniqueFactorizationStructure,
+    PolynomialStructure<Ring>: SetStructure<Set = Polynomial<Ring::Set>> + FactorableStructure,
+    Ring: GreatestCommonDivisorStructure,
 {
-    pub fn factorize_by_factorize_primitive_part(
-        &self,
-        f: &Polynomial<Fof::Set>,
-    ) -> Option<Factored<PolynomialStructure<Fof>>> {
-        let (unit, prim) = self.factor_primitive_fof(f);
-        let (prim_unit, prim_factors) =
-            PolynomialStructure::new(self.coeff_ring().base_ring_structure())
-                .factor(&prim)?
-                .unit_and_factors();
-        let mut fof_unit = prim_unit.apply_map(|c| self.coeff_ring().from_base_ring(c.clone()));
-        let mut fof_factors = vec![];
-        for (factor, power) in prim_factors.into_iter() {
-            let fof_factor = factor.apply_map(|c| self.coeff_ring().from_base_ring(c.clone()));
-            let (fof_factor_unit, fof_factor_prim) = self.factor_fav_assoc(&fof_factor);
-            self.mul_mut(&mut fof_unit, &fof_factor_unit);
-            fof_factors.push((fof_factor_prim, power));
-        }
-        let factors = Factored::new_unchecked(
-            self.clone().into(),
-            self.mul(&Polynomial::constant(unit), &fof_unit),
-            fof_factors,
-        );
-        Some(factors)
+    let (unit, prim) = poly_ring.factor_primitive_fof(f);
+    let (prim_unit, prim_factors) = PolynomialStructure::new(fof_inclusion.domain().clone().into())
+        .factor(&prim)?
+        .unit_and_factors();
+    let mut fof_unit = prim_unit.apply_map(|c| fof_inclusion.image(c));
+    let mut fof_factors = vec![];
+    for (factor, power) in prim_factors.into_iter() {
+        let fof_factor = factor.apply_map(|c| fof_inclusion.image(c));
+        let (fof_factor_unit, fof_factor_prim) = poly_ring.factor_fav_assoc(&fof_factor);
+        poly_ring.mul_mut(&mut fof_unit, &fof_factor_unit);
+        fof_factors.push((fof_factor_prim, power));
     }
+    let factors = Factored::new_unchecked(
+        poly_ring.clone().into(),
+        poly_ring.mul(&Polynomial::constant(unit), &fof_unit),
+        fof_factors,
+    );
+    Some(factors)
 }
 
 impl<RS: FieldStructure + FiniteUnitsStructure> PolynomialStructure<RS>

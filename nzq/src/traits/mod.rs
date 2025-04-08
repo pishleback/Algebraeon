@@ -48,12 +48,18 @@ pub trait AbsDiff<T> {
 pub trait Fraction {
     type NumeratorOutput;
     type DenominatorOutput;
+
+    fn numerator_and_denominator(self) ->(Self::NumeratorOutput, Self::DenominatorOutput);
     /// The numerator of `self`.
     /// - Has the same sign as `self`.
-    fn numerator(self) -> Self::NumeratorOutput;
+    fn numerator(self) -> Self::NumeratorOutput where Self:Sized{
+        self.numerator_and_denominator().0
+    }
     /// The denominator of `self`.
     /// - Is always positive.
-    fn denominator(self) -> Self::DenominatorOutput;
+    fn denominator(self) -> Self::DenominatorOutput where Self:Sized {
+        self.numerator_and_denominator().1
+    }
 }
 
 pub trait Floor {
