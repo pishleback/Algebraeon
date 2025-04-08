@@ -2,9 +2,11 @@
 //!
 //! The structure framework used by algebraeon_rings is established here.
 
+mod morphism;
 mod structure;
 
+pub use morphism::{FunctionStructure, InjectiveFunctionStructure, Morphism};
 pub use structure::{
-    CannonicalStructure, EqStructure, MetaType, PartialEqStructure, Structure, ToStringStructure,
-    common_structure,
+    CannonicalStructure, EqStructure, MetaType, PartialEqStructure, SetStructure, Structure,
+    ToStringStructure, common_structure,
 };

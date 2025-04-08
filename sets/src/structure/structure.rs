@@ -1,14 +1,16 @@
 use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, rc::Rc};
 
+pub trait Structure: Clone + Debug + PartialEq + Eq {}
+
 /// Instances of a type implementing this trait represent
 /// a set of elements of type `Self::Set` with some
 /// structure, for example, the structure of a ring.
-pub trait Structure: Clone + Debug + PartialEq + Eq {
+pub trait SetStructure: Structure {
     type Set: Clone + Debug;
 }
 
 pub trait MetaType: Clone + Debug {
-    type Structure: Structure<Set = Self>;
+    type Structure: SetStructure<Set = Self>;
     fn structure() -> Rc<Self::Structure>;
 }
 
@@ -25,7 +27,9 @@ impl<T: MetaType> CannonicalStructure<T> {
     }
 }
 
-impl<T: MetaType> Structure for CannonicalStructure<T> {
+impl<T: MetaType> Structure for CannonicalStructure<T> {}
+
+impl<T: MetaType> SetStructure for CannonicalStructure<T> {
     type Set = T;
 }
 
@@ -37,7 +41,7 @@ impl<T: MetaType> PartialEq for CannonicalStructure<T> {
 
 impl<T: MetaType> Eq for CannonicalStructure<T> {}
 
-pub fn common_structure<S: Structure>(
+pub fn common_structure<S: SetStructure>(
     structure1: impl Borrow<Rc<S>>,
     structure2: impl Borrow<Rc<S>>,
 ) -> Rc<S> {
@@ -48,7 +52,7 @@ pub fn common_structure<S: Structure>(
     }
 }
 
-pub trait ToStringStructure: Structure {
+pub trait ToStringStructure: SetStructure {
     fn to_string(&self, elem: &Self::Set) -> String;
 }
 impl<T: MetaType + ToString> ToStringStructure for CannonicalStructure<T> {
@@ -57,7 +61,7 @@ impl<T: MetaType + ToString> ToStringStructure for CannonicalStructure<T> {
     }
 }
 
-pub trait PartialEqStructure: Structure {
+pub trait PartialEqStructure: SetStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool;
 }
 impl<T: MetaType + PartialEq> PartialEqStructure for CannonicalStructure<T> {
@@ -108,7 +112,9 @@ mod tests {
             t: usize,
         }
 
-        impl Structure for A {
+        impl Structure for A {}
+
+        impl SetStructure for A {
             type Set = usize;
         }
 
