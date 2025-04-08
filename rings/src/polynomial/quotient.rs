@@ -2,7 +2,8 @@ use super::polynomial::*;
 use crate::{linear::matrix::*, structure::*};
 use algebraeon_sets::structure::*;
 
-pub type FieldExtensionStructure<FS> = QuotientStructure<PolynomialStructure<FS>, true>;
+pub type FieldExtensionByPolynomialQuotientStructure<FS> =
+    QuotientStructure<PolynomialStructure<FS>, true>;
 
 impl<FS: FieldStructure, const IS_FIELD: bool> QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
 where
@@ -83,40 +84,128 @@ where
     }
 }
 
-// impl<FS: FieldStructure, const IS_FIELD: bool>
-//     MorphismStructure<FS, QuotientStructure<PolynomialStructure<FS>, IS_FIELD>>
-//     for QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
-// where
-//     PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
-// {
-//     fn domain(&self) -> &FS {
-//         self.ring().coeff_ring()
-//     }
+#[derive(Debug, Clone)]
+pub struct FieldExtensionByPolynomialQuotient<Field: FieldStructure> {
+    inclusion: Morphism<Field, FieldExtensionByPolynomialQuotientStructure<Field>>,
+}
 
-//     fn range(&self) -> &QuotientStructure<PolynomialStructure<FS>, IS_FIELD> {
-//         todo!()
-//     }
-// }
+impl<Field: FieldStructure> FieldExtensionByPolynomialQuotient<Field> {
+    pub fn new(extension: FieldExtensionByPolynomialQuotientStructure<Field>) -> Self {
+        Self {
+            inclusion: Morphism::new(extension.ring().coeff_ring().clone(), extension),
+        }
+    }
+}
 
-// impl<FS: FieldStructure, const IS_FIELD: bool>
-//     FiniteRankFreeRingExtension<FS, QuotientStructure<PolynomialStructure<FS>, IS_FIELD>>
-//     for QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
-// where
-//     PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
-// {
-//     fn degree(&self) -> usize {
-//         self.ring().degree(self.modulus()).unwrap()
-//     }
+impl<Field: FieldStructure>
+    MorphismStructure<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+    for FieldExtensionByPolynomialQuotient<Field>
+{
+    fn domain(&self) -> &Field {
+        self.inclusion.domain()
+    }
 
-//     fn norm(&self, a: &Polynomial<FS::Set>) -> FS::Set {
-//         MatrixStructure::new(self.ring().coeff_ring())
-//             .det(self.col_multiplication_matrix(a))
-//             .unwrap()
-//     }
+    fn range(&self) -> &FieldExtensionByPolynomialQuotientStructure<Field> {
+        self.inclusion.range()
+    }
+}
 
-//     fn trace(&self, a: &Polynomial<FS::Set>) -> FS::Set {
-//         MatrixStructure::new(self.ring().coeff_ring())
-//             .trace(&self.col_multiplication_matrix(a))
-//             .unwrap()
-//     }
-// }
+impl<Field: FieldStructure>
+    FunctionStructure<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+    for FieldExtensionByPolynomialQuotient<Field>
+{
+    fn image(&self, x: &Field::Set) -> Polynomial<Field::Set> {
+        Polynomial::constant(x.clone())
+    }
+}
+
+impl<Field: FieldStructure>
+    RingHomomorphismStructure<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+    for FieldExtensionByPolynomialQuotient<Field>
+{
+}
+
+impl<Field: FieldStructure>
+    InjectiveFunctionStructure<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+    for FieldExtensionByPolynomialQuotient<Field>
+{
+    fn try_preimage(&self, x: &Polynomial<Field::Set>) -> Option<Field::Set> {
+        PolynomialStructure::new(self.domain().clone()).as_constant(&self.range().reduce(x))
+    }
+}
+
+impl<Field: FieldStructure>
+    FiniteDimensionalFieldExtension<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+    for FieldExtensionByPolynomialQuotient<Field>
+{
+    fn degree(&self) -> usize {
+        self.range().degree()
+    }
+
+    fn norm(&self, a: &Polynomial<Field::Set>) -> Field::Set {
+        self.range().norm(a)
+    }
+
+    fn trace(&self, a: &Polynomial<Field::Set>) -> Field::Set {
+        self.range().trace(a)
+    }
+
+    fn min_poly(&self, a: &Polynomial<Field::Set>) -> Polynomial<<Field>::Set> {
+        self.range().min_poly(a)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use algebraeon_nzq::Rational;
+    use std::str::FromStr;
+
+    #[test]
+    fn finite_dimensional_field_extension_structure() {
+        let x = PolynomialStructure::new(Rational::structure())
+            .var()
+            .into_ergonomic();
+        {
+            let p = (x.pow(3) + &x - 1).into_verbose();
+            let f = p.algebraic_number_field();
+            let ext = FieldExtensionByPolynomialQuotient::new(f);
+            assert_eq!(ext.degree(), 3);
+            assert_eq!(
+                ext.image(&Rational::from_str("4").unwrap()),
+                (4 * x.pow(0)).into_verbose()
+            );
+            assert_eq!(ext.try_preimage(&(3 * x.pow(2) + 1).into_verbose()), None);
+            assert_eq!(
+                ext.try_preimage(&(x.pow(3) + &x + 1).into_verbose()),
+                Some(Rational::from_str("2").unwrap())
+            );
+            assert_eq!(
+                ext.norm(&(5 * x.pow(1) + 2).into_verbose()),
+                Rational::from_str("183").unwrap()
+            );
+        }
+        {
+            // Z[i]
+            let p = (x.pow(2) + 1).into_verbose();
+            let f = p.algebraic_number_field();
+            let ext = FieldExtensionByPolynomialQuotient::new(f);
+            assert_eq!(ext.degree(), 2);
+            // a^2 + b^2
+            assert_eq!(
+                ext.norm(&(3 + 4 * &x).into_verbose()),
+                Rational::from_str("25").unwrap()
+            );
+            // 2a
+            assert_eq!(
+                ext.trace(&(3 + 4 * &x).into_verbose()),
+                Rational::from_str("6").unwrap()
+            );
+            // min_poly(1+i) = x^2 - 2x + 2
+            assert_eq!(
+                ext.min_poly(&(1 + &x).into_verbose()),
+                (x.pow(2) - 2 * &x + 2).into_verbose()
+            );
+        }
+    }
+}

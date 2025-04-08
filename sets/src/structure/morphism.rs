@@ -17,6 +17,7 @@ pub trait InjectiveFunctionStructure<Domain: SetStructure, Range: SetStructure>:
     fn try_preimage(&self, x: &Range::Set) -> Option<Domain::Set>;
 }
 
+#[derive(Debug, Clone)]
 pub struct Morphism<Domain: Structure, Range: Structure> {
     domain: Domain,
     range: Range,

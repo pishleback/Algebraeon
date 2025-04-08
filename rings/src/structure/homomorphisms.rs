@@ -69,16 +69,11 @@ pub trait FieldOfFractionsInclusionStructure<Ring: RingStructure, Field: FieldSt
     }
 }
 
-pub trait FiniteRankFreeRingExtension<A: RingStructure, B: RingStructure>:
-    InjectiveFunctionStructure<A, B> + RingHomomorphismStructure<A, B>
+pub trait FiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
+    RingHomomorphismStructure<F, K> + InjectiveFunctionStructure<F, K>
 {
     fn degree(&self) -> usize;
-    fn norm(&self, a: &B::Set) -> A::Set;
-    fn trace(&self, a: &B::Set) -> A::Set;
-}
-
-pub trait FiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
-    FiniteRankFreeRingExtension<F, K>
-{
+    fn norm(&self, a: &K::Set) -> F::Set;
+    fn trace(&self, a: &K::Set) -> F::Set;
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set>;
 }
