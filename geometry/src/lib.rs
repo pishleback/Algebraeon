@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
+use algebraeon_rings::structure::{FieldStructure, OrderedRingStructure};
 use std::borrow::Borrow;
 use std::hash::Hash;
-use algebraeon_rings::structure::{FieldStructure, OrderedRingStructure};
 
 mod coordinates;
 pub use coordinates::*;

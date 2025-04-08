@@ -1,5 +1,5 @@
-use std::collections::{HashMap, HashSet};
 use super::*;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 pub struct ConvexHull<

@@ -1,6 +1,6 @@
-use std::sync::atomic::AtomicUsize;
-use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
 use super::*;
+use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
+use std::sync::atomic::AtomicUsize;
 
 #[derive(Debug, Clone)]
 pub struct AffineSpace<FS: OrderedRingStructure + FieldStructure> {
