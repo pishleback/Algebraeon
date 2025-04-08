@@ -133,7 +133,7 @@ pub struct LinearLatticeStructure<RS: BezoutDomainStructure> {
     ring: Rc<RS>,
 }
 
-impl<RS: BezoutDomainStructure> Structure for LinearLatticeStructure<RS> {
+impl<RS: BezoutDomainStructure> SetStructure for LinearLatticeStructure<RS> {
     type Set = LinearLattice<RS::Set>;
 }
 
@@ -650,7 +650,7 @@ pub struct AffineLatticeStructure<RS: BezoutDomainStructure> {
     ring: Rc<RS>,
 }
 
-impl<RS: BezoutDomainStructure> Structure for AffineLatticeStructure<RS> {
+impl<RS: BezoutDomainStructure> SetStructure for AffineLatticeStructure<RS> {
     type Set = AffineLattice<RS::Set>;
 }
 

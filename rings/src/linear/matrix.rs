@@ -244,15 +244,15 @@ impl<Set: Clone> Matrix<Set> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MatrixStructure<RS: Structure> {
+pub struct MatrixStructure<RS: SetStructure> {
     ring: Rc<RS>,
 }
 
-impl<RS: Structure> Structure for MatrixStructure<RS> {
+impl<RS: SetStructure> SetStructure for MatrixStructure<RS> {
     type Set = Matrix<RS::Set>;
 }
 
-impl<RS: Structure> MatrixStructure<RS> {
+impl<RS: SetStructure> MatrixStructure<RS> {
     pub fn new(ring: Rc<RS>) -> Self {
         Self { ring }
     }
@@ -1381,14 +1381,16 @@ impl<RS: GreatestCommonDivisorStructure> MatrixStructure<RS> {
     }
 }
 
-impl<FS: FieldOfFractionsStructure> MatrixStructure<FS>
-where
-    FS::RS: GreatestCommonDivisorStructure,
-{
+// struct FieldOfFractionsExtension<RS: IntegralDomainStructure, FS: FieldOfFractionsStructure<RS>> {
+//     ring: RS,
+//     field: FS,
+// }
+
+impl<RS: GreatestCommonDivisorStructure, FS: FieldOfFractionsStructure<RS>> MatrixStructure<FS> {
     pub fn factor_primitive_fof(
         &self,
         mat: &Matrix<FS::Set>,
-    ) -> (FS::Set, Matrix<<FS::RS as Structure>::Set>) {
+    ) -> (FS::Set, Matrix<<FS::RS as SetStructure>::Set>) {
         let div = self.ring.base_ring_structure().lcm_list(
             mat.entries_list()
                 .into_iter()
@@ -1618,7 +1620,7 @@ impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructu
 pub struct JordanBlock<FS: AlgebraicClosureStructure>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
 {
     eigenvalue: FS::Set,
     blocksize: usize,
@@ -1627,7 +1629,7 @@ where
 impl<FS: AlgebraicClosureStructure> JordanBlock<FS>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
 {
     pub fn matrix(&self, field: &FS) -> Matrix<FS::Set> {
         // let base_field = field.base_field();
@@ -1647,7 +1649,7 @@ where
 pub struct JordanNormalForm<FS: AlgebraicClosureStructure>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
 {
     field: Rc<FS>,
     blocks: Vec<JordanBlock<FS>>,
@@ -1656,7 +1658,7 @@ where
 impl<FS: AlgebraicClosureStructure> JordanNormalForm<FS>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
 {
     pub fn matrix(&self) -> Matrix<FS::Set> {
         let ac_mat_structure = MatrixStructure::new(self.field.clone());
@@ -1672,9 +1674,9 @@ where
 impl<FS: AlgebraicClosureStructure> MatrixStructure<FS>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + Structure<Set = Polynomial<<FS::BFS as Structure>::Set>>,
+        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
 {
-    pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as Structure>::Set>) -> Vec<FS::Set> {
+    pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetStructure>::Set>) -> Vec<FS::Set> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
         self.ring()
             .all_roots_list(
@@ -1685,7 +1687,7 @@ where
             .unwrap()
     }
 
-    pub fn eigenvalues_unique(&self, mat: Matrix<<FS::BFS as Structure>::Set>) -> Vec<FS::Set> {
+    pub fn eigenvalues_unique(&self, mat: Matrix<<FS::BFS as SetStructure>::Set>) -> Vec<FS::Set> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
         self.ring()
             .all_roots_unique(
@@ -1698,7 +1700,7 @@ where
 
     pub fn eigenvalues_powers(
         &self,
-        mat: Matrix<<FS::BFS as Structure>::Set>,
+        mat: Matrix<<FS::BFS as SetStructure>::Set>,
     ) -> Vec<(FS::Set, usize)> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
         self.ring()
@@ -1712,7 +1714,7 @@ where
 
     pub fn generalized_col_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as Structure>::Set>,
+        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
         eigenvalue: &FS::Set,
         k: usize,
     ) -> LinearLattice<FS::Set> {
@@ -1734,7 +1736,7 @@ where
 
     pub fn generalized_row_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as Structure>::Set>,
+        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
         eigenvalue: &FS::Set,
         k: usize,
     ) -> LinearLattice<FS::Set> {
@@ -1747,7 +1749,7 @@ where
 
     pub fn col_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as Structure>::Set>,
+        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
         eigenvalue: &FS::Set,
     ) -> LinearLattice<FS::Set> {
         self.generalized_col_eigenspace(mat, eigenvalue, 1)
@@ -1755,7 +1757,7 @@ where
 
     pub fn row_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as Structure>::Set>,
+        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
         eigenvalue: &FS::Set,
     ) -> LinearLattice<FS::Set> {
         self.generalized_row_eigenspace(mat, eigenvalue, 1)
@@ -1765,7 +1767,7 @@ where
     // B^-1 M B = J
     pub fn jordan_algorithm(
         &self,
-        mat: &Matrix<<FS::BFS as Structure>::Set>,
+        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
     ) -> (JordanNormalForm<FS>, Matrix<FS::Set>) {
         let n = mat.rows();
         assert_eq!(n, mat.cols());
@@ -1992,7 +1994,7 @@ where
         (jnf, jnf_basis)
     }
 
-    pub fn jordan_normal_form(&self, mat: &Matrix<<FS::BFS as Structure>::Set>) -> Matrix<FS::Set> {
+    pub fn jordan_normal_form(&self, mat: &Matrix<<FS::BFS as SetStructure>::Set>) -> Matrix<FS::Set> {
         self.jordan_algorithm(mat).0.matrix()
     }
 
@@ -2030,7 +2032,7 @@ where
 
 impl<R: MetaType> MetaType for Matrix<R>
 where
-    R::Structure: Structure,
+    R::Structure: SetStructure,
 {
     type Structure = MatrixStructure<R::Structure>;
 
@@ -2228,7 +2230,7 @@ where
         &self,
     ) -> (
         F,
-        Matrix<<<F::Structure as FieldOfFractionsStructure>::RS as Structure>::Set>,
+        Matrix<<<F::Structure as FieldOfFractionsStructure>::RS as SetStructure>::Set>,
     ) {
         Self::structure().factor_primitive_fof(self)
     }

@@ -77,7 +77,7 @@ impl<RS: SemiRingStructure> PolynomialStructure<RS> {
     }
 }
 
-impl<RS: SemiRingStructure> Structure for PolynomialStructure<RS> {
+impl<RS: SemiRingStructure> SetStructure for PolynomialStructure<RS> {
     type Set = Polynomial<RS::Set>;
 }
 
@@ -920,7 +920,7 @@ where
     pub fn factor_primitive_fof(
         &self,
         p: &Polynomial<FS::Set>,
-    ) -> (FS::Set, Polynomial<<FS::RS as Structure>::Set>) {
+    ) -> (FS::Set, Polynomial<<FS::RS as SetStructure>::Set>) {
         let div = self.coeff_ring.base_ring_structure().lcm_list(
             p.coeffs()
                 .into_iter()
@@ -953,7 +953,7 @@ where
     pub fn primitive_part_fof(
         &self,
         p: &Polynomial<FS::Set>,
-    ) -> Polynomial<<FS::RS as Structure>::Set> {
+    ) -> Polynomial<<FS::RS as SetStructure>::Set> {
         self.factor_primitive_fof(p).1
     }
 }
@@ -1139,14 +1139,14 @@ where
         &self,
     ) -> (
         F,
-        Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as Structure>::Set>,
+        Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as SetStructure>::Set>,
     ) {
         Self::structure().factor_primitive_fof(self)
     }
 
     pub fn primitive_part_fof(
         &self,
-    ) -> Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as Structure>::Set> {
+    ) -> Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as SetStructure>::Set> {
         Self::structure().primitive_part_fof(self)
     }
 }

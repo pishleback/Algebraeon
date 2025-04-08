@@ -556,7 +556,7 @@ impl<RS: FactorableStructure + EuclideanDivisionStructure + GreatestCommonDiviso
     Factored<PolynomialStructure<QuotientStructure<RS, true>>>
 where
     PolynomialStructure<QuotientStructure<RS, true>>:
-        Structure<Set = Polynomial<RS::Set>> + FactorableStructure,
+        SetStructure<Set = Polynomial<RS::Set>> + FactorableStructure,
 {
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None
     pub fn into_hensel_factorization(

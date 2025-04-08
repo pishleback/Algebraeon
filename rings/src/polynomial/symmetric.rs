@@ -32,7 +32,7 @@ pub fn ss_num(n: usize) -> String {
 impl<RS: IntegralDomainStructure> MultiPolynomialStructure<RS>
 //TODO: replace integral domain with division ring structure
 where
-    MultiPolynomialStructure<RS>: Structure<Set = MultiPolynomial<RS::Set>> + ToStringStructure,
+    MultiPolynomialStructure<RS>: SetStructure<Set = MultiPolynomial<RS::Set>> + ToStringStructure,
 {
     pub fn is_symmetric(
         &self,
@@ -236,7 +236,7 @@ where
 impl<R: MetaType> MultiPolynomial<R>
 where
     R::Structure: IntegralDomainStructure,
-    MultiPolynomialStructure<R::Structure>: Structure<Set = Self> + ToStringStructure,
+    MultiPolynomialStructure<R::Structure>: SetStructure<Set = Self> + ToStringStructure,
 {
     pub fn is_symmetric(&self, vars: Vec<impl Borrow<Variable>>) -> bool {
         Self::structure().is_symmetric(vars, self)

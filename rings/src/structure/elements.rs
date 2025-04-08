@@ -16,12 +16,12 @@ pub trait IntoErgonomic: MetaType {
 impl<T: MetaType> IntoErgonomic for T {}
 
 #[derive(Debug, Clone)]
-pub struct StructuredElement<S: Structure> {
+pub struct StructuredElement<S: SetStructure> {
     structure: Rc<S>,
     elem: S::Set,
 }
 
-impl<S: Structure> StructuredElement<S> {
+impl<S: SetStructure> StructuredElement<S> {
     pub fn new(structure: Rc<S>, elem: S::Set) -> Self {
         Self { structure, elem }
     }
@@ -39,7 +39,7 @@ impl<S: Structure> StructuredElement<S> {
     }
 }
 
-impl<S: Structure> std::fmt::Display for StructuredElement<S>
+impl<S: SetStructure> std::fmt::Display for StructuredElement<S>
 where
     S::Set: std::fmt::Display,
 {

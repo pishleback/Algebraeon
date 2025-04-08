@@ -6,7 +6,7 @@ use algebraeon_sets::structure::*;
 impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + CharZeroStructure>
     PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>
+    PolynomialStructure<RS>: SetStructure<Set = Polynomial<RS::Set>>
         + GreatestCommonDivisorStructure
         + UniqueFactorizationStructure,
 {
@@ -64,7 +64,7 @@ where
 impl<RS: FactorableStructure + GreatestCommonDivisorStructure + FiniteUnitsStructure>
     PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
+    PolynomialStructure<RS>: SetStructure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
 {
     fn factor_primitive_linear_part(
         &self,
@@ -134,7 +134,7 @@ where
 impl<RS: UniqueFactorizationStructure + CharZeroStructure + FiniteUnitsStructure + 'static>
     PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>,
+    PolynomialStructure<RS>: SetStructure<Set = Polynomial<RS::Set>>,
 {
     fn find_factor_primitive_by_kroneckers_algorithm(
         &self,
@@ -232,7 +232,7 @@ impl<
         + 'static,
 > PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
+    PolynomialStructure<RS>: SetStructure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
 {
     pub fn factorize_by_kroneckers_method(
         &self,
@@ -271,7 +271,7 @@ impl<
         + 'static,
 > PolynomialStructure<RS>
 where
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>>
+    PolynomialStructure<RS>: SetStructure<Set = Polynomial<RS::Set>>
         + GreatestCommonDivisorStructure
         + UniqueFactorizationStructure,
 {
@@ -307,7 +307,7 @@ where
         + CharZeroStructure
         + FiniteUnitsStructure
         + 'static,
-    PolynomialStructure<R::Structure>: Structure<Set = Polynomial<R>>
+    PolynomialStructure<R::Structure>: SetStructure<Set = Polynomial<R>>
         + GreatestCommonDivisorStructure
         + UniqueFactorizationStructure,
 {
@@ -321,9 +321,9 @@ where
 
 impl<Fof: FieldOfFractionsStructure> PolynomialStructure<Fof>
 where
-    Self: Structure<Set = Polynomial<Fof::Set>> + UniqueFactorizationStructure,
+    Self: SetStructure<Set = Polynomial<Fof::Set>> + UniqueFactorizationStructure,
     PolynomialStructure<Fof::RS>:
-        Structure<Set = Polynomial<<Fof::RS as Structure>::Set>> + FactorableStructure,
+        SetStructure<Set = Polynomial<<Fof::RS as SetStructure>::Set>> + FactorableStructure,
     Fof::RS: GreatestCommonDivisorStructure,
 {
     pub fn factorize_by_factorize_primitive_part(
@@ -354,7 +354,7 @@ where
 
 impl<RS: FieldStructure + FiniteUnitsStructure> PolynomialStructure<RS>
 where
-    Self: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
+    Self: SetStructure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
 {
     fn find_factor_by_trying_all_factors(
         &self,
@@ -402,7 +402,7 @@ impl<F: MetaType> Polynomial<F>
 where
     F::Structure: FieldStructure + FiniteUnitsStructure,
     PolynomialStructure<F::Structure>:
-        Structure<Set = Polynomial<F>> + UniqueFactorizationStructure,
+        SetStructure<Set = Polynomial<F>> + UniqueFactorizationStructure,
 {
     pub fn factorize_by_trying_all_factors(
         &self,

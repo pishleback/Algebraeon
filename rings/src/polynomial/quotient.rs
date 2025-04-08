@@ -6,7 +6,7 @@ pub type FieldExtensionStructure<FS> = QuotientStructure<PolynomialStructure<FS>
 
 impl<FS: FieldStructure, const IS_FIELD: bool> QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
 where
-    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
 {
     pub fn generator(&self) -> Polynomial<FS::Set> {
         self.ring().var()

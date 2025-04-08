@@ -32,6 +32,8 @@ impl IdealArithmeticStructure for CannonicalStructure<Integer> {
     }
 }
 
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -40,7 +40,7 @@ impl<FS: FiniteFieldStructure> FiniteFieldStructure for FieldExtensionStructure<
 
 pub fn new_finite_field_extension<FS: FiniteFieldStructure>(
     finite_field: FS,
-    poly: <PolynomialStructure<FS> as Structure>::Set,
+    poly: <PolynomialStructure<FS> as SetStructure>::Set,
 ) -> FieldExtensionStructure<FS>
 where
     PolynomialStructure<FS>: FactorableStructure,

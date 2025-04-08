@@ -8,7 +8,7 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, Rational};
-use algebraeon_sets::structure::{EqStructure, PartialEqStructure, Structure};
+use algebraeon_sets::structure::{EqStructure, PartialEqStructure, SetStructure};
 
 #[derive(Debug, Clone)]
 pub struct RingOfIntegersWithIntegralBasisStructure {
@@ -211,7 +211,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl Structure for RingOfIntegersWithIntegralBasisStructure {
+impl SetStructure for RingOfIntegersWithIntegralBasisStructure {
     type Set = RingOfIntegersWithIntegralBasisElement;
 }
 

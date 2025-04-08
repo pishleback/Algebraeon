@@ -584,7 +584,7 @@ impl<R: MetaRing> MetaEuclideanDivision for R where
 {
 }
 
-pub trait InfiniteStructure: Structure {
+pub trait InfiniteStructure: SetStructure {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
 }
 pub trait Infinite: MetaType {
@@ -608,7 +608,7 @@ where
 impl<R: MetaType> MetaCharZero for R where Self::Structure: CharZeroStructure<Set = R> {}
 
 impl<RS: CharZeroStructure + 'static> InfiniteStructure for RS {
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as Structure>::Set>> {
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetStructure>::Set>> {
         struct IntegerIterator<RS: CharZeroStructure> {
             ring: RS,
             next: Integer,
@@ -733,75 +733,20 @@ pub trait FiniteFieldStructure: FieldStructure + FiniteUnitsStructure {
     }
 }
 
-pub trait FieldOfFractionsStructure: FieldStructure {
-    type RS: IntegralDomainStructure;
 
-    fn base_ring_structure(&self) -> Rc<Self::RS>;
-    fn from_base_ring(&self, elem: <Self::RS as Structure>::Set) -> Self::Set;
-    fn numerator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set;
-    fn denominator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set;
-    fn as_base_ring(&self, elem: Self::Set) -> Option<<Self::RS as Structure>::Set> {
-        let base_ring = self.base_ring_structure();
-        if base_ring.equal(&self.denominator(&elem), &base_ring.one()) {
-            Some(self.numerator(&elem))
-        } else {
-            None
-        }
-    }
-}
-pub trait MetaFieldOfFractions: MetaRing
-where
-    Self::Structure: FieldOfFractionsStructure,
-{
-    fn base_ring_structure() -> Rc<<Self::Structure as FieldOfFractionsStructure>::RS> {
-        Self::structure().base_ring_structure()
-    }
-    fn from_base_ring(
-        a: <<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set,
-    ) -> Self {
-        Self::structure().from_base_ring(a)
-    }
-    fn numerator(&self) -> <<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set {
-        Self::structure().numerator(self)
-    }
-    fn denominator(
-        &self,
-    ) -> <<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set {
-        Self::structure().denominator(self)
-    }
-    fn as_base_ring(
-        self,
-    ) -> Option<<<Self::Structure as FieldOfFractionsStructure>::RS as Structure>::Set> {
-        Self::structure().as_base_ring(self)
-    }
-}
-impl<R: MetaRing> MetaFieldOfFractions for R where
-    Self::Structure: FieldOfFractionsStructure<Set = R>
-{
-}
-
-impl<FS: FieldOfFractionsStructure> CharZeroStructure for FS where FS::RS: CharZeroStructure {}
-
-impl<FS: FieldOfFractionsStructure> ComplexSubsetStructure for FS where
-    FS::RS: ComplexSubsetStructure
-{
-}
-
-impl<FS: FieldOfFractionsStructure> RealSubsetStructure for FS where FS::RS: RealSubsetStructure {}
-
-impl<FS: FieldOfFractionsStructure> RealToFloatStructure for FS
-where
-    FS::RS: RealToFloatStructure,
-{
-    fn as_f64(&self, x: &Self::Set) -> f64 {
-        let base_ring = self.base_ring_structure();
-        RealToFloatStructure::as_f64(base_ring.as_ref(), &self.numerator(x))
-            / RealToFloatStructure::as_f64(base_ring.as_ref(), &self.denominator(x))
-    }
-}
+// impl<FS: FieldOfFractionsStructure> RealToFloatStructure for FS
+// where
+//     FS::RS: RealToFloatStructure,
+// {
+//     fn as_f64(&self, x: &Self::Set) -> f64 {
+//         let base_ring = self.base_ring_structure();
+//         RealToFloatStructure::as_f64(base_ring.as_ref(), &self.numerator(x))
+//             / RealToFloatStructure::as_f64(base_ring.as_ref(), &self.denominator(x))
+//     }
+// }
 
 //is a subset of the complex numbers
-pub trait ComplexSubsetStructure: Structure {}
+pub trait ComplexSubsetStructure: SetStructure {}
 
 //is a subset of the real numbers
 pub trait RealSubsetStructure: ComplexSubsetStructure {}
@@ -888,7 +833,7 @@ where
 }
 impl<R: MetaType> MetaRealFromFloat for R where Self::Structure: RealFromFloatStructure<Set = R> {}
 
-pub trait ComplexConjugateStructure: Structure {
+pub trait ComplexConjugateStructure: SetStructure {
     fn conjugate(&self, x: &Self::Set) -> Self::Set;
 }
 pub trait MetaComplexConjugate: MetaType
@@ -932,22 +877,22 @@ impl<R: MetaType> MetaPositiveRealNthRoot for R where
 pub trait AlgebraicClosureStructure: FieldStructure
 where
     PolynomialStructure<Self::BFS>:
-        FactorableStructure + Structure<Set = Polynomial<<Self::BFS as Structure>::Set>>,
+        FactorableStructure + SetStructure<Set = Polynomial<<Self::BFS as SetStructure>::Set>>,
 {
     type BFS: FieldStructure; //base field structure
 
     fn base_field(&self) -> Rc<Self::BFS>;
 
-    fn base_field_inclusion(&self, x: &<Self::BFS as Structure>::Set) -> Self::Set;
+    fn base_field_inclusion(&self, x: &<Self::BFS as SetStructure>::Set) -> Self::Set;
 
     //return None for the zero polynomial
     fn all_roots_list(
         &self,
-        poly: &Polynomial<<Self::BFS as Structure>::Set>,
+        poly: &Polynomial<<Self::BFS as SetStructure>::Set>,
     ) -> Option<Vec<Self::Set>>;
     fn all_roots_unique(
         &self,
-        poly: &Polynomial<<Self::BFS as Structure>::Set>,
+        poly: &Polynomial<<Self::BFS as SetStructure>::Set>,
     ) -> Option<Vec<Self::Set>> {
         self.all_roots_list(
             &PolynomialStructure::new(self.base_field())
@@ -958,7 +903,7 @@ where
     }
     fn all_roots_powers(
         &self,
-        poly: &Polynomial<<Self::BFS as Structure>::Set>,
+        poly: &Polynomial<<Self::BFS as SetStructure>::Set>,
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
         for (factor, k) in PolynomialStructure::new(self.base_field())

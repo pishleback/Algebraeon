@@ -426,7 +426,7 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
     }
 }
 
-impl<RS: RingStructure> Structure for MultiPolynomialStructure<RS> {
+impl<RS: RingStructure> SetStructure for MultiPolynomialStructure<RS> {
     type Set = MultiPolynomial<RS::Set>;
 }
 
@@ -621,7 +621,7 @@ impl<RS: GreatestCommonDivisorStructure> GreatestCommonDivisorStructure
     for MultiPolynomialStructure<RS>
 where
     PolynomialStructure<MultiPolynomialStructure<RS>>:
-        Structure<Set = Polynomial<MultiPolynomial<RS::Set>>>,
+        SetStructure<Set = Polynomial<MultiPolynomial<RS::Set>>>,
 {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         match x.free_vars().into_iter().chain(y.free_vars()).next() {
@@ -656,9 +656,9 @@ impl<
 > PolynomialStructure<MultiPolynomialStructure<RS>>
 where
     PolynomialStructure<MultiPolynomialStructure<RS>>:
-        Structure<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationStructure,
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
-    MultiPolynomialStructure<RS>: Structure<Set = MultiPolynomial<RS::Set>>
+        SetStructure<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationStructure,
+    PolynomialStructure<RS>: SetStructure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
+    MultiPolynomialStructure<RS>: SetStructure<Set = MultiPolynomial<RS::Set>>
         + UniqueFactorizationStructure
         + GreatestCommonDivisorStructure,
 {
@@ -668,9 +668,9 @@ where
         factor_multipoly_coeff: impl Fn(
             &MultiPolynomial<RS::Set>,
         ) -> Option<Factored<MultiPolynomialStructure<RS>>>,
-        mpoly: &<Self as Structure>::Set,
+        mpoly: &<Self as SetStructure>::Set,
     ) -> Option<Factored<PolynomialStructure<MultiPolynomialStructure<RS>>>> {
-        match |mpoly: &<Self as Structure>::Set| -> Option<Polynomial<RS::Set>> {
+        match |mpoly: &<Self as SetStructure>::Set| -> Option<Polynomial<RS::Set>> {
             let mut const_coeffs = vec![];
             for coeff in mpoly.coeffs() {
                 const_coeffs.push(self.coeff_ring().as_constant(&coeff)?);
@@ -712,16 +712,16 @@ impl<
 > MultiPolynomialStructure<RS>
 where
     MultiPolynomialStructure<RS>:
-        Structure<Set = MultiPolynomial<RS::Set>> + UniqueFactorizationStructure,
-    PolynomialStructure<RS>: Structure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
+        SetStructure<Set = MultiPolynomial<RS::Set>> + UniqueFactorizationStructure,
+    PolynomialStructure<RS>: SetStructure<Set = Polynomial<RS::Set>> + UniqueFactorizationStructure,
     PolynomialStructure<MultiPolynomialStructure<RS>>:
-        Structure<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationStructure,
+        SetStructure<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationStructure,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
         factor_coeff: Rc<dyn Fn(&RS::Set) -> Option<Factored<RS>>>,
         factor_poly: Rc<dyn Fn(&Polynomial<RS::Set>) -> Option<Factored<PolynomialStructure<RS>>>>,
-        mpoly: &<Self as Structure>::Set,
+        mpoly: &<Self as SetStructure>::Set,
     ) -> Option<Factored<MultiPolynomialStructure<RS>>> {
         if self.is_zero(mpoly) {
             None

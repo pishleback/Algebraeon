@@ -690,7 +690,7 @@ pub mod structure {
         p: Natural,
     }
 
-    impl Structure for PAdicAlgebraicStructure {
+    impl SetStructure for PAdicAlgebraicStructure {
         type Set = PAdicAlgebraic;
     }
 
@@ -704,7 +704,7 @@ pub mod structure {
     }
 
     impl PAdicAlgebraicStructure {
-        fn check_is_element(&self, a: &<Self as Structure>::Set) {
+        fn check_is_element(&self, a: &<Self as SetStructure>::Set) {
             // #[cfg(debug_assertions)]
             if &self.p != a.p() {
                 panic!(

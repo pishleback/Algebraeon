@@ -170,7 +170,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
-        p: &<Self as Structure>::Set,
+        p: &<Self as SetStructure>::Set,
     ) -> crate::structure::Factored<Self> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
@@ -242,7 +242,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
     pub fn factor_primitive_sqfree_by_reduced_ring(
         &self,
-        p: &<Self as Structure>::Set,
+        p: &<Self as SetStructure>::Set,
     ) -> Factored<Self> {
         debug_assert!(!self.is_zero(p));
 
@@ -560,8 +560,8 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     //factor over the rationals first, then factor each irreducible rational factor over the anf
     pub fn factorize_rational_factorize_first(
         &self,
-        f: &<Self as Structure>::Set,
-        factorize: &impl Fn(&<Self as Structure>::Set) -> Factored<Self>,
+        f: &<Self as SetStructure>::Set,
+        factorize: &impl Fn(&<Self as SetStructure>::Set) -> Factored<Self>,
     ) -> Factored<Self> {
         debug_assert!(!self.is_zero(f));
         // println!("f = {}", f);

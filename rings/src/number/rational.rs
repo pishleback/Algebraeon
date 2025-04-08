@@ -53,22 +53,32 @@ impl OrderedRingStructure for CannonicalStructure<Rational> {
 
 impl FieldStructure for CannonicalStructure<Rational> {}
 
-impl FieldOfFractionsStructure for CannonicalStructure<Rational> {
-    type RS = CannonicalStructure<Integer>;
+impl ComplexSubsetStructure for CannonicalStructure<Rational> {}
 
-    fn base_ring_structure(&self) -> Rc<Self::RS> {
+impl RealSubsetStructure for CannonicalStructure<Rational> {}
+
+impl RealToFloatStructure for CannonicalStructure<Rational> {
+    fn as_f64(&self, x: &Rational) -> f64 {
+        let base_ring = self.base_ring_structure();
+        RealToFloatStructure::as_f64(base_ring.as_ref(), &self.numerator(x))
+            / RealToFloatStructure::as_f64(base_ring.as_ref(), &self.denominator(x))
+    }
+}
+
+impl FieldOfFractionsStructure<CannonicalStructure<Integer>> for CannonicalStructure<Rational> {
+    fn base_ring_structure(&self) -> Rc<CannonicalStructure<Integer>> {
         Integer::structure()
     }
 
-    fn from_base_ring(&self, elem: <Self::RS as Structure>::Set) -> Self::Set {
+    fn from_base_ring(&self, elem: Integer) -> Self::Set {
         Rational::from(elem)
     }
 
-    fn numerator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
+    fn numerator(&self, elem: &Self::Set) -> Integer {
         Fraction::numerator(elem)
     }
 
-    fn denominator(&self, elem: &Self::Set) -> <Self::RS as Structure>::Set {
+    fn denominator(&self, elem: &Self::Set) -> Integer {
         Integer::from(Fraction::denominator(elem))
     }
 }

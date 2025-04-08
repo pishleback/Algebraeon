@@ -5,12 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
  - Ring of Integers
- - Ideals (TODO)
+ - Ideal sum, product, intersection, containment, equality for integers and rings of integers.
 
 ## [0.0.11] - 2025-03-2025
 
- - Lots of reorganizing where things are..
- - Added docs and examples to sets::combinatorics
+ - Lots of reorganizing where things are.
+ - Added docs and examples to sets::combinatorics.
  - Mucking around trying to get `cargo ws` to work.
  - Added Lenstra elliptic-curve factorization for integers.
  - Added signature of a number field.
