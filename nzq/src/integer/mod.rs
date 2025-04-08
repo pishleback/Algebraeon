@@ -476,7 +476,7 @@ impl Abs for &Integer {
 impl MetaType for Integer {
     type Structure = CannonicalStructure<Integer>;
 
-    fn structure() -> std::rc::Rc<Self::Structure> {
-        CannonicalStructure::new().into()
+    fn structure() -> Self::Structure {
+        CannonicalStructure::new()
     }
 }

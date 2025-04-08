@@ -60,7 +60,7 @@ impl ComplexAlgebraic {
 impl AlgebraicClosureStructure for CannonicalStructure<ComplexAlgebraic> {
     type BFS = <Rational as algebraeon_sets::structure::MetaType>::Structure;
 
-    fn base_field(&self) -> Rc<Self::BFS> {
+    fn base_field(&self) -> Self::BFS {
         Rational::structure()
     }
 
@@ -106,7 +106,7 @@ pub fn as_poly_expr(
 
     //let K = Q[generator]
     let gen_anf = generator.min_poly().algebraic_number_field();
-    let gen_anf_poly = PolynomialStructure::new(gen_anf.clone().into());
+    let gen_anf_poly = PolynomialStructure::new(gen_anf.clone());
 
     //the minimal polynomial of target in K[x]
     let target_min_poly = target

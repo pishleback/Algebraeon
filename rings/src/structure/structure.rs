@@ -689,11 +689,7 @@ impl<FS: FieldStructure> FactorableStructure for FS {
         if self.is_zero(a) {
             None
         } else {
-            Some(Factored::new_unchecked(
-                Rc::new(self.clone()),
-                a.clone(),
-                vec![],
-            ))
+            Some(Factored::new_unchecked(self.clone(), a.clone(), vec![]))
         }
     }
 }
@@ -885,7 +881,7 @@ where
 {
     type BFS: FieldStructure; //base field structure
 
-    fn base_field(&self) -> Rc<Self::BFS>;
+    fn base_field(&self) -> Self::BFS;
 
     fn base_field_inclusion(&self, x: &<Self::BFS as SetStructure>::Set) -> Self::Set;
 
@@ -899,7 +895,7 @@ where
         poly: &Polynomial<<Self::BFS as SetStructure>::Set>,
     ) -> Option<Vec<Self::Set>> {
         self.all_roots_list(
-            &PolynomialStructure::new(self.base_field())
+            &PolynomialStructure::new(self.base_field().clone())
                 .factor(poly)
                 .unwrap()
                 .expand_squarefree(),
@@ -910,7 +906,7 @@ where
         poly: &Polynomial<<Self::BFS as SetStructure>::Set>,
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
-        for (factor, k) in PolynomialStructure::new(self.base_field())
+        for (factor, k) in PolynomialStructure::new(self.base_field().clone())
             .factor(poly)?
             .unit_and_factors()
             .1

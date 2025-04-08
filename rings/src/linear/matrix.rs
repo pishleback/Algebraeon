@@ -1,13 +1,10 @@
-use std::borrow::Borrow;
-use std::rc::Rc;
-
-use itertools::Itertools;
-
 use super::subspace::*;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use itertools::Itertools;
+use std::borrow::Borrow;
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -245,7 +242,7 @@ impl<Set: Clone> Matrix<Set> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MatrixStructure<RS: SetStructure> {
-    ring: Rc<RS>,
+    ring: RS,
 }
 
 impl<RS: SetStructure> Structure for MatrixStructure<RS> {}
@@ -255,12 +252,12 @@ impl<RS: SetStructure> SetStructure for MatrixStructure<RS> {
 }
 
 impl<RS: SetStructure> MatrixStructure<RS> {
-    pub fn new(ring: Rc<RS>) -> Self {
+    pub fn new(ring: RS) -> Self {
         Self { ring }
     }
 
-    pub fn ring(&self) -> Rc<RS> {
-        self.ring.clone()
+    pub fn ring(&self) -> &RS {
+        &self.ring
     }
 }
 
@@ -582,7 +579,7 @@ enum ElementaryOppType<RS: RingStructure> {
 }
 
 struct ElementaryOpp<RS: RingStructure> {
-    ring: Rc<RS>,
+    ring: RS,
     transpose: bool, //false = row opp, true = column opp
     opp: ElementaryOppType<RS>,
 }
@@ -629,7 +626,7 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
         Ok(())
     }
 
-    fn new_row_opp(ring: Rc<RS>, opp: ElementaryOppType<RS>) -> Self {
+    fn new_row_opp(ring: RS, opp: ElementaryOppType<RS>) -> Self {
         Self {
             ring,
             transpose: false,
@@ -637,7 +634,7 @@ impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
         }
     }
 
-    fn new_col_opp(ring: Rc<RS>, opp: ElementaryOppType<RS>) -> Self {
+    fn new_col_opp(ring: RS, opp: ElementaryOppType<RS>) -> Self {
         Self {
             ring,
             transpose: true,
@@ -1393,7 +1390,7 @@ pub fn factor_primitive_fof<
 ) -> (Field::Set, Matrix<Ring::Set>) {
     let ring = fof_inclusion.domain();
     let field = fof_inclusion.range();
-    let mat_ring = MatrixStructure::new(ring.clone().into());
+    let mat_ring = MatrixStructure::new(ring.clone());
 
     let div = ring.lcm_list(
         mat.entries_list()
@@ -1428,7 +1425,7 @@ impl<FS: FieldStructure> MatrixStructure<FS> {
             Err(MatOppErr::NotSquare)
         } else {
             let poly_ring = PolynomialStructure::new(self.ring.clone());
-            let poly_mat_struct = MatrixStructure::new(poly_ring.clone().into());
+            let poly_mat_struct = MatrixStructure::new(poly_ring.clone());
             Ok(poly_mat_struct
                 .add(
                     &m.apply_map(|x| Polynomial::constant(x.clone())),
@@ -1443,7 +1440,7 @@ impl<FS: FieldStructure> MatrixStructure<FS> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
                 let poly_ring = PolynomialStructure::new(self.ring.clone());
-                let poly_mat_struct = MatrixStructure::new(poly_ring.into());
+                let poly_mat_struct = MatrixStructure::new(poly_ring.clone());
                 let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
                 debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
                 Ok(s.at(k - 1, k - 1).unwrap().clone())
@@ -1460,7 +1457,7 @@ impl<FS: FieldStructure> MatrixStructure<FS> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
                 let poly_ring = PolynomialStructure::new(self.ring.clone());
-                let poly_mat_struct = MatrixStructure::new(poly_ring.clone().into());
+                let poly_mat_struct = MatrixStructure::new(poly_ring.clone());
                 let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
                 debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
                 let mut char_poly = poly_ring.one();
@@ -1651,7 +1648,7 @@ where
     PolynomialStructure<FS::BFS>:
         FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
 {
-    field: Rc<FS>,
+    field: FS,
     blocks: Vec<JordanBlock<FS>>,
 }
 
@@ -1665,7 +1662,7 @@ where
         ac_mat_structure.join_diag(
             self.blocks
                 .iter()
-                .map(|block| block.matrix(self.field.as_ref()))
+                .map(|block| block.matrix(&self.field))
                 .collect(),
         )
     }
@@ -1677,7 +1674,7 @@ where
         FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
 {
     pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetStructure>::Set>) -> Vec<FS::Set> {
-        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
+        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
         self.ring()
             .all_roots_list(
                 &base_field_mat_structure
@@ -1688,7 +1685,7 @@ where
     }
 
     pub fn eigenvalues_unique(&self, mat: Matrix<<FS::BFS as SetStructure>::Set>) -> Vec<FS::Set> {
-        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
+        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
         self.ring()
             .all_roots_unique(
                 &base_field_mat_structure
@@ -1702,7 +1699,7 @@ where
         &self,
         mat: Matrix<<FS::BFS as SetStructure>::Set>,
     ) -> Vec<(FS::Set, usize)> {
-        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
+        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
         self.ring()
             .all_roots_powers(
                 &base_field_mat_structure
@@ -1740,11 +1737,8 @@ where
         eigenvalue: &FS::Set,
         k: usize,
     ) -> LinearLattice<FS::Set> {
-        LinearLatticeStructure::new(self.ring()).transpose(&self.generalized_col_eigenspace(
-            &mat.transpose_ref(),
-            eigenvalue,
-            k,
-        ))
+        LinearLatticeStructure::new(self.ring().clone())
+            .transpose(&self.generalized_col_eigenspace(&mat.transpose_ref(), eigenvalue, k))
     }
 
     pub fn col_eigenspace(
@@ -1958,7 +1952,7 @@ where
             jnf_basis_rel_gesp_basis.push(Matrix::join_cols(mult, eigenblock_basis));
         }
         let jnf = JordanNormalForm {
-            field: self.ring(),
+            field: self.ring().clone(),
             blocks: jordan_blocks,
         };
         let jordan_blocks_basis = ac_mat_structure.join_diag(jnf_basis_rel_gesp_basis);
@@ -2039,8 +2033,8 @@ where
 {
     type Structure = MatrixStructure<R::Structure>;
 
-    fn structure() -> Rc<Self::Structure> {
-        MatrixStructure::new(R::structure()).into()
+    fn structure() -> Self::Structure {
+        MatrixStructure::new(R::structure())
     }
 }
 
@@ -2231,10 +2225,7 @@ where
         FieldOfFractionsInclusionStructure<CannonicalStructure<Integer>, Field::Structure>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Matrix<Integer>) {
-        factor_primitive_fof(
-            &PrincipalSubringInclusion::new(Field::structure().as_ref().clone()),
-            self,
-        )
+        factor_primitive_fof(&PrincipalSubringInclusion::new(Field::structure()), self)
     }
 }
 

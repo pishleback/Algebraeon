@@ -68,12 +68,12 @@ impl<Set> Polynomial<Set> {
 #[derive(Debug, Clone)]
 pub struct PolynomialStructure<RS: SemiRingStructure> {
     coeff_ring_zero: RS::Set, //so that we can return a refernece to zero when getting polynomial coefficients out of range
-    coeff_ring: Rc<RS>,
+    coeff_ring: RS,
 }
 
 impl<RS: SemiRingStructure> PolynomialStructure<RS> {
-    pub fn coeff_ring(&self) -> Rc<RS> {
-        self.coeff_ring.clone()
+    pub fn coeff_ring(&self) -> &RS {
+        &self.coeff_ring
     }
 }
 
@@ -189,7 +189,7 @@ impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
 }
 
 impl<RS: SemiRingStructure> PolynomialStructure<RS> {
-    pub fn new(coeff_ring: Rc<RS>) -> Self {
+    pub fn new(coeff_ring: RS) -> Self {
         Self {
             coeff_ring_zero: coeff_ring.zero(),
             coeff_ring,
@@ -270,7 +270,7 @@ impl<RS: SemiRingStructure> PolynomialStructure<RS> {
 
     //find p(q(x))
     pub fn compose(&self, p: &Polynomial<RS::Set>, q: &Polynomial<RS::Set>) -> Polynomial<RS::Set> {
-        PolynomialStructure::new(Rc::new(self.clone()))
+        PolynomialStructure::new(self.clone())
             .evaluate(&p.apply_map(|c| Polynomial::constant(c.clone())), q)
     }
 
@@ -824,7 +824,7 @@ impl<RS: BezoutDomainStructure> PolynomialStructure<RS> {
         \ 1 3 9 / \ c /   \ -2 /
         */
 
-        let matrix_structure = MatrixStructure::new(self.coeff_ring());
+        let matrix_structure = MatrixStructure::new(self.coeff_ring().clone());
 
         let n = points.len();
         let mut mat = matrix_structure.zero(n, n);
@@ -861,12 +861,10 @@ pub fn factor_primitive_fof<
 >(
     fof_inclusion: &Fof,
     p: &Polynomial<Field::Set>,
-) -> (Field::Set, Polynomial<Ring::Set>)
-
-{
+) -> (Field::Set, Polynomial<Ring::Set>) {
     let ring = fof_inclusion.domain();
     let field = fof_inclusion.range();
-    let poly_ring = PolynomialStructure::new(ring.clone().into());
+    let poly_ring = PolynomialStructure::new(ring.clone());
 
     let div = fof_inclusion.domain().lcm_list(
         p.coeffs()
@@ -899,7 +897,7 @@ where
 {
     pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {
         factor_primitive_fof(
-            &PrincipalSubringInclusion::new(Self::structure().coeff_ring().as_ref().clone()),
+            &PrincipalSubringInclusion::new(Self::structure().coeff_ring().clone()),
             self,
         )
     }
@@ -915,8 +913,8 @@ where
 {
     type Structure = PolynomialStructure<R::Structure>;
 
-    fn structure() -> Rc<Self::Structure> {
-        PolynomialStructure::new(R::structure()).into()
+    fn structure() -> Self::Structure {
+        PolynomialStructure::new(R::structure())
     }
 }
 

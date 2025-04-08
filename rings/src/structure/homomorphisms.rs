@@ -1,3 +1,5 @@
+use crate::polynomial::Polynomial;
+
 use super::*;
 use algebraeon_nzq::Integer;
 use algebraeon_sets::structure::*;
@@ -14,7 +16,7 @@ pub struct PrincipalSubringInclusion<Ring: RingStructure> {
 impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
     pub fn new(ring: Ring) -> Self {
         Self {
-            inclusion: Morphism::new(Integer::structure().as_ref().clone(), ring),
+            inclusion: Morphism::new(Integer::structure().clone(), ring),
         }
     }
 }
@@ -65,4 +67,18 @@ pub trait FieldOfFractionsInclusionStructure<Ring: RingStructure, Field: FieldSt
     fn denominator(&self, a: &Field::Set) -> Ring::Set {
         self.numerator_and_denominator(a).1
     }
+}
+
+pub trait FiniteRankFreeRingExtension<A: RingStructure, B: RingStructure>:
+    InjectiveFunctionStructure<A, B> + RingHomomorphismStructure<A, B>
+{
+    fn degree(&self) -> usize;
+    fn norm(&self, a: &B::Set) -> A::Set;
+    fn trace(&self, a: &B::Set) -> A::Set;
+}
+
+pub trait FiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
+    FiniteRankFreeRingExtension<F, K>
+{
+    fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set>;
 }

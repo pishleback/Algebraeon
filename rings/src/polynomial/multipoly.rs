@@ -163,7 +163,7 @@ impl Monomial {
 
     pub fn evaluate<RS: RingStructure>(
         &self,
-        ring: Rc<RS>,
+        ring: RS,
         values: &HashMap<Variable, impl Borrow<RS::Set>>,
     ) -> RS::Set {
         ring.product(
@@ -415,15 +415,15 @@ impl<RS: RingStructure + ToStringStructure> ToStringStructure for MultiPolynomia
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MultiPolynomialStructure<RS: RingStructure> {
-    coeff_ring: Rc<RS>,
+    coeff_ring: RS,
 }
 
 impl<RS: RingStructure> MultiPolynomialStructure<RS> {
-    pub fn new(coeff_ring: Rc<RS>) -> Self {
+    pub fn new(coeff_ring: RS) -> Self {
         Self { coeff_ring }
     }
 
-    pub fn coeff_ring(&self) -> Rc<RS> {
+    pub fn coeff_ring(&self) -> RS {
         self.coeff_ring.clone()
     }
 }
@@ -945,7 +945,7 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
                 values.insert(free_var.clone(), self.var(free_var));
             }
         }
-        MultiPolynomialStructure::new(self.clone().into()).evaluate(
+        MultiPolynomialStructure::new(self.clone()).evaluate(
             &poly.apply_map(|x| MultiPolynomial::constant(x.clone())),
             values,
         )
@@ -974,8 +974,8 @@ where
 {
     type Structure = MultiPolynomialStructure<R::Structure>;
 
-    fn structure() -> std::rc::Rc<Self::Structure> {
-        MultiPolynomialStructure::new(R::structure()).into()
+    fn structure() -> Self::Structure {
+        MultiPolynomialStructure::new(R::structure())
     }
 }
 

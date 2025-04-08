@@ -6,7 +6,6 @@ use crate::{
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use std::rc::Rc;
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
 /*
@@ -306,8 +305,8 @@ where
         let mat = Matrix::construct(f_deg, f_deg, |i, j| self.coeff(&row_polys[i], j).clone());
         // mat.pprint();
         //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
-        let mat_struct = MatrixStructure::<FS>::new(self.coeff_ring().into());
-        let linlat_struct = LinearLatticeStructure::<FS>::new(self.coeff_ring().into());
+        let mat_struct = MatrixStructure::<FS>::new(self.coeff_ring().clone());
+        let linlat_struct = LinearLatticeStructure::<FS>::new(self.coeff_ring().clone());
         let ker = mat_struct.row_kernel(mat);
         // ker.pprint();
         let ker_rank = linlat_struct.rank(&ker);
@@ -360,7 +359,7 @@ where
         PolynomialStructure<FS>: FactorableStructure,
     {
         let mut factors = Factored::new_unchecked(
-            Rc::new(self.poly_ring.clone()),
+            self.poly_ring.clone(),
             Polynomial::constant(self.unit.clone()),
             vec![],
         );
@@ -399,7 +398,7 @@ where
 
             let mod_poly_ring =
                 QuotientStructure::new_ring(self.poly_ring.clone().into(), poly.clone());
-            let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring());
+            let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring().clone());
             let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
             let qth_power_matrix = Matrix::join_cols(
                 n,
@@ -505,7 +504,7 @@ where
     where
         PolynomialStructure<FS>: FactorableStructure,
     {
-        let poly_ring: Rc<_> = self.poly_ring.clone().into();
+        let poly_ring = &self.poly_ring;
         let mut fs = Factored::factored_unit_unchecked(
             poly_ring.clone(),
             Polynomial::constant(self.unit.clone()),
@@ -570,10 +569,8 @@ where
                     sum
                 } else {
                     // when char != 2 use h^{(q^d-1)/2}-1 mod f
-                    let poly_mod_f = QuotientStructure::new_ring(
-                        self.poly_ring.clone().into(),
-                        ddf.polynomial.clone(),
-                    );
+                    let poly_mod_f =
+                        QuotientStructure::new_ring(self.poly_ring.clone(), ddf.polynomial.clone());
                     let a = (q.nat_pow(&d.into()) - Natural::ONE) / Natural::TWO;
                     poly_mod_f.add(
                         &poly_mod_f.nat_pow(&h, &a),

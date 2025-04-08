@@ -498,8 +498,8 @@ impl Rational {
 impl MetaType for Rational {
     type Structure = CannonicalStructure<Rational>;
 
-    fn structure() -> std::rc::Rc<Self::Structure> {
-        CannonicalStructure::new().into()
+    fn structure() -> Self::Structure {
+        CannonicalStructure::new()
     }
 }
 

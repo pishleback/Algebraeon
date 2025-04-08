@@ -131,7 +131,7 @@ where
         );
         // println!("first_vars={:?} last_var={:?}", first_vars, last_var);
         // println!("r_sym = {}", self.elem_to_string(&r_sym));
-        let r = MultiPolynomialStructure::new(self.clone().into()).evaluate(
+        let r = MultiPolynomialStructure::new(self.clone()).evaluate(
             &r_sym.apply_map(|x| MultiPolynomial::constant(x.clone())),
             (0..first_vars.len())
                 .map(|i| (e[i].clone(), self.elementary_symmetric(i + 1, vars)))
@@ -207,7 +207,7 @@ where
 
         #[cfg(debug_assertions)]
         {
-            let poly_check = MultiPolynomialStructure::new(self.clone().into()).evaluate(
+            let poly_check = MultiPolynomialStructure::new(self.clone()).evaluate(
                 &poly_sym.apply_map(|x| MultiPolynomial::constant(x.clone())),
                 (0..e.len())
                     .map(|i| (e[i].clone(), self.elementary_symmetric(i + 1, &vars_clone)))

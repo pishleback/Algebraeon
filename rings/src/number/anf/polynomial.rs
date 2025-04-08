@@ -105,7 +105,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
         // println!("embeddings = {:?}", embedding_vars);
 
         let rational_poly_multipoly_structure =
-            PolynomialStructure::new(MultiPolynomialStructure::new(Rational::structure()).into());
+            PolynomialStructure::new(MultiPolynomialStructure::new(Rational::structure()));
 
         let norm_f_sym = rational_poly_multipoly_structure.product(
             embedding_vars
@@ -404,7 +404,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             let q = Polynomial::add(&Polynomial::var_pow(n), &q_prime.neg());
             //assert q(α) = 0
             debug_assert!(l_reduced_ring.is_zero(
-                &PolynomialStructure::new(l_reduced_ring.clone().into()).evaluate(
+                &PolynomialStructure::new(l_reduced_ring.clone()).evaluate(
                     &q.apply_map::<Polynomial<Polynomial<Rational>>>(|c| {
                         Polynomial::from_coeffs(vec![Polynomial::from_coeffs(vec![c.clone()])])
                     }),
@@ -628,7 +628,7 @@ mod tests {
     fn test_anf_poly_factor_count() {
         let y = &Polynomial::<Rational>::var().into_ergonomic();
         let k = (y.pow(2) - 3).into_verbose().algebraic_number_field();
-        let k_poly = PolynomialStructure::new(k.clone().into());
+        let k_poly = PolynomialStructure::new(k.clone());
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
@@ -643,7 +643,7 @@ mod tests {
         let k = (y.pow(4) - y.pow(2) + 1)
             .into_verbose()
             .algebraic_number_field();
-        let k_poly = PolynomialStructure::new(k.clone().into());
+        let k_poly = PolynomialStructure::new(k.clone());
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
@@ -655,7 +655,7 @@ mod tests {
         );
 
         let k = (y.pow(3) - y + 1).into_verbose().algebraic_number_field();
-        let k_poly = PolynomialStructure::new(k.clone().into());
+        let k_poly = PolynomialStructure::new(k.clone());
         debug_assert_eq!(
             k_poly
                 .factor(&(x.pow(3) - x + 1).into_verbose())
@@ -668,7 +668,7 @@ mod tests {
         let k = (y.pow(4) - y.pow(2) + 1)
             .into_verbose()
             .algebraic_number_field();
-        let k_poly = PolynomialStructure::new(k.clone().into());
+        let k_poly = PolynomialStructure::new(k.clone());
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly

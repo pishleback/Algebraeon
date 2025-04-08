@@ -12,10 +12,6 @@ where
         self.ring().var()
     }
 
-    pub fn degree(&self) -> usize {
-        self.ring().degree(self.modulus()).unwrap()
-    }
-
     //matrix representing column vector multiplication by a on the left
     pub fn col_multiplication_matrix(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
         let poly_ring = self.ring();
@@ -65,20 +61,62 @@ where
     }
 
     pub fn min_poly(&self, a: &Polynomial<FS::Set>) -> Polynomial<FS::Set> {
-        MatrixStructure::new(self.ring().coeff_ring())
+        MatrixStructure::new(self.ring().coeff_ring().clone())
             .minimal_polynomial(self.col_multiplication_matrix(a))
             .unwrap()
     }
 
+    pub fn degree(&self) -> usize {
+        self.ring().degree(self.modulus()).unwrap()
+    }
+
     pub fn norm(&self, a: &Polynomial<FS::Set>) -> FS::Set {
-        MatrixStructure::new(self.ring().coeff_ring())
+        MatrixStructure::new(self.ring().coeff_ring().clone())
             .det(self.col_multiplication_matrix(a))
             .unwrap()
     }
 
     pub fn trace(&self, a: &Polynomial<FS::Set>) -> FS::Set {
-        MatrixStructure::new(self.ring().coeff_ring())
+        MatrixStructure::new(self.ring().coeff_ring().clone())
             .trace(&self.col_multiplication_matrix(a))
             .unwrap()
     }
 }
+
+// impl<FS: FieldStructure, const IS_FIELD: bool>
+//     MorphismStructure<FS, QuotientStructure<PolynomialStructure<FS>, IS_FIELD>>
+//     for QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
+// where
+//     PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
+// {
+//     fn domain(&self) -> &FS {
+//         self.ring().coeff_ring()
+//     }
+
+//     fn range(&self) -> &QuotientStructure<PolynomialStructure<FS>, IS_FIELD> {
+//         todo!()
+//     }
+// }
+
+// impl<FS: FieldStructure, const IS_FIELD: bool>
+//     FiniteRankFreeRingExtension<FS, QuotientStructure<PolynomialStructure<FS>, IS_FIELD>>
+//     for QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
+// where
+//     PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
+// {
+//     fn degree(&self) -> usize {
+//         self.ring().degree(self.modulus()).unwrap()
+//     }
+
+//     fn norm(&self, a: &Polynomial<FS::Set>) -> FS::Set {
+//         MatrixStructure::new(self.ring().coeff_ring())
+//             .det(self.col_multiplication_matrix(a))
+//             .unwrap()
+//     }
+
+//     fn trace(&self, a: &Polynomial<FS::Set>) -> FS::Set {
+//         MatrixStructure::new(self.ring().coeff_ring())
+//             .trace(&self.col_multiplication_matrix(a))
+//             .unwrap()
+//     }
+// }

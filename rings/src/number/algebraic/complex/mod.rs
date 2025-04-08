@@ -6,7 +6,7 @@ use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use boxes::*;
-use std::{collections::HashSet, fmt::Display, rc::Rc, str::FromStr};
+use std::{collections::HashSet, fmt::Display, str::FromStr};
 
 mod boxes;
 pub mod polynomial;
@@ -575,8 +575,8 @@ impl Eq for ComplexAlgebraic {}
 impl MetaType for ComplexAlgebraic {
     type Structure = CannonicalStructure<ComplexAlgebraic>;
 
-    fn structure() -> Rc<Self::Structure> {
-        CannonicalStructure::new().into()
+    fn structure() -> Self::Structure {
+        CannonicalStructure::new()
     }
 }
 

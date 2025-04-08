@@ -1,10 +1,7 @@
-use std::fmt::Display;
-use std::rc::Rc;
-
 use crate::structure::*;
-use algebraeon_sets::structure::*;
-
 use algebraeon_nzq::*;
+use algebraeon_sets::structure::*;
+use std::fmt::Display;
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -29,8 +26,8 @@ impl Display for QuaternaryField {
 impl MetaType for QuaternaryField {
     type Structure = CannonicalStructure<QuaternaryField>;
 
-    fn structure() -> Rc<Self::Structure> {
-        CannonicalStructure::new().into()
+    fn structure() -> Self::Structure {
+        CannonicalStructure::new()
     }
 }
 

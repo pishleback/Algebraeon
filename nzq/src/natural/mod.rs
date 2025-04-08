@@ -626,8 +626,8 @@ impl TryInto<usize> for &Natural {
 impl MetaType for Natural {
     type Structure = CannonicalStructure<Natural>;
 
-    fn structure() -> std::rc::Rc<Self::Structure> {
-        CannonicalStructure::new().into()
+    fn structure() -> Self::Structure {
+        CannonicalStructure::new()
     }
 }
 

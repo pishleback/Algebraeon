@@ -1,13 +1,11 @@
-use std::borrow::Borrow;
-use std::rc::Rc;
-
 use super::matrix::*;
 use crate::structure::*;
 use algebraeon_sets::structure::*;
+use std::borrow::Borrow;
 
 //return a metamatrix whose rows are a basis for the joint row span of all the passed metamatricies
 fn metamatrix_row_sum<RS: BezoutDomainStructure, MetaMatT: Borrow<Matrix<RS::Set>>>(
-    ring: Rc<RS>,
+    ring: RS,
     cols: usize,
     metamats: Vec<MetaMatT>,
 ) -> Matrix<RS::Set> {
@@ -22,7 +20,7 @@ fn metamatrix_row_sum<RS: BezoutDomainStructure, MetaMatT: Borrow<Matrix<RS::Set
 
 //return a metamatrix whose rows are a basis for the intersection of the row spans of the passed metamatricies
 fn metamatrix_row_intersection<RS: BezoutDomainStructure, MetaMatT: Borrow<Matrix<RS::Set>>>(
-    ring: Rc<RS>,
+    ring: RS,
     cols: usize,
     mut metamat1: MetaMatT,
     mut metamat2: MetaMatT,
@@ -130,7 +128,7 @@ fn mats_to_rows<Set: Clone, MatT: Borrow<Matrix<Set>>>(
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LinearLatticeStructure<RS: BezoutDomainStructure> {
-    ring: Rc<RS>,
+    ring: RS,
 }
 
 impl<RS: BezoutDomainStructure> Structure for LinearLatticeStructure<RS> {}
@@ -140,7 +138,7 @@ impl<RS: BezoutDomainStructure> SetStructure for LinearLatticeStructure<RS> {
 }
 
 impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
-    pub fn new(ring: Rc<RS>) -> Self {
+    pub fn new(ring: RS) -> Self {
         Self { ring }
     }
 }
@@ -492,8 +490,8 @@ where
 {
     type Structure = LinearLatticeStructure<R::Structure>;
 
-    fn structure() -> Rc<Self::Structure> {
-        LinearLatticeStructure::new(R::structure()).into()
+    fn structure() -> Self::Structure {
+        LinearLatticeStructure::new(R::structure())
     }
 }
 
@@ -649,7 +647,7 @@ impl<Set: Clone> AffineLattice<Set> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AffineLatticeStructure<RS: BezoutDomainStructure> {
-    ring: Rc<RS>,
+    ring: RS,
 }
 
 impl<RS: BezoutDomainStructure> Structure for AffineLatticeStructure<RS> {}
@@ -659,7 +657,7 @@ impl<RS: BezoutDomainStructure> SetStructure for AffineLatticeStructure<RS> {
 }
 
 impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
-    pub fn new(ring: Rc<RS>) -> Self {
+    pub fn new(ring: RS) -> Self {
         Self { ring }
     }
 }
@@ -1042,8 +1040,8 @@ where
 {
     type Structure = AffineLatticeStructure<R::Structure>;
 
-    fn structure() -> Rc<Self::Structure> {
-        AffineLatticeStructure::new(R::structure()).into()
+    fn structure() -> Self::Structure {
+        AffineLatticeStructure::new(R::structure())
     }
 }
 

@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, rc::Rc};
+use std::{borrow::Borrow, fmt::Debug, marker::PhantomData};
 
 pub trait Structure: Clone + Debug + PartialEq + Eq {}
 
@@ -11,7 +11,7 @@ pub trait SetStructure: Structure {
 
 pub trait MetaType: Clone + Debug {
     type Structure: SetStructure<Set = Self>;
-    fn structure() -> Rc<Self::Structure>;
+    fn structure() -> Self::Structure;
 }
 
 #[derive(Debug, Clone)]
@@ -42,9 +42,9 @@ impl<T: MetaType> PartialEq for CannonicalStructure<T> {
 impl<T: MetaType> Eq for CannonicalStructure<T> {}
 
 pub fn common_structure<S: SetStructure>(
-    structure1: impl Borrow<Rc<S>>,
-    structure2: impl Borrow<Rc<S>>,
-) -> Rc<S> {
+    structure1: impl Borrow<S>,
+    structure2: impl Borrow<S>,
+) -> S {
     if structure1.borrow() == structure2.borrow() {
         structure1.borrow().clone()
     } else {
@@ -87,7 +87,7 @@ mod tests {
         impl MetaType for A {
             type Structure = CannonicalStructure<A>;
 
-            fn structure() -> Rc<Self::Structure> {
+            fn structure() -> Self::Structure {
                 CannonicalStructure::new().into()
             }
         }

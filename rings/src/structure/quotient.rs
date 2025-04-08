@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, rc::Rc};
+use std::borrow::Borrow;
 
 use algebraeon_sets::structure::*;
 
@@ -6,17 +6,17 @@ use super::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct QuotientStructure<RS: EuclideanDivisionStructure, const IS_FIELD: bool> {
-    ring: Rc<RS>,
+    ring: RS,
     modulus: RS::Set,
 }
 
 impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> QuotientStructure<RS, IS_FIELD> {
-    pub fn new_unchecked(ring: Rc<RS>, modulus: RS::Set) -> Self {
+    pub fn new_unchecked(ring: RS, modulus: RS::Set) -> Self {
         assert!(!ring.is_zero(&modulus));
         Self { ring, modulus }
     }
 
-    pub fn ring(&self) -> Rc<RS> {
+    pub fn ring(&self) -> RS {
         self.ring.clone()
     }
 
@@ -30,19 +30,19 @@ impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> QuotientStructure<RS,
 }
 
 impl<RS: EuclideanDivisionStructure> QuotientStructure<RS, false> {
-    pub fn new_ring(ring: Rc<RS>, modulus: RS::Set) -> Self {
+    pub fn new_ring(ring: RS, modulus: RS::Set) -> Self {
         Self::new_unchecked(ring, modulus)
     }
 }
 
 impl<RS: EuclideanDivisionStructure> QuotientStructure<RS, true> {
-    pub fn new_field_unchecked(ring: Rc<RS>, modulus: RS::Set) -> Self {
+    pub fn new_field_unchecked(ring: RS, modulus: RS::Set) -> Self {
         Self::new_unchecked(ring, modulus)
     }
 }
 
 impl<RS: EuclideanDivisionStructure + FactorableStructure> QuotientStructure<RS, true> {
-    pub fn new_field(ring: Rc<RS>, modulus: RS::Set) -> Self {
+    pub fn new_field(ring: RS, modulus: RS::Set) -> Self {
         #[cfg(debug_assertions)]
         if !ring.is_irreducible(&modulus) {
             panic!(

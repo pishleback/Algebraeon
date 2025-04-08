@@ -429,8 +429,8 @@ impl Ord for RealAlgebraic {
 impl MetaType for RealAlgebraic {
     type Structure = CannonicalStructure<RealAlgebraic>;
 
-    fn structure() -> Rc<Self::Structure> {
-        CannonicalStructure::new().into()
+    fn structure() -> Self::Structure {
+        CannonicalStructure::new()
     }
 }
 

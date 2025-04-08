@@ -2,7 +2,6 @@ use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
-use std::rc::Rc;
 use std::{fmt::Display, hash::Hash};
 
 fn xgcd(mut x: usize, mut y: usize) -> (usize, isize, isize) {
@@ -123,8 +122,8 @@ impl<const N: usize> Display for Modulo<N> {
 impl<const N: usize> MetaType for Modulo<N> {
     type Structure = CannonicalStructure<Modulo<N>>;
 
-    fn structure() -> Rc<Self::Structure> {
-        CannonicalStructure::new().into()
+    fn structure() -> Self::Structure {
+        CannonicalStructure::new()
     }
 }
 

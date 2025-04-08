@@ -67,8 +67,8 @@ impl RealSubsetStructure for CannonicalStructure<Rational> {}
 impl RealToFloatStructure for CannonicalStructure<Rational> {
     fn as_f64(&self, x: &Rational) -> f64 {
         let fof = PrincipalSubringInclusion::new(self.clone());
-        RealToFloatStructure::as_f64(Integer::structure().as_ref(), &fof.numerator(x))
-            / RealToFloatStructure::as_f64(Integer::structure().as_ref(), &fof.denominator(x))
+        RealToFloatStructure::as_f64(&Integer::structure(), &fof.numerator(x))
+            / RealToFloatStructure::as_f64(&Integer::structure(), &fof.denominator(x))
     }
 }
 
@@ -101,7 +101,7 @@ impl RealFromFloatStructure for CannonicalStructure<Rational> {
 impl FactorableStructure for PolynomialStructure<CannonicalStructure<Rational>> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
         factorize_by_factorize_primitive_part(
-            &PrincipalSubringInclusion::new(self.coeff_ring().as_ref().clone()),
+            &PrincipalSubringInclusion::new(self.coeff_ring().clone()),
             self,
             p,
         )

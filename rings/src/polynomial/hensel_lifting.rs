@@ -1,11 +1,7 @@
-use std::rc::Rc;
-
-use crate::structure::*;
-
 use super::polynomial::*;
-use algebraeon_sets::structure::*;
-
+use crate::structure::*;
 use algebraeon_nzq::*;
+use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 enum HenselProduct<
@@ -40,7 +36,7 @@ pub struct HenselFactorization<
     const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + FactorableStructure,
 > {
-    ring: Rc<RS>,
+    ring: RS,
     i: RS::Set,
     n: Natural,
     factorization: HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>, //defined absolutely and factored modulo i^n
@@ -69,11 +65,11 @@ impl<
                 f_factorization.check(ring, i, n)?;
                 g_factorization.check(ring, i, n)?;
 
-                let poly_ring = PolynomialStructure::new(ring.clone().into());
-                let ring_mod_i = QuotientStructure::new_ring(ring.clone().into(), i.clone());
-                let poly_ring_mod_i = PolynomialStructure::new(ring_mod_i.clone().into());
+                let poly_ring = PolynomialStructure::new(ring.clone());
+                let ring_mod_i = QuotientStructure::new_ring(ring.clone(), i.clone());
+                let poly_ring_mod_i = PolynomialStructure::new(ring_mod_i.clone());
                 let poly_ring_mod_i_tothe_n = PolynomialStructure::new(
-                    QuotientStructure::new_ring(ring.clone().into(), ring.nat_pow(i, n)).into(),
+                    QuotientStructure::new_ring(ring.clone(), ring.nat_pow(i, n)),
                 );
 
                 //af + bg = 1 mod i
@@ -127,10 +123,9 @@ impl<
         first_fs: Vec<&Polynomial<RS::Set>>,
         second_fs: Vec<&Polynomial<RS::Set>>,
     ) -> Self {
-        let poly_ring = PolynomialStructure::new(ring.clone().into());
-        let poly_ring_mod_p = PolynomialStructure::new(
-            QuotientStructure::new_field(ring.clone().into(), p.clone()).into(),
-        );
+        let poly_ring = PolynomialStructure::new(ring.clone());
+        let poly_ring_mod_p =
+            PolynomialStructure::new(QuotientStructure::new_field(ring.clone(), p.clone()));
 
         //first_h and second_h are defined modulo p^n
         let first_h = poly_ring
@@ -212,7 +207,7 @@ fn compute_lift_factors<
     Polynomial<RS::Set>,
     Polynomial<RS::Set>,
 ) {
-    let poly_ring = PolynomialStructure::new(ring.clone().into());
+    let poly_ring = PolynomialStructure::new(ring.clone());
 
     let alpha = poly_ring.leading_coeff(h).unwrap();
     let (gcd, beta, gamma) = ring.euclidean_xgcd(alpha.clone(), i.clone());
@@ -220,7 +215,7 @@ fn compute_lift_factors<
     drop(gcd);
     drop(gamma);
 
-    let ring_mod_i = QuotientStructure::new_ring(ring.clone().into(), i.clone());
+    let ring_mod_i = QuotientStructure::new_ring(ring.clone(), i.clone());
     debug_assert!(ring_mod_i.equal(alpha, poly_ring.leading_coeff(h).unwrap()));
 
     let delta_h = poly_ring
@@ -232,10 +227,10 @@ fn compute_lift_factors<
 
     //found delta_h such that
     //delta_h = h - alpha*f*g mod i^n+1
-    let poly_ring_mod_i_tothe_nplusone = PolynomialStructure::new(
-        QuotientStructure::new_ring(ring.clone().into(), ring.nat_pow(i, &(n + Natural::ONE)))
-            .into(),
-    );
+    let poly_ring_mod_i_tothe_nplusone = PolynomialStructure::new(QuotientStructure::new_ring(
+        ring.clone(),
+        ring.nat_pow(i, &(n + Natural::ONE)),
+    ));
     debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
         &delta_h,
         &poly_ring_mod_i_tothe_nplusone.add(
@@ -247,7 +242,7 @@ fn compute_lift_factors<
             ]))
         ),
     ));
-    let poly_ring = PolynomialStructure::new(ring.clone().into());
+    let poly_ring = PolynomialStructure::new(ring.clone());
 
     debug_assert!(poly_ring.degree(&delta_h).unwrap_or(0) < poly_ring.degree(h).unwrap());
 
@@ -318,13 +313,10 @@ impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + Factorabl
                 a,
                 b,
             } => {
-                let pring_mod_i2n = PolynomialStructure::new(
-                    QuotientStructure::new_ring(
-                        ring.clone().into(),
-                        ring.nat_pow(i, &(n * Natural::TWO)),
-                    )
-                    .into(),
-                );
+                let pring_mod_i2n = PolynomialStructure::new(QuotientStructure::new_ring(
+                    ring.clone(),
+                    ring.nat_pow(i, &(n * Natural::TWO)),
+                ));
 
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
@@ -411,7 +403,7 @@ impl<
                 debug_assert_eq!(first_fs.len() + second_fs.len(), fs_len);
 
                 //find an inverse beta to alpha modulo p
-                let alpha = PolynomialStructure::new(ring.clone().into())
+                let alpha = PolynomialStructure::new(ring.clone())
                     .leading_coeff(&h)
                     .unwrap();
                 let (g, _beta, _gamma) = ring.euclidean_xgcd(alpha.clone(), p.clone());
@@ -463,12 +455,11 @@ impl<
 > HenselFactorization<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(&self) -> Result<(), &'static str> {
-        self.factorization
-            .check(self.ring.as_ref(), &self.i, &self.n)
+        self.factorization.check(&self.ring, &self.i, &self.n)
     }
 
     pub fn new(
-        ring: Rc<RS>,
+        ring: RS,
         p: RS::Set,
         n: Natural,
         h: Polynomial<RS::Set>,
@@ -485,9 +476,10 @@ impl<
             debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n
-        let poly_ring_mod_p_tothe_n = PolynomialStructure::new(
-            QuotientStructure::new_ring(ring.clone(), ring.nat_pow(&p, &n)).into(),
-        );
+        let poly_ring_mod_p_tothe_n = PolynomialStructure::new(QuotientStructure::new_ring(
+            ring.clone(),
+            ring.nat_pow(&p, &n),
+        ));
         let alpha = poly_ring.leading_coeff(&h).unwrap();
         debug_assert!(poly_ring_mod_p_tothe_n.equal(
             &h,
@@ -497,9 +489,10 @@ impl<
             )
         ));
         // fs are coprime mod i - checked when computing bezout coefficients
-        let factors = HenselFactorizationImpl::new(ring.as_ref(), &p, &n, h, fs.iter().collect());
+        let ans_ring = ring.clone();
+        let factors = HenselFactorizationImpl::new(&ring, &p, &n, h, fs.iter().collect());
         let ans = Self {
-            ring,
+            ring: ans_ring,
             i: p,
             n,
             factorization: factors,
@@ -536,8 +529,7 @@ impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + Factorabl
     HenselFactorization<false, RS>
 {
     pub fn linear_lift(&mut self) {
-        self.factorization
-            .linear_lift(self.ring.as_ref(), &self.i, &self.n);
+        self.factorization.linear_lift(&self.ring, &self.i, &self.n);
         self.n += Natural::ONE;
     }
 }
@@ -547,7 +539,7 @@ impl<RS: EuclideanDivisionStructure + GreatestCommonDivisorStructure + Factorabl
 {
     pub fn quadratic_lift(&mut self) {
         self.factorization
-            .quadratic_lift(self.ring.as_ref(), &self.i, &self.n);
+            .quadratic_lift(&self.ring, &self.i, &self.n);
         self.n *= Natural::TWO;
     }
 }
