@@ -2,7 +2,7 @@ use super::polynomial::*;
 use crate::{linear::matrix::*, structure::*};
 use algebraeon_sets::structure::*;
 
-pub type FieldExtensionByPolynomialQuotientStructure<FS> =
+pub type FieldExtensionByPolynomialQuotientAlias<FS> =
     QuotientStructure<PolynomialStructure<FS>, true>;
 
 impl<FS: FieldStructure, const IS_FIELD: bool> QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
@@ -86,32 +86,30 @@ where
 
 #[derive(Debug, Clone)]
 pub struct FieldExtensionByPolynomialQuotient<Field: FieldStructure> {
-    inclusion: Morphism<Field, FieldExtensionByPolynomialQuotientStructure<Field>>,
+    inclusion: Morphism<Field, FieldExtensionByPolynomialQuotientAlias<Field>>,
 }
 
 impl<Field: FieldStructure> FieldExtensionByPolynomialQuotient<Field> {
-    pub fn new(extension: FieldExtensionByPolynomialQuotientStructure<Field>) -> Self {
+    pub fn new(extension: FieldExtensionByPolynomialQuotientAlias<Field>) -> Self {
         Self {
             inclusion: Morphism::new(extension.ring().coeff_ring().clone(), extension),
         }
     }
 }
 
-impl<Field: FieldStructure>
-    MorphismStructure<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+impl<Field: FieldStructure> MorphismStructure<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn domain(&self) -> &Field {
         self.inclusion.domain()
     }
 
-    fn range(&self) -> &FieldExtensionByPolynomialQuotientStructure<Field> {
+    fn range(&self) -> &FieldExtensionByPolynomialQuotientAlias<Field> {
         self.inclusion.range()
     }
 }
 
-impl<Field: FieldStructure>
-    FunctionStructure<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+impl<Field: FieldStructure> FunctionStructure<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn image(&self, x: &Field::Set) -> Polynomial<Field::Set> {
@@ -120,13 +118,13 @@ impl<Field: FieldStructure>
 }
 
 impl<Field: FieldStructure>
-    RingHomomorphismStructure<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+    RingHomomorphismStructure<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
 }
 
 impl<Field: FieldStructure>
-    InjectiveFunctionStructure<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+    InjectiveFunctionStructure<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn try_preimage(&self, x: &Polynomial<Field::Set>) -> Option<Field::Set> {
@@ -135,7 +133,7 @@ impl<Field: FieldStructure>
 }
 
 impl<Field: FieldStructure>
-    FiniteDimensionalFieldExtension<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+    FiniteDimensionalFieldExtension<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn degree(&self) -> usize {
@@ -180,6 +178,7 @@ mod tests {
                 ext.try_preimage(&(x.pow(3) + &x + 1).into_verbose()),
                 Some(Rational::from_str("2").unwrap())
             );
+
             assert_eq!(
                 ext.norm(&(5 * x.pow(1) + 2).into_verbose()),
                 Rational::from_str("183").unwrap()
