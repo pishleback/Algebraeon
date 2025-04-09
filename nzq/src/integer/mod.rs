@@ -478,3 +478,36 @@ impl Abs for &Integer {
         Natural::from_malachite((&self.0).unsigned_abs())
     }
 }
+
+impl AbsDiff<Integer> for Integer {
+    type Output = Natural;
+
+    fn abs_diff(self, rhs: Integer) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::AbsDiff;
+        Natural::from_malachite(self.0.abs_diff(rhs.0))
+    }
+}
+impl AbsDiff<&Integer> for Integer {
+    type Output = Natural;
+
+    fn abs_diff(self, rhs: &Integer) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::AbsDiff;
+        Natural::from_malachite(self.0.abs_diff(&rhs.0))
+    }
+}
+impl AbsDiff<Integer> for &Integer {
+    type Output = Natural;
+
+    fn abs_diff(self, rhs: Integer) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::AbsDiff;
+        Natural::from_malachite((&self.0).abs_diff(rhs.0))
+    }
+}
+impl AbsDiff<&Integer> for &Integer {
+    type Output = Natural;
+
+    fn abs_diff(self, rhs: &Integer) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::AbsDiff;
+        Natural::from_malachite((&self.0).abs_diff(&rhs.0))
+    }
+}
