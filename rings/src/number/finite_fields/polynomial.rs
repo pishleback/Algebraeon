@@ -24,7 +24,7 @@ Cantor–Zassenhaus algorithm does 4.
 
 /// Store a monic factorization
 #[derive(Debug, Clone)]
-pub struct MonicFactored<FS: FiniteFieldStructure> {
+pub struct MonicFactored<FS: FieldStructure> {
     poly_ring: PolynomialStructure<FS>,
     unit: FS::Set,              // a unit
     monic: Polynomial<FS::Set>, // a monic polynomial
@@ -51,17 +51,17 @@ pub struct DistinctDegreeFactored<FS: FiniteFieldStructure> {
     distinct_degree_factors: Vec<(DistinctDegreeFactor<FS>, Natural)>,
 }
 
-impl<FS: FiniteFieldStructure> MonicFactored<FS> {
-    pub fn factor(poly_ring: PolynomialStructure<FS>, poly: Polynomial<FS::Set>) -> Self {
-        let (unit, monic) = poly_ring.factor_fav_assoc(&poly);
-        let unit = poly_ring.as_constant(&unit).unwrap();
-        debug_assert!(poly_ring.is_monic(&monic));
-        Self {
-            poly_ring,
-            unit,
-            monic,
-        }
-    }
+impl<FS: FieldStructure> MonicFactored<FS> {
+    // pub fn factor(poly_ring: PolynomialStructure<FS>, poly: Polynomial<FS::Set>) -> Self {
+    //     let (unit, monic) = poly_ring.factor_fav_assoc(&poly);
+    //     let unit = poly_ring.as_constant(&unit).unwrap();
+    //     debug_assert!(poly_ring.is_monic(&monic));
+    //     Self {
+    //         poly_ring,
+    //         unit,
+    //         monic,
+    //     }
+    // }
 
     pub fn new_monic_unchecked(
         poly_ring: PolynomialStructure<FS>,
@@ -74,6 +74,14 @@ impl<FS: FiniteFieldStructure> MonicFactored<FS> {
             unit,
             monic,
         }
+    }
+
+    pub fn scalar_part(&self) -> &FS::Set {
+        &self.unit
+    }
+
+    pub fn monic_part(&self) -> &Polynomial<FS::Set> {
+        &self.monic
     }
 
     pub fn into_polynomial(self) -> Polynomial<FS::Set> {
@@ -195,7 +203,7 @@ where
     }
 }
 
-impl<FS: FiniteFieldStructure> PolynomialStructure<FS>
+impl<FS: FieldStructure> PolynomialStructure<FS>
 where
     PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
 {

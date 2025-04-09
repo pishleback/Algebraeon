@@ -5,7 +5,9 @@ use itertools::Itertools;
 
 use super::modulo::Modulo;
 
-impl<FS: FiniteFieldStructure> FiniteUnitsStructure for FieldExtensionByPolynomialQuotientAlias<FS> {
+impl<FS: FiniteFieldStructure> FiniteUnitsStructure
+    for FieldExtensionByPolynomialQuotientAlias<FS>
+{
     fn all_units(&self) -> Vec<Self::Set> {
         let mut all_base_elements = vec![self.ring().coeff_ring().zero()];
         for unit in self.ring().coeff_ring().all_units() {
@@ -30,7 +32,9 @@ impl<FS: FiniteFieldStructure> FiniteUnitsStructure for FieldExtensionByPolynomi
     }
 }
 
-impl<FS: FiniteFieldStructure> FiniteFieldStructure for FieldExtensionByPolynomialQuotientAlias<FS> {
+impl<FS: FiniteFieldStructure> FiniteFieldStructure
+    for FieldExtensionByPolynomialQuotientAlias<FS>
+{
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         let (p, t) = self.ring().coeff_ring().characteristic_and_power();
         let d = Natural::from(self.degree());

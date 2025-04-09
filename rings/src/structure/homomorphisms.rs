@@ -9,6 +9,18 @@ pub trait RingHomomorphismStructure<Domain: RingStructure, Range: RingStructure>
 {
 }
 
+impl<
+    A: RingStructure,
+    B: RingStructure,
+    C: RingStructure,
+    AB: RingHomomorphismStructure<A, B>,
+    BC: RingHomomorphismStructure<B, C>,
+> RingHomomorphismStructure<A, C> for CompositionMorphism<A, B, C, AB, BC>
+{
+}
+
+/// The unique ring homomorphism Z -> R of the integers into any ring R
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrincipalSubringInclusion<Ring: RingStructure> {
     inclusion: Morphism<CannonicalStructure<Integer>, Ring>,
 }
@@ -20,6 +32,8 @@ impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
         }
     }
 }
+
+impl<Ring: RingStructure> Structure for PrincipalSubringInclusion<Ring> {}
 
 impl<Ring: RingStructure> MorphismStructure<CannonicalStructure<Integer>, Ring>
     for PrincipalSubringInclusion<Ring>
@@ -57,6 +71,7 @@ impl<Ring: RingStructure> RingHomomorphismStructure<CannonicalStructure<Integer>
 {
 }
 
+/// The inclusion of an integral domain into its field of fractions
 pub trait FieldOfFractionsInclusionStructure<Ring: RingStructure, Field: FieldStructure>:
     RingHomomorphismStructure<Ring, Field> + InjectiveFunctionStructure<Ring, Field>
 {
@@ -69,64 +84,19 @@ pub trait FieldOfFractionsInclusionStructure<Ring: RingStructure, Field: FieldSt
     }
 }
 
+/// A finite dimensional field extension F -> K
 pub trait FiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
     RingHomomorphismStructure<F, K> + InjectiveFunctionStructure<F, K>
 {
     fn degree(&self) -> usize;
     fn norm(&self, a: &K::Set) -> F::Set;
     fn trace(&self, a: &K::Set) -> F::Set;
+    /// The monic minimal polynomial of a
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set>;
 }
 
-/// Given a commuting square of injective ring homomorphisms
-///
-/// Q → K
-/// ↑   ↑
-/// Z → R
-///
-/// such that
-///  - Q is the field of fractions of Z
-///  - Q → K is a finite dimensional field extension
-///
-/// This trait expresses that R is the integral closure of Z in K
-pub trait IntegralClosureSquare<
-    Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
-    Q: FieldStructure,
-    K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunctionStructure<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunctionStructure<R, K>,
->
+/// A seperable finite dimensional field extension F -> K
+pub trait SeperableFiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
+    FiniteDimensionalFieldExtension<F, K>
 {
-    fn z_ring(&self) -> &Z;
-    fn r_ring(&self) -> &R;
-    fn q_field(&self) -> &Q;
-    fn k_field(&self) -> &K;
-
-    fn z_to_r(&self) -> &ZR;
-    fn q_to_k(&self) -> &QK;
-    fn z_to_q(&self) -> &ZQ;
-    fn r_to_k(&self) -> &RK;
-
-    /// Every element of K is a fraction of elements of R
-    fn r_to_k_field_of_fractions(&self) -> impl FieldOfFractionsInclusionStructure<R, K>;
-
-    /// Compose two squares
-    ///
-    /// Q → K → L
-    /// ↑   ↑   ↑
-    /// Z → R → S
-    ///
-    /// into
-    ///
-    /// Q → L
-    /// ↑   ↑
-    /// Z → S
-    ///
-    /// This is always possible because
-    ///  - K is the field of fractions of R.
-    ///  - The integral closure of R in L is equal to the integral closure of Z in L. Both are given by S.
-    fn compose(square1: Self, square2: Self) -> Self;
 }

@@ -84,7 +84,7 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldExtensionByPolynomialQuotient<Field: FieldStructure> {
     inclusion: Morphism<Field, FieldExtensionByPolynomialQuotientAlias<Field>>,
 }
@@ -96,6 +96,8 @@ impl<Field: FieldStructure> FieldExtensionByPolynomialQuotient<Field> {
         }
     }
 }
+
+impl<Field: FieldStructure> Structure for FieldExtensionByPolynomialQuotient<Field> {}
 
 impl<Field: FieldStructure> MorphismStructure<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>

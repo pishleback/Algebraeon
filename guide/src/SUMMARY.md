@@ -3,6 +3,7 @@
 - [Introduction](./introduction.md)
 - [Getting Started](./getting_started.md)
 - [Examples](./examples.md)
+- [The Structure System](./structure.md)
 <!-- - [Combinatorics]()
 - - [Number Partitions]()
 - - [Number Compositions]()
