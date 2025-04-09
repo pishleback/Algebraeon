@@ -519,32 +519,35 @@ impl<RS: RingStructure> MatrixStructure<RS> {
         }
     }
 
-    pub fn nat_pow(&self, a: &Matrix<RS::Set>, k: &Natural) -> Matrix<RS::Set> {
-        let n = a.rows();
-        assert_eq!(n, a.cols());
-        if *k == Natural::ZERO {
-            self.ident(n)
-        } else if *k == Natural::ONE {
-            a.clone()
+    pub fn nat_pow(&self, a: &Matrix<RS::Set>, k: &Natural) -> Result<Matrix<RS::Set>, MatOppErr> {
+        let n = a.dim1;
+        if n != a.dim2 {
+            Err(MatOppErr::NotSquare)
         } else {
-            debug_assert!(*k >= Natural::TWO);
-            let bits: Vec<_> = k.bits().collect();
-            let mut pows = vec![a.clone()];
-            while pows.len() < bits.len() {
-                pows.push(
-                    self.mul(&pows.last().unwrap(), &pows.last().unwrap())
-                        .unwrap(),
-                );
-            }
-            let count = bits.len();
-            debug_assert_eq!(count, pows.len());
-            let mut ans = self.ident(n);
-            for i in 0..count {
-                if bits[i] {
-                    ans = self.mul(&ans, &pows[i]).unwrap();
+            if *k == Natural::ZERO {
+                Ok(self.ident(n))
+            } else if *k == Natural::ONE {
+                Ok(a.clone())
+            } else {
+                debug_assert!(*k >= Natural::TWO);
+                let bits: Vec<_> = k.bits().collect();
+                let mut pows = vec![a.clone()];
+                while pows.len() < bits.len() {
+                    pows.push(
+                        self.mul(&pows.last().unwrap(), &pows.last().unwrap())
+                            .unwrap(),
+                    );
                 }
+                let count = bits.len();
+                debug_assert_eq!(count, pows.len());
+                let mut ans = self.ident(n);
+                for i in 0..count {
+                    if bits[i] {
+                        ans = self.mul(&ans, &pows[i]).unwrap();
+                    }
+                }
+                Ok(ans)
             }
-            ans
         }
     }
 }
@@ -1727,7 +1730,7 @@ where
                     )
                     .unwrap(),
                 &Natural::from(k),
-            ),
+            ).unwrap(),
         )
     }
 
