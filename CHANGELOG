@@ -10,8 +10,9 @@ All notable changes to this project will be documented in this file.
  - Structures for morphisms, functions, injective functions, ring homomorphisms, principal subring, field of fractions inclusion...
  - Added try_to_int to CharZeroStructure.
  - Replaced the old CanonicalStructure with a derive proc macro to generate a canonical structure per type. This lets the canonical structure type be defined in the same crate as the type it is the canonical structure of and so lets foreign traits be defined for it.
-    Some structure bits for integral closures, dedekind domains, ideal factorization. None yet implemented but I plan to do implementations of these in the context of algebraic number fields.
-    Removed reference counters in favour of clones for structures - in most situations the structures are empty anyway.
+ - Some structure bits for integral closures, dedekind domains, ideal factorization. None yet implemented but I plan to do implementations of these in the context of algebraic number fields.
+ - Removed reference counters in favour of clones for structures - in most situations the structures are empty anyway.
+ - Merged EqStructure and PartialEqStructure.
 
 
 ## [0.0.11] - 2025-03-2025
