@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::natural::factorization::factor;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
@@ -149,6 +151,17 @@ impl RealSubsetStructure for IntegerCanonicalStructure {}
 impl RealToFloatStructure for IntegerCanonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         x.into()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum IntegerInitialRingGeneratorNeverType {}
+
+impl FreeRingStructure for IntegerCanonicalStructure {
+    type Generator = IntegerInitialRingGeneratorNeverType;
+
+    fn free_generators(&self) -> HashSet<Self::Generator> {
+        HashSet::new()
     }
 }
 

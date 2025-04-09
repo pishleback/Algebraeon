@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use crate::polynomial::Polynomial;
 
 use super::*;
@@ -99,4 +101,30 @@ pub trait FiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
 pub trait SeperableFiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
     FiniteDimensionalFieldExtension<F, K>
 {
+}
+
+/// Represent all ring homomorphisms from `domain` to `range`
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RingHomomorphisms<Domain: RingStructure, Range: RingStructure> {
+    domain: Domain,
+    range: Range,
+}
+
+impl<Domain: RingStructure, Range: RingStructure> RingHomomorphisms<Domain, Range> {
+    pub fn new(domain: Domain, range: Range) -> Self {
+        Self { domain, range }
+    }
+}
+
+impl<Domain: RingStructure, Range: RingStructure> Structure for RingHomomorphisms<Domain, Range> {}
+
+impl<Domain: FreeRingStructure, Range: RingStructure> SetStructure
+    for RingHomomorphisms<Domain, Range>
+{
+    type Set = HashMap<Domain::Generator, Range::Set>;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        self.domain.free_generators() == x.keys().cloned().collect::<HashSet<_>>()
+            && x.iter().all(|(_, v)| self.range.is_element(v))
+    }
 }

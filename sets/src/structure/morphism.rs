@@ -169,22 +169,22 @@ where
 {
 }
 
-/// Represent the morphisms from `domain` to `range`
+/// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Morphisms<Domain: Structure, Range: Structure> {
+pub struct Functions<Domain: SetStructure, Range: SetStructure> {
     domain: Domain,
     range: Range,
 }
 
-impl<Domain: Structure, Range: Structure> Morphisms<Domain, Range> {
+impl<Domain: SetStructure, Range: SetStructure> Functions<Domain, Range> {
     pub fn new(domain: Domain, range: Range) -> Self {
         Self { domain, range }
     }
 }
 
-impl<Domain: Structure, Range: Structure> Structure for Morphisms<Domain, Range> {}
+impl<Domain: SetStructure, Range: SetStructure> Structure for Functions<Domain, Range> {}
 
-impl<Domain: FiniteSetStructure, Range: EqStructure> SetStructure for Morphisms<Domain, Range> {
+impl<Domain: FiniteSetStructure, Range: EqStructure> SetStructure for Functions<Domain, Range> {
     type Set = Vec<Range::Set>;
 
     fn is_element(&self, x: &Self::Set) -> bool {
@@ -193,7 +193,7 @@ impl<Domain: FiniteSetStructure, Range: EqStructure> SetStructure for Morphisms<
 }
 
 impl<Domain: FiniteSetStructure, Range: EqStructure + FiniteSetStructure> CountableSetStructure
-    for Morphisms<Domain, Range>
+    for Functions<Domain, Range>
 {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         (0..self.domain.size())
@@ -203,6 +203,6 @@ impl<Domain: FiniteSetStructure, Range: EqStructure + FiniteSetStructure> Counta
 }
 
 impl<Domain: FiniteSetStructure, Range: EqStructure + FiniteSetStructure> FiniteSetStructure
-    for Morphisms<Domain, Range>
+    for Functions<Domain, Range>
 {
 }

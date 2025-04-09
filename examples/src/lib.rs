@@ -8,7 +8,7 @@ mod tests {
 
     #[test]
     fn enumerate_functions_finite_sets() {
-        let fns = Morphisms::new(Modulo::<3>::structure(), Modulo::<4>::structure());
+        let fns = Functions::new(Modulo::<3>::structure(), Modulo::<4>::structure());
         assert_eq!(fns.list_all_elements().len(), 64);
     }
 }

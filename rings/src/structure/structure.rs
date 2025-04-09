@@ -734,17 +734,6 @@ pub trait FiniteFieldStructure: FieldStructure + FiniteUnitsStructure {
     }
 }
 
-// impl<FS: FieldOfFractionsStructure> RealToFloatStructure for FS
-// where
-//     FS::RS: RealToFloatStructure,
-// {
-//     fn as_f64(&self, x: &Self::Set) -> f64 {
-//         let base_ring = self.base_ring_structure();
-//         RealToFloatStructure::as_f64(base_ring.as_ref(), &self.numerator(x))
-//             / RealToFloatStructure::as_f64(base_ring.as_ref(), &self.denominator(x))
-//     }
-// }
-
 //is a subset of the complex numbers
 pub trait ComplexSubsetStructure: SetStructure {}
 
@@ -916,5 +905,17 @@ where
             }
         }
         Some(root_powers)
+    }
+}
+
+/// The free ring of rank 0 is the integers
+/// The free ring of rank 1 is the polynomial ring over the integers
+/// The free ring of rank n is the multipolynomial ring over the integers
+pub trait FreeRingStructure: RingStructure {
+    type Generator: Clone + Debug + PartialEq + Eq + std::hash::Hash;
+
+    fn free_generators(&self) -> std::collections::HashSet<Self::Generator>;
+    fn free_rank(&self) -> usize {
+        self.free_generators().len()
     }
 }
