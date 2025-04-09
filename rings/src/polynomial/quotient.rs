@@ -86,32 +86,30 @@ where
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldExtensionByPolynomialQuotient<Field: FieldStructure> {
-    inclusion: Morphism<Field, FieldExtensionByPolynomialQuotientAlias<Field>>,
+    extension_field: FieldExtensionByPolynomialQuotientAlias<Field>,
 }
 
 impl<Field: FieldStructure> FieldExtensionByPolynomialQuotient<Field> {
-    pub fn new(extension: FieldExtensionByPolynomialQuotientAlias<Field>) -> Self {
-        Self {
-            inclusion: Morphism::new(extension.ring().coeff_ring().clone(), extension),
-        }
+    pub fn new(extension_field: FieldExtensionByPolynomialQuotientAlias<Field>) -> Self {
+        Self { extension_field }
     }
 }
 
 impl<Field: FieldStructure> Structure for FieldExtensionByPolynomialQuotient<Field> {}
 
-impl<Field: FieldStructure> MorphismStructure<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
+impl<Field: FieldStructure> Morphism<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn domain(&self) -> &Field {
-        self.inclusion.domain()
+        self.extension_field.ring().coeff_ring()
     }
 
     fn range(&self) -> &FieldExtensionByPolynomialQuotientAlias<Field> {
-        self.inclusion.range()
+        &self.extension_field
     }
 }
 
-impl<Field: FieldStructure> FunctionStructure<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
+impl<Field: FieldStructure> Function<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn image(&self, x: &Field::Set) -> Polynomial<Field::Set> {
@@ -126,7 +124,7 @@ impl<Field: FieldStructure>
 }
 
 impl<Field: FieldStructure>
-    InjectiveFunctionStructure<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
+    InjectiveFunction<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn try_preimage(&self, x: &Polynomial<Field::Set>) -> Option<Field::Set> {

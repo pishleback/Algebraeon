@@ -16,8 +16,8 @@ impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> QuotientStructure<RS,
         Self { ring, modulus }
     }
 
-    pub fn ring(&self) -> RS {
-        self.ring.clone()
+    pub fn ring(&self) -> &RS {
+        &self.ring
     }
 
     pub fn modulus(&self) -> &RS::Set {

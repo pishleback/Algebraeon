@@ -7,8 +7,8 @@ mod structure;
 
 pub use algebraeon_canonical_structure_derive::CanonicalStructure;
 pub use morphism::{
-    BijectiveFunctionStructure, CompositionMorphism, FunctionStructure, IdentityMorphism,
-    InjectiveFunctionStructure, Morphism, MorphismStructure,
+    BijectiveFunction, CompositionMorphism, Function, IdentityMorphism,
+    InjectiveFunction, Morphism,
 };
 pub use structure::{
     CountableSetStructure, EqStructure, FiniteSetStructure, MetaType, SetStructure, Structure,

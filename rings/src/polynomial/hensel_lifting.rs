@@ -560,7 +560,7 @@ where
     {
         let poly_ring_mod = self.ring().clone();
         let ring_mod = poly_ring_mod.coeff_ring();
-        let ring = ring_mod.ring();
+        let ring = ring_mod.ring().clone();
         // let poly_ring: PolynomialStructure<RS> = PolynomialStructure::new(ring.clone());
 
         let mut fs = vec![];

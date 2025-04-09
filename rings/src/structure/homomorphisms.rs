@@ -5,7 +5,7 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 pub trait RingHomomorphismStructure<Domain: RingStructure, Range: RingStructure>:
-    FunctionStructure<Domain, Range>
+    Function<Domain, Range>
 {
 }
 
@@ -22,32 +22,34 @@ impl<
 /// The unique ring homomorphism Z -> R of the integers into any ring R
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrincipalSubringInclusion<Ring: RingStructure> {
-    inclusion: Morphism<IntegerCanonicalStructure, Ring>,
+    integer_structure: IntegerCanonicalStructure,
+    ring: Ring,
 }
 
 impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
     pub fn new(ring: Ring) -> Self {
         Self {
-            inclusion: Morphism::new(Integer::structure().clone(), ring),
+            integer_structure: Integer::structure(),
+            ring,
         }
     }
 }
 
 impl<Ring: RingStructure> Structure for PrincipalSubringInclusion<Ring> {}
 
-impl<Ring: RingStructure> MorphismStructure<IntegerCanonicalStructure, Ring>
+impl<Ring: RingStructure> Morphism<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
     fn domain(&self) -> &IntegerCanonicalStructure {
-        self.inclusion.domain()
+        &self.integer_structure
     }
 
     fn range(&self) -> &Ring {
-        self.inclusion.range()
+        &self.ring
     }
 }
 
-impl<Ring: RingStructure> FunctionStructure<IntegerCanonicalStructure, Ring>
+impl<Ring: RingStructure> Function<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
     fn image(&self, x: &Integer) -> <Ring as SetStructure>::Set {
@@ -55,7 +57,7 @@ impl<Ring: RingStructure> FunctionStructure<IntegerCanonicalStructure, Ring>
     }
 }
 
-impl<Ring: CharZeroStructure> InjectiveFunctionStructure<IntegerCanonicalStructure, Ring>
+impl<Ring: CharZeroStructure> InjectiveFunction<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
     fn try_preimage(
@@ -73,7 +75,7 @@ impl<Ring: RingStructure> RingHomomorphismStructure<IntegerCanonicalStructure, R
 
 /// The inclusion of an integral domain into its field of fractions
 pub trait FieldOfFractionsInclusionStructure<Ring: RingStructure, Field: FieldStructure>:
-    RingHomomorphismStructure<Ring, Field> + InjectiveFunctionStructure<Ring, Field>
+    RingHomomorphismStructure<Ring, Field> + InjectiveFunction<Ring, Field>
 {
     fn numerator_and_denominator(&self, a: &Field::Set) -> (Ring::Set, Ring::Set);
     fn numerator(&self, a: &Field::Set) -> Ring::Set {
@@ -86,7 +88,7 @@ pub trait FieldOfFractionsInclusionStructure<Ring: RingStructure, Field: FieldSt
 
 /// A finite dimensional field extension F -> K
 pub trait FiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
-    RingHomomorphismStructure<F, K> + InjectiveFunctionStructure<F, K>
+    RingHomomorphismStructure<F, K> + InjectiveFunction<F, K>
 {
     fn degree(&self) -> usize;
     fn norm(&self, a: &K::Set) -> F::Set;
