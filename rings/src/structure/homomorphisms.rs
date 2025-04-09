@@ -1,7 +1,7 @@
 use crate::polynomial::Polynomial;
 
 use super::*;
-use algebraeon_nzq::Integer;
+use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 pub trait RingHomomorphismStructure<Domain: RingStructure, Range: RingStructure>:
@@ -22,7 +22,7 @@ impl<
 /// The unique ring homomorphism Z -> R of the integers into any ring R
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrincipalSubringInclusion<Ring: RingStructure> {
-    inclusion: Morphism<CannonicalStructure<Integer>, Ring>,
+    inclusion: Morphism<IntegerCannonicalStructure, Ring>,
 }
 
 impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
@@ -35,10 +35,10 @@ impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
 
 impl<Ring: RingStructure> Structure for PrincipalSubringInclusion<Ring> {}
 
-impl<Ring: RingStructure> MorphismStructure<CannonicalStructure<Integer>, Ring>
+impl<Ring: RingStructure> MorphismStructure<IntegerCannonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
-    fn domain(&self) -> &CannonicalStructure<Integer> {
+    fn domain(&self) -> &IntegerCannonicalStructure {
         self.inclusion.domain()
     }
 
@@ -47,7 +47,7 @@ impl<Ring: RingStructure> MorphismStructure<CannonicalStructure<Integer>, Ring>
     }
 }
 
-impl<Ring: RingStructure> FunctionStructure<CannonicalStructure<Integer>, Ring>
+impl<Ring: RingStructure> FunctionStructure<IntegerCannonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
     fn image(&self, x: &Integer) -> <Ring as SetStructure>::Set {
@@ -55,18 +55,18 @@ impl<Ring: RingStructure> FunctionStructure<CannonicalStructure<Integer>, Ring>
     }
 }
 
-impl<Ring: CharZeroStructure> InjectiveFunctionStructure<CannonicalStructure<Integer>, Ring>
+impl<Ring: CharZeroStructure> InjectiveFunctionStructure<IntegerCannonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
     fn try_preimage(
         &self,
         x: &<Ring as SetStructure>::Set,
-    ) -> Option<<CannonicalStructure<Integer> as SetStructure>::Set> {
+    ) -> Option<<IntegerCannonicalStructure as SetStructure>::Set> {
         self.range().try_to_int(x)
     }
 }
 
-impl<Ring: RingStructure> RingHomomorphismStructure<CannonicalStructure<Integer>, Ring>
+impl<Ring: RingStructure> RingHomomorphismStructure<IntegerCannonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
 }

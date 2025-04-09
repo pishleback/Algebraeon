@@ -592,7 +592,7 @@ pub trait Infinite: MetaType {
 }
 impl<T: MetaType> Infinite for T
 where
-    CannonicalStructure<T>: InfiniteStructure,
+    T::Structure: InfiniteStructure,
 {
     fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>> {
         todo!()

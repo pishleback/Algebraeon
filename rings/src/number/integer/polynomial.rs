@@ -1,13 +1,13 @@
 use crate::{number::integer::*, polynomial::*};
 use std::rc::Rc;
 
-impl GreatestCommonDivisorStructure for PolynomialStructure<CannonicalStructure<Integer>> {
+impl GreatestCommonDivisorStructure for PolynomialStructure<IntegerCannonicalStructure> {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         self.gcd_by_primitive_subresultant(x.clone(), y.clone())
     }
 }
 
-impl FactorableStructure for PolynomialStructure<CannonicalStructure<Integer>> {
+impl FactorableStructure for PolynomialStructure<IntegerCannonicalStructure> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
         use berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm;
         // self.factorize_by_kroneckers_method(p)
@@ -48,7 +48,7 @@ impl Polynomial<Integer> {
     }
 }
 
-impl FactorableStructure for MultiPolynomialStructure<CannonicalStructure<Integer>> {
+impl FactorableStructure for MultiPolynomialStructure<IntegerCannonicalStructure> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
         self.factor_by_yuns_and_kroneckers_inductively(
             Rc::new(Integer::factor),

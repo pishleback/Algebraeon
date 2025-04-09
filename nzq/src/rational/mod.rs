@@ -12,8 +12,22 @@ use std::{
 };
 
 /// Represent a rational number - a number of the form `a`/`b` where `a` is an integer and `b` is a non-zero integer.
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CannonicalStructure)]
 pub struct Rational(malachite_q::Rational);
+
+impl PartialEqStructure for RationalCannonicalStructure {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        a == b
+    }
+}
+
+impl EqStructure for RationalCannonicalStructure {}
+
+impl ToStringStructure for RationalCannonicalStructure {
+    fn to_string(&self, elem: &Self::Set) -> String {
+        format!("{}", elem)
+    }
+}
 
 impl Rational {
     pub(crate) fn from_malachite(value: malachite_q::Rational) -> Self {
@@ -492,14 +506,6 @@ impl Rational {
         }
         b = (1000.0 * b).round() / 1000.0;
         b.to_string()
-    }
-}
-
-impl MetaType for Rational {
-    type Structure = CannonicalStructure<Rational>;
-
-    fn structure() -> Self::Structure {
-        CannonicalStructure::new()
     }
 }
 

@@ -4,7 +4,7 @@ use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
-impl SemiRingStructure for CannonicalStructure<Rational> {
+impl SemiRingStructure for RationalCannonicalStructure {
     fn zero(&self) -> Self::Set {
         Rational::ZERO
     }
@@ -22,19 +22,19 @@ impl SemiRingStructure for CannonicalStructure<Rational> {
     }
 }
 
-impl RingStructure for CannonicalStructure<Rational> {
+impl RingStructure for RationalCannonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         -a
     }
 }
 
-impl UnitsStructure for CannonicalStructure<Rational> {
+impl UnitsStructure for RationalCannonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
 }
 
-impl IntegralDomainStructure for CannonicalStructure<Rational> {
+impl IntegralDomainStructure for RationalCannonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if b == &Rational::ZERO {
             Err(RingDivisionError::DivideByZero)
@@ -44,7 +44,7 @@ impl IntegralDomainStructure for CannonicalStructure<Rational> {
     }
 }
 
-impl CharZeroStructure for CannonicalStructure<Rational> {
+impl CharZeroStructure for RationalCannonicalStructure {
     fn try_to_int(&self, x: &Rational) -> Option<Integer> {
         let (n, d) = x.numerator_and_denominator();
         debug_assert_ne!(&d, &Natural::ZERO);
@@ -52,19 +52,19 @@ impl CharZeroStructure for CannonicalStructure<Rational> {
     }
 }
 
-impl OrderedRingStructure for CannonicalStructure<Rational> {
+impl OrderedRingStructure for RationalCannonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         Self::Set::cmp(a, b)
     }
 }
 
-impl FieldStructure for CannonicalStructure<Rational> {}
+impl FieldStructure for RationalCannonicalStructure {}
 
-impl ComplexSubsetStructure for CannonicalStructure<Rational> {}
+impl ComplexSubsetStructure for RationalCannonicalStructure {}
 
-impl RealSubsetStructure for CannonicalStructure<Rational> {}
+impl RealSubsetStructure for RationalCannonicalStructure {}
 
-impl RealToFloatStructure for CannonicalStructure<Rational> {
+impl RealToFloatStructure for RationalCannonicalStructure {
     fn as_f64(&self, x: &Rational) -> f64 {
         let fof = PrincipalSubringInclusion::new(self.clone());
         RealToFloatStructure::as_f64(&Integer::structure(), &fof.numerator(x))
@@ -72,15 +72,15 @@ impl RealToFloatStructure for CannonicalStructure<Rational> {
     }
 }
 
-impl FieldOfFractionsInclusionStructure<CannonicalStructure<Integer>, CannonicalStructure<Rational>>
-    for PrincipalSubringInclusion<CannonicalStructure<Rational>>
+impl FieldOfFractionsInclusionStructure<IntegerCannonicalStructure, RationalCannonicalStructure>
+    for PrincipalSubringInclusion<RationalCannonicalStructure>
 {
     fn numerator_and_denominator(&self, a: &Rational) -> (Integer, Integer) {
         (a.numerator(), a.denominator().into())
     }
 }
 
-impl RealRoundingStructure for CannonicalStructure<Rational> {
+impl RealRoundingStructure for RationalCannonicalStructure {
     fn floor(&self, x: &Self::Set) -> Integer {
         Floor::floor(x)
     }
@@ -92,13 +92,13 @@ impl RealRoundingStructure for CannonicalStructure<Rational> {
     }
 }
 
-impl RealFromFloatStructure for CannonicalStructure<Rational> {
+impl RealFromFloatStructure for RationalCannonicalStructure {
     fn from_f64_approx(&self, x: f64) -> Self::Set {
         Rational::try_from_float_simplest(x).unwrap()
     }
 }
 
-impl FactorableStructure for PolynomialStructure<CannonicalStructure<Rational>> {
+impl FactorableStructure for PolynomialStructure<RationalCannonicalStructure> {
     fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
         factorize_by_factorize_primitive_part(
             &PrincipalSubringInclusion::new(self.coeff_ring().clone()),

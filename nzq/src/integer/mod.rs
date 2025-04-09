@@ -11,7 +11,7 @@ use std::{
 };
 
 /// Represent an integer {..., -2, -1, 0, 1, 2, ...}
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CannonicalStructure)]
 pub struct Integer(malachite_nz::integer::Integer);
 
 impl Integer {
@@ -23,6 +23,20 @@ impl Integer {
     }
     pub(crate) fn to_malachite_ref(&self) -> &malachite_nz::integer::Integer {
         &self.0
+    }
+}
+
+impl PartialEqStructure for IntegerCannonicalStructure {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        a == b
+    }
+}
+
+impl EqStructure for IntegerCannonicalStructure {}
+
+impl ToStringStructure for IntegerCannonicalStructure {
+    fn to_string(&self, elem: &Self::Set) -> String {
+        format!("{}", elem)
     }
 }
 
@@ -470,13 +484,5 @@ impl Abs for &Integer {
     fn abs(self) -> Self::Output {
         use malachite_base::num::arithmetic::traits::UnsignedAbs;
         Natural::from_malachite((&self.0).unsigned_abs())
-    }
-}
-
-impl MetaType for Integer {
-    type Structure = CannonicalStructure<Integer>;
-
-    fn structure() -> Self::Structure {
-        CannonicalStructure::new()
     }
 }

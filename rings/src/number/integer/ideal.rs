@@ -1,12 +1,11 @@
 use crate::structure::*;
-use algebraeon_nzq::{Integer, Natural, gcd, lcm, traits::Abs};
-use algebraeon_sets::structure::CannonicalStructure;
+use algebraeon_nzq::{traits::Abs, *};
 
-impl IdealStructure for CannonicalStructure<Integer> {
+impl IdealStructure for IntegerCannonicalStructure {
     type Ideal = Natural;
 }
 
-impl IdealArithmeticStructure for CannonicalStructure<Integer> {
+impl IdealArithmeticStructure for IntegerCannonicalStructure {
     fn principal_ideal(&self, a: &Self::Set) -> Self::Ideal {
         a.abs()
     }

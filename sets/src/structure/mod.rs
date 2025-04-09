@@ -11,6 +11,6 @@ pub use morphism::{
     InjectiveFunctionStructure, Morphism, MorphismStructure,
 };
 pub use structure::{
-    CannonicalStructure, CountableSetStructure, EqStructure, FiniteSetStructure, MetaType,
-    PartialEqStructure, SetStructure, Structure, ToStringStructure, common_structure,
+    CountableSetStructure, EqStructure, FiniteSetStructure, MetaType, PartialEqStructure,
+    SetStructure, Structure, ToStringStructure, common_structure,
 };

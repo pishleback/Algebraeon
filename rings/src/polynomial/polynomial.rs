@@ -888,7 +888,7 @@ impl<Field: MetaType> Polynomial<Field>
 where
     Field::Structure: FieldStructure,
     PrincipalSubringInclusion<Field::Structure>:
-        FieldOfFractionsInclusionStructure<CannonicalStructure<Integer>, Field::Structure>,
+        FieldOfFractionsInclusionStructure<IntegerCannonicalStructure, Field::Structure>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {
         factor_primitive_fof(

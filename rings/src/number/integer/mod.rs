@@ -11,7 +11,7 @@ pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
 
-impl SemiRingStructure for CannonicalStructure<Integer> {
+impl SemiRingStructure for IntegerCannonicalStructure {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
@@ -29,19 +29,19 @@ impl SemiRingStructure for CannonicalStructure<Integer> {
     }
 }
 
-impl RingStructure for CannonicalStructure<Integer> {
+impl RingStructure for IntegerCannonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         -a
     }
 }
 
-impl UnitsStructure for CannonicalStructure<Integer> {
+impl UnitsStructure for IntegerCannonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
 }
 
-impl IntegralDomainStructure for CannonicalStructure<Integer> {
+impl IntegralDomainStructure for IntegerCannonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.quorem(a, b) {
             Some((q, r)) => {
@@ -56,19 +56,19 @@ impl IntegralDomainStructure for CannonicalStructure<Integer> {
     }
 }
 
-impl OrderedRingStructure for CannonicalStructure<Integer> {
+impl OrderedRingStructure for IntegerCannonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         Self::Set::cmp(a, b)
     }
 }
 
-impl FiniteUnitsStructure for CannonicalStructure<Integer> {
+impl FiniteUnitsStructure for IntegerCannonicalStructure {
     fn all_units(&self) -> Vec<Self::Set> {
         vec![Integer::ONE, -Integer::ONE]
     }
 }
 
-impl FavoriteAssociateStructure for CannonicalStructure<Integer> {
+impl FavoriteAssociateStructure for IntegerCannonicalStructure {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
         if a == &Integer::ZERO {
             (Integer::ONE, Integer::ZERO)
@@ -80,9 +80,9 @@ impl FavoriteAssociateStructure for CannonicalStructure<Integer> {
     }
 }
 
-impl UniqueFactorizationStructure for CannonicalStructure<Integer> {}
+impl UniqueFactorizationStructure for IntegerCannonicalStructure {}
 
-impl FactorableStructure for CannonicalStructure<Integer> {
+impl FactorableStructure for IntegerCannonicalStructure {
     fn factor(&self, a: &Self::Set) -> Option<Factored<Self>> {
         if a == &Integer::ZERO {
             None
@@ -106,7 +106,7 @@ impl FactorableStructure for CannonicalStructure<Integer> {
     }
 }
 
-impl EuclideanDivisionStructure for CannonicalStructure<Integer> {
+impl EuclideanDivisionStructure for IntegerCannonicalStructure {
     fn norm(&self, elem: &Self::Set) -> Option<Natural> {
         if elem == &Integer::ZERO {
             None
@@ -124,29 +124,29 @@ impl EuclideanDivisionStructure for CannonicalStructure<Integer> {
     }
 }
 
-impl GreatestCommonDivisorStructure for CannonicalStructure<Integer> {
+impl GreatestCommonDivisorStructure for IntegerCannonicalStructure {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         Integer::structure().euclidean_gcd(x.clone(), y.clone())
     }
 }
 
-impl BezoutDomainStructure for CannonicalStructure<Integer> {
+impl BezoutDomainStructure for IntegerCannonicalStructure {
     fn xgcd(&self, x: &Self::Set, y: &Self::Set) -> (Self::Set, Self::Set, Self::Set) {
         Integer::euclidean_xgcd(x.clone(), y.clone())
     }
 }
 
-impl CharZeroStructure for CannonicalStructure<Integer> {
+impl CharZeroStructure for IntegerCannonicalStructure {
     fn try_to_int(&self, x: &Integer) -> Option<Integer> {
         Some(x.clone())
     }
 }
 
-impl ComplexSubsetStructure for CannonicalStructure<Integer> {}
+impl ComplexSubsetStructure for IntegerCannonicalStructure {}
 
-impl RealSubsetStructure for CannonicalStructure<Integer> {}
+impl RealSubsetStructure for IntegerCannonicalStructure {}
 
-impl RealToFloatStructure for CannonicalStructure<Integer> {
+impl RealToFloatStructure for IntegerCannonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         x.into()
     }
