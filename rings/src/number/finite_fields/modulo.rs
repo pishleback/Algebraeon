@@ -198,6 +198,14 @@ impl<const N: usize> UnitsStructure for ModuloCanonicalStructure<N> {
     }
 }
 
+impl<const N: usize> CountableSetStructure for ModuloCanonicalStructure<N> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        (0..N).map(|n| Modulo::new(n))
+    }
+}
+
+impl<const N: usize> FiniteSetStructure for ModuloCanonicalStructure<N> {}
+
 macro_rules! impl_field {
     ($N: literal) => {
         impl IntegralDomainStructure for ModuloCanonicalStructure<$N> {
@@ -402,7 +410,6 @@ impl_field!(997);
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]
@@ -413,5 +420,10 @@ mod tests {
                 assert_eq!(g as isize, a * x as isize + b * y as isize);
             }
         }
+    }
+
+    #[test]
+    fn count_elements() {
+        assert_eq!(Modulo::<26>::structure().list_all_elements().len(), 26);
     }
 }

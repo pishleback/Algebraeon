@@ -34,10 +34,12 @@ pub trait EqStructure: SetStructure {
 }
 
 pub trait CountableSetStructure: SetStructure {
+    /// Yield distinct elements of the set such that every element eventually appears.
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set>;
 }
 
 pub trait FiniteSetStructure: CountableSetStructure {
+    /// A list of all elements in the set.
     fn list_all_elements(&self) -> Vec<Self::Set> {
         self.generate_all_elements().collect()
     }

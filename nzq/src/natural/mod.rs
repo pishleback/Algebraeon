@@ -631,7 +631,10 @@ impl TryInto<usize> for &Natural {
 
 impl CountableSetStructure for NaturalCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
-        (0usize..).map(|n| n.into())
+        use malachite_nz::natural::exhaustive::exhaustive_naturals;
+        exhaustive_naturals()
+            .into_iter()
+            .map(|n| Natural::from_malachite(n))
     }
 }
 
@@ -652,6 +655,17 @@ mod tests {
         assert_eq!(
             <&Natural as TryInto<usize>>::try_into(&Natural::from(2u8)).unwrap(),
             2
+        );
+    }
+
+    #[test]
+    fn natural_countable_list() {
+        assert_eq!(
+            Natural::structure()
+                .generate_all_elements()
+                .take(10)
+                .collect::<Vec<_>>(),
+            (0..10u32).map(|x| x.into()).collect::<Vec<Natural>>()
         );
     }
 }

@@ -511,3 +511,12 @@ impl AbsDiff<&Integer> for &Integer {
         Natural::from_malachite((&self.0).abs_diff(&rhs.0))
     }
 }
+
+impl CountableSetStructure for IntegerCanonicalStructure {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        use malachite_nz::integer::exhaustive::exhaustive_integers;
+        exhaustive_integers()
+            .into_iter()
+            .map(|n| Integer::from_malachite(n))
+    }
+}

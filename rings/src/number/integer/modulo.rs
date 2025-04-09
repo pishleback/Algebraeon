@@ -17,3 +17,33 @@ impl FiniteFieldStructure for QuotientStructure<IntegerCanonicalStructure, true>
         (self.modulus().abs(), Natural::ONE)
     }
 }
+
+impl<const IS_FIELD: bool> CountableSetStructure
+    for QuotientStructure<IntegerCanonicalStructure, IS_FIELD>
+{
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        (0usize..)
+            .map(|n| Integer::from(n))
+            .take_while(|n| n < self.modulus())
+    }
+}
+
+impl<const IS_FIELD: bool> FiniteSetStructure
+    for QuotientStructure<IntegerCanonicalStructure, IS_FIELD>
+{
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn count_elements() {
+        assert_eq!(
+            QuotientStructure::new_ring(Integer::structure(), 26.into())
+                .list_all_elements()
+                .len(),
+            26
+        );
+    }
+}

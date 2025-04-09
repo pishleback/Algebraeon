@@ -12,5 +12,5 @@ pub use morphism::{
 };
 pub use structure::{
     CountableSetStructure, EqStructure, FiniteSetStructure, MetaType, SetStructure, Structure,
-    ToStringStructure, common_structure,
+    ToStringStructure, common_structure
 };

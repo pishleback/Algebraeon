@@ -501,6 +501,15 @@ impl Rational {
     }
 }
 
+impl CountableSetStructure for RationalCanonicalStructure {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        use malachite_q::exhaustive::exhaustive_rationals;
+        exhaustive_rationals()
+            .into_iter()
+            .map(|x| Rational::from_malachite(x))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
