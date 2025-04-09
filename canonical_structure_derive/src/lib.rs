@@ -27,15 +27,13 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             type Set = #name;
         }
 
-        impl PartialEqStructure for #newtype_name
+        impl EqStructure for #newtype_name
             where #name: Eq
         {
             fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
                 a == b
             }
         }
-
-        impl EqStructure for #newtype_name {}
 
         impl MetaType for #name {
             type Structure = #newtype_name;

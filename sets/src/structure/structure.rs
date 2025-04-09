@@ -29,10 +29,9 @@ pub trait ToStringStructure: SetStructure {
     fn to_string(&self, elem: &Self::Set) -> String;
 }
 
-pub trait PartialEqStructure: SetStructure {
+pub trait EqStructure: SetStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool;
 }
-pub trait EqStructure: PartialEqStructure {}
 
 pub trait CountableSetStructure: SetStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set>;
@@ -46,9 +45,8 @@ pub trait FiniteSetStructure: CountableSetStructure {
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_canonical_structure_derive::CanonicalStructure;
-
     use super::*;
+    use algebraeon_canonical_structure_derive::CanonicalStructure;
 
     #[test]
     fn canonical_structure() {

@@ -125,7 +125,7 @@ impl<RS: SemiRingStructure + ToStringStructure> ToStringStructure for Polynomial
     }
 }
 
-impl<RS: SemiRingStructure> PartialEqStructure for PolynomialStructure<RS> {
+impl<RS: SemiRingStructure> EqStructure for PolynomialStructure<RS> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         for i in 0..std::cmp::max(a.coeffs.len(), b.coeffs.len()) {
             if !self.coeff_ring.equal(self.coeff(a, i), self.coeff(b, i)) {
@@ -135,8 +135,6 @@ impl<RS: SemiRingStructure> PartialEqStructure for PolynomialStructure<RS> {
         true
     }
 }
-
-impl<RS: SemiRingStructure> EqStructure for PolynomialStructure<RS> {}
 
 impl<RS: SemiRingStructure> SemiRingStructure for PolynomialStructure<RS> {
     fn zero(&self) -> Self::Set {

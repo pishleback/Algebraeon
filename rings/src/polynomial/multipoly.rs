@@ -432,7 +432,7 @@ impl<RS: RingStructure> SetStructure for MultiPolynomialStructure<RS> {
     type Set = MultiPolynomial<RS::Set>;
 }
 
-impl<RS: RingStructure> PartialEqStructure for MultiPolynomialStructure<RS> {
+impl<RS: RingStructure> EqStructure for MultiPolynomialStructure<RS> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         let a = self.reduce(a.clone());
         let b = self.reduce(b.clone());
@@ -448,7 +448,6 @@ impl<RS: RingStructure> PartialEqStructure for MultiPolynomialStructure<RS> {
         }
     }
 }
-impl<RS: RingStructure> EqStructure for MultiPolynomialStructure<RS> {}
 
 impl<RS: RingStructure> SemiRingStructure for MultiPolynomialStructure<RS> {
     fn zero(&self) -> Self::Set {

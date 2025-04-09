@@ -716,7 +716,7 @@ pub mod structure {
         }
     }
 
-    impl PartialEqStructure for PAdicAlgebraicStructure {
+    impl EqStructure for PAdicAlgebraicStructure {
         fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
             self.check_is_element(a);
             self.check_is_element(b);
@@ -732,8 +732,6 @@ pub mod structure {
             }
         }
     }
-
-    impl EqStructure for PAdicAlgebraicStructure {}
 
     impl SemiRingStructure for PAdicAlgebraicStructure {
         fn zero(&self) -> Self::Set {

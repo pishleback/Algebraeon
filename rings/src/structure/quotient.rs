@@ -91,7 +91,7 @@ impl<RS: EuclideanDivisionStructure + ToStringStructure, const IS_FIELD: bool> T
     }
 }
 
-impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> PartialEqStructure
+impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> EqStructure
     for QuotientStructure<RS, IS_FIELD>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -101,11 +101,6 @@ impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> PartialEqStructure
                 .rem(&self.ring.add(a, &self.ring.neg(b)), &self.modulus),
         )
     }
-}
-
-impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> EqStructure
-    for QuotientStructure<RS, IS_FIELD>
-{
 }
 
 impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> SemiRingStructure

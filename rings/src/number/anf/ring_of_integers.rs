@@ -210,13 +210,11 @@ impl SetStructure for RingOfIntegersWithIntegralBasisStructure {
     type Set = RingOfIntegersWithIntegralBasisElement;
 }
 
-impl PartialEqStructure for RingOfIntegersWithIntegralBasisStructure {
+impl EqStructure for RingOfIntegersWithIntegralBasisStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
-
-impl EqStructure for RingOfIntegersWithIntegralBasisStructure {}
 
 impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
     fn zero(&self) -> Self::Set {

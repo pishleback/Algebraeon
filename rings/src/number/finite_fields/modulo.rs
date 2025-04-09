@@ -136,13 +136,11 @@ impl<const N: usize> MetaType for Modulo<N> {
     }
 }
 
-impl<const N: usize> PartialEqStructure for ModuloCanonicalStructure<N> {
+impl<const N: usize> EqStructure for ModuloCanonicalStructure<N> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
-
-impl<const N: usize> EqStructure for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> ToStringStructure for ModuloCanonicalStructure<N> {
     fn to_string(&self, elem: &Self::Set) -> String {
