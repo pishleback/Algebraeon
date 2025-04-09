@@ -1,8 +1,6 @@
-use simplexes::{OrientedHyperplane, OrientedSimplex, Simplex};
-
-use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
-
 use super::*;
+use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
+use simplexes::{OrientedHyperplane, OrientedSimplex, Simplex};
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAffineSubspace<
@@ -121,7 +119,7 @@ impl<
     ESP: Borrow<AffineSpace<FS>> + Clone,
 > EmbeddedAffineSubspace<FS, SP, ESP>
 {
-    pub fn ordered_field(&self) -> Rc<FS> {
+    pub fn ordered_field(&self) -> &FS {
         self.ambient_space.borrow().ordered_field()
     }
 
@@ -143,17 +141,16 @@ impl<
         &self,
         pt: Vector<FS, SP>,
     ) -> (
-        EmbeddedAffineSubspace<FS, Rc<AffineSpace<FS>>, ESP>,
-        EmbeddedAffineSubspace<FS, SP, Rc<AffineSpace<FS>>>,
-        Vector<FS, Rc<AffineSpace<FS>>>,
+        EmbeddedAffineSubspace<FS, AffineSpace<FS>, ESP>,
+        EmbeddedAffineSubspace<FS, SP, AffineSpace<FS>>,
+        Vector<FS, AffineSpace<FS>>,
     ) {
         debug_assert_eq!(self.ambient_space.borrow(), pt.ambient_space().borrow());
         debug_assert!(self.unembed_point(&pt).is_none());
         let ordered_field = self.ordered_field();
 
         let n = self.embedded_space.borrow().affine_dimension();
-        let extended_embedded_space =
-            Rc::new(AffineSpace::new_affine(ordered_field.clone(), n + 1));
+        let extended_embedded_space = AffineSpace::new_affine(ordered_field.clone(), n + 1);
 
         (
             EmbeddedAffineSubspace {
@@ -236,7 +233,7 @@ impl<
                     .ambient_space
                     .borrow()
                     .cols_from_vectors(span.iter().collect());
-                let x = MatrixStructure::new(self.ambient_space.borrow().ordered_field())
+                let x = MatrixStructure::new(self.ambient_space.borrow().ordered_field().clone())
                     .col_solve(&basis_matrix, y);
                 Some(vector_from_col(self.embedded_space(), &x?))
             }

@@ -1,3 +1,5 @@
+use algebraeon_nzq::traits::Fraction;
+
 use super::*;
 
 impl Polynomial<Integer> {
@@ -11,10 +13,8 @@ impl Polynomial<Integer> {
         //up to rational multiples (its the roots we care about)
         match self.degree() {
             Some(n) => {
-                let (a_numer, a_denom) = (
-                    Rational::numerator(a),
-                    Integer::from(Rational::denominator(a)),
-                );
+                let (a_numer, a_denom) = a.numerator_and_denominator();
+                let a_denom = Integer::from(a_denom);
                 //multiply everything by a_d^n so that everything is integers
 
                 //compute 1, a, a^2, a^3, ..., a^n (after multiplying everything by a_d)

@@ -1,9 +1,11 @@
 use super::number_field::AlgebraicNumberFieldStructure;
+use crate::number::algebraic::complex::ComplexAlgebraicCannonicalStructure;
 use crate::structure::*;
 use crate::{
     number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
     polynomial::*,
 };
+use algebraeon_nzq::traits::Fraction;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use std::rc::Rc;
@@ -56,10 +58,10 @@ impl ComplexAlgebraic {
 // use complex::*;
 // use  real::*;
 
-impl AlgebraicClosureStructure for CannonicalStructure<ComplexAlgebraic> {
+impl AlgebraicClosureStructure for ComplexAlgebraicCannonicalStructure {
     type BFS = <Rational as algebraeon_sets::structure::MetaType>::Structure;
 
-    fn base_field(&self) -> Rc<Self::BFS> {
+    fn base_field(&self) -> Self::BFS {
         Rational::structure()
     }
 
@@ -105,7 +107,7 @@ pub fn as_poly_expr(
 
     //let K = Q[generator]
     let gen_anf = generator.min_poly().algebraic_number_field();
-    let gen_anf_poly = PolynomialStructure::new(gen_anf.clone().into());
+    let gen_anf_poly = PolynomialStructure::new(gen_anf.clone());
 
     //the minimal polynomial of target in K[x]
     let target_min_poly = target
@@ -153,8 +155,10 @@ pub fn anf_pair_primitive_element_theorem(
         None => {}
     }
 
-    let mut nontrivial_linear_combinations =
-        Rational::exhaustive_rationals().map(|r| (r.numerator(), Integer::from(r.denominator())));
+    let mut nontrivial_linear_combinations = Rational::exhaustive_rationals().map(|r| {
+        let (n, d) = r.numerator_and_denominator();
+        (n, Integer::from(d))
+    });
     nontrivial_linear_combinations.next().unwrap();
     for (x, y) in nontrivial_linear_combinations {
         let generator = ComplexAlgebraic::add(

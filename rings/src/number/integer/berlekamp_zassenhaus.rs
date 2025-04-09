@@ -151,7 +151,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
     }
 }
 
-trait SemigroupStructure: Structure {
+trait SemigroupStructure: SetStructure {
     fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 }
 
@@ -180,11 +180,11 @@ impl<SG: SemigroupStructure> MemoryStack<SG> {
         }
     }
 
-    fn get_val(&self, i: usize) -> &<SG as Structure>::Set {
+    fn get_val(&self, i: usize) -> &<SG as SetStructure>::Set {
         &self.modular_factor_values[i]
     }
 
-    fn get_product(&mut self, subset: &Vec<usize>) -> &<SG as Structure>::Set {
+    fn get_product(&mut self, subset: &Vec<usize>) -> &<SG as SetStructure>::Set {
         debug_assert!(!subset.is_empty());
         let mut i = 0;
         loop {
@@ -246,7 +246,8 @@ mod dminusone_test {
     }
     #[derive(Debug, Clone, PartialEq, Eq)]
     struct DMinusOneTestSemigroup {}
-    impl Structure for DMinusOneTestSemigroup {
+    impl Structure for DMinusOneTestSemigroup {}
+    impl SetStructure for DMinusOneTestSemigroup {
         type Set = DMinusOneTestSemigroupElem;
     }
     impl SemigroupStructure for DMinusOneTestSemigroup {
@@ -349,7 +350,7 @@ mod dminusone_test {
 
 // Polynomial division test. This test is never wrong.
 type ModularFactorMultSemigrp =
-    PolynomialStructure<QuotientStructure<CannonicalStructure<Integer>, false>>;
+    PolynomialStructure<QuotientStructure<IntegerCannonicalStructure, false>>;
 impl SemigroupStructure for ModularFactorMultSemigrp {
     fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.mul(a, b)
@@ -359,7 +360,7 @@ impl SemigroupStructure for ModularFactorMultSemigrp {
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn factor_by_try_all_subsets<'a>(
         &'a self,
-    ) -> Factored<PolynomialStructure<CannonicalStructure<Integer>>> {
+    ) -> Factored<PolynomialStructure<IntegerCannonicalStructure>> {
         let n = self.modular_factors.len();
 
         let mut dminusone_test =
@@ -459,7 +460,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 /// No optimizations are used when searching for combinations of modular factors yielding true factors.
 pub fn factorize_by_berlekamp_zassenhaus_algorithm(
     poly: Polynomial<Integer>,
-) -> Option<Factored<PolynomialStructure<CannonicalStructure<Integer>>>> {
+) -> Option<Factored<PolynomialStructure<IntegerCannonicalStructure>>> {
     if poly.is_zero() {
         None
     } else {
@@ -484,7 +485,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
 /// Find a factor of a primitive squarefree integer polynomial by a naive implementation of the Berlekamp-Zassenhaus algorithm.
 fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     f: Polynomial<Integer>,
-) -> FindFactorResult<PolynomialStructure<CannonicalStructure<Integer>>> {
+) -> FindFactorResult<PolynomialStructure<IntegerCannonicalStructure>> {
     let f_deg = f.degree().unwrap();
     debug_assert_ne!(f_deg, 0);
     let factor_coeff_bound = f.mignotte_factor_coefficient_bound().unwrap();
@@ -564,7 +565,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
 /// No optimizations are used when searching for combinations of modular factors yielding true factors.
 pub fn factorize_by_berlekamp_zassenhaus_algorithm_naive(
     f: Polynomial<Integer>,
-) -> Option<Factored<PolynomialStructure<CannonicalStructure<Integer>>>> {
+) -> Option<Factored<PolynomialStructure<IntegerCannonicalStructure>>> {
     if f.is_zero() {
         None
     } else {

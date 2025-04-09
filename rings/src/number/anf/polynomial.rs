@@ -105,7 +105,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
         // println!("embeddings = {:?}", embedding_vars);
 
         let rational_poly_multipoly_structure =
-            PolynomialStructure::new(MultiPolynomialStructure::new(Rational::structure()).into());
+            PolynomialStructure::new(MultiPolynomialStructure::new(Rational::structure()));
 
         let norm_f_sym = rational_poly_multipoly_structure.product(
             embedding_vars
@@ -170,7 +170,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
-        p: &<Self as Structure>::Set,
+        p: &<Self as SetStructure>::Set,
     ) -> crate::structure::Factored<Self> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
@@ -242,7 +242,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
     pub fn factor_primitive_sqfree_by_reduced_ring(
         &self,
-        p: &<Self as Structure>::Set,
+        p: &<Self as SetStructure>::Set,
     ) -> Factored<Self> {
         debug_assert!(!self.is_zero(p));
 
@@ -404,7 +404,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             let q = Polynomial::add(&Polynomial::var_pow(n), &q_prime.neg());
             //assert q(α) = 0
             debug_assert!(l_reduced_ring.is_zero(
-                &PolynomialStructure::new(l_reduced_ring.clone().into()).evaluate(
+                &PolynomialStructure::new(l_reduced_ring.clone()).evaluate(
                     &q.apply_map::<Polynomial<Polynomial<Rational>>>(|c| {
                         Polynomial::from_coeffs(vec![Polynomial::from_coeffs(vec![c.clone()])])
                     }),
@@ -560,8 +560,8 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     //factor over the rationals first, then factor each irreducible rational factor over the anf
     pub fn factorize_rational_factorize_first(
         &self,
-        f: &<Self as Structure>::Set,
-        factorize: &impl Fn(&<Self as Structure>::Set) -> Factored<Self>,
+        f: &<Self as SetStructure>::Set,
+        factorize: &impl Fn(&<Self as SetStructure>::Set) -> Factored<Self>,
     ) -> Factored<Self> {
         debug_assert!(!self.is_zero(f));
         // println!("f = {}", f);
@@ -628,7 +628,7 @@ mod tests {
     fn test_anf_poly_factor_count() {
         let y = &Polynomial::<Rational>::var().into_ergonomic();
         let k = (y.pow(2) - 3).into_verbose().algebraic_number_field();
-        let k_poly = PolynomialStructure::new(k.clone().into());
+        let k_poly = PolynomialStructure::new(k.clone());
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
@@ -643,7 +643,7 @@ mod tests {
         let k = (y.pow(4) - y.pow(2) + 1)
             .into_verbose()
             .algebraic_number_field();
-        let k_poly = PolynomialStructure::new(k.clone().into());
+        let k_poly = PolynomialStructure::new(k.clone());
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
@@ -655,7 +655,7 @@ mod tests {
         );
 
         let k = (y.pow(3) - y + 1).into_verbose().algebraic_number_field();
-        let k_poly = PolynomialStructure::new(k.clone().into());
+        let k_poly = PolynomialStructure::new(k.clone());
         debug_assert_eq!(
             k_poly
                 .factor(&(x.pow(3) - x + 1).into_verbose())
@@ -668,7 +668,7 @@ mod tests {
         let k = (y.pow(4) - y.pow(2) + 1)
             .into_verbose()
             .algebraic_number_field();
-        let k_poly = PolynomialStructure::new(k.clone().into());
+        let k_poly = PolynomialStructure::new(k.clone());
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly

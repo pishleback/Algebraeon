@@ -5,7 +5,7 @@ use algebraeon_sets::structure::*;
 use bounds::*;
 use interval::*;
 use polynomial::*;
-use std::{fmt::Display, rc::Rc};
+use std::fmt::Display;
 
 mod bounds;
 mod interval;
@@ -346,7 +346,7 @@ impl RealAlgebraicRoot {
     }
 }
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Hash, CannonicalStructure)]
 pub enum RealAlgebraic {
     Rational(Rational),
     Real(RealAlgebraicRoot),
@@ -400,7 +400,7 @@ impl RealAlgebraic {
     }
 }
 
-impl PositiveRealNthRootStructure for CannonicalStructure<RealAlgebraic> {
+impl PositiveRealNthRootStructure for RealAlgebraicCannonicalStructure {
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
         nth_root(x, n)
     }
@@ -426,14 +426,6 @@ impl Ord for RealAlgebraic {
     }
 }
 
-impl MetaType for RealAlgebraic {
-    type Structure = CannonicalStructure<RealAlgebraic>;
-
-    fn structure() -> Rc<Self::Structure> {
-        CannonicalStructure::new().into()
-    }
-}
-
 impl Display for RealAlgebraic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -443,15 +435,21 @@ impl Display for RealAlgebraic {
     }
 }
 
-// impl PartialEqStructure for <RealAlgebraic as MetaType>::Structure {
-//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-//         a == b
-//     }
-// }
+impl PartialEqStructure for RealAlgebraicCannonicalStructure {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        a == b
+    }
+}
 
-// impl EqStructure for CannonicalStructure<RealAlgebraic> {}
+impl EqStructure for RealAlgebraicCannonicalStructure {}
 
-impl SemiRingStructure for CannonicalStructure<RealAlgebraic> {
+impl ToStringStructure for RealAlgebraicCannonicalStructure {
+    fn to_string(&self, elem: &Self::Set) -> String {
+        format!("{}", elem)
+    }
+}
+
+impl SemiRingStructure for RealAlgebraicCannonicalStructure {
     fn zero(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(0))
     }
@@ -600,7 +598,7 @@ impl SemiRingStructure for CannonicalStructure<RealAlgebraic> {
     }
 }
 
-impl RingStructure for CannonicalStructure<RealAlgebraic> {
+impl RingStructure for RealAlgebraicCannonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         match a {
             RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
@@ -609,7 +607,7 @@ impl RingStructure for CannonicalStructure<RealAlgebraic> {
     }
 }
 
-impl UnitsStructure for CannonicalStructure<RealAlgebraic> {
+impl UnitsStructure for RealAlgebraicCannonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let mut a = a.clone();
         match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {
@@ -680,7 +678,7 @@ impl UnitsStructure for CannonicalStructure<RealAlgebraic> {
     }
 }
 
-impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
+impl IntegralDomainStructure for RealAlgebraicCannonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.inv(b) {
             Ok(b_inv) => Ok(self.mul(a, &b_inv)),
@@ -689,21 +687,28 @@ impl IntegralDomainStructure for CannonicalStructure<RealAlgebraic> {
     }
 }
 
-impl FieldStructure for CannonicalStructure<RealAlgebraic> {}
+impl FieldStructure for RealAlgebraicCannonicalStructure {}
 
-impl CharZeroStructure for CannonicalStructure<RealAlgebraic> {}
+impl CharZeroStructure for RealAlgebraicCannonicalStructure {
+    fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
+        match alg {
+            RealAlgebraic::Rational(rat) => rat.try_to_int(),
+            RealAlgebraic::Real(_) => None,
+        }
+    }
+}
 
-impl ComplexSubsetStructure for CannonicalStructure<RealAlgebraic> {}
+impl ComplexSubsetStructure for RealAlgebraicCannonicalStructure {}
 
-impl RealSubsetStructure for CannonicalStructure<RealAlgebraic> {}
+impl RealSubsetStructure for RealAlgebraicCannonicalStructure {}
 
-impl OrderedRingStructure for CannonicalStructure<RealAlgebraic> {
+impl OrderedRingStructure for RealAlgebraicCannonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         a.cmp(b)
     }
 }
 
-impl RealToFloatStructure for CannonicalStructure<RealAlgebraic> {
+impl RealToFloatStructure for RealAlgebraicCannonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         match x {
             RealAlgebraic::Rational(x) => x.as_f64(),
@@ -719,7 +724,7 @@ impl RealToFloatStructure for CannonicalStructure<RealAlgebraic> {
     }
 }
 
-impl RealRoundingStructure for CannonicalStructure<RealAlgebraic> {
+impl RealRoundingStructure for RealAlgebraicCannonicalStructure {
     fn floor(&self, _x: &Self::Set) -> Integer {
         todo!()
     }

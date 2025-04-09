@@ -6,7 +6,6 @@ use crate::{
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use std::rc::Rc;
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
 /*
@@ -25,7 +24,7 @@ Cantor–Zassenhaus algorithm does 4.
 
 /// Store a monic factorization
 #[derive(Debug, Clone)]
-pub struct MonicFactored<FS: FiniteFieldStructure> {
+pub struct MonicFactored<FS: FieldStructure> {
     poly_ring: PolynomialStructure<FS>,
     unit: FS::Set,              // a unit
     monic: Polynomial<FS::Set>, // a monic polynomial
@@ -52,17 +51,17 @@ pub struct DistinctDegreeFactored<FS: FiniteFieldStructure> {
     distinct_degree_factors: Vec<(DistinctDegreeFactor<FS>, Natural)>,
 }
 
-impl<FS: FiniteFieldStructure> MonicFactored<FS> {
-    pub fn factor(poly_ring: PolynomialStructure<FS>, poly: Polynomial<FS::Set>) -> Self {
-        let (unit, monic) = poly_ring.factor_fav_assoc(&poly);
-        let unit = poly_ring.as_constant(&unit).unwrap();
-        debug_assert!(poly_ring.is_monic(&monic));
-        Self {
-            poly_ring,
-            unit,
-            monic,
-        }
-    }
+impl<FS: FieldStructure> MonicFactored<FS> {
+    // pub fn factor(poly_ring: PolynomialStructure<FS>, poly: Polynomial<FS::Set>) -> Self {
+    //     let (unit, monic) = poly_ring.factor_fav_assoc(&poly);
+    //     let unit = poly_ring.as_constant(&unit).unwrap();
+    //     debug_assert!(poly_ring.is_monic(&monic));
+    //     Self {
+    //         poly_ring,
+    //         unit,
+    //         monic,
+    //     }
+    // }
 
     pub fn new_monic_unchecked(
         poly_ring: PolynomialStructure<FS>,
@@ -75,6 +74,14 @@ impl<FS: FiniteFieldStructure> MonicFactored<FS> {
             unit,
             monic,
         }
+    }
+
+    pub fn scalar_part(&self) -> &FS::Set {
+        &self.unit
+    }
+
+    pub fn monic_part(&self) -> &Polynomial<FS::Set> {
+        &self.monic
     }
 
     pub fn into_polynomial(self) -> Polynomial<FS::Set> {
@@ -170,7 +177,7 @@ impl<FS: FiniteFieldStructure> DistinctDegreeFactored<FS> {
 
 impl<FS: FiniteFieldStructure> Factored<PolynomialStructure<FS>>
 where
-    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>> + FactorableStructure,
+    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>> + FactorableStructure,
 {
     pub fn into_distinct_degree_factored(self) -> DistinctDegreeFactored<FS> {
         let poly_ring = (*self.ring()).clone();
@@ -196,9 +203,9 @@ where
     }
 }
 
-impl<FS: FiniteFieldStructure> PolynomialStructure<FS>
+impl<FS: FieldStructure> PolynomialStructure<FS>
 where
-    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
 {
     /// monic factorization
     pub fn factorize_monic(&self, poly: &Polynomial<FS::Set>) -> Option<MonicFactored<FS>> {
@@ -219,7 +226,7 @@ where
 impl<F: MetaType> Polynomial<F>
 where
     F::Structure: FiniteFieldStructure,
-    PolynomialStructure<F::Structure>: Structure<Set = Polynomial<F>>,
+    PolynomialStructure<F::Structure>: SetStructure<Set = Polynomial<F>>,
 {
     pub fn factorize_monic(&self) -> Option<MonicFactored<F::Structure>> {
         Self::structure().factorize_monic(self)
@@ -228,7 +235,7 @@ where
 
 impl<FS: FiniteFieldStructure> MonicFactored<FS>
 where
-    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
 {
     /// squarefree factorization
     pub fn factorize_squarefree(&self) -> SquarefreeFactored<FS> {
@@ -269,7 +276,7 @@ where
                     debug_assert!(self.poly_ring.coeff_ring().is_zero(coeff));
                 }
             }
-            let reduced_c: Polynomial<<FS as Structure>::Set> =
+            let reduced_c: Polynomial<<FS as SetStructure>::Set> =
                 Polynomial::from_coeffs(reduced_c_coeffs);
             factors.mul(
                 &MonicFactored::new_monic_unchecked(self.poly_ring.clone(), reduced_c)
@@ -283,7 +290,7 @@ where
 
 impl<FS: FiniteFieldStructure> PolynomialStructure<FS>
 where
-    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
 {
     fn find_factor_by_berlekamps_algorithm(
         &self,
@@ -306,8 +313,8 @@ where
         let mat = Matrix::construct(f_deg, f_deg, |i, j| self.coeff(&row_polys[i], j).clone());
         // mat.pprint();
         //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
-        let mat_struct = MatrixStructure::<FS>::new(self.coeff_ring().into());
-        let linlat_struct = LinearLatticeStructure::<FS>::new(self.coeff_ring().into());
+        let mat_struct = MatrixStructure::<FS>::new(self.coeff_ring().clone());
+        let linlat_struct = LinearLatticeStructure::<FS>::new(self.coeff_ring().clone());
         let ker = mat_struct.row_kernel(mat);
         // ker.pprint();
         let ker_rank = linlat_struct.rank(&ker);
@@ -352,7 +359,7 @@ where
 
 impl<FS: FiniteFieldStructure> SquarefreeFactored<FS>
 where
-    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
 {
     /// use Berlekamps algorithm for a full factorization from a squarefree
     pub fn factorize_berlekamps(&self) -> Factored<PolynomialStructure<FS>>
@@ -360,7 +367,7 @@ where
         PolynomialStructure<FS>: FactorableStructure,
     {
         let mut factors = Factored::new_unchecked(
-            Rc::new(self.poly_ring.clone()),
+            self.poly_ring.clone(),
             Polynomial::constant(self.unit.clone()),
             vec![],
         );
@@ -378,7 +385,7 @@ where
 
 impl<FS: FiniteFieldStructure> SquarefreeFactored<FS>
 where
-    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
 {
     /// distinct degree factorization
     pub fn factorize_distinct_degree(&self) -> DistinctDegreeFactored<FS> {
@@ -399,7 +406,7 @@ where
 
             let mod_poly_ring =
                 QuotientStructure::new_ring(self.poly_ring.clone().into(), poly.clone());
-            let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring());
+            let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring().clone());
             let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
             let qth_power_matrix = Matrix::join_cols(
                 n,
@@ -498,14 +505,14 @@ where
 
 impl<FS: FiniteFieldStructure> DistinctDegreeFactored<FS>
 where
-    PolynomialStructure<FS>: Structure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
 {
     /// Cantor–Zassenhaus algorithm for equal degree factorization
     pub fn factorize_cantor_zassenhaus(&self) -> Factored<PolynomialStructure<FS>>
     where
         PolynomialStructure<FS>: FactorableStructure,
     {
-        let poly_ring: Rc<_> = self.poly_ring.clone().into();
+        let poly_ring = &self.poly_ring;
         let mut fs = Factored::factored_unit_unchecked(
             poly_ring.clone(),
             Polynomial::constant(self.unit.clone()),
@@ -570,10 +577,8 @@ where
                     sum
                 } else {
                     // when char != 2 use h^{(q^d-1)/2}-1 mod f
-                    let poly_mod_f = QuotientStructure::new_ring(
-                        self.poly_ring.clone().into(),
-                        ddf.polynomial.clone(),
-                    );
+                    let poly_mod_f =
+                        QuotientStructure::new_ring(self.poly_ring.clone(), ddf.polynomial.clone());
                     let a = (q.nat_pow(&d.into()) - Natural::ONE) / Natural::TWO;
                     poly_mod_f.add(
                         &poly_mod_f.nat_pow(&h, &a),

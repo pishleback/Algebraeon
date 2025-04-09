@@ -1,14 +1,7 @@
 use super::number_field::AlgebraicNumberFieldStructure;
-use crate::{
-    linear::matrix::Matrix,
-    polynomial::Polynomial,
-    structure::{
-        IntegralDomainStructure, RingDivisionError, RingStructure, SemiRingStructure,
-        UnitsStructure,
-    },
-};
+use crate::{linear::matrix::Matrix, polynomial::Polynomial, structure::*};
 use algebraeon_nzq::{Integer, Rational};
-use algebraeon_sets::structure::{EqStructure, PartialEqStructure, Structure};
+use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct RingOfIntegersWithIntegralBasisStructure {
@@ -211,7 +204,9 @@ impl RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl Structure for RingOfIntegersWithIntegralBasisStructure {
+impl Structure for RingOfIntegersWithIntegralBasisStructure {}
+
+impl SetStructure for RingOfIntegersWithIntegralBasisStructure {
     type Set = RingOfIntegersWithIntegralBasisElement;
 }
 

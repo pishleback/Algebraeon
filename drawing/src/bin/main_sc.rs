@@ -29,9 +29,9 @@ fn main() {
     let space = Rc::new(AffineSpace::new_linear(Rational::structure(), 2));
 
     fn random_point(
-        space: Rc<AffineSpace<CannonicalStructure<Rational>>>,
+        space: Rc<AffineSpace<RationalCannonicalStructure>>,
         rad: f64,
-    ) -> Vector<CannonicalStructure<Rational>, Rc<AffineSpace<CannonicalStructure<Rational>>>> {
+    ) -> Vector<RationalCannonicalStructure, Rc<AffineSpace<RationalCannonicalStructure>>> {
         let mut rng = rand::thread_rng();
         Vector::construct(space.clone(), |i| {
             Rational::from_f64_approx(rng.gen_range(-rad..rad)).approximate(&Natural::from(3u64))

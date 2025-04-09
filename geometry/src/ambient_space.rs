@@ -1,11 +1,10 @@
+use super::*;
+use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
 use std::sync::atomic::AtomicUsize;
 
-use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
-
-use super::*;
 #[derive(Debug, Clone)]
 pub struct AffineSpace<FS: OrderedRingStructure + FieldStructure> {
-    ordered_field: Rc<FS>,
+    ordered_field: FS,
     //linear dimension = affine dimension - 1
     affine_dimension: usize,
     ident: usize,
@@ -31,7 +30,7 @@ impl<FS: OrderedRingStructure + FieldStructure + Hash> Hash for AffineSpace<FS> 
 }
 
 impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
-    pub fn new_affine(ordered_field: Rc<FS>, affine_dimension: usize) -> Self {
+    pub fn new_affine(ordered_field: FS, affine_dimension: usize) -> Self {
         static COUNTER: AtomicUsize = AtomicUsize::new(0);
         Self {
             ordered_field,
@@ -40,16 +39,16 @@ impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
         }
     }
 
-    pub fn new_empty(ordered_field: Rc<FS>) -> Self {
+    pub fn new_empty(ordered_field: FS) -> Self {
         Self::new_affine(ordered_field, 0)
     }
 
-    pub fn new_linear(ordered_field: Rc<FS>, linear_dimension: usize) -> Self {
+    pub fn new_linear(ordered_field: FS, linear_dimension: usize) -> Self {
         Self::new_affine(ordered_field, linear_dimension + 1)
     }
 
-    pub fn ordered_field(&self) -> Rc<FS> {
-        self.ordered_field.clone()
+    pub fn ordered_field(&self) -> &FS {
+        &self.ordered_field
     }
 
     pub fn origin<SP: Borrow<Self> + Clone + From<Self>>(&self) -> Option<Vector<FS, SP>> {
@@ -84,13 +83,13 @@ impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
     }
 
     pub fn determinant(&self, vecs: Vec<&Vector<FS, impl Borrow<Self>>>) -> FS::Set {
-        MatrixStructure::new(self.ordered_field())
+        MatrixStructure::new(self.ordered_field().clone())
             .det(self.rows_from_vectors(vecs))
             .unwrap()
     }
 
     pub fn rank(&self, vecs: Vec<&Vector<FS, impl Borrow<Self>>>) -> usize {
-        MatrixStructure::new(self.ordered_field()).rank(self.rows_from_vectors(vecs))
+        MatrixStructure::new(self.ordered_field().clone()).rank(self.rows_from_vectors(vecs))
     }
 
     pub fn are_points_affine_independent(
@@ -107,7 +106,7 @@ impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
             let mat = self.rows_from_vectors(vecs.iter().collect());
             // println!("{:?}", mat);
             // println!("{:?} {:?}", vecs.len(), MatrixStructure::new(self.ordered_field()).rank(mat.clone()));
-            MatrixStructure::new(self.ordered_field()).rank(mat) == vecs.len()
+            MatrixStructure::new(self.ordered_field().clone()).rank(mat) == vecs.len()
         } else {
             true
         }

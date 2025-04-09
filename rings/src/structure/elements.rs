@@ -1,7 +1,4 @@
-use std::{
-    ops::{Add, Div, Mul, Neg, Sub},
-    rc::Rc,
-};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 use super::structure::*;
 use algebraeon_sets::structure::*;
@@ -16,17 +13,17 @@ pub trait IntoErgonomic: MetaType {
 impl<T: MetaType> IntoErgonomic for T {}
 
 #[derive(Debug, Clone)]
-pub struct StructuredElement<S: Structure> {
-    structure: Rc<S>,
+pub struct StructuredElement<S: SetStructure> {
+    structure: S,
     elem: S::Set,
 }
 
-impl<S: Structure> StructuredElement<S> {
-    pub fn new(structure: Rc<S>, elem: S::Set) -> Self {
+impl<S: SetStructure> StructuredElement<S> {
+    pub fn new(structure: S, elem: S::Set) -> Self {
         Self { structure, elem }
     }
 
-    pub fn structure(&self) -> Rc<S> {
+    pub fn structure(&self) -> S {
         self.structure.clone()
     }
 
@@ -39,7 +36,7 @@ impl<S: Structure> StructuredElement<S> {
     }
 }
 
-impl<S: Structure> std::fmt::Display for StructuredElement<S>
+impl<S: SetStructure> std::fmt::Display for StructuredElement<S>
 where
     S::Set: std::fmt::Display,
 {
@@ -50,7 +47,7 @@ where
 
 impl<RS: RingStructure> PartialEq for StructuredElement<RS> {
     fn eq(&self, other: &Self) -> bool {
-        let structure = common_structure(self.structure(), other.structure());
+        let structure = common_structure::<RS>(self.structure(), other.structure());
         structure.equal(&self.ref_set(), &other.ref_set())
     }
 }

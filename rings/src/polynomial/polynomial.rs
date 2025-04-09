@@ -1,14 +1,9 @@
-use std::fmt::Display;
-use std::rc::Rc;
-
-use itertools::Itertools;
-
-use crate::linear::matrix::*;
-
 use super::super::structure::*;
-use algebraeon_sets::structure::*;
-
+use crate::linear::matrix::*;
 use algebraeon_nzq::*;
+use algebraeon_sets::structure::*;
+use itertools::Itertools;
+use std::fmt::Display;
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {
@@ -68,16 +63,18 @@ impl<Set> Polynomial<Set> {
 #[derive(Debug, Clone)]
 pub struct PolynomialStructure<RS: SemiRingStructure> {
     coeff_ring_zero: RS::Set, //so that we can return a refernece to zero when getting polynomial coefficients out of range
-    coeff_ring: Rc<RS>,
+    coeff_ring: RS,
 }
 
 impl<RS: SemiRingStructure> PolynomialStructure<RS> {
-    pub fn coeff_ring(&self) -> Rc<RS> {
-        self.coeff_ring.clone()
+    pub fn coeff_ring(&self) -> &RS {
+        &self.coeff_ring
     }
 }
 
-impl<RS: SemiRingStructure> Structure for PolynomialStructure<RS> {
+impl<RS: SemiRingStructure> Structure for PolynomialStructure<RS> {}
+
+impl<RS: SemiRingStructure> SetStructure for PolynomialStructure<RS> {
     type Set = Polynomial<RS::Set>;
 }
 
@@ -187,7 +184,7 @@ impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
 }
 
 impl<RS: SemiRingStructure> PolynomialStructure<RS> {
-    pub fn new(coeff_ring: Rc<RS>) -> Self {
+    pub fn new(coeff_ring: RS) -> Self {
         Self {
             coeff_ring_zero: coeff_ring.zero(),
             coeff_ring,
@@ -268,7 +265,7 @@ impl<RS: SemiRingStructure> PolynomialStructure<RS> {
 
     //find p(q(x))
     pub fn compose(&self, p: &Polynomial<RS::Set>, q: &Polynomial<RS::Set>) -> Polynomial<RS::Set> {
-        PolynomialStructure::new(Rc::new(self.clone()))
+        PolynomialStructure::new(self.clone())
             .evaluate(&p.apply_map(|c| Polynomial::constant(c.clone())), q)
     }
 
@@ -349,71 +346,6 @@ impl<RS: SemiRingStructure> PolynomialStructure<RS> {
         p
     }
 }
-
-// #[derive(Debug)]
-// pub struct PseudoRemainderSubresultantSequence<RS: IntegralDomainStructure> {
-//     poly_ring: PolynomialStructure<RS>,
-//     n: usize,
-//     rs: Vec<Polynomial<RS::Set>>,
-//     subresultants: Vec<Polynomial<RS::Set>>,
-//     smallest_nonzero_subresultant_idx: usize,
-// }
-
-// impl<RS: IntegralDomainStructure> PseudoRemainderSubresultantSequence<RS> {
-//     fn new(poly_ring: PolynomialStructure<RS>, n: usize) -> Self {
-//         let subresultants = (0..n).map(|_| poly_ring.zero()).collect();
-//         Self {
-//             poly_ring,
-//             n,
-//             rs: vec![],
-//             subresultants,
-//             smallest_nonzero_subresultant_idx: n,
-//         }
-//     }
-
-//     fn push(&mut self, r: Polynomial<RS::Set>) {
-//         let deg = self.poly_ring.degree(&r).unwrap();
-//         match self.rs.last() {
-//             Some(prev_r) => {
-//                 let prev_deg = self.poly_ring.degree(prev_r).unwrap();
-//                 debug_assert!(deg < prev_deg);
-//                 self.subresultants[prev_deg - 1] = r.clone();
-//                 self.smallest_nonzero_subresultant_idx = prev_deg - 1;
-//                 if deg < prev_deg - 1 {
-//                     self.subresultants[deg] = self.poly_ring.mul(
-//                         &self
-//                             .poly_ring
-//                             .nat_pow(&r, &Natural::from(prev_deg - deg - 1)),
-//                         &r,
-//                     );
-//                     self.smallest_nonzero_subresultant_idx = deg;
-//                 }
-//             }
-//             None => {
-//                 debug_assert_eq!(self.poly_ring.degree(&r).unwrap(), self.n);
-//             }
-//         };
-//         self.rs.push(r);
-//     }
-
-//     pub fn resultant(&self) -> RS::Set {
-//         debug_assert_ne!(self.rs.len(), 0); // Should have added something by the time it comes to using it
-//         self.poly_ring.as_constant(&self.subresultants[0]).unwrap()
-//     }
-
-//     pub fn subresultant_gcd(&self) -> &Polynomial<RS::Set> {
-//         debug_assert_ne!(self.rs.len(), 0); // Should have added something by the time it comes to using it
-//         &self.subresultants[self.smallest_nonzero_subresultant_idx]
-//     }
-
-//     pub fn into_subresultant_gcd(self) -> Polynomial<RS::Set> {
-//         debug_assert_ne!(self.rs.len(), 0); // Should have added something by the time it comes to using it
-//         self.subresultants
-//             .into_iter()
-//             .nth(self.smallest_nonzero_subresultant_idx)
-//             .unwrap()
-//     }
-// }
 
 impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     pub fn try_quorem(
@@ -746,7 +678,11 @@ impl<RS: FavoriteAssociateStructure + IntegralDomainStructure> FavoriteAssociate
     }
 }
 
-impl<RS: CharZeroStructure> CharZeroStructure for PolynomialStructure<RS> {}
+impl<RS: CharZeroStructure> CharZeroStructure for PolynomialStructure<RS> {
+    fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
+        self.coeff_ring().try_to_int(&self.as_constant(x)?)
+    }
+}
 
 impl<RS: IntegralDomainStructure + FiniteUnitsStructure> FiniteUnitsStructure
     for PolynomialStructure<RS>
@@ -883,7 +819,7 @@ impl<RS: BezoutDomainStructure> PolynomialStructure<RS> {
         \ 1 3 9 / \ c /   \ -2 /
         */
 
-        let matrix_structure = MatrixStructure::new(self.coeff_ring());
+        let matrix_structure = MatrixStructure::new(self.coeff_ring().clone());
 
         let n = points.len();
         let mut mat = matrix_structure.zero(n, n);
@@ -913,48 +849,56 @@ impl<RS: BezoutDomainStructure> PolynomialStructure<RS> {
     }
 }
 
-impl<FS: FieldOfFractionsStructure> PolynomialStructure<FS>
+pub fn factor_primitive_fof<
+    Ring: GreatestCommonDivisorStructure,
+    Field: FieldStructure,
+    Fof: FieldOfFractionsInclusionStructure<Ring, Field>,
+>(
+    fof_inclusion: &Fof,
+    p: &Polynomial<Field::Set>,
+) -> (Field::Set, Polynomial<Ring::Set>) {
+    let ring = fof_inclusion.domain();
+    let field = fof_inclusion.range();
+    let poly_ring = PolynomialStructure::new(ring.clone());
+
+    let div = fof_inclusion.domain().lcm_list(
+        p.coeffs()
+            .into_iter()
+            .map(|c| fof_inclusion.denominator(&c))
+            .collect(),
+    );
+
+    let (mul, prim) = poly_ring
+        .factor_primitive(p.apply_map(|c| {
+            fof_inclusion
+                .try_preimage(&field.mul(&fof_inclusion.image(&div), c))
+                .unwrap()
+        }))
+        .unwrap();
+
+    (
+        field
+            .div(&fof_inclusion.image(&mul), &fof_inclusion.image(&div))
+            .unwrap(),
+        prim,
+    )
+}
+
+impl<Field: MetaType> Polynomial<Field>
 where
-    FS::RS: GreatestCommonDivisorStructure,
+    Field::Structure: FieldStructure,
+    PrincipalSubringInclusion<Field::Structure>:
+        FieldOfFractionsInclusionStructure<IntegerCannonicalStructure, Field::Structure>,
 {
-    pub fn factor_primitive_fof(
-        &self,
-        p: &Polynomial<FS::Set>,
-    ) -> (FS::Set, Polynomial<<FS::RS as Structure>::Set>) {
-        let div = self.coeff_ring.base_ring_structure().lcm_list(
-            p.coeffs()
-                .into_iter()
-                .map(|c| self.coeff_ring.denominator(&c))
-                .collect(),
-        );
-
-        let (mul, prim) = PolynomialStructure::new(self.coeff_ring.base_ring_structure())
-            .factor_primitive(p.apply_map(|c| {
-                self.coeff_ring
-                    .as_base_ring(
-                        self.coeff_ring
-                            .mul(&self.coeff_ring.from_base_ring(div.clone()), c),
-                    )
-                    .unwrap()
-            }))
-            .unwrap();
-
-        (
-            self.coeff_ring
-                .div(
-                    &self.coeff_ring.from_base_ring(mul),
-                    &self.coeff_ring.from_base_ring(div),
-                )
-                .unwrap(),
-            prim,
+    pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {
+        factor_primitive_fof(
+            &PrincipalSubringInclusion::new(Self::structure().coeff_ring().clone()),
+            self,
         )
     }
 
-    pub fn primitive_part_fof(
-        &self,
-        p: &Polynomial<FS::Set>,
-    ) -> Polynomial<<FS::RS as Structure>::Set> {
-        self.factor_primitive_fof(p).1
+    pub fn primitive_part_fof(&self) -> Polynomial<Integer> {
+        self.factor_primitive_fof().1
     }
 }
 
@@ -964,8 +908,8 @@ where
 {
     type Structure = PolynomialStructure<R::Structure>;
 
-    fn structure() -> Rc<Self::Structure> {
-        PolynomialStructure::new(R::structure()).into()
+    fn structure() -> Self::Structure {
+        PolynomialStructure::new(R::structure())
     }
 }
 
@@ -1127,27 +1071,6 @@ where
 {
     pub fn primitive_squarefree_part(&self) -> Self {
         Self::structure().primitive_squarefree_part(self.clone())
-    }
-}
-
-impl<F: MetaType> Polynomial<F>
-where
-    F::Structure: FieldOfFractionsStructure,
-    <F::Structure as FieldOfFractionsStructure>::RS: GreatestCommonDivisorStructure,
-{
-    pub fn factor_primitive_fof(
-        &self,
-    ) -> (
-        F,
-        Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as Structure>::Set>,
-    ) {
-        Self::structure().factor_primitive_fof(self)
-    }
-
-    pub fn primitive_part_fof(
-        &self,
-    ) -> Polynomial<<<F::Structure as FieldOfFractionsStructure>::RS as Structure>::Set> {
-        Self::structure().primitive_part_fof(self)
     }
 }
 

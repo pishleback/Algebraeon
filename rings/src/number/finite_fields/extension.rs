@@ -3,9 +3,11 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
-use super::modulo::Modulo;
+use super::modulo::ModuloCannonicalStructure;
 
-impl<FS: FiniteFieldStructure> FiniteUnitsStructure for FieldExtensionStructure<FS> {
+impl<FS: FiniteFieldStructure> FiniteUnitsStructure
+    for FieldExtensionByPolynomialQuotientAlias<FS>
+{
     fn all_units(&self) -> Vec<Self::Set> {
         let mut all_base_elements = vec![self.ring().coeff_ring().zero()];
         for unit in self.ring().coeff_ring().all_units() {
@@ -30,7 +32,9 @@ impl<FS: FiniteFieldStructure> FiniteUnitsStructure for FieldExtensionStructure<
     }
 }
 
-impl<FS: FiniteFieldStructure> FiniteFieldStructure for FieldExtensionStructure<FS> {
+impl<FS: FiniteFieldStructure> FiniteFieldStructure
+    for FieldExtensionByPolynomialQuotientAlias<FS>
+{
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         let (p, t) = self.ring().coeff_ring().characteristic_and_power();
         let d = Natural::from(self.degree());
@@ -40,21 +44,21 @@ impl<FS: FiniteFieldStructure> FiniteFieldStructure for FieldExtensionStructure<
 
 pub fn new_finite_field_extension<FS: FiniteFieldStructure>(
     finite_field: FS,
-    poly: <PolynomialStructure<FS> as Structure>::Set,
-) -> FieldExtensionStructure<FS>
+    poly: <PolynomialStructure<FS> as SetStructure>::Set,
+) -> FieldExtensionByPolynomialQuotientAlias<FS>
 where
     PolynomialStructure<FS>: FactorableStructure,
 {
-    FieldExtensionStructure::<FS>::new_field(
+    FieldExtensionByPolynomialQuotientAlias::<FS>::new_field(
         PolynomialStructure::new(finite_field.into()).into(),
         poly,
     )
 }
 
-pub fn f9() -> FieldExtensionStructure<CannonicalStructure<Modulo<3>>> {
+pub fn f9() -> FieldExtensionByPolynomialQuotientAlias<ModuloCannonicalStructure<3>> {
     use crate::number::finite_fields::modulo::*;
-    new_finite_field_extension::<CannonicalStructure<Modulo<3>>>(
-        CannonicalStructure::<Modulo<3>>::new().into(),
+    new_finite_field_extension::<ModuloCannonicalStructure<3>>(
+        Modulo::<3>::structure().into(),
         Polynomial::from_coeffs(vec![1, 1, 2]),
     )
 }

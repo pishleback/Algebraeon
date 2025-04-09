@@ -22,7 +22,7 @@ pub use functions::gcd;
 pub use functions::lcm;
 
 /// Represents a natural number {0, 1, 2, ...}
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CannonicalStructure)]
 pub struct Natural(malachite_nz::natural::Natural);
 
 impl Natural {
@@ -34,6 +34,20 @@ impl Natural {
     }
     pub(crate) fn to_malachite_ref(&self) -> &malachite_nz::natural::Natural {
         &self.0
+    }
+}
+
+impl PartialEqStructure for NaturalCannonicalStructure {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        a == b
+    }
+}
+
+impl EqStructure for NaturalCannonicalStructure {}
+
+impl ToStringStructure for NaturalCannonicalStructure {
+    fn to_string(&self, elem: &Self::Set) -> String {
+        format!("{}", elem)
     }
 }
 
@@ -623,11 +637,9 @@ impl TryInto<usize> for &Natural {
     }
 }
 
-impl MetaType for Natural {
-    type Structure = CannonicalStructure<Natural>;
-
-    fn structure() -> std::rc::Rc<Self::Structure> {
-        CannonicalStructure::new().into()
+impl CountableSetStructure for NaturalCannonicalStructure {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        (0usize..).map(|n| n.into())
     }
 }
 

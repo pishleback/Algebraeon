@@ -1,6 +1,5 @@
-use std::collections::{HashMap, HashSet};
-
 use super::*;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 pub struct ConvexHull<
@@ -13,14 +12,14 @@ pub struct ConvexHull<
     ambient_space: SP,
     // the affine subspace spanned by this convex hull
     // so that this convex hull is "full" in this embedded subspace
-    subspace: EmbeddedAffineSubspace<FS, SP, Rc<AffineSpace<FS>>>,
+    subspace: EmbeddedAffineSubspace<FS, SP, AffineSpace<FS>>,
     // oriented facets belonging to the embedded subspace such that
     // the positive side of each facet is on the interior of the convex hull and
     // the negative side of each facet is on the outside of the convex hull.
     // These facets should form a simplicial complex
-    facets: Vec<OrientedSimplex<FS, Rc<AffineSpace<FS>>>>,
+    facets: Vec<OrientedSimplex<FS, AffineSpace<FS>>>,
     // These interior simplicies are the full-dimensional simplicies in the embedded subspace forming the interior of the convex hull
-    interior: Vec<Simplex<FS, Rc<AffineSpace<FS>>>>,
+    interior: Vec<Simplex<FS, AffineSpace<FS>>>,
     /*
     Consider the case of a convex hull given by a simplex in dimension d:
 

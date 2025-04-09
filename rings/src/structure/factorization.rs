@@ -1,4 +1,4 @@
-use std::{fmt::Display, rc::Rc};
+use std::fmt::Display;
 
 use super::structure::*;
 use algebraeon_nzq::*;
@@ -6,7 +6,7 @@ use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct Factored<RS: UniqueFactorizationStructure> {
-    ring: Rc<RS>,
+    ring: RS,
     unit: RS::Set,
     factors: Vec<(RS::Set, Natural)>,
 }
@@ -56,15 +56,15 @@ impl<RS: FactorableStructure> Factored<RS> {
 }
 
 impl<RS: UniqueFactorizationStructure> Factored<RS> {
-    pub fn ring(&self) -> Rc<RS> {
-        self.ring.clone()
+    pub fn ring(&self) -> &RS {
+        &self.ring
     }
 
     //change to a new ring structure type
     //the new ring structure type must represent the same ring structure
     pub fn change_ring_unsafe<NewRS: UniqueFactorizationStructure<Set = RS::Set>>(
         self,
-        ring: Rc<NewRS>,
+        ring: NewRS,
     ) -> Factored<NewRS> {
         Factored {
             ring,
@@ -98,7 +98,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         self.clone().make_squarefree().expand()
     }
 
-    pub fn new_unchecked(ring: Rc<RS>, unit: RS::Set, factors: Vec<(RS::Set, Natural)>) -> Self {
+    pub fn new_unchecked(ring: RS, unit: RS::Set, factors: Vec<(RS::Set, Natural)>) -> Self {
         Self {
             ring,
             unit,
@@ -107,7 +107,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
     }
 
     pub fn equal(a: &Self, b: &Self) -> bool {
-        let ring = common_structure(&a.ring, &b.ring);
+        let ring = common_structure::<RS>(&a.ring, &b.ring);
         if !ring.equal(a.unit(), b.unit()) {
             false
         } else {
@@ -211,7 +211,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
     }
 
     pub fn mul(mut a: Self, b: Self) -> Self {
-        let ring = common_structure(&a.ring, &b.ring);
+        let ring = common_structure::<RS>(&a.ring, &b.ring);
         ring.mul_mut(&mut a.unit, &b.unit);
         for (p, k) in b.factors {
             a.mul_by_unchecked(p, k)
@@ -226,7 +226,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         self
     }
 
-    pub fn factored_one(ring: Rc<RS>) -> Self {
+    pub fn factored_one(ring: RS) -> Self {
         Factored {
             unit: ring.one(),
             ring,
@@ -234,7 +234,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         }
     }
 
-    pub fn factored_irreducible_unchecked(ring: Rc<RS>, elem: RS::Set) -> Self {
+    pub fn factored_irreducible_unchecked(ring: RS, elem: RS::Set) -> Self {
         let (unit, assoc) = ring.factor_fav_assoc(&elem);
         Factored {
             ring,
@@ -243,7 +243,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         }
     }
 
-    pub fn factored_irreducible_power_unchecked(ring: Rc<RS>, elem: RS::Set, k: Natural) -> Self {
+    pub fn factored_irreducible_power_unchecked(ring: RS, elem: RS::Set, k: Natural) -> Self {
         debug_assert!(k >= Natural::ONE);
         let (unit, assoc) = ring.factor_fav_assoc(&elem);
         Factored {
@@ -253,7 +253,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         }
     }
 
-    pub fn factored_unit_unchecked(ring: Rc<RS>, unit: RS::Set) -> Self {
+    pub fn factored_unit_unchecked(ring: RS, unit: RS::Set) -> Self {
         Factored {
             ring,
             unit,
@@ -300,7 +300,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
     }
 
     pub fn gcd(mut a: Self, b: Self) -> RS::Set {
-        let ring = common_structure(&a.ring, &b.ring);
+        let ring = common_structure::<RS>(&a.ring, &b.ring);
         a.factors = a
             .factors
             .into_iter()

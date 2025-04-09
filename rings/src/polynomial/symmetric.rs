@@ -32,7 +32,7 @@ pub fn ss_num(n: usize) -> String {
 impl<RS: IntegralDomainStructure> MultiPolynomialStructure<RS>
 //TODO: replace integral domain with division ring structure
 where
-    MultiPolynomialStructure<RS>: Structure<Set = MultiPolynomial<RS::Set>> + ToStringStructure,
+    MultiPolynomialStructure<RS>: SetStructure<Set = MultiPolynomial<RS::Set>> + ToStringStructure,
 {
     pub fn is_symmetric(
         &self,
@@ -131,7 +131,7 @@ where
         );
         // println!("first_vars={:?} last_var={:?}", first_vars, last_var);
         // println!("r_sym = {}", self.elem_to_string(&r_sym));
-        let r = MultiPolynomialStructure::new(self.clone().into()).evaluate(
+        let r = MultiPolynomialStructure::new(self.clone()).evaluate(
             &r_sym.apply_map(|x| MultiPolynomial::constant(x.clone())),
             (0..first_vars.len())
                 .map(|i| (e[i].clone(), self.elementary_symmetric(i + 1, vars)))
@@ -207,7 +207,7 @@ where
 
         #[cfg(debug_assertions)]
         {
-            let poly_check = MultiPolynomialStructure::new(self.clone().into()).evaluate(
+            let poly_check = MultiPolynomialStructure::new(self.clone()).evaluate(
                 &poly_sym.apply_map(|x| MultiPolynomial::constant(x.clone())),
                 (0..e.len())
                     .map(|i| (e[i].clone(), self.elementary_symmetric(i + 1, &vars_clone)))
@@ -236,7 +236,7 @@ where
 impl<R: MetaType> MultiPolynomial<R>
 where
     R::Structure: IntegralDomainStructure,
-    MultiPolynomialStructure<R::Structure>: Structure<Set = Self> + ToStringStructure,
+    MultiPolynomialStructure<R::Structure>: SetStructure<Set = Self> + ToStringStructure,
 {
     pub fn is_symmetric(&self, vars: Vec<impl Borrow<Variable>>) -> bool {
         Self::structure().is_symmetric(vars, self)

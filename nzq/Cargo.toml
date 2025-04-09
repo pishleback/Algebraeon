@@ -18,5 +18,6 @@ malachite-base = "0.5.1"
 malachite-nz = { version = "0.5.1", features = ["random"] }
 malachite-q = "0.5.1"
 
+
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
