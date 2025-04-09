@@ -4,7 +4,8 @@ use super::{
 };
 use crate::{linear::matrix::*, polynomial::*, structure::*};
 use algebraeon_nzq::{
-    traits::{Abs, Fraction}, Integer, Natural, Rational, RationalCanonicalStructure
+    Integer, Natural, Rational, RationalCanonicalStructure,
+    traits::{Abs, Fraction},
 };
 use algebraeon_sets::structure::*;
 use itertools::Itertools;

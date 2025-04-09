@@ -102,14 +102,6 @@ mod tests {
             }
         }
 
-        impl PartialEqStructure for ACanonicalStructure {
-            fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-                a == b
-            }
-        }
-
-        impl EqStructure for ACanonicalStructure {}
-
         impl ToStringStructure for ACanonicalStructure {
             fn to_string(&self, elem: &Self::Set) -> String {
                 elem.to_string()

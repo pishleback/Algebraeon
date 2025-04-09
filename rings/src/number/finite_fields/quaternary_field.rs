@@ -12,14 +12,6 @@ pub enum QuaternaryField {
     Beta,
 }
 
-impl PartialEqStructure for QuaternaryFieldCanonicalStructure {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
-
-impl EqStructure for QuaternaryFieldCanonicalStructure {}
-
 impl ToStringStructure for QuaternaryFieldCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)

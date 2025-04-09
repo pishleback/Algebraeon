@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Ident};
+use syn::{DeriveInput, Ident, parse_macro_input};
 
 #[proc_macro_derive(CanonicalStructure)]
 pub fn derive_newtype(input: TokenStream) -> TokenStream {
@@ -14,7 +14,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct #newtype_name {}
-        
+
         impl #newtype_name {
             fn new() -> Self {
                 Self {}
@@ -27,9 +27,19 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             type Set = #name;
         }
 
+        impl PartialEqStructure for #newtype_name
+            where #name: Eq
+        {
+            fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+                a == b
+            }
+        }
+
+        impl EqStructure for #newtype_name {}
+
         impl MetaType for #name {
             type Structure = #newtype_name;
-        
+
             fn structure() -> Self::Structure {
                 #newtype_name::new()
             }

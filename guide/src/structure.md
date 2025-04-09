@@ -4,7 +4,7 @@
 
 In mathematics there are many instances of sets of sets and often these sets of sets parameterized by other sets. For example the set of integers modulo \\(n\\) is defined for every natural number \\(n \in \mathbb{N}\\). A mathematician would like to think that there exists infinitely many types, \\(\frac{\mathbb{Z}}{n \mathbb{Z}}\\), one for each natural number \\(n\\). However, in the world of Rust we now have a problem since it is not in general possible (except in simple cases, for example by using const generics) to define infinitely many types, one for each instance of another type.
 
-Algebraeons workaround for this problem is to use instances of certain types (types which implementing the `Structure` trait), rather than types themselves, to represent mathematical sets of sets. In the example of the integers modulo \\(n\\), one might proceed as follows
+Algebraeons workaround for this problem is to use instances of certain types (types which implementing the `Structure` trait), rather than types themselves, to represent mathematical sets of sets. In the case integers modulo \\(n\\), one might proceed as follows
 
 ```
 use algebraeon::nzq::{Natural, Integer};

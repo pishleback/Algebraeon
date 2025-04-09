@@ -435,14 +435,6 @@ impl Display for RealAlgebraic {
     }
 }
 
-impl PartialEqStructure for RealAlgebraicCanonicalStructure {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
-
-impl EqStructure for RealAlgebraicCanonicalStructure {}
-
 impl ToStringStructure for RealAlgebraicCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)

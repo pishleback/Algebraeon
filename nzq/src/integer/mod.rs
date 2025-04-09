@@ -26,14 +26,6 @@ impl Integer {
     }
 }
 
-impl PartialEqStructure for IntegerCanonicalStructure {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
-
-impl EqStructure for IntegerCanonicalStructure {}
-
 impl ToStringStructure for IntegerCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)

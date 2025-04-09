@@ -37,14 +37,6 @@ impl Natural {
     }
 }
 
-impl PartialEqStructure for NaturalCanonicalStructure {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
-
-impl EqStructure for NaturalCanonicalStructure {}
-
 impl ToStringStructure for NaturalCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)

@@ -15,14 +15,6 @@ use std::{
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
 pub struct Rational(malachite_q::Rational);
 
-impl PartialEqStructure for RationalCanonicalStructure {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
-
-impl EqStructure for RationalCanonicalStructure {}
-
 impl ToStringStructure for RationalCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)

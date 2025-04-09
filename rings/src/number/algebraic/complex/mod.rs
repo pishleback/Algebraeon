@@ -580,14 +580,6 @@ impl Display for ComplexAlgebraic {
     }
 }
 
-impl PartialEqStructure for ComplexAlgebraicCanonicalStructure {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
-
-impl EqStructure for ComplexAlgebraicCanonicalStructure {}
-
 impl ToStringStructure for ComplexAlgebraicCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
