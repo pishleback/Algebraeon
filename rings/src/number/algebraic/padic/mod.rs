@@ -692,6 +692,10 @@ pub mod structure {
 
     impl SetStructure for PAdicAlgebraicStructure {
         type Set = PAdicAlgebraic;
+
+        fn is_element(&self, x: &Self::Set) -> bool {
+            &self.p == x.p()
+        }
     }
 
     impl PAdicAlgebraicStructure {
@@ -703,23 +707,10 @@ pub mod structure {
         }
     }
 
-    impl PAdicAlgebraicStructure {
-        fn check_is_element(&self, a: &<Self as SetStructure>::Set) {
-            // #[cfg(debug_assertions)]
-            if &self.p != a.p() {
-                panic!(
-                    "{}-adic structure cannot use {}-adic elements",
-                    self.p,
-                    a.p()
-                );
-            }
-        }
-    }
-
     impl EqStructure for PAdicAlgebraicStructure {
         fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-            self.check_is_element(a);
-            self.check_is_element(b);
+            debug_assert!(self.is_element(a));
+            debug_assert!(self.is_element(b));
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     PAdicRational::equal(a, b)
@@ -749,8 +740,8 @@ pub mod structure {
         }
 
         fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-            self.check_is_element(a);
-            self.check_is_element(b);
+            debug_assert!(self.is_element(a));
+            debug_assert!(self.is_element(b));
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     PAdicAlgebraic::Rational(PAdicRational::add(a, b))
@@ -768,8 +759,8 @@ pub mod structure {
         }
 
         fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-            self.check_is_element(a);
-            self.check_is_element(b);
+            debug_assert!(self.is_element(a));
+            debug_assert!(self.is_element(b));
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     PAdicAlgebraic::Rational(PAdicRational {
@@ -788,14 +779,14 @@ pub mod structure {
 
     impl RingStructure for PAdicAlgebraicStructure {
         fn neg(&self, a: &Self::Set) -> Self::Set {
-            self.check_is_element(a);
+            debug_assert!(self.is_element(a));
             a.clone().neg()
         }
     }
 
     impl UnitsStructure for PAdicAlgebraicStructure {
         fn inv(&self, a: &PAdicAlgebraic) -> Result<PAdicAlgebraic, RingDivisionError> {
-            self.check_is_element(a);
+            debug_assert!(self.is_element(a));
             match a {
                 PAdicAlgebraic::Rational(a) => Ok(PAdicAlgebraic::Rational(a.clone().inv()?)),
                 PAdicAlgebraic::Algebraic(a) => Ok(a.clone().inv_mut()?),
@@ -805,8 +796,8 @@ pub mod structure {
 
     impl IntegralDomainStructure for PAdicAlgebraicStructure {
         fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-            self.check_is_element(a);
-            self.check_is_element(b);
+            debug_assert!(self.is_element(a));
+            debug_assert!(self.is_element(b));
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     return Ok(PAdicAlgebraic::Rational(PAdicRational {

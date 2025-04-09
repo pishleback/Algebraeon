@@ -24,6 +24,10 @@ impl Structure for IntegersModuloN {}
 // Implement `SetStructure` to indicate that instances of `IntegersModuloN` represent sets whose elements are represented by instances of `Integer`.
 impl SetStructure for IntegersModuloN {
     type Set = Integer;
+
+    fn is_element(&self, x : &Integer) -> bool {
+        x < &self.n
+    }
 }
 
 // Implement `EqStructure` so that integers can be compared for equality modulo `n`.
@@ -46,7 +50,7 @@ impl SemiRingStructure for IntegersModuloN {
     }
 
     fn one(&self) -> Self::Set {
-        Integer::ONE
+        (Integer::ONE % &self.n).into()
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -59,7 +63,7 @@ impl SemiRingStructure for IntegersModuloN {
 }
 impl RingStructure for IntegersModuloN {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        -a
+        (-a % &self.n).into()
     }
 }
 

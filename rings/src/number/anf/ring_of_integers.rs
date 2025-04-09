@@ -163,7 +163,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         elem: &RingOfIntegersWithIntegralBasisElement,
     ) -> Polynomial<Rational> {
         let n = self.degree();
-        debug_assert_eq!(elem.coefficients.len(), n);
+        debug_assert!(self.is_element(elem));
         self.algebraic_number_field.sum(
             (0..n)
                 .map(|i| self.integral_basis[i].mul_scalar(&Rational::from(&elem.coefficients[i])))
@@ -208,6 +208,10 @@ impl Structure for RingOfIntegersWithIntegralBasisStructure {}
 
 impl SetStructure for RingOfIntegersWithIntegralBasisStructure {
     type Set = RingOfIntegersWithIntegralBasisElement;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        x.coefficients.len() == self.degree()
+    }
 }
 
 impl EqStructure for RingOfIntegersWithIntegralBasisStructure {
@@ -231,8 +235,8 @@ impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let n = self.degree();
-        debug_assert_eq!(a.coefficients.len(), n);
-        debug_assert_eq!(b.coefficients.len(), n);
+        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(b));
         let coefficients = (0..n)
             .map(|i| &a.coefficients[i] + &b.coefficients[i])
             .collect();
@@ -241,8 +245,8 @@ impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let n = self.degree();
-        debug_assert_eq!(a.coefficients.len(), n);
-        debug_assert_eq!(b.coefficients.len(), n);
+        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(b));
         match &self.mul_crossterms {
             Some(mul_crossterms) => {
                 // Used cached cross-terms

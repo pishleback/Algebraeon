@@ -216,3 +216,34 @@ impl<
         self.a_to_b.preimage(&self.b_to_c.preimage(x))
     }
 }
+
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub struct FunctionFiniteDomain<Domain: FiniteSetStructure, Range: SetStructure> {
+//     domain: Domain,
+//     range: Range,
+//     // func.len() == domain.size()
+//     func: Vec<Range>,
+// }
+
+// impl<Domain: FiniteSetStructure, Range: SetStructure> Structure
+//     for FunctionFiniteDomain<Domain, Range>
+// {
+// }
+
+// impl<Domain: FiniteSetStructure, Range: SetStructure> MorphismStructure<Domain, Range>
+//     for FunctionFiniteDomain<Domain, Range>
+// {
+//     fn domain(&self) -> &Domain {
+//         &self.domain
+//     }
+
+//     fn range(&self) -> &Range {
+//         &self.range
+//     }
+// }
+
+// impl<Domain: FiniteSetStructure, Range: SetStructure> SetStructure for Morphism<Domain, Range> {
+//     type Set = Vec<Domain>;
+// }
+
+// impl<Domain: FiniteSetStructure, Range: SetStructure>  FiniteSetStructure for Morphism<Domain, Range>

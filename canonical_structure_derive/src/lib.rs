@@ -25,6 +25,10 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
 
         impl SetStructure for #newtype_name {
             type Set = #name;
+
+            fn is_element(&self, _x : &Self::Set) -> bool {
+                true
+            }
         }
 
         impl EqStructure for #newtype_name

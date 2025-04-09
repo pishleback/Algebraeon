@@ -7,6 +7,10 @@ pub trait Structure: Clone + Debug + PartialEq + Eq {}
 /// structure, for example, the structure of a ring.
 pub trait SetStructure: Structure {
     type Set: Clone + Debug;
+
+    /// Some instances of Self::Set may not be valid to represent elements of this set.
+    /// Return `true` if `x` is a valid element and `false` if not.
+    fn is_element(&self, x: &Self::Set) -> bool;
 }
 
 pub trait MetaType: Clone + Debug {
@@ -35,13 +39,18 @@ pub trait EqStructure: SetStructure {
 
 pub trait CountableSetStructure: SetStructure {
     /// Yield distinct elements of the set such that every element eventually appears.
+    /// Always yields elements in the same order.
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set>;
 }
 
 pub trait FiniteSetStructure: CountableSetStructure {
     /// A list of all elements in the set.
+    /// Always returns elements in the same order.
     fn list_all_elements(&self) -> Vec<Self::Set> {
         self.generate_all_elements().collect()
+    }
+    fn size(&self) -> usize {
+        self.list_all_elements().len()
     }
 }
 
@@ -87,6 +96,10 @@ mod tests {
 
         impl SetStructure for A {
             type Set = usize;
+
+            fn is_element(&self, _x: &Self::Set) -> bool {
+                true
+            }
         }
 
         impl ToStringStructure for A {

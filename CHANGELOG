@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
  - Some structure bits for integral closures, dedekind domains, ideal factorization. None yet implemented but I plan to do implementations of these in the context of algebraic number fields.
  - Removed reference counters in favour of clones for structures - in most situations the structures are empty anyway.
  - Merged EqStructure and PartialEqStructure.
+ - Added is_element() to SetStructure.
 
 
 ## [0.0.11] - 2025-03-2025

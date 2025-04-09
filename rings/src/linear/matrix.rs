@@ -249,6 +249,10 @@ impl<RS: SetStructure> Structure for MatrixStructure<RS> {}
 
 impl<RS: SetStructure> SetStructure for MatrixStructure<RS> {
     type Set = Matrix<RS::Set>;
+    
+    fn is_element(&self, _x: &Self::Set) -> bool {
+        true
+    }
 }
 
 impl<RS: SetStructure> MatrixStructure<RS> {

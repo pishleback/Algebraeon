@@ -31,6 +31,9 @@ impl<const IS_FIELD: bool> CountableSetStructure
 impl<const IS_FIELD: bool> FiniteSetStructure
     for QuotientStructure<IntegerCanonicalStructure, IS_FIELD>
 {
+    fn size(&self) -> usize {
+        self.modulus().abs().try_into().unwrap()
+    }
 }
 
 #[cfg(test)]

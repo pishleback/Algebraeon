@@ -249,6 +249,10 @@ mod dminusone_test {
     impl Structure for DMinusOneTestSemigroup {}
     impl SetStructure for DMinusOneTestSemigroup {
         type Set = DMinusOneTestSemigroupElem;
+        
+        fn is_element(&self, _x: &Self::Set) -> bool {
+            true
+        }
     }
     impl SemigroupStructure for DMinusOneTestSemigroup {
         fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {

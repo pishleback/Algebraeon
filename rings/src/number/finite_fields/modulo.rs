@@ -126,6 +126,10 @@ impl<const N: usize> Structure for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> SetStructure for ModuloCanonicalStructure<N> {
     type Set = Modulo<N>;
+    
+    fn is_element(&self, _x: &Self::Set) -> bool {
+        true
+    }
 }
 
 impl<const N: usize> MetaType for Modulo<N> {
@@ -204,7 +208,11 @@ impl<const N: usize> CountableSetStructure for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> FiniteSetStructure for ModuloCanonicalStructure<N> {}
+impl<const N: usize> FiniteSetStructure for ModuloCanonicalStructure<N> {
+    fn size(&self) -> usize {
+        N
+    }
+}
 
 macro_rules! impl_field {
     ($N: literal) => {
