@@ -126,7 +126,7 @@ impl<const N: usize> Structure for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> SetStructure for ModuloCanonicalStructure<N> {
     type Set = Modulo<N>;
-    
+
     fn is_element(&self, _x: &Self::Set) -> bool {
         true
     }

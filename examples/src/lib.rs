@@ -5,7 +5,7 @@ include!(concat!(env!("OUT_DIR"), "/generated_docs.rs"));
 #[cfg(test)]
 mod tests {
     use algebraeon::{rings::number::finite_fields::modulo::Modulo, sets::structure::*};
-    
+
     #[test]
     fn enumerate_functions_finite_sets() {
         let fns = Morphisms::new(Modulo::<3>::structure(), Modulo::<4>::structure());

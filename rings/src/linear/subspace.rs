@@ -135,7 +135,7 @@ impl<RS: BezoutDomainStructure> Structure for LinearLatticeStructure<RS> {}
 
 impl<RS: BezoutDomainStructure> SetStructure for LinearLatticeStructure<RS> {
     type Set = LinearLattice<RS::Set>;
-    
+
     fn is_element(&self, _x: &Self::Set) -> bool {
         true
     }
@@ -658,7 +658,7 @@ impl<RS: BezoutDomainStructure> Structure for AffineLatticeStructure<RS> {}
 
 impl<RS: BezoutDomainStructure> SetStructure for AffineLatticeStructure<RS> {
     type Set = AffineLattice<RS::Set>;
-    
+
     fn is_element(&self, _x: &Self::Set) -> bool {
         true
     }

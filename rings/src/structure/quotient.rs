@@ -81,7 +81,7 @@ impl<RS: EuclideanDivisionStructure, const IS_FIELD: bool> SetStructure
     for QuotientStructure<RS, IS_FIELD>
 {
     type Set = RS::Set;
-    
+
     fn is_element(&self, _x: &Self::Set) -> bool {
         true
     }

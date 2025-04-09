@@ -430,7 +430,7 @@ impl<RS: RingStructure> MultiPolynomialStructure<RS> {
 
 impl<RS: RingStructure> SetStructure for MultiPolynomialStructure<RS> {
     type Set = MultiPolynomial<RS::Set>;
-    
+
     fn is_element(&self, _x: &Self::Set) -> bool {
         true
     }

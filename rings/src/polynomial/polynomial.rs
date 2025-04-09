@@ -76,7 +76,7 @@ impl<RS: SemiRingStructure> Structure for PolynomialStructure<RS> {}
 
 impl<RS: SemiRingStructure> SetStructure for PolynomialStructure<RS> {
     type Set = Polynomial<RS::Set>;
-    
+
     fn is_element(&self, _x: &Self::Set) -> bool {
         true
     }

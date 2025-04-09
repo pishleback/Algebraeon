@@ -115,14 +115,12 @@ impl<Field: FieldStructure> Function<Field, FieldExtensionByPolynomialQuotientAl
     }
 }
 
-impl<Field: FieldStructure>
-    RingHomomorphism<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
+impl<Field: FieldStructure> RingHomomorphism<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
 }
 
-impl<Field: FieldStructure>
-    InjectiveFunction<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
+impl<Field: FieldStructure> InjectiveFunction<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn try_preimage(&self, x: &Polynomial<Field::Set>) -> Option<Field::Set> {
