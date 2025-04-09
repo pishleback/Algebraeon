@@ -38,17 +38,3 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
-
-
-        // impl std::ops::Deref for #newtype_name {
-        //     type Target = #name;
-        //     fn deref(&self) -> &Self::Target {
-        //         &self.0
-        //     }
-        // }
-
-        // impl std::fmt::Display for #newtype_name {
-        //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        //         write!(f, "{}", self.0)
-        //     }
-        // }
