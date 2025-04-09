@@ -11,7 +11,7 @@ use std::{
 };
 
 /// Represent an integer {..., -2, -1, 0, 1, 2, ...}
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CannonicalStructure)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
 pub struct Integer(malachite_nz::integer::Integer);
 
 impl Integer {
@@ -26,15 +26,15 @@ impl Integer {
     }
 }
 
-impl PartialEqStructure for IntegerCannonicalStructure {
+impl PartialEqStructure for IntegerCanonicalStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
 
-impl EqStructure for IntegerCannonicalStructure {}
+impl EqStructure for IntegerCanonicalStructure {}
 
-impl ToStringStructure for IntegerCannonicalStructure {
+impl ToStringStructure for IntegerCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }

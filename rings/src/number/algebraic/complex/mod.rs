@@ -500,7 +500,7 @@ impl ComplexAlgebraicRoot {
     }
 }
 
-#[derive(Debug, Clone, CannonicalStructure)]
+#[derive(Debug, Clone, CanonicalStructure)]
 pub enum ComplexAlgebraic {
     Real(RealAlgebraic),
     Complex(ComplexAlgebraicRoot),
@@ -580,21 +580,21 @@ impl Display for ComplexAlgebraic {
     }
 }
 
-impl PartialEqStructure for ComplexAlgebraicCannonicalStructure {
+impl PartialEqStructure for ComplexAlgebraicCanonicalStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
 
-impl EqStructure for ComplexAlgebraicCannonicalStructure {}
+impl EqStructure for ComplexAlgebraicCanonicalStructure {}
 
-impl ToStringStructure for ComplexAlgebraicCannonicalStructure {
+impl ToStringStructure for ComplexAlgebraicCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
 }
 
-impl SemiRingStructure for ComplexAlgebraicCannonicalStructure {
+impl SemiRingStructure for ComplexAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
     }
@@ -805,7 +805,7 @@ impl SemiRingStructure for ComplexAlgebraicCannonicalStructure {
     }
 }
 
-impl RingStructure for ComplexAlgebraicCannonicalStructure {
+impl RingStructure for ComplexAlgebraicCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         match a {
             ComplexAlgebraic::Real(root) => ComplexAlgebraic::Real(RealAlgebraic::neg(root)),
@@ -814,7 +814,7 @@ impl RingStructure for ComplexAlgebraicCannonicalStructure {
     }
 }
 
-impl UnitsStructure for ComplexAlgebraicCannonicalStructure {
+impl UnitsStructure for ComplexAlgebraicCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         // println!("inv {:?}", a);
         // a.check_invariants().unwrap();
@@ -926,15 +926,15 @@ impl UnitsStructure for ComplexAlgebraicCannonicalStructure {
     }
 }
 
-impl IntegralDomainStructure for ComplexAlgebraicCannonicalStructure {
+impl IntegralDomainStructure for ComplexAlgebraicCanonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         Ok(self.mul(a, &self.inv(b)?))
     }
 }
 
-impl FieldStructure for ComplexAlgebraicCannonicalStructure {}
+impl FieldStructure for ComplexAlgebraicCanonicalStructure {}
 
-impl CharZeroStructure for ComplexAlgebraicCannonicalStructure {
+impl CharZeroStructure for ComplexAlgebraicCanonicalStructure {
     fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
         match alg {
             ComplexAlgebraic::Real(real_alg) => real_alg.try_to_int(),
@@ -943,9 +943,9 @@ impl CharZeroStructure for ComplexAlgebraicCannonicalStructure {
     }
 }
 
-impl ComplexSubsetStructure for ComplexAlgebraicCannonicalStructure {}
+impl ComplexSubsetStructure for ComplexAlgebraicCanonicalStructure {}
 
-impl ComplexConjugateStructure for ComplexAlgebraicCannonicalStructure {
+impl ComplexConjugateStructure for ComplexAlgebraicCanonicalStructure {
     fn conjugate(&self, x: &Self::Set) -> Self::Set {
         match x {
             ComplexAlgebraic::Real(x) => ComplexAlgebraic::Real(x.clone()),
@@ -954,7 +954,7 @@ impl ComplexConjugateStructure for ComplexAlgebraicCannonicalStructure {
     }
 }
 
-impl PositiveRealNthRootStructure for ComplexAlgebraicCannonicalStructure {
+impl PositiveRealNthRootStructure for ComplexAlgebraicCanonicalStructure {
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
         match x {
             ComplexAlgebraic::Real(x) => Ok(ComplexAlgebraic::Real(x.nth_root(n)?)),

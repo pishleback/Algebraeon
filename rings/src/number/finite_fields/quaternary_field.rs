@@ -4,7 +4,7 @@ use algebraeon_sets::structure::*;
 use std::fmt::Display;
 
 //the finite field of 4 elements
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, CannonicalStructure)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, CanonicalStructure)]
 pub enum QuaternaryField {
     Zero,
     One,
@@ -12,15 +12,15 @@ pub enum QuaternaryField {
     Beta,
 }
 
-impl PartialEqStructure for QuaternaryFieldCannonicalStructure {
+impl PartialEqStructure for QuaternaryFieldCanonicalStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
 
-impl EqStructure for QuaternaryFieldCannonicalStructure {}
+impl EqStructure for QuaternaryFieldCanonicalStructure {}
 
-impl ToStringStructure for QuaternaryFieldCannonicalStructure {
+impl ToStringStructure for QuaternaryFieldCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
@@ -37,7 +37,7 @@ impl Display for QuaternaryField {
     }
 }
 
-impl SemiRingStructure for QuaternaryFieldCannonicalStructure {
+impl SemiRingStructure for QuaternaryFieldCanonicalStructure {
     fn zero(&self) -> Self::Set {
         QuaternaryField::Zero
     }
@@ -76,19 +76,19 @@ impl SemiRingStructure for QuaternaryFieldCannonicalStructure {
     }
 }
 
-impl RingStructure for QuaternaryFieldCannonicalStructure {
+impl RingStructure for QuaternaryFieldCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         a.clone()
     }
 }
 
-impl UnitsStructure for QuaternaryFieldCannonicalStructure {
+impl UnitsStructure for QuaternaryFieldCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
 }
 
-impl IntegralDomainStructure for QuaternaryFieldCannonicalStructure {
+impl IntegralDomainStructure for QuaternaryFieldCanonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match (&a, &b) {
             (_, QuaternaryField::Zero) => Err(RingDivisionError::DivideByZero),
@@ -104,9 +104,9 @@ impl IntegralDomainStructure for QuaternaryFieldCannonicalStructure {
     }
 }
 
-impl FieldStructure for QuaternaryFieldCannonicalStructure {}
+impl FieldStructure for QuaternaryFieldCanonicalStructure {}
 
-impl FiniteUnitsStructure for QuaternaryFieldCannonicalStructure {
+impl FiniteUnitsStructure for QuaternaryFieldCanonicalStructure {
     fn all_units(&self) -> Vec<Self::Set> {
         vec![
             QuaternaryField::One,
@@ -116,7 +116,7 @@ impl FiniteUnitsStructure for QuaternaryFieldCannonicalStructure {
     }
 }
 
-impl FiniteFieldStructure for QuaternaryFieldCannonicalStructure {
+impl FiniteFieldStructure for QuaternaryFieldCanonicalStructure {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (Natural::from(2u8), Natural::from(2u8))
     }

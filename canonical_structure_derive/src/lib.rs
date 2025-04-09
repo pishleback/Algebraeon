@@ -4,12 +4,12 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Ident};
 
-#[proc_macro_derive(CannonicalStructure)]
+#[proc_macro_derive(CanonicalStructure)]
 pub fn derive_newtype(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let name = input.ident;
-    let newtype_name = Ident::new(&format!("{}CannonicalStructure", name), name.span());
+    let newtype_name = Ident::new(&format!("{}CanonicalStructure", name), name.span());
 
     let expanded = quote! {
         #[derive(Debug, Clone, PartialEq, Eq)]

@@ -4,13 +4,13 @@ use super::{
 };
 use crate::{linear::matrix::*, polynomial::*, structure::*};
 use algebraeon_nzq::{
-    traits::{Abs, Fraction}, Integer, Natural, Rational, RationalCannonicalStructure
+    traits::{Abs, Fraction}, Integer, Natural, Rational, RationalCanonicalStructure
 };
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
 pub type AlgebraicNumberFieldStructure =
-    FieldExtensionByPolynomialQuotientAlias<RationalCannonicalStructure>;
+    FieldExtensionByPolynomialQuotientAlias<RationalCanonicalStructure>;
 
 impl Polynomial<Rational> {
     pub fn algebraic_number_field(self) -> AlgebraicNumberFieldStructure {

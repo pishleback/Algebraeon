@@ -888,7 +888,7 @@ impl<Field: MetaType> Polynomial<Field>
 where
     Field::Structure: FieldStructure,
     PrincipalSubringInclusion<Field::Structure>:
-        FieldOfFractionsInclusionStructure<IntegerCannonicalStructure, Field::Structure>,
+        FieldOfFractionsInclusionStructure<IntegerCanonicalStructure, Field::Structure>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {
         factor_primitive_fof(
@@ -1088,7 +1088,7 @@ mod tests {
     }
 
     #[test]
-    fn test_display_poly_over_display_cannonical_ring() {
+    fn test_display_poly_over_display_canonical_ring() {
         let f = Polynomial {
             coeffs: vec![
                 Integer::from(-2),
@@ -1102,10 +1102,10 @@ mod tests {
         println!("{}", f);
         println!("{}", f.into_ergonomic());
         //    Integer : Display
-        // => CannonicalRS<Integer> : DisplayableRSStructure
-        // => PolynomialStructure<CannonicalRS<Integer>> : DisplayableRSStructure
-        // => CannonicalRS<Polynomial<Integer>> : DisplayableRSStructure
-        // => Polynomial<Integer> : Display AND RSElement<CannonicalRS<Polynomial<Integer>>> : Display
+        // => CanonicalRS<Integer> : DisplayableRSStructure
+        // => PolynomialStructure<CanonicalRS<Integer>> : DisplayableRSStructure
+        // => CanonicalRS<Polynomial<Integer>> : DisplayableRSStructure
+        // => Polynomial<Integer> : Display AND RSElement<CanonicalRS<Polynomial<Integer>>> : Display
     }
 
     #[test]

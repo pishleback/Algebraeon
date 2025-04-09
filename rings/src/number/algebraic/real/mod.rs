@@ -346,7 +346,7 @@ impl RealAlgebraicRoot {
     }
 }
 
-#[derive(Debug, Clone, Hash, CannonicalStructure)]
+#[derive(Debug, Clone, Hash, CanonicalStructure)]
 pub enum RealAlgebraic {
     Rational(Rational),
     Real(RealAlgebraicRoot),
@@ -400,7 +400,7 @@ impl RealAlgebraic {
     }
 }
 
-impl PositiveRealNthRootStructure for RealAlgebraicCannonicalStructure {
+impl PositiveRealNthRootStructure for RealAlgebraicCanonicalStructure {
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
         nth_root(x, n)
     }
@@ -435,21 +435,21 @@ impl Display for RealAlgebraic {
     }
 }
 
-impl PartialEqStructure for RealAlgebraicCannonicalStructure {
+impl PartialEqStructure for RealAlgebraicCanonicalStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
 
-impl EqStructure for RealAlgebraicCannonicalStructure {}
+impl EqStructure for RealAlgebraicCanonicalStructure {}
 
-impl ToStringStructure for RealAlgebraicCannonicalStructure {
+impl ToStringStructure for RealAlgebraicCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
 }
 
-impl SemiRingStructure for RealAlgebraicCannonicalStructure {
+impl SemiRingStructure for RealAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(0))
     }
@@ -598,7 +598,7 @@ impl SemiRingStructure for RealAlgebraicCannonicalStructure {
     }
 }
 
-impl RingStructure for RealAlgebraicCannonicalStructure {
+impl RingStructure for RealAlgebraicCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         match a {
             RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
@@ -607,7 +607,7 @@ impl RingStructure for RealAlgebraicCannonicalStructure {
     }
 }
 
-impl UnitsStructure for RealAlgebraicCannonicalStructure {
+impl UnitsStructure for RealAlgebraicCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let mut a = a.clone();
         match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {
@@ -678,7 +678,7 @@ impl UnitsStructure for RealAlgebraicCannonicalStructure {
     }
 }
 
-impl IntegralDomainStructure for RealAlgebraicCannonicalStructure {
+impl IntegralDomainStructure for RealAlgebraicCanonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.inv(b) {
             Ok(b_inv) => Ok(self.mul(a, &b_inv)),
@@ -687,9 +687,9 @@ impl IntegralDomainStructure for RealAlgebraicCannonicalStructure {
     }
 }
 
-impl FieldStructure for RealAlgebraicCannonicalStructure {}
+impl FieldStructure for RealAlgebraicCanonicalStructure {}
 
-impl CharZeroStructure for RealAlgebraicCannonicalStructure {
+impl CharZeroStructure for RealAlgebraicCanonicalStructure {
     fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
         match alg {
             RealAlgebraic::Rational(rat) => rat.try_to_int(),
@@ -698,17 +698,17 @@ impl CharZeroStructure for RealAlgebraicCannonicalStructure {
     }
 }
 
-impl ComplexSubsetStructure for RealAlgebraicCannonicalStructure {}
+impl ComplexSubsetStructure for RealAlgebraicCanonicalStructure {}
 
-impl RealSubsetStructure for RealAlgebraicCannonicalStructure {}
+impl RealSubsetStructure for RealAlgebraicCanonicalStructure {}
 
-impl OrderedRingStructure for RealAlgebraicCannonicalStructure {
+impl OrderedRingStructure for RealAlgebraicCanonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         a.cmp(b)
     }
 }
 
-impl RealToFloatStructure for RealAlgebraicCannonicalStructure {
+impl RealToFloatStructure for RealAlgebraicCanonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         match x {
             RealAlgebraic::Rational(x) => x.as_f64(),
@@ -724,7 +724,7 @@ impl RealToFloatStructure for RealAlgebraicCannonicalStructure {
     }
 }
 
-impl RealRoundingStructure for RealAlgebraicCannonicalStructure {
+impl RealRoundingStructure for RealAlgebraicCanonicalStructure {
     fn floor(&self, _x: &Self::Set) -> Integer {
         todo!()
     }

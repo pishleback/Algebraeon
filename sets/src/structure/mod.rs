@@ -5,7 +5,7 @@
 mod morphism;
 mod structure;
 
-pub use algebraeon_cannonical_structure_derive::CannonicalStructure;
+pub use algebraeon_canonical_structure_derive::CanonicalStructure;
 pub use morphism::{
     BijectiveFunctionStructure, CompositionMorphism, FunctionStructure, IdentityMorphism,
     InjectiveFunctionStructure, Morphism, MorphismStructure,

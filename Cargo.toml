@@ -9,7 +9,7 @@ members = [
     "drawing",
     "combinatorics",
     "examples", 
-    "algebraeon", "cannonical_structure_derive",
+    "algebraeon", "canonical_structure_derive",
 ]
 
 # https://github.com/pksunkara/cargo-workspaces

@@ -5,7 +5,7 @@ use algebraeon_sets::structure::*;
 pub mod factorization;
 pub mod functions;
 
-impl SemiRingStructure for NaturalCannonicalStructure {
+impl SemiRingStructure for NaturalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Natural::ZERO
     }

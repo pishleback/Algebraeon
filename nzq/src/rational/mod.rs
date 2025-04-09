@@ -12,18 +12,18 @@ use std::{
 };
 
 /// Represent a rational number - a number of the form `a`/`b` where `a` is an integer and `b` is a non-zero integer.
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CannonicalStructure)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
 pub struct Rational(malachite_q::Rational);
 
-impl PartialEqStructure for RationalCannonicalStructure {
+impl PartialEqStructure for RationalCanonicalStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
 
-impl EqStructure for RationalCannonicalStructure {}
+impl EqStructure for RationalCanonicalStructure {}
 
-impl ToStringStructure for RationalCannonicalStructure {
+impl ToStringStructure for RationalCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }

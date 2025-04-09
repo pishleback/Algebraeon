@@ -1,5 +1,5 @@
 use super::number_field::AlgebraicNumberFieldStructure;
-use crate::number::algebraic::complex::ComplexAlgebraicCannonicalStructure;
+use crate::number::algebraic::complex::ComplexAlgebraicCanonicalStructure;
 use crate::structure::*;
 use crate::{
     number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
@@ -58,7 +58,7 @@ impl ComplexAlgebraic {
 // use complex::*;
 // use  real::*;
 
-impl AlgebraicClosureStructure for ComplexAlgebraicCannonicalStructure {
+impl AlgebraicClosureStructure for ComplexAlgebraicCanonicalStructure {
     type BFS = <Rational as algebraeon_sets::structure::MetaType>::Structure;
 
     fn base_field(&self) -> Self::BFS {

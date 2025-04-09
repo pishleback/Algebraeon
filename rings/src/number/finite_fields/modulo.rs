@@ -120,37 +120,37 @@ impl<const N: usize> Display for Modulo<N> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ModuloCannonicalStructure<const N: usize> {}
+pub struct ModuloCanonicalStructure<const N: usize> {}
 
-impl<const N: usize> Structure for ModuloCannonicalStructure<N> {}
+impl<const N: usize> Structure for ModuloCanonicalStructure<N> {}
 
-impl<const N: usize> SetStructure for ModuloCannonicalStructure<N> {
+impl<const N: usize> SetStructure for ModuloCanonicalStructure<N> {
     type Set = Modulo<N>;
 }
 
 impl<const N: usize> MetaType for Modulo<N> {
-    type Structure = ModuloCannonicalStructure<N>;
+    type Structure = ModuloCanonicalStructure<N>;
 
     fn structure() -> Self::Structure {
-        ModuloCannonicalStructure {}
+        ModuloCanonicalStructure {}
     }
 }
 
-impl<const N: usize> PartialEqStructure for ModuloCannonicalStructure<N> {
+impl<const N: usize> PartialEqStructure for ModuloCanonicalStructure<N> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
 
-impl<const N: usize> EqStructure for ModuloCannonicalStructure<N> {}
+impl<const N: usize> EqStructure for ModuloCanonicalStructure<N> {}
 
-impl<const N: usize> ToStringStructure for ModuloCannonicalStructure<N> {
+impl<const N: usize> ToStringStructure for ModuloCanonicalStructure<N> {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
 }
 
-impl<const N: usize> SemiRingStructure for ModuloCannonicalStructure<N> {
+impl<const N: usize> SemiRingStructure for ModuloCanonicalStructure<N> {
     fn zero(&self) -> Self::Set {
         Modulo { x: 0 }
     }
@@ -174,7 +174,7 @@ impl<const N: usize> SemiRingStructure for ModuloCannonicalStructure<N> {
     }
 }
 
-impl<const N: usize> RingStructure for ModuloCannonicalStructure<N> {
+impl<const N: usize> RingStructure for ModuloCanonicalStructure<N> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         if a.x == 0 {
             Modulo { x: 0 }
@@ -184,7 +184,7 @@ impl<const N: usize> RingStructure for ModuloCannonicalStructure<N> {
     }
 }
 
-impl<const N: usize> UnitsStructure for ModuloCannonicalStructure<N> {
+impl<const N: usize> UnitsStructure for ModuloCanonicalStructure<N> {
     fn inv(&self, x: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if x == &self.zero() {
             Err(RingDivisionError::DivideByZero)
@@ -202,7 +202,7 @@ impl<const N: usize> UnitsStructure for ModuloCannonicalStructure<N> {
 
 macro_rules! impl_field {
     ($N: literal) => {
-        impl IntegralDomainStructure for ModuloCannonicalStructure<$N> {
+        impl IntegralDomainStructure for ModuloCanonicalStructure<$N> {
             fn div(
                 &self,
                 top: &Self::Set,
@@ -214,8 +214,8 @@ macro_rules! impl_field {
                 }
             }
         }
-        impl FieldStructure for ModuloCannonicalStructure<$N> {}
-        impl FiniteUnitsStructure for ModuloCannonicalStructure<$N> {
+        impl FieldStructure for ModuloCanonicalStructure<$N> {}
+        impl FiniteUnitsStructure for ModuloCanonicalStructure<$N> {
             fn all_units(&self) -> Vec<Modulo<$N>> {
                 let mut units = vec![];
                 for x in 1..$N {
@@ -224,7 +224,7 @@ macro_rules! impl_field {
                 units
             }
         }
-        impl FiniteFieldStructure for ModuloCannonicalStructure<$N> {
+        impl FiniteFieldStructure for ModuloCanonicalStructure<$N> {
             fn characteristic_and_power(&self) -> (Natural, Natural) {
                 (Natural::from($N as usize), Natural::from(1u8))
             }

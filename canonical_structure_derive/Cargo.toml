@@ -1,5 +1,5 @@
 [package]
-name = "algebraeon-cannonical-structure-derive"
+name = "algebraeon-canonical-structure-derive"
 version = "0.0.0"
 edition = "2024"
 

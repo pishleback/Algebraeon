@@ -22,7 +22,7 @@ impl<
 /// The unique ring homomorphism Z -> R of the integers into any ring R
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrincipalSubringInclusion<Ring: RingStructure> {
-    inclusion: Morphism<IntegerCannonicalStructure, Ring>,
+    inclusion: Morphism<IntegerCanonicalStructure, Ring>,
 }
 
 impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
@@ -35,10 +35,10 @@ impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
 
 impl<Ring: RingStructure> Structure for PrincipalSubringInclusion<Ring> {}
 
-impl<Ring: RingStructure> MorphismStructure<IntegerCannonicalStructure, Ring>
+impl<Ring: RingStructure> MorphismStructure<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
-    fn domain(&self) -> &IntegerCannonicalStructure {
+    fn domain(&self) -> &IntegerCanonicalStructure {
         self.inclusion.domain()
     }
 
@@ -47,7 +47,7 @@ impl<Ring: RingStructure> MorphismStructure<IntegerCannonicalStructure, Ring>
     }
 }
 
-impl<Ring: RingStructure> FunctionStructure<IntegerCannonicalStructure, Ring>
+impl<Ring: RingStructure> FunctionStructure<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
     fn image(&self, x: &Integer) -> <Ring as SetStructure>::Set {
@@ -55,18 +55,18 @@ impl<Ring: RingStructure> FunctionStructure<IntegerCannonicalStructure, Ring>
     }
 }
 
-impl<Ring: CharZeroStructure> InjectiveFunctionStructure<IntegerCannonicalStructure, Ring>
+impl<Ring: CharZeroStructure> InjectiveFunctionStructure<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
     fn try_preimage(
         &self,
         x: &<Ring as SetStructure>::Set,
-    ) -> Option<<IntegerCannonicalStructure as SetStructure>::Set> {
+    ) -> Option<<IntegerCanonicalStructure as SetStructure>::Set> {
         self.range().try_to_int(x)
     }
 }
 
-impl<Ring: RingStructure> RingHomomorphismStructure<IntegerCannonicalStructure, Ring>
+impl<Ring: RingStructure> RingHomomorphismStructure<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
 }

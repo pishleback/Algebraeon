@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "algebraeon-cannonical-structure-derive"
+name = "algebraeon-canonical-structure-derive"
 version = "0.0.0"
 dependencies = [
  "proc-macro2",
@@ -129,7 +129,7 @@ dependencies = [
 name = "algebraeon-sets"
 version = "0.0.11"
 dependencies = [
- "algebraeon-cannonical-structure-derive",
+ "algebraeon-canonical-structure-derive",
  "indexmap",
  "itertools 0.14.0",
  "malachite-base 0.5.1",

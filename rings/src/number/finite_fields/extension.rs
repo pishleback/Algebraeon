@@ -3,7 +3,7 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
-use super::modulo::ModuloCannonicalStructure;
+use super::modulo::ModuloCanonicalStructure;
 
 impl<FS: FiniteFieldStructure> FiniteUnitsStructure
     for FieldExtensionByPolynomialQuotientAlias<FS>
@@ -55,9 +55,9 @@ where
     )
 }
 
-pub fn f9() -> FieldExtensionByPolynomialQuotientAlias<ModuloCannonicalStructure<3>> {
+pub fn f9() -> FieldExtensionByPolynomialQuotientAlias<ModuloCanonicalStructure<3>> {
     use crate::number::finite_fields::modulo::*;
-    new_finite_field_extension::<ModuloCannonicalStructure<3>>(
+    new_finite_field_extension::<ModuloCanonicalStructure<3>>(
         Modulo::<3>::structure().into(),
         Polynomial::from_coeffs(vec![1, 1, 2]),
     )

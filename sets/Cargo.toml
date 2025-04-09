@@ -13,7 +13,7 @@ readme = "../README.md"
 name = "algebraeon_sets"
 
 [dependencies]
-algebraeon-cannonical-structure-derive = {path = "../cannonical_structure_derive" }
+algebraeon-canonical-structure-derive = {path = "../canonical_structure_derive" }
 indexmap = "2.8.0"
 itertools = "0.14.0"
 malachite-base = "0.5.1"

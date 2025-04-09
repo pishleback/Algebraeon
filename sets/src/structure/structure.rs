@@ -15,11 +15,11 @@ pub trait MetaType: Clone + Debug {
 }
 
 // #[derive(Debug, Clone)]
-// pub struct CannonicalStructure<T: MetaType> {
+// pub struct CanonicalStructure<T: MetaType> {
 //     _ghost: std::marker::PhantomData<T>,
 // }
 
-// impl<T: MetaType> CannonicalStructure<T> {
+// impl<T: MetaType> CanonicalStructure<T> {
 //     pub fn new() -> Self {
 //         Self {
 //             _ghost: PhantomData::default(),
@@ -27,19 +27,19 @@ pub trait MetaType: Clone + Debug {
 //     }
 // }
 
-// impl<T: MetaType> Structure for CannonicalStructure<T> {}
+// impl<T: MetaType> Structure for CanonicalStructure<T> {}
 
-// impl<T: MetaType> SetStructure for CannonicalStructure<T> {
+// impl<T: MetaType> SetStructure for CanonicalStructure<T> {
 //     type Set = T;
 // }
 
-// impl<T: MetaType> PartialEq for CannonicalStructure<T> {
+// impl<T: MetaType> PartialEq for CanonicalStructure<T> {
 //     fn eq(&self, _: &Self) -> bool {
 //         true
 //     }
 // }
 
-// impl<T: MetaType> Eq for CannonicalStructure<T> {}
+// impl<T: MetaType> Eq for CanonicalStructure<T> {}
 
 pub fn common_structure<S: SetStructure>(
     structure1: impl Borrow<S>,
@@ -55,7 +55,7 @@ pub fn common_structure<S: SetStructure>(
 pub trait ToStringStructure: SetStructure {
     fn to_string(&self, elem: &Self::Set) -> String;
 }
-// impl<T: MetaType + ToString> ToStringStructure for CannonicalStructure<T> {
+// impl<T: MetaType + ToString> ToStringStructure for CanonicalStructure<T> {
 //     fn to_string(&self, elem: &Self::Set) -> String {
 //         elem.to_string()
 //     }
@@ -64,14 +64,14 @@ pub trait ToStringStructure: SetStructure {
 pub trait PartialEqStructure: SetStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool;
 }
-// impl<T: MetaType + PartialEq> PartialEqStructure for CannonicalStructure<T> {
+// impl<T: MetaType + PartialEq> PartialEqStructure for CanonicalStructure<T> {
 //     fn equal(&self, a: &T, b: &T) -> bool {
 //         a == b
 //     }
 // }
 
 pub trait EqStructure: PartialEqStructure {}
-// impl<T: MetaType + Eq> EqStructure for CannonicalStructure<T> {}
+// impl<T: MetaType + Eq> EqStructure for CanonicalStructure<T> {}
 
 pub trait CountableSetStructure: SetStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set>;
@@ -85,13 +85,13 @@ pub trait FiniteSetStructure: CountableSetStructure {
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_cannonical_structure_derive::CannonicalStructure;
+    use algebraeon_canonical_structure_derive::CanonicalStructure;
 
     use super::*;
 
     #[test]
-    fn cannonical_structure() {
-        #[derive(Debug, Clone, PartialEq, Eq, CannonicalStructure)]
+    fn canonical_structure() {
+        #[derive(Debug, Clone, PartialEq, Eq, CanonicalStructure)]
         pub struct A {
             x: i32,
         }
@@ -102,15 +102,15 @@ mod tests {
             }
         }
 
-        impl PartialEqStructure for ACannonicalStructure {
+        impl PartialEqStructure for ACanonicalStructure {
             fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
                 a == b
             }
         }
 
-        impl EqStructure for ACannonicalStructure {}
+        impl EqStructure for ACanonicalStructure {}
 
-        impl ToStringStructure for ACannonicalStructure {
+        impl ToStringStructure for ACanonicalStructure {
             fn to_string(&self, elem: &Self::Set) -> String {
                 elem.to_string()
             }

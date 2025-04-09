@@ -2222,7 +2222,7 @@ impl<Field: MetaType> Matrix<Field>
 where
     Field::Structure: FieldStructure,
     PrincipalSubringInclusion<Field::Structure>:
-        FieldOfFractionsInclusionStructure<IntegerCannonicalStructure, Field::Structure>,
+        FieldOfFractionsInclusionStructure<IntegerCanonicalStructure, Field::Structure>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Matrix<Integer>) {
         factor_primitive_fof(&PrincipalSubringInclusion::new(Field::structure()), self)
