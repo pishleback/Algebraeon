@@ -14,33 +14,6 @@ pub trait MetaType: Clone + Debug {
     fn structure() -> Self::Structure;
 }
 
-// #[derive(Debug, Clone)]
-// pub struct CanonicalStructure<T: MetaType> {
-//     _ghost: std::marker::PhantomData<T>,
-// }
-
-// impl<T: MetaType> CanonicalStructure<T> {
-//     pub fn new() -> Self {
-//         Self {
-//             _ghost: PhantomData::default(),
-//         }
-//     }
-// }
-
-// impl<T: MetaType> Structure for CanonicalStructure<T> {}
-
-// impl<T: MetaType> SetStructure for CanonicalStructure<T> {
-//     type Set = T;
-// }
-
-// impl<T: MetaType> PartialEq for CanonicalStructure<T> {
-//     fn eq(&self, _: &Self) -> bool {
-//         true
-//     }
-// }
-
-// impl<T: MetaType> Eq for CanonicalStructure<T> {}
-
 pub fn common_structure<S: SetStructure>(
     structure1: impl Borrow<S>,
     structure2: impl Borrow<S>,
@@ -55,23 +28,11 @@ pub fn common_structure<S: SetStructure>(
 pub trait ToStringStructure: SetStructure {
     fn to_string(&self, elem: &Self::Set) -> String;
 }
-// impl<T: MetaType + ToString> ToStringStructure for CanonicalStructure<T> {
-//     fn to_string(&self, elem: &Self::Set) -> String {
-//         elem.to_string()
-//     }
-// }
 
 pub trait PartialEqStructure: SetStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool;
 }
-// impl<T: MetaType + PartialEq> PartialEqStructure for CanonicalStructure<T> {
-//     fn equal(&self, a: &T, b: &T) -> bool {
-//         a == b
-//     }
-// }
-
 pub trait EqStructure: PartialEqStructure {}
-// impl<T: MetaType + Eq> EqStructure for CanonicalStructure<T> {}
 
 pub trait CountableSetStructure: SetStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set>;
