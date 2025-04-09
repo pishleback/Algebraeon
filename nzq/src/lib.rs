@@ -7,7 +7,7 @@ mod rational;
 pub mod traits;
 
 pub use integer::Integer;
-pub use natural::Natural;
+pub use natural::{Natural, NaturalCannonicalStructure};
 pub use natural::choose;
 pub use natural::gcd;
 pub use natural::lcm;

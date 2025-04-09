@@ -5,11 +5,12 @@
 mod morphism;
 mod structure;
 
+pub use algebraeon_cannonical_structure_derive::CannonicalStructure;
 pub use morphism::{
     BijectiveFunctionStructure, CompositionMorphism, FunctionStructure, IdentityMorphism,
     InjectiveFunctionStructure, Morphism, MorphismStructure,
 };
 pub use structure::{
-    CannonicalStructure, EqStructure, MetaType, PartialEqStructure, SetStructure, Structure,
-    ToStringStructure, common_structure,
+    CannonicalStructure, CountableSetStructure, EqStructure, FiniteSetStructure, MetaType,
+    PartialEqStructure, SetStructure, Structure, ToStringStructure, common_structure,
 };

@@ -73,6 +73,16 @@ impl<T: MetaType + PartialEq> PartialEqStructure for CannonicalStructure<T> {
 pub trait EqStructure: PartialEqStructure {}
 impl<T: MetaType + Eq> EqStructure for CannonicalStructure<T> {}
 
+pub trait CountableSetStructure: SetStructure {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set>;
+}
+
+pub trait FiniteSetStructure: CountableSetStructure {
+    fn list_all_elements(&self) -> Vec<Self::Set> {
+        self.generate_all_elements().collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
