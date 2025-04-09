@@ -1,8 +1,10 @@
+use itertools::Itertools;
+
 use super::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-pub trait Morphism<Domain: Structure, Range: Structure>: Structure {
+pub trait Morphism<Domain: Structure, Range: Structure>: Debug + Clone {
     fn domain(&self) -> &Domain;
     fn range(&self) -> &Range;
 }
@@ -36,8 +38,6 @@ impl<X: Structure> IdentityMorphism<X> {
         Self { x }
     }
 }
-
-impl<X: Structure> Structure for IdentityMorphism<X> {}
 
 impl<X: Structure> Morphism<X, X> for IdentityMorphism<X> {
     fn domain(&self) -> &X {
@@ -117,11 +117,6 @@ impl<A: Structure, B: Structure, C: Structure, AB: Morphism<A, B>, BC: Morphism<
     }
 }
 
-impl<A: Structure, B: Structure, C: Structure, AB: Morphism<A, B>, BC: Morphism<B, C>> Structure
-    for CompositionMorphism<A, B, C, AB, BC>
-{
-}
-
 impl<A: Structure, B: Structure, C: Structure, AB: Morphism<A, B>, BC: Morphism<B, C>>
     Morphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
@@ -166,4 +161,48 @@ impl<
     fn preimage(&self, x: &C::Set) -> A::Set {
         self.a_to_b.preimage(&self.b_to_c.preimage(x))
     }
+}
+
+pub trait MorphismsStructure<Domain: Structure, Range: Structure>: SetStructure
+where
+    Self::Set: Morphism<Domain, Range>,
+{
+}
+
+/// Represent the morphisms from `domain` to `range`
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Morphisms<Domain: Structure, Range: Structure> {
+    domain: Domain,
+    range: Range,
+}
+
+impl<Domain: Structure, Range: Structure> Morphisms<Domain, Range> {
+    pub fn new(domain: Domain, range: Range) -> Self {
+        Self { domain, range }
+    }
+}
+
+impl<Domain: Structure, Range: Structure> Structure for Morphisms<Domain, Range> {}
+
+impl<Domain: FiniteSetStructure, Range: EqStructure> SetStructure for Morphisms<Domain, Range> {
+    type Set = Vec<Range::Set>;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        x.len() == self.domain.size() && x.iter().all(|y| self.range.is_element(y))
+    }
+}
+
+impl<Domain: FiniteSetStructure, Range: EqStructure + FiniteSetStructure> CountableSetStructure
+    for Morphisms<Domain, Range>
+{
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        (0..self.domain.size())
+            .map(|_| self.range.list_all_elements())
+            .multi_cartesian_product()
+    }
+}
+
+impl<Domain: FiniteSetStructure, Range: EqStructure + FiniteSetStructure> FiniteSetStructure
+    for Morphisms<Domain, Range>
+{
 }

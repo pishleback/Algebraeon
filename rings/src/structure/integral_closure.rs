@@ -10,11 +10,11 @@ struct FieldOfFractionsInclusionForIntegralClosure<
     R: IntegralDomainStructure,
     Q: FieldStructure,
     K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquareStructure<Z, R, Q, K, ZR, QK, ZQ, RK>,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
 > {
     z: PhantomData<Z>,
     r: PhantomData<R>,
@@ -32,11 +32,11 @@ impl<
     R: IntegralDomainStructure,
     Q: FieldStructure,
     K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquareStructure<Z, R, Q, K, ZR, QK, ZQ, RK>,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
 > FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
 {
     fn new(square: ICS) -> Self {
@@ -59,27 +59,12 @@ impl<
     R: IntegralDomainStructure,
     Q: FieldStructure,
     K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquareStructure<Z, R, Q, K, ZR, QK, ZQ, RK>,
-> Structure for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
-{
-}
-
-impl<
-    Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
-    Q: FieldStructure,
-    K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquareStructure<Z, R, Q, K, ZR, QK, ZQ, RK>,
-> Morphism<R, K>
-    for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
+> Morphism<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
 {
     fn domain(&self) -> &R {
         self.square.r_ring()
@@ -95,13 +80,12 @@ impl<
     R: IntegralDomainStructure,
     Q: FieldStructure,
     K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquareStructure<Z, R, Q, K, ZR, QK, ZQ, RK>,
-> Function<R, K>
-    for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
+> Function<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
 {
     fn image(&self, x: &R::Set) -> K::Set {
         self.square.r_to_k().image(x)
@@ -113,11 +97,11 @@ impl<
     R: IntegralDomainStructure,
     Q: FieldStructure,
     K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquareStructure<Z, R, Q, K, ZR, QK, ZQ, RK>,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
 > InjectiveFunction<R, K>
     for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
 {
@@ -131,12 +115,12 @@ impl<
     R: IntegralDomainStructure,
     Q: FieldStructure,
     K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquareStructure<Z, R, Q, K, ZR, QK, ZQ, RK>,
-> RingHomomorphismStructure<R, K>
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
+> RingHomomorphism<R, K>
     for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
 {
 }
@@ -146,12 +130,12 @@ impl<
     R: IntegralDomainStructure,
     Q: FieldStructure,
     K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquareStructure<Z, R, Q, K, ZR, QK, ZQ, RK>,
-> FieldOfFractionsInclusionStructure<R, K>
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
+> FieldOfFractionsInclusion<R, K>
     for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
 {
     fn numerator_and_denominator(&self, a: &K::Set) -> (R::Set, R::Set) {
@@ -182,16 +166,16 @@ impl<
 ///  - Q → K is a finite dimensional field extension
 ///
 /// This trait expresses that R is the integral closure of Z in K
-pub trait IntegralClosureSquareStructure<
+pub trait IntegralClosureSquare<
     Z: IntegralDomainStructure,
     R: IntegralDomainStructure,
     Q: FieldStructure,
     K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
->: Structure
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+>: Debug + Clone
 {
     fn z_ring(&self) -> &Z;
     fn r_ring(&self) -> &R;
@@ -206,7 +190,7 @@ pub trait IntegralClosureSquareStructure<
     /// The square should commute, so this should be both
     /// - z_to_q followed by q_to_k
     /// - z_to_r followed by r_to_k
-    fn z_to_k(&self) -> impl RingHomomorphismStructure<Z, K> + InjectiveFunction<Z, K> {
+    fn z_to_k(&self) -> impl RingHomomorphism<Z, K> + InjectiveFunction<Z, K> {
         CompositionMorphism::new(self.z_to_q().clone(), self.q_to_k().clone())
     }
 
@@ -256,56 +240,57 @@ pub trait IntegralClosureSquareStructure<
     */
 
     /// Every element of K is a fraction of elements of R
-    fn r_to_k_field_of_fractions(&self) -> impl FieldOfFractionsInclusionStructure<R, K> {
+    fn r_to_k_field_of_fractions(&self) -> impl FieldOfFractionsInclusion<R, K> {
         FieldOfFractionsInclusionForIntegralClosure::new(self.clone())
     }
 }
 
-pub struct IntegralClosureSquare<
-    Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
-    Q: FieldStructure,
-    K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-> {
-    z: PhantomData<Z>,
-    r: PhantomData<R>,
-    q: PhantomData<Q>,
-    k: PhantomData<K>,
-    z_to_r: ZR,
-    q_to_k: QK,
-    z_to_q: ZQ,
-    r_to_k: RK,
-}
+// #[derive(Clone)]
+// pub struct IntegralClosureSquare<
+//     Z: IntegralDomainStructure,
+//     R: IntegralDomainStructure,
+//     Q: FieldStructure,
+//     K: FieldStructure,
+//     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
+//     QK: FiniteDimensionalFieldExtension<Q, K>,
+//     ZQ: FieldOfFractionsInclusion<Z, Q>,
+//     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+// > {
+//     z: PhantomData<Z>,
+//     r: PhantomData<R>,
+//     q: PhantomData<Q>,
+//     k: PhantomData<K>,
+//     z_to_r: ZR,
+//     q_to_k: QK,
+//     z_to_q: ZQ,
+//     r_to_k: RK,
+// }
 
-impl<
-    Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
-    Q: FieldStructure,
-    K: FieldStructure,
-    ZR: RingHomomorphismStructure<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusionStructure<Z, Q>,
-    RK: RingHomomorphismStructure<R, K> + InjectiveFunction<R, K>,
-> IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>
-{
-    pub fn new(z_to_r: ZR, q_to_k: QK, z_to_q: ZQ, r_to_k: RK) -> Self {
-        assert_eq!(z_to_r.domain(), z_to_q.domain());
-        assert_eq!(q_to_k.domain(), z_to_q.range());
-        assert_eq!(z_to_r.range(), r_to_k.domain());
-        assert_eq!(q_to_k.range(), r_to_k.range());
-        Self {
-            z: PhantomData,
-            r: PhantomData,
-            q: PhantomData,
-            k: PhantomData,
-            z_to_r,
-            q_to_k,
-            z_to_q,
-            r_to_k,
-        }
-    }
-}
+// impl<
+//     Z: IntegralDomainStructure,
+//     R: IntegralDomainStructure,
+//     Q: FieldStructure,
+//     K: FieldStructure,
+//     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
+//     QK: FiniteDimensionalFieldExtension<Q, K>,
+//     ZQ: FieldOfFractionsInclusion<Z, Q>,
+//     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+// > IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>
+// {
+//     pub fn new(z_to_r: ZR, q_to_k: QK, z_to_q: ZQ, r_to_k: RK) -> Self {
+//         assert_eq!(z_to_r.domain(), z_to_q.domain());
+//         assert_eq!(q_to_k.domain(), z_to_q.range());
+//         assert_eq!(z_to_r.range(), r_to_k.domain());
+//         assert_eq!(q_to_k.range(), r_to_k.range());
+//         Self {
+//             z: PhantomData,
+//             r: PhantomData,
+//             q: PhantomData,
+//             k: PhantomData,
+//             z_to_r,
+//             q_to_k,
+//             z_to_q,
+//             r_to_k,
+//         }
+//     }
+// }

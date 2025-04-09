@@ -1390,7 +1390,7 @@ impl<RS: GreatestCommonDivisorStructure> MatrixStructure<RS> {
 pub fn factor_primitive_fof<
     Ring: GreatestCommonDivisorStructure,
     Field: FieldStructure,
-    Fof: FieldOfFractionsInclusionStructure<Ring, Field>,
+    Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
     fof_inclusion: &Fof,
     mat: &Matrix<Field::Set>,
@@ -2229,7 +2229,7 @@ impl<Field: MetaType> Matrix<Field>
 where
     Field::Structure: FieldStructure,
     PrincipalSubringInclusion<Field::Structure>:
-        FieldOfFractionsInclusionStructure<IntegerCanonicalStructure, Field::Structure>,
+        FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Structure>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Matrix<Integer>) {
         factor_primitive_fof(&PrincipalSubringInclusion::new(Field::structure()), self)

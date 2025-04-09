@@ -322,7 +322,7 @@ where
 pub fn factorize_by_factorize_primitive_part<
     Ring: RingStructure,
     Field: FieldStructure,
-    Fof: FieldOfFractionsInclusionStructure<Ring, Field>,
+    Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
     fof_inclusion: &Fof,
     poly_ring: &PolynomialStructure<Field>,

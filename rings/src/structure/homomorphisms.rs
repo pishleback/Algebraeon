@@ -4,7 +4,7 @@ use super::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
-pub trait RingHomomorphismStructure<Domain: RingStructure, Range: RingStructure>:
+pub trait RingHomomorphism<Domain: RingStructure, Range: RingStructure>:
     Function<Domain, Range>
 {
 }
@@ -13,9 +13,9 @@ impl<
     A: RingStructure,
     B: RingStructure,
     C: RingStructure,
-    AB: RingHomomorphismStructure<A, B>,
-    BC: RingHomomorphismStructure<B, C>,
-> RingHomomorphismStructure<A, C> for CompositionMorphism<A, B, C, AB, BC>
+    AB: RingHomomorphism<A, B>,
+    BC: RingHomomorphism<B, C>,
+> RingHomomorphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
 }
 
@@ -34,8 +34,6 @@ impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
         }
     }
 }
-
-impl<Ring: RingStructure> Structure for PrincipalSubringInclusion<Ring> {}
 
 impl<Ring: RingStructure> Morphism<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
@@ -68,14 +66,14 @@ impl<Ring: CharZeroStructure> InjectiveFunction<IntegerCanonicalStructure, Ring>
     }
 }
 
-impl<Ring: RingStructure> RingHomomorphismStructure<IntegerCanonicalStructure, Ring>
+impl<Ring: RingStructure> RingHomomorphism<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
 }
 
 /// The inclusion of an integral domain into its field of fractions
-pub trait FieldOfFractionsInclusionStructure<Ring: RingStructure, Field: FieldStructure>:
-    RingHomomorphismStructure<Ring, Field> + InjectiveFunction<Ring, Field>
+pub trait FieldOfFractionsInclusion<Ring: RingStructure, Field: FieldStructure>:
+    RingHomomorphism<Ring, Field> + InjectiveFunction<Ring, Field>
 {
     fn numerator_and_denominator(&self, a: &Field::Set) -> (Ring::Set, Ring::Set);
     fn numerator(&self, a: &Field::Set) -> Ring::Set {
@@ -88,7 +86,7 @@ pub trait FieldOfFractionsInclusionStructure<Ring: RingStructure, Field: FieldSt
 
 /// A finite dimensional field extension F -> K
 pub trait FiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
-    RingHomomorphismStructure<F, K> + InjectiveFunction<F, K>
+    RingHomomorphism<F, K> + InjectiveFunction<F, K>
 {
     fn degree(&self) -> usize;
     fn norm(&self, a: &K::Set) -> F::Set;

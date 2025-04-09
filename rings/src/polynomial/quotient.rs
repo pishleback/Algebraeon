@@ -95,8 +95,6 @@ impl<Field: FieldStructure> FieldExtensionByPolynomialQuotient<Field> {
     }
 }
 
-impl<Field: FieldStructure> Structure for FieldExtensionByPolynomialQuotient<Field> {}
-
 impl<Field: FieldStructure> Morphism<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
@@ -118,7 +116,7 @@ impl<Field: FieldStructure> Function<Field, FieldExtensionByPolynomialQuotientAl
 }
 
 impl<Field: FieldStructure>
-    RingHomomorphismStructure<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
+    RingHomomorphism<Field, FieldExtensionByPolynomialQuotientAlias<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
 }

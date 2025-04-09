@@ -72,7 +72,7 @@ impl RealToFloatStructure for RationalCanonicalStructure {
     }
 }
 
-impl FieldOfFractionsInclusionStructure<IntegerCanonicalStructure, RationalCanonicalStructure>
+impl FieldOfFractionsInclusion<IntegerCanonicalStructure, RationalCanonicalStructure>
     for PrincipalSubringInclusion<RationalCanonicalStructure>
 {
     fn numerator_and_denominator(&self, a: &Rational) -> (Integer, Integer) {

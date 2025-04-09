@@ -854,7 +854,7 @@ impl<RS: BezoutDomainStructure> PolynomialStructure<RS> {
 pub fn factor_primitive_fof<
     Ring: GreatestCommonDivisorStructure,
     Field: FieldStructure,
-    Fof: FieldOfFractionsInclusionStructure<Ring, Field>,
+    Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
     fof_inclusion: &Fof,
     p: &Polynomial<Field::Set>,
@@ -890,7 +890,7 @@ impl<Field: MetaType> Polynomial<Field>
 where
     Field::Structure: FieldStructure,
     PrincipalSubringInclusion<Field::Structure>:
-        FieldOfFractionsInclusionStructure<IntegerCanonicalStructure, Field::Structure>,
+        FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Structure>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {
         factor_primitive_fof(
