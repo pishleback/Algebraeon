@@ -11,6 +11,7 @@ pub enum MatOppErr {
     DimMissmatch,
     InvalidIndex,
     NotSquare,
+    Singular,
 }
 
 #[derive(Debug, Clone)]
@@ -1350,15 +1351,18 @@ impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateS
         self.col_reduced_hermite_algorithm(m).0
     }
 
-    pub fn inv(&self, a: Matrix<RS::Set>) -> Option<Matrix<RS::Set>> {
-        let n = a.rows();
-        assert_eq!(n, a.cols());
-        let (h, u, _pivs) = self.row_reduced_hermite_algorithm(a);
-        //h = u*a
-        if self.equal(&h, &self.ident(n)) {
-            Some(u)
+    pub fn inv(&self, a: Matrix<RS::Set>) -> Result<Matrix<RS::Set>, MatOppErr> {
+        let n = a.dim1;
+        if n != a.dim2 {
+            Err(MatOppErr::NotSquare)
         } else {
-            None
+            let (h, u, _pivs) = self.row_reduced_hermite_algorithm(a);
+            //h = u*a
+            if self.equal(&h, &self.ident(n)) {
+                Ok(u)
+            } else {
+                Err(MatOppErr::Singular)
+            }
         }
     }
 }
@@ -2208,7 +2212,7 @@ where
         Self::structure().col_reduced_hermite_normal_form(self.clone())
     }
 
-    pub fn inv(&self) -> Option<Matrix<R>> {
+    pub fn inv(&self) -> Result<Matrix<R>, MatOppErr> {
         Self::structure().inv(self.clone())
     }
 }
