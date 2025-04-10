@@ -1,5 +1,6 @@
 use super::*;
 use crate::polynomial::*;
+use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -221,6 +222,17 @@ pub trait IntegralClosureSquare<
     /// For alpha in K return non-zero d in Z such that d*alpha is in R
     fn integralize_multiplier(&self, alpha: &K::Set) -> Z::Set;
 
+    fn integral_scalar_multiple(&self, alpha: &K::Set) -> R::Set {
+        let d = self.integralize_multiplier(&alpha);
+        self.r_to_k()
+            .try_preimage(
+                &self
+                    .k_field()
+                    .mul(&self.r_to_k().image(&self.z_to_r().image(&d)), alpha),
+            )
+            .unwrap()
+    }
+
     /// Every element of K is a fraction of elements of R
     fn r_to_k_field_of_fractions(&self) -> impl FieldOfFractionsInclusion<R, K> {
         FieldOfFractionsInclusionForIntegralClosure::new(self.clone())
@@ -251,7 +263,17 @@ pub trait FactorablePrimeIdealsSquare<
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
 >: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>
 {
-    fn factor_prime_ideal(&self, p: &DedekindDomainPrimeIdeal<Z>) -> DedekindDomainIdealFactorization<R>;
+    fn factor_prime_ideal(
+        &self,
+        p: &DedekindDomainPrimeIdeal<Z>,
+    ) -> DedekindDomainIdealFactorization<R>;
+
+    /// The degree of the finite field extension Z/p -> R/q
+    fn residue_class_degree(
+        &self,
+        p: &DedekindDomainPrimeIdeal<Z>,
+        q: &DedekindDomainPrimeIdeal<R>,
+    ) -> Natural;
 }
 
 // #[derive(Clone)]

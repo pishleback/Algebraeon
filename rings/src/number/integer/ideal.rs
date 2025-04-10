@@ -1,4 +1,7 @@
-use crate::{number::natural::factorization::factor, structure::*};
+use crate::{
+    number::natural::factorization::{factor, primes::is_prime},
+    structure::*,
+};
 use algebraeon_nzq::{traits::Abs, *};
 
 impl IdealStructure for IntegerCanonicalStructure {
@@ -31,6 +34,12 @@ impl IdealArithmeticStructure for IntegerCanonicalStructure {
     }
 }
 
+impl PrincipalIdealDomainStructure for IntegerCanonicalStructure {
+    fn ideal_generator(&self, ideal: &Self::Ideal) -> Self::Set {
+        Integer::from(ideal)
+    }
+}
+
 impl DedekindDomainStructure for IntegerCanonicalStructure {}
 
 impl FactorableIdealsStructure for IntegerCanonicalStructure {
@@ -42,6 +51,16 @@ impl FactorableIdealsStructure for IntegerCanonicalStructure {
                 .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k.into()))
                 .collect(),
         ))
+    }
+}
+
+impl DedekindDomainPrimeIdeal<IntegerCanonicalStructure> {
+    pub fn try_from_nat(n: Natural) -> Result<Self, ()> {
+        if is_prime(&n) {
+            Ok(DedekindDomainPrimeIdeal::from_ideal_unchecked(n))
+        } else {
+            Err(())
+        }
     }
 }
 

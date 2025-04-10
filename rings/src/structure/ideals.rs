@@ -144,6 +144,22 @@ impl<R: MetaRing> MetaIdealArithmeticStructure for R where
 {
 }
 
+pub trait PrincipalIdealDomainStructure: IdealStructure {
+    fn ideal_generator(&self, ideal: &Self::Ideal) -> Self::Set;
+}
+pub trait MetaPrincipalIdealDomainStructure: MetaIdealStructure
+where
+    Self::Structure: PrincipalIdealDomainStructure,
+{
+    fn ideal_generator(ideal: &<Self::Structure as IdealStructure>::Ideal) -> Self {
+        Self::structure().ideal_generator(ideal)
+    }
+}
+impl<R: MetaRing> MetaPrincipalIdealDomainStructure for R where
+    Self::Structure: PrincipalIdealDomainStructure<Set = R>
+{
+}
+
 #[derive(Debug, Clone)]
 pub struct DedekindDomainPrimeIdeal<RS: DedekindDomainStructure> {
     prime_ideal: RS::Ideal,
@@ -152,6 +168,14 @@ pub struct DedekindDomainPrimeIdeal<RS: DedekindDomainStructure> {
 impl<RS: DedekindDomainStructure> DedekindDomainPrimeIdeal<RS> {
     pub fn from_ideal_unchecked(ideal: RS::Ideal) -> Self {
         Self { prime_ideal: ideal }
+    }
+
+    pub fn into_ideal(self) -> RS::Ideal {
+        self.prime_ideal
+    }
+
+    pub fn ideal(&self) -> &RS::Ideal {
+        &self.prime_ideal
     }
 }
 
@@ -170,7 +194,11 @@ impl<RS: DedekindDomainStructure> DedekindDomainIdealFactorization<RS> {
         Self { factors }
     }
 
-    pub fn is_prime(&self) -> bool {
+    pub fn is_ramified(&self) -> bool {
+        self.factors.iter().any(|(_, k)| k > &Natural::ONE)
+    }
+
+    pub fn is_inert(&self) -> bool {
         match self.factors.len() {
             1 => {
                 let (_, k) = &self.factors[0];
@@ -189,7 +217,7 @@ pub trait FactorableIdealsStructure: DedekindDomainStructure {
     fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>>;
     fn is_prime_ideal(&self, ideal: &Self::Ideal) -> bool {
         if let Some(f) = self.factor_ideal(ideal) {
-            f.is_prime()
+            f.is_inert()
         } else {
             false
         }

@@ -4,33 +4,46 @@ use algebraeon_nzq::Integer;
 use algebraeon_sets::structure::MetaType;
 
 #[derive(Debug, Clone)]
-pub struct RingOfIntegersIdeal {
-    // 1 column and n rows
-    lattice: LinearLattice<Integer>,
+pub enum RingOfIntegersIdeal {
+    Zero,
+    NonZero {
+        // 1 column and n rows
+        lattice: LinearLattice<Integer>,
+    },
 }
 
 impl RingOfIntegersWithIntegralBasisStructure {
     #[cfg(debug_assertions)]
     fn check_ideal(&self, ideal: &RingOfIntegersIdeal) {
-        assert_eq!(ideal.lattice.rows(), self.degree());
-        assert_eq!(ideal.lattice.cols(), 1);
-        //TODO: check that it's actually an ideal
+        match ideal {
+            RingOfIntegersIdeal::Zero => {}
+            RingOfIntegersIdeal::NonZero { lattice } => {
+                assert_eq!(lattice.rows(), self.degree());
+                assert_eq!(lattice.cols(), 1);
+                //TODO: check that it's actually an ideal
+            }
+        }
     }
 }
 
 impl RingOfIntegersIdeal {
     /// A basis of this ideal as a Z-module.
-    pub fn integer_basis(&self) -> Vec<RingOfIntegersWithIntegralBasisElement> {
-        self.lattice
-            .basis_matrices()
-            .into_iter()
-            .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
-            .collect()
+    pub fn integer_basis(&self) -> Option<Vec<RingOfIntegersWithIntegralBasisElement>> {
+        match self {
+            RingOfIntegersIdeal::Zero => None,
+            RingOfIntegersIdeal::NonZero { lattice } => Some(
+                lattice
+                    .basis_matrices()
+                    .into_iter()
+                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+                    .collect(),
+            ),
+        }
     }
 
     /// Construct an ideal from a Z-linear span
     fn from_integer_span(n: usize, span: Vec<RingOfIntegersWithIntegralBasisElement>) -> Self {
-        Self {
+        Self::NonZero {
             lattice: LinearLattice::from_span(
                 n,
                 1,
@@ -41,7 +54,7 @@ impl RingOfIntegersIdeal {
 
     /// Construct an ideal from a Z-linear basis
     fn from_integer_basis(n: usize, basis: Vec<RingOfIntegersWithIntegralBasisElement>) -> Self {
-        Self {
+        Self::NonZero {
             lattice: LinearLattice::from_basis(
                 n,
                 1,
@@ -57,16 +70,22 @@ impl IdealStructure for RingOfIntegersWithIntegralBasisStructure {
 
 impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
     fn principal_ideal(&self, a: &Self::Set) -> Self::Ideal {
-        let n = self.degree();
-        Self::Ideal::from_integer_basis(
-            n,
-            (0..n)
-                .map(|i| {
-                    self.try_anf_to_roi(&self.anf().mul(self.basis_element(i), &self.roi_to_anf(a)))
+        if self.is_zero(a) {
+            Self::Ideal::Zero
+        } else {
+            let n = self.degree();
+            Self::Ideal::from_integer_basis(
+                n,
+                (0..n)
+                    .map(|i| {
+                        self.try_anf_to_roi(
+                            &self.anf().mul(self.basis_element(i), &self.roi_to_anf(a)),
+                        )
                         .unwrap()
-                })
-                .collect(),
-        )
+                    })
+                    .collect(),
+            )
+        }
     }
 
     fn ideal_equal(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool {
@@ -75,7 +94,14 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             self.check_ideal(a);
             self.check_ideal(b);
         }
-        LinearLatticeStructure::new(Integer::structure()).equal(&a.lattice, &b.lattice)
+        match (a, b) {
+            (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::Zero) => true,
+            (
+                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
+                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
+            ) => LinearLatticeStructure::new(Integer::structure()).equal(a_lattice, b_lattice),
+            _ => false,
+        }
     }
 
     fn ideal_contains(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool {
@@ -84,8 +110,19 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             self.check_ideal(a);
             self.check_ideal(b);
         }
-        LinearLatticeStructure::new(Integer::structure())
-            .contains_sublattice(&a.lattice, &b.lattice)
+
+        match (a, b) {
+            (_, RingOfIntegersIdeal::Zero) => true,
+            (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::NonZero { .. }) => {
+                debug_assert_ne!(self.degree(), 0);
+                false
+            }
+            (
+                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
+                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
+            ) => LinearLatticeStructure::new(Integer::structure())
+                .contains_sublattice(a_lattice, b_lattice),
+        }
     }
 
     fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
@@ -94,13 +131,19 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             self.check_ideal(a);
             self.check_ideal(b);
         }
-        Self::Ideal {
-            lattice: LinearLatticeStructure::new(Integer::structure()).intersect_pair(
-                self.degree(),
-                1,
-                &a.lattice,
-                &b.lattice,
-            ),
+        match (a, b) {
+            (
+                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
+                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
+            ) => Self::Ideal::NonZero {
+                lattice: LinearLatticeStructure::new(Integer::structure()).intersect_pair(
+                    self.degree(),
+                    1,
+                    a_lattice,
+                    b_lattice,
+                ),
+            },
+            _ => Self::Ideal::Zero,
         }
     }
 
@@ -110,13 +153,21 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             self.check_ideal(a);
             self.check_ideal(b);
         }
-        Self::Ideal {
-            lattice: LinearLatticeStructure::new(Integer::structure()).sum_pair(
-                self.degree(),
-                1,
-                &a.lattice,
-                &b.lattice,
-            ),
+        match (a, b) {
+            (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::Zero) => RingOfIntegersIdeal::Zero,
+            (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::NonZero { .. }) => b.clone(),
+            (RingOfIntegersIdeal::NonZero { .. }, RingOfIntegersIdeal::Zero) => a.clone(),
+            (
+                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
+                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
+            ) => Self::Ideal::NonZero {
+                lattice: LinearLatticeStructure::new(Integer::structure()).sum_pair(
+                    self.degree(),
+                    1,
+                    a_lattice,
+                    b_lattice,
+                ),
+            },
         }
     }
 
@@ -126,28 +177,35 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             self.check_ideal(a);
             self.check_ideal(b);
         }
-        let n = self.degree();
 
-        let a_basis = a
-            .lattice
-            .basis_matrices()
-            .into_iter()
-            .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
-            .collect::<Vec<_>>();
-        let b_basis = b
-            .lattice
-            .basis_matrices()
-            .into_iter()
-            .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
-            .collect::<Vec<_>>();
+        match (a, b) {
+            (
+                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
+                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
+            ) => {
+                let n = self.degree();
 
-        let mut span = vec![];
-        for i in 0..n {
-            for j in 0..n {
-                span.push(self.mul(&a_basis[i], &b_basis[j]));
+                let a_basis = a_lattice
+                    .basis_matrices()
+                    .into_iter()
+                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+                    .collect::<Vec<_>>();
+                let b_basis = b_lattice
+                    .basis_matrices()
+                    .into_iter()
+                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+                    .collect::<Vec<_>>();
+
+                let mut span = vec![];
+                for i in 0..n {
+                    for j in 0..n {
+                        span.push(self.mul(&a_basis[i], &b_basis[j]));
+                    }
+                }
+                Self::Ideal::from_integer_span(n, span)
             }
+            _ => Self::Ideal::Zero,
         }
-        Self::Ideal::from_integer_span(n, span)
     }
 }
 
