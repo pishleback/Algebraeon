@@ -238,11 +238,11 @@ pub trait IntegralClosureSquare<
 ///  - Q → K is a finite dimensional field extension
 ///  - R is the integral closure of Z in K
 ///  - Z and R are Dedekind domains
-/// 
+///
 /// This trait allows, for each prime ideal p of Z, the ideal pR of R to be factored into prime ideals in R
 pub trait FactorableIdealsSquare<
-    Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
+    Z: DedekindDomainStructure,
+    R: DedekindDomainStructure,
     Q: FieldStructure,
     K: FieldStructure,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
