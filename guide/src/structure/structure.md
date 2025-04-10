@@ -77,7 +77,7 @@ impl RingStructure for IntegersModuloN {
     }
 }
 
-// Now `mod_6` has the structure of a ring, Algebraeon implements the repeated squaring algorithm for taking very large powers modulo `n`.
+// Now `mod_6` now has the structure of a ring so Algebraeon implements the repeated squaring algorithm for taking very large powers modulo `n`.
 assert!(mod_6.equal(
     &mod_6.nat_pow(&2.into(), &1000000000000u64.into()),
     &4.into()
