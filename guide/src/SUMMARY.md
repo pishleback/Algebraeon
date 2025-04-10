@@ -1,7 +1,7 @@
 # Summary
 
 - [Introduction](./introduction.md)
-- [Getting Started](./getting_started/root.md)
+- [Getting Started](./getting_started/getting_started.md)
   - [Examples](./getting_started/examples.md)
 - [The Structure System](./structure/structure_root.md)
   - [Structure Traits](./structure/structure.md)
