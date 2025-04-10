@@ -50,31 +50,24 @@ impl
     fn z_ring(&self) -> &IntegerCanonicalStructure {
         &self.z
     }
-
     fn r_ring(&self) -> &RingOfIntegersWithIntegralBasisStructure {
         &self.r
     }
-
     fn q_field(&self) -> &RationalCanonicalStructure {
         &self.q
     }
-
     fn k_field(&self) -> &AlgebraicNumberFieldStructure {
         &self.k
     }
-
     fn z_to_q(&self) -> &PrincipalSubringInclusion<RationalCanonicalStructure> {
         &self.z_to_q
     }
-
     fn z_to_r(&self) -> &PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure> {
         &self.z_to_r
     }
-
     fn q_to_k(&self) -> &PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure> {
         &self.q_to_k
     }
-
     fn r_to_k(&self) -> &RingOfIntegersToAlgebraicNumberFieldInclusion {
         &self.r_to_k
     }
@@ -92,6 +85,25 @@ impl
             .map(|c| self.z_to_q().denominator(&c))
             .collect();
         Integer::lcm_list(alpha_min_poly_monic_coeffs_denominators)
+    }
+}
+
+impl
+    FactorablePrimeIdealsSquare<
+        IntegerCanonicalStructure,
+        RationalCanonicalStructure,
+        RingOfIntegersWithIntegralBasisStructure,
+        AlgebraicNumberFieldStructure,
+        PrincipalSubringInclusion<RationalCanonicalStructure>,
+        PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
+        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
+        RingOfIntegersToAlgebraicNumberFieldInclusion,
+    > for RingOfIntegersSquare
+{
+    fn factor_prime_ideal(
+        _p: &DedekindDomainPrimeIdeal<IntegerCanonicalStructure>,
+    ) -> DedekindDomainIdealFactorization<RingOfIntegersWithIntegralBasisStructure> {
+        todo!()
     }
 }
 

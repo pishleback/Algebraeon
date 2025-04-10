@@ -151,6 +151,8 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
+impl DedekindDomainStructure for RingOfIntegersWithIntegralBasisStructure {}
+
 #[cfg(test)]
 mod tests {
     use super::*;

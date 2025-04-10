@@ -240,14 +240,14 @@ pub trait IntegralClosureSquare<
 ///  - Z and R are Dedekind domains
 ///
 /// This trait allows, for each prime ideal p of Z, the ideal pR of R to be factored into prime ideals in R
-pub trait FactorableIdealsSquare<
+pub trait FactorablePrimeIdealsSquare<
     Z: DedekindDomainStructure,
     Q: FieldStructure,
     R: DedekindDomainStructure,
     K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
 >: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>
 {
