@@ -149,7 +149,7 @@ impl<
             .unwrap();
         debug_assert!(
             self.range()
-                .equal(a, &self.range().mul(&self.image(&n), &self.image(&d)))
+                .equal(a, &self.range().div(&self.image(&n), &self.image(&d)).unwrap())
         );
         (n, d)
     }
