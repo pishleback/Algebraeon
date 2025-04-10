@@ -3,7 +3,7 @@
 - [Introduction](./introduction.md)
 - [Getting Started](./getting_started/root.md)
   - [Examples](./getting_started/examples.md)
-- [The Structure System](./structure/root.md)
+- [The Structure System](./structure/structure_root.md)
   - [Structure Traits](./structure/structure.md)
   - [Canonical Structure](./structure/canonical.md)
   - [Morphisms]()
