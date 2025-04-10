@@ -103,24 +103,27 @@ mod tests {
     #[test]
     fn ring_of_integers_integral_multiplier_test() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
         let roi = anf.ring_of_integers();
         let sq = RingOfIntegersSquare::new(&roi);
 
         let sample_rats = Rational::exhaustive_rationals()
-            .take(20)
+            .take(10)
             .collect::<Vec<_>>();
 
         for x in &sample_rats {
             for y in &sample_rats {
-                println!();
-                let alpha = Polynomial::<Rational>::from_coeffs(vec![x.clone(), y.clone()]);
-                println!("alpha = {:?}", alpha);
-                let d = sq.integralize_multiplier(&alpha);
-                println!("d = {:?}", d);
-                let d_times_alpha = anf.mul(&anf.from_int(&d), &alpha);
-                println!("d * alpha = {:?}", d_times_alpha);
-                assert!(anf.is_algebraic_integer(&d_times_alpha));
+                for z in &sample_rats {
+                    println!();
+                    let alpha =
+                        Polynomial::<Rational>::from_coeffs(vec![x.clone(), y.clone(), z.clone()]);
+                    println!("alpha = {:?}", alpha);
+                    let d = sq.integralize_multiplier(&alpha);
+                    println!("d = {:?}", d);
+                    let d_times_alpha = anf.mul(&anf.from_int(&d), &alpha);
+                    println!("d * alpha = {:?}", d_times_alpha);
+                    assert!(anf.is_algebraic_integer(&d_times_alpha));
+                }
             }
         }
     }
