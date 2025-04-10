@@ -1,4 +1,4 @@
-use crate::structure::*;
+use crate::{number::natural::factorization::factor, structure::*};
 use algebraeon_nzq::{traits::Abs, *};
 
 impl IdealStructure for IntegerCanonicalStructure {
@@ -28,6 +28,20 @@ impl IdealArithmeticStructure for IntegerCanonicalStructure {
 
     fn ideal_mul(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
         a * b
+    }
+}
+
+impl DedekindDomainStructure for IntegerCanonicalStructure {}
+
+impl FactorableIdealsStructure for IntegerCanonicalStructure {
+    fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>> {
+        let f = factor(ideal.clone())?;
+        Some(DedekindDomainIdealFactorization::from_powers_unchecked(
+            f.into_powers()
+                .into_iter()
+                .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k.into()))
+                .collect(),
+        ))
     }
 }
 
@@ -78,5 +92,16 @@ mod tests {
         ));
 
         assert_eq!(Integer::generated_ideal(vec![-15, 6]), 3u32.into());
+    }
+
+    #[test]
+    fn factor_integer_ideal() {
+        let f = Integer::factor_ideal(&Integer::from(0).principal_ideal());
+        println!("{:?}", f);
+        assert!(f.is_none());
+
+        let f = Integer::factor_ideal(&Integer::from(18).principal_ideal());
+        println!("{:?}", f);
+        assert!(f.is_some());
     }
 }

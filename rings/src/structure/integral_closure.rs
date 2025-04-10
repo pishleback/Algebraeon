@@ -147,10 +147,10 @@ impl<
         let n = self
             .try_preimage(&self.range().mul(&self.image(&d), a))
             .unwrap();
-        debug_assert!(
-            self.range()
-                .equal(a, &self.range().div(&self.image(&n), &self.image(&d)).unwrap())
-        );
+        debug_assert!(self.range().equal(
+            a,
+            &self.range().div(&self.image(&n), &self.image(&d)).unwrap()
+        ));
         (n, d)
     }
 }
@@ -253,7 +253,6 @@ pub trait FactorableIdealsSquare<
 {
     fn factor_prime_ideal(p: &DedekindDomainPrimeIdeal<Z>) -> DedekindDomainIdealFactorization<R>;
 }
-
 
 // #[derive(Clone)]
 // pub struct IntegralClosureSquare<
