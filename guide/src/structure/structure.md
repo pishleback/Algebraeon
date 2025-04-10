@@ -4,7 +4,7 @@
 
 In mathematics there are many instances of sets of sets with some additional structure (think the set of all groups) and often these sets of sets are parameterized by other sets. For example the set of integers modulo \\(n\\) is defined for every natural number \\(n \in \mathbb{N}\\) and has the structure of a commutative ring. A mathematician would like to think that there exists infinitely many types, \\(\frac{\mathbb{Z}}{n \mathbb{Z}}\\), one for each natural number \\(n\\). However, in the world of Rust we now have a problem since it is not in general possible (except in simple cases, for example by using generics) to define infinitely many types, one for each instance of some mathematical set. 
 
-The solution Algebraeon takes for this problem is structure types - types whose objects represent sets with additional structure. Algebraeon provides many structure traits for types whose objects represent mathematical sets with additional structure. A non-exhaustive list of structure traits is as follows:
+The solution Algebraeon takes for this problem is structure types - types whose objects represent sets with additional structure. The structure given by a structure type is determined by the structure traits it implements. A non-exhaustive list of structure traits is as follows:
  - `Structure`: This is the base trait for structure types. All structure types implement `Structure`.
  - `SetStructure: Structure`: Objects are sets whose elements are objects of the associated type `Set`.
  - `EqStructure: SetStructure`: It is possible to compare elements for equality.
