@@ -1,4 +1,4 @@
-use crate::polynomial::{PolynomialStructure, factorize_by_factorize_primitive_part};
+use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
@@ -44,6 +44,14 @@ impl IntegralDomainStructure for RationalCanonicalStructure {
     }
 }
 
+impl OrderedRingStructure for RationalCanonicalStructure {
+    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+        Self::Set::cmp(a, b)
+    }
+}
+
+impl FieldStructure for RationalCanonicalStructure {}
+
 impl CharZeroRingStructure for RationalCanonicalStructure {
     fn try_to_int(&self, x: &Rational) -> Option<Integer> {
         let (n, d) = x.numerator_and_denominator();
@@ -52,13 +60,31 @@ impl CharZeroRingStructure for RationalCanonicalStructure {
     }
 }
 
-impl OrderedRingStructure for RationalCanonicalStructure {
-    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-        Self::Set::cmp(a, b)
+impl CharZeroFieldStructure for RationalCanonicalStructure {
+    fn try_to_rat(&self, x: &Rational) -> Option<Rational> {
+        Some(x.clone())
     }
 }
 
-impl FieldStructure for RationalCanonicalStructure {}
+impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, RationalCanonicalStructure>
+    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure>
+{
+    fn degree(&self) -> usize {
+        1
+    }
+
+    fn norm(&self, a: &Rational) -> Rational {
+        a.clone()
+    }
+
+    fn trace(&self, a: &Rational) -> Rational {
+        a.clone()
+    }
+
+    fn min_poly(&self, a: &Rational) -> Polynomial<Rational> {
+        Polynomial::from_coeffs(vec![-a, Rational::ONE])
+    }
+}
 
 impl ComplexSubsetStructure for RationalCanonicalStructure {}
 

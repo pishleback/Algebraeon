@@ -19,17 +19,25 @@ struct RingOfIntegersSquare<
     r_to_k: RK,
 }
 
-// impl AlgebraicNumberFieldStructure {
-//     fn ring_of_integers_commuting_square(&self) -> RingOfIntegersSquare<PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>, _, _, _> {
-//         let roi = self.ring_of_integers();
-//         RingOfIntegersSquare{
-//             z_to_r: PrincipalSubringInclusion::new(roi),
-//             q_to_k: PrincipalRationalSubfieldInclusion::new(self.clone()),
-//             z_to_q: PrincipalSubringInclusion::new(Rational::structure()),
-//             r_to_k: roi.inclusion_to_anf(),
-//         }
-//     }
-// }
+impl AlgebraicNumberFieldStructure {
+    fn ring_of_integers_commuting_square(
+        &self,
+    ) -> RingOfIntegersSquare<
+        PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
+        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
+        PrincipalSubringInclusion<RationalCanonicalStructure>,
+        RingOfIntegersToAlgebraicNumberFieldInclusion,
+    > {
+        let anf = self;
+        let roi = self.ring_of_integers();
+        RingOfIntegersSquare {
+            z_to_r: PrincipalSubringInclusion::new(roi.clone()),
+            q_to_k: PrincipalRationalSubfieldInclusion::new(anf.clone()),
+            z_to_q: PrincipalSubringInclusion::new(Rational::structure()),
+            r_to_k: RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(roi),
+        }
+    }
+}
 
 // impl<
 //     Z: IntegralDomainStructure,

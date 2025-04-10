@@ -701,7 +701,7 @@ pub trait MetaCharZeroField: MetaRing
 where
     Self::Structure: CharZeroFieldStructure,
 {
-    fn try_to_int(&self) -> Option<Rational> {
+    fn try_to_rat(&self) -> Option<Rational> {
         Self::structure().try_to_rat(self)
     }
 }

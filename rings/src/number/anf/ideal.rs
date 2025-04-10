@@ -62,7 +62,7 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             n,
             (0..n)
                 .map(|i| {
-                    self.anf_to_roi(self.anf().mul(self.basis_element(i), &self.roi_to_anf(a)))
+                    self.try_anf_to_roi(&self.anf().mul(self.basis_element(i), &self.roi_to_anf(a)))
                         .unwrap()
                 })
                 .collect(),
@@ -174,7 +174,7 @@ mod tests {
 
         {
             // 1 + sqrt(2)
-            let alpha = roi.anf_to_roi((&x + 1).into_verbose()).unwrap();
+            let alpha = roi.try_anf_to_roi(&(&x + 1).into_verbose()).unwrap();
 
             // (a + b sqrt(2)) * (1 + sqrt(2)) = a(1 + sqrt(2)) + b(2 + sqrt(2))
             assert!(roi.ideal_equal(
@@ -182,8 +182,8 @@ mod tests {
                 &RingOfIntegersIdeal::from_integer_basis(
                     2,
                     vec![
-                        roi.anf_to_roi((1 + &x).into_verbose()).unwrap(),
-                        roi.anf_to_roi((2 + &x).into_verbose()).unwrap()
+                        roi.try_anf_to_roi(&(1 + &x).into_verbose()).unwrap(),
+                        roi.try_anf_to_roi(&(2 + &x).into_verbose()).unwrap()
                     ]
                 )
             ));
@@ -191,9 +191,9 @@ mod tests {
 
         {
             // 6
-            let alpha = roi.anf_to_roi((6 * x.pow(0)).into_verbose()).unwrap();
+            let alpha = roi.try_anf_to_roi(&(6 * x.pow(0)).into_verbose()).unwrap();
             // 15
-            let beta = roi.anf_to_roi((15 * x.pow(0)).into_verbose()).unwrap();
+            let beta = roi.try_anf_to_roi(&(15 * x.pow(0)).into_verbose()).unwrap();
 
             let alpha_ideal = roi.principal_ideal(&alpha);
             let beta_ideal = roi.principal_ideal(&beta);
@@ -208,8 +208,8 @@ mod tests {
                 &RingOfIntegersIdeal::from_integer_basis(
                     2,
                     vec![
-                        roi.anf_to_roi((3 * x.pow(0)).into_verbose()).unwrap(),
-                        roi.anf_to_roi((3 * x.pow(1)).into_verbose()).unwrap()
+                        roi.try_anf_to_roi(&(3 * x.pow(0)).into_verbose()).unwrap(),
+                        roi.try_anf_to_roi(&(3 * x.pow(1)).into_verbose()).unwrap()
                     ]
                 )
             ));
@@ -220,8 +220,8 @@ mod tests {
                 &RingOfIntegersIdeal::from_integer_basis(
                     2,
                     vec![
-                        roi.anf_to_roi((30 * x.pow(0)).into_verbose()).unwrap(),
-                        roi.anf_to_roi((30 * x.pow(1)).into_verbose()).unwrap()
+                        roi.try_anf_to_roi(&(30 * x.pow(0)).into_verbose()).unwrap(),
+                        roi.try_anf_to_roi(&(30 * x.pow(1)).into_verbose()).unwrap()
                     ]
                 )
             ));
@@ -232,8 +232,8 @@ mod tests {
                 &RingOfIntegersIdeal::from_integer_basis(
                     2,
                     vec![
-                        roi.anf_to_roi((90 * x.pow(0)).into_verbose()).unwrap(),
-                        roi.anf_to_roi((90 * x.pow(1)).into_verbose()).unwrap()
+                        roi.try_anf_to_roi(&(90 * x.pow(0)).into_verbose()).unwrap(),
+                        roi.try_anf_to_roi(&(90 * x.pow(1)).into_verbose()).unwrap()
                     ]
                 )
             ));

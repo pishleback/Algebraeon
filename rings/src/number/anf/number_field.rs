@@ -178,6 +178,40 @@ impl CharZeroRingStructure for AlgebraicNumberFieldStructure {
     }
 }
 
+impl CharZeroFieldStructure for AlgebraicNumberFieldStructure {
+    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
+        let x = self.reduce(x);
+        match x.degree() {
+            None => Some(Rational::ZERO),
+            Some(0) => Some(x.coeff(0)),
+            Some(_) => None,
+        }
+    }
+}
+
+impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, AlgebraicNumberFieldStructure>
+    for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>
+{
+    fn degree(&self) -> usize {
+        self.range().degree()
+    }
+
+    fn norm(&self, a: &<AlgebraicNumberFieldStructure as SetStructure>::Set) -> Rational {
+        self.range().norm(a)
+    }
+
+    fn trace(&self, a: &<AlgebraicNumberFieldStructure as SetStructure>::Set) -> Rational {
+        self.range().trace(a)
+    }
+
+    fn min_poly(
+        &self,
+        a: &<AlgebraicNumberFieldStructure as SetStructure>::Set,
+    ) -> Polynomial<Rational> {
+        self.range().min_poly(a)
+    }
+}
+
 struct RingOfIntegers {
     anf: AlgebraicNumberFieldStructure,
     basis: Vec<Polynomial<Rational>>,

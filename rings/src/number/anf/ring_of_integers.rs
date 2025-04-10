@@ -47,14 +47,17 @@ impl RingOfIntegersWithIntegralBasisStructure {
             mul_crossterms: None,
         };
         let n = roi.degree();
-        roi.one = Some(roi.anf_to_roi(roi.algebraic_number_field.one()).unwrap());
+        roi.one = Some(
+            roi.try_anf_to_roi(&roi.algebraic_number_field.one())
+                .unwrap(),
+        );
         roi.mul_crossterms = Some(
             (0..n)
                 .map(|j| {
                     (0..(j + 1))
                         .map(|i| {
-                            roi.anf_to_roi(
-                                roi.algebraic_number_field
+                            roi.try_anf_to_roi(
+                                &roi.algebraic_number_field
                                     .mul(&roi.integral_basis[i], &roi.integral_basis[j]),
                             )
                             .unwrap()
@@ -171,12 +174,12 @@ impl RingOfIntegersWithIntegralBasisStructure {
         )
     }
 
-    pub fn anf_to_roi(
+    pub fn try_anf_to_roi(
         &self,
-        elem: Polynomial<Rational>,
+        elem: &Polynomial<Rational>,
     ) -> Option<RingOfIntegersWithIntegralBasisElement> {
         let n = self.degree();
-        let y = self.algebraic_number_field.to_col_vector(&elem);
+        let y = self.algebraic_number_field.to_col_vector(elem);
         let m = Matrix::join_cols(
             n,
             (0..n)
@@ -229,7 +232,9 @@ impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
     fn one(&self) -> Self::Set {
         match &self.one {
             Some(one) => one.clone(),
-            None => self.anf_to_roi(self.algebraic_number_field.one()).unwrap(),
+            None => self
+                .try_anf_to_roi(&self.algebraic_number_field.one())
+                .unwrap(),
         }
     }
 
@@ -265,8 +270,9 @@ impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
             }
             None => {
                 // Compute using anf mul
-                self.anf_to_roi(
-                    self.algebraic_number_field
+                self.try_anf_to_roi(
+                    &self
+                        .algebraic_number_field
                         .mul(&self.roi_to_anf(a), &self.roi_to_anf(b)),
                 )
                 .unwrap()
@@ -286,8 +292,9 @@ impl UnitsStructure for RingOfIntegersWithIntegralBasisStructure {
         if self.is_zero(a) {
             Err(RingDivisionError::DivideByZero)
         } else {
-            if let Some(a_inv) = self.anf_to_roi(
-                self.algebraic_number_field
+            if let Some(a_inv) = self.try_anf_to_roi(
+                &self
+                    .algebraic_number_field
                     .inv(&self.roi_to_anf(a))
                     .unwrap(),
             ) {
@@ -318,12 +325,66 @@ impl CharZeroRingStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-// TODO:
-// impl FiniteUnitsStructure for RingOfIntegersWithIntegralBasisStructure {
-//     fn all_units(&self) -> Vec<Self::Set> {
-//         todo!()
-//     }
-// }
+#[derive(Debug, Clone)]
+pub struct RingOfIntegersToAlgebraicNumberFieldInclusion {
+    roi: RingOfIntegersWithIntegralBasisStructure,
+    anf: AlgebraicNumberFieldStructure,
+}
+
+impl RingOfIntegersToAlgebraicNumberFieldInclusion {
+    pub fn from_algebraic_number_field(anf: AlgebraicNumberFieldStructure) -> Self {
+        Self {
+            roi: anf.ring_of_integers(),
+            anf,
+        }
+    }
+
+    pub fn from_ring_of_integers(roi: RingOfIntegersWithIntegralBasisStructure) -> Self {
+        Self {
+            anf: roi.anf().clone(),
+            roi,
+        }
+    }
+}
+
+impl Morphism<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
+    for RingOfIntegersToAlgebraicNumberFieldInclusion
+{
+    fn domain(&self) -> &RingOfIntegersWithIntegralBasisStructure {
+        &self.roi
+    }
+
+    fn range(&self) -> &AlgebraicNumberFieldStructure {
+        &self.anf
+    }
+}
+
+impl Function<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
+    for RingOfIntegersToAlgebraicNumberFieldInclusion
+{
+    fn image(
+        &self,
+        x: &<RingOfIntegersWithIntegralBasisStructure as SetStructure>::Set,
+    ) -> <AlgebraicNumberFieldStructure as SetStructure>::Set {
+        self.roi.roi_to_anf(x)
+    }
+}
+
+impl InjectiveFunction<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
+    for RingOfIntegersToAlgebraicNumberFieldInclusion
+{
+    fn try_preimage(
+        &self,
+        x: &<AlgebraicNumberFieldStructure as SetStructure>::Set,
+    ) -> Option<<RingOfIntegersWithIntegralBasisStructure as SetStructure>::Set> {
+        self.roi.try_anf_to_roi(x)
+    }
+}
+
+impl RingHomomorphism<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
+    for RingOfIntegersToAlgebraicNumberFieldInclusion
+{
+}
 
 #[cfg(test)]
 mod tests {
@@ -356,7 +417,7 @@ mod tests {
 
         {
             assert!(
-                roi.anf_to_roi(Polynomial::<Rational>::from_coeffs(vec![
+                roi.try_anf_to_roi(&Polynomial::<Rational>::from_coeffs(vec![
                     Rational::ONE_HALF,
                     Rational::ONE,
                 ]))
@@ -364,7 +425,7 @@ mod tests {
             );
 
             let c = roi
-                .anf_to_roi(Polynomial::<Rational>::from_coeffs(vec![
+                .try_anf_to_roi(&Polynomial::<Rational>::from_coeffs(vec![
                     Rational::from(2),
                     Rational::from(3),
                 ]))
@@ -392,24 +453,24 @@ mod tests {
         }
 
         {
-            let alpha = roi.anf_to_roi((2 + 3 * &x).into_verbose()).unwrap();
-            let beta = roi.anf_to_roi((-1 + 2 * &x).into_verbose()).unwrap();
+            let alpha = roi.try_anf_to_roi(&(2 + 3 * &x).into_verbose()).unwrap();
+            let beta = roi.try_anf_to_roi(&(-1 + 2 * &x).into_verbose()).unwrap();
 
             {
-                let gamma = roi.anf_to_roi((1 + 5 * &x).into_verbose()).unwrap();
+                let gamma = roi.try_anf_to_roi(&(1 + 5 * &x).into_verbose()).unwrap();
                 // (2 + 3x) + (-1 + 2x) = 1 + 5x
                 assert_eq!(roi.add(&alpha, &beta), gamma);
             }
 
             {
-                let gamma = roi.anf_to_roi((-44 + &x).into_verbose()).unwrap();
+                let gamma = roi.try_anf_to_roi(&(-44 + &x).into_verbose()).unwrap();
                 // x^2 = -7 so
                 // (2 + 3x) * (-1 + 2x) = -44 + x
                 assert_eq!(roi.mul(&alpha, &beta), gamma);
             }
 
             {
-                let gamma = roi.anf_to_roi((-2 - 3 * &x).into_verbose()).unwrap();
+                let gamma = roi.try_anf_to_roi(&(-2 - 3 * &x).into_verbose()).unwrap();
                 // -(2 + 3x) = -2 - 3x
                 assert_eq!(roi.neg(&alpha), gamma);
             }
