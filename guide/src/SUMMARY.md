@@ -3,7 +3,12 @@
 - [Introduction](./introduction.md)
 - [Getting Started](./getting_started.md)
 - [Examples](./examples.md)
-- [The Structure System](./structure.md)
+- [The Structure System](./structure/root.md)
+  - [Structure Traits](./structure/structure.md)
+  - [Canonical Structure](./structure/canonical.md)
+  <!-- - [Morphisms](./structure/morphism.md) -->
+  - [Sets](./structure/sets.md)
+  - [Rings](./structure/rings.md)
 <!-- - [Combinatorics]()
 - - [Number Partitions]()
 - - [Number Compositions]()
