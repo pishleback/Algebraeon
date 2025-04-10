@@ -599,47 +599,6 @@ where
     }
 }
 
-pub trait CharZeroStructure: RingStructure {
-    fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
-}
-pub trait MetaCharZero: MetaRing
-where
-    Self::Structure: CharZeroStructure,
-{
-    fn try_to_int(&self) -> Option<Integer> {
-        Self::structure().try_to_int(self)
-    }
-}
-impl<R: MetaType> MetaCharZero for R where Self::Structure: CharZeroStructure<Set = R> {}
-
-impl<RS: CharZeroStructure + 'static> InfiniteStructure for RS {
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetStructure>::Set>> {
-        struct IntegerIterator<RS: CharZeroStructure> {
-            ring: RS,
-            next: Integer,
-        }
-
-        impl<RS: CharZeroStructure> Iterator for IntegerIterator<RS> {
-            type Item = RS::Set;
-
-            fn next(&mut self) -> Option<Self::Item> {
-                let next = self.next.clone();
-                if Integer::ZERO < next {
-                    self.next = -self.next.clone();
-                } else {
-                    self.next = Integer::from(1) - self.next.clone();
-                }
-                Some(self.ring.from_int(next))
-            }
-        }
-
-        Box::new(IntegerIterator {
-            ring: self.clone(),
-            next: Integer::from(0),
-        })
-    }
-}
-
 pub trait FieldStructure: IntegralDomainStructure {}
 
 impl<FS: FieldStructure> FavoriteAssociateStructure for FS {
@@ -693,6 +652,60 @@ impl<FS: FieldStructure> FactorableStructure for FS {
         }
     }
 }
+
+pub trait CharZeroRingStructure: RingStructure {
+    fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
+}
+pub trait MetaCharZeroRing: MetaRing
+where
+    Self::Structure: CharZeroRingStructure,
+{
+    fn try_to_int(&self) -> Option<Integer> {
+        Self::structure().try_to_int(self)
+    }
+}
+impl<R: MetaType> MetaCharZeroRing for R where Self::Structure: CharZeroRingStructure<Set = R> {}
+
+impl<RS: CharZeroRingStructure + 'static> InfiniteStructure for RS {
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetStructure>::Set>> {
+        struct IntegerIterator<RS: CharZeroRingStructure> {
+            ring: RS,
+            next: Integer,
+        }
+
+        impl<RS: CharZeroRingStructure> Iterator for IntegerIterator<RS> {
+            type Item = RS::Set;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                let next = self.next.clone();
+                if Integer::ZERO < next {
+                    self.next = -self.next.clone();
+                } else {
+                    self.next = Integer::from(1) - self.next.clone();
+                }
+                Some(self.ring.from_int(next))
+            }
+        }
+
+        Box::new(IntegerIterator {
+            ring: self.clone(),
+            next: Integer::from(0),
+        })
+    }
+}
+
+pub trait CharZeroFieldStructure: FieldStructure + CharZeroRingStructure {
+    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
+}
+pub trait MetaCharZeroField: MetaRing
+where
+    Self::Structure: CharZeroFieldStructure,
+{
+    fn try_to_int(&self) -> Option<Rational> {
+        Self::structure().try_to_rat(self)
+    }
+}
+impl<R: MetaType> MetaCharZeroField for R where Self::Structure: CharZeroFieldStructure<Set = R> {}
 
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};

@@ -926,7 +926,7 @@ impl IntegralDomainStructure for ComplexAlgebraicCanonicalStructure {
 
 impl FieldStructure for ComplexAlgebraicCanonicalStructure {}
 
-impl CharZeroStructure for ComplexAlgebraicCanonicalStructure {
+impl CharZeroRingStructure for ComplexAlgebraicCanonicalStructure {
     fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
         match alg {
             ComplexAlgebraic::Real(real_alg) => real_alg.try_to_int(),

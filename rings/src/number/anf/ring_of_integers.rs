@@ -312,7 +312,7 @@ impl IntegralDomainStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl CharZeroStructure for RingOfIntegersWithIntegralBasisStructure {
+impl CharZeroRingStructure for RingOfIntegersWithIntegralBasisStructure {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
         self.anf().try_to_int(&self.roi_to_anf(x))
     }

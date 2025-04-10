@@ -44,7 +44,7 @@ impl IntegralDomainStructure for RationalCanonicalStructure {
     }
 }
 
-impl CharZeroStructure for RationalCanonicalStructure {
+impl CharZeroRingStructure for RationalCanonicalStructure {
     fn try_to_int(&self, x: &Rational) -> Option<Integer> {
         let (n, d) = x.numerator_and_denominator();
         debug_assert_ne!(&d, &Natural::ZERO);

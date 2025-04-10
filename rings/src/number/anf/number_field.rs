@@ -171,7 +171,7 @@ impl AlgebraicNumberFieldStructure {
     }
 }
 
-impl CharZeroStructure for AlgebraicNumberFieldStructure {
+impl CharZeroRingStructure for AlgebraicNumberFieldStructure {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
         let x = self.reduce(x);
         x.try_to_int()

@@ -3,8 +3,8 @@ use crate::{
     linear::matrix::Matrix,
     polynomial::*,
     structure::{
-        EuclideanDivisionStructure, FactorableStructure, Factored, MetaRing, MetaRingEq,
-        MetaSemiRing, MetaFactorableStructure, QuotientStructure, RingStructure, SemiRingStructure,
+        EuclideanDivisionStructure, FactorableStructure, Factored, MetaFactorableStructure,
+        MetaRing, MetaRingEq, MetaSemiRing, QuotientStructure, RingStructure, SemiRingStructure,
     },
 };
 use algebraeon_nzq::*;
