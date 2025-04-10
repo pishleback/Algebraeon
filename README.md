@@ -25,7 +25,7 @@ Output:
 */
 ```
 
-Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization), the third-fastest known factoring algorithm known, for quickly finding prime factors with around 20 digits.
+Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization) for quickly finding prime factors with around 20 digits.
 
 ## Factoring Polynomials
 
