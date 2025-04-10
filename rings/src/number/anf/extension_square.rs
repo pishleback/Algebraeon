@@ -106,6 +106,7 @@ mod tests {
         let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
         let roi = anf.ring_of_integers();
         let sq = RingOfIntegersSquare::new(&roi);
+        let r_to_k_fof = sq.r_to_k_field_of_fractions();
 
         let sample_rats = Rational::exhaustive_rationals()
             .take(10)
@@ -118,11 +119,16 @@ mod tests {
                     let alpha =
                         Polynomial::<Rational>::from_coeffs(vec![x.clone(), y.clone(), z.clone()]);
                     println!("alpha = {:?}", alpha);
-                    let d = sq.integralize_multiplier(&alpha);
-                    println!("d = {:?}", d);
-                    let d_times_alpha = anf.mul(&anf.from_int(&d), &alpha);
-                    println!("d * alpha = {:?}", d_times_alpha);
-                    assert!(anf.is_algebraic_integer(&d_times_alpha));
+                    let m = sq.integralize_multiplier(&alpha);
+                    println!("m = {:?}", m);
+                    let m_times_alpha = anf.mul(&anf.from_int(&m), &alpha);
+                    println!("m * alpha = {:?}", m_times_alpha);
+                    assert!(anf.is_algebraic_integer(&m_times_alpha));
+                    let (n, d) = r_to_k_fof.numerator_and_denominator(&alpha);
+                    println!("n={:?} d={:?}", n, d);
+                    let (n, d) = (r_to_k_fof.image(&n), r_to_k_fof.image(&d));
+                    println!("n={:?} d={:?}", n, d);
+                    assert!(anf.equal(&alpha, &anf.div(&n, &d).unwrap()));
                 }
             }
         }
