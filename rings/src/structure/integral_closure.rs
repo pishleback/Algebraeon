@@ -251,6 +251,7 @@ pub trait FactorableIdealsSquare<
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
 >: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>
 {
+    fn factor_prime_ideal(p: &DedekindDomainPrimeIdeal<Z>) -> DedekindDomainIdealFactorization<R>;
 }
 
 /*
