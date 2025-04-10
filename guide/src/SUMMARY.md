@@ -1,8 +1,8 @@
 # Summary
 
 - [Introduction](./introduction.md)
-- [Getting Started](./getting_started.md)
-- [Examples](./examples.md)
+- [Getting Started](./getting_started/root.md)
+  - [Examples](./getting_started/examples.md)
 - [The Structure System](./structure/root.md)
   - [Structure Traits](./structure/structure.md)
   - [Canonical Structure](./structure/canonical.md)
