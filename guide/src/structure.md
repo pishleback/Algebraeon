@@ -76,7 +76,37 @@ assert!(mod_6.equal(
 
 ## Canonical Structures
 
-Sometimes we don't want to implement a whole family of sets with structure, such as the ring of integers modulo \\(n\\) for all naturals \\(n\\), rather we only want to implement a single type. An example of this scenario is the field of rational numbers. Since sets with structure are supposed to be represented by instances of a type implementing `Structure`, we'd need to define a singleton type, say `RationalCanonicalStructure`, which implements `SetStructure<Set = Rational>`. Algebraeon provides a derive macro called `CanonicalStructure` to streamline this.
+Sometimes we only want to define one set with structure rather than a family of sets, for example, the set of all rational numbers. Since sets with structure are represented in Algebraeon by instances of a type implementing `Structure`, we will need a new type with exactly once instance to represent the structure on the set. This can be done explicitly
+
+```rust
+use algebraeon::{nzq::Rational, rings::structure::*, sets::structure::*};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MyRational {
+    value: Rational,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MyRationalCanonicalStructure {}
+
+impl Structure for MyRationalCanonicalStructure {}
+
+impl SetStructure for MyRationalCanonicalStructure {
+    type Set = MyRational;
+
+    fn is_element(&self, _x: &Self::Set) -> bool {
+        true
+    }
+}
+
+impl EqStructure for MyRationalCanonicalStructure {
+    fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
+        x == y
+    }
+}
+```
+
+However, Algebraeon provides a derive macro called `CanonicalStructure` which reduces the boilerplate code above to just
 
 ```rust
 use algebraeon::{nzq::Rational, rings::structure::*, sets::structure::*};
@@ -85,6 +115,13 @@ use algebraeon::{nzq::Rational, rings::structure::*, sets::structure::*};
 pub struct MyRational {
     value: Rational,
 }
+```
+
+In any case, once we have `MyRationalCanonicalStructure` implementing `Structure` and `SetStructure<Set = MyRational>`, we can go on to implement more traits `RingStructure` and `FieldStructure` for `MyRationalCanonicalStructure` to give the set of instances of `MyRational` the structure of a ring and a field.
+
+<!-- ```
+// The CanonicalStructure derive macro defines a new type MyRationalCanonicalStructure with one value and implements `Structure`, `SetStructure` and `EqStructure` for it.
+// We can proceed to implement more interesting structures.
 
 impl SemiRingStructure for MyRationalCanonicalStructure {
     fn zero(&self) -> Self::Set {
@@ -129,4 +166,10 @@ assert_eq!(
         value: Rational::from_str("8/27").unwrap()
     }
 );
-```
+``` -->
+
+<!-- # Sets
+
+# Rings and Fields
+
+# Groups -->
