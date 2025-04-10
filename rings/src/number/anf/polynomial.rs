@@ -4,7 +4,7 @@ use crate::{
     polynomial::*,
     structure::{
         EuclideanDivisionStructure, FactorableStructure, Factored, MetaRing, MetaRingEq,
-        MetaSemiRing, MetaUniqueFactorization, QuotientStructure, RingStructure, SemiRingStructure,
+        MetaSemiRing, MetaFactorableStructure, QuotientStructure, RingStructure, SemiRingStructure,
     },
 };
 use algebraeon_nzq::*;

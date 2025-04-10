@@ -135,23 +135,26 @@ impl<R: MetaRing> MetaIdealArithmeticStructure for R where
 }
 
 pub struct DedekindDomainPrimeIdeal<RS: DedekindDomainStructure> {
-    ideal: RS::Ideal,
+    prime_ideal: RS::Ideal,
 }
 
 pub struct DedekindDomainIdealFactorization<RS: DedekindDomainStructure> {
     factors: Vec<(DedekindDomainPrimeIdeal<RS>, Natural)>,
 }
 
-pub trait DedekindDomainStructure: IdealArithmeticStructure {
+/// A ring in which all ideals uniquely factor as a product of powers of prime ideals
+pub trait DedekindDomainStructure: IdealArithmeticStructure {}
+
+pub trait FactorableIdealsStructure: DedekindDomainStructure {
     fn factor_ideal(&self) -> DedekindDomainIdealFactorization<Self>;
     fn is_prime_ideal(&self, ideal: Self::Ideal) -> bool;
 }
 pub trait MetaDedekindDomainStructure: MetaIdealArithmeticStructure
 where
-    Self::Structure: DedekindDomainStructure,
+    Self::Structure: FactorableIdealsStructure,
 {
 }
 impl<R: MetaRing> MetaDedekindDomainStructure for R where
-    Self::Structure: DedekindDomainStructure<Set = R>
+    Self::Structure: FactorableIdealsStructure<Set = R>
 {
 }

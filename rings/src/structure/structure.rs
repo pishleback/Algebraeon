@@ -378,47 +378,6 @@ impl<R: MetaRing> MetaGreatestCommonDivisor for R where
 {
 }
 
-pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {}
-
-pub trait FactorableStructure: UniqueFactorizationStructure {
-    //a UFD with an explicit algorithm to compute unique factorizations
-    fn factor(&self, a: &Self::Set) -> Option<super::factorization::Factored<Self>>;
-
-    fn is_irreducible(&self, a: &Self::Set) -> bool {
-        match self.factor(a) {
-            None => false, //zero is not irreducible
-            Some(factored) => factored.is_irreducible(),
-        }
-    }
-
-    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        match (self.factor(a), self.factor(b)) {
-            (Some(factored_a), Some(factored_b)) => Factored::gcd(factored_a, factored_b),
-            (None, Some(_)) => b.clone(),
-            (Some(_), None) => a.clone(),
-            (None, None) => self.zero(),
-        }
-    }
-}
-
-pub trait MetaUniqueFactorization: MetaFavoriteAssociate
-where
-    Self::Structure: FactorableStructure,
-{
-    fn factor(&self) -> Option<Factored<Self::Structure>> {
-        Self::structure().factor(self)
-    }
-
-    fn is_irreducible(&self) -> bool {
-        Self::structure().is_irreducible(self)
-    }
-
-    fn gcd_by_factor(a: &Self, b: &Self) -> Self {
-        Self::structure().gcd_by_factor(a, b)
-    }
-}
-impl<R: MetaRing> MetaUniqueFactorization for R where Self::Structure: FactorableStructure<Set = R> {}
-
 pub trait BezoutDomainStructure: GreatestCommonDivisorStructure {
     //any gcds should be the standard associate representative
     fn xgcd(&self, a: &Self::Set, b: &Self::Set) -> (Self::Set, Self::Set, Self::Set); //(g, x, y) s.t. g = ax + by
@@ -583,6 +542,47 @@ impl<R: MetaRing> MetaEuclideanDivision for R where
     Self::Structure: EuclideanDivisionStructure<Set = R>
 {
 }
+
+pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {}
+
+pub trait FactorableStructure: UniqueFactorizationStructure {
+    //a UFD with an explicit algorithm to compute unique factorizations
+    fn factor(&self, a: &Self::Set) -> Option<super::factorization::Factored<Self>>;
+
+    fn is_irreducible(&self, a: &Self::Set) -> bool {
+        match self.factor(a) {
+            None => false, //zero is not irreducible
+            Some(factored) => factored.is_irreducible(),
+        }
+    }
+
+    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        match (self.factor(a), self.factor(b)) {
+            (Some(factored_a), Some(factored_b)) => Factored::gcd(factored_a, factored_b),
+            (None, Some(_)) => b.clone(),
+            (Some(_), None) => a.clone(),
+            (None, None) => self.zero(),
+        }
+    }
+}
+
+pub trait MetaFactorableStructure: MetaFavoriteAssociate
+where
+    Self::Structure: FactorableStructure,
+{
+    fn factor(&self) -> Option<Factored<Self::Structure>> {
+        Self::structure().factor(self)
+    }
+
+    fn is_irreducible(&self) -> bool {
+        Self::structure().is_irreducible(self)
+    }
+
+    fn gcd_by_factor(a: &Self, b: &Self) -> Self {
+        Self::structure().gcd_by_factor(a, b)
+    }
+}
+impl<R: MetaRing> MetaFactorableStructure for R where Self::Structure: FactorableStructure<Set = R> {}
 
 pub trait InfiniteStructure: SetStructure {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;

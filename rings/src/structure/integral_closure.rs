@@ -221,29 +221,55 @@ pub trait IntegralClosureSquare<
     /// For alpha in K return non-zero d in Z such that d*alpha is in R
     fn integralize_multiplier(&self, alpha: &K::Set) -> Z::Set;
 
-    /*
-    integralize_multiplier for when Z : GCDStructure
-    {
-        let q_poly = PolynomialStructure::new(self.q_field().clone());
-        let k_poly = PolynomialStructure::new(self.k_field().clone());
-
-        let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
-        debug_assert!(q_poly.is_monic(&alpha_min_poly_monic));
-
-        let alpha_min_poly_monic_coeffs = alpha_min_poly_monic.into_coeffs();
-        let alpha_min_poly_monic_coeffs_denominators = alpha_min_poly_monic_coeffs
-            .into_iter()
-            .map(|c| self.z_to_q().denominator(&c));
-
-        todo!()
-    }
-    */
-
     /// Every element of K is a fraction of elements of R
     fn r_to_k_field_of_fractions(&self) -> impl FieldOfFractionsInclusion<R, K> {
         FieldOfFractionsInclusionForIntegralClosure::new(self.clone())
     }
 }
+
+/// A commuting square of injective ring homomorphisms
+///
+/// Q → K
+/// ↑   ↑
+/// Z → R
+///
+/// such that
+///  - Q is the field of fractions of Z
+///  - Q → K is a finite dimensional field extension
+///  - R is the integral closure of Z in K
+///  - Z and R are Dedekind domains
+/// 
+/// This trait allows, for each prime ideal p of Z, the ideal pR of R to be factored into prime ideals in R
+pub trait FactorableIdealsSquare<
+    Z: IntegralDomainStructure,
+    R: IntegralDomainStructure,
+    Q: FieldStructure,
+    K: FieldStructure,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
+    QK: FiniteDimensionalFieldExtension<Q, K>,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+>: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>
+{
+}
+
+/*
+integralize_multiplier for when Z : GCDStructure
+{
+    let q_poly = PolynomialStructure::new(self.q_field().clone());
+    let k_poly = PolynomialStructure::new(self.k_field().clone());
+
+    let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
+    debug_assert!(q_poly.is_monic(&alpha_min_poly_monic));
+
+    let alpha_min_poly_monic_coeffs = alpha_min_poly_monic.into_coeffs();
+    let alpha_min_poly_monic_coeffs_denominators = alpha_min_poly_monic_coeffs
+        .into_iter()
+        .map(|c| self.z_to_q().denominator(&c));
+
+    todo!()
+}
+*/
 
 // #[derive(Clone)]
 // pub struct IntegralClosureSquare<
