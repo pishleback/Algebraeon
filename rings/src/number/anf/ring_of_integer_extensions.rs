@@ -204,7 +204,6 @@ impl
             RingOfIntegersWithIntegralBasisStructure,
         >,
     > {
-        println!("{:?}", ideal);
         let roi = self.r_ring();
         let extension_square = RingOfIntegersExtension::new(roi.clone());
         let norm = extension_square.ideal_norm(ideal);
