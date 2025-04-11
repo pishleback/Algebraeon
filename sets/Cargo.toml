@@ -13,7 +13,7 @@ readme = "../README.md"
 name = "algebraeon_sets"
 
 [dependencies]
-algebraeon-macros = {path = "../macros" }
+algebraeon-macros = { version = "=0.0.12", path = "../macros" }
 indexmap = "2.8.0"
 itertools = "0.14.0"
 malachite-base = "0.5.1"
