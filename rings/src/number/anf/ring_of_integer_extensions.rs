@@ -6,7 +6,7 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
-pub struct RingOfIntegersSquare {
+pub struct RingOfIntegersExtension {
     z: IntegerCanonicalStructure,
     q: RationalCanonicalStructure,
     r: RingOfIntegersWithIntegralBasisStructure,
@@ -17,10 +17,10 @@ pub struct RingOfIntegersSquare {
     r_to_k: RingOfIntegersToAlgebraicNumberFieldInclusion,
 }
 
-impl RingOfIntegersSquare {
+impl RingOfIntegersExtension {
     pub fn new(roi: &RingOfIntegersWithIntegralBasisStructure) -> Self {
         let anf = roi.anf();
-        RingOfIntegersSquare {
+        RingOfIntegersExtension {
             z: Integer::structure(),
             q: Rational::structure(),
             r: roi.clone(),
@@ -36,7 +36,7 @@ impl RingOfIntegersSquare {
 }
 
 impl
-    IntegralClosureSquare<
+    IntegralClosureExtension<
         IntegerCanonicalStructure,
         RationalCanonicalStructure,
         RingOfIntegersWithIntegralBasisStructure,
@@ -45,7 +45,7 @@ impl
         PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
         PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
         RingOfIntegersToAlgebraicNumberFieldInclusion,
-    > for RingOfIntegersSquare
+    > for RingOfIntegersExtension
 {
     fn z_ring(&self) -> &IntegerCanonicalStructure {
         &self.z
@@ -93,7 +93,7 @@ impl
 }
 
 impl
-    FactorablePrimeIdealsSquare<
+    DedekindDomainExtension<
         IntegerCanonicalStructure,
         RationalCanonicalStructure,
         RingOfIntegersWithIntegralBasisStructure,
@@ -102,7 +102,7 @@ impl
         PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
         PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
         RingOfIntegersToAlgebraicNumberFieldInclusion,
-    > for RingOfIntegersSquare
+    > for RingOfIntegersExtension
 {
     fn factor_prime_ideal(
         &self,
@@ -142,14 +142,6 @@ impl
                 .collect(),
         )
     }
-
-    fn residue_class_degree(
-        &self,
-        p: &DedekindDomainPrimeIdeal<IntegerCanonicalStructure>,
-        q: &DedekindDomainPrimeIdeal<RingOfIntegersWithIntegralBasisStructure>,
-    ) -> Natural {
-        todo!()
-    }
 }
 
 #[cfg(test)]
@@ -162,7 +154,7 @@ mod tests {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
         let roi = anf.ring_of_integers();
-        let sq = RingOfIntegersSquare::new(&roi);
+        let sq = RingOfIntegersExtension::new(&roi);
         let r_to_k_fof = sq.r_to_k_field_of_fractions();
 
         let sample_rats = Rational::exhaustive_rationals()
@@ -196,7 +188,7 @@ mod tests {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
         let roi = anf.ring_of_integers();
-        let sq = RingOfIntegersSquare::new(&roi);
+        let sq = RingOfIntegersExtension::new(&roi);
 
         let f2 =
             sq.factor_prime_ideal(&DedekindDomainPrimeIdeal::try_from_nat(2u32.into()).unwrap());

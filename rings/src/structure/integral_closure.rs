@@ -1,6 +1,5 @@
 use super::*;
 use crate::polynomial::*;
-use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -15,7 +14,7 @@ struct FieldOfFractionsInclusionForIntegralClosure<
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > {
     z: PhantomData<Z>,
     q: PhantomData<Q>,
@@ -37,7 +36,7 @@ impl<
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
     fn new(square: ICS) -> Self {
@@ -64,7 +63,7 @@ impl<
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > Morphism<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
     fn domain(&self) -> &R {
@@ -85,7 +84,7 @@ impl<
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > Function<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
     fn image(&self, x: &R::Set) -> K::Set {
@@ -102,7 +101,7 @@ impl<
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > InjectiveFunction<R, K>
     for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
@@ -120,7 +119,7 @@ impl<
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > RingHomomorphism<R, K>
     for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
@@ -135,7 +134,7 @@ impl<
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > FieldOfFractionsInclusion<R, K>
     for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
@@ -167,7 +166,7 @@ impl<
 ///  - Q → K is a finite dimensional field extension
 ///
 /// This trait expresses that R is the integral closure of Z in K
-pub trait IntegralClosureSquare<
+pub trait IntegralClosureExtension<
     Z: IntegralDomainStructure,
     Q: FieldStructure,
     R: IntegralDomainStructure,
@@ -252,7 +251,7 @@ pub trait IntegralClosureSquare<
 ///  - Z and R are Dedekind domains
 ///
 /// This trait allows, for each prime ideal p of Z, the ideal pR of R to be factored into prime ideals in R
-pub trait FactorablePrimeIdealsSquare<
+pub trait DedekindDomainExtension<
     Z: DedekindDomainStructure,
     Q: FieldStructure,
     R: DedekindDomainStructure,
@@ -261,19 +260,21 @@ pub trait FactorablePrimeIdealsSquare<
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
->: IntegralClosureSquare<Z, Q, R, K, ZQ, ZR, QK, RK>
+>: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>
 {
     fn factor_prime_ideal(
         &self,
         p: &DedekindDomainPrimeIdeal<Z>,
     ) -> DedekindDomainIdealFactorization<R>;
 
-    /// The degree of the finite field extension Z/p -> R/q
-    fn residue_class_degree(
-        &self,
-        p: &DedekindDomainPrimeIdeal<Z>,
-        q: &DedekindDomainPrimeIdeal<R>,
-    ) -> Natural;
+    
+    // TODO: residue class degree, residue fields, induced embedding on residue fields
+    // /// The degree of the finite field extension Z/p -> R/q
+    // fn residue_class_degree(
+    //     &self,
+    //     p: &DedekindDomainPrimeIdeal<Z>,
+    //     q: &DedekindDomainPrimeIdeal<R>,
+    // ) -> Natural;
 }
 
 // #[derive(Clone)]
