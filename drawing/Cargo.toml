@@ -9,9 +9,9 @@ name = "algebraeon_drawing"
 [dependencies]
 glium = "0.32"
 rand = "0.8.5"
-algebraeon-sets = { version = "=0.0.11", path = "../sets" }
-algebraeon-groups = { version = "=0.0.11", path = "../groups" }
-algebraeon-rings = { version = "=0.0.11", path = "../rings" }
-algebraeon-geometry = { version = "=0.0.11", path = "../geometry" }
+algebraeon-sets = { version = "=0.0.12", path = "../sets" }
+algebraeon-groups = { version = "=0.0.12", path = "../groups" }
+algebraeon-rings = { version = "=0.0.12", path = "../rings" }
+algebraeon-geometry = { version = "=0.0.12", path = "../geometry" }
 algebraeon-combinatorics = { version = "0.0.0", path = "../combinatorics" }
-algebraeon-nzq = { version = "=0.0.11", path = "../nzq" }
+algebraeon-nzq = { version = "=0.0.12", path = "../nzq" }
