@@ -208,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    fn factor_integer_prime_in_ring_of_ints() {
+    fn ideals_opps_roi_extension_for_gaussian_integers() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
         let roi = anf.ring_of_integers();
