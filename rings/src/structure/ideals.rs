@@ -198,6 +198,10 @@ impl<RS: DedekindDomainStructure> DedekindDomainIdealFactorization<RS> {
         self.factors.iter().map(|(ideal, _)| ideal).collect()
     }
 
+    pub fn into_prime_factors_and_powers(self) -> Vec<(DedekindDomainPrimeIdeal<RS>, Natural)> {
+        self.factors
+    }
+
     /// Do any prime factors appear with multiplicity greater than 1?
     pub fn is_ramified(&self) -> bool {
         self.factors.iter().any(|(_, k)| k > &Natural::ONE)
