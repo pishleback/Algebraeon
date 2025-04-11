@@ -26,6 +26,6 @@
   - [p-Adic Algebraic Numbers]()
   - [Algebraic Number Fields]()
     - [Embedded Number Fields]()
-    - [Ideals]()
+    - [Ideals](./anf_ideals.md)
     - [Class Group]()
 - [Groups]()

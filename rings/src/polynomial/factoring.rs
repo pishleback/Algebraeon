@@ -3,7 +3,7 @@ use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
-impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + CharZeroStructure>
+impl<RS: UniqueFactorizationStructure + GreatestCommonDivisorStructure + CharZeroRingStructure>
     PolynomialStructure<RS>
 where
     PolynomialStructure<RS>: SetStructure<Set = Polynomial<RS::Set>>
@@ -131,7 +131,7 @@ where
     }
 }
 
-impl<RS: UniqueFactorizationStructure + CharZeroStructure + FiniteUnitsStructure + 'static>
+impl<RS: UniqueFactorizationStructure + CharZeroRingStructure + FiniteUnitsStructure + 'static>
     PolynomialStructure<RS>
 where
     PolynomialStructure<RS>: SetStructure<Set = Polynomial<RS::Set>>,
@@ -227,7 +227,7 @@ where
 impl<
     RS: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
-        + CharZeroStructure
+        + CharZeroRingStructure
         + FiniteUnitsStructure
         + 'static,
 > PolynomialStructure<RS>
@@ -266,7 +266,7 @@ where
 impl<
     RS: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
-        + CharZeroStructure
+        + CharZeroRingStructure
         + FiniteUnitsStructure
         + 'static,
 > PolynomialStructure<RS>
@@ -304,7 +304,7 @@ impl<R: MetaType> Polynomial<R>
 where
     R::Structure: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
-        + CharZeroStructure
+        + CharZeroRingStructure
         + FiniteUnitsStructure
         + 'static,
     PolynomialStructure<R::Structure>: SetStructure<Set = Polynomial<R>>

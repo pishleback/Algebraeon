@@ -378,47 +378,6 @@ impl<R: MetaRing> MetaGreatestCommonDivisor for R where
 {
 }
 
-pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {}
-
-pub trait FactorableStructure: UniqueFactorizationStructure {
-    //a UFD with an explicit algorithm to compute unique factorizations
-    fn factor(&self, a: &Self::Set) -> Option<super::factorization::Factored<Self>>;
-
-    fn is_irreducible(&self, a: &Self::Set) -> bool {
-        match self.factor(a) {
-            None => false, //zero is not irreducible
-            Some(factored) => factored.is_irreducible(),
-        }
-    }
-
-    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        match (self.factor(a), self.factor(b)) {
-            (Some(factored_a), Some(factored_b)) => Factored::gcd(factored_a, factored_b),
-            (None, Some(_)) => b.clone(),
-            (Some(_), None) => a.clone(),
-            (None, None) => self.zero(),
-        }
-    }
-}
-
-pub trait MetaUniqueFactorization: MetaFavoriteAssociate
-where
-    Self::Structure: FactorableStructure,
-{
-    fn factor(&self) -> Option<Factored<Self::Structure>> {
-        Self::structure().factor(self)
-    }
-
-    fn is_irreducible(&self) -> bool {
-        Self::structure().is_irreducible(self)
-    }
-
-    fn gcd_by_factor(a: &Self, b: &Self) -> Self {
-        Self::structure().gcd_by_factor(a, b)
-    }
-}
-impl<R: MetaRing> MetaUniqueFactorization for R where Self::Structure: FactorableStructure<Set = R> {}
-
 pub trait BezoutDomainStructure: GreatestCommonDivisorStructure {
     //any gcds should be the standard associate representative
     fn xgcd(&self, a: &Self::Set, b: &Self::Set) -> (Self::Set, Self::Set, Self::Set); //(g, x, y) s.t. g = ax + by
@@ -584,6 +543,47 @@ impl<R: MetaRing> MetaEuclideanDivision for R where
 {
 }
 
+pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {}
+
+pub trait FactorableStructure: UniqueFactorizationStructure {
+    //a UFD with an explicit algorithm to compute unique factorizations
+    fn factor(&self, a: &Self::Set) -> Option<super::factorization::Factored<Self>>;
+
+    fn is_irreducible(&self, a: &Self::Set) -> bool {
+        match self.factor(a) {
+            None => false, //zero is not irreducible
+            Some(factored) => factored.is_irreducible(),
+        }
+    }
+
+    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        match (self.factor(a), self.factor(b)) {
+            (Some(factored_a), Some(factored_b)) => Factored::gcd(factored_a, factored_b),
+            (None, Some(_)) => b.clone(),
+            (Some(_), None) => a.clone(),
+            (None, None) => self.zero(),
+        }
+    }
+}
+
+pub trait MetaFactorableStructure: MetaFavoriteAssociate
+where
+    Self::Structure: FactorableStructure,
+{
+    fn factor(&self) -> Option<Factored<Self::Structure>> {
+        Self::structure().factor(self)
+    }
+
+    fn is_irreducible(&self) -> bool {
+        Self::structure().is_irreducible(self)
+    }
+
+    fn gcd_by_factor(a: &Self, b: &Self) -> Self {
+        Self::structure().gcd_by_factor(a, b)
+    }
+}
+impl<R: MetaRing> MetaFactorableStructure for R where Self::Structure: FactorableStructure<Set = R> {}
+
 pub trait InfiniteStructure: SetStructure {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
 }
@@ -596,47 +596,6 @@ where
 {
     fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>> {
         todo!()
-    }
-}
-
-pub trait CharZeroStructure: RingStructure {
-    fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
-}
-pub trait MetaCharZero: MetaRing
-where
-    Self::Structure: CharZeroStructure,
-{
-    fn try_to_int(&self) -> Option<Integer> {
-        Self::structure().try_to_int(self)
-    }
-}
-impl<R: MetaType> MetaCharZero for R where Self::Structure: CharZeroStructure<Set = R> {}
-
-impl<RS: CharZeroStructure + 'static> InfiniteStructure for RS {
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetStructure>::Set>> {
-        struct IntegerIterator<RS: CharZeroStructure> {
-            ring: RS,
-            next: Integer,
-        }
-
-        impl<RS: CharZeroStructure> Iterator for IntegerIterator<RS> {
-            type Item = RS::Set;
-
-            fn next(&mut self) -> Option<Self::Item> {
-                let next = self.next.clone();
-                if Integer::ZERO < next {
-                    self.next = -self.next.clone();
-                } else {
-                    self.next = Integer::from(1) - self.next.clone();
-                }
-                Some(self.ring.from_int(next))
-            }
-        }
-
-        Box::new(IntegerIterator {
-            ring: self.clone(),
-            next: Integer::from(0),
-        })
     }
 }
 
@@ -693,6 +652,60 @@ impl<FS: FieldStructure> FactorableStructure for FS {
         }
     }
 }
+
+pub trait CharZeroRingStructure: RingStructure {
+    fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
+}
+pub trait MetaCharZeroRing: MetaRing
+where
+    Self::Structure: CharZeroRingStructure,
+{
+    fn try_to_int(&self) -> Option<Integer> {
+        Self::structure().try_to_int(self)
+    }
+}
+impl<R: MetaType> MetaCharZeroRing for R where Self::Structure: CharZeroRingStructure<Set = R> {}
+
+impl<RS: CharZeroRingStructure + 'static> InfiniteStructure for RS {
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetStructure>::Set>> {
+        struct IntegerIterator<RS: CharZeroRingStructure> {
+            ring: RS,
+            next: Integer,
+        }
+
+        impl<RS: CharZeroRingStructure> Iterator for IntegerIterator<RS> {
+            type Item = RS::Set;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                let next = self.next.clone();
+                if Integer::ZERO < next {
+                    self.next = -self.next.clone();
+                } else {
+                    self.next = Integer::from(1) - self.next.clone();
+                }
+                Some(self.ring.from_int(next))
+            }
+        }
+
+        Box::new(IntegerIterator {
+            ring: self.clone(),
+            next: Integer::from(0),
+        })
+    }
+}
+
+pub trait CharZeroFieldStructure: FieldStructure + CharZeroRingStructure {
+    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
+}
+pub trait MetaCharZeroField: MetaRing
+where
+    Self::Structure: CharZeroFieldStructure,
+{
+    fn try_to_rat(&self) -> Option<Rational> {
+        Self::structure().try_to_rat(self)
+    }
+}
+impl<R: MetaType> MetaCharZeroField for R where Self::Structure: CharZeroFieldStructure<Set = R> {}
 
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};

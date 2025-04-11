@@ -681,7 +681,7 @@ impl IntegralDomainStructure for RealAlgebraicCanonicalStructure {
 
 impl FieldStructure for RealAlgebraicCanonicalStructure {}
 
-impl CharZeroStructure for RealAlgebraicCanonicalStructure {
+impl CharZeroRingStructure for RealAlgebraicCanonicalStructure {
     fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
         match alg {
             RealAlgebraic::Rational(rat) => rat.try_to_int(),

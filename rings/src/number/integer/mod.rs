@@ -138,7 +138,7 @@ impl BezoutDomainStructure for IntegerCanonicalStructure {
     }
 }
 
-impl CharZeroStructure for IntegerCanonicalStructure {
+impl CharZeroRingStructure for IntegerCanonicalStructure {
     fn try_to_int(&self, x: &Integer) -> Option<Integer> {
         Some(x.clone())
     }

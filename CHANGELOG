@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
  - Removed reference counters in favour of clones for structures - in most situations the structures are empty anyway.
  - Merged EqStructure and PartialEqStructure.
  - Added is_element() to SetStructure.
+ - Structure for a commuting square of integral domain, its field of fractions, a finite field extension, and integral closure. Additional structure when both rings are Dedekind domains for factoring prime ideals of the small ring in the big ring.
 
 
 ## [0.0.11] - 2025-03-2025

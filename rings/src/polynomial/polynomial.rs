@@ -644,7 +644,7 @@ impl<FS: FieldStructure> BezoutDomainStructure for PolynomialStructure<FS> {
     }
 }
 
-impl<RS: GreatestCommonDivisorStructure + CharZeroStructure> PolynomialStructure<RS> {
+impl<RS: GreatestCommonDivisorStructure + CharZeroRingStructure> PolynomialStructure<RS> {
     pub fn primitive_squarefree_part(&self, f: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         if self.is_zero(&f) {
             f
@@ -680,7 +680,7 @@ impl<RS: FavoriteAssociateStructure + IntegralDomainStructure> FavoriteAssociate
     }
 }
 
-impl<RS: CharZeroStructure> CharZeroStructure for PolynomialStructure<RS> {
+impl<RS: CharZeroRingStructure> CharZeroRingStructure for PolynomialStructure<RS> {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
         self.coeff_ring().try_to_int(&self.as_constant(x)?)
     }
@@ -1069,7 +1069,7 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: GreatestCommonDivisorStructure + CharZeroStructure,
+    R::Structure: GreatestCommonDivisorStructure + CharZeroRingStructure,
 {
     pub fn primitive_squarefree_part(&self) -> Self {
         Self::structure().primitive_squarefree_part(self.clone())

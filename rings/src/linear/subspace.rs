@@ -202,11 +202,12 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
     ) -> LinearLattice<RS::Set> {
         let metamatrix = mats_to_rows(rows, cols, mats);
         let lattice = LinearLattice {
-            metamatrix: metamatrix,
+            metamatrix,
             rows,
             cols,
         };
-        debug_assert!(self.check_invariants(&lattice).is_ok());
+        #[cfg(debug_assertions)]
+        self.check_invariants(&lattice).unwrap();
         lattice
     }
 

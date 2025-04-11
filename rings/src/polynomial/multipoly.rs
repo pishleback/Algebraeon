@@ -602,7 +602,7 @@ impl<RS: FavoriteAssociateStructure> FavoriteAssociateStructure for MultiPolynom
     }
 }
 
-impl<RS: CharZeroStructure> CharZeroStructure for MultiPolynomialStructure<RS> {
+impl<RS: CharZeroRingStructure> CharZeroRingStructure for MultiPolynomialStructure<RS> {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
         self.coeff_ring().try_to_int(&self.as_constant(x)?)
     }
@@ -659,7 +659,7 @@ impl<RS: UniqueFactorizationStructure> UniqueFactorizationStructure
 impl<
     RS: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
-        + CharZeroStructure
+        + CharZeroRingStructure
         + FiniteUnitsStructure
         + 'static,
 > PolynomialStructure<MultiPolynomialStructure<RS>>
@@ -715,7 +715,7 @@ where
 impl<
     RS: UniqueFactorizationStructure
         + GreatestCommonDivisorStructure
-        + CharZeroStructure
+        + CharZeroRingStructure
         + FiniteUnitsStructure
         + 'static,
 > MultiPolynomialStructure<RS>

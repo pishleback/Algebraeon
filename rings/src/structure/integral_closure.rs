@@ -1,5 +1,6 @@
 use super::*;
 use crate::polynomial::*;
+use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -7,47 +8,47 @@ use std::marker::PhantomData;
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct FieldOfFractionsInclusionForIntegralClosure<
     Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
     Q: FieldStructure,
+    R: IntegralDomainStructure,
     K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > {
     z: PhantomData<Z>,
-    r: PhantomData<R>,
     q: PhantomData<Q>,
+    r: PhantomData<R>,
     k: PhantomData<K>,
+    zq: PhantomData<ZQ>,
     zr: PhantomData<ZR>,
     qk: PhantomData<QK>,
-    zq: PhantomData<ZQ>,
     rk: PhantomData<RK>,
     square: ICS,
 }
 
 impl<
     Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
     Q: FieldStructure,
+    R: IntegralDomainStructure,
     K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
-> FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
+> FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
     fn new(square: ICS) -> Self {
         Self {
             z: PhantomData,
-            r: PhantomData,
             q: PhantomData,
+            r: PhantomData,
             k: PhantomData,
+            zq: PhantomData,
             zr: PhantomData,
             qk: PhantomData,
-            zq: PhantomData,
             rk: PhantomData,
             square,
         }
@@ -56,15 +57,15 @@ impl<
 
 impl<
     Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
     Q: FieldStructure,
+    R: IntegralDomainStructure,
     K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
-> Morphism<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
+> Morphism<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
     fn domain(&self) -> &R {
         self.square.r_ring()
@@ -77,15 +78,15 @@ impl<
 
 impl<
     Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
     Q: FieldStructure,
+    R: IntegralDomainStructure,
     K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
-> Function<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
+> Function<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
     fn image(&self, x: &R::Set) -> K::Set {
         self.square.r_to_k().image(x)
@@ -94,16 +95,16 @@ impl<
 
 impl<
     Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
     Q: FieldStructure,
+    R: IntegralDomainStructure,
     K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > InjectiveFunction<R, K>
-    for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
+    for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
     fn try_preimage(&self, x: &K::Set) -> Option<R::Set> {
         self.square.r_to_k().try_preimage(x)
@@ -112,31 +113,31 @@ impl<
 
 impl<
     Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
     Q: FieldStructure,
+    R: IntegralDomainStructure,
     K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > RingHomomorphism<R, K>
-    for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
+    for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
 }
 
 impl<
     Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
     Q: FieldStructure,
+    R: IntegralDomainStructure,
     K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>,
+    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > FieldOfFractionsInclusion<R, K>
-    for FieldOfFractionsInclusionForIntegralClosure<Z, R, Q, K, ZR, QK, ZQ, RK, ICS>
+    for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
     fn numerator_and_denominator(&self, a: &K::Set) -> (R::Set, R::Set) {
         // let d in Z such that d*a is in R
@@ -147,10 +148,10 @@ impl<
         let n = self
             .try_preimage(&self.range().mul(&self.image(&d), a))
             .unwrap();
-        debug_assert!(
-            self.range()
-                .equal(a, &self.range().mul(&self.image(&n), &self.image(&d)))
-        );
+        debug_assert!(self.range().equal(
+            a,
+            &self.range().div(&self.image(&n), &self.image(&d)).unwrap()
+        ));
         (n, d)
     }
 }
@@ -166,25 +167,25 @@ impl<
 ///  - Q → K is a finite dimensional field extension
 ///
 /// This trait expresses that R is the integral closure of Z in K
-pub trait IntegralClosureSquare<
+pub trait IntegralClosureExtension<
     Z: IntegralDomainStructure,
-    R: IntegralDomainStructure,
     Q: FieldStructure,
+    R: IntegralDomainStructure,
     K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
 >: Debug + Clone
 {
     fn z_ring(&self) -> &Z;
-    fn r_ring(&self) -> &R;
     fn q_field(&self) -> &Q;
+    fn r_ring(&self) -> &R;
     fn k_field(&self) -> &K;
 
+    fn z_to_q(&self) -> &ZQ;
     fn z_to_r(&self) -> &ZR;
     fn q_to_k(&self) -> &QK;
-    fn z_to_q(&self) -> &ZQ;
     fn r_to_k(&self) -> &RK;
 
     /// The square should commute, so this should be both
@@ -221,23 +222,16 @@ pub trait IntegralClosureSquare<
     /// For alpha in K return non-zero d in Z such that d*alpha is in R
     fn integralize_multiplier(&self, alpha: &K::Set) -> Z::Set;
 
-    /*
-    integralize_multiplier for when Z : GCDStructure
-    {
-        let q_poly = PolynomialStructure::new(self.q_field().clone());
-        let k_poly = PolynomialStructure::new(self.k_field().clone());
-
-        let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
-        debug_assert!(q_poly.is_monic(&alpha_min_poly_monic));
-
-        let alpha_min_poly_monic_coeffs = alpha_min_poly_monic.into_coeffs();
-        let alpha_min_poly_monic_coeffs_denominators = alpha_min_poly_monic_coeffs
-            .into_iter()
-            .map(|c| self.z_to_q().denominator(&c));
-
-        todo!()
+    fn integral_scalar_multiple(&self, alpha: &K::Set) -> R::Set {
+        let d = self.integralize_multiplier(&alpha);
+        self.r_to_k()
+            .try_preimage(
+                &self
+                    .k_field()
+                    .mul(&self.r_to_k().image(&self.z_to_r().image(&d)), alpha),
+            )
+            .unwrap()
     }
-    */
 
     /// Every element of K is a fraction of elements of R
     fn r_to_k_field_of_fractions(&self) -> impl FieldOfFractionsInclusion<R, K> {
@@ -245,52 +239,118 @@ pub trait IntegralClosureSquare<
     }
 }
 
-// #[derive(Clone)]
-// pub struct IntegralClosureSquare<
-//     Z: IntegralDomainStructure,
-//     R: IntegralDomainStructure,
-//     Q: FieldStructure,
-//     K: FieldStructure,
-//     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-//     QK: FiniteDimensionalFieldExtension<Q, K>,
-//     ZQ: FieldOfFractionsInclusion<Z, Q>,
-//     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-// > {
-//     z: PhantomData<Z>,
-//     r: PhantomData<R>,
-//     q: PhantomData<Q>,
-//     k: PhantomData<K>,
-//     z_to_r: ZR,
-//     q_to_k: QK,
-//     z_to_q: ZQ,
-//     r_to_k: RK,
-// }
+/// A commuting square of injective ring homomorphisms
+///
+/// Q → K
+/// ↑   ↑
+/// Z → R
+///
+/// such that
+///  - Q is the field of fractions of Z
+///  - Q → K is a finite dimensional field extension
+///  - R is the integral closure of Z in K
+///  - Z and R are Dedekind domains
+///
+/// This trait allows, for each prime ideal p of Z, the ideal pR of R to be factored into prime ideals in R
+pub trait DedekindDomainExtension<
+    Z: DedekindDomainStructure,
+    Q: FieldStructure,
+    R: DedekindDomainStructure,
+    K: FieldStructure,
+    ZQ: FieldOfFractionsInclusion<Z, Q>,
+    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
+    QK: FiniteDimensionalFieldExtension<Q, K>,
+    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+>: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>
+{
+    fn ideal_norm(&self, ideal: &R::Ideal) -> Z::Ideal;
 
-// impl<
-//     Z: IntegralDomainStructure,
-//     R: IntegralDomainStructure,
-//     Q: FieldStructure,
-//     K: FieldStructure,
-//     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-//     QK: FiniteDimensionalFieldExtension<Q, K>,
-//     ZQ: FieldOfFractionsInclusion<Z, Q>,
-//     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-// > IntegralClosureSquare<Z, R, Q, K, ZR, QK, ZQ, RK>
-// {
-//     pub fn new(z_to_r: ZR, q_to_k: QK, z_to_q: ZQ, r_to_k: RK) -> Self {
-//         assert_eq!(z_to_r.domain(), z_to_q.domain());
-//         assert_eq!(q_to_k.domain(), z_to_q.range());
-//         assert_eq!(z_to_r.range(), r_to_k.domain());
-//         assert_eq!(q_to_k.range(), r_to_k.range());
-//         Self {
-//             z: PhantomData,
-//             r: PhantomData,
-//             q: PhantomData,
-//             k: PhantomData,
-//             z_to_r,
-//             q_to_k,
-//             z_to_q,
-//             r_to_k,
-//         }
-//     }
-// }
+    fn factor_prime_ideal(
+        &self,
+        prime_ideal: DedekindDomainPrimeIdeal<Z>,
+    ) -> DedekindExtensionIdealFactorsAbovePrime<Z, R>;
+
+    fn factor_ideal(&self, ideal: &R::Ideal) -> Option<DedekindExtensionIdealFactorization<Z, R>>;
+}
+
+#[derive(Debug, Clone)]
+pub struct DedekindExtensionIdealFactorsAbovePrime<
+    Z: DedekindDomainStructure,
+    R: DedekindDomainStructure,
+> {
+    base_prime: DedekindDomainPrimeIdeal<Z>,
+    // All factors lie above base_prime
+    // All powers are >= 1
+    factors: Vec<(DedekindDomainPrimeIdeal<R>, Natural)>,
+}
+
+impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
+    DedekindExtensionIdealFactorsAbovePrime<Z, R>
+{
+    pub fn from_powers_unchecked(
+        base_prime: DedekindDomainPrimeIdeal<Z>,
+        factors: Vec<(DedekindDomainPrimeIdeal<R>, Natural)>,
+    ) -> Self {
+        for (_factor, power) in &factors {
+            debug_assert_ne!(power, &Natural::ZERO);
+        }
+        Self {
+            base_prime,
+            factors,
+        }
+    }
+
+    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R>, Natural)> {
+        self.factors
+    }
+
+    pub fn unique_prime_factors(&self) -> Vec<&DedekindDomainPrimeIdeal<R>> {
+        self.factors.iter().map(|(ideal, _)| ideal).collect()
+    }
+
+    /// Do any prime factors appear with multiplicity greater than 1?
+    pub fn is_ramified(&self) -> bool {
+        self.factors.iter().any(|(_, k)| k > &Natural::ONE)
+    }
+
+    /// Is there exactly one prime factor with multiplicity equal to 1?
+    pub fn is_inert(&self) -> bool {
+        match self.factors.len() {
+            1 => {
+                let (_, k) = &self.factors[0];
+                debug_assert_ne!(k, &Natural::ZERO);
+                k == &Natural::ONE
+            }
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DedekindExtensionIdealFactorization<
+    Z: DedekindDomainStructure,
+    R: DedekindDomainStructure,
+> {
+    // Each should be above a different prime
+    factors_above_primes: Vec<DedekindExtensionIdealFactorsAbovePrime<Z, R>>,
+}
+
+impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
+    DedekindExtensionIdealFactorization<Z, R>
+{
+    pub fn from_ideal_factors_above_primes(
+        factors_above_primes: Vec<DedekindExtensionIdealFactorsAbovePrime<Z, R>>,
+    ) -> Self {
+        Self {
+            factors_above_primes,
+        }
+    }
+
+    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R>, Natural)> {
+        self.factors_above_primes
+            .into_iter()
+            .map(|factors| factors.into_powers())
+            .flatten()
+            .collect()
+    }
+}

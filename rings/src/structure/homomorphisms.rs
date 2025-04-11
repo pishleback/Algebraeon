@@ -57,19 +57,65 @@ impl<Ring: RingStructure> Function<IntegerCanonicalStructure, Ring>
     }
 }
 
-impl<Ring: CharZeroStructure> InjectiveFunction<IntegerCanonicalStructure, Ring>
+impl<Ring: CharZeroRingStructure> InjectiveFunction<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
-    fn try_preimage(
-        &self,
-        x: &<Ring as SetStructure>::Set,
-    ) -> Option<<IntegerCanonicalStructure as SetStructure>::Set> {
+    fn try_preimage(&self, x: &<Ring as SetStructure>::Set) -> Option<Integer> {
         self.range().try_to_int(x)
     }
 }
 
 impl<Ring: RingStructure> RingHomomorphism<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
+{
+}
+
+/// The unique field embedding Q -> K of the rationals into any field of characteristic zero
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PrincipalRationalSubfieldInclusion<Field: CharZeroFieldStructure> {
+    rational_structure: RationalCanonicalStructure,
+    field: Field,
+}
+
+impl<Field: CharZeroFieldStructure> PrincipalRationalSubfieldInclusion<Field> {
+    pub fn new(field: Field) -> Self {
+        Self {
+            rational_structure: Rational::structure(),
+            field,
+        }
+    }
+}
+
+impl<Field: CharZeroFieldStructure> Morphism<RationalCanonicalStructure, Field>
+    for PrincipalRationalSubfieldInclusion<Field>
+{
+    fn domain(&self) -> &RationalCanonicalStructure {
+        &self.rational_structure
+    }
+
+    fn range(&self) -> &Field {
+        &self.field
+    }
+}
+
+impl<Field: CharZeroFieldStructure> Function<RationalCanonicalStructure, Field>
+    for PrincipalRationalSubfieldInclusion<Field>
+{
+    fn image(&self, x: &Rational) -> <Field as SetStructure>::Set {
+        self.range().from_rat(x).unwrap()
+    }
+}
+
+impl<Field: CharZeroFieldStructure> InjectiveFunction<RationalCanonicalStructure, Field>
+    for PrincipalRationalSubfieldInclusion<Field>
+{
+    fn try_preimage(&self, x: &<Field as SetStructure>::Set) -> Option<Rational> {
+        self.range().try_to_rat(x)
+    }
+}
+
+impl<Field: CharZeroFieldStructure> RingHomomorphism<RationalCanonicalStructure, Field>
+    for PrincipalRationalSubfieldInclusion<Field>
 {
 }
 
