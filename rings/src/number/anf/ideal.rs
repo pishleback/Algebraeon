@@ -1,6 +1,6 @@
 use super::{ring_of_integer_extensions::RingOfIntegersExtension, ring_of_integers::*};
 use crate::{linear::subspace::*, structure::*};
-use algebraeon_nzq::Integer;
+use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::{MetaType, SetStructure};
 
 #[derive(Debug, Clone)]
@@ -79,13 +79,9 @@ impl RingOfIntegersWithIntegralBasisStructure {
         }
     }
 
-    // pub fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
-    //     self.check_ideal(ideal);
-    //     match ideal {
-    //         RingOfIntegersIdeal::Zero => Natural::ZERO,
-    //         RingOfIntegersIdeal::NonZero { lattice } => todo!(),
-    //     }
-    // }
+    pub fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
+        RingOfIntegersExtension::new(self.clone()).ideal_norm(ideal)
+    }
 }
 
 impl IdealStructure for RingOfIntegersWithIntegralBasisStructure {
