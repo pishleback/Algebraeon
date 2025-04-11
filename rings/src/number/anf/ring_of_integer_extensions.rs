@@ -1,7 +1,10 @@
+use super::ideal::RingOfIntegersIdeal;
 use super::number_field::*;
 use super::ring_of_integers::*;
+use crate::linear::matrix::Matrix;
 use crate::polynomial::PolynomialStructure;
 use crate::structure::*;
+use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
@@ -104,6 +107,27 @@ impl
         RingOfIntegersToAlgebraicNumberFieldInclusion,
     > for RingOfIntegersExtension
 {
+    fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
+        #[cfg(debug_assertions)]
+        self.r_ring().check_ideal(ideal);
+        match ideal {
+            RingOfIntegersIdeal::Zero => Natural::ZERO,
+            RingOfIntegersIdeal::NonZero { lattice } => {
+                let n = self.r_ring().degree();
+                let cols = lattice.basis_matrices();
+                #[cfg(debug_assertions)]
+                for col in &cols {
+                    assert_eq!(col.cols(), 1);
+                    assert_eq!(col.rows(), n);
+                }
+                let mat = Matrix::join_cols(n, cols);
+                debug_assert_eq!(mat.rows(), n);
+                debug_assert_eq!(mat.cols(), n);
+                mat.det().unwrap().abs()
+            }
+        }
+    }
+
     fn factor_prime_ideal(
         &self,
         p: &DedekindDomainPrimeIdeal<IntegerCanonicalStructure>,
@@ -194,15 +218,27 @@ mod tests {
             sq.factor_prime_ideal(&DedekindDomainPrimeIdeal::try_from_nat(2u32.into()).unwrap());
         assert!(!f2.is_inert());
         assert!(f2.is_ramified());
+        println!("f2 = {:?}", f2);
+        for ideal in f2.unique_prime_factors() {
+            assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 2u32.into())
+        }
 
         let f3 =
             sq.factor_prime_ideal(&DedekindDomainPrimeIdeal::try_from_nat(3u32.into()).unwrap());
         assert!(f3.is_inert());
         assert!(!f3.is_ramified());
+        println!("f3 = {:?}", f3);
+        for ideal in f3.unique_prime_factors() {
+            assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 9u32.into())
+        }
 
         let f5 =
             sq.factor_prime_ideal(&DedekindDomainPrimeIdeal::try_from_nat(5u32.into()).unwrap());
         assert!(!f5.is_inert());
         assert!(!f5.is_ramified());
+        println!("f5 = {:?}", f5);
+        for ideal in f5.unique_prime_factors() {
+            assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 5u32.into())
+        }
     }
 }

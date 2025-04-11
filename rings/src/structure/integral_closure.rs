@@ -262,12 +262,13 @@ pub trait DedekindDomainExtension<
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
 >: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>
 {
+    fn ideal_norm(&self, ideal: &R::Ideal) -> Z::Ideal;
+
     fn factor_prime_ideal(
         &self,
         p: &DedekindDomainPrimeIdeal<Z>,
     ) -> DedekindDomainIdealFactorization<R>;
 
-    
     // TODO: residue class degree, residue fields, induced embedding on residue fields
     // /// The degree of the finite field extension Z/p -> R/q
     // fn residue_class_degree(

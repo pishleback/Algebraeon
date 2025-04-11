@@ -1,7 +1,7 @@
 use super::ring_of_integers::*;
 use crate::{linear::subspace::*, structure::*};
 use algebraeon_nzq::Integer;
-use algebraeon_sets::structure::MetaType;
+use algebraeon_sets::structure::{MetaType, SetStructure};
 
 #[derive(Debug, Clone)]
 pub enum RingOfIntegersIdeal {
@@ -14,7 +14,7 @@ pub enum RingOfIntegersIdeal {
 
 impl RingOfIntegersWithIntegralBasisStructure {
     #[cfg(debug_assertions)]
-    fn check_ideal(&self, ideal: &RingOfIntegersIdeal) {
+    pub fn check_ideal(&self, ideal: &RingOfIntegersIdeal) {
         match ideal {
             RingOfIntegersIdeal::Zero => {}
             RingOfIntegersIdeal::NonZero { lattice } => {
@@ -40,10 +40,19 @@ impl RingOfIntegersIdeal {
             ),
         }
     }
+}
 
+impl RingOfIntegersWithIntegralBasisStructure {
     /// Construct an ideal from a Z-linear span
-    fn from_integer_span(n: usize, span: Vec<RingOfIntegersWithIntegralBasisElement>) -> Self {
-        Self::NonZero {
+    pub fn ideal_from_integer_span(
+        &self,
+        span: Vec<RingOfIntegersWithIntegralBasisElement>,
+    ) -> RingOfIntegersIdeal {
+        for elem in &span {
+            debug_assert!(self.is_element(elem));
+        }
+        let n = self.degree();
+        RingOfIntegersIdeal::NonZero {
             lattice: LinearLattice::from_span(
                 n,
                 1,
@@ -53,8 +62,15 @@ impl RingOfIntegersIdeal {
     }
 
     /// Construct an ideal from a Z-linear basis
-    fn from_integer_basis(n: usize, basis: Vec<RingOfIntegersWithIntegralBasisElement>) -> Self {
-        Self::NonZero {
+    fn ideal_from_integer_basis(
+        &self,
+        basis: Vec<RingOfIntegersWithIntegralBasisElement>,
+    ) -> RingOfIntegersIdeal {
+        for elem in &basis {
+            debug_assert!(self.is_element(elem));
+        }
+        let n = self.degree();
+        RingOfIntegersIdeal::NonZero {
             lattice: LinearLattice::from_basis(
                 n,
                 1,
@@ -62,6 +78,14 @@ impl RingOfIntegersIdeal {
             ),
         }
     }
+
+    // pub fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
+    //     self.check_ideal(ideal);
+    //     match ideal {
+    //         RingOfIntegersIdeal::Zero => Natural::ZERO,
+    //         RingOfIntegersIdeal::NonZero { lattice } => todo!(),
+    //     }
+    // }
 }
 
 impl IdealStructure for RingOfIntegersWithIntegralBasisStructure {
@@ -74,8 +98,7 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             Self::Ideal::Zero
         } else {
             let n = self.degree();
-            Self::Ideal::from_integer_basis(
-                n,
+            self.ideal_from_integer_basis(
                 (0..n)
                     .map(|i| {
                         self.try_anf_to_roi(
@@ -202,7 +225,7 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
                         span.push(self.mul(&a_basis[i], &b_basis[j]));
                     }
                 }
-                Self::Ideal::from_integer_span(n, span)
+                self.ideal_from_integer_span(span)
             }
             _ => Self::Ideal::Zero,
         }
@@ -239,13 +262,10 @@ mod tests {
             // (a + b sqrt(2)) * (1 + sqrt(2)) = a(1 + sqrt(2)) + b(2 + sqrt(2))
             assert!(roi.ideal_equal(
                 &roi.principal_ideal(&alpha),
-                &RingOfIntegersIdeal::from_integer_basis(
-                    2,
-                    vec![
-                        roi.try_anf_to_roi(&(1 + &x).into_verbose()).unwrap(),
-                        roi.try_anf_to_roi(&(2 + &x).into_verbose()).unwrap()
-                    ]
-                )
+                &roi.ideal_from_integer_basis(vec![
+                    roi.try_anf_to_roi(&(1 + &x).into_verbose()).unwrap(),
+                    roi.try_anf_to_roi(&(2 + &x).into_verbose()).unwrap()
+                ])
             ));
         }
 
@@ -265,37 +285,28 @@ mod tests {
             // sum is 3
             assert!(roi.ideal_equal(
                 &alpha_beta_add,
-                &RingOfIntegersIdeal::from_integer_basis(
-                    2,
-                    vec![
-                        roi.try_anf_to_roi(&(3 * x.pow(0)).into_verbose()).unwrap(),
-                        roi.try_anf_to_roi(&(3 * x.pow(1)).into_verbose()).unwrap()
-                    ]
-                )
+                &roi.ideal_from_integer_basis(vec![
+                    roi.try_anf_to_roi(&(3 * x.pow(0)).into_verbose()).unwrap(),
+                    roi.try_anf_to_roi(&(3 * x.pow(1)).into_verbose()).unwrap()
+                ])
             ));
 
             // intersection is 30
             assert!(roi.ideal_equal(
                 &alpha_beta_intersect,
-                &RingOfIntegersIdeal::from_integer_basis(
-                    2,
-                    vec![
-                        roi.try_anf_to_roi(&(30 * x.pow(0)).into_verbose()).unwrap(),
-                        roi.try_anf_to_roi(&(30 * x.pow(1)).into_verbose()).unwrap()
-                    ]
-                )
+                &roi.ideal_from_integer_basis(vec![
+                    roi.try_anf_to_roi(&(30 * x.pow(0)).into_verbose()).unwrap(),
+                    roi.try_anf_to_roi(&(30 * x.pow(1)).into_verbose()).unwrap()
+                ])
             ));
 
             // product is 90
             assert!(roi.ideal_equal(
                 &alpha_beta_mul,
-                &RingOfIntegersIdeal::from_integer_basis(
-                    2,
-                    vec![
-                        roi.try_anf_to_roi(&(90 * x.pow(0)).into_verbose()).unwrap(),
-                        roi.try_anf_to_roi(&(90 * x.pow(1)).into_verbose()).unwrap()
-                    ]
-                )
+                &roi.ideal_from_integer_basis(vec![
+                    roi.try_anf_to_roi(&(90 * x.pow(0)).into_verbose()).unwrap(),
+                    roi.try_anf_to_roi(&(90 * x.pow(1)).into_verbose()).unwrap()
+                ])
             ));
         }
     }
