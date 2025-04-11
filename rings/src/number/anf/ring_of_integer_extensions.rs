@@ -21,7 +21,7 @@ pub struct RingOfIntegersExtension {
 }
 
 impl RingOfIntegersExtension {
-    pub fn new(roi: &RingOfIntegersWithIntegralBasisStructure) -> Self {
+    pub fn new(roi: RingOfIntegersWithIntegralBasisStructure) -> Self {
         let anf = roi.anf();
         RingOfIntegersExtension {
             z: Integer::structure(),
@@ -31,9 +31,7 @@ impl RingOfIntegersExtension {
             z_to_q: PrincipalSubringInclusion::new(Rational::structure()),
             z_to_r: PrincipalSubringInclusion::new(roi.clone()),
             q_to_k: PrincipalRationalSubfieldInclusion::new(anf.clone()),
-            r_to_k: RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(
-                roi.clone(),
-            ),
+            r_to_k: RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(roi),
         }
     }
 }
@@ -178,7 +176,7 @@ mod tests {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
         let roi = anf.ring_of_integers();
-        let sq = RingOfIntegersExtension::new(&roi);
+        let sq = RingOfIntegersExtension::new(roi.clone());
         let r_to_k_fof = sq.r_to_k_field_of_fractions();
 
         let sample_rats = Rational::exhaustive_rationals()
@@ -212,7 +210,7 @@ mod tests {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
         let roi = anf.ring_of_integers();
-        let sq = RingOfIntegersExtension::new(&roi);
+        let sq = RingOfIntegersExtension::new(roi.clone());
 
         let f2 =
             sq.factor_prime_ideal(&DedekindDomainPrimeIdeal::try_from_nat(2u32.into()).unwrap());
