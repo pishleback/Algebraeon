@@ -41,15 +41,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "algebraeon-canonical-structure-derive"
-version = "0.0.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.100",
-]
-
-[[package]]
 name = "algebraeon-combinatorics"
 version = "0.0.0"
 dependencies = [
@@ -104,6 +95,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "algebraeon-macros"
+version = "0.0.11"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.100",
+]
+
+[[package]]
 name = "algebraeon-nzq"
 version = "0.0.11"
 dependencies = [
@@ -129,7 +129,7 @@ dependencies = [
 name = "algebraeon-sets"
 version = "0.0.11"
 dependencies = [
- "algebraeon-canonical-structure-derive",
+ "algebraeon-macros",
  "indexmap",
  "itertools 0.14.0",
  "malachite-base 0.5.1",

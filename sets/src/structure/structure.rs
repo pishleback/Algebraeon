@@ -57,7 +57,7 @@ pub trait FiniteSetStructure: CountableSetStructure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_canonical_structure_derive::CanonicalStructure;
+    use algebraeon_macros::CanonicalStructure;
 
     #[test]
     fn canonical_structure() {
