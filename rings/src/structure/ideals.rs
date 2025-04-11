@@ -202,13 +202,8 @@ impl<RS: DedekindDomainStructure> DedekindDomainIdealFactorization<RS> {
         self.factors
     }
 
-    /// Do any prime factors appear with multiplicity greater than 1?
-    pub fn is_ramified(&self) -> bool {
-        self.factors.iter().any(|(_, k)| k > &Natural::ONE)
-    }
-
     /// Is there exactly one prime factor with multiplicity equal to 1?
-    pub fn is_inert(&self) -> bool {
+    pub fn is_prime(&self) -> bool {
         match self.factors.len() {
             1 => {
                 let (_, k) = &self.factors[0];
@@ -243,7 +238,7 @@ pub trait FactorableIdealsStructure: DedekindDomainStructure {
     fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>>;
     fn is_prime_ideal(&self, ideal: &Self::Ideal) -> bool {
         if let Some(f) = self.factor_ideal(ideal) {
-            f.is_inert()
+            f.is_prime()
         } else {
             false
         }

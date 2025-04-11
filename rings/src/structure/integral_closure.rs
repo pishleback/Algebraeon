@@ -1,5 +1,6 @@
 use super::*;
 use crate::polynomial::*;
+use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -266,6 +267,90 @@ pub trait DedekindDomainExtension<
 
     fn factor_prime_ideal(
         &self,
-        p: &DedekindDomainPrimeIdeal<Z>,
-    ) -> DedekindDomainIdealFactorization<R>;
+        prime_ideal: DedekindDomainPrimeIdeal<Z>,
+    ) -> DedekindExtensionIdealFactorsAbovePrime<Z, R>;
+
+    fn factor_ideal(&self, ideal: &R::Ideal) -> Option<DedekindExtensionIdealFactorization<Z, R>>;
+}
+
+#[derive(Debug, Clone)]
+pub struct DedekindExtensionIdealFactorsAbovePrime<
+    Z: DedekindDomainStructure,
+    R: DedekindDomainStructure,
+> {
+    base_prime: DedekindDomainPrimeIdeal<Z>,
+    // All factors lie above base_prime
+    // All powers are >= 1
+    factors: Vec<(DedekindDomainPrimeIdeal<R>, Natural)>,
+}
+
+impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
+    DedekindExtensionIdealFactorsAbovePrime<Z, R>
+{
+    pub fn from_powers_unchecked(
+        base_prime: DedekindDomainPrimeIdeal<Z>,
+        factors: Vec<(DedekindDomainPrimeIdeal<R>, Natural)>,
+    ) -> Self {
+        for (_factor, power) in &factors {
+            debug_assert_ne!(power, &Natural::ZERO);
+        }
+        Self {
+            base_prime,
+            factors,
+        }
+    }
+
+    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R>, Natural)> {
+        self.factors
+    }
+
+    pub fn unique_prime_factors(&self) -> Vec<&DedekindDomainPrimeIdeal<R>> {
+        self.factors.iter().map(|(ideal, _)| ideal).collect()
+    }
+
+    /// Do any prime factors appear with multiplicity greater than 1?
+    pub fn is_ramified(&self) -> bool {
+        self.factors.iter().any(|(_, k)| k > &Natural::ONE)
+    }
+
+    /// Is there exactly one prime factor with multiplicity equal to 1?
+    pub fn is_inert(&self) -> bool {
+        match self.factors.len() {
+            1 => {
+                let (_, k) = &self.factors[0];
+                debug_assert_ne!(k, &Natural::ZERO);
+                k == &Natural::ONE
+            }
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DedekindExtensionIdealFactorization<
+    Z: DedekindDomainStructure,
+    R: DedekindDomainStructure,
+> {
+    // Each should be above a different prime
+    factors_above_primes: Vec<DedekindExtensionIdealFactorsAbovePrime<Z, R>>,
+}
+
+impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
+    DedekindExtensionIdealFactorization<Z, R>
+{
+    pub fn from_ideal_factors_above_primes(
+        factors_above_primes: Vec<DedekindExtensionIdealFactorsAbovePrime<Z, R>>,
+    ) -> Self {
+        Self {
+            factors_above_primes,
+        }
+    }
+
+    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R>, Natural)> {
+        self.factors_above_primes
+            .into_iter()
+            .map(|factors| factors.into_powers())
+            .flatten()
+            .collect()
+    }
 }
