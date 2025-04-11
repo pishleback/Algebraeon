@@ -28,10 +28,12 @@ struct IntegersModuloN {
 
 use algebraeon::sets::structure::{EqStructure, SetStructure, Structure};
 
-// Implement `Structure` to indicate that instances of `IntegersModuloN` represent abstract mathematical objects.
+// Implement `Structure` to indicate that instances
+// of `IntegersModuloN` represent abstract mathematical objects.
 impl Structure for IntegersModuloN {}
 
-// Implement `SetStructure` to indicate that instances of `IntegersModuloN` represent sets whose elements are represented by instances of `Integer`.
+// Implement `SetStructure` to indicate that instances of `IntegersModuloN` 
+// represent sets whose elements are represented by instances of `Integer`.
 impl SetStructure for IntegersModuloN {
     type Set = Integer;
 
@@ -40,7 +42,8 @@ impl SetStructure for IntegersModuloN {
     }
 }
 
-// Implement `EqStructure` so that integers can be compared for equality modulo `n`.
+// Implement `EqStructure` so that integers 
+// can be compared for equality modulo `n`.
 impl EqStructure for IntegersModuloN {
     fn equal(&self, a: &Integer, b: &Integer) -> bool {
         a.abs_diff(b) % &self.n == Natural::ZERO
@@ -53,7 +56,8 @@ assert!(!mod_6.equal(&3.into(), &5.into()));
 
 use algebraeon::rings::structure::{RingStructure, SemiRingStructure};
 
-// Implement `SemiRingStructure` and `RingStructure` to equip the integers modulo `n` with the quotient ring structure.
+// Implement `SemiRingStructure` and `RingStructure` to 
+// equip the integers modulo `n` with the quotient ring structure.
 impl SemiRingStructure for IntegersModuloN {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
@@ -77,7 +81,8 @@ impl RingStructure for IntegersModuloN {
     }
 }
 
-// Now `mod_6` now has the structure of a ring so Algebraeon implements the repeated squaring algorithm for taking very large powers modulo `n`.
+// Now `mod_6` now has the structure of a ring so Algebraeon implements 
+// the repeated squaring algorithm for taking very large powers modulo `n`.
 assert!(mod_6.equal(
     &mod_6.nat_pow(&2.into(), &1000000000000u64.into()),
     &4.into()
