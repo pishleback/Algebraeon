@@ -221,7 +221,23 @@ impl<RS: DedekindDomainStructure> DedekindDomainIdealFactorization<RS> {
 }
 
 /// A ring in which all ideals uniquely factor as a product of powers of prime ideals
-pub trait DedekindDomainStructure: IdealArithmeticStructure {}
+pub trait DedekindDomainStructure: IdealArithmeticStructure {
+    /// Return the largest power of prime_ideal which divides ideal
+    fn largest_prime_ideal_factor_power(
+        &self,
+        prime_ideal: &DedekindDomainPrimeIdeal<Self>,
+        ideal: &Self::Ideal,
+    ) -> Natural {
+        let mut k = Natural::ZERO;
+        let mut prime_ideal_to_the_k_plus_one = prime_ideal.ideal().clone();
+        while self.ideal_contains(&prime_ideal_to_the_k_plus_one, ideal) {
+            k += Natural::ONE;
+            prime_ideal_to_the_k_plus_one =
+                self.ideal_mul(&prime_ideal_to_the_k_plus_one, prime_ideal.ideal())
+        }
+        k
+    }
+}
 
 pub trait FactorableIdealsStructure: DedekindDomainStructure {
     fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>>;

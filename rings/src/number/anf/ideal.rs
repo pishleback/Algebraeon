@@ -1,6 +1,6 @@
-use super::ring_of_integers::*;
+use super::{ring_of_integer_extensions::RingOfIntegersExtension, ring_of_integers::*};
 use crate::{linear::subspace::*, structure::*};
-use algebraeon_nzq::Integer;
+use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::{MetaType, SetStructure};
 
 #[derive(Debug, Clone)]
@@ -233,6 +233,39 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
 }
 
 impl DedekindDomainStructure for RingOfIntegersWithIntegralBasisStructure {}
+
+impl FactorableIdealsStructure for RingOfIntegersWithIntegralBasisStructure {
+    fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>> {
+        println!("{:?}", ideal);
+        let extension_square = RingOfIntegersExtension::new(self.clone());
+        let norm = extension_square.ideal_norm(ideal);
+        let norm_prime_factors = Integer::factor_ideal(&norm)?;
+        Some(DedekindDomainIdealFactorization::from_powers_unchecked(
+            norm_prime_factors
+                .unique_prime_factors()
+                .into_iter()
+                .map(|prime| {
+                    extension_square
+                        .factor_prime_ideal(prime)
+                        .into_prime_factors_and_powers()
+                        .into_iter()
+                        .filter_map(|(prime_ideal_factor_of_prime, _)| {
+                            let k = self.largest_prime_ideal_factor_power(
+                                &prime_ideal_factor_of_prime,
+                                ideal,
+                            );
+                            if k == Natural::ZERO {
+                                None
+                            } else {
+                                Some((prime_ideal_factor_of_prime, k))
+                            }
+                        })
+                })
+                .flatten()
+                .collect(),
+        ))
+    }
+}
 
 #[cfg(test)]
 mod tests {
