@@ -18,3 +18,7 @@ algebraeon-nzq = { version = "=0.0.12", path = "../nzq" }
 algebraeon-groups = { version = "=0.0.12", path = "../groups" }
 algebraeon-rings = { version = "=0.0.12", path = "../rings" }
 algebraeon-geometry = { version = "=0.0.12", path = "../geometry" }
+
+[features]
+default = []
+runtime-fetch = ["algebraeon-rings/runtime-fetch"]
