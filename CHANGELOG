@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [unrelease]
+
+ - Added database of Conway polynomials.
+
+## [0.0.12] - 2025-04-12
 
  - Ring of Integers
  - Ideal sum, product, intersection, containment, equality for integers and rings of integers.
@@ -17,8 +21,7 @@ All notable changes to this project will be documented in this file.
  - Added is_element() to SetStructure.
  - Structure for a commuting square of integral domain, its field of fractions, a finite field extension, and integral closure. Additional structure when both rings are Dedekind domains for factoring prime ideals of the small ring in the big ring.
 
-
-## [0.0.11] - 2025-03-2025
+## [0.0.11] - 2025-04-05
 
  - Lots of reorganizing where things are.
  - Added docs and examples to sets::combinatorics.
