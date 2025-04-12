@@ -10,17 +10,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # Install build dependencies
-  install_deps:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Install Linux Dependencies
-      run: sudo apt install libfontconfig1-dev
-
   # Build and run tests with default flags
   build_and_test_default:
     runs-on: ubuntu-latest
@@ -28,6 +17,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Install Linux Dependencies
+      run: sudo apt install libfontconfig1-dev
 
     - name: Build with default flags
       run: cargo build --verbose
@@ -42,6 +34,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Install Linux Dependencies
+      run: sudo apt install libfontconfig1-dev
 
     - name: Build with runtime-fetch feature flag
       run: cargo build --features runtime-fetch --verbose
