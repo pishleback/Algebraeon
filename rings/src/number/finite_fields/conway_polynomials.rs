@@ -87,7 +87,6 @@ fn get_polynomial_lookup() -> &'static ConwayPolynomialDatabase {
     POLYNOMIAL_LOOKUP.get_or_init(|| {
         #[cfg(feature = "conway-polynomials-buildtime-fetch")]
         {
-            println!("buildtime");
             return ConwayPolynomialDatabase::from_file(String::from(include_str!(concat!(
                 env!("OUT_DIR"),
                 "/conway_polynomials.txt"
@@ -96,7 +95,6 @@ fn get_polynomial_lookup() -> &'static ConwayPolynomialDatabase {
 
         #[cfg(feature = "conway-polynomials-runtime-fetch")]
         {
-            println!("runtime");
             let url = include_str!(concat!(env!("OUT_DIR"), "/conway_polynomials_url.txt"));
             return ConwayPolynomialDatabase::from_file(
                 reqwest::blocking::get(url).unwrap().text().unwrap(),
