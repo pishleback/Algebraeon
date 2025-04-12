@@ -69,6 +69,12 @@ impl ConwayPolynomialDatabase {
         Self { data }
     }
 
+    fn empty() -> Self {
+        Self {
+            data: HashMap::new(),
+        }
+    }
+
     fn get_polynomial(&self, p: &Natural, n: &Natural) -> Option<&Polynomial<Integer>> {
         self.data.get(p)?.get(n)
     }
@@ -77,24 +83,27 @@ impl ConwayPolynomialDatabase {
 static POLYNOMIAL_LOOKUP: OnceLock<ConwayPolynomialDatabase> = OnceLock::new();
 
 fn get_polynomial_lookup() -> &'static ConwayPolynomialDatabase {
+    #[allow(unreachable_code)]
     POLYNOMIAL_LOOKUP.get_or_init(|| {
-        let content: String = {
-            #[cfg(feature = "runtime-fetch")]
-            {
-                let url = include_str!(concat!(env!("OUT_DIR"), "/conway_polynomials.txt"));
-                let content = reqwest::blocking::get(url).unwrap().text().unwrap();
-                content
-            }
+        #[cfg(feature = "conway-polynomials-buildtime-fetch")]
+        {
+            println!("buildtime");
+            return ConwayPolynomialDatabase::from_file(String::from(include_str!(concat!(
+                env!("OUT_DIR"),
+                "/conway_polynomials.txt"
+            ))));
+        }
 
-            #[cfg(not(feature = "runtime-fetch"))]
-            {
-                String::from(include_str!(concat!(
-                    env!("OUT_DIR"),
-                    "/conway_polynomials.txt"
-                )))
-            }
-        };
-        ConwayPolynomialDatabase::from_file(content)
+        #[cfg(feature = "conway-polynomials-runtime-fetch")]
+        {
+            println!("runtime");
+            let url = include_str!(concat!(env!("OUT_DIR"), "/conway_polynomials_url.txt"));
+            return ConwayPolynomialDatabase::from_file(
+                reqwest::blocking::get(url).unwrap().text().unwrap(),
+            );
+        }
+
+        ConwayPolynomialDatabase::empty()
     })
 }
 

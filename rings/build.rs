@@ -6,15 +6,7 @@ fn main() {
 
     let out_dir = env::var("OUT_DIR").unwrap();
 
-    if cfg!(feature = "runtime-fetch") {
-        let dest_path = Path::new(&out_dir).join("conway_polynomials.txt");
-        let content = String::from(conway_polynomials_url);
-        fs::write(&dest_path, content).expect("Failed to write file");
-    }
-
-    if cfg!(not(feature = "runtime-fetch")) {
-        // Conway polynomials
-
+    if cfg!(feature = "conway-polynomials-buildtime-fetch") {
         let dest_path = Path::new(&out_dir).join("conway_polynomials.txt");
         let content = reqwest::blocking::get(conway_polynomials_url)
             .expect("Failed to download file")
@@ -22,5 +14,12 @@ fn main() {
             .expect("Failed to read response");
         fs::write(&dest_path, content).expect("Failed to write file");
     }
+
+    if cfg!(feature = "conway-polynomials-runtime-fetch") {
+        let dest_path = Path::new(&out_dir).join("conway_polynomials_url.txt");
+        let content = String::from(conway_polynomials_url);
+        fs::write(&dest_path, content).expect("Failed to write file");
+    }
+
     println!("cargo:rerun-if-changed=build.rs");
 }

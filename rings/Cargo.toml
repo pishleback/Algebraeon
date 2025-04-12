@@ -29,4 +29,5 @@ rustdoc-args = ["--html-in-header", "katex-header.html"]
 
 [features]
 default = []
-runtime-fetch = ["reqwest"]
+conway-polynomials-buildtime-fetch = []
+conway-polynomials-runtime-fetch = ["reqwest"]
