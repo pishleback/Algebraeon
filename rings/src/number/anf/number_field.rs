@@ -11,7 +11,7 @@ use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
 pub type AlgebraicNumberFieldStructure =
-    FieldExtensionByPolynomialQuotientAlias<RationalCanonicalStructure>;
+    FieldExtensionByPolynomialQuotientStructure<RationalCanonicalStructure>;
 
 impl Polynomial<Rational> {
     pub fn algebraic_number_field(self) -> AlgebraicNumberFieldStructure {

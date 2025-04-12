@@ -13,9 +13,9 @@ readme = "../README.md"
 name = "algebraeon_rings"
 
 [dependencies]
-algebraeon-sets = { version = "=0.0.12", path = "../sets" }
-algebraeon-nzq = { version = "=0.0.12", path = "../nzq" }
-algebraeon-groups = { version = "=0.0.12", path = "../groups" }
+algebraeon-sets = { version = "=0.0.12", path = "../sets", default-features = false }
+algebraeon-nzq = { version = "=0.0.12", path = "../nzq", default-features = false }
+algebraeon-groups = { version = "=0.0.12", path = "../groups", default-features = false }
 rand = "0.8.5"
 rayon = "1.7.0"
 itertools = "0.11.0"
@@ -28,6 +28,6 @@ reqwest = { version = "0.12.15", features = ["blocking"] }
 rustdoc-args = ["--html-in-header", "katex-header.html"]
 
 [features]
-default = []
+default = ["conway-polynomials-buildtime-fetch"]
 conway-polynomials-buildtime-fetch = []
 conway-polynomials-runtime-fetch = ["reqwest"]

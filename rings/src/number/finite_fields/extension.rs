@@ -6,7 +6,7 @@ use itertools::Itertools;
 use super::modulo::ModuloCanonicalStructure;
 
 impl<FS: FiniteFieldStructure> FiniteUnitsStructure
-    for FieldExtensionByPolynomialQuotientAlias<FS>
+    for FieldExtensionByPolynomialQuotientStructure<FS>
 {
     fn all_units(&self) -> Vec<Self::Set> {
         let mut all_base_elements = vec![self.ring().coeff_ring().zero()];
@@ -33,7 +33,7 @@ impl<FS: FiniteFieldStructure> FiniteUnitsStructure
 }
 
 impl<FS: FiniteFieldStructure> FiniteFieldStructure
-    for FieldExtensionByPolynomialQuotientAlias<FS>
+    for FieldExtensionByPolynomialQuotientStructure<FS>
 {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         let (p, t) = self.ring().coeff_ring().characteristic_and_power();
@@ -45,17 +45,17 @@ impl<FS: FiniteFieldStructure> FiniteFieldStructure
 pub fn new_finite_field_extension<FS: FiniteFieldStructure>(
     finite_field: FS,
     poly: <PolynomialStructure<FS> as SetStructure>::Set,
-) -> FieldExtensionByPolynomialQuotientAlias<FS>
+) -> FieldExtensionByPolynomialQuotientStructure<FS>
 where
     PolynomialStructure<FS>: FactorableStructure,
 {
-    FieldExtensionByPolynomialQuotientAlias::<FS>::new_field(
+    FieldExtensionByPolynomialQuotientStructure::<FS>::new_field(
         PolynomialStructure::new(finite_field.into()).into(),
         poly,
     )
 }
 
-pub fn f9() -> FieldExtensionByPolynomialQuotientAlias<ModuloCanonicalStructure<3>> {
+pub fn f9() -> FieldExtensionByPolynomialQuotientStructure<ModuloCanonicalStructure<3>> {
     use crate::number::finite_fields::modulo::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(
         Modulo::<3>::structure().into(),

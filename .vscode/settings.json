@@ -2,5 +2,6 @@
     "rust-analyzer.cargo.features": [
         // "algebraeon/runtime-fetch"
         // "algebraeon/conway-polynomials"
+        // "algebraeon-rings/buildtime-fetch"
     ]
 }

@@ -13,7 +13,7 @@ readme = "../README.md"
 name = "algebraeon_geometry"
 
 [dependencies]
-itertools="0.11.0"
-algebraeon-sets = { version = "=0.0.12", path = "../sets" }
-algebraeon-rings = { version = "=0.0.12", path = "../rings" }
-algebraeon-nzq = { version = "=0.0.12", path = "../nzq" }
+itertools = "0.11.0"
+algebraeon-sets = { version = "=0.0.12", path = "../sets", default-features = false }
+algebraeon-rings = { version = "=0.0.12", path = "../rings", default-features = false }
+algebraeon-nzq = { version = "=0.0.12", path = "../nzq", default-features = false }
