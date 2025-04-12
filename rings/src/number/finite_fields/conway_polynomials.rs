@@ -13,7 +13,6 @@ fn get_polynomial_lookup() -> &'static ConwayPolynomialDatabase {
         let content: String = {
             #[cfg(feature = "runtime-fetch")]
             {
-                println!("online");
                 let url = include_str!(concat!(env!("OUT_DIR"), "/conway_polynomials.txt"));
                 let content = reqwest::blocking::get(url).unwrap().text().unwrap();
                 content
@@ -21,7 +20,6 @@ fn get_polynomial_lookup() -> &'static ConwayPolynomialDatabase {
 
             #[cfg(not(feature = "runtime-fetch"))]
             {
-                println!("offline");
                 String::from(include_str!(concat!(
                     env!("OUT_DIR"),
                     "/conway_polynomials.txt"
