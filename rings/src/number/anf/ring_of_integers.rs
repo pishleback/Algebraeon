@@ -77,6 +77,10 @@ impl RingOfIntegersWithIntegralBasisStructure {
         self.integral_basis.len()
     }
 
+    pub fn integral_basis(&self) -> &Vec<Polynomial<Rational>> {
+        &self.integral_basis
+    }
+
     pub fn basis_element(&self, i: usize) -> &Polynomial<Rational> {
         assert!(i < self.degree());
         &self.integral_basis[i]
