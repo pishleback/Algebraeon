@@ -1,5 +1,5 @@
 use crate::polynomial::Polynomial;
-use algebraeon_nzq::{Integer, Natural};
+use algebraeon_nzq::Integer;
 use std::{
     collections::HashMap,
     str::{Chars, FromStr},
@@ -7,7 +7,7 @@ use std::{
 };
 
 pub struct ConwayPolynomialDatabase {
-    data: HashMap<Natural, HashMap<Natural, Polynomial<Integer>>>,
+    data: HashMap<usize, HashMap<usize, Polynomial<Integer>>>,
 }
 
 impl ConwayPolynomialDatabase {
@@ -15,12 +15,12 @@ impl ConwayPolynomialDatabase {
         let content = &content[24..];
         let mut chars = content.chars();
 
-        let parse_nat_until = |chars: &mut Chars<'_>| -> (char, Natural) {
+        let parse_nat_until = |chars: &mut Chars<'_>| -> (char, usize) {
             let mut nat_string = String::new();
             loop {
                 let char = chars.next().unwrap();
                 if char == ',' || char == '[' || char == ']' {
-                    return (char, Natural::from_str(&nat_string).unwrap());
+                    return (char, usize::from_str(&nat_string).unwrap());
                 }
                 nat_string.push(char);
             }
@@ -75,8 +75,8 @@ impl ConwayPolynomialDatabase {
         }
     }
 
-    fn get_polynomial(&self, p: &Natural, n: &Natural) -> Option<&Polynomial<Integer>> {
-        self.data.get(p)?.get(n)
+    fn get_polynomial(&self, p: usize, n: usize) -> Option<&Polynomial<Integer>> {
+        self.data.get(&p)?.get(&n)
     }
 }
 
@@ -105,7 +105,7 @@ fn get_polynomial_lookup() -> &'static ConwayPolynomialDatabase {
     })
 }
 
-pub fn conway_polynomial(p: &Natural, n: &Natural) -> Result<&'static Polynomial<Integer>, ()> {
+pub fn conway_polynomial(p: usize, n: usize) -> Result<&'static Polynomial<Integer>, ()> {
     match get_polynomial_lookup().get_polynomial(p, n) {
         Some(p) => Ok(p),
         None => Err(()),
@@ -120,33 +120,27 @@ mod tests {
     #[test]
     fn test_conway_polynomial() {
         let x = &Polynomial::<Integer>::var().into_ergonomic();
+        assert_eq!(conway_polynomial(2, 1).unwrap(), &(x + 1).into_verbose());
         assert_eq!(
-            conway_polynomial(&Natural::from(2u32), &Natural::from(1u32)).unwrap(),
-            &(x + 1).into_verbose()
-        );
-        assert_eq!(
-            conway_polynomial(&Natural::from(2u32), &Natural::from(2u32)).unwrap(),
+            conway_polynomial(2, 2).unwrap(),
             &(x.pow(2) + x + 1).into_verbose()
         );
         assert_eq!(
-            conway_polynomial(&Natural::from(2u32), &Natural::from(3u32)).unwrap(),
+            conway_polynomial(2, 3).unwrap(),
             &(x.pow(3) + x + 1).into_verbose()
         );
         assert_eq!(
-            conway_polynomial(&Natural::from(2u32), &Natural::from(6u32)).unwrap(),
+            conway_polynomial(2, 6).unwrap(),
             &(x.pow(6) + x.pow(4) + x.pow(3) + x + 1).into_verbose()
         );
 
+        assert_eq!(conway_polynomial(3, 1).unwrap(), &(x + 1).into_verbose());
         assert_eq!(
-            conway_polynomial(&Natural::from(3u32), &Natural::from(1u32)).unwrap(),
-            &(x + 1).into_verbose()
-        );
-        assert_eq!(
-            conway_polynomial(&Natural::from(3u32), &Natural::from(2u32)).unwrap(),
+            conway_polynomial(3, 2).unwrap(),
             &(x.pow(2) + 2 * x + 2).into_verbose()
         );
         assert_eq!(
-            conway_polynomial(&Natural::from(3u32), &Natural::from(3u32)).unwrap(),
+            conway_polynomial(3, 3).unwrap(),
             &(x.pow(3) + 2 * x + 1).into_verbose()
         );
     }

@@ -1,41 +1,58 @@
 use super::conway_polynomials::conway_polynomial;
 use crate::{
+    linear::matrix::{Matrix, MatrixStructure},
     polynomial::{FieldExtensionByPolynomialQuotientStructure, Polynomial, PolynomialStructure},
     structure::{
         FieldStructure, FiniteFieldStructure, FiniteUnitsStructure, IntegralDomainStructure,
-        QuotientStructure, RingStructure, SemiRingStructure, UnitsStructure,
+        QuotientStructure, RingHomomorphism, RingStructure, SemiRingStructure, UnitsStructure,
     },
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, traits::DivMod};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConwayFiniteFieldStructure {
-    p: Natural,
-    n: Natural,
+    p: usize,
+    n: usize,
     structure: FieldExtensionByPolynomialQuotientStructure<
         QuotientStructure<IntegerCanonicalStructure, true>,
     >,
 }
 
 impl ConwayFiniteFieldStructure {
-    pub fn new(p: Natural, n: Natural) -> Result<Self, ()> {
-        let f = conway_polynomial(&p, &n)?;
+    pub fn new(p: usize, n: usize) -> Result<Self, ()> {
+        let f = conway_polynomial(p, n)?;
         Ok(Self {
+            p,
+            n,
             structure: FieldExtensionByPolynomialQuotientStructure::new_field_unchecked(
                 PolynomialStructure::new(QuotientStructure::new_field_unchecked(
                     Integer::structure(),
-                    Integer::from(&p),
+                    Integer::from(p),
                 )),
                 f.clone(),
             ),
-            p,
-            n,
         })
     }
 
     pub fn reduce(&self, f: Polynomial<Integer>) -> Polynomial<Integer> {
         self.structure.reduce(f)
+    }
+
+    pub fn to_row_vector(&self, f: &Polynomial<Integer>) -> Matrix<Integer> {
+        self.structure.to_row_vector(f)
+    }
+
+    pub fn to_col_vector(&self, f: &Polynomial<Integer>) -> Matrix<Integer> {
+        self.structure.to_col_vector(f)
+    }
+
+    pub fn from_row_vector(&self, v: Matrix<Integer>) -> Polynomial<Integer> {
+        self.structure.from_row_vector(v)
+    }
+
+    pub fn from_col_vector(&self, v: Matrix<Integer>) -> Polynomial<Integer> {
+        self.structure.from_col_vector(v)
     }
 }
 
@@ -105,34 +122,57 @@ impl FiniteUnitsStructure for ConwayFiniteFieldStructure {
 
 impl FiniteFieldStructure for ConwayFiniteFieldStructure {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
-        (self.p.clone(), self.n.clone())
+        (self.p.into(), self.n.into())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct ConwayFiniteFieldInclusion {
     // a prime
-    p: Natural,
+    p: usize,
     // finite field of order p^m
     domain: ConwayFiniteFieldStructure,
     // finite field of order p^n
     range: ConwayFiniteFieldStructure,
     // n/m
-    degree: Natural,
-    // (p^n-1)/(p^m-1)
-    r: Natural,
+    degree: usize,
+    // Linear map F_{p^m} -> F_{p^n} of column vectors of polynomial coefficients over F_p
+    inclusion: Matrix<Integer>,
+    // matricies modulo p
+    mat_mod_p: MatrixStructure<QuotientStructure<IntegerCanonicalStructure, true>>,
 }
 
 impl ConwayFiniteFieldInclusion {
-    pub fn new(p: Natural, m: Natural, n: Natural) -> Result<Self, ()> {
-        let (degree, r) = (&n).div_mod(&m);
-        if r == Natural::ZERO {
+    pub fn new(p: usize, m: usize, n: usize) -> Result<Self, ()> {
+        if n % m == 0 {
+            let degree = n / m;
+
+            let domain = ConwayFiniteFieldStructure::new(p, m).unwrap();
+            let range = ConwayFiniteFieldStructure::new(p, n).unwrap();
+
+            // r = (p^n-1)/(p^m-1)
+            let r = (Natural::from(p).pow(&n.into()) - Natural::ONE)
+                / (Natural::from(p).pow(&m.into()) - Natural::ONE);
+
+            // x -> x^r
+            let inclusion = Matrix::join_cols(
+                n,
+                (0..m)
+                    .map(|i| range.to_col_vector(&range.nat_pow(&Polynomial::var_pow(i), &r)))
+                    .collect(),
+            );
+            assert_eq!(inclusion.rows(), n);
+            assert_eq!(inclusion.cols(), m);
             Ok(Self {
-                r: ((&p).pow(&n) - Natural::ONE) / ((&p).pow(&m) - Natural::ONE),
-                domain: ConwayFiniteFieldStructure::new(p.clone(), m).unwrap(),
-                range: ConwayFiniteFieldStructure::new(p.clone(), n).unwrap(),
                 p,
+                domain,
+                range,
                 degree,
+                inclusion,
+                mat_mod_p: MatrixStructure::new(QuotientStructure::new_field(
+                    Integer::structure(),
+                    p.into(),
+                )),
             })
         } else {
             Err(())
@@ -156,9 +196,28 @@ impl Function<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
     fn image(&self, x: &Polynomial<Integer>) -> Polynomial<Integer> {
-        self.range()
-            .reduce(x.eval_var_pow(self.r.clone().try_into().unwrap()))
+        self.range().from_col_vector(
+            self.mat_mod_p
+                .mul(&self.inclusion, &self.domain().to_col_vector(x))
+                .unwrap(),
+        )
     }
+}
+
+impl InjectiveFunction<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
+    for ConwayFiniteFieldInclusion
+{
+    fn try_preimage(&self, x: &Polynomial<Integer>) -> Option<Polynomial<Integer>> {
+        Some(
+            self.domain()
+                .from_col_vector(self.inclusion.col_solve(&self.range().to_col_vector(x))?),
+        )
+    }
+}
+
+impl RingHomomorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
+    for ConwayFiniteFieldInclusion
+{
 }
 
 // #[derive(Debug, Clone, PartialEq, Eq)]
@@ -190,19 +249,55 @@ impl Function<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::IntoErgonomicStructure;
 
     #[test]
-    fn conway_finite_fields() {
-        let f = ConwayFiniteFieldInclusion::new(2u32.into(), 2u32.into(), 4u32.into()).unwrap();
+    fn conway_finite_fields_homomorphism() {
+        let f = ConwayFiniteFieldInclusion::new(2, 2, 4).unwrap();
 
-        let a = f.domain().into_ergonomic(Polynomial::var());
-        let b = f.range().into_ergonomic(f.image(&a.clone().into_verbose()));
+        f.inclusion.pprint();
+
+        let a = Polynomial::var();
+        println!("a = {}", a);
+        let b = f.image(&a.clone());
+        println!("b = {}", b);
 
         assert!(
             f.domain()
-                .equal(&a.pow(3).into_verbose(), &f.domain().one())
+                .equal(&f.domain().nat_pow(&a, &3u32.into()), &f.domain().one())
         );
-        assert!(f.range().equal(&b.pow(3).into_verbose(), &f.range().one()));
+        assert!(
+            f.range()
+                .equal(&f.range().nat_pow(&b, &3u32.into()), &f.range().one())
+        );
+
+        let a2 = f.try_preimage(&b).unwrap();
+        println!("a2 = {}", a2);
+        assert!(f.domain().equal(&a, &a2));
+    }
+
+    #[test]
+    fn conway_finite_fields_compatability() {
+        /*
+                 x
+        f_{3^2} ===> f_{3^4}
+           ||           ||
+         y ||           || z
+           \/           \/
+        f_{3^6} ===> f_{3^12}
+                 w
+
+        */
+
+        let f_3_2 = ConwayFiniteFieldStructure::new(3, 2).unwrap();
+        let f_3_12 = ConwayFiniteFieldStructure::new(3, 12).unwrap();
+
+        let x = ConwayFiniteFieldInclusion::new(3, 2, 4).unwrap();
+        let y = ConwayFiniteFieldInclusion::new(3, 2, 6).unwrap();
+        let z = ConwayFiniteFieldInclusion::new(3, 4, 12).unwrap();
+        let w = ConwayFiniteFieldInclusion::new(3, 6, 12).unwrap();
+
+        for a in f_3_2.all_elements() {
+            assert!(f_3_12.equal(&z.image(&x.image(&a)), &w.image(&y.image(&a))));
+        }
     }
 }
