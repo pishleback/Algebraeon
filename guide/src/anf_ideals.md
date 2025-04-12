@@ -46,5 +46,5 @@ for (prime_ideal, power) in roi
 
 // There's not yet a nice way to print ideals so the output is messy
 // But it prints the following factorization into primes
-// ideal = (1+i) * (1+2i) * (3)^2
+// ideal = (1+i) * (5, 1+2i) * (3)^2
 ```
