@@ -20,7 +20,19 @@ impl RingOfIntegersWithIntegralBasisStructure {
             RingOfIntegersIdeal::NonZero { lattice } => {
                 assert_eq!(lattice.rows(), self.degree());
                 assert_eq!(lattice.cols(), 1);
-                //TODO: check that it's actually an ideal
+                // check it's actually an ideal
+                for ideal_basis_elem in lattice
+                    .basis_matrices()
+                    .into_iter()
+                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+                {
+                    for integral_basis_elem in (0..self.degree()).map(|i| {
+                        RingOfIntegersWithIntegralBasisElement::basis_element(self.degree(), i)
+                    }) {
+                        let x = self.mul(&ideal_basis_elem, &integral_basis_elem).into_col();
+                        assert!(lattice.contains_point(&x));
+                    }
+                }
             }
         }
     }
@@ -214,6 +226,9 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
                     .into_iter()
                     .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
                     .collect::<Vec<_>>();
+
+                debug_assert_eq!(a_basis.len(), n);
+                debug_assert_eq!(b_basis.len(), n);
 
                 let mut span = vec![];
                 for i in 0..n {
