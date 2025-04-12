@@ -13,7 +13,6 @@ jobs:
   # Build and run tests with default flags
   build_and_test_default:
     runs-on: ubuntu-latest
-    needs: install_deps
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -30,7 +29,6 @@ jobs:
   # Build and run tests with 'runtime-fetch' feature flag
   build_and_test_runtime_fetch:
     runs-on: ubuntu-latest
-    needs: install_deps
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
