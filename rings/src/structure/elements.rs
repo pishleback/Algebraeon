@@ -5,6 +5,13 @@ use algebraeon_sets::structure::*;
 
 use algebraeon_nzq::*;
 
+pub trait IntoErgonomicStructure: SetStructure {
+    fn into_ergonomic(&self, elem: Self::Set) -> StructuredElement<Self> {
+        StructuredElement::new(self.clone(), elem)
+    }
+}
+impl<S: SetStructure> IntoErgonomicStructure for S {}
+
 pub trait IntoErgonomic: MetaType {
     fn into_ergonomic(self) -> StructuredElement<Self::Structure> {
         StructuredElement::new(Self::structure(), self)

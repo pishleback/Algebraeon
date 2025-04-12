@@ -288,6 +288,24 @@ impl<RS: SemiRingStructure> PolynomialStructure<RS> {
         Polynomial { coeffs }
     }
 
+    pub fn eval_var_pow(&self, p: &Polynomial<RS::Set>, n: usize) -> Polynomial<RS::Set> {
+        if n == 0 {
+            Polynomial::constant(self.coeff_ring().sum(p.coeffs()))
+        } else {
+            let gap = n - 1;
+            let mut coeffs = vec![];
+            for (i, coeff) in p.coeffs.iter().enumerate() {
+                if i != 0 {
+                    for _ in 0..gap {
+                        coeffs.push(self.coeff_ring().zero());
+                    }
+                }
+                coeffs.push(coeff.clone());
+            }
+            Polynomial { coeffs }
+        }
+    }
+
     pub fn mul_scalar(&self, p: &Polynomial<RS::Set>, x: &RS::Set) -> Polynomial<RS::Set> {
         self.reduce_poly(Polynomial::from_coeffs(
             p.coeffs.iter().map(|c| self.coeff_ring.mul(c, x)).collect(),
@@ -972,6 +990,14 @@ where
         Self::structure().evaluate(self, x)
     }
 
+    pub fn mul_var_pow(&self, n: usize) -> Self {
+        Self::structure().mul_var_pow(self, n)
+    }
+
+    pub fn eval_var_pow(&self, n: usize) -> Self {
+        Self::structure().eval_var_pow(self, n)
+    }
+
     //find p(q(x))
     pub fn compose(p: &Self, q: &Self) -> Self {
         Self::structure().compose(p, q)
@@ -1429,6 +1455,31 @@ mod tests {
         let g = (3 - 2 * x + 21 * x.pow(2)).into_verbose();
         assert!(f.is_monic());
         assert!(!g.is_monic());
+    }
+
+    #[test]
+    fn test_eval_var_pow() {
+        let p = Polynomial::<Integer>::from_coeffs(vec![1, 2, 3]);
+        assert_eq!(p.eval_var_pow(0), Polynomial::from_coeffs(vec![6]));
+        assert_eq!(p.eval_var_pow(1), Polynomial::from_coeffs(vec![1, 2, 3]));
+        assert_eq!(
+            p.eval_var_pow(2),
+            Polynomial::from_coeffs(vec![1, 0, 2, 0, 3])
+        );
+        assert_eq!(
+            p.eval_var_pow(3),
+            Polynomial::from_coeffs(vec![1, 0, 0, 2, 0, 0, 3])
+        );
+
+        let p = Polynomial::<Integer>::from_coeffs(vec![4]);
+        assert_eq!(p.eval_var_pow(0), Polynomial::from_coeffs(vec![4]));
+        assert_eq!(p.eval_var_pow(1), Polynomial::from_coeffs(vec![4]));
+        assert_eq!(p.eval_var_pow(2), Polynomial::from_coeffs(vec![4]));
+
+        let p = Polynomial::<Integer>::zero();
+        assert_eq!(p.eval_var_pow(0), Polynomial::zero());
+        assert_eq!(p.eval_var_pow(1), Polynomial::zero());
+        assert_eq!(p.eval_var_pow(2), Polynomial::zero());
     }
 
     #[test]
