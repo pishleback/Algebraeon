@@ -3,7 +3,7 @@
 ## Factoring example
 
 ```rust
-use algebraeon::{
+ use algebraeon::{
     nzq::*,
     rings::{
         number::{
@@ -21,19 +21,8 @@ let x = &Polynomial::<Rational>::var().into_ergonomic();
 let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
 let roi = anf.ring_of_integers();
 
-// The ideal (1+i) * (1+2i, 5) * (9) in Z[i]
-let ideal = roi.ideal_product(vec![
-    roi.generated_ideal(vec![
-        roi.try_anf_to_roi(&(1 + 1 * x.pow(1)).into_verbose())
-            .unwrap(),
-    ]),
-    roi.generated_ideal(vec![
-        roi.try_anf_to_roi(&(1 + 2 * x.pow(1)).into_verbose())
-            .unwrap(),
-        roi.try_anf_to_roi(&(5 * x.pow(0)).into_verbose()).unwrap(),
-    ]),
-    roi.principal_ideal(&roi.from_int(9)),
-]);
+// The ideal (27i - 9) in Z[i]
+let ideal = roi.principal_ideal(&roi.try_anf_to_roi(&(27 * x - 9).into_verbose()).unwrap());
 
 // Factor the ideal
 for (prime_ideal, power) in roi
