@@ -2,9 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unrelease]
+## [Unreleased]
 
  - Added database of Conway polynomials.
+ - Added structure for finite fields using Conway polynomials and inclusion maps between finite fields.
 
 ## [0.0.12] - 2025-04-12
 
