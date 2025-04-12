@@ -106,7 +106,7 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             Self::Ideal::Zero
         } else {
             let n = self.degree();
-            self.ideal_from_integer_basis(
+            let ideal = self.ideal_from_integer_basis(
                 (0..n)
                     .map(|i| {
                         self.try_anf_to_roi(
@@ -115,7 +115,10 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
                         .unwrap()
                     })
                     .collect(),
-            )
+            );
+            #[cfg(debug_assertions)]
+            self.check_ideal(&ideal);
+            ideal
         }
     }
 
