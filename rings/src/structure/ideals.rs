@@ -223,6 +223,7 @@ pub trait DedekindDomainStructure: IdealArithmeticStructure {
         prime_ideal: &DedekindDomainPrimeIdeal<Self>,
         ideal: &Self::Ideal,
     ) -> Natural {
+        debug_assert!(!self.ideal_equal(prime_ideal.ideal(), &self.unit_ideal()));
         let mut k = Natural::ZERO;
         let mut prime_ideal_to_the_k_plus_one = prime_ideal.ideal().clone();
         while self.ideal_contains(&prime_ideal_to_the_k_plus_one, ideal) {
