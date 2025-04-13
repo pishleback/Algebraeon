@@ -317,9 +317,11 @@ where
     fn factor_fav_assoc(&self) -> (Self, Self) {
         Self::structure().factor_fav_assoc(self)
     }
-
     fn fav_assoc(&self) -> Self {
         Self::structure().fav_assoc(self)
+    }
+    fn is_fav_assoc(&self) -> bool {
+        Self::structure().is_fav_assoc(self)
     }
 }
 impl<R: MetaRing> MetaFavoriteAssociate for R where

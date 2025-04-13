@@ -280,6 +280,7 @@ impl SquarefreePolyRealRoots {
 
     pub fn to_real_roots(self) -> Vec<RealAlgebraic> {
         debug_assert!(self.poly_sqfr.is_irreducible());
+        debug_assert!(self.poly_sqfr.is_fav_assoc());
         let deg = self.poly_sqfr.degree().unwrap();
         if deg == 0 {
             vec![]

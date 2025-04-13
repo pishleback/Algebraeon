@@ -43,13 +43,13 @@ pub trait FactoredAbstractStructure<F: FactoredAbstract>: Structure {
     fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object;
 }
 
-pub trait FactoredAbstract: Sized {
+pub trait FactoredAbstract: Debug + Clone + Sized {
     /// A structure for working with the above types.
     type Structure: FactoredAbstractStructure<Self>;
 
     fn factored_structure(&self) -> &Self::Structure;
 
-    fn from_factor_powers_unchecked(
+    fn from_factor_powers_impl(
         structure: Self::Structure,
         factor_powers: Vec<(
             <Self::Structure as FactoredAbstractStructure<Self>>::PrimeObject,
@@ -74,7 +74,7 @@ pub trait FactoredAbstract: Sized {
                 ps.push(p);
             }
         }
-        Self::from_factor_powers_unchecked(
+        Self::from_factor_powers_impl(
             structure,
             factor_powers
                 .into_iter()
@@ -213,13 +213,31 @@ pub trait FactoredAbstract: Sized {
     fn mul(a: Self, b: Self) -> Self;
 
     fn pow(self, n: &Natural) -> Self {
-        Self::from_factor_powers_unchecked(
-            self.factored_structure().clone(),
-            self.into_factor_powers()
-                .into_iter()
-                .map(|(p, k)| (p, k * n))
-                .collect(),
-        )
+        let structure = self.factored_structure();
+        if *n == Natural::ZERO {
+            Self::new_trivial(structure.clone())
+        } else if *n == Natural::ONE {
+            self
+        } else {
+            debug_assert!(*n >= Natural::TWO);
+            let bits: Vec<_> = n.bits().collect();
+            let mut pows = vec![self.clone()];
+            while pows.len() < bits.len() {
+                pows.push(Self::mul(
+                    pows.last().unwrap().clone(),
+                    pows.last().unwrap().clone(),
+                ));
+            }
+            let count = bits.len();
+            debug_assert_eq!(count, pows.len());
+            let mut ans = Self::new_trivial(structure.clone());
+            for (i, pow) in pows.into_iter().enumerate() {
+                if bits[i] {
+                    ans = Self::mul(ans, pow);
+                }
+            }
+            ans
+        }
     }
 
     fn divisors<'a>(
@@ -289,6 +307,7 @@ pub trait FactoredAbstract: Sized {
 pub struct Factored<RS: UniqueFactorizationStructure> {
     ring: RS,
     unit: RS::Set,
+    // all prime factors should satisfy is_fav_assoc()
     factors: Vec<(RS::Set, Natural)>,
 }
 
@@ -429,19 +448,28 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
 
     pub fn from_unit_and_factor_powers(
         ring: RS,
-        unit: RS::Set,
+        mut unit: RS::Set,
         factor_powers: Vec<(RS::Set, Natural)>,
     ) -> Self {
         debug_assert!(ring.is_unit(&unit));
-        let mut f = Self::from_factor_powers(
+        let mut factor_powers = factor_powers
+            .into_iter()
+            .filter(|(_, k)| k > &Natural::ZERO)
+            .collect::<Vec<_>>();
+        for i in 0..factor_powers.len() {
+            let (p, k) = &mut factor_powers[i];
+            let (u, q) = ring.factor_fav_assoc(p);
+            *p = q;
+            unit = ring.mul(&unit, &ring.nat_pow(&u, k));
+        }
+        for (p, _) in &factor_powers {
+            debug_assert!(ring.is_fav_assoc(p));
+        }
+        Self {
             ring,
-            factor_powers
-                .into_iter()
-                .filter(|(_, k)| k > &Natural::ZERO)
-                .collect(),
-        );
-        f.unit = unit;
-        f
+            unit,
+            factors: factor_powers,
+        }
     }
 
     pub fn mul_mut(&mut self, other: Self) {
@@ -482,7 +510,7 @@ impl<RS: UniqueFactorizationStructure> FactoredAbstract for Factored<RS> {
         &self.ring
     }
 
-    fn from_factor_powers_unchecked(
+    fn from_factor_powers_impl(
         ring: Self::Structure,
         factor_powers: Vec<(
             <Self::Structure as FactoredAbstractStructure<Self>>::PrimeObject,
@@ -490,11 +518,7 @@ impl<RS: UniqueFactorizationStructure> FactoredAbstract for Factored<RS> {
         )>,
     ) -> Self {
         let one = ring.one();
-        Self {
-            ring,
-            unit: one,
-            factors: factor_powers,
-        }
+        Self::from_unit_and_factor_powers(ring, one, factor_powers)
     }
 
     fn factor_powers(

@@ -24,7 +24,6 @@ where
         //where each a_i is a squarefree primitive polynomial and x is an element of R
 
         let (content, prim) = self.factor_primitive(f.clone()).unwrap();
-
         let (content_unit, content_factors) = factor_coeff(&content)
             .unwrap()
             .into_unit_and_factor_powers();
@@ -57,7 +56,6 @@ where
             i += 1;
             d = self.add(&self.neg(&self.derivative(b.clone())), &c);
         }
-
         factors.mul_mut(Factored::from_unit(self.clone().into(), f));
         factors
     }
@@ -287,11 +285,12 @@ where
                     f.clone(),
                     &factor_coeff,
                     &|f| {
-                        factorize_by_find_factor(self, f, &|f| {
+                        let big_ff = factorize_by_find_factor(self, f, &|f| {
                             self.find_factor_primitive_by_kroneckers_algorithm(&f, |c| {
                                 factor_coeff(c)
                             })
-                        })
+                        });
+                        big_ff
                     },
                 ),
             )
