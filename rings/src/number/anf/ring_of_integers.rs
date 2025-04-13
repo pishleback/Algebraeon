@@ -77,6 +77,10 @@ impl RingOfIntegersWithIntegralBasisStructure {
         self.integral_basis.len()
     }
 
+    pub fn integral_basis(&self) -> &Vec<Polynomial<Rational>> {
+        &self.integral_basis
+    }
+
     pub fn basis_element(&self, i: usize) -> &Polynomial<Rational> {
         assert!(i < self.degree());
         &self.integral_basis[i]
@@ -256,16 +260,26 @@ impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
             Some(mul_crossterms) => {
                 // Used cached cross-terms
                 let mut t = self.zero();
-                for mut i in 0..n {
-                    for mut j in 0..n {
+                for i in 0..n {
+                    for j in 0..n {
                         let c = &a.coefficients[i] * &b.coefficients[j];
                         // Sort i and j for indexing into mul_crossterms which is a triangular array
-                        if j > i {
-                            (i, j) = (j, i)
-                        }
+                        let (i, j) = if j <= i { (i, j) } else { (j, i) };
                         t = self.add(&t, &mul_crossterms[i][j].clone().scalar_mul(&c));
                     }
                 }
+                debug_assert!(
+                    self.equal(
+                        &self
+                            .try_anf_to_roi(
+                                &self
+                                    .algebraic_number_field
+                                    .mul(&self.roi_to_anf(a), &self.roi_to_anf(b)),
+                            )
+                            .unwrap(),
+                        &t
+                    )
+                );
                 t
             }
             None => {
@@ -484,5 +498,25 @@ mod tests {
         }
 
         println!("{:?}", roi);
+    }
+
+    #[test]
+    fn ideal_factoring() {
+        // Construct the ring of integers Z[i]
+        let x = &Polynomial::<Rational>::var().into_ergonomic();
+        let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
+        let roi = anf.ring_of_integers();
+
+        // The ideal (27i - 9) in Z[i]
+        let ideal = roi.principal_ideal(&roi.try_anf_to_roi(&(27 * x - 9).into_verbose()).unwrap());
+
+        // Factor the ideal
+        for (prime_ideal, power) in roi
+            .factor_ideal(&ideal)
+            .unwrap()
+            .into_prime_factors_and_powers()
+        {
+            println!("power = {power} prime_ideal_factor = {:?}", prime_ideal);
+        }
     }
 }
