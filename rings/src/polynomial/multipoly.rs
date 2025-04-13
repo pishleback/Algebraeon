@@ -654,6 +654,9 @@ where
 impl<RS: UniqueFactorizationStructure> UniqueFactorizationStructure
     for MultiPolynomialStructure<RS>
 {
+    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+        None
+    }
 }
 
 impl<
@@ -690,8 +693,8 @@ where
             // It is a polynomial with multipolynomial coefficients where all coefficients are constant
             // So we can defer to a univariate factoring algorithm
             Some(poly) => {
-                let (unit, factors) = factor_poly(&poly)?.unit_and_factors();
-                Some(Factored::new_unchecked(
+                let (unit, factors) = factor_poly(&poly)?.into_unit_and_factor_powers();
+                Some(Factored::from_unit_and_factor_powers(
                     self.clone().into(),
                     unit.apply_map_into(|c| MultiPolynomial::constant(c)),
                     factors
@@ -751,8 +754,8 @@ where
                                     &dehom_mpoly,
                                 )
                                 .unwrap()
-                                .unit_and_factors();
-                            Some(Factored::new_unchecked(
+                                .into_unit_and_factor_powers();
+                            Some(Factored::from_unit_and_factor_powers(
                                 self.clone().into(),
                                 self.homogenize(&unit, &free_var),
                                 factors
@@ -783,8 +786,8 @@ where
                                     &expanded_poly,
                                 )
                                 .unwrap()
-                                .unit_and_factors();
-                            Some(Factored::new_unchecked(
+                                .into_unit_and_factor_powers();
+                            Some(Factored::from_unit_and_factor_powers(
                                 self.clone().into(),
                                 poly_over_self.evaluate(&unit, &free_var),
                                 factors
@@ -802,8 +805,8 @@ where
                     // Just an element of the coefficient ring
                     let value = self.as_constant(mpoly).unwrap();
                     let factored = factor_coeff(&value)?;
-                    let (unit, factors) = factored.unit_and_factors();
-                    Some(Factored::new_unchecked(
+                    let (unit, factors) = factored.into_unit_and_factor_powers();
+                    Some(Factored::from_unit_and_factor_powers(
                         self.clone().into(),
                         MultiPolynomial::constant(unit),
                         factors

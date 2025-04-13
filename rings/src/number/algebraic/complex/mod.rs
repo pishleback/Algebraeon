@@ -80,7 +80,7 @@ fn identify_complex_root(
     let (mut a, mut b, mut c, mut d) = box_gen.next().unwrap();
 
     let irr_poly = {
-        let (_unit, factors) = poly.factor().unwrap().unit_and_factors();
+        let (_unit, factors) = poly.factor().unwrap().into_unit_and_factor_powers();
         let irr_polys = factors.into_iter().map(|(f, _k)| f).collect::<Vec<_>>();
         let mut possible_irr_poly_idxs: HashSet<_> = (0..irr_polys.len()).collect();
         loop {
@@ -170,7 +170,7 @@ impl Display for ComplexAlgebraicRoot {
             let d = &b * &b - Integer::from(4) * &a * &c;
             let mut d_sq = Integer::ONE;
             let mut d_sqfreee = Integer::ONE;
-            let (d_sign, d_factors) = d.factor().unwrap().unit_and_factors();
+            let (d_sign, d_factors) = d.factor().unwrap().into_unit_and_factor_powers();
             for (d_factor, k) in d_factors {
                 d_sq *= d_factor.nat_pow(&(&k / Natural::TWO));
                 if k % Natural::TWO == Natural::ONE {

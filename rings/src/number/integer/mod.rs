@@ -82,7 +82,11 @@ impl FavoriteAssociateStructure for IntegerCanonicalStructure {
     }
 }
 
-impl UniqueFactorizationStructure for IntegerCanonicalStructure {}
+impl UniqueFactorizationStructure for IntegerCanonicalStructure {
+    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+        Some(self.is_irreducible(a))
+    }
+}
 
 impl FactorableStructure for IntegerCanonicalStructure {
     fn factor(&self, a: &Self::Set) -> Option<Factored<Self>> {
@@ -96,7 +100,7 @@ impl FactorableStructure for IntegerCanonicalStructure {
                 unit = Integer::from(1);
             }
             let f = factor(a.abs()).unwrap();
-            Some(Factored::new_unchecked(
+            Some(Factored::from_unit_and_factor_powers_unchecked(
                 self.clone().into(),
                 unit,
                 f.into_powers()

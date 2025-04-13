@@ -10,29 +10,44 @@ pub trait FactoredAbstractStructure<F: FactoredAbstract>: Structure {
     /// A type used to hold any object.
     type Object: Clone + Debug;
 
+    /// return true iff a divides b
     fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool;
 
-    fn object_equal(&self, a: &Self::Object, b: &Self::Object) -> bool {
+    // not necessarily equal but equivalent wrt division
+    fn object_equivalent(&self, a: &Self::Object, b: &Self::Object) -> bool {
         self.object_divides(a, b) && self.object_divides(b, a)
     }
 
-    fn prime_object_equal(&self, a: &Self::PrimeObject, b: &Self::PrimeObject) -> bool {
-        self.object_equal(
+    fn prime_object_equivalent(&self, a: &Self::PrimeObject, b: &Self::PrimeObject) -> bool {
+        self.object_equivalent(
             &self.prime_to_object(a.clone()),
             &self.prime_to_object(b.clone()),
         )
     }
 
+    /// return true if object actually is a prime object
+    /// may return true if object doesn't represent a prime object, but this is not so good for debugging
+    /// if returns false then object is definitely not a valid prime object
     fn object_is_prime(&self, object: &Self::PrimeObject) -> bool;
 
     fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object;
 
-    fn object_mul(&self, a: &Self::Object, b: &Self::Object) -> Self::Object;
+    fn object_one(&self) -> Self::Object {
+        self.object_product(vec![])
+    }
+
+    fn object_mul(&self, a: &Self::Object, b: &Self::Object) -> Self::Object {
+        self.object_product(vec![a, b])
+    }
+
+    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object;
 }
 
 pub trait FactoredAbstract: Sized {
     /// A structure for working with the above types.
     type Structure: FactoredAbstractStructure<Self>;
+
+    fn factored_structure(&self) -> &Self::Structure;
 
     fn from_factor_powers_unchecked(
         structure: Self::Structure,
@@ -55,7 +70,7 @@ pub trait FactoredAbstract: Sized {
                 vec![];
             for (p, _) in &factor_powers {
                 assert!(structure.object_is_prime(p));
-                assert!(!ps.iter().any(|q| structure.prime_object_equal(p, q)));
+                assert!(!ps.iter().any(|q| structure.prime_object_equivalent(p, q)));
                 ps.push(p);
             }
         }
@@ -135,6 +150,32 @@ pub trait FactoredAbstract: Sized {
             .collect()
     }
 
+    fn divides(a: &Self, b: &Self) -> bool {
+        let structure =
+            common_structure::<Self::Structure>(a.factored_structure(), b.factored_structure());
+        for (pa, ka) in a.factor_powers() {
+            'EQUIV_PRIME_SEARCH: {
+                for (pb, kb) in b.factor_powers() {
+                    if structure.prime_object_equivalent(pa, pb) {
+                        if !(ka <= kb) {
+                            // `b` has the prime factor `pa` of `a` but its multiplicity is too small
+                            return false;
+                        }
+                        break 'EQUIV_PRIME_SEARCH;
+                    }
+                }
+                // `a` has a prime factor `pa` which `b` does not have
+                return false;
+            }
+        }
+        // every prime factor `pa` of `a` appears in `b` with at least the same multiplicity
+        true
+    }
+
+    fn equivalent(a: &Self, b: &Self) -> bool {
+        Self::divides(a, b) && Self::divides(b, a)
+    }
+
     fn is_trivial(&self) -> bool {
         self.factor_powers().into_iter().next().is_none()
     }
@@ -156,9 +197,91 @@ pub trait FactoredAbstract: Sized {
             .all(|(_, k)| k == &Natural::ONE)
     }
 
-    fn expanded(&self) -> <Self::Structure as FactoredAbstractStructure<Self>>::Object {
-        compile_error!("hi");
-        todo!()
+    fn expanded(&self) -> <Self::Structure as FactoredAbstractStructure<Self>>::Object;
+
+    fn expanded_squarefree(&self) -> <Self::Structure as FactoredAbstractStructure<Self>>::Object {
+        Self::from_factor_powers(
+            self.factored_structure().clone(),
+            self.squarefree_factor_list()
+                .into_iter()
+                .map(|p| (p.clone(), Natural::ONE))
+                .collect(),
+        )
+        .expanded()
+    }
+
+    fn mul(a: Self, b: Self) -> Self;
+
+    fn pow(self, n: &Natural) -> Self {
+        Self::from_factor_powers_unchecked(
+            self.factored_structure().clone(),
+            self.into_factor_powers()
+                .into_iter()
+                .map(|(p, k)| (p, k * n))
+                .collect(),
+        )
+    }
+
+    fn divisors<'a>(
+        &'a self,
+    ) -> Box<dyn Iterator<Item = <Self::Structure as FactoredAbstractStructure<Self>>::Object> + 'a>
+    {
+        let structure = self.factored_structure();
+        let factors = self.factor_powers();
+        if factors.len() == 0 {
+            Box::new(vec![structure.object_one()].into_iter())
+        } else {
+            let mut factor_powers = vec![];
+            for (p, k) in factors {
+                let j = factor_powers.len();
+                factor_powers.push(vec![]);
+                let mut p_pow = structure.object_one();
+                let mut i = Natural::from(0u8);
+                while &i <= k {
+                    factor_powers[j].push(p_pow.clone());
+                    p_pow = structure.object_mul(&p_pow, &structure.prime_to_object(p.clone()));
+                    i += Natural::from(1u8);
+                }
+            }
+
+            Box::new(
+                itertools::Itertools::multi_cartesian_product(
+                    factor_powers.into_iter().map(|p_pows| p_pows.into_iter()),
+                )
+                .map(|prime_power_factors| {
+                    structure
+                        .object_product(prime_power_factors.iter().collect())
+                        .clone()
+                }),
+            )
+        }
+    }
+
+    fn count_divisors(&self) -> Option<Natural> {
+        let factors = self.factor_powers();
+        let mut count = Natural::from(1u8);
+        for (_p, k) in factors {
+            count *= k + Natural::ONE;
+        }
+        Some(count)
+    }
+
+    fn gcd(a: Self, b: Self) -> Self {
+        let structure =
+            common_structure::<Self::Structure>(a.factored_structure(), b.factored_structure());
+        let factor_powers = a
+            .into_factor_powers()
+            .into_iter()
+            .filter_map(|(p, pk)| {
+                for (q, qk) in b.factor_powers() {
+                    if structure.prime_object_equivalent(&p, q) {
+                        return Some((p, std::cmp::min(pk, qk.clone())));
+                    }
+                }
+                None
+            })
+            .collect();
+        Self::from_factor_powers(structure, factor_powers)
     }
 }
 
@@ -212,6 +335,205 @@ impl<RS: FactorableStructure> Factored<RS> {
         Ok(())
     }
 }
+
+impl<RS: UniqueFactorizationStructure> FactoredAbstractStructure<Factored<RS>> for RS {
+    type PrimeObject = RS::Set;
+
+    type Object = RS::Set;
+
+    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
+        self.divisible(a, b)
+    }
+
+    fn object_is_prime(&self, object: &Self::PrimeObject) -> bool {
+        match self.try_is_irreducible(object) {
+            Some(answer) => answer,
+            None => {
+                // unsure, so we are allowed to return true here
+                true
+            }
+        }
+    }
+
+    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object {
+        prime
+    }
+
+    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
+        self.product(objects)
+    }
+}
+
+impl<RS: UniqueFactorizationStructure> Factored<RS> {
+    pub(crate) fn equal(a: &Self, b: &Self) -> bool {
+        let ring = common_structure::<RS>(&a.ring, &b.ring);
+        if !ring.equal(&a.unit, &b.unit) {
+            false
+        } else {
+            //every a_factor is a b_factor
+            for (a_factor, _a_power) in &a.factors {
+                debug_assert!(ring.is_fav_assoc(a_factor));
+                if !b
+                    .factors
+                    .iter()
+                    .any(|(b_factor, _b_power)| ring.equal(a_factor, b_factor))
+                {
+                    return false;
+                }
+            }
+            //every b_factor is an a_factor
+            for (b_factor, _b_power) in &b.factors {
+                debug_assert!(ring.is_fav_assoc(b_factor));
+                if !a
+                    .factors
+                    .iter()
+                    .any(|(a_factor, _a_power)| ring.equal(a_factor, b_factor))
+                {
+                    return false;
+                }
+            }
+            //the powers of the factors are equal
+            for (a_factor, a_power) in &a.factors {
+                for (b_factor, b_power) in &b.factors {
+                    if ring.equal(a_factor, b_factor) {
+                        if a_power != b_power {
+                            return false;
+                        }
+                    }
+                }
+            }
+            true
+        }
+    }
+
+    pub fn from_unit(ring: RS, unit: RS::Set) -> Self {
+        debug_assert!(ring.is_unit(&unit));
+        Self {
+            ring,
+            unit,
+            factors: vec![],
+        }
+    }
+
+    pub fn from_unit_and_factor_powers_unchecked(
+        ring: RS,
+        unit: RS::Set,
+        factor_powers: Vec<(RS::Set, Natural)>,
+    ) -> Self {
+        Self {
+            ring,
+            unit,
+            factors: factor_powers,
+        }
+    }
+
+    pub fn from_unit_and_factor_powers(
+        ring: RS,
+        unit: RS::Set,
+        factor_powers: Vec<(RS::Set, Natural)>,
+    ) -> Self {
+        debug_assert!(ring.is_unit(&unit));
+        let mut f = Self::from_factor_powers(
+            ring,
+            factor_powers
+                .into_iter()
+                .filter(|(_, k)| k > &Natural::ZERO)
+                .collect(),
+        );
+        f.unit = unit;
+        f
+    }
+
+    pub fn mul_mut(&mut self, other: Self) {
+        *self = Self::mul(self.clone(), other)
+    }
+
+    pub fn ring(&self) -> &RS {
+        &self.ring
+    }
+
+    pub fn into_unit_and_factor_powers(self) -> (RS::Set, Vec<(RS::Set, Natural)>) {
+        (self.unit, self.factors)
+    }
+
+    fn mul_by_unchecked(&mut self, p: RS::Set, k: Natural) {
+        for (q, t) in &mut self.factors {
+            match (self.ring.div(&p, q), self.ring.div(q, &p)) {
+                (Ok(u), Ok(v)) => {
+                    if self.ring.is_unit(&u) && self.ring.is_unit(&v) {
+                        //q = v*p so q^k = v^kp^k and this is what we are multiplying by
+                        self.ring
+                            .mul_mut(&mut self.unit, &self.ring.nat_pow(&v, &k));
+                        *t += k;
+                        return;
+                    }
+                }
+                _ => {}
+            }
+        }
+        self.factors.push((p, k));
+    }
+}
+
+impl<RS: UniqueFactorizationStructure> FactoredAbstract for Factored<RS> {
+    type Structure = RS;
+
+    fn factored_structure(&self) -> &Self::Structure {
+        &self.ring
+    }
+
+    fn from_factor_powers_unchecked(
+        ring: Self::Structure,
+        factor_powers: Vec<(
+            <Self::Structure as FactoredAbstractStructure<Self>>::PrimeObject,
+            Natural,
+        )>,
+    ) -> Self {
+        let one = ring.one();
+        Self {
+            ring,
+            unit: one,
+            factors: factor_powers,
+        }
+    }
+
+    fn factor_powers(
+        &self,
+    ) -> Vec<(
+        &<Self::Structure as FactoredAbstractStructure<Self>>::PrimeObject,
+        &Natural,
+    )> {
+        self.factors.iter().map(|(p, k)| (p, k)).collect()
+    }
+
+    fn into_factor_powers(
+        self,
+    ) -> Vec<(
+        <Self::Structure as FactoredAbstractStructure<Self>>::PrimeObject,
+        Natural,
+    )> {
+        self.factors
+    }
+
+    fn expanded(&self) -> <Self::Structure as FactoredAbstractStructure<Self>>::Object {
+        let mut ans = self.unit.clone();
+        for (p, k) in &self.factors {
+            self.ring.mul_mut(&mut ans, &self.ring.nat_pow(p, k));
+        }
+        ans
+    }
+
+    fn mul(mut a: Self, b: Self) -> Self {
+        let ring = common_structure::<RS>(&a.ring, &b.ring);
+        ring.mul_mut(&mut a.unit, &b.unit);
+        for (p, k) in b.factors {
+            a.mul_by_unchecked(p, k)
+        }
+        a
+    }
+}
+
+/*
 
 impl<RS: UniqueFactorizationStructure> Factored<RS> {
     pub fn ring(&self) -> &RS {
@@ -476,6 +798,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
         a.expand()
     }
 }
+*/
 
 #[derive(Debug)]
 pub enum FindFactorResult<RS: RingStructure> {
@@ -490,7 +813,7 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationStructure>(
 ) -> Factored<RS> {
     debug_assert!(!ring.is_zero(&elem));
     if ring.is_unit(&elem) {
-        Factored::factored_unit_unchecked(ring.clone().into(), elem)
+        Factored::from_unit(ring.clone().into(), elem)
     } else {
         debug_assert!(!ring.is_unit(&elem));
         match partial_factor(elem.clone()) {
@@ -500,7 +823,7 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationStructure>(
             ),
             FindFactorResult::Irreducible => {
                 //f is irreducible
-                Factored::factored_irreducible_unchecked(ring.clone().into(), elem)
+                Factored::from_prime(ring.clone().into(), elem)
             }
         }
     }
@@ -512,7 +835,7 @@ mod tests {
 
     #[test]
     fn factorization_invariants() {
-        let f = Factored::new_unchecked(
+        let f = Factored::from_unit_and_factor_powers_unchecked(
             Integer::structure(),
             Integer::from(-1),
             vec![
@@ -522,10 +845,11 @@ mod tests {
         );
         f.check_invariants().unwrap();
 
-        let f = Factored::new_unchecked(Integer::structure(), Integer::from(1), vec![]);
+        let f =
+            Factored::from_unit_and_factor_powers(Integer::structure(), Integer::from(1), vec![]);
         f.check_invariants().unwrap();
 
-        let f = Factored::new_unchecked(
+        let f = Factored::from_unit_and_factor_powers_unchecked(
             Integer::structure(),
             Integer::from(-1),
             vec![
@@ -540,14 +864,14 @@ mod tests {
             "can't have a power of zero"
         );
 
-        let f = Factored::new_unchecked(
+        let f = Factored::from_unit_and_factor_powers_unchecked(
             Integer::structure(),
             Integer::from(3),
             vec![(Integer::from(2), Natural::from(2u8))],
         );
         assert_eq!(f.check_invariants().is_ok(), false, "unit should be a unit");
 
-        let f = Factored::new_unchecked(
+        let f = Factored::from_unit_and_factor_powers_unchecked(
             Integer::structure(),
             Integer::from(1),
             vec![
@@ -561,7 +885,7 @@ mod tests {
             "prime factors must not be zero"
         );
 
-        let f = Factored::new_unchecked(
+        let f = Factored::from_unit_and_factor_powers_unchecked(
             Integer::structure(),
             Integer::from(-1),
             vec![
@@ -575,7 +899,7 @@ mod tests {
             "prime factors must be prime"
         );
 
-        let f = Factored::new_unchecked(
+        let f = Factored::from_unit_and_factor_powers_unchecked(
             Integer::structure(),
             Integer::from(-1),
             vec![

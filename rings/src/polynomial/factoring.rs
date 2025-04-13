@@ -25,9 +25,11 @@ where
 
         let (content, prim) = self.factor_primitive(f.clone()).unwrap();
 
-        let (content_unit, content_factors) = factor_coeff(&content).unwrap().unit_and_factors();
+        let (content_unit, content_factors) = factor_coeff(&content)
+            .unwrap()
+            .into_unit_and_factor_powers();
 
-        let mut factors = Factored::new_unchecked(
+        let mut factors = Factored::from_unit_and_factor_powers(
             self.clone().into(),
             Polynomial::constant(content_unit),
             content_factors
@@ -56,7 +58,7 @@ where
             d = self.add(&self.neg(&self.derivative(b.clone())), &c);
         }
 
-        factors.mul_mut(Factored::factored_unit_unchecked(self.clone().into(), f));
+        factors.mul_mut(Factored::from_unit(self.clone().into(), f));
         factors
     }
 }
@@ -79,7 +81,7 @@ where
         so just factor c0 and cn and check all divisors
         */
 
-        let mut linear_factors = Factored::factored_one(self.clone().into());
+        let mut linear_factors = Factored::new_trivial(self.clone().into());
         'seek_linear_factor: while self.degree(&f).unwrap() > 0 {
             let c0 = self.coeff(&f, 0);
             if self.coeff_ring().is_zero(c0) {
@@ -87,7 +89,7 @@ where
                 f = self.div(&f, &self.var()).unwrap();
                 linear_factors = Factored::mul(
                     linear_factors,
-                    Factored::factored_irreducible_unchecked(self.clone().into(), self.var()),
+                    Factored::from_prime(self.clone().into(), self.var()),
                 );
                 continue 'seek_linear_factor;
             } else {
@@ -110,10 +112,7 @@ where
                                     f = new_f;
                                     linear_factors = Factored::mul(
                                         linear_factors,
-                                        Factored::factored_irreducible_unchecked(
-                                            self.clone().into(),
-                                            lin,
-                                        ),
+                                        Factored::from_prime(self.clone().into(), lin),
                                     );
                                     continue 'seek_linear_factor;
                                 }
@@ -244,8 +243,8 @@ where
         } else {
             let (g, f_prim) = self.factor_primitive(f).unwrap();
             let g_factored = factor_coeff(&g).unwrap();
-            let (g_unit, g_factors) = g_factored.unit_and_factors();
-            let g_factored = Factored::new_unchecked(
+            let (g_unit, g_factors) = g_factored.into_unit_and_factor_powers();
+            let g_factored = Factored::from_unit_and_factor_powers(
                 self.clone().into(),
                 Polynomial::constant(g_unit),
                 g_factors
@@ -337,7 +336,7 @@ where
     let (unit, prim) = factor_primitive_fof(fof_inclusion, f);
     let (prim_unit, prim_factors) = PolynomialStructure::new(fof_inclusion.domain().clone().into())
         .factor(&prim)?
-        .unit_and_factors();
+        .into_unit_and_factor_powers();
     let mut fof_unit = prim_unit.apply_map(|c| fof_inclusion.image(c));
     let mut fof_factors = vec![];
     for (factor, power) in prim_factors.into_iter() {
@@ -346,7 +345,7 @@ where
         poly_ring.mul_mut(&mut fof_unit, &fof_factor_unit);
         fof_factors.push((fof_factor_prim, power));
     }
-    let factors = Factored::new_unchecked(
+    let factors = Factored::from_unit_and_factor_powers(
         poly_ring.clone().into(),
         poly_ring.mul(&Polynomial::constant(unit), &fof_unit),
         fof_factors,
@@ -426,7 +425,7 @@ mod tests {
         let f = ((1 + x).pow(2)).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &Factored::new_unchecked(
+            &Factored::from_unit_and_factor_powers(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![((1 + x).into_verbose(), Natural::from(2u8))]
@@ -435,7 +434,7 @@ mod tests {
 
         let f = (-1 - 2 * x).into_verbose();
         let fs1 = f.factorize_by_kroneckers_method(Integer::factor).unwrap();
-        let fs2 = &Factored::new_unchecked(
+        let fs2 = &Factored::from_unit_and_factor_powers(
             Polynomial::<Integer>::structure().into(),
             Polynomial::neg(&Polynomial::one()),
             vec![((1 + 2 * x).into_verbose(), Natural::from(1u8))],
@@ -446,7 +445,7 @@ mod tests {
         let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &Factored::new_unchecked(
+            &Factored::from_unit_and_factor_powers(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
@@ -459,7 +458,7 @@ mod tests {
         let f = (1 + x + x.pow(2)).pow(2).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &Factored::new_unchecked(
+            &Factored::from_unit_and_factor_powers(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![((1 + x + x.pow(2)).into_verbose(), Natural::from(2u8))]
@@ -470,7 +469,7 @@ mod tests {
         let f = (2 + 2 * x).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &Factored::new_unchecked(
+            &Factored::from_unit_and_factor_powers(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
@@ -483,7 +482,7 @@ mod tests {
         let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &Factored::new_unchecked(
+            &Factored::from_unit_and_factor_powers(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
@@ -498,7 +497,7 @@ mod tests {
         let f = Polynomial::<Integer>::one();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &Factored::new_unchecked(
+            &Factored::from_unit_and_factor_powers(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![]
@@ -508,7 +507,7 @@ mod tests {
         let f = ((x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_verbose();
         assert!(Factored::equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &Factored::new_unchecked(
+            &Factored::from_unit_and_factor_powers(
                 Polynomial::<Integer>::structure().into(),
                 Polynomial::one(),
                 vec![
@@ -529,7 +528,7 @@ mod tests {
 
         assert!(Factored::equal(
             &f.factor().unwrap(),
-            &Factored::new_unchecked(
+            &Factored::from_unit_and_factor_powers(
                 Polynomial::<Rational>::structure().into(),
                 Polynomial::constant(Rational::from(6)),
                 vec![

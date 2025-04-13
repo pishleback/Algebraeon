@@ -376,7 +376,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
             self.modular_factors.iter().map(|g| g.clone()).collect(),
         );
 
-        let mut factored = Factored::factored_one(Polynomial::<Integer>::structure());
+        let mut factored = Factored::new_trivial(Polynomial::<Integer>::structure());
         let mut excluded_modular_factors = vec![];
         let mut f = self.poly.clone();
         let mut k = 1; // The cardinality of the subset to search for each loop
@@ -425,7 +425,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                                 // Divide f by the found factor g
                                 f = h;
                                 // Add g to this list of found factors
-                                factored.mul_mut(Factored::factored_irreducible_unchecked(
+                                factored.mul_mut(Factored::from_prime(
                                     Polynomial::<Integer>::structure(),
                                     g,
                                 ));
@@ -450,10 +450,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 
         // The remaining modular factors must give the last irreducible factor in the factorization
         if m > 0 {
-            factored.mul_mut(Factored::factored_irreducible_unchecked(
-                Polynomial::<Integer>::structure(),
-                f,
-            ));
+            factored.mul_mut(Factored::from_prime(Polynomial::<Integer>::structure(), f));
         }
 
         factored
@@ -475,7 +472,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
                     Integer::factor,
                     &|f| {
                         if f.degree().unwrap() == 0 {
-                            Factored::factored_unit_unchecked(Polynomial::<Integer>::structure(), f)
+                            Factored::from_unit(Polynomial::<Integer>::structure(), f)
                         } else {
                             let state = BerlekampAassenhausAlgorithmState::new(f).next_prime();
                             state.factor_by_try_all_subsets()

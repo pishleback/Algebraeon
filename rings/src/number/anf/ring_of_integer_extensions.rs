@@ -179,7 +179,7 @@ impl
         DedekindExtensionIdealFactorsAbovePrime::from_powers_unchecked(
             prime_ideal,
             beta_min_poly_factored
-                .into_factors()
+                .into_factor_powers()
                 .into_iter()
                 .map(|(g, power)| {
                     debug_assert!(g.is_monic());
