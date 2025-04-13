@@ -135,15 +135,15 @@ Use the issue tracker if you have questions, feature requests, bugs reports, etc
 
 ## Changing the code-base
 
-You should fork this repository, make changes, and submit a pull request. Submitted code should, where applicable, have associated unit tests.
+Fork this repository, make changes, and submit a pull request.
+
+If you're unsure what needs doing, have a look through the issue tracker for unassigned issues.
 
 Algebraeon is organized as a [cargo workspace](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). Run `cargo test` in the root directory to build and run all tests.
 
 A suggested workflow for testing new features:
-
 - Create a new binary in `examples/src/bin`, for example `my_main.rs`.
 - To run, use `cargo run --bin my_main` in the root directory.
-- Test any changes to the codebase with unit tests and/or using `my_main.rs`.
 
 ## CLA
 
