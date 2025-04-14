@@ -213,6 +213,7 @@ pub trait IntegralDomainStructure: UnitsStructure {
         }
     }
 
+    /// return true iff a is divisible by b
     fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
         match self.div(a, b) {
             Ok(_q) => true,
@@ -319,9 +320,11 @@ where
     fn factor_fav_assoc(&self) -> (Self, Self) {
         Self::structure().factor_fav_assoc(self)
     }
-
     fn fav_assoc(&self) -> Self {
         Self::structure().fav_assoc(self)
+    }
+    fn is_fav_assoc(&self) -> bool {
+        Self::structure().is_fav_assoc(self)
     }
 }
 impl<R: MetaRing> MetaFavoriteAssociate for R where
@@ -546,7 +549,10 @@ impl<R: MetaRing> MetaEuclideanDivision for R where
 {
 }
 
-pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {}
+pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {
+    /// Try to determine if a is irreducible. May fail to produce an answer.
+    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
+}
 
 pub trait FactorableStructure: UniqueFactorizationStructure {
     //a UFD with an explicit algorithm to compute unique factorizations
@@ -555,20 +561,25 @@ pub trait FactorableStructure: UniqueFactorizationStructure {
     fn is_irreducible(&self, a: &Self::Set) -> bool {
         match self.factor(a) {
             None => false, //zero is not irreducible
-            Some(factored) => factored.is_irreducible(),
+            Some(factored) => factored.is_prime(),
         }
     }
 
-    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set
+// where
+    //     Self: FactoredAbstractStructure<Factored<Self>, Object = Self::Set, PrimeObject = Self::Set>,
+        // Factored<Self>: FactoredAbstract<Structure = Self>,
+    {
         match (self.factor(a), self.factor(b)) {
-            (Some(factored_a), Some(factored_b)) => Factored::gcd(factored_a, factored_b),
+            (Some(factored_a), Some(factored_b)) => {
+                Factored::gcd(factored_a, factored_b).expanded()
+            }
             (None, Some(_)) => b.clone(),
             (Some(_), None) => a.clone(),
             (None, None) => self.zero(),
         }
     }
 }
-
 pub trait MetaFactorableStructure: MetaFavoriteAssociate
 where
     Self::Structure: FactorableStructure,
@@ -644,14 +655,22 @@ impl<FS: FieldStructure> BezoutDomainStructure for FS {
     }
 }
 
-impl<FS: FieldStructure> UniqueFactorizationStructure for FS {}
+impl<FS: FieldStructure> UniqueFactorizationStructure for FS {
+    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+        Some(self.is_irreducible(a))
+    }
+}
 
 impl<FS: FieldStructure> FactorableStructure for FS {
-    fn factor(&self, a: &Self::Set) -> Option<super::factorization::Factored<Self>> {
+    fn factor(&self, a: &Self::Set) -> Option<Factored<Self>> {
         if self.is_zero(a) {
             None
         } else {
-            Some(Factored::new_unchecked(self.clone(), a.clone(), vec![]))
+            Some(Factored::from_unit_and_factor_powers(
+                self.clone(),
+                a.clone(),
+                vec![],
+            ))
         }
     }
 }
@@ -903,7 +922,7 @@ where
             &PolynomialStructure::new(self.base_field().clone())
                 .factor(poly)
                 .unwrap()
-                .expand_squarefree(),
+                .expanded_squarefree(),
         )
     }
     fn all_roots_powers(
@@ -913,8 +932,7 @@ where
         let mut root_powers = vec![];
         for (factor, k) in PolynomialStructure::new(self.base_field().clone())
             .factor(poly)?
-            .unit_and_factors()
-            .1
+            .into_factor_powers()
         {
             for root in self.all_roots_list(&factor).unwrap() {
                 root_powers.push((root, (&k).try_into().unwrap()))

@@ -3,8 +3,9 @@ use crate::{
     linear::matrix::Matrix,
     polynomial::*,
     structure::{
-        EuclideanDivisionStructure, FactorableStructure, Factored, MetaFactorableStructure,
-        MetaRing, MetaRingEq, MetaSemiRing, QuotientStructure, RingStructure, SemiRingStructure,
+        EuclideanDivisionStructure, FactorableStructure, Factored, FactoredAbstract,
+        MetaFactorableStructure, MetaRing, MetaRingEq, MetaSemiRing, QuotientStructure,
+        RingStructure, SemiRingStructure,
     },
 };
 use algebraeon_nzq::*;
@@ -211,7 +212,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
         //the factors of p are gcd(p(x), t_i(x + kθ)) for each squarefree factor t_i of t
 
         let mut p_factors = vec![];
-        for (ti, ti_pow) in t.factor().unwrap().factors() {
+        for (ti, ti_pow) in t.factor().unwrap().factor_powers() {
             // println!("ti = {}", ti);
             debug_assert_eq!(ti_pow, &Natural::ONE);
             p_factors.push(
@@ -228,7 +229,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
         // println!("p_factors = {:?}", p_factors);
 
-        let factored = Factored::new_unchecked(
+        let factored = Factored::from_unit_and_factor_powers(
             self.clone().into(),
             self.one(),
             p_factors
@@ -274,8 +275,8 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             )
             .factor()
             .unwrap()
-            .unit_and_factors();
-            Factored::new_unchecked(
+            .into_unit_and_factor_powers();
+            Factored::from_unit_and_factor_powers(
                 self.clone().into(),
                 Polynomial::constant(unit),
                 factors
@@ -458,7 +459,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             let p_factors = q
                 .factor()
                 .unwrap()
-                .factors()
+                .factor_powers()
                 .into_iter()
                 .map(|(qi, pow)| {
                     // println!("");
@@ -549,7 +550,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             //     println!("pi = {}", pi);
             // }
 
-            Factored::new_unchecked(
+            Factored::from_unit_and_factor_powers(
                 self.clone().into(),
                 self.one(),
                 p_factors.into_iter().map(|pi| (pi, Natural::ONE)).collect(),
@@ -579,9 +580,8 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             Polynomial::<Rational>::from_coeffs(rat_coeffs)
         };
 
-        let (rat_unit, rat_factors) = rat_f.factor().unwrap().unit_and_factors();
-        let mut factored =
-            Factored::factored_unit_unchecked(self.clone().into(), Polynomial::constant(rat_unit));
+        let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_factor_powers();
+        let mut factored = Factored::from_unit(self.clone().into(), Polynomial::constant(rat_unit));
         for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor
@@ -622,7 +622,7 @@ impl FactorableStructure for PolynomialStructure<AlgebraicNumberFieldStructure> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::IntoErgonomic;
+    use crate::structure::{FactoredAbstract, IntoErgonomic};
 
     #[test]
     fn test_anf_poly_factor_count() {
@@ -634,7 +634,7 @@ mod tests {
             k_poly
                 .factor(&(x.pow(2) - 12).into_verbose())
                 .unwrap()
-                .factors()
+                .factor_powers()
                 .len(),
             2
         );
@@ -649,7 +649,7 @@ mod tests {
             k_poly
                 .factor(&(x.pow(4) - x.pow(2) + 1).into_verbose())
                 .unwrap()
-                .factors()
+                .factor_powers()
                 .len(),
             4
         );
@@ -660,7 +660,7 @@ mod tests {
             k_poly
                 .factor(&(x.pow(3) - x + 1).into_verbose())
                 .unwrap()
-                .factors()
+                .factor_powers()
                 .len(),
             2
         );
@@ -674,7 +674,7 @@ mod tests {
             k_poly
                 .factor(&(x.pow(12) - 1).into_verbose())
                 .unwrap()
-                .factors()
+                .factor_powers()
                 .len(),
             12
         );

@@ -18,10 +18,7 @@ pub trait MetaType: Clone + Debug {
     fn structure() -> Self::Structure;
 }
 
-pub fn common_structure<S: SetStructure>(
-    structure1: impl Borrow<S>,
-    structure2: impl Borrow<S>,
-) -> S {
+pub fn common_structure<S: Structure>(structure1: impl Borrow<S>, structure2: impl Borrow<S>) -> S {
     if structure1.borrow() == structure2.borrow() {
         structure1.borrow().clone()
     } else {
