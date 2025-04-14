@@ -28,7 +28,7 @@ let ideal = roi.principal_ideal(&roi.try_anf_to_roi(&(27 * x - 9).into_verbose()
 for (prime_ideal, power) in roi
     .factor_ideal(&ideal)
     .unwrap()
-    .into_prime_factors_and_powers()
+    .into_factor_powers()
 {
     println!("power = {power} prime_ideal_factor = {:?}", prime_ideal);
 }
