@@ -11,7 +11,7 @@ pub struct ConwayPolynomialDatabase {
 }
 
 impl ConwayPolynomialDatabase {
-    fn from_file(content: String) -> Self {
+    fn from_file(content: String) -> Result<Self, ()> {
         let content = &content[24..];
         let mut chars = content.chars();
 
@@ -28,19 +28,35 @@ impl ConwayPolynomialDatabase {
 
         let mut data = HashMap::new();
 
-        assert_eq!(chars.next().unwrap(), '[');
+        macro_rules! assert_or_err {
+            ($a:expr) => {
+                if !$a {
+                    return Err(());
+                }
+            };
+        }
+
+        macro_rules! assert_eq_or_err {
+            ($a:expr, $b:expr) => {
+                if $a != $b {
+                    return Err(());
+                }
+            };
+        }
+
+        assert_eq_or_err!(chars.next().unwrap(), '[');
         loop {
-            assert_eq!(chars.next().unwrap(), '\n');
+            assert_eq_or_err!(chars.next().unwrap(), '\n');
             let d = chars.next().unwrap();
             if d == '0' {
                 break;
             }
-            assert_eq!(d, '[');
+            assert_eq_or_err!(d, '[');
             let (d, p) = parse_nat_until(&mut chars);
-            assert_eq!(d, ',');
+            assert_eq_or_err!(d, ',');
             let (d, n) = parse_nat_until(&mut chars);
-            assert_eq!(d, ',');
-            assert_eq!(chars.next().unwrap(), '[');
+            assert_eq_or_err!(d, ',');
+            assert_eq_or_err!(chars.next().unwrap(), '[');
             let mut coeffs = vec![];
             loop {
                 let (d, c) = parse_nat_until(&mut chars);
@@ -48,10 +64,10 @@ impl ConwayPolynomialDatabase {
                 if d == ']' {
                     break;
                 } else {
-                    assert_eq!(d, ',');
+                    assert_eq_or_err!(d, ',');
                 }
             }
-            assert!(
+            assert_or_err!(
                 data.entry(p)
                     .or_insert(HashMap::new())
                     .insert(
@@ -62,11 +78,11 @@ impl ConwayPolynomialDatabase {
                     )
                     .is_none()
             );
-            assert_eq!(chars.next().unwrap(), ']');
-            assert_eq!(chars.next().unwrap(), ',');
+            assert_eq_or_err!(chars.next().unwrap(), ']');
+            assert_eq_or_err!(chars.next().unwrap(), ',');
         }
 
-        Self { data }
+        Ok(Self { data })
     }
 
     fn empty() -> Self {
@@ -80,9 +96,9 @@ impl ConwayPolynomialDatabase {
     }
 }
 
-static POLYNOMIAL_LOOKUP: OnceLock<ConwayPolynomialDatabase> = OnceLock::new();
+static POLYNOMIAL_LOOKUP: OnceLock<Result<ConwayPolynomialDatabase, ()>> = OnceLock::new();
 
-fn get_polynomial_lookup() -> &'static ConwayPolynomialDatabase {
+fn get_polynomial_lookup() -> &'static Result<ConwayPolynomialDatabase, ()> {
     #[allow(unreachable_code)]
     POLYNOMIAL_LOOKUP.get_or_init(|| {
         #[cfg(feature = "conway-polynomials-buildtime-fetch")]
@@ -101,12 +117,16 @@ fn get_polynomial_lookup() -> &'static ConwayPolynomialDatabase {
             );
         }
 
-        ConwayPolynomialDatabase::empty()
+        Ok(ConwayPolynomialDatabase::empty())
     })
 }
 
 pub fn conway_polynomial(p: usize, n: usize) -> Result<&'static Polynomial<Integer>, ()> {
-    match get_polynomial_lookup().get_polynomial(p, n) {
+    match get_polynomial_lookup()
+        .as_ref()
+        .unwrap_or_else(|_err| panic!("Failed to parse Conway polynomial file. Please report this error to `https://github.com/pishleback/Algebraeon/issues`."))
+        .get_polynomial(p, n)
+    {
         Some(p) => Ok(p),
         None => Err(()),
     }
