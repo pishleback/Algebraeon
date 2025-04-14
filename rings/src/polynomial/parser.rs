@@ -4,6 +4,84 @@ use algebraeon_nzq::*;
 use std::collections::{BTreeMap, HashSet};
 use std::str::FromStr;
 
+// Variable names or numbers
+// e.g. "x" or "123"
+struct Chars {
+    string: String,
+}
+
+// Something in brackets
+// e.g. "(x + y^2 - 2)"
+enum SubExpression {
+    Chars(Chars),
+    Sum(Sum),
+    Product(Product),
+    Power(Power),
+}
+
+// A sum
+// e.g. "x + 123 + 4*x^2*y + (x + y^2 - 2)"
+struct Sum {
+    terms: Vec<SumTerm>,
+}
+enum SumTerm {
+    Chars(Chars),
+    Power(Power),
+    Product(Product),
+    SubExpression(SubExpression),
+}
+
+// A product
+// e.g. "4*x^2*y"
+struct Product {
+    terms: Vec<ProductTerm>,
+}
+enum ProductTerm {
+    Chars(Chars),
+    Power(Power),
+    SubExpression(SubExpression),
+}
+
+// A power of something
+// e.g. "x^2" or "(x + y^2)^3"
+struct Power {
+    base: Box<PowerBase>,
+    exponent: Integer,
+}
+enum PowerBase {
+    Chars(Chars),
+    SubExpression(SubExpression),
+}
+
+// Any expression
+enum Expression {
+    Chars(Chars),
+    Sum(Sum),
+    Product(Product),
+    Power(Power),
+}
+
+impl Expression {
+    fn from_string(input: String) -> Self {
+        todo!()
+    }
+
+    // integer coefficients
+    fn to_univariate_integer_polynomial(
+        var: char,
+        expression: Expression,
+    ) -> Result<Polynomial<Integer>, String> {
+        todo!()
+    }
+
+    // rational coefficients
+    fn to_univariate_rational_polynomial(
+        var: char,
+        expression: Expression,
+    ) -> Result<Polynomial<Rational>, String> {
+        todo!()
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct Monomial {
@@ -23,7 +101,8 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
     }
 
     // Check for invalid operators like just "*" or "/" alone
-    if input.contains("**") || input.contains("//") || input.contains("++") || input.contains("--") {
+    if input.contains("**") || input.contains("//") || input.contains("++") || input.contains("--")
+    {
         return Err("Invalid consecutive operators found".to_string());
     }
 
@@ -42,7 +121,10 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
 
     // Ensure we have at most one variable
     if variables.len() > 1 {
-        return Err(format!("Found multiple variables: {:?}; expected univariate polynomial", variables));
+        return Err(format!(
+            "Found multiple variables: {:?}; expected univariate polynomial",
+            variables
+        ));
     }
 
     // Get the variable if there is one
@@ -77,7 +159,9 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
                     let coeff_part = &term[..idx];
                     let power = if let Some(pow_idx) = term.find("^") {
                         let exp_str = &term[pow_idx + 1..];
-                        exp_str.parse::<usize>().map_err(|_| format!("Invalid exponent: '{}'", exp_str))?
+                        exp_str
+                            .parse::<usize>()
+                            .map_err(|_| format!("Invalid exponent: '{}'", exp_str))?
                     } else {
                         1
                     };
@@ -85,7 +169,7 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
                 } else {
                     (term, 0)
                 }
-            },
+            }
             None => (term, 0), // No variable means constant polynomial
         };
 
@@ -94,7 +178,8 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
         } else if coeff_str == "-" {
             Integer::from(-1)
         } else {
-            Integer::from_str(coeff_str).map_err(|e| format!("Invalid coefficient '{}': {:?}", coeff_str, e))?
+            Integer::from_str(coeff_str)
+                .map_err(|e| format!("Invalid coefficient '{}': {:?}", coeff_str, e))?
         };
 
         let monomial = Monomial::new(deg);
@@ -215,6 +300,9 @@ mod tests {
         let input = "3^2";
         let result = parse_univariate_polynomial(input);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Invalid exponentiation: '^' without variable");
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid exponentiation: '^' without variable"
+        );
     }
 }
