@@ -18,7 +18,7 @@
   - [Affine Lattices]()
 - [Polynomials]()
   - [Univariate Polynomials]()
-  - [Multivariate Polynomials]()
+  - [Multivariate Polynomials](./multi_polys.md)
   - [Symmetric Polynomials]()
 - [Algebraic Numbers]()
   - [Real Algebraic Numbers]()
