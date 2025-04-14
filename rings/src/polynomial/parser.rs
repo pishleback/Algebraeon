@@ -62,43 +62,42 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
     Ok(Polynomial::from_coeffs(coeffs))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_parse_univariate_whitespace_variable() {
+        let input = "  1 + x^2  - 5x^3  ";
+        let poly = parse_univariate_polynomial(input).unwrap();        
+        assert_eq!(poly, Polynomial::from_coeffs(vec![1, 0, 1, -5]));
+    }
+    
+    #[test]
+    fn test_parse_constant() {
+        let input = "42";
+        let poly = parse_univariate_polynomial(input).unwrap();
+        assert_eq!(poly, Polynomial::from_coeffs(vec![42]));
+    }
 
-#[test]
-fn test_parse_univariate_explicit_mult() {
-    let input = "3*x^2 - 4*x + 5";
-    let poly = parse_univariate_polynomial(input).unwrap();
-    assert_eq!(poly, Polynomial::from_coeffs(vec![5, -4, 3]));
+    #[test]
+    fn test_parse_univariate_explicit_mult() {
+        let input = "3*x^2 - 4*x + 5";
+        let poly = parse_univariate_polynomial(input).unwrap();
+        assert_eq!(poly, Polynomial::from_coeffs(vec![5, -4, 3]));
+    }
+
+    #[test]
+    fn test_parse_univariate_explicit_mult_skip_exp() {
+        let input = "3*x^3 - 4*x + 5";
+        let poly = parse_univariate_polynomial(input).unwrap();
+        assert_eq!(poly, Polynomial::from_coeffs(vec![5, -4, 0, 3]));
+    }
+
+    #[test]
+    fn test_parse_univariate_implicit_mult() {
+        let input = "3x^2 - 4x + 5";
+        let poly = parse_univariate_polynomial(input).unwrap();
+        assert_eq!(poly, Polynomial::from_coeffs(vec![5, -4, 3]));
+    }
 }
-
-#[test]
-fn test_parse_univariate_implicit_mult() {
-    let input = "3x^2 - 4x + 5";
-    let poly = parse_univariate_polynomial(input).unwrap();
-    assert_eq!(poly, Polynomial::from_coeffs(vec![5, -4, 3]));
-}
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     #[test]
-//     fn test_parser() {
-//         // Simple constant polynomial
-//         {
-//             let poly = parse_univariate_polynomial("42").unwrap();
-//             let expected = Polynomial::from_coeffs(vec![Integer::from(42)]);
-//             assert_eq!(poly, expected);
-//         }
-//         
-//         // Test with whitespace variations
-//         {
-//             let poly = parse_univariate_polynomial("  1 + x^2  - 5x^3  ").unwrap();
-//             let expected = Polynomial::from_coeffs(vec![
-//                 Integer::from(1),
-//                 Integer::from(0),
-//                 Integer::from(1),
-//                 Integer::from(-5),
-//             ]);
-//             assert_eq!(poly, expected);
-//         }
-//     }
-// }
