@@ -293,6 +293,9 @@ where
 }
 impl<R: MetaRing> MetaFiniteUnits for R where Self::Structure: FiniteUnitsStructure<Set = R> {}
 
+
+
+
 pub trait FavoriteAssociateStructure: IntegralDomainStructure {
     //For associate class of elements, choose a unique representative
     //write self=unit*assoc and return (unit, assoc)
