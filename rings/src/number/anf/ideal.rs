@@ -92,9 +92,33 @@ impl RingOfIntegersWithIntegralBasisStructure {
     }
 
     pub fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
-        RingOfIntegersExtension::new(self.clone()).ideal_norm(ideal)
+        RingOfIntegersExtension::new_integer_extension(self.clone()).ideal_norm(ideal)
     }
 }
+
+// impl RingOfIntegersWithIntegralBasisStructure {
+//     /// generate all ideals of norm equal to n
+//     pub fn all_ideals_norm_eq(&self, n: &Natural) -> impl Iterator<Item = RingOfIntegersIdeal> {
+//         match Integer::factor_ideal(n) {
+//             Some(n) => {
+//                 let sq = RingOfIntegersExtension::new_integer_extension(self.clone());
+
+//                 // for (p, k) in n.into_prime_factors_and_powers() {
+//                 //     for i in sq
+//                 //         .factor_prime_ideal(p)
+//                 //         .into_powers()
+//                 //     {
+//                 //         println!("{:?} {:?}", p, i);
+//                 //     }
+//                 // }
+
+//                 todo!();
+//                 vec![].into_iter()
+//             }
+//             None => vec![self.zero_ideal()].into_iter(),
+//         }
+//     }
+// }
 
 impl IdealStructure for RingOfIntegersWithIntegralBasisStructure {
     type Ideal = RingOfIntegersIdeal;
@@ -251,7 +275,7 @@ impl DedekindDomainStructure for RingOfIntegersWithIntegralBasisStructure {}
 impl FactorableIdealsStructure for RingOfIntegersWithIntegralBasisStructure {
     fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>> {
         Some(
-            RingOfIntegersExtension::new(self.clone())
+            RingOfIntegersExtension::new_integer_extension(self.clone())
                 .factor_ideal(ideal)?
                 .into_full_factorization(),
         )
