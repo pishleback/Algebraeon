@@ -273,7 +273,7 @@ mod tests {
         assert!(result.is_err());
         println!("Error: {:?}", result);
         // invalid exponent fails because we end up flagging this input for being
-        // multivariate before it reaches the bad coeeficient test
+        // multivariate before it reaches the bad coeficient test
         // to do: make this more precise
         // assert!(result.unwrap_err().contains("Invalid exponent"));
         assert!(result.unwrap_err().contains("Found multiple variables"));
