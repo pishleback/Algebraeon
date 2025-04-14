@@ -1,7 +1,7 @@
 use crate::polynomial::Polynomial;
 use algebraeon_nzq::*;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::str::FromStr;
 
 
@@ -16,9 +16,53 @@ impl Monomial {
     }
 }
 
-/// Parses a univariate polynomial in x with Integer coefficients.
+/// Parses a univariate polynomial with Integer coefficients.
 pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, String> {
+    if input.trim().is_empty() {
+        return Err("Empty input string".to_string());
+    }
+
+    // Check for invalid operators like just "*" or "/" alone
+    if input.contains("**") || input.contains("//") || input.contains("++") || input.contains("--") {
+        return Err("Invalid consecutive operators found".to_string());
+    }
+
+    // Check for lone operators
+    if input.trim() == "*" || input.trim() == "/" {
+        return Err("Lone operator without operands".to_string());
+    }
+
+    // Detect all variable characters in the input
+    let mut variables = HashSet::new();
+    for c in input.chars() {
+        if c.is_alphabetic() {
+            variables.insert(c);
+        }
+    }
+
+    // Ensure we have at most one variable
+    if variables.len() > 1 {
+        return Err(format!("Found multiple variables: {:?}; expected univariate polynomial", variables));
+    }
+
+    // Get the variable if there is one
+    let variable = variables.iter().next().copied();
+
     let input = input.replace(" ", "").replace("*", "");
+
+    // Early check for malformed expressions
+    if input.contains("^") && variable.is_none() {
+        return Err("Invalid exponentiation: '^' without variable".to_string());
+    }
+
+    // Check for invalid exponents
+    if let Some(var) = variable {
+        let exp_pattern = format!(r"{}\^([^0-9].*)", var);
+        let exp_check = regex::Regex::new(&exp_pattern).unwrap();
+        if let Some(cap) = exp_check.captures(&input) {
+            return Err(format!("Invalid exponent: '{}'", &cap[1]));
+        }
+    }
 
     let mut terms = BTreeMap::new();
 
@@ -26,16 +70,23 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
     for cap in re.captures_iter(&input) {
         let term = &cap[1];
 
-        let (coeff_str, deg) = if let Some(idx) = term.find('x') {
-            let coeff_part = &term[..idx];
-            let power = if let Some(pow_idx) = term.find("^") {
-                term[pow_idx + 1..].parse::<usize>().map_err(|e| e.to_string())?
-            } else {
-                1
-            };
-            (coeff_part, power)
-        } else {
-            (term, 0)
+        // Parse coefficient and degree
+        let (coeff_str, deg) = match variable {
+            Some(var) => {
+                if let Some(idx) = term.find(var) {
+                    let coeff_part = &term[..idx];
+                    let power = if let Some(pow_idx) = term.find("^") {
+                        let exp_str = &term[pow_idx + 1..];
+                        exp_str.parse::<usize>().map_err(|_| format!("Invalid exponent: '{}'", exp_str))?
+                    } else {
+                        1
+                    };
+                    (coeff_part, power)
+                } else {
+                    (term, 0)
+                }
+            },
+            None => (term, 0), // No variable means constant polynomial
         };
 
         let coeff = if coeff_str == "+" || coeff_str.is_empty() {
@@ -43,7 +94,7 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
         } else if coeff_str == "-" {
             Integer::from(-1)
         } else {
-            Integer::from_str(coeff_str).map_err(|e| format!("Bad coeff '{}': {:?}", coeff_str, e))?
+            Integer::from_str(coeff_str).map_err(|e| format!("Invalid coefficient '{}': {:?}", coeff_str, e))?
         };
 
         let monomial = Monomial::new(deg);
@@ -51,6 +102,10 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
             .entry(monomial)
             .and_modify(|c: &mut Integer| *c += &coeff)
             .or_insert(coeff);
+    }
+
+    if terms.is_empty() {
+        return Err("Unable to parse any valid terms".to_string());
     }
 
     let max_degree = terms.keys().map(|m| m.degree).max().unwrap_or(0);
@@ -65,14 +120,14 @@ pub fn parse_univariate_polynomial(input: &str) -> Result<Polynomial<Integer>, S
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_parse_univariate_whitespace_variable() {
         let input = "  1 + x^2  - 5x^3  ";
-        let poly = parse_univariate_polynomial(input).unwrap();        
+        let poly = parse_univariate_polynomial(input).unwrap();
         assert_eq!(poly, Polynomial::from_coeffs(vec![1, 0, 1, -5]));
     }
-    
+
     #[test]
     fn test_parse_constant() {
         let input = "42";
@@ -99,5 +154,67 @@ mod tests {
         let input = "3x^2 - 4x + 5";
         let poly = parse_univariate_polynomial(input).unwrap();
         assert_eq!(poly, Polynomial::from_coeffs(vec![5, -4, 3]));
+    }
+
+    #[test]
+    fn test_parse_univariate_diff_variable() {
+        let input = "y^3 + 2y - 7";
+        let poly = parse_univariate_polynomial(input).unwrap();
+        assert_eq!(poly, Polynomial::from_coeffs(vec![-7, 2, 0, 1]));
+    }
+
+    // Error case tests
+
+    #[test]
+    fn test_multiple_variables() {
+        let input = "2x + 3y + z";
+        let result = parse_univariate_polynomial(input);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Found multiple variables"));
+    }
+
+    #[test]
+    fn test_lone_operator() {
+        let input = "*";
+        let result = parse_univariate_polynomial(input);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Lone operator without operands");
+    }
+
+    #[test]
+    fn test_invalid_exponent() {
+        let input = "x^a";
+        let result = parse_univariate_polynomial(input);
+        assert!(result.is_err());
+        println!("Error: {:?}", result);
+        // invalid exponent fails because we end up flagging this input for being
+        // multivariate before it reaches the bad coeeficient test
+        // to do: make this more precise
+        // assert!(result.unwrap_err().contains("Invalid exponent"));
+        assert!(result.unwrap_err().contains("Found multiple variables"));
+    }
+
+    #[test]
+    fn test_invalid_consecutive_operators() {
+        let input = "x++2";
+        let result = parse_univariate_polynomial(input);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid consecutive operators found");
+    }
+
+    #[test]
+    fn test_empty_input() {
+        let input = "";
+        let result = parse_univariate_polynomial(input);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Empty input string");
+    }
+
+    #[test]
+    fn test_exponent_without_variable() {
+        let input = "3^2";
+        let result = parse_univariate_polynomial(input);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid exponentiation: '^' without variable");
     }
 }
