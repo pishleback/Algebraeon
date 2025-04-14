@@ -46,7 +46,7 @@ impl FactorableIdealsStructure for IntegerCanonicalStructure {
     fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>> {
         let f = factor(ideal.clone())?;
         Some(DedekindDomainIdealFactorization::from_powers_unchecked(
-            f.into_powers()
+            f.into_factor_powers()
                 .into_iter()
                 .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k.into()))
                 .collect(),

@@ -103,7 +103,7 @@ impl FactorableStructure for IntegerCanonicalStructure {
             Some(Factored::from_unit_and_factor_powers_unchecked(
                 self.clone().into(),
                 unit,
-                f.into_powers()
+                f.into_factor_powers()
                     .into_iter()
                     .map(|(p, k)| (Integer::from(p), Natural::from(k)))
                     .collect(),

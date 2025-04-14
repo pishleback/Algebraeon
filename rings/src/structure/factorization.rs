@@ -1,6 +1,7 @@
 use super::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::fmt::Display;
 
@@ -47,7 +48,7 @@ pub trait FactoredAbstract: Debug + Clone + Sized {
     /// A structure for working with the above types.
     type Structure: FactoredAbstractStructure<Self>;
 
-    fn factored_structure(&self) -> &Self::Structure;
+    fn factored_structure<'a>(&'a self) -> impl 'a + Borrow<Self::Structure>;
 
     fn from_factor_powers_impl(
         structure: Self::Structure,
@@ -201,7 +202,7 @@ pub trait FactoredAbstract: Debug + Clone + Sized {
 
     fn expanded_squarefree(&self) -> <Self::Structure as FactoredAbstractStructure<Self>>::Object {
         Self::from_factor_powers(
-            self.factored_structure().clone(),
+            self.factored_structure().borrow().clone(),
             self.squarefree_factor_list()
                 .into_iter()
                 .map(|p| (p.clone(), Natural::ONE))
@@ -213,9 +214,9 @@ pub trait FactoredAbstract: Debug + Clone + Sized {
     fn mul(a: Self, b: Self) -> Self;
 
     fn pow(self, n: &Natural) -> Self {
-        let structure = self.factored_structure();
+        let structure = self.factored_structure().borrow().clone();
         if *n == Natural::ZERO {
-            Self::new_trivial(structure.clone())
+            Self::new_trivial(structure)
         } else if *n == Natural::ONE {
             self
         } else {
@@ -230,7 +231,7 @@ pub trait FactoredAbstract: Debug + Clone + Sized {
             }
             let count = bits.len();
             debug_assert_eq!(count, pows.len());
-            let mut ans = Self::new_trivial(structure.clone());
+            let mut ans = Self::new_trivial(structure);
             for (i, pow) in pows.into_iter().enumerate() {
                 if bits[i] {
                     ans = Self::mul(ans, pow);
@@ -247,17 +248,19 @@ pub trait FactoredAbstract: Debug + Clone + Sized {
         let structure = self.factored_structure();
         let factors = self.factor_powers();
         if factors.len() == 0 {
-            Box::new(vec![structure.object_one()].into_iter())
+            Box::new(vec![structure.borrow().object_one()].into_iter())
         } else {
             let mut factor_powers = vec![];
             for (p, k) in factors {
                 let j = factor_powers.len();
                 factor_powers.push(vec![]);
-                let mut p_pow = structure.object_one();
+                let mut p_pow = structure.borrow().object_one();
                 let mut i = Natural::from(0u8);
                 while &i <= k {
                     factor_powers[j].push(p_pow.clone());
-                    p_pow = structure.object_mul(&p_pow, &structure.prime_to_object(p.clone()));
+                    p_pow = structure
+                        .borrow()
+                        .object_mul(&p_pow, &structure.borrow().prime_to_object(p.clone()));
                     i += Natural::from(1u8);
                 }
             }
@@ -266,8 +269,9 @@ pub trait FactoredAbstract: Debug + Clone + Sized {
                 itertools::Itertools::multi_cartesian_product(
                     factor_powers.into_iter().map(|p_pows| p_pows.into_iter()),
                 )
-                .map(|prime_power_factors| {
+                .map(move |prime_power_factors| {
                     structure
+                        .borrow()
                         .object_product(prime_power_factors.iter().collect())
                         .clone()
                 }),
@@ -285,8 +289,10 @@ pub trait FactoredAbstract: Debug + Clone + Sized {
     }
 
     fn gcd(a: Self, b: Self) -> Self {
-        let structure =
-            common_structure::<Self::Structure>(a.factored_structure(), b.factored_structure());
+        let structure = common_structure::<Self::Structure>(
+            a.factored_structure().borrow(),
+            b.factored_structure().borrow(),
+        );
         let factor_powers = a
             .into_factor_powers()
             .into_iter()
@@ -506,7 +512,7 @@ impl<RS: UniqueFactorizationStructure> Factored<RS> {
 impl<RS: UniqueFactorizationStructure> FactoredAbstract for Factored<RS> {
     type Structure = RS;
 
-    fn factored_structure(&self) -> &Self::Structure {
+    fn factored_structure<'a>(&'a self) -> impl 'a + Borrow<Self::Structure> {
         &self.ring
     }
 

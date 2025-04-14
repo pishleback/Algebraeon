@@ -1,14 +1,78 @@
-use algebraeon_nzq::{Natural, gcd, traits::ModPow};
-use itertools::Itertools;
-use std::collections::HashMap;
-
-use crate::number::natural::factorization::primes::is_prime;
-
 use super::factor;
+use crate::{
+    number::natural::factorization::primes::is_prime,
+    structure::{FactoredAbstract, FactoredAbstractStructure, SemiRingStructure},
+};
+use algebraeon_nzq::{Natural, NaturalCanonicalStructure, gcd, traits::ModPow};
+use algebraeon_sets::structure::MetaType;
+use itertools::Itertools;
+use std::{borrow::Borrow, collections::HashMap};
+
+impl FactoredAbstractStructure<FactoredNatural> for NaturalCanonicalStructure {
+    type PrimeObject = Natural;
+
+    type Object = Natural;
+
+    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
+        b % a == Natural::ZERO
+    }
+
+    fn object_is_prime(&self, object: &Self::PrimeObject) -> bool {
+        is_prime(object)
+    }
+
+    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object {
+        prime
+    }
+
+    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
+        self.product(objects)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct FactoredNatural {
-    primes: HashMap<Natural, usize>,
+    primes: HashMap<Natural, Natural>,
+}
+
+impl FactoredAbstract for FactoredNatural {
+    type Structure = NaturalCanonicalStructure;
+
+    fn factored_structure<'a>(&'a self) -> impl 'a + Borrow<Self::Structure> {
+        Natural::structure()
+    }
+
+    fn from_factor_powers_impl(
+        _structure: Self::Structure,
+        factor_powers: Vec<(Natural, Natural)>,
+    ) -> Self {
+        Self {
+            primes: factor_powers.into_iter().collect(),
+        }
+    }
+
+    fn factor_powers(&self) -> Vec<(&Natural, &Natural)> {
+        self.primes.iter().collect()
+    }
+
+    fn into_factor_powers(self) -> Vec<(Natural, Natural)> {
+        self.primes.into_iter().collect()
+    }
+
+    fn expanded(&self) -> Natural {
+        let mut t = Natural::ONE;
+        for (p, k) in &self.primes {
+            t *= p.pow(k);
+        }
+        t
+    }
+
+    fn mul(mut a: Self, b: Self) -> Self {
+        for (p, k) in b.into_factor_powers() {
+            *a.primes.entry(p).or_insert(Natural::ZERO) += k;
+        }
+        a
+    }
 }
 
 impl std::fmt::Display for FactoredNatural {
@@ -16,7 +80,7 @@ impl std::fmt::Display for FactoredNatural {
         if self.primes.is_empty() {
             write!(f, "1")?;
         } else {
-            for (i, (p, &k)) in self
+            for (i, (p, k)) in self
                 .primes
                 .iter()
                 .sorted_by_cached_key(|(p, _k)| (*p).clone())
@@ -26,7 +90,7 @@ impl std::fmt::Display for FactoredNatural {
                     write!(f, " × ")?;
                 }
                 write!(f, "{}", p)?;
-                if k != 1 {
+                if k != &Natural::ONE {
                     write!(f, "^")?;
                     write!(f, "{}", k)?;
                 }
@@ -37,49 +101,15 @@ impl std::fmt::Display for FactoredNatural {
 }
 
 impl FactoredNatural {
-    pub fn new_unchecked(primes: HashMap<Natural, usize>) -> Self {
-        for (p, k) in &primes {
-            debug_assert!(is_prime(p));
-            debug_assert!(k > &0);
-        }
-        Self { primes }
-    }
-
-    pub fn one() -> Self {
-        Self {
-            primes: HashMap::new(),
-        }
-    }
-
     pub fn mul_prime(&mut self, p: Natural) {
         debug_assert!(is_prime(&p));
-        *self.primes.entry(p).or_insert(0) += 1;
-    }
-
-    pub fn from_prime_unchecked(prime: Natural) -> Self {
-        Self::new_unchecked(HashMap::from([(prime, 1)]))
-    }
-
-    pub fn powers(&self) -> &HashMap<Natural, usize> {
-        &self.primes
-    }
-
-    pub fn into_powers(self) -> HashMap<Natural, usize> {
-        self.primes
-    }
-
-    pub fn expand(&self) -> Natural {
-        let mut t = Natural::ONE;
-        for (p, k) in &self.primes {
-            t *= p.pow(&(*k).into());
-        }
-        t
+        *self.primes.entry(p).or_insert(Natural::ZERO) += Natural::ONE;
     }
 
     pub fn euler_totient(&self) -> Natural {
         let mut t = Natural::ONE;
         for (p, k) in &self.primes {
-            t *= (p - &Natural::ONE) * p.pow(&(k - 1).into());
+            t *= (p - &Natural::ONE) * p.pow(&(k - &Natural::ONE));
         }
         t
     }
@@ -103,7 +133,7 @@ impl FactoredNatural {
     /// Return whether x is a primitive root modulo the value represented by self
     pub fn is_primitive_root(&self, x: &Natural) -> IsPrimitiveRootResult {
         let n_factored = self;
-        let n = n_factored.expand();
+        let n = n_factored.expanded();
         if gcd(x.clone(), n.clone()) != Natural::ONE {
             IsPrimitiveRootResult::NonUnit
         } else {
