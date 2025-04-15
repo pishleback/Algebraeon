@@ -1,4 +1,7 @@
-struct NumPartitionIterator<P: Fn(usize) -> bool + Copy> {
+use itertools::Itertools;
+use std::collections::{BTreeMap, HashSet};
+
+struct NumPartitionIterator<P: Fn(usize) -> bool + Clone> {
     n: usize,
     x: usize,
     predicate: P,
@@ -7,7 +10,7 @@ struct NumPartitionIterator<P: Fn(usize) -> bool + Copy> {
     rest: Option<Box<NumPartitionIterator<P>>>,
 }
 
-impl<P: Fn(usize) -> bool + Copy> NumPartitionIterator<P> {
+impl<P: Fn(usize) -> bool + Clone> NumPartitionIterator<P> {
     pub fn new(n: usize, x: usize, predicate: P) -> Self {
         Self {
             n,
@@ -20,7 +23,7 @@ impl<P: Fn(usize) -> bool + Copy> NumPartitionIterator<P> {
     }
 }
 
-impl<P: Fn(usize) -> bool + Copy> Iterator for NumPartitionIterator<P> {
+impl<P: Fn(usize) -> bool + Clone> Iterator for NumPartitionIterator<P> {
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -57,7 +60,7 @@ impl<P: Fn(usize) -> bool + Copy> Iterator for NumPartitionIterator<P> {
                 self.rest = Some(Box::new(NumPartitionIterator {
                     n: self.n - self.first,
                     x: self.x - 1,
-                    predicate: self.predicate,
+                    predicate: self.predicate.clone(),
                     min: self.min + 1,
                     first: self.first,
                     rest: None,
@@ -100,7 +103,7 @@ impl<P: Fn(usize) -> bool + Copy> Iterator for NumPartitionIterator<P> {
 ///     vec![2, 2, 2],
 /// ]);
 /// ```
-pub fn num_partitions_sized_predicated<P: Fn(usize) -> bool + Copy>(
+pub fn num_partitions_sized_predicated<P: Fn(usize) -> bool + Clone>(
     n: usize,
     x: usize,
     predicate: P,
@@ -145,11 +148,11 @@ pub fn num_partitions_sized_zero_predicated<P: Fn(usize) -> bool + Copy>(
 ///     vec![1, 1, 1, 1],
 /// ]);
 /// ```
-pub fn num_partitions_predicated<P: Fn(usize) -> bool + Copy>(
+pub fn num_partitions_predicated<P: Fn(usize) -> bool + Clone>(
     n: usize,
     predicate: P,
 ) -> impl Iterator<Item = Vec<usize>> {
-    (1..n + 1).flat_map(move |x| num_partitions_sized_predicated::<P>(n, x, predicate))
+    (1..n + 1).flat_map(move |x| num_partitions_sized_predicated::<P>(n, x, predicate.clone()))
 }
 
 /// Returns all partitions of n into exactly x parts where all parts are non-zero.
@@ -196,6 +199,53 @@ pub fn num_partitions(n: usize) -> impl Iterator<Item = Vec<usize>> {
     num_partitions_predicated(n, |_| true)
 }
 
+/// Return all partitions of n where parts come from a pool of allowed part sizes.
+/// Two different parts in the part size pool count as different parts.
+/// Parts may appear zero times or multiple times.
+/// ```
+/// use algebraeon_sets::combinatorics::num_partitions_part_pool;
+/// assert_eq!(num_partitions_part_pool(8, vec![2, 3, 3]).collect::<Vec<_>>(), vec![
+///     vec![0, 1, 1],
+///     vec![0, 1, 2],
+///     vec![0, 2, 1],
+///     vec![0, 2, 2],
+///     vec![0, 0, 0, 0]
+/// ]);
+/// ```
+pub fn num_partitions_part_pool(
+    n: usize,
+    part_pool: Vec<usize>,
+) -> impl Iterator<Item = Vec<usize>> {
+    let mut allowed_sizes: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+    for (idx, size) in part_pool.iter().enumerate() {
+        allowed_sizes.entry(*size).or_insert(vec![]).push(idx);
+    }
+    let allowed_sizes_set = allowed_sizes.keys().cloned().collect::<HashSet<_>>();
+
+    num_partitions_predicated(n, move |k| allowed_sizes_set.contains(&k))
+        .into_iter()
+        .map(move |partition| {
+            let mut counts: BTreeMap<usize, usize> =
+                allowed_sizes.keys().map(|x| (*x, 0)).collect();
+            for p in partition {
+                *counts.get_mut(&p).unwrap() += 1;
+            }
+            counts
+                .into_iter()
+                .map(|(size, count)| {
+                    (0..count)
+                        .map(|_| allowed_sizes.get(&size).unwrap().iter().cloned())
+                        .multi_cartesian_product()
+                        .collect::<Vec<_>>()
+                })
+                .multi_cartesian_product()
+                .map(|z| z.into_iter().flatten().collect::<Vec<_>>())
+                // .flatten()
+                .collect::<Vec<_>>()
+        })
+        .flatten()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -224,6 +274,13 @@ mod tests {
         println!("end");
 
         let parts = num_partitions(6);
+        println!("start");
+        for part in parts {
+            println!("{:?}", part);
+        }
+        println!("end");
+
+        let parts = num_partitions_part_pool(8, vec![2, 3, 3]);
         println!("start");
         for part in parts {
             println!("{:?}", part);
