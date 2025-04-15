@@ -1,7 +1,11 @@
 use super::{ring_of_integer_extensions::RingOfIntegersExtension, ring_of_integers::*};
 use crate::{linear::subspace::*, structure::*};
 use algebraeon_nzq::{Integer, Natural};
-use algebraeon_sets::structure::{MetaType, SetStructure};
+use algebraeon_sets::{
+    combinatorics::num_partitions_part_pool,
+    structure::{MetaType, SetStructure},
+};
+use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub enum RingOfIntegersIdeal {
@@ -92,7 +96,82 @@ impl RingOfIntegersWithIntegralBasisStructure {
     }
 
     pub fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
-        RingOfIntegersExtension::new(self.clone()).ideal_norm(ideal)
+        RingOfIntegersExtension::new_integer_extension(self.clone()).ideal_norm(ideal)
+    }
+}
+
+impl RingOfIntegersWithIntegralBasisStructure {
+    /// generate all ideals of norm equal to n
+    pub fn all_ideals_norm_eq<'a>(
+        &'a self,
+        n: &Natural,
+    ) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
+        match Integer::factor_ideal(n) {
+            Some(n) => {
+                let sq = RingOfIntegersExtension::new_integer_extension(self.clone());
+                Box::new(
+                    n.into_factor_powers()
+                        .into_iter()
+                        .map(|(p, k)| {
+                            let k: usize = k.try_into().unwrap();
+                            let primes_over_p = sq.factor_prime_ideal(p).into_factors();
+                            num_partitions_part_pool(
+                                k,
+                                primes_over_p
+                                    .iter()
+                                    .map(|f| f.residue_class_degree)
+                                    .collect(),
+                            )
+                            .into_iter()
+                            .map(|idxs| {
+                                self.ideal_product(
+                                    idxs.into_iter()
+                                        .map(|i| primes_over_p[i].prime_ideal.ideal().clone())
+                                        .collect(),
+                                )
+                            })
+                            .collect::<Vec<RingOfIntegersIdeal>>()
+                        })
+                        .multi_cartesian_product()
+                        .map(|ideals| self.ideal_product(ideals)),
+                )
+            }
+            None => Box::new(vec![self.zero_ideal()].into_iter()),
+        }
+    }
+
+    /// generate all non-zero ideals of norm at most n
+    pub fn all_nonzero_ideals_norm_le<'a>(
+        &'a self,
+        n: &'a Natural,
+    ) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
+        Box::new(
+            (1usize..)
+                .map(|m| Natural::from(m))
+                .take_while(|m| m <= n)
+                .map(|m| self.all_ideals_norm_eq(&m))
+                .flatten(),
+        )
+    }
+
+    /// generate all ideals
+    pub fn all_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
+        Box::new(
+            (0usize..)
+                .map(|m| Natural::from(m))
+                .map(|m| self.all_ideals_norm_eq(&m))
+                .flatten(),
+        )
+    }
+
+    /// generate all non-zero ideals
+    pub fn all_nonzero_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
+        Box::new(
+            (1usize..)
+                .map(|m| Natural::from(m))
+                .map(|m| self.all_ideals_norm_eq(&m))
+                .flatten(),
+        )
     }
 }
 
@@ -251,7 +330,7 @@ impl DedekindDomainStructure for RingOfIntegersWithIntegralBasisStructure {}
 impl FactorableIdealsStructure for RingOfIntegersWithIntegralBasisStructure {
     fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>> {
         Some(
-            RingOfIntegersExtension::new(self.clone())
+            RingOfIntegersExtension::new_integer_extension(self.clone())
                 .factor_ideal(ideal)?
                 .into_full_factorization(),
         )
@@ -333,5 +412,25 @@ mod tests {
                 ])
             ));
         }
+    }
+
+    #[test]
+    fn test_count_all_ideals_norm_eq() {
+        let x = &Polynomial::<Rational>::var().into_ergonomic();
+        let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
+        let roi = anf.ring_of_integers();
+
+        assert_eq!(
+            roi.all_ideals_norm_eq(&Natural::from(5040 as u32))
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
+        assert_eq!(
+            roi.all_ideals_norm_eq(&Natural::from(5040 * 7 as u32))
+                .collect::<Vec<_>>()
+                .len(),
+            2
+        );
     }
 }

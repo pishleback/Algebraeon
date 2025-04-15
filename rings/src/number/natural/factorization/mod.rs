@@ -114,7 +114,7 @@ impl Factorizer {
     fn new(n: Natural) -> Self {
         debug_assert_ne!(n, Natural::ZERO);
         Self {
-            prime_factors: FactoredNatural::one(),
+            prime_factors: FactoredNatural::new_trivial(Natural::structure()),
             to_factor: vec![ToFactor::new_composite(n)],
         }
     }
@@ -204,7 +204,7 @@ pub fn factor(n: Natural) -> Option<FactoredNatural> {
     if n == Natural::ZERO {
         None
     } else if n == Natural::ONE {
-        Some(FactoredNatural::one())
+        Some(FactoredNatural::new_trivial(Natural::structure()))
     } else {
         let mut f = Factorizer::new(n);
         // Trial division

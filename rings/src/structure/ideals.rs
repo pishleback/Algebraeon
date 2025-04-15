@@ -1,7 +1,6 @@
 use std::fmt::Debug;
-
 use algebraeon_nzq::Natural;
-
+use algebraeon_sets::structure::common_structure;
 use super::*;
 
 pub trait IdealStructure: IntegralDomainStructure {
@@ -179,39 +178,99 @@ impl<RS: DedekindDomainStructure> DedekindDomainPrimeIdeal<RS> {
     }
 }
 
+impl<RS: DedekindDomainStructure> FactoredAbstractStructure<DedekindDomainIdealFactorization<RS>>
+    for RS
+{
+    type PrimeObject = DedekindDomainPrimeIdeal<RS>;
+
+    type Object = RS::Ideal;
+
+    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
+        self.ideal_contains(a, b)
+    }
+
+    fn object_is_prime(&self, _object: &Self::PrimeObject) -> bool {
+        true
+    }
+
+    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object {
+        prime.into_ideal()
+    }
+
+    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
+        self.ideal_product(objects.into_iter().cloned().collect())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DedekindDomainIdealFactorization<RS: DedekindDomainStructure> {
+    ring: RS,
     // The prime ideals should be distinct
     // All powers should be non-zero
     factors: Vec<(DedekindDomainPrimeIdeal<RS>, Natural)>,
 }
 
-impl<RS: DedekindDomainStructure> DedekindDomainIdealFactorization<RS> {
-    pub fn from_powers_unchecked(factors: Vec<(DedekindDomainPrimeIdeal<RS>, Natural)>) -> Self {
-        for (_, k) in &factors {
-            debug_assert_ne!(k, &Natural::ZERO);
+impl<RS: DedekindDomainStructure> FactoredAbstract for DedekindDomainIdealFactorization<RS> {
+    type Structure = RS;
+
+    fn factored_structure<'a>(&'a self) -> impl 'a + std::borrow::Borrow<Self::Structure> {
+        &self.ring
+    }
+
+    fn from_factor_powers_impl(
+        structure: Self::Structure,
+        factor_powers: Vec<(
+            <Self::Structure as FactoredAbstractStructure<Self>>::PrimeObject,
+            Natural,
+        )>,
+    ) -> Self {
+        Self {
+            ring: structure,
+            factors: factor_powers,
         }
-        Self { factors }
     }
 
-    pub fn unique_prime_factors(&self) -> Vec<&DedekindDomainPrimeIdeal<RS>> {
-        self.factors.iter().map(|(ideal, _)| ideal).collect()
+    fn factor_powers(
+        &self,
+    ) -> Vec<(
+        &<Self::Structure as FactoredAbstractStructure<Self>>::PrimeObject,
+        &Natural,
+    )> {
+        self.factors.iter().map(|(p, k)| (p, k)).collect()
     }
 
-    pub fn into_prime_factors_and_powers(self) -> Vec<(DedekindDomainPrimeIdeal<RS>, Natural)> {
+    fn into_factor_powers(
+        self,
+    ) -> Vec<(
+        <Self::Structure as FactoredAbstractStructure<Self>>::PrimeObject,
+        Natural,
+    )> {
         self.factors
     }
 
-    /// Is there exactly one prime factor with multiplicity equal to 1?
-    pub fn is_prime(&self) -> bool {
-        match self.factors.len() {
-            1 => {
-                let (_, k) = &self.factors[0];
-                debug_assert_ne!(k, &Natural::ZERO);
-                k == &Natural::ONE
+    fn expanded(&self) -> <Self::Structure as FactoredAbstractStructure<Self>>::Object {
+        self.ring.ideal_product(
+            self.factor_list()
+                .into_iter()
+                .map(|p| p.ideal().clone())
+                .collect(),
+        )
+    }
+
+    fn mul(mut a: Self, b: Self) -> Self {
+        let ring = common_structure::<RS>(a.factored_structure(), b.factored_structure());
+        for (q, l) in b.into_factor_powers() {
+            'SEARCH_A: {
+                for (p, k) in &mut a.factors {
+                    if ring.object_equivalent(p.ideal(), q.ideal()) {
+                        *k += l;
+                        break 'SEARCH_A;
+                    }
+                }
+                a.factors.push((q, l));
             }
-            _ => false,
         }
+        a
     }
 }
 

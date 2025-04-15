@@ -126,6 +126,24 @@ pub fn subsets(n: usize, k: usize) -> impl Iterator<Item = Vec<usize>> {
     LexicographicSubsetsWithRemovals::new(n, k)
 }
 
+/// Returns all subsets of {0, 1, ..., n-1}.
+/// ```
+/// use algebraeon_sets::combinatorics::all_subsets;
+/// assert_eq!(all_subsets(3).collect::<Vec<_>>(), vec![
+///     vec![],
+///     vec![0],
+///     vec![1],
+///     vec![0, 1],
+///     vec![2],
+///     vec![0, 2],
+///     vec![1, 2],
+///     vec![0, 1, 2],
+/// ]);
+/// ```
+pub fn all_subsets(n: usize) -> impl Iterator<Item = Vec<usize>> {
+    (0usize..(1 << n)).map(move |i| (0..n).filter(|j| i & (1 << j) != 0).collect())
+}
+
 /// Returns all size k subsets of items.
 /// ```
 /// use algebraeon_sets::combinatorics::subsets_of_vec;

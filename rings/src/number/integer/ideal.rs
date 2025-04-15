@@ -3,6 +3,7 @@ use crate::{
     structure::*,
 };
 use algebraeon_nzq::{traits::Abs, *};
+use algebraeon_sets::structure::MetaType;
 
 impl IdealStructure for IntegerCanonicalStructure {
     type Ideal = Natural;
@@ -45,8 +46,9 @@ impl DedekindDomainStructure for IntegerCanonicalStructure {}
 impl FactorableIdealsStructure for IntegerCanonicalStructure {
     fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>> {
         let f = factor(ideal.clone())?;
-        Some(DedekindDomainIdealFactorization::from_powers_unchecked(
-            f.into_powers()
+        Some(DedekindDomainIdealFactorization::from_factor_powers(
+            Integer::structure(),
+            f.into_factor_powers()
                 .into_iter()
                 .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k.into()))
                 .collect(),

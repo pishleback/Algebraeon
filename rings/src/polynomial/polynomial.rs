@@ -596,7 +596,11 @@ impl<RS: IntegralDomainStructure> IntegralDomainStructure for PolynomialStructur
     }
 }
 
-impl<RS: UniqueFactorizationStructure> UniqueFactorizationStructure for PolynomialStructure<RS> {}
+impl<RS: UniqueFactorizationStructure> UniqueFactorizationStructure for PolynomialStructure<RS> {
+    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+        None
+    }
+}
 
 impl<RS: GreatestCommonDivisorStructure> PolynomialStructure<RS> {
     pub fn factor_primitive(

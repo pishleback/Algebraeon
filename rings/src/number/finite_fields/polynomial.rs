@@ -181,7 +181,7 @@ where
 {
     pub fn into_distinct_degree_factored(self) -> DistinctDegreeFactored<FS> {
         let poly_ring = (*self.ring()).clone();
-        let (unit, factors) = self.unit_and_factors();
+        let (unit, factors) = self.into_unit_and_factor_powers();
         let unit = poly_ring.as_constant(&unit).unwrap();
         let distinct_degree_factors = factors
             .into_iter()
@@ -366,7 +366,7 @@ where
     where
         PolynomialStructure<FS>: FactorableStructure,
     {
-        let mut factors = Factored::new_unchecked(
+        let mut factors = Factored::from_unit_and_factor_powers(
             self.poly_ring.clone(),
             Polynomial::constant(self.unit.clone()),
             vec![],
@@ -513,10 +513,8 @@ where
         PolynomialStructure<FS>: FactorableStructure,
     {
         let poly_ring = &self.poly_ring;
-        let mut fs = Factored::factored_unit_unchecked(
-            poly_ring.clone(),
-            Polynomial::constant(self.unit.clone()),
-        );
+        let mut fs =
+            Factored::from_unit(poly_ring.clone(), Polynomial::constant(self.unit.clone()));
         for (ddf, mult) in &self.distinct_degree_factors {
             let d = ddf.irreducible_factor_degree;
             let n = self.poly_ring.degree(&ddf.polynomial).unwrap();
@@ -542,10 +540,7 @@ where
                     .into_iter()
                     .filter_map(|f| {
                         if self.poly_ring.degree(&f).unwrap() == d {
-                            fs.mul_mut(
-                                Factored::factored_irreducible_unchecked(poly_ring.clone(), f)
-                                    .pow(mult),
-                            );
+                            fs.mul_mut(Factored::from_prime(poly_ring.clone(), f).pow(mult));
                             None
                         } else {
                             Some(f)
@@ -655,7 +650,7 @@ mod tests {
     fn test_factorize_over_f2_example1() {
         let x = &Polynomial::<Modulo<2>>::var().into_ergonomic();
         let p = (1 + x.pow(4) + x.pow(5)).pow(12).into_verbose();
-        let ans = Factored::new_unchecked(
+        let ans = Factored::from_unit_and_factor_powers(
             Polynomial::<Modulo<2>>::structure().into(),
             Polynomial::one(),
             vec![
@@ -682,7 +677,7 @@ mod tests {
         let x = &Polynomial::<Modulo<2>>::var().into_ergonomic();
         let p =
             ((1 + x.pow(4) + x.pow(7)).pow(6) * (1 + x.pow(6) + x.pow(7)).pow(4)).into_verbose();
-        let ans = Factored::new_unchecked(
+        let ans = Factored::from_unit_and_factor_powers(
             Polynomial::<Modulo<2>>::structure().into(),
             Polynomial::one(),
             vec![
@@ -714,7 +709,7 @@ mod tests {
     fn test_factorize_over_f5_example1() {
         let x = &Polynomial::<Modulo<5>>::var().into_ergonomic();
         let p = (1 + x.pow(4)).pow(5).into_verbose();
-        let ans = Factored::new_unchecked(
+        let ans = Factored::from_unit_and_factor_powers(
             Polynomial::<Modulo<5>>::structure().into(),
             Polynomial::one(),
             vec![
@@ -740,7 +735,7 @@ mod tests {
     fn test_factorize_over_f5_example2() {
         let x = &Polynomial::<Modulo<5>>::var().into_ergonomic();
         let p = (3 + 2 * x.pow(2) + x.pow(4) + x.pow(6)).into_verbose();
-        let ans = Factored::new_unchecked(
+        let ans = Factored::from_unit_and_factor_powers(
             Polynomial::<Modulo<5>>::structure().into(),
             Polynomial::one(),
             vec![((2 + x.pow(2)).into_verbose(), Natural::from(3u8))],
@@ -763,7 +758,7 @@ mod tests {
     fn test_factorize_over_f31_example1() {
         let x = &Polynomial::<Modulo<31>>::var().into_ergonomic();
         let p = (1 + x.pow(27) + 8 * x.pow(30)).into_verbose();
-        let ans = Factored::new_unchecked(
+        let ans = Factored::from_unit_and_factor_powers(
             Polynomial::<Modulo<31>>::structure().into(),
             Polynomial::constant(Modulo::from_int(Integer::from(8))),
             vec![
@@ -814,7 +809,7 @@ mod tests {
         let b = x - Polynomial::constant(QuaternaryField::Alpha).into_ergonomic();
         let c = x - Polynomial::constant(QuaternaryField::Beta).into_ergonomic();
         let p = (1 - x.pow(3)).pow(48).into_verbose();
-        let ans = Factored::new_unchecked(
+        let ans = Factored::from_unit_and_factor_powers(
             Polynomial::<QuaternaryField>::structure().into(),
             Polynomial::one(),
             vec![

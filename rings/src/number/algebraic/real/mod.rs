@@ -55,7 +55,7 @@ impl Display for RealAlgebraicRoot {
             let d = &b * &b - Integer::from(4) * &a * &c;
             let mut d_sq = Integer::ONE;
             let mut d_sqfreee = Integer::ONE;
-            let (d_sign, d_factors) = d.factor().unwrap().unit_and_factors();
+            let (d_sign, d_factors) = d.factor().unwrap().into_unit_and_factor_powers();
             for (d_factor, k) in d_factors {
                 d_sq *= d_factor.nat_pow(&(&k / Natural::TWO));
                 if k % Natural::TWO == Natural::ONE {

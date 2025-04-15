@@ -1,4 +1,5 @@
 use indexmap::IndexMap;
+use itertools::Itertools;
 use std::collections::HashSet;
 
 #[derive(Clone, Debug)]
@@ -257,6 +258,17 @@ pub fn set_partitions_range(
     max_x: usize,
 ) -> impl Iterator<Item = Vec<usize>> {
     LexographicPartitionsNumPartsInRange::new(n, min_x, max_x)
+}
+
+pub fn set_compositions_eq(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
+    (0..x)
+        .permutations(x)
+        .map(move |perm| {
+            set_partitions_eq(n, x)
+                .into_iter()
+                .map(move |partition| partition.into_iter().map(|i| perm[i]).collect())
+        })
+        .flatten()
 }
 
 #[cfg(test)]
