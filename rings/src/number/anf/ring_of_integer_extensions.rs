@@ -158,13 +158,20 @@ impl
                 .into_iter()
                 .map(|(g, power)| {
                     debug_assert!(g.is_monic());
-                    (
-                        DedekindDomainPrimeIdeal::from_ideal_unchecked(roi.generated_ideal(vec![
-                            self.z_to_r().image(&p),
-                            poly_roi.evaluate(&g.apply_map(|c| self.z_to_r().image(&c)), &beta),
-                        ])),
+                    let prime_ideal = roi.generated_ideal(vec![
+                        self.z_to_r().image(&p),
+                        poly_roi.evaluate(&g.apply_map(|c| self.z_to_r().image(&c)), &beta),
+                    ]);
+                    // norm(I) = p^deg(g)
+                    debug_assert_eq!(
+                        roi.ideal_norm(&prime_ideal),
+                        p.clone().abs().nat_pow(&g.degree().unwrap().into())
+                    );
+                    DedekindExtensionIdealFactorsAbovePrimeFactor {
+                        prime_ideal: DedekindDomainPrimeIdeal::from_ideal_unchecked(prime_ideal),
+                        residue_class_degree: g.degree().unwrap(),
                         power,
-                    )
+                    }
                 })
                 .collect(),
         )
@@ -195,18 +202,22 @@ impl
                             prime.clone(),
                             extension_square
                                 .factor_prime_ideal(prime.clone())
-                                .into_full_factorization()
-                                .into_factor_powers()
+                                .into_factors()
                                 .into_iter()
-                                .filter_map(|(prime_ideal_factor_of_prime, _)| {
+                                .filter_map(|factor_above_prime| {
                                     let k = roi.largest_prime_ideal_factor_power(
-                                        &prime_ideal_factor_of_prime,
+                                        &factor_above_prime.prime_ideal,
                                         ideal,
                                     );
                                     if k == Natural::ZERO {
                                         None
                                     } else {
-                                        Some((prime_ideal_factor_of_prime, k))
+                                        Some(DedekindExtensionIdealFactorsAbovePrimeFactor {
+                                            prime_ideal: factor_above_prime.prime_ideal,
+                                            residue_class_degree: factor_above_prime
+                                                .residue_class_degree,
+                                            power: k,
+                                        })
                                     }
                                 })
                                 .collect(),

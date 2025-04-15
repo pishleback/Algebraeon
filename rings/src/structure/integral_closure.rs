@@ -274,6 +274,13 @@ pub trait DedekindDomainExtension<
 }
 
 #[derive(Debug, Clone)]
+pub struct DedekindExtensionIdealFactorsAbovePrimeFactor<R: DedekindDomainStructure> {
+    pub prime_ideal: DedekindDomainPrimeIdeal<R>,
+    pub residue_class_degree: usize,
+    pub power: Natural,
+}
+
+#[derive(Debug, Clone)]
 pub struct DedekindExtensionIdealFactorsAbovePrime<
     Z: DedekindDomainStructure,
     R: DedekindDomainStructure,
@@ -282,7 +289,7 @@ pub struct DedekindExtensionIdealFactorsAbovePrime<
     base_prime: DedekindDomainPrimeIdeal<Z>,
     // All factors lie above base_prime
     // All powers are >= 1
-    factors: Vec<(DedekindDomainPrimeIdeal<R>, Natural)>,
+    factors: Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R>>,
 }
 
 impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
@@ -291,10 +298,10 @@ impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
     pub fn from_powers_unchecked(
         ring: R,
         base_prime: DedekindDomainPrimeIdeal<Z>,
-        factors: Vec<(DedekindDomainPrimeIdeal<R>, Natural)>,
+        factors: Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R>>,
     ) -> Self {
-        for (_factor, power) in &factors {
-            debug_assert_ne!(power, &Natural::ZERO);
+        for f in &factors {
+            debug_assert_ne!(f.power, Natural::ZERO);
         }
         Self {
             ring,
@@ -303,30 +310,43 @@ impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
         }
     }
 
-    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R>, Natural)> {
+    pub fn into_factors(self) -> Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R>> {
         self.factors
     }
 
+    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R>, Natural)> {
+        self.factors
+            .into_iter()
+            .map(|f| (f.prime_ideal, f.power))
+            .collect()
+    }
+
     pub fn unique_prime_factors(&self) -> Vec<&DedekindDomainPrimeIdeal<R>> {
-        self.factors.iter().map(|(ideal, _)| ideal).collect()
+        self.factors.iter().map(|f| &f.prime_ideal).collect()
     }
 
     pub fn into_full_factorization(self) -> DedekindDomainIdealFactorization<R> {
-        DedekindDomainIdealFactorization::from_factor_powers(self.ring, self.factors)
+        DedekindDomainIdealFactorization::from_factor_powers(
+            self.ring,
+            self.factors
+                .into_iter()
+                .map(|f| (f.prime_ideal, f.power))
+                .collect(),
+        )
     }
 
     /// Do any prime factors appear with multiplicity greater than 1?
     pub fn is_ramified(&self) -> bool {
-        self.factors.iter().any(|(_, k)| k > &Natural::ONE)
+        self.factors.iter().any(|f| f.power > Natural::ONE)
     }
 
     /// Is there exactly one prime factor with multiplicity equal to 1?
     pub fn is_inert(&self) -> bool {
         match self.factors.len() {
             1 => {
-                let (_, k) = &self.factors[0];
-                debug_assert_ne!(k, &Natural::ZERO);
-                k == &Natural::ONE
+                let f = &self.factors[0];
+                debug_assert_ne!(f.power, Natural::ZERO);
+                f.power == Natural::ONE
             }
             _ => false,
         }
