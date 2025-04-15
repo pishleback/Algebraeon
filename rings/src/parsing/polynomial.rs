@@ -1,8 +1,17 @@
 use crate::polynomial::Polynomial;
 use algebraeon_nzq::*;
-
+use lalrpop_util::lalrpop_mod;
 use std::collections::{BTreeMap, HashSet};
 use std::str::FromStr;
+
+lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs"); // synthesized by LALRPOP
+
+#[test]
+fn tmp_test() {
+    let term_parser = polynomial_parser::TermParser::new();
+
+    println!("{:?}", term_parser.parse("3098473"));
+}
 
 // Variable names or numbers
 // e.g. "x" or "123"

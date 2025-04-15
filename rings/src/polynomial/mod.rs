@@ -4,7 +4,6 @@ mod multipoly;
 mod polynomial;
 mod quotient;
 mod symmetric;
-mod parser;
 
 pub use factoring::*;
 pub use hensel_lifting::*;
