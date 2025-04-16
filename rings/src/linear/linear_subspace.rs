@@ -60,11 +60,11 @@ fn metamatrix_row_intersection<RS: BezoutDomainStructure, MetaMatT: Borrow<Matri
     //    but metamat2 is linearly independent, so the whole linear combination is zero
     Matrix::join_rows(
         cols,
-        (0..LinearLatticeStructure::new(ring.clone()).rank(&row_ker))
+        (0..LinearSubspaceStructure::new(ring.clone()).rank(&row_ker))
             .map(|i| {
                 mat_struct
                     .mul(
-                        &LinearLatticeStructure::new(ring.clone())
+                        &LinearSubspaceStructure::new(ring.clone())
                             .basis_matrix(&row_ker, i)
                             .submatrix(vec![0], (0..metamat1.borrow().rows()).collect()),
                         metamat1.borrow(),
@@ -76,7 +76,7 @@ fn metamatrix_row_intersection<RS: BezoutDomainStructure, MetaMatT: Borrow<Matri
 }
 
 #[derive(Debug, Clone)]
-pub struct LinearLattice<Set: Clone> {
+pub struct LinearSubspace<Set: Clone> {
     //matrix whose rows are a basis of the linear lattice
     //NOT necessarily in row hermite normal form
     metamatrix: Matrix<Set>,
@@ -85,7 +85,7 @@ pub struct LinearLattice<Set: Clone> {
     cols: usize,
 }
 
-impl<Set: Clone> LinearLattice<Set> {
+impl<Set: Clone> LinearSubspace<Set> {
     pub fn rows(&self) -> usize {
         self.rows
     }
@@ -127,28 +127,28 @@ fn mats_to_rows<Set: Clone, MatT: Borrow<Matrix<Set>>>(
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LinearLatticeStructure<RS: BezoutDomainStructure> {
+pub struct LinearSubspaceStructure<RS: BezoutDomainStructure> {
     ring: RS,
 }
 
-impl<RS: BezoutDomainStructure> Structure for LinearLatticeStructure<RS> {}
+impl<RS: BezoutDomainStructure> Structure for LinearSubspaceStructure<RS> {}
 
-impl<RS: BezoutDomainStructure> SetStructure for LinearLatticeStructure<RS> {
-    type Set = LinearLattice<RS::Set>;
+impl<RS: BezoutDomainStructure> SetStructure for LinearSubspaceStructure<RS> {
+    type Set = LinearSubspace<RS::Set>;
 
     fn is_element(&self, _x: &Self::Set) -> bool {
         true
     }
 }
 
-impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
+impl<RS: BezoutDomainStructure> LinearSubspaceStructure<RS> {
     pub fn new(ring: RS) -> Self {
         Self { ring }
     }
 }
 
-impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
-    pub fn check_invariants(&self, lat: &LinearLattice<RS::Set>) -> Result<(), &'static str> {
+impl<RS: BezoutDomainStructure> LinearSubspaceStructure<RS> {
+    pub fn check_invariants(&self, lat: &LinearSubspace<RS::Set>) -> Result<(), &'static str> {
         if lat.rows * lat.cols != lat.metamatrix.cols() {
             return Err("the number of colnums of the meta_matrix should be rows*cols");
         }
@@ -165,12 +165,12 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         rows: usize,
         cols: usize,
         mats: Vec<MatT>,
-    ) -> LinearLattice<RS::Set> {
+    ) -> LinearSubspace<RS::Set> {
         let spanning_meta_matrix = mats_to_rows(rows, cols, mats);
         let (h, _u, _u_det, pivs) =
             MatrixStructure::new(self.ring.clone()).row_hermite_algorithm(spanning_meta_matrix);
         let metamatrix = h.submatrix((0..pivs.len()).collect(), (0..rows * cols).collect());
-        let lattice = LinearLattice {
+        let lattice = LinearSubspace {
             metamatrix,
             rows,
             cols,
@@ -179,8 +179,8 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         lattice
     }
 
-    pub fn transpose(&self, lat: &LinearLattice<RS::Set>) -> LinearLattice<RS::Set> {
-        LinearLattice {
+    pub fn transpose(&self, lat: &LinearSubspace<RS::Set>) -> LinearSubspace<RS::Set> {
+        LinearSubspace {
             metamatrix: mats_to_rows(
                 lat.cols,
                 lat.rows,
@@ -199,9 +199,9 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         rows: usize,
         cols: usize,
         mats: Vec<MatT>,
-    ) -> LinearLattice<RS::Set> {
+    ) -> LinearSubspace<RS::Set> {
         let metamatrix = mats_to_rows(rows, cols, mats);
-        let lattice = LinearLattice {
+        let lattice = LinearSubspace {
             metamatrix,
             rows,
             cols,
@@ -211,15 +211,15 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         lattice
     }
 
-    pub fn zero(&self, rows: usize, cols: usize) -> LinearLattice<RS::Set> {
+    pub fn zero(&self, rows: usize, cols: usize) -> LinearSubspace<RS::Set> {
         self.from_basis::<Matrix<RS::Set>>(rows, cols, vec![])
     }
 
-    pub fn rank(&self, lat: &LinearLattice<RS::Set>) -> usize {
+    pub fn rank(&self, lat: &LinearSubspace<RS::Set>) -> usize {
         lat.metamatrix.rows()
     }
 
-    pub fn take_nonzero_point(&self, lat: &LinearLattice<RS::Set>) -> Option<Matrix<RS::Set>> {
+    pub fn take_nonzero_point(&self, lat: &LinearSubspace<RS::Set>) -> Option<Matrix<RS::Set>> {
         if self.rank(&lat) == 0 {
             None
         } else {
@@ -227,12 +227,12 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         }
     }
 
-    fn basis_row(&self, lat: &LinearLattice<RS::Set>, basis_num: usize) -> Matrix<RS::Set> {
+    fn basis_row(&self, lat: &LinearSubspace<RS::Set>, basis_num: usize) -> Matrix<RS::Set> {
         lat.metamatrix
             .submatrix(vec![basis_num], (0..lat.metamatrix.cols()).collect())
     }
 
-    pub fn basis_matrix(&self, lat: &LinearLattice<RS::Set>, r: usize) -> Matrix<RS::Set> {
+    pub fn basis_matrix(&self, lat: &LinearSubspace<RS::Set>, r: usize) -> Matrix<RS::Set> {
         if self.rank(lat) <= r {
             panic!();
         }
@@ -244,7 +244,7 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         })
     }
 
-    pub fn basis_matrices(&self, lat: &LinearLattice<RS::Set>) -> Vec<Matrix<RS::Set>> {
+    pub fn basis_matrices(&self, lat: &LinearSubspace<RS::Set>) -> Vec<Matrix<RS::Set>> {
         (0..self.rank(lat))
             .map(|r| self.basis_matrix(lat, r))
             .collect()
@@ -252,7 +252,7 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
 
     pub fn basis_matrix_element<'b>(
         &self,
-        lat: &'b LinearLattice<RS::Set>,
+        lat: &'b LinearSubspace<RS::Set>,
         basis_num: usize,
         r: usize,
         c: usize,
@@ -264,7 +264,7 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
 
     fn contains_row(
         &self,
-        lat: &LinearLattice<RS::Set>,
+        lat: &LinearSubspace<RS::Set>,
         mat_as_row: impl Borrow<Matrix<RS::Set>>,
     ) -> bool {
         match MatrixStructure::new(self.ring.clone()).row_solve(&lat.metamatrix, mat_as_row) {
@@ -275,7 +275,7 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
 
     pub fn contains_point<MatT: Borrow<Matrix<RS::Set>>>(
         &self,
-        lat: &LinearLattice<RS::Set>,
+        lat: &LinearSubspace<RS::Set>,
         mat: MatT,
     ) -> bool {
         self.contains_row(lat, mats_to_rows(lat.rows, lat.cols, vec![mat]))
@@ -284,8 +284,8 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
     //is lat a subset of self?
     pub fn contains_sublattice(
         &self,
-        lat: &LinearLattice<RS::Set>,
-        sublat: impl Borrow<LinearLattice<RS::Set>>,
+        lat: &LinearSubspace<RS::Set>,
+        sublat: impl Borrow<LinearSubspace<RS::Set>>,
     ) -> bool {
         assert_eq!(lat.metamatrix.cols(), sublat.borrow().metamatrix.cols());
         for basis_num in 0..self.rank(sublat.borrow()) {
@@ -296,15 +296,15 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         true
     }
 
-    pub fn equal(&self, lat1: &LinearLattice<RS::Set>, lat2: &LinearLattice<RS::Set>) -> bool {
+    pub fn equal(&self, lat1: &LinearSubspace<RS::Set>, lat2: &LinearSubspace<RS::Set>) -> bool {
         self.contains_sublattice(lat1, lat2) && self.contains_sublattice(lat2, lat1)
     }
 
     //given a contained in b, find rank(b) - rank(a) basis vectors needed to extend a to b
     pub fn extension_basis(
         &self,
-        lat_a: &LinearLattice<RS::Set>,
-        lat_b: &LinearLattice<RS::Set>,
+        lat_a: &LinearSubspace<RS::Set>,
+        lat_b: &LinearSubspace<RS::Set>,
     ) -> Vec<Matrix<RS::Set>> {
         //https://math.stackexchange.com/questions/2554408/how-to-find-the-basis-of-a-quotient-space
 
@@ -340,17 +340,17 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         extension_basis
     }
 
-    pub fn sum<LatT: Borrow<LinearLattice<RS::Set>>>(
+    pub fn sum<LatT: Borrow<LinearSubspace<RS::Set>>>(
         &self,
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> LinearLattice<RS::Set> {
+    ) -> LinearSubspace<RS::Set> {
         for lat in &lats {
             assert_eq!(lat.borrow().rows, rows);
             assert_eq!(lat.borrow().cols, cols);
         }
-        LinearLattice {
+        LinearSubspace {
             rows,
             cols,
             metamatrix: metamatrix_row_sum(
@@ -361,24 +361,24 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         }
     }
 
-    pub fn sum_pair<LatT: Borrow<LinearLattice<RS::Set>>>(
+    pub fn sum_pair<LatT: Borrow<LinearSubspace<RS::Set>>>(
         &self,
         rows: usize,
         cols: usize,
         lat1: LatT,
         lat2: LatT,
-    ) -> LinearLattice<RS::Set> {
+    ) -> LinearSubspace<RS::Set> {
         self.sum(rows, cols, vec![lat1, lat2])
     }
 
-    pub fn intersect<LatT: Borrow<LinearLattice<RS::Set>>>(
+    pub fn intersect<LatT: Borrow<LinearSubspace<RS::Set>>>(
         &self,
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> LinearLattice<RS::Set> {
+    ) -> LinearSubspace<RS::Set> {
         if lats.len() == 0 {
-            LinearLattice {
+            LinearSubspace {
                 rows,
                 cols,
                 metamatrix: MatrixStructure::new(self.ring.clone()).ident(rows * cols),
@@ -398,14 +398,14 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
         &self,
         rows: usize,
         cols: usize,
-        lat1: impl Borrow<LinearLattice<RS::Set>>,
-        lat2: impl Borrow<LinearLattice<RS::Set>>,
-    ) -> LinearLattice<RS::Set> {
+        lat1: impl Borrow<LinearSubspace<RS::Set>>,
+        lat2: impl Borrow<LinearSubspace<RS::Set>>,
+    ) -> LinearSubspace<RS::Set> {
         assert_eq!(lat1.borrow().rows, rows);
         assert_eq!(lat1.borrow().cols, cols);
         assert_eq!(lat2.borrow().rows, rows);
         assert_eq!(lat2.borrow().cols, cols);
-        let intersection_lattice = LinearLattice {
+        let intersection_lattice = LinearSubspace {
             rows,
             cols,
             metamatrix: metamatrix_row_intersection(
@@ -421,8 +421,8 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
 
     pub fn as_hyperplane_intersection(
         &self,
-        lat: &LinearLattice<RS::Set>,
-    ) -> Vec<LinearLattice<RS::Set>> {
+        lat: &LinearSubspace<RS::Set>,
+    ) -> Vec<LinearSubspace<RS::Set>> {
         //extend the basis of lat to a full basis
         let mut extended_basis = vec![];
         let (rows, cols) = (lat.rows, lat.cols);
@@ -479,8 +479,8 @@ impl<RS: BezoutDomainStructure> LinearLatticeStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure + ToStringStructure> LinearLatticeStructure<RS> {
-    pub fn pprint(&self, lat: &LinearLattice<RS::Set>) {
+impl<RS: BezoutDomainStructure + ToStringStructure> LinearSubspaceStructure<RS> {
+    pub fn pprint(&self, lat: &LinearSubspace<RS::Set>) {
         println!("Start Linear Lattice");
         for r in 0..lat.metamatrix.rows() {
             MatrixStructure::new(self.ring.clone()).pprint(&self.basis_matrix(lat, r));
@@ -489,18 +489,18 @@ impl<RS: BezoutDomainStructure + ToStringStructure> LinearLatticeStructure<RS> {
     }
 }
 
-impl<R: MetaType> MetaType for LinearLattice<R>
+impl<R: MetaType> MetaType for LinearSubspace<R>
 where
     R::Structure: BezoutDomainStructure,
 {
-    type Structure = LinearLatticeStructure<R::Structure>;
+    type Structure = LinearSubspaceStructure<R::Structure>;
 
     fn structure() -> Self::Structure {
-        LinearLatticeStructure::new(R::structure())
+        LinearSubspaceStructure::new(R::structure())
     }
 }
 
-impl<R: MetaType> LinearLattice<R>
+impl<R: MetaType> LinearSubspace<R>
 where
     R::Structure: BezoutDomainStructure + ToStringStructure,
 {
@@ -509,7 +509,7 @@ where
     }
 }
 
-impl<R: MetaType> PartialEq for LinearLattice<R>
+impl<R: MetaType> PartialEq for LinearSubspace<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -518,7 +518,7 @@ where
     }
 }
 
-impl<R: MetaType> LinearLattice<R>
+impl<R: MetaType> LinearSubspace<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -530,7 +530,7 @@ where
         rows: usize,
         cols: usize,
         mats: Vec<MatT>,
-    ) -> LinearLattice<R> {
+    ) -> LinearSubspace<R> {
         Self::structure().from_span(rows, cols, mats)
     }
 
@@ -538,7 +538,7 @@ where
         rows: usize,
         cols: usize,
         mats: Vec<MatT>,
-    ) -> LinearLattice<R> {
+    ) -> LinearSubspace<R> {
         Self::structure().from_basis(rows, cols, mats)
     }
 
@@ -560,7 +560,7 @@ where
 
     pub fn basis_matrix_element<'b>(
         &self,
-        lat: &'b LinearLattice<R>,
+        lat: &'b LinearSubspace<R>,
         basis_num: usize,
         r: usize,
         c: usize,
@@ -577,45 +577,45 @@ where
     }
 
     //is lat a subset of self?
-    pub fn contains_sublattice(&self, sublat: impl Borrow<LinearLattice<R>>) -> bool {
+    pub fn contains_sublattice(&self, sublat: impl Borrow<LinearSubspace<R>>) -> bool {
         Self::structure().contains_sublattice(self, sublat)
     }
 
-    pub fn sum<LatT: Borrow<LinearLattice<R>>>(
+    pub fn sum<LatT: Borrow<LinearSubspace<R>>>(
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> LinearLattice<R> {
+    ) -> LinearSubspace<R> {
         Self::structure().sum(rows, cols, lats)
     }
 
-    pub fn sum_pair<LatT: Borrow<LinearLattice<R>>>(
+    pub fn sum_pair<LatT: Borrow<LinearSubspace<R>>>(
         rows: usize,
         cols: usize,
         lat1: LatT,
         lat2: LatT,
-    ) -> LinearLattice<R> {
+    ) -> LinearSubspace<R> {
         Self::structure().sum_pair(rows, cols, lat1, lat2)
     }
 
-    pub fn intersect<LatT: Borrow<LinearLattice<R>>>(
+    pub fn intersect<LatT: Borrow<LinearSubspace<R>>>(
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> LinearLattice<R> {
+    ) -> LinearSubspace<R> {
         Self::structure().intersect(rows, cols, lats)
     }
 
     pub fn intersect_pair(
         rows: usize,
         cols: usize,
-        lat1: impl Borrow<LinearLattice<R>>,
-        lat2: impl Borrow<LinearLattice<R>>,
-    ) -> LinearLattice<R> {
+        lat1: impl Borrow<LinearSubspace<R>>,
+        lat2: impl Borrow<LinearSubspace<R>>,
+    ) -> LinearSubspace<R> {
         Self::structure().intersect_pair(rows, cols, lat1, lat2)
     }
 
-    pub fn as_hyperplane_intersection(&self) -> Vec<LinearLattice<R>> {
+    pub fn as_hyperplane_intersection(&self) -> Vec<LinearSubspace<R>> {
         Self::structure().as_hyperplane_intersection(self)
     }
 }
@@ -624,19 +624,19 @@ where
 pub enum AffineLatticeElements<Set: Clone> {
     Empty(),
     NonEmpty {
-        offset: Matrix<Set>,        //offset.rows == 1 and offset.cols == self.cols
-        linlat: LinearLattice<Set>, //linlat.rows == self.rows and linlat.cols == self.cols
+        offset: Matrix<Set>,         //offset.rows == 1 and offset.cols == self.cols
+        linlat: LinearSubspace<Set>, //linlat.rows == self.rows and linlat.cols == self.cols
     },
 }
 
 #[derive(Debug, Clone)]
-pub struct AffineLattice<Set: Clone> {
+pub struct AffineSubspace<Set: Clone> {
     rows: usize,
     cols: usize,
     elems: AffineLatticeElements<Set>,
 }
 
-impl<Set: Clone> AffineLattice<Set> {
+impl<Set: Clone> AffineSubspace<Set> {
     pub fn rows(&self) -> usize {
         self.rows
     }
@@ -651,32 +651,32 @@ impl<Set: Clone> AffineLattice<Set> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AffineLatticeStructure<RS: BezoutDomainStructure> {
+pub struct AffineSubspaceStructure<RS: BezoutDomainStructure> {
     ring: RS,
 }
 
-impl<RS: BezoutDomainStructure> Structure for AffineLatticeStructure<RS> {}
+impl<RS: BezoutDomainStructure> Structure for AffineSubspaceStructure<RS> {}
 
-impl<RS: BezoutDomainStructure> SetStructure for AffineLatticeStructure<RS> {
-    type Set = AffineLattice<RS::Set>;
+impl<RS: BezoutDomainStructure> SetStructure for AffineSubspaceStructure<RS> {
+    type Set = AffineSubspace<RS::Set>;
 
     fn is_element(&self, _x: &Self::Set) -> bool {
         true
     }
 }
 
-impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
+impl<RS: BezoutDomainStructure> AffineSubspaceStructure<RS> {
     pub fn new(ring: RS) -> Self {
         Self { ring }
     }
 }
 
-impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
-    pub fn check_invariants(&self, lat: &AffineLattice<RS::Set>) -> Result<(), &'static str> {
+impl<RS: BezoutDomainStructure> AffineSubspaceStructure<RS> {
+    pub fn check_invariants(&self, lat: &AffineSubspace<RS::Set>) -> Result<(), &'static str> {
         match &lat.elems {
             AffineLatticeElements::Empty() => {}
             AffineLatticeElements::NonEmpty { offset, linlat } => {
-                match LinearLatticeStructure::new(self.ring.clone()).check_invariants(linlat) {
+                match LinearSubspaceStructure::new(self.ring.clone()).check_invariants(linlat) {
                     Ok(()) => {
                         if offset.rows() != lat.rows {
                             return Err("offset rows doesnt match self rows");
@@ -700,27 +700,27 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
         Ok(())
     }
 
-    pub fn rows(&self, lat: &AffineLattice<RS::Set>) -> usize {
+    pub fn rows(&self, lat: &AffineSubspace<RS::Set>) -> usize {
         lat.rows
     }
 
-    pub fn cols(&self, lat: &AffineLattice<RS::Set>) -> usize {
+    pub fn cols(&self, lat: &AffineSubspace<RS::Set>) -> usize {
         lat.cols
     }
 
-    pub fn rank(&self, lat: &AffineLattice<RS::Set>) -> Option<usize> {
+    pub fn rank(&self, lat: &AffineSubspace<RS::Set>) -> Option<usize> {
         match &lat.elems {
             AffineLatticeElements::Empty() => None,
             AffineLatticeElements::NonEmpty {
                 offset: _offset,
 
                 linlat,
-            } => Some(LinearLatticeStructure::new(self.ring.clone()).rank(linlat)),
+            } => Some(LinearSubspaceStructure::new(self.ring.clone()).rank(linlat)),
         }
     }
 
-    pub fn empty(&self, rows: usize, cols: usize) -> AffineLattice<RS::Set> {
-        AffineLattice {
+    pub fn empty(&self, rows: usize, cols: usize) -> AffineSubspace<RS::Set> {
+        AffineSubspace {
             rows,
             cols,
             elems: AffineLatticeElements::Empty(),
@@ -729,15 +729,15 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
 
     pub fn to_offset_and_linear_lattice(
         &self,
-        lat: AffineLattice<RS::Set>,
-    ) -> Option<(Matrix<RS::Set>, LinearLattice<RS::Set>)> {
+        lat: AffineSubspace<RS::Set>,
+    ) -> Option<(Matrix<RS::Set>, LinearSubspace<RS::Set>)> {
         match lat.elems {
             AffineLatticeElements::Empty() => None,
             AffineLatticeElements::NonEmpty { offset, linlat } => Some((offset, linlat)),
         }
     }
 
-    pub fn take_point(&self, lat: AffineLattice<RS::Set>) -> Option<Matrix<RS::Set>> {
+    pub fn take_point(&self, lat: AffineSubspace<RS::Set>) -> Option<Matrix<RS::Set>> {
         match self.to_offset_and_linear_lattice(lat) {
             Some((offset, _linlat)) => Some(offset),
             None => None,
@@ -749,13 +749,13 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
         rows: usize,
         cols: usize,
         offset: Matrix<RS::Set>,
-        linlat: LinearLattice<RS::Set>,
-    ) -> AffineLattice<RS::Set> {
+        linlat: LinearSubspace<RS::Set>,
+    ) -> AffineSubspace<RS::Set> {
         assert_eq!(offset.rows(), rows);
         assert_eq!(offset.cols(), cols);
         assert_eq!(linlat.rows(), rows);
         assert_eq!(linlat.cols(), cols);
-        let afflat = AffineLattice {
+        let afflat = AffineSubspace {
             rows,
             cols,
             elems: AffineLatticeElements::NonEmpty { offset, linlat },
@@ -766,14 +766,14 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
 
     pub fn contains_point(
         &self,
-        lat: &AffineLattice<RS::Set>,
+        lat: &AffineSubspace<RS::Set>,
         mat: impl Borrow<Matrix<RS::Set>>,
     ) -> bool {
         let mat_struct = MatrixStructure::new(self.ring.clone());
         match &lat.elems {
             AffineLatticeElements::Empty() => false,
             AffineLatticeElements::NonEmpty { offset, linlat } => {
-                LinearLatticeStructure::new(self.ring.clone()).contains_point(
+                LinearSubspaceStructure::new(self.ring.clone()).contains_point(
                     linlat,
                     mat_struct
                         .add(&mat_struct.neg(offset.clone()), mat.borrow())
@@ -786,11 +786,11 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
     //is other a subset of self?
     pub fn contains_sublattice(
         &self,
-        lat: &AffineLattice<RS::Set>,
-        other: impl Borrow<AffineLattice<RS::Set>>,
+        lat: &AffineSubspace<RS::Set>,
+        other: impl Borrow<AffineSubspace<RS::Set>>,
     ) -> bool {
         let mat_struct = MatrixStructure::new(self.ring.clone());
-        let linlat_struct = LinearLatticeStructure::new(self.ring.clone());
+        let linlat_struct = LinearSubspaceStructure::new(self.ring.clone());
         match &other.borrow().elems {
             AffineLatticeElements::Empty() => true,
             AffineLatticeElements::NonEmpty {
@@ -818,16 +818,16 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
         }
     }
 
-    pub fn equal(&self, lat1: &AffineLattice<RS::Set>, lat2: &AffineLattice<RS::Set>) -> bool {
+    pub fn equal(&self, lat1: &AffineSubspace<RS::Set>, lat2: &AffineSubspace<RS::Set>) -> bool {
         self.contains_sublattice(lat1, lat2) && self.contains_sublattice(lat2, lat1)
     }
 
-    pub fn sum<LatT: Borrow<AffineLattice<RS::Set>>>(
+    pub fn sum<LatT: Borrow<AffineSubspace<RS::Set>>>(
         &self,
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> AffineLattice<RS::Set> {
+    ) -> AffineSubspace<RS::Set> {
         let mut sum_offset = MatrixStructure::new(self.ring.clone()).zero(rows, cols);
         let mut sum_linlats = vec![];
         for lat in &lats {
@@ -845,39 +845,43 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
                 }
             }
         }
-        AffineLattice {
+        AffineSubspace {
             rows: rows,
             cols: cols,
             elems: AffineLatticeElements::NonEmpty {
                 offset: sum_offset,
-                linlat: LinearLatticeStructure::new(self.ring.clone()).sum(rows, cols, sum_linlats),
+                linlat: LinearSubspaceStructure::new(self.ring.clone()).sum(
+                    rows,
+                    cols,
+                    sum_linlats,
+                ),
             },
         }
     }
 
-    pub fn sum_pair<LatT: Borrow<AffineLattice<RS::Set>>>(
+    pub fn sum_pair<LatT: Borrow<AffineSubspace<RS::Set>>>(
         &self,
         rows: usize,
         cols: usize,
         lat1: LatT,
         lat2: LatT,
-    ) -> AffineLattice<RS::Set> {
+    ) -> AffineSubspace<RS::Set> {
         self.sum(rows, cols, vec![lat1, lat2])
     }
 
-    pub fn intersect<LatT: Borrow<AffineLattice<RS::Set>>>(
+    pub fn intersect<LatT: Borrow<AffineSubspace<RS::Set>>>(
         &self,
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> AffineLattice<RS::Set> {
+    ) -> AffineSubspace<RS::Set> {
         if lats.len() == 0 {
-            AffineLattice {
+            AffineSubspace {
                 rows,
                 cols,
                 elems: AffineLatticeElements::NonEmpty {
                     offset: MatrixStructure::new(self.ring.clone()).zero(rows, cols),
-                    linlat: LinearLattice {
+                    linlat: LinearSubspace {
                         rows,
                         cols,
                         metamatrix: MatrixStructure::new(self.ring.clone()).ident(rows * cols),
@@ -900,10 +904,10 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
         rows: usize,
         cols: usize,
         offset: &Matrix<RS::Set>,
-        linlat: &LinearLattice<RS::Set>,
+        linlat: &LinearSubspace<RS::Set>,
     ) -> Matrix<RS::Set> {
         let mut metamat = MatrixStructure::new(self.ring.clone()).zero(
-            1 + LinearLatticeStructure::new(self.ring.clone()).rank(linlat),
+            1 + LinearSubspaceStructure::new(self.ring.clone()).rank(linlat),
             1 + rows * cols,
         );
         *metamat.at_mut(0, 0).unwrap() = self.ring.one();
@@ -912,11 +916,11 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
             // println!("rows={} cols={} r={} c={} idx={}", rows, cols, r, c, idx);
             *metamat.at_mut(0, 1 + idx).unwrap() = offset.at(r, c).unwrap().clone();
         }
-        for bn in 0..LinearLatticeStructure::new(self.ring.clone()).rank(linlat) {
+        for bn in 0..LinearSubspaceStructure::new(self.ring.clone()).rank(linlat) {
             for idx in 0..rows * cols {
                 let (r, c) = idx_to_rc(rows, cols, idx);
                 *metamat.at_mut(0 + 1 + bn, 1 + idx).unwrap() =
-                    LinearLatticeStructure::new(self.ring.clone())
+                    LinearSubspaceStructure::new(self.ring.clone())
                         .basis_matrix_element(linlat, bn, r, c)
                         .clone();
             }
@@ -928,9 +932,9 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
         &self,
         rows: usize,
         cols: usize,
-        lat1: impl Borrow<AffineLattice<RS::Set>>,
-        lat2: impl Borrow<AffineLattice<RS::Set>>,
-    ) -> AffineLattice<RS::Set> {
+        lat1: impl Borrow<AffineSubspace<RS::Set>>,
+        lat2: impl Borrow<AffineSubspace<RS::Set>>,
+    ) -> AffineSubspace<RS::Set> {
         assert_eq!(self.rows(lat1.borrow()), rows);
         assert_eq!(self.cols(lat1.borrow()), cols);
         assert_eq!(self.rows(lat2.borrow()), rows);
@@ -1011,7 +1015,7 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
                                 rows,
                                 cols,
                                 int_offset,
-                                LinearLatticeStructure::new(self.ring.clone()).from_basis(
+                                LinearSubspaceStructure::new(self.ring.clone()).from_basis(
                                     rows,
                                     cols,
                                     int_basis_mats,
@@ -1028,33 +1032,33 @@ impl<RS: BezoutDomainStructure> AffineLatticeStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure + ToStringStructure> AffineLatticeStructure<RS> {
-    pub fn pprint(&self, lat: &AffineLattice<RS::Set>) {
+impl<RS: BezoutDomainStructure + ToStringStructure> AffineSubspaceStructure<RS> {
+    pub fn pprint(&self, lat: &AffineSubspace<RS::Set>) {
         println!("Start Affine Lattice");
         match &lat.elems {
             AffineLatticeElements::Empty() => println!("Empty"),
             AffineLatticeElements::NonEmpty { offset, linlat } => {
                 println!("Offset");
                 MatrixStructure::new(self.ring.clone()).pprint(&offset);
-                LinearLatticeStructure::new(self.ring.clone()).pprint(&linlat);
+                LinearSubspaceStructure::new(self.ring.clone()).pprint(&linlat);
             }
         }
         println!("End Affine Lattice");
     }
 }
 
-impl<R: MetaType> MetaType for AffineLattice<R>
+impl<R: MetaType> MetaType for AffineSubspace<R>
 where
     R::Structure: BezoutDomainStructure,
 {
-    type Structure = AffineLatticeStructure<R::Structure>;
+    type Structure = AffineSubspaceStructure<R::Structure>;
 
     fn structure() -> Self::Structure {
-        AffineLatticeStructure::new(R::structure())
+        AffineSubspaceStructure::new(R::structure())
     }
 }
 
-impl<R: MetaType> AffineLattice<R>
+impl<R: MetaType> AffineSubspace<R>
 where
     R::Structure: BezoutDomainStructure + ToStringStructure,
 {
@@ -1063,7 +1067,7 @@ where
     }
 }
 
-impl<R: MetaType> PartialEq for AffineLattice<R>
+impl<R: MetaType> PartialEq for AffineSubspace<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -1072,7 +1076,7 @@ where
     }
 }
 
-impl<R: MetaType> AffineLattice<R>
+impl<R: MetaType> AffineSubspace<R>
 where
     R::Structure: BezoutDomainStructure,
 {
@@ -1084,11 +1088,11 @@ where
         Self::structure().rank(self)
     }
 
-    pub fn empty(rows: usize, cols: usize) -> AffineLattice<R> {
+    pub fn empty(rows: usize, cols: usize) -> AffineSubspace<R> {
         Self::structure().empty(rows, cols)
     }
 
-    pub fn to_offset_and_linear_lattice(self) -> Option<(Matrix<R>, LinearLattice<R>)> {
+    pub fn to_offset_and_linear_lattice(self) -> Option<(Matrix<R>, LinearSubspace<R>)> {
         Self::structure().to_offset_and_linear_lattice(self)
     }
 
@@ -1096,8 +1100,8 @@ where
         rows: usize,
         cols: usize,
         offset: Matrix<R>,
-        linlat: LinearLattice<R>,
-    ) -> AffineLattice<R> {
+        linlat: LinearSubspace<R>,
+    ) -> AffineSubspace<R> {
         Self::structure().from_offset_and_linear_lattice(rows, cols, offset, linlat)
     }
 
@@ -1106,32 +1110,32 @@ where
     }
 
     //is other a subset of self?
-    pub fn contains_sublattice(&self, other: impl Borrow<AffineLattice<R>>) -> bool {
+    pub fn contains_sublattice(&self, other: impl Borrow<AffineSubspace<R>>) -> bool {
         Self::structure().contains_sublattice(self, other)
     }
 
-    pub fn sum<LatT: Borrow<AffineLattice<R>>>(
+    pub fn sum<LatT: Borrow<AffineSubspace<R>>>(
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> AffineLattice<R> {
+    ) -> AffineSubspace<R> {
         Self::structure().sum(rows, cols, lats)
     }
 
-    pub fn sum_pair<LatT: Borrow<AffineLattice<R>>>(
+    pub fn sum_pair<LatT: Borrow<AffineSubspace<R>>>(
         rows: usize,
         cols: usize,
         lat1: LatT,
         lat2: LatT,
-    ) -> AffineLattice<R> {
+    ) -> AffineSubspace<R> {
         Self::structure().sum_pair(rows, cols, lat1, lat2)
     }
 
-    pub fn intersect<LatT: Borrow<AffineLattice<R>>>(
+    pub fn intersect<LatT: Borrow<AffineSubspace<R>>>(
         rows: usize,
         cols: usize,
         lats: Vec<LatT>,
-    ) -> AffineLattice<R> {
+    ) -> AffineSubspace<R> {
         Self::structure().intersect(rows, cols, lats)
     }
 
@@ -1139,7 +1143,7 @@ where
         rows: usize,
         cols: usize,
         offset: &Matrix<R>,
-        linlat: &LinearLattice<R>,
+        linlat: &LinearSubspace<R>,
     ) -> Matrix<R> {
         Self::structure().offset_linlat_to_metamat(rows, cols, offset, linlat)
     }
@@ -1161,7 +1165,7 @@ mod tests {
 
     #[test]
     fn linear_lattice_invariant() {
-        let lattice = LinearLattice {
+        let lattice = LinearSubspace {
             metamatrix: Matrix::<Integer>::from_rows(vec![
                 vec![
                     Integer::from(0),
@@ -1181,7 +1185,7 @@ mod tests {
         };
         lattice.check_invariants().unwrap();
 
-        let lattice = LinearLattice {
+        let lattice = LinearSubspace {
             metamatrix: Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(0), Integer::from(3), Integer::from(0)],
                 vec![Integer::from(2), Integer::from(0), Integer::from(1)],
@@ -1191,7 +1195,7 @@ mod tests {
         };
         assert!(lattice.check_invariants().is_err());
 
-        let lattice = LinearLattice {
+        let lattice = LinearSubspace {
             metamatrix: Matrix::<Integer>::from_rows(vec![
                 vec![
                     Integer::from(6),
@@ -1231,7 +1235,7 @@ mod tests {
 
     #[test]
     fn containment() {
-        let lattice = LinearLattice::<Integer>::from_span(
+        let lattice = LinearSubspace::<Integer>::from_span(
             2,
             2,
             vec![
@@ -1271,7 +1275,7 @@ mod tests {
         );
 
         assert_ne!(
-            LinearLattice::from_span(
+            LinearSubspace::from_span(
                 2,
                 3,
                 vec![
@@ -1285,7 +1289,7 @@ mod tests {
                     ]),
                 ],
             ),
-            LinearLattice::from_span(
+            LinearSubspace::from_span(
                 2,
                 3,
                 vec![
@@ -1337,10 +1341,10 @@ mod tests {
             b.pprint();
             println!("a & b");
             let int =
-                LinearLattice::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+                LinearSubspace::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
             int.pprint();
             println!("a + b");
-            let sum = LinearLattice::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            let sum = LinearSubspace::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
             sum.pprint();
 
             assert_eq!(int, c.col_span());
@@ -1380,10 +1384,10 @@ mod tests {
             b.pprint();
             println!("a & b");
             let int =
-                LinearLattice::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+                LinearSubspace::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
             int.pprint();
             println!("a + b");
-            let sum = LinearLattice::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            let sum = LinearSubspace::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
             sum.pprint();
 
             assert_eq!(int, c.col_span());
@@ -1474,7 +1478,7 @@ mod tests {
             ]);
 
             let int =
-                LinearLattice::intersect(4, 1, vec![a.col_span(), b.col_span(), c.col_span()]);
+                LinearSubspace::intersect(4, 1, vec![a.col_span(), b.col_span(), c.col_span()]);
 
             assert_eq!(
                 int,
@@ -1553,10 +1557,10 @@ mod tests {
             b.pprint();
             println!("a & b");
             let int =
-                LinearLattice::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+                LinearSubspace::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
             int.pprint();
             println!("a + b");
-            let sum = LinearLattice::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            let sum = LinearSubspace::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
             sum.pprint();
 
             assert_eq!(int, c.col_span());
@@ -1583,7 +1587,7 @@ mod tests {
         println!("b");
         b.pprint();
 
-        let ll_s = LinearLatticeStructure::new(Rational::structure());
+        let ll_s = LinearSubspaceStructure::new(Rational::structure());
         let ext = ll_s.extension_basis(&a.col_span(), &b.col_span());
 
         println!("ext");
@@ -1594,18 +1598,18 @@ mod tests {
 
     #[test]
     fn affine_lattice_invariants() {
-        let afflat = AffineLattice::<Integer> {
+        let afflat = AffineSubspace::<Integer> {
             rows: 2,
             cols: 2,
             elems: AffineLatticeElements::Empty(),
         };
         assert!(afflat.check_invariants().is_ok());
 
-        let afflat = AffineLattice {
+        let afflat = AffineSubspace {
             rows: 2,
             cols: 2,
             elems: AffineLatticeElements::NonEmpty {
-                linlat: LinearLattice::from_basis(
+                linlat: LinearSubspace::from_basis(
                     2,
                     2,
                     vec![
@@ -1661,11 +1665,11 @@ mod tests {
         println!();
         alat2.pprint();
 
-        let alat3 = AffineLattice::sum(3, 1, vec![alat1, alat2]);
+        let alat3 = AffineSubspace::sum(3, 1, vec![alat1, alat2]);
         println!();
         alat3.pprint();
 
-        let expected_alat3 = AffineLattice::from_offset_and_linear_lattice(
+        let expected_alat3 = AffineSubspace::from_offset_and_linear_lattice(
             3,
             1,
             Matrix::from_rows(vec![
@@ -1673,7 +1677,7 @@ mod tests {
                 vec![Integer::from(0)],
                 vec![Integer::from(1)],
             ]),
-            LinearLattice::from_span(
+            LinearSubspace::from_span(
                 3,
                 1,
                 vec![

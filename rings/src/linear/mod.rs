@@ -1,3 +1,4 @@
+pub mod affine_subspace;
+pub mod linear_subspace;
 pub mod matrix;
-pub mod subspace;
 // pub mod real;

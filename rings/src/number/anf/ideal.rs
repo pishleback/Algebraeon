@@ -1,5 +1,5 @@
 use super::{ring_of_integer_extensions::RingOfIntegersExtension, ring_of_integers::*};
-use crate::{linear::subspace::*, structure::*};
+use crate::{linear::linear_subspace::*, structure::*};
 use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::{
     combinatorics::num_partitions_part_pool,
@@ -12,7 +12,7 @@ pub enum RingOfIntegersIdeal {
     Zero,
     NonZero {
         // 1 column and n rows
-        lattice: LinearLattice<Integer>,
+        lattice: LinearSubspace<Integer>,
     },
 }
 
@@ -69,7 +69,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         }
         let n = self.degree();
         RingOfIntegersIdeal::NonZero {
-            lattice: LinearLattice::from_span(
+            lattice: LinearSubspace::from_span(
                 n,
                 1,
                 span.into_iter().map(|elem| elem.into_col()).collect(),
@@ -87,7 +87,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         }
         let n = self.degree();
         RingOfIntegersIdeal::NonZero {
-            lattice: LinearLattice::from_basis(
+            lattice: LinearSubspace::from_basis(
                 n,
                 1,
                 basis.into_iter().map(|elem| elem.into_col()).collect(),
@@ -212,7 +212,7 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             (
                 RingOfIntegersIdeal::NonZero { lattice: a_lattice },
                 RingOfIntegersIdeal::NonZero { lattice: b_lattice },
-            ) => LinearLatticeStructure::new(Integer::structure()).equal(a_lattice, b_lattice),
+            ) => LinearSubspaceStructure::new(Integer::structure()).equal(a_lattice, b_lattice),
             _ => false,
         }
     }
@@ -233,7 +233,7 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
             (
                 RingOfIntegersIdeal::NonZero { lattice: a_lattice },
                 RingOfIntegersIdeal::NonZero { lattice: b_lattice },
-            ) => LinearLatticeStructure::new(Integer::structure())
+            ) => LinearSubspaceStructure::new(Integer::structure())
                 .contains_sublattice(a_lattice, b_lattice),
         }
     }
@@ -249,7 +249,7 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
                 RingOfIntegersIdeal::NonZero { lattice: a_lattice },
                 RingOfIntegersIdeal::NonZero { lattice: b_lattice },
             ) => Self::Ideal::NonZero {
-                lattice: LinearLatticeStructure::new(Integer::structure()).intersect_pair(
+                lattice: LinearSubspaceStructure::new(Integer::structure()).intersect_pair(
                     self.degree(),
                     1,
                     a_lattice,
@@ -274,7 +274,7 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
                 RingOfIntegersIdeal::NonZero { lattice: a_lattice },
                 RingOfIntegersIdeal::NonZero { lattice: b_lattice },
             ) => Self::Ideal::NonZero {
-                lattice: LinearLatticeStructure::new(Integer::structure()).sum_pair(
+                lattice: LinearSubspaceStructure::new(Integer::structure()).sum_pair(
                     self.degree(),
                     1,
                     a_lattice,

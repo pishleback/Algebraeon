@@ -1,5 +1,5 @@
 use crate::{
-    linear::{matrix::*, subspace::*},
+    linear::{linear_subspace::*, matrix::*},
     polynomial::*,
     structure::*,
 };
@@ -314,7 +314,7 @@ where
         // mat.pprint();
         //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
         let mat_struct = MatrixStructure::<FS>::new(self.coeff_ring().clone());
-        let linlat_struct = LinearLatticeStructure::<FS>::new(self.coeff_ring().clone());
+        let linlat_struct = LinearSubspaceStructure::<FS>::new(self.coeff_ring().clone());
         let ker = mat_struct.row_kernel(mat);
         // ker.pprint();
         let ker_rank = linlat_struct.rank(&ker);

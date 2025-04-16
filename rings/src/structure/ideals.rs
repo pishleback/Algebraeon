@@ -1,7 +1,7 @@
-use std::fmt::Debug;
+use super::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::common_structure;
-use super::*;
+use std::fmt::Debug;
 
 pub trait IdealStructure: IntegralDomainStructure {
     type Ideal: Debug + Clone;
