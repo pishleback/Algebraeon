@@ -767,7 +767,7 @@ pub trait FiniteFieldStructure: FieldStructure + FiniteUnitsStructure {
 }
 
 //is a subset of the complex numbers
-pub trait ComplexSubsetStructure: SetStructure {}
+pub trait ComplexSubsetStructure: IntegralDomainStructure {}
 
 //is a subset of the real numbers
 pub trait RealSubsetStructure: ComplexSubsetStructure {}
