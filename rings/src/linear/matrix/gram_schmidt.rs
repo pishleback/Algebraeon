@@ -1,5 +1,27 @@
 use super::*;
 
+// #[derive(Debug, Clone)]
+// struct FiniteDimensionalInnerProductSpaceStructure<Ring: ComplexSubsetStructure> {
+//     ring: Ring,
+//     rows: usize,
+//     cols: usize,
+//     // Let n = self.rows * self.cols.
+//     // Then self.values is an n by n matrix containing the inner products
+//     // of the elementary basis vectors when expressed as metamatricies.
+//     values: Matrix<Ring::Set>,
+// }
+
+// impl<Ring: ComplexSubsetStructure> PartialEq for FiniteDimensionalInnerProductSpaceStructure<Ring> {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.ring == other.ring
+//             && self.rows == other.rows
+//             && self.cols == other.cols
+//             && MatrixStructure::new(self.ring.clone()).equal(&self.values, &other.values)
+//     }
+// }
+
+// impl<Ring: ComplexSubsetStructure> Eq for FiniteDimensionalInnerProductSpaceStructure<Ring> {}
+
 impl<FS: ComplexConjugateStructure> MatrixStructure<FS> {
     pub fn conjugate(&self, mat: &Matrix<FS::Set>) -> Matrix<FS::Set> {
         mat.apply_map(|x| self.ring().conjugate(x))
