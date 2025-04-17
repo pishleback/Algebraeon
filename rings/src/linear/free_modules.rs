@@ -147,12 +147,14 @@ where
     }
 
     fn from_vec(&self, v: &Vec<Ring::Set>) -> Self::Set {
-        self.set
-            .list_all_elements()
-            .into_iter()
-            .enumerate()
-            .map(|(i, b)| (b, v[i].clone()))
-            .collect()
+        self.reduce(
+            self.set
+                .list_all_elements()
+                .into_iter()
+                .enumerate()
+                .map(|(i, b)| (b, v[i].clone()))
+                .collect(),
+        )
     }
 }
 
