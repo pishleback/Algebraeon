@@ -178,7 +178,6 @@ impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature> FieldSignature
 mod tests {
     use super::*;
     use algebraeon_nzq::*;
-    use algebraeon_sets::structure::*;
 
     #[test]
     fn test() {
