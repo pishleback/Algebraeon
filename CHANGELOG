@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file.
  - Added database of Conway polynomials.
  - Added structure for finite fields using Conway polynomials and inclusion maps between finite fields.
  - Fixed a bug in ring of integers multiplication in dimensions >= 3
+ - Rename structure traits from SomethingStructure to SomethingSignature
+ - Moved a bunch of stuff around in algebraeon-rings
+ - Added Legendre Jacobi and Kronecker symbols.
+ - Listing ring of algebraic integers ideals of a given norm.
 
 ## [0.0.12] - 2025-04-12
 
