@@ -1,5 +1,5 @@
 use crate::{
-    number::natural::factorization::{factor, primes::is_prime},
+    rings::natural::factorization::{factor, primes::is_prime},
     structure::*,
 };
 use algebraeon_nzq::{traits::Abs, *};

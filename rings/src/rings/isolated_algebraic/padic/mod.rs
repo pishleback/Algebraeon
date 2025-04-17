@@ -1,4 +1,4 @@
-use crate::{number::natural::factorization::primes::*, polynomial::*, structure::*};
+use crate::{rings::natural::factorization::primes::*, polynomial::*, structure::*};
 use algebraeon_nzq::*;
 use valuation::*;
 
@@ -431,7 +431,7 @@ impl Polynomial<Integer> {
 }
 
 pub mod structure {
-    use crate::number::algebraic::poly_tools::{
+    use crate::rings::isolated_algebraic::poly_tools::{
         root_product_poly, root_rat_mul_poly, root_sum_poly,
     };
 

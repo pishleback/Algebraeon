@@ -417,8 +417,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::number::algebraic::complex::ComplexAlgebraic;
-
+    use crate::rings::isolated_algebraic::complex::ComplexAlgebraic;
     use super::*;
 
     #[test]

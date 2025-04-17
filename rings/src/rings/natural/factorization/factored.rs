@@ -1,6 +1,6 @@
 use super::factor;
 use crate::{
-    number::natural::factorization::primes::is_prime,
+    rings::natural::factorization::primes::is_prime,
     structure::{Factored, FactoredSignature, SemiRingSignature},
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure, gcd, traits::ModPow};

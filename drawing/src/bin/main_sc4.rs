@@ -11,7 +11,7 @@ use algebraeon_geometry::simplexes::OrientedSimplex;
 use algebraeon_geometry::simplexes::Simplex;
 use algebraeon_geometry::*;
 use algebraeon_nzq::*;
-use algebraeon_rings::number::algebraic::real::RealAlgebraic;
+use algebraeon_rings::number::isolated_algebraic::real::RealAlgebraic;
 use algebraeon_rings::structure::PositiveRealNthRootSignature;
 use algebraeon_rings::structure::RingSignature;
 use algebraeon_sets::structure::*;

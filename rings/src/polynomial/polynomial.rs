@@ -1109,7 +1109,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::number::finite_fields::quaternary_field::*;
+    use crate::rings::finite_fields::quaternary_field::*;
 
     #[test]
     fn test_constant_var_pow() {
