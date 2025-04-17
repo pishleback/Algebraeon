@@ -61,20 +61,20 @@ impl<Set> Polynomial<Set> {
 }
 
 #[derive(Debug, Clone)]
-pub struct PolynomialStructure<RS: SemiRingStructure> {
+pub struct PolynomialStructure<RS: SemiRingSignature> {
     coeff_ring_zero: RS::Set, //so that we can return a refernece to zero when getting polynomial coefficients out of range
     coeff_ring: RS,
 }
 
-impl<RS: SemiRingStructure> PolynomialStructure<RS> {
+impl<RS: SemiRingSignature> PolynomialStructure<RS> {
     pub fn coeff_ring(&self) -> &RS {
         &self.coeff_ring
     }
 }
 
-impl<RS: SemiRingStructure> Structure for PolynomialStructure<RS> {}
+impl<RS: SemiRingSignature> Signature for PolynomialStructure<RS> {}
 
-impl<RS: SemiRingStructure> SetStructure for PolynomialStructure<RS> {
+impl<RS: SemiRingSignature> SetSignature for PolynomialStructure<RS> {
     type Set = Polynomial<RS::Set>;
 
     fn is_element(&self, _x: &Self::Set) -> bool {
@@ -82,15 +82,15 @@ impl<RS: SemiRingStructure> SetStructure for PolynomialStructure<RS> {
     }
 }
 
-impl<RS: SemiRingStructure> PartialEq for PolynomialStructure<RS> {
+impl<RS: SemiRingSignature> PartialEq for PolynomialStructure<RS> {
     fn eq(&self, other: &Self) -> bool {
         self.coeff_ring == other.coeff_ring
     }
 }
 
-impl<RS: SemiRingStructure> Eq for PolynomialStructure<RS> {}
+impl<RS: SemiRingSignature> Eq for PolynomialStructure<RS> {}
 
-impl<RS: SemiRingStructure + ToStringStructure> ToStringStructure for PolynomialStructure<RS> {
+impl<RS: SemiRingSignature + ToStringSignature> ToStringSignature for PolynomialStructure<RS> {
     fn to_string(&self, elem: &Self::Set) -> String {
         if self.num_coeffs(elem) == 0 {
             "0".into()
@@ -129,7 +129,7 @@ impl<RS: SemiRingStructure + ToStringStructure> ToStringStructure for Polynomial
     }
 }
 
-impl<RS: SemiRingStructure> EqStructure for PolynomialStructure<RS> {
+impl<RS: SemiRingSignature> EqSignature for PolynomialStructure<RS> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         for i in 0..std::cmp::max(a.coeffs.len(), b.coeffs.len()) {
             if !self.coeff_ring.equal(self.coeff(a, i), self.coeff(b, i)) {
@@ -140,7 +140,7 @@ impl<RS: SemiRingStructure> EqStructure for PolynomialStructure<RS> {
     }
 }
 
-impl<RS: SemiRingStructure> SemiRingStructure for PolynomialStructure<RS> {
+impl<RS: SemiRingSignature> SemiRingSignature for PolynomialStructure<RS> {
     fn zero(&self) -> Self::Set {
         Polynomial { coeffs: vec![] }
     }
@@ -174,7 +174,7 @@ impl<RS: SemiRingStructure> SemiRingStructure for PolynomialStructure<RS> {
     }
 }
 
-impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
+impl<RS: RingSignature> RingSignature for PolynomialStructure<RS> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         Polynomial::from_coeffs(
             a.coeffs()
@@ -185,7 +185,7 @@ impl<RS: RingStructure> RingStructure for PolynomialStructure<RS> {
     }
 }
 
-impl<RS: SemiRingStructure> PolynomialStructure<RS> {
+impl<RS: SemiRingSignature> PolynomialStructure<RS> {
     pub fn new(coeff_ring: RS) -> Self {
         Self {
             coeff_ring_zero: coeff_ring.zero(),
@@ -367,7 +367,7 @@ impl<RS: SemiRingStructure> PolynomialStructure<RS> {
     }
 }
 
-impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
+impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     pub fn try_quorem(
         &self,
         a: &Polynomial<RS::Set>,
@@ -584,25 +584,25 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     }
 }
 
-impl<RS: IntegralDomainStructure> UnitsStructure for PolynomialStructure<RS> {
+impl<RS: IntegralDomainSignature> UnitsSignature for PolynomialStructure<RS> {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
 }
 
-impl<RS: IntegralDomainStructure> IntegralDomainStructure for PolynomialStructure<RS> {
+impl<RS: IntegralDomainSignature> IntegralDomainSignature for PolynomialStructure<RS> {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div_impl(a, b)
     }
 }
 
-impl<RS: UniqueFactorizationStructure> UniqueFactorizationStructure for PolynomialStructure<RS> {
+impl<RS: UniqueFactorizationSignature> UniqueFactorizationSignature for PolynomialStructure<RS> {
     fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         None
     }
 }
 
-impl<RS: GreatestCommonDivisorStructure> PolynomialStructure<RS> {
+impl<RS: GreatestCommonDivisorSignature> PolynomialStructure<RS> {
     pub fn factor_primitive(
         &self,
         mut p: Polynomial<RS::Set>,
@@ -654,19 +654,19 @@ impl<RS: GreatestCommonDivisorStructure> PolynomialStructure<RS> {
     }
 }
 
-impl<FS: FieldStructure> GreatestCommonDivisorStructure for PolynomialStructure<FS> {
+impl<FS: FieldSignature> GreatestCommonDivisorSignature for PolynomialStructure<FS> {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         self.euclidean_gcd(x.clone(), y.clone())
     }
 }
 
-impl<FS: FieldStructure> BezoutDomainStructure for PolynomialStructure<FS> {
+impl<FS: FieldSignature> BezoutDomainSignature for PolynomialStructure<FS> {
     fn xgcd(&self, x: &Self::Set, y: &Self::Set) -> (Self::Set, Self::Set, Self::Set) {
         self.euclidean_xgcd(x.clone(), y.clone())
     }
 }
 
-impl<RS: GreatestCommonDivisorStructure + CharZeroRingStructure> PolynomialStructure<RS> {
+impl<RS: GreatestCommonDivisorSignature + CharZeroRingSignature> PolynomialStructure<RS> {
     pub fn primitive_squarefree_part(&self, f: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         if self.is_zero(&f) {
             f
@@ -680,7 +680,7 @@ impl<RS: GreatestCommonDivisorStructure + CharZeroRingStructure> PolynomialStruc
     }
 }
 
-impl<RS: FavoriteAssociateStructure + IntegralDomainStructure> FavoriteAssociateStructure
+impl<RS: FavoriteAssociateSignature + IntegralDomainSignature> FavoriteAssociateSignature
     for PolynomialStructure<RS>
 {
     fn factor_fav_assoc(
@@ -702,13 +702,13 @@ impl<RS: FavoriteAssociateStructure + IntegralDomainStructure> FavoriteAssociate
     }
 }
 
-impl<RS: CharZeroRingStructure> CharZeroRingStructure for PolynomialStructure<RS> {
+impl<RS: CharZeroRingSignature> CharZeroRingSignature for PolynomialStructure<RS> {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
         self.coeff_ring().try_to_int(&self.as_constant(x)?)
     }
 }
 
-impl<RS: IntegralDomainStructure + FiniteUnitsStructure> FiniteUnitsStructure
+impl<RS: IntegralDomainSignature + FiniteUnitsSignature> FiniteUnitsSignature
     for PolynomialStructure<RS>
 {
     fn all_units(&self) -> Vec<Self::Set> {
@@ -724,7 +724,7 @@ impl<RS: IntegralDomainStructure + FiniteUnitsStructure> FiniteUnitsStructure
 //     fn interpolate(points: &Vec<(Self::ElemT, Self::ElemT)>) -> Option<Polynomial<Self>>;
 // }
 
-impl<FS: FieldStructure> EuclideanDivisionStructure for PolynomialStructure<FS> {
+impl<FS: FieldSignature> EuclideanDivisionSignature for PolynomialStructure<FS> {
     fn norm(&self, elem: &Self::Set) -> Option<Natural> {
         Some(Natural::from(self.degree(elem)?))
     }
@@ -738,7 +738,7 @@ impl<FS: FieldStructure> EuclideanDivisionStructure for PolynomialStructure<FS> 
     }
 }
 
-impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
+impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     pub fn interpolate_by_lagrange_basis(
         &self,
         points: &Vec<(RS::Set, RS::Set)>,
@@ -827,7 +827,7 @@ impl<RS: IntegralDomainStructure> PolynomialStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure> PolynomialStructure<RS> {
+impl<RS: BezoutDomainSignature> PolynomialStructure<RS> {
     pub fn interpolate_by_linear_system(
         &self,
         points: &Vec<(RS::Set, RS::Set)>,
@@ -874,8 +874,8 @@ impl<RS: BezoutDomainStructure> PolynomialStructure<RS> {
 }
 
 pub fn factor_primitive_fof<
-    Ring: GreatestCommonDivisorStructure,
-    Field: FieldStructure,
+    Ring: GreatestCommonDivisorSignature,
+    Field: FieldSignature,
     Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
     fof_inclusion: &Fof,
@@ -910,9 +910,9 @@ pub fn factor_primitive_fof<
 
 impl<Field: MetaType> Polynomial<Field>
 where
-    Field::Structure: FieldStructure,
-    PrincipalSubringInclusion<Field::Structure>:
-        FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Structure>,
+    Field::Signature: FieldSignature,
+    PrincipalSubringInclusion<Field::Signature>:
+        FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Signature>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {
         factor_primitive_fof(
@@ -928,18 +928,18 @@ where
 
 impl<R: MetaType> MetaType for Polynomial<R>
 where
-    R::Structure: SemiRingStructure,
+    R::Signature: SemiRingSignature,
 {
-    type Structure = PolynomialStructure<R::Structure>;
+    type Signature = PolynomialStructure<R::Signature>;
 
-    fn structure() -> Self::Structure {
+    fn structure() -> Self::Signature {
         PolynomialStructure::new(R::structure())
     }
 }
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: SemiRingStructure<Set = R>,
+    R::Signature: SemiRingSignature<Set = R>,
 {
     fn reduce(self) -> Self {
         Self::structure().reduce_poly(self)
@@ -948,7 +948,7 @@ where
 
 impl<R: MetaType> Display for Polynomial<R>
 where
-    R::Structure: SemiRingStructure + ToStringStructure,
+    R::Signature: SemiRingSignature + ToStringSignature,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Self::structure().to_string(self))
@@ -957,18 +957,18 @@ where
 
 impl<R: MetaType> PartialEq for Polynomial<R>
 where
-    R::Structure: SemiRingStructure,
+    R::Signature: SemiRingSignature,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
     }
 }
 
-impl<R: MetaType> Eq for Polynomial<R> where R::Structure: SemiRingStructure {}
+impl<R: MetaType> Eq for Polynomial<R> where R::Signature: SemiRingSignature {}
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: SemiRingStructure<Set = R>,
+    R::Signature: SemiRingSignature<Set = R>,
 {
     pub fn var() -> Self {
         Self::structure().var()
@@ -1036,7 +1036,7 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: IntegralDomainStructure,
+    R::Signature: IntegralDomainSignature,
 {
     pub fn try_quorem(a: &Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
         Self::structure().try_quorem(a, b)
@@ -1073,7 +1073,7 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: BezoutDomainStructure,
+    R::Signature: BezoutDomainSignature,
 {
     pub fn interpolate_by_linear_system(points: &Vec<(R, R)>) -> Option<Self> {
         Self::structure().interpolate_by_linear_system(points)
@@ -1082,7 +1082,7 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: GreatestCommonDivisorStructure,
+    R::Signature: GreatestCommonDivisorSignature,
 {
     pub fn factor_primitive(self) -> Option<(R, Polynomial<R>)> {
         Self::structure().factor_primitive(self)
@@ -1099,7 +1099,7 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Structure: GreatestCommonDivisorStructure + CharZeroRingStructure,
+    R::Signature: GreatestCommonDivisorSignature + CharZeroRingSignature,
 {
     pub fn primitive_squarefree_part(&self) -> Self {
         Self::structure().primitive_squarefree_part(self.clone())

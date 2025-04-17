@@ -59,6 +59,7 @@ some improvements
 */
 
 use crate::polynomial::*;
+use crate::rings::quotient::QuotientStructure;
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
@@ -151,11 +152,11 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
     }
 }
 
-trait SemigroupStructure: SetStructure {
+trait SemigroupSignature: SetSignature {
     fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 }
 
-struct MemoryStack<SG: SemigroupStructure> {
+struct MemoryStack<SG: SemigroupSignature> {
     semigroup: SG,
     modular_factor_values: Vec<SG::Set>,
     // Store the partial products of a previous calculation
@@ -171,7 +172,7 @@ struct MemoryStack<SG: SemigroupStructure> {
     prev_calc: Vec<(usize, SG::Set)>,
 }
 
-impl<SG: SemigroupStructure> MemoryStack<SG> {
+impl<SG: SemigroupSignature> MemoryStack<SG> {
     fn new(semigroup: SG, modular_factor_values: Vec<SG::Set>) -> Self {
         Self {
             semigroup,
@@ -180,11 +181,11 @@ impl<SG: SemigroupStructure> MemoryStack<SG> {
         }
     }
 
-    fn get_val(&self, i: usize) -> &<SG as SetStructure>::Set {
+    fn get_val(&self, i: usize) -> &<SG as SetSignature>::Set {
         &self.modular_factor_values[i]
     }
 
-    fn get_product(&mut self, subset: &Vec<usize>) -> &<SG as SetStructure>::Set {
+    fn get_product(&mut self, subset: &Vec<usize>) -> &<SG as SetSignature>::Set {
         debug_assert!(!subset.is_empty());
         let mut i = 0;
         loop {
@@ -246,15 +247,15 @@ mod dminusone_test {
     }
     #[derive(Debug, Clone, PartialEq, Eq)]
     struct DMinusOneTestSemigroup {}
-    impl Structure for DMinusOneTestSemigroup {}
-    impl SetStructure for DMinusOneTestSemigroup {
+    impl Signature for DMinusOneTestSemigroup {}
+    impl SetSignature for DMinusOneTestSemigroup {
         type Set = DMinusOneTestSemigroupElem;
 
         fn is_element(&self, _x: &Self::Set) -> bool {
             true
         }
     }
-    impl SemigroupStructure for DMinusOneTestSemigroup {
+    impl SemigroupSignature for DMinusOneTestSemigroup {
         fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
             DMinusOneTestSemigroupElem {
                 approx_coeff_lower_bound: a
@@ -355,7 +356,7 @@ mod dminusone_test {
 // Polynomial division test. This test is never wrong.
 type ModularFactorMultSemigrp =
     PolynomialStructure<QuotientStructure<IntegerCanonicalStructure, false>>;
-impl SemigroupStructure for ModularFactorMultSemigrp {
+impl SemigroupSignature for ModularFactorMultSemigrp {
     fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.mul(a, b)
     }
@@ -364,7 +365,7 @@ impl SemigroupStructure for ModularFactorMultSemigrp {
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn factor_by_try_all_subsets<'a>(
         &'a self,
-    ) -> Factored<PolynomialStructure<IntegerCanonicalStructure>> {
+    ) -> FactoredElement<PolynomialStructure<IntegerCanonicalStructure>> {
         let n = self.modular_factors.len();
 
         let mut dminusone_test =
@@ -376,7 +377,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
             self.modular_factors.iter().map(|g| g.clone()).collect(),
         );
 
-        let mut factored = Factored::new_trivial(Polynomial::<Integer>::structure());
+        let mut factored = FactoredElement::new_trivial(Polynomial::<Integer>::structure());
         let mut excluded_modular_factors = vec![];
         let mut f = self.poly.clone();
         let mut k = 1; // The cardinality of the subset to search for each loop
@@ -425,7 +426,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                                 // Divide f by the found factor g
                                 f = h;
                                 // Add g to this list of found factors
-                                factored.mul_mut(Factored::from_prime(
+                                factored.mul_mut(FactoredElement::from_prime(
                                     Polynomial::<Integer>::structure(),
                                     g,
                                 ));
@@ -450,7 +451,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 
         // The remaining modular factors must give the last irreducible factor in the factorization
         if m > 0 {
-            factored.mul_mut(Factored::from_prime(Polynomial::<Integer>::structure(), f));
+            factored.mul_mut(FactoredElement::from_prime(Polynomial::<Integer>::structure(), f));
         }
 
         factored
@@ -461,7 +462,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 /// No optimizations are used when searching for combinations of modular factors yielding true factors.
 pub fn factorize_by_berlekamp_zassenhaus_algorithm(
     poly: Polynomial<Integer>,
-) -> Option<Factored<PolynomialStructure<IntegerCanonicalStructure>>> {
+) -> Option<FactoredElement<PolynomialStructure<IntegerCanonicalStructure>>> {
     if poly.is_zero() {
         None
     } else {
@@ -472,7 +473,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
                     Integer::factor,
                     &|f| {
                         if f.degree().unwrap() == 0 {
-                            Factored::from_unit(Polynomial::<Integer>::structure(), f)
+                            FactoredElement::from_unit(Polynomial::<Integer>::structure(), f)
                         } else {
                             let state = BerlekampAassenhausAlgorithmState::new(f).next_prime();
                             state.factor_by_try_all_subsets()
@@ -566,7 +567,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
 /// No optimizations are used when searching for combinations of modular factors yielding true factors.
 pub fn factorize_by_berlekamp_zassenhaus_algorithm_naive(
     f: Polynomial<Integer>,
-) -> Option<Factored<PolynomialStructure<IntegerCanonicalStructure>>> {
+) -> Option<FactoredElement<PolynomialStructure<IntegerCanonicalStructure>>> {
     if f.is_zero() {
         None
     } else {

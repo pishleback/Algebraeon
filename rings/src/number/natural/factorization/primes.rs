@@ -4,6 +4,8 @@ use algebraeon_sets::number_theory::primes;
 use std::ops::Rem;
 use traits::ModPow;
 
+use crate::rings::quotient::QuotientStructure;
+
 use super::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,13 +1,13 @@
 use super::polynomial::*;
-use crate::{linear::matrix::*, structure::*};
+use crate::{linear::matrix::*, rings::quotient::QuotientStructure, structure::*};
 use algebraeon_sets::structure::*;
 
 pub type FieldExtensionByPolynomialQuotientStructure<FS> =
     QuotientStructure<PolynomialStructure<FS>, true>;
 
-impl<FS: FieldStructure, const IS_FIELD: bool> QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
+impl<FS: FieldSignature, const IS_FIELD: bool> QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
 where
-    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetSignature<Set = Polynomial<FS::Set>>,
 {
     pub fn generator(&self) -> Polynomial<FS::Set> {
         self.ring().var()
@@ -85,17 +85,17 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FieldExtensionByPolynomialQuotient<Field: FieldStructure> {
+pub struct FieldExtensionByPolynomialQuotient<Field: FieldSignature> {
     extension_field: FieldExtensionByPolynomialQuotientStructure<Field>,
 }
 
-impl<Field: FieldStructure> FieldExtensionByPolynomialQuotient<Field> {
+impl<Field: FieldSignature> FieldExtensionByPolynomialQuotient<Field> {
     pub fn new(extension_field: FieldExtensionByPolynomialQuotientStructure<Field>) -> Self {
         Self { extension_field }
     }
 }
 
-impl<Field: FieldStructure> Morphism<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+impl<Field: FieldSignature> Morphism<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn domain(&self) -> &Field {
@@ -107,7 +107,7 @@ impl<Field: FieldStructure> Morphism<Field, FieldExtensionByPolynomialQuotientSt
     }
 }
 
-impl<Field: FieldStructure> Function<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
+impl<Field: FieldSignature> Function<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
     fn image(&self, x: &Field::Set) -> Polynomial<Field::Set> {
@@ -115,13 +115,13 @@ impl<Field: FieldStructure> Function<Field, FieldExtensionByPolynomialQuotientSt
     }
 }
 
-impl<Field: FieldStructure>
+impl<Field: FieldSignature>
     RingHomomorphism<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
 }
 
-impl<Field: FieldStructure>
+impl<Field: FieldSignature>
     InjectiveFunction<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {
@@ -130,7 +130,7 @@ impl<Field: FieldStructure>
     }
 }
 
-impl<Field: FieldStructure>
+impl<Field: FieldSignature>
     FiniteDimensionalFieldExtension<Field, FieldExtensionByPolynomialQuotientStructure<Field>>
     for FieldExtensionByPolynomialQuotient<Field>
 {

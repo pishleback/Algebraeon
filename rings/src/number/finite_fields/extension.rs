@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use super::modulo::ModuloCanonicalStructure;
 
-impl<FS: FiniteFieldStructure> FiniteUnitsStructure
+impl<FS: FiniteFieldSignature> FiniteUnitsSignature
     for FieldExtensionByPolynomialQuotientStructure<FS>
 {
     fn all_units(&self) -> Vec<Self::Set> {
@@ -32,7 +32,7 @@ impl<FS: FiniteFieldStructure> FiniteUnitsStructure
     }
 }
 
-impl<FS: FiniteFieldStructure> FiniteFieldStructure
+impl<FS: FiniteFieldSignature> FiniteFieldSignature
     for FieldExtensionByPolynomialQuotientStructure<FS>
 {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
@@ -42,12 +42,12 @@ impl<FS: FiniteFieldStructure> FiniteFieldStructure
     }
 }
 
-pub fn new_finite_field_extension<FS: FiniteFieldStructure>(
+pub fn new_finite_field_extension<FS: FiniteFieldSignature>(
     finite_field: FS,
-    poly: <PolynomialStructure<FS> as SetStructure>::Set,
+    poly: <PolynomialStructure<FS> as SetSignature>::Set,
 ) -> FieldExtensionByPolynomialQuotientStructure<FS>
 where
-    PolynomialStructure<FS>: FactorableStructure,
+    PolynomialStructure<FS>: FactorableSignature,
 {
     FieldExtensionByPolynomialQuotientStructure::<FS>::new_field(
         PolynomialStructure::new(finite_field.into()).into(),

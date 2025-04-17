@@ -58,8 +58,8 @@ impl ComplexAlgebraic {
 // use complex::*;
 // use  real::*;
 
-impl AlgebraicClosureStructure for ComplexAlgebraicCanonicalStructure {
-    type BFS = <Rational as algebraeon_sets::structure::MetaType>::Structure;
+impl AlgebraicClosureSignature for ComplexAlgebraicCanonicalStructure {
+    type BFS = <Rational as algebraeon_sets::structure::MetaType>::Signature;
 
     fn base_field(&self) -> Self::BFS {
         Rational::structure()

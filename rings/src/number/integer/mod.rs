@@ -13,7 +13,7 @@ pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
 
-impl SemiRingStructure for IntegerCanonicalStructure {
+impl SemiRingSignature for IntegerCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
@@ -31,19 +31,19 @@ impl SemiRingStructure for IntegerCanonicalStructure {
     }
 }
 
-impl RingStructure for IntegerCanonicalStructure {
+impl RingSignature for IntegerCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         -a
     }
 }
 
-impl UnitsStructure for IntegerCanonicalStructure {
+impl UnitsSignature for IntegerCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
 }
 
-impl IntegralDomainStructure for IntegerCanonicalStructure {
+impl IntegralDomainSignature for IntegerCanonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.quorem(a, b) {
             Some((q, r)) => {
@@ -58,19 +58,19 @@ impl IntegralDomainStructure for IntegerCanonicalStructure {
     }
 }
 
-impl OrderedRingStructure for IntegerCanonicalStructure {
+impl OrderedRingSignature for IntegerCanonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         Self::Set::cmp(a, b)
     }
 }
 
-impl FiniteUnitsStructure for IntegerCanonicalStructure {
+impl FiniteUnitsSignature for IntegerCanonicalStructure {
     fn all_units(&self) -> Vec<Self::Set> {
         vec![Integer::ONE, -Integer::ONE]
     }
 }
 
-impl FavoriteAssociateStructure for IntegerCanonicalStructure {
+impl FavoriteAssociateSignature for IntegerCanonicalStructure {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
         if a == &Integer::ZERO {
             (Integer::ONE, Integer::ZERO)
@@ -82,14 +82,14 @@ impl FavoriteAssociateStructure for IntegerCanonicalStructure {
     }
 }
 
-impl UniqueFactorizationStructure for IntegerCanonicalStructure {
+impl UniqueFactorizationSignature for IntegerCanonicalStructure {
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
         Some(self.is_irreducible(a))
     }
 }
 
-impl FactorableStructure for IntegerCanonicalStructure {
-    fn factor(&self, a: &Self::Set) -> Option<Factored<Self>> {
+impl FactorableSignature for IntegerCanonicalStructure {
+    fn factor(&self, a: &Self::Set) -> Option<FactoredElement<Self>> {
         if a == &Integer::ZERO {
             None
         } else {
@@ -100,7 +100,7 @@ impl FactorableStructure for IntegerCanonicalStructure {
                 unit = Integer::from(1);
             }
             let f = factor(a.abs()).unwrap();
-            Some(Factored::from_unit_and_factor_powers_unchecked(
+            Some(FactoredElement::from_unit_and_factor_powers_unchecked(
                 self.clone().into(),
                 unit,
                 f.into_factor_powers()
@@ -112,7 +112,7 @@ impl FactorableStructure for IntegerCanonicalStructure {
     }
 }
 
-impl EuclideanDivisionStructure for IntegerCanonicalStructure {
+impl EuclideanDivisionSignature for IntegerCanonicalStructure {
     fn norm(&self, elem: &Self::Set) -> Option<Natural> {
         if elem == &Integer::ZERO {
             None
@@ -130,29 +130,29 @@ impl EuclideanDivisionStructure for IntegerCanonicalStructure {
     }
 }
 
-impl GreatestCommonDivisorStructure for IntegerCanonicalStructure {
+impl GreatestCommonDivisorSignature for IntegerCanonicalStructure {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         Integer::structure().euclidean_gcd(x.clone(), y.clone())
     }
 }
 
-impl BezoutDomainStructure for IntegerCanonicalStructure {
+impl BezoutDomainSignature for IntegerCanonicalStructure {
     fn xgcd(&self, x: &Self::Set, y: &Self::Set) -> (Self::Set, Self::Set, Self::Set) {
         Integer::euclidean_xgcd(x.clone(), y.clone())
     }
 }
 
-impl CharZeroRingStructure for IntegerCanonicalStructure {
+impl CharZeroRingSignature for IntegerCanonicalStructure {
     fn try_to_int(&self, x: &Integer) -> Option<Integer> {
         Some(x.clone())
     }
 }
 
-impl ComplexSubsetStructure for IntegerCanonicalStructure {}
+impl ComplexSubsetSignature for IntegerCanonicalStructure {}
 
-impl RealSubsetStructure for IntegerCanonicalStructure {}
+impl RealSubsetSignature for IntegerCanonicalStructure {}
 
-impl RealToFloatStructure for IntegerCanonicalStructure {
+impl RealToFloatSignature for IntegerCanonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         x.into()
     }
@@ -161,7 +161,7 @@ impl RealToFloatStructure for IntegerCanonicalStructure {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum IntegerInitialRingGeneratorNeverType {}
 
-impl FreeRingStructure for IntegerCanonicalStructure {
+impl FreeRingSignature for IntegerCanonicalStructure {
     type Generator = IntegerInitialRingGeneratorNeverType;
 
     fn free_generators(&self) -> HashSet<Self::Generator> {

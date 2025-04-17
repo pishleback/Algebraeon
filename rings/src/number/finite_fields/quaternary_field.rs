@@ -12,7 +12,7 @@ pub enum QuaternaryField {
     Beta,
 }
 
-impl ToStringStructure for QuaternaryFieldCanonicalStructure {
+impl ToStringSignature for QuaternaryFieldCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
@@ -29,7 +29,7 @@ impl Display for QuaternaryField {
     }
 }
 
-impl SemiRingStructure for QuaternaryFieldCanonicalStructure {
+impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
     fn zero(&self) -> Self::Set {
         QuaternaryField::Zero
     }
@@ -68,19 +68,19 @@ impl SemiRingStructure for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl RingStructure for QuaternaryFieldCanonicalStructure {
+impl RingSignature for QuaternaryFieldCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         a.clone()
     }
 }
 
-impl UnitsStructure for QuaternaryFieldCanonicalStructure {
+impl UnitsSignature for QuaternaryFieldCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
 }
 
-impl IntegralDomainStructure for QuaternaryFieldCanonicalStructure {
+impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match (&a, &b) {
             (_, QuaternaryField::Zero) => Err(RingDivisionError::DivideByZero),
@@ -96,9 +96,9 @@ impl IntegralDomainStructure for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl FieldStructure for QuaternaryFieldCanonicalStructure {}
+impl FieldSignature for QuaternaryFieldCanonicalStructure {}
 
-impl FiniteUnitsStructure for QuaternaryFieldCanonicalStructure {
+impl FiniteUnitsSignature for QuaternaryFieldCanonicalStructure {
     fn all_units(&self) -> Vec<Self::Set> {
         vec![
             QuaternaryField::One,
@@ -108,7 +108,7 @@ impl FiniteUnitsStructure for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl FiniteFieldStructure for QuaternaryFieldCanonicalStructure {
+impl FiniteFieldSignature for QuaternaryFieldCanonicalStructure {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (Natural::from(2u8), Natural::from(2u8))
     }

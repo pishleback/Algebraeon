@@ -1,6 +1,6 @@
 use super::*;
 
-impl<FS: FieldStructure> MatrixStructure<FS> {
+impl<FS: FieldSignature> MatrixStructure<FS> {
     pub fn presentation_matrix(
         &self,
         m: Matrix<FS::Set>,
@@ -59,7 +59,7 @@ impl<FS: FieldStructure> MatrixStructure<FS> {
 
 impl<F: MetaType> Matrix<F>
 where
-    F::Structure: FieldStructure,
+    F::Signature: FieldSignature,
 {
     pub fn presentation_matrix(&self) -> Result<Matrix<Polynomial<F>>, MatOppErr> {
         Self::structure().presentation_matrix(self.clone())

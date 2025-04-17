@@ -1,6 +1,8 @@
+use crate::rings::quotient::QuotientStructure;
+
 use super::*;
 
-impl FiniteUnitsStructure for QuotientStructure<IntegerCanonicalStructure, true> {
+impl FiniteUnitsSignature for QuotientStructure<IntegerCanonicalStructure, true> {
     fn all_units(&self) -> Vec<Self::Set> {
         let mut units = vec![];
         let mut u = Integer::from(1);
@@ -12,13 +14,13 @@ impl FiniteUnitsStructure for QuotientStructure<IntegerCanonicalStructure, true>
     }
 }
 
-impl FiniteFieldStructure for QuotientStructure<IntegerCanonicalStructure, true> {
+impl FiniteFieldSignature for QuotientStructure<IntegerCanonicalStructure, true> {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (self.modulus().abs(), Natural::ONE)
     }
 }
 
-impl<const IS_FIELD: bool> CountableSetStructure
+impl<const IS_FIELD: bool> CountableSetSignature
     for QuotientStructure<IntegerCanonicalStructure, IS_FIELD>
 {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
@@ -28,7 +30,7 @@ impl<const IS_FIELD: bool> CountableSetStructure
     }
 }
 
-impl<const IS_FIELD: bool> FiniteSetStructure
+impl<const IS_FIELD: bool> FiniteSetSignature
     for QuotientStructure<IntegerCanonicalStructure, IS_FIELD>
 {
     fn size(&self) -> usize {

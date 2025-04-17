@@ -10,7 +10,7 @@ pub enum RingDivisionError {
     NotDivisible,
 }
 
-pub trait SemiRingStructure: EqStructure {
+pub trait SemiRingSignature: EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
     }
@@ -90,7 +90,7 @@ pub trait SemiRingStructure: EqStructure {
 
 pub trait MetaSemiRing: MetaType
 where
-    Self::Structure: SemiRingStructure,
+    Self::Signature: SemiRingSignature,
 {
     fn zero() -> Self {
         Self::structure().zero()
@@ -120,9 +120,9 @@ where
         Self::structure().from_nat(x)
     }
 }
-impl<R: MetaType> MetaSemiRing for R where Self::Structure: SemiRingStructure {}
+impl<R: MetaType> MetaSemiRing for R where Self::Signature: SemiRingSignature {}
 
-pub trait RingStructure: SemiRingStructure {
+pub trait RingSignature: SemiRingSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
     fn from_int(&self, x: impl Into<Integer>) -> Self::Set {
@@ -137,7 +137,7 @@ pub trait RingStructure: SemiRingStructure {
 
 pub trait MetaRing: MetaType
 where
-    Self::Structure: RingStructure,
+    Self::Signature: RingSignature,
 {
     fn neg(&self) -> Self {
         Self::structure().neg(self)
@@ -147,19 +147,19 @@ where
         Self::structure().from_int(x)
     }
 }
-impl<R: MetaType> MetaRing for R where Self::Structure: RingStructure {}
+impl<R: MetaType> MetaRing for R where Self::Signature: RingSignature {}
 
 pub trait MetaRingEq: MetaType
 where
-    Self::Structure: RingStructure + EqStructure,
+    Self::Signature: RingSignature + EqSignature,
 {
     fn is_zero(&self) -> bool {
         Self::structure().is_zero(self)
     }
 }
-impl<R: MetaType> MetaRingEq for R where Self::Structure: RingStructure + EqStructure {}
+impl<R: MetaType> MetaRingEq for R where Self::Signature: RingSignature + EqSignature {}
 
-pub trait UnitsStructure: RingStructure {
+pub trait UnitsSignature: RingSignature {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
     fn is_unit(&self, a: &Self::Set) -> bool {
@@ -170,9 +170,9 @@ pub trait UnitsStructure: RingStructure {
         }
     }
 }
-pub trait MetaUnitsStructure: MetaRing
+pub trait MetaUnitsSignature: MetaRing
 where
-    Self::Structure: UnitsStructure,
+    Self::Signature: UnitsSignature,
 {
     fn inv(&self) -> Result<Self, RingDivisionError> {
         Self::structure().inv(self)
@@ -181,9 +181,9 @@ where
         Self::structure().is_unit(self)
     }
 }
-impl<R: MetaRing> MetaUnitsStructure for R where Self::Structure: UnitsStructure<Set = R> {}
+impl<R: MetaRing> MetaUnitsSignature for R where Self::Signature: UnitsSignature<Set = R> {}
 
-pub trait IntegralDomainStructure: UnitsStructure {
+pub trait IntegralDomainSignature: UnitsSignature {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
@@ -231,7 +231,7 @@ pub trait IntegralDomainStructure: UnitsStructure {
 }
 pub trait MetaIntegralDomain: MetaRing
 where
-    Self::Structure: IntegralDomainStructure,
+    Self::Signature: IntegralDomainSignature,
 {
     fn div(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
         Self::structure().div(a, b)
@@ -252,9 +252,9 @@ where
         Self::structure().are_associate(a, b)
     }
 }
-impl<R: MetaRing> MetaIntegralDomain for R where Self::Structure: IntegralDomainStructure<Set = R> {}
+impl<R: MetaRing> MetaIntegralDomain for R where Self::Signature: IntegralDomainSignature<Set = R> {}
 
-pub trait OrderedRingStructure: IntegralDomainStructure {
+pub trait OrderedRingSignature: IntegralDomainSignature {
     // <= satisfying translation invariance and multiplication by positive scalar
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering;
     fn abs(&self, a: &Self::Set) -> Self::Set {
@@ -267,7 +267,7 @@ pub trait OrderedRingStructure: IntegralDomainStructure {
 }
 pub trait MetaOrderedRing: MetaType
 where
-    Self::Structure: OrderedRingStructure,
+    Self::Signature: OrderedRingSignature,
 {
     fn ring_cmp(a: &Self, b: &Self) -> std::cmp::Ordering {
         Self::structure().ring_cmp(a, b)
@@ -277,23 +277,23 @@ where
         Self::structure().abs(a)
     }
 }
-impl<R: MetaType> MetaOrderedRing for R where Self::Structure: OrderedRingStructure<Set = R> {}
+impl<R: MetaType> MetaOrderedRing for R where Self::Signature: OrderedRingSignature<Set = R> {}
 
-pub trait FiniteUnitsStructure: RingStructure {
+pub trait FiniteUnitsSignature: RingSignature {
     fn all_units(&self) -> Vec<Self::Set>;
 }
 
 pub trait MetaFiniteUnits: MetaRing
 where
-    Self::Structure: FiniteUnitsStructure,
+    Self::Signature: FiniteUnitsSignature,
 {
     fn all_units(&self) -> Vec<Self> {
         Self::structure().all_units()
     }
 }
-impl<R: MetaRing> MetaFiniteUnits for R where Self::Structure: FiniteUnitsStructure<Set = R> {}
+impl<R: MetaRing> MetaFiniteUnits for R where Self::Signature: FiniteUnitsSignature<Set = R> {}
 
-pub trait FavoriteAssociateStructure: IntegralDomainStructure {
+pub trait FavoriteAssociateSignature: IntegralDomainSignature {
     //For associate class of elements, choose a unique representative
     //write self=unit*assoc and return (unit, assoc)
     //0 is required to return (1, 0)
@@ -312,7 +312,7 @@ pub trait FavoriteAssociateStructure: IntegralDomainStructure {
 }
 pub trait MetaFavoriteAssociate: MetaIntegralDomain
 where
-    Self::Structure: FavoriteAssociateStructure,
+    Self::Signature: FavoriteAssociateSignature,
 {
     fn factor_fav_assoc(&self) -> (Self, Self) {
         Self::structure().factor_fav_assoc(self)
@@ -325,11 +325,11 @@ where
     }
 }
 impl<R: MetaRing> MetaFavoriteAssociate for R where
-    Self::Structure: FavoriteAssociateStructure<Set = R>
+    Self::Signature: FavoriteAssociateSignature<Set = R>
 {
 }
 
-pub trait GreatestCommonDivisorStructure: FavoriteAssociateStructure {
+pub trait GreatestCommonDivisorSignature: FavoriteAssociateSignature {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
@@ -358,7 +358,7 @@ pub trait GreatestCommonDivisorStructure: FavoriteAssociateStructure {
 
 pub trait MetaGreatestCommonDivisor: MetaFavoriteAssociate
 where
-    Self::Structure: GreatestCommonDivisorStructure,
+    Self::Signature: GreatestCommonDivisorSignature,
 {
     fn gcd(x: &Self, y: &Self) -> Self {
         Self::structure().gcd(x, y)
@@ -377,11 +377,11 @@ where
     }
 }
 impl<R: MetaRing> MetaGreatestCommonDivisor for R where
-    Self::Structure: GreatestCommonDivisorStructure<Set = R>
+    Self::Signature: GreatestCommonDivisorSignature<Set = R>
 {
 }
 
-pub trait BezoutDomainStructure: GreatestCommonDivisorStructure {
+pub trait BezoutDomainSignature: GreatestCommonDivisorSignature {
     //any gcds should be the standard associate representative
     fn xgcd(&self, a: &Self::Set, b: &Self::Set) -> (Self::Set, Self::Set, Self::Set); //(g, x, y) s.t. g = ax + by
     fn xgcd_list(&self, elems: Vec<&Self::Set>) -> (Self::Set, Vec<Self::Set>) {
@@ -416,7 +416,7 @@ pub trait BezoutDomainStructure: GreatestCommonDivisorStructure {
 
 pub trait MetaBezoutDomain: MetaGreatestCommonDivisor
 where
-    Self::Structure: BezoutDomainStructure,
+    Self::Signature: BezoutDomainSignature,
 {
     fn xgcd(x: &Self, y: &Self) -> (Self, Self, Self) {
         Self::structure().xgcd(x, y)
@@ -426,9 +426,9 @@ where
         Self::structure().xgcd_list(elems)
     }
 }
-impl<R: MetaRing> MetaBezoutDomain for R where Self::Structure: BezoutDomainStructure<Set = R> {}
+impl<R: MetaRing> MetaBezoutDomain for R where Self::Signature: BezoutDomainSignature<Set = R> {}
 
-pub trait EuclideanDivisionStructure: IntegralDomainStructure {
+pub trait EuclideanDivisionSignature: IntegralDomainSignature {
     //should return None for 0, and Some(norm) for everything else
     fn norm(&self, elem: &Self::Set) -> Option<Natural>;
 
@@ -452,7 +452,7 @@ pub trait EuclideanDivisionStructure: IntegralDomainStructure {
 
     fn euclidean_gcd(&self, mut x: Self::Set, mut y: Self::Set) -> Self::Set
     where
-        Self: FavoriteAssociateStructure,
+        Self: FavoriteAssociateSignature,
     {
         //Euclidean algorithm
         while !self.is_zero(&y) {
@@ -469,7 +469,7 @@ pub trait EuclideanDivisionStructure: IntegralDomainStructure {
         mut y: Self::Set,
     ) -> (Self::Set, Self::Set, Self::Set)
     where
-        Self: FavoriteAssociateStructure,
+        Self: FavoriteAssociateSignature,
     {
         let orig_x = x.clone();
         let orig_y = y.clone();
@@ -509,7 +509,7 @@ pub trait EuclideanDivisionStructure: IntegralDomainStructure {
 
 pub trait MetaEuclideanDivision: MetaIntegralDomain
 where
-    Self::Structure: EuclideanDivisionStructure,
+    Self::Signature: EuclideanDivisionSignature,
 {
     fn norm(&self) -> Option<Natural> {
         Self::structure().norm(self)
@@ -529,31 +529,31 @@ where
 
     fn euclidean_gcd(x: Self, y: Self) -> Self
     where
-        Self::Structure: FavoriteAssociateStructure,
+        Self::Signature: FavoriteAssociateSignature,
     {
         Self::structure().euclidean_gcd(x, y)
     }
 
     fn euclidean_xgcd(x: Self, y: Self) -> (Self, Self, Self)
     where
-        Self::Structure: GreatestCommonDivisorStructure,
+        Self::Signature: GreatestCommonDivisorSignature,
     {
         Self::structure().euclidean_xgcd(x, y)
     }
 }
 impl<R: MetaRing> MetaEuclideanDivision for R where
-    Self::Structure: EuclideanDivisionStructure<Set = R>
+    Self::Signature: EuclideanDivisionSignature<Set = R>
 {
 }
 
-pub trait UniqueFactorizationStructure: FavoriteAssociateStructure {
+pub trait UniqueFactorizationSignature: FavoriteAssociateSignature {
     /// Try to determine if a is irreducible. May fail to produce an answer.
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
 }
 
-pub trait FactorableStructure: UniqueFactorizationStructure {
+pub trait FactorableSignature: UniqueFactorizationSignature {
     //a UFD with an explicit algorithm to compute unique factorizations
-    fn factor(&self, a: &Self::Set) -> Option<super::factorization::Factored<Self>>;
+    fn factor(&self, a: &Self::Set) -> Option<super::factorization::FactoredElement<Self>>;
 
     fn is_irreducible(&self, a: &Self::Set) -> bool {
         match self.factor(a) {
@@ -569,7 +569,7 @@ pub trait FactorableStructure: UniqueFactorizationStructure {
     {
         match (self.factor(a), self.factor(b)) {
             (Some(factored_a), Some(factored_b)) => {
-                Factored::gcd(factored_a, factored_b).expanded()
+                FactoredElement::gcd(factored_a, factored_b).expanded()
             }
             (None, Some(_)) => b.clone(),
             (Some(_), None) => a.clone(),
@@ -577,11 +577,11 @@ pub trait FactorableStructure: UniqueFactorizationStructure {
         }
     }
 }
-pub trait MetaFactorableStructure: MetaFavoriteAssociate
+pub trait MetaFactorableSignature: MetaFavoriteAssociate
 where
-    Self::Structure: FactorableStructure,
+    Self::Signature: FactorableSignature,
 {
-    fn factor(&self) -> Option<Factored<Self::Structure>> {
+    fn factor(&self) -> Option<FactoredElement<Self::Signature>> {
         Self::structure().factor(self)
     }
 
@@ -593,9 +593,9 @@ where
         Self::structure().gcd_by_factor(a, b)
     }
 }
-impl<R: MetaRing> MetaFactorableStructure for R where Self::Structure: FactorableStructure<Set = R> {}
+impl<R: MetaRing> MetaFactorableSignature for R where Self::Signature: FactorableSignature<Set = R> {}
 
-pub trait InfiniteStructure: SetStructure {
+pub trait InfiniteSignature: SetSignature {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
 }
 pub trait Infinite: MetaType {
@@ -603,16 +603,16 @@ pub trait Infinite: MetaType {
 }
 impl<T: MetaType> Infinite for T
 where
-    T::Structure: InfiniteStructure,
+    T::Signature: InfiniteSignature,
 {
     fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>> {
         todo!()
     }
 }
 
-pub trait FieldStructure: IntegralDomainStructure {}
+pub trait FieldSignature: IntegralDomainSignature {}
 
-impl<FS: FieldStructure> FavoriteAssociateStructure for FS {
+impl<FS: FieldSignature> FavoriteAssociateSignature for FS {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
         if self.is_zero(a) {
             (self.one(), self.zero())
@@ -622,7 +622,7 @@ impl<FS: FieldStructure> FavoriteAssociateStructure for FS {
     }
 }
 
-impl<FS: FieldStructure> EuclideanDivisionStructure for FS {
+impl<FS: FieldSignature> EuclideanDivisionSignature for FS {
     fn norm(&self, elem: &Self::Set) -> Option<Natural> {
         if self.is_zero(elem) {
             None
@@ -640,30 +640,30 @@ impl<FS: FieldStructure> EuclideanDivisionStructure for FS {
     }
 }
 
-impl<FS: FieldStructure> GreatestCommonDivisorStructure for FS {
+impl<FS: FieldSignature> GreatestCommonDivisorSignature for FS {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         self.euclidean_gcd(x.clone(), y.clone())
     }
 }
 
-impl<FS: FieldStructure> BezoutDomainStructure for FS {
+impl<FS: FieldSignature> BezoutDomainSignature for FS {
     fn xgcd(&self, x: &Self::Set, y: &Self::Set) -> (Self::Set, Self::Set, Self::Set) {
         self.euclidean_xgcd(x.clone(), y.clone())
     }
 }
 
-impl<FS: FieldStructure> UniqueFactorizationStructure for FS {
+impl<FS: FieldSignature> UniqueFactorizationSignature for FS {
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
         Some(self.is_irreducible(a))
     }
 }
 
-impl<FS: FieldStructure> FactorableStructure for FS {
-    fn factor(&self, a: &Self::Set) -> Option<Factored<Self>> {
+impl<FS: FieldSignature> FactorableSignature for FS {
+    fn factor(&self, a: &Self::Set) -> Option<FactoredElement<Self>> {
         if self.is_zero(a) {
             None
         } else {
-            Some(Factored::from_unit_and_factor_powers(
+            Some(FactoredElement::from_unit_and_factor_powers(
                 self.clone(),
                 a.clone(),
                 vec![],
@@ -672,27 +672,27 @@ impl<FS: FieldStructure> FactorableStructure for FS {
     }
 }
 
-pub trait CharZeroRingStructure: RingStructure {
+pub trait CharZeroRingSignature: RingSignature {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
 }
 pub trait MetaCharZeroRing: MetaRing
 where
-    Self::Structure: CharZeroRingStructure,
+    Self::Signature: CharZeroRingSignature,
 {
     fn try_to_int(&self) -> Option<Integer> {
         Self::structure().try_to_int(self)
     }
 }
-impl<R: MetaType> MetaCharZeroRing for R where Self::Structure: CharZeroRingStructure<Set = R> {}
+impl<R: MetaType> MetaCharZeroRing for R where Self::Signature: CharZeroRingSignature<Set = R> {}
 
-impl<RS: CharZeroRingStructure + 'static> InfiniteStructure for RS {
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetStructure>::Set>> {
-        struct IntegerIterator<RS: CharZeroRingStructure> {
+impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetSignature>::Set>> {
+        struct IntegerIterator<RS: CharZeroRingSignature> {
             ring: RS,
             next: Integer,
         }
 
-        impl<RS: CharZeroRingStructure> Iterator for IntegerIterator<RS> {
+        impl<RS: CharZeroRingSignature> Iterator for IntegerIterator<RS> {
             type Item = RS::Set;
 
             fn next(&mut self) -> Option<Self::Item> {
@@ -713,28 +713,28 @@ impl<RS: CharZeroRingStructure + 'static> InfiniteStructure for RS {
     }
 }
 
-pub trait CharZeroFieldStructure: FieldStructure + CharZeroRingStructure {
+pub trait CharZeroFieldSignature: FieldSignature + CharZeroRingSignature {
     fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
 }
 pub trait MetaCharZeroField: MetaRing
 where
-    Self::Structure: CharZeroFieldStructure,
+    Self::Signature: CharZeroFieldSignature,
 {
     fn try_to_rat(&self) -> Option<Rational> {
         Self::structure().try_to_rat(self)
     }
 }
-impl<R: MetaType> MetaCharZeroField for R where Self::Structure: CharZeroFieldStructure<Set = R> {}
+impl<R: MetaType> MetaCharZeroField for R where Self::Signature: CharZeroFieldSignature<Set = R> {}
 
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
-struct FiniteFieldRandomElementGenerator<FS: FiniteFieldStructure, R: Rng> {
+struct FiniteFieldRandomElementGenerator<FS: FiniteFieldSignature, R: Rng> {
     all_elements: Vec<FS::Set>,
     rng: R,
 }
 
-impl<FS: FiniteFieldStructure, R: Rng> Iterator for FiniteFieldRandomElementGenerator<FS, R> {
+impl<FS: FiniteFieldSignature, R: Rng> Iterator for FiniteFieldRandomElementGenerator<FS, R> {
     type Item = FS::Set;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -747,7 +747,7 @@ impl<FS: FiniteFieldStructure, R: Rng> Iterator for FiniteFieldRandomElementGene
     }
 }
 
-pub trait FiniteFieldStructure: FieldStructure + FiniteUnitsStructure {
+pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature {
     // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(&self) -> (Natural, Natural);
 
@@ -767,36 +767,20 @@ pub trait FiniteFieldStructure: FieldStructure + FiniteUnitsStructure {
 }
 
 //is a subset of the complex numbers
-pub trait ComplexSubsetStructure: IntegralDomainStructure {}
+pub trait ComplexSubsetSignature: IntegralDomainSignature {}
 
 //is a subset of the real numbers
-pub trait RealSubsetStructure: ComplexSubsetStructure {}
+pub trait RealSubsetSignature: ComplexSubsetSignature {}
 
-// pub trait OrderedFieldStructure: RealSubsetStructure {
-//     fn cmp(&self, x: &Self::Set, y: &Self::Set) -> std::cmp::Ordering;
-// }
-
-pub trait RealRoundingStructure: RealSubsetStructure {
+pub trait RealRoundingSignature: RealSubsetSignature {
     fn floor(&self, x: &Self::Set) -> Integer; //round down
     fn ceil(&self, x: &Self::Set) -> Integer; //round up
     fn round(&self, x: &Self::Set) -> Integer; //round closets, either direction is fine if mid way
-
-    /*
-    fn ceil(&self, x: &Self::Set) -> Integer {
-        -self.floor(&self.neg(x))
-    }
-    fn round(&self, x: &Self::Set) -> Integer {
-        self.floor(&self.add(
-            x,
-            &self.from_rat(&Rational::from_integers(Integer::ONE, Integer::TWO)).unwrap(),
-        ))
-    }
-    */
 }
 
 pub trait MetaRealRounding: MetaType
 where
-    Self::Structure: RealRoundingStructure,
+    Self::Signature: RealRoundingSignature,
 {
     fn floor(&self) -> Integer {
         Self::structure().floor(self)
@@ -810,18 +794,18 @@ where
         Self::structure().round(self)
     }
 }
-impl<R: MetaType> MetaRealRounding for R where Self::Structure: RealRoundingStructure<Set = R> {}
+impl<R: MetaType> MetaRealRounding for R where Self::Signature: RealRoundingSignature<Set = R> {}
 
-pub trait RealToFloatStructure: RealSubsetStructure {
+pub trait RealToFloatSignature: RealSubsetSignature {
     fn as_f64(&self, x: &Self::Set) -> f64;
     fn as_f32(&self, x: &Self::Set) -> f32 {
-        RealToFloatStructure::as_f64(self, x) as f32
+        RealToFloatSignature::as_f64(self, x) as f32
     }
 }
 
 pub trait MetaRealToFloat: MetaType
 where
-    Self::Structure: RealToFloatStructure,
+    Self::Signature: RealToFloatSignature,
 {
     fn as_f64(&self) -> f64 {
         Self::structure().as_f64(self)
@@ -831,9 +815,9 @@ where
         Self::structure().as_f32(self)
     }
 }
-impl<R: MetaType> MetaRealToFloat for R where Self::Structure: RealToFloatStructure {}
+impl<R: MetaType> MetaRealToFloat for R where Self::Signature: RealToFloatSignature {}
 
-pub trait RealFromFloatStructure: RealSubsetStructure {
+pub trait RealFromFloatSignature: RealSubsetSignature {
     fn from_f64_approx(&self, x: f64) -> Self::Set;
     fn from_f32_approx(&self, x: f32) -> Self::Set {
         self.from_f64_approx(x as f64)
@@ -842,7 +826,7 @@ pub trait RealFromFloatStructure: RealSubsetStructure {
 
 pub trait MetaRealFromFloat: MetaType
 where
-    Self::Structure: RealFromFloatStructure,
+    Self::Signature: RealFromFloatSignature,
 {
     fn from_f64_approx(x: f64) -> Self {
         Self::structure().from_f64_approx(x)
@@ -852,31 +836,31 @@ where
         Self::structure().from_f32_approx(x)
     }
 }
-impl<R: MetaType> MetaRealFromFloat for R where Self::Structure: RealFromFloatStructure<Set = R> {}
+impl<R: MetaType> MetaRealFromFloat for R where Self::Signature: RealFromFloatSignature<Set = R> {}
 
-pub trait ComplexConjugateStructure: SetStructure {
+pub trait ComplexConjugateSignature: SetSignature {
     fn conjugate(&self, x: &Self::Set) -> Self::Set;
 }
 pub trait MetaComplexConjugate: MetaType
 where
-    Self::Structure: ComplexConjugateStructure,
+    Self::Signature: ComplexConjugateSignature,
 {
     fn conjugate(&self) -> Self {
         Self::structure().conjugate(self)
     }
 }
 impl<R: MetaType> MetaComplexConjugate for R where
-    Self::Structure: ComplexConjugateStructure<Set = R>
+    Self::Signature: ComplexConjugateSignature<Set = R>
 {
 }
 
-impl<RS: RealSubsetStructure> ComplexConjugateStructure for RS {
+impl<RS: RealSubsetSignature> ComplexConjugateSignature for RS {
     fn conjugate(&self, x: &Self::Set) -> Self::Set {
         x.clone()
     }
 }
 
-pub trait PositiveRealNthRootStructure: ComplexSubsetStructure {
+pub trait PositiveRealNthRootSignature: ComplexSubsetSignature {
     //if x is a non-negative real number, return the nth root of x
     //may also return Ok for other well-defined values such as for 1st root of any x and 0th root of any non-zero x, but is not required to
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()>;
@@ -884,36 +868,36 @@ pub trait PositiveRealNthRootStructure: ComplexSubsetStructure {
 
 pub trait MetaPositiveRealNthRoot: MetaType
 where
-    Self::Structure: PositiveRealNthRootStructure,
+    Self::Signature: PositiveRealNthRootSignature,
 {
     fn nth_root(&self, n: usize) -> Result<Self, ()> {
         Self::structure().nth_root(self, n)
     }
 }
 impl<R: MetaType> MetaPositiveRealNthRoot for R where
-    Self::Structure: PositiveRealNthRootStructure<Set = R>
+    Self::Signature: PositiveRealNthRootSignature<Set = R>
 {
 }
 
-pub trait AlgebraicClosureStructure: FieldStructure
+pub trait AlgebraicClosureSignature: FieldSignature
 where
     PolynomialStructure<Self::BFS>:
-        FactorableStructure + SetStructure<Set = Polynomial<<Self::BFS as SetStructure>::Set>>,
+        FactorableSignature + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
 {
-    type BFS: FieldStructure; //base field structure
+    type BFS: FieldSignature; //base field structure
 
     fn base_field(&self) -> Self::BFS;
 
-    fn base_field_inclusion(&self, x: &<Self::BFS as SetStructure>::Set) -> Self::Set;
+    fn base_field_inclusion(&self, x: &<Self::BFS as SetSignature>::Set) -> Self::Set;
 
     //return None for the zero polynomial
     fn all_roots_list(
         &self,
-        poly: &Polynomial<<Self::BFS as SetStructure>::Set>,
+        poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<Self::Set>>;
     fn all_roots_unique(
         &self,
-        poly: &Polynomial<<Self::BFS as SetStructure>::Set>,
+        poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<Self::Set>> {
         self.all_roots_list(
             &PolynomialStructure::new(self.base_field().clone())
@@ -924,7 +908,7 @@ where
     }
     fn all_roots_powers(
         &self,
-        poly: &Polynomial<<Self::BFS as SetStructure>::Set>,
+        poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
         for (factor, k) in PolynomialStructure::new(self.base_field().clone())
@@ -942,7 +926,7 @@ where
 /// The free ring of rank 0 is the integers
 /// The free ring of rank 1 is the polynomial ring over the integers
 /// The free ring of rank n is the multipolynomial ring over the integers
-pub trait FreeRingStructure: RingStructure {
+pub trait FreeRingSignature: RingSignature {
     type Generator: Clone + Debug + PartialEq + Eq + std::hash::Hash;
 
     fn free_generators(&self) -> std::collections::HashSet<Self::Generator>;

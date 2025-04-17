@@ -171,14 +171,14 @@ impl AlgebraicNumberFieldStructure {
     }
 }
 
-impl CharZeroRingStructure for AlgebraicNumberFieldStructure {
+impl CharZeroRingSignature for AlgebraicNumberFieldStructure {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
         let x = self.reduce(x);
         x.try_to_int()
     }
 }
 
-impl CharZeroFieldStructure for AlgebraicNumberFieldStructure {
+impl CharZeroFieldSignature for AlgebraicNumberFieldStructure {
     fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
         let x = self.reduce(x);
         match x.degree() {
@@ -196,17 +196,17 @@ impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, AlgebraicNumber
         self.range().degree()
     }
 
-    fn norm(&self, a: &<AlgebraicNumberFieldStructure as SetStructure>::Set) -> Rational {
+    fn norm(&self, a: &<AlgebraicNumberFieldStructure as SetSignature>::Set) -> Rational {
         self.range().norm(a)
     }
 
-    fn trace(&self, a: &<AlgebraicNumberFieldStructure as SetStructure>::Set) -> Rational {
+    fn trace(&self, a: &<AlgebraicNumberFieldStructure as SetSignature>::Set) -> Rational {
         self.range().trace(a)
     }
 
     fn min_poly(
         &self,
-        a: &<AlgebraicNumberFieldStructure as SetStructure>::Set,
+        a: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
     ) -> Polynomial<Rational> {
         self.range().min_poly(a)
     }

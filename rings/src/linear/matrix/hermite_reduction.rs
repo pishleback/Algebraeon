@@ -1,6 +1,6 @@
 use super::*;
 
-impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
+impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
     pub fn row_span(&self, a: Matrix<RS::Set>) -> LinearSubspace<RS::Set> {
         LinearSubspaceStructure::new(self.ring().clone()).from_span(
             1,
@@ -313,7 +313,7 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
     }
 }
 
-impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateStructure>
+impl<RS: EuclideanDivisionSignature + BezoutDomainSignature + FavoriteAssociateSignature>
     MatrixStructure<RS>
 {
     //if A:=self return (H, U, pivots) such that
@@ -384,7 +384,7 @@ impl<RS: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateS
 
 impl<R: MetaType> Matrix<R>
 where
-    R::Structure: BezoutDomainStructure,
+    R::Signature: BezoutDomainSignature,
 {
     pub fn row_span(&self) -> LinearSubspace<R> {
         Self::structure().row_span(self.clone())
@@ -445,7 +445,7 @@ where
 
 impl<R: MetaType> Matrix<R>
 where
-    R::Structure: EuclideanDivisionStructure + BezoutDomainStructure + FavoriteAssociateStructure,
+    R::Signature: EuclideanDivisionSignature + BezoutDomainSignature + FavoriteAssociateSignature,
 {
     pub fn row_reduced_hermite_algorithm(&self) -> (Self, Self, Vec<usize>) {
         Self::structure().row_reduced_hermite_algorithm(self.clone())

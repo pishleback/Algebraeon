@@ -1,14 +1,14 @@
 use super::factor;
 use crate::{
     number::natural::factorization::primes::is_prime,
-    structure::{FactoredAbstract, FactoredAbstractStructure, SemiRingStructure},
+    structure::{Factored, FactoredSignature, SemiRingSignature},
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure, gcd, traits::ModPow};
 use algebraeon_sets::structure::MetaType;
 use itertools::Itertools;
 use std::{borrow::Borrow, collections::HashMap};
 
-impl FactoredAbstractStructure<FactoredNatural> for NaturalCanonicalStructure {
+impl FactoredSignature<FactoredNatural> for NaturalCanonicalStructure {
     type PrimeObject = Natural;
 
     type Object = Natural;
@@ -35,7 +35,7 @@ pub struct FactoredNatural {
     primes: HashMap<Natural, Natural>,
 }
 
-impl FactoredAbstract for FactoredNatural {
+impl Factored for FactoredNatural {
     type Structure = NaturalCanonicalStructure;
 
     fn factored_structure<'a>(&'a self) -> impl 'a + Borrow<Self::Structure> {

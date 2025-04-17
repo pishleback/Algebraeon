@@ -3,7 +3,7 @@ use crate::{linear::linear_subspace::*, structure::*};
 use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::{
     combinatorics::num_partitions_part_pool,
-    structure::{MetaType, SetStructure},
+    structure::{MetaType, SetSignature},
 };
 use itertools::Itertools;
 
@@ -175,11 +175,11 @@ impl RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl IdealStructure for RingOfIntegersWithIntegralBasisStructure {
+impl IdealSignature for RingOfIntegersWithIntegralBasisStructure {
     type Ideal = RingOfIntegersIdeal;
 }
 
-impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
+impl IdealArithmeticSignature for RingOfIntegersWithIntegralBasisStructure {
     fn principal_ideal(&self, a: &Self::Set) -> Self::Ideal {
         if self.is_zero(a) {
             Self::Ideal::Zero
@@ -325,9 +325,9 @@ impl IdealArithmeticStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl DedekindDomainStructure for RingOfIntegersWithIntegralBasisStructure {}
+impl DedekindDomainSignature for RingOfIntegersWithIntegralBasisStructure {}
 
-impl FactorableIdealsStructure for RingOfIntegersWithIntegralBasisStructure {
+impl FactorableIdealsSignature for RingOfIntegersWithIntegralBasisStructure {
     fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>> {
         Some(
             RingOfIntegersExtension::new_integer_extension(self.clone())

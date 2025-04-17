@@ -1,64 +1,93 @@
-use super::matrix::Matrix;
-use crate::structure::*;
-use algebraeon_sets::structure::*;
+mod structure {
+    use crate::structure::*;
+    use algebraeon_sets::structure::*;
 
-// modules and vector spaces
-pub trait ModuleStructure<Ring: RingStructure>: SetStructure {
-    fn ring(&self) -> Ring;
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
-    fn neg(&self, a: &Self::Set) -> Self::Set;
-    fn scalar_mul(&self, x: &Ring::Set, a: Self::Set) -> Self::Set;
-}
+    pub trait ModuleStructure<Ring: RingSignature>: SetSignature {
+        fn ring(&self) -> Ring;
+        fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+        fn neg(&self, a: &Self::Set) -> Self::Set;
+        fn scalar_mul(&self, x: &Ring::Set, a: &Self::Set) -> Self::Set;
+    }
 
-pub trait VectorSpaceStructure<Field: FieldStructure>: ModuleStructure<Field> {
-    fn field(&self) -> Field;
-}
-impl<Field: FieldStructure, FMod: ModuleStructure<Field>> VectorSpaceStructure<Field> for FMod {
-    fn field(&self) -> Field {
-        self.ring()
+    pub trait FreeModuleStructure<Ring: RingSignature>: ModuleStructure<Ring> {}
+
+    pub trait FiniteRankModuleStructure<Ring: RingSignature>: FreeModuleStructure<Ring> {
+        fn basis(&self) -> Vec<Self::Set>;
+        fn rank(&self) -> usize {
+            self.basis().len()
+        }
+    }
+
+    pub trait ModuleHomomorphism<
+        Ring: RingSignature,
+        Domain: ModuleStructure<Ring>,
+        Range: ModuleStructure<Ring>,
+    >: Function<Domain, Range>
+    {
     }
 }
 
-// modules of finite rank and vector spaces of finite dimension
-pub trait FreeFiniteRankModuleStructure<Ring: RingStructure>: ModuleStructure<Ring> {
-    fn rank(&self) -> usize;
-}
+mod free_modules {
+    use crate::structure::*;
 
-pub trait FiniteDimensionalVectorSpaceStructure<Field: FieldStructure>:
-    FreeFiniteRankModuleStructure<Field>
-{
-    fn dimension(&self) -> usize;
-}
-impl<Field: FieldStructure, FMod: FreeFiniteRankModuleStructure<Field>>
-    FiniteDimensionalVectorSpaceStructure<Field> for FMod
-{
-    fn dimension(&self) -> usize {
-        self.rank()
+    pub struct FreeModuleOverSetStructure<Ring: RingSignature> {
+        ring: Ring,
+    }
+
+    pub struct FreeModuleFiniteNumberedBasisStructure<Ring: RingSignature> {
+        ring: Ring,
     }
 }
 
-// modules of finite rank and vector spaces of finite dimension with a prefered basis
-pub trait FiniteRankModuleWithBasisStructure<Ring: RingStructure>:
-    FreeFiniteRankModuleStructure<Ring>
-{
-    fn basis(&self) -> Vec<Self::Set>;
-    fn coordinates(&self, a: &Self::Set) -> Vec<Ring::Set>;
-    fn into_coordinates(&self, a: Self::Set) -> Vec<Ring::Set>;
-    fn coordinate(&self, a: &Self::Set, i: usize) -> Ring::Set {
-        self.coordinates(a).into_iter().nth(i).unwrap()
-    }
-    fn into_coordinate(&self, a: Self::Set, i: usize) -> Ring::Set {
-        self.into_coordinates(a).into_iter().nth(i).unwrap()
+/*
+
+// the free module of fixed finite rank over a ring
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FiniteRankFreeModuleStructure<Ring: RingStructure> {
+    ring: Ring,
+    rank: usize,
+}
+pub type FiniteDimensionalVectorSpace<Field: FieldStructure> = FiniteRankFreeModuleStructure<Field>;
+
+impl<Ring: RingStructure> Structure for FiniteRankFreeModuleStructure<Ring> {}
+
+impl<Ring: RingStructure> SetStructure for FiniteRankFreeModuleStructure<Ring> {
+    type Set = Vec<Ring::Set>;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        self.rank == x.len()
     }
 }
 
-pub trait FiniteDimensionalVectorSpaceWithBasisStructure<Field: FieldStructure>:
-    FiniteRankModuleWithBasisStructure<Field>
-{
+impl<Ring: RingStructure> ModuleStructure<Ring> for FiniteRankFreeModuleStructure<Ring> {
+    fn ring(&self) -> Ring {
+        self.ring.clone()
+    }
+
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(b));
+        (0..self.rank).map(|i| self.ring.add(a[i], b[i])).collect()
+    }
+
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        debug_assert!(self.is_element(a));
+        a.iter().map(|x| self.ring.neg(x)).collect()
+    }
+
+    fn scalar_mul(&self, x: &Ring::Set, a: &Self::Set) -> Self::Set {
+        debug_assert!(self.ring.is_element(x));
+        debug_assert!(self.is_element(&a));
+        a.iter().map(|y| self.ring.mul(x, y)).collect()
+    }
 }
-impl<Field: FieldStructure, FMod: FiniteRankModuleWithBasisStructure<Field>>
-    FiniteDimensionalVectorSpaceWithBasisStructure<Field> for FMod
+
+impl<Ring: RingStructure> FreeFiniteRankModuleStructure<Ring>
+    for FiniteRankFreeModuleStructure<Ring>
 {
+    fn rank(&self) -> usize {
+        self.rank
+    }
 }
 
 // linear maps of finite rank free modules with a basis
@@ -67,24 +96,35 @@ pub struct LinearTransformation<
     Ring: RingStructure,
     Domain: FiniteRankModuleWithBasisStructure<Ring>,
     Range: FiniteRankModuleWithBasisStructure<Ring>,
+    const INJECTIVE: bool,
+    const SURJECTIVE: bool,
 > {
     ring: Ring,
     domain: Domain,
     range: Range,
-    matrix: Matrix<Ring::Set>,
+    matrix: Matrix<Ring::Set>, // v -> Mv
 }
 
 impl<
-    Ring: RingStructure,
+    Ring: BezoutDomainStructure,
     Domain: FiniteRankModuleWithBasisStructure<Ring>,
     Range: FiniteRankModuleWithBasisStructure<Ring>,
-> LinearTransformation<Ring, Domain, Range>
+    const INJECTIVE: bool,
+    const SURJECTIVE: bool,
+> LinearTransformation<Ring, Domain, Range, INJECTIVE, SURJECTIVE>
 {
     pub fn new(ring: Ring, domain: Domain, range: Range, matrix: Matrix<Ring::Set>) -> Self {
         debug_assert_eq!(ring, domain.ring());
         debug_assert_eq!(ring, range.ring());
         debug_assert_eq!(domain.rank(), matrix.cols());
         debug_assert_eq!(range.rank(), matrix.rows());
+        let rank = MatrixStructure::new(ring.clone()).rank(matrix.clone());
+        if INJECTIVE {
+            debug_assert_eq!(rank, domain.rank());
+        }
+        if SURJECTIVE {
+            debug_assert_eq!(rank, range.rank());
+        }
         Self {
             ring,
             domain,
@@ -98,7 +138,9 @@ impl<
     Ring: RingStructure,
     Domain: FiniteRankModuleWithBasisStructure<Ring>,
     Range: FiniteRankModuleWithBasisStructure<Ring>,
-> Morphism<Domain, Range> for LinearTransformation<Ring, Domain, Range>
+    const INJECTIVE: bool,
+    const SURJECTIVE: bool,
+> Morphism<Domain, Range> for LinearTransformation<Ring, Domain, Range, INJECTIVE, SURJECTIVE>
 {
     fn domain(&self) -> &Domain {
         &self.domain
@@ -113,10 +155,35 @@ impl<
     Ring: RingStructure,
     Domain: FiniteRankModuleWithBasisStructure<Ring>,
     Range: FiniteRankModuleWithBasisStructure<Ring>,
-> Function<Domain, Range> for LinearTransformation<Ring, Domain, Range>
+    const INJECTIVE: bool,
+    const SURJECTIVE: bool,
+> Function<Domain, Range> for LinearTransformation<Ring, Domain, Range, INJECTIVE, SURJECTIVE>
 {
     fn image(&self, x: &Domain::Set) -> Range::Set {
-        todo!()
+        compile_error!("grrr")
+    }
+}
+
+impl<
+    Ring: RingStructure,
+    Domain: FiniteRankModuleWithBasisStructure<Ring>,
+    Range: FiniteRankModuleWithBasisStructure<Ring>,
+    const SURJECTIVE: bool,
+> InjectiveFunction<Domain, Range> for LinearTransformation<Ring, Domain, Range, true, SURJECTIVE>
+{
+    fn try_preimage(&self, x: &Range::Set) -> Option<<Domain as SetStructure>::Set> {
+        compile_error!("grrr")
+    }
+}
+
+impl<
+    Ring: RingStructure,
+    Domain: FiniteRankModuleWithBasisStructure<Ring>,
+    Range: FiniteRankModuleWithBasisStructure<Ring>,
+> BijectiveFunction<Domain, Range> for LinearTransformation<Ring, Domain, Range, true, true>
+{
+    fn preimage(&self, x: &Range::Set) -> Domain::Set {
+        compile_error!("grrr")
     }
 }
 
@@ -125,6 +192,8 @@ pub struct LinearTransformationStructure<
     Ring: RingStructure,
     Domain: FiniteRankModuleWithBasisStructure<Ring>,
     Range: FiniteRankModuleWithBasisStructure<Ring>,
+    const INJECTIVE: bool,
+    const SURJECTIVE: bool,
 > {
     ring: Ring,
     domain: Domain,
@@ -135,7 +204,9 @@ impl<
     Ring: RingStructure,
     Domain: FiniteRankModuleWithBasisStructure<Ring>,
     Range: FiniteRankModuleWithBasisStructure<Ring>,
-> Structure for LinearTransformationStructure<Ring, Domain, Range>
+    const INJECTIVE: bool,
+    const SURJECTIVE: bool,
+> Structure for LinearTransformationStructure<Ring, Domain, Range, INJECTIVE, SURJECTIVE>
 {
 }
 
@@ -143,12 +214,14 @@ impl<
     Ring: RingStructure,
     Domain: FiniteRankModuleWithBasisStructure<Ring>,
     Range: FiniteRankModuleWithBasisStructure<Ring>,
-> SetStructure for LinearTransformationStructure<Ring, Domain, Range>
+    const INJECTIVE: bool,
+    const SURJECTIVE: bool,
+> SetStructure for LinearTransformationStructure<Ring, Domain, Range, INJECTIVE, SURJECTIVE>
 {
-    type Set = LinearTransformation<Ring, Domain, Range>;
+    type Set = LinearTransformation<Ring, Domain, Range, INJECTIVE, SURJECTIVE>;
 
     fn is_element(&self, x: &Self::Set) -> bool {
-        true
+        self.ring == x.ring && self.domain == x.domain && self.range == x.range
     }
 }
 
@@ -156,7 +229,10 @@ impl<
     Ring: RingStructure,
     Domain: FiniteRankModuleWithBasisStructure<Ring>,
     Range: FiniteRankModuleWithBasisStructure<Ring>,
-> MorphismsStructure<Domain, Range> for LinearTransformationStructure<Ring, Domain, Range>
+    const INJECTIVE: bool,
+    const SURJECTIVE: bool,
+> MorphismsStructure<Domain, Range>
+    for LinearTransformationStructure<Ring, Domain, Range, INJECTIVE, SURJECTIVE>
 {
 }
 
@@ -169,3 +245,4 @@ mod tests {
         println!("hi");
     }
 }
+*/

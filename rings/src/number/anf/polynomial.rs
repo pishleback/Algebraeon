@@ -1,12 +1,6 @@
 use super::number_field::AlgebraicNumberFieldStructure;
 use crate::{
-    linear::matrix::Matrix,
-    polynomial::*,
-    structure::{
-        EuclideanDivisionStructure, FactorableStructure, Factored, FactoredAbstract,
-        MetaFactorableStructure, MetaRing, MetaRingEq, MetaSemiRing, QuotientStructure,
-        RingStructure, SemiRingStructure,
-    },
+    linear::matrix::Matrix, polynomial::*, rings::quotient::QuotientStructure, structure::*
 };
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
@@ -171,8 +165,8 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
-        p: &<Self as SetStructure>::Set,
-    ) -> crate::structure::Factored<Self> {
+        p: &<Self as SetSignature>::Set,
+    ) -> crate::structure::FactoredElement<Self> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
         debug_assert!(!self.is_zero(p));
@@ -229,7 +223,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
         // println!("p_factors = {:?}", p_factors);
 
-        let factored = Factored::from_unit_and_factor_powers(
+        let factored = FactoredElement::from_unit_and_factor_powers(
             self.clone().into(),
             self.one(),
             p_factors
@@ -243,8 +237,8 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
     pub fn factor_primitive_sqfree_by_reduced_ring(
         &self,
-        p: &<Self as SetStructure>::Set,
-    ) -> Factored<Self> {
+        p: &<Self as SetSignature>::Set,
+    ) -> FactoredElement<Self> {
         debug_assert!(!self.is_zero(p));
 
         /*
@@ -276,7 +270,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             .factor()
             .unwrap()
             .into_unit_and_factor_powers();
-            Factored::from_unit_and_factor_powers(
+            FactoredElement::from_unit_and_factor_powers(
                 self.clone().into(),
                 Polynomial::constant(unit),
                 factors
@@ -550,7 +544,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             //     println!("pi = {}", pi);
             // }
 
-            Factored::from_unit_and_factor_powers(
+            FactoredElement::from_unit_and_factor_powers(
                 self.clone().into(),
                 self.one(),
                 p_factors.into_iter().map(|pi| (pi, Natural::ONE)).collect(),
@@ -561,9 +555,9 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     //factor over the rationals first, then factor each irreducible rational factor over the anf
     pub fn factorize_rational_factorize_first(
         &self,
-        f: &<Self as SetStructure>::Set,
-        factorize: &impl Fn(&<Self as SetStructure>::Set) -> Factored<Self>,
-    ) -> Factored<Self> {
+        f: &<Self as SetSignature>::Set,
+        factorize: &impl Fn(&<Self as SetSignature>::Set) -> FactoredElement<Self>,
+    ) -> FactoredElement<Self> {
         debug_assert!(!self.is_zero(f));
         // println!("f = {}", f);
 
@@ -581,7 +575,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
         };
 
         let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_factor_powers();
-        let mut factored = Factored::from_unit(self.clone().into(), Polynomial::constant(rat_unit));
+        let mut factored = FactoredElement::from_unit(self.clone().into(), Polynomial::constant(rat_unit));
         for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor
@@ -596,8 +590,8 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     }
 }
 
-impl FactorableStructure for PolynomialStructure<AlgebraicNumberFieldStructure> {
-    fn factor(&self, a: &Self::Set) -> Option<crate::structure::Factored<Self>> {
+impl FactorableSignature for PolynomialStructure<AlgebraicNumberFieldStructure> {
+    fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredElement<Self>> {
         if self.is_zero(a) {
             None
         } else {
@@ -622,7 +616,7 @@ impl FactorableStructure for PolynomialStructure<AlgebraicNumberFieldStructure> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::{FactoredAbstract, IntoErgonomic};
+    use crate::structure::{Factored, IntoErgonomic};
 
     #[test]
     fn test_anf_poly_factor_count() {

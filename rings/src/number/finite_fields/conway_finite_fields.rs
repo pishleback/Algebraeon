@@ -1,11 +1,6 @@
 use super::conway_polynomials::conway_polynomial;
 use crate::{
-    linear::matrix::{Matrix, MatrixStructure},
-    polynomial::{FieldExtensionByPolynomialQuotientStructure, Polynomial, PolynomialStructure},
-    structure::{
-        FieldStructure, FiniteFieldStructure, FiniteUnitsStructure, IntegralDomainStructure,
-        QuotientStructure, RingHomomorphism, RingStructure, SemiRingStructure, UnitsStructure,
-    },
+    linear::matrix::{Matrix, MatrixStructure}, polynomial::*, rings::quotient::QuotientStructure, structure::*
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
 use algebraeon_sets::structure::*;
@@ -56,9 +51,9 @@ impl ConwayFiniteFieldStructure {
     }
 }
 
-impl Structure for ConwayFiniteFieldStructure {}
+impl Signature for ConwayFiniteFieldStructure {}
 
-impl SetStructure for ConwayFiniteFieldStructure {
+impl SetSignature for ConwayFiniteFieldStructure {
     type Set = Polynomial<Integer>;
 
     fn is_element(&self, _: &Self::Set) -> bool {
@@ -66,13 +61,13 @@ impl SetStructure for ConwayFiniteFieldStructure {
     }
 }
 
-impl EqStructure for ConwayFiniteFieldStructure {
+impl EqSignature for ConwayFiniteFieldStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.structure.equal(a, b)
     }
 }
 
-impl SemiRingStructure for ConwayFiniteFieldStructure {
+impl SemiRingSignature for ConwayFiniteFieldStructure {
     fn zero(&self) -> Self::Set {
         self.structure.zero()
     }
@@ -90,19 +85,19 @@ impl SemiRingStructure for ConwayFiniteFieldStructure {
     }
 }
 
-impl RingStructure for ConwayFiniteFieldStructure {
+impl RingSignature for ConwayFiniteFieldStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         self.structure.neg(a)
     }
 }
 
-impl UnitsStructure for ConwayFiniteFieldStructure {
+impl UnitsSignature for ConwayFiniteFieldStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
         self.structure.inv(a)
     }
 }
 
-impl IntegralDomainStructure for ConwayFiniteFieldStructure {
+impl IntegralDomainSignature for ConwayFiniteFieldStructure {
     fn div(
         &self,
         a: &Self::Set,
@@ -112,15 +107,15 @@ impl IntegralDomainStructure for ConwayFiniteFieldStructure {
     }
 }
 
-impl FieldStructure for ConwayFiniteFieldStructure {}
+impl FieldSignature for ConwayFiniteFieldStructure {}
 
-impl FiniteUnitsStructure for ConwayFiniteFieldStructure {
+impl FiniteUnitsSignature for ConwayFiniteFieldStructure {
     fn all_units(&self) -> Vec<Self::Set> {
         self.structure.all_units()
     }
 }
 
-impl FiniteFieldStructure for ConwayFiniteFieldStructure {
+impl FiniteFieldSignature for ConwayFiniteFieldStructure {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (self.p.into(), self.n.into())
     }

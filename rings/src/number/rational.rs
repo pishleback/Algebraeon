@@ -4,7 +4,7 @@ use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
-impl SemiRingStructure for RationalCanonicalStructure {
+impl SemiRingSignature for RationalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Rational::ZERO
     }
@@ -22,19 +22,19 @@ impl SemiRingStructure for RationalCanonicalStructure {
     }
 }
 
-impl RingStructure for RationalCanonicalStructure {
+impl RingSignature for RationalCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         -a
     }
 }
 
-impl UnitsStructure for RationalCanonicalStructure {
+impl UnitsSignature for RationalCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
 }
 
-impl IntegralDomainStructure for RationalCanonicalStructure {
+impl IntegralDomainSignature for RationalCanonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if b == &Rational::ZERO {
             Err(RingDivisionError::DivideByZero)
@@ -44,15 +44,15 @@ impl IntegralDomainStructure for RationalCanonicalStructure {
     }
 }
 
-impl OrderedRingStructure for RationalCanonicalStructure {
+impl OrderedRingSignature for RationalCanonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         Self::Set::cmp(a, b)
     }
 }
 
-impl FieldStructure for RationalCanonicalStructure {}
+impl FieldSignature for RationalCanonicalStructure {}
 
-impl CharZeroRingStructure for RationalCanonicalStructure {
+impl CharZeroRingSignature for RationalCanonicalStructure {
     fn try_to_int(&self, x: &Rational) -> Option<Integer> {
         let (n, d) = x.numerator_and_denominator();
         debug_assert_ne!(&d, &Natural::ZERO);
@@ -60,7 +60,7 @@ impl CharZeroRingStructure for RationalCanonicalStructure {
     }
 }
 
-impl CharZeroFieldStructure for RationalCanonicalStructure {
+impl CharZeroFieldSignature for RationalCanonicalStructure {
     fn try_to_rat(&self, x: &Rational) -> Option<Rational> {
         Some(x.clone())
     }
@@ -86,15 +86,15 @@ impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, RationalCanonic
     }
 }
 
-impl ComplexSubsetStructure for RationalCanonicalStructure {}
+impl ComplexSubsetSignature for RationalCanonicalStructure {}
 
-impl RealSubsetStructure for RationalCanonicalStructure {}
+impl RealSubsetSignature for RationalCanonicalStructure {}
 
-impl RealToFloatStructure for RationalCanonicalStructure {
+impl RealToFloatSignature for RationalCanonicalStructure {
     fn as_f64(&self, x: &Rational) -> f64 {
         let fof = PrincipalSubringInclusion::new(self.clone());
-        RealToFloatStructure::as_f64(&Integer::structure(), &fof.numerator(x))
-            / RealToFloatStructure::as_f64(&Integer::structure(), &fof.denominator(x))
+        RealToFloatSignature::as_f64(&Integer::structure(), &fof.numerator(x))
+            / RealToFloatSignature::as_f64(&Integer::structure(), &fof.denominator(x))
     }
 }
 
@@ -106,7 +106,7 @@ impl FieldOfFractionsInclusion<IntegerCanonicalStructure, RationalCanonicalStruc
     }
 }
 
-impl RealRoundingStructure for RationalCanonicalStructure {
+impl RealRoundingSignature for RationalCanonicalStructure {
     fn floor(&self, x: &Self::Set) -> Integer {
         Floor::floor(x)
     }
@@ -118,14 +118,14 @@ impl RealRoundingStructure for RationalCanonicalStructure {
     }
 }
 
-impl RealFromFloatStructure for RationalCanonicalStructure {
+impl RealFromFloatSignature for RationalCanonicalStructure {
     fn from_f64_approx(&self, x: f64) -> Self::Set {
         Rational::try_from_float_simplest(x).unwrap()
     }
 }
 
-impl FactorableStructure for PolynomialStructure<RationalCanonicalStructure> {
-    fn factor(&self, p: &Self::Set) -> Option<Factored<Self>> {
+impl FactorableSignature for PolynomialStructure<RationalCanonicalStructure> {
+    fn factor(&self, p: &Self::Set) -> Option<FactoredElement<Self>> {
         factorize_by_factorize_primitive_part(
             &PrincipalSubringInclusion::new(self.coeff_ring().clone()),
             self,

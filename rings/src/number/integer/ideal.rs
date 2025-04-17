@@ -5,11 +5,11 @@ use crate::{
 use algebraeon_nzq::{traits::Abs, *};
 use algebraeon_sets::structure::MetaType;
 
-impl IdealStructure for IntegerCanonicalStructure {
+impl IdealSignature for IntegerCanonicalStructure {
     type Ideal = Natural;
 }
 
-impl IdealArithmeticStructure for IntegerCanonicalStructure {
+impl IdealArithmeticSignature for IntegerCanonicalStructure {
     fn principal_ideal(&self, a: &Self::Set) -> Self::Ideal {
         a.abs()
     }
@@ -35,15 +35,15 @@ impl IdealArithmeticStructure for IntegerCanonicalStructure {
     }
 }
 
-impl PrincipalIdealDomainStructure for IntegerCanonicalStructure {
+impl PrincipalIdealDomainSignature for IntegerCanonicalStructure {
     fn ideal_generator(&self, ideal: &Self::Ideal) -> Self::Set {
         Integer::from(ideal)
     }
 }
 
-impl DedekindDomainStructure for IntegerCanonicalStructure {}
+impl DedekindDomainSignature for IntegerCanonicalStructure {}
 
-impl FactorableIdealsStructure for IntegerCanonicalStructure {
+impl FactorableIdealsSignature for IntegerCanonicalStructure {
     fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>> {
         let f = factor(ideal.clone())?;
         Some(DedekindDomainIdealFactorization::from_factor_powers(

@@ -3,6 +3,7 @@ use super::number_field::*;
 use super::ring_of_integers::*;
 use crate::linear::matrix::Matrix;
 use crate::polynomial::PolynomialStructure;
+use crate::rings::quotient::QuotientStructure;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::*;
@@ -75,7 +76,7 @@ impl
 
     fn integralize_multiplier(
         &self,
-        alpha: &<AlgebraicNumberFieldStructure as SetStructure>::Set,
+        alpha: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
     ) -> Integer {
         if self.k_field().is_algebraic_integer(alpha) {
             Integer::ONE

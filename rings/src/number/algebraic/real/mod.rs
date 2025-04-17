@@ -400,7 +400,7 @@ impl RealAlgebraic {
     }
 }
 
-impl PositiveRealNthRootStructure for RealAlgebraicCanonicalStructure {
+impl PositiveRealNthRootSignature for RealAlgebraicCanonicalStructure {
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
         nth_root(x, n)
     }
@@ -435,13 +435,13 @@ impl Display for RealAlgebraic {
     }
 }
 
-impl ToStringStructure for RealAlgebraicCanonicalStructure {
+impl ToStringSignature for RealAlgebraicCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
 }
 
-impl SemiRingStructure for RealAlgebraicCanonicalStructure {
+impl SemiRingSignature for RealAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(0))
     }
@@ -590,7 +590,7 @@ impl SemiRingStructure for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl RingStructure for RealAlgebraicCanonicalStructure {
+impl RingSignature for RealAlgebraicCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         match a {
             RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
@@ -599,7 +599,7 @@ impl RingStructure for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl UnitsStructure for RealAlgebraicCanonicalStructure {
+impl UnitsSignature for RealAlgebraicCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let mut a = a.clone();
         match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {
@@ -670,7 +670,7 @@ impl UnitsStructure for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl IntegralDomainStructure for RealAlgebraicCanonicalStructure {
+impl IntegralDomainSignature for RealAlgebraicCanonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.inv(b) {
             Ok(b_inv) => Ok(self.mul(a, &b_inv)),
@@ -679,9 +679,9 @@ impl IntegralDomainStructure for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl FieldStructure for RealAlgebraicCanonicalStructure {}
+impl FieldSignature for RealAlgebraicCanonicalStructure {}
 
-impl CharZeroRingStructure for RealAlgebraicCanonicalStructure {
+impl CharZeroRingSignature for RealAlgebraicCanonicalStructure {
     fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
         match alg {
             RealAlgebraic::Rational(rat) => rat.try_to_int(),
@@ -690,17 +690,17 @@ impl CharZeroRingStructure for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl ComplexSubsetStructure for RealAlgebraicCanonicalStructure {}
+impl ComplexSubsetSignature for RealAlgebraicCanonicalStructure {}
 
-impl RealSubsetStructure for RealAlgebraicCanonicalStructure {}
+impl RealSubsetSignature for RealAlgebraicCanonicalStructure {}
 
-impl OrderedRingStructure for RealAlgebraicCanonicalStructure {
+impl OrderedRingSignature for RealAlgebraicCanonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         a.cmp(b)
     }
 }
 
-impl RealToFloatStructure for RealAlgebraicCanonicalStructure {
+impl RealToFloatSignature for RealAlgebraicCanonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         match x {
             RealAlgebraic::Rational(x) => x.as_f64(),
@@ -716,7 +716,7 @@ impl RealToFloatStructure for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl RealRoundingStructure for RealAlgebraicCanonicalStructure {
+impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
     fn floor(&self, _x: &Self::Set) -> Integer {
         todo!()
     }

@@ -2,7 +2,7 @@ use super::*;
 
 // It is helpful for computational reasons to put an ordering on the vectors
 // so that the points of a simplex can be ordered
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> PartialOrd
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> PartialOrd
     for Vector<FS, SP>
 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
@@ -27,7 +27,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
         Some(std::cmp::Ordering::Equal)
     }
 }
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> Ord
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Ord
     for Vector<FS, SP>
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {

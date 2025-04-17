@@ -1,7 +1,5 @@
 use crate::{
-    linear::{linear_subspace::*, matrix::*},
-    polynomial::*,
-    structure::*,
+    linear::{linear_subspace::*, matrix::*}, polynomial::*, rings::quotient::QuotientStructure, structure::*
 };
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
@@ -24,7 +22,7 @@ Cantor–Zassenhaus algorithm does 4.
 
 /// Store a monic factorization
 #[derive(Debug, Clone)]
-pub struct MonicFactored<FS: FieldStructure> {
+pub struct MonicFactored<FS: FieldSignature> {
     poly_ring: PolynomialStructure<FS>,
     unit: FS::Set,              // a unit
     monic: Polynomial<FS::Set>, // a monic polynomial
@@ -32,26 +30,26 @@ pub struct MonicFactored<FS: FieldStructure> {
 
 /// Store a squarefree factorization
 #[derive(Debug, Clone)]
-pub struct SquarefreeFactored<FS: FiniteFieldStructure> {
+pub struct SquarefreeFactored<FS: FiniteFieldSignature> {
     poly_ring: PolynomialStructure<FS>,
     unit: FS::Set,                                           // a unit
     squarefree_factors: Vec<(Polynomial<FS::Set>, Natural)>, // squarefree monic polynomials and their multiplicities
 }
 
 #[derive(Debug, Clone)]
-struct DistinctDegreeFactor<FS: FiniteFieldStructure> {
+struct DistinctDegreeFactor<FS: FiniteFieldSignature> {
     irreducible_factor_degree: usize, // the degree of the irreducible factors
     polynomial: Polynomial<FS::Set>, // a monic squarefree polynomial equal to a product of irreducibles all of the same degree
 }
 /// Store a distinct degree factorization
 #[derive(Debug, Clone)]
-pub struct DistinctDegreeFactored<FS: FiniteFieldStructure> {
+pub struct DistinctDegreeFactored<FS: FiniteFieldSignature> {
     poly_ring: PolynomialStructure<FS>,
     unit: FS::Set, // a unit
     distinct_degree_factors: Vec<(DistinctDegreeFactor<FS>, Natural)>,
 }
 
-impl<FS: FieldStructure> MonicFactored<FS> {
+impl<FS: FieldSignature> MonicFactored<FS> {
     // pub fn factor(poly_ring: PolynomialStructure<FS>, poly: Polynomial<FS::Set>) -> Self {
     //     let (unit, monic) = poly_ring.factor_fav_assoc(&poly);
     //     let unit = poly_ring.as_constant(&unit).unwrap();
@@ -90,7 +88,7 @@ impl<FS: FieldStructure> MonicFactored<FS> {
     }
 }
 
-impl<FS: FiniteFieldStructure> SquarefreeFactored<FS> {
+impl<FS: FiniteFieldSignature> SquarefreeFactored<FS> {
     pub fn unit_unchecked(poly_ring: PolynomialStructure<FS>, unit: FS::Set) -> Self {
         debug_assert!(poly_ring.coeff_ring().is_unit(&unit));
         Self {
@@ -160,7 +158,7 @@ impl<FS: FiniteFieldStructure> SquarefreeFactored<FS> {
     }
 }
 
-impl<FS: FiniteFieldStructure> DistinctDegreeFactored<FS> {
+impl<FS: FiniteFieldSignature> DistinctDegreeFactored<FS> {
     pub fn into_squarefree_factored(self) -> SquarefreeFactored<FS> {
         let squarefree_factors = self
             .distinct_degree_factors
@@ -175,9 +173,9 @@ impl<FS: FiniteFieldStructure> DistinctDegreeFactored<FS> {
     }
 }
 
-impl<FS: FiniteFieldStructure> Factored<PolynomialStructure<FS>>
+impl<FS: FiniteFieldSignature> FactoredElement<PolynomialStructure<FS>>
 where
-    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>> + FactorableStructure,
+    PolynomialStructure<FS>: SetSignature<Set = Polynomial<FS::Set>> + FactorableSignature,
 {
     pub fn into_distinct_degree_factored(self) -> DistinctDegreeFactored<FS> {
         let poly_ring = (*self.ring()).clone();
@@ -203,9 +201,9 @@ where
     }
 }
 
-impl<FS: FieldStructure> PolynomialStructure<FS>
+impl<FS: FieldSignature> PolynomialStructure<FS>
 where
-    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetSignature<Set = Polynomial<FS::Set>>,
 {
     /// monic factorization
     pub fn factorize_monic(&self, poly: &Polynomial<FS::Set>) -> Option<MonicFactored<FS>> {
@@ -225,17 +223,17 @@ where
 
 impl<F: MetaType> Polynomial<F>
 where
-    F::Structure: FiniteFieldStructure,
-    PolynomialStructure<F::Structure>: SetStructure<Set = Polynomial<F>>,
+    F::Signature: FiniteFieldSignature,
+    PolynomialStructure<F::Signature>: SetSignature<Set = Polynomial<F>>,
 {
-    pub fn factorize_monic(&self) -> Option<MonicFactored<F::Structure>> {
+    pub fn factorize_monic(&self) -> Option<MonicFactored<F::Signature>> {
         Self::structure().factorize_monic(self)
     }
 }
 
-impl<FS: FiniteFieldStructure> MonicFactored<FS>
+impl<FS: FiniteFieldSignature> MonicFactored<FS>
 where
-    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetSignature<Set = Polynomial<FS::Set>>,
 {
     /// squarefree factorization
     pub fn factorize_squarefree(&self) -> SquarefreeFactored<FS> {
@@ -276,7 +274,7 @@ where
                     debug_assert!(self.poly_ring.coeff_ring().is_zero(coeff));
                 }
             }
-            let reduced_c: Polynomial<<FS as SetStructure>::Set> =
+            let reduced_c: Polynomial<<FS as SetSignature>::Set> =
                 Polynomial::from_coeffs(reduced_c_coeffs);
             factors.mul(
                 &MonicFactored::new_monic_unchecked(self.poly_ring.clone(), reduced_c)
@@ -288,9 +286,9 @@ where
     }
 }
 
-impl<FS: FiniteFieldStructure> PolynomialStructure<FS>
+impl<FS: FiniteFieldSignature> PolynomialStructure<FS>
 where
-    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetSignature<Set = Polynomial<FS::Set>>,
 {
     fn find_factor_by_berlekamps_algorithm(
         &self,
@@ -357,16 +355,16 @@ where
     }
 }
 
-impl<FS: FiniteFieldStructure> SquarefreeFactored<FS>
+impl<FS: FiniteFieldSignature> SquarefreeFactored<FS>
 where
-    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetSignature<Set = Polynomial<FS::Set>>,
 {
     /// use Berlekamps algorithm for a full factorization from a squarefree
-    pub fn factorize_berlekamps(&self) -> Factored<PolynomialStructure<FS>>
+    pub fn factorize_berlekamps(&self) -> FactoredElement<PolynomialStructure<FS>>
     where
-        PolynomialStructure<FS>: FactorableStructure,
+        PolynomialStructure<FS>: FactorableSignature,
     {
-        let mut factors = Factored::from_unit_and_factor_powers(
+        let mut factors = FactoredElement::from_unit_and_factor_powers(
             self.poly_ring.clone(),
             Polynomial::constant(self.unit.clone()),
             vec![],
@@ -383,9 +381,9 @@ where
     }
 }
 
-impl<FS: FiniteFieldStructure> SquarefreeFactored<FS>
+impl<FS: FiniteFieldSignature> SquarefreeFactored<FS>
 where
-    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetSignature<Set = Polynomial<FS::Set>>,
 {
     /// distinct degree factorization
     pub fn factorize_distinct_degree(&self) -> DistinctDegreeFactored<FS> {
@@ -503,18 +501,18 @@ where
     }
 }
 
-impl<FS: FiniteFieldStructure> DistinctDegreeFactored<FS>
+impl<FS: FiniteFieldSignature> DistinctDegreeFactored<FS>
 where
-    PolynomialStructure<FS>: SetStructure<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS>: SetSignature<Set = Polynomial<FS::Set>>,
 {
     /// Cantor–Zassenhaus algorithm for equal degree factorization
-    pub fn factorize_cantor_zassenhaus(&self) -> Factored<PolynomialStructure<FS>>
+    pub fn factorize_cantor_zassenhaus(&self) -> FactoredElement<PolynomialStructure<FS>>
     where
-        PolynomialStructure<FS>: FactorableStructure,
+        PolynomialStructure<FS>: FactorableSignature,
     {
         let poly_ring = &self.poly_ring;
         let mut fs =
-            Factored::from_unit(poly_ring.clone(), Polynomial::constant(self.unit.clone()));
+            FactoredElement::from_unit(poly_ring.clone(), Polynomial::constant(self.unit.clone()));
         for (ddf, mult) in &self.distinct_degree_factors {
             let d = ddf.irreducible_factor_degree;
             let n = self.poly_ring.degree(&ddf.polynomial).unwrap();
@@ -540,7 +538,7 @@ where
                     .into_iter()
                     .filter_map(|f| {
                         if self.poly_ring.degree(&f).unwrap() == d {
-                            fs.mul_mut(Factored::from_prime(poly_ring.clone(), f).pow(mult));
+                            fs.mul_mut(FactoredElement::from_prime(poly_ring.clone(), f).pow(mult));
                             None
                         } else {
                             Some(f)
@@ -614,7 +612,7 @@ mod tests {
         let p = (x.pow(3) + x.pow(2) + 2) * (x.pow(3) + 2 * x.pow(2) + 1);
         let p = p.into_verbose();
 
-        assert!(Factored::equal(
+        assert!(FactoredElement::equal(
             &p.factorize_monic()
                 .unwrap()
                 .factorize_squarefree()
@@ -633,7 +631,7 @@ mod tests {
         let p = (x.pow(3) + x.pow(2) + 2) * (x.pow(3) + 2 * x.pow(2) + 1);
         let p = p.into_verbose();
 
-        assert!(Factored::equal(
+        assert!(FactoredElement::equal(
             &p.factorize_monic()
                 .unwrap()
                 .factorize_squarefree()
@@ -650,7 +648,7 @@ mod tests {
     fn test_factorize_over_f2_example1() {
         let x = &Polynomial::<Modulo<2>>::var().into_ergonomic();
         let p = (1 + x.pow(4) + x.pow(5)).pow(12).into_verbose();
-        let ans = Factored::from_unit_and_factor_powers(
+        let ans = FactoredElement::from_unit_and_factor_powers(
             Polynomial::<Modulo<2>>::structure().into(),
             Polynomial::one(),
             vec![
@@ -661,7 +659,7 @@ mod tests {
 
         let f = p.factorize_by_trying_all_factors().unwrap();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
 
         let f = p
             .factorize_monic()
@@ -669,7 +667,7 @@ mod tests {
             .factorize_squarefree()
             .factorize_berlekamps();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
     }
 
     #[test]
@@ -677,7 +675,7 @@ mod tests {
         let x = &Polynomial::<Modulo<2>>::var().into_ergonomic();
         let p =
             ((1 + x.pow(4) + x.pow(7)).pow(6) * (1 + x.pow(6) + x.pow(7)).pow(4)).into_verbose();
-        let ans = Factored::from_unit_and_factor_powers(
+        let ans = FactoredElement::from_unit_and_factor_powers(
             Polynomial::<Modulo<2>>::structure().into(),
             Polynomial::one(),
             vec![
@@ -694,7 +692,7 @@ mod tests {
 
         let f = p.factorize_by_trying_all_factors().unwrap();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
 
         let f = p
             .factorize_monic()
@@ -702,14 +700,14 @@ mod tests {
             .factorize_squarefree()
             .factorize_berlekamps();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
     }
 
     #[test]
     fn test_factorize_over_f5_example1() {
         let x = &Polynomial::<Modulo<5>>::var().into_ergonomic();
         let p = (1 + x.pow(4)).pow(5).into_verbose();
-        let ans = Factored::from_unit_and_factor_powers(
+        let ans = FactoredElement::from_unit_and_factor_powers(
             Polynomial::<Modulo<5>>::structure().into(),
             Polynomial::one(),
             vec![
@@ -720,7 +718,7 @@ mod tests {
 
         let f = p.factorize_by_trying_all_factors().unwrap();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
 
         let f = p
             .factorize_monic()
@@ -728,14 +726,14 @@ mod tests {
             .factorize_squarefree()
             .factorize_berlekamps();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
     }
 
     #[test]
     fn test_factorize_over_f5_example2() {
         let x = &Polynomial::<Modulo<5>>::var().into_ergonomic();
         let p = (3 + 2 * x.pow(2) + x.pow(4) + x.pow(6)).into_verbose();
-        let ans = Factored::from_unit_and_factor_powers(
+        let ans = FactoredElement::from_unit_and_factor_powers(
             Polynomial::<Modulo<5>>::structure().into(),
             Polynomial::one(),
             vec![((2 + x.pow(2)).into_verbose(), Natural::from(3u8))],
@@ -743,7 +741,7 @@ mod tests {
 
         let f = p.factorize_by_trying_all_factors().unwrap();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
 
         let f = p
             .factorize_monic()
@@ -751,14 +749,14 @@ mod tests {
             .factorize_squarefree()
             .factorize_berlekamps();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
     }
 
     #[test]
     fn test_factorize_over_f31_example1() {
         let x = &Polynomial::<Modulo<31>>::var().into_ergonomic();
         let p = (1 + x.pow(27) + 8 * x.pow(30)).into_verbose();
-        let ans = Factored::from_unit_and_factor_powers(
+        let ans = FactoredElement::from_unit_and_factor_powers(
             Polynomial::<Modulo<31>>::structure().into(),
             Polynomial::constant(Modulo::from_int(Integer::from(8))),
             vec![
@@ -798,7 +796,7 @@ mod tests {
             .factorize_squarefree()
             .factorize_berlekamps();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
     }
 
     #[test]
@@ -809,7 +807,7 @@ mod tests {
         let b = x - Polynomial::constant(QuaternaryField::Alpha).into_ergonomic();
         let c = x - Polynomial::constant(QuaternaryField::Beta).into_ergonomic();
         let p = (1 - x.pow(3)).pow(48).into_verbose();
-        let ans = Factored::from_unit_and_factor_powers(
+        let ans = FactoredElement::from_unit_and_factor_powers(
             Polynomial::<QuaternaryField>::structure().into(),
             Polynomial::one(),
             vec![
@@ -821,7 +819,7 @@ mod tests {
 
         let f = p.factorize_by_trying_all_factors().unwrap();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
 
         let f = p
             .factorize_monic()
@@ -829,6 +827,6 @@ mod tests {
             .factorize_squarefree()
             .factorize_berlekamps();
         println!("{} = {}", p, f);
-        assert!(Factored::equal(&f, &ans));
+        assert!(FactoredElement::equal(&f, &ans));
     }
 }

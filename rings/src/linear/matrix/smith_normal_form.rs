@@ -1,6 +1,6 @@
 use super::*;
 
-impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
+impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
     //return (u, s, v, k) such that self = usv and s is in smith normal form (with diagonal entries their favorite associates) and u, v are invertible and k is the number of non-zero elements in the diagonal of s
     pub fn smith_algorithm(
         &self,
@@ -281,7 +281,7 @@ impl<RS: BezoutDomainStructure> MatrixStructure<RS> {
 
 impl<R: MetaType> Matrix<R>
 where
-    R::Structure: BezoutDomainStructure,
+    R::Signature: BezoutDomainSignature,
 {
     pub fn smith_algorithm(&self) -> (Self, Self, Self, usize) {
         Self::structure().smith_algorithm(self.clone())

@@ -7,10 +7,10 @@ use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct FieldOfFractionsInclusionForIntegralClosure<
-    Z: IntegralDomainStructure,
-    Q: FieldStructure,
-    R: IntegralDomainStructure,
-    K: FieldStructure,
+    Z: IntegralDomainSignature,
+    Q: FieldSignature,
+    R: IntegralDomainSignature,
+    K: FieldSignature,
     ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
@@ -29,10 +29,10 @@ struct FieldOfFractionsInclusionForIntegralClosure<
 }
 
 impl<
-    Z: IntegralDomainStructure,
-    Q: FieldStructure,
-    R: IntegralDomainStructure,
-    K: FieldStructure,
+    Z: IntegralDomainSignature,
+    Q: FieldSignature,
+    R: IntegralDomainSignature,
+    K: FieldSignature,
     ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
@@ -56,10 +56,10 @@ impl<
 }
 
 impl<
-    Z: IntegralDomainStructure,
-    Q: FieldStructure,
-    R: IntegralDomainStructure,
-    K: FieldStructure,
+    Z: IntegralDomainSignature,
+    Q: FieldSignature,
+    R: IntegralDomainSignature,
+    K: FieldSignature,
     ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
@@ -77,10 +77,10 @@ impl<
 }
 
 impl<
-    Z: IntegralDomainStructure,
-    Q: FieldStructure,
-    R: IntegralDomainStructure,
-    K: FieldStructure,
+    Z: IntegralDomainSignature,
+    Q: FieldSignature,
+    R: IntegralDomainSignature,
+    K: FieldSignature,
     ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
@@ -94,10 +94,10 @@ impl<
 }
 
 impl<
-    Z: IntegralDomainStructure,
-    Q: FieldStructure,
-    R: IntegralDomainStructure,
-    K: FieldStructure,
+    Z: IntegralDomainSignature,
+    Q: FieldSignature,
+    R: IntegralDomainSignature,
+    K: FieldSignature,
     ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
@@ -112,10 +112,10 @@ impl<
 }
 
 impl<
-    Z: IntegralDomainStructure,
-    Q: FieldStructure,
-    R: IntegralDomainStructure,
-    K: FieldStructure,
+    Z: IntegralDomainSignature,
+    Q: FieldSignature,
+    R: IntegralDomainSignature,
+    K: FieldSignature,
     ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
@@ -127,10 +127,10 @@ impl<
 }
 
 impl<
-    Z: IntegralDomainStructure,
-    Q: FieldStructure,
-    R: IntegralDomainStructure,
-    K: FieldStructure,
+    Z: IntegralDomainSignature,
+    Q: FieldSignature,
+    R: IntegralDomainSignature,
+    K: FieldSignature,
     ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
@@ -168,10 +168,10 @@ impl<
 ///
 /// This trait expresses that R is the integral closure of Z in K
 pub trait IntegralClosureExtension<
-    Z: IntegralDomainStructure,
-    Q: FieldStructure,
-    R: IntegralDomainStructure,
-    K: FieldStructure,
+    Z: IntegralDomainSignature,
+    Q: FieldSignature,
+    R: IntegralDomainSignature,
+    K: FieldSignature,
     ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
@@ -253,10 +253,10 @@ pub trait IntegralClosureExtension<
 ///
 /// This trait allows, for each prime ideal p of Z, the ideal pR of R to be factored into prime ideals in R
 pub trait DedekindDomainExtension<
-    Z: DedekindDomainStructure,
-    Q: FieldStructure,
-    R: DedekindDomainStructure,
-    K: FieldStructure,
+    Z: DedekindDomainSignature,
+    Q: FieldSignature,
+    R: DedekindDomainSignature,
+    K: FieldSignature,
     ZQ: FieldOfFractionsInclusion<Z, Q>,
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
@@ -274,7 +274,7 @@ pub trait DedekindDomainExtension<
 }
 
 #[derive(Debug, Clone)]
-pub struct DedekindExtensionIdealFactorsAbovePrimeFactor<R: DedekindDomainStructure> {
+pub struct DedekindExtensionIdealFactorsAbovePrimeFactor<R: DedekindDomainSignature> {
     pub prime_ideal: DedekindDomainPrimeIdeal<R>,
     pub residue_class_degree: usize,
     pub power: Natural,
@@ -282,8 +282,8 @@ pub struct DedekindExtensionIdealFactorsAbovePrimeFactor<R: DedekindDomainStruct
 
 #[derive(Debug, Clone)]
 pub struct DedekindExtensionIdealFactorsAbovePrime<
-    Z: DedekindDomainStructure,
-    R: DedekindDomainStructure,
+    Z: DedekindDomainSignature,
+    R: DedekindDomainSignature,
 > {
     ring: R,
     base_prime: DedekindDomainPrimeIdeal<Z>,
@@ -292,7 +292,7 @@ pub struct DedekindExtensionIdealFactorsAbovePrime<
     factors: Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R>>,
 }
 
-impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
+impl<Z: DedekindDomainSignature, R: DedekindDomainSignature>
     DedekindExtensionIdealFactorsAbovePrime<Z, R>
 {
     pub fn from_powers_unchecked(
@@ -355,15 +355,15 @@ impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
 
 #[derive(Debug, Clone)]
 pub struct DedekindExtensionIdealFactorization<
-    Z: DedekindDomainStructure,
-    R: DedekindDomainStructure,
+    Z: DedekindDomainSignature,
+    R: DedekindDomainSignature,
 > {
     ring: R,
     // Each should be above a different prime
     factors_above_primes: Vec<DedekindExtensionIdealFactorsAbovePrime<Z, R>>,
 }
 
-impl<Z: DedekindDomainStructure, R: DedekindDomainStructure>
+impl<Z: DedekindDomainSignature, R: DedekindDomainSignature>
     DedekindExtensionIdealFactorization<Z, R>
 {
     pub fn from_ideal_factors_above_primes(

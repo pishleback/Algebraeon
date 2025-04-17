@@ -580,13 +580,13 @@ impl Display for ComplexAlgebraic {
     }
 }
 
-impl ToStringStructure for ComplexAlgebraicCanonicalStructure {
+impl ToStringSignature for ComplexAlgebraicCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
 }
 
-impl SemiRingStructure for ComplexAlgebraicCanonicalStructure {
+impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
     }
@@ -797,7 +797,7 @@ impl SemiRingStructure for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl RingStructure for ComplexAlgebraicCanonicalStructure {
+impl RingSignature for ComplexAlgebraicCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         match a {
             ComplexAlgebraic::Real(root) => ComplexAlgebraic::Real(RealAlgebraic::neg(root)),
@@ -806,7 +806,7 @@ impl RingStructure for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl UnitsStructure for ComplexAlgebraicCanonicalStructure {
+impl UnitsSignature for ComplexAlgebraicCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         // println!("inv {:?}", a);
         // a.check_invariants().unwrap();
@@ -918,15 +918,15 @@ impl UnitsStructure for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl IntegralDomainStructure for ComplexAlgebraicCanonicalStructure {
+impl IntegralDomainSignature for ComplexAlgebraicCanonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         Ok(self.mul(a, &self.inv(b)?))
     }
 }
 
-impl FieldStructure for ComplexAlgebraicCanonicalStructure {}
+impl FieldSignature for ComplexAlgebraicCanonicalStructure {}
 
-impl CharZeroRingStructure for ComplexAlgebraicCanonicalStructure {
+impl CharZeroRingSignature for ComplexAlgebraicCanonicalStructure {
     fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
         match alg {
             ComplexAlgebraic::Real(real_alg) => real_alg.try_to_int(),
@@ -935,9 +935,9 @@ impl CharZeroRingStructure for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl ComplexSubsetStructure for ComplexAlgebraicCanonicalStructure {}
+impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {}
 
-impl ComplexConjugateStructure for ComplexAlgebraicCanonicalStructure {
+impl ComplexConjugateSignature for ComplexAlgebraicCanonicalStructure {
     fn conjugate(&self, x: &Self::Set) -> Self::Set {
         match x {
             ComplexAlgebraic::Real(x) => ComplexAlgebraic::Real(x.clone()),
@@ -946,7 +946,7 @@ impl ComplexConjugateStructure for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl PositiveRealNthRootStructure for ComplexAlgebraicCanonicalStructure {
+impl PositiveRealNthRootSignature for ComplexAlgebraicCanonicalStructure {
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
         match x {
             ComplexAlgebraic::Real(x) => Ok(ComplexAlgebraic::Real(x.nth_root(n)?)),

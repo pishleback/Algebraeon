@@ -688,9 +688,9 @@ pub mod structure {
         p: Natural,
     }
 
-    impl Structure for PAdicAlgebraicStructure {}
+    impl Signature for PAdicAlgebraicStructure {}
 
-    impl SetStructure for PAdicAlgebraicStructure {
+    impl SetSignature for PAdicAlgebraicStructure {
         type Set = PAdicAlgebraic;
 
         fn is_element(&self, x: &Self::Set) -> bool {
@@ -707,7 +707,7 @@ pub mod structure {
         }
     }
 
-    impl EqStructure for PAdicAlgebraicStructure {
+    impl EqSignature for PAdicAlgebraicStructure {
         fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
             debug_assert!(self.is_element(a));
             debug_assert!(self.is_element(b));
@@ -724,7 +724,7 @@ pub mod structure {
         }
     }
 
-    impl SemiRingStructure for PAdicAlgebraicStructure {
+    impl SemiRingSignature for PAdicAlgebraicStructure {
         fn zero(&self) -> Self::Set {
             PAdicAlgebraic::Rational(PAdicRational {
                 p: self.p.clone(),
@@ -777,14 +777,14 @@ pub mod structure {
         }
     }
 
-    impl RingStructure for PAdicAlgebraicStructure {
+    impl RingSignature for PAdicAlgebraicStructure {
         fn neg(&self, a: &Self::Set) -> Self::Set {
             debug_assert!(self.is_element(a));
             a.clone().neg()
         }
     }
 
-    impl UnitsStructure for PAdicAlgebraicStructure {
+    impl UnitsSignature for PAdicAlgebraicStructure {
         fn inv(&self, a: &PAdicAlgebraic) -> Result<PAdicAlgebraic, RingDivisionError> {
             debug_assert!(self.is_element(a));
             match a {
@@ -794,7 +794,7 @@ pub mod structure {
         }
     }
 
-    impl IntegralDomainStructure for PAdicAlgebraicStructure {
+    impl IntegralDomainSignature for PAdicAlgebraicStructure {
         fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
             debug_assert!(self.is_element(a));
             debug_assert!(self.is_element(b));
@@ -818,7 +818,7 @@ pub mod structure {
         }
     }
 
-    impl FieldStructure for PAdicAlgebraicStructure {}
+    impl FieldSignature for PAdicAlgebraicStructure {}
 
     #[cfg(test)]
     mod tests {

@@ -1,9 +1,7 @@
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
 use algebraeon_sets::structure::MetaType;
-
 use crate::{
-    number::natural::factorization::{factor, primes::is_prime},
-    structure::{FactoredAbstract, MetaFactorableStructure, QuotientStructure, SemiRingStructure},
+    number::natural::factorization::{factor, primes::is_prime}, rings::quotient::QuotientStructure, structure::{Factored, MetaFactorableSignature, SemiRingSignature}
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

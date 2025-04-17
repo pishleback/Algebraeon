@@ -122,9 +122,9 @@ impl<const N: usize> Display for Modulo<N> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModuloCanonicalStructure<const N: usize> {}
 
-impl<const N: usize> Structure for ModuloCanonicalStructure<N> {}
+impl<const N: usize> Signature for ModuloCanonicalStructure<N> {}
 
-impl<const N: usize> SetStructure for ModuloCanonicalStructure<N> {
+impl<const N: usize> SetSignature for ModuloCanonicalStructure<N> {
     type Set = Modulo<N>;
 
     fn is_element(&self, _x: &Self::Set) -> bool {
@@ -133,26 +133,26 @@ impl<const N: usize> SetStructure for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> MetaType for Modulo<N> {
-    type Structure = ModuloCanonicalStructure<N>;
+    type Signature = ModuloCanonicalStructure<N>;
 
-    fn structure() -> Self::Structure {
+    fn structure() -> Self::Signature {
         ModuloCanonicalStructure {}
     }
 }
 
-impl<const N: usize> EqStructure for ModuloCanonicalStructure<N> {
+impl<const N: usize> EqSignature for ModuloCanonicalStructure<N> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
 
-impl<const N: usize> ToStringStructure for ModuloCanonicalStructure<N> {
+impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
 }
 
-impl<const N: usize> SemiRingStructure for ModuloCanonicalStructure<N> {
+impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {
     fn zero(&self) -> Self::Set {
         Modulo { x: 0 }
     }
@@ -176,7 +176,7 @@ impl<const N: usize> SemiRingStructure for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> RingStructure for ModuloCanonicalStructure<N> {
+impl<const N: usize> RingSignature for ModuloCanonicalStructure<N> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         if a.x == 0 {
             Modulo { x: 0 }
@@ -186,7 +186,7 @@ impl<const N: usize> RingStructure for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> UnitsStructure for ModuloCanonicalStructure<N> {
+impl<const N: usize> UnitsSignature for ModuloCanonicalStructure<N> {
     fn inv(&self, x: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if x == &self.zero() {
             Err(RingDivisionError::DivideByZero)
@@ -202,13 +202,13 @@ impl<const N: usize> UnitsStructure for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> CountableSetStructure for ModuloCanonicalStructure<N> {
+impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         (0..N).map(|n| Modulo::new(n))
     }
 }
 
-impl<const N: usize> FiniteSetStructure for ModuloCanonicalStructure<N> {
+impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
     fn size(&self) -> usize {
         N
     }
@@ -216,7 +216,7 @@ impl<const N: usize> FiniteSetStructure for ModuloCanonicalStructure<N> {
 
 macro_rules! impl_field {
     ($N: literal) => {
-        impl IntegralDomainStructure for ModuloCanonicalStructure<$N> {
+        impl IntegralDomainSignature for ModuloCanonicalStructure<$N> {
             fn div(
                 &self,
                 top: &Self::Set,
@@ -228,8 +228,8 @@ macro_rules! impl_field {
                 }
             }
         }
-        impl FieldStructure for ModuloCanonicalStructure<$N> {}
-        impl FiniteUnitsStructure for ModuloCanonicalStructure<$N> {
+        impl FieldSignature for ModuloCanonicalStructure<$N> {}
+        impl FiniteUnitsSignature for ModuloCanonicalStructure<$N> {
             fn all_units(&self) -> Vec<Modulo<$N>> {
                 let mut units = vec![];
                 for x in 1..$N {
@@ -238,7 +238,7 @@ macro_rules! impl_field {
                 units
             }
         }
-        impl FiniteFieldStructure for ModuloCanonicalStructure<$N> {
+        impl FiniteFieldSignature for ModuloCanonicalStructure<$N> {
             fn characteristic_and_power(&self) -> (Natural, Natural) {
                 (Natural::from($N as usize), Natural::from(1u8))
             }

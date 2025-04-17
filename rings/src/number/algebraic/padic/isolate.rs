@@ -1,5 +1,6 @@
+use crate::rings::quotient::QuotientStructure;
+
 use super::*;
-use crate::structure::QuotientStructure;
 use algebraeon_sets::structure::MetaType;
 use std::collections::HashSet;
 

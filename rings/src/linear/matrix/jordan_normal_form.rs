@@ -1,19 +1,19 @@
 use super::*;
 
 #[derive(Debug, Clone)]
-pub struct JordanBlock<FS: AlgebraicClosureStructure>
+pub struct JordanBlock<FS: AlgebraicClosureSignature>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
+        FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     eigenvalue: FS::Set,
     blocksize: usize,
 }
 
-impl<FS: AlgebraicClosureStructure> JordanBlock<FS>
+impl<FS: AlgebraicClosureSignature> JordanBlock<FS>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
+        FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn matrix(&self, field: &FS) -> Matrix<FS::Set> {
         // let base_field = field.base_field();
@@ -30,19 +30,19 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct JordanNormalForm<FS: AlgebraicClosureStructure>
+pub struct JordanNormalForm<FS: AlgebraicClosureSignature>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
+        FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     field: FS,
     blocks: Vec<JordanBlock<FS>>,
 }
 
-impl<FS: AlgebraicClosureStructure> JordanNormalForm<FS>
+impl<FS: AlgebraicClosureSignature> JordanNormalForm<FS>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
+        FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn matrix(&self) -> Matrix<FS::Set> {
         let ac_mat_structure = MatrixStructure::new(self.field.clone());
@@ -55,12 +55,12 @@ where
     }
 }
 
-impl<FS: AlgebraicClosureStructure> MatrixStructure<FS>
+impl<FS: AlgebraicClosureSignature> MatrixStructure<FS>
 where
     PolynomialStructure<FS::BFS>:
-        FactorableStructure + SetStructure<Set = Polynomial<<FS::BFS as SetStructure>::Set>>,
+        FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
-    pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetStructure>::Set>) -> Vec<FS::Set> {
+    pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetSignature>::Set>) -> Vec<FS::Set> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
         self.ring()
             .all_roots_list(
@@ -71,7 +71,7 @@ where
             .unwrap()
     }
 
-    pub fn eigenvalues_unique(&self, mat: Matrix<<FS::BFS as SetStructure>::Set>) -> Vec<FS::Set> {
+    pub fn eigenvalues_unique(&self, mat: Matrix<<FS::BFS as SetSignature>::Set>) -> Vec<FS::Set> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
         self.ring()
             .all_roots_unique(
@@ -84,7 +84,7 @@ where
 
     pub fn eigenvalues_powers(
         &self,
-        mat: Matrix<<FS::BFS as SetStructure>::Set>,
+        mat: Matrix<<FS::BFS as SetSignature>::Set>,
     ) -> Vec<(FS::Set, usize)> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
         self.ring()
@@ -98,7 +98,7 @@ where
 
     pub fn generalized_col_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
+        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
         k: usize,
     ) -> LinearSubspace<FS::Set> {
@@ -121,7 +121,7 @@ where
 
     pub fn generalized_row_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
+        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
         k: usize,
     ) -> LinearSubspace<FS::Set> {
@@ -131,7 +131,7 @@ where
 
     pub fn col_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
+        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
     ) -> LinearSubspace<FS::Set> {
         self.generalized_col_eigenspace(mat, eigenvalue, 1)
@@ -139,7 +139,7 @@ where
 
     pub fn row_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
+        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
     ) -> LinearSubspace<FS::Set> {
         self.generalized_row_eigenspace(mat, eigenvalue, 1)
@@ -149,7 +149,7 @@ where
     // B^-1 M B = J
     pub fn jordan_algorithm(
         &self,
-        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
+        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
     ) -> (JordanNormalForm<FS>, Matrix<FS::Set>) {
         let n = mat.rows();
         assert_eq!(n, mat.cols());
@@ -378,7 +378,7 @@ where
 
     pub fn jordan_normal_form(
         &self,
-        mat: &Matrix<<FS::BFS as SetStructure>::Set>,
+        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
     ) -> Matrix<FS::Set> {
         self.jordan_algorithm(mat).0.matrix()
     }

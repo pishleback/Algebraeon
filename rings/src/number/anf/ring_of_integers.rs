@@ -211,9 +211,9 @@ impl RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl Structure for RingOfIntegersWithIntegralBasisStructure {}
+impl Signature for RingOfIntegersWithIntegralBasisStructure {}
 
-impl SetStructure for RingOfIntegersWithIntegralBasisStructure {
+impl SetSignature for RingOfIntegersWithIntegralBasisStructure {
     type Set = RingOfIntegersWithIntegralBasisElement;
 
     fn is_element(&self, x: &Self::Set) -> bool {
@@ -221,13 +221,13 @@ impl SetStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl EqStructure for RingOfIntegersWithIntegralBasisStructure {
+impl EqSignature for RingOfIntegersWithIntegralBasisStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 }
 
-impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
+impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
     fn zero(&self) -> Self::Set {
         let coefficients = vec![Integer::ZERO; self.degree()];
         RingOfIntegersWithIntegralBasisElement { coefficients }
@@ -295,13 +295,13 @@ impl SemiRingStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl RingStructure for RingOfIntegersWithIntegralBasisStructure {
+impl RingSignature for RingOfIntegersWithIntegralBasisStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         a.neg_ref()
     }
 }
 
-impl UnitsStructure for RingOfIntegersWithIntegralBasisStructure {
+impl UnitsSignature for RingOfIntegersWithIntegralBasisStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
         if self.is_zero(a) {
             Err(RingDivisionError::DivideByZero)
@@ -320,7 +320,7 @@ impl UnitsStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl IntegralDomainStructure for RingOfIntegersWithIntegralBasisStructure {
+impl IntegralDomainSignature for RingOfIntegersWithIntegralBasisStructure {
     fn div(
         &self,
         a: &Self::Set,
@@ -333,7 +333,7 @@ impl IntegralDomainStructure for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl CharZeroRingStructure for RingOfIntegersWithIntegralBasisStructure {
+impl CharZeroRingSignature for RingOfIntegersWithIntegralBasisStructure {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
         self.anf().try_to_int(&self.roi_to_anf(x))
     }
@@ -378,8 +378,8 @@ impl Function<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStru
 {
     fn image(
         &self,
-        x: &<RingOfIntegersWithIntegralBasisStructure as SetStructure>::Set,
-    ) -> <AlgebraicNumberFieldStructure as SetStructure>::Set {
+        x: &<RingOfIntegersWithIntegralBasisStructure as SetSignature>::Set,
+    ) -> <AlgebraicNumberFieldStructure as SetSignature>::Set {
         self.roi.roi_to_anf(x)
     }
 }
@@ -389,8 +389,8 @@ impl InjectiveFunction<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumber
 {
     fn try_preimage(
         &self,
-        x: &<AlgebraicNumberFieldStructure as SetStructure>::Set,
-    ) -> Option<<RingOfIntegersWithIntegralBasisStructure as SetStructure>::Set> {
+        x: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
+    ) -> Option<<RingOfIntegersWithIntegralBasisStructure as SetSignature>::Set> {
         self.roi.try_anf_to_roi(x)
     }
 }

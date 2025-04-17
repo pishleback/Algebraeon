@@ -15,7 +15,7 @@ use std::{
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
 pub struct Rational(malachite_q::Rational);
 
-impl ToStringStructure for RationalCanonicalStructure {
+impl ToStringSignature for RationalCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
@@ -501,7 +501,7 @@ impl Rational {
     }
 }
 
-impl CountableSetStructure for RationalCanonicalStructure {
+impl CountableSetSignature for RationalCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         use malachite_q::exhaustive::exhaustive_rationals;
         exhaustive_rationals()
