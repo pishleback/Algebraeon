@@ -417,8 +417,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::rings::isolated_algebraic::complex::ComplexAlgebraic;
     use super::*;
+    use crate::rings::isolated_algebraic::complex::ComplexAlgebraic;
 
     #[test]
     fn jordan_normal_form() {
