@@ -2,8 +2,8 @@ use super::number_field::AlgebraicNumberFieldStructure;
 use crate::rings::isolated_algebraic::complex::ComplexAlgebraicCanonicalStructure;
 use crate::structure::*;
 use crate::{
-    rings::isolated_algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
     polynomial::*,
+    rings::isolated_algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
 };
 use algebraeon_nzq::traits::Fraction;
 use algebraeon_nzq::*;
