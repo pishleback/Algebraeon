@@ -4,7 +4,7 @@ use super::*;
 
 #[derive(Clone)]
 pub struct SCSpxInfo<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
     T: Eq + Clone,
 > {
@@ -12,7 +12,7 @@ pub struct SCSpxInfo<
     label: T,
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     std::fmt::Debug for SCSpxInfo<FS, SP, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -24,7 +24,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 
 #[derive(Clone)]
 pub struct LabelledSimplicialComplex<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
     T: Eq + Clone,
 > {
@@ -34,7 +34,7 @@ pub struct LabelledSimplicialComplex<
 
 pub type SimplicialComplex<FS, SP> = LabelledSimplicialComplex<FS, SP, ()>;
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     std::fmt::Debug for LabelledSimplicialComplex<FS, SP, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -44,7 +44,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     LabelledSimplexCollection<FS, SP, T> for LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
@@ -128,7 +128,7 @@ where
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
@@ -162,7 +162,7 @@ where
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     SimplicialComplex<FS, SP>
 where
     FS::Set: Hash,
@@ -251,7 +251,7 @@ Output:
 
 */
 fn simplify_in_region<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 >(
     space: SP,
@@ -315,7 +315,7 @@ where
     None
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     LabelledSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,

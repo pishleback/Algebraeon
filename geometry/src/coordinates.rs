@@ -5,12 +5,12 @@ use std::hash::Hash;
 use super::*;
 
 #[derive(Clone)]
-pub struct Vector<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> {
+pub struct Vector<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> {
     ambient_space: SP,
     coordinates: Vec<FS::Set>, //length equal to ambient_space.dimension()
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> std::fmt::Debug
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> std::fmt::Debug
     for Vector<FS, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -20,7 +20,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> std
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> PartialEq
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> PartialEq
     for Vector<FS, SP>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -38,9 +38,9 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Par
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Eq for Vector<FS, SP> {}
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Eq for Vector<FS, SP> {}
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Hash for Vector<FS, SP>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Hash for Vector<FS, SP>
 where
     FS::Set: Hash,
 {
@@ -50,7 +50,7 @@ where
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Vector<FS, SP> {
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Vector<FS, SP> {
     pub fn new(ambient_space: SP, coordinates: Vec<FS::Set>) -> Self {
         assert_eq!(
             ambient_space.borrow().linear_dimension().unwrap(),
@@ -115,7 +115,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>>> Vec
 }
 
 // -&vector
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::ops::Neg
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::ops::Neg
     for &Vector<FS, SP>
 {
     type Output = Vector<FS, SP>;
@@ -133,7 +133,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 // &vector + &vector
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     std::ops::Add<&Vector<FS, SP>> for &Vector<FS, SP>
 {
     type Output = Vector<FS, SP>;
@@ -161,7 +161,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 // mut vector += &vector
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     std::ops::AddAssign<&Vector<FS, SP>> for Vector<FS, SP>
 {
     fn add_assign(&mut self, other: &Vector<FS, SP>) {
@@ -181,7 +181,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 // &vector - &vector
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     std::ops::Sub<&Vector<FS, SP>> for &Vector<FS, SP>
 {
     type Output = Vector<FS, SP>;
@@ -192,7 +192,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 // &vector * &scalar
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     Vector<FS, SP>
 {
     pub fn scalar_mul(&self, other: &FS::Set) -> Vector<FS, SP> {

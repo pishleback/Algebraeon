@@ -26,7 +26,7 @@ impl Integer {
     }
 }
 
-impl ToStringStructure for IntegerCanonicalStructure {
+impl ToStringSignature for IntegerCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
@@ -512,7 +512,7 @@ impl AbsDiff<&Integer> for &Integer {
     }
 }
 
-impl CountableSetStructure for IntegerCanonicalStructure {
+impl CountableSetSignature for IntegerCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         use malachite_nz::integer::exhaustive::exhaustive_integers;
         exhaustive_integers()

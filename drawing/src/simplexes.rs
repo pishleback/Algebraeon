@@ -1,7 +1,7 @@
 use std::borrow::Borrow;
 
 use crate::canvas::canvas2d::Drawable;
-use algebraeon_rings::structure::{FieldStructure, OrderedRingStructure, RealToFloatStructure};
+use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature, RealToFloatSignature};
 
 use algebraeon_geometry::{
     AffineSpace,
@@ -12,7 +12,7 @@ use algebraeon_geometry::{
 };
 
 impl<
-    FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+    FS: OrderedRingSignature + FieldSignature + RealToFloatSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > Drawable for Simplex<FS, SP>
 {
@@ -70,7 +70,7 @@ impl<
 }
 
 impl<
-    FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+    FS: OrderedRingSignature + FieldSignature + RealToFloatSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
     T: Eq + Clone,
 > Drawable for LabelledSimplicialComplex<FS, SP, T>
@@ -85,7 +85,7 @@ where
 }
 
 impl<
-    FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+    FS: OrderedRingSignature + FieldSignature + RealToFloatSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > Drawable for PartialSimplicialComplex<FS, SP>
 where
@@ -99,7 +99,7 @@ where
 }
 
 impl<
-    FS: OrderedRingStructure + FieldStructure + RealToFloatStructure,
+    FS: OrderedRingSignature + FieldSignature + RealToFloatSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
     T: Eq + Clone,
 > Drawable for LabelledSimplicialDisjointUnion<FS, SP, T>

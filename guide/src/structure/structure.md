@@ -2,89 +2,81 @@
 
 ## Motivation
 
-In mathematics there are many instances of sets of sets with some additional structure (think the set of all groups) and often these sets of sets are parameterized by other sets. For example the set of integers modulo \\(n\\) is defined for every natural number \\(n \in \mathbb{N}\\) and has the structure of a commutative ring. A mathematician would like to think that there exists infinitely many types, \\(\frac{\mathbb{Z}}{n \mathbb{Z}}\\), one for each natural number \\(n\\). However, in the world of Rust we now have a problem since it is not in general possible (except in simple cases, for example by using generics) to define infinitely many types, one for each instance of some mathematical set. 
-
-The solution Algebraeon takes for this problem is structure types - types whose objects represent sets with additional structure. The structure given by a structure type is determined by the structure traits it implements. A non-exhaustive list of structure traits is as follows:
- - `Structure`: This is the base trait for structure types. All structure types implement `Structure`.
- - `SetStructure: Structure`: Objects are sets whose elements are objects of the associated type `Set`.
- - `EqStructure: SetStructure`: It is possible to compare elements for equality.
- - `FiniteSetStructure : SetStructure`: Objects are finite sets. There is a way to obtain a `Vec<Set>` containing all the elements.
- - `RingStructure: SetStructure`: Objects are commutative rings and there are functions for doing ring operations (addition, subtraction, multiplication) with elements.
- - `FieldStructure: RingStructure`: Objects are fields and there are functions for doing field operations (addition, subtraction, multiplication, division) with elements.
-
-## Example: Ring Structure on the Integers Modulo \\(n\\)
-
-An example of using Algebraeon to define the ring structure on the set of integers modulo \\(n \in \mathbb{N}\\) is below.
+In mathematics there are many instances of sets with some additional structure, for example:
+ - The set of integers with its ordered ring structure.
+ - The set of rational numbers with its ordered field structure.
+ - For each natural number \\(n \in \mathbb{N}\\), the finite set of integers modulo \\(n\\) with its ring structure.
+ - The set of all algebraic numbers in \\(\mathbb{C}\\) with its field structure.
+ - The set of all ideals in a ring with the operations of ideal addition, ideal intersection, and ideal multiplication. Depending on the ring, ideals may be uniquely factorable as a product of prime ideals.
+ - 
+The approach taken by Algebraeon to represent such sets with additional structure is well illustrated by the example of the ring of integers modulo \\(n \in \mathbb{N}\\). This would be done as follows:
+ - Define a structure type `IntegersModuloN` whose objects shall represent the ring of integers modulo \\(n\\) for different values of \\(n\\).
+ - Implement the desired structure by implementing signature traits on the structure type. In the case of `IntegersModuloN` the required signature traits are:
+   - `Signature` the base signature trait.
+   - `SetSignature<Set = Integer>` so that instances of `Integer` shall be used to represent elements of the set of integers modulo \\(n\\).
+   - `EqSignature` so that pairs of `Integer`s can be tested for equality modulo \\(n\\).
+   - `FiniteSetSignature` so that a list of all integers modulo \\(n\\) can be produced.
+   - `SemiRingSignature` so that `Integer`s can be added and multiplied modulo \\(n\\).
+   - `RingSignature` so that `Integer`s can be subtracted modulo \\(n\\).
+In practice, this could look like
 
 ```rust
 use algebraeon::nzq::traits::AbsDiff;
-use algebraeon::nzq::{Integer, Natural};
+  use algebraeon::nzq::{Integer, Natural};
+  use algebraeon::sets::structure::*;
 
-// Define a type whose instances will represent the set of integers modulo `n`.
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct IntegersModuloN {
-    n: Natural,
-}
+  #[derive(Debug, Clone, PartialEq, Eq)]
+  struct IntegersModuloN {
+      n: Natural,
+  }
 
-use algebraeon::sets::structure::{EqStructure, SetStructure, Structure};
+  impl Signature for IntegersModuloN {}
 
-// Implement `Structure` to indicate that instances
-// of `IntegersModuloN` represent abstract mathematical objects.
-impl Structure for IntegersModuloN {}
+  impl SetSignature for IntegersModuloN {
+      type Set = Integer;
 
-// Implement `SetStructure` to indicate that instances of `IntegersModuloN` 
-// represent sets whose elements are represented by instances of `Integer`.
-impl SetStructure for IntegersModuloN {
-    type Set = Integer;
+      fn is_element(&self, x: &Integer) -> bool {
+          x < &self.n
+      }
+  }
 
-    fn is_element(&self, x : &Integer) -> bool {
-        x < &self.n
-    }
-}
+  impl EqSignature for IntegersModuloN {
+      fn equal(&self, a: &Integer, b: &Integer) -> bool {
+          a == b
+      }
+  }
 
-// Implement `EqStructure` so that integers 
-// can be compared for equality modulo `n`.
-impl EqStructure for IntegersModuloN {
-    fn equal(&self, a: &Integer, b: &Integer) -> bool {
-        a.abs_diff(b) % &self.n == Natural::ZERO
-    }
-}
+  use algebraeon::rings::structure::{RingSignature, SemiRingSignature};
 
-let mod_6 = IntegersModuloN {n : 6u32.into()};
-assert!(mod_6.equal(&2.into(), &8.into()));
-assert!(!mod_6.equal(&3.into(), &5.into()));
+  impl SemiRingSignature for IntegersModuloN {
+      fn zero(&self) -> Self::Set {
+          Integer::ZERO
+      }
 
-use algebraeon::rings::structure::{RingStructure, SemiRingStructure};
+      fn one(&self) -> Self::Set {
+          (Integer::ONE % &self.n).into()
+      }
 
-// Implement `SemiRingStructure` and `RingStructure` to 
-// equip the integers modulo `n` with the quotient ring structure.
-impl SemiRingStructure for IntegersModuloN {
-    fn zero(&self) -> Self::Set {
-        Integer::ZERO
-    }
+      fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+          ((a + b) % &self.n).into()
+      }
 
-    fn one(&self) -> Self::Set {
-        (Integer::ONE % &self.n).into()
-    }
+      fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+          ((a * b) % &self.n).into()
+      }
+  }
 
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        ((a + b) % &self.n).into()
-    }
+  impl RingSignature for IntegersModuloN {
+      fn neg(&self, a: &Self::Set) -> Self::Set {
+          (-a % &self.n).into()
+      }
+  }
 
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        ((a * b) % &self.n).into()
-    }
-}
-impl RingStructure for IntegersModuloN {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        (-a % &self.n).into()
-    }
-}
-
-// Now `mod_6` now has the structure of a ring so Algebraeon implements 
-// the repeated squaring algorithm for taking very large powers modulo `n`.
-assert!(mod_6.equal(
-    &mod_6.nat_pow(&2.into(), &1000000000000u64.into()),
-    &4.into()
-));
+  let mod_6 = IntegersModuloN { n: 6u32.into() };
+  // Since we've given `mod_6` the structure of a ring, Algebraeon implements
+  // the repeated squaring algorithm for taking very large powers modulo `n`.
+  assert!(mod_6.equal(
+      &mod_6.nat_pow(&2.into(), &1000000000000u64.into()),
+      &4.into()
+  ));
 ```

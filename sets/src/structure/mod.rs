@@ -8,9 +8,9 @@ mod structure;
 pub use algebraeon_macros::CanonicalStructure;
 pub use morphism::{
     BijectiveFunction, CompositionMorphism, Function, Functions, IdentityMorphism,
-    InjectiveFunction, Morphism, MorphismsStructure,
+    InjectiveFunction, Morphism, MorphismsSignature,
 };
 pub use structure::{
-    CountableSetStructure, EqStructure, FiniteSetStructure, MetaType, SetStructure, Structure,
-    ToStringStructure, common_structure,
+    CountableSetSignature, EqSignature, FiniteSetSignature, MetaType, SetSignature, Signature,
+    ToStringSignature, common_structure,
 };

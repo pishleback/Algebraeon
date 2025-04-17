@@ -13,9 +13,9 @@ pub struct MyRational {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MyRationalCanonicalStructure {}
 
-impl Structure for MyRationalCanonicalStructure {}
+impl Signature for MyRationalCanonicalStructure {}
 
-impl SetStructure for MyRationalCanonicalStructure {
+impl SetSignature for MyRationalCanonicalStructure {
     type Set = MyRational;
 
     fn is_element(&self, _x: &Self::Set) -> bool {
@@ -23,7 +23,7 @@ impl SetStructure for MyRationalCanonicalStructure {
     }
 }
 
-impl EqStructure for MyRationalCanonicalStructure {
+impl EqSignature for MyRationalCanonicalStructure {
     fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
         x == y
     }
@@ -41,7 +41,7 @@ pub struct MyRational {
 }
 ```
 
-In any case, once we have the structure type `MyRationalCanonicalStructure` implementing `Structure` and `SetStructure<Set = MyRational>` we can go on to implement more structure traits like  `RingStructure` and `FieldStructure` for `MyRationalCanonicalStructure` to give the set of instances of `MyRational` the structure of a ring or a field.
+In any case, once we have the structure type `MyRationalCanonicalStructure` implementing `Signature + SetSignature<Set = MyRational>` we can go on to implement more structure traits like  `RingSignature` and `FieldSignature` for `MyRationalCanonicalStructure` to give the set of instances of `MyRational` the structure of a ring or a field.
 
 <!-- ```
 // The CanonicalStructure derive macro defines a new type MyRationalCanonicalStructure with one value and implements `Structure`, `SetStructure` and `EqStructure` for it.

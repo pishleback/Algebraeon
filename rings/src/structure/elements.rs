@@ -1,31 +1,31 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
-use super::structure::*;
+use super::rings::*;
 use algebraeon_sets::structure::*;
 
 use algebraeon_nzq::*;
 
-pub trait IntoErgonomicStructure: SetStructure {
+pub trait IntoErgonomicSignature: SetSignature {
     fn into_ergonomic(&self, elem: Self::Set) -> StructuredElement<Self> {
         StructuredElement::new(self.clone(), elem)
     }
 }
-impl<S: SetStructure> IntoErgonomicStructure for S {}
+impl<S: SetSignature> IntoErgonomicSignature for S {}
 
 pub trait IntoErgonomic: MetaType {
-    fn into_ergonomic(self) -> StructuredElement<Self::Structure> {
+    fn into_ergonomic(self) -> StructuredElement<Self::Signature> {
         StructuredElement::new(Self::structure(), self)
     }
 }
 impl<T: MetaType> IntoErgonomic for T {}
 
 #[derive(Debug, Clone)]
-pub struct StructuredElement<S: SetStructure> {
+pub struct StructuredElement<S: SetSignature> {
     structure: S,
     elem: S::Set,
 }
 
-impl<S: SetStructure> StructuredElement<S> {
+impl<S: SetSignature> StructuredElement<S> {
     pub fn new(structure: S, elem: S::Set) -> Self {
         Self { structure, elem }
     }
@@ -43,7 +43,7 @@ impl<S: SetStructure> StructuredElement<S> {
     }
 }
 
-impl<S: SetStructure> std::fmt::Display for StructuredElement<S>
+impl<S: SetSignature> std::fmt::Display for StructuredElement<S>
 where
     S::Set: std::fmt::Display,
 {
@@ -52,16 +52,16 @@ where
     }
 }
 
-impl<RS: RingStructure> PartialEq for StructuredElement<RS> {
+impl<RS: RingSignature> PartialEq for StructuredElement<RS> {
     fn eq(&self, other: &Self) -> bool {
         let structure = common_structure::<RS>(self.structure(), other.structure());
         structure.equal(&self.ref_set(), &other.ref_set())
     }
 }
 
-impl<RS: RingStructure> Eq for StructuredElement<RS> {}
+impl<RS: RingSignature> Eq for StructuredElement<RS> {}
 
-impl<RS: RingStructure> Neg for &StructuredElement<RS> {
+impl<RS: RingSignature> Neg for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn neg(self) -> Self::Output {
@@ -72,7 +72,7 @@ impl<RS: RingStructure> Neg for &StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Neg for StructuredElement<RS> {
+impl<RS: RingSignature> Neg for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn neg(self) -> Self::Output {
@@ -80,7 +80,7 @@ impl<RS: RingStructure> Neg for StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Add<&StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: RingSignature> Add<&StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -91,7 +91,7 @@ impl<RS: RingStructure> Add<&StructuredElement<RS>> for &StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Add<StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: RingSignature> Add<StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -99,7 +99,7 @@ impl<RS: RingStructure> Add<StructuredElement<RS>> for &StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Add<&StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: RingSignature> Add<&StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -107,7 +107,7 @@ impl<RS: RingStructure> Add<&StructuredElement<RS>> for StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Add<StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: RingSignature> Add<StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -115,7 +115,7 @@ impl<RS: RingStructure> Add<StructuredElement<RS>> for StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Sub<&StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: RingSignature> Sub<&StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -127,7 +127,7 @@ impl<RS: RingStructure> Sub<&StructuredElement<RS>> for &StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Sub<StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: RingSignature> Sub<StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -135,7 +135,7 @@ impl<RS: RingStructure> Sub<StructuredElement<RS>> for &StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Sub<&StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: RingSignature> Sub<&StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -143,7 +143,7 @@ impl<RS: RingStructure> Sub<&StructuredElement<RS>> for StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Sub<StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: RingSignature> Sub<StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -151,7 +151,7 @@ impl<RS: RingStructure> Sub<StructuredElement<RS>> for StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Mul<&StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: RingSignature> Mul<&StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -162,7 +162,7 @@ impl<RS: RingStructure> Mul<&StructuredElement<RS>> for &StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Mul<StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: RingSignature> Mul<StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -170,7 +170,7 @@ impl<RS: RingStructure> Mul<StructuredElement<RS>> for &StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Mul<&StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: RingSignature> Mul<&StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -178,7 +178,7 @@ impl<RS: RingStructure> Mul<&StructuredElement<RS>> for StructuredElement<RS> {
     }
 }
 
-impl<RS: RingStructure> Mul<StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: RingSignature> Mul<StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -186,7 +186,7 @@ impl<RS: RingStructure> Mul<StructuredElement<RS>> for StructuredElement<RS> {
     }
 }
 
-impl<RS: IntegralDomainStructure> Div<&StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: IntegralDomainSignature> Div<&StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn div(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -199,7 +199,7 @@ impl<RS: IntegralDomainStructure> Div<&StructuredElement<RS>> for &StructuredEle
     }
 }
 
-impl<RS: IntegralDomainStructure> Div<StructuredElement<RS>> for &StructuredElement<RS> {
+impl<RS: IntegralDomainSignature> Div<StructuredElement<RS>> for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn div(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -207,7 +207,7 @@ impl<RS: IntegralDomainStructure> Div<StructuredElement<RS>> for &StructuredElem
     }
 }
 
-impl<RS: IntegralDomainStructure> Div<&StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: IntegralDomainSignature> Div<&StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn div(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -215,7 +215,7 @@ impl<RS: IntegralDomainStructure> Div<&StructuredElement<RS>> for StructuredElem
     }
 }
 
-impl<RS: IntegralDomainStructure> Div<StructuredElement<RS>> for StructuredElement<RS> {
+impl<RS: IntegralDomainSignature> Div<StructuredElement<RS>> for StructuredElement<RS> {
     type Output = StructuredElement<RS>;
 
     fn div(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -223,7 +223,7 @@ impl<RS: IntegralDomainStructure> Div<StructuredElement<RS>> for StructuredEleme
     }
 }
 
-impl<RS: IntegralDomainStructure> StructuredElement<RS> {
+impl<RS: IntegralDomainSignature> StructuredElement<RS> {
     pub fn pow(&self, n: i32) -> StructuredElement<RS> {
         StructuredElement::new(
             self.structure().clone(),
@@ -238,7 +238,7 @@ macro_rules! impl_int_ops {
     ($I : ty) => {
         //adding $I
 
-        impl<RS: RingStructure> Add<$I> for StructuredElement<RS> {
+        impl<RS: RingSignature> Add<$I> for StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn add(self, rhs: $I) -> Self::Output {
@@ -247,7 +247,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Add<&$I> for StructuredElement<RS> {
+        impl<RS: RingSignature> Add<&$I> for StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn add(self, rhs: &$I) -> Self::Output {
@@ -259,7 +259,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Add<$I> for &StructuredElement<RS> {
+        impl<RS: RingSignature> Add<$I> for &StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn add(self, rhs: $I) -> Self::Output {
@@ -268,7 +268,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Add<&$I> for &StructuredElement<RS> {
+        impl<RS: RingSignature> Add<&$I> for &StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn add(self, rhs: &$I) -> Self::Output {
@@ -280,7 +280,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Add<StructuredElement<RS>> for $I {
+        impl<RS: RingSignature> Add<StructuredElement<RS>> for $I {
             type Output = StructuredElement<RS>;
 
             fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -289,7 +289,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Add<&StructuredElement<RS>> for $I {
+        impl<RS: RingSignature> Add<&StructuredElement<RS>> for $I {
             type Output = StructuredElement<RS>;
 
             fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -298,7 +298,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Add<StructuredElement<RS>> for &$I {
+        impl<RS: RingSignature> Add<StructuredElement<RS>> for &$I {
             type Output = StructuredElement<RS>;
 
             fn add(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -308,7 +308,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Add<&StructuredElement<RS>> for &$I {
+        impl<RS: RingSignature> Add<&StructuredElement<RS>> for &$I {
             type Output = StructuredElement<RS>;
 
             fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -319,7 +319,7 @@ macro_rules! impl_int_ops {
         }
 
         //subbing $I
-        impl<RS: RingStructure> Sub<$I> for StructuredElement<RS> {
+        impl<RS: RingSignature> Sub<$I> for StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn sub(self, rhs: $I) -> Self::Output {
@@ -328,7 +328,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Sub<&$I> for StructuredElement<RS> {
+        impl<RS: RingSignature> Sub<&$I> for StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn sub(self, rhs: &$I) -> Self::Output {
@@ -340,7 +340,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Sub<$I> for &StructuredElement<RS> {
+        impl<RS: RingSignature> Sub<$I> for &StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn sub(self, rhs: $I) -> Self::Output {
@@ -349,7 +349,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Sub<&$I> for &StructuredElement<RS> {
+        impl<RS: RingSignature> Sub<&$I> for &StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn sub(self, rhs: &$I) -> Self::Output {
@@ -361,7 +361,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Sub<StructuredElement<RS>> for $I {
+        impl<RS: RingSignature> Sub<StructuredElement<RS>> for $I {
             type Output = StructuredElement<RS>;
 
             fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -370,7 +370,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Sub<&StructuredElement<RS>> for $I {
+        impl<RS: RingSignature> Sub<&StructuredElement<RS>> for $I {
             type Output = StructuredElement<RS>;
 
             fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -379,7 +379,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Sub<StructuredElement<RS>> for &$I {
+        impl<RS: RingSignature> Sub<StructuredElement<RS>> for &$I {
             type Output = StructuredElement<RS>;
 
             fn sub(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -389,7 +389,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Sub<&StructuredElement<RS>> for &$I {
+        impl<RS: RingSignature> Sub<&StructuredElement<RS>> for &$I {
             type Output = StructuredElement<RS>;
 
             fn sub(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -400,7 +400,7 @@ macro_rules! impl_int_ops {
         }
 
         //multiplying $I
-        impl<RS: RingStructure> Mul<$I> for StructuredElement<RS> {
+        impl<RS: RingSignature> Mul<$I> for StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn mul(self, rhs: $I) -> Self::Output {
@@ -409,7 +409,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Mul<&$I> for StructuredElement<RS> {
+        impl<RS: RingSignature> Mul<&$I> for StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn mul(self, rhs: &$I) -> Self::Output {
@@ -421,7 +421,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Mul<$I> for &StructuredElement<RS> {
+        impl<RS: RingSignature> Mul<$I> for &StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn mul(self, rhs: $I) -> Self::Output {
@@ -430,7 +430,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Mul<&$I> for &StructuredElement<RS> {
+        impl<RS: RingSignature> Mul<&$I> for &StructuredElement<RS> {
             type Output = StructuredElement<RS>;
 
             fn mul(self, rhs: &$I) -> Self::Output {
@@ -442,7 +442,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Mul<StructuredElement<RS>> for $I {
+        impl<RS: RingSignature> Mul<StructuredElement<RS>> for $I {
             type Output = StructuredElement<RS>;
 
             fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -451,7 +451,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Mul<&StructuredElement<RS>> for $I {
+        impl<RS: RingSignature> Mul<&StructuredElement<RS>> for $I {
             type Output = StructuredElement<RS>;
 
             fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
@@ -460,7 +460,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Mul<StructuredElement<RS>> for &$I {
+        impl<RS: RingSignature> Mul<StructuredElement<RS>> for &$I {
             type Output = StructuredElement<RS>;
 
             fn mul(self, rhs: StructuredElement<RS>) -> Self::Output {
@@ -470,7 +470,7 @@ macro_rules! impl_int_ops {
             }
         }
 
-        impl<RS: RingStructure> Mul<&StructuredElement<RS>> for &$I {
+        impl<RS: RingSignature> Mul<&StructuredElement<RS>> for &$I {
             type Output = StructuredElement<RS>;
 
             fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {

@@ -4,7 +4,7 @@ Algebraeon is a computational algebra system (CAS) written purely in Rust. It im
 
 See the [user guide](https://pishleback.github.io/Algebraeon/) to get started.
 
-The latest published version of Algebraeon is hosted on crates.io [here](https://crates.io/crates/algebraeon) and the formal documentation is [here](https://docs.rs/algebraeon/latest/algebraeon/).
+The latest published version of Algebraeon is hosted on crates.io [here](https://crates.io/crates/algebraeon) and the formal documentation for the most recent release is [here](https://docs.rs/algebraeon/latest/algebraeon/).
 
 # Examples
 
@@ -14,7 +14,7 @@ To factor large integers using Algebraeon
 
 ```
 use std::str::FromStr;
-use algebraeon::{nzq::Natural, rings::number::natural::factorization::factor};
+use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
 let f = factor(n.clone()).unwrap();

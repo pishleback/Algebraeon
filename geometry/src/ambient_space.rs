@@ -3,14 +3,14 @@ use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
 use std::sync::atomic::AtomicUsize;
 
 #[derive(Debug, Clone)]
-pub struct AffineSpace<FS: OrderedRingStructure + FieldStructure> {
+pub struct AffineSpace<FS: OrderedRingSignature + FieldSignature> {
     ordered_field: FS,
     //linear dimension = affine dimension - 1
     affine_dimension: usize,
     ident: usize,
 }
 
-impl<FS: OrderedRingStructure + FieldStructure> PartialEq for AffineSpace<FS> {
+impl<FS: OrderedRingSignature + FieldSignature> PartialEq for AffineSpace<FS> {
     fn eq(&self, other: &Self) -> bool {
         #[cfg(debug_assertions)]
         if self.ident == other.ident {
@@ -21,15 +21,15 @@ impl<FS: OrderedRingStructure + FieldStructure> PartialEq for AffineSpace<FS> {
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure> Eq for AffineSpace<FS> {}
+impl<FS: OrderedRingSignature + FieldSignature> Eq for AffineSpace<FS> {}
 
-impl<FS: OrderedRingStructure + FieldStructure + Hash> Hash for AffineSpace<FS> {
+impl<FS: OrderedRingSignature + FieldSignature + Hash> Hash for AffineSpace<FS> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.ident.hash(state);
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
+impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS> {
     pub fn new_affine(ordered_field: FS, affine_dimension: usize) -> Self {
         static COUNTER: AtomicUsize = AtomicUsize::new(0);
         Self {
@@ -114,7 +114,7 @@ impl<FS: OrderedRingStructure + FieldStructure> AffineSpace<FS> {
 }
 
 pub fn vectors_from_rows<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 >(
     sp: SP,
@@ -134,7 +134,7 @@ pub fn vectors_from_rows<
 }
 
 pub fn vectors_from_cols<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 >(
     sp: SP,
@@ -145,7 +145,7 @@ pub fn vectors_from_cols<
 }
 
 pub fn vector_from_row<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 >(
     sp: SP,
@@ -157,7 +157,7 @@ pub fn vector_from_row<
 }
 
 pub fn vector_from_col<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 >(
     sp: SP,
@@ -169,7 +169,7 @@ pub fn vector_from_col<
 }
 
 pub fn common_space<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 >(
     space1: SP,

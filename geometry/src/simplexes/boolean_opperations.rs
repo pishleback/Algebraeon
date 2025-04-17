@@ -9,7 +9,7 @@ pub enum VennLabel {
     Right,
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> Simplex<FS, SP>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Simplex<FS, SP>
 where
     FS::Set: Hash,
 {
@@ -60,7 +60,7 @@ where
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     LabelledSimplicialDisjointUnion<FS, SP, T>
 where
     FS::Set: Hash,
@@ -116,7 +116,7 @@ where
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     SimplicialDisjointUnion<FS, SP>
 where
     FS::Set: Hash,
@@ -160,7 +160,7 @@ where
 //     }
 // }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     SimplicialComplex<FS, SP>
 where
     FS::Set: Hash,

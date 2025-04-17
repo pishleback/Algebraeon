@@ -6,8 +6,8 @@
  use algebraeon::{
     nzq::*,
     rings::{
-        number::{
-            anf::ring_of_integer_extensions::RingOfIntegersExtension,
+        rings::{
+            algebraic_number_fields::ring_of_integer_extensions::RingOfIntegersExtension,
             finite_fields::modulo::Modulo,
         },
         polynomial::Polynomial,

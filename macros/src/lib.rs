@@ -9,11 +9,12 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let name = input.ident;
+    let vis = input.vis;
     let newtype_name = Ident::new(&format!("{}CanonicalStructure", name), name.span());
 
     let expanded = quote! {
         #[derive(Debug, Clone, PartialEq, Eq)]
-        pub struct #newtype_name {}
+        #vis struct #newtype_name {}
 
         impl #newtype_name {
             fn new() -> Self {
@@ -21,9 +22,9 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl Structure for #newtype_name {}
+        impl Signature for #newtype_name {}
 
-        impl SetStructure for #newtype_name {
+        impl SetSignature for #newtype_name {
             type Set = #name;
 
             fn is_element(&self, _x : &Self::Set) -> bool {
@@ -31,7 +32,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl EqStructure for #newtype_name
+        impl EqSignature for #newtype_name
             where #name: Eq
         {
             fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -40,9 +41,9 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         }
 
         impl MetaType for #name {
-            type Structure = #newtype_name;
+            type Signature = #newtype_name;
 
-            fn structure() -> Self::Structure {
+            fn structure() -> Self::Signature {
                 #newtype_name::new()
             }
         }

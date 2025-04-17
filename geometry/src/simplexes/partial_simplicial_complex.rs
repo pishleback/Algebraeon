@@ -4,7 +4,7 @@ use super::*;
 
 #[derive(Clone)]
 pub struct LabelledPartialSimplicialComplex<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
     T: Eq + Clone,
 > {
@@ -14,7 +14,7 @@ pub struct LabelledPartialSimplicialComplex<
 
 pub type PartialSimplicialComplex<FS, SP> = LabelledPartialSimplicialComplex<FS, SP, ()>;
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
     for PartialSimplicialComplex<FS, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -24,7 +24,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     LabelledSimplexCollection<FS, SP, T> for LabelledPartialSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
@@ -66,7 +66,7 @@ where
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     LabelledPartialSimplicialComplex<FS, SP, T>
 where
     FS::Set: Hash,
