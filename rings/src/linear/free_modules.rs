@@ -1,6 +1,7 @@
 use crate::structure::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
+// use itertools::Itertools;
 use std::{collections::HashMap, hash::Hash};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,6 +28,7 @@ where
     }
 
     pub fn basis_element(&self, b: Set::Set) -> <Self as SetSignature>::Set {
+        debug_assert!(self.set.is_element(&b));
         [(b, self.ring.one())].into()
     }
 }
@@ -113,6 +115,27 @@ where
     }
 }
 
+impl<Set: SetSignature, Ring: RingSignature> FreeModuleSignature<Ring>
+    for FreeModuleOverSetStructure<Set, Ring>
+where
+    Set::Set: Eq + Hash,
+{
+}
+
+impl<Set: FiniteSetSignature, Ring: RingSignature> FiniteRankModuleSignature<Ring>
+    for FreeModuleOverSetStructure<Set, Ring>
+where
+    Set::Set: Eq + Hash,
+{
+    fn basis(&self) -> Vec<Self::Set> {
+        self.set
+            .list_all_elements()
+            .into_iter()
+            .map(|a| self.basis_element(a))
+            .collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -126,6 +149,14 @@ mod tests {
             B,
             C,
         }
+
+        impl CountableSetSignature for BasisCanonicalStructure {
+            fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+                vec![Basis::A, Basis::B, Basis::C].into_iter()
+            }
+        }
+
+        impl FiniteSetSignature for BasisCanonicalStructure {}
 
         let m = FreeModuleOverSetStructure::new(Basis::structure(), Integer::structure());
 
@@ -149,5 +180,7 @@ mod tests {
         );
 
         assert_eq!(m.scalar_mul(&5.into(), &a), [(Basis::A, 5.into())].into());
+
+        assert_eq!(m.basis(), vec![a, b, c]);
     }
 }
