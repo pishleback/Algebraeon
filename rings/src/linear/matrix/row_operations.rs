@@ -1,7 +1,7 @@
 use super::*;
 
 #[derive(Debug)]
-pub enum ElementaryOppType<RS: RingStructure> {
+pub enum ElementaryOppType<RS: RingSignature> {
     //swap distinct rows
     Swap(usize, usize),
     //multiply a row by a unit
@@ -29,13 +29,13 @@ pub enum ElementaryOppType<RS: RingStructure> {
     },
 }
 
-pub struct ElementaryOpp<RS: RingStructure> {
+pub struct ElementaryOpp<RS: RingSignature> {
     ring: RS,
     transpose: bool, //false = row opp, true = column opp
     opp: ElementaryOppType<RS>,
 }
 
-impl<RS: BezoutDomainStructure> ElementaryOpp<RS> {
+impl<RS: BezoutDomainSignature> ElementaryOpp<RS> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         match &self.opp {
             ElementaryOppType::Swap(i, j) => {

@@ -1,4 +1,4 @@
-use algebraeon_rings::number::finite_fields::modulo::Modulo;
+use algebraeon_rings::rings::finite_fields::modulo::Modulo;
 
 pub type TernaryField = Modulo<3>;
 pub const ZERO: TernaryField = TernaryField::new(0);

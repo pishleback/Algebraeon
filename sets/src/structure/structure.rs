@@ -1,11 +1,11 @@
 use std::{borrow::Borrow, fmt::Debug};
 
-pub trait Structure: Clone + Debug + PartialEq + Eq {}
+pub trait Signature: Clone + Debug + PartialEq + Eq {}
 
 /// Instances of a type implementing this trait represent
 /// a set of elements of type `Self::Set` with some
 /// structure, for example, the structure of a ring.
-pub trait SetStructure: Structure {
+pub trait SetSignature: Signature {
     type Set: Clone + Debug;
 
     /// Some instances of Self::Set may not be valid to represent elements of this set.
@@ -14,11 +14,11 @@ pub trait SetStructure: Structure {
 }
 
 pub trait MetaType: Clone + Debug {
-    type Structure: SetStructure<Set = Self>;
-    fn structure() -> Self::Structure;
+    type Signature: SetSignature<Set = Self>;
+    fn structure() -> Self::Signature;
 }
 
-pub fn common_structure<S: Structure>(structure1: impl Borrow<S>, structure2: impl Borrow<S>) -> S {
+pub fn common_structure<S: Signature>(structure1: impl Borrow<S>, structure2: impl Borrow<S>) -> S {
     if structure1.borrow() == structure2.borrow() {
         structure1.borrow().clone()
     } else {
@@ -26,21 +26,21 @@ pub fn common_structure<S: Structure>(structure1: impl Borrow<S>, structure2: im
     }
 }
 
-pub trait ToStringStructure: SetStructure {
+pub trait ToStringSignature: SetSignature {
     fn to_string(&self, elem: &Self::Set) -> String;
 }
 
-pub trait EqStructure: SetStructure {
+pub trait EqSignature: SetSignature {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool;
 }
 
-pub trait CountableSetStructure: SetStructure {
+pub trait CountableSetSignature: SetSignature {
     /// Yield distinct elements of the set such that every element eventually appears.
     /// Always yields elements in the same order.
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set>;
 }
 
-pub trait FiniteSetStructure: CountableSetStructure {
+pub trait FiniteSetSignature: CountableSetSignature {
     /// A list of all elements in the set.
     /// Always returns elements in the same order.
     fn list_all_elements(&self) -> Vec<Self::Set> {
@@ -69,7 +69,7 @@ mod tests {
             }
         }
 
-        impl ToStringStructure for ACanonicalStructure {
+        impl ToStringSignature for ACanonicalStructure {
             fn to_string(&self, elem: &Self::Set) -> String {
                 elem.to_string()
             }
@@ -89,9 +89,9 @@ mod tests {
             t: usize,
         }
 
-        impl Structure for A {}
+        impl Signature for A {}
 
-        impl SetStructure for A {
+        impl SetSignature for A {
             type Set = usize;
 
             fn is_element(&self, _x: &Self::Set) -> bool {
@@ -99,7 +99,7 @@ mod tests {
             }
         }
 
-        impl ToStringStructure for A {
+        impl ToStringSignature for A {
             fn to_string(&self, elem: &Self::Set) -> String {
                 elem.to_string()
             }

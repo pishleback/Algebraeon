@@ -37,7 +37,7 @@ impl Natural {
     }
 }
 
-impl ToStringStructure for NaturalCanonicalStructure {
+impl ToStringSignature for NaturalCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
     }
@@ -629,7 +629,7 @@ impl TryInto<usize> for &Natural {
     }
 }
 
-impl CountableSetStructure for NaturalCanonicalStructure {
+impl CountableSetSignature for NaturalCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         use malachite_nz::natural::exhaustive::exhaustive_naturals;
         exhaustive_naturals()

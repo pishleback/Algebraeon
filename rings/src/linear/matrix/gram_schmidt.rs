@@ -22,7 +22,7 @@ use super::*;
 
 // impl<Ring: ComplexSubsetStructure> Eq for FiniteDimensionalInnerProductSpaceStructure<Ring> {}
 
-impl<FS: ComplexConjugateStructure> MatrixStructure<FS> {
+impl<FS: ComplexConjugateSignature> MatrixStructure<FS> {
     pub fn conjugate(&self, mat: &Matrix<FS::Set>) -> Matrix<FS::Set> {
         mat.apply_map(|x| self.ring().conjugate(x))
     }
@@ -32,14 +32,14 @@ impl<FS: ComplexConjugateStructure> MatrixStructure<FS> {
     }
 }
 
-impl<FS: ComplexConjugateStructure + RingStructure> MatrixStructure<FS> {
+impl<FS: ComplexConjugateSignature + RingSignature> MatrixStructure<FS> {
     // dot product of a and conj(b)
     pub fn inner_product(&self, a: &Matrix<FS::Set>, b: &Matrix<FS::Set>) -> FS::Set {
         self.dot(a, &self.conjugate(b))
     }
 }
 
-impl<FS: ComplexConjugateStructure + FieldStructure> MatrixStructure<FS> {
+impl<FS: ComplexConjugateSignature + FieldSignature> MatrixStructure<FS> {
     //return mat=LQ where L is lower triangular and Q is row-orthogonal (not orthonormal)
     pub fn gram_schmidt_row_orthogonalization_algorithm(
         &self,
@@ -106,7 +106,7 @@ impl<FS: ComplexConjugateStructure + FieldStructure> MatrixStructure<FS> {
     }
 }
 
-impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructure>
+impl<FS: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature>
     MatrixStructure<FS>
 {
     //return L*mat=Q where L is lower triangular and Q is orthonormal
@@ -165,7 +165,7 @@ impl<FS: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructu
 
 impl<F: MetaType> Matrix<F>
 where
-    F::Structure: ComplexConjugateStructure + FieldStructure,
+    F::Signature: ComplexConjugateSignature + FieldSignature,
 {
     pub fn gram_schmidt_row_orthogonalization_algorithm(self) -> (Matrix<F>, Matrix<F>) {
         Self::structure().gram_schmidt_row_orthogonalization_algorithm(self)
@@ -186,7 +186,7 @@ where
 
 impl<F: MetaType> Matrix<F>
 where
-    F::Structure: ComplexConjugateStructure + PositiveRealNthRootStructure + FieldStructure,
+    F::Signature: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature,
 {
     pub fn lq_decomposition_algorithm(self) -> (Matrix<F>, Matrix<F>) {
         Self::structure().lq_decomposition_algorithm(self)
@@ -208,7 +208,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::number::algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic};
+    use crate::rings::isolated_algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic};
     use std::str::FromStr;
 
     #[test]

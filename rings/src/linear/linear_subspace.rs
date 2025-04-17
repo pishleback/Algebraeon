@@ -4,7 +4,7 @@ use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
 
 //return a metamatrix whose rows are a basis for the joint row span of all the passed metamatricies
-fn metamatrix_row_sum<RS: BezoutDomainStructure, MetaMatT: Borrow<Matrix<RS::Set>>>(
+fn metamatrix_row_sum<RS: BezoutDomainSignature, MetaMatT: Borrow<Matrix<RS::Set>>>(
     ring: RS,
     cols: usize,
     metamats: Vec<MetaMatT>,
@@ -19,7 +19,7 @@ fn metamatrix_row_sum<RS: BezoutDomainStructure, MetaMatT: Borrow<Matrix<RS::Set
 }
 
 //return a metamatrix whose rows are a basis for the intersection of the row spans of the passed metamatricies
-fn metamatrix_row_intersection<RS: BezoutDomainStructure, MetaMatT: Borrow<Matrix<RS::Set>>>(
+fn metamatrix_row_intersection<RS: BezoutDomainSignature, MetaMatT: Borrow<Matrix<RS::Set>>>(
     ring: RS,
     cols: usize,
     mut metamat1: MetaMatT,
@@ -127,13 +127,13 @@ fn mats_to_rows<Set: Clone, MatT: Borrow<Matrix<Set>>>(
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LinearSubspaceStructure<RS: BezoutDomainStructure> {
+pub struct LinearSubspaceStructure<RS: BezoutDomainSignature> {
     ring: RS,
 }
 
-impl<RS: BezoutDomainStructure> Structure for LinearSubspaceStructure<RS> {}
+impl<RS: BezoutDomainSignature> Signature for LinearSubspaceStructure<RS> {}
 
-impl<RS: BezoutDomainStructure> SetStructure for LinearSubspaceStructure<RS> {
+impl<RS: BezoutDomainSignature> SetSignature for LinearSubspaceStructure<RS> {
     type Set = LinearSubspace<RS::Set>;
 
     fn is_element(&self, _x: &Self::Set) -> bool {
@@ -141,13 +141,13 @@ impl<RS: BezoutDomainStructure> SetStructure for LinearSubspaceStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure> LinearSubspaceStructure<RS> {
+impl<RS: BezoutDomainSignature> LinearSubspaceStructure<RS> {
     pub fn new(ring: RS) -> Self {
         Self { ring }
     }
 }
 
-impl<RS: BezoutDomainStructure> LinearSubspaceStructure<RS> {
+impl<RS: BezoutDomainSignature> LinearSubspaceStructure<RS> {
     pub fn check_invariants(&self, lat: &LinearSubspace<RS::Set>) -> Result<(), &'static str> {
         if lat.rows * lat.cols != lat.metamatrix.cols() {
             return Err("the number of colnums of the meta_matrix should be rows*cols");
@@ -479,7 +479,7 @@ impl<RS: BezoutDomainStructure> LinearSubspaceStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure + ToStringStructure> LinearSubspaceStructure<RS> {
+impl<RS: BezoutDomainSignature + ToStringSignature> LinearSubspaceStructure<RS> {
     pub fn pprint(&self, lat: &LinearSubspace<RS::Set>) {
         println!("Start Linear Lattice");
         for r in 0..lat.metamatrix.rows() {
@@ -491,18 +491,18 @@ impl<RS: BezoutDomainStructure + ToStringStructure> LinearSubspaceStructure<RS> 
 
 impl<R: MetaType> MetaType for LinearSubspace<R>
 where
-    R::Structure: BezoutDomainStructure,
+    R::Signature: BezoutDomainSignature,
 {
-    type Structure = LinearSubspaceStructure<R::Structure>;
+    type Signature = LinearSubspaceStructure<R::Signature>;
 
-    fn structure() -> Self::Structure {
+    fn structure() -> Self::Signature {
         LinearSubspaceStructure::new(R::structure())
     }
 }
 
 impl<R: MetaType> LinearSubspace<R>
 where
-    R::Structure: BezoutDomainStructure + ToStringStructure,
+    R::Signature: BezoutDomainSignature + ToStringSignature,
 {
     pub fn pprint(&self) {
         Self::structure().pprint(self)
@@ -511,7 +511,7 @@ where
 
 impl<R: MetaType> PartialEq for LinearSubspace<R>
 where
-    R::Structure: BezoutDomainStructure,
+    R::Signature: BezoutDomainSignature,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
@@ -520,7 +520,7 @@ where
 
 impl<R: MetaType> LinearSubspace<R>
 where
-    R::Structure: BezoutDomainStructure,
+    R::Signature: BezoutDomainSignature,
 {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
         Self::structure().check_invariants(self)
@@ -651,13 +651,13 @@ impl<Set: Clone> AffineSubspace<Set> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AffineSubspaceStructure<RS: BezoutDomainStructure> {
+pub struct AffineSubspaceStructure<RS: BezoutDomainSignature> {
     ring: RS,
 }
 
-impl<RS: BezoutDomainStructure> Structure for AffineSubspaceStructure<RS> {}
+impl<RS: BezoutDomainSignature> Signature for AffineSubspaceStructure<RS> {}
 
-impl<RS: BezoutDomainStructure> SetStructure for AffineSubspaceStructure<RS> {
+impl<RS: BezoutDomainSignature> SetSignature for AffineSubspaceStructure<RS> {
     type Set = AffineSubspace<RS::Set>;
 
     fn is_element(&self, _x: &Self::Set) -> bool {
@@ -665,13 +665,13 @@ impl<RS: BezoutDomainStructure> SetStructure for AffineSubspaceStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure> AffineSubspaceStructure<RS> {
+impl<RS: BezoutDomainSignature> AffineSubspaceStructure<RS> {
     pub fn new(ring: RS) -> Self {
         Self { ring }
     }
 }
 
-impl<RS: BezoutDomainStructure> AffineSubspaceStructure<RS> {
+impl<RS: BezoutDomainSignature> AffineSubspaceStructure<RS> {
     pub fn check_invariants(&self, lat: &AffineSubspace<RS::Set>) -> Result<(), &'static str> {
         match &lat.elems {
             AffineLatticeElements::Empty() => {}
@@ -1032,7 +1032,7 @@ impl<RS: BezoutDomainStructure> AffineSubspaceStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainStructure + ToStringStructure> AffineSubspaceStructure<RS> {
+impl<RS: BezoutDomainSignature + ToStringSignature> AffineSubspaceStructure<RS> {
     pub fn pprint(&self, lat: &AffineSubspace<RS::Set>) {
         println!("Start Affine Lattice");
         match &lat.elems {
@@ -1049,18 +1049,18 @@ impl<RS: BezoutDomainStructure + ToStringStructure> AffineSubspaceStructure<RS> 
 
 impl<R: MetaType> MetaType for AffineSubspace<R>
 where
-    R::Structure: BezoutDomainStructure,
+    R::Signature: BezoutDomainSignature,
 {
-    type Structure = AffineSubspaceStructure<R::Structure>;
+    type Signature = AffineSubspaceStructure<R::Signature>;
 
-    fn structure() -> Self::Structure {
+    fn structure() -> Self::Signature {
         AffineSubspaceStructure::new(R::structure())
     }
 }
 
 impl<R: MetaType> AffineSubspace<R>
 where
-    R::Structure: BezoutDomainStructure + ToStringStructure,
+    R::Signature: BezoutDomainSignature + ToStringSignature,
 {
     pub fn pprint(&self) {
         Self::structure().pprint(self)
@@ -1069,7 +1069,7 @@ where
 
 impl<R: MetaType> PartialEq for AffineSubspace<R>
 where
-    R::Structure: BezoutDomainStructure,
+    R::Signature: BezoutDomainSignature,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
@@ -1078,7 +1078,7 @@ where
 
 impl<R: MetaType> AffineSubspace<R>
 where
-    R::Structure: BezoutDomainStructure,
+    R::Signature: BezoutDomainSignature,
 {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
         Self::structure().check_invariants(self)

@@ -1,6 +1,6 @@
 use super::*;
 
-impl<RS: GreatestCommonDivisorStructure> MatrixStructure<RS> {
+impl<RS: GreatestCommonDivisorSignature> MatrixStructure<RS> {
     pub fn factor_primitive(&self, mut mat: Matrix<RS::Set>) -> Option<(RS::Set, Matrix<RS::Set>)> {
         let entries = mat.entries_list();
         let g = self.ring().gcd_list(entries);
@@ -26,8 +26,8 @@ impl<RS: GreatestCommonDivisorStructure> MatrixStructure<RS> {
 }
 
 pub fn factor_primitive_fof<
-    Ring: GreatestCommonDivisorStructure,
-    Field: FieldStructure,
+    Ring: GreatestCommonDivisorSignature,
+    Field: FieldSignature,
     Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
     fof_inclusion: &Fof,
@@ -62,7 +62,7 @@ pub fn factor_primitive_fof<
 
 impl<R: MetaType> Matrix<R>
 where
-    R::Structure: GreatestCommonDivisorStructure,
+    R::Signature: GreatestCommonDivisorSignature,
 {
     pub fn factor_primitive(self) -> Option<(R, Matrix<R>)> {
         Self::structure().factor_primitive(self)
@@ -75,9 +75,9 @@ where
 
 impl<Field: MetaType> Matrix<Field>
 where
-    Field::Structure: FieldStructure,
-    PrincipalSubringInclusion<Field::Structure>:
-        FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Structure>,
+    Field::Signature: FieldSignature,
+    PrincipalSubringInclusion<Field::Signature>:
+        FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Signature>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Matrix<Integer>) {
         factor_primitive_fof(&PrincipalSubringInclusion::new(Field::structure()), self)

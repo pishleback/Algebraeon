@@ -6,15 +6,15 @@ use super::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
-pub trait RingHomomorphism<Domain: RingStructure, Range: RingStructure>:
+pub trait RingHomomorphism<Domain: RingSignature, Range: RingSignature>:
     Function<Domain, Range>
 {
 }
 
 impl<
-    A: RingStructure,
-    B: RingStructure,
-    C: RingStructure,
+    A: RingSignature,
+    B: RingSignature,
+    C: RingSignature,
     AB: RingHomomorphism<A, B>,
     BC: RingHomomorphism<B, C>,
 > RingHomomorphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
@@ -23,12 +23,12 @@ impl<
 
 /// The unique ring homomorphism Z -> R of the integers into any ring R
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PrincipalSubringInclusion<Ring: RingStructure> {
+pub struct PrincipalSubringInclusion<Ring: RingSignature> {
     integer_structure: IntegerCanonicalStructure,
     ring: Ring,
 }
 
-impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
+impl<Ring: RingSignature> PrincipalSubringInclusion<Ring> {
     pub fn new(ring: Ring) -> Self {
         Self {
             integer_structure: Integer::structure(),
@@ -37,7 +37,7 @@ impl<Ring: RingStructure> PrincipalSubringInclusion<Ring> {
     }
 }
 
-impl<Ring: RingStructure> Morphism<IntegerCanonicalStructure, Ring>
+impl<Ring: RingSignature> Morphism<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
     fn domain(&self) -> &IntegerCanonicalStructure {
@@ -49,35 +49,35 @@ impl<Ring: RingStructure> Morphism<IntegerCanonicalStructure, Ring>
     }
 }
 
-impl<Ring: RingStructure> Function<IntegerCanonicalStructure, Ring>
+impl<Ring: RingSignature> Function<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
-    fn image(&self, x: &Integer) -> <Ring as SetStructure>::Set {
+    fn image(&self, x: &Integer) -> <Ring as SetSignature>::Set {
         self.range().from_int(x)
     }
 }
 
-impl<Ring: CharZeroRingStructure> InjectiveFunction<IntegerCanonicalStructure, Ring>
+impl<Ring: CharZeroRingSignature> InjectiveFunction<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
-    fn try_preimage(&self, x: &<Ring as SetStructure>::Set) -> Option<Integer> {
+    fn try_preimage(&self, x: &<Ring as SetSignature>::Set) -> Option<Integer> {
         self.range().try_to_int(x)
     }
 }
 
-impl<Ring: RingStructure> RingHomomorphism<IntegerCanonicalStructure, Ring>
+impl<Ring: RingSignature> RingHomomorphism<IntegerCanonicalStructure, Ring>
     for PrincipalSubringInclusion<Ring>
 {
 }
 
 /// The unique field embedding Q -> K of the rationals into any field of characteristic zero
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PrincipalRationalSubfieldInclusion<Field: CharZeroFieldStructure> {
+pub struct PrincipalRationalSubfieldInclusion<Field: CharZeroFieldSignature> {
     rational_structure: RationalCanonicalStructure,
     field: Field,
 }
 
-impl<Field: CharZeroFieldStructure> PrincipalRationalSubfieldInclusion<Field> {
+impl<Field: CharZeroFieldSignature> PrincipalRationalSubfieldInclusion<Field> {
     pub fn new(field: Field) -> Self {
         Self {
             rational_structure: Rational::structure(),
@@ -86,7 +86,7 @@ impl<Field: CharZeroFieldStructure> PrincipalRationalSubfieldInclusion<Field> {
     }
 }
 
-impl<Field: CharZeroFieldStructure> Morphism<RationalCanonicalStructure, Field>
+impl<Field: CharZeroFieldSignature> Morphism<RationalCanonicalStructure, Field>
     for PrincipalRationalSubfieldInclusion<Field>
 {
     fn domain(&self) -> &RationalCanonicalStructure {
@@ -98,29 +98,29 @@ impl<Field: CharZeroFieldStructure> Morphism<RationalCanonicalStructure, Field>
     }
 }
 
-impl<Field: CharZeroFieldStructure> Function<RationalCanonicalStructure, Field>
+impl<Field: CharZeroFieldSignature> Function<RationalCanonicalStructure, Field>
     for PrincipalRationalSubfieldInclusion<Field>
 {
-    fn image(&self, x: &Rational) -> <Field as SetStructure>::Set {
+    fn image(&self, x: &Rational) -> <Field as SetSignature>::Set {
         self.range().from_rat(x).unwrap()
     }
 }
 
-impl<Field: CharZeroFieldStructure> InjectiveFunction<RationalCanonicalStructure, Field>
+impl<Field: CharZeroFieldSignature> InjectiveFunction<RationalCanonicalStructure, Field>
     for PrincipalRationalSubfieldInclusion<Field>
 {
-    fn try_preimage(&self, x: &<Field as SetStructure>::Set) -> Option<Rational> {
+    fn try_preimage(&self, x: &<Field as SetSignature>::Set) -> Option<Rational> {
         self.range().try_to_rat(x)
     }
 }
 
-impl<Field: CharZeroFieldStructure> RingHomomorphism<RationalCanonicalStructure, Field>
+impl<Field: CharZeroFieldSignature> RingHomomorphism<RationalCanonicalStructure, Field>
     for PrincipalRationalSubfieldInclusion<Field>
 {
 }
 
 /// The inclusion of an integral domain into its field of fractions
-pub trait FieldOfFractionsInclusion<Ring: RingStructure, Field: FieldStructure>:
+pub trait FieldOfFractionsInclusion<Ring: RingSignature, Field: FieldSignature>:
     RingHomomorphism<Ring, Field> + InjectiveFunction<Ring, Field>
 {
     fn numerator_and_denominator(&self, a: &Field::Set) -> (Ring::Set, Ring::Set);
@@ -133,7 +133,7 @@ pub trait FieldOfFractionsInclusion<Ring: RingStructure, Field: FieldStructure>:
 }
 
 /// A finite dimensional field extension F -> K
-pub trait FiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
+pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     RingHomomorphism<F, K> + InjectiveFunction<F, K>
 {
     fn degree(&self) -> usize;
@@ -144,27 +144,27 @@ pub trait FiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
 }
 
 /// A seperable finite dimensional field extension F -> K
-pub trait SeperableFiniteDimensionalFieldExtension<F: FieldStructure, K: FieldStructure>:
+pub trait SeperableFiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     FiniteDimensionalFieldExtension<F, K>
 {
 }
 
 /// Represent all ring homomorphisms from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RingHomomorphisms<Domain: RingStructure, Range: RingStructure> {
+pub struct RingHomomorphisms<Domain: RingSignature, Range: RingSignature> {
     domain: Domain,
     range: Range,
 }
 
-impl<Domain: RingStructure, Range: RingStructure> RingHomomorphisms<Domain, Range> {
+impl<Domain: RingSignature, Range: RingSignature> RingHomomorphisms<Domain, Range> {
     pub fn new(domain: Domain, range: Range) -> Self {
         Self { domain, range }
     }
 }
 
-impl<Domain: RingStructure, Range: RingStructure> Structure for RingHomomorphisms<Domain, Range> {}
+impl<Domain: RingSignature, Range: RingSignature> Signature for RingHomomorphisms<Domain, Range> {}
 
-impl<Domain: FreeRingStructure, Range: RingStructure> SetStructure
+impl<Domain: FreeRingSignature, Range: RingSignature> SetSignature
     for RingHomomorphisms<Domain, Range>
 {
     type Set = HashMap<Domain::Generator, Range::Set>;

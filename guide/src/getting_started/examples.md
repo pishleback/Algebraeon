@@ -6,7 +6,7 @@ To factor large integers using Algebraeon
 
 ```rust
 use std::str::FromStr;
-use algebraeon::{nzq::Natural, rings::number::natural::factorization::factor};
+use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
 let f = factor(n.clone()).unwrap();
@@ -193,7 +193,7 @@ assert_eq!(n, 120);
 
 ```rust
 use algebraeon::nzq::{Rational};
-use algebraeon::rings::{linear::matrix::*, number::algebraic::complex::*};
+use algebraeon::rings::{linear::matrix::*, rings::isolated_algebraic::complex::*};
 use algebraeon::sets::structure::*;
 // Construct a matrix
 let a = Matrix::<Rational>::from_rows(vec![

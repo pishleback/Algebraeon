@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 pub struct ConvexHull<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > where
     FS::Set: Hash,
@@ -34,7 +34,7 @@ pub struct ConvexHull<
     */
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
     for ConvexHull<FS, SP>
 where
     FS::Set: std::hash::Hash + std::fmt::Debug,
@@ -61,7 +61,7 @@ where
 //     pub interior: PartialSimplicialComplex<FS, SP>,
 // }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     ConvexHull<FS, SP>
 where
     FS::Set: Hash,
@@ -543,7 +543,7 @@ where
 
 #[derive(Clone)]
 struct ConvexHullWireframe<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > {
     ambient_space: SP,
@@ -551,7 +551,7 @@ struct ConvexHullWireframe<
     edges: Vec<(Vector<FS, SP>, Vector<FS, SP>)>,
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     ConvexHullWireframe<FS, SP>
 where
     FS::Set: Hash,
@@ -721,7 +721,7 @@ where
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     ConvexHull<FS, SP>
 where
     FS::Set: Hash,

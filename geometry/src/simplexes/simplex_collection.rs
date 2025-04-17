@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use super::*;
 
 pub trait LabelledSimplexCollection<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
     T: Eq + Clone,
 >: Sized where

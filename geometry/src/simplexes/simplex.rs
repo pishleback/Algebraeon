@@ -2,7 +2,7 @@ use super::*;
 use itertools::Itertools;
 
 #[derive(Clone)]
-pub struct Simplex<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> {
+pub struct Simplex<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> {
     ambient_space: SP,
     // points must be ordered w.r.t the ordering on vectors
     // points must be non-degenerate
@@ -10,7 +10,7 @@ pub struct Simplex<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineS
     points: Vec<Vector<FS, SP>>,
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
     for Simplex<FS, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -20,7 +20,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> PartialEq
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> PartialEq
     for Simplex<FS, SP>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -28,12 +28,12 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> Eq
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Eq
     for Simplex<FS, SP>
 {
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> Hash
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Hash
     for Simplex<FS, SP>
 where
     FS::Set: Hash,
@@ -43,7 +43,7 @@ where
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> Simplex<FS, SP>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Simplex<FS, SP>
 where
     SP: Clone,
 {
@@ -198,14 +198,14 @@ pub enum OrientationSide {
 /// in 0d space it is a null simplex. The orientation looses meaning but it is nice to still count this case.
 #[derive(Clone)]
 struct OrientedSimplexOrientation<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > {
     flip: bool,                     // flip the orientation if necessary
     positive_point: Vector<FS, SP>, // a point on the positive side
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
     for OrientedSimplexOrientation<FS, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -218,14 +218,14 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 
 #[derive(Clone)]
 pub struct OrientedSimplex<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > {
     simplex: Simplex<FS, SP>,
     orientation: Option<OrientedSimplexOrientation<FS, SP>>, //None iff simplex is null
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
     for OrientedSimplex<FS, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -236,7 +236,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     OrientedSimplex<FS, SP>
 {
     pub fn new_with_positive_point(
@@ -376,13 +376,13 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 
 #[derive(Clone)]
 pub struct OrientedHyperplane<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > {
     oriented_simplex: OrientedSimplex<FS, SP>,
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
     for OrientedHyperplane<FS, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -401,7 +401,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 // }
 
 pub enum OrientedHyperplaneIntersectLineSegmentResult<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
 > {
     PositivePositive,
@@ -415,7 +415,7 @@ pub enum OrientedHyperplaneIntersectLineSegmentResult<
     NegativePositive { intersection_point: Vector<FS, SP> },
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     OrientedHyperplane<FS, SP>
 {
     pub fn ambient_space(&self) -> SP {

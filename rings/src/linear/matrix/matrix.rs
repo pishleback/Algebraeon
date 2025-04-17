@@ -239,13 +239,13 @@ impl<Set: Clone> Matrix<Set> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MatrixStructure<RS: SetStructure> {
+pub struct MatrixStructure<RS: SetSignature> {
     ring: RS,
 }
 
-impl<RS: SetStructure> Structure for MatrixStructure<RS> {}
+impl<RS: SetSignature> Signature for MatrixStructure<RS> {}
 
-impl<RS: SetStructure> SetStructure for MatrixStructure<RS> {
+impl<RS: SetSignature> SetSignature for MatrixStructure<RS> {
     type Set = Matrix<RS::Set>;
 
     fn is_element(&self, _x: &Self::Set) -> bool {
@@ -253,7 +253,7 @@ impl<RS: SetStructure> SetStructure for MatrixStructure<RS> {
     }
 }
 
-impl<RS: SetStructure> MatrixStructure<RS> {
+impl<RS: SetSignature> MatrixStructure<RS> {
     pub fn new(ring: RS) -> Self {
         Self { ring }
     }
@@ -263,7 +263,7 @@ impl<RS: SetStructure> MatrixStructure<RS> {
     }
 }
 
-impl<RS: EqStructure> MatrixStructure<RS> {
+impl<RS: EqSignature> MatrixStructure<RS> {
     pub fn equal(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> bool {
         let rows = a.rows();
         let cols = a.cols();
@@ -284,7 +284,7 @@ impl<RS: EqStructure> MatrixStructure<RS> {
     }
 }
 
-impl<RS: ToStringStructure> MatrixStructure<RS> {
+impl<RS: ToStringSignature> MatrixStructure<RS> {
     pub fn pprint(&self, mat: &Matrix<RS::Set>) {
         let mut str_rows = vec![];
         for r in 0..mat.rows() {
@@ -340,7 +340,7 @@ impl<RS: ToStringStructure> MatrixStructure<RS> {
     }
 }
 
-impl<RS: RingStructure> MatrixStructure<RS> {
+impl<RS: RingSignature> MatrixStructure<RS> {
     pub fn zero(&self, rows: usize, cols: usize) -> Matrix<RS::Set> {
         Matrix::construct(rows, cols, |_r, _c| self.ring.zero())
     }
@@ -556,18 +556,18 @@ impl<RS: RingStructure> MatrixStructure<RS> {
 
 impl<R: MetaType> MetaType for Matrix<R>
 where
-    R::Structure: SetStructure,
+    R::Signature: SetSignature,
 {
-    type Structure = MatrixStructure<R::Structure>;
+    type Signature = MatrixStructure<R::Signature>;
 
-    fn structure() -> Self::Structure {
+    fn structure() -> Self::Signature {
         MatrixStructure::new(R::structure())
     }
 }
 
 impl<R: MetaType> Matrix<R>
 where
-    R::Structure: ToStringStructure,
+    R::Signature: ToStringSignature,
 {
     pub fn pprint(&self) {
         Self::structure().pprint(self)
@@ -576,18 +576,18 @@ where
 
 impl<R: MetaType> PartialEq for Matrix<R>
 where
-    R::Structure: RingStructure,
+    R::Signature: RingSignature,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
     }
 }
 
-impl<R: MetaType> Eq for Matrix<R> where R::Structure: RingStructure {}
+impl<R: MetaType> Eq for Matrix<R> where R::Signature: RingSignature {}
 
 impl<R: MetaType> Matrix<R>
 where
-    R::Structure: RingStructure,
+    R::Signature: RingSignature,
 {
     pub fn zero(rows: usize, cols: usize) -> Self {
         Self::structure().zero(rows, cols)

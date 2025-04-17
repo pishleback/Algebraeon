@@ -4,7 +4,7 @@ use simplexes::{OrientedHyperplane, OrientedSimplex, Simplex};
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAffineSubspace<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
     ESP: Borrow<AffineSpace<FS>> + Clone,
 > {
@@ -22,7 +22,7 @@ pub struct EmbeddedAffineSubspace<
 }
 
 impl<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
     ESP: Borrow<AffineSpace<FS>> + From<AffineSpace<FS>> + Clone,
 > EmbeddedAffineSubspace<FS, SP, ESP>
@@ -73,7 +73,7 @@ impl<
     }
 }
 
-impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
+impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     EmbeddedAffineSubspace<FS, SP, AffineSpace<FS>>
 {
     pub fn new(
@@ -114,7 +114,7 @@ impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 impl<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
     ESP: Borrow<AffineSpace<FS>> + Clone,
 > EmbeddedAffineSubspace<FS, SP, ESP>
@@ -340,7 +340,7 @@ impl<
 }
 
 pub fn compose_affine_embeddings<
-    FS: OrderedRingStructure + FieldStructure,
+    FS: OrderedRingSignature + FieldSignature,
     SPA: Borrow<AffineSpace<FS>> + Clone,
     SPB: Borrow<AffineSpace<FS>> + Clone,
     SPC: Borrow<AffineSpace<FS>> + Clone,
