@@ -8,7 +8,7 @@ mod structure;
 pub use algebraeon_macros::CanonicalStructure;
 pub use morphism::{
     BijectiveFunction, CompositionMorphism, Function, Functions, IdentityMorphism,
-    InjectiveFunction, Morphism, MorphismsSignature,
+    InjectiveFunction, Morphism,
 };
 pub use structure::{
     CountableSetSignature, EqSignature, FiniteSetSignature, MetaType, SetSignature, Signature,
