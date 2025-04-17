@@ -1,4 +1,5 @@
-use crate::structure::*;
+use super::matrix::Matrix;
+use crate::{linear::matrix::MatrixStructure, structure::*};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -10,6 +11,36 @@ pub struct FreeModuleFiniteNumberedBasisStructure<Ring: RingSignature> {
 impl<Ring: RingSignature> FreeModuleFiniteNumberedBasisStructure<Ring> {
     pub fn new(ring: Ring, rank: usize) -> Self {
         Self { ring, rank }
+    }
+
+    pub fn ring(&self) -> &Ring {
+        &self.ring
+    }
+
+    pub fn to_col(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
+        debug_assert!(self.is_element(&v));
+        Matrix::construct(self.rank, 1, |r, _| v[r].clone())
+    }
+
+    pub fn to_row(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
+        debug_assert!(self.is_element(&v));
+        Matrix::construct(1, self.rank, |_, c| v[c].clone())
+    }
+
+    pub fn from_row(&self, m: &Matrix<Ring::Set>) -> <Self as SetSignature>::Set {
+        debug_assert_eq!(m.rows(), 1);
+        debug_assert_eq!(m.cols(), self.rank);
+        (0..self.rank)
+            .map(|i| m.at(0, i).unwrap().clone())
+            .collect()
+    }
+
+    pub fn from_col(&self, m: &Matrix<Ring::Set>) -> <Self as SetSignature>::Set {
+        debug_assert_eq!(m.cols(), 1);
+        debug_assert_eq!(m.rows(), self.rank);
+        (0..self.rank)
+            .map(|i| m.at(i, 0).unwrap().clone())
+            .collect()
     }
 
     pub fn basis_element(&self, i: usize) -> <Self as SetSignature>::Set {
@@ -81,6 +112,102 @@ impl<Ring: RingSignature> FiniteRankModuleSignature<Ring>
             .into_iter()
             .map(|i| self.basis_element(i))
             .collect()
+    }
+}
+
+// linear maps of finite rank free modules with a basis
+#[derive(Debug, Clone)]
+pub struct LinearTransformation<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
+{
+    ring: Ring,
+    domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
+    range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+    matrix: Matrix<Ring::Set>, // v -> Mv
+}
+
+impl<Ring: BezoutDomainSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
+    LinearTransformation<Ring, INJECTIVE, SURJECTIVE>
+{
+    pub fn new(
+        ring: Ring,
+        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        matrix: Matrix<Ring::Set>,
+    ) -> Self {
+        debug_assert_eq!(&ring, domain.ring());
+        debug_assert_eq!(&ring, range.ring());
+        debug_assert_eq!(domain.rank(), matrix.cols());
+        debug_assert_eq!(range.rank(), matrix.rows());
+        let rank = MatrixStructure::new(ring.clone()).rank(matrix.clone());
+        if INJECTIVE {
+            debug_assert_eq!(rank, domain.rank());
+        }
+        if SURJECTIVE {
+            debug_assert_eq!(rank, range.rank());
+        }
+        Self {
+            ring,
+            domain,
+            range,
+            matrix,
+        }
+    }
+}
+
+impl<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
+    Morphism<
+        FreeModuleFiniteNumberedBasisStructure<Ring>,
+        FreeModuleFiniteNumberedBasisStructure<Ring>,
+    > for LinearTransformation<Ring, INJECTIVE, SURJECTIVE>
+{
+    fn domain(&self) -> &FreeModuleFiniteNumberedBasisStructure<Ring> {
+        &self.domain
+    }
+
+    fn range(&self) -> &FreeModuleFiniteNumberedBasisStructure<Ring> {
+        &self.range
+    }
+}
+
+impl<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
+    Function<
+        FreeModuleFiniteNumberedBasisStructure<Ring>,
+        FreeModuleFiniteNumberedBasisStructure<Ring>,
+    > for LinearTransformation<Ring, INJECTIVE, SURJECTIVE>
+{
+    fn image(&self, x: &Vec<Ring::Set>) -> Vec<Ring::Set> {
+        self.range.from_col(
+            &MatrixStructure::new(self.ring.clone())
+                .mul(&self.matrix, &self.domain.to_col(x))
+                .unwrap(),
+        )
+    }
+}
+
+impl<Ring: BezoutDomainSignature, const SURJECTIVE: bool>
+    InjectiveFunction<
+        FreeModuleFiniteNumberedBasisStructure<Ring>,
+        FreeModuleFiniteNumberedBasisStructure<Ring>,
+    > for LinearTransformation<Ring, true, SURJECTIVE>
+{
+    fn try_preimage(&self, y: &Vec<Ring::Set>) -> Option<Vec<Ring::Set>> {
+        Some(
+            self.domain.from_col(
+                &MatrixStructure::new(self.ring.clone())
+                    .col_solve(&self.matrix, &self.range.to_col(&y))?,
+            ),
+        )
+    }
+}
+
+impl<Ring: BezoutDomainSignature>
+    BijectiveFunction<
+        FreeModuleFiniteNumberedBasisStructure<Ring>,
+        FreeModuleFiniteNumberedBasisStructure<Ring>,
+    > for LinearTransformation<Ring, true, true>
+{
+    fn preimage(&self, y: &Vec<Ring::Set>) -> Vec<Ring::Set> {
+        self.try_preimage(y).unwrap()
     }
 }
 
