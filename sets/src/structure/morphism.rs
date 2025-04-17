@@ -163,12 +163,6 @@ impl<
     }
 }
 
-pub trait MorphismsSignature<Domain: Signature, Range: Signature>: SetSignature
-where
-    Self::Set: Morphism<Domain, Range>,
-{
-}
-
 /// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Functions<Domain: SetSignature, Range: SetSignature> {
