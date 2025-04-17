@@ -16,7 +16,9 @@ where
         &self,
         f: Polynomial<RS::Set>,
         factor_coeff: impl Fn(&RS::Set) -> Option<FactoredElement<RS>>,
-        primitive_sqfree_factorize: &impl Fn(Polynomial<RS::Set>) -> FactoredElement<PolynomialStructure<RS>>,
+        primitive_sqfree_factorize: &impl Fn(
+            Polynomial<RS::Set>,
+        ) -> FactoredElement<PolynomialStructure<RS>>,
     ) -> FactoredElement<PolynomialStructure<RS>> {
         debug_assert!(!self.is_zero(&f));
         //look for a squarefree factorization of the form
@@ -69,7 +71,10 @@ where
     fn factor_primitive_linear_part(
         &self,
         mut f: Polynomial<RS::Set>,
-    ) -> (FactoredElement<PolynomialStructure<RS>>, Polynomial<RS::Set>) {
+    ) -> (
+        FactoredElement<PolynomialStructure<RS>>,
+        Polynomial<RS::Set>,
+    ) {
         debug_assert!(self.is_primitive(f.clone()));
 
         /*

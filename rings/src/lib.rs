@@ -2,5 +2,5 @@
 pub mod linear;
 pub mod number;
 pub mod polynomial;
-pub mod structure;
 pub mod rings;
+pub mod structure;

@@ -1,4 +1,4 @@
-use super::factorization::*;
+use super::*;
 use crate::polynomial::*;
 use algebraeon_nzq::{Integer, Natural, Rational, traits::*};
 use algebraeon_sets::structure::*;
@@ -546,55 +546,6 @@ impl<R: MetaRing> MetaEuclideanDivision for R where
 {
 }
 
-pub trait UniqueFactorizationSignature: FavoriteAssociateSignature {
-    /// Try to determine if a is irreducible. May fail to produce an answer.
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
-}
-
-pub trait FactorableSignature: UniqueFactorizationSignature {
-    //a UFD with an explicit algorithm to compute unique factorizations
-    fn factor(&self, a: &Self::Set) -> Option<super::factorization::FactoredElement<Self>>;
-
-    fn is_irreducible(&self, a: &Self::Set) -> bool {
-        match self.factor(a) {
-            None => false, //zero is not irreducible
-            Some(factored) => factored.is_prime(),
-        }
-    }
-
-    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set
-// where
-    //     Self: FactoredAbstractStructure<Factored<Self>, Object = Self::Set, PrimeObject = Self::Set>,
-        // Factored<Self>: FactoredAbstract<Structure = Self>,
-    {
-        match (self.factor(a), self.factor(b)) {
-            (Some(factored_a), Some(factored_b)) => {
-                FactoredElement::gcd(factored_a, factored_b).expanded()
-            }
-            (None, Some(_)) => b.clone(),
-            (Some(_), None) => a.clone(),
-            (None, None) => self.zero(),
-        }
-    }
-}
-pub trait MetaFactorableSignature: MetaFavoriteAssociate
-where
-    Self::Signature: FactorableSignature,
-{
-    fn factor(&self) -> Option<FactoredElement<Self::Signature>> {
-        Self::structure().factor(self)
-    }
-
-    fn is_irreducible(&self) -> bool {
-        Self::structure().is_irreducible(self)
-    }
-
-    fn gcd_by_factor(a: &Self, b: &Self) -> Self {
-        Self::structure().gcd_by_factor(a, b)
-    }
-}
-impl<R: MetaRing> MetaFactorableSignature for R where Self::Signature: FactorableSignature<Set = R> {}
-
 pub trait InfiniteSignature: SetSignature {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
 }
@@ -649,26 +600,6 @@ impl<FS: FieldSignature> GreatestCommonDivisorSignature for FS {
 impl<FS: FieldSignature> BezoutDomainSignature for FS {
     fn xgcd(&self, x: &Self::Set, y: &Self::Set) -> (Self::Set, Self::Set, Self::Set) {
         self.euclidean_xgcd(x.clone(), y.clone())
-    }
-}
-
-impl<FS: FieldSignature> UniqueFactorizationSignature for FS {
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(self.is_irreducible(a))
-    }
-}
-
-impl<FS: FieldSignature> FactorableSignature for FS {
-    fn factor(&self, a: &Self::Set) -> Option<FactoredElement<Self>> {
-        if self.is_zero(a) {
-            None
-        } else {
-            Some(FactoredElement::from_unit_and_factor_powers(
-                self.clone(),
-                a.clone(),
-                vec![],
-            ))
-        }
     }
 }
 

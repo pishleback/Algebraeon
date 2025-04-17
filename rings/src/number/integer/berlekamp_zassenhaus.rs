@@ -451,7 +451,10 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 
         // The remaining modular factors must give the last irreducible factor in the factorization
         if m > 0 {
-            factored.mul_mut(FactoredElement::from_prime(Polynomial::<Integer>::structure(), f));
+            factored.mul_mut(FactoredElement::from_prime(
+                Polynomial::<Integer>::structure(),
+                f,
+            ));
         }
 
         factored

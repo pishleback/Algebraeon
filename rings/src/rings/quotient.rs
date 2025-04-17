@@ -1,6 +1,6 @@
-use std::borrow::Borrow;
-use algebraeon_sets::structure::*;
 use crate::structure::*;
+use algebraeon_sets::structure::*;
+use std::borrow::Borrow;
 
 #[derive(Debug, Clone)]
 pub struct QuotientStructure<RS: EuclideanDivisionSignature, const IS_FIELD: bool> {
@@ -161,11 +161,7 @@ impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature, const IS_FIELD
 impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature> IntegralDomainSignature
     for QuotientStructure<RS, true>
 {
-    fn div(
-        &self,
-        top: &Self::Set,
-        bot: &Self::Set,
-    ) -> Result<Self::Set, RingDivisionError> {
+    fn div(&self, top: &Self::Set, bot: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.inv(bot) {
             Ok(bot_inv) => Ok(self.mul(top, &bot_inv)),
             Err(err) => Err(err),
@@ -180,9 +176,9 @@ impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature> FieldSignature
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::*;
     use super::*;
     use algebraeon_nzq::*;
+    use algebraeon_sets::structure::*;
 
     #[test]
     fn test() {

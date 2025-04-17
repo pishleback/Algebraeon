@@ -1,6 +1,9 @@
 use super::conway_polynomials::conway_polynomial;
 use crate::{
-    linear::matrix::{Matrix, MatrixStructure}, polynomial::*, rings::quotient::QuotientStructure, structure::*
+    linear::matrix::{Matrix, MatrixStructure},
+    polynomial::*,
+    rings::quotient::QuotientStructure,
+    structure::*,
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
 use algebraeon_sets::structure::*;

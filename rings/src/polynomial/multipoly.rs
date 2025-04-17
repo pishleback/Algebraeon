@@ -679,7 +679,8 @@ where
         factor_poly: impl Fn(&Polynomial<RS::Set>) -> Option<FactoredElement<PolynomialStructure<RS>>>,
         factor_multipoly_coeff: impl Fn(
             &MultiPolynomial<RS::Set>,
-        ) -> Option<FactoredElement<MultiPolynomialStructure<RS>>>,
+        )
+            -> Option<FactoredElement<MultiPolynomialStructure<RS>>>,
         mpoly: &<Self as SetSignature>::Set,
     ) -> Option<FactoredElement<PolynomialStructure<MultiPolynomialStructure<RS>>>> {
         match |mpoly: &<Self as SetSignature>::Set| -> Option<Polynomial<RS::Set>> {
@@ -732,7 +733,9 @@ where
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
         factor_coeff: Rc<dyn Fn(&RS::Set) -> Option<FactoredElement<RS>>>,
-        factor_poly: Rc<dyn Fn(&Polynomial<RS::Set>) -> Option<FactoredElement<PolynomialStructure<RS>>>>,
+        factor_poly: Rc<
+            dyn Fn(&Polynomial<RS::Set>) -> Option<FactoredElement<PolynomialStructure<RS>>>,
+        >,
         mpoly: &<Self as SetSignature>::Set,
     ) -> Option<FactoredElement<MultiPolynomialStructure<RS>>> {
         if self.is_zero(mpoly) {

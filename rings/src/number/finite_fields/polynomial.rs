@@ -1,5 +1,8 @@
 use crate::{
-    linear::{linear_subspace::*, matrix::*}, polynomial::*, rings::quotient::QuotientStructure, structure::*
+    linear::{linear_subspace::*, matrix::*},
+    polynomial::*,
+    rings::quotient::QuotientStructure,
+    structure::*,
 };
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;

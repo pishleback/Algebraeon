@@ -1,6 +1,6 @@
 use super::number_field::AlgebraicNumberFieldStructure;
 use crate::{
-    linear::matrix::Matrix, polynomial::*, rings::quotient::QuotientStructure, structure::*
+    linear::matrix::Matrix, polynomial::*, rings::quotient::QuotientStructure, structure::*,
 };
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
@@ -575,7 +575,8 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
         };
 
         let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_factor_powers();
-        let mut factored = FactoredElement::from_unit(self.clone().into(), Polynomial::constant(rat_unit));
+        let mut factored =
+            FactoredElement::from_unit(self.clone().into(), Polynomial::constant(rat_unit));
         for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor

@@ -178,9 +178,7 @@ impl<RS: DedekindDomainSignature> DedekindDomainPrimeIdeal<RS> {
     }
 }
 
-impl<RS: DedekindDomainSignature> FactoredSignature<DedekindDomainIdealFactorization<RS>>
-    for RS
-{
+impl<RS: DedekindDomainSignature> FactoredSignature<DedekindDomainIdealFactorization<RS>> for RS {
     type PrimeObject = DedekindDomainPrimeIdeal<RS>;
 
     type Object = RS::Ideal;
