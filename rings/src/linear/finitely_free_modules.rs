@@ -3,12 +3,12 @@ use crate::{linear::matrix::MatrixStructure, structure::*};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FreeModuleFiniteNumberedBasisStructure<Ring: RingSignature> {
+pub struct FinitelyFreeModuleStructure<Ring: RingSignature> {
     ring: Ring,
     rank: usize,
 }
 
-impl<Ring: RingSignature> FreeModuleFiniteNumberedBasisStructure<Ring> {
+impl<Ring: RingSignature> FinitelyFreeModuleStructure<Ring> {
     pub fn new(ring: Ring, rank: usize) -> Self {
         Self { ring, rank }
     }
@@ -57,9 +57,9 @@ impl<Ring: RingSignature> FreeModuleFiniteNumberedBasisStructure<Ring> {
     }
 }
 
-impl<Ring: RingSignature> Signature for FreeModuleFiniteNumberedBasisStructure<Ring> {}
+impl<Ring: RingSignature> Signature for FinitelyFreeModuleStructure<Ring> {}
 
-impl<Ring: RingSignature> SetSignature for FreeModuleFiniteNumberedBasisStructure<Ring> {
+impl<Ring: RingSignature> SetSignature for FinitelyFreeModuleStructure<Ring> {
     type Set = Vec<Ring::Set>;
 
     fn is_element(&self, v: &Self::Set) -> bool {
@@ -67,7 +67,7 @@ impl<Ring: RingSignature> SetSignature for FreeModuleFiniteNumberedBasisStructur
     }
 }
 
-impl<Ring: RingSignature> EqSignature for FreeModuleFiniteNumberedBasisStructure<Ring> {
+impl<Ring: RingSignature> EqSignature for FinitelyFreeModuleStructure<Ring> {
     fn equal(&self, v: &Self::Set, w: &Self::Set) -> bool {
         debug_assert!(self.is_element(v));
         debug_assert!(self.is_element(w));
@@ -75,9 +75,13 @@ impl<Ring: RingSignature> EqSignature for FreeModuleFiniteNumberedBasisStructure
     }
 }
 
-impl<Ring: RingSignature> ModuleSignature<Ring> for FreeModuleFiniteNumberedBasisStructure<Ring> {
+impl<Ring: RingSignature> ModuleSignature<Ring> for FinitelyFreeModuleStructure<Ring> {
     fn ring(&self) -> &Ring {
         &self.ring
+    }
+
+    fn zero(&self) -> Self::Set {
+        (0..self.rank).map(|_| self.ring().zero()).collect()
     }
 
     fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
@@ -99,19 +103,19 @@ impl<Ring: RingSignature> ModuleSignature<Ring> for FreeModuleFiniteNumberedBasi
     }
 }
 
-impl<Ring: RingSignature> FreeModuleSignature<Ring>
-    for FreeModuleFiniteNumberedBasisStructure<Ring>
-{
-}
+impl<Ring: RingSignature> FreeModuleSignature<Ring> for FinitelyFreeModuleStructure<Ring> {}
 
-impl<Ring: RingSignature> FiniteRankModuleSignature<Ring>
-    for FreeModuleFiniteNumberedBasisStructure<Ring>
-{
-    fn basis(&self) -> Vec<Self::Set> {
-        (0..self.rank)
-            .into_iter()
-            .map(|i| self.basis_element(i))
-            .collect()
+impl<Ring: RingSignature> FinitelyFreeModuleSignature<Ring> for FinitelyFreeModuleStructure<Ring> {
+    fn rank(&self) -> usize {
+        self.rank
+    }
+
+    fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
+        v.clone()
+    }
+
+    fn from_vec(&self, v: &Vec<Ring::Set>) -> Self::Set {
+        v.clone()
     }
 }
 
@@ -123,8 +127,8 @@ pub struct FreeModuleFiniteNumberedBasisLinearTransformation<
     const SURJECTIVE: bool,
 > {
     ring: Ring,
-    domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
-    range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+    domain: FinitelyFreeModuleStructure<Ring>,
+    range: FinitelyFreeModuleStructure<Ring>,
     matrix: Matrix<Ring::Set>, // v -> Mv
 }
 
@@ -133,8 +137,8 @@ impl<Ring: BezoutDomainSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
 {
     pub fn new(
         ring: Ring,
-        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
-        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        domain: FinitelyFreeModuleStructure<Ring>,
+        range: FinitelyFreeModuleStructure<Ring>,
         matrix: Matrix<Ring::Set>,
     ) -> Self {
         debug_assert_eq!(&ring, domain.ring());
@@ -158,8 +162,8 @@ impl<Ring: BezoutDomainSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
 
     fn construct_impl(
         ring: Ring,
-        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
-        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        domain: FinitelyFreeModuleStructure<Ring>,
+        range: FinitelyFreeModuleStructure<Ring>,
         basis_image: impl Fn(usize) -> Vec<Ring::Set>,
     ) -> Self {
         let matrix = Matrix::from_cols(
@@ -180,8 +184,8 @@ impl<Ring: BezoutDomainSignature>
 {
     pub fn construct(
         ring: Ring,
-        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
-        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        domain: FinitelyFreeModuleStructure<Ring>,
+        range: FinitelyFreeModuleStructure<Ring>,
         basis_image: impl Fn(usize) -> Vec<Ring::Set>,
     ) -> Self {
         Self::construct_impl(ring, domain, range, basis_image)
@@ -193,8 +197,8 @@ impl<Ring: BezoutDomainSignature>
 {
     pub fn construct_injective(
         ring: Ring,
-        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
-        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        domain: FinitelyFreeModuleStructure<Ring>,
+        range: FinitelyFreeModuleStructure<Ring>,
         basis_image: impl Fn(usize) -> Vec<Ring::Set>,
     ) -> Self {
         Self::construct_impl(ring, domain, range, basis_image)
@@ -206,8 +210,8 @@ impl<Ring: BezoutDomainSignature>
 {
     pub fn construct_surjective(
         ring: Ring,
-        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
-        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        domain: FinitelyFreeModuleStructure<Ring>,
+        range: FinitelyFreeModuleStructure<Ring>,
         basis_image: impl Fn(usize) -> Vec<Ring::Set>,
     ) -> Self {
         Self::construct_impl(ring, domain, range, basis_image)
@@ -219,8 +223,8 @@ impl<Ring: BezoutDomainSignature>
 {
     pub fn construct_bijective(
         ring: Ring,
-        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
-        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        domain: FinitelyFreeModuleStructure<Ring>,
+        range: FinitelyFreeModuleStructure<Ring>,
         basis_image: impl Fn(usize) -> Vec<Ring::Set>,
     ) -> Self {
         Self::construct_impl(ring, domain, range, basis_image)
@@ -228,25 +232,21 @@ impl<Ring: BezoutDomainSignature>
 }
 
 impl<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
-    Morphism<
-        FreeModuleFiniteNumberedBasisStructure<Ring>,
-        FreeModuleFiniteNumberedBasisStructure<Ring>,
-    > for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, INJECTIVE, SURJECTIVE>
+    Morphism<FinitelyFreeModuleStructure<Ring>, FinitelyFreeModuleStructure<Ring>>
+    for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, INJECTIVE, SURJECTIVE>
 {
-    fn domain(&self) -> &FreeModuleFiniteNumberedBasisStructure<Ring> {
+    fn domain(&self) -> &FinitelyFreeModuleStructure<Ring> {
         &self.domain
     }
 
-    fn range(&self) -> &FreeModuleFiniteNumberedBasisStructure<Ring> {
+    fn range(&self) -> &FinitelyFreeModuleStructure<Ring> {
         &self.range
     }
 }
 
 impl<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
-    Function<
-        FreeModuleFiniteNumberedBasisStructure<Ring>,
-        FreeModuleFiniteNumberedBasisStructure<Ring>,
-    > for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, INJECTIVE, SURJECTIVE>
+    Function<FinitelyFreeModuleStructure<Ring>, FinitelyFreeModuleStructure<Ring>>
+    for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, INJECTIVE, SURJECTIVE>
 {
     fn image(&self, x: &Vec<Ring::Set>) -> Vec<Ring::Set> {
         self.range.from_col(
@@ -258,10 +258,8 @@ impl<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
 }
 
 impl<Ring: BezoutDomainSignature, const SURJECTIVE: bool>
-    InjectiveFunction<
-        FreeModuleFiniteNumberedBasisStructure<Ring>,
-        FreeModuleFiniteNumberedBasisStructure<Ring>,
-    > for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, SURJECTIVE>
+    InjectiveFunction<FinitelyFreeModuleStructure<Ring>, FinitelyFreeModuleStructure<Ring>>
+    for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, SURJECTIVE>
 {
     fn try_preimage(&self, y: &Vec<Ring::Set>) -> Option<Vec<Ring::Set>> {
         Some(
@@ -274,10 +272,8 @@ impl<Ring: BezoutDomainSignature, const SURJECTIVE: bool>
 }
 
 impl<Ring: BezoutDomainSignature>
-    BijectiveFunction<
-        FreeModuleFiniteNumberedBasisStructure<Ring>,
-        FreeModuleFiniteNumberedBasisStructure<Ring>,
-    > for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, true>
+    BijectiveFunction<FinitelyFreeModuleStructure<Ring>, FinitelyFreeModuleStructure<Ring>>
+    for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, true>
 {
     fn preimage(&self, y: &Vec<Ring::Set>) -> Vec<Ring::Set> {
         self.try_preimage(y).unwrap()
@@ -291,7 +287,7 @@ mod tests {
 
     #[test]
     fn test_finite_rank_modules() {
-        let m = FreeModuleFiniteNumberedBasisStructure::new(Integer::structure(), 3);
+        let m = FinitelyFreeModuleStructure::new(Integer::structure(), 3);
 
         let a = m.basis_element(0);
         let b = m.basis_element(1);
@@ -317,8 +313,8 @@ mod tests {
 
     #[test]
     fn test_finite_rank_modules_linear_transformation() {
-        let m = FreeModuleFiniteNumberedBasisStructure::new(Integer::structure(), 2);
-        let n = FreeModuleFiniteNumberedBasisStructure::new(Integer::structure(), 5);
+        let m = FinitelyFreeModuleStructure::new(Integer::structure(), 2);
+        let n = FinitelyFreeModuleStructure::new(Integer::structure(), 5);
 
         let t = FreeModuleFiniteNumberedBasisLinearTransformation::construct_injective(
             Integer::structure(),
