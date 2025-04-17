@@ -1,43 +1,42 @@
-mod structure {
-    use crate::structure::*;
-    use algebraeon_sets::structure::*;
 
-    pub trait ModuleStructure<Ring: RingSignature>: SetSignature {
-        fn ring(&self) -> Ring;
-        fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
-        fn neg(&self, a: &Self::Set) -> Self::Set;
-        fn scalar_mul(&self, x: &Ring::Set, a: &Self::Set) -> Self::Set;
-    }
+use crate::structure::*;
+use algebraeon_sets::structure::*;
 
-    pub trait FreeModuleStructure<Ring: RingSignature>: ModuleStructure<Ring> {}
+pub trait ModuleStructure<Ring: RingSignature>: SetSignature {
+    fn ring(&self) -> Ring;
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+    fn neg(&self, a: &Self::Set) -> Self::Set;
+    fn scalar_mul(&self, x: &Ring::Set, a: &Self::Set) -> Self::Set;
+}
 
-    pub trait FiniteRankModuleStructure<Ring: RingSignature>: FreeModuleStructure<Ring> {
-        fn basis(&self) -> Vec<Self::Set>;
-        fn rank(&self) -> usize {
-            self.basis().len()
-        }
-    }
+pub trait FreeModuleStructure<Ring: RingSignature>: ModuleStructure<Ring> {}
 
-    pub trait ModuleHomomorphism<
-        Ring: RingSignature,
-        Domain: ModuleStructure<Ring>,
-        Range: ModuleStructure<Ring>,
-    >: Function<Domain, Range>
-    {
+pub trait FiniteRankModuleStructure<Ring: RingSignature>: FreeModuleStructure<Ring> {
+    fn basis(&self) -> Vec<Self::Set>;
+    fn rank(&self) -> usize {
+        self.basis().len()
     }
 }
 
-mod free_modules {
-    use crate::structure::*;
-
-    pub struct FreeModuleOverSetStructure<Ring: RingSignature> {
-        ring: Ring,
-    }
-
-    pub struct FreeModuleFiniteNumberedBasisStructure<Ring: RingSignature> {
-        ring: Ring,
-    }
+pub trait ModuleHomomorphism<
+    Ring: RingSignature,
+    Domain: ModuleStructure<Ring>,
+    Range: ModuleStructure<Ring>,
+>: Function<Domain, Range>
+{
 }
+
+// mod free_modules {
+//     use crate::structure::*;
+
+//     pub struct FreeModuleOverSetStructure<Ring: RingSignature> {
+//         ring: Ring,
+//     }
+
+//     pub struct FreeModuleFiniteNumberedBasisStructure<Ring: RingSignature> {
+//         ring: Ring,
+//     }
+// }
 
 /*
 
