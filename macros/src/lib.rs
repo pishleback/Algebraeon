@@ -9,11 +9,12 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let name = input.ident;
+    let vis = input.vis;
     let newtype_name = Ident::new(&format!("{}CanonicalStructure", name), name.span());
 
     let expanded = quote! {
         #[derive(Debug, Clone, PartialEq, Eq)]
-        pub struct #newtype_name {}
+        #vis struct #newtype_name {}
 
         impl #newtype_name {
             fn new() -> Self {
