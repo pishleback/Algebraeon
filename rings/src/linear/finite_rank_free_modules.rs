@@ -117,8 +117,11 @@ impl<Ring: RingSignature> FiniteRankModuleSignature<Ring>
 
 // linear maps of finite rank free modules with a basis
 #[derive(Debug, Clone)]
-pub struct LinearTransformation<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
-{
+pub struct FreeModuleFiniteNumberedBasisLinearTransformation<
+    Ring: RingSignature,
+    const INJECTIVE: bool,
+    const SURJECTIVE: bool,
+> {
     ring: Ring,
     domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
     range: FreeModuleFiniteNumberedBasisStructure<Ring>,
@@ -126,7 +129,7 @@ pub struct LinearTransformation<Ring: RingSignature, const INJECTIVE: bool, cons
 }
 
 impl<Ring: BezoutDomainSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
-    LinearTransformation<Ring, INJECTIVE, SURJECTIVE>
+    FreeModuleFiniteNumberedBasisLinearTransformation<Ring, INJECTIVE, SURJECTIVE>
 {
     pub fn new(
         ring: Ring,
@@ -152,13 +155,83 @@ impl<Ring: BezoutDomainSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
             matrix,
         }
     }
+
+    fn construct_impl(
+        ring: Ring,
+        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+    ) -> Self {
+        let matrix = Matrix::from_cols(
+            (0..domain.rank())
+                .map(|i| {
+                    let img_i = basis_image(i);
+                    debug_assert!(range.is_element(&img_i));
+                    img_i
+                })
+                .collect(),
+        );
+        Self::new(ring, domain, range, matrix)
+    }
+}
+
+impl<Ring: BezoutDomainSignature>
+    FreeModuleFiniteNumberedBasisLinearTransformation<Ring, false, false>
+{
+    pub fn construct(
+        ring: Ring,
+        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+    ) -> Self {
+        Self::construct_impl(ring, domain, range, basis_image)
+    }
+}
+
+impl<Ring: BezoutDomainSignature>
+    FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, false>
+{
+    pub fn construct_injective(
+        ring: Ring,
+        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+    ) -> Self {
+        Self::construct_impl(ring, domain, range, basis_image)
+    }
+}
+
+impl<Ring: BezoutDomainSignature>
+    FreeModuleFiniteNumberedBasisLinearTransformation<Ring, false, true>
+{
+    pub fn construct_surjective(
+        ring: Ring,
+        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+    ) -> Self {
+        Self::construct_impl(ring, domain, range, basis_image)
+    }
+}
+
+impl<Ring: BezoutDomainSignature>
+    FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, true>
+{
+    pub fn construct_bijective(
+        ring: Ring,
+        domain: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        range: FreeModuleFiniteNumberedBasisStructure<Ring>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+    ) -> Self {
+        Self::construct_impl(ring, domain, range, basis_image)
+    }
 }
 
 impl<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
     Morphism<
         FreeModuleFiniteNumberedBasisStructure<Ring>,
         FreeModuleFiniteNumberedBasisStructure<Ring>,
-    > for LinearTransformation<Ring, INJECTIVE, SURJECTIVE>
+    > for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, INJECTIVE, SURJECTIVE>
 {
     fn domain(&self) -> &FreeModuleFiniteNumberedBasisStructure<Ring> {
         &self.domain
@@ -173,7 +246,7 @@ impl<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
     Function<
         FreeModuleFiniteNumberedBasisStructure<Ring>,
         FreeModuleFiniteNumberedBasisStructure<Ring>,
-    > for LinearTransformation<Ring, INJECTIVE, SURJECTIVE>
+    > for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, INJECTIVE, SURJECTIVE>
 {
     fn image(&self, x: &Vec<Ring::Set>) -> Vec<Ring::Set> {
         self.range.from_col(
@@ -188,7 +261,7 @@ impl<Ring: BezoutDomainSignature, const SURJECTIVE: bool>
     InjectiveFunction<
         FreeModuleFiniteNumberedBasisStructure<Ring>,
         FreeModuleFiniteNumberedBasisStructure<Ring>,
-    > for LinearTransformation<Ring, true, SURJECTIVE>
+    > for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, SURJECTIVE>
 {
     fn try_preimage(&self, y: &Vec<Ring::Set>) -> Option<Vec<Ring::Set>> {
         Some(
@@ -204,7 +277,7 @@ impl<Ring: BezoutDomainSignature>
     BijectiveFunction<
         FreeModuleFiniteNumberedBasisStructure<Ring>,
         FreeModuleFiniteNumberedBasisStructure<Ring>,
-    > for LinearTransformation<Ring, true, true>
+    > for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, true>
 {
     fn preimage(&self, y: &Vec<Ring::Set>) -> Vec<Ring::Set> {
         self.try_preimage(y).unwrap()
@@ -213,7 +286,7 @@ impl<Ring: BezoutDomainSignature>
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{FreeModuleFiniteNumberedBasisLinearTransformation, *};
     use algebraeon_nzq::Integer;
 
     #[test]
@@ -240,5 +313,40 @@ mod tests {
         );
 
         assert_eq!(m.basis(), vec![a, b, c]);
+    }
+
+    #[test]
+    fn test_finite_rank_modules_linear_transformation() {
+        let m = FreeModuleFiniteNumberedBasisStructure::new(Integer::structure(), 2);
+        let n = FreeModuleFiniteNumberedBasisStructure::new(Integer::structure(), 5);
+
+        let t = FreeModuleFiniteNumberedBasisLinearTransformation::construct_injective(
+            Integer::structure(),
+            m.clone(),
+            n.clone(),
+            |i| {
+                if i == 0 {
+                    vec![0, 2, 3, -4, 1]
+                        .into_iter()
+                        .map(|x| Integer::from(x))
+                        .collect()
+                } else if i == 1 {
+                    vec![1, 2, 3, 2, 1]
+                        .into_iter()
+                        .map(|x| Integer::from(x))
+                        .collect()
+                } else {
+                    unreachable!()
+                }
+            },
+        );
+
+        assert_eq!(
+            t.image(&vec![Integer::from(1), Integer::from(2)]),
+            vec![2, 6, 9, 0, 3]
+                .into_iter()
+                .map(|x| Integer::from(x))
+                .collect::<Vec<_>>()
+        );
     }
 }
