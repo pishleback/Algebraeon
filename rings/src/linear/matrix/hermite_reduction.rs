@@ -1,7 +1,24 @@
 use super::*;
 
-impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
-    pub fn row_span(&self, a: Matrix<RS::Set>) -> LinearSubspace<RS::Set> {
+/// Rings for which hermite normal forms can be computed
+pub trait HermiteAlgorithmSignature: BezoutDomainSignature {}
+impl<Ring: BezoutDomainSignature> HermiteAlgorithmSignature for Ring {}
+
+/// Rings for which reduced hermite normal forms can be computed
+pub trait ReducedHermiteAlgorithmSignature: HermiteAlgorithmSignature+ EuclideanDivisionSignature + FavoriteAssociateSignature {}
+impl<Ring: HermiteAlgorithmSignature + EuclideanDivisionSignature + FavoriteAssociateSignature>
+    ReducedHermiteAlgorithmSignature for Ring
+{
+}
+
+/// Rings for which reduced hermite normal forms can be computed and are unique
+pub trait UniqueReducedHermiteAlgorithmSignature: ReducedHermiteAlgorithmSignature {}
+impl UniqueReducedHermiteAlgorithmSignature for IntegerCanonicalStructure {}
+impl<Field: FieldSignature> UniqueReducedHermiteAlgorithmSignature for Field {}
+
+impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
+    #[deprecated]
+    pub fn row_span(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
         LinearSubspaceStructure::new(self.ring().clone()).from_span(
             1,
             a.cols(),
@@ -11,7 +28,8 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         )
     }
 
-    pub fn col_span(&self, a: Matrix<RS::Set>) -> LinearSubspace<RS::Set> {
+    #[deprecated]
+    pub fn col_span(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
         LinearSubspaceStructure::new(self.ring().clone()).from_span(
             a.rows(),
             1,
@@ -21,7 +39,8 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         )
     }
 
-    pub fn row_affine_span(&self, a: Matrix<RS::Set>) -> AffineSubspace<RS::Set> {
+    #[deprecated]
+    pub fn row_affine_span(&self, a: Matrix<Ring::Set>) -> AffineSubspace<Ring::Set> {
         let affine_lattice_structure = AffineSubspaceStructure::new(self.ring().clone());
         if a.rows() == 0 {
             affine_lattice_structure.empty(1, a.cols())
@@ -41,7 +60,8 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         }
     }
 
-    pub fn col_affine_span(&self, a: Matrix<RS::Set>) -> AffineSubspace<RS::Set> {
+    #[deprecated]
+    pub fn col_affine_span(&self, a: Matrix<Ring::Set>) -> AffineSubspace<Ring::Set> {
         let affine_lattice_structure = AffineSubspaceStructure::new(self.ring().clone());
         if a.cols() == 0 {
             affine_lattice_structure.empty(a.rows(), 1)
@@ -61,7 +81,8 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         }
     }
 
-    pub fn row_kernel(&self, a: Matrix<RS::Set>) -> LinearSubspace<RS::Set> {
+    #[deprecated]
+    pub fn row_kernel(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
         let (_h, u, _u_det, pivs) = self.row_hermite_algorithm(a);
         LinearSubspaceStructure::new(self.ring().clone()).from_basis(
             1,
@@ -73,7 +94,8 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         )
     }
 
-    pub fn col_kernel(&self, a: Matrix<RS::Set>) -> LinearSubspace<RS::Set> {
+    #[deprecated]
+    pub fn col_kernel(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
         let (_h, u, _u_det, pivs) = self.col_hermite_algorithm(a);
         LinearSubspaceStructure::new(self.ring().clone()).from_basis(
             u.rows(),
@@ -85,22 +107,24 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         )
     }
 
+    #[deprecated]
     pub fn row_solve(
         &self,
-        m: &Matrix<RS::Set>,
-        y: impl Borrow<Matrix<RS::Set>>,
-    ) -> Option<Matrix<RS::Set>> {
+        m: &Matrix<Ring::Set>,
+        y: impl Borrow<Matrix<Ring::Set>>,
+    ) -> Option<Matrix<Ring::Set>> {
         match self.col_solve(&m.transpose_ref(), &y.borrow().transpose_ref()) {
             Some(x) => Some(x.transpose()),
             None => None,
         }
     }
 
+    #[deprecated]
     pub fn col_solve(
         &self,
-        m: &Matrix<RS::Set>,
-        y: impl Borrow<Matrix<RS::Set>>,
-    ) -> Option<Matrix<RS::Set>> {
+        m: &Matrix<Ring::Set>,
+        y: impl Borrow<Matrix<Ring::Set>>,
+    ) -> Option<Matrix<Ring::Set>> {
         assert_eq!(y.borrow().rows(), m.rows());
         assert_eq!(y.borrow().cols(), 1);
         //the kernel of ext_mat is related to the solution
@@ -108,7 +132,7 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         //we are looking for a point in the column kernel where the first coordinate is 1
         let col_ker = self.col_kernel(ext_mat);
 
-        let first_coords: Vec<&RS::Set> = (0..LinearSubspaceStructure::new(self.ring().clone())
+        let first_coords: Vec<&Ring::Set> = (0..LinearSubspaceStructure::new(self.ring().clone())
             .rank(&col_ker))
             .map(|basis_num| {
                 LinearSubspaceStructure::new(self.ring().clone())
@@ -148,11 +172,12 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         }
     }
 
+    #[deprecated]
     pub fn row_solution_lattice(
         &self,
-        m: &Matrix<RS::Set>,
-        y: impl Borrow<Matrix<RS::Set>>,
-    ) -> AffineSubspace<RS::Set> {
+        m: &Matrix<Ring::Set>,
+        y: impl Borrow<Matrix<Ring::Set>>,
+    ) -> AffineSubspace<Ring::Set> {
         match self.row_solve(m, y) {
             Some(x) => AffineSubspaceStructure::new(self.ring().clone())
                 .from_offset_and_linear_lattice(1, m.rows(), x, self.row_kernel(m.clone())),
@@ -160,28 +185,31 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         }
     }
 
+    #[deprecated]
     pub fn col_solution_lattice(
         &self,
-        m: &Matrix<RS::Set>,
-        y: impl Borrow<Matrix<RS::Set>>,
-    ) -> AffineSubspace<RS::Set> {
+        m: &Matrix<Ring::Set>,
+        y: impl Borrow<Matrix<Ring::Set>>,
+    ) -> AffineSubspace<Ring::Set> {
         match self.col_solve(m, y) {
             Some(x) => AffineSubspaceStructure::new(self.ring().clone())
                 .from_offset_and_linear_lattice(m.cols(), 1, x, self.col_kernel(m.clone())),
             None => AffineSubspaceStructure::new(self.ring().clone()).empty(m.cols(), 1),
         }
     }
+}
 
-    //if A:=self return (H, U, u_det, pivots) such that
-    //H is in row hermite normal form
-    //U is invertible
-    //H=UA
-    //u det is the determinant of u. It is a unit
-    //pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
+impl<Ring: HermiteAlgorithmSignature> MatrixStructure<Ring> {
+    /// Return (H, U, u_det, pivots) such that
+    /// - H is in row hermite normal form, meaning
+    /// - U is invertible
+    /// - UM=H
+    /// - u_det is the determinant of u
+    /// - pivots[r] is the column of the rth pivot
     pub fn row_hermite_algorithm(
         &self,
-        mut m: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, RS::Set, Vec<usize>) {
+        mut m: Matrix<Ring::Set>,
+    ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>) {
         //build up U by applying row opps to the identity as we go
         let mut u = self.ident(m.rows());
         let mut u_det = self.ring().one();
@@ -277,13 +305,13 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
 
     pub fn col_hermite_algorithm(
         &self,
-        a: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, RS::Set, Vec<usize>) {
+        a: Matrix<Ring::Set>,
+    ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>) {
         let (rh, ru, u_det, pivs) = self.row_hermite_algorithm(a.transpose());
         (rh.transpose(), ru.transpose(), u_det, pivs)
     }
 
-    fn det_hermite(&self, a: Matrix<RS::Set>) -> RS::Set {
+    fn det_hermite(&self, a: Matrix<Ring::Set>) -> Ring::Set {
         let n = a.rows();
         debug_assert_eq!(n, a.cols());
         let (h, _u, u_det, _pivs) = self.row_hermite_algorithm(a);
@@ -295,7 +323,7 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         self.ring().div(&h_det, &u_det).unwrap()
     }
 
-    pub fn det(&self, a: Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
+    pub fn det(&self, a: Matrix<Ring::Set>) -> Result<Ring::Set, MatOppErr> {
         let n = a.rows();
         if n != a.cols() {
             Err(MatOppErr::NotSquare)
@@ -307,25 +335,23 @@ impl<RS: BezoutDomainSignature> MatrixStructure<RS> {
         }
     }
 
-    pub fn rank(&self, a: Matrix<RS::Set>) -> usize {
+    pub fn rank(&self, a: Matrix<Ring::Set>) -> usize {
         let (_h, _u, _u_det, pivs) = self.row_hermite_algorithm(a);
         pivs.len()
     }
 }
 
-impl<RS: EuclideanDivisionSignature + BezoutDomainSignature + FavoriteAssociateSignature>
-    MatrixStructure<RS>
-{
-    //if A:=self return (H, U, pivots) such that
-    //H is in row reduced hermite normal form
-    //U is invertible
-    //H=UA
-    //pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
+impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
+    /// Returns (H, U, u_det, pivots) such that
+    /// - H is in row reduced hermite normal form, meaning entries above pivots have euclidean norm strictly less than the pivot
+    /// - U is invertible
+    /// - UM=H
+    /// - pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
     pub fn row_reduced_hermite_algorithm(
         &self,
-        m: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, Vec<usize>) {
-        let (mut h, mut u, _u_det, pivs) = self.row_hermite_algorithm(m);
+        m: Matrix<Ring::Set>,
+    ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>) {
+        let (mut h, mut u, u_det, pivs) = self.row_hermite_algorithm(m);
 
         for (pr, pc) in pivs.iter().enumerate() {
             for r in 0..pr {
@@ -344,34 +370,35 @@ impl<RS: EuclideanDivisionSignature + BezoutDomainSignature + FavoriteAssociateS
                 );
                 row_opp.apply(&mut h);
                 row_opp.apply(&mut u);
+                // adding a multiple of a row does not change the determinant so no need to update u_det
             }
         }
 
-        (h, u, pivs)
+        (h, u, u_det, pivs)
     }
 
-    pub fn row_reduced_hermite_normal_form(&self, m: Matrix<RS::Set>) -> Matrix<RS::Set> {
+    pub fn row_reduced_hermite_normal_form(&self, m: Matrix<Ring::Set>) -> Matrix<Ring::Set> {
         self.row_reduced_hermite_algorithm(m).0
     }
 
     pub fn col_reduced_hermite_algorithm(
         &self,
-        m: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, Vec<usize>) {
-        let (rh, ru, pivs) = self.row_reduced_hermite_algorithm(m.transpose());
-        (rh.transpose(), ru.transpose(), pivs)
+        m: Matrix<Ring::Set>,
+    ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>) {
+        let (rh, ru, ru_det, pivs) = self.row_reduced_hermite_algorithm(m.transpose());
+        (rh.transpose(), ru.transpose(), ru_det, pivs)
     }
 
-    pub fn col_reduced_hermite_normal_form(&self, m: Matrix<RS::Set>) -> Matrix<RS::Set> {
+    pub fn col_reduced_hermite_normal_form(&self, m: Matrix<Ring::Set>) -> Matrix<Ring::Set> {
         self.col_reduced_hermite_algorithm(m).0
     }
 
-    pub fn inv(&self, a: Matrix<RS::Set>) -> Result<Matrix<RS::Set>, MatOppErr> {
+    pub fn inv(&self, a: Matrix<Ring::Set>) -> Result<Matrix<Ring::Set>, MatOppErr> {
         let n = a.rows();
         if n != a.cols() {
             Err(MatOppErr::NotSquare)
         } else {
-            let (h, u, _pivs) = self.row_reduced_hermite_algorithm(a);
+            let (h, u, _u_det, _pivs) = self.row_reduced_hermite_algorithm(a);
             //h = u*a
             if self.equal(&h, &self.ident(n)) {
                 Ok(u)
@@ -447,7 +474,7 @@ impl<R: MetaType> Matrix<R>
 where
     R::Signature: EuclideanDivisionSignature + BezoutDomainSignature + FavoriteAssociateSignature,
 {
-    pub fn row_reduced_hermite_algorithm(&self) -> (Self, Self, Vec<usize>) {
+    pub fn row_reduced_hermite_algorithm(&self) -> (Self, Self, R, Vec<usize>) {
         Self::structure().row_reduced_hermite_algorithm(self.clone())
     }
 
@@ -455,7 +482,7 @@ where
         Self::structure().row_reduced_hermite_normal_form(self.clone())
     }
 
-    pub fn col_reduced_hermite_algorithm(&self) -> (Self, Self, Vec<usize>) {
+    pub fn col_reduced_hermite_algorithm(&self) -> (Self, Self, R, Vec<usize>) {
         Self::structure().col_reduced_hermite_algorithm(self.clone())
     }
 
@@ -545,7 +572,7 @@ mod tests {
             println!();
             println!("hermite reduced row algorithm for");
             a.pprint();
-            let (h, u, pivs) = a.clone().row_reduced_hermite_algorithm();
+            let (h, u, u_det, pivs) = a.clone().row_reduced_hermite_algorithm();
             println!("H =");
             h.pprint();
             println!("pivs = {:?}", pivs);
@@ -590,7 +617,7 @@ mod tests {
             println!();
             println!("hermite reduced col algorithm for");
             a.pprint();
-            let (h, u, pivs) = a.clone().col_reduced_hermite_algorithm();
+            let (h, u, u_det, pivs) = a.clone().col_reduced_hermite_algorithm();
             println!("H =");
             h.pprint();
             println!("pivs = {:?}", pivs);
@@ -683,7 +710,7 @@ mod tests {
                 vec![Integer::from(11), Integer::from(-6), Integer::from(1)],
             ]);
 
-            let (h, u, pivs) = a.clone().row_reduced_hermite_algorithm();
+            let (h, u, u_det, pivs) = a.clone().row_reduced_hermite_algorithm();
 
             assert_eq!(h, expected_h);
             assert_eq!(u, expected_u);
@@ -746,7 +773,7 @@ mod tests {
                 ],
             ]);
 
-            let (h, u, pivs) = a.clone().row_reduced_hermite_algorithm();
+            let (h, u, u_det, pivs) = a.clone().row_reduced_hermite_algorithm();
 
             assert_eq!(h, expected_h);
             assert_eq!(u, expected_u);

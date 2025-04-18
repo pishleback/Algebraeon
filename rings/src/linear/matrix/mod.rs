@@ -15,7 +15,7 @@ mod primitive;
 mod row_operations;
 mod smith_normal_form;
 
-// pub use hermite_reduction::*;
+pub use hermite_reduction::*;
 pub use matrix::*;
 // pub use polynomial::*;
 use row_operations::*;
