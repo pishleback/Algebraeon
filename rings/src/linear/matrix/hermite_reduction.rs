@@ -5,7 +5,10 @@ pub trait HermiteAlgorithmSignature: BezoutDomainSignature {}
 impl<Ring: BezoutDomainSignature> HermiteAlgorithmSignature for Ring {}
 
 /// Rings for which reduced hermite normal forms can be computed
-pub trait ReducedHermiteAlgorithmSignature: HermiteAlgorithmSignature+ EuclideanDivisionSignature + FavoriteAssociateSignature {}
+pub trait ReducedHermiteAlgorithmSignature:
+    HermiteAlgorithmSignature + EuclideanDivisionSignature + FavoriteAssociateSignature
+{
+}
 impl<Ring: HermiteAlgorithmSignature + EuclideanDivisionSignature + FavoriteAssociateSignature>
     ReducedHermiteAlgorithmSignature for Ring
 {
@@ -572,7 +575,7 @@ mod tests {
             println!();
             println!("hermite reduced row algorithm for");
             a.pprint();
-            let (h, u, u_det, pivs) = a.clone().row_reduced_hermite_algorithm();
+            let (h, u, _u_det, pivs) = a.clone().row_reduced_hermite_algorithm();
             println!("H =");
             h.pprint();
             println!("pivs = {:?}", pivs);
@@ -617,7 +620,7 @@ mod tests {
             println!();
             println!("hermite reduced col algorithm for");
             a.pprint();
-            let (h, u, u_det, pivs) = a.clone().col_reduced_hermite_algorithm();
+            let (h, u, _u_det, pivs) = a.clone().col_reduced_hermite_algorithm();
             println!("H =");
             h.pprint();
             println!("pivs = {:?}", pivs);
@@ -710,7 +713,7 @@ mod tests {
                 vec![Integer::from(11), Integer::from(-6), Integer::from(1)],
             ]);
 
-            let (h, u, u_det, pivs) = a.clone().row_reduced_hermite_algorithm();
+            let (h, u, _u_det, pivs) = a.clone().row_reduced_hermite_algorithm();
 
             assert_eq!(h, expected_h);
             assert_eq!(u, expected_u);
@@ -773,7 +776,7 @@ mod tests {
                 ],
             ]);
 
-            let (h, u, u_det, pivs) = a.clone().row_reduced_hermite_algorithm();
+            let (h, u, _u_det, pivs) = a.clone().row_reduced_hermite_algorithm();
 
             assert_eq!(h, expected_h);
             assert_eq!(u, expected_u);
