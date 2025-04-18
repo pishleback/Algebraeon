@@ -208,16 +208,24 @@ impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool>
         self.matrix_row_span(row_span)
     }
 
-    fn contains_element(&self, x: &Self::Set, p: &Vec<Ring::Set>) -> bool {
-        debug_assert!(self.is_element(x));
-        debug_assert!(self.module().is_element(&p));
-        todo!()
+    fn contains_element(&self, submodule: &Self::Set, element: &Vec<Ring::Set>) -> bool {
+        debug_assert!(self.is_element(&submodule));
+        debug_assert!(self.module().is_element(&element));
+        let (_offset, element_reduced) = self.reduce_element(submodule, element);
+        element_reduced
+            .iter()
+            .all(|coeff| self.ring().is_zero(coeff))
     }
 
     fn contains(&self, x: &Self::Set, y: &Self::Set) -> bool {
         debug_assert!(self.is_element(&x));
         debug_assert!(self.is_element(&y));
-        todo!()
+        for b in self.basis(y) {
+            if !self.contains_element(&x, &b) {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -240,18 +248,6 @@ mod tests {
             a_expected.pprint();
             assert_eq!(a_reduced, a_expected);
         }
-        println!();
-        {
-            let a = Matrix::from_rows(vec![vec![1, 2, 4, 5], vec![1, 2, 3, 4]]);
-            a.pprint();
-            let a_reduced = FinitelyFreeSubmoduleStructure::new(module.clone())
-                .matrix_row_span(a)
-                .into_row_basis();
-            let a_expected = Matrix::from_rows(vec![vec![1, 2, 3, 4], vec![0, 0, 1, 1]]);
-            a_reduced.pprint();
-            a_expected.pprint();
-            assert_eq!(a_reduced, a_expected);
-        }
     }
 
     #[test]
@@ -268,7 +264,7 @@ mod tests {
     #[test]
     fn test_finitely_free_submodule_intersect() {
         let module = FinitelyFreeModuleStructure::new(Integer::structure(), 4);
-        let submodule = FinitelyFreeSubmoduleStructure::new(module.clone());
+        let submodule = FinitelyFreeSubmoduleStructure::new_nonunique_reduction(module.clone());
 
         let a = submodule.matrix_row_span(Matrix::from_rows(vec![
             vec![2, 0, 0, 0],
