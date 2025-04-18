@@ -101,139 +101,74 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
         }
         (offset, reduced_element)
     }
-}
 
-/// The set of all submodules of some module represented by a basis in hermite normal form
-/// UNIQUE: The reduced hermite normal form representing a submodule is unique
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelyFreeSubmodulesStructure<Ring: RingSignature, const UNIQUE: bool> {
-    module: FinitelyFreeModuleStructure<Ring>,
-}
-
-impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodulesStructure<Ring, false> {
-    pub fn new_nonunique_reduction(module: FinitelyFreeModuleStructure<Ring>) -> Self {
-        Self { module }
-    }
-}
-
-impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmodulesStructure<Ring, true> {
-    pub fn new(module: FinitelyFreeModuleStructure<Ring>) -> Self {
-        Self { module }
-    }
-}
-
-impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> Signature
-    for FinitelyFreeSubmodulesStructure<Ring, UNIQUE>
-{
-}
-
-impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> SetSignature
-    for FinitelyFreeSubmodulesStructure<Ring, UNIQUE>
-{
-    type Set = FinitelyFreeSubmodule<Ring>;
-
-    fn is_element(&self, sm: &Self::Set) -> bool {
-        if sm.ring() != self.ring() {
-            return false;
-        }
-        if sm.row_basis.cols() != self.module().rank() {
-            return false;
-        }
-        // todo check sm.row_basis is in reduced hermite normal form with all non-zero rows
-        true
-    }
-}
-
-impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> EqSignature
-    for FinitelyFreeSubmodulesStructure<Ring, UNIQUE>
-{
-    fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
-        if UNIQUE {
-            MatrixStructure::new(self.ring().clone()).equal(&x.row_basis, &y.row_basis)
-        } else {
-            self.contains(x, y) && self.contains(y, x)
-        }
-    }
-}
-
-impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool>
-    SubModuleSignature<Ring, FinitelyFreeModuleStructure<Ring>>
-    for FinitelyFreeSubmodulesStructure<Ring, UNIQUE>
-{
-    fn ring(&self) -> &Ring {
-        self.module.ring()
+    fn equal_slow(x: &Self, y: &Self) -> bool {
+        debug_assert_eq!(x.module(), y.module());
+        Self::contains(x, y) && Self::contains(y, x)
     }
 
-    fn module(&self) -> &FinitelyFreeModuleStructure<Ring> {
-        &self.module
-    }
-
-    fn improper_submodule(&self) -> Self::Set {
-        Self::Set::matrix_row_span(
-            self.ring().clone(),
-            MatrixStructure::new(self.ring().clone()).ident(self.module().rank()),
-        )
-    }
-
-    fn add(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(&x));
-        debug_assert!(self.is_element(&y));
-        Self::Set::matrix_row_span(
-            self.ring().clone(),
-            Matrix::join_rows(
-                self.module().rank(),
-                vec![x.clone().into_row_basis(), y.clone().into_row_basis()],
-            ),
-        )
-    }
-
-    fn intersect(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(&x));
-        debug_assert!(self.is_element(&y));
-        let x_rows = x.clone().into_row_basis();
-        let y_rows = y.clone().into_row_basis();
-        let matrix = Matrix::join_rows(self.module().rank(), vec![&x_rows, &y_rows]);
-        let matrix_ker = Self::Set::matrix_row_kernel(self.ring().clone(), matrix).into_row_basis();
-        let matrix_ker_first_part = matrix_ker.submatrix(
-            (0..matrix_ker.rows()).collect(),
-            (0..x_rows.rows()).collect(),
-        );
-        Self::Set::matrix_row_span(
-            self.ring().clone(),
-            MatrixStructure::new(self.ring().clone())
-                .mul(&matrix_ker_first_part, &x_rows)
-                .unwrap(),
-        )
-    }
-
-    fn generated(&self, generators: Vec<&Vec<Ring::Set>>) -> Self::Set {
-        for generator in &generators {
-            debug_assert!(self.module.is_element(generator));
-        }
-        let row_span = Matrix::construct(generators.len(), self.module().rank(), |r, c| {
-            generators[r][c].clone()
-        });
-        Self::Set::matrix_row_span(self.ring().clone(), row_span)
-    }
-
-    fn contains_element(&self, submodule: &Self::Set, element: &Vec<Ring::Set>) -> bool {
-        debug_assert!(self.is_element(&submodule));
+    fn contains_element(&self, element: &Vec<Ring::Set>) -> bool {
         debug_assert!(self.module().is_element(&element));
-        let (_offset, element_reduced) = submodule.reduce_element(element);
+        let (_offset, element_reduced) = self.reduce_element(element);
         element_reduced
             .iter()
             .all(|coeff| self.ring().is_zero(coeff))
     }
 
-    fn contains(&self, x: &Self::Set, y: &Self::Set) -> bool {
-        debug_assert!(self.is_element(&x));
-        debug_assert!(self.is_element(&y));
+    fn contains(x: &Self, y: &Self) -> bool {
+        debug_assert_eq!(x.module(), y.module());
         for b in y.basis() {
-            if !self.contains_element(&x, &b) {
+            if !Self::contains_element(&x, &b) {
                 return false;
             }
         }
         true
+    }
+
+    fn add(x: &Self, y: &Self) -> Self {
+        debug_assert_eq!(x.module(), y.module());
+        let ring = x.ring();
+        debug_assert_eq!(ring, y.ring());
+        let cols = x.module_rank();
+        debug_assert_eq!(cols, y.module_rank());
+        Self::matrix_row_span(
+            ring.clone(),
+            Matrix::join_rows(
+                cols,
+                vec![x.clone().into_row_basis(), y.clone().into_row_basis()],
+            ),
+        )
+    }
+
+    fn intersect(x: &Self, y: &Self) -> Self {
+        debug_assert_eq!(x.module(), y.module());
+        let ring = x.ring();
+        debug_assert_eq!(ring, y.ring());
+        let cols = x.module_rank();
+        debug_assert_eq!(cols, y.module_rank());
+        let x_rows = x.clone().into_row_basis();
+        let y_rows = y.clone().into_row_basis();
+        let matrix = Matrix::join_rows(cols, vec![&x_rows, &y_rows]);
+        let matrix_ker = Self::matrix_row_kernel(ring.clone(), matrix).into_row_basis();
+        let matrix_ker_first_part = matrix_ker.submatrix(
+            (0..matrix_ker.rows()).collect(),
+            (0..x_rows.rows()).collect(),
+        );
+        Self::matrix_row_span(
+            ring.clone(),
+            MatrixStructure::new(ring.clone())
+                .mul(&matrix_ker_first_part, &x_rows)
+                .unwrap(),
+        )
+    }
+}
+
+impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
+    fn equal(x: &Self, y: &Self) -> bool {
+        debug_assert_eq!(x.module(), y.module());
+        let ring = x.ring();
+        debug_assert_eq!(ring, y.ring());
+        MatrixStructure::new(ring.clone()).equal(&x.row_basis, &y.row_basis)
     }
 }
 
@@ -256,10 +191,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_unreduced_equal() {
-        let module = FinitelyFreeModuleStructure::new(Integer::structure(), 4);
-        let submodule = FinitelyFreeSubmodulesStructure::new(module.clone());
-
-        assert!(submodule.equal(
+        assert!(FinitelyFreeSubmodule::equal(
             &FinitelyFreeSubmodule::matrix_row_span(
                 Integer::structure(),
                 Matrix::from_rows(vec![vec![1, 2, 3, 4], vec![0, 0, 1, 1]])
@@ -273,9 +205,6 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_intersect() {
-        let module = FinitelyFreeModuleStructure::new(Integer::structure(), 4);
-        let submodule = FinitelyFreeSubmodulesStructure::new_nonunique_reduction(module.clone());
-
         let a = FinitelyFreeSubmodule::matrix_row_span(
             Integer::structure(),
             Matrix::from_rows(vec![
@@ -296,11 +225,11 @@ mod tests {
             Matrix::from_rows(vec![vec![6, 6, 0, 0], vec![0, 0, 6, 6]]),
         );
 
-        let s = submodule.intersect(&a, &b);
+        let s = FinitelyFreeSubmodule::intersect(&a, &b);
 
         s.clone().into_row_basis().pprint();
 
-        assert!(submodule.equal(&c, &s));
+        assert!(FinitelyFreeSubmodule::equal(&c, &s));
     }
 
     #[test]

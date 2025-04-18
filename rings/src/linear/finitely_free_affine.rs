@@ -7,60 +7,40 @@ use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub enum FinitelyFreeSubmoduleAffineSubset<Ring: ReducedHermiteAlgorithmSignature> {
-    Empty,
+    Empty { ring: Ring, module_rank: usize },
     NonEmpty(FinitelyFreeSubmoduleCoset<Ring>),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelyFreeSubmoduleAffineSubsetsStructure<
-    Ring: ReducedHermiteAlgorithmSignature,
-    const UNIQUE: bool,
-> {
-    module: FinitelyFreeModuleStructure<Ring>,
-}
-
-impl<Ring: ReducedHermiteAlgorithmSignature>
-    FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, false>
-{
-    pub fn new_nonunique_reduction(module: FinitelyFreeModuleStructure<Ring>) -> Self {
-        Self { module }
+impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<Ring> {
+    pub fn ring(&self) -> &Ring {
+        match &self {
+            FinitelyFreeSubmoduleAffineSubset::Empty { ring, .. } => ring,
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset.ring(),
+        }
     }
-}
 
-impl<Ring: UniqueReducedHermiteAlgorithmSignature>
-    FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, true>
-{
-    pub fn new(module: FinitelyFreeModuleStructure<Ring>) -> Self {
-        Self { module }
+    pub fn module(&self) -> FinitelyFreeModuleStructure<Ring> {
+        match &self {
+            FinitelyFreeSubmoduleAffineSubset::Empty { module_rank, .. } => {
+                FinitelyFreeModuleStructure::new(self.ring().clone(), *module_rank)
+            }
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset.module(),
+        }
     }
-}
 
-impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> Signature
-    for FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, UNIQUE>
-{
-}
-
-impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> SetSignature
-    for FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, UNIQUE>
-{
-    type Set = FinitelyFreeSubmoduleAffineSubset<Ring>;
-
-    fn is_element(&self, sm: &Self::Set) -> bool {
-        todo!()
+    pub fn module_rank(&self) -> usize {
+        match &self {
+            FinitelyFreeSubmoduleAffineSubset::Empty { module_rank, .. } => *module_rank,
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset.module_rank(),
+        }
     }
-}
 
-impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> EqSignature
-    for FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, UNIQUE>
-{
-    fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
-        todo!()
+    pub fn subset_rank(&self) -> Option<usize> {
+        match &self {
+            FinitelyFreeSubmoduleAffineSubset::Empty { .. } => None,
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => Some(coset.coset_rank()),
+        }
     }
-}
-
-impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool>
-    FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, UNIQUE>
-{
 }
 
 #[cfg(test)]

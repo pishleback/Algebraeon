@@ -49,29 +49,29 @@ pub trait LinearTransformation<
 {
 }
 
-pub trait SubModuleSignature<Ring: RingSignature, Module: ModuleSignature<Ring>>:
-    EqSignature
-{
-    fn ring(&self) -> &Ring;
-    fn module(&self) -> &Module;
-    fn zero_submodule(&self) -> Self::Set {
-        self.generated(vec![])
-    }
-    fn improper_submodule(&self) -> Self::Set;
-    fn add(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
-    fn intersect(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
-    fn generated(&self, generators: Vec<&Module::Set>) -> Self::Set;
-    /// Does x contain p
-    fn contains_element(&self, x: &Self::Set, p: &Module::Set) -> bool;
-    /// Does x contain y
-    fn contains(&self, x: &Self::Set, y: &Self::Set) -> bool;
-}
+// pub trait SubModuleSignature<Ring: RingSignature, Module: ModuleSignature<Ring>>:
+//     EqSignature
+// {
+//     fn ring(&self) -> &Ring;
+//     fn module(&self) -> &Module;
+//     fn zero_submodule(&self) -> Self::Set {
+//         self.generated(vec![])
+//     }
+//     fn improper_submodule(&self) -> Self::Set;
+//     fn add(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
+//     fn intersect(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
+//     fn generated(&self, generators: Vec<&Module::Set>) -> Self::Set;
+//     /// Does x contain p
+//     fn contains_element(&self, x: &Self::Set, p: &Module::Set) -> bool;
+//     /// Does x contain y
+//     fn contains(&self, x: &Self::Set, y: &Self::Set) -> bool;
+// }
 
-pub trait SubModuleCosetSignature<Ring: RingSignature, Module: ModuleSignature<Ring>>:
-    EqSignature
-{
-    fn ring(&self) -> &Ring;
-    fn module(&self) -> &Module;
-    fn add(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
-    fn intersect(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
-}
+// pub trait SubModuleCosetSignature<Ring: RingSignature, Module: ModuleSignature<Ring>>:
+//     EqSignature
+// {
+//     fn ring(&self) -> &Ring;
+//     fn module(&self) -> &Module;
+//     fn add(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
+//     fn intersect(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
+// }
