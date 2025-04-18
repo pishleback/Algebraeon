@@ -1,9 +1,9 @@
-use algebraeon_sets::structure::*;
 use super::{
     finitely_free_coset::FinitelyFreeSubmoduleCoset,
     finitely_free_modules::FinitelyFreeModuleStructure,
     matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
 };
+use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub enum FinitelyFreeSubmoduleAffineSubset<Ring: ReducedHermiteAlgorithmSignature> {
@@ -12,7 +12,7 @@ pub enum FinitelyFreeSubmoduleAffineSubset<Ring: ReducedHermiteAlgorithmSignatur
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelyFreeSubmoduleAffineSubsetStructure<
+pub struct FinitelyFreeSubmoduleAffineSubsetsStructure<
     Ring: ReducedHermiteAlgorithmSignature,
     const UNIQUE: bool,
 > {
@@ -20,7 +20,7 @@ pub struct FinitelyFreeSubmoduleAffineSubsetStructure<
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature>
-    FinitelyFreeSubmoduleAffineSubsetStructure<Ring, false>
+    FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, false>
 {
     pub fn new_nonunique_reduction(module: FinitelyFreeModuleStructure<Ring>) -> Self {
         Self { module }
@@ -28,7 +28,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature>
 }
 
 impl<Ring: UniqueReducedHermiteAlgorithmSignature>
-    FinitelyFreeSubmoduleAffineSubsetStructure<Ring, true>
+    FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, true>
 {
     pub fn new(module: FinitelyFreeModuleStructure<Ring>) -> Self {
         Self { module }
@@ -36,12 +36,12 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature>
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> Signature
-    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, UNIQUE>
+    for FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, UNIQUE>
 {
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> SetSignature
-    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, UNIQUE>
+    for FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, UNIQUE>
 {
     type Set = FinitelyFreeSubmoduleAffineSubset<Ring>;
 
@@ -51,7 +51,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> SetSignature
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> EqSignature
-    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, UNIQUE>
+    for FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, UNIQUE>
 {
     fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
         todo!()
@@ -59,7 +59,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> EqSignature
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool>
-    FinitelyFreeSubmoduleAffineSubsetStructure<Ring, UNIQUE>
+    FinitelyFreeSubmoduleAffineSubsetsStructure<Ring, UNIQUE>
 {
 }
 
