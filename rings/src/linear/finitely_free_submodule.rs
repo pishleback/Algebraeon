@@ -3,15 +3,14 @@ use crate::{linear::matrix::*, structure::*};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
-pub struct FinitelyFreeSubmodule<Ring: RingSignature> {
-    // a matrix in hermite normal form with all non-zero rows whose rows form a basis for the submodule
-    // may also be required to be reduced or unique depending on the structure used
+pub struct FinitelyFreeSubmodule<Ring: ReducedHermiteAlgorithmSignature> {
+    // a matrix in reduced hermite normal form with all non-zero rows whose rows form a basis for the submodule
     row_basis: Matrix<Ring::Set>,
     // the columns of the pivots of row_basis
     pivots: Vec<usize>,
 }
 
-impl<Ring: RingSignature> FinitelyFreeSubmodule<Ring> {
+impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
     pub fn into_row_basis(self) -> Matrix<Ring::Set> {
         self.row_basis
     }
@@ -22,21 +21,14 @@ impl<Ring: RingSignature> FinitelyFreeSubmodule<Ring> {
 }
 
 /// The set of all submodules of some module represented by a basis in hermite normal form
-/// REDUCED: Submodules are represented by matricies in _reduced_ hermite normal form
-/// UNIQUE: The hermite normal form representing a submodule is _unique_
+/// UNIQUE: The reduced hermite normal form representing a submodule is unique
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelyFreeSubmoduleStructure<
-    Ring: RingSignature,
-    const REDUCED: bool,
-    const UNIQUE: bool,
-> {
+pub struct FinitelyFreeSubmoduleStructure<Ring: RingSignature, const UNIQUE: bool> {
     module: FinitelyFreeModuleStructure<Ring>,
 }
 
-impl<Ring: RingSignature, const REDUCED: bool, const UNIQUE: bool>
-    FinitelyFreeSubmoduleStructure<Ring, REDUCED, UNIQUE>
-where
-    Self: FinitelyFreeSubmoduleHermiteAlgorithm<Ring, UNIQUE>,
+impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool>
+    FinitelyFreeSubmoduleStructure<Ring, UNIQUE>
 {
     pub fn basis(&self, sm: &FinitelyFreeSubmodule<Ring>) -> Vec<Vec<Ring::Set>> {
         debug_assert!(self.is_element(sm));
@@ -50,81 +42,25 @@ where
     }
 }
 
-impl<Ring: HermiteAlgorithmSignature> FinitelyFreeSubmoduleStructure<Ring, false, false> {
-    pub fn new_unreduced(module: FinitelyFreeModuleStructure<Ring>) -> Self {
+impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleStructure<Ring, false> {
+    pub fn new_nonunique_reduction(module: FinitelyFreeModuleStructure<Ring>) -> Self {
         Self { module }
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleStructure<Ring, true, false> {
-    pub fn new_reduced(module: FinitelyFreeModuleStructure<Ring>) -> Self {
+impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleStructure<Ring, true> {
+    pub fn new(module: FinitelyFreeModuleStructure<Ring>) -> Self {
         Self { module }
-    }
-}
-
-impl<Ring: UniqueReducedHermiteAlgorithmSignature>
-    FinitelyFreeSubmoduleStructure<Ring, true, true>
-{
-    pub fn new_uniquely_reduced(module: FinitelyFreeModuleStructure<Ring>) -> Self {
-        Self { module }
-    }
-}
-
-mod hermite_algorithm_impl {
-    use super::*;
-    pub trait FinitelyFreeSubmoduleHermiteAlgorithm<Ring: RingSignature, const UNIQUE: bool>:
-        SetSignature<Set = FinitelyFreeSubmodule<Ring>>
-    {
-        fn row_hermite_algorithm(
-            &self,
-            matrix: Matrix<Ring::Set>,
-        ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>);
-    }
-}
-use hermite_algorithm_impl::*;
-
-impl<Ring: HermiteAlgorithmSignature, const UNIQUE: bool>
-    FinitelyFreeSubmoduleHermiteAlgorithm<Ring, UNIQUE>
-    for FinitelyFreeSubmoduleStructure<Ring, false, UNIQUE>
-{
-    fn row_hermite_algorithm(
-        &self,
-        matrix: Matrix<<Ring>::Set>,
-    ) -> (
-        Matrix<<Ring>::Set>,
-        Matrix<<Ring>::Set>,
-        <Ring>::Set,
-        Vec<usize>,
-    ) {
-        MatrixStructure::new(self.ring().clone()).row_hermite_algorithm(matrix)
     }
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool>
-    FinitelyFreeSubmoduleHermiteAlgorithm<Ring, UNIQUE>
-    for FinitelyFreeSubmoduleStructure<Ring, true, UNIQUE>
-{
-    fn row_hermite_algorithm(
-        &self,
-        matrix: Matrix<<Ring>::Set>,
-    ) -> (
-        Matrix<<Ring>::Set>,
-        Matrix<<Ring>::Set>,
-        <Ring>::Set,
-        Vec<usize>,
-    ) {
-        MatrixStructure::new(self.ring().clone()).row_reduced_hermite_algorithm(matrix)
-    }
-}
-
-impl<Ring: RingSignature, const REDUCED: bool, const UNIQUE: bool>
-    FinitelyFreeSubmoduleStructure<Ring, REDUCED, UNIQUE>
-where
-    Self: FinitelyFreeSubmoduleHermiteAlgorithm<Ring, UNIQUE>,
+    FinitelyFreeSubmoduleStructure<Ring, UNIQUE>
 {
     pub fn matrix_row_span(&self, matrix: Matrix<<Ring>::Set>) -> FinitelyFreeSubmodule<Ring> {
         debug_assert_eq!(matrix.cols(), self.module().rank());
-        let (h, _u, _det, pivots) = self.row_hermite_algorithm(matrix);
+        let (h, _u, _det, pivots) =
+            MatrixStructure::new(self.ring().clone()).row_reduced_hermite_algorithm(matrix);
         let row_basis = h.submatrix(
             (0..pivots.len()).collect(),
             (0..self.module().rank()).collect(),
@@ -139,7 +75,8 @@ where
     pub fn matrix_row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
         debug_assert_eq!(matrix.rows(), self.module().rank());
         let rows = matrix.rows();
-        let (_h, u, _u_det, pivs) = self.row_hermite_algorithm(matrix);
+        let (_h, u, _u_det, pivs) =
+            MatrixStructure::new(self.ring().clone()).row_hermite_algorithm(matrix);
         debug_assert_eq!(rows, u.rows());
         debug_assert_eq!(rows, u.cols());
         let ker = u.submatrix((pivs.len()..rows).collect(), (0..rows).collect());
@@ -149,19 +86,47 @@ where
     pub fn matrix_col_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
         self.matrix_row_kernel(matrix.transpose())
     }
+
+    /// Return (offset, reduced_element) such that offset is an element of the submodule
+    /// and offset+reduced_element=element with reduced_element small
+    ///
+    /// If UNIQUE=true then reduced_element shall be uniquely determined by the coset of submodule containing element.
+    pub fn reduce_element(
+        &self,
+        submodule: &FinitelyFreeSubmodule<Ring>,
+        element: &Vec<Ring::Set>,
+    ) -> (Vec<Ring::Set>, Vec<Ring::Set>) {
+        debug_assert!(self.module().is_element(&element));
+        let mut reduced_element = element.clone();
+        let mut offset = vec![];
+        for (r, &c) in submodule.pivots.iter().enumerate() {
+            let quo = self
+                .ring()
+                .quo(&reduced_element[c], submodule.row_basis.at(r, c).unwrap())
+                .unwrap();
+            for c2 in 0..self.module().rank() {
+                reduced_element[c2] = self.ring().add(
+                    &reduced_element[c2],
+                    &self.ring().neg(
+                        &self
+                            .ring()
+                            .mul(&quo, &submodule.row_basis.at(r, c2).unwrap()),
+                    ),
+                );
+            }
+            offset.push(quo);
+        }
+        (offset, reduced_element)
+    }
 }
 
-impl<Ring: RingSignature, const REDUCED: bool, const UNIQUE: bool> Signature
-    for FinitelyFreeSubmoduleStructure<Ring, REDUCED, UNIQUE>
-where
-    Self: FinitelyFreeSubmoduleHermiteAlgorithm<Ring, UNIQUE>,
+impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> Signature
+    for FinitelyFreeSubmoduleStructure<Ring, UNIQUE>
 {
 }
 
-impl<Ring: RingSignature, const REDUCED: bool, const UNIQUE: bool> SetSignature
-    for FinitelyFreeSubmoduleStructure<Ring, REDUCED, UNIQUE>
-where
-    Self: FinitelyFreeSubmoduleHermiteAlgorithm<Ring, UNIQUE>,
+impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> SetSignature
+    for FinitelyFreeSubmoduleStructure<Ring, UNIQUE>
 {
     type Set = FinitelyFreeSubmodule<Ring>;
 
@@ -169,18 +134,13 @@ where
         if sm.row_basis.cols() != self.module().rank() {
             return false;
         }
-        // todo check sm.row_basis is in hermite normal form with all non-zero rows
-        if REDUCED {
-            // todo check sm.row_basis is in _reduced_ hermite normal form
-        }
+        // todo check sm.row_basis is in reduced hermite normal form with all non-zero rows
         true
     }
 }
 
-impl<Ring: RingSignature, const REDUCED: bool, const UNIQUE: bool> EqSignature
-    for FinitelyFreeSubmoduleStructure<Ring, REDUCED, UNIQUE>
-where
-    Self: FinitelyFreeSubmoduleHermiteAlgorithm<Ring, UNIQUE>,
+impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> EqSignature
+    for FinitelyFreeSubmoduleStructure<Ring, UNIQUE>
 {
     fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
         if UNIQUE {
@@ -191,11 +151,9 @@ where
     }
 }
 
-impl<Ring: RingSignature, const REDUCED: bool, const UNIQUE: bool>
+impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool>
     SubModuleSignature<Ring, FinitelyFreeModuleStructure<Ring>>
-    for FinitelyFreeSubmoduleStructure<Ring, REDUCED, UNIQUE>
-where
-    Self: FinitelyFreeSubmoduleHermiteAlgorithm<Ring, UNIQUE>,
+    for FinitelyFreeSubmoduleStructure<Ring, UNIQUE>
 {
     fn ring(&self) -> &Ring {
         self.module.ring()
@@ -274,7 +232,7 @@ mod tests {
         {
             let a = Matrix::from_rows(vec![vec![1, 2, 4, 5], vec![1, 2, 3, 4]]);
             a.pprint();
-            let a_reduced = FinitelyFreeSubmoduleStructure::new_uniquely_reduced(module.clone())
+            let a_reduced = FinitelyFreeSubmoduleStructure::new(module.clone())
                 .matrix_row_span(a)
                 .into_row_basis();
             let a_expected = Matrix::from_rows(vec![vec![1, 2, 0, 1], vec![0, 0, 1, 1]]);
@@ -286,7 +244,7 @@ mod tests {
         {
             let a = Matrix::from_rows(vec![vec![1, 2, 4, 5], vec![1, 2, 3, 4]]);
             a.pprint();
-            let a_reduced = FinitelyFreeSubmoduleStructure::new_unreduced(module.clone())
+            let a_reduced = FinitelyFreeSubmoduleStructure::new(module.clone())
                 .matrix_row_span(a)
                 .into_row_basis();
             let a_expected = Matrix::from_rows(vec![vec![1, 2, 3, 4], vec![0, 0, 1, 1]]);
@@ -299,7 +257,7 @@ mod tests {
     #[test]
     fn test_finitely_free_submodule_unreduced_equal() {
         let module = FinitelyFreeModuleStructure::new(Integer::structure(), 4);
-        let submodule = FinitelyFreeSubmoduleStructure::new_unreduced(module.clone());
+        let submodule = FinitelyFreeSubmoduleStructure::new(module.clone());
 
         assert!(submodule.equal(
             &submodule.matrix_row_span(Matrix::from_rows(vec![vec![1, 2, 3, 4], vec![0, 0, 1, 1]])),
@@ -310,7 +268,7 @@ mod tests {
     #[test]
     fn test_finitely_free_submodule_intersect() {
         let module = FinitelyFreeModuleStructure::new(Integer::structure(), 4);
-        let submodule = FinitelyFreeSubmoduleStructure::new_uniquely_reduced(module.clone());
+        let submodule = FinitelyFreeSubmoduleStructure::new(module.clone());
 
         let a = submodule.matrix_row_span(Matrix::from_rows(vec![
             vec![2, 0, 0, 0],
@@ -332,5 +290,36 @@ mod tests {
         s.clone().into_row_basis().pprint();
 
         assert!(submodule.equal(&c, &s));
+    }
+
+    #[test]
+    fn test_finitely_free_submodule_element_reduction() {
+        let module = FinitelyFreeModuleStructure::new(Integer::structure(), 4);
+        let submodule = FinitelyFreeSubmoduleStructure::new(module.clone());
+
+        let a = submodule.matrix_row_span(Matrix::from_rows(vec![
+            vec![3, 2, 0, 3],
+            vec![0, 14, 3, 1],
+            vec![0, 0, 0, 10],
+        ]));
+        a.clone().into_row_basis().pprint();
+
+        let element = vec![20, 20, 20, 20]
+            .into_iter()
+            .map(|x| Integer::from(x))
+            .collect::<Vec<_>>();
+        println!("element = {:?}", element);
+
+        let (offset, reduced_element) = submodule.reduce_element(&a, &element);
+
+        println!("offset = {:?}", offset);
+        println!("reduced_element = {:?}", reduced_element);
+        debug_assert_eq!(
+            reduced_element,
+            vec![2, 8, 20, 2]
+                .into_iter()
+                .map(|x| Integer::from(x))
+                .collect::<Vec<_>>()
+        )
     }
 }
