@@ -12,32 +12,34 @@ pub struct FinitelyFreeSubmoduleCoset<Ring: ReducedHermiteAlgorithmSignature> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelyFreeSubmoduleCosetStructure<
+pub struct FinitelyFreeSubmoduleCosetsStructure<
     Ring: ReducedHermiteAlgorithmSignature,
     const UNIQUE: bool,
 > {
     module: FinitelyFreeModuleStructure<Ring>,
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCosetStructure<Ring, false> {
+impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCosetsStructure<Ring, false> {
     pub fn new_nonunique_reduction(module: FinitelyFreeModuleStructure<Ring>) -> Self {
         Self { module }
     }
 }
 
-impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCosetStructure<Ring, true> {
+impl<Ring: UniqueReducedHermiteAlgorithmSignature>
+    FinitelyFreeSubmoduleCosetsStructure<Ring, true>
+{
     pub fn new(module: FinitelyFreeModuleStructure<Ring>) -> Self {
         Self { module }
     }
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> Signature
-    for FinitelyFreeSubmoduleCosetStructure<Ring, UNIQUE>
+    for FinitelyFreeSubmoduleCosetsStructure<Ring, UNIQUE>
 {
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> SetSignature
-    for FinitelyFreeSubmoduleCosetStructure<Ring, UNIQUE>
+    for FinitelyFreeSubmoduleCosetsStructure<Ring, UNIQUE>
 {
     type Set = FinitelyFreeSubmoduleCoset<Ring>;
 
@@ -47,7 +49,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> SetSignature
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> EqSignature
-    for FinitelyFreeSubmoduleCosetStructure<Ring, UNIQUE>
+    for FinitelyFreeSubmoduleCosetsStructure<Ring, UNIQUE>
 {
     fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
         todo!()
@@ -55,7 +57,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool> EqSignature
 }
 
 impl<Ring: ReducedHermiteAlgorithmSignature, const UNIQUE: bool>
-    FinitelyFreeSubmoduleCosetStructure<Ring, UNIQUE>
+    FinitelyFreeSubmoduleCosetsStructure<Ring, UNIQUE>
 {
 }
 
