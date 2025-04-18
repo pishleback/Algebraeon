@@ -30,6 +30,4 @@ fn main() {
     }
 
     lalrpop::process_src().unwrap();
-
-    println!("cargo:rerun-if-changed=build.rs");
 }
