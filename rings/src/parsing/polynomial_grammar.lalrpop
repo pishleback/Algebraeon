@@ -1,10 +1,42 @@
-use std::str::FromStr;
-
 grammar;
 
-pub Term: i32 = {
-    <n:Num> => n,
-    "(" <t:Term> ")" => t,
+use std::str::FromStr;
+use crate::parsing::polynomial::Expr;
+
+pub Expr: Box<Expr> = {
+    Sum,
 };
 
-Num: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
+Sum: Box<Expr> = {
+    <l:Sum> "+" <r:Product> => Box::new(Expr::Sum(Sum { left: l, right: r })),
+    <l:Sum> "-" <r:Product> => Box::new(Expr::Sum(Sum {
+        left: l,
+        right: Box::new(Expr::Neg(r))
+    })),
+    Product,
+};
+
+Product: Box<Expr> = {
+    <l:Product> "*" <r:Power> => Box::new(Expr::Product(Product { left: l, right: r })),
+    Power,
+};
+
+Power: Box<Expr> = {
+    <l:Atom> "^" <r:Atom> => Box::new(Expr::Power(Power { base: l, exponent: r })),
+    Atom,
+};
+
+Atom: Box<Expr> = {
+    Num => Box::new(Expr::Num(<>)),
+    Var => Box::new(Expr::Var(<>)),
+    "-" <e:Atom> => Box::new(Expr::Neg(e)),
+    "(" <e:Expr> ")" => Box::new(Expr::Grouped(e)),
+};
+
+Num: Number = {
+    r"[0-9]+" => Number { value: i64::from_str(<>).unwrap() },
+};
+
+Var: Variable = {
+    r"[a-zA-Z][a-zA-Z0-9]*" => Variable { name: <>.to_string() },
+};
