@@ -29,5 +29,5 @@ fn main() {
         fs::write(&dest_path, content).expect("Failed to write file");
     }
 
-    println!("cargo:rerun-if-changed=build.rs");
+    lalrpop::process_src().unwrap();
 }
