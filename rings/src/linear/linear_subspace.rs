@@ -1341,14 +1341,14 @@ mod tests {
             b.pprint();
             println!("a & b");
             let int =
-                LinearSubspace::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+                LinearSubspace::intersect_pair(3, 1, a.clone().col_span_old(), b.clone().col_span_old());
             int.pprint();
             println!("a + b");
-            let sum = LinearSubspace::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            let sum = LinearSubspace::sum_pair(3, 1, a.clone().col_span_old(), b.clone().col_span_old());
             sum.pprint();
 
-            assert_eq!(int, c.col_span());
-            assert_eq!(sum, d.col_span());
+            assert_eq!(int, c.col_span_old());
+            assert_eq!(sum, d.col_span_old());
         }
 
         {
@@ -1384,14 +1384,14 @@ mod tests {
             b.pprint();
             println!("a & b");
             let int =
-                LinearSubspace::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+                LinearSubspace::intersect_pair(3, 1, a.clone().col_span_old(), b.clone().col_span_old());
             int.pprint();
             println!("a + b");
-            let sum = LinearSubspace::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            let sum = LinearSubspace::sum_pair(3, 1, a.clone().col_span_old(), b.clone().col_span_old());
             sum.pprint();
 
-            assert_eq!(int, c.col_span());
-            assert_eq!(sum, d.col_span());
+            assert_eq!(int, c.col_span_old());
+            assert_eq!(sum, d.col_span_old());
         }
 
         {
@@ -1478,7 +1478,7 @@ mod tests {
             ]);
 
             let int =
-                LinearSubspace::intersect(4, 1, vec![a.col_span(), b.col_span(), c.col_span()]);
+                LinearSubspace::intersect(4, 1, vec![a.col_span_old(), b.col_span_old(), c.col_span_old()]);
 
             assert_eq!(
                 int,
@@ -1508,7 +1508,7 @@ mod tests {
                         Integer::from(0)
                     ],
                 ])
-                .col_span()
+                .col_span_old()
             );
         }
 
@@ -1557,14 +1557,14 @@ mod tests {
             b.pprint();
             println!("a & b");
             let int =
-                LinearSubspace::intersect_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+                LinearSubspace::intersect_pair(3, 1, a.clone().col_span_old(), b.clone().col_span_old());
             int.pprint();
             println!("a + b");
-            let sum = LinearSubspace::sum_pair(3, 1, a.clone().col_span(), b.clone().col_span());
+            let sum = LinearSubspace::sum_pair(3, 1, a.clone().col_span_old(), b.clone().col_span_old());
             sum.pprint();
 
-            assert_eq!(int, c.col_span());
-            assert_eq!(sum, d.col_span());
+            assert_eq!(int, c.col_span_old());
+            assert_eq!(sum, d.col_span_old());
         }
     }
 
@@ -1588,7 +1588,7 @@ mod tests {
         b.pprint();
 
         let ll_s = LinearSubspaceStructure::new(Rational::structure());
-        let ext = ll_s.extension_basis(&a.col_span(), &b.col_span());
+        let ext = ll_s.extension_basis(&a.col_span_old(), &b.col_span_old());
 
         println!("ext");
         for v in ext {
@@ -1658,8 +1658,8 @@ mod tests {
             vec![Integer::from(1)],
         ]);
 
-        let alat1 = a1.col_solution_lattice(y1);
-        let alat2 = a2.col_solution_lattice(y2);
+        let alat1 = a1.col_solution_lattice_old(y1);
+        let alat2 = a2.col_solution_lattice_old(y2);
 
         alat1.pprint();
         println!();

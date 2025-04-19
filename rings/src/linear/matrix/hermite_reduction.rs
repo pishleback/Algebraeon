@@ -417,19 +417,19 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
     }
 
     pub fn row_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
-        todo!()
+        FinitelyFreeSubmodule::matrix_row_span(self.ring().clone(), matrix)
     }
 
     pub fn col_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
-        todo!()
+        FinitelyFreeSubmodule::matrix_col_span(self.ring().clone(), matrix)
     }
 
     pub fn row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
-        todo!()
+        FinitelyFreeSubmodule::matrix_row_kernel(self.ring().clone(), matrix)
     }
 
     pub fn col_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
-        todo!()
+        FinitelyFreeSubmodule::matrix_col_kernel(self.ring().clone(), matrix)
     }
 
     pub fn row_affine_span(
@@ -483,43 +483,43 @@ impl<R: MetaType> Matrix<R>
 where
     R::Signature: BezoutDomainSignature,
 {
-    pub fn row_span(&self) -> LinearSubspace<R> {
+    pub fn row_span_old(&self) -> LinearSubspace<R> {
         Self::structure().row_span_old(self.clone())
     }
 
-    pub fn col_span(&self) -> LinearSubspace<R> {
+    pub fn col_span_old(&self) -> LinearSubspace<R> {
         Self::structure().col_span_old(self.clone())
     }
 
-    pub fn row_affine_span(&self) -> AffineSubspace<R> {
+    pub fn row_affine_span_old(&self) -> AffineSubspace<R> {
         Self::structure().row_affine_span_old(self.clone())
     }
 
-    pub fn col_affine_span(&self) -> AffineSubspace<R> {
+    pub fn col_affine_span_old(&self) -> AffineSubspace<R> {
         Self::structure().col_affine_span_old(self.clone())
     }
 
-    pub fn row_kernel(&self) -> LinearSubspace<R> {
+    pub fn row_kernel_old(&self) -> LinearSubspace<R> {
         Self::structure().row_kernel_old(self.clone())
     }
 
-    pub fn col_kernel(&self) -> LinearSubspace<R> {
+    pub fn col_kernel_old(&self) -> LinearSubspace<R> {
         Self::structure().col_kernel_old(self.clone())
     }
 
-    pub fn row_solve(&self, y: impl Borrow<Self>) -> Option<Self> {
+    pub fn row_solve_old(&self, y: impl Borrow<Self>) -> Option<Self> {
         Self::structure().row_solve_old(self, y)
     }
 
-    pub fn col_solve(&self, y: impl Borrow<Self>) -> Option<Self> {
+    pub fn col_solve_old(&self, y: impl Borrow<Self>) -> Option<Self> {
         Self::structure().col_solve_old(self, y)
     }
 
-    pub fn row_solution_lattice(&self, y: impl Borrow<Self>) -> AffineSubspace<R> {
+    pub fn row_solution_lattice_old(&self, y: impl Borrow<Self>) -> AffineSubspace<R> {
         Self::structure().row_solution_lattice_old(self, y)
     }
 
-    pub fn col_solution_lattice(&self, y: impl Borrow<Self>) -> AffineSubspace<R> {
+    pub fn col_solution_lattice_old(&self, y: impl Borrow<Self>) -> AffineSubspace<R> {
         Self::structure().col_solution_lattice_old(self, y)
     }
 
@@ -562,6 +562,46 @@ where
 
     pub fn inv(&self) -> Result<Matrix<R>, MatOppErr> {
         Self::structure().inv(self.clone())
+    }
+
+    pub fn row_span(self) -> FinitelyFreeSubmodule<R::Signature> {
+        Self::structure().row_span(self)
+    }
+
+    pub fn col_span(self) -> FinitelyFreeSubmodule<R::Signature> {
+        Self::structure().col_span(self)
+    }
+
+    pub fn row_kernel(self) -> FinitelyFreeSubmodule<R::Signature> {
+        Self::structure().row_kernel(self)
+    }
+
+    pub fn col_kernel(self) -> FinitelyFreeSubmodule<R::Signature> {
+        Self::structure().col_kernel(self)
+    }
+
+    pub fn row_affine_span(self) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+        Self::structure().row_affine_span(self)
+    }
+
+    pub fn col_affine_span(self) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+        Self::structure().col_affine_span(self)
+    }
+
+    pub fn row_solve(&self, y: &Vec<R>) -> Option<Matrix<R>> {
+        Self::structure().row_solve(self, y)
+    }
+
+    pub fn col_solve(&self, y: &Vec<R>) -> Option<Matrix<R>> {
+        Self::structure().col_solve(self, y)
+    }
+
+    pub fn row_solution_set(&self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+        Self::structure().row_solution_set(self, y)
+    }
+
+    pub fn col_solution_set(&self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+        Self::structure().col_solution_set(self, y)
     }
 }
 
@@ -875,10 +915,10 @@ mod tests {
             vec![Integer::from(1), Integer::from(1), Integer::from(1)],
         ]);
 
-        assert_eq!(mat.clone().row_span().rank(), 2);
-        assert_eq!(mat.clone().col_span().rank(), 2);
-        assert_eq!(mat.clone().row_kernel().rank(), 2);
-        assert_eq!(mat.clone().col_kernel().rank(), 1);
+        assert_eq!(mat.clone().row_span_old().rank(), 2);
+        assert_eq!(mat.clone().col_span_old().rank(), 2);
+        assert_eq!(mat.clone().row_kernel_old().rank(), 2);
+        assert_eq!(mat.clone().col_kernel_old().rank(), 1);
     }
 
     #[test]
@@ -890,7 +930,7 @@ mod tests {
                 vec![Integer::from(3), Integer::from(1)],
                 vec![Integer::from(2), Integer::from(3)],
             ])
-            .row_affine_span();
+            .row_affine_span_old();
 
             let lat2 = AffineSubspace::from_offset_and_linear_lattice(
                 1,
@@ -900,7 +940,7 @@ mod tests {
                     vec![Integer::from(1), Integer::from(2)],
                     vec![Integer::from(-1), Integer::from(2)],
                 ])
-                .row_span(),
+                .row_span_old(),
             );
 
             lat1.pprint();
@@ -915,7 +955,7 @@ mod tests {
                 vec![Integer::from(1), Integer::from(3), Integer::from(2)],
                 vec![Integer::from(1), Integer::from(1), Integer::from(3)],
             ])
-            .col_affine_span();
+            .col_affine_span_old();
 
             let lat2 = AffineSubspace::from_offset_and_linear_lattice(
                 2,
@@ -925,7 +965,7 @@ mod tests {
                     vec![Integer::from(1), Integer::from(-1)],
                     vec![Integer::from(2), Integer::from(2)],
                 ])
-                .col_span(),
+                .col_span_old(),
             );
 
             lat1.pprint();
@@ -961,7 +1001,7 @@ mod tests {
         println!("matrix");
         mat.pprint();
 
-        let k = mat.col_kernel();
+        let k = mat.col_kernel_old();
         println!("kernel");
         k.pprint();
 

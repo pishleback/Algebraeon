@@ -32,11 +32,11 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
         FinitelyFreeModuleStructure::new(self.ring().clone(), self.submodule_rank())
     }
 
-    pub fn into_row_basis(self) -> Matrix<Ring::Set> {
+    pub fn into_row_basis_matrix(self) -> Matrix<Ring::Set> {
         self.row_basis
     }
 
-    pub fn into_col_basis(self) -> Matrix<Ring::Set> {
+    pub fn into_col_basis_matrix(self) -> Matrix<Ring::Set> {
         self.row_basis.transpose()
     }
 
@@ -83,7 +83,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
     pub fn reduce_element(&self, element: &Vec<Ring::Set>) -> (Vec<Ring::Set>, Vec<Ring::Set>) {
         debug_assert!(self.module().is_element(&element));
         let mut reduced_element = element.clone();
-        let mut offset = vec![];
+        let mut coset = vec![];
         for (r, &c) in self.pivots.iter().enumerate() {
             let quo = self
                 .ring()
@@ -97,17 +97,17 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
                         .neg(&self.ring().mul(&quo, &self.row_basis.at(r, c2).unwrap())),
                 );
             }
-            offset.push(quo);
+            coset.push(quo);
         }
-        (offset, reduced_element)
+        (coset, reduced_element)
     }
 
-    fn equal_slow(x: &Self, y: &Self) -> bool {
+    pub fn equal_slow(x: &Self, y: &Self) -> bool {
         debug_assert_eq!(x.module(), y.module());
         Self::contains(x, y) && Self::contains(y, x)
     }
 
-    fn contains_element(&self, element: &Vec<Ring::Set>) -> bool {
+    pub fn contains_element(&self, element: &Vec<Ring::Set>) -> bool {
         debug_assert!(self.module().is_element(&element));
         let (_offset, element_reduced) = self.reduce_element(element);
         element_reduced
@@ -115,7 +115,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
             .all(|coeff| self.ring().is_zero(coeff))
     }
 
-    fn contains(x: &Self, y: &Self) -> bool {
+    pub fn contains(x: &Self, y: &Self) -> bool {
         debug_assert_eq!(x.module(), y.module());
         for b in y.basis() {
             if !Self::contains_element(&x, &b) {
@@ -125,7 +125,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
         true
     }
 
-    fn add(x: &Self, y: &Self) -> Self {
+    pub fn add(x: &Self, y: &Self) -> Self {
         debug_assert_eq!(x.module(), y.module());
         let ring = x.ring();
         debug_assert_eq!(ring, y.ring());
@@ -135,21 +135,24 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
             ring.clone(),
             Matrix::join_rows(
                 cols,
-                vec![x.clone().into_row_basis(), y.clone().into_row_basis()],
+                vec![
+                    x.clone().into_row_basis_matrix(),
+                    y.clone().into_row_basis_matrix(),
+                ],
             ),
         )
     }
 
-    fn intersect(x: &Self, y: &Self) -> Self {
+    pub fn intersect(x: &Self, y: &Self) -> Self {
         debug_assert_eq!(x.module(), y.module());
         let ring = x.ring();
         debug_assert_eq!(ring, y.ring());
         let cols = x.module_rank();
         debug_assert_eq!(cols, y.module_rank());
-        let x_rows = x.clone().into_row_basis();
-        let y_rows = y.clone().into_row_basis();
+        let x_rows = x.clone().into_row_basis_matrix();
+        let y_rows = y.clone().into_row_basis_matrix();
         let matrix = Matrix::join_rows(cols, vec![&x_rows, &y_rows]);
-        let matrix_ker = Self::matrix_row_kernel(ring.clone(), matrix).into_row_basis();
+        let matrix_ker = Self::matrix_row_kernel(ring.clone(), matrix).into_row_basis_matrix();
         let matrix_ker_first_part = matrix_ker.submatrix(
             (0..matrix_ker.rows()).collect(),
             (0..x_rows.rows()).collect(),
@@ -164,7 +167,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
 }
 
 impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
-    fn equal(x: &Self, y: &Self) -> bool {
+    pub fn equal(x: &Self, y: &Self) -> bool {
         debug_assert_eq!(x.module(), y.module());
         let ring = x.ring();
         debug_assert_eq!(ring, y.ring());
@@ -182,7 +185,7 @@ mod tests {
         let a = Matrix::from_rows(vec![vec![1, 2, 4, 5], vec![1, 2, 3, 4]]);
         a.pprint();
         let a_reduced =
-            FinitelyFreeSubmodule::matrix_row_span(Integer::structure(), a).into_row_basis();
+            FinitelyFreeSubmodule::matrix_row_span(Integer::structure(), a).into_row_basis_matrix();
         let a_expected = Matrix::from_rows(vec![vec![1, 2, 0, 1], vec![0, 0, 1, 1]]);
         a_reduced.pprint();
         a_expected.pprint();
@@ -201,7 +204,7 @@ mod tests {
                 Matrix::from_rows(vec![vec![1, 2, 0, 1], vec![0, 0, 1, 1]])
             )
         ))
-    } 
+    }
 
     #[test]
     fn test_finitely_free_submodule_intersect() {
@@ -227,7 +230,7 @@ mod tests {
 
         let s = FinitelyFreeSubmodule::intersect(&a, &b);
 
-        s.clone().into_row_basis().pprint();
+        s.clone().into_row_basis_matrix().pprint();
 
         assert!(FinitelyFreeSubmodule::equal(&c, &s));
     }
@@ -238,7 +241,7 @@ mod tests {
             Integer::structure(),
             Matrix::from_rows(vec![vec![3, 2, 0, 3], vec![0, 14, 3, 1], vec![0, 0, 0, 10]]),
         );
-        a.clone().into_row_basis().pprint();
+        a.clone().into_row_basis_matrix().pprint();
 
         let element = vec![20, 20, 20, 20]
             .into_iter()

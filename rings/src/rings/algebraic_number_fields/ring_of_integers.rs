@@ -193,7 +193,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
                 })
                 .collect(),
         );
-        if let Some(s) = m.col_solve(y) {
+        if let Some(s) = m.col_solve_old(y) {
             debug_assert_eq!(s.rows(), n);
             debug_assert_eq!(s.cols(), 1);
             if let Ok(coefficients) = (0..n)
