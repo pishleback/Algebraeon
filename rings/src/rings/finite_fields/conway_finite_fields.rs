@@ -208,7 +208,7 @@ impl InjectiveFunction<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     fn try_preimage(&self, x: &Polynomial<Integer>) -> Option<Polynomial<Integer>> {
         Some(
             self.domain()
-                .from_col_vector(self.inclusion.col_solve(&self.range().to_col_vector(x))?),
+                .from_col_vector(self.inclusion.col_solve_old(&self.range().to_col_vector(x))?),
         )
     }
 }

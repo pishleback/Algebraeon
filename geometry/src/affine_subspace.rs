@@ -234,7 +234,7 @@ impl<
                     .borrow()
                     .cols_from_vectors(span.iter().collect());
                 let x = MatrixStructure::new(self.ambient_space.borrow().ordered_field().clone())
-                    .col_solve(&basis_matrix, y);
+                    .col_solve_old(&basis_matrix, y);
                 Some(vector_from_col(self.embedded_space(), &x?))
             }
             None => None,

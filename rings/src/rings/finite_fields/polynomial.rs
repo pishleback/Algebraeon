@@ -316,7 +316,7 @@ where
         //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
         let mat_struct = MatrixStructure::<FS>::new(self.coeff_ring().clone());
         let linlat_struct = LinearSubspaceStructure::<FS>::new(self.coeff_ring().clone());
-        let ker = mat_struct.row_kernel(mat);
+        let ker = mat_struct.row_kernel_old(mat);
         // ker.pprint();
         let ker_rank = linlat_struct.rank(&ker);
         let ker_basis = linlat_struct

@@ -142,12 +142,32 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
-    pub fn get_row(&self, row: usize) -> Self {
+    pub fn get_row_submatrix(&self, row: usize) -> Self {
         self.submatrix(vec![row], (0..self.cols()).collect())
     }
 
-    pub fn get_col(&self, col: usize) -> Self {
+    pub fn get_col_submatrix(&self, col: usize) -> Self {
         self.submatrix((0..self.rows()).collect(), vec![col])
+    }
+
+    pub fn get_row_refs(&self, row: usize) -> Vec<&Set> {
+        assert!(row < self.rows());
+        (0..self.cols()).map(|c| self.at(row, c).unwrap()).collect()
+    }
+
+    pub fn get_col_refs(&self, col: usize) -> Vec<&Set> {
+        assert!(col < self.cols());
+        (0..self.rows()).map(|r| self.at(r, col).unwrap()).collect()
+    }
+
+    pub fn get_row(&self, row: usize) -> Vec<Set> {
+        assert!(row < self.rows());
+        self.get_row_refs(row).into_iter().cloned().collect()
+    }
+
+    pub fn get_col(&self, col: usize) -> Vec<Set> {
+        assert!(col < self.cols());
+        self.get_col_refs(col).into_iter().cloned().collect()
     }
 
     pub fn apply_map<NewSet: Clone>(&self, f: impl Fn(&Set) -> NewSet) -> Matrix<NewSet> {
