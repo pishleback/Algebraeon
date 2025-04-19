@@ -290,7 +290,7 @@ impl<Ring: BezoutDomainSignature, const SURJECTIVE: bool>
         Some(
             self.domain.from_col(
                 &MatrixStructure::new(self.ring.clone())
-                    .col_solve(&self.matrix, &self.range.to_col(&y))?,
+                    .col_solve_old(&self.matrix, &self.range.to_col(&y))?,
             ),
         )
     }

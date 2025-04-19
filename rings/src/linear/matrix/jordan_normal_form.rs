@@ -105,7 +105,7 @@ where
         let n = mat.rows();
         assert_eq!(n, mat.cols());
         //compute ker((M - xI)^k)
-        self.col_kernel(
+        self.col_kernel_old(
             self.nat_pow(
                 &self
                     .add(
@@ -247,7 +247,7 @@ where
                     // }
                     let mat_s_pow_kers = mat_s_pows
                         .into_iter()
-                        .map(|s_mat_pow| ac_mat_structure.col_kernel(s_mat_pow))
+                        .map(|s_mat_pow| ac_mat_structure.col_kernel_old(s_mat_pow))
                         .collect_vec();
                     // ker(S) in ker(S^2) in ker(S^3) in ...
                     // for (i, ker) in mat_s_pow_kers.iter().enumerate() {

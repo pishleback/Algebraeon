@@ -1,3 +1,8 @@
+use crate::linear::{
+    finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
+    finitely_free_submodule::FinitelyFreeSubmodule,
+};
+
 use super::*;
 
 /// Rings for which hermite normal forms can be computed
@@ -21,7 +26,7 @@ impl<Field: FieldSignature> UniqueReducedHermiteAlgorithmSignature for Field {}
 
 impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
     #[deprecated]
-    pub fn row_span(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
+    pub fn row_span_old(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
         LinearSubspaceStructure::new(self.ring().clone()).from_span(
             1,
             a.cols(),
@@ -32,7 +37,7 @@ impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
     }
 
     #[deprecated]
-    pub fn col_span(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
+    pub fn col_span_old(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
         LinearSubspaceStructure::new(self.ring().clone()).from_span(
             a.rows(),
             1,
@@ -43,12 +48,12 @@ impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
     }
 
     #[deprecated]
-    pub fn row_affine_span(&self, a: Matrix<Ring::Set>) -> AffineSubspace<Ring::Set> {
+    pub fn row_affine_span_old(&self, a: Matrix<Ring::Set>) -> AffineSubspace<Ring::Set> {
         let affine_lattice_structure = AffineSubspaceStructure::new(self.ring().clone());
         if a.rows() == 0 {
             affine_lattice_structure.empty(1, a.cols())
         } else {
-            let offset = a.get_row(0);
+            let offset = a.get_row_submatrix(0);
 
             let b = Matrix::construct(a.rows() - 1, a.cols(), |r, c| {
                 self.ring().add(
@@ -57,19 +62,19 @@ impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
                 )
             });
 
-            let linlat = self.row_span(b);
+            let linlat = self.row_span_old(b);
 
             affine_lattice_structure.from_offset_and_linear_lattice(1, a.cols(), offset, linlat)
         }
     }
 
     #[deprecated]
-    pub fn col_affine_span(&self, a: Matrix<Ring::Set>) -> AffineSubspace<Ring::Set> {
+    pub fn col_affine_span_old(&self, a: Matrix<Ring::Set>) -> AffineSubspace<Ring::Set> {
         let affine_lattice_structure = AffineSubspaceStructure::new(self.ring().clone());
         if a.cols() == 0 {
             affine_lattice_structure.empty(a.rows(), 1)
         } else {
-            let offset = a.get_col(0);
+            let offset = a.get_col_submatrix(0);
 
             let b = Matrix::construct(a.rows(), a.cols() - 1, |r, c| {
                 self.ring().add(
@@ -78,14 +83,14 @@ impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
                 )
             });
 
-            let linlat = self.col_span(b);
+            let linlat = self.col_span_old(b);
 
             affine_lattice_structure.from_offset_and_linear_lattice(a.rows(), 1, offset, linlat)
         }
     }
 
     #[deprecated]
-    pub fn row_kernel(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
+    pub fn row_kernel_old(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
         let (_h, u, _u_det, pivs) = self.row_hermite_algorithm(a);
         LinearSubspaceStructure::new(self.ring().clone()).from_basis(
             1,
@@ -98,7 +103,7 @@ impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
     }
 
     #[deprecated]
-    pub fn col_kernel(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
+    pub fn col_kernel_old(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
         let (_h, u, _u_det, pivs) = self.col_hermite_algorithm(a);
         LinearSubspaceStructure::new(self.ring().clone()).from_basis(
             u.rows(),
@@ -111,19 +116,19 @@ impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
     }
 
     #[deprecated]
-    pub fn row_solve(
+    pub fn row_solve_old(
         &self,
         m: &Matrix<Ring::Set>,
         y: impl Borrow<Matrix<Ring::Set>>,
     ) -> Option<Matrix<Ring::Set>> {
-        match self.col_solve(&m.transpose_ref(), &y.borrow().transpose_ref()) {
+        match self.col_solve_old(&m.transpose_ref(), &y.borrow().transpose_ref()) {
             Some(x) => Some(x.transpose()),
             None => None,
         }
     }
 
     #[deprecated]
-    pub fn col_solve(
+    pub fn col_solve_old(
         &self,
         m: &Matrix<Ring::Set>,
         y: impl Borrow<Matrix<Ring::Set>>,
@@ -133,7 +138,7 @@ impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
         //the kernel of ext_mat is related to the solution
         let ext_mat = Matrix::join_cols(m.rows(), vec![y.borrow(), m]);
         //we are looking for a point in the column kernel where the first coordinate is 1
-        let col_ker = self.col_kernel(ext_mat);
+        let col_ker = self.col_kernel_old(ext_mat);
 
         let first_coords: Vec<&Ring::Set> = (0..LinearSubspaceStructure::new(self.ring().clone())
             .rank(&col_ker))
@@ -176,27 +181,27 @@ impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
     }
 
     #[deprecated]
-    pub fn row_solution_lattice(
+    pub fn row_solution_lattice_old(
         &self,
         m: &Matrix<Ring::Set>,
         y: impl Borrow<Matrix<Ring::Set>>,
     ) -> AffineSubspace<Ring::Set> {
-        match self.row_solve(m, y) {
+        match self.row_solve_old(m, y) {
             Some(x) => AffineSubspaceStructure::new(self.ring().clone())
-                .from_offset_and_linear_lattice(1, m.rows(), x, self.row_kernel(m.clone())),
+                .from_offset_and_linear_lattice(1, m.rows(), x, self.row_kernel_old(m.clone())),
             None => AffineSubspaceStructure::new(self.ring().clone()).empty(1, m.rows()),
         }
     }
 
     #[deprecated]
-    pub fn col_solution_lattice(
+    pub fn col_solution_lattice_old(
         &self,
         m: &Matrix<Ring::Set>,
         y: impl Borrow<Matrix<Ring::Set>>,
     ) -> AffineSubspace<Ring::Set> {
-        match self.col_solve(m, y) {
+        match self.col_solve_old(m, y) {
             Some(x) => AffineSubspaceStructure::new(self.ring().clone())
-                .from_offset_and_linear_lattice(m.cols(), 1, x, self.col_kernel(m.clone())),
+                .from_offset_and_linear_lattice(m.cols(), 1, x, self.col_kernel_old(m.clone())),
             None => AffineSubspaceStructure::new(self.ring().clone()).empty(m.cols(), 1),
         }
     }
@@ -410,6 +415,68 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
             }
         }
     }
+
+    pub fn row_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
+        todo!()
+    }
+
+    pub fn col_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
+        todo!()
+    }
+
+    pub fn row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
+        todo!()
+    }
+
+    pub fn col_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
+        todo!()
+    }
+
+    pub fn row_affine_span(
+        &self,
+        matrix: Matrix<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
+        todo!()
+    }
+
+    pub fn col_affine_span(
+        &self,
+        matrix: Matrix<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
+        todo!()
+    }
+
+    pub fn row_solve(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        y: &Vec<Ring::Set>,
+    ) -> Option<Matrix<Ring::Set>> {
+        todo!()
+    }
+
+    pub fn col_solve(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        y: &Vec<Ring::Set>,
+    ) -> Option<Matrix<Ring::Set>> {
+        todo!()
+    }
+
+    pub fn row_solution_set(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        y: &Vec<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
+        todo!()
+    }
+
+    pub fn col_solution_set(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        y: &Vec<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
+        todo!()
+    }
 }
 
 impl<R: MetaType> Matrix<R>
@@ -417,43 +484,43 @@ where
     R::Signature: BezoutDomainSignature,
 {
     pub fn row_span(&self) -> LinearSubspace<R> {
-        Self::structure().row_span(self.clone())
+        Self::structure().row_span_old(self.clone())
     }
 
     pub fn col_span(&self) -> LinearSubspace<R> {
-        Self::structure().col_span(self.clone())
+        Self::structure().col_span_old(self.clone())
     }
 
     pub fn row_affine_span(&self) -> AffineSubspace<R> {
-        Self::structure().row_affine_span(self.clone())
+        Self::structure().row_affine_span_old(self.clone())
     }
 
     pub fn col_affine_span(&self) -> AffineSubspace<R> {
-        Self::structure().col_affine_span(self.clone())
+        Self::structure().col_affine_span_old(self.clone())
     }
 
     pub fn row_kernel(&self) -> LinearSubspace<R> {
-        Self::structure().row_kernel(self.clone())
+        Self::structure().row_kernel_old(self.clone())
     }
 
     pub fn col_kernel(&self) -> LinearSubspace<R> {
-        Self::structure().col_kernel(self.clone())
+        Self::structure().col_kernel_old(self.clone())
     }
 
     pub fn row_solve(&self, y: impl Borrow<Self>) -> Option<Self> {
-        Self::structure().row_solve(self, y)
+        Self::structure().row_solve_old(self, y)
     }
 
     pub fn col_solve(&self, y: impl Borrow<Self>) -> Option<Self> {
-        Self::structure().col_solve(self, y)
+        Self::structure().col_solve_old(self, y)
     }
 
     pub fn row_solution_lattice(&self, y: impl Borrow<Self>) -> AffineSubspace<R> {
-        Self::structure().row_solution_lattice(self, y)
+        Self::structure().row_solution_lattice_old(self, y)
     }
 
     pub fn col_solution_lattice(&self, y: impl Borrow<Self>) -> AffineSubspace<R> {
-        Self::structure().col_solution_lattice(self, y)
+        Self::structure().col_solution_lattice_old(self, y)
     }
 
     pub fn row_hermite_algorithm(&self) -> (Self, Self, R, Vec<usize>) {

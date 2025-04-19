@@ -142,12 +142,24 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
-    pub fn get_row(&self, row: usize) -> Self {
+    pub fn get_row_submatrix(&self, row: usize) -> Self {
         self.submatrix(vec![row], (0..self.cols()).collect())
     }
 
-    pub fn get_col(&self, col: usize) -> Self {
+    pub fn get_col_submatrix(&self, col: usize) -> Self {
         self.submatrix((0..self.rows()).collect(), vec![col])
+    }
+
+    pub fn get_row(&self, row: usize) -> Vec<Set> {
+        assert!(row < self.rows());
+        // compile_error!("todo");
+        todo!()
+    }
+
+    pub fn get_col(&self, col: usize) -> Vec<Set> {
+        assert!(col < self.cols());
+        // compile_error!("todo");
+        todo!()
     }
 
     pub fn apply_map<NewSet: Clone>(&self, f: impl Fn(&Set) -> NewSet) -> Matrix<NewSet> {

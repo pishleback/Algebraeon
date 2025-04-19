@@ -122,7 +122,7 @@ impl AlgebraicNumberFieldStructure {
                                 .map(|i| {
                                     self.from_row_vector(
                                         guess_mat_prim_hnf
-                                            .get_row(i)
+                                            .get_row_submatrix(i)
                                             .apply_map(|v| Rational::from(v) * &mul),
                                     )
                                 })

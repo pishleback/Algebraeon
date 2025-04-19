@@ -55,8 +55,8 @@ impl<FS: ComplexConjugateSignature + FieldSignature> MatrixStructure<FS> {
                 let lambda = self
                     .ring()
                     .div(
-                        &self.inner_product(&mat.get_row(i), &mat.get_row(j)),
-                        &self.inner_product(&mat.get_row(j), &mat.get_row(j)),
+                        &self.inner_product(&mat.get_row_submatrix(i), &mat.get_row_submatrix(j)),
+                        &self.inner_product(&mat.get_row_submatrix(j), &mat.get_row_submatrix(j)),
                     )
                     .unwrap();
                 //col_i -= lambda col_j
@@ -77,7 +77,7 @@ impl<FS: ComplexConjugateSignature + FieldSignature> MatrixStructure<FS> {
             for j in (i + 1)..mat.rows() {
                 debug_assert!(
                     self.ring()
-                        .is_zero(&self.inner_product(&mat.get_row(i), &mat.get_row(j)),)
+                        .is_zero(&self.inner_product(&mat.get_row_submatrix(i), &mat.get_row_submatrix(j)),)
                 );
             }
         }
@@ -117,7 +117,7 @@ impl<FS: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignatu
         let (mut lt, mut mat) = self.gram_schmidt_row_orthogonalization_algorithm(mat);
 
         for r in 0..mat.rows() {
-            let row = mat.get_row(r);
+            let row = mat.get_row_submatrix(r);
             let lensq = self.inner_product(&row, &row);
             let row_opp = ElementaryOpp::new_row_opp(
                 self.ring().clone(),

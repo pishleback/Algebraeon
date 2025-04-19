@@ -201,7 +201,7 @@ mod tests {
                 Matrix::from_rows(vec![vec![1, 2, 0, 1], vec![0, 0, 1, 1]])
             )
         ))
-    }
+    } 
 
     #[test]
     fn test_finitely_free_submodule_intersect() {

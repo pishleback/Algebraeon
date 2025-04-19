@@ -49,7 +49,7 @@ fn metamatrix_row_intersection<RS: BezoutDomainSignature, MetaMatT: Borrow<Matri
         ],
     );
     //the row kernel of joined_metamat tells us about which linear combinations of rows of metamat1 are equal to which linear combinations of rows of metamat2
-    let row_ker = mat_struct.row_kernel(joined_metamat);
+    let row_ker = mat_struct.row_kernel_old(joined_metamat);
     //the rows in row_ker are in two halves
     //the first represents a linear combination of metamat1 rows
     //the second represents a linear combination of metamat2 rows
@@ -267,7 +267,7 @@ impl<RS: BezoutDomainSignature> LinearSubspaceStructure<RS> {
         lat: &LinearSubspace<RS::Set>,
         mat_as_row: impl Borrow<Matrix<RS::Set>>,
     ) -> bool {
-        match MatrixStructure::new(self.ring.clone()).row_solve(&lat.metamatrix, mat_as_row) {
+        match MatrixStructure::new(self.ring.clone()).row_solve_old(&lat.metamatrix, mat_as_row) {
             Some(_taps) => true,
             None => false,
         }

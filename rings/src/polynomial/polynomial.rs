@@ -862,7 +862,7 @@ impl<RS: BezoutDomainSignature> PolynomialStructure<RS> {
             *output_vec.at_mut(r, 0).unwrap() = y.clone();
         }
 
-        match matrix_structure.col_solve(&mat, output_vec) {
+        match matrix_structure.col_solve_old(&mat, output_vec) {
             Some(coeff_vec) => Some(Polynomial::from_coeffs(
                 (0..n)
                     .map(|i| coeff_vec.at(i, 0).unwrap().clone())
