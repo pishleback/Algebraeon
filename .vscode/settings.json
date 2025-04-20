@@ -1,6 +1,0 @@
-{
-    "rust-analyzer.cargo.features": [
-        // "algebraeon/runtime-fetch"
-        // "algebraeon/buildtime-fetch"
-    ]
-}

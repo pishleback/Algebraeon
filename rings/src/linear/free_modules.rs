@@ -76,6 +76,10 @@ where
         &self.ring
     }
 
+    fn zero(&self) -> Self::Set {
+        [].into()
+    }
+
     fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(v));
         debug_assert!(self.is_element(w));
@@ -122,17 +126,35 @@ where
 {
 }
 
-impl<Set: FiniteSetSignature, Ring: RingSignature> FiniteRankModuleSignature<Ring>
+impl<Set: FiniteSetSignature, Ring: RingSignature> FinitelyFreeModuleSignature<Ring>
     for FreeModuleOverSetStructure<Set, Ring>
 where
     Set::Set: Eq + Hash,
 {
-    fn basis(&self) -> Vec<Self::Set> {
+    fn rank(&self) -> usize {
+        self.set.size()
+    }
+
+    fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
         self.set
             .list_all_elements()
             .into_iter()
-            .map(|a| self.basis_element(a))
+            .map(|b| match v.get(&b) {
+                Some(c) => c.clone(),
+                None => self.ring.zero(),
+            })
             .collect()
+    }
+
+    fn from_vec(&self, v: &Vec<Ring::Set>) -> Self::Set {
+        self.reduce(
+            self.set
+                .list_all_elements()
+                .into_iter()
+                .enumerate()
+                .map(|(i, b)| (b, v[i].clone()))
+                .collect(),
+        )
     }
 }
 

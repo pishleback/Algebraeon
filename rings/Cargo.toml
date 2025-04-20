@@ -29,8 +29,3 @@ lalrpop = "0.22.1"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
-
-[features]
-default = []
-conway-polynomials-buildtime-fetch = []
-conway-polynomials-runtime-fetch = ["reqwest"]

@@ -18,12 +18,3 @@ algebraeon-nzq = { version = "=0.0.12", path = "../nzq", default-features = fals
 algebraeon-groups = { version = "=0.0.12", path = "../groups", default-features = false }
 algebraeon-rings = { version = "=0.0.12", path = "../rings", default-features = false }
 algebraeon-geometry = { version = "=0.0.12", path = "../geometry", default-features = false }
-
-[features]
-default = []
-buildtime-fetch = [
-    "algebraeon-rings/conway-polynomials-buildtime-fetch",
-]
-runtime-fetch = [
-    "algebraeon-rings/conway-polynomials-runtime-fetch",
-]

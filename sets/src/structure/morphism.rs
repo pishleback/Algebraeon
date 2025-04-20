@@ -16,14 +16,14 @@ pub trait Function<Domain: SetSignature, Range: SetSignature>: Morphism<Domain, 
 pub trait InjectiveFunction<Domain: SetSignature, Range: SetSignature>:
     Function<Domain, Range>
 {
-    fn try_preimage(&self, x: &Range::Set) -> Option<Domain::Set>;
+    fn try_preimage(&self, y: &Range::Set) -> Option<Domain::Set>;
 }
 
 pub trait BijectiveFunction<Domain: SetSignature, Range: SetSignature>:
     InjectiveFunction<Domain, Range>
 {
-    fn preimage(&self, x: &Range::Set) -> Domain::Set {
-        self.try_preimage(x).unwrap()
+    fn preimage(&self, y: &Range::Set) -> Domain::Set {
+        self.try_preimage(y).unwrap()
     }
 }
 
@@ -161,12 +161,6 @@ impl<
     fn preimage(&self, x: &C::Set) -> A::Set {
         self.a_to_b.preimage(&self.b_to_c.preimage(x))
     }
-}
-
-pub trait MorphismsSignature<Domain: Signature, Range: Signature>: SetSignature
-where
-    Self::Set: Morphism<Domain, Range>,
-{
 }
 
 /// Represent all functions from `domain` to `range`

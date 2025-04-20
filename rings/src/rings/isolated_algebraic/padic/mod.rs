@@ -1,4 +1,4 @@
-use crate::{rings::natural::factorization::primes::*, polynomial::*, structure::*};
+use crate::{polynomial::*, rings::natural::factorization::primes::*, structure::*};
 use algebraeon_nzq::*;
 use valuation::*;
 
