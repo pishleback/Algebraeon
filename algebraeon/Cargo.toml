@@ -20,7 +20,7 @@ algebraeon-rings = { version = "=0.0.12", path = "../rings", default-features = 
 algebraeon-geometry = { version = "=0.0.12", path = "../geometry", default-features = false }
 
 [features]
-default = ["buildtime-fetch"]
+default = []
 buildtime-fetch = [
     "algebraeon-rings/conway-polynomials-buildtime-fetch",
 ]
