@@ -57,20 +57,40 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
             .collect()
     }
 
-    pub fn matrix_row_span(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {
+    pub fn matrix_row_span_and_basis(
+        ring: Ring,
+        matrix: Matrix<Ring::Set>,
+    ) -> (Self, Matrix<Ring::Set>) {
+        let rows = matrix.rows();
         let cols = matrix.cols();
-        let (h, _u, _det, pivots) =
+        let (h, u, _det, pivots) =
             MatrixStructure::new(ring.clone()).row_reduced_hermite_algorithm(matrix);
         let row_basis = h.submatrix((0..pivots.len()).collect(), (0..cols).collect());
-        FinitelyFreeSubmodule {
-            module: FinitelyFreeModuleStructure::new(ring, row_basis.cols()),
-            row_basis,
-            pivots,
-        }
+        let u = u.submatrix((0..pivots.len()).collect(), (0..rows).collect());
+        (
+            FinitelyFreeSubmodule {
+                module: FinitelyFreeModuleStructure::new(ring, row_basis.cols()),
+                row_basis,
+                pivots,
+            },
+            u,
+        )
+    }
+
+    pub fn matrix_col_span_and_basis(
+        ring: Ring,
+        matrix: Matrix<Ring::Set>,
+    ) -> (Self, Matrix<Ring::Set>) {
+        let (s, u) = Self::matrix_row_span_and_basis(ring, matrix.transpose());
+        (s, u.transpose())
+    }
+
+    pub fn matrix_row_span(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {
+        Self::matrix_row_span_and_basis(ring, matrix).0
     }
 
     pub fn matrix_col_span(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {
-        Self::matrix_row_span(ring, matrix.transpose())
+        Self::matrix_col_span_and_basis(ring, matrix).0
     }
 
     pub fn matrix_row_kernel(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {

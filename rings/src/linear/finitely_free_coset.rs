@@ -1,4 +1,4 @@
-use crate::{linear::matrix::MatrixStructure, structure::ModuleSignature};
+use crate::structure::ModuleSignature;
 
 use super::{
     finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
@@ -73,10 +73,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCoset<Ring> {
         )
     }
 
-    pub fn intersect(x: &Self, y: &Self) -> FinitelyFreeSubmoduleAffineSubset<Ring>
-    where
-        Ring: ToStringSignature,
-    {
+    pub fn intersect(x: &Self, y: &Self) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
         let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
         let cols = x.module_rank();
         debug_assert_eq!(cols, y.module_rank());

@@ -1,5 +1,7 @@
 use crate::linear::{
     finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
+    finitely_free_coset::FinitelyFreeSubmoduleCoset,
+    finitely_free_modules::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
 };
 
@@ -448,34 +450,59 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
 
     pub fn row_solve(
         &self,
-        matrix: &Matrix<Ring::Set>,
+        matrix: Matrix<Ring::Set>,
         y: &Vec<Ring::Set>,
-    ) -> Option<Matrix<Ring::Set>> {
-        todo!()
+    ) -> Option<Vec<Ring::Set>> {
+        let (row_span_submodule, basis_in_terms_of_matrix_rows) =
+            FinitelyFreeSubmodule::matrix_row_span_and_basis(self.ring().clone(), matrix);
+        let (offset, y_reduced) = row_span_submodule.reduce_element(y);
+        if y_reduced.iter().all(|v| self.ring().is_zero(v)) {
+            Some(
+                self.mul(
+                    &Matrix::from_rows(vec![offset]),
+                    &basis_in_terms_of_matrix_rows,
+                )
+                .unwrap()
+                .get_row(0),
+            )
+        } else {
+            None
+        }
     }
 
     pub fn col_solve(
         &self,
-        matrix: &Matrix<Ring::Set>,
+        matrix: Matrix<Ring::Set>,
         y: &Vec<Ring::Set>,
-    ) -> Option<Matrix<Ring::Set>> {
-        todo!()
+    ) -> Option<Vec<Ring::Set>> {
+        self.row_solve(matrix.transpose(), y)
     }
 
     pub fn row_solution_set(
         &self,
-        matrix: &Matrix<Ring::Set>,
+        matrix: Matrix<Ring::Set>,
         y: &Vec<Ring::Set>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
-        todo!()
+        match self.row_solve(matrix.clone(), y) {
+            Some(offset) => FinitelyFreeSubmoduleAffineSubset::from_coset(
+                FinitelyFreeSubmoduleCoset::from_offset_and_module(
+                    &offset,
+                    self.row_kernel(matrix),
+                ),
+            ),
+            None => FinitelyFreeSubmoduleAffineSubset::new_empty(FinitelyFreeModuleStructure::new(
+                self.ring().clone(),
+                matrix.rows(),
+            )),
+        }
     }
 
     pub fn col_solution_set(
         &self,
-        matrix: &Matrix<Ring::Set>,
+        matrix: Matrix<Ring::Set>,
         y: &Vec<Ring::Set>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
-        todo!()
+        self.row_solution_set(matrix.transpose(), y)
     }
 }
 
@@ -588,19 +615,19 @@ where
         Self::structure().col_affine_span(self)
     }
 
-    pub fn row_solve(&self, y: &Vec<R>) -> Option<Matrix<R>> {
+    pub fn row_solve(self, y: &Vec<R>) -> Option<Vec<R>> {
         Self::structure().row_solve(self, y)
     }
 
-    pub fn col_solve(&self, y: &Vec<R>) -> Option<Matrix<R>> {
+    pub fn col_solve(self, y: &Vec<R>) -> Option<Vec<R>> {
         Self::structure().col_solve(self, y)
     }
 
-    pub fn row_solution_set(&self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+    pub fn row_solution_set(self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
         Self::structure().row_solution_set(self, y)
     }
 
-    pub fn col_solution_set(&self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+    pub fn col_solution_set(self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
         Self::structure().col_solution_set(self, y)
     }
 }
@@ -1011,5 +1038,25 @@ mod tests {
             vec![Integer::from(5)],
             vec![Integer::from(-3)]
         ])));
+    }
+
+    #[test]
+    fn test_row_solve() {
+        let matrix =
+            Matrix::<Integer>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 1], vec![1, 1, 1]]);
+        let x =
+            matrix
+                .clone()
+                .row_solve(&vec![Integer::from(4), Integer::from(4), Integer::from(7)]);
+        assert_eq!(
+            x.unwrap(),
+            vec![Integer::from(-3), Integer::from(3), Integer::from(4),]
+        );
+
+        let a = Matrix::<Integer>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 1]])
+            .row_solution_set(&vec![Integer::from(2), Integer::from(3), Integer::from(2)]);
+        for s in a.affine_basis() {
+            println!("{:?}", s);
+        }
     }
 }

@@ -1,10 +1,8 @@
-use crate::structure::FinitelyFreeModuleSignature;
-
 use super::{
     finitely_free_coset::FinitelyFreeSubmoduleCoset,
-    finitely_free_modules::FinitelyFreeModuleStructure,
-    matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
+    finitely_free_modules::FinitelyFreeModuleStructure, matrix::ReducedHermiteAlgorithmSignature,
 };
+use crate::structure::{FinitelyFreeModuleSignature, ModuleSignature};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
@@ -63,6 +61,28 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
         }
     }
 
+    pub fn affine_rank(&self) -> usize {
+        match &self {
+            FinitelyFreeSubmoduleAffineSubset::Empty(..) => 0,
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => {
+                coset.submodule().submodule_rank() + 1
+            }
+        }
+    }
+
+    pub fn affine_basis(&self) -> Vec<Vec<Ring::Set>> {
+        match &self {
+            FinitelyFreeSubmoduleAffineSubset::Empty(..) => vec![],
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => {
+                let mut affine_basis = vec![coset.offset().clone()];
+                for v in coset.submodule().basis() {
+                    affine_basis.push(self.module().add(&v, coset.offset()));
+                }
+                affine_basis
+            }
+        }
+    }
+
     pub fn add(x: &Self, y: &Self) -> Self {
         let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
         let module_rank = x.module_rank();
@@ -75,21 +95,15 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
         }
     }
 
-    // pub fn intersect(x: &Self, y: &Self) -> Self {
-    //     let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
-    //     let module_rank = x.module_rank();
-    //     assert_eq!(module_rank, y.module_rank());
-    //     match (x, y) {
-    //         (Self::Empty(_), _) | (_, Self::Empty(_)) => Self::Empty(module),
-    //         (Self::NonEmpty(x_coset), Self::NonEmpty(y_coset)) => {
-    //             Self::NonEmpty(FinitelyFreeSubmoduleCoset::intersect(&x_coset, &y_coset))
-    //         }
-    //     }
-    // }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use algebraeon_nzq::Integer;
+    pub fn intersect(x: &Self, y: &Self) -> Self {
+        let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
+        let module_rank = x.module_rank();
+        assert_eq!(module_rank, y.module_rank());
+        match (x, y) {
+            (Self::Empty(_), _) | (_, Self::Empty(_)) => Self::Empty(module),
+            (Self::NonEmpty(x_coset), Self::NonEmpty(y_coset)) => {
+                FinitelyFreeSubmoduleCoset::intersect(&x_coset, &y_coset)
+            }
+        }
+    }
 }
