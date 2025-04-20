@@ -26,8 +26,3 @@ reqwest = { version = "0.12.15", features = ["blocking"] }
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
-
-[features]
-default = ["conway-polynomials-buildtime-fetch"]
-conway-polynomials-buildtime-fetch = []
-conway-polynomials-runtime-fetch = ["reqwest"]
