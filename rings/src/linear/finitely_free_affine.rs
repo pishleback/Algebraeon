@@ -47,6 +47,22 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
         Self::NonEmpty(coset)
     }
 
+    pub fn is_empty(&self) -> bool {
+        match &self {
+            FinitelyFreeSubmoduleAffineSubset::Empty(..) => true,
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(..) => false,
+        }
+    }
+
+    pub fn unwrap_to_coset(self) -> FinitelyFreeSubmoduleCoset<Ring> {
+        match self {
+            FinitelyFreeSubmoduleAffineSubset::Empty(..) => {
+                panic!("unwrap called on empty affine subset")
+            }
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset,
+        }
+    }
+
     pub fn add(x: &Self, y: &Self) -> Self {
         let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
         let module_rank = x.module_rank();
@@ -59,17 +75,17 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
         }
     }
 
-    pub fn intersect(x: &Self, y: &Self) -> Self {
-        let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
-        let module_rank = x.module_rank();
-        assert_eq!(module_rank, y.module_rank());
-        match (x, y) {
-            (Self::Empty(_), _) | (_, Self::Empty(_)) => Self::Empty(module),
-            (Self::NonEmpty(x_coset), Self::NonEmpty(y_coset)) => {
-                Self::NonEmpty(FinitelyFreeSubmoduleCoset::intersect(&x_coset, &y_coset))
-            }
-        }
-    }
+    // pub fn intersect(x: &Self, y: &Self) -> Self {
+    //     let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
+    //     let module_rank = x.module_rank();
+    //     assert_eq!(module_rank, y.module_rank());
+    //     match (x, y) {
+    //         (Self::Empty(_), _) | (_, Self::Empty(_)) => Self::Empty(module),
+    //         (Self::NonEmpty(x_coset), Self::NonEmpty(y_coset)) => {
+    //             Self::NonEmpty(FinitelyFreeSubmoduleCoset::intersect(&x_coset, &y_coset))
+    //         }
+    //     }
+    // }
 }
 
 #[cfg(test)]

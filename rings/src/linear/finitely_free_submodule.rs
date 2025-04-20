@@ -43,6 +43,10 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
         self.row_basis.transpose()
     }
 
+    pub(crate) fn row_basis_matrix(&self) -> &Matrix<Ring::Set> {
+        &self.row_basis
+    }
+
     pub fn basis(&self) -> Vec<Vec<Ring::Set>> {
         (0..self.row_basis.rows())
             .map(|r| {
