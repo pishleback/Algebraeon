@@ -28,7 +28,10 @@ impl Number {
         if denominator == 0 {
             panic!("Denominator cannot be zero");
         }
-        Number { numerator, denominator }
+        Number {
+            numerator,
+            denominator,
+        }
     }
 }
 
@@ -157,7 +160,6 @@ impl fmt::Display for Power {
     }
 }
 
-
 impl Expr {
     fn from_string(input: String) -> Result<Self, String> {
         match polynomial_parser::ExprParser::new().parse(&input) {
@@ -184,7 +186,10 @@ impl Expr {
         if vars.is_empty() {
             // Constant polynomial
         } else if vars.len() > 1 {
-            return Err(format!("Expected univariate polynomial with variable '{}', but found multiple variables: {:?}", var, vars));
+            return Err(format!(
+                "Expected univariate polynomial with variable '{}', but found multiple variables: {:?}",
+                var, vars
+            ));
         } else if !vars.contains(&var.to_string()) {
             return Err(format!(
                 "Expected polynomial with variable '{}', but found '{}'",
@@ -224,7 +229,10 @@ impl Expr {
         if vars.is_empty() {
             // Constant polynomial
         } else if vars.len() > 1 {
-            return Err(format!("Expected univariate polynomial with variable '{}', but found multiple variables: {:?}", var, vars));
+            return Err(format!(
+                "Expected univariate polynomial with variable '{}', but found multiple variables: {:?}",
+                var, vars
+            ));
         } else if !vars.contains(&var.to_string()) {
             return Err(format!(
                 "Expected polynomial with variable '{}', but found '{}'",
@@ -314,20 +322,22 @@ impl Expr {
                 match (p.left.as_ref(), p.right.as_ref()) {
                     // Handle coefficient * var^n pattern
                     (Expr::Num(n), right) => {
-                        let new_coeff = coefficient * Integer::from(n.numerator) / Integer::from(n.denominator);
+                        let new_coeff =
+                            coefficient * Integer::from(n.numerator) / Integer::from(n.denominator);
                         right.extract_terms(var, terms, new_coeff);
                     }
                     // Handle var^n * coefficient pattern
                     (left, Expr::Num(n)) => {
-                        let new_coeff = coefficient * Integer::from(n.numerator) / Integer::from(n.denominator);
+                        let new_coeff =
+                            coefficient * Integer::from(n.numerator) / Integer::from(n.denominator);
                         left.extract_terms(var, terms, new_coeff);
                     }
                     // Handle var * var pattern (produces var^2)
                     (Expr::Var(v1), Expr::Var(v2))
-                    if v1.name == var.to_string() && v2.name == var.to_string() =>
-                        {
-                            *terms.entry(2).or_insert(Integer::from(0)) += coefficient;
-                        }
+                        if v1.name == var.to_string() && v2.name == var.to_string() =>
+                    {
+                        *terms.entry(2).or_insert(Integer::from(0)) += coefficient;
+                    }
                     // Handle var * var^n pattern
                     (Expr::Var(v), Expr::Power(pow)) if v.name == var.to_string() => {
                         if let Expr::Var(base_var) = pow.base.as_ref() {
@@ -335,7 +345,8 @@ impl Expr {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
                                     if exp.denominator == 1 {
                                         let degree = 1 + exp.numerator as usize;
-                                        *terms.entry(degree).or_insert(Integer::from(0)) += coefficient;
+                                        *terms.entry(degree).or_insert(Integer::from(0)) +=
+                                            coefficient;
                                     }
                                 }
                             }
@@ -348,7 +359,8 @@ impl Expr {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
                                     if exp.denominator == 1 {
                                         let degree = exp.numerator as usize + 1;
-                                        *terms.entry(degree).or_insert(Integer::from(0)) += coefficient;
+                                        *terms.entry(degree).or_insert(Integer::from(0)) +=
+                                            coefficient;
                                     }
                                 }
                             }
@@ -415,8 +427,9 @@ impl Expr {
                                         for (term_deg, term_coef) in &temp_terms {
                                             let new_deg = res_deg + term_deg;
                                             let new_coef = res_coef.clone() * term_coef.clone();
-                                            *new_result.entry(new_deg).or_insert(Integer::from(0)) +=
-                                                new_coef;
+                                            *new_result
+                                                .entry(new_deg)
+                                                .or_insert(Integer::from(0)) += new_coef;
                                         }
                                     }
                                     result_terms = new_result;
@@ -440,7 +453,12 @@ impl Expr {
     }
 
     // New method for rational polynomial extraction
-    fn extract_rational_terms(&self, var: char, terms: &mut HashMap<usize, Rational>, coefficient: Rational) {
+    fn extract_rational_terms(
+        &self,
+        var: char,
+        terms: &mut HashMap<usize, Rational>,
+        coefficient: Rational,
+    ) {
         match self {
             Expr::Var(v) => {
                 if v.name == var.to_string() {
@@ -455,12 +473,13 @@ impl Expr {
                 // Constant term
                 let num_rational = Rational::from_integers(
                     Integer::from(n.numerator),
-                    Integer::from(n.denominator)
+                    Integer::from(n.denominator),
                 );
                 *terms.entry(0).or_insert(Rational::from(0)) += coefficient * num_rational;
             }
             Expr::Sum(s) => {
-                s.left.extract_rational_terms(var, terms, coefficient.clone());
+                s.left
+                    .extract_rational_terms(var, terms, coefficient.clone());
                 s.right.extract_rational_terms(var, terms, coefficient);
             }
             Expr::Product(p) => {
@@ -469,7 +488,7 @@ impl Expr {
                     (Expr::Num(n), right) => {
                         let num_rational = Rational::from_integers(
                             Integer::from(n.numerator),
-                            Integer::from(n.denominator)
+                            Integer::from(n.denominator),
                         );
                         let new_coeff = coefficient * num_rational;
                         right.extract_rational_terms(var, terms, new_coeff);
@@ -478,17 +497,17 @@ impl Expr {
                     (left, Expr::Num(n)) => {
                         let num_rational = Rational::from_integers(
                             Integer::from(n.numerator),
-                            Integer::from(n.denominator)
+                            Integer::from(n.denominator),
                         );
                         let new_coeff = coefficient * num_rational;
                         left.extract_rational_terms(var, terms, new_coeff);
                     }
                     // Handle var * var pattern (produces var^2)
                     (Expr::Var(v1), Expr::Var(v2))
-                    if v1.name == var.to_string() && v2.name == var.to_string() =>
-                        {
-                            *terms.entry(2).or_insert(Rational::from(0)) += coefficient;
-                        }
+                        if v1.name == var.to_string() && v2.name == var.to_string() =>
+                    {
+                        *terms.entry(2).or_insert(Rational::from(0)) += coefficient;
+                    }
                     // Handle var * var^n pattern
                     (Expr::Var(v), Expr::Power(pow)) if v.name == var.to_string() => {
                         if let Expr::Var(base_var) = pow.base.as_ref() {
@@ -496,7 +515,8 @@ impl Expr {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
                                     if exp.denominator == 1 {
                                         let degree = 1 + exp.numerator as usize;
-                                        *terms.entry(degree).or_insert(Rational::from(0)) += coefficient;
+                                        *terms.entry(degree).or_insert(Rational::from(0)) +=
+                                            coefficient;
                                     }
                                 }
                             }
@@ -509,7 +529,8 @@ impl Expr {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
                                     if exp.denominator == 1 {
                                         let degree = exp.numerator as usize + 1;
-                                        *terms.entry(degree).or_insert(Rational::from(0)) += coefficient;
+                                        *terms.entry(degree).or_insert(Rational::from(0)) +=
+                                            coefficient;
                                     }
                                 }
                             }
@@ -563,7 +584,11 @@ impl Expr {
                             } else if exp.numerator > 0 {
                                 // For (expression)^n, we need to expand it
                                 let mut temp_terms: HashMap<usize, Rational> = HashMap::new();
-                                inner.extract_rational_terms(var, &mut temp_terms, Rational::from(1));
+                                inner.extract_rational_terms(
+                                    var,
+                                    &mut temp_terms,
+                                    Rational::from(1),
+                                );
 
                                 // Apply the exponent by expanding the polynomial power
                                 let mut result_terms: HashMap<usize, Rational> = HashMap::new();
@@ -575,8 +600,9 @@ impl Expr {
                                         for (term_deg, term_coef) in &temp_terms {
                                             let new_deg = res_deg + term_deg;
                                             let new_coef = res_coef.clone() * term_coef.clone();
-                                            *new_result.entry(new_deg).or_insert(Rational::from(0)) +=
-                                                new_coef;
+                                            *new_result
+                                                .entry(new_deg)
+                                                .or_insert(Rational::from(0)) += new_coef;
                                         }
                                     }
                                     result_terms = new_result;
@@ -602,6 +628,8 @@ impl Expr {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
     use crate::parsing::polynomial::polynomial_parser::ExprParser;
 
@@ -614,7 +642,10 @@ mod tests {
     }
 
     // Helper function to parse and create rational polynomial
-    fn parse_and_build_rational_poly(input: &str, var: char) -> Result<Polynomial<Rational>, String> {
+    fn parse_and_build_rational_poly(
+        input: &str,
+        var: char,
+    ) -> Result<Polynomial<Rational>, String> {
         match ExprParser::new().parse(input) {
             Ok(expr) => Expr::build_univariate_rational_polynomial(var, &expr),
             Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
@@ -624,13 +655,24 @@ mod tests {
     #[test]
     fn test_integer_polynomial_basic() {
         let result = parse_and_build_integer_poly("3*x^2 + 2*x - 1", 'x').unwrap();
-        assert_eq!(result, Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(2), Integer::from(3)]));
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(2), Integer::from(3)])
+        );
     }
 
     #[test]
     fn test_integer_polynomial_different_var() {
         let result = parse_and_build_integer_poly("y^3 + 2*y - 7", 'y').unwrap();
-        assert_eq!(result, Polynomial::from_coeffs(vec![Integer::from(-7), Integer::from(2), Integer::from(0), Integer::from(1)]));
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![
+                Integer::from(-7),
+                Integer::from(2),
+                Integer::from(0),
+                Integer::from(1)
+            ])
+        );
     }
 
     #[test]
@@ -642,11 +684,14 @@ mod tests {
     #[test]
     fn test_rational_polynomial_basic() {
         let result = parse_and_build_rational_poly("3*x^2 + 2*x - 1", 'x').unwrap();
-        assert_eq!(result, Polynomial::from_coeffs(vec![
-            Rational::from(-1),
-            Rational::from(2),
-            Rational::from(3)
-        ]));
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![
+                Rational::from(-1),
+                Rational::from(2),
+                Rational::from(3)
+            ])
+        );
     }
 
     #[test]
@@ -659,12 +704,10 @@ mod tests {
         let zero = Rational::from(0);
         let two_thirds = Rational::from_integers(Integer::from(2), Integer::from(3));
 
-        assert_eq!(result, Polynomial::from_coeffs(vec![
-            neg_seven_sixths,
-            one_fourth,
-            zero,
-            two_thirds
-        ]));
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![neg_seven_sixths, one_fourth, zero, two_thirds])
+        );
     }
 
     #[test]
@@ -672,12 +715,42 @@ mod tests {
         let result = parse_and_build_rational_poly("(x + 2)^3", 'x').unwrap();
 
         // (x + 2)^3 = x^3 + 6x^2 + 12x + 8
-        assert_eq!(result, Polynomial::from_coeffs(vec![
-            Rational::from(8),
-            Rational::from(12),
-            Rational::from(6),
-            Rational::from(1)
-        ]));
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![
+                Rational::from(8),
+                Rational::from(12),
+                Rational::from(6),
+                Rational::from(1)
+            ])
+        );
+    }
+
+    #[test]
+    fn test_rational_polynomial_nested_subexpression() {
+        let result = parse_and_build_rational_poly("(((x + 2)))", 'x').unwrap();
+
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![Rational::from(2), Rational::from(1)])
+        );
+    }
+
+    #[test]
+    fn test_rational_polynomial_divide_polynomial_by_integer() {
+        // dividing by integers should be ok for polynomials with rational coefficients
+        // though dividing by polynomial expressions should not be valid
+
+        let result = parse_and_build_rational_poly("(x^2 + 3*x + 2)/3", 'x').unwrap();
+
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![
+                Rational::from_str("2/3").unwrap(),
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("1/3").unwrap()
+            ])
+        );
     }
 
     #[test]
@@ -685,12 +758,15 @@ mod tests {
         let result = parse_and_build_integer_poly("(x + 2)^3", 'x').unwrap();
 
         // (x + 2)^3 = x^3 + 6x^2 + 12x + 8
-        assert_eq!(result, Polynomial::from_coeffs(vec![
-            Integer::from(8),
-            Integer::from(12),
-            Integer::from(6),
-            Integer::from(1)
-        ]));
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![
+                Integer::from(8),
+                Integer::from(12),
+                Integer::from(6),
+                Integer::from(1)
+            ])
+        );
     }
 
     #[test]
@@ -704,5 +780,62 @@ mod tests {
         let result = parse_and_build_rational_poly("1/(x+1)", 'x');
         assert!(result.is_err());
     }
-}
 
+    #[test]
+    fn test_integer_polynomial_big_constant() {
+        let result = parse_and_build_integer_poly(
+            "123456789123456789123456789123456789123456789123456789123456789",
+            'x',
+        )
+        .unwrap();
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![
+                Integer::from_str(
+                    "123456789123456789123456789123456789123456789123456789123456789"
+                )
+                .unwrap()
+            ])
+        );
+    }
+
+    #[test]
+    fn test_rational_polynomial_big_constant() {
+        let result = parse_and_build_rational_poly(
+            "123456789123456789123456789123456789123456789123456789123456789/123456789123456789123456789123456789123456789123456789123456789",
+            'x',
+        )
+        .unwrap();
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![
+                Rational::from_str(
+                    "123456789123456789123456789123456789123456789123456789123456789/123456789123456789123456789123456789123456789123456789123456789"
+                )
+                .unwrap()
+            ])
+        );
+    }
+
+    #[test]
+    fn test_rational_polynomial_big_coefficients() {
+        let result = parse_and_build_rational_poly("123456789123456789123456789123456789123456789123456789123456789*x^2 + 123456789123456789123456789123456789123456789123456789123456789*x - 123456789123456789123456789123456789123456789123456789123456789", 'x').unwrap();
+        assert_eq!(
+            result,
+            Polynomial::from_coeffs(vec![
+                Rational::from_str(
+                    "123456789123456789123456789123456789123456789123456789123456789"
+                )
+                .unwrap(),
+                Rational::from_str(
+                    "123456789123456789123456789123456789123456789123456789123456789"
+                )
+                .unwrap(),
+                Rational::from_str(
+                    "123456789123456789123456789123456789123456789123456789123456789"
+                )
+                .unwrap()
+            ])
+        );
+    }
+}
