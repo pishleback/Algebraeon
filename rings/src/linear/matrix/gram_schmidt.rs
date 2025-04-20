@@ -75,10 +75,9 @@ impl<FS: ComplexConjugateSignature + FieldSignature> MatrixStructure<FS> {
 
         for i in 0..mat.rows() {
             for j in (i + 1)..mat.rows() {
-                debug_assert!(
-                    self.ring()
-                        .is_zero(&self.inner_product(&mat.get_row_submatrix(i), &mat.get_row_submatrix(j)),)
-                );
+                debug_assert!(self.ring().is_zero(
+                    &self.inner_product(&mat.get_row_submatrix(i), &mat.get_row_submatrix(j)),
+                ));
             }
         }
 

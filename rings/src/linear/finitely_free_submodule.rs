@@ -1,10 +1,13 @@
-use super::{finitely_free_modules::FinitelyFreeModuleStructure, matrix::Matrix};
+use super::{
+    finitely_free_coset::FinitelyFreeSubmoduleCoset,
+    finitely_free_modules::FinitelyFreeModuleStructure, matrix::Matrix,
+};
 use crate::{linear::matrix::*, structure::*};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmodule<Ring: ReducedHermiteAlgorithmSignature> {
-    ring: Ring,
+    module: FinitelyFreeModuleStructure<Ring>,
     // a matrix in reduced hermite normal form with all non-zero rows whose rows form a basis for the submodule
     row_basis: Matrix<Ring::Set>,
     // the columns of the pivots of row_basis
@@ -13,7 +16,7 @@ pub struct FinitelyFreeSubmodule<Ring: ReducedHermiteAlgorithmSignature> {
 
 impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
     pub fn ring(&self) -> &Ring {
-        &self.ring
+        self.module().ring()
     }
 
     pub fn module_rank(&self) -> usize {
@@ -24,8 +27,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
         self.row_basis.rows()
     }
 
-    pub fn module(&self) -> FinitelyFreeModuleStructure<Ring> {
-        FinitelyFreeModuleStructure::new(self.ring().clone(), self.module_rank())
+    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring> {
+        &self.module
     }
 
     pub fn submodule(&self) -> FinitelyFreeModuleStructure<Ring> {
@@ -56,7 +59,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
             MatrixStructure::new(ring.clone()).row_reduced_hermite_algorithm(matrix);
         let row_basis = h.submatrix((0..pivots.len()).collect(), (0..cols).collect());
         FinitelyFreeSubmodule {
-            ring,
+            module: FinitelyFreeModuleStructure::new(ring, row_basis.cols()),
             row_basis,
             pivots,
         }
@@ -163,6 +166,14 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
                 .mul(&matrix_ker_first_part, &x_rows)
                 .unwrap(),
         )
+    }
+
+    pub fn coset(&self, offset: &Vec<Ring::Set>) -> FinitelyFreeSubmoduleCoset<Ring> {
+        FinitelyFreeSubmoduleCoset::from_offset_and_module(offset, self.clone())
+    }
+
+    pub fn into_coset(self) -> FinitelyFreeSubmoduleCoset<Ring> {
+        FinitelyFreeSubmoduleCoset::from_offset_and_module(&self.module().zero(), self)
     }
 }
 
