@@ -34,7 +34,19 @@ Atom: Box<Expr> = {
 };
 
 Num: Number = {
-    r"[0-9]+" => Number { value: i64::from_str(<>).unwrap() },
+    r"\d+/\d+" => {
+        let parts: Vec<&str> = <>.split('/').collect();
+        let numerator = i64::from_str(parts[0]).unwrap();
+        let denominator = i64::from_str(parts[1]).unwrap();
+        if denominator == 0 {
+            panic!("Denominator cannot be zero");
+        }
+        Number { numerator, denominator }
+    },
+    r"\d+" => {
+        let numerator = i64::from_str(<>).unwrap();
+        Number { numerator, denominator: 1 }
+    },
 };
 
 Var: Variable = {
