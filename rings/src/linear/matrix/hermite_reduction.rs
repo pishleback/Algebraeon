@@ -26,189 +26,6 @@ pub trait UniqueReducedHermiteAlgorithmSignature: ReducedHermiteAlgorithmSignatu
 impl UniqueReducedHermiteAlgorithmSignature for IntegerCanonicalStructure {}
 impl<Field: FieldSignature> UniqueReducedHermiteAlgorithmSignature for Field {}
 
-impl<Ring: BezoutDomainSignature> MatrixStructure<Ring> {
-    #[deprecated]
-    pub fn row_span_old(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
-        LinearSubspaceStructure::new(self.ring().clone()).from_span(
-            1,
-            a.cols(),
-            (0..a.rows())
-                .map(|r| a.submatrix(vec![r], (0..a.cols()).collect()))
-                .collect(),
-        )
-    }
-
-    #[deprecated]
-    pub fn col_span_old(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
-        LinearSubspaceStructure::new(self.ring().clone()).from_span(
-            a.rows(),
-            1,
-            (0..a.cols())
-                .map(|c| a.submatrix((0..a.rows()).collect(), vec![c]))
-                .collect(),
-        )
-    }
-
-    #[deprecated]
-    pub fn row_affine_span_old(&self, a: Matrix<Ring::Set>) -> AffineSubspace<Ring::Set> {
-        let affine_lattice_structure = AffineSubspaceStructure::new(self.ring().clone());
-        if a.rows() == 0 {
-            affine_lattice_structure.empty(1, a.cols())
-        } else {
-            let offset = a.get_row_submatrix(0);
-
-            let b = Matrix::construct(a.rows() - 1, a.cols(), |r, c| {
-                self.ring().add(
-                    &self.ring().neg(offset.at(0, c).unwrap()),
-                    a.at(r + 1, c).unwrap(),
-                )
-            });
-
-            let linlat = self.row_span_old(b);
-
-            affine_lattice_structure.from_offset_and_linear_lattice(1, a.cols(), offset, linlat)
-        }
-    }
-
-    #[deprecated]
-    pub fn col_affine_span_old(&self, a: Matrix<Ring::Set>) -> AffineSubspace<Ring::Set> {
-        let affine_lattice_structure = AffineSubspaceStructure::new(self.ring().clone());
-        if a.cols() == 0 {
-            affine_lattice_structure.empty(a.rows(), 1)
-        } else {
-            let offset = a.get_col_submatrix(0);
-
-            let b = Matrix::construct(a.rows(), a.cols() - 1, |r, c| {
-                self.ring().add(
-                    &self.ring().neg(offset.at(r, 0).unwrap()),
-                    a.at(r, c + 1).unwrap(),
-                )
-            });
-
-            let linlat = self.col_span_old(b);
-
-            affine_lattice_structure.from_offset_and_linear_lattice(a.rows(), 1, offset, linlat)
-        }
-    }
-
-    #[deprecated]
-    pub fn row_kernel_old(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
-        let (_h, u, _u_det, pivs) = self.row_hermite_algorithm(a);
-        LinearSubspaceStructure::new(self.ring().clone()).from_basis(
-            1,
-            u.cols(),
-            (pivs.len()..u.rows())
-                .into_iter()
-                .map(|r| u.submatrix(vec![r], (0..u.cols()).collect()))
-                .collect(),
-        )
-    }
-
-    #[deprecated]
-    pub fn col_kernel_old(&self, a: Matrix<Ring::Set>) -> LinearSubspace<Ring::Set> {
-        let (_h, u, _u_det, pivs) = self.col_hermite_algorithm(a);
-        LinearSubspaceStructure::new(self.ring().clone()).from_basis(
-            u.rows(),
-            1,
-            (pivs.len()..u.cols())
-                .into_iter()
-                .map(|c| u.submatrix((0..u.rows()).collect(), vec![c]))
-                .collect(),
-        )
-    }
-
-    #[deprecated]
-    pub fn row_solve_old(
-        &self,
-        m: &Matrix<Ring::Set>,
-        y: impl Borrow<Matrix<Ring::Set>>,
-    ) -> Option<Matrix<Ring::Set>> {
-        match self.col_solve_old(&m.transpose_ref(), &y.borrow().transpose_ref()) {
-            Some(x) => Some(x.transpose()),
-            None => None,
-        }
-    }
-
-    #[deprecated]
-    pub fn col_solve_old(
-        &self,
-        m: &Matrix<Ring::Set>,
-        y: impl Borrow<Matrix<Ring::Set>>,
-    ) -> Option<Matrix<Ring::Set>> {
-        assert_eq!(y.borrow().rows(), m.rows());
-        assert_eq!(y.borrow().cols(), 1);
-        //the kernel of ext_mat is related to the solution
-        let ext_mat = Matrix::join_cols(m.rows(), vec![y.borrow(), m]);
-        //we are looking for a point in the column kernel where the first coordinate is 1
-        let col_ker = self.col_kernel_old(ext_mat);
-
-        let first_coords: Vec<&Ring::Set> = (0..LinearSubspaceStructure::new(self.ring().clone())
-            .rank(&col_ker))
-            .map(|basis_num| {
-                LinearSubspaceStructure::new(self.ring().clone())
-                    .basis_matrix_element(&col_ker, basis_num, 0, 0)
-            })
-            .collect();
-
-        let (g, taps) = self.ring().xgcd_list(first_coords);
-
-        if self.ring().is_unit(&g) {
-            debug_assert!(self.ring().equal(&g, &self.ring().one()));
-        }
-        if self.ring().equal(&g, &self.ring().one()) {
-            //there is a solution
-            //it is given by -(sum(taps * col_ker.basis)) with the first coordinate (equal to 1) removed
-            let mut ext_ans = self.zero(m.cols() + 1, 1);
-            for basis_num in 0..LinearSubspaceStructure::new(self.ring().clone()).rank(&col_ker) {
-                self.add_mut(
-                    &mut ext_ans,
-                    &self.mul_scalar_ref(
-                        &LinearSubspaceStructure::new(self.ring().clone())
-                            .basis_matrix(&col_ker, basis_num),
-                        &taps[basis_num],
-                    ),
-                )
-                .unwrap();
-            }
-            debug_assert!(
-                self.ring()
-                    .equal(ext_ans.at(0, 0).unwrap(), &self.ring().one())
-            );
-            let x = self.neg(ext_ans.submatrix((1..ext_ans.rows()).collect(), vec![0]));
-            debug_assert!(self.equal(&self.mul(m, &x).unwrap(), y.borrow()));
-            Some(x)
-        } else {
-            None //there is no solution
-        }
-    }
-
-    #[deprecated]
-    pub fn row_solution_lattice_old(
-        &self,
-        m: &Matrix<Ring::Set>,
-        y: impl Borrow<Matrix<Ring::Set>>,
-    ) -> AffineSubspace<Ring::Set> {
-        match self.row_solve_old(m, y) {
-            Some(x) => AffineSubspaceStructure::new(self.ring().clone())
-                .from_offset_and_linear_lattice(1, m.rows(), x, self.row_kernel_old(m.clone())),
-            None => AffineSubspaceStructure::new(self.ring().clone()).empty(1, m.rows()),
-        }
-    }
-
-    #[deprecated]
-    pub fn col_solution_lattice_old(
-        &self,
-        m: &Matrix<Ring::Set>,
-        y: impl Borrow<Matrix<Ring::Set>>,
-    ) -> AffineSubspace<Ring::Set> {
-        match self.col_solve_old(m, y) {
-            Some(x) => AffineSubspaceStructure::new(self.ring().clone())
-                .from_offset_and_linear_lattice(m.cols(), 1, x, self.col_kernel_old(m.clone())),
-            None => AffineSubspaceStructure::new(self.ring().clone()).empty(m.cols(), 1),
-        }
-    }
-}
-
 impl<Ring: HermiteAlgorithmSignature> MatrixStructure<Ring> {
     /// Return (H, U, u_det, pivots) such that
     /// - H is in row hermite normal form, meaning
@@ -510,46 +327,6 @@ impl<R: MetaType> Matrix<R>
 where
     R::Signature: BezoutDomainSignature,
 {
-    pub fn row_span_old(&self) -> LinearSubspace<R> {
-        Self::structure().row_span_old(self.clone())
-    }
-
-    pub fn col_span_old(&self) -> LinearSubspace<R> {
-        Self::structure().col_span_old(self.clone())
-    }
-
-    pub fn row_affine_span_old(&self) -> AffineSubspace<R> {
-        Self::structure().row_affine_span_old(self.clone())
-    }
-
-    pub fn col_affine_span_old(&self) -> AffineSubspace<R> {
-        Self::structure().col_affine_span_old(self.clone())
-    }
-
-    pub fn row_kernel_old(&self) -> LinearSubspace<R> {
-        Self::structure().row_kernel_old(self.clone())
-    }
-
-    pub fn col_kernel_old(&self) -> LinearSubspace<R> {
-        Self::structure().col_kernel_old(self.clone())
-    }
-
-    pub fn row_solve_old(&self, y: impl Borrow<Self>) -> Option<Self> {
-        Self::structure().row_solve_old(self, y)
-    }
-
-    pub fn col_solve_old(&self, y: impl Borrow<Self>) -> Option<Self> {
-        Self::structure().col_solve_old(self, y)
-    }
-
-    pub fn row_solution_lattice_old(&self, y: impl Borrow<Self>) -> AffineSubspace<R> {
-        Self::structure().row_solution_lattice_old(self, y)
-    }
-
-    pub fn col_solution_lattice_old(&self, y: impl Borrow<Self>) -> AffineSubspace<R> {
-        Self::structure().col_solution_lattice_old(self, y)
-    }
-
     pub fn row_hermite_algorithm(&self) -> (Self, Self, R, Vec<usize>) {
         Self::structure().row_hermite_algorithm(self.clone())
     }
@@ -942,10 +719,10 @@ mod tests {
             vec![Integer::from(1), Integer::from(1), Integer::from(1)],
         ]);
 
-        assert_eq!(mat.clone().row_span_old().rank(), 2);
-        assert_eq!(mat.clone().col_span_old().rank(), 2);
-        assert_eq!(mat.clone().row_kernel_old().rank(), 2);
-        assert_eq!(mat.clone().col_kernel_old().rank(), 1);
+        assert_eq!(mat.clone().row_span().submodule_rank(), 2);
+        assert_eq!(mat.clone().col_span().submodule_rank(), 2);
+        assert_eq!(mat.clone().row_kernel().submodule_rank(), 2);
+        assert_eq!(mat.clone().col_kernel().submodule_rank(), 1);
     }
 
     #[test]
@@ -957,23 +734,20 @@ mod tests {
                 vec![Integer::from(3), Integer::from(1)],
                 vec![Integer::from(2), Integer::from(3)],
             ])
-            .row_affine_span_old();
+            .row_affine_span();
 
-            let lat2 = AffineSubspace::from_offset_and_linear_lattice(
-                1,
-                2,
-                Matrix::from_rows(vec![vec![Integer::from(2), Integer::from(3)]]),
-                Matrix::from_rows(vec![
-                    vec![Integer::from(1), Integer::from(2)],
-                    vec![Integer::from(-1), Integer::from(2)],
-                ])
-                .row_span_old(),
+            let lat2 = FinitelyFreeSubmoduleAffineSubset::from_coset(
+                FinitelyFreeSubmoduleCoset::from_offset_and_module(
+                    &vec![Integer::from(2), Integer::from(3)],
+                    Matrix::<Integer>::from_rows(vec![vec![1, 2], vec![-1, 2]]).row_span(),
+                ),
             );
 
-            lat1.pprint();
-            lat2.pprint();
+            println!("lat1 = {:?}", lat1);
+            println!("lat2 = {:?}", lat2);
 
-            assert_eq!(lat1, lat2);
+            assert!(FinitelyFreeSubmoduleAffineSubset::equal(&lat1, &lat2));
+            assert!(FinitelyFreeSubmoduleAffineSubset::equal_slow(&lat1, &lat2));
         }
 
         {
@@ -982,23 +756,20 @@ mod tests {
                 vec![Integer::from(1), Integer::from(3), Integer::from(2)],
                 vec![Integer::from(1), Integer::from(1), Integer::from(3)],
             ])
-            .col_affine_span_old();
+            .col_affine_span();
 
-            let lat2 = AffineSubspace::from_offset_and_linear_lattice(
-                2,
-                1,
-                Matrix::from_rows(vec![vec![Integer::from(2)], vec![Integer::from(3)]]),
-                Matrix::from_rows(vec![
-                    vec![Integer::from(1), Integer::from(-1)],
-                    vec![Integer::from(2), Integer::from(2)],
-                ])
-                .col_span_old(),
+            let lat2 = FinitelyFreeSubmoduleAffineSubset::from_coset(
+                FinitelyFreeSubmoduleCoset::from_offset_and_module(
+                    &vec![Integer::from(2), Integer::from(3)],
+                    Matrix::<Integer>::from_rows(vec![vec![1, -1], vec![2, 2]]).col_span(),
+                ),
             );
 
-            lat1.pprint();
-            lat2.pprint();
+            println!("lat1 = {:?}", lat1);
+            println!("lat2 = {:?}", lat2);
 
-            assert_eq!(&lat1, &lat2);
+            assert!(FinitelyFreeSubmoduleAffineSubset::equal(&lat1, &lat2));
+            assert!(FinitelyFreeSubmoduleAffineSubset::equal_slow(&lat1, &lat2));
         }
     }
 
@@ -1028,16 +799,14 @@ mod tests {
         println!("matrix");
         mat.pprint();
 
-        let k = mat.col_kernel_old();
-        println!("kernel");
-        k.pprint();
+        let k = mat.col_kernel();
 
-        assert!(k.contains_point(Matrix::from_rows(vec![
-            vec![Integer::from(-1)],
-            vec![Integer::from(1)],
-            vec![Integer::from(5)],
-            vec![Integer::from(-3)]
-        ])));
+        assert!(k.contains_element(&vec![
+            Integer::from(-1),
+            Integer::from(1),
+            Integer::from(5),
+            Integer::from(-3)
+        ]));
     }
 
     #[test]

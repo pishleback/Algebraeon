@@ -93,6 +93,19 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
         Self::matrix_col_span_and_basis(ring, matrix).0
     }
 
+    pub fn from_span(
+        module: FinitelyFreeModuleStructure<Ring>,
+        span: Vec<&Vec<Ring::Set>>,
+    ) -> Self {
+        for v in &span {
+            debug_assert_eq!(v.len(), module.rank());
+        }
+        Self::matrix_row_span(
+            module.ring().clone(),
+            Matrix::construct(span.len(), module.rank(), |r, c| span[r][c].clone()),
+        )
+    }
+
     pub fn matrix_row_kernel(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {
         let rows = matrix.rows();
         let (_h, u, _u_det, pivs) =
@@ -105,6 +118,15 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
 
     pub fn matrix_col_kernel(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {
         Self::matrix_row_kernel(ring, matrix.transpose())
+    }
+
+    pub fn zero_submodule(module: FinitelyFreeModuleStructure<Ring>) -> Self {
+        let cols = module.rank();
+        Self {
+            module: module,
+            row_basis: Matrix::construct(0, cols, |_, _| unreachable!()),
+            pivots: vec![],
+        }
     }
 
     pub fn reduce_element(&self, element: &Vec<Ring::Set>) -> (Vec<Ring::Set>, Vec<Ring::Set>) {
@@ -192,6 +214,37 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
         )
     }
 
+    //given a contained in b, find rank(b) - rank(a) basis vectors needed to extend a to b
+    pub fn extension_basis(lat_a: &Self, lat_b: &Self) -> Vec<Vec<Ring::Set>> {
+        //https://math.stackexchange.com/questions/2554408/how-to-find-the-basis-of-a-quotient-space
+        let module =
+            common_structure::<FinitelyFreeModuleStructure<Ring>>(lat_a.module(), lat_b.module());
+        debug_assert!(Self::contains(lat_b, lat_a));
+
+        let n = module.rank();
+        // form matrix of all vectors from [other self]
+        // row reduce and get pivots - take cols from orig to form basies of the quotient space
+
+        let mat_structure = MatrixStructure::new(module.ring().clone());
+        let row_span = Matrix::join_rows(n, vec![&lat_a.row_basis, &lat_b.row_basis]);
+        let (_h, _u, _u_det, pivs) = mat_structure.col_hermite_algorithm(row_span.clone());
+
+        let mut extension_basis = vec![];
+        for r in pivs {
+            //dont take vectors which form a basis of lat_a
+            if r >= lat_a.submodule_rank() {
+                extension_basis.push(row_span.get_row(r));
+            }
+        }
+
+        debug_assert_eq!(
+            lat_a.submodule_rank() + extension_basis.len(),
+            lat_b.submodule_rank()
+        );
+
+        extension_basis
+    }
+
     pub fn coset(&self, offset: &Vec<Ring::Set>) -> FinitelyFreeSubmoduleCoset<Ring> {
         FinitelyFreeSubmoduleCoset::from_offset_and_module(offset, self.clone())
     }
@@ -213,7 +266,7 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::Integer;
+    use algebraeon_nzq::{Integer, Rational};
 
     #[test]
     fn test_finitely_free_submodule_reduction() {
@@ -295,5 +348,24 @@ mod tests {
                 .map(|x| Integer::from(x))
                 .collect::<Vec<_>>()
         )
+    }
+
+    #[test]
+    fn test_finitely_free_submodule_extension_basis() {
+        let a = Matrix::<Rational>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 0], vec![-1, 0, 0]]);
+
+        let b = Matrix::<Rational>::from_rows(vec![vec![1, 1, 0], vec![1, 1, 0], vec![1, -1, 0]]);
+
+        println!("a");
+        a.pprint();
+        println!("b");
+        b.pprint();
+
+        let ext = FinitelyFreeSubmodule::extension_basis(&a.col_span(), &b.col_span());
+
+        println!("ext");
+        for v in ext {
+            println!("{:?}", v);
+        }
     }
 }

@@ -183,7 +183,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         elem: &Polynomial<Rational>,
     ) -> Option<RingOfIntegersWithIntegralBasisElement> {
         let n = self.degree();
-        let y = self.algebraic_number_field.to_col_vector(elem);
+        let y = self.algebraic_number_field.to_vector(elem);
         let m = Matrix::join_cols(
             n,
             (0..n)
@@ -193,13 +193,9 @@ impl RingOfIntegersWithIntegralBasisStructure {
                 })
                 .collect(),
         );
-        if let Some(s) = m.col_solve_old(y) {
-            debug_assert_eq!(s.rows(), n);
-            debug_assert_eq!(s.cols(), 1);
-            if let Ok(coefficients) = (0..n)
-                .map(|i| Integer::try_from(s.at(i, 0).unwrap()))
-                .collect()
-            {
+        if let Some(s) = m.col_solve(&y) {
+            debug_assert_eq!(s.len(), n);
+            if let Ok(coefficients) = (0..n).map(|i| Integer::try_from(s[i].clone())).collect() {
                 Some(RingOfIntegersWithIntegralBasisElement { coefficients })
             } else {
                 None

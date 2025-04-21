@@ -47,6 +47,14 @@ where
     pub fn to_row_vector(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
         self.to_col_vector(a).transpose()
     }
+    pub fn to_vector(&self, a: &Polynomial<FS::Set>) -> Vec<FS::Set> {
+        let mut v = self.reduce(a).into_coeffs();
+        debug_assert!(v.len() <= self.degree());
+        while v.len() < self.degree() {
+            v.push(self.ring().coeff_ring().zero());
+        }
+        v
+    }
 
     pub fn from_col_vector(&self, v: Matrix<FS::Set>) -> Polynomial<FS::Set> {
         assert_eq!(v.cols(), 1);
@@ -59,6 +67,9 @@ where
     }
     pub fn from_row_vector(&self, v: Matrix<FS::Set>) -> Polynomial<FS::Set> {
         self.from_col_vector(v.transpose())
+    }
+    pub fn from_vector(&self, v: Vec<FS::Set>) -> Polynomial<FS::Set> {
+        Polynomial::from_coeffs(v)
     }
 
     pub fn min_poly(&self, a: &Polynomial<FS::Set>) -> Polynomial<FS::Set> {

@@ -282,21 +282,16 @@ impl<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
     }
 }
 
-impl<Ring: BezoutDomainSignature, const SURJECTIVE: bool>
+impl<Ring: ReducedHermiteAlgorithmSignature, const SURJECTIVE: bool>
     InjectiveFunction<FinitelyFreeModuleStructure<Ring>, FinitelyFreeModuleStructure<Ring>>
     for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, SURJECTIVE>
 {
     fn try_preimage(&self, y: &Vec<Ring::Set>) -> Option<Vec<Ring::Set>> {
-        Some(
-            self.domain.from_col(
-                &MatrixStructure::new(self.ring.clone())
-                    .col_solve_old(&self.matrix, &self.range.to_col(&y))?,
-            ),
-        )
+        MatrixStructure::new(self.ring.clone()).col_solve(self.matrix.clone(), &y)
     }
 }
 
-impl<Ring: BezoutDomainSignature>
+impl<Ring: ReducedHermiteAlgorithmSignature>
     BijectiveFunction<FinitelyFreeModuleStructure<Ring>, FinitelyFreeModuleStructure<Ring>>
     for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, true>
 {

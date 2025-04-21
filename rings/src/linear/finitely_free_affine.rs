@@ -1,6 +1,7 @@
 use super::{
     finitely_free_coset::FinitelyFreeSubmoduleCoset,
-    finitely_free_modules::FinitelyFreeModuleStructure, matrix::ReducedHermiteAlgorithmSignature,
+    finitely_free_modules::FinitelyFreeModuleStructure,
+    matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
 };
 use crate::structure::{FinitelyFreeModuleSignature, ModuleSignature};
 use algebraeon_sets::structure::*;
@@ -104,6 +105,52 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
             (Self::NonEmpty(x_coset), Self::NonEmpty(y_coset)) => {
                 FinitelyFreeSubmoduleCoset::intersect(&x_coset, &y_coset)
             }
+        }
+    }
+
+    pub fn equal_slow(x: &Self, y: &Self) -> bool {
+        debug_assert_eq!(x.module(), y.module());
+        match (x, y) {
+            (
+                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+            ) => true,
+            (
+                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(..),
+            ) => false,
+            (
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+            ) => false,
+            (
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
+            ) => FinitelyFreeSubmoduleCoset::equal_slow(x_coset, y_coset),
+        }
+    }
+}
+
+impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<Ring> {
+    pub fn equal(x: &Self, y: &Self) -> bool {
+        debug_assert_eq!(x.module(), y.module());
+        match (x, y) {
+            (
+                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+            ) => true,
+            (
+                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(..),
+            ) => false,
+            (
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+            ) => false,
+            (
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
+            ) => FinitelyFreeSubmoduleCoset::equal(x_coset, y_coset),
         }
     }
 }
