@@ -228,14 +228,14 @@ impl<
         match self.get_root_and_span() {
             Some((root, span)) => {
                 //solve root + x * basis = v for x
-                let y = (pt - &root).into_col();
+                let y = (pt - &root).into_coordinates();
                 let basis_matrix = self
                     .ambient_space
                     .borrow()
                     .cols_from_vectors(span.iter().collect());
                 let x = MatrixStructure::new(self.ambient_space.borrow().ordered_field().clone())
-                    .col_solve_old(&basis_matrix, y);
-                Some(vector_from_col(self.embedded_space(), &x?))
+                    .col_solve(basis_matrix, &y);
+                Some(Vector::new(self.embedded_space(), x?))
             }
             None => None,
         }
