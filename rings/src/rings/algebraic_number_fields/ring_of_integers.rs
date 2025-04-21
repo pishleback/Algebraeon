@@ -21,6 +21,12 @@ pub struct RingOfIntegersWithIntegralBasisStructure {
     mul_crossterms: Option<Vec<Vec<RingOfIntegersWithIntegralBasisElement>>>,
 }
 
+impl ToStringSignature for RingOfIntegersWithIntegralBasisStructure {
+    fn to_string(&self, elem: &Self::Set) -> String {
+        self.roi_to_anf(elem).to_string()
+    }
+}
+
 impl PartialEq for RingOfIntegersWithIntegralBasisStructure {
     fn eq(&self, other: &Self) -> bool {
         self.algebraic_number_field == other.algebraic_number_field
@@ -321,41 +327,6 @@ impl RingOfIntegersWithIntegralBasisStructure {
                 (a, b)
             }
         };
-
-        println!("ideal:");
-        for (p, k) in self.factor_ideal(ideal).unwrap().factor_powers() {
-            println!("{:?} {:?}", k, p);
-        }
-
-        println!("a:");
-        for (p, k) in self
-            .factor_ideal(&self.principal_ideal(&a))
-            .unwrap()
-            .factor_powers()
-        {
-            println!("{:?} {:?}", k, p);
-        }
-
-        println!("b:");
-        for (p, k) in self
-            .factor_ideal(&self.principal_ideal(&b))
-            .unwrap()
-            .factor_powers()
-        {
-            println!("{:?} {:?}", k, p);
-        }
-
-        println!(
-            "{:?} {:?}",
-            self.ideal_contains_element(&ideal, &a),
-            self.ideal_contains_element(&ideal, &b),
-        );
-        println!(
-            "{:?} {:?}",
-            self.ideal_contains(&ideal, &self.generated_ideal(vec![a.clone(), b.clone()])),
-            self.ideal_contains(&self.generated_ideal(vec![a.clone(), b.clone()]), &ideal)
-        );
-
         debug_assert!(self.ideal_equal(&ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
         (a, b)
     }
@@ -661,13 +632,16 @@ mod tests {
         let ideal = roi.principal_ideal(&roi.try_anf_to_roi(&(27 * x - 9).into_verbose()).unwrap());
 
         let (a, b) = roi.ideal_two_generators(&ideal);
-        println!("I = (a, b) = ({:?}, {:?})", a, b);
+        println!("I = ({}, {})", roi.to_string(&a), roi.to_string(&b));
 
         // Factor the ideal
         for (prime_ideal, power) in roi.factor_ideal(&ideal).unwrap().into_factor_powers() {
-            println!("power = {power} prime_ideal_factor = {:?}", prime_ideal);
             let (a, b) = roi.ideal_two_generators(prime_ideal.ideal());
-            println!("P = (a, b) = ({:?}, {:?})", a, b);
+            println!(
+                "P = ({}, {})    power = {power}",
+                roi.to_string(&a),
+                roi.to_string(&b)
+            );
         }
     }
 }
