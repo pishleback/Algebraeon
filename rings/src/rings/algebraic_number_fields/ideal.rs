@@ -217,6 +217,19 @@ impl IdealArithmeticSignature for RingOfIntegersWithIntegralBasisStructure {
         }
     }
 
+    fn ideal_contains_element(&self, a: &Self::Ideal, x: &Self::Set) -> bool {
+        #[cfg(debug_assertions)]
+        {
+            self.check_ideal(a);
+            debug_assert!(self.is_element(x));
+        }
+
+        match a {
+            RingOfIntegersIdeal::Zero => self.is_zero(x),
+            RingOfIntegersIdeal::NonZero { lattice } => lattice.contains_element(x.coefficients()),
+        }
+    }
+
     fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
         #[cfg(debug_assertions)]
         {

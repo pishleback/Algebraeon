@@ -43,6 +43,10 @@ pub trait IdealArithmeticSignature: IdealSignature {
     }
     /// Does a contain b i.e. does a divide b
     fn ideal_contains(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool;
+    /// Does a contain x
+    fn ideal_contains_element(&self, a: &Self::Ideal, x: &Self::Set) -> bool {
+        self.ideal_contains(a, &self.principal_ideal(x))
+    }
     /// Intersection of ideals
     fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
     // Sum of two ideals

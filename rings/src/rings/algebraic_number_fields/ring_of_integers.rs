@@ -133,6 +133,10 @@ impl RingOfIntegersWithIntegralBasisElement {
         self.coefficients
     }
 
+    pub fn coefficients(&self) -> &Vec<Integer> {
+        &self.coefficients
+    }
+
     pub fn from_coefficients(coefficients: Vec<Integer>) -> Self {
         Self {
             coefficients: coefficients,
@@ -205,6 +209,10 @@ impl RingOfIntegersWithIntegralBasisStructure {
             unreachable!()
         }
     }
+
+    // pub fn ideal_other_generator(&self, g: &Self::Set, ideal: &Self::Ideal) -> Self::Set {
+    //     self.ideal_contains()
+    // }
 }
 
 impl Signature for RingOfIntegersWithIntegralBasisStructure {}
