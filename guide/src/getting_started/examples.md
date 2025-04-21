@@ -77,7 +77,7 @@ Output:
 
 so two solutions are given by \\((a, b, c) = (0, 2, 1)\\) and \\((a, b, c) = (1, 1, 0)\\) and _every_ solution is a linear combination of these two solutions; The general solution is given by all \\((a, b, c)\\) such that
 
-\\[\begin{pmatrix}a \\ b \\ c\end{pmatrix} = s\begin{pmatrix}0 \\ 2 \\ 1\end{pmatrix} + t\begin{pmatrix}1 \\ 1 \\ 0\end{pmatrix}\\]
+\\[\\begin{pmatrix}a \\\\ b \\\\ c\\end{pmatrix} = s\\begin{pmatrix}0 \\\\ 2 \\\\ 1\\end{pmatrix} + t\\begin{pmatrix}1 \\\\ 1 \\\\ 0\\end{pmatrix}\\\\]
 
 where \\(s\\) and \\(t\\) are integers such that \\(s + t = 1\\).
 
