@@ -308,7 +308,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
         match self.row_solve(matrix.clone(), y) {
             Some(offset) => FinitelyFreeSubmoduleAffineSubset::from_coset(
-                FinitelyFreeSubmoduleCoset::from_offset_and_module(
+                FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
                     &offset,
                     self.row_kernel(matrix),
                 ),
@@ -743,7 +743,7 @@ mod tests {
             .row_affine_span();
 
             let lat2 = FinitelyFreeSubmoduleAffineSubset::from_coset(
-                FinitelyFreeSubmoduleCoset::from_offset_and_module(
+                FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
                     &vec![Integer::from(2), Integer::from(3)],
                     Matrix::<Integer>::from_rows(vec![vec![1, 2], vec![-1, 2]]).row_span(),
                 ),
@@ -765,7 +765,7 @@ mod tests {
             .col_affine_span();
 
             let lat2 = FinitelyFreeSubmoduleAffineSubset::from_coset(
-                FinitelyFreeSubmoduleCoset::from_offset_and_module(
+                FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
                     &vec![Integer::from(2), Integer::from(3)],
                     Matrix::<Integer>::from_rows(vec![vec![1, -1], vec![2, 2]]).col_span(),
                 ),

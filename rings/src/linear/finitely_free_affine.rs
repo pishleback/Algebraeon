@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use super::{
     finitely_free_coset::FinitelyFreeSubmoduleCoset,
     finitely_free_modules::FinitelyFreeModuleStructure,
@@ -59,7 +61,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
                 .into_iter()
                 .map(|v| module.add(v, &module.neg(offset)))
                 .collect::<Vec<_>>();
-            Self::from_coset(FinitelyFreeSubmoduleCoset::from_offset_and_module(
+            Self::from_coset(FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
                 offset,
                 FinitelyFreeSubmodule::from_span(module, linear_span.iter().collect()),
             ))
@@ -127,6 +129,30 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
             (Self::NonEmpty(x_coset), Self::NonEmpty(y_coset)) => {
                 FinitelyFreeSubmoduleCoset::intersect(&x_coset, &y_coset)
             }
+        }
+    }
+
+    pub fn intersect_list(
+        module: FinitelyFreeModuleStructure<Ring>,
+        xs: Vec<impl Borrow<Self>>,
+    ) -> Self {
+        for x in &xs {
+            debug_assert_eq!(x.borrow().module(), &module);
+        }
+        let mut i = Self::from_coset(FinitelyFreeSubmoduleCoset::from_submodule(
+            FinitelyFreeSubmodule::full_submodule(module),
+        ));
+        for x in xs {
+            i = Self::intersect(&i, x.borrow());
+        }
+        i
+    }
+
+    pub fn contains_element(&self, p: &Vec<Ring::Set>) -> bool {
+        debug_assert_eq!(self.module_rank(), p.len());
+        match self {
+            FinitelyFreeSubmoduleAffineSubset::Empty(..) => false,
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset.contains_element(p),
         }
     }
 

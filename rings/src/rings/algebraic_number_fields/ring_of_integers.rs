@@ -1,6 +1,14 @@
-use super::number_field::AlgebraicNumberFieldStructure;
-use crate::{linear::matrix::Matrix, polynomial::Polynomial, structure::*};
-use algebraeon_nzq::{Integer, Rational};
+use super::{ideal::RingOfIntegersIdeal, number_field::AlgebraicNumberFieldStructure};
+use crate::{
+    linear::{
+        finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
+        finitely_free_coset::FinitelyFreeSubmoduleCoset,
+        finitely_free_modules::FinitelyFreeModuleStructure, matrix::Matrix,
+    },
+    polynomial::Polynomial,
+    structure::*,
+};
+use algebraeon_nzq::{Integer, Natural, Rational};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
@@ -210,9 +218,147 @@ impl RingOfIntegersWithIntegralBasisStructure {
         }
     }
 
-    // pub fn ideal_other_generator(&self, g: &Self::Set, ideal: &Self::Ideal) -> Self::Set {
-    //     self.ideal_contains()
-    // }
+    /// given an ideal I and element a find an element b such that I = (a, b)
+    pub fn ideal_other_generator(
+        &self,
+        g: &RingOfIntegersWithIntegralBasisElement,
+        ideal: &RingOfIntegersIdeal,
+    ) -> RingOfIntegersWithIntegralBasisElement {
+        debug_assert!(self.ideal_contains_element(ideal, g));
+        debug_assert!(!self.is_zero(g));
+        // prod_i p^{e_i}
+        let ideal_factored = self.factor_ideal(ideal).unwrap();
+        // prod_i p^{f_i} * prod_j q^{g_j}
+        let g_factored = self.factor_ideal(&self.principal_ideal(g)).unwrap();
+        // want b not in any q and in all p^{e_i} and not in any p^{e_i+1}
+
+        // this is all b not in any q and in all p^{e_i}
+        let b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
+            FinitelyFreeModuleStructure::new(Integer::structure(), self.degree()),
+            ideal_factored
+                .factor_powers()
+                .into_iter()
+                .map(|(p, k)| match self.ideal_nat_pow(p.ideal(), k) {
+                    RingOfIntegersIdeal::Zero => unreachable!(),
+                    RingOfIntegersIdeal::NonZero {
+                        lattice: pk_lattice,
+                    } => FinitelyFreeSubmoduleAffineSubset::from_coset(
+                        FinitelyFreeSubmoduleCoset::from_submodule(pk_lattice),
+                    ),
+                })
+                .chain(
+                    g_factored
+                        .into_squarefree_factor_list()
+                        .into_iter()
+                        .filter(|prime_ideal| {
+                            !ideal_factored
+                                .squarefree_factor_list()
+                                .into_iter()
+                                .any(|p| self.ideal_equal(p.ideal(), prime_ideal.ideal()))
+                        })
+                        .map(|q| match q.into_ideal() {
+                            RingOfIntegersIdeal::Zero => unreachable!(),
+                            RingOfIntegersIdeal::NonZero { lattice: q_lattice } => {
+                                FinitelyFreeSubmoduleAffineSubset::from_coset(
+                                    FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
+                                        self.one().coefficients(),
+                                        q_lattice,
+                                    ),
+                                )
+                            }
+                        }),
+                )
+                .collect(),
+        );
+
+        //need to filter out the b in some p^{e_i+1}
+        let rm_b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
+            FinitelyFreeModuleStructure::new(Integer::structure(), self.degree()),
+            ideal_factored
+                .factor_powers()
+                .into_iter()
+                .map(
+                    |(p, k)| match self.ideal_nat_pow(p.ideal(), &(k + Natural::ONE)) {
+                        RingOfIntegersIdeal::Zero => unreachable!(),
+                        RingOfIntegersIdeal::NonZero {
+                            lattice: pk_lattice,
+                        } => FinitelyFreeSubmoduleAffineSubset::from_coset(
+                            FinitelyFreeSubmoduleCoset::from_submodule(pk_lattice),
+                        ),
+                    },
+                )
+                .collect(),
+        );
+
+        //if all basis elements of b_set were contain in rm_b_set then we'd have b_set contained in rm_b_set
+        //but this is not the case, so some basis of b_set is not in rm_b_set
+
+        RingOfIntegersWithIntegralBasisElement::from_coefficients(
+            b_set
+                .affine_basis()
+                .into_iter()
+                .filter(|b| !rm_b_set.contains_element(b))
+                .next()
+                .unwrap(),
+        )
+    }
+
+    /// return two elements which generate the ideal
+    pub fn ideal_two_generators(
+        &self,
+        ideal: &RingOfIntegersIdeal,
+    ) -> (
+        RingOfIntegersWithIntegralBasisElement,
+        RingOfIntegersWithIntegralBasisElement,
+    ) {
+        let (a, b) = match ideal {
+            RingOfIntegersIdeal::Zero => (self.zero(), self.zero()),
+            RingOfIntegersIdeal::NonZero { lattice } => {
+                let a = RingOfIntegersWithIntegralBasisElement::from_coefficients(
+                    lattice.basis().into_iter().next().unwrap(),
+                );
+                let b = self.ideal_other_generator(&a, ideal);
+                (a, b)
+            }
+        };
+
+        println!("ideal:");
+        for (p, k) in self.factor_ideal(ideal).unwrap().factor_powers() {
+            println!("{:?} {:?}", k, p);
+        }
+
+        println!("a:");
+        for (p, k) in self
+            .factor_ideal(&self.principal_ideal(&a))
+            .unwrap()
+            .factor_powers()
+        {
+            println!("{:?} {:?}", k, p);
+        }
+
+        println!("b:");
+        for (p, k) in self
+            .factor_ideal(&self.principal_ideal(&b))
+            .unwrap()
+            .factor_powers()
+        {
+            println!("{:?} {:?}", k, p);
+        }
+
+        println!(
+            "{:?} {:?}",
+            self.ideal_contains_element(&ideal, &a),
+            self.ideal_contains_element(&ideal, &b),
+        );
+        println!(
+            "{:?} {:?}",
+            self.ideal_contains(&ideal, &self.generated_ideal(vec![a.clone(), b.clone()])),
+            self.ideal_contains(&self.generated_ideal(vec![a.clone(), b.clone()]), &ideal)
+        );
+
+        debug_assert!(self.ideal_equal(&ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
+        (a, b)
+    }
 }
 
 impl Signature for RingOfIntegersWithIntegralBasisStructure {}
@@ -514,9 +660,14 @@ mod tests {
         // The ideal (27i - 9) in Z[i]
         let ideal = roi.principal_ideal(&roi.try_anf_to_roi(&(27 * x - 9).into_verbose()).unwrap());
 
+        let (a, b) = roi.ideal_two_generators(&ideal);
+        println!("I = (a, b) = ({:?}, {:?})", a, b);
+
         // Factor the ideal
         for (prime_ideal, power) in roi.factor_ideal(&ideal).unwrap().into_factor_powers() {
             println!("power = {power} prime_ideal_factor = {:?}", prime_ideal);
+            let (a, b) = roi.ideal_two_generators(prime_ideal.ideal());
+            println!("P = (a, b) = ({:?}, {:?})", a, b);
         }
     }
 }

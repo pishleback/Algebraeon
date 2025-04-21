@@ -48,12 +48,19 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCoset<Ring> {
         (self.offset, self.submodule.into_col_basis_matrix())
     }
 
-    pub fn from_offset_and_module(
+    pub fn from_offset_and_submodule(
         offset: &Vec<Ring::Set>,
         submodule: FinitelyFreeSubmodule<Ring>,
     ) -> Self {
         let (_, offset) = submodule.reduce_element(offset);
         Self { offset, submodule }
+    }
+
+    pub fn from_submodule(submodule: FinitelyFreeSubmodule<Ring>) -> Self {
+        Self {
+            offset: submodule.module().zero(),
+            submodule,
+        }
     }
 
     pub fn equal_slow(x: &Self, y: &Self) -> bool {
@@ -67,7 +74,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCoset<Ring> {
 
     pub fn add(x: &Self, y: &Self) -> Self {
         let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
-        Self::from_offset_and_module(
+        Self::from_offset_and_submodule(
             &module.add(&x.offset, &y.offset),
             FinitelyFreeSubmodule::add(&x.submodule, &y.submodule),
         )
@@ -169,13 +176,19 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCoset<Ring> {
                         .clone()
                 })
                 .collect();
-            FinitelyFreeSubmoduleAffineSubset::from_coset(Self::from_offset_and_module(
+            FinitelyFreeSubmoduleAffineSubset::from_coset(Self::from_offset_and_submodule(
                 &offset,
                 FinitelyFreeSubmodule::intersect(x.submodule(), y.submodule()),
             ))
         } else {
             FinitelyFreeSubmoduleAffineSubset::new_empty(module)
         }
+    }
+
+    pub fn contains_element(&self, p: &Vec<Ring::Set>) -> bool {
+        debug_assert_eq!(p.len(), self.module_rank());
+        self.submodule()
+            .contains_element(&self.module().add(p, &self.module().neg(self.offset())))
     }
 
     pub fn into_affine_subset(self) -> FinitelyFreeSubmoduleAffineSubset<Ring> {

@@ -120,6 +120,13 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
         Self::matrix_row_kernel(ring, matrix.transpose())
     }
 
+    pub fn full_submodule(module: FinitelyFreeModuleStructure<Ring>) -> Self {
+        Self::matrix_row_span(
+            module.ring().clone(),
+            MatrixStructure::new(module.ring().clone()).ident(module.rank()),
+        )
+    }
+
     pub fn zero_submodule(module: FinitelyFreeModuleStructure<Ring>) -> Self {
         let cols = module.rank();
         Self {
@@ -246,11 +253,11 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
     }
 
     pub fn coset(&self, offset: &Vec<Ring::Set>) -> FinitelyFreeSubmoduleCoset<Ring> {
-        FinitelyFreeSubmoduleCoset::from_offset_and_module(offset, self.clone())
+        FinitelyFreeSubmoduleCoset::from_offset_and_submodule(offset, self.clone())
     }
 
     pub fn into_coset(self) -> FinitelyFreeSubmoduleCoset<Ring> {
-        FinitelyFreeSubmoduleCoset::from_offset_and_module(&self.module().zero(), self)
+        FinitelyFreeSubmoduleCoset::from_offset_and_submodule(&self.module().zero(), self)
     }
 }
 
