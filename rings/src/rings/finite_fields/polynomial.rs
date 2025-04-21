@@ -1,9 +1,4 @@
-use crate::{
-    linear::{linear_subspace::*, matrix::*},
-    polynomial::*,
-    rings::quotient::QuotientStructure,
-    structure::*,
-};
+use crate::{linear::matrix::*, polynomial::*, rings::quotient::QuotientStructure, structure::*};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
@@ -315,16 +310,13 @@ where
         // mat.pprint();
         //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
         let mat_struct = MatrixStructure::<FS>::new(self.coeff_ring().clone());
-        let linlat_struct = LinearSubspaceStructure::<FS>::new(self.coeff_ring().clone());
         let ker = mat_struct.row_kernel(mat);
         // ker.pprint();
-        let ker_rank = linlat_struct.rank(&ker);
-        let ker_basis = linlat_struct
-            .basis_matrices(&ker)
+        let ker_rank = ker.submodule_rank();
+        let ker_basis = ker
+            .basis()
             .into_iter()
-            .map(|col| {
-                Polynomial::from_coeffs((0..f_deg).map(|c| col.at(0, c).unwrap().clone()).collect())
-            })
+            .map(|col| Polynomial::from_coeffs((0..f_deg).map(|c| col[c].clone()).collect()))
             .collect::<Vec<_>>();
 
         for berlekamp_subspace_coeffs in (0..ker_rank)

@@ -1,4 +1,7 @@
-use super::matrix::Matrix;
+use super::{
+    finitely_free_submodule::FinitelyFreeSubmodule,
+    matrix::{Matrix, ReducedHermiteAlgorithmSignature},
+};
 use crate::{linear::matrix::MatrixStructure, structure::*};
 use algebraeon_sets::structure::*;
 
@@ -54,6 +57,28 @@ impl<Ring: RingSignature> FinitelyFreeModuleStructure<Ring> {
                 }
             })
             .collect()
+    }
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeModuleStructure<Ring> {
+    pub fn improper_submodule(&self) -> FinitelyFreeSubmodule<Ring> {
+        FinitelyFreeSubmodule::matrix_row_span(
+            self.ring().clone(),
+            MatrixStructure::new(self.ring().clone()).ident(self.rank()),
+        )
+    }
+
+    pub fn generated_submodule(
+        &self,
+        generators: Vec<&Vec<Ring::Set>>,
+    ) -> FinitelyFreeSubmodule<Ring> {
+        for generator in &generators {
+            debug_assert!(self.is_element(generator));
+        }
+        let row_span = Matrix::construct(generators.len(), self.rank(), |r, c| {
+            generators[r][c].clone()
+        });
+        FinitelyFreeSubmodule::matrix_row_span(self.ring().clone(), row_span)
     }
 }
 
@@ -257,21 +282,16 @@ impl<Ring: RingSignature, const INJECTIVE: bool, const SURJECTIVE: bool>
     }
 }
 
-impl<Ring: BezoutDomainSignature, const SURJECTIVE: bool>
+impl<Ring: ReducedHermiteAlgorithmSignature, const SURJECTIVE: bool>
     InjectiveFunction<FinitelyFreeModuleStructure<Ring>, FinitelyFreeModuleStructure<Ring>>
     for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, SURJECTIVE>
 {
     fn try_preimage(&self, y: &Vec<Ring::Set>) -> Option<Vec<Ring::Set>> {
-        Some(
-            self.domain.from_col(
-                &MatrixStructure::new(self.ring.clone())
-                    .col_solve(&self.matrix, &self.range.to_col(&y))?,
-            ),
-        )
+        MatrixStructure::new(self.ring.clone()).col_solve(self.matrix.clone(), &y)
     }
 }
 
-impl<Ring: BezoutDomainSignature>
+impl<Ring: ReducedHermiteAlgorithmSignature>
     BijectiveFunction<FinitelyFreeModuleStructure<Ring>, FinitelyFreeModuleStructure<Ring>>
     for FreeModuleFiniteNumberedBasisLinearTransformation<Ring, true, true>
 {

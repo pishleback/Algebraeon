@@ -97,6 +97,10 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Vec
         self.coordinates.get_mut(i).unwrap()
     }
 
+    pub fn into_coordinates(self) -> Vec<FS::Set> {
+        self.coordinates
+    }
+
     pub fn into_row(&self) -> Matrix<FS::Set> {
         Matrix::construct(
             1,

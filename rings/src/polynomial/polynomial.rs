@@ -827,7 +827,7 @@ impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     }
 }
 
-impl<RS: BezoutDomainSignature> PolynomialStructure<RS> {
+impl<RS: ReducedHermiteAlgorithmSignature> PolynomialStructure<RS> {
     pub fn interpolate_by_linear_system(
         &self,
         points: &Vec<(RS::Set, RS::Set)>,
@@ -856,18 +856,14 @@ impl<RS: BezoutDomainSignature> PolynomialStructure<RS> {
             }
         }
 
-        let mut output_vec = matrix_structure.zero(n, 1);
-        for r in 0..n {
-            let (_x, y) = &points[r];
-            *output_vec.at_mut(r, 0).unwrap() = y.clone();
-        }
+        // let mut output_vec = matrix_structure.zero(n, 1);
+        // for r in 0..n {
+        //     let (_x, y) = &points[r];
+        //     *output_vec.at_mut(r, 0).unwrap() = y.clone();
+        // }
 
-        match matrix_structure.col_solve(&mat, output_vec) {
-            Some(coeff_vec) => Some(Polynomial::from_coeffs(
-                (0..n)
-                    .map(|i| coeff_vec.at(i, 0).unwrap().clone())
-                    .collect(),
-            )),
+        match matrix_structure.col_solve(mat, &points.iter().map(|(_x, y)| y.clone()).collect()) {
+            Some(coeff_vec) => Some(Polynomial::from_coeffs(coeff_vec)),
             None => None,
         }
     }
@@ -1073,7 +1069,7 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Signature: BezoutDomainSignature,
+    R::Signature: ReducedHermiteAlgorithmSignature,
 {
     pub fn interpolate_by_linear_system(points: &Vec<(R, R)>) -> Option<Self> {
         Self::structure().interpolate_by_linear_system(points)

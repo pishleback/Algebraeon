@@ -274,7 +274,7 @@ impl ExtendedBinaryGolayCode {
             return Err("Matrix does not have full rank");
         }
         let basis = (0..12)
-            .map(|i| Vector24::from_row(&m.get_row(i)).unwrap())
+            .map(|i| Vector24::from_row(&m.get_row_submatrix(i)).unwrap())
             .collect::<Vec<_>>();
 
         let mut blocks = HashMap::new();
