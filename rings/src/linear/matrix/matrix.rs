@@ -495,6 +495,32 @@ impl<RS: RingSignature> MatrixStructure<RS> {
         Ok(s)
     }
 
+    pub fn apply_row(&self, mat: &Matrix<RS::Set>, row: &Vec<RS::Set>) -> Vec<RS::Set> {
+        assert_eq!(mat.rows(), row.len());
+        (0..mat.cols())
+            .map(|c| {
+                self.ring().sum(
+                    (0..mat.rows())
+                        .map(|r| self.ring().mul(mat.at(r, c).unwrap(), &row[r]))
+                        .collect(),
+                )
+            })
+            .collect()
+    }
+
+    pub fn apply_col(&self, mat: &Matrix<RS::Set>, col: &Vec<RS::Set>) -> Vec<RS::Set> {
+        assert_eq!(mat.cols(), col.len());
+        (0..mat.rows())
+            .map(|r| {
+                self.ring().sum(
+                    (0..mat.cols())
+                        .map(|c| self.ring().mul(mat.at(r, c).unwrap(), &col[c]))
+                        .collect(),
+                )
+            })
+            .collect()
+    }
+
     pub fn mul_scalar(&self, mut a: Matrix<RS::Set>, scalar: &RS::Set) -> Matrix<RS::Set> {
         for r in 0..a.rows() {
             for c in 0..a.cols() {
@@ -643,6 +669,14 @@ where
 
     pub fn mul(a: &Self, b: &Self) -> Result<Self, MatOppErr> {
         Self::structure().mul(a, b)
+    }
+
+    pub fn apply_row(&self, row: &Vec<R>) -> Vec<R> {
+        Self::structure().apply_row(self, row)
+    }
+
+    pub fn apply_col(&self, col: &Vec<R>) -> Vec<R> {
+        Self::structure().apply_col(self, col)
     }
 
     pub fn mul_scalar(&self, scalar: &R) -> Matrix<R> {
@@ -1107,6 +1141,49 @@ mod tests {
 
             assert_eq!(Matrix::mul(&a, &b).unwrap(), c);
         }
+    }
+
+    #[test]
+    fn matrix_apply_row_and_col_test() {
+        let m = Matrix::<Integer>::from_rows(vec![
+            vec![Integer::from(1), Integer::from(2), Integer::from(3)],
+            vec![Integer::from(6), Integer::from(5), Integer::from(4)],
+        ]);
+
+        assert_eq!(
+            m.apply_row(&vec![Integer::from(1), Integer::from(0)]),
+            vec![Integer::from(1), Integer::from(2), Integer::from(3)]
+        );
+
+        assert_eq!(
+            m.apply_row(&vec![Integer::from(0), Integer::from(1)]),
+            vec![Integer::from(6), Integer::from(5), Integer::from(4)]
+        );
+
+        assert_eq!(
+            m.apply_row(&vec![Integer::from(1), Integer::from(1)]),
+            vec![Integer::from(7), Integer::from(7), Integer::from(7)]
+        );
+
+        assert_eq!(
+            m.apply_col(&vec![Integer::from(1), Integer::from(0), Integer::from(0)]),
+            vec![Integer::from(1), Integer::from(6)]
+        );
+
+        assert_eq!(
+            m.apply_col(&vec![Integer::from(0), Integer::from(1), Integer::from(0)]),
+            vec![Integer::from(2), Integer::from(5)]
+        );
+
+        assert_eq!(
+            m.apply_col(&vec![Integer::from(0), Integer::from(0), Integer::from(1)]),
+            vec![Integer::from(3), Integer::from(4)]
+        );
+
+        assert_eq!(
+            m.apply_col(&vec![Integer::from(1), Integer::from(1), Integer::from(1)]),
+            vec![Integer::from(6), Integer::from(15)]
+        );
     }
 
     #[test]
