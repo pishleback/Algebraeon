@@ -1,6 +1,7 @@
 use super::{
     finitely_free_coset::FinitelyFreeSubmoduleCoset,
     finitely_free_modules::FinitelyFreeModuleStructure,
+    finitely_free_submodule::FinitelyFreeSubmodule,
     matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
 };
 use crate::structure::{FinitelyFreeModuleSignature, ModuleSignature};
@@ -44,6 +45,27 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
 
     pub fn from_coset(coset: FinitelyFreeSubmoduleCoset<Ring>) -> Self {
         Self::NonEmpty(coset)
+    }
+
+    pub fn from_affine_span(
+        module: FinitelyFreeModuleStructure<Ring>,
+        mut span: Vec<&Vec<Ring::Set>>,
+    ) -> Self {
+        for v in &span {
+            debug_assert_eq!(v.len(), module.rank());
+        }
+        if let Some(offset) = span.pop() {
+            let linear_span = span
+                .into_iter()
+                .map(|v| module.add(v, &module.neg(offset)))
+                .collect::<Vec<_>>();
+            Self::from_coset(FinitelyFreeSubmoduleCoset::from_offset_and_module(
+                offset,
+                FinitelyFreeSubmodule::from_span(module, linear_span.iter().collect()),
+            ))
+        } else {
+            Self::new_empty(module)
+        }
     }
 
     pub fn is_empty(&self) -> bool {

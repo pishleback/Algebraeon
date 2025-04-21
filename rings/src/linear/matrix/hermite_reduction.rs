@@ -255,14 +255,20 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
         &self,
         matrix: Matrix<Ring::Set>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
-        todo!()
+        let span = (0..matrix.rows())
+            .map(|r| matrix.get_row(r))
+            .collect::<Vec<_>>();
+        FinitelyFreeSubmoduleAffineSubset::from_affine_span(
+            FinitelyFreeModuleStructure::new(self.ring().clone(), matrix.cols()),
+            span.iter().collect(),
+        )
     }
 
     pub fn col_affine_span(
         &self,
         matrix: Matrix<Ring::Set>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
-        todo!()
+        self.row_affine_span(matrix.transpose())
     }
 
     pub fn row_solve(
