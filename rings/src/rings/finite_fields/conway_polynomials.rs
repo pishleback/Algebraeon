@@ -13,7 +13,7 @@ pub struct ConwayPolynomialDatabase {
 impl ConwayPolynomialDatabase {
     fn from_file(content: String) -> Result<Self, ()> {
         let content = content.replace("\r\n", "\n");
-        
+
         let content = &content[24..];
         let mut chars = content.chars();
 
