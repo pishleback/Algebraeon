@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 
-use crate::canvas::canvas2d::Drawable;
+use crate::canvas_old::canvas2d::Drawable;
 use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature, RealToFloatSignature};
 
 use algebraeon_geometry::{
@@ -16,7 +16,7 @@ impl<
     SP: Borrow<AffineSpace<FS>> + Clone,
 > Drawable for Simplex<FS, SP>
 {
-    fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
+    fn draw(&self, canvas: &mut crate::canvas_old::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
         let space = self.ambient_space();
         let ordered_field = space.borrow().ordered_field();
         assert_eq!(space.borrow().linear_dimension(), Some(2));
@@ -77,7 +77,7 @@ impl<
 where
     FS::Set: std::hash::Hash,
 {
-    fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
+    fn draw(&self, canvas: &mut crate::canvas_old::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
         for simplex in self.simplexes() {
             simplex.draw(canvas, colour);
         }
@@ -91,7 +91,7 @@ impl<
 where
     FS::Set: std::hash::Hash,
 {
-    fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
+    fn draw(&self, canvas: &mut crate::canvas_old::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
         for simplex in self.simplexes() {
             simplex.draw(canvas, colour);
         }
@@ -106,7 +106,7 @@ impl<
 where
     FS::Set: std::hash::Hash,
 {
-    fn draw(&self, canvas: &mut crate::canvas::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
+    fn draw(&self, canvas: &mut crate::canvas_old::canvas2d::Diagram2dCanvas, colour: (f32, f32, f32)) {
         for simplex in self.simplexes() {
             simplex.draw(canvas, colour);
         }

@@ -2,6 +2,7 @@ use glium::{Display, backend::Facade, glutin::event::Event};
 use std::time::Instant;
 
 pub mod canvas2d;
+pub mod simplexes;
 
 #[derive(Debug)]
 pub struct State {

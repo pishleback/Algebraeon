@@ -2,8 +2,8 @@
 
 use std::rc::Rc;
 
-use algebraeon_drawing::canvas::Canvas;
-use algebraeon_drawing::canvas::canvas2d::*;
+use algebraeon_drawing::canvas_old::Canvas;
+use algebraeon_drawing::canvas_old::canvas2d::*;
 use algebraeon_geometry::simplexes::ConvexHull;
 use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
 use algebraeon_geometry::simplexes::OrientationSide;
@@ -84,7 +84,7 @@ fn main() {
     let sc6 = sc5.clone().simplify();
     println!("done simplify");
 
-    algebraeon_drawing::canvas::canvas2d::Diagram2dCanvas::run(|canvas| {
+    algebraeon_drawing::canvas_old::canvas2d::Diagram2dCanvas::run(|canvas| {
         canvas.draw(&sc1, (1.0, 0.0, 1.0));
         canvas.draw(&sc2, (0.0, 1.0, 1.0));
         // canvas.draw(&sc3, (1.0, 1.0, 0.0));
