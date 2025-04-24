@@ -1,9 +1,9 @@
-use std::time::Duration;
 use algebraeon_drawing::canvas2d::*;
 use glium::{
     DrawParameters, Program, Surface, glutin::surface::WindowSurface, implement_vertex, uniform,
     winit::event::Event,
 };
+use std::time::Duration;
 
 struct TestElement {
     program: Option<Program>,
@@ -67,7 +67,6 @@ impl DrawElement for TestElement {
                 glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None)
                     .unwrap(),
             );
-
         }
         let program = self.program.as_ref().unwrap();
 
@@ -111,7 +110,14 @@ impl DrawElement for TestElement {
         let instance_buffer = glium::VertexBuffer::new(display, &instances).unwrap();
         let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        let (view_matrix, view_offset) = camera.view_matrix(display_size);
+        let (view_matrix, view_offset) = camera.view_matrix_and_shift(display_size);
+        let (view_matrix, view_offset) = (
+            [
+                [view_matrix[0][0] as f32, view_matrix[0][1] as f32],
+                [view_matrix[1][0] as f32, view_matrix[1][1] as f32],
+            ],
+            [view_offset[0] as f32, view_offset[1] as f32],
+        );
 
         target
             .draw(

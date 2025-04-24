@@ -40,36 +40,38 @@ pub trait Canvas {
         let mut prev_time = Instant::now();
 
         #[allow(deprecated)]
-        event_loop.run(move |ev, window_target| {
-            let time = Instant::now();
-            let dt = (time - prev_time).as_secs_f64();
-            prev_time = time;
+        event_loop
+            .run(move |ev, window_target| {
+                let time = Instant::now();
+                let dt = (time - prev_time).as_secs_f64();
+                prev_time = time;
 
-            let mut stop = false;
+                let mut stop = false;
 
-            //events
-            match &ev {
-                glium::winit::event::Event::WindowEvent { event, .. } => match event {
-                    glium::winit::event::WindowEvent::CloseRequested => {
-                        window_target.exit();
-                    }
-                    glium::winit::event::WindowEvent::CursorMoved { position, .. } => {
-                        state.mouse_pos = (position.x, position.y);
-                    }
-                    glium::winit::event::WindowEvent::Resized(size) => {
-                        state.display_size = (size.width, size.height);
-                    }
+                //events
+                match &ev {
+                    glium::winit::event::Event::WindowEvent { event, .. } => match event {
+                        glium::winit::event::WindowEvent::CloseRequested => {
+                            window_target.exit();
+                        }
+                        glium::winit::event::WindowEvent::CursorMoved { position, .. } => {
+                            state.mouse_pos = (position.x, position.y);
+                        }
+                        glium::winit::event::WindowEvent::Resized(size) => {
+                            state.display_size = (size.width, size.height);
+                        }
+                        _ => {}
+                    },
                     _ => {}
-                },
-                _ => {}
-            }
-            canvas.event(&state, &ev);
+                }
+                canvas.event(&state, &ev);
 
-            //update
-            canvas.tick(&state, dt);
+                //update
+                canvas.tick(&state, dt);
 
-            //draw
-            canvas.draw(&state, &display);
-        }).unwrap();
+                //draw
+                canvas.draw(&state, &display);
+            })
+            .unwrap();
     }
 }

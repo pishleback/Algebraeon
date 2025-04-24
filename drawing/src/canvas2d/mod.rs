@@ -14,7 +14,7 @@ pub trait EventHandler {
 }
 
 pub trait Camera: EventHandler {
-    fn view_matrix(&self, display_size: (u32, u32)) -> ([[f32; 2]; 2], [f32; 2]);
+    fn view_matrix_and_shift(&self, display_size: (u32, u32)) -> ([[f64; 2]; 2], [f64; 2]);
 }
 
 pub trait DrawElement: EventHandler {
@@ -39,22 +39,28 @@ pub struct MouseWheelZoomCamera {
 impl MouseWheelZoomCamera {
     pub fn new() -> Self {
         Self {
-            mid_x: 0.0,
-            mid_y: 0.0,
-            sqrt_area: 2.0,
+            mid_x: 1.0,
+            mid_y: 1.0,
+            sqrt_area: 6.0,
         }
     }
 }
 
 impl EventHandler for MouseWheelZoomCamera {
     fn tick(&mut self, dt: &Duration) {}
-
     fn event(&mut self, ev: &Event<()>) {}
 }
 
 impl Camera for MouseWheelZoomCamera {
-    fn view_matrix(&self, display_size: (u32, u32)) -> ([[f32; 2]; 2], [f32; 2]) {
-        ([[1.0, 0.0], [0.0, 1.0]], [0.0, 0.0])
+    fn view_matrix_and_shift(&self, display_size: (u32, u32)) -> ([[f64; 2]; 2], [f64; 2]) {
+        let display_size = (display_size.0 as f64, display_size.1 as f64);
+        let avg_side = (display_size.0 * display_size.1).sqrt();
+        let x_mult = 2.0 * avg_side / (display_size.0 * self.sqrt_area);
+        let y_mult = 2.0 * avg_side / (display_size.1 * self.sqrt_area);
+        (
+            [[x_mult, 0.0], [0.0, y_mult]],
+            [-self.mid_x * x_mult, -self.mid_y * y_mult],
+        )
     }
 }
 
