@@ -7,7 +7,7 @@ edition = "2024"
 name = "algebraeon_drawing"
 
 [dependencies]
-glium = "0.32"
+glium = "0.36"
 rand = "0.8.5"
 algebraeon-sets = { version = "=0.0.12", path = "../sets", default-features = false }
 algebraeon-groups = { version = "=0.0.12", path = "../groups", default-features = false }

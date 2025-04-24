@@ -1,15 +1,30 @@
-use glium::{Display, glutin::event::Event};
-use std::time::Instant;
+use glium::{
+    Display, Frame, Surface,
+    glutin::surface::WindowSurface,
+    winit::{
+        event::{Event, WindowEvent},
+        event_loop::{EventLoop, EventLoopBuilder},
+    },
+};
+use std::time::{Duration, Instant};
 
 pub trait EventHandler {
-    fn tick(&mut self, dt: f64);
-    fn event(&mut self, ev: &Event<'_, ()>);
+    fn tick(&mut self, dt: &Duration);
+    fn event(&mut self, ev: &Event<()>);
 }
 
-pub trait Camera: EventHandler {}
+pub trait Camera: EventHandler {
+    fn view_matrix(&self, display_size: (u32, u32)) -> ([[f32; 2]; 2], [f32; 2]);
+}
 
 pub trait DrawElement: EventHandler {
-    fn draw(&mut self, display: &Display);
+    fn draw(
+        &mut self,
+        display: &Display<WindowSurface>,
+        target: &mut Frame,
+        display_size: (u32, u32),
+        camera: &Box<dyn Camera>,
+    );
 }
 
 pub struct MouseWheelZoomCamera {
@@ -32,12 +47,16 @@ impl MouseWheelZoomCamera {
 }
 
 impl EventHandler for MouseWheelZoomCamera {
-    fn tick(&mut self, dt: f64) {}
+    fn tick(&mut self, dt: &Duration) {}
 
-    fn event(&mut self, ev: &Event<'_, ()>) {}
+    fn event(&mut self, ev: &Event<()>) {}
 }
 
-impl Camera for MouseWheelZoomCamera {}
+impl Camera for MouseWheelZoomCamera {
+    fn view_matrix(&self, display_size: (u32, u32)) -> ([[f32; 2]; 2], [f32; 2]) {
+        ([[1.0, 0.0], [0.0, 1.0]], [0.0, 0.0])
+    }
+}
 
 pub struct Canvas2D {
     camera: Box<dyn Camera>,
@@ -56,74 +75,85 @@ impl Canvas2D {
         self.elements.push(element);
     }
 
-    fn tick(&mut self, dt: f64) {
+    fn tick(&mut self, dt: &Duration) {
         for element in &mut self.elements {
             element.tick(dt);
         }
     }
 
-    fn draw(&mut self, display: &Display) {
+    fn draw(&mut self, display: &Display<WindowSurface>, display_size: (u32, u32)) {
+        let mut target = display.draw();
+        target.clear_color(0.0, 0.0, 0.0, 1.0);
         for element in &mut self.elements {
-            element.draw(display);
+            element.draw(display, &mut target, display_size, &self.camera);
         }
+        target.finish().unwrap();
     }
 
-    fn event(&mut self, ev: &Event<'_, ()>) {
+    fn event(&mut self, ev: &Event<()>) {
         for element in &mut self.elements {
             element.event(ev);
         }
     }
 
-    pub fn run(mut self, display_width: i32, display_height: i32) {
-        let event_loop = glium::glutin::event_loop::EventLoopBuilder::new().build();
+    pub fn run(mut self, display_width: u32, display_height: u32) {
+        let event_loop = glium::winit::event_loop::EventLoop::builder()
+            .build()
+            .expect("event loop building");
+        let (_window, display) = glium::backend::glutin::SimpleWindowBuilder::new()
+            .with_inner_size(display_width, display_height)
+            .with_title("Hello World")
+            .build(&event_loop);
 
-        let wb = glium::glutin::window::WindowBuilder::new()
-            .with_inner_size(glium::glutin::dpi::LogicalSize::new(
-                display_width as f64,
-                display_height as f64,
-            ))
-            .with_title("Hello world");
+        let mut display_size = (display_width, display_height);
 
-        let cb = glium::glutin::ContextBuilder::new();
-
-        let display = glium::Display::new(wb, cb, &event_loop).unwrap();
-
+        let mut since_tick = Duration::from_secs(0);
         let mut prev_time = Instant::now();
+        let tick_interval = Duration::from_secs(1 / 30);
 
-        event_loop.run(move |ev, _, control_flow| {
-            let time = Instant::now();
-            let dt = (time - prev_time).as_secs_f64();
-            prev_time = time;
+        #[allow(deprecated)]
+        event_loop
+            .run(move |ev, window_target| {
+                let time = Instant::now();
+                let dt = time - prev_time;
+                prev_time = time;
+                since_tick += dt;
 
-            let mut stop = false;
-
-            match &ev {
-                glium::glutin::event::Event::WindowEvent { event, .. } => match event {
-                    glium::glutin::event::WindowEvent::CloseRequested => {
-                        stop = true;
+                match &ev {
+                    glium::winit::event::Event::WindowEvent { event, .. } => match event {
+                        glium::winit::event::WindowEvent::CloseRequested => {
+                            window_target.exit();
+                        }
+                        // glium::glutin::event::WindowEvent::CursorMoved { position, .. } => {
+                        //     state.mouse_pos = (position.x, position.y);
+                        // }
+                        glium::winit::event::WindowEvent::Resized(size) => {
+                            display_size = (size.width, size.height);
+                        }
+                        _ => {}
+                    },
+                    glium::winit::event::Event::AboutToWait => {
+                        if since_tick >= tick_interval {
+                            self.tick(&dt);
+                            self.draw(&display, display_size);
+                            since_tick = Duration::from_secs(0);
+                            window_target.set_control_flow(
+                                glium::winit::event_loop::ControlFlow::WaitUntil(
+                                    time + tick_interval,
+                                ),
+                            );
+                        } else {
+                            window_target.set_control_flow(
+                                glium::winit::event_loop::ControlFlow::WaitUntil(
+                                    time + tick_interval - since_tick,
+                                ),
+                            );
+                        }
                     }
-                    // glium::glutin::event::WindowEvent::CursorMoved { position, .. } => {
-                    //     state.mouse_pos = (position.x, position.y);
-                    // }
-                    // glium::glutin::event::WindowEvent::Resized(size) => {
-                    //     state.display_size = (size.width, size.height);
-                    // }
                     _ => {}
-                },
-                _ => {}
-            }
-            self.event(&ev);
-            self.tick(dt);
-            self.draw(&display);
-
-            match stop {
-                true => {
-                    *control_flow = glium::glutin::event_loop::ControlFlow::Exit;
                 }
-                false => {
-                    *control_flow = glium::glutin::event_loop::ControlFlow::Poll;
-                }
-            }
-        });
+                self.event(&ev);
+            })
+            .unwrap();
     }
 }

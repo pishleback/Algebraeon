@@ -1,4 +1,4 @@
-use glium::{Display, backend::Facade, glutin::event::Event};
+use glium::{Display, backend::Facade, glutin::surface::WindowSurface, winit::event::Event};
 use std::time::Instant;
 
 pub mod canvas2d;
@@ -13,32 +13,21 @@ pub struct State {
 pub trait Canvas {
     fn new(facade: &impl Facade) -> Self;
     fn tick(&mut self, state: &State, dt: f64);
-    fn draw(&mut self, state: &State, display: &Display);
-    fn event(&mut self, state: &State, ev: &Event<'_, ()>);
-    fn run(init: impl FnOnce(&mut Self)) -> !
+    fn draw(&mut self, state: &State, display: &Display<WindowSurface>);
+    fn event(&mut self, state: &State, ev: &Event<()>);
+    fn run(init: impl FnOnce(&mut Self)) -> ()
     where
         Self: Sized + 'static,
     {
         let display_size = (1 * 1024, 1 * 768);
 
-        // 1. We start by creating the EventLoop, this can only be done once per process.
-        // This also needs to happen on the main thread to make the program portable.
-        let event_loop = glium::glutin::event_loop::EventLoopBuilder::new().build();
-
-        // 2. Parameters for building the Window.
-        let wb = glium::glutin::window::WindowBuilder::new()
-            .with_inner_size(glium::glutin::dpi::LogicalSize::new(
-                display_size.0 as f64,
-                display_size.1 as f64,
-            ))
-            .with_title("Hello world");
-
-        // 3. Parameters for building the OpenGL context.
-        let cb = glium::glutin::ContextBuilder::new();
-
-        // 4. Build the Display with the given window and OpenGL context parameters and register the
-        //    window with the events_loop.
-        let display = glium::Display::new(wb, cb, &event_loop).unwrap();
+        let event_loop = glium::winit::event_loop::EventLoop::builder()
+            .build()
+            .expect("event loop building");
+        let (_window, display) = glium::backend::glutin::SimpleWindowBuilder::new()
+            .with_inner_size(1000, 600)
+            .with_title("Hello World")
+            .build(&event_loop);
 
         let mut canvas = Self::new(&display);
         init(&mut canvas);
@@ -50,25 +39,24 @@ pub trait Canvas {
 
         let mut prev_time = Instant::now();
 
-        event_loop.run(move |ev, _, control_flow| {
+        #[allow(deprecated)]
+        event_loop.run(move |ev, window_target| {
             let time = Instant::now();
             let dt = (time - prev_time).as_secs_f64();
             prev_time = time;
 
             let mut stop = false;
 
-            // println!("{:?}", ev);
-
             //events
             match &ev {
-                glium::glutin::event::Event::WindowEvent { event, .. } => match event {
-                    glium::glutin::event::WindowEvent::CloseRequested => {
-                        stop = true;
+                glium::winit::event::Event::WindowEvent { event, .. } => match event {
+                    glium::winit::event::WindowEvent::CloseRequested => {
+                        window_target.exit();
                     }
-                    glium::glutin::event::WindowEvent::CursorMoved { position, .. } => {
+                    glium::winit::event::WindowEvent::CursorMoved { position, .. } => {
                         state.mouse_pos = (position.x, position.y);
                     }
-                    glium::glutin::event::WindowEvent::Resized(size) => {
+                    glium::winit::event::WindowEvent::Resized(size) => {
                         state.display_size = (size.width, size.height);
                     }
                     _ => {}
@@ -82,16 +70,6 @@ pub trait Canvas {
 
             //draw
             canvas.draw(&state, &display);
-
-            //control flow
-            match stop {
-                true => {
-                    *control_flow = glium::glutin::event_loop::ControlFlow::Exit;
-                }
-                false => {
-                    *control_flow = glium::glutin::event_loop::ControlFlow::Poll;
-                }
-            }
-        });
+        }).unwrap();
     }
 }

@@ -1,6 +1,6 @@
 use glium::{
-    Display, Program, Surface, VertexBuffer, backend::Facade, glutin::event::Event,
-    implement_vertex, uniform,
+    Display, Program, Surface, VertexBuffer, backend::Facade, glutin::surface::WindowSurface,
+    implement_vertex, uniform, winit::event::Event,
 };
 
 #[derive(Debug)]
@@ -51,7 +51,7 @@ pub struct Canvas2D {
 }
 
 impl Canvas2D {
-    fn make_program(&mut self, display: &Display) {
+    fn make_program(&mut self, display: &Display<WindowSurface>) {
         if self.program.is_none() {
             let vertex_shader_src = r#"
                 #version 330
@@ -111,7 +111,7 @@ impl super::Canvas for Canvas2D {
 
     fn tick(&mut self, _state: &super::State, _dt: f64) {}
 
-    fn draw(&mut self, state: &super::State, display: &Display) {
+    fn draw(&mut self, state: &super::State, display: &Display<WindowSurface>) {
         self.make_program(display);
 
         let mut target = display.draw();
@@ -176,12 +176,12 @@ impl super::Canvas for Canvas2D {
         target.finish().unwrap();
     }
 
-    fn event(&mut self, state: &super::State, ev: &Event<'_, ()>) {
+    fn event(&mut self, state: &super::State, ev: &Event<()>) {
         // println!("{:?}", ev);
         match ev {
             Event::WindowEvent { event, .. } => match event {
-                glium::glutin::event::WindowEvent::MouseWheel { delta, .. } => match delta {
-                    glium::glutin::event::MouseScrollDelta::LineDelta(_x, y) => {
+                glium::winit::event::WindowEvent::MouseWheel { delta, .. } => match delta {
+                    glium::winit::event::MouseScrollDelta::LineDelta(_x, y) => {
                         self.camera.change_zoom(
                             state.display_size,
                             state.mouse_pos,
@@ -231,7 +231,7 @@ pub struct Diagram2dCanvas {
 }
 
 impl Diagram2dCanvas {
-    fn make_program(&mut self, display: &Display) {
+    fn make_program(&mut self, display: &Display<WindowSurface>) {
         if self.point_program.is_none() {
             self.point_program = Some(
                 glium::Program::from_source(
@@ -618,7 +618,7 @@ impl super::Canvas for Diagram2dCanvas {
 
     fn tick(&mut self, _state: &super::State, _dt: f64) {}
 
-    fn draw(&mut self, state: &super::State, display: &Display) {
+    fn draw(&mut self, state: &super::State, display: &Display<WindowSurface>) {
         self.make_program(display);
 
         let mut target = display.draw();
@@ -673,12 +673,12 @@ impl super::Canvas for Diagram2dCanvas {
         target.finish().unwrap();
     }
 
-    fn event(&mut self, state: &super::State, ev: &Event<'_, ()>) {
+    fn event(&mut self, state: &super::State, ev: &Event<()>) {
         // println!("{:?}", ev);
         match ev {
             Event::WindowEvent { event, .. } => match event {
-                glium::glutin::event::WindowEvent::MouseWheel { delta, .. } => match delta {
-                    glium::glutin::event::MouseScrollDelta::LineDelta(_x, y) => {
+                glium::winit::event::WindowEvent::MouseWheel { delta, .. } => match delta {
+                    glium::winit::event::MouseScrollDelta::LineDelta(_x, y) => {
                         self.camera.change_zoom(
                             state.display_size,
                             state.mouse_pos,
