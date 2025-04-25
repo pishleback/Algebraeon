@@ -7,11 +7,6 @@ edition = "2024"
 name = "algebraeon_drawing"
 
 [dependencies]
-glium = "0.36"
-rand = "0.8.5"
-algebraeon-sets = { version = "=0.0.12", path = "../sets", default-features = false }
-algebraeon-groups = { version = "=0.0.12", path = "../groups", default-features = false }
-algebraeon-rings = { version = "=0.0.12", path = "../rings", default-features = false }
-algebraeon-geometry = { version = "=0.0.12", path = "../geometry", default-features = false }
-algebraeon-combinatorics = { version = "0.0.0", path = "../combinatorics", default-features = false }
-algebraeon-nzq = { version = "=0.0.12", path = "../nzq", default-features = false }
+pollster = "0.4.0"
+wgpu = "25.0.0"
+winit = "0.30.9"
