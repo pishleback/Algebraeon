@@ -15,8 +15,8 @@ pub struct RenderTarget<'r> {
     pub encoder: &'r mut CommandEncoder,
 }
 
-pub trait Renderer<C: Canvas> {
-    fn init(&self, window_state: &C::State) -> Box<dyn RendererInstance>;
+pub trait Renderer<State: CanvasState> {
+    fn init(&self, window_state: &State) -> Box<dyn RendererInstance>;
 }
 
 pub trait RendererInstance {
@@ -167,7 +167,7 @@ pub trait Canvas: Sized {
         event_loop.run_app(&mut app_handler)
     }
 
-    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer<Self>>;
+    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer<Self::State>>;
 }
 
 struct CanvasApplicationHandler<'c, C: Canvas> {

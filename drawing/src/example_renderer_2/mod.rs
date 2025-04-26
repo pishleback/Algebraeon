@@ -1,6 +1,9 @@
 use wgpu::util::DeviceExt;
 
-use crate::canvas::{CanvasState, RenderTarget, Renderer, RendererInstance};
+use crate::{
+    canvas::{RenderTarget, Renderer, RendererInstance},
+    canvas2d::Canvas2DState,
+};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -52,28 +55,67 @@ struct ExampleRendererInstance {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
+    camera_bind_group: wgpu::BindGroup,
 }
 
 impl ExampleRendererInstance {
-    fn new<State: CanvasState>(window_state: &State) -> Self {
-        let shader = window_state
+    fn new<State: Canvas2DState>(state: &State) -> Self {
+        let shader = state
             .device()
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Shader"),
                 source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
             });
 
+        let camera_uniform = state.camera_uniform();
+
+        let camera_buffer = state
+            .device()
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Camera Buffer"),
+                contents: bytemuck::cast_slice(&[camera_uniform]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+
+        let camera_bind_group_layout =
+            state
+                .device()
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                    label: Some("camera_bind_group_layout"),
+                });
+
+        let camera_bind_group = state
+            .device()
+            .create_bind_group(&wgpu::BindGroupDescriptor {
+                layout: &camera_bind_group_layout,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: camera_buffer.as_entire_binding(),
+                }],
+                label: Some("camera_bind_group"),
+            });
+
         let render_pipeline_layout =
-            window_state
+            state
                 .device()
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[],
+                    bind_group_layouts: &[&camera_bind_group_layout],
                     push_constant_ranges: &[],
                 });
 
         let render_pipeline =
-            window_state
+            state
                 .device()
                 .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                     label: Some("Render Pipeline"),
@@ -90,7 +132,7 @@ impl ExampleRendererInstance {
                         entry_point: Some("fs_main"),
                         targets: &[Some(wgpu::ColorTargetState {
                             // 4.
-                            format: window_state.config().format,
+                            format: state.config().format,
                             blend: Some(wgpu::BlendState::REPLACE),
                             write_mask: wgpu::ColorWrites::ALL,
                         })],
@@ -118,23 +160,21 @@ impl ExampleRendererInstance {
                     cache: None,     // 6.
                 });
 
-        let vertex_buffer =
-            window_state
-                .device()
-                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("Vertex Buffer"),
-                    contents: bytemuck::cast_slice(VERTICES),
-                    usage: wgpu::BufferUsages::VERTEX,
-                });
+        let vertex_buffer = state
+            .device()
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(VERTICES),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
 
-        let index_buffer =
-            window_state
-                .device()
-                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("Index Buffer"),
-                    contents: bytemuck::cast_slice(INDICES),
-                    usage: wgpu::BufferUsages::INDEX,
-                });
+        let index_buffer = state
+            .device()
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(INDICES),
+                usage: wgpu::BufferUsages::INDEX,
+            });
 
         let num_indices = INDICES.len() as u32;
 
@@ -143,6 +183,7 @@ impl ExampleRendererInstance {
             vertex_buffer,
             index_buffer,
             num_indices,
+            camera_bind_group,
         }
     }
 }
@@ -172,21 +213,22 @@ impl RendererInstance for ExampleRendererInstance {
             });
 
         render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16); // 1.
         render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 2.
     }
 }
 
-pub struct ExampleRenderer1 {}
+pub struct ExampleRenderer2 {}
 
-impl ExampleRenderer1 {
+impl ExampleRenderer2 {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl<State: CanvasState> Renderer<State> for ExampleRenderer1 {
+impl<State: Canvas2DState> Renderer<State> for ExampleRenderer2 {
     fn init(&self, window_state: &State) -> Box<dyn RendererInstance> {
         Box::new(ExampleRendererInstance::new(window_state))
     }

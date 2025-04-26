@@ -1,9 +1,9 @@
 use algebraeon_drawing::{
-    canvas::{BasicCanvasState, Canvas, Renderer},
+    canvas::{Canvas, Renderer},
     canvas2d::{BasicCanvas2DState, Canvas2D},
     example_renderer_1::ExampleRenderer1,
+    example_renderer_2::ExampleRenderer2,
 };
-use cgmath::{Matrix2, Vector2};
 
 // struct TestElement {
 //     // program: Option<Program>,
@@ -133,16 +133,18 @@ use cgmath::{Matrix2, Vector2};
 // }
 
 struct MyApp {
-    renderer: ExampleRenderer1,
+    renderer: ExampleRenderer2,
 }
 
 impl Canvas for MyApp {
     type State = BasicCanvas2DState;
 
-    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer<Self>> {
-        vec![&self.renderer as &dyn Renderer<Self>].into_iter()
+    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer<Self::State>> {
+        vec![&self.renderer as &dyn Renderer<Self::State>].into_iter()
     }
 }
+
+impl Canvas2D for MyApp {}
 
 fn main() {
     simplelog::CombinedLogger::init(vec![simplelog::TermLogger::new(
@@ -155,7 +157,7 @@ fn main() {
     log::set_max_level(log::LevelFilter::Debug);
 
     MyApp {
-        renderer: ExampleRenderer1::new(),
+        renderer: ExampleRenderer2::new(),
     }
     .run()
     .unwrap();
