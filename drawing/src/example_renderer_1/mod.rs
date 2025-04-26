@@ -1,6 +1,6 @@
 use wgpu::util::DeviceExt;
 
-use crate::window::{RenderTarget, Renderer, RendererInstance, WindowState};
+use crate::canvas::{Canvas, RenderTarget, Renderer, RendererInstance, CanvasState};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -55,9 +55,9 @@ struct ExampleRendererInstance {
 }
 
 impl ExampleRendererInstance {
-    fn new(window_state: &WindowState) -> Self {
+    fn new<C: Canvas>(window_state: &C::State) -> Self {
         let shader = window_state
-            .device
+            .device()
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Shader"),
                 source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
@@ -65,7 +65,7 @@ impl ExampleRendererInstance {
 
         let render_pipeline_layout =
             window_state
-                .device
+                .device()
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
                     bind_group_layouts: &[],
@@ -74,7 +74,7 @@ impl ExampleRendererInstance {
 
         let render_pipeline =
             window_state
-                .device
+                .device()
                 .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                     label: Some("Render Pipeline"),
                     layout: Some(&render_pipeline_layout),
@@ -90,7 +90,7 @@ impl ExampleRendererInstance {
                         entry_point: Some("fs_main"),
                         targets: &[Some(wgpu::ColorTargetState {
                             // 4.
-                            format: window_state.config.format,
+                            format: window_state.config().format,
                             blend: Some(wgpu::BlendState::REPLACE),
                             write_mask: wgpu::ColorWrites::ALL,
                         })],
@@ -120,7 +120,7 @@ impl ExampleRendererInstance {
 
         let vertex_buffer =
             window_state
-                .device
+                .device()
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("Vertex Buffer"),
                     contents: bytemuck::cast_slice(VERTICES),
@@ -129,7 +129,7 @@ impl ExampleRendererInstance {
 
         let index_buffer =
             window_state
-                .device
+                .device()
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("Index Buffer"),
                     contents: bytemuck::cast_slice(INDICES),
@@ -148,7 +148,7 @@ impl ExampleRendererInstance {
 }
 
 impl RendererInstance for ExampleRendererInstance {
-    fn render<'a>(&self, target: RenderTarget<'a>) {
+    fn render(&self, target: RenderTarget) {
         let mut render_pass = target
             .encoder
             .begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -178,16 +178,16 @@ impl RendererInstance for ExampleRendererInstance {
     }
 }
 
-pub struct ExampleRenderer {}
+pub struct ExampleRenderer1 {}
 
-impl ExampleRenderer {
+impl ExampleRenderer1 {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl Renderer for ExampleRenderer {
-    fn init(&self, window_state: &WindowState) -> Box<dyn RendererInstance> {
-        Box::new(ExampleRendererInstance::new(window_state))
+impl<C: Canvas> Renderer<C> for ExampleRenderer1 {
+    fn init(&self, window_state: &C::State) -> Box<dyn RendererInstance> {
+        Box::new(ExampleRendererInstance::new::<C>(window_state))
     }
 }

@@ -15,26 +15,15 @@ pub struct RenderTarget<'r> {
     pub encoder: &'r mut CommandEncoder,
 }
 
-pub trait Renderer {
-    fn init(&self, window_state: &WindowState) -> Box<dyn RendererInstance>;
+pub trait Renderer<C: Canvas> {
+    fn init(&self, window_state: &C::State) -> Box<dyn RendererInstance>;
 }
 
 pub trait RendererInstance {
     fn render(&self, target: RenderTarget);
 }
 
-pub trait App: Sized {
-    fn run(&self) -> Result<(), EventLoopError> {
-        let event_loop = EventLoop::new().unwrap();
-        event_loop.set_control_flow(ControlFlow::Poll);
-        let mut app_handler = AppApplicationHandler::new(self);
-        event_loop.run_app(&mut app_handler)
-    }
-
-    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer>;
-}
-
-pub struct WindowState {
+pub struct BasicCanvasState {
     surface: wgpu::Surface<'static>,
     pub device: wgpu::Device,
     queue: wgpu::Queue,
@@ -42,7 +31,28 @@ pub struct WindowState {
     size: winit::dpi::PhysicalSize<u32>,
 }
 
-impl WindowState {
+pub trait CanvasState {
+    fn new(window: Arc<Window>) -> Self;
+
+    fn size(&self) -> winit::dpi::PhysicalSize<u32>;
+
+    fn device(&self) -> &wgpu::Device;
+
+    fn config(&self) -> &wgpu::SurfaceConfiguration;
+
+    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>);
+
+    fn reconfigure(&mut self) {
+        self.resize(self.size());
+    }
+
+    fn render(
+        &mut self,
+        renderers: &Vec<Box<dyn RendererInstance>>,
+    ) -> Result<(), wgpu::SurfaceError>;
+}
+
+impl CanvasState for BasicCanvasState {
     fn new(window: Arc<Window>) -> Self {
         let size = window.inner_size();
 
@@ -100,7 +110,19 @@ impl WindowState {
         }
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    fn size(&self) -> winit::dpi::PhysicalSize<u32> {
+        self.size.clone()
+    }
+
+    fn device(&self) -> &wgpu::Device {
+        &self.device
+    }
+
+    fn config(&self) -> &wgpu::SurfaceConfiguration {
+        &self.config
+    }
+
+    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
             self.config.width = new_size.width;
@@ -109,11 +131,7 @@ impl WindowState {
         }
     }
 
-    pub fn reconfigure(&mut self) {
-        self.resize(self.size);
-    }
-
-    fn render<'r>(
+    fn render(
         &mut self,
         renderers: &Vec<Box<dyn RendererInstance>>,
     ) -> Result<(), wgpu::SurfaceError> {
@@ -139,15 +157,28 @@ impl WindowState {
     }
 }
 
-struct AppApplicationHandler<'a, A: App> {
-    app: &'a A,
+pub trait Canvas: Sized {
+    type State: CanvasState;
+
+    fn run(&self) -> Result<(), EventLoopError> {
+        let event_loop = EventLoop::new().unwrap();
+        event_loop.set_control_flow(ControlFlow::Poll);
+        let mut app_handler = CanvasApplicationHandler::new(self);
+        event_loop.run_app(&mut app_handler)
+    }
+
+    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer<Self>>;
+}
+
+struct CanvasApplicationHandler<'c, C: Canvas> {
+    app: &'c C,
     window: OnceCell<Arc<Window>>,
-    window_state: Option<WindowState>,
+    window_state: Option<C::State>,
     renderers: Vec<Box<dyn RendererInstance>>,
 }
 
-impl<'a, A: App> AppApplicationHandler<'a, A> {
-    pub fn new(app: &'a A) -> Self {
+impl<'c, C: Canvas> CanvasApplicationHandler<'c, C> {
+    pub fn new(app: &'c C) -> Self {
         Self {
             app,
             window: OnceCell::default(),
@@ -157,7 +188,7 @@ impl<'a, A: App> AppApplicationHandler<'a, A> {
     }
 }
 
-impl<'a, A: App> ApplicationHandler for AppApplicationHandler<'a, A> {
+impl<'c, C: Canvas> ApplicationHandler for CanvasApplicationHandler<'c, C> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = self
             .window
@@ -169,7 +200,7 @@ impl<'a, A: App> ApplicationHandler for AppApplicationHandler<'a, A> {
                 )
             })
             .clone();
-        self.window_state = Some(WindowState::new(window));
+        self.window_state = Some(C::State::new(window));
         self.renderers = self
             .app
             .renderers()

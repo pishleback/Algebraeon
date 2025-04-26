@@ -1,7 +1,9 @@
 use algebraeon_drawing::{
-    example_renderer_1::ExampleRenderer,
-    window::{App, Renderer},
+    canvas::{BasicCanvasState, Canvas, Renderer},
+    canvas2d::{BasicCanvas2DState, Canvas2D},
+    example_renderer_1::ExampleRenderer1,
 };
+use cgmath::{Matrix2, Vector2};
 
 // struct TestElement {
 //     // program: Option<Program>,
@@ -131,12 +133,14 @@ use algebraeon_drawing::{
 // }
 
 struct MyApp {
-    renderer: ExampleRenderer,
+    renderer: ExampleRenderer1,
 }
 
-impl App for MyApp {
-    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer> {
-        vec![&self.renderer as &dyn Renderer].into_iter()
+impl Canvas for MyApp {
+    type State = BasicCanvas2DState;
+
+    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer<Self>> {
+        vec![&self.renderer as &dyn Renderer<Self>].into_iter()
     }
 }
 
@@ -151,7 +155,7 @@ fn main() {
     log::set_max_level(log::LevelFilter::Debug);
 
     MyApp {
-        renderer: ExampleRenderer::new(),
+        renderer: ExampleRenderer1::new(),
     }
     .run()
     .unwrap();
