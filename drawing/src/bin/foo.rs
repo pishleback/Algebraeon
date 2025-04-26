@@ -1,21 +1,22 @@
-use algebraeon_drawing::canvas2d::*;
-use std::time::Duration;
-use winit::event::Event;
+use algebraeon_drawing::{
+    example_renderer_1::ExampleRenderer,
+    window::{App, Renderer},
+};
 
-struct TestElement {
-    // program: Option<Program>,
-}
+// struct TestElement {
+//     // program: Option<Program>,
+// }
 
-impl TestElement {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
+// impl TestElement {
+//     pub fn new() -> Self {
+//         Self {}
+//     }
+// }
 
-impl EventHandler for TestElement {
-    fn tick(&mut self, dt: &Duration) {}
-    fn event(&mut self, ev: &Event<()>) {}
-}
+// impl EventHandler for TestElement {
+//     fn tick(&mut self, dt: &Duration) {}
+//     fn event(&mut self, ev: &Event<()>) {}
+// }
 
 // impl DrawElement for TestElement {
 //     fn draw(
@@ -129,6 +130,16 @@ impl EventHandler for TestElement {
 //     }
 // }
 
+struct MyApp {
+    renderer: ExampleRenderer,
+}
+
+impl App for MyApp {
+    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer> {
+        vec![&self.renderer as &dyn Renderer].into_iter()
+    }
+}
+
 fn main() {
     simplelog::CombinedLogger::init(vec![simplelog::TermLogger::new(
         simplelog::LevelFilter::Trace,
@@ -139,9 +150,9 @@ fn main() {
     .unwrap();
     log::set_max_level(log::LevelFilter::Debug);
 
-    let canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
-
-    // canvas.add_element(Box::new(TestElement::new()));
-
-    canvas.run(1000, 600);
+    MyApp {
+        renderer: ExampleRenderer::new(),
+    }
+    .run()
+    .unwrap();
 }
