@@ -7,6 +7,7 @@ edition = "2024"
 name = "algebraeon_drawing"
 
 [dependencies]
+bytemuck = "1.22.0"
 log = "0.4.27"
 pollster = "0.4.0"
 simplelog = "0.12.2"
