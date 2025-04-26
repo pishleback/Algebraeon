@@ -7,6 +7,8 @@ edition = "2024"
 name = "algebraeon_drawing"
 
 [dependencies]
+log = "0.4.27"
 pollster = "0.4.0"
+simplelog = "0.12.2"
 wgpu = "25.0.0"
 winit = "0.30.9"
