@@ -1,10 +1,3 @@
-use algebraeon_drawing::{
-    canvas::{Canvas, Renderer},
-    canvas2d::{BasicCanvas2DState, Canvas2D},
-    example_renderer_1::ExampleRenderer1,
-    example_renderer_2::ExampleRenderer2,
-};
-
 // struct TestElement {
 //     // program: Option<Program>,
 // }
@@ -132,19 +125,7 @@ use algebraeon_drawing::{
 //     }
 // }
 
-struct MyApp {
-    renderer: ExampleRenderer2,
-}
-
-impl Canvas for MyApp {
-    type State = BasicCanvas2DState;
-
-    fn renderers(&self) -> impl Iterator<Item = &dyn Renderer<Self::State>> {
-        vec![&self.renderer as &dyn Renderer<Self::State>].into_iter()
-    }
-}
-
-impl Canvas2D for MyApp {}
+use algebraeon_drawing::{canvas::Canvas, example_canvas_1::Example1WgpuCanvas};
 
 fn main() {
     simplelog::CombinedLogger::init(vec![simplelog::TermLogger::new(
@@ -156,9 +137,5 @@ fn main() {
     .unwrap();
     log::set_max_level(log::LevelFilter::Debug);
 
-    MyApp {
-        renderer: ExampleRenderer2::new(),
-    }
-    .run()
-    .unwrap();
+    Example1WgpuCanvas::new().run().unwrap();
 }

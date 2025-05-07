@@ -1,7 +1,9 @@
+use std::marker::PhantomData;
+
 use wgpu::util::DeviceExt;
 
 use crate::{
-    canvas::{RenderTarget, Renderer, RendererInstance},
+    canvas::{RenderTarget, Renderer, RendererInstance, WgpuState},
     canvas2d::Canvas2DState,
 };
 
@@ -61,62 +63,27 @@ struct ExampleRendererInstance {
 impl ExampleRendererInstance {
     fn new<State: Canvas2DState>(state: &State) -> Self {
         let shader = state
-            .device()
+            .wgpu_state()
+            .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Shader"),
                 source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
             });
 
-        let camera_uniform = state.camera_uniform();
-
-        let camera_buffer = state
-            .device()
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Camera Buffer"),
-                contents: bytemuck::cast_slice(&[camera_uniform]),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            });
-
-        let camera_bind_group_layout =
-            state
-                .device()
-                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    entries: &[wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    }],
-                    label: Some("camera_bind_group_layout"),
-                });
-
-        let camera_bind_group = state
-            .device()
-            .create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &camera_bind_group_layout,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: camera_buffer.as_entire_binding(),
-                }],
-                label: Some("camera_bind_group"),
-            });
-
         let render_pipeline_layout =
             state
-                .device()
+                .wgpu_state()
+                .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[&camera_bind_group_layout],
+                    bind_group_layouts: &[&state.camera_bind_group_layout()],
                     push_constant_ranges: &[],
                 });
 
         let render_pipeline =
             state
-                .device()
+                .wgpu_state()
+                .device
                 .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                     label: Some("Render Pipeline"),
                     layout: Some(&render_pipeline_layout),
@@ -132,7 +99,7 @@ impl ExampleRendererInstance {
                         entry_point: Some("fs_main"),
                         targets: &[Some(wgpu::ColorTargetState {
                             // 4.
-                            format: state.config().format,
+                            format: state.wgpu_state().config.format,
                             blend: Some(wgpu::BlendState::REPLACE),
                             write_mask: wgpu::ColorWrites::ALL,
                         })],
@@ -160,21 +127,25 @@ impl ExampleRendererInstance {
                     cache: None,     // 6.
                 });
 
-        let vertex_buffer = state
-            .device()
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
+        let vertex_buffer =
+            state
+                .wgpu_state()
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Vertex Buffer"),
+                    contents: bytemuck::cast_slice(VERTICES),
+                    usage: wgpu::BufferUsages::VERTEX,
+                });
 
-        let index_buffer = state
-            .device()
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
-                usage: wgpu::BufferUsages::INDEX,
-            });
+        let index_buffer =
+            state
+                .wgpu_state()
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Index Buffer"),
+                    contents: bytemuck::cast_slice(INDICES),
+                    usage: wgpu::BufferUsages::INDEX,
+                });
 
         let num_indices = INDICES.len() as u32;
 
@@ -183,13 +154,13 @@ impl ExampleRendererInstance {
             vertex_buffer,
             index_buffer,
             num_indices,
-            camera_bind_group,
+            camera_bind_group: state.camera_bind_group(),
         }
     }
 }
 
 impl RendererInstance for ExampleRendererInstance {
-    fn render(&self, target: RenderTarget) {
+    fn render(&self, wgpu_state: &WgpuState, target: RenderTarget) {
         let mut render_pass = target
             .encoder
             .begin_render_pass(&wgpu::RenderPassDescriptor {
