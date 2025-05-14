@@ -32,7 +32,7 @@ struct CanvasApplicationHandler<C: Canvas> {
 }
 
 impl<C: Canvas> CanvasApplicationHandler<C> {
-    pub fn new(canvas: C) -> Self {
+    fn new(canvas: C) -> Self {
         Self {
             canvas,
             window: OnceCell::default(),

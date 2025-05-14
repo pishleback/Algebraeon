@@ -125,7 +125,7 @@
 //     }
 // }
 
-use algebraeon_drawing::{canvas::Canvas, example_canvas_1::Example1WgpuCanvas};
+use algebraeon_drawing::{canvas::Canvas, example_canvas_1::ExampleCanvas};
 
 fn main() {
     simplelog::CombinedLogger::init(vec![simplelog::TermLogger::new(
@@ -137,5 +137,5 @@ fn main() {
     .unwrap();
     log::set_max_level(log::LevelFilter::Debug);
 
-    Example1WgpuCanvas::new().run().unwrap();
+    ExampleCanvas::new().run().unwrap();
 }

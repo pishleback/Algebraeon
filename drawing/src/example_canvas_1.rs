@@ -4,9 +4,13 @@ use winit::event::WindowEvent;
 
 use crate::{canvas::Canvas, wgpu_state::WgpuState};
 
-pub struct Example1WgpuCanvas {}
+pub struct ExampleCanvas {}
 
-impl Example1WgpuCanvas {
+pub struct Example1WindowState {
+    wgpu_state: WgpuState,
+}
+
+impl ExampleCanvas {
     pub fn new() -> Self {
         Self {}
     }
@@ -28,15 +32,11 @@ impl Example1WgpuCanvas {
     }
 }
 
-pub struct Example1State {
-    wgpu_state: WgpuState,
-}
-
-impl Canvas for Example1WgpuCanvas {
-    type WindowState = Example1State;
+impl Canvas for ExampleCanvas {
+    type WindowState = Example1WindowState;
 
     fn new_state(&self, window: Arc<winit::window::Window>) -> Self::WindowState {
-        Example1State {
+        Example1WindowState {
             wgpu_state: WgpuState::new(window),
         }
     }
