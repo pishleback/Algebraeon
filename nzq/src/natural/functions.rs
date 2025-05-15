@@ -101,6 +101,8 @@ impl Natural {
     }
 
     pub fn is_square(&self) -> bool {
+        // implementation based on algorithm 1.7.3 of Cohen H - a course in computational algebraic number theory
+        
         const fn qr<const N: usize>() -> [bool; N] {
             let mut table = [false; N];
             let mut i = 0;
