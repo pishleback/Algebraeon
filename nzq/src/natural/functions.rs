@@ -99,6 +99,46 @@ impl Natural {
     pub fn sqrt_ceil(&self) -> Natural {
         self.nth_root_ceil(&Natural::TWO)
     }
+
+    pub fn is_square(&self) -> bool {
+        const fn qr<const N: usize>() -> [bool; N] {
+            let mut table = [false; N];
+            let mut i = 0;
+            while i < N {
+                table[(i * i) % N] = true;
+                i += 1;
+            }
+            table
+        }
+
+        const QR11: [bool; 11] = qr::<11>();
+        const QR63: [bool; 63] = qr::<63>();
+        const QR64: [bool; 64] = qr::<64>();
+        const QR65: [bool; 65] = qr::<65>();
+
+        let r11: usize = (self % Natural::from(11u32)).try_into().unwrap();
+        if !QR11[r11] {
+            return false;
+        }
+
+        let r63: usize = (self % Natural::from(63u32)).try_into().unwrap();
+        if !QR63[r63] {
+            return false;
+        }
+
+        let r64: usize = (self % Natural::from(64u32)).try_into().unwrap();
+        if !QR64[r64] {
+            return false;
+        }
+
+        let r65: usize = (self % Natural::from(65u32)).try_into().unwrap();
+        if !QR65[r65] {
+            return false;
+        }
+
+        let root = self.sqrt_floor();
+        &root * &root == *self
+    }
 }
 
 pub fn choose(a: impl Borrow<Natural>, b: impl Borrow<Natural>) -> Natural {
@@ -296,6 +336,36 @@ mod tests {
                 assert!(x == Natural::ZERO || (r + Natural::ONE).pow(&n) > x);
             }
         }
+    }
+
+    #[test]
+    fn test_is_square() {
+        // Squares of integers from 0 to 20
+        for i in 0..=20usize {
+            let n = Natural::from(i);
+            let sq = &n * &n;
+            assert!(sq.is_square());
+        }
+
+        // Some non-square values
+        let non_squares = [
+            2usize, 3, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 17, 18, 19, 21, 22, 23, 24, 26, 27, 28,
+        ];
+        for &i in &non_squares {
+            let n = Natural::from(i);
+            assert!(!n.is_square());
+        }
+
+        // Big perfect square
+        let big = Natural::from(123456usize);
+        let big_sq = &big * &big;
+        assert!(big_sq.is_square());
+
+        // Off-by-one cases
+        let not_square_minus = &big_sq - Natural::ONE;
+        let not_square_plus = &big_sq + Natural::ONE;
+        assert!(!not_square_minus.is_square());
+        assert!(!not_square_plus.is_square());
     }
 
     #[test]
