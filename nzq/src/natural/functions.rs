@@ -100,9 +100,9 @@ impl Natural {
         self.nth_root_ceil(&Natural::TWO)
     }
 
-    pub fn is_square(&self) -> bool {
+    pub fn sqrt_if_square(&self) -> Option<Natural> {
         // implementation based on algorithm 1.7.3 of Cohen H - a course in computational algebraic number theory
-        
+
         const fn qr<const N: usize>() -> [bool; N] {
             let mut table = [false; N];
             let mut i = 0;
@@ -120,26 +120,34 @@ impl Natural {
 
         let r11: usize = (self % Natural::from(11u32)).try_into().unwrap();
         if !QR11[r11] {
-            return false;
+            return None;
         }
 
         let r63: usize = (self % Natural::from(63u32)).try_into().unwrap();
         if !QR63[r63] {
-            return false;
+            return None;
         }
 
         let r64: usize = (self % Natural::from(64u32)).try_into().unwrap();
         if !QR64[r64] {
-            return false;
+            return None;
         }
 
         let r65: usize = (self % Natural::from(65u32)).try_into().unwrap();
         if !QR65[r65] {
-            return false;
+            return None;
         }
 
         let root = self.sqrt_floor();
-        &root * &root == *self
+        if &root * &root == *self {
+            Some(root)
+        } else {
+            None
+        }
+    }
+
+    fn is_square(&self) -> bool {
+        self.sqrt_if_square().is_some()
     }
 }
 
