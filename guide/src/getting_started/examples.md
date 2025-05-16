@@ -58,29 +58,28 @@ Find the general solution to the linear system
 for integers \\(a\\), \\(b\\) and \\(c\\).
 
 ```rust
-use algebraeon::rings::linear::matrix::Matrix;
 use algebraeon::nzq::Integer;
-let x = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
+use algebraeon::rings::linear::matrix::Matrix;
+let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
 let y = Matrix::<Integer>::from_rows(vec![vec![5, 5, 3]]);
-let s = x.row_solution_lattice(y);
-s.pprint();
+for x in m
+    .row_solution_set(&vec![5.into(), 5.into(), 3.into()])
+    .affine_basis()
+{
+    println!("{:?}", x);
+}
 /*
 Output:
-    Start Affine Lattice
-    Offset
-    ( 2    0    -1 )
-    Start Linear Lattice
-    ( 1    -1    -1 )
-    End Linear Lattice
-    End Affine Lattice
+    [Integer(0), Integer(2), Integer(1)]
+    [Integer(1), Integer(1), Integer(0)]
 */
 ```
 
-so the general solution is all \\(a\\), \\(b\\), \\(c\\) such that
+so two solutions are given by \\((a, b, c) = (0, 2, 1)\\) and \\((a, b, c) = (1, 1, 0)\\) and _every_ solution is a linear combination of these two solutions; The general solution is given by all \\((a, b, c)\\) such that
 
-\\[\begin{pmatrix}a \\\\ b \\\\ c\end{pmatrix} = \begin{pmatrix}2 \\\\ 0 \\\\ -1\end{pmatrix} + t\begin{pmatrix}1 \\\\ -1 \\\\ -1\end{pmatrix}\\]
+\\[\begin{pmatrix}a \\\\ b \\\\ c\end{pmatrix} = s\begin{pmatrix}0 \\\\ 2 \\\\ 1\end{pmatrix} + t\begin{pmatrix}1 \\\\ 1 \\\\ 0\end{pmatrix}\\]
 
-for some integer \\(t\\).
+where \\(s\\) and \\(t\\) are integers such that \\(s + t = 1\\).
 
 ## Complex Root Isolation
 

@@ -43,11 +43,15 @@ pub trait IdealArithmeticSignature: IdealSignature {
     }
     /// Does a contain b i.e. does a divide b
     fn ideal_contains(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool;
+    /// Does a contain x
+    fn ideal_contains_element(&self, a: &Self::Ideal, x: &Self::Set) -> bool {
+        self.ideal_contains(a, &self.principal_ideal(x))
+    }
     /// Intersection of ideals
     fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
-    // Sum of two ideals
+    /// Sum of two ideals
     fn ideal_add(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
-    // Sum of many ideals
+    /// Sum of many ideals
     fn ideal_sum(&self, ideals: Vec<impl Into<Self::Ideal>>) -> Self::Ideal {
         let mut total = self.zero_ideal();
         for i in ideals {
@@ -55,15 +59,39 @@ pub trait IdealArithmeticSignature: IdealSignature {
         }
         total
     }
-    // Product of two ideals
+    /// Product of two ideals
     fn ideal_mul(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal;
-    // Sum of many ideals
+    /// Sum of many ideals
     fn ideal_product(&self, ideals: Vec<impl Into<Self::Ideal>>) -> Self::Ideal {
         let mut total = self.unit_ideal();
         for i in ideals {
             total = self.ideal_mul(&total, &i.into());
         }
         total
+    }
+    /// ideal to a natural power
+    fn ideal_nat_pow(&self, ideal: &Self::Ideal, n: &Natural) -> Self::Ideal {
+        if *n == Natural::ZERO {
+            self.unit_ideal()
+        } else if *n == Natural::ONE {
+            ideal.clone()
+        } else {
+            debug_assert!(*n >= Natural::TWO);
+            let bits: Vec<_> = n.bits().collect();
+            let mut pows = vec![ideal.clone()];
+            while pows.len() < bits.len() {
+                pows.push(self.ideal_mul(pows.last().unwrap(), pows.last().unwrap()));
+            }
+            let count = bits.len();
+            debug_assert_eq!(count, pows.len());
+            let mut ans = self.unit_ideal();
+            for i in 0..count {
+                if bits[i] {
+                    ans = self.ideal_mul(&ans, &pows[i]);
+                }
+            }
+            ans
+        }
     }
 }
 pub trait MetaIdealArithmeticSignature: MetaIdealSignature

@@ -1,10 +1,10 @@
 use super::{ring_of_integer_extensions::RingOfIntegersExtension, ring_of_integers::*};
-use crate::{linear::linear_subspace::*, structure::*};
-use algebraeon_nzq::{Integer, Natural};
-use algebraeon_sets::{
-    combinatorics::num_partitions_part_pool,
-    structure::{MetaType, SetSignature},
+use crate::{
+    linear::{finitely_free_submodule::FinitelyFreeSubmodule, matrix::Matrix},
+    structure::*,
 };
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
+use algebraeon_sets::{combinatorics::num_partitions_part_pool, structure::SetSignature};
 use itertools::Itertools;
 
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub enum RingOfIntegersIdeal {
     Zero,
     NonZero {
         // 1 column and n rows
-        lattice: LinearSubspace<Integer>,
+        lattice: FinitelyFreeSubmodule<IntegerCanonicalStructure>,
     },
 }
 
@@ -22,19 +22,20 @@ impl RingOfIntegersWithIntegralBasisStructure {
         match ideal {
             RingOfIntegersIdeal::Zero => {}
             RingOfIntegersIdeal::NonZero { lattice } => {
-                assert_eq!(lattice.rows(), self.degree());
-                assert_eq!(lattice.cols(), 1);
+                assert_eq!(lattice.module_rank(), self.degree());
                 // check it's actually an ideal
                 for ideal_basis_elem in lattice
-                    .basis_matrices()
+                    .basis()
                     .into_iter()
-                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_coefficients(m))
                 {
                     for integral_basis_elem in (0..self.degree()).map(|i| {
                         RingOfIntegersWithIntegralBasisElement::basis_element(self.degree(), i)
                     }) {
-                        let x = self.mul(&ideal_basis_elem, &integral_basis_elem).into_col();
-                        assert!(lattice.contains_point(&x));
+                        let x = self
+                            .mul(&ideal_basis_elem, &integral_basis_elem)
+                            .into_coefficients();
+                        assert!(lattice.contains_element(&x));
                     }
                 }
             }
@@ -49,9 +50,9 @@ impl RingOfIntegersIdeal {
             RingOfIntegersIdeal::Zero => None,
             RingOfIntegersIdeal::NonZero { lattice } => Some(
                 lattice
-                    .basis_matrices()
+                    .basis()
                     .into_iter()
-                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_coefficients(m))
                     .collect(),
             ),
         }
@@ -69,29 +70,8 @@ impl RingOfIntegersWithIntegralBasisStructure {
         }
         let n = self.degree();
         RingOfIntegersIdeal::NonZero {
-            lattice: LinearSubspace::from_span(
-                n,
-                1,
-                span.into_iter().map(|elem| elem.into_col()).collect(),
-            ),
-        }
-    }
-
-    /// Construct an ideal from a Z-linear basis
-    fn ideal_from_integer_basis(
-        &self,
-        basis: Vec<RingOfIntegersWithIntegralBasisElement>,
-    ) -> RingOfIntegersIdeal {
-        for elem in &basis {
-            debug_assert!(self.is_element(elem));
-        }
-        let n = self.degree();
-        RingOfIntegersIdeal::NonZero {
-            lattice: LinearSubspace::from_basis(
-                n,
-                1,
-                basis.into_iter().map(|elem| elem.into_col()).collect(),
-            ),
+            lattice: Matrix::join_cols(n, span.into_iter().map(|elem| elem.into_col()).collect())
+                .col_span(),
         }
     }
 
@@ -185,7 +165,7 @@ impl IdealArithmeticSignature for RingOfIntegersWithIntegralBasisStructure {
             Self::Ideal::Zero
         } else {
             let n = self.degree();
-            let ideal = self.ideal_from_integer_basis(
+            let ideal = self.ideal_from_integer_span(
                 (0..n)
                     .map(|i| {
                         self.try_anf_to_roi(
@@ -212,7 +192,7 @@ impl IdealArithmeticSignature for RingOfIntegersWithIntegralBasisStructure {
             (
                 RingOfIntegersIdeal::NonZero { lattice: a_lattice },
                 RingOfIntegersIdeal::NonZero { lattice: b_lattice },
-            ) => LinearSubspaceStructure::new(Integer::structure()).equal(a_lattice, b_lattice),
+            ) => FinitelyFreeSubmodule::equal(a_lattice, b_lattice),
             _ => false,
         }
     }
@@ -233,8 +213,20 @@ impl IdealArithmeticSignature for RingOfIntegersWithIntegralBasisStructure {
             (
                 RingOfIntegersIdeal::NonZero { lattice: a_lattice },
                 RingOfIntegersIdeal::NonZero { lattice: b_lattice },
-            ) => LinearSubspaceStructure::new(Integer::structure())
-                .contains_sublattice(a_lattice, b_lattice),
+            ) => FinitelyFreeSubmodule::contains(a_lattice, b_lattice),
+        }
+    }
+
+    fn ideal_contains_element(&self, a: &Self::Ideal, x: &Self::Set) -> bool {
+        #[cfg(debug_assertions)]
+        {
+            self.check_ideal(a);
+            debug_assert!(self.is_element(x));
+        }
+
+        match a {
+            RingOfIntegersIdeal::Zero => self.is_zero(x),
+            RingOfIntegersIdeal::NonZero { lattice } => lattice.contains_element(x.coefficients()),
         }
     }
 
@@ -249,12 +241,7 @@ impl IdealArithmeticSignature for RingOfIntegersWithIntegralBasisStructure {
                 RingOfIntegersIdeal::NonZero { lattice: a_lattice },
                 RingOfIntegersIdeal::NonZero { lattice: b_lattice },
             ) => Self::Ideal::NonZero {
-                lattice: LinearSubspaceStructure::new(Integer::structure()).intersect_pair(
-                    self.degree(),
-                    1,
-                    a_lattice,
-                    b_lattice,
-                ),
+                lattice: FinitelyFreeSubmodule::intersect(a_lattice, b_lattice),
             },
             _ => Self::Ideal::Zero,
         }
@@ -274,12 +261,7 @@ impl IdealArithmeticSignature for RingOfIntegersWithIntegralBasisStructure {
                 RingOfIntegersIdeal::NonZero { lattice: a_lattice },
                 RingOfIntegersIdeal::NonZero { lattice: b_lattice },
             ) => Self::Ideal::NonZero {
-                lattice: LinearSubspaceStructure::new(Integer::structure()).sum_pair(
-                    self.degree(),
-                    1,
-                    a_lattice,
-                    b_lattice,
-                ),
+                lattice: FinitelyFreeSubmodule::add(a_lattice, b_lattice),
             },
         }
     }
@@ -299,14 +281,14 @@ impl IdealArithmeticSignature for RingOfIntegersWithIntegralBasisStructure {
                 let n = self.degree();
 
                 let a_basis = a_lattice
-                    .basis_matrices()
+                    .basis()
                     .into_iter()
-                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_coefficients(m))
                     .collect::<Vec<_>>();
                 let b_basis = b_lattice
-                    .basis_matrices()
+                    .basis()
                     .into_iter()
-                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_col(&m))
+                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_coefficients(m))
                     .collect::<Vec<_>>();
 
                 debug_assert_eq!(a_basis.len(), n);
@@ -365,7 +347,7 @@ mod tests {
             // (a + b sqrt(2)) * (1 + sqrt(2)) = a(1 + sqrt(2)) + b(2 + sqrt(2))
             assert!(roi.ideal_equal(
                 &roi.principal_ideal(&alpha),
-                &roi.ideal_from_integer_basis(vec![
+                &roi.ideal_from_integer_span(vec![
                     roi.try_anf_to_roi(&(1 + &x).into_verbose()).unwrap(),
                     roi.try_anf_to_roi(&(2 + &x).into_verbose()).unwrap()
                 ])
@@ -388,7 +370,7 @@ mod tests {
             // sum is 3
             assert!(roi.ideal_equal(
                 &alpha_beta_add,
-                &roi.ideal_from_integer_basis(vec![
+                &roi.ideal_from_integer_span(vec![
                     roi.try_anf_to_roi(&(3 * x.pow(0)).into_verbose()).unwrap(),
                     roi.try_anf_to_roi(&(3 * x.pow(1)).into_verbose()).unwrap()
                 ])
@@ -397,7 +379,7 @@ mod tests {
             // intersection is 30
             assert!(roi.ideal_equal(
                 &alpha_beta_intersect,
-                &roi.ideal_from_integer_basis(vec![
+                &roi.ideal_from_integer_span(vec![
                     roi.try_anf_to_roi(&(30 * x.pow(0)).into_verbose()).unwrap(),
                     roi.try_anf_to_roi(&(30 * x.pow(1)).into_verbose()).unwrap()
                 ])
@@ -406,7 +388,7 @@ mod tests {
             // product is 90
             assert!(roi.ideal_equal(
                 &alpha_beta_mul,
-                &roi.ideal_from_integer_basis(vec![
+                &roi.ideal_from_integer_span(vec![
                     roi.try_anf_to_roi(&(90 * x.pow(0)).into_verbose()).unwrap(),
                     roi.try_anf_to_roi(&(90 * x.pow(1)).into_verbose()).unwrap()
                 ])

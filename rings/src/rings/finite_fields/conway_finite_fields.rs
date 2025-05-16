@@ -45,12 +45,20 @@ impl ConwayFiniteFieldStructure {
         self.structure.to_col_vector(f)
     }
 
+    pub fn to_vector(&self, f: &Polynomial<Integer>) -> Vec<Integer> {
+        self.structure.to_vector(f)
+    }
+
     pub fn from_row_vector(&self, v: Matrix<Integer>) -> Polynomial<Integer> {
         self.structure.from_row_vector(v)
     }
 
     pub fn from_col_vector(&self, v: Matrix<Integer>) -> Polynomial<Integer> {
         self.structure.from_col_vector(v)
+    }
+
+    pub fn from_vector(&self, v: Vec<Integer>) -> Polynomial<Integer> {
+        self.structure.from_vector(v)
     }
 }
 
@@ -207,8 +215,11 @@ impl InjectiveFunction<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
 {
     fn try_preimage(&self, x: &Polynomial<Integer>) -> Option<Polynomial<Integer>> {
         Some(
-            self.domain()
-                .from_col_vector(self.inclusion.col_solve(&self.range().to_col_vector(x))?),
+            self.domain().from_vector(
+                self.inclusion
+                    .clone()
+                    .col_solve(&self.range().to_vector(x))?,
+            ),
         )
     }
 }

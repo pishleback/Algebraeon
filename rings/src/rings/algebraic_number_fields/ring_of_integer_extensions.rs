@@ -113,15 +113,12 @@ impl
             RingOfIntegersIdeal::Zero => Natural::ZERO,
             RingOfIntegersIdeal::NonZero { lattice } => {
                 let n = self.r_ring().degree();
-                let cols = lattice.basis_matrices();
+                let cols = lattice.basis();
                 #[cfg(debug_assertions)]
                 for col in &cols {
-                    assert_eq!(col.cols(), 1);
-                    assert_eq!(col.rows(), n);
+                    assert_eq!(col.len(), n);
                 }
-                let mat = Matrix::join_cols(n, cols);
-                debug_assert_eq!(mat.rows(), n);
-                debug_assert_eq!(mat.cols(), n);
+                let mat = Matrix::construct(n, n, |i, j| cols[i][j].clone());
                 mat.det().unwrap().abs()
             }
         }

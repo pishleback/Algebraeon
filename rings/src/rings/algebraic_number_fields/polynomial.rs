@@ -389,12 +389,11 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             //compute q_prime(y) in Q[y] such that αⁿ = q_prime(α)
             //then q(y) = yⁿ - q_prime(y) is such that q(α) = 0
             let q_prime_row = alpha_pow_mat
-                .row_solve(l_to_vec(l_reduced_ring.nat_pow(&alpha, &Natural::from(n))))
+                .clone()
+                .row_solve(&l_to_vec(l_reduced_ring.nat_pow(&alpha, &Natural::from(n))).get_row(0))
                 .unwrap();
             let q_prime = Polynomial::<Rational>::from_coeffs(
-                (0..n)
-                    .map(|c| q_prime_row.at(0, c).unwrap().clone())
-                    .collect(),
+                (0..n).map(|c| q_prime_row[c].clone()).collect(),
             );
             let q = Polynomial::add(&Polynomial::var_pow(n), &q_prime.neg());
             //assert q(α) = 0
@@ -415,12 +414,9 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             );
             let l_to_la = |x_in_l: Polynomial<Polynomial<Rational>>| -> Polynomial<Rational> {
                 let x_in_q = l_to_vec(x_in_l);
-                let x_in_la_vec = alpha_pow_mat.row_solve(x_in_q).unwrap();
-                let x_in_la = Polynomial::from_coeffs(
-                    (0..n)
-                        .map(|c| x_in_la_vec.at(0, c).unwrap().clone())
-                        .collect(),
-                );
+                let x_in_la_vec = alpha_pow_mat.clone().row_solve(&x_in_q.get_row(0)).unwrap();
+                let x_in_la =
+                    Polynomial::from_coeffs((0..n).map(|c| x_in_la_vec[c].clone()).collect());
                 x_in_la
             };
             #[cfg(any())]
@@ -521,17 +517,20 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
                     // );
 
                     let x_wrapping_pow_vec = lai_reduced_ring
-                        .to_row_vector(&lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg)));
-                    // println!("x_wrapping_pow_vec");
+                        .to_vector(&lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg)));
                     // x_wrapping_pow_vec.pprint();
                     //this is a vector containing the coefficients of (the coefficients of elements of K of) the polynomial pi_prime(x) in K[x] such that
                     //x^n = pi_prime(x)
                     //so pi(x) = x^n - pi_prime(x) is such that pi(x) = 0 and so is the irreducible factor of p we seek such that K[x]/pi(x) = Q[y]/qi(y)
                     let x_wrapping_pow_vec_coeffs =
-                        lai_basis_mat.row_solve(x_wrapping_pow_vec).unwrap();
+                        lai_basis_mat.row_solve(&x_wrapping_pow_vec).unwrap();
                     // println!("x_wrapping_pow_vec_coeffs");
                     // x_wrapping_pow_vec_coeffs.pprint();
-                    let pi_prime = row_to_double_poly(pi_deg, k_deg, x_wrapping_pow_vec_coeffs);
+                    let pi_prime = row_to_double_poly(
+                        pi_deg,
+                        k_deg,
+                        Matrix::from_rows(vec![x_wrapping_pow_vec_coeffs]),
+                    );
                     // println!("pi_prime = {}", pi_prime);
                     let pi = self.add(&self.var_pow(pi_deg), &pi_prime.neg());
                     // println!("pi = {}", pi);

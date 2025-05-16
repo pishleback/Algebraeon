@@ -1,3 +1,8 @@
+use crate::linear::{
+    finitely_free_modules::FinitelyFreeModuleStructure,
+    finitely_free_submodule::FinitelyFreeSubmodule,
+};
+
 use super::*;
 
 #[derive(Debug, Clone)]
@@ -101,7 +106,7 @@ where
         mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
         k: usize,
-    ) -> LinearSubspace<FS::Set> {
+    ) -> FinitelyFreeSubmodule<FS> {
         let n = mat.rows();
         assert_eq!(n, mat.cols());
         //compute ker((M - xI)^k)
@@ -124,16 +129,15 @@ where
         mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
         k: usize,
-    ) -> LinearSubspace<FS::Set> {
-        LinearSubspaceStructure::new(self.ring().clone())
-            .transpose(&self.generalized_col_eigenspace(&mat.transpose_ref(), eigenvalue, k))
+    ) -> FinitelyFreeSubmodule<FS> {
+        self.generalized_col_eigenspace(&mat.transpose_ref(), eigenvalue, k)
     }
 
     pub fn col_eigenspace(
         &self,
         mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
-    ) -> LinearSubspace<FS::Set> {
+    ) -> FinitelyFreeSubmodule<FS> {
         self.generalized_col_eigenspace(mat, eigenvalue, 1)
     }
 
@@ -141,7 +145,7 @@ where
         &self,
         mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
-    ) -> LinearSubspace<FS::Set> {
+    ) -> FinitelyFreeSubmodule<FS> {
         self.generalized_row_eigenspace(mat, eigenvalue, 1)
     }
 
@@ -156,7 +160,6 @@ where
 
         let ac_field = self.ring();
         let ac_mat_structure = self;
-        let ac_linlat_structure = LinearSubspaceStructure::new(ac_field.clone());
 
         let ac_mat = mat.apply_map(|x| self.ring().base_field_inclusion(x));
 
@@ -164,13 +167,13 @@ where
         let mut eigenvalues = vec![]; //store (gesp_basis, eigenvalue, multiplicity)
         for (eigenvalue, multiplicity) in self.eigenvalues_powers(mat.clone()) {
             let eigenspace = self.generalized_col_eigenspace(mat, &eigenvalue, multiplicity);
-            debug_assert_eq!(ac_linlat_structure.rank(&eigenspace), multiplicity);
-            basis.append(&mut ac_linlat_structure.basis_matrices(&eigenspace));
+            debug_assert_eq!(eigenspace.submodule_rank(), multiplicity);
+            basis.append(&mut eigenspace.basis());
             eigenvalues.push((eigenvalue, multiplicity));
         }
 
         //b = direct sum of generalized eigenspace
-        let gesp_basis = Matrix::join_cols(mat.rows(), basis);
+        let gesp_basis = Matrix::construct(mat.rows(), basis.len(), |r, c| basis[c][r].clone());
         //b^-1 * mat * b = block diagonal of generalized eigenspaces
         let gesp_blocks_mat = ac_mat_structure
             .mul(
@@ -185,10 +188,6 @@ where
                 idx_to_block.push(b);
             }
         }
-
-        // println!("{:?}", idx_to_block);
-        // println!("{:?}", eigenvalues);
-        // ac_mat_structure.pprint(&gesp_blocks_mat);
 
         //extract the blocks from the block diagonal gesp_blocks_mat
         let mut gesp_blocks = vec![];
@@ -215,8 +214,6 @@ where
             .map(|(eval, m, mat_t)| {
                 debug_assert_eq!(mat_t.rows(), m);
                 debug_assert_eq!(mat_t.cols(), m);
-                // println!("eval = {:?} m={}", eval, m);
-                // ac_mat_structure.pprint(&mat_t);
                 //all eigenvalues of T are eval
                 //let S = T - x I so that all eigenvlues of S are zero
                 let mat_s = ac_mat_structure
@@ -241,85 +238,66 @@ where
                     debug_assert!(
                         ac_mat_structure.equal(&ac_mat_structure.zero(m, m), &mat_s_pows[m])
                     );
-                    // for (i, spow) in mat_s_pows.iter().enumerate() {
-                    //     println!("s^{}", i);
-                    //     ac_mat_structure.pprint(&spow);
-                    // }
+
                     let mat_s_pow_kers = mat_s_pows
                         .into_iter()
                         .map(|s_mat_pow| ac_mat_structure.col_kernel(s_mat_pow))
                         .collect_vec();
                     // ker(S) in ker(S^2) in ker(S^3) in ...
-                    // for (i, ker) in mat_s_pow_kers.iter().enumerate() {
-                    //     println!("ker(s^{})", i);
-                    //     ac_linlat_structure.pprint(&ker);
-                    // }
 
-                    let mut accounted = ac_linlat_structure.zero(m, 1);
+                    let mut accounted = FinitelyFreeSubmodule::zero_submodule(
+                        FinitelyFreeModuleStructure::new(ac_field.clone(), m),
+                    );
                     let mut jordan_block_bases = vec![];
                     for k in (0..m).rev() {
                         //extend the basis by stuff in ker(S^{k+1}) but not in ker(S^k) and their images under S, and which are not already accounted for
-                        // println!("k = {} {}", k + 1, k);
-                        let ker_ext = ac_linlat_structure.from_basis(
-                            m,
-                            1,
-                            ac_linlat_structure
-                                .extension_basis(&mat_s_pow_kers[k], &mat_s_pow_kers[k + 1]),
+                        let ker_ext = FinitelyFreeSubmodule::from_span(
+                            FinitelyFreeModuleStructure::new(ac_field.clone(), m),
+                            FinitelyFreeSubmodule::extension_basis(
+                                &mat_s_pow_kers[k],
+                                &mat_s_pow_kers[k + 1],
+                            )
+                            .iter()
+                            .collect(),
                         );
 
-                        let unaccounted_ker_ext_basis = ac_linlat_structure.extension_basis(
-                            &ac_linlat_structure.intersect_pair(m, 1, &accounted, &ker_ext),
+                        let unaccounted_ker_ext_basis = FinitelyFreeSubmodule::extension_basis(
+                            &FinitelyFreeSubmodule::intersect(&accounted, &ker_ext),
                             &ker_ext,
                         );
-                        // let unaccounted_ker_ext =
-                        //     ac_linlat_structure.from_basis(m, 1, unaccounted_ker_ext_basis.clone());
 
                         for ukeb in unaccounted_ker_ext_basis {
                             //one new jordan block for each ukeb
-                            // println!("ukeb");
-                            // ac_mat_structure.pprint(&ukeb);
 
                             let mut jb_basis = vec![ukeb];
                             for _i in 0..k {
                                 let ukeb_img = ac_mat_structure
-                                    .mul(&mat_s, &jb_basis.last().unwrap())
+                                    .mul(
+                                        &mat_s,
+                                        &Matrix::construct(m, 1, |r, _| {
+                                            jb_basis.last().unwrap()[r].clone()
+                                        }),
+                                    )
                                     .unwrap();
-                                // println!("ukeb_img #{}", i);
+                                assert_eq!(ukeb_img.cols(), 1);
+                                assert_eq!(ukeb_img.rows(), m);
                                 // ac_mat_structure.pprint(&ukeb_img);
-                                jb_basis.push(ukeb_img);
+                                jb_basis.push(ukeb_img.get_col(0));
                             }
 
-                            accounted = ac_linlat_structure.sum_pair(
-                                m,
-                                1,
+                            accounted = FinitelyFreeSubmodule::add(
                                 &accounted,
-                                &ac_linlat_structure.from_basis(m, 1, jb_basis.clone()),
+                                &FinitelyFreeSubmodule::from_span(
+                                    FinitelyFreeModuleStructure::new(ac_field.clone(), m),
+                                    jb_basis.iter().collect(),
+                                ),
                             );
-
                             jordan_block_bases.push(jb_basis.into_iter().rev().collect_vec());
                         }
                     }
 
-                    // println!(
-                    //     "jb sizes = {:?}",
-                    //     jordan_block_bases.iter().map(|v| v.len()).collect_vec()
-                    // );
-
                     jordan_block_bases
-
-                    // Matrix::join_cols(m, jordan_block_bases.into_iter().flatten().collect_vec())
                 };
-
-                // println!("gesp_jordan_basis");
-                // ac_mat_structure.pprint(&jb_basis);
-                // ac_mat_structure.pprint(
-                //     &ac_mat_structure
-                //         .mul(
-                //             &ac_mat_structure.inv(jb_basis.clone()).unwrap(),
-                //             &ac_mat_structure.mul(&mat_t, &jb_basis).unwrap(),
-                //         )
-                //         .unwrap(),
-                // );
 
                 (eval, m, jb_basis)
             })
@@ -337,7 +315,13 @@ where
                 });
                 eigenblock_basis.append(&mut block);
             }
-            jnf_basis_rel_gesp_basis.push(Matrix::join_cols(mult, eigenblock_basis));
+            jnf_basis_rel_gesp_basis.push(Matrix::join_cols(
+                mult,
+                eigenblock_basis
+                    .into_iter()
+                    .map(|col| Matrix::from_cols(vec![col]))
+                    .collect(),
+            ));
         }
         let jnf = JordanNormalForm {
             field: self.ring().clone(),

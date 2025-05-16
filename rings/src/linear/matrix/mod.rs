@@ -1,10 +1,8 @@
-use super::linear_subspace::*;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use std::borrow::Borrow;
 
 mod gram_schmidt;
 mod hermite_reduction;
@@ -15,7 +13,7 @@ mod primitive;
 mod row_operations;
 mod smith_normal_form;
 
-// pub use hermite_reduction::*;
+pub use hermite_reduction::*;
 pub use matrix::*;
 // pub use polynomial::*;
 use row_operations::*;

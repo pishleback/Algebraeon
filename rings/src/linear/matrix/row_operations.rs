@@ -35,7 +35,7 @@ pub struct ElementaryOpp<RS: RingSignature> {
     opp: ElementaryOppType<RS>,
 }
 
-impl<RS: BezoutDomainSignature> ElementaryOpp<RS> {
+impl<RS: IntegralDomainSignature> ElementaryOpp<RS> {
     fn check_invariants(&self) -> Result<(), &'static str> {
         match &self.opp {
             ElementaryOppType::Swap(i, j) => {
