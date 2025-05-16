@@ -26,7 +26,8 @@ pub trait Camera {
 
     fn window_event(
         &mut self,
-        mouse_pos: &PhysicalPosition<f64>,
+        display_size: PhysicalSize<u32>,
+        mouse_pos: PhysicalPosition<f64>,
         event_loop: &ActiveEventLoop,
         id: WindowId,
         event: &WindowEvent,
@@ -128,7 +129,8 @@ impl Camera for MouseWheelZoomCamera {
 
     fn window_event(
         &mut self,
-        mouse_pos: &PhysicalPosition<f64>,
+        display_size: PhysicalSize<u32>,
+        mouse_pos: PhysicalPosition<f64>,
         event_loop: &ActiveEventLoop,
         id: WindowId,
         event: &WindowEvent,
@@ -143,7 +145,7 @@ impl Camera for MouseWheelZoomCamera {
                     winit::event::MouseScrollDelta::PixelDelta(pos) => pos.y,
                     winit::event::MouseScrollDelta::LineDelta(x, y) => *y as f64,
                 };
-                self.zoom_event(mouse_pos, 0.8f64.powf(dy));
+                self.zoom_event(display_size, mouse_pos, 0.8f64.powf(dy));
             }
             _ => {}
         }
@@ -151,9 +153,18 @@ impl Camera for MouseWheelZoomCamera {
 }
 
 impl MouseWheelZoomCamera {
-    fn zoom_event(&mut self, center: &PhysicalPosition<f64>, mult: f64) {
+    fn zoom_event(
+        &mut self,
+        display_size: PhysicalSize<u32>,
+        center: PhysicalPosition<f64>,
+        mult: f64,
+    ) {
         // println!("{:?} {:?}", center, mult);
+        let center_before = self.pixel_to_coord(display_size, center);
         self.sqrt_area *= mult;
+        let center_after = self.pixel_to_coord(display_size, center);
+        self.mid_x += center_before.0 - center_after.0;
+        self.mid_y += center_before.1 - center_after.1;
     }
 }
 
@@ -436,8 +447,13 @@ impl Canvas for Canvas2D {
         id: WindowId,
         event: WindowEvent,
     ) {
-        self.camera
-            .window_event(&self.mouse_pos, event_loop, id, &event);
+        self.camera.window_event(
+            window_state.wgpu_state.size,
+            self.mouse_pos,
+            event_loop,
+            id,
+            &event,
+        );
 
         match event {
             WindowEvent::CloseRequested => {
