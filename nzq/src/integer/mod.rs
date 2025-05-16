@@ -593,3 +593,186 @@ impl CountableSetSignature for IntegerCanonicalStructure {
             .map(|n| Integer::from_malachite(n))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_int_to_uint() {
+        // u8
+        assert_eq!(
+            <&Integer as TryInto<u8>>::try_into(&Integer::from_str("0").unwrap()),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u8>>::try_into(&Integer::from_str("255").unwrap()),
+            Ok(255)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u8>>::try_into(&Integer::from_str("256").unwrap()),
+            Err(())
+        );
+
+        // u16
+        assert_eq!(
+            <&Integer as TryInto<u16>>::try_into(&Integer::from_str("65535").unwrap()),
+            Ok(65535)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u16>>::try_into(&Integer::from_str("65536").unwrap()),
+            Err(())
+        );
+
+        // u32
+        assert_eq!(
+            <&Integer as TryInto<u32>>::try_into(&Integer::from_str("4294967295").unwrap()),
+            Ok(4294967295)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u32>>::try_into(&Integer::from_str("4294967296").unwrap()),
+            Err(())
+        );
+
+        // u64
+        assert_eq!(
+            <&Integer as TryInto<u64>>::try_into(
+                &Integer::from_str("18446744073709551615").unwrap()
+            ),
+            Ok(18446744073709551615)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u64>>::try_into(
+                &Integer::from_str("18446744073709551616").unwrap()
+            ),
+            Err(())
+        );
+
+        // u128
+        assert_eq!(
+            <&Integer as TryInto<u128>>::try_into(
+                &Integer::from_str("340282366920938463463374607431768211455").unwrap()
+            ),
+            Ok(340282366920938463463374607431768211455)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u128>>::try_into(
+                &Integer::from_str("340282366920938463463374607431768211456").unwrap()
+            ),
+            Err(())
+        );
+    }
+
+    #[test]
+    fn test_int_to_int() {
+        // i8
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("-129").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("-128").unwrap()),
+            Ok(-128)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("0").unwrap()),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("127").unwrap()),
+            Ok(127)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("128").unwrap()),
+            Err(())
+        );
+
+        // i16
+        assert_eq!(
+            <&Integer as TryInto<i16>>::try_into(&Integer::from_str("-32769").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i16>>::try_into(&Integer::from_str("-32768").unwrap()),
+            Ok(-32768)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i16>>::try_into(&Integer::from_str("32767").unwrap()),
+            Ok(32767)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i16>>::try_into(&Integer::from_str("32768").unwrap()),
+            Err(())
+        );
+
+        // i32
+        assert_eq!(
+            <&Integer as TryInto<i32>>::try_into(&Integer::from_str("-2147483649").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i32>>::try_into(&Integer::from_str("-2147483648").unwrap()),
+            Ok(-2147483648)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i32>>::try_into(&Integer::from_str("2147483647").unwrap()),
+            Ok(2147483647)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i32>>::try_into(&Integer::from_str("2147483648").unwrap()),
+            Err(())
+        );
+
+        // i64
+        assert_eq!(
+            <&Integer as TryInto<i64>>::try_into(
+                &Integer::from_str("-9223372036854775809").unwrap()
+            ),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i64>>::try_into(
+                &Integer::from_str("-9223372036854775808").unwrap()
+            ),
+            Ok(-9223372036854775808)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i64>>::try_into(
+                &Integer::from_str("9223372036854775807").unwrap()
+            ),
+            Ok(9223372036854775807)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i64>>::try_into(
+                &Integer::from_str("9223372036854775808").unwrap()
+            ),
+            Err(())
+        );
+
+        // i128
+        assert_eq!(
+            <&Integer as TryInto<i128>>::try_into(
+                &Integer::from_str("-170141183460469231731687303715884105729").unwrap()
+            ),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i128>>::try_into(
+                &Integer::from_str("-170141183460469231731687303715884105728").unwrap()
+            ),
+            Ok(-170141183460469231731687303715884105728)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i128>>::try_into(
+                &Integer::from_str("170141183460469231731687303715884105727").unwrap()
+            ),
+            Ok(170141183460469231731687303715884105727)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i128>>::try_into(
+                &Integer::from_str("170141183460469231731687303715884105728").unwrap()
+            ),
+            Err(())
+        );
+    }
+}
