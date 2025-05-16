@@ -628,7 +628,6 @@ macro_rules! impl_try_into_unsigned {
                             }
                         },
                         2 => {
-                            #[allow(unused_comparisons)]
                             if std::mem::size_of::<$t>() >= 16 {
                                 let low = limbs[0] as u128;
                                 let high = limbs[1] as u128;
@@ -676,7 +675,6 @@ macro_rules! impl_try_into_signed {
                             }
                         },
                         2 => {
-                            #[allow(unused_comparisons)]
                             if std::mem::size_of::<$t>() >= 16 {
                                 let low = limbs[0] as u128;
                                 let high = limbs[1] as u128;
