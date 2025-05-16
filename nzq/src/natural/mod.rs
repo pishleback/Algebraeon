@@ -635,7 +635,41 @@ macro_rules! impl_try_into_unsigned {
     };
 }
 
+macro_rules! impl_try_into_signed {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Natural {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
+            }
+            impl TryInto<$t> for &Natural {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    let limbs = self.0.to_limbs_asc();
+                    if limbs.len() == 0 {
+                        Ok(0)
+                    } else if limbs.len() == 1 {
+                        let n = limbs[0] as i128;
+                        if n > <$t>::MAX as i128 {
+                            Err(())
+                        } else {
+                            Ok(n as $t)
+                        }
+                    } else {
+                        Err(())
+                    }
+                }
+            }
+        )*
+    };
+}
+
 impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
+impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
 
 impl CountableSetSignature for NaturalCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
