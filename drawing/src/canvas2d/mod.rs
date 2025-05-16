@@ -40,7 +40,10 @@ pub trait Camera {
         display_size: PhysicalSize<u32>,
         wgpu: (f64, f64),
     ) -> PhysicalPosition<f64> {
-        todo!()
+        PhysicalPosition::new(
+            display_size.width as f64 * (wgpu.0 + 1.0) / 2.0,
+            display_size.height as f64 * (-wgpu.1 + 1.0) / 2.0,
+        )
     }
 
     fn wgpu_to_coord(&self, display_size: PhysicalSize<u32>, wgpu: (f64, f64)) -> (f64, f64) {
@@ -57,7 +60,14 @@ pub trait Camera {
     }
 
     fn coord_to_wgpu(&self, display_size: PhysicalSize<u32>, coord: (f64, f64)) -> (f64, f64) {
-        todo!()
+        let uniform = self.get_uniform(display_size);
+        let [[a, b], [c, d]] = uniform.matrix;
+        let [x, y] = uniform.shift;
+        let v = coord;
+        (
+            a as f64 * v.0 + b as f64 * v.1 + x as f64,
+            c as f64 * v.0 + d as f64 * v.1 + y as f64,
+        )
     }
 
     fn pixel_to_coord(
@@ -429,10 +439,15 @@ impl Canvas for Canvas2D {
             } => match (button, state) {
                 (winit::event::MouseButton::Left, winit::event::ElementState::Pressed) => {
                     println!(
-                        "{:?} -> {:?}",
+                        "{:?} -> {:?} -> {:?}",
                         self.mouse_pos,
                         self.camera
-                            .pixel_to_coord(window_state.wgpu_state.size, self.mouse_pos)
+                            .pixel_to_coord(window_state.wgpu_state.size, self.mouse_pos),
+                        self.camera.coord_to_pixel(
+                            window_state.wgpu_state.size,
+                            self.camera
+                                .pixel_to_coord(window_state.wgpu_state.size, self.mouse_pos)
+                        )
                     );
                 }
                 _ => {}
