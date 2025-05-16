@@ -602,32 +602,102 @@ impl Natural {
     }
 }
 
-impl TryInto<usize> for Natural {
-    type Error = ();
+macro_rules! impl_try_into_unsigned {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Natural {
+                type Error = ();
 
-    fn try_into(self) -> Result<usize, Self::Error> {
-        (&self).try_into()
-    }
-}
-impl TryInto<usize> for &Natural {
-    type Error = ();
-
-    fn try_into(self) -> Result<usize, Self::Error> {
-        let limbs = self.0.to_limbs_asc();
-        if limbs.len() == 0 {
-            Ok(0)
-        } else if limbs.len() == 1 {
-            let n = limbs[0];
-            if Natural::from(n) > Natural::from(usize::MAX) {
-                Err(())
-            } else {
-                Ok(n as usize)
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
             }
-        } else {
-            Err(())
-        }
-    }
+            impl TryInto<$t> for &Natural {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    let limbs = self.0.to_limbs_asc();
+                    match limbs.len() {
+                        0 => Ok(0),
+                        1 => {
+                            let n = limbs[0];
+                            if Natural::from(n) > Natural::from(<$t>::MAX) {
+                                Err(())
+                            } else {
+                                Ok(n as $t)
+                            }
+                        },
+                        2 => {
+                            if std::mem::size_of::<$t>() >= 16 {
+                                let low = limbs[0] as u128;
+                                let high = limbs[1] as u128;
+                                let value = (high << 64) | low;
+                                if value > <$t>::MAX as u128 {
+                                    Err(())
+                                } else {
+                                    Ok(value as $t)
+                                }
+                            } else {
+                                Err(())
+                            }
+                        },
+                        _ => Err(()),
+                    }
+                }
+            }
+        )*
+    };
 }
+
+macro_rules! impl_try_into_signed {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Natural {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
+            }
+            impl TryInto<$t> for &Natural {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    let limbs = self.0.to_limbs_asc();
+                    match limbs.len() {
+                        0 => Ok(0),
+                        1 => {
+                            let n = limbs[0] as i128;
+                            if n > <$t>::MAX as i128 {
+                                Err(())
+                            } else {
+                                Ok(n as $t)
+                            }
+                        },
+                        2 => {
+                            if std::mem::size_of::<$t>() >= 16 {
+                                let low = limbs[0] as u128;
+                                let high = limbs[1] as u128;
+                                let value = (high << 64) | low;
+                                if value > <$t>::MAX as u128 {
+                                    Err(())
+                                } else {
+                                    Ok(value as $t)
+                                }
+                            } else {
+                                Err(())
+                            }
+                        },
+                        _ => Err(()),
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
+impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
 
 impl CountableSetSignature for NaturalCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
@@ -655,6 +725,136 @@ mod tests {
         assert_eq!(
             <&Natural as TryInto<usize>>::try_into(&Natural::from(2u8)).unwrap(),
             2
+        );
+    }
+
+    #[test]
+    fn test_nat_to_uint() {
+        // u8
+        assert_eq!(
+            <&Natural as TryInto<u8>>::try_into(&Natural::from_str("0").unwrap()),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Natural as TryInto<u8>>::try_into(&Natural::from_str("255").unwrap()),
+            Ok(255)
+        );
+        assert_eq!(
+            <&Natural as TryInto<u8>>::try_into(&Natural::from_str("256").unwrap()),
+            Err(())
+        );
+
+        // u16
+        assert_eq!(
+            <&Natural as TryInto<u16>>::try_into(&Natural::from_str("65535").unwrap()),
+            Ok(65535)
+        );
+        assert_eq!(
+            <&Natural as TryInto<u16>>::try_into(&Natural::from_str("65536").unwrap()),
+            Err(())
+        );
+
+        // u32
+        assert_eq!(
+            <&Natural as TryInto<u32>>::try_into(&Natural::from_str("4294967295").unwrap()),
+            Ok(4294967295)
+        );
+        assert_eq!(
+            <&Natural as TryInto<u32>>::try_into(&Natural::from_str("4294967296").unwrap()),
+            Err(())
+        );
+
+        // u64
+        assert_eq!(
+            <&Natural as TryInto<u64>>::try_into(
+                &Natural::from_str("18446744073709551615").unwrap()
+            ),
+            Ok(18446744073709551615)
+        );
+        assert_eq!(
+            <&Natural as TryInto<u64>>::try_into(
+                &Natural::from_str("18446744073709551616").unwrap()
+            ),
+            Err(())
+        );
+
+        // u128
+        assert_eq!(
+            <&Natural as TryInto<u128>>::try_into(
+                &Natural::from_str("340282366920938463463374607431768211455").unwrap()
+            ),
+            Ok(340282366920938463463374607431768211455)
+        );
+        assert_eq!(
+            <&Natural as TryInto<u128>>::try_into(
+                &Natural::from_str("340282366920938463463374607431768211456").unwrap()
+            ),
+            Err(())
+        );
+    }
+
+    #[test]
+    fn test_nat_to_int() {
+        // i8
+        assert_eq!(
+            <&Natural as TryInto<i8>>::try_into(&Natural::from_str("0").unwrap()),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Natural as TryInto<i8>>::try_into(&Natural::from_str("127").unwrap()),
+            Ok(127)
+        );
+        assert_eq!(
+            <&Natural as TryInto<i8>>::try_into(&Natural::from_str("128").unwrap()),
+            Err(())
+        );
+
+        // i16
+        assert_eq!(
+            <&Natural as TryInto<i16>>::try_into(&Natural::from_str("32767").unwrap()),
+            Ok(32767)
+        );
+        assert_eq!(
+            <&Natural as TryInto<i16>>::try_into(&Natural::from_str("32768").unwrap()),
+            Err(())
+        );
+
+        // i32
+        assert_eq!(
+            <&Natural as TryInto<i32>>::try_into(&Natural::from_str("2147483647").unwrap()),
+            Ok(2147483647)
+        );
+        assert_eq!(
+            <&Natural as TryInto<i32>>::try_into(&Natural::from_str("2147483648").unwrap()),
+            Err(())
+        );
+
+        // i64
+        assert_eq!(
+            <&Natural as TryInto<i64>>::try_into(
+                &Natural::from_str("9223372036854775807").unwrap()
+            ),
+            Ok(9223372036854775807)
+        );
+        assert_eq!(
+            <&Natural as TryInto<i64>>::try_into(
+                &Natural::from_str("9223372036854775808").unwrap()
+            ),
+            Err(())
+        );
+
+        // i128
+        assert_eq!(
+            <&Natural as TryInto<i128>>::try_into(
+                &Natural::from_str("170141183460469231731687303715884105727").unwrap()
+            ),
+            Ok(170141183460469231731687303715884105727)
+        );
+        assert_eq!(
+            <&Natural as TryInto<i128>>::try_into(
+                &Natural::from_str("170141183460469231731687303715884105728").unwrap()
+            ),
+            Err(())
         );
     }
 
