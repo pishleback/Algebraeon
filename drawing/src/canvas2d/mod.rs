@@ -1,6 +1,5 @@
 use crate::canvas::*;
-use bytemuck::Zeroable;
-use std::{ops::Div, sync::Arc};
+use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
