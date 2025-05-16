@@ -154,18 +154,28 @@ macro_rules! impl_try_into_unsigned {
                     if self < &Integer::ZERO {
                         Err(())
                     } else {
-                        let limbs = self.0.to_twos_complement_limbs_asc();
-                        if limbs.len() == 0 {
-                            Ok(0)
-                        } else if limbs.len() == 1 {
-                            let n = limbs[0];
-                            if Integer::from(n) > Integer::from(<$t>::MAX) {
-                                Err(())
-                            } else {
-                                Ok(n as $t)
-                            }
-                        } else {
+                        if self > &Integer::from(<$t>::MAX) {
                             Err(())
+                        } else {
+                            let limbs = self.to_malachite_ref().to_twos_complement_limbs_asc();
+                            match limbs.len() {
+                                0 => {
+                                    Ok(0)
+                                }
+                                1 => {
+                                    Ok(limbs[0] as $t)
+                                }
+                                2 | 3 => {
+                                    if limbs.len() == 3 {
+                                        debug_assert!(limbs[2] == 0); // malachite sometimes adds a 0 on the end for some reason
+                                    }
+                                    let low = limbs[0] as u128;
+                                    let high = limbs[1] as u128;
+                                    let value = (high << 64) | low;
+                                    Ok(value as $t)
+                                }
+                                _ => {unreachable!()}
+                            }
                         }
                     }
                 }
@@ -188,18 +198,30 @@ macro_rules! impl_try_into_signed {
                 type Error = ();
 
                 fn try_into(self) -> Result<$t, Self::Error> {
-                    let limbs = self.0.to_twos_complement_limbs_asc();
-                    if limbs.len() == 0 {
-                        Ok(0)
-                    } else if limbs.len() == 1 {
-                        let n = limbs[0] as i128;
-                        if n < <$t>::MIN as i128 || n > <$t>::MAX as i128 {
-                            Err(())
-                        } else {
-                            Ok(n as $t)
-                        }
-                    } else {
+                    if self > &Integer::from(<$t>::MAX) {
                         Err(())
+                    } else if self < &Integer::from(<$t>::MIN) {
+                        Err(())
+                    } else {
+                        let limbs = self.to_malachite_ref().to_twos_complement_limbs_asc();
+                        match limbs.len() {
+                            0 => {
+                                Ok(0)
+                            }
+                            1 => {
+                                Ok(limbs[0] as $t)
+                            }
+                            2 | 3 => {
+                                if limbs.len() == 3 {
+                                    debug_assert!(limbs[2] == 0); // malachite sometimes adds a 0 on the end for some reason
+                                }
+                                let low = limbs[0] as u128;
+                                let high = limbs[1] as u128;
+                                let value = (high << 64) | low;
+                                Ok(value as $t)
+                            }
+                            _ => {unreachable!()}
+                        }
                     }
                 }
             }
