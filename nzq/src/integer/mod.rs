@@ -137,6 +137,79 @@ impl TryFrom<&Rational> for Integer {
     }
 }
 
+macro_rules! impl_try_into_unsigned {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Integer {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
+            }
+            impl TryInto<$t> for &Integer {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    if self < &Integer::ZERO {
+                        Err(())
+                    } else {
+                        let limbs = self.0.to_twos_complement_limbs_asc();
+                        if limbs.len() == 0 {
+                            Ok(0)
+                        } else if limbs.len() == 1 {
+                            let n = limbs[0];
+                            if Integer::from(n) > Integer::from(<$t>::MAX) {
+                                Err(())
+                            } else {
+                                Ok(n as $t)
+                            }
+                        } else {
+                            Err(())
+                        }
+                    }
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_try_into_signed {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Integer {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
+            }
+            impl TryInto<$t> for &Integer {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    let limbs = self.0.to_twos_complement_limbs_asc();
+                    if limbs.len() == 0 {
+                        Ok(0)
+                    } else if limbs.len() == 1 {
+                        let n = limbs[0] as i128;
+                        if n < <$t>::MIN as i128 || n > <$t>::MAX as i128 {
+                            Err(())
+                        } else {
+                            Ok(n as $t)
+                        }
+                    } else {
+                        Err(())
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
+impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
+
 impl Into<f64> for Integer {
     fn into(self) -> f64 {
         if self < Integer::ZERO {
