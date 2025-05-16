@@ -14,5 +14,5 @@ fn main() {
         }
     }
 
-    println!("cargo:rerun-if-changed=build.rs");
+    lalrpop::process_src().unwrap();
 }
