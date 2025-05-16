@@ -665,17 +665,32 @@ macro_rules! impl_try_into_signed {
 
                 fn try_into(self) -> Result<$t, Self::Error> {
                     let limbs = self.0.to_limbs_asc();
-                    if limbs.len() == 0 {
-                        Ok(0)
-                    } else if limbs.len() == 1 {
-                        let n = limbs[0] as i128;
-                        if n > <$t>::MAX as i128 {
-                            Err(())
-                        } else {
-                            Ok(n as $t)
-                        }
-                    } else {
-                        Err(())
+                    match limbs.len() {
+                        0 => Ok(0),
+                        1 => {
+                            let n = limbs[0] as i128;
+                            if n > <$t>::MAX as i128 {
+                                Err(())
+                            } else {
+                                Ok(n as $t)
+                            }
+                        },
+                        2 => {
+                            #[allow(unused_comparisons)]
+                            if std::mem::size_of::<$t>() >= 16 {
+                                let low = limbs[0] as u128;
+                                let high = limbs[1] as u128;
+                                let value = (high << 64) | low;
+                                if value > <$t>::MAX as u128 {
+                                    Err(())
+                                } else {
+                                    Ok(value as $t)
+                                }
+                            } else {
+                                Err(())
+                            }
+                        },
+                        _ => Err(()),
                     }
                 }
             }
