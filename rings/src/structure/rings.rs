@@ -122,6 +122,19 @@ where
 }
 impl<R: MetaType> MetaSemiRing for R where Self::Signature: SemiRingSignature {}
 
+pub trait CharacteristicSignature: SemiRingSignature {
+    fn characteristic(&self) -> Natural;
+}
+pub trait MetaCharacteristic: MetaType
+where
+    Self::Signature: CharacteristicSignature,
+{
+    fn characteristic() -> Natural {
+        Self::structure().characteristic()
+    }
+}
+impl<R: MetaType> MetaCharacteristic for R where Self::Signature: CharacteristicSignature {}
+
 pub trait RingSignature: SemiRingSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
@@ -603,11 +616,8 @@ impl<FS: FieldSignature> BezoutDomainSignature for FS {
     }
 }
 
-pub trait CharZeroRingSignature: RingSignature {
-    fn characteristic(&self) -> Natural {
-        Natural::ZERO
-    }
-
+ // A trait to indicate that characteristic() always returns 0
+pub trait CharZeroRingSignature: RingSignature + CharacteristicSignature {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
 }
 pub trait MetaCharZeroRing: MetaRing
@@ -685,10 +695,6 @@ impl<FS: FiniteFieldSignature, R: Rng> Iterator for FiniteFieldRandomElementGene
 pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature {
     // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(&self) -> (Natural, Natural);
-
-    fn characteristic(&self) -> Natural {
-        self.characteristic_and_power().0
-    }
 
     fn all_elements(&self) -> Vec<Self::Set> {
         let mut elems = vec![self.zero()];

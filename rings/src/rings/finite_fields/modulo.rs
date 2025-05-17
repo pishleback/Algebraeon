@@ -176,6 +176,12 @@ impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {
     }
 }
 
+impl<const N: usize> CharacteristicSignature for ModuloCanonicalStructure<N> {
+    fn characteristic(&self) -> Natural {
+        Natural::from(N)
+    }
+}
+
 impl<const N: usize> RingSignature for ModuloCanonicalStructure<N> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         if a.x == 0 {

@@ -777,6 +777,12 @@ pub mod structure {
         }
     }
 
+    impl CharacteristicSignature for PAdicAlgebraicStructure {
+        fn characteristic(&self) -> Natural {
+            Natural::ZERO
+        }
+    }
+
     impl RingSignature for PAdicAlgebraicStructure {
         fn neg(&self, a: &Self::Set) -> Self::Set {
             debug_assert!(self.is_element(a));
