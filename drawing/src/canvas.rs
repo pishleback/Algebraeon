@@ -1,6 +1,7 @@
 use std::{cell::OnceCell, sync::Arc};
 use winit::{
     application::ApplicationHandler,
+    dpi::PhysicalSize,
     event::WindowEvent,
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
@@ -126,7 +127,10 @@ impl<C: Canvas> ApplicationHandler for CanvasApplicationHandler<C> {
             .get_or_init(|| {
                 Arc::new(
                     event_loop
-                        .create_window(Window::default_attributes())
+                        .create_window(
+                            Window::default_attributes()
+                                .with_inner_size(PhysicalSize::new(2000, 1600)),
+                        )
                         .unwrap(),
                 )
             })
