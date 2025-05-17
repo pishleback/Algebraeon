@@ -10,7 +10,7 @@
   - [Sets]()
   - [Rings]()
 - [Numbers]()
-  - [Naturals]()
+  - [Naturals](./numbers/naturals.md)
   - [Integers]()
   - [Rationals]()
   - [Modular Arithmetic]()
