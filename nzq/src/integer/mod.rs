@@ -264,6 +264,22 @@ impl Integer {
     pub const ZERO: Self = Self(malachite_nz::integer::Integer::ZERO);
     pub const ONE: Self = Self(malachite_nz::integer::Integer::ONE);
     pub const TWO: Self = Self(malachite_nz::integer::Integer::TWO);
+
+    pub fn sqrt_if_square(&self) -> Option<Natural> {
+        if self < &Integer::ZERO {
+            None
+        } else {
+            self.abs().sqrt_if_square()
+        }
+    }
+
+    pub fn is_square(&self) -> bool {
+        if self < &Integer::ZERO {
+            false
+        } else {
+            self.abs().is_square()
+        }
+    }
 }
 
 impl PartialEq<Natural> for Integer {
