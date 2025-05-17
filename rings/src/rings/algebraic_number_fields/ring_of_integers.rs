@@ -416,6 +416,12 @@ impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
+impl CharacteristicSignature for RingOfIntegersWithIntegralBasisStructure {
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
+    }
+}
+
 impl RingSignature for RingOfIntegersWithIntegralBasisStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         a.neg_ref()
