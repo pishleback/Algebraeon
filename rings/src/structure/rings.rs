@@ -125,6 +125,8 @@ impl<R: MetaType> MetaSemiRing for R where Self::Signature: SemiRingSignature {}
 pub trait RingSignature: SemiRingSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
+    fn characteristic(&self) -> Natural;
+
     fn from_int(&self, x: impl Into<Integer>) -> Self::Set {
         let x = x.into();
         if x < Integer::ZERO {

@@ -26,6 +26,10 @@ impl RingSignature for RationalCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         -a
     }
+
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
+    }
 }
 
 impl UnitsSignature for RationalCanonicalStructure {

@@ -420,6 +420,10 @@ impl RingSignature for RingOfIntegersWithIntegralBasisStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         a.neg_ref()
     }
+
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
+    }
 }
 
 impl UnitsSignature for RingOfIntegersWithIntegralBasisStructure {
