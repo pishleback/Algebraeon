@@ -604,6 +604,10 @@ impl<FS: FieldSignature> BezoutDomainSignature for FS {
 }
 
 pub trait CharZeroRingSignature: RingSignature {
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
+    }
+
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
 }
 pub trait MetaCharZeroRing: MetaRing
@@ -681,6 +685,10 @@ impl<FS: FiniteFieldSignature, R: Rng> Iterator for FiniteFieldRandomElementGene
 pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature {
     // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(&self) -> (Natural, Natural);
+
+    fn characteristic(&self) -> Natural {
+        self.characteristic_and_power().0
+    }
 
     fn all_elements(&self) -> Vec<Self::Set> {
         let mut elems = vec![self.zero()];
