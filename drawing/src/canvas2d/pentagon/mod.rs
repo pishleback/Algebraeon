@@ -2,7 +2,7 @@ use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::Device
 
 use crate::canvas::WgpuState;
 
-use super::Canvas2DItem;
+use super::{Canvas2DItem, Canvas2DItemWgpu};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -57,8 +57,20 @@ pub struct PentagonWgpu {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-impl PentagonWgpu {
-    pub fn new(wgpu_state: &WgpuState, camera_bind_group_layout: &BindGroupLayout) -> Self {
+pub struct Pentagon {}
+
+impl Pentagon {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Canvas2DItem for Pentagon {
+    fn new(
+        &self,
+        wgpu_state: &WgpuState,
+        camera_bind_group_layout: &BindGroupLayout,
+    ) -> Box<dyn Canvas2DItemWgpu> {
         let vertex_buffer =
             wgpu_state
                 .device
@@ -143,17 +155,17 @@ impl PentagonWgpu {
                     cache: None,
                 });
 
-        Self {
+      Box::new(  PentagonWgpu {
             vertex_buffer,
             num_vertices,
             index_buffer,
             num_indices,
             render_pipeline,
-        }
+        })
     }
 }
 
-impl Canvas2DItem for PentagonWgpu {
+impl Canvas2DItemWgpu for PentagonWgpu {
     fn render(
         &mut self,
         encoder: &mut CommandEncoder,

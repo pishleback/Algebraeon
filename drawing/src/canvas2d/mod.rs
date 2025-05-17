@@ -8,6 +8,8 @@ use winit::{
     window::{Window, WindowId},
 };
 
+pub mod pentagon;
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CameraUniform {
@@ -169,10 +171,11 @@ impl MouseWheelZoomCamera {
 
 pub struct Canvas2D {
     mouse_pos: PhysicalPosition<f64>,
+    items: Vec<Box<dyn Canvas2DItem>>,
     camera: Box<dyn Camera>,
 }
 
-pub trait Canvas2DItem {
+pub trait Canvas2DItemWgpu {
     fn render(
         &mut self,
         encoder: &mut CommandEncoder,
@@ -181,17 +184,24 @@ pub trait Canvas2DItem {
     ) -> Result<(), wgpu::SurfaceError>;
 }
 
+pub trait Canvas2DItem {
+    fn new(
+        &self,
+        wgpu_state: &WgpuState,
+        camera_bind_group_layout: &BindGroupLayout,
+    ) -> Box<dyn Canvas2DItemWgpu>;
+}
+
 pub struct Canvas2DWindowState {
     wgpu_state: WgpuState,
 
     camera_uniform: CameraUniform,
     camera_buffer: wgpu::Buffer,
+    camera_bind_group_layout: wgpu::BindGroupLayout,
     camera_bind_group: wgpu::BindGroup,
 
-    items: Vec<Box<dyn Canvas2DItem>>,
+    items: Vec<Box<dyn Canvas2DItemWgpu>>,
 }
-
-mod pentagon;
 
 impl Canvas2DWindowState {
     fn new(window: Arc<Window>) -> Self {
@@ -240,14 +250,12 @@ impl Canvas2DWindowState {
             });
 
         Self {
-            items: vec![Box::new(pentagon::PentagonWgpu::new(
-                &wgpu_state,
-                &camera_bind_group_layout,
-            ))],
+            items: vec![],
             wgpu_state,
             camera_uniform,
             camera_bind_group,
             camera_buffer,
+            camera_bind_group_layout,
         }
     }
 
@@ -286,8 +294,14 @@ impl Canvas2DWindowState {
 impl Canvas for Canvas2D {
     type WindowState = Canvas2DWindowState;
 
-    fn new_window_state(window: Arc<Window>) -> Self::WindowState {
-        Canvas2DWindowState::new(window)
+    fn new_window_state(&self, window: Arc<Window>) -> Self::WindowState {
+        let mut state = Canvas2DWindowState::new(window);
+        for item in &self.items {
+            state
+                .items
+                .push(item.new(&state.wgpu_state, &state.camera_bind_group_layout));
+        }
+        state
     }
 
     fn window_event(
@@ -368,7 +382,12 @@ impl Canvas2D {
     pub fn new(camera: Box<dyn Camera>) -> Self {
         Self {
             mouse_pos: PhysicalPosition::new(0.0, 0.0),
+            items: vec![],
             camera,
         }
+    }
+
+    pub fn add_item(&mut self, item: impl Canvas2DItem + 'static) {
+        self.items.push(Box::new(item));
     }
 }

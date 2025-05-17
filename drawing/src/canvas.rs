@@ -92,7 +92,7 @@ impl WgpuState {
 pub trait Canvas: Sized {
     type WindowState;
 
-    fn new_window_state(window: Arc<Window>) -> Self::WindowState;
+    fn new_window_state(&self, window: Arc<Window>) -> Self::WindowState;
 
     fn run(self) {
         let event_loop = EventLoop::new().unwrap();
@@ -135,7 +135,7 @@ impl<C: Canvas> ApplicationHandler for CanvasApplicationHandler<C> {
                 )
             })
             .clone();
-        self.window_state = Some(C::new_window_state(window));
+        self.window_state = Some(self.canvas.new_window_state(window));
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
