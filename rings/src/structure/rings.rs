@@ -140,6 +140,10 @@ pub trait RingSignature: SemiRingSignature {
 
     fn characteristic(&self) -> Natural;
 
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.add(a, &self.neg(b))
+    }
+
     fn from_int(&self, x: impl Into<Integer>) -> Self::Set {
         let x = x.into();
         if x < Integer::ZERO {
