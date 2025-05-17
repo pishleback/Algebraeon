@@ -1,4 +1,7 @@
-use algebraeon_drawing::{canvas::Canvas, canvas2d::{pentagon::{Pentagon, PentagonWgpu}, *}};
+use algebraeon_drawing::{
+    canvas::Canvas,
+    canvas2d::{complex_polynomial::PolynomialPlot, *},
+};
 
 fn main() {
     simplelog::CombinedLogger::init(vec![simplelog::TermLogger::new(
@@ -12,9 +15,8 @@ fn main() {
 
     let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
 
-    canvas.add_item(Pentagon::new());
-
-    // canvas.add_element(Box::new(TestElement::new()));
+    canvas.add_item(PolynomialPlot::new());
+    // canvas.add_item(Pentagon::new());
 
     canvas.run();
 }

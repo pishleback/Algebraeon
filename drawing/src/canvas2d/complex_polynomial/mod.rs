@@ -8,12 +8,10 @@ use super::{Canvas2DItem, Canvas2DItemWgpu};
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct Vertex {
     position: [f32; 2],
-    color: [f32; 3],
 }
 
 impl Vertex {
-    const ATTRIBS: [wgpu::VertexAttribute; 2] =
-        wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x3];
+    const ATTRIBS: [wgpu::VertexAttribute; 1] = wgpu::vertex_attr_array![0 => Float32x2];
 
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
@@ -26,46 +24,37 @@ impl Vertex {
 
 const VERTICES: &[Vertex] = &[
     Vertex {
-        position: [-0.0868241, 0.49240386],
-        color: [0.5, 0.0, 0.5],
-    }, // A
+        position: [-1.0, -1.0],
+    },
     Vertex {
-        position: [-0.49513406, 0.06958647],
-        color: [0.5, 0.5, 0.5],
-    }, // B
+        position: [1.0, -1.0],
+    },
     Vertex {
-        position: [-0.21918549, -0.44939706],
-        color: [0.5, 0.0, 0.5],
-    }, // C
+        position: [1.0, 1.0],
+    },
     Vertex {
-        position: [0.35966998, -0.3473291],
-        color: [0.5, 0.0, 0.5],
-    }, // D
-    Vertex {
-        position: [0.44147372, 0.2347359],
-        color: [0.5, 0.0, 0.5],
-    }, // E
+        position: [-1.0, 1.0],
+    },
 ];
 
-const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
+const INDICES: &[u16] = &[0, 1, 2, 0, 2, 3];
 
-struct PentagonWgpu {
+struct PolynomialWgpu {
     vertex_buffer: wgpu::Buffer,
-    num_vertices: u32,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
     render_pipeline: wgpu::RenderPipeline,
 }
 
-pub struct Pentagon {}
+pub struct PolynomialPlot {}
 
-impl Pentagon {
+impl PolynomialPlot {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl Canvas2DItem for Pentagon {
+impl Canvas2DItem for PolynomialPlot {
     fn new(
         &self,
         wgpu_state: &WgpuState,
@@ -79,8 +68,6 @@ impl Canvas2DItem for Pentagon {
                     contents: bytemuck::cast_slice(VERTICES),
                     usage: wgpu::BufferUsages::VERTEX,
                 });
-
-        let num_vertices = VERTICES.len() as u32;
 
         let index_buffer =
             wgpu_state
@@ -137,7 +124,7 @@ impl Canvas2DItem for Pentagon {
                         topology: wgpu::PrimitiveTopology::TriangleList,
                         strip_index_format: None,
                         front_face: wgpu::FrontFace::Ccw,
-                        cull_mode: Some(wgpu::Face::Back),
+                        cull_mode: None,
                         // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
                         polygon_mode: wgpu::PolygonMode::Fill,
                         // Requires Features::DEPTH_CLIP_CONTROL
@@ -155,9 +142,8 @@ impl Canvas2DItem for Pentagon {
                     cache: None,
                 });
 
-        Box::new(PentagonWgpu {
+        Box::new(PolynomialWgpu {
             vertex_buffer,
-            num_vertices,
             index_buffer,
             num_indices,
             render_pipeline,
@@ -165,7 +151,7 @@ impl Canvas2DItem for Pentagon {
     }
 }
 
-impl Canvas2DItemWgpu for PentagonWgpu {
+impl Canvas2DItemWgpu for PolynomialWgpu {
     fn render(
         &mut self,
         encoder: &mut CommandEncoder,
@@ -178,7 +164,12 @@ impl Canvas2DItemWgpu for PentagonWgpu {
                 view: view,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Load,
+                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                        r: 0.1,
+                        g: 0.2,
+                        b: 0.3,
+                        a: 1.0,
+                    }),
                     store: wgpu::StoreOp::Store,
                 },
             })],

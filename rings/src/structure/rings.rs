@@ -620,7 +620,7 @@ impl<FS: FieldSignature> BezoutDomainSignature for FS {
     }
 }
 
- // A trait to indicate that characteristic() always returns 0
+// A trait to indicate that characteristic() always returns 0
 pub trait CharZeroRingSignature: RingSignature + CharacteristicSignature {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
 }

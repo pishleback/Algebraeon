@@ -12,6 +12,7 @@ struct VertexOutput {
 
 struct CameraUniform {
     matrix: mat2x2<f32>,
+    matrix_inv: mat2x2<f32>,
     shift: vec2<f32>,
 };
 @group(0) @binding(0)

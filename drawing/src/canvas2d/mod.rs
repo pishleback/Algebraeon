@@ -8,12 +8,14 @@ use winit::{
     window::{Window, WindowId},
 };
 
+pub mod complex_polynomial;
 pub mod pentagon;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CameraUniform {
     pub matrix: [[f32; 2]; 2],
+    pub matrix_inv: [[f32; 2]; 2],
     pub shift: [f32; 2],
 }
 
@@ -109,9 +111,9 @@ pub struct MouseWheelZoomCamera {
 impl MouseWheelZoomCamera {
     pub fn new() -> Self {
         Self {
-            mid_x: -21.918549,
-            mid_y: -44.939706,
-            sqrt_area: 200.0,
+            mid_x: 0.0,
+            mid_y: 0.0,
+            sqrt_area: 2.0,
         }
     }
 }
@@ -122,8 +124,11 @@ impl Camera for MouseWheelZoomCamera {
         let avg_side = (display_size.0 * display_size.1).sqrt();
         let x_mult = 2.0 * avg_side / (display_size.0 * self.sqrt_area as f32);
         let y_mult = 2.0 * avg_side / (display_size.1 * self.sqrt_area as f32);
+        let matrix = [[x_mult, 0.0], [0.0, y_mult]];
+        let matrix_inv = mat2x2inv(matrix);
         CameraUniform {
-            matrix: [[x_mult, 0.0], [0.0, y_mult]],
+            matrix,
+            matrix_inv,
             shift: [-self.mid_x as f32 * x_mult, -self.mid_y as f32 * y_mult],
         }
     }
@@ -132,19 +137,15 @@ impl Camera for MouseWheelZoomCamera {
         &mut self,
         display_size: PhysicalSize<u32>,
         mouse_pos: PhysicalPosition<f64>,
-        event_loop: &ActiveEventLoop,
-        id: WindowId,
+        _event_loop: &ActiveEventLoop,
+        _id: WindowId,
         event: &WindowEvent,
     ) {
         match event {
-            WindowEvent::MouseWheel {
-                device_id,
-                delta,
-                phase,
-            } => {
+            WindowEvent::MouseWheel { delta, .. } => {
                 let dy = match delta {
                     winit::event::MouseScrollDelta::PixelDelta(pos) => pos.y,
-                    winit::event::MouseScrollDelta::LineDelta(x, y) => *y as f64,
+                    winit::event::MouseScrollDelta::LineDelta(_x, y) => *y as f64,
                 };
                 self.zoom_event(display_size, mouse_pos, 0.8f64.powf(dy));
             }
@@ -209,6 +210,7 @@ impl Canvas2DWindowState {
 
         let camera_uniform = CameraUniform {
             matrix: [[1.0, 0.0], [0.0, 1.0]],
+            matrix_inv: [[1.0, 0.0], [0.0, 1.0]],
             shift: [0.0, 0.0],
         };
 
@@ -347,17 +349,10 @@ impl Canvas for Canvas2D {
                 }
                 window_state.wgpu_state.window.request_redraw();
             }
-            WindowEvent::CursorMoved {
-                device_id,
-                position,
-            } => {
+            WindowEvent::CursorMoved { position, .. } => {
                 self.mouse_pos = position;
             }
-            WindowEvent::MouseInput {
-                device_id,
-                state,
-                button,
-            } => match (button, state) {
+            WindowEvent::MouseInput { state, button, .. } => match (button, state) {
                 (winit::event::MouseButton::Left, winit::event::ElementState::Pressed) => {
                     println!(
                         "{:?} -> {:?} -> {:?}",
