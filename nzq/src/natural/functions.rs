@@ -146,7 +146,7 @@ impl Natural {
         }
     }
 
-    fn is_square(&self) -> bool {
+    pub fn is_square(&self) -> bool {
         self.sqrt_if_square().is_some()
     }
 }
