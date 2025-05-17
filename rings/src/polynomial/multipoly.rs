@@ -549,10 +549,6 @@ impl<RS: RingSignature> RingSignature for MultiPolynomialStructure<RS> {
                 .collect(),
         }
     }
-
-    fn characteristic(&self) -> Natural {
-        self.coeff_ring.characteristic()
-    }
 }
 
 impl<RS: IntegralDomainSignature> UnitsSignature for MultiPolynomialStructure<RS> {

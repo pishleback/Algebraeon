@@ -138,8 +138,6 @@ impl<R: MetaType> MetaCharacteristic for R where Self::Signature: Characteristic
 pub trait RingSignature: SemiRingSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
-    fn characteristic(&self) -> Natural;
-
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.add(a, &self.neg(b))
     }

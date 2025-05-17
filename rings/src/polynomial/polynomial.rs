@@ -189,10 +189,6 @@ impl<RS: RingSignature> RingSignature for PolynomialStructure<RS> {
                 .collect(),
         )
     }
-
-    fn characteristic(&self) -> Natural {
-        self.coeff_ring.characteristic()
-    }
 }
 
 impl<RS: SemiRingSignature> PolynomialStructure<RS> {
