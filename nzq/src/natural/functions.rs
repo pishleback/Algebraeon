@@ -85,7 +85,7 @@ impl Natural {
         self.nth_root_floor(&Natural::TWO)
     }
 
-    /// Compute the cil of the nth root of a
+    /// Compute the ceil of the nth root of a
     pub fn nth_root_ceil(&self, n: &Natural) -> Natural {
         let x = self;
         let mut a = x.nth_root_floor(n);
