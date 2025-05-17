@@ -172,7 +172,14 @@ pub struct Canvas2D {
     camera: Box<dyn Camera>,
 }
 
-mod pentagon;
+pub trait Canvas2DItem {
+    fn render(
+        &mut self,
+        encoder: &mut CommandEncoder,
+        view: &TextureView,
+        camera_bind_group: &BindGroup,
+    ) -> Result<(), wgpu::SurfaceError>;
+}
 
 pub struct Canvas2DWindowState {
     wgpu_state: WgpuState,
@@ -181,8 +188,10 @@ pub struct Canvas2DWindowState {
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
 
-    pentagon: pentagon::PentagonWgpu,
+    items: Vec<Box<dyn Canvas2DItem>>,
 }
+
+mod pentagon;
 
 impl Canvas2DWindowState {
     fn new(window: Arc<Window>) -> Self {
@@ -231,7 +240,10 @@ impl Canvas2DWindowState {
             });
 
         Self {
-            pentagon: pentagon::PentagonWgpu::new(&wgpu_state, &camera_bind_group_layout),
+            items: vec![Box::new(pentagon::PentagonWgpu::new(
+                &wgpu_state,
+                &camera_bind_group_layout,
+            ))],
             wgpu_state,
             camera_uniform,
             camera_bind_group,
@@ -257,8 +269,9 @@ impl Canvas2DWindowState {
                     label: Some("Render Encoder"),
                 });
 
-        self.pentagon
-            .render(&mut encoder, &view, &self.camera_bind_group)?;
+        for item in &mut self.items {
+            item.render(&mut encoder, &view, &self.camera_bind_group)?;
+        }
 
         // submit will accept anything that implements IntoIter
         self.wgpu_state

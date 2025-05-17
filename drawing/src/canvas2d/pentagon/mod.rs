@@ -1,7 +1,8 @@
-use wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, CommandEncoder, TextureView};
+use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
 
 use crate::canvas::WgpuState;
 
+use super::Canvas2DItem;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -150,8 +151,10 @@ impl PentagonWgpu {
             render_pipeline,
         }
     }
+}
 
-   pub fn render(
+impl Canvas2DItem for PentagonWgpu {
+    fn render(
         &mut self,
         encoder: &mut CommandEncoder,
         view: &TextureView,
