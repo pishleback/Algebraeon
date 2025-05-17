@@ -53,7 +53,7 @@ fn c_arg(z: vec2<f32>) -> f32 {
 // Convert HSL to RGB (H in radians, L in [0,1], S fixed at 1.0)
 fn hsl_to_rgb(h: f32, s: f32, l: f32) -> vec3<f32> {
     let c = (1.0 - abs(2.0 * l - 1.0)) * s;
-    let h_ = h / (3.1415926 * 2.0); // Normalize radians to [0, 1]
+    let h_ = fract(h / (3.1415926 * 2.0)); // Normalize radians to [0, 1]
     let x = c * (1.0 - abs((h_ * 6.0) % 2.0 - 1.0));
     var r = 0.0;
     var g = 0.0;
@@ -77,12 +77,14 @@ fn hsl_to_rgb(h: f32, s: f32, l: f32) -> vec3<f32> {
     return vec3<f32>(r + m, g + m, b + m);
 }
 
+// Generate eval_cfn HERE
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let z = in.coord;
     let w = eval_cfn(z);
 
-    let hue = c_arg(w) + 3.1415926;
+    let hue = c_arg(w);
     let mag = c_abs(w);
     let lightness = (0.5 * sin(1.44269504089 * log2(mag)) + 1.0) * 0.5;
     let saturation = 1.0;
@@ -91,22 +93,5 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     return vec4<f32>(rgb * rgb, 1.0);
 }
 
-// Evaluate a complex polynomial using Horner's method
-fn eval_cfn(z: vec2<f32>) -> vec2<f32> {
-    var coeffs = array<vec2<f32>, 4>(
-        vec2<f32>(-1.0, 0.0),
-        vec2<f32>( 0.0, 0.0),
-        vec2<f32>( 0.0, 0.0),
-        vec2<f32>( 1.0, 0.0)
-    );
-
-    var result = coeffs[3];
-    for (var i = 2i; i >= 0i; i = i - 1i) {
-        result = c_add(c_mul(result, z), coeffs[i]);
-    }
-    return result;
-}
-
- 
 
  

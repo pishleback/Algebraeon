@@ -51,7 +51,7 @@ const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
 struct PentagonWgpu {
     vertex_buffer: wgpu::Buffer,
-    num_vertices: u32,
+    _num_vertices: u32,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
     render_pipeline: wgpu::RenderPipeline,
@@ -157,7 +157,7 @@ impl Canvas2DItem for Pentagon {
 
         Box::new(PentagonWgpu {
             vertex_buffer,
-            num_vertices,
+            _num_vertices: num_vertices,
             index_buffer,
             num_indices,
             render_pipeline,

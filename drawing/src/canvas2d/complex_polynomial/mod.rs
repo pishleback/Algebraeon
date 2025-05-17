@@ -1,8 +1,10 @@
-use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
-
-use crate::canvas::WgpuState;
-
 use super::{Canvas2DItem, Canvas2DItemWgpu};
+use crate::canvas::WgpuState;
+use algebraeon_rings::{
+    polynomial::Polynomial,
+    structure::{ComplexSubsetSignature, MetaComplexSubset},
+};
+use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -46,11 +48,66 @@ struct PolynomialWgpu {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-pub struct PolynomialPlot {}
+pub struct PolynomialPlot {
+    coeffs: Vec<(f64, f64)>,
+}
 
 impl PolynomialPlot {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new<MetaRing: MetaComplexSubset>(p: Polynomial<MetaRing>) -> Self
+    where
+        MetaRing::Signature: ComplexSubsetSignature,
+    {
+        let coeffs = p
+            .into_coeffs()
+            .into_iter()
+            .map(|c| MetaRing::as_f64_real_and_imaginary_parts(&c))
+            .collect();
+        Self { coeffs }
+    }
+
+    pub fn make_shader(&self) -> String {
+        let n = self.coeffs.len();
+        String::from(include_str!("shader.wgsl")).replace(
+            "// Generate eval_cfn HERE",
+            format!(
+                r#"fn eval_cfn(z: vec2<f32>) -> vec2<f32> {{{}}}"#,
+                match n {
+                    0 => {
+                        format!("return vec2<f32>(0.0, 0.0);")
+                    }
+                    1 => {
+                        format!(
+                            "return vec2<f32>({}, {});",
+                            self.coeffs[0].0, self.coeffs[0].1
+                        )
+                    }
+                    n => {
+                        let n2 = n - 2;
+                        let n1 = n - 1;
+                        let wgsl_coeffs = self
+                            .coeffs
+                            .iter()
+                            .map(|(a, b)| format!("vec2<f32>({a}, {b}), "))
+                            .collect::<Vec<_>>()
+                            .join("");
+                        println!("{:?}", wgsl_coeffs);
+                        format!(
+                            r#"
+var coeffs = array<vec2<f32>, {n}>(
+    {wgsl_coeffs}
+);
+var result = coeffs[{n1}];
+for (var i = {n2}; i >= 0i; i = i - 1i) {{
+    result = c_add(c_mul(result, z), coeffs[i]);
+}}
+return result;
+                "#
+                        )
+                    }
+                }
+            )
+            .as_str(),
+        )
     }
 }
 
@@ -84,7 +141,7 @@ impl Canvas2DItem for PolynomialPlot {
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Shader"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(self.make_shader().into()),
             });
 
         let render_pipeline_layout =

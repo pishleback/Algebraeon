@@ -113,7 +113,7 @@ impl MouseWheelZoomCamera {
         Self {
             mid_x: 0.0,
             mid_y: 0.0,
-            sqrt_area: 2.0,
+            sqrt_area: 6.0,
         }
     }
 }

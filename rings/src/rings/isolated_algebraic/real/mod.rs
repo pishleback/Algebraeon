@@ -696,7 +696,11 @@ impl CharZeroRingSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl ComplexSubsetSignature for RealAlgebraicCanonicalStructure {}
+impl ComplexSubsetSignature for RealAlgebraicCanonicalStructure {
+    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
+        (self.as_f64(z), 0.0)
+    }
+}
 
 impl RealSubsetSignature for RealAlgebraicCanonicalStructure {}
 

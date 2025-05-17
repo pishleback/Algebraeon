@@ -74,6 +74,9 @@ dependencies = [
 name = "algebraeon-drawing"
 version = "0.0.0"
 dependencies = [
+ "algebraeon-nzq",
+ "algebraeon-rings",
+ "algebraeon-sets",
  "bytemuck",
  "log",
  "pollster",

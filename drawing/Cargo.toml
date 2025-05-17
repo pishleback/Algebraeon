@@ -7,6 +7,9 @@ edition = "2024"
 name = "algebraeon_drawing"
 
 [dependencies]
+algebraeon-sets = { version = "=0.0.12", path = "../sets", default-features = false }
+algebraeon-rings = { version = "=0.0.12", path = "../rings", default-features = false }
+algebraeon-nzq = { version = "=0.0.12", path = "../nzq", default-features = false }
 bytemuck = "1.22.0"
 log = "0.4.27"
 pollster = "0.4.0"
