@@ -184,8 +184,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         a: &QuaternionAlgebraElement<Field>,
     ) -> QuaternionAlgebraElement<Field> {
         let base = &self.base;
-        let is_char_2 = base.equal(&base.add(&base.one(), &base.one()), &base.zero());
-        if is_char_2 {
+        if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
             QuaternionAlgebraElement {
                 coeffs: [
