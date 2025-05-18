@@ -33,8 +33,10 @@ For exponentiation, use the method `.pow(&exp)` instead of `^` (which is xor).
 ## Available functions
 
 - `choose`
+- `euler_totient`
 - `factorial`
 - `gcd`
+- `is_prime`
 - `is_square`
 - `lcm`
 - `nth_root_floor`
@@ -86,6 +88,14 @@ assert_eq!(choose(&a, &b), Natural::from(792u32));
 assert_eq!(gcd(a.clone(), b.clone()), Natural::from(1u32));
 assert_eq!(lcm(a.clone(), b.clone()), Natural::from(60u32));
 ```
+
+// is_prime
+assert!(!a.is_prime());      // 12 is not prime
+assert!(b.is_prime());       // 5 is prime
+
+// Euler's totient function
+assert_eq!(a.euler_totient(), Natural::from(4u32));  // φ(12) = 4
+assert_eq!(b.euler_totient(), Natural::from(4u32));  // φ(5) = 4
 
 ## Factoring
 
