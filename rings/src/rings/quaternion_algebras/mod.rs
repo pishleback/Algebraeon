@@ -179,6 +179,34 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
+    pub fn conjugate(
+        &self,
+        a: &QuaternionAlgebraElement<Field>,
+    ) -> QuaternionAlgebraElement<Field> {
+        let base = &self.base;
+        let is_char_2 = base.equal(&base.add(&base.one(), &base.one()), &base.zero());
+        if is_char_2 {
+            // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
+            QuaternionAlgebraElement {
+                coeffs: [
+                    base.add(&a.coeffs[0], &a.coeffs[1]),
+                    a.coeffs[1].clone(),
+                    a.coeffs[2].clone(),
+                    a.coeffs[3].clone(),
+                ],
+            }
+        } else {
+            QuaternionAlgebraElement {
+                coeffs: [
+                    a.coeffs[0].clone(),
+                    base.neg(&a.coeffs[1]),
+                    base.neg(&a.coeffs[2]),
+                    base.neg(&a.coeffs[3]),
+                ],
+            }
+        }
+    }
+
     pub fn equal_elements(
         &self,
         a: &QuaternionAlgebraElement<Field>,
