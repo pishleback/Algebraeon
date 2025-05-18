@@ -87,19 +87,21 @@ assert_eq!(choose(&a, &b), Natural::from(792u32));
 // GCD and LCM
 assert_eq!(gcd(a.clone(), b.clone()), Natural::from(1u32));
 assert_eq!(lcm(a.clone(), b.clone()), Natural::from(60u32));
-```
 
 // is_prime
-assert!(!a.is_prime());      // 12 is not prime
-assert!(b.is_prime());       // 5 is prime
+use algebraeon::rings::rings::natural::factorization::primes::is_prime;
+assert!(!is_prime(&a)); // 12 is not prime
+assert!(is_prime(&b));  // 5 is prime
 
 // Euler's totient function
-assert_eq!(a.euler_totient(), Natural::from(4u32));  // φ(12) = 4
-assert_eq!(b.euler_totient(), Natural::from(4u32));  // φ(5) = 4
+use algebraeon::rings::rings::natural::factorization::factor;
+assert_eq!(factor(a).unwrap().euler_totient(), Natural::from(4u32)); // φ(12) = 4
+assert_eq!(factor(b).unwrap().euler_totient(), Natural::from(4u32)); // φ(5) = 4
+```
 
 ## Factoring
 
-Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization) for quickly finding prime factors with around 20 digits.
+Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization) for quickly finding prime factors up to around 20 digits.
 
 ```rust
 use std::str::FromStr;
