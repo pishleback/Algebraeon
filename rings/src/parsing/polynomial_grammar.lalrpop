@@ -28,7 +28,8 @@ Power: Box<Expr> = {
 
 Atom: Box<Expr> = {
     Num => Box::new(Expr::Num(<>)),
-    Var => Box::new(Expr::Var(<>)),
+    SingleVar => Box::new(Expr::Var(<>)),
+    BracedVar => Box::new(Expr::Var(<>)),
     "-" <e:Atom> => Box::new(Expr::Neg(e)),
     "(" <e:Expr> ")" => Box::new(Expr::Grouped(e)),
 };
@@ -49,6 +50,14 @@ Num: Number = {
     },
 };
 
-Var: Variable = {
-    r"[a-zA-Z][a-zA-Z0-9]*" => Variable { name: <>.to_string() },
+SingleVar: Variable = {
+    r"[a-zA-Z]" => Variable { name: <>.to_string() },
+};
+
+// Modified BracedVar to use a regex that captures braced multi-character variables
+BracedVar: Variable = {
+    r"\{[a-zA-Z][a-zA-Z0-9]*\}" => {
+        let name = <>.trim_start_matches('{').trim_end_matches('}').to_string();
+        Variable { name }
+    },
 };
