@@ -1,15 +1,28 @@
 use crate::structure::*;
+use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
-struct QuaternionAlgebraStructure<Field: FieldSignature> {
+pub struct QuaternionAlgebraStructure<Field: FieldSignature> {
     base: Field,
+    is_char_2: bool,
     a: Field::Set,
     b: Field::Set,
 }
 
+impl<Field: FieldSignature + CharacteristicSignature> QuaternionAlgebraStructure<Field> {
+    pub fn new(base: Field, a: Field::Set, b: Field::Set) -> Self {
+        Self {
+            base,
+            is_char_2: base.characteristic() == Natural::TWO,
+            a,
+            b,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
-struct QuaternionAlgebraElement<Field: FieldSignature> {
+pub struct QuaternionAlgebraElement<Field: FieldSignature> {
     coeffs: [Field::Set; 4],
 }
 
@@ -62,9 +75,7 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
         for i in 0..4 {
             result[i] = self.base.add(&a.coeffs[i], &b.coeffs[i]);
         }
-        QuaternionAlgebraElement {
-            coeffs: result,
-        }
+        QuaternionAlgebraElement { coeffs: result }
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -75,9 +86,8 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
         let b_param = &self.b;
         let ab = base.mul(a_param, b_param);
         let base = &self.base;
-        let is_char_2 = base.equal(&base.add(&base.one(), &base.one()), &base.zero());
 
-        if is_char_2 {
+        if self.is_char_2 {
             // Quaternion multiplication in characteristic 2.
             //
             //   i^2 + i = a
@@ -189,11 +199,7 @@ mod tests {
     fn test_add_commutativity() {
         // Hamilton quaternion algebra: H = (-1, -1 / QQ)
         let field = RationalCanonicalStructure {};
-        let h = QuaternionAlgebraStructure {
-            base: field,
-            a: -Rational::ONE,
-            b: -Rational::ONE,
-        };
+        let h = QuaternionAlgebraStructure::new(field, -Rational::ONE, -Rational::ONE);
 
         let i = h.i();
         let j = h.j();
