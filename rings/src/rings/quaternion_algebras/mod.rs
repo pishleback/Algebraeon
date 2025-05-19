@@ -23,16 +23,16 @@ impl<Field: FieldSignature + CharacteristicSignature> QuaternionAlgebraStructure
     }
 }
 
-impl<Field> fmt::Display for QuaternionAlgebraStructure<Field>
-where
-    Field: FieldSignature + fmt::Display,
-    Field::Set: fmt::Display,
+impl<Field: FieldSignature + ToStringSignature + fmt::Display> fmt::Display
+    for QuaternionAlgebraStructure<Field>
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "Quaternion Algebra ({}, {}) over base field {}",
-            self.a, self.b, self.base
+            self.base.to_string(&self.a),
+            self.base.to_string(&self.b),
+            self.base
         )
     }
 }
