@@ -1,6 +1,7 @@
 use crate::structure::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct QuaternionAlgebraStructure<Field: FieldSignature> {
@@ -19,6 +20,20 @@ impl<Field: FieldSignature + CharacteristicSignature> QuaternionAlgebraStructure
             a,
             b,
         }
+    }
+}
+
+impl<Field: FieldSignature + ToStringSignature + fmt::Display> fmt::Display
+    for QuaternionAlgebraStructure<Field>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Quaternion Algebra ({}, {}) over base field {}",
+            self.base.to_string(&self.a),
+            self.base.to_string(&self.b),
+            self.base
+        )
     }
 }
 
