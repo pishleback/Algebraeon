@@ -523,6 +523,14 @@ impl<RS: RingSignature> SemiRingSignature for MultiPolynomialStructure<RS> {
     }
 }
 
+impl<RS: CharacteristicSignature + RingSignature> CharacteristicSignature
+    for MultiPolynomialStructure<RS>
+{
+    fn characteristic(&self) -> Natural {
+        self.coeff_ring().characteristic()
+    }
+}
+
 impl<RS: RingSignature> RingSignature for MultiPolynomialStructure<RS> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         MultiPolynomial {

@@ -22,6 +22,12 @@ impl SemiRingSignature for RationalCanonicalStructure {
     }
 }
 
+impl CharacteristicSignature for RationalCanonicalStructure {
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
+    }
+}
+
 impl RingSignature for RationalCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         -a

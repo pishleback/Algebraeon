@@ -174,6 +174,12 @@ impl<RS: SemiRingSignature> SemiRingSignature for PolynomialStructure<RS> {
     }
 }
 
+impl<RS: CharacteristicSignature> CharacteristicSignature for PolynomialStructure<RS> {
+    fn characteristic(&self) -> Natural {
+        self.coeff_ring().characteristic()
+    }
+}
+
 impl<RS: RingSignature> RingSignature for PolynomialStructure<RS> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         Polynomial::from_coeffs(

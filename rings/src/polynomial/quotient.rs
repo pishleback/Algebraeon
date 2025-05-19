@@ -1,9 +1,20 @@
 use super::polynomial::*;
 use crate::{linear::matrix::*, rings::quotient::QuotientStructure, structure::*};
+use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 
 pub type FieldExtensionByPolynomialQuotientStructure<FS> =
     QuotientStructure<PolynomialStructure<FS>, true>;
+
+impl<FS: FieldSignature + CharacteristicSignature, const IS_FIELD: bool> CharacteristicSignature
+    for QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
+where
+    PolynomialStructure<FS>: SetSignature<Set = Polynomial<FS::Set>>,
+{
+    fn characteristic(&self) -> Natural {
+        self.ring().characteristic()
+    }
+}
 
 impl<FS: FieldSignature, const IS_FIELD: bool> QuotientStructure<PolynomialStructure<FS>, IS_FIELD>
 where

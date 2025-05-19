@@ -7,3 +7,6 @@ title = "Algebraeon User Guide"
 
 [output.html]
 mathjax-support = true
+
+[output.html.playground]
+runnable = false

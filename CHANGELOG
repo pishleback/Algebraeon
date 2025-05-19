@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
  - Moved a bunch of stuff around in algebraeon-rings
  - Added Legendre Jacobi and Kronecker symbols.
  - Listing ring of algebraic integers ideals of a given norm.
+ - Added trait for getting the characteristic of a ring.
 
 ## [0.0.12] - 2025-04-12
 

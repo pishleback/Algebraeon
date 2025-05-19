@@ -68,6 +68,12 @@ impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
+impl CharacteristicSignature for QuaternaryFieldCanonicalStructure {
+    fn characteristic(&self) -> Natural {
+        Natural::TWO
+    }
+}
+
 impl RingSignature for QuaternaryFieldCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         a.clone()

@@ -590,6 +590,12 @@ impl SemiRingSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
+impl CharacteristicSignature for RealAlgebraicCanonicalStructure {
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
+    }
+}
+
 impl RingSignature for RealAlgebraicCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         match a {

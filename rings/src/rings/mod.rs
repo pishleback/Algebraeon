@@ -4,5 +4,6 @@ pub mod integer;
 pub mod isolated_algebraic;
 pub mod natural;
 pub mod num_theory;
+pub mod quaternion_algebras;
 pub mod quotient;
 pub mod rational;

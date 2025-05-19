@@ -96,6 +96,12 @@ impl SemiRingSignature for ConwayFiniteFieldStructure {
     }
 }
 
+impl CharacteristicSignature for ConwayFiniteFieldStructure {
+    fn characteristic(&self) -> Natural {
+        self.characteristic_and_power().0
+    }
+}
+
 impl RingSignature for ConwayFiniteFieldStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         self.structure.neg(a)

@@ -19,3 +19,9 @@ impl SemiRingSignature for NaturalCanonicalStructure {
         a * b
     }
 }
+
+impl CharacteristicSignature for NaturalCanonicalStructure {
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
+    }
+}
