@@ -82,11 +82,11 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let (x0, x1, x2, x3) = (&a.coeffs[0], &a.coeffs[1], &a.coeffs[2], &a.coeffs[3]);
         let (y0, y1, y2, y3) = (&b.coeffs[0], &b.coeffs[1], &b.coeffs[2], &b.coeffs[3]);
-        let base = &self.base;
+
         let a_param = &self.a;
         let b_param = &self.b;
-        let ab = base.mul(a_param, b_param);
         let base = &self.base;
+        let ab = base.mul(a_param, b_param);
 
         if self.is_char_2 {
             // Quaternion multiplication in characteristic 2.
