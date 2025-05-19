@@ -65,6 +65,8 @@ impl WgpuState {
             desired_maximum_frame_latency: 2,
         };
 
+        surface.configure(&device, &config);
+
         Self {
             window,
             surface,
