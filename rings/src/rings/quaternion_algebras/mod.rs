@@ -146,6 +146,28 @@ impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> 
     }
 }
 
+impl<Field: FieldSignature + CharacteristicSignature> CharacteristicSignature
+    for QuaternionAlgebraStructure<Field>
+{
+    fn characteristic(&self) -> Natural {
+        self.base.characteristic()
+    }
+}
+
+impl<Field: CharZeroFieldSignature> CharZeroRingSignature for QuaternionAlgebraStructure<Field> {
+    fn try_to_int(&self, x: &Self::Set) -> Option<algebraeon_nzq::Integer> {
+        // The element must be of the form [x0, 0, 0, 0]
+        if self.base.is_zero(&x.coeffs[1])
+            && self.base.is_zero(&x.coeffs[2])
+            && self.base.is_zero(&x.coeffs[3])
+        {
+            self.base.try_to_int(&x.coeffs[0])
+        } else {
+            None
+        }
+    }
+}
+
 impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
     pub fn i(&self) -> QuaternionAlgebraElement<Field> {
         QuaternionAlgebraElement {
