@@ -272,13 +272,14 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::Rational;
     use super::*;
+    use algebraeon_nzq::Rational;
 
     #[test]
     fn test_add_and_mul() {
         // Hamilton quaternion algebra: H = (-1, -1 / QQ)
-        let h = QuaternionAlgebraStructure::new(Rational::structure(), -Rational::ONE, -Rational::ONE);
+        let h =
+            QuaternionAlgebraStructure::new(Rational::structure(), -Rational::ONE, -Rational::ONE);
 
         let i = h.i();
         let j = h.j();
@@ -289,5 +290,27 @@ mod tests {
 
         assert!(h.equal(&i_plus_j, &j_plus_i));
         assert!(h.equal(&i_times_j, &h.neg(&j_times_i)));
+    }
+
+    #[test]
+    fn test_reduced_norm_from_sage_example() {
+        let h = QuaternionAlgebraStructure::new(
+            Rational::structure(),
+            Rational::from(-5i32),
+            Rational::from(-2i32),
+        );
+
+        assert_eq!(h.reduced_norm(&h.i()), Rational::from(5i32));
+        assert_eq!(h.reduced_norm(&h.j()), Rational::from(2i32));
+
+        let a = QuaternionAlgebraElement {
+            x: Rational::from_integers(1, 3),
+            y: Rational::from_integers(1, 5),
+            z: Rational::from_integers(1, 7),
+            w: Rational::ONE,
+        };
+
+        let expected = Rational::from_integers(22826, 2205);
+        assert_eq!(h.reduced_norm(&a), expected);
     }
 }
