@@ -273,15 +273,12 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
 #[cfg(test)]
 mod tests {
     use algebraeon_nzq::Rational;
-    use algebraeon_nzq::RationalCanonicalStructure;
-
     use super::*;
 
     #[test]
-    fn test_add_commutativity() {
+    fn test_add_and_mul() {
         // Hamilton quaternion algebra: H = (-1, -1 / QQ)
-        let field = RationalCanonicalStructure {};
-        let h = QuaternionAlgebraStructure::new(field, -Rational::ONE, -Rational::ONE);
+        let h = QuaternionAlgebraStructure::new(Rational::structure(), -Rational::ONE, -Rational::ONE);
 
         let i = h.i();
         let j = h.j();
