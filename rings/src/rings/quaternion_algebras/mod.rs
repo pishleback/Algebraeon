@@ -229,6 +229,52 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
+    pub fn reduced_trace(&self, a: &QuaternionAlgebraElement<Field>) -> Field::Set {
+        let base = &self.base;
+        let a0 = &a.coeffs[0];
+        let a1 = &a.coeffs[1];
+        if self.is_char_2 {
+            // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
+            a1.clone()
+        } else {
+            base.add(&a0, &a0) // 2 * a0
+        }
+    }
+
+    pub fn reduced_norm(&self, a: &QuaternionAlgebraElement<Field>) -> Field::Set {
+        let base = &self.base;
+        let a0 = &a.coeffs[0];
+        let a1 = &a.coeffs[1];
+        let a2 = &a.coeffs[2];
+        let a3 = &a.coeffs[3];
+        let a_param = &self.a;
+        let b_param = &self.b;
+        let ab = base.mul(a_param, b_param);
+
+        if self.is_char_2 {
+            // https://jvoight.github.io/quat-book.pdf equation 6.2.7.
+            // t^2 + t·x + a·x^2 + b·y^2 + b·y·z + ab·z^2
+            let t2 = base.mul(a0, a0);
+            let tx = base.mul(a0, a1);
+            let ax2 = base.mul(a_param, &base.mul(a1, a1));
+            let by2 = base.mul(b_param, &base.mul(a2, a2));
+            let byz = base.mul(b_param, &base.mul(a2, a3));
+            let abz2 = base.mul(&ab, &base.mul(a3, a3));
+
+            base.add(
+                &base.add(&base.add(&base.add(&base.add(&t2, &tx), &ax2), &by2), &byz),
+                &abz2,
+            )
+        } else {
+            let term0 = base.mul(a0, a0);
+            let term1 = base.mul(a_param, &base.mul(a1, a1));
+            let term2 = base.mul(b_param, &base.mul(a2, a2));
+            let term3 = base.mul(&ab, &base.mul(a3, a3));
+
+            base.sub(&base.sub(&base.add(&term0, &term3), &term1), &term2)
+        }
+    }
+
     pub fn equal_elements(
         &self,
         a: &QuaternionAlgebraElement<Field>,
