@@ -745,7 +745,7 @@ mod tests {
         );
     }
 
-    // TODO: this test case needs a potential grammar update
+    // TODO: this test case needs a potential grammar update (shelved for now)
     // #[test]
     // fn test_rational_polynomial_divide_polynomial_by_integer() {
     //     // dividing by integers should be ok for polynomials with rational coefficients
