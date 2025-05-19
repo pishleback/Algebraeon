@@ -24,7 +24,11 @@ impl<Field: FieldSignature + CharacteristicSignature> QuaternionAlgebraStructure
 
 #[derive(Debug, Clone)]
 pub struct QuaternionAlgebraElement<Field: FieldSignature> {
-    coeffs: [Field::Set; 4],
+    // represent x + yi + zj + wk
+    x: Field::Set,
+    y: Field::Set,
+    z: Field::Set,
+    w: Field::Set,
 }
 
 impl<Field: FieldSignature> PartialEq for QuaternionAlgebraStructure<Field> {
@@ -39,7 +43,10 @@ impl<Field: FieldSignature> Eq for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> EqSignature for QuaternionAlgebraStructure<Field> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.equal_elements(a, b)
+        self.base.equal(&a.x, &b.x)
+            && self.base.equal(&a.y, &b.y)
+            && self.base.equal(&a.z, &b.z)
+            && self.base.equal(&a.w, &b.w)
     }
 }
 
@@ -56,33 +63,32 @@ impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
 impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {
     fn zero(&self) -> Self::Set {
         QuaternionAlgebraElement {
-            coeffs: std::array::from_fn(|_| self.base.zero()),
+            x: self.base.zero(),
+            y: self.base.zero(),
+            z: self.base.zero(),
+            w: self.base.zero(),
         }
     }
 
     fn one(&self) -> Self::Set {
         QuaternionAlgebraElement {
-            coeffs: [
-                self.base.one(),
-                self.base.zero(),
-                self.base.zero(),
-                self.base.zero(),
-            ],
+            x: self.base.one(),
+            y: self.base.zero(),
+            z: self.base.zero(),
+            w: self.base.zero(),
         }
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        let mut result = std::array::from_fn(|_| self.base.zero());
-        for i in 0..4 {
-            result[i] = self.base.add(&a.coeffs[i], &b.coeffs[i]);
+        QuaternionAlgebraElement {
+            x: self.base.add(&a.x, &b.x),
+            y: self.base.add(&a.y, &b.y),
+            z: self.base.add(&a.z, &b.z),
+            w: self.base.add(&a.w, &b.w),
         }
-        QuaternionAlgebraElement { coeffs: result }
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        let (x0, x1, x2, x3) = (&a.coeffs[0], &a.coeffs[1], &a.coeffs[2], &a.coeffs[3]);
-        let (y0, y1, y2, y3) = (&b.coeffs[0], &b.coeffs[1], &b.coeffs[2], &b.coeffs[3]);
-
         let a_param = &self.a;
         let b_param = &self.b;
         let base = &self.base;
@@ -104,35 +110,41 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
 
             let z0 = base.sub(
                 &base.add(
-                    &base.add(&base.mul(x0, y0), &base.mul(&base.mul(x1, y1), a_param)),
-                    &base.mul(&base.mul(x2, y2), b_param),
+                    &base.add(
+                        &base.mul(&a.x, &b.x),
+                        &base.mul(&base.mul(&a.y, &b.y), a_param),
+                    ),
+                    &base.mul(&base.mul(&a.z, &b.z), b_param),
                 ),
-                &base.mul(&base.mul(x3, y3), &ab),
+                &base.mul(&base.mul(&a.w, &b.w), &ab),
             );
             let z1 = base.sub(
                 &base.add(
-                    &base.add(&base.mul(x0, y1), &base.mul(x1, y0)),
-                    &base.mul(&base.mul(x2, y3), b_param),
+                    &base.add(&base.mul(&a.x, &b.y), &base.mul(&a.y, &b.x)),
+                    &base.mul(&base.mul(&a.z, &b.w), b_param),
                 ),
-                &base.mul(&base.mul(x3, y2), b_param),
+                &base.mul(&base.mul(&a.w, &b.z), b_param),
             );
             let z2 = base.add(
                 &base.sub(
-                    &base.add(&base.mul(x0, y2), &base.mul(x2, y0)),
-                    &base.mul(&base.mul(x1, y3), a_param),
+                    &base.add(&base.mul(&a.x, &b.z), &base.mul(&a.z, &b.x)),
+                    &base.mul(&base.mul(&a.y, &b.w), a_param),
                 ),
-                &base.mul(&base.mul(x3, y1), a_param),
+                &base.mul(&base.mul(&a.w, &b.y), a_param),
             );
             let z3 = base.add(
                 &base.sub(
-                    &base.add(&base.mul(x0, y3), &base.mul(x3, y0)),
-                    &base.mul(x2, y1),
+                    &base.add(&base.mul(&a.x, &b.w), &base.mul(&a.w, &b.x)),
+                    &base.mul(&a.z, &b.y),
                 ),
-                &base.mul(x1, y2),
+                &base.mul(&a.y, &b.z),
             );
 
             QuaternionAlgebraElement {
-                coeffs: [z0, z1, z2, z3],
+                x: z0,
+                y: z1,
+                z: z2,
+                w: z3,
             }
         }
     }
@@ -141,7 +153,10 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
 impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         QuaternionAlgebraElement {
-            coeffs: std::array::from_fn(|i| self.base.neg(&a.coeffs[i])),
+            x: self.base.neg(&a.x),
+            y: self.base.neg(&a.y),
+            z: self.base.neg(&a.z),
+            w: self.base.neg(&a.w),
         }
     }
 }
@@ -155,13 +170,10 @@ impl<Field: FieldSignature + CharacteristicSignature> CharacteristicSignature
 }
 
 impl<Field: CharZeroFieldSignature> CharZeroRingSignature for QuaternionAlgebraStructure<Field> {
-    fn try_to_int(&self, x: &Self::Set) -> Option<algebraeon_nzq::Integer> {
-        // The element must be of the form [x0, 0, 0, 0]
-        if self.base.is_zero(&x.coeffs[1])
-            && self.base.is_zero(&x.coeffs[2])
-            && self.base.is_zero(&x.coeffs[3])
-        {
-            self.base.try_to_int(&x.coeffs[0])
+    fn try_to_int(&self, a: &Self::Set) -> Option<algebraeon_nzq::Integer> {
+        // The element must be of the form [a.x, 0, 0, 0]
+        if self.base.is_zero(&a.y) && self.base.is_zero(&a.z) && self.base.is_zero(&a.w) {
+            self.base.try_to_int(&a.x)
         } else {
             None
         }
@@ -171,34 +183,28 @@ impl<Field: CharZeroFieldSignature> CharZeroRingSignature for QuaternionAlgebraS
 impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
     pub fn i(&self) -> QuaternionAlgebraElement<Field> {
         QuaternionAlgebraElement {
-            coeffs: [
-                self.base.zero(),
-                self.base.one(),
-                self.base.zero(),
-                self.base.zero(),
-            ],
+            x: self.base.zero(),
+            y: self.base.one(),
+            z: self.base.zero(),
+            w: self.base.zero(),
         }
     }
 
     pub fn j(&self) -> QuaternionAlgebraElement<Field> {
         QuaternionAlgebraElement {
-            coeffs: [
-                self.base.zero(),
-                self.base.zero(),
-                self.base.one(),
-                self.base.zero(),
-            ],
+            x: self.base.zero(),
+            y: self.base.zero(),
+            z: self.base.one(),
+            w: self.base.zero(),
         }
     }
 
     pub fn k(&self) -> QuaternionAlgebraElement<Field> {
         QuaternionAlgebraElement {
-            coeffs: [
-                self.base.zero(),
-                self.base.zero(),
-                self.base.zero(),
-                self.base.one(),
-            ],
+            x: self.base.zero(),
+            y: self.base.zero(),
+            z: self.base.zero(),
+            w: self.base.one(),
         }
     }
 
@@ -210,43 +216,32 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
             QuaternionAlgebraElement {
-                coeffs: [
-                    base.add(&a.coeffs[0], &a.coeffs[1]),
-                    a.coeffs[1].clone(),
-                    a.coeffs[2].clone(),
-                    a.coeffs[3].clone(),
-                ],
+                x: base.add(&a.x, &a.x),
+                y: a.y.clone(),
+                z: a.z.clone(),
+                w: a.w.clone(),
             }
         } else {
             QuaternionAlgebraElement {
-                coeffs: [
-                    a.coeffs[0].clone(),
-                    base.neg(&a.coeffs[1]),
-                    base.neg(&a.coeffs[2]),
-                    base.neg(&a.coeffs[3]),
-                ],
+                x: a.x.clone(),
+                y: base.neg(&a.y),
+                z: base.neg(&a.z),
+                w: base.neg(&a.w),
             }
         }
     }
 
     pub fn reduced_trace(&self, a: &QuaternionAlgebraElement<Field>) -> Field::Set {
-        let base = &self.base;
-        let a0 = &a.coeffs[0];
-        let a1 = &a.coeffs[1];
         if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
-            a1.clone()
+            a.y.clone()
         } else {
-            base.add(&a0, &a0) // 2 * a0
+            self.base.add(&a.x, &a.x) // 2 * &a.x
         }
     }
 
     pub fn reduced_norm(&self, a: &QuaternionAlgebraElement<Field>) -> Field::Set {
         let base = &self.base;
-        let a0 = &a.coeffs[0];
-        let a1 = &a.coeffs[1];
-        let a2 = &a.coeffs[2];
-        let a3 = &a.coeffs[3];
         let a_param = &self.a;
         let b_param = &self.b;
         let ab = base.mul(a_param, b_param);
@@ -254,33 +249,24 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf equation 6.2.7.
             // t^2 + t·x + a·x^2 + b·y^2 + b·y·z + ab·z^2
-            let t2 = base.mul(a0, a0);
-            let tx = base.mul(a0, a1);
-            let ax2 = base.mul(a_param, &base.mul(a1, a1));
-            let by2 = base.mul(b_param, &base.mul(a2, a2));
-            let byz = base.mul(b_param, &base.mul(a2, a3));
-            let abz2 = base.mul(&ab, &base.mul(a3, a3));
-
+            let t2 = base.mul(&a.x, &a.x);
+            let tx = base.mul(&a.x, &a.y);
+            let ax2 = base.mul(a_param, &base.mul(&a.y, &a.y));
+            let by2 = base.mul(b_param, &base.mul(&a.z, &a.z));
+            let byz = base.mul(b_param, &base.mul(&a.z, &a.w));
+            let abz2 = base.mul(&ab, &base.mul(&a.w, &a.w));
             base.add(
                 &base.add(&base.add(&base.add(&base.add(&t2, &tx), &ax2), &by2), &byz),
                 &abz2,
             )
         } else {
-            let term0 = base.mul(a0, a0);
-            let term1 = base.mul(a_param, &base.mul(a1, a1));
-            let term2 = base.mul(b_param, &base.mul(a2, a2));
-            let term3 = base.mul(&ab, &base.mul(a3, a3));
+            let term0 = base.mul(&a.x, &a.x);
+            let term1 = base.mul(a_param, &base.mul(&a.y, &a.y));
+            let term2 = base.mul(b_param, &base.mul(&a.z, &a.z));
+            let term3 = base.mul(&ab, &base.mul(&a.w, &a.w));
 
             base.sub(&base.sub(&base.add(&term0, &term3), &term1), &term2)
         }
-    }
-
-    pub fn equal_elements(
-        &self,
-        a: &QuaternionAlgebraElement<Field>,
-        b: &QuaternionAlgebraElement<Field>,
-    ) -> bool {
-        (0..4).all(|i| self.base.equal(&a.coeffs[i], &b.coeffs[i]))
     }
 }
 
@@ -304,7 +290,7 @@ mod tests {
         let i_times_j = h.mul(&i, &j);
         let j_times_i = h.mul(&j, &i);
 
-        assert!(h.equal_elements(&i_plus_j, &j_plus_i));
-        assert!(h.equal_elements(&i_times_j, &h.neg(&j_times_i)));
+        assert!(h.equal(&i_plus_j, &j_plus_i));
+        assert!(h.equal(&i_times_j, &h.neg(&j_times_i)));
     }
 }
