@@ -1,4 +1,8 @@
-use crate::{polynomial::*, rings::{natural::factorization::primes::*, valuation::*}, structure::*};
+use crate::{
+    polynomial::*,
+    rings::{natural::factorization::primes::*, valuation::*},
+    structure::*,
+};
 use algebraeon_nzq::*;
 mod isolate;
 

@@ -1,4 +1,7 @@
-use algebraeon_nzq::{traits::{Abs, DivMod}, Integer, Natural, Rational};
+use algebraeon_nzq::{
+    Integer, Natural, Rational,
+    traits::{Abs, DivMod},
+};
 use std::ops::{Add, Mul, Sub};
 
 use crate::rings::natural::factorization::primes::is_prime;
