@@ -19,6 +19,8 @@ jobs:
     - name: Install Linux Dependencies
       run: sudo apt install libfontconfig1-dev
 
-    - name: Run tests
+    - name: Run tests in debug
       run: cargo test --verbose
-      run_release: cargo test --release --verbose
+
+    - name: Run tests in release
+      run: cargo test --release --verbose
