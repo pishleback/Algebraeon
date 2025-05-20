@@ -142,6 +142,10 @@ pub trait RingSignature: SemiRingSignature {
         self.add(a, &self.neg(b))
     }
 
+    fn bracket(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.sub(&self.mul(a, b), &self.mul(b, a))
+    }
+
     fn from_int(&self, x: impl Into<Integer>) -> Self::Set {
         let x = x.into();
         if x < Integer::ZERO {
@@ -620,7 +624,7 @@ impl<FS: FieldSignature> BezoutDomainSignature for FS {
     }
 }
 
- // A trait to indicate that characteristic() always returns 0
+// A trait to indicate that characteristic() always returns 0
 pub trait CharZeroRingSignature: RingSignature + CharacteristicSignature {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
 }
