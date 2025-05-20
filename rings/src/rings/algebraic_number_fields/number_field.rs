@@ -1,8 +1,12 @@
 use super::{
     embedded_anf::anf_multi_primitive_element_theorem,
-    ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
+    ideal::RingOfIntegersIdeal,
+    ring_of_integers::{
+        RingOfIntegersWithIntegralBasisElement, RingOfIntegersWithIntegralBasisStructure,
+        padic_roi_element_valuation,
+    },
 };
-use crate::{linear::matrix::*, polynomial::*, structure::*};
+use crate::{linear::matrix::*, polynomial::*, rings::valuation::Valuation, structure::*};
 use algebraeon_nzq::{
     Integer, Natural, Rational, RationalCanonicalStructure,
     traits::{Abs, Fraction},
@@ -156,18 +160,42 @@ impl AlgebraicNumberFieldStructure {
             .all(|c| c.denominator() == Natural::ONE)
     }
 
-    //return a scalar multiple of $a$ which is an algebraic integer
-    fn integral_multiple(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
-        let m = Integer::lcm_list(
+    // This is the LCM of the denominators of the coefficients of a,
+    // and thus it may well be > 1 even when the element is an algebraic integer.
+    fn denominator(&self, a: &Polynomial<Rational>) -> Integer {
+        Integer::lcm_list(
             self.min_poly(a)
                 .coeffs()
                 .into_iter()
                 .map(|c| Integer::from(c.denominator()))
                 .collect(),
-        );
+        )
+    }
+
+    //return a scalar multiple of $a$ which is an algebraic integer
+    fn integral_multiple(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
+        let m = self.denominator(a);
         let b = Polynomial::mul(&Polynomial::constant(Rational::from(m)), a);
         debug_assert!(self.is_algebraic_integer(&b));
         b
+    }
+
+    fn padic_anf_valuation_element(
+        &self,
+        prime_ideal: RingOfIntegersIdeal,
+        a: &Polynomial<Rational>,
+    ) -> Valuation {
+        let d = self.denominator(a);
+        let m = self.integral_multiple(a);
+        padic_roi_element_valuation(
+            self.ring_of_integers(),
+            prime_ideal.clone(),
+            self.ring_of_integers().try_anf_to_roi(&m).unwrap(),
+        ) - padic_roi_element_valuation(
+            self.ring_of_integers(),
+            prime_ideal,
+            self.ring_of_integers().from_int(d),
+        )
     }
 }
 
