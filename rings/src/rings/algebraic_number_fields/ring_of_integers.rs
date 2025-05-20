@@ -4,9 +4,7 @@ use crate::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
         finitely_free_coset::FinitelyFreeSubmoduleCoset,
         finitely_free_modules::FinitelyFreeModuleStructure, matrix::Matrix,
-    },
-    polynomial::Polynomial,
-    structure::*,
+    }, polynomial::Polynomial, rings::valuation::*, structure::*
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
 use algebraeon_sets::structure::*;
@@ -525,6 +523,54 @@ impl InjectiveFunction<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumber
 impl RingHomomorphism<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
     for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
+}
+
+pub fn padic_roi_element_valuation(
+    roi: RingOfIntegersWithIntegralBasisStructure,
+    prime_ideal: RingOfIntegersIdeal,
+    a: RingOfIntegersWithIntegralBasisElement,
+) -> Valuation {
+    #[cfg(debug_assertions)]
+    roi.is_element(&a);
+    #[cfg(debug_assertions)]
+    roi.check_ideal(&prime_ideal);
+    if roi.is_zero(&a) {
+        return Valuation::Infinity;
+    } else {
+        let mut k = 1usize;
+        let mut prime_to_the_k = prime_ideal.clone();
+        loop {
+            if !roi.ideal_contains_element(&prime_to_the_k, &a) {
+                return Valuation::Finite((k - 1).into());
+            }
+            k = k + 1;
+            prime_to_the_k = roi.ideal_mul(&prime_to_the_k, &prime_ideal);
+        }
+    }
+}
+
+pub fn padic_roi_ideal_valuation(
+    roi: RingOfIntegersWithIntegralBasisStructure,
+    prime_ideal: RingOfIntegersIdeal,
+    a: RingOfIntegersIdeal,
+) -> Valuation {
+    #[cfg(debug_assertions)]
+    roi.check_ideal(&a);
+    #[cfg(debug_assertions)]
+    roi.check_ideal(&prime_ideal);
+    if roi.ideal_is_zero(&a) {
+        return Valuation::Infinity;
+    } else {
+        let mut k = 1usize;
+        let mut prime_to_the_k = prime_ideal.clone();
+        loop {
+            if !roi.ideal_contains(&prime_to_the_k, &a) {
+                return Valuation::Finite((k - 1).into());
+            }
+            k = k + 1;
+            prime_to_the_k = roi.ideal_mul(&prime_to_the_k, &prime_ideal);
+        }
+    }
 }
 
 #[cfg(test)]

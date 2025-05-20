@@ -1,10 +1,7 @@
-use super::super::super::algebraic_number_fields::ideal::RingOfIntegersIdeal;
-use super::super::super::algebraic_number_fields::ring_of_integers::RingOfIntegersWithIntegralBasisElement;
-use super::super::super::algebraic_number_fields::ring_of_integers::RingOfIntegersWithIntegralBasisStructure;
-use super::*;
-use algebraeon_nzq::traits::{Abs, DivMod};
-use algebraeon_sets::structure::SetSignature;
+use algebraeon_nzq::{traits::{Abs, DivMod}, Integer, Natural, Rational};
 use std::ops::{Add, Mul, Sub};
+
+use crate::rings::natural::factorization::primes::is_prime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Valuation {
@@ -229,50 +226,6 @@ pub fn padic_rat_valuation(p: &Natural, r: Rational) -> Valuation {
     match padic_nat_valuation(p, n) {
         Valuation::Infinity => Valuation::Infinity,
         Valuation::Finite(vn) => Valuation::Finite(vn - padic_nat_valuation(p, d).unwrap_int()),
-    }
-}
-
-pub fn padic_roi_element_valuation(
-    roi: RingOfIntegersWithIntegralBasisStructure,
-    prime_ideal: RingOfIntegersIdeal,
-    a: RingOfIntegersWithIntegralBasisElement,
-) -> Valuation {
-    roi.is_element(&a);
-    roi.check_ideal(&prime_ideal);
-    if roi.is_zero(&a) {
-        return Valuation::Infinity;
-    } else {
-        let mut k = 1usize;
-        let mut prime_to_the_k = prime_ideal.clone();
-        loop {
-            if !roi.ideal_contains_element(&prime_to_the_k, &a) {
-                return Valuation::Finite((k - 1).into());
-            }
-            k = k + 1;
-            prime_to_the_k = roi.ideal_mul(&prime_to_the_k, &prime_ideal);
-        }
-    }
-}
-
-pub fn padic_roi_ideal_valuation(
-    roi: RingOfIntegersWithIntegralBasisStructure,
-    prime_ideal: RingOfIntegersIdeal,
-    a: RingOfIntegersIdeal,
-) -> Valuation {
-    roi.check_ideal(&a);
-    roi.check_ideal(&prime_ideal);
-    if roi.ideal_is_zero(&a) {
-        return Valuation::Infinity;
-    } else {
-        let mut k = 1usize;
-        let mut prime_to_the_k = prime_ideal.clone();
-        loop {
-            if !roi.ideal_contains(&prime_to_the_k, &a) {
-                return Valuation::Finite((k - 1).into());
-            }
-            k = k + 1;
-            prime_to_the_k = roi.ideal_mul(&prime_to_the_k, &prime_ideal);
-        }
     }
 }
 

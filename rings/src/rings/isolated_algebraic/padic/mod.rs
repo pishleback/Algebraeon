@@ -1,9 +1,6 @@
-use crate::{polynomial::*, rings::natural::factorization::primes::*, structure::*};
+use crate::{polynomial::*, rings::{natural::factorization::primes::*, valuation::*}, structure::*};
 use algebraeon_nzq::*;
-use valuation::*;
-
 mod isolate;
-pub mod valuation;
 
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {
