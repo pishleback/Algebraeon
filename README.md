@@ -4,7 +4,7 @@ Algebraeon is a computational algebra system (CAS) written purely in Rust. It im
 
 See the [user guide](https://pishleback.github.io/Algebraeon/) to get started.
 
-Join the [Discord server](https://discord.gg/DBqbPqPMKR) for informal discussions on the project.
+There is a [![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?logo=discord&logoColor=white)](https://discord.gg/DBqbPqPMKR) for informal discussions on the project.
 
 The latest published version of Algebraeon is hosted on crates.io [here](https://crates.io/crates/algebraeon) and the formal documentation for the most recent release is [here](https://docs.rs/algebraeon/latest/algebraeon/).
 
