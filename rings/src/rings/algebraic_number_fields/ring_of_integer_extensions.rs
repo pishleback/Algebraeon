@@ -51,6 +51,44 @@ impl RingOfIntegersExtension {
                 .r
                 .padic_roi_element_valuation(prime_ideal, self.r.from_int(d))
     }
+
+    #[allow(non_snake_case)]
+    pub fn is_S_integral(&self, S: &[RingOfIntegersIdeal], a: &Polynomial<Rational>) -> bool {
+        let d = self.integralize_multiplier(a);
+        let m = self.k_field().mul(a, &self.z_to_k().image(&d));
+        // for each prime factor P of d not in S, check if valuation_P(m) ≥ valuation_P(d)
+
+        let d_as_roi = self.r.from_int(d.clone());
+        let principal_ideal_d = self.r.ideal_from_integer_span(vec![d_as_roi.clone()]);
+        let d_factorization = self.factor_ideal(&principal_ideal_d);
+        if d_factorization.is_none() {
+            return true;
+        }
+
+        for prime in d_factorization.unwrap().into_ring_and_powers().1 {
+            let prime_ideal = prime.0.into_ideal();
+            // Skip primes in S
+            if S.iter()
+                .any(|s_ideal| self.r.ideal_equal(s_ideal, &prime_ideal))
+            {
+                continue;
+            }
+
+            let m_val = self.r.padic_roi_element_valuation(
+                prime_ideal.clone(),
+                self.r.try_anf_to_roi(&m).unwrap(),
+            );
+            let d_val = self
+                .r
+                .padic_roi_element_valuation(prime_ideal, d_as_roi.clone());
+
+            if m_val < d_val {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 impl
