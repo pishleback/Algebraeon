@@ -29,13 +29,13 @@ impl fmt::Display for Variable {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Number {
-    pub numerator: i64,
-    pub denominator: i64,
+    pub numerator: Integer,
+    pub denominator: Integer,
 }
 
 impl Number {
-    pub fn new(numerator: i64, denominator: i64) -> Self {
-        if denominator == 0 {
+    pub fn new(numerator: Integer, denominator: Integer) -> Self {
+        if denominator == Integer::from(0) {
             panic!("Denominator cannot be zero");
         }
         Number {
@@ -47,7 +47,7 @@ impl Number {
 
 impl fmt::Display for Number {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.denominator == 1 {
+        if self.denominator == Integer::from(1) {
             write!(f, "{}", self.numerator)
         } else {
             write!(f, "{}/{}", self.numerator, self.denominator)
