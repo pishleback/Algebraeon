@@ -125,7 +125,7 @@ impl Product {
     fn validate_polynomial(&self) -> Result<(), String> {
         if let Expr::Power(p) = self.right.as_ref() {
             if let Expr::Num(n) = p.exponent.as_ref() {
-                if n.denominator == 1 && n.numerator == -1 {
+                if n.denominator == Integer::from(1) && n.numerator == Integer::from(-1) {
                     return Err("Division not allowed in polynomials".to_string());
                 }
             }
@@ -151,10 +151,10 @@ impl Power {
     fn validate_polynomial(&self) -> Result<(), String> {
         match self.exponent.as_ref() {
             Expr::Num(n) => {
-                if n.denominator != 1 {
+                if n.denominator != Integer::from(1) {
                     return Err("Fractional exponents not allowed in polynomials".to_string());
                 }
-                if n.numerator < 0 {
+                if n.numerator < Integer::from(0) {
                     return Err("Negative exponents not allowed in polynomials".to_string());
                 }
             }
@@ -314,8 +314,8 @@ impl Expr {
             }
             Expr::Num(n) => {
                 // Constant term
-                let num_val = Integer::from(n.numerator) * coefficient.clone();
-                let denom_val = Integer::from(n.denominator);
+                let num_val = n.numerator.clone() * coefficient.clone();
+                let denom_val = n.denominator.clone();
 
                 // Handle fractions by ensuring denominator=1 for integer polynomials
                 if denom_val != Integer::from(1) {
@@ -335,14 +335,12 @@ impl Expr {
                 match (p.left.as_ref(), p.right.as_ref()) {
                     // Handle coefficient * var^n pattern
                     (Expr::Num(n), right) => {
-                        let new_coeff =
-                            coefficient * Integer::from(n.numerator) / Integer::from(n.denominator);
+                        let new_coeff = coefficient * n.numerator.clone() / n.denominator.clone();
                         right.extract_terms(var, terms, new_coeff);
                     }
                     // Handle var^n * coefficient pattern
                     (left, Expr::Num(n)) => {
-                        let new_coeff =
-                            coefficient * Integer::from(n.numerator) / Integer::from(n.denominator);
+                        let new_coeff = coefficient * n.numerator.clone() / n.denominator.clone();
                         left.extract_terms(var, terms, new_coeff);
                     }
                     // Handle var * var pattern (produces var^2)
@@ -354,8 +352,13 @@ impl Expr {
                         if let Expr::Var(base_var) = pow.base.as_ref() {
                             if base_var.name == var {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
-                                    if exp.denominator == 1 {
-                                        let degree = 1 + exp.numerator as usize;
+                                    if exp.denominator == Integer::from(1) {
+                                        // Convert the Integer to usize safely
+                                        let exp_f64: f64 = (&exp.numerator).into();
+                                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
+                                            panic!("Exponent out of range for usize conversion");
+                                        }
+                                        let degree = 1 + exp_f64 as usize;
                                         *terms.entry(degree).or_insert(Integer::from(0)) +=
                                             coefficient;
                                     }
@@ -368,8 +371,13 @@ impl Expr {
                         if let Expr::Var(base_var) = pow.base.as_ref() {
                             if base_var.name == var {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
-                                    if exp.denominator == 1 {
-                                        let degree = exp.numerator as usize + 1;
+                                    if exp.denominator == Integer::from(1) {
+                                        // Convert the Integer to usize safely
+                                        let exp_f64: f64 = (&exp.numerator).into();
+                                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
+                                            panic!("Exponent out of range for usize conversion");
+                                        }
+                                        let degree = 1 + exp_f64 as usize;
                                         *terms.entry(degree).or_insert(Integer::from(0)) +=
                                             coefficient;
                                     }
@@ -401,8 +409,13 @@ impl Expr {
                 if let Expr::Var(base_var) = p.base.as_ref() {
                     if base_var.name == var {
                         if let Expr::Num(exp) = p.exponent.as_ref() {
-                            if exp.denominator == 1 {
-                                let degree = exp.numerator as usize;
+                            if exp.denominator == Integer::from(1) {
+                                // Convert the Integer to usize safely
+                                let exp_f64: f64 = (&exp.numerator).into();
+                                if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
+                                    panic!("Exponent out of range for usize conversion");
+                                }
+                                let degree = exp_f64 as usize;
                                 *terms.entry(degree).or_insert(Integer::from(0)) += coefficient;
                             } else {
                                 panic!("Fractional exponent in integer polynomial");
@@ -418,11 +431,11 @@ impl Expr {
                 } else if let Expr::Grouped(inner) = p.base.as_ref() {
                     // (expression)^n
                     if let Expr::Num(exp) = p.exponent.as_ref() {
-                        if exp.denominator == 1 {
-                            if exp.numerator == 0 {
+                        if exp.denominator == Integer::from(1) {
+                            if exp.numerator == Integer::from(0) {
                                 // Anything^0 = 1
                                 *terms.entry(0).or_insert(Integer::from(0)) += coefficient;
-                            } else if exp.numerator > 0 {
+                            } else if exp.numerator > Integer::from(0) {
                                 // For (expression)^n, we need to expand it
                                 let mut temp_terms: HashMap<usize, Integer> = HashMap::new();
                                 inner.extract_terms(var, &mut temp_terms, Integer::from(1));
@@ -432,7 +445,13 @@ impl Expr {
                                 let mut result_terms: HashMap<usize, Integer> = HashMap::new();
                                 result_terms.insert(0, Integer::from(1)); // Start with x^0 = 1
 
-                                for _ in 0..exp.numerator {
+                                // Convert the Integer to usize safely
+                                let exp_f64: f64 = (&exp.numerator).into();
+                                if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
+                                    panic!("Exponent out of range for usize conversion");
+                                }
+
+                                for _ in 0..exp_f64 as usize {
                                     let mut new_result: HashMap<usize, Integer> = HashMap::new();
                                     for (res_deg, res_coef) in &result_terms {
                                         for (term_deg, term_coef) in &temp_terms {
@@ -482,10 +501,8 @@ impl Expr {
             }
             Expr::Num(n) => {
                 // Constant term
-                let num_rational = Rational::from_integers(
-                    Integer::from(n.numerator),
-                    Integer::from(n.denominator),
-                );
+                let num_rational =
+                    Rational::from_integers(n.numerator.clone(), n.denominator.clone());
                 *terms.entry(0).or_insert(Rational::from(0)) += coefficient * num_rational;
             }
             Expr::Sum(s) => {
@@ -497,19 +514,15 @@ impl Expr {
                 match (p.left.as_ref(), p.right.as_ref()) {
                     // Handle coefficient * var^n pattern
                     (Expr::Num(n), right) => {
-                        let num_rational = Rational::from_integers(
-                            Integer::from(n.numerator),
-                            Integer::from(n.denominator),
-                        );
+                        let num_rational =
+                            Rational::from_integers(n.numerator.clone(), n.denominator.clone());
                         let new_coeff = coefficient * num_rational;
                         right.extract_rational_terms(var, terms, new_coeff);
                     }
                     // Handle var^n * coefficient pattern
                     (left, Expr::Num(n)) => {
-                        let num_rational = Rational::from_integers(
-                            Integer::from(n.numerator),
-                            Integer::from(n.denominator),
-                        );
+                        let num_rational =
+                            Rational::from_integers(n.numerator.clone(), n.denominator.clone());
                         let new_coeff = coefficient * num_rational;
                         left.extract_rational_terms(var, terms, new_coeff);
                     }
@@ -522,8 +535,13 @@ impl Expr {
                         if let Expr::Var(base_var) = pow.base.as_ref() {
                             if base_var.name == var {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
-                                    if exp.denominator == 1 {
-                                        let degree = 1 + exp.numerator as usize;
+                                    if exp.denominator == Integer::from(1) {
+                                        // Convert the Integer to usize safely
+                                        let exp_f64: f64 = (&exp.numerator).into();
+                                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
+                                            panic!("Exponent out of range for usize conversion");
+                                        }
+                                        let degree = 1 + exp_f64 as usize;
                                         *terms.entry(degree).or_insert(Rational::from(0)) +=
                                             coefficient;
                                     }
@@ -536,8 +554,13 @@ impl Expr {
                         if let Expr::Var(base_var) = pow.base.as_ref() {
                             if base_var.name == var {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
-                                    if exp.denominator == 1 {
-                                        let degree = exp.numerator as usize + 1;
+                                    if exp.denominator == Integer::from(1) {
+                                        // Convert the Integer to usize safely
+                                        let exp_f64: f64 = (&exp.numerator).into();
+                                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
+                                            panic!("Exponent out of range for usize conversion");
+                                        }
+                                        let degree = 1 + exp_f64 as usize;
                                         *terms.entry(degree).or_insert(Rational::from(0)) +=
                                             coefficient;
                                     }
@@ -569,8 +592,13 @@ impl Expr {
                 if let Expr::Var(base_var) = p.base.as_ref() {
                     if base_var.name == var {
                         if let Expr::Num(exp) = p.exponent.as_ref() {
-                            if exp.denominator == 1 {
-                                let degree = exp.numerator as usize;
+                            if exp.denominator == Integer::from(1) {
+                                // Convert the Integer to usize safely
+                                let exp_f64: f64 = (&exp.numerator).into();
+                                if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
+                                    panic!("Exponent out of range for usize conversion");
+                                }
+                                let degree = exp_f64 as usize;
                                 *terms.entry(degree).or_insert(Rational::from(0)) += coefficient;
                             } else {
                                 panic!("Fractional exponent in polynomial");
@@ -586,11 +614,11 @@ impl Expr {
                 } else if let Expr::Grouped(inner) = p.base.as_ref() {
                     // (expression)^n
                     if let Expr::Num(exp) = p.exponent.as_ref() {
-                        if exp.denominator == 1 {
-                            if exp.numerator == 0 {
+                        if exp.denominator == Integer::from(1) {
+                            if exp.numerator == Integer::from(0) {
                                 // Anything^0 = 1
                                 *terms.entry(0).or_insert(Rational::from(0)) += coefficient;
-                            } else if exp.numerator > 0 {
+                            } else if exp.numerator > Integer::from(0) {
                                 // For (expression)^n, we need to expand it
                                 let mut temp_terms: HashMap<usize, Rational> = HashMap::new();
                                 inner.extract_rational_terms(
@@ -603,7 +631,12 @@ impl Expr {
                                 let mut result_terms: HashMap<usize, Rational> = HashMap::new();
                                 result_terms.insert(0, Rational::from(1)); // Start with x^0 = 1
 
-                                for _ in 0..exp.numerator {
+                                let exp_f64: f64 = (&exp.numerator).into();
+                                if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
+                                    panic!("Exponent out of range for usize conversion");
+                                }
+
+                                for _ in 0..exp_f64 as usize {
                                     let mut new_result: HashMap<usize, Rational> = HashMap::new();
                                     for (res_deg, res_coef) in &result_terms {
                                         for (term_deg, term_coef) in &temp_terms {
@@ -750,9 +783,9 @@ mod tests {
     // fn test_rational_polynomial_divide_polynomial_by_integer() {
     //     // dividing by integers should be ok for polynomials with rational coefficients
     //     // though dividing by polynomial expressions should not be valid
-    // 
+    //
     //     let result = parse_and_build_rational_poly("(x^2 + 3*x + 2)/3", "x").unwrap();
-    // 
+    //
     //     assert_eq!(
     //         result,
     //         Polynomial::from_coeffs(vec![
@@ -849,14 +882,14 @@ mod tests {
             "123456789123456789123456789123456789123456789123456789123456789",
             "x",
         )
-            .unwrap();
+        .unwrap();
         assert_eq!(
             result,
             Polynomial::from_coeffs(vec![
                 Integer::from_str(
                     "123456789123456789123456789123456789123456789123456789123456789"
                 )
-                    .unwrap()
+                .unwrap()
             ])
         );
     }
@@ -888,15 +921,15 @@ mod tests {
                 Rational::from_str(
                     "-123456789123456789123456789123456789123456789123456789123456789"
                 )
-                    .unwrap(),
+                .unwrap(),
                 Rational::from_str(
                     "123456789123456789123456789123456789123456789123456789123456789"
                 )
-                    .unwrap(),
+                .unwrap(),
                 Rational::from_str(
                     "123456789123456789123456789123456789123456789123456789123456789"
                 )
-                    .unwrap()
+                .unwrap()
             ])
         );
     }
