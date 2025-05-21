@@ -11,7 +11,7 @@
   - [Rings]()
 - [Numbers]()
   - [Naturals](./numbers/naturals.md)
-  - [Integers]()
+  - [Integers](./numbers/integers.md)
   - [Rationals]()
   - [Modular Arithmetic]()
 - [Linear Algebra]()
