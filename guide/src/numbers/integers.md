@@ -33,6 +33,8 @@ Integer supports the following operators:
 
 - `%` (modulo)
 
+For exponentiation, use the methods `.nat_pow(&exp)` or `.int_pow(&exp)`.
+
 ## Available functions
 
 - `abs`
