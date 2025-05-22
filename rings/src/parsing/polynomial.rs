@@ -1,17 +1,18 @@
-use crate::polynomial::Polynomial;
+use crate::polynomial::{MultiPolynomial, Polynomial, Variable};
 use algebraeon_nzq::*;
 use lalrpop_util::lalrpop_mod;
 use std::collections::HashMap;
 use std::fmt;
+use crate::structure::{MetaRing, MetaSemiRing};
 
 lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs"); // synthesized by LALRPOP
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Variable {
+pub struct ParseVar {
     pub name: String,
 }
 
-impl Variable {
+impl ParseVar {
     pub fn formatted(&self) -> String {
         if self.name.len() > 1 {
             format!("{{{}}}", self.name) // Add braces for multi-character variables
@@ -21,7 +22,7 @@ impl Variable {
     }
 }
 
-impl fmt::Display for Variable {
+impl fmt::Display for ParseVar {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.formatted())
     }
@@ -57,7 +58,7 @@ impl fmt::Display for Number {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-    Var(Variable),
+    Var(ParseVar),
     Num(Number),
     Sum(Sum),
     Product(Product),
@@ -266,8 +267,85 @@ impl Expr {
         Ok(Polynomial::from_coeffs(coeffs))
     }
 
-    // TODO: Add function for multivariate polynomial parsing
-    // This would handle polynomials with multiple variables
+    // Convert expression into multivariate integer polynomial
+    pub fn build_multivariate_integer_polynomial(
+        expression: &Expr,
+    ) -> Result<MultiPolynomial<Integer>, String> {
+
+        // First validate it's a valid polynomial
+        expression.validate_polynomial()?;
+
+        // Build the multivariate polynomial recursively
+        expression.to_multivariate_integer()
+    }
+
+    fn to_multivariate_integer(&self) -> Result<MultiPolynomial<Integer>, String> {
+
+        match self {
+            Expr::Var(v) => {
+                let var = Variable::new(&v.name);
+                Ok(MultiPolynomial::<Integer>::var(var))
+            }
+            Expr::Num(n) => {
+                if n.denominator != Integer::from(1) {
+                    return Err("Non-integer coefficient in integer polynomial".to_string());
+                }
+                Ok(MultiPolynomial::<Integer>::constant(n.numerator.clone()))
+            }
+            Expr::Sum(s) => {
+                let left = s.left.to_multivariate_integer()?;
+                let right = s.right.to_multivariate_integer()?;
+                Ok(MultiPolynomial::add(&left, &right))
+            }
+            Expr::Product(p) => {
+                let left = p.left.to_multivariate_integer()?;
+                let right = p.right.to_multivariate_integer()?;
+                Ok(MultiPolynomial::mul(&left, &right))
+            }
+            Expr::Power(p) => {
+                let base = p.base.to_multivariate_integer()?;
+                match p.exponent.as_ref() {
+                    Expr::Num(n) => {
+                        if n.denominator != Integer::from(1) {
+                            return Err("Fractional exponents not allowed in polynomials".to_string());
+                        }
+                        if n.numerator < Integer::from(0) {
+                            return Err("Negative exponents not allowed in polynomials".to_string());
+                        }
+                        // Convert Integer to Natural for nat_pow
+                        let exp_f64: f64 = (&n.numerator).into();
+                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
+                            panic!("Exponent out of range for usize conversion");
+                        }
+                        let exp_natural = Natural::from(exp_f64 as usize);
+                        Ok(base.nat_pow(&exp_natural))
+                    }
+                    _ => Err("Exponents must be integer constants in polynomials".to_string()),
+                }
+            }
+            Expr::Grouped(e) => e.to_multivariate_integer(),
+            Expr::Neg(e) => {
+                let inner = e.to_multivariate_integer()?;
+                Ok(MultiPolynomial::neg(&inner))
+            }
+        }
+    }
+
+    // Convert expression into multivariate rational polynomial
+    pub fn build_multivariate_rational_polynomial(
+        expression: &Expr,
+    ) -> Result<MultiPolynomial<Rational>, String> {
+
+        // First validate it's a valid polynomial
+        expression.validate_polynomial()?;
+
+        // Build the multivariate polynomial recursively
+        expression.to_multivariate_rational()
+    }
+
+    fn to_multivariate_rational(&self) -> Result<MultiPolynomial<Rational>, String> {
+        todo!()
+    }
 
     // Helper method to collect all variables in the expression
     fn collect_variables(&self) -> std::collections::HashSet<String> {
@@ -694,6 +772,16 @@ mod tests {
         }
     }
 
+    // Helper function to parse and create multivariate integer polynomial
+    fn parse_and_build_multivariate_integer_poly(
+        input: &str,
+    ) -> Result<MultiPolynomial<Integer>, String> {
+        match ExprParser::new().parse(input) {
+            Ok(expr) => Expr::build_multivariate_integer_polynomial(&expr),
+            Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
+        }
+    }
+
     #[test]
     fn test_integer_polynomial_basic() {
         let result = parse_and_build_integer_poly("3*x^2 + 2*x - 1", "x").unwrap();
@@ -810,6 +898,86 @@ mod tests {
                 Integer::from(1)
             ])
         );
+    }
+
+    // New test cases for multivariate polynomials
+    #[test]
+    fn test_multivariate_integer_polynomial_basic() {
+        let result = parse_and_build_multivariate_integer_poly("x + y").unwrap();
+        
+        println!("Parsed multivariate polynomial: {}", result);
+
+        // Create expected polynomial using library methods
+        let x_var = Variable::new("x");
+        let y_var = Variable::new("y");
+        let x = MultiPolynomial::<Integer>::var(x_var);
+        let y = MultiPolynomial::<Integer>::var(y_var);
+        let expected = MultiPolynomial::add(&x, &y);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_multivariate_integer_polynomial_product() {
+        let result = parse_and_build_multivariate_integer_poly("x * y").unwrap();
+
+        println!("Parsed multivariate polynomial: {}", result);
+
+        // Create expected polynomial using library methods
+        let x_var = Variable::new("x");
+        let y_var = Variable::new("y");
+        let x = MultiPolynomial::<Integer>::var(x_var);
+        let y = MultiPolynomial::<Integer>::var(y_var);
+        let expected = MultiPolynomial::mul(&x, &y);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_multivariate_integer_polynomial_power() {
+        let result = parse_and_build_multivariate_integer_poly("x^2 + y^3").unwrap();
+
+        println!("Parsed multivariate polynomial: {}", result);
+
+        // Create expected polynomial using library methods
+        let x_var = Variable::new("x");
+        let y_var = Variable::new("y");
+        let x = MultiPolynomial::<Integer>::var(x_var);
+        let y = MultiPolynomial::<Integer>::var(y_var);
+        let x_squared = x.nat_pow(&Natural::from(2u32));
+        let y_cubed = y.nat_pow(&Natural::from(3u32));
+        let expected = MultiPolynomial::add(&x_squared, &y_cubed);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_multivariate_integer_polynomial_complex() {
+        let result = parse_and_build_multivariate_integer_poly("3*x^2*y + 2*x*y^2 - x + 5").unwrap();
+        
+        println!("Parsed multivariate polynomial: {}", result);
+
+        // Create expected polynomial using library methods
+        let x_var = Variable::new("x");
+        let y_var = Variable::new("y");
+        let x = MultiPolynomial::<Integer>::var(x_var);
+        let y = MultiPolynomial::<Integer>::var(y_var);
+        let constant_3 = MultiPolynomial::<Integer>::constant(Integer::from(3));
+        let constant_2 = MultiPolynomial::<Integer>::constant(Integer::from(2));
+        let constant_5 = MultiPolynomial::<Integer>::constant(Integer::from(5));
+
+        let x_squared = x.nat_pow(&Natural::from(2u32));
+        let y_squared = y.nat_pow(&Natural::from(2u32));
+
+        let term1 = MultiPolynomial::mul(&MultiPolynomial::mul(&constant_3, &x_squared), &y);
+        let term2 = MultiPolynomial::mul(&MultiPolynomial::mul(&constant_2, &x), &y_squared);
+        let neg_x = MultiPolynomial::neg(&x);
+
+        let sum1 = MultiPolynomial::add(&term1, &term2);
+        let sum2 = MultiPolynomial::add(&sum1, &neg_x);
+        let expected = MultiPolynomial::add(&sum2, &constant_5);
+
+        assert_eq!(result, expected);
     }
 
     // New test cases for multi-character variables with braces

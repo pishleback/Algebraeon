@@ -50,14 +50,14 @@ Num: Number = {
     },
 };
 
-SingleVar: Variable = {
-    r"[a-zA-Z]" => Variable { name: <>.to_string() },
+SingleVar: ParseVar = {
+    r"[a-zA-Z]" => ParseVar { name: <>.to_string() },
 };
 
 // Modified BracedVar to use a regex that captures braced multi-character variables
-BracedVar: Variable = {
+BracedVar: ParseVar = {
     r"\{[a-zA-Z][a-zA-Z0-9]*\}" => {
         let name = <>.trim_start_matches('{').trim_end_matches('}').to_string();
-        Variable { name }
+        ParseVar { name }
     },
 };
