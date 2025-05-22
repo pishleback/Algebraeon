@@ -797,6 +797,12 @@ impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
+impl CharacteristicSignature for ComplexAlgebraicCanonicalStructure {
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
+    }
+}
+
 impl RingSignature for ComplexAlgebraicCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         match a {

@@ -222,15 +222,18 @@ pub trait IntegralClosureExtension<
     /// For alpha in K return non-zero d in Z such that d*alpha is in R
     fn integralize_multiplier(&self, alpha: &K::Set) -> Z::Set;
 
-    fn integral_scalar_multiple(&self, alpha: &K::Set) -> R::Set {
-        let d = self.integralize_multiplier(&alpha);
+    fn integral_scalar_multiple_r(&self, alpha: &K::Set) -> R::Set {
         self.r_to_k()
-            .try_preimage(
-                &self
-                    .k_field()
-                    .mul(&self.r_to_k().image(&self.z_to_r().image(&d)), alpha),
-            )
+            .try_preimage(&self.integral_scalar_multiple_k(alpha))
             .unwrap()
+    }
+
+    fn integral_scalar_multiple_k(&self, alpha: &K::Set) -> K::Set {
+        let d = self.integralize_multiplier(&alpha);
+        // This is the LCM of the denominators of the coefficients of a,
+        // and thus it may well be > 1 even when the element is an algebraic integer.
+        self.k_field()
+            .mul(&self.r_to_k().image(&self.z_to_r().image(&d)), alpha)
     }
 
     /// Every element of K is a fraction of elements of R

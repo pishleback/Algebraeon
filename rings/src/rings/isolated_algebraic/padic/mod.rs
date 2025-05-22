@@ -1,9 +1,10 @@
-use crate::{polynomial::*, rings::natural::factorization::primes::*, structure::*};
+use crate::{
+    polynomial::*,
+    rings::{natural::factorization::primes::*, valuation::*},
+    structure::*,
+};
 use algebraeon_nzq::*;
-use valuation::*;
-
 mod isolate;
-pub mod valuation;
 
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {
@@ -774,6 +775,12 @@ pub mod structure {
                     PAdicAlgebraicRoot::mul_mut(&mut a.clone(), &mut b.clone())
                 }
             }
+        }
+    }
+
+    impl CharacteristicSignature for PAdicAlgebraicStructure {
+        fn characteristic(&self) -> Natural {
+            Natural::ZERO
         }
     }
 

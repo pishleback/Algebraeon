@@ -137,6 +137,101 @@ impl TryFrom<&Rational> for Integer {
     }
 }
 
+macro_rules! impl_try_into_unsigned {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Integer {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
+            }
+            impl TryInto<$t> for &Integer {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    if self < &Integer::ZERO {
+                        Err(())
+                    } else {
+                        if self > &Integer::from(<$t>::MAX) {
+                            Err(())
+                        } else {
+                            let limbs = self.to_malachite_ref().to_twos_complement_limbs_asc();
+                            match limbs.len() {
+                                0 => {
+                                    Ok(0)
+                                }
+                                1 => {
+                                    Ok(limbs[0] as $t)
+                                }
+                                2 | 3 => {
+                                    if limbs.len() == 3 {
+                                        debug_assert!(limbs[2] == 0); // malachite sometimes adds a 0 on the end for some reason
+                                    }
+                                    let low = limbs[0] as u128;
+                                    let high = limbs[1] as u128;
+                                    let value = (high << 64) | low;
+                                    Ok(value as $t)
+                                }
+                                _ => {unreachable!()}
+                            }
+                        }
+                    }
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_try_into_signed {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Integer {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
+            }
+            impl TryInto<$t> for &Integer {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    if self > &Integer::from(<$t>::MAX) {
+                        Err(())
+                    } else if self < &Integer::from(<$t>::MIN) {
+                        Err(())
+                    } else {
+                        let limbs = self.to_malachite_ref().to_twos_complement_limbs_asc();
+                        match limbs.len() {
+                            0 => {
+                                Ok(0)
+                            }
+                            1 => {
+                                Ok(limbs[0] as $t)
+                            }
+                            2 | 3 => {
+                                if limbs.len() == 3 {
+                                    debug_assert!(limbs[2] == 0); // malachite sometimes adds a 0 on the end for some reason
+                                }
+                                let low = limbs[0] as u128;
+                                let high = limbs[1] as u128;
+                                let value = (high << 64) | low;
+                                Ok(value as $t)
+                            }
+                            _ => {unreachable!()}
+                        }
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
+impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
+
 impl Into<f64> for Integer {
     fn into(self) -> f64 {
         if self < Integer::ZERO {
@@ -169,6 +264,22 @@ impl Integer {
     pub const ZERO: Self = Self(malachite_nz::integer::Integer::ZERO);
     pub const ONE: Self = Self(malachite_nz::integer::Integer::ONE);
     pub const TWO: Self = Self(malachite_nz::integer::Integer::TWO);
+
+    pub fn sqrt_if_square(&self) -> Option<Natural> {
+        if self < &Integer::ZERO {
+            None
+        } else {
+            self.abs().sqrt_if_square()
+        }
+    }
+
+    pub fn is_square(&self) -> bool {
+        if self < &Integer::ZERO {
+            false
+        } else {
+            self.abs().is_square()
+        }
+    }
 }
 
 impl PartialEq<Natural> for Integer {
@@ -518,5 +629,188 @@ impl CountableSetSignature for IntegerCanonicalStructure {
         exhaustive_integers()
             .into_iter()
             .map(|n| Integer::from_malachite(n))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_int_to_uint() {
+        // u8
+        assert_eq!(
+            <&Integer as TryInto<u8>>::try_into(&Integer::from_str("0").unwrap()),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u8>>::try_into(&Integer::from_str("255").unwrap()),
+            Ok(255)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u8>>::try_into(&Integer::from_str("256").unwrap()),
+            Err(())
+        );
+
+        // u16
+        assert_eq!(
+            <&Integer as TryInto<u16>>::try_into(&Integer::from_str("65535").unwrap()),
+            Ok(65535)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u16>>::try_into(&Integer::from_str("65536").unwrap()),
+            Err(())
+        );
+
+        // u32
+        assert_eq!(
+            <&Integer as TryInto<u32>>::try_into(&Integer::from_str("4294967295").unwrap()),
+            Ok(4294967295)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u32>>::try_into(&Integer::from_str("4294967296").unwrap()),
+            Err(())
+        );
+
+        // u64
+        assert_eq!(
+            <&Integer as TryInto<u64>>::try_into(
+                &Integer::from_str("18446744073709551615").unwrap()
+            ),
+            Ok(18446744073709551615)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u64>>::try_into(
+                &Integer::from_str("18446744073709551616").unwrap()
+            ),
+            Err(())
+        );
+
+        // u128
+        assert_eq!(
+            <&Integer as TryInto<u128>>::try_into(
+                &Integer::from_str("340282366920938463463374607431768211455").unwrap()
+            ),
+            Ok(340282366920938463463374607431768211455)
+        );
+        assert_eq!(
+            <&Integer as TryInto<u128>>::try_into(
+                &Integer::from_str("340282366920938463463374607431768211456").unwrap()
+            ),
+            Err(())
+        );
+    }
+
+    #[test]
+    fn test_int_to_int() {
+        // i8
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("-129").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("-128").unwrap()),
+            Ok(-128)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("0").unwrap()),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("127").unwrap()),
+            Ok(127)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i8>>::try_into(&Integer::from_str("128").unwrap()),
+            Err(())
+        );
+
+        // i16
+        assert_eq!(
+            <&Integer as TryInto<i16>>::try_into(&Integer::from_str("-32769").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i16>>::try_into(&Integer::from_str("-32768").unwrap()),
+            Ok(-32768)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i16>>::try_into(&Integer::from_str("32767").unwrap()),
+            Ok(32767)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i16>>::try_into(&Integer::from_str("32768").unwrap()),
+            Err(())
+        );
+
+        // i32
+        assert_eq!(
+            <&Integer as TryInto<i32>>::try_into(&Integer::from_str("-2147483649").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i32>>::try_into(&Integer::from_str("-2147483648").unwrap()),
+            Ok(-2147483648)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i32>>::try_into(&Integer::from_str("2147483647").unwrap()),
+            Ok(2147483647)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i32>>::try_into(&Integer::from_str("2147483648").unwrap()),
+            Err(())
+        );
+
+        // i64
+        assert_eq!(
+            <&Integer as TryInto<i64>>::try_into(
+                &Integer::from_str("-9223372036854775809").unwrap()
+            ),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i64>>::try_into(
+                &Integer::from_str("-9223372036854775808").unwrap()
+            ),
+            Ok(-9223372036854775808)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i64>>::try_into(
+                &Integer::from_str("9223372036854775807").unwrap()
+            ),
+            Ok(9223372036854775807)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i64>>::try_into(
+                &Integer::from_str("9223372036854775808").unwrap()
+            ),
+            Err(())
+        );
+
+        // i128
+        assert_eq!(
+            <&Integer as TryInto<i128>>::try_into(
+                &Integer::from_str("-170141183460469231731687303715884105729").unwrap()
+            ),
+            Err(())
+        );
+        assert_eq!(
+            <&Integer as TryInto<i128>>::try_into(
+                &Integer::from_str("-170141183460469231731687303715884105728").unwrap()
+            ),
+            Ok(-170141183460469231731687303715884105728)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i128>>::try_into(
+                &Integer::from_str("170141183460469231731687303715884105727").unwrap()
+            ),
+            Ok(170141183460469231731687303715884105727)
+        );
+        assert_eq!(
+            <&Integer as TryInto<i128>>::try_into(
+                &Integer::from_str("170141183460469231731687303715884105728").unwrap()
+            ),
+            Err(())
+        );
     }
 }

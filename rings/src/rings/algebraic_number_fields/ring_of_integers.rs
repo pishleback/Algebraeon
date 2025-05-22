@@ -6,6 +6,7 @@ use crate::{
         finitely_free_modules::FinitelyFreeModuleStructure, matrix::Matrix,
     },
     polynomial::Polynomial,
+    rings::valuation::*,
     structure::*,
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
@@ -330,6 +331,54 @@ impl RingOfIntegersWithIntegralBasisStructure {
         debug_assert!(self.ideal_equal(&ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
         (a, b)
     }
+
+    pub fn padic_roi_element_valuation(
+        &self,
+        prime_ideal: RingOfIntegersIdeal,
+        a: RingOfIntegersWithIntegralBasisElement,
+    ) -> Valuation {
+        #[cfg(debug_assertions)]
+        self.is_element(&a);
+        #[cfg(debug_assertions)]
+        self.check_ideal(&prime_ideal);
+        if self.is_zero(&a) {
+            return Valuation::Infinity;
+        } else {
+            let mut k = 1usize;
+            let mut prime_to_the_k = prime_ideal.clone();
+            loop {
+                if !self.ideal_contains_element(&prime_to_the_k, &a) {
+                    return Valuation::Finite((k - 1).into());
+                }
+                k = k + 1;
+                prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
+            }
+        }
+    }
+
+    pub fn padic_roi_ideal_valuation(
+        &self,
+        prime_ideal: RingOfIntegersIdeal,
+        a: RingOfIntegersIdeal,
+    ) -> Valuation {
+        #[cfg(debug_assertions)]
+        self.check_ideal(&a);
+        #[cfg(debug_assertions)]
+        self.check_ideal(&prime_ideal);
+        if self.ideal_is_zero(&a) {
+            return Valuation::Infinity;
+        } else {
+            let mut k = 1usize;
+            let mut prime_to_the_k = prime_ideal.clone();
+            loop {
+                if !self.ideal_contains(&prime_to_the_k, &a) {
+                    return Valuation::Finite((k - 1).into());
+                }
+                k = k + 1;
+                prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
+            }
+        }
+    }
 }
 
 impl Signature for RingOfIntegersWithIntegralBasisStructure {}
@@ -413,6 +462,12 @@ impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
                 .unwrap()
             }
         }
+    }
+}
+
+impl CharacteristicSignature for RingOfIntegersWithIntegralBasisStructure {
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
     }
 }
 

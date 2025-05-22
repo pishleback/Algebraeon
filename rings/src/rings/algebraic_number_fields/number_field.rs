@@ -156,15 +156,21 @@ impl AlgebraicNumberFieldStructure {
             .all(|c| c.denominator() == Natural::ONE)
     }
 
-    //return a scalar multiple of $a$ which is an algebraic integer
-    fn integral_multiple(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
-        let m = Integer::lcm_list(
+    // This is the LCM of the denominators of the coefficients of a,
+    // and thus it may well be > 1 even when the element is an algebraic integer.
+    pub(crate) fn denominator(&self, a: &Polynomial<Rational>) -> Integer {
+        Integer::lcm_list(
             self.min_poly(a)
                 .coeffs()
                 .into_iter()
                 .map(|c| Integer::from(c.denominator()))
                 .collect(),
-        );
+        )
+    }
+
+    //return a scalar multiple of $a$ which is an algebraic integer
+    pub fn integral_multiple(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
+        let m = self.denominator(a);
         let b = Polynomial::mul(&Polynomial::constant(Rational::from(m)), a);
         debug_assert!(self.is_algebraic_integer(&b));
         b

@@ -2,8 +2,10 @@ use super::ideal::RingOfIntegersIdeal;
 use super::number_field::*;
 use super::ring_of_integers::*;
 use crate::linear::matrix::Matrix;
+use crate::polynomial::Polynomial;
 use crate::polynomial::PolynomialStructure;
 use crate::rings::quotient::QuotientStructure;
+use crate::rings::valuation::Valuation;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::*;
@@ -34,6 +36,20 @@ impl RingOfIntegersExtension {
             q_to_k: PrincipalRationalSubfieldInclusion::new(anf.clone()),
             r_to_k: RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(roi),
         }
+    }
+
+    pub fn padic_anf_valuation_element(
+        &self,
+        prime_ideal: RingOfIntegersIdeal,
+        a: &Polynomial<Rational>,
+    ) -> Valuation {
+        let d = self.integralize_multiplier(a);
+        let m = self.k_field().mul(a, &self.z_to_k().image(&d));
+        self.r
+            .padic_roi_element_valuation(prime_ideal.clone(), self.r.try_anf_to_roi(&m).unwrap())
+            - self
+                .r
+                .padic_roi_element_valuation(prime_ideal, self.r.from_int(d))
     }
 }
 
@@ -74,22 +90,11 @@ impl
         &self.r_to_k
     }
 
-    fn integralize_multiplier(
-        &self,
-        alpha: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
-    ) -> Integer {
+    fn integralize_multiplier(&self, alpha: &Polynomial<Rational>) -> Integer {
         if self.k_field().is_algebraic_integer(alpha) {
             Integer::ONE
         } else {
-            let q_poly = PolynomialStructure::new(self.q_field().clone());
-            let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
-            debug_assert!(q_poly.is_monic(&alpha_min_poly_monic));
-            let alpha_min_poly_monic_coeffs = alpha_min_poly_monic.into_coeffs();
-            let alpha_min_poly_monic_coeffs_denominators = alpha_min_poly_monic_coeffs
-                .into_iter()
-                .map(|c| self.z_to_q().denominator(&c))
-                .collect();
-            Integer::lcm_list(alpha_min_poly_monic_coeffs_denominators)
+            self.k_field().denominator(alpha)
         }
     }
 }
@@ -142,7 +147,7 @@ impl
         // alpha generates the algebraic number field but it is not necessarily an algebraic integer
         let alpha = anf.generator();
         // beta generates the algebraic number field and belongs to the ring of integers
-        let beta = self.integral_scalar_multiple(&alpha);
+        let beta = self.integral_scalar_multiple_r(&alpha);
         // factor the minimal polynomial of beta over the integers modulo p
         let beta_min_poly = self.min_poly_r_over_z(&beta);
         let beta_min_poly_factored = poly_mod_p.factor(&beta_min_poly).unwrap();

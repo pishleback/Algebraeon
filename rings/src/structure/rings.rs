@@ -122,8 +122,29 @@ where
 }
 impl<R: MetaType> MetaSemiRing for R where Self::Signature: SemiRingSignature {}
 
+pub trait CharacteristicSignature: SemiRingSignature {
+    fn characteristic(&self) -> Natural;
+}
+pub trait MetaCharacteristic: MetaType
+where
+    Self::Signature: CharacteristicSignature,
+{
+    fn characteristic() -> Natural {
+        Self::structure().characteristic()
+    }
+}
+impl<R: MetaType> MetaCharacteristic for R where Self::Signature: CharacteristicSignature {}
+
 pub trait RingSignature: SemiRingSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.add(a, &self.neg(b))
+    }
+
+    fn bracket(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.sub(&self.mul(a, b), &self.mul(b, a))
+    }
 
     fn from_int(&self, x: impl Into<Integer>) -> Self::Set {
         let x = x.into();
@@ -603,7 +624,8 @@ impl<FS: FieldSignature> BezoutDomainSignature for FS {
     }
 }
 
-pub trait CharZeroRingSignature: RingSignature {
+// A trait to indicate that characteristic() always returns 0
+pub trait CharZeroRingSignature: RingSignature + CharacteristicSignature {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
 }
 pub trait MetaCharZeroRing: MetaRing

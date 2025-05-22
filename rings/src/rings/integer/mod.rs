@@ -31,6 +31,12 @@ impl SemiRingSignature for IntegerCanonicalStructure {
     }
 }
 
+impl CharacteristicSignature for IntegerCanonicalStructure {
+    fn characteristic(&self) -> Natural {
+        Natural::ZERO
+    }
+}
+
 impl RingSignature for IntegerCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         -a
