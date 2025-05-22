@@ -125,6 +125,57 @@ impl From<&Rational> for Rational {
     }
 }
 
+macro_rules! impl_try_into_unsigned {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Rational {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
+            }
+            impl TryInto<$t> for &Rational {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    // First check if this rational represents a whole number
+                    let integer: Integer = Integer::try_from(self)?;
+                    // Then try to convert the integer to the target type
+                    integer.try_into()
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_try_into_signed {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Rational {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
+            }
+            impl TryInto<$t> for &Rational {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    // First check if this rational represents a whole number
+                    let integer: Integer = Integer::try_from(self)?;
+                    // Then try to convert the integer to the target type
+                    integer.try_into()
+                }
+            }
+        )*
+    };
+}
+
+impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
+impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
+
 impl FromStr for Rational {
     type Err = ();
 
@@ -520,5 +571,177 @@ mod tests {
         let (n, d) = ((&x).numerator(), (&x).denominator());
         assert_eq!(n, Integer::from(-2));
         assert_eq!(d, Natural::from(3u32));
+    }
+
+    #[test]
+    fn test_rational_to_unsigned() {
+        // Test successful conversions for whole numbers
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("0").unwrap()),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("255").unwrap()),
+            Ok(255)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u16>>::try_into(&Rational::from_str("65535").unwrap()),
+            Ok(65535)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::from_str("4294967295").unwrap()),
+            Ok(4294967295)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u64>>::try_into(&Rational::from_str("18446744073709551615").unwrap()),
+            Ok(18446744073709551615)
+        );
+
+        // Test failure for fractional numbers
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("1/2").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::from_str("5/3").unwrap()),
+            Err(())
+        );
+
+        // Test failure for negative numbers (unsigned types)
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("-1").unwrap()),
+            Err(())
+        );
+
+        // Test failure for out-of-range values
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("256").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<u16>>::try_into(&Rational::from_str("65536").unwrap()),
+            Err(())
+        );
+
+        // Test owned version
+        assert_eq!(
+            <Rational as TryInto<u8>>::try_into(Rational::from_str("42").unwrap()),
+            Ok(42)
+        );
+    }
+
+    #[test]
+    fn test_rational_to_signed() {
+        // Test successful conversions for whole numbers
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("-128").unwrap()),
+            Ok(-128)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("127").unwrap()),
+            Ok(127)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i16>>::try_into(&Rational::from_str("-32768").unwrap()),
+            Ok(-32768)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("2147483647").unwrap()),
+            Ok(2147483647)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i64>>::try_into(&Rational::from_str("-9223372036854775808").unwrap()),
+            Ok(-9223372036854775808)
+        );
+
+        // Test failure for fractional numbers
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("-1/2").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("7/4").unwrap()),
+            Err(())
+        );
+
+        // Test failure for out-of-range values
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("-129").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("128").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<i16>>::try_into(&Rational::from_str("32768").unwrap()),
+            Err(())
+        );
+
+        // Test owned version
+        assert_eq!(
+            <Rational as TryInto<i32>>::try_into(Rational::from_str("-42").unwrap()),
+            Ok(-42)
+        );
+    }
+
+    #[test]
+    fn test_rational_whole_numbers_with_denominators() {
+        // Test that rationals like 6/3 = 2 convert correctly
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("6/3").unwrap()),
+            Ok(2)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::from_str("8/4").unwrap()),
+            Ok(2)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("-12/4").unwrap()),
+            Ok(-3)
+        );
+
+        // Test that non-whole rationals fail
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("7/3").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::from_str("5/2").unwrap()),
+            Err(())
+        );
+    }
+
+    #[test]
+    fn test_rational_edge_cases() {
+        // Test zero
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::ZERO),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::ZERO),
+            Ok(0)
+        );
+
+        // Test one
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::ONE),
+            Ok(1)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::ONE),
+            Ok(1)
+        );
+
+        // Test that ONE_HALF fails
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::ONE_HALF),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::ONE_HALF),
+            Err(())
+        );
     }
 }
