@@ -39,22 +39,24 @@ Integer supports the following operators:
 
 ```rust
 use algebraeon::nzq::{Integer, Natural};
-use std::str::FromStr;
+use algebraeon::rings::structure::*;
 
 let a = Integer::from(-12);
 let b = Integer::from(5);
 
 // Basic operations
-let sum = &a + &b;              // -7
-let neg = -&a;                  // 12
-let sub = &a - &b;              // -17
-let product = &a * &b;          // -60
-let modulo = &a % &b;           // 3
+let sum = &a + &b;                              // -7
+let neg = -&a;                                  // 12
+let sub = &a - &b;                              // -17
+let product = &a * &b;                          // -60
+let power = a.nat_pow(&Natural::from(5u32));    // -248832
+let modulo = &a % &b;                           // 3
 
 assert_eq!(sum, Integer::from(-7));
 assert_eq!(neg, Integer::from(12));
 assert_eq!(sub, Integer::from(-17));
 assert_eq!(product, Integer::from(-60));
+assert_eq!(power, Integer::from(-248832));
 assert_eq!(modulo, Integer::from(3));
 
 // abs
