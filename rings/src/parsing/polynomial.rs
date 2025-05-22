@@ -1,9 +1,9 @@
 use crate::polynomial::{MultiPolynomial, Polynomial, Variable};
+use crate::structure::{MetaRing, MetaSemiRing};
 use algebraeon_nzq::*;
 use lalrpop_util::lalrpop_mod;
 use std::collections::HashMap;
 use std::fmt;
-use crate::structure::{MetaRing, MetaSemiRing};
 
 lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs"); // synthesized by LALRPOP
 
@@ -270,22 +270,27 @@ impl Expr {
     // Convert expression into multivariate integer polynomial
     pub fn build_multivariate_integer_polynomial(
         expression: &Expr,
+        variable_mapping: HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Integer>, String> {
-
         // First validate it's a valid polynomial
         expression.validate_polynomial()?;
 
         // Build the multivariate polynomial recursively
-        expression.to_multivariate_integer()
+        expression.to_multivariate_integer(&variable_mapping)
     }
 
-    fn to_multivariate_integer(&self) -> Result<MultiPolynomial<Integer>, String> {
-
+    fn to_multivariate_integer(
+        &self,
+        variable_mapping: &HashMap<&str, Variable>,
+    ) -> Result<MultiPolynomial<Integer>, String> {
         match self {
-            Expr::Var(v) => {
-                let var = Variable::new(&v.name);
-                Ok(MultiPolynomial::<Integer>::var(var))
-            }
+            Expr::Var(v) => match variable_mapping.get(v.name.as_str()) {
+                Some(var) => Ok(MultiPolynomial::<Integer>::var(var.clone())),
+                None => Err(format!(
+                    "Variable '{}' not found in variable mapping",
+                    v.name
+                )),
+            },
             Expr::Num(n) => {
                 if n.denominator != Integer::from(1) {
                     return Err("Non-integer coefficient in integer polynomial".to_string());
@@ -293,21 +298,23 @@ impl Expr {
                 Ok(MultiPolynomial::<Integer>::constant(n.numerator.clone()))
             }
             Expr::Sum(s) => {
-                let left = s.left.to_multivariate_integer()?;
-                let right = s.right.to_multivariate_integer()?;
+                let left = s.left.to_multivariate_integer(variable_mapping)?;
+                let right = s.right.to_multivariate_integer(variable_mapping)?;
                 Ok(MultiPolynomial::add(&left, &right))
             }
             Expr::Product(p) => {
-                let left = p.left.to_multivariate_integer()?;
-                let right = p.right.to_multivariate_integer()?;
+                let left = p.left.to_multivariate_integer(variable_mapping)?;
+                let right = p.right.to_multivariate_integer(variable_mapping)?;
                 Ok(MultiPolynomial::mul(&left, &right))
             }
             Expr::Power(p) => {
-                let base = p.base.to_multivariate_integer()?;
+                let base = p.base.to_multivariate_integer(variable_mapping)?;
                 match p.exponent.as_ref() {
                     Expr::Num(n) => {
                         if n.denominator != Integer::from(1) {
-                            return Err("Fractional exponents not allowed in polynomials".to_string());
+                            return Err(
+                                "Fractional exponents not allowed in polynomials".to_string()
+                            );
                         }
                         if n.numerator < Integer::from(0) {
                             return Err("Negative exponents not allowed in polynomials".to_string());
@@ -323,9 +330,9 @@ impl Expr {
                     _ => Err("Exponents must be integer constants in polynomials".to_string()),
                 }
             }
-            Expr::Grouped(e) => e.to_multivariate_integer(),
+            Expr::Grouped(e) => e.to_multivariate_integer(variable_mapping),
             Expr::Neg(e) => {
-                let inner = e.to_multivariate_integer()?;
+                let inner = e.to_multivariate_integer(variable_mapping)?;
                 Ok(MultiPolynomial::neg(&inner))
             }
         }
@@ -334,43 +341,51 @@ impl Expr {
     // Convert expression into multivariate rational polynomial
     pub fn build_multivariate_rational_polynomial(
         expression: &Expr,
+        variable_mapping: HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Rational>, String> {
-
         // First validate it's a valid polynomial
         expression.validate_polynomial()?;
 
         // Build the multivariate polynomial recursively
-        expression.to_multivariate_rational()
+        expression.to_multivariate_rational(&variable_mapping)
     }
 
     // Convert this expression to a multivariate rational polynomial
-    fn to_multivariate_rational(&self) -> Result<MultiPolynomial<Rational>, String> {
-        
+    fn to_multivariate_rational(
+        &self,
+        variable_mapping: &HashMap<&str, Variable>,
+    ) -> Result<MultiPolynomial<Rational>, String> {
         match self {
-            Expr::Var(v) => {
-                let var = Variable::new(&v.name);
-                Ok(MultiPolynomial::<Rational>::var(var))
-            }
+            Expr::Var(v) => match variable_mapping.get(v.name.as_str()) {
+                Some(var) => Ok(MultiPolynomial::<Rational>::var(var.clone())),
+                None => Err(format!(
+                    "Variable '{}' not found in variable mapping",
+                    v.name
+                )),
+            },
             Expr::Num(n) => {
-                let rational_coeff = Rational::from_integers(n.numerator.clone(), n.denominator.clone());
+                let rational_coeff =
+                    Rational::from_integers(n.numerator.clone(), n.denominator.clone());
                 Ok(MultiPolynomial::<Rational>::constant(rational_coeff))
             }
             Expr::Sum(s) => {
-                let left = s.left.to_multivariate_rational()?;
-                let right = s.right.to_multivariate_rational()?;
+                let left = s.left.to_multivariate_rational(variable_mapping)?;
+                let right = s.right.to_multivariate_rational(variable_mapping)?;
                 Ok(MultiPolynomial::add(&left, &right))
             }
             Expr::Product(p) => {
-                let left = p.left.to_multivariate_rational()?;
-                let right = p.right.to_multivariate_rational()?;
+                let left = p.left.to_multivariate_rational(variable_mapping)?;
+                let right = p.right.to_multivariate_rational(variable_mapping)?;
                 Ok(MultiPolynomial::mul(&left, &right))
             }
             Expr::Power(p) => {
-                let base = p.base.to_multivariate_rational()?;
+                let base = p.base.to_multivariate_rational(variable_mapping)?;
                 match p.exponent.as_ref() {
                     Expr::Num(n) => {
                         if n.denominator != Integer::from(1) {
-                            return Err("Fractional exponents not allowed in polynomials".to_string());
+                            return Err(
+                                "Fractional exponents not allowed in polynomials".to_string()
+                            );
                         }
                         if n.numerator < Integer::from(0) {
                             return Err("Negative exponents not allowed in polynomials".to_string());
@@ -386,9 +401,9 @@ impl Expr {
                     _ => Err("Exponents must be integer constants in polynomials".to_string()),
                 }
             }
-            Expr::Grouped(e) => e.to_multivariate_rational(),
+            Expr::Grouped(e) => e.to_multivariate_rational(variable_mapping),
             Expr::Neg(e) => {
-                let inner = e.to_multivariate_rational()?;
+                let inner = e.to_multivariate_rational(variable_mapping)?;
                 Ok(MultiPolynomial::neg(&inner))
             }
         }
@@ -822,9 +837,10 @@ mod tests {
     // Helper function to parse and create multivariate integer polynomial
     fn parse_and_build_multivariate_integer_poly(
         input: &str,
+        variable_mapping: HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Integer>, String> {
         match ExprParser::new().parse(input) {
-            Ok(expr) => Expr::build_multivariate_integer_polynomial(&expr),
+            Ok(expr) => Expr::build_multivariate_integer_polynomial(&expr, variable_mapping),
             Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
         }
     }
@@ -832,9 +848,10 @@ mod tests {
     // Helper function to parse and create multivariate rational polynomial
     fn parse_and_build_multivariate_rational_poly(
         input: &str,
+        variable_mapping: HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Rational>, String> {
         match ExprParser::new().parse(input) {
-            Ok(expr) => Expr::build_multivariate_rational_polynomial(&expr),
+            Ok(expr) => Expr::build_multivariate_rational_polynomial(&expr, variable_mapping),
             Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
         }
     }
@@ -960,13 +977,14 @@ mod tests {
     // New test cases for multivariate polynomials
     #[test]
     fn test_multivariate_integer_polynomial_basic() {
-        let result = parse_and_build_multivariate_integer_poly("x + y").unwrap();
-        
-        println!("Parsed multivariate polynomial: {}", result);
-
-        // Create expected polynomial using library methods
+        // Create variables first
         let x_var = Variable::new("x");
         let y_var = Variable::new("y");
+        let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
+
+        let result = parse_and_build_multivariate_integer_poly("x + y", variable_mapping).unwrap();
+
+        // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
         let y = MultiPolynomial::<Integer>::var(y_var);
         let expected = MultiPolynomial::add(&x, &y);
@@ -976,13 +994,14 @@ mod tests {
 
     #[test]
     fn test_multivariate_integer_polynomial_product() {
-        let result = parse_and_build_multivariate_integer_poly("x * y").unwrap();
-
-        println!("Parsed multivariate polynomial: {}", result);
-
-        // Create expected polynomial using library methods
+        // Create variables first
         let x_var = Variable::new("x");
         let y_var = Variable::new("y");
+        let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
+
+        let result = parse_and_build_multivariate_integer_poly("x * y", variable_mapping).unwrap();
+
+        // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
         let y = MultiPolynomial::<Integer>::var(y_var);
         let expected = MultiPolynomial::mul(&x, &y);
@@ -992,13 +1011,15 @@ mod tests {
 
     #[test]
     fn test_multivariate_integer_polynomial_power() {
-        let result = parse_and_build_multivariate_integer_poly("x^2 + y^3").unwrap();
-
-        println!("Parsed multivariate polynomial: {}", result);
-
-        // Create expected polynomial using library methods
+        // Create variables first
         let x_var = Variable::new("x");
         let y_var = Variable::new("y");
+        let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
+
+        let result =
+            parse_and_build_multivariate_integer_poly("x^2 + y^3", variable_mapping).unwrap();
+
+        // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
         let y = MultiPolynomial::<Integer>::var(y_var);
         let x_squared = x.nat_pow(&Natural::from(2u32));
@@ -1010,13 +1031,18 @@ mod tests {
 
     #[test]
     fn test_multivariate_integer_polynomial_complex() {
-        let result = parse_and_build_multivariate_integer_poly("3*x^2*y + 2*x*y^2 - x + 5").unwrap();
-        
-        println!("Parsed multivariate polynomial: {}", result);
-
-        // Create expected polynomial using library methods
+        // Create variables first
         let x_var = Variable::new("x");
         let y_var = Variable::new("y");
+        let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
+
+        let result = parse_and_build_multivariate_integer_poly(
+            "3*x^2*y + 2*x*y^2 - x + 5",
+            variable_mapping,
+        )
+        .unwrap();
+
+        // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
         let y = MultiPolynomial::<Integer>::var(y_var);
         let constant_3 = MultiPolynomial::<Integer>::constant(Integer::from(3));
@@ -1039,13 +1065,14 @@ mod tests {
 
     #[test]
     fn test_multivariate_rational_polynomial_basic() {
-        let result = parse_and_build_multivariate_rational_poly("x + y").unwrap();
-
-        println!("Parsed multivariate polynomial: {}", result);
-
-        // Create expected polynomial using library methods
+        // Create variables first
         let x_var = Variable::new("x");
         let y_var = Variable::new("y");
+        let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
+
+        let result = parse_and_build_multivariate_rational_poly("x + y", variable_mapping).unwrap();
+
+        // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Rational>::var(x_var);
         let y = MultiPolynomial::<Rational>::var(y_var);
         let expected = MultiPolynomial::add(&x, &y);
@@ -1055,17 +1082,25 @@ mod tests {
 
     #[test]
     fn test_multivariate_rational_polynomial_fractions() {
-        let result = parse_and_build_multivariate_rational_poly("1/2*x + 3/4*y").unwrap();
-
-        println!("Parsed multivariate polynomial: {}", result);
-
-        // Create expected polynomial using library methods
+        // Create variables first
         let x_var = Variable::new("x");
         let y_var = Variable::new("y");
+        let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
+
+        let result =
+            parse_and_build_multivariate_rational_poly("1/2*x + 3/4*y", variable_mapping).unwrap();
+
+        // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Rational>::var(x_var);
         let y = MultiPolynomial::<Rational>::var(y_var);
-        let half = MultiPolynomial::<Rational>::constant(Rational::from_integers(Integer::from(1), Integer::from(2)));
-        let three_fourths = MultiPolynomial::<Rational>::constant(Rational::from_integers(Integer::from(3), Integer::from(4)));
+        let half = MultiPolynomial::<Rational>::constant(Rational::from_integers(
+            Integer::from(1),
+            Integer::from(2),
+        ));
+        let three_fourths = MultiPolynomial::<Rational>::constant(Rational::from_integers(
+            Integer::from(3),
+            Integer::from(4),
+        ));
 
         let term1 = MultiPolynomial::mul(&half, &x);
         let term2 = MultiPolynomial::mul(&three_fourths, &y);
@@ -1076,13 +1111,15 @@ mod tests {
 
     #[test]
     fn test_multivariate_polynomial_expansion() {
-        let result = parse_and_build_multivariate_integer_poly("(x + y)^2").unwrap();
-
-        println!("Parsed multivariate polynomial: {}", result);
-
-        // Create expected polynomial: x^2 + 2*x*y + y^2
+        // Create variables first
         let x_var = Variable::new("x");
         let y_var = Variable::new("y");
+        let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
+
+        let result =
+            parse_and_build_multivariate_integer_poly("(x + y)^2", variable_mapping).unwrap();
+
+        // Create expected polynomial: x^2 + 2*x*y + y^2
         let x = MultiPolynomial::<Integer>::var(x_var);
         let y = MultiPolynomial::<Integer>::var(y_var);
         let sum_xy = MultiPolynomial::add(&x, &y);
@@ -1093,14 +1130,21 @@ mod tests {
 
     #[test]
     fn test_multivariate_polynomial_large_expression() {
-        let result = parse_and_build_multivariate_integer_poly("(x + y + z)^3").unwrap();
-
-        println!("Parsed multivariate polynomial: {}", result);
-
-        // Create expected polynomial using library methods
+        // Create variables first
         let x_var = Variable::new("x");
         let y_var = Variable::new("y");
         let z_var = Variable::new("z");
+        let variable_mapping = [
+            ("x", x_var.clone()),
+            ("y", y_var.clone()),
+            ("z", z_var.clone()),
+        ]
+        .into();
+
+        let result =
+            parse_and_build_multivariate_integer_poly("(x + y + z)^3", variable_mapping).unwrap();
+
+        // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
         let y = MultiPolynomial::<Integer>::var(y_var);
         let z = MultiPolynomial::<Integer>::var(z_var);
@@ -1127,6 +1171,24 @@ mod tests {
     }
 
     #[test]
+    fn test_multivariate_multi_character_variables() {
+        // Create variables first
+        let var1 = Variable::new("var1");
+        let var2 = Variable::new("var2");
+        let variable_mapping = [("var1", var1.clone()), ("var2", var2.clone())].into();
+
+        let result =
+            parse_and_build_multivariate_integer_poly("{var1} + {var2}", variable_mapping).unwrap();
+
+        // Create expected polynomial using the same variables
+        let x = MultiPolynomial::<Integer>::var(var1);
+        let y = MultiPolynomial::<Integer>::var(var2);
+        let expected = MultiPolynomial::add(&x, &y);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
     fn test_mixed_variable_formats() {
         // This should work because we're still using "x" as the variable name
         // even though it's represented as {x} in the expression
@@ -1140,6 +1202,24 @@ mod tests {
                 Rational::from(1)
             ])
         );
+    }
+
+    #[test]
+    fn test_mixed_variable_formats_multivariate() {
+        // Create variables first
+        let x_var = Variable::new("x");
+        let y_var = Variable::new("y");
+        let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
+
+        let result =
+            parse_and_build_multivariate_integer_poly("{x} + y", variable_mapping).unwrap();
+
+        // Create expected polynomial using the same variables
+        let x = MultiPolynomial::<Integer>::var(x_var);
+        let y = MultiPolynomial::<Integer>::var(y_var);
+        let expected = MultiPolynomial::add(&x, &y);
+
+        assert_eq!(result, expected);
     }
 
     #[test]
@@ -1160,6 +1240,19 @@ mod tests {
 
         let result = parse_and_build_rational_poly("1/(x+1)", "x");
         assert!(result.is_err());
+
+        // Test multivariate versions too
+        let x_var = Variable::new("x");
+        let variable_mapping = [("x", x_var)].into();
+
+        let result = parse_and_build_multivariate_rational_poly("x^-2", variable_mapping);
+        assert!(result.is_err());
+
+        let x_var = Variable::new("x");
+        let variable_mapping = [("x", x_var)].into();
+
+        let result = parse_and_build_multivariate_rational_poly("x^(1/2)", variable_mapping);
+        assert!(result.is_err());
     }
 
     #[test]
@@ -1172,6 +1265,17 @@ mod tests {
         assert!(result.is_err());
 
         let result = parse_and_build_rational_poly("x{foo}", "x");
+        assert!(result.is_err());
+
+        // Test multivariate versions too - these should fail at parsing level
+        // so we can use empty variable mappings
+        let empty_mapping = HashMap::new();
+
+        let result = parse_and_build_multivariate_rational_poly("2x", empty_mapping);
+        assert!(result.is_err());
+
+        let empty_mapping = HashMap::new();
+        let result = parse_and_build_multivariate_rational_poly("x{foo}", empty_mapping);
         assert!(result.is_err());
     }
 
