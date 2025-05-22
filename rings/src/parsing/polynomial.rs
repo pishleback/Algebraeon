@@ -8,12 +8,12 @@ use std::fmt;
 lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs"); // synthesized by LALRPOP
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ParseVar {
-    pub name: String,
+struct ParseVar {
+    name: String,
 }
 
 impl ParseVar {
-    pub fn formatted(&self) -> String {
+    fn formatted(&self) -> String {
         if self.name.len() > 1 {
             format!("{{{}}}", self.name) // Add braces for multi-character variables
         } else {
@@ -29,13 +29,13 @@ impl fmt::Display for ParseVar {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Number {
-    pub numerator: Integer,
-    pub denominator: Integer,
+struct Number {
+    numerator: Integer,
+    denominator: Integer,
 }
 
 impl Number {
-    pub fn new(numerator: Integer, denominator: Integer) -> Self {
+    fn new(numerator: Integer, denominator: Integer) -> Self {
         if denominator == Integer::from(0) {
             panic!("Denominator cannot be zero");
         }
@@ -57,7 +57,7 @@ impl fmt::Display for Number {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Expr {
+enum Expr {
     Var(ParseVar),
     Num(Number),
     Sum(Sum),
@@ -68,13 +68,13 @@ pub enum Expr {
 }
 
 impl Expr {
-    pub fn validate_polynomial(&self) -> Result<(), String> {
+    fn validate(&self) -> Result<(), String> {
         match self {
-            Expr::Power(p) => p.validate_polynomial(),
-            Expr::Product(p) => p.validate_polynomial(),
-            Expr::Sum(s) => s.validate_polynomial(),
-            Expr::Neg(e) => e.validate_polynomial(),
-            Expr::Grouped(e) => e.validate_polynomial(),
+            Expr::Power(p) => p.validate(),
+            Expr::Product(p) => p.validate(),
+            Expr::Sum(s) => s.validate(),
+            Expr::Neg(e) => e.validate(),
+            Expr::Grouped(e) => e.validate(),
             _ => Ok(()),
         }
     }
@@ -95,15 +95,15 @@ impl fmt::Display for Expr {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Sum {
-    pub left: Box<Expr>,
-    pub right: Box<Expr>,
+struct Sum {
+    left: Box<Expr>,
+    right: Box<Expr>,
 }
 
 impl Sum {
-    fn validate_polynomial(&self) -> Result<(), String> {
-        self.left.validate_polynomial()?;
-        self.right.validate_polynomial()
+    fn validate(&self) -> Result<(), String> {
+        self.left.validate()?;
+        self.right.validate()
     }
 }
 
@@ -117,13 +117,13 @@ impl fmt::Display for Sum {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Product {
-    pub left: Box<Expr>,
-    pub right: Box<Expr>,
+struct Product {
+    left: Box<Expr>,
+    right: Box<Expr>,
 }
 
 impl Product {
-    fn validate_polynomial(&self) -> Result<(), String> {
+    fn validate(&self) -> Result<(), String> {
         if let Expr::Power(p) = self.right.as_ref() {
             if let Expr::Num(n) = p.exponent.as_ref() {
                 if n.denominator == Integer::from(1) && n.numerator == Integer::from(-1) {
@@ -131,8 +131,8 @@ impl Product {
                 }
             }
         }
-        self.left.validate_polynomial()?;
-        self.right.validate_polynomial()
+        self.left.validate()?;
+        self.right.validate()
     }
 }
 
@@ -143,13 +143,13 @@ impl fmt::Display for Product {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Power {
-    pub base: Box<Expr>,
-    pub exponent: Box<Expr>,
+struct Power {
+    base: Box<Expr>,
+    exponent: Box<Expr>,
 }
 
 impl Power {
-    fn validate_polynomial(&self) -> Result<(), String> {
+    fn validate(&self) -> Result<(), String> {
         match self.exponent.as_ref() {
             Expr::Num(n) => {
                 if n.denominator != Integer::from(1) {
@@ -161,7 +161,7 @@ impl Power {
             }
             _ => return Err("Exponents must be integer constants in polynomials".to_string()),
         }
-        self.base.validate_polynomial()
+        self.base.validate()
     }
 }
 
@@ -182,12 +182,12 @@ impl Expr {
 
 impl Expr {
     // Convert expression into univariate integer polynomial
-    pub fn build_univariate_integer_polynomial(
-        var: &str,
+    fn build_univariate_integer_polynomial(
         expression: &Expr,
+        var: &str,
     ) -> Result<Polynomial<Integer>, String> {
         // First validate it's a valid polynomial
-        expression.validate_polynomial()?;
+        expression.validate()?;
 
         // Collect terms as (exponent, coefficient) pairs
         let mut terms: HashMap<usize, Integer> = HashMap::new();
@@ -225,12 +225,12 @@ impl Expr {
     }
 
     // New function: Convert expression into univariate rational polynomial
-    pub fn build_univariate_rational_polynomial(
-        var: &str,
+    fn build_univariate_rational_polynomial(
         expression: &Expr,
+        var: &str,
     ) -> Result<Polynomial<Rational>, String> {
         // First validate it's a valid polynomial
-        expression.validate_polynomial()?;
+        expression.validate()?;
 
         // Collect terms as (exponent, coefficient) pairs
         let mut terms: HashMap<usize, Rational> = HashMap::new();
@@ -268,12 +268,12 @@ impl Expr {
     }
 
     // Convert expression into multivariate integer polynomial
-    pub fn build_multivariate_integer_polynomial(
+    fn build_multivariate_integer_polynomial(
         expression: &Expr,
         variable_mapping: HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Integer>, String> {
         // First validate it's a valid polynomial
-        expression.validate_polynomial()?;
+        expression.validate()?;
 
         // Build the multivariate polynomial recursively
         expression.to_multivariate_integer(&variable_mapping)
@@ -339,12 +339,12 @@ impl Expr {
     }
 
     // Convert expression into multivariate rational polynomial
-    pub fn build_multivariate_rational_polynomial(
+    fn build_multivariate_rational_polynomial(
         expression: &Expr,
         variable_mapping: HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Rational>, String> {
         // First validate it's a valid polynomial
-        expression.validate_polynomial()?;
+        expression.validate()?;
 
         // Build the multivariate polynomial recursively
         expression.to_multivariate_rational(&variable_mapping)
@@ -808,57 +808,56 @@ impl Expr {
     }
 }
 
+/// Create a polynomial with integer coefficients from a string
+pub fn parse_integer_polynomial(polynomial_str: &str, var: &str) -> Result<Polynomial<Integer>, String> {
+    match polynomial_parser::ExprParser::new().parse(polynomial_str) {
+        Ok(expr) => Expr::build_univariate_integer_polynomial(&expr, var),
+        Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
+    }
+}
+
+/// Create a polynomial with rational coefficients from a string
+pub fn parse_rational_polynomial(
+    polynomial_str: &str,
+    var: &str,
+) -> Result<Polynomial<Rational>, String> {
+    match polynomial_parser::ExprParser::new().parse(polynomial_str) {
+        Ok(expr) => Expr::build_univariate_rational_polynomial(&expr, var),
+        Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
+    }
+}
+
+/// Create a multivariate polynomial with integer coefficients from a string
+pub fn parse_multivariate_integer_polynomial(
+    polynomial_str: &str,
+    variable_mapping: HashMap<&str, Variable>,
+) -> Result<MultiPolynomial<Integer>, String> {
+    match polynomial_parser::ExprParser::new().parse(polynomial_str) {
+        Ok(expr) => Expr::build_multivariate_integer_polynomial(&expr, variable_mapping),
+        Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
+    }
+}
+
+/// Create a multivariate polynomial with integer coefficients from a string
+pub fn parse_multivariate_rational_polynomial(
+    polynomial_str: &str,
+    variable_mapping: HashMap<&str, Variable>,
+) -> Result<MultiPolynomial<Rational>, String> {
+    match polynomial_parser::ExprParser::new().parse(polynomial_str) {
+        Ok(expr) => Expr::build_multivariate_rational_polynomial(&expr, variable_mapping),
+        Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
 
     use super::*;
-    use crate::parsing::polynomial::polynomial_parser::ExprParser;
-
-    // Helper function to parse and create integer polynomial
-    fn parse_and_build_integer_poly(input: &str, var: &str) -> Result<Polynomial<Integer>, String> {
-        match ExprParser::new().parse(input) {
-            Ok(expr) => Expr::build_univariate_integer_polynomial(var, &expr),
-            Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
-        }
-    }
-
-    // Helper function to parse and create rational polynomial
-    fn parse_and_build_rational_poly(
-        input: &str,
-        var: &str,
-    ) -> Result<Polynomial<Rational>, String> {
-        match ExprParser::new().parse(input) {
-            Ok(expr) => Expr::build_univariate_rational_polynomial(var, &expr),
-            Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
-        }
-    }
-
-    // Helper function to parse and create multivariate integer polynomial
-    fn parse_and_build_multivariate_integer_poly(
-        input: &str,
-        variable_mapping: HashMap<&str, Variable>,
-    ) -> Result<MultiPolynomial<Integer>, String> {
-        match ExprParser::new().parse(input) {
-            Ok(expr) => Expr::build_multivariate_integer_polynomial(&expr, variable_mapping),
-            Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
-        }
-    }
-
-    // Helper function to parse and create multivariate rational polynomial
-    fn parse_and_build_multivariate_rational_poly(
-        input: &str,
-        variable_mapping: HashMap<&str, Variable>,
-    ) -> Result<MultiPolynomial<Rational>, String> {
-        match ExprParser::new().parse(input) {
-            Ok(expr) => Expr::build_multivariate_rational_polynomial(&expr, variable_mapping),
-            Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
-        }
-    }
 
     #[test]
     fn test_integer_polynomial_basic() {
-        let result = parse_and_build_integer_poly("3*x^2 + 2*x - 1", "x").unwrap();
+        let result = parse_integer_polynomial("3*x^2 + 2*x - 1", "x").unwrap();
         assert_eq!(
             result,
             Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(2), Integer::from(3)])
@@ -867,7 +866,7 @@ mod tests {
 
     #[test]
     fn test_integer_polynomial_different_var() {
-        let result = parse_and_build_integer_poly("y^3 + 2*y - 7", "y").unwrap();
+        let result = parse_integer_polynomial("y^3 + 2*y - 7", "y").unwrap();
         assert_eq!(
             result,
             Polynomial::from_coeffs(vec![
@@ -881,13 +880,13 @@ mod tests {
 
     #[test]
     fn test_integer_polynomial_constant() {
-        let result = parse_and_build_integer_poly("42", "x").unwrap();
+        let result = parse_integer_polynomial("42", "x").unwrap();
         assert_eq!(result, Polynomial::from_coeffs(vec![Integer::from(42)]));
     }
 
     #[test]
     fn test_rational_polynomial_basic() {
-        let result = parse_and_build_rational_poly("3*x^2 + 2*x - 1", "x").unwrap();
+        let result = parse_rational_polynomial("3*x^2 + 2*x - 1", "x").unwrap();
         assert_eq!(
             result,
             Polynomial::from_coeffs(vec![
@@ -900,7 +899,7 @@ mod tests {
 
     #[test]
     fn test_rational_polynomial_fractions() {
-        let result = parse_and_build_rational_poly("2/3*x^3 + 1/4*x - 7/6", "x").unwrap();
+        let result = parse_rational_polynomial("2/3*x^3 + 1/4*x - 7/6", "x").unwrap();
 
         // Create expected rational coefficients
         let neg_seven_sixths = Rational::from_integers(Integer::from(-7), Integer::from(6));
@@ -916,7 +915,7 @@ mod tests {
 
     #[test]
     fn test_rational_polynomial_expansion() {
-        let result = parse_and_build_rational_poly("(x + 2)^3", "x").unwrap();
+        let result = parse_rational_polynomial("(x + 2)^3", "x").unwrap();
 
         // (x + 2)^3 = x^3 + 6x^2 + 12x + 8
         assert_eq!(
@@ -932,7 +931,7 @@ mod tests {
 
     #[test]
     fn test_rational_polynomial_nested_subexpression() {
-        let result = parse_and_build_rational_poly("(((x + 2)))", "x").unwrap();
+        let result = parse_rational_polynomial("(((x + 2)))", "x").unwrap();
 
         assert_eq!(
             result,
@@ -960,7 +959,7 @@ mod tests {
 
     #[test]
     fn test_integer_polynomial_expansion() {
-        let result = parse_and_build_integer_poly("(x + 2)^3", "x").unwrap();
+        let result = parse_integer_polynomial("(x + 2)^3", "x").unwrap();
 
         // (x + 2)^3 = x^3 + 6x^2 + 12x + 8
         assert_eq!(
@@ -982,7 +981,7 @@ mod tests {
         let y_var = Variable::new("y");
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
-        let result = parse_and_build_multivariate_integer_poly("x + y", variable_mapping).unwrap();
+        let result = parse_multivariate_integer_polynomial("x + y", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
@@ -999,7 +998,7 @@ mod tests {
         let y_var = Variable::new("y");
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
-        let result = parse_and_build_multivariate_integer_poly("x * y", variable_mapping).unwrap();
+        let result = parse_multivariate_integer_polynomial("x * y", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
@@ -1017,7 +1016,7 @@ mod tests {
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
         let result =
-            parse_and_build_multivariate_integer_poly("x^2 + y^3", variable_mapping).unwrap();
+            parse_multivariate_integer_polynomial("x^2 + y^3", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
@@ -1036,7 +1035,7 @@ mod tests {
         let y_var = Variable::new("y");
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
-        let result = parse_and_build_multivariate_integer_poly(
+        let result = parse_multivariate_integer_polynomial(
             "3*x^2*y + 2*x*y^2 - x + 5",
             variable_mapping,
         )
@@ -1070,7 +1069,7 @@ mod tests {
         let y_var = Variable::new("y");
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
-        let result = parse_and_build_multivariate_rational_poly("x + y", variable_mapping).unwrap();
+        let result = parse_multivariate_rational_polynomial("x + y", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Rational>::var(x_var);
@@ -1088,7 +1087,7 @@ mod tests {
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
         let result =
-            parse_and_build_multivariate_rational_poly("1/2*x + 3/4*y", variable_mapping).unwrap();
+            parse_multivariate_rational_polynomial("1/2*x + 3/4*y", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Rational>::var(x_var);
@@ -1117,7 +1116,7 @@ mod tests {
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
         let result =
-            parse_and_build_multivariate_integer_poly("(x + y)^2", variable_mapping).unwrap();
+            parse_multivariate_integer_polynomial("(x + y)^2", variable_mapping).unwrap();
 
         // Create expected polynomial: x^2 + 2*x*y + y^2
         let x = MultiPolynomial::<Integer>::var(x_var);
@@ -1142,7 +1141,7 @@ mod tests {
         .into();
 
         let result =
-            parse_and_build_multivariate_integer_poly("(x + y + z)^3", variable_mapping).unwrap();
+            parse_multivariate_integer_polynomial("(x + y + z)^30", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
@@ -1150,7 +1149,7 @@ mod tests {
         let z = MultiPolynomial::<Integer>::var(z_var);
         let sum_xy = MultiPolynomial::add(&x, &y);
         let sum_xyz = MultiPolynomial::add(&sum_xy, &z);
-        let expected = sum_xyz.nat_pow(&Natural::from(3u32));
+        let expected = sum_xyz.nat_pow(&Natural::from(30u32));
 
         assert_eq!(result, expected);
     }
@@ -1158,7 +1157,7 @@ mod tests {
     // New test cases for multi-character variables with braces
     #[test]
     fn test_multi_character_variables() {
-        let result = parse_and_build_rational_poly("{var}^2 + 3*{var} + 1", "var").unwrap();
+        let result = parse_rational_polynomial("{var}^2 + 3*{var} + 1", "var").unwrap();
 
         assert_eq!(
             result,
@@ -1178,7 +1177,7 @@ mod tests {
         let variable_mapping = [("var1", var1.clone()), ("var2", var2.clone())].into();
 
         let result =
-            parse_and_build_multivariate_integer_poly("{var1} + {var2}", variable_mapping).unwrap();
+            parse_multivariate_integer_polynomial("{var1} + {var2}", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(var1);
@@ -1192,7 +1191,7 @@ mod tests {
     fn test_mixed_variable_formats() {
         // This should work because we're still using "x" as the variable name
         // even though it's represented as {x} in the expression
-        let result = parse_and_build_rational_poly("{x}^2 + 3*{x} + 1", "x").unwrap();
+        let result = parse_rational_polynomial("{x}^2 + 3*{x} + 1", "x").unwrap();
 
         assert_eq!(
             result,
@@ -1212,7 +1211,7 @@ mod tests {
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
         let result =
-            parse_and_build_multivariate_integer_poly("{x} + y", variable_mapping).unwrap();
+            parse_multivariate_integer_polynomial("{x} + y", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
@@ -1224,7 +1223,7 @@ mod tests {
 
     #[test]
     fn test_multiple_multi_character_variables() {
-        let result = parse_and_build_rational_poly("{foo} + {foo}*{bar}", "foo");
+        let result = parse_rational_polynomial("{foo} + {foo}*{bar}", "foo");
 
         // This should fail because it contains multiple variables
         assert!(result.is_err());
@@ -1232,56 +1231,56 @@ mod tests {
 
     #[test]
     fn test_invalid_polynomial() {
-        let result = parse_and_build_rational_poly("x^-2", "x");
+        let result = parse_rational_polynomial("x^-2", "x");
         assert!(result.is_err());
 
-        let result = parse_and_build_rational_poly("x^(1/2)", "x");
+        let result = parse_rational_polynomial("x^(1/2)", "x");
         assert!(result.is_err());
 
-        let result = parse_and_build_rational_poly("1/(x+1)", "x");
+        let result = parse_rational_polynomial("1/(x+1)", "x");
         assert!(result.is_err());
 
         // Test multivariate versions too
         let x_var = Variable::new("x");
         let variable_mapping = [("x", x_var)].into();
 
-        let result = parse_and_build_multivariate_rational_poly("x^-2", variable_mapping);
+        let result = parse_multivariate_rational_polynomial("x^-2", variable_mapping);
         assert!(result.is_err());
 
         let x_var = Variable::new("x");
         let variable_mapping = [("x", x_var)].into();
 
-        let result = parse_and_build_multivariate_rational_poly("x^(1/2)", variable_mapping);
+        let result = parse_multivariate_rational_polynomial("x^(1/2)", variable_mapping);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_invalid_implicit_multiplication() {
         // These should fail because implicit multiplication is not allowed
-        let result = parse_and_build_rational_poly("2x", "x");
+        let result = parse_rational_polynomial("2x", "x");
         assert!(result.is_err());
 
-        let result = parse_and_build_rational_poly("xy", "x");
+        let result = parse_rational_polynomial("xy", "x");
         assert!(result.is_err());
 
-        let result = parse_and_build_rational_poly("x{foo}", "x");
+        let result = parse_rational_polynomial("x{foo}", "x");
         assert!(result.is_err());
 
         // Test multivariate versions too - these should fail at parsing level
         // so we can use empty variable mappings
         let empty_mapping = HashMap::new();
 
-        let result = parse_and_build_multivariate_rational_poly("2x", empty_mapping);
+        let result = parse_multivariate_rational_polynomial("2x", empty_mapping);
         assert!(result.is_err());
 
         let empty_mapping = HashMap::new();
-        let result = parse_and_build_multivariate_rational_poly("x{foo}", empty_mapping);
+        let result = parse_multivariate_rational_polynomial("x{foo}", empty_mapping);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_integer_polynomial_big_constant() {
-        let result = parse_and_build_integer_poly(
+        let result = parse_integer_polynomial(
             "123456789123456789123456789123456789123456789123456789123456789",
             "x",
         )
@@ -1299,7 +1298,7 @@ mod tests {
 
     #[test]
     fn test_rational_polynomial_big_constant() {
-        let result = parse_and_build_rational_poly(
+        let result = parse_rational_polynomial(
             "123456789123456789123456789123456789123456789123456789123456789/123456789123456789123456789123456789123456789123456789123456789",
             "x",
         )
@@ -1317,7 +1316,7 @@ mod tests {
 
     #[test]
     fn test_rational_polynomial_big_coefficients() {
-        let result = parse_and_build_rational_poly("123456789123456789123456789123456789123456789123456789123456789*x^2 + 123456789123456789123456789123456789123456789123456789123456789*x - 123456789123456789123456789123456789123456789123456789123456789", "x").unwrap();
+        let result = parse_rational_polynomial("123456789123456789123456789123456789123456789123456789123456789*x^2 + 123456789123456789123456789123456789123456789123456789123456789*x - 123456789123456789123456789123456789123456789123456789123456789", "x").unwrap();
         assert_eq!(
             result,
             Polynomial::from_coeffs(vec![
