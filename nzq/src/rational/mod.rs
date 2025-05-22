@@ -593,7 +593,9 @@ mod tests {
             Ok(4294967295)
         );
         assert_eq!(
-            <&Rational as TryInto<u64>>::try_into(&Rational::from_str("18446744073709551615").unwrap()),
+            <&Rational as TryInto<u64>>::try_into(
+                &Rational::from_str("18446744073709551615").unwrap()
+            ),
             Ok(18446744073709551615)
         );
 
@@ -650,7 +652,9 @@ mod tests {
             Ok(2147483647)
         );
         assert_eq!(
-            <&Rational as TryInto<i64>>::try_into(&Rational::from_str("-9223372036854775808").unwrap()),
+            <&Rational as TryInto<i64>>::try_into(
+                &Rational::from_str("-9223372036854775808").unwrap()
+            ),
             Ok(-9223372036854775808)
         );
 
@@ -725,14 +729,8 @@ mod tests {
         );
 
         // Test one
-        assert_eq!(
-            <&Rational as TryInto<i32>>::try_into(&Rational::ONE),
-            Ok(1)
-        );
-        assert_eq!(
-            <&Rational as TryInto<u32>>::try_into(&Rational::ONE),
-            Ok(1)
-        );
+        assert_eq!(<&Rational as TryInto<i32>>::try_into(&Rational::ONE), Ok(1));
+        assert_eq!(<&Rational as TryInto<u32>>::try_into(&Rational::ONE), Ok(1));
 
         // Test that ONE_HALF fails
         assert_eq!(
