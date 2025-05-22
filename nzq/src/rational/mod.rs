@@ -125,7 +125,7 @@ impl From<&Rational> for Rational {
     }
 }
 
-macro_rules! impl_try_into_unsigned {
+macro_rules! impl_try_into_via_integer {
     ($($t:ty),*) => {
         $(
             impl TryInto<$t> for Rational {
@@ -149,32 +149,7 @@ macro_rules! impl_try_into_unsigned {
     };
 }
 
-macro_rules! impl_try_into_signed {
-    ($($t:ty),*) => {
-        $(
-            impl TryInto<$t> for Rational {
-                type Error = ();
-
-                fn try_into(self) -> Result<$t, Self::Error> {
-                    (&self).try_into()
-                }
-            }
-            impl TryInto<$t> for &Rational {
-                type Error = ();
-
-                fn try_into(self) -> Result<$t, Self::Error> {
-                    // First check if this rational represents a whole number
-                    let integer: Integer = Integer::try_from(self)?;
-                    // Then try to convert the integer to the target type
-                    integer.try_into()
-                }
-            }
-        )*
-    };
-}
-
-impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
-impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
+impl_try_into_via_integer!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
 
 impl FromStr for Rational {
     type Err = ();
