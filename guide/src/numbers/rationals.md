@@ -12,6 +12,15 @@ There are several ways to construct rational numbers. Some of them are:
 * from `Integer` or `Natural`: `Rational::from(Integer::from(-5))`
 * from two integers: `Rational::from_integers(n, d)`
 
+## Basic operations
+
+Rational supports the following operators:
+
+- `+` (addition)
+- `-` (subtraction or negation)
+- `*` (multiplication)
+- `/` (division)
+
 ## Available functions
 
 The following methods are available on `Rational`:
