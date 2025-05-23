@@ -1,6 +1,6 @@
 use super::*;
 use crate::polynomial::*;
-use algebraeon_nzq::Natural;
+use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
