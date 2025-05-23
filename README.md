@@ -128,7 +128,7 @@ Despite the output, the roots found are _not_ numerical approximations. Rather, 
 
 # Contributing
 
-Contributions are welcome. There are two primary ways to contribute:
+Contributions are welcome and I am happy to do some hand-holding to help out new contributors. See below for the best ways to get started with contributions.
 
 ## Using the issue tracker
 
@@ -138,14 +138,17 @@ Use the issue tracker if you have questions, feature requests, bugs reports, etc
 
 Fork this repository, make changes, and submit a pull request.
 
-If you're unsure what needs doing, have a look through the issue tracker for unassigned issues.
+If you're unsure what to do:
+ - Have a look through the issue tracker for unassigned issues.
+ - Ask in the discord server.
 
 Algebraeon is organized as a [cargo workspace](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). Run `cargo test` in the root directory to build and run all tests.
 
-A suggested workflow for testing new features:
+A suggested workflow for getting started:
 - Create a new binary in `examples/src/bin`, for example `my_main.rs`.
-- To run, use `cargo run --bin my_main` in the root directory.
+- Copy an example into `my_main.rs`.
+- Run it with `cargo run --bin my_main` in the root directory.
 
 ## CLA
 
-If you wish to contribute code we ask that you sign a CLA. The CLA allows us to relicense future versions of Algebraeon, including your contribution, under any licences the Free Software Foundation classifies as a Free Software Licence and which are approved by the Open Source Initiative as Open Source licences. It does not allow us to relicense of your contribution under any other more restrictive licences. The CLA can be signed on GitHub after you submit a pull request.
+If you wish to contribute code we ask that you sign a CLA. The CLA allows us to relicense future versions of Algebraeon, including your contribution, under any licences the Free Software Foundation classifies as a Free Software Licence and which are approved by the Open Source Initiative as Open Source licences. It does not allow us to relicense of your contribution under any other more restrictive licences. The CLA can be signed on GitHub once you submit a pull request.
