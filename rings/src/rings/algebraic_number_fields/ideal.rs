@@ -78,6 +78,25 @@ impl RingOfIntegersWithIntegralBasisStructure {
     pub fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
         RingOfIntegersExtension::new_integer_extension(self.clone()).ideal_norm(ideal)
     }
+
+    // Order of the multiplicative group of the quotient modulo the ideal.
+    pub fn euler_phi(&self, ideal: &RingOfIntegersIdeal) -> Option<Natural> {
+        match ideal {
+            RingOfIntegersIdeal::Zero => None,
+            RingOfIntegersIdeal::NonZero { .. } => Some(
+                self.factor_ideal(ideal)
+                    .unwrap()
+                    .into_factor_powers()
+                    .iter()
+                    .map(|(prime_ideal, exponent)| {
+                        let norm = self.ideal_norm(&prime_ideal.ideal());
+                        let e_minus_1 = exponent - Natural::ONE;
+                        (&norm - Natural::ONE) * norm.pow(&e_minus_1)
+                    })
+                    .fold(Natural::ONE, |acc, x| acc * x),
+            ),
+        }
+    }
 }
 
 impl RingOfIntegersWithIntegralBasisStructure {
@@ -414,5 +433,20 @@ mod tests {
                 .len(),
             2
         );
+    }
+
+    #[test]
+    fn test_euler_phi_of_principal_ideal() {
+        let x = Polynomial::<Rational>::var().into_ergonomic();
+
+        // Construct the number field Q(i), which has ring of integers Z[i]
+        let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
+        let roi = anf.ring_of_integers();
+
+        // Consider the ideal (5)
+        let ideal = roi.principal_ideal(&roi.from_int(5));
+
+        let phi = roi.euler_phi(&ideal).unwrap();
+        assert_eq!(phi, Natural::from(16u32));
     }
 }
