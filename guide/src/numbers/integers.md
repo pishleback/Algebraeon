@@ -1,4 +1,4 @@
-# Naturals
+# Integers
 
 ## Constructing integers
 
