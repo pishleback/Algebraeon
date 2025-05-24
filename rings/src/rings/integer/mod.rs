@@ -148,6 +148,8 @@ impl BezoutDomainSignature for IntegerCanonicalStructure {
     }
 }
 
+impl DedekindDomainSignature for IntegerCanonicalStructure {}
+
 impl CharZeroRingSignature for IntegerCanonicalStructure {
     fn try_to_int(&self, x: &Integer) -> Option<Integer> {
         Some(x.clone())

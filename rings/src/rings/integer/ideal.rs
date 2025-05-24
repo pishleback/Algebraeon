@@ -3,51 +3,80 @@ use crate::{
     structure::*,
 };
 use algebraeon_nzq::{traits::Abs, *};
-use algebraeon_sets::structure::MetaType;
+use algebraeon_sets::structure::{MetaType, SetSignature, Signature};
 
-impl IdealSignature for IntegerCanonicalStructure {
-    type Ideal = Natural;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IntegerIdealsStructure {
+    integers: IntegerCanonicalStructure,
 }
 
-impl IdealArithmeticSignature for IntegerCanonicalStructure {
-    fn principal_ideal(&self, a: &Self::Set) -> Self::Ideal {
+impl CannonicalIdealsSignature for IntegerCanonicalStructure {
+    type Ideals = IntegerIdealsStructure;
+
+    fn ideals(&self) -> Self::Ideals {
+        IntegerIdealsStructure {
+            integers: Integer::structure(),
+        }
+    }
+}
+
+impl Signature for IntegerIdealsStructure {}
+
+impl SetSignature for IntegerIdealsStructure {
+    type Set = Natural;
+    fn is_element(&self, _x: &Self::Set) -> bool {
+        true
+    }
+}
+
+impl IdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+    fn ring(&self) -> &IntegerCanonicalStructure {
+        &self.integers
+    }
+}
+
+impl IdealsArithmeticSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+    fn principal_ideal(&self, a: &Integer) -> Self::Set {
         a.abs()
     }
 
-    fn ideal_equal(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool {
+    fn ideal_equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 
-    fn ideal_contains(&self, a: &Self::Ideal, b: &Self::Ideal) -> bool {
+    fn ideal_contains(&self, a: &Self::Set, b: &Self::Set) -> bool {
         b % a == Natural::ZERO
     }
 
-    fn ideal_intersect(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
+    fn ideal_intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         lcm(a.clone(), b.clone())
     }
 
-    fn ideal_add(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
+    fn ideal_add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         gcd(a.clone(), b.clone())
     }
 
-    fn ideal_mul(&self, a: &Self::Ideal, b: &Self::Ideal) -> Self::Ideal {
+    fn ideal_mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
 }
 
-impl PrincipalIdealDomainSignature for IntegerCanonicalStructure {
-    fn ideal_generator(&self, ideal: &Self::Ideal) -> Self::Set {
+impl PrincipalIdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+    fn ideal_generator(&self, ideal: &Natural) -> Integer {
         Integer::from(ideal)
     }
 }
 
-impl DedekindDomainSignature for IntegerCanonicalStructure {}
+impl DedekindDomainIdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {}
 
-impl FactorableIdealsSignature for IntegerCanonicalStructure {
-    fn factor_ideal(&self, ideal: &Self::Ideal) -> Option<DedekindDomainIdealFactorization<Self>> {
+impl FactorableIdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+    fn factor_ideal(
+        &self,
+        ideal: &Self::Set,
+    ) -> Option<DedekindDomainIdealFactorization<IntegerCanonicalStructure, Self>> {
         let f = factor(ideal.clone())?;
         Some(DedekindDomainIdealFactorization::from_factor_powers(
-            Integer::structure(),
+            Integer::ideals(),
             f.into_factor_powers()
                 .into_iter()
                 .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k.into()))
@@ -56,7 +85,7 @@ impl FactorableIdealsSignature for IntegerCanonicalStructure {
     }
 }
 
-impl DedekindDomainPrimeIdeal<IntegerCanonicalStructure> {
+impl DedekindDomainPrimeIdeal<IntegerCanonicalStructure, IntegerIdealsStructure> {
     pub fn try_from_nat(n: Natural) -> Result<Self, ()> {
         if is_prime(&n) {
             Ok(DedekindDomainPrimeIdeal::from_ideal_unchecked(n))
@@ -72,56 +101,43 @@ mod tests {
 
     #[test]
     fn integer_ideals() {
-        assert!(Integer::ideal_equal(
-            &Natural::from(3u32),
+        assert!(Integer::ideals().ideal_equal(&Natural::from(3u32), &Natural::from(3u32)));
+
+        assert!(!Integer::ideals().ideal_equal(&Natural::from(2u32), &Natural::from(3u32)));
+
+        assert!(Integer::ideals().ideal_contains(&Natural::from(2u32), &Natural::from(6u32)));
+
+        assert!(!Integer::ideals().ideal_contains(&Natural::from(6u32), &Natural::from(2u32)));
+
+        assert!(!Integer::ideals().ideal_contains(&Natural::from(5u32), &Natural::from(7u32)));
+
+        assert!(Integer::ideals().ideal_equal(
+            &Integer::ideals().ideal_add(&Natural::from(6u32), &Natural::from(15u32)),
             &Natural::from(3u32)
         ));
 
-        assert!(!Integer::ideal_equal(
-            &Natural::from(2u32),
-            &Natural::from(3u32)
-        ));
-
-        assert!(Integer::ideal_contains(
-            &Natural::from(2u32),
-            &Natural::from(6u32)
-        ));
-
-        assert!(!Integer::ideal_contains(
-            &Natural::from(6u32),
-            &Natural::from(2u32)
-        ));
-
-        assert!(!Integer::ideal_contains(
-            &Natural::from(5u32),
-            &Natural::from(7u32)
-        ));
-
-        assert!(Integer::ideal_equal(
-            &Integer::ideal_add(&Natural::from(6u32), &Natural::from(15u32)),
-            &Natural::from(3u32)
-        ));
-
-        assert!(Integer::ideal_equal(
-            &Integer::ideal_intersect(&Natural::from(6u32), &Natural::from(15u32)),
+        assert!(Integer::ideals().ideal_equal(
+            &Integer::ideals().ideal_intersect(&Natural::from(6u32), &Natural::from(15u32)),
             &Natural::from(30u32)
         ));
 
-        assert!(Integer::ideal_equal(
-            &Integer::ideal_mul(&Natural::from(6u32), &Natural::from(15u32)),
+        assert!(Integer::ideals().ideal_equal(
+            &Integer::ideals().ideal_mul(&Natural::from(6u32), &Natural::from(15u32)),
             &Natural::from(90u32)
         ));
 
-        assert_eq!(Integer::generated_ideal(vec![-15, 6]), 3u32.into());
+        assert_eq!(Integer::ideals().generated_ideal(vec![-15, 6]), 3u32.into());
     }
 
     #[test]
     fn factor_integer_ideal() {
-        let f = Integer::factor_ideal(&Integer::from(0).principal_ideal());
+        let f =
+            Integer::ideals().factor_ideal(&Integer::ideals().principal_ideal(&Integer::from(0)));
         println!("{:?}", f);
         assert!(f.is_none());
 
-        let f = Integer::factor_ideal(&Integer::from(18).principal_ideal());
+        let f =
+            Integer::ideals().factor_ideal(&Integer::ideals().principal_ideal(&Integer::from(18)));
         println!("{:?}", f);
         assert!(f.is_some());
     }

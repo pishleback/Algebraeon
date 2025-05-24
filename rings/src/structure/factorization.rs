@@ -7,13 +7,13 @@ pub trait FactoredSignature<F: Factored>: Signature {
     /// A type used to hold the prime objects.
     type PrimeObject: Clone + Debug;
     /// A type used to hold any object.
-    type Object: Clone + Debug;
+    type FactoredObject: Clone + Debug;
 
     /// return true iff a divides b
-    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool;
+    fn object_divides(&self, a: &Self::FactoredObject, b: &Self::FactoredObject) -> bool;
 
     // not necessarily equal but equivalent wrt division
-    fn object_equivalent(&self, a: &Self::Object, b: &Self::Object) -> bool {
+    fn object_equivalent(&self, a: &Self::FactoredObject, b: &Self::FactoredObject) -> bool {
         self.object_divides(a, b) && self.object_divides(b, a)
     }
 
@@ -29,17 +29,21 @@ pub trait FactoredSignature<F: Factored>: Signature {
     /// if returns false then object is definitely not a valid prime object
     fn object_is_prime(&self, object: &Self::PrimeObject) -> bool;
 
-    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object;
+    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::FactoredObject;
 
-    fn object_one(&self) -> Self::Object {
+    fn object_one(&self) -> Self::FactoredObject {
         self.object_product(vec![])
     }
 
-    fn object_mul(&self, a: &Self::Object, b: &Self::Object) -> Self::Object {
+    fn object_mul(
+        &self,
+        a: &Self::FactoredObject,
+        b: &Self::FactoredObject,
+    ) -> Self::FactoredObject {
         self.object_product(vec![a, b])
     }
 
-    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object;
+    fn object_product(&self, objects: Vec<&Self::FactoredObject>) -> Self::FactoredObject;
 }
 
 pub trait Factored: Debug + Clone + Sized {
@@ -191,9 +195,9 @@ pub trait Factored: Debug + Clone + Sized {
             .all(|(_, k)| k == &Natural::ONE)
     }
 
-    fn expanded(&self) -> <Self::Structure as FactoredSignature<Self>>::Object;
+    fn expanded(&self) -> <Self::Structure as FactoredSignature<Self>>::FactoredObject;
 
-    fn expanded_squarefree(&self) -> <Self::Structure as FactoredSignature<Self>>::Object {
+    fn expanded_squarefree(&self) -> <Self::Structure as FactoredSignature<Self>>::FactoredObject {
         Self::from_factor_powers(
             self.factored_structure().borrow().clone(),
             self.squarefree_factor_list()
@@ -236,7 +240,8 @@ pub trait Factored: Debug + Clone + Sized {
 
     fn divisors<'a>(
         &'a self,
-    ) -> Box<dyn Iterator<Item = <Self::Structure as FactoredSignature<Self>>::Object> + 'a> {
+    ) -> Box<dyn Iterator<Item = <Self::Structure as FactoredSignature<Self>>::FactoredObject> + 'a>
+    {
         let structure = self.factored_structure();
         let factors = self.factor_powers();
         if factors.len() == 0 {
