@@ -320,11 +320,10 @@ impl Expr {
                             return Err("Negative exponents not allowed in polynomials".to_string());
                         }
                         // Convert Integer to Natural for nat_pow
-                        let exp_f64: f64 = (&n.numerator).into();
-                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                            panic!("Exponent out of range for usize conversion");
-                        }
-                        let exp_natural = Natural::from(exp_f64 as usize);
+                        let exp_usize: usize = (&n.numerator)
+                            .try_into()
+                            .expect("Exponent out of range for usize conversion");
+                        let exp_natural = Natural::from(exp_usize);
                         Ok(base.nat_pow(&exp_natural))
                     }
                     _ => Err("Exponents must be integer constants in polynomials".to_string()),
@@ -391,11 +390,10 @@ impl Expr {
                             return Err("Negative exponents not allowed in polynomials".to_string());
                         }
                         // Convert Integer to Natural for nat_pow
-                        let exp_f64: f64 = (&n.numerator).into();
-                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                            panic!("Exponent out of range for usize conversion");
-                        }
-                        let exp_natural = Natural::from(exp_f64 as usize);
+                        let exp_usize: usize = (&n.numerator)
+                            .try_into()
+                            .expect("Exponent out of range for usize conversion");
+                        let exp_natural = Natural::from(exp_usize);
                         Ok(base.nat_pow(&exp_natural))
                     }
                     _ => Err("Exponents must be integer constants in polynomials".to_string()),
@@ -494,11 +492,10 @@ impl Expr {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
                                     if exp.denominator == Integer::from(1) {
                                         // Convert the Integer to usize safely
-                                        let exp_f64: f64 = (&exp.numerator).into();
-                                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                                            panic!("Exponent out of range for usize conversion");
-                                        }
-                                        let degree = 1 + exp_f64 as usize;
+                                        let exp_usize: usize = (&exp.numerator)
+                                            .try_into()
+                                            .expect("Exponent out of range for usize conversion");
+                                        let degree = 1 + exp_usize;
                                         *terms.entry(degree).or_insert(Integer::from(0)) +=
                                             coefficient;
                                     }
@@ -513,11 +510,10 @@ impl Expr {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
                                     if exp.denominator == Integer::from(1) {
                                         // Convert the Integer to usize safely
-                                        let exp_f64: f64 = (&exp.numerator).into();
-                                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                                            panic!("Exponent out of range for usize conversion");
-                                        }
-                                        let degree = 1 + exp_f64 as usize;
+                                        let exp_usize: usize = (&exp.numerator)
+                                            .try_into()
+                                            .expect("Exponent out of range for usize conversion");
+                                        let degree = 1 + exp_usize;
                                         *terms.entry(degree).or_insert(Integer::from(0)) +=
                                             coefficient;
                                     }
@@ -551,11 +547,9 @@ impl Expr {
                         if let Expr::Num(exp) = p.exponent.as_ref() {
                             if exp.denominator == Integer::from(1) {
                                 // Convert the Integer to usize safely
-                                let exp_f64: f64 = (&exp.numerator).into();
-                                if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                                    panic!("Exponent out of range for usize conversion");
-                                }
-                                let degree = exp_f64 as usize;
+                                let degree: usize = (&exp.numerator)
+                                    .try_into()
+                                    .expect("Exponent out of range for usize conversion");
                                 *terms.entry(degree).or_insert(Integer::from(0)) += coefficient;
                             } else {
                                 panic!("Fractional exponent in integer polynomial");
@@ -586,12 +580,11 @@ impl Expr {
                                 result_terms.insert(0, Integer::from(1)); // Start with x^0 = 1
 
                                 // Convert the Integer to usize safely
-                                let exp_f64: f64 = (&exp.numerator).into();
-                                if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                                    panic!("Exponent out of range for usize conversion");
-                                }
+                                let exp_usize: usize = (&exp.numerator)
+                                    .try_into()
+                                    .expect("Exponent out of range for usize conversion");
 
-                                for _ in 0..exp_f64 as usize {
+                                for _ in 0..exp_usize {
                                     let mut new_result: HashMap<usize, Integer> = HashMap::new();
                                     for (res_deg, res_coef) in &result_terms {
                                         for (term_deg, term_coef) in &temp_terms {
@@ -677,11 +670,10 @@ impl Expr {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
                                     if exp.denominator == Integer::from(1) {
                                         // Convert the Integer to usize safely
-                                        let exp_f64: f64 = (&exp.numerator).into();
-                                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                                            panic!("Exponent out of range for usize conversion");
-                                        }
-                                        let degree = 1 + exp_f64 as usize;
+                                        let exp_usize: usize = (&exp.numerator)
+                                            .try_into()
+                                            .expect("Exponent out of range for usize conversion");
+                                        let degree = 1 + exp_usize;
                                         *terms.entry(degree).or_insert(Rational::from(0)) +=
                                             coefficient;
                                     }
@@ -696,11 +688,10 @@ impl Expr {
                                 if let Expr::Num(exp) = pow.exponent.as_ref() {
                                     if exp.denominator == Integer::from(1) {
                                         // Convert the Integer to usize safely
-                                        let exp_f64: f64 = (&exp.numerator).into();
-                                        if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                                            panic!("Exponent out of range for usize conversion");
-                                        }
-                                        let degree = 1 + exp_f64 as usize;
+                                        let exp_usize: usize = (&exp.numerator)
+                                            .try_into()
+                                            .expect("Exponent out of range for usize conversion");
+                                        let degree = 1 + exp_usize;
                                         *terms.entry(degree).or_insert(Rational::from(0)) +=
                                             coefficient;
                                     }
@@ -734,11 +725,9 @@ impl Expr {
                         if let Expr::Num(exp) = p.exponent.as_ref() {
                             if exp.denominator == Integer::from(1) {
                                 // Convert the Integer to usize safely
-                                let exp_f64: f64 = (&exp.numerator).into();
-                                if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                                    panic!("Exponent out of range for usize conversion");
-                                }
-                                let degree = exp_f64 as usize;
+                                let degree: usize = (&exp.numerator)
+                                    .try_into()
+                                    .expect("Exponent out of range for usize conversion");
                                 *terms.entry(degree).or_insert(Rational::from(0)) += coefficient;
                             } else {
                                 panic!("Fractional exponent in polynomial");
@@ -771,12 +760,11 @@ impl Expr {
                                 let mut result_terms: HashMap<usize, Rational> = HashMap::new();
                                 result_terms.insert(0, Rational::from(1)); // Start with x^0 = 1
 
-                                let exp_f64: f64 = (&exp.numerator).into();
-                                if exp_f64 < 0.0 || exp_f64 > (usize::MAX as f64) {
-                                    panic!("Exponent out of range for usize conversion");
-                                }
+                                let exp_usize: usize = (&exp.numerator)
+                                    .try_into()
+                                    .expect("Exponent out of range for usize conversion");
 
-                                for _ in 0..exp_f64 as usize {
+                                for _ in 0..exp_usize {
                                     let mut new_result: HashMap<usize, Rational> = HashMap::new();
                                     for (res_deg, res_coef) in &result_terms {
                                         for (term_deg, term_coef) in &temp_terms {
@@ -809,7 +797,10 @@ impl Expr {
 }
 
 /// Create a polynomial with integer coefficients from a string
-pub fn parse_integer_polynomial(polynomial_str: &str, var: &str) -> Result<Polynomial<Integer>, String> {
+pub fn parse_integer_polynomial(
+    polynomial_str: &str,
+    var: &str,
+) -> Result<Polynomial<Integer>, String> {
     match polynomial_parser::ExprParser::new().parse(polynomial_str) {
         Ok(expr) => Expr::build_univariate_integer_polynomial(&expr, var),
         Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
@@ -1015,8 +1006,7 @@ mod tests {
         let y_var = Variable::new("y");
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
-        let result =
-            parse_multivariate_integer_polynomial("x^2 + y^3", variable_mapping).unwrap();
+        let result = parse_multivariate_integer_polynomial("x^2 + y^3", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
@@ -1035,11 +1025,9 @@ mod tests {
         let y_var = Variable::new("y");
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
-        let result = parse_multivariate_integer_polynomial(
-            "3*x^2*y + 2*x*y^2 - x + 5",
-            variable_mapping,
-        )
-        .unwrap();
+        let result =
+            parse_multivariate_integer_polynomial("3*x^2*y + 2*x*y^2 - x + 5", variable_mapping)
+                .unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);
@@ -1115,8 +1103,7 @@ mod tests {
         let y_var = Variable::new("y");
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
-        let result =
-            parse_multivariate_integer_polynomial("(x + y)^2", variable_mapping).unwrap();
+        let result = parse_multivariate_integer_polynomial("(x + y)^2", variable_mapping).unwrap();
 
         // Create expected polynomial: x^2 + 2*x*y + y^2
         let x = MultiPolynomial::<Integer>::var(x_var);
@@ -1210,8 +1197,7 @@ mod tests {
         let y_var = Variable::new("y");
         let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
-        let result =
-            parse_multivariate_integer_polynomial("{x} + y", variable_mapping).unwrap();
+        let result = parse_multivariate_integer_polynomial("{x} + y", variable_mapping).unwrap();
 
         // Create expected polynomial using the same variables
         let x = MultiPolynomial::<Integer>::var(x_var);

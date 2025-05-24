@@ -12,7 +12,7 @@
 - [Numbers]()
   - [Naturals](./numbers/naturals.md)
   - [Integers](./numbers/integers.md)
-  - [Rationals]()
+  - [Rationals](./numbers/rationals.md)
   - [Modular Arithmetic]()
 - [Linear Algebra]()
   - [Matrices]()
