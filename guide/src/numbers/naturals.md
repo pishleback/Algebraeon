@@ -32,17 +32,17 @@ For exponentiation, use the method `.pow(&exp)` instead of `^` (which is xor).
 
 ## Available functions
 
-- `choose`
+- [`choose`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.choose.html)
 - `euler_totient`
-- `factorial`
-- `gcd`
+- [`factorial`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.factorial)
+- [`gcd`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.gcd.html)
 - `is_prime`
 - `is_square`
-- `lcm`
-- `nth_root_floor`
-- `nth_root_ceil`
-- `sqrt_ceil`
-- `sqrt_floor`
+- [`lcm`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.lcm.html)
+- [`nth_root_floor`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.nth_root_floor)
+- [`nth_root_ceil`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.nth_root_ceil)
+- [`sqrt_ceil`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.sqrt_ceil)
+- [`sqrt_floor`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.sqrt_floor)
 - `sqrt_if_square`
 
 ```rust
