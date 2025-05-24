@@ -128,9 +128,9 @@ impl<RS: FactorableSignature> FactoredElement<RS> {
 impl<RS: UniqueFactorizationSignature> FactoredSignature<FactoredElement<RS>> for RS {
     type PrimeObject = RS::Set;
 
-    type Object = RS::Set;
+    type FactoredObject = RS::Set;
 
-    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
+    fn object_divides(&self, a: &Self::FactoredObject, b: &Self::FactoredObject) -> bool {
         self.divisible(a, b)
     }
 
@@ -144,11 +144,11 @@ impl<RS: UniqueFactorizationSignature> FactoredSignature<FactoredElement<RS>> fo
         }
     }
 
-    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object {
+    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::FactoredObject {
         prime
     }
 
-    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
+    fn object_product(&self, objects: Vec<&Self::FactoredObject>) -> Self::FactoredObject {
         self.product(objects)
     }
 }
@@ -309,7 +309,7 @@ impl<RS: UniqueFactorizationSignature> Factored for FactoredElement<RS> {
         self.factors
     }
 
-    fn expanded(&self) -> <Self::Structure as FactoredSignature<Self>>::Object {
+    fn expanded(&self) -> <Self::Structure as FactoredSignature<Self>>::FactoredObject {
         let mut ans = self.unit.clone();
         for (p, k) in &self.factors {
             self.ring.mul_mut(&mut ans, &self.ring.nat_pow(p, k));

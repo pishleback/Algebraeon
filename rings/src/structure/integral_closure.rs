@@ -1,6 +1,6 @@
 use super::*;
 use crate::polynomial::*;
-use algebraeon_nzq::{Integer, Natural};
+use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -264,21 +264,29 @@ pub trait DedekindDomainExtension<
     ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
     QK: FiniteDimensionalFieldExtension<Q, K>,
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
+    IdealsZ: DedekindDomainIdealsSignature<Z>,
+    IdealsR: DedekindDomainIdealsSignature<R>,
 >: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>
 {
-    fn ideal_norm(&self, ideal: &R::Ideal) -> Z::Ideal;
+    fn ideal_norm(&self, ideal: &IdealsR::Set) -> IdealsZ::Set;
 
     fn factor_prime_ideal(
         &self,
-        prime_ideal: DedekindDomainPrimeIdeal<Z>,
-    ) -> DedekindExtensionIdealFactorsAbovePrime<Z, R>;
+        prime_ideal: DedekindDomainPrimeIdeal<Z, IdealsZ>,
+    ) -> DedekindExtensionIdealFactorsAbovePrime<Z, R, IdealsZ, IdealsR>;
 
-    fn factor_ideal(&self, ideal: &R::Ideal) -> Option<DedekindExtensionIdealFactorization<Z, R>>;
+    fn factor_ideal(
+        &self,
+        ideal: &IdealsR::Set,
+    ) -> Option<DedekindExtensionIdealFactorization<Z, R, IdealsZ, IdealsR>>;
 }
 
 #[derive(Debug, Clone)]
-pub struct DedekindExtensionIdealFactorsAbovePrimeFactor<R: DedekindDomainSignature> {
-    pub prime_ideal: DedekindDomainPrimeIdeal<R>,
+pub struct DedekindExtensionIdealFactorsAbovePrimeFactor<
+    R: DedekindDomainSignature,
+    IdealsR: DedekindDomainIdealsSignature<R>,
+> {
+    pub prime_ideal: DedekindDomainPrimeIdeal<R, IdealsR>,
     pub residue_class_degree: usize,
     pub power: Natural,
 }
@@ -287,50 +295,56 @@ pub struct DedekindExtensionIdealFactorsAbovePrimeFactor<R: DedekindDomainSignat
 pub struct DedekindExtensionIdealFactorsAbovePrime<
     Z: DedekindDomainSignature,
     R: DedekindDomainSignature,
+    IdealsZ: DedekindDomainIdealsSignature<Z>,
+    IdealsR: DedekindDomainIdealsSignature<R>,
 > {
-    ring: R,
-    base_prime: DedekindDomainPrimeIdeal<Z>,
+    ideals_r: IdealsR,
+    base_prime: DedekindDomainPrimeIdeal<Z, IdealsZ>,
     // All factors lie above base_prime
     // All powers are >= 1
-    factors: Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R>>,
+    factors: Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R, IdealsR>>,
 }
 
-impl<Z: DedekindDomainSignature, R: DedekindDomainSignature>
-    DedekindExtensionIdealFactorsAbovePrime<Z, R>
+impl<
+    Z: DedekindDomainSignature,
+    R: DedekindDomainSignature,
+    IdealsZ: DedekindDomainIdealsSignature<Z>,
+    IdealsR: DedekindDomainIdealsSignature<R>,
+> DedekindExtensionIdealFactorsAbovePrime<Z, R, IdealsZ, IdealsR>
 {
     pub fn from_powers_unchecked(
-        ring: R,
-        base_prime: DedekindDomainPrimeIdeal<Z>,
-        factors: Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R>>,
+        ideals_r: IdealsR,
+        base_prime: DedekindDomainPrimeIdeal<Z, IdealsZ>,
+        factors: Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R, IdealsR>>,
     ) -> Self {
         for f in &factors {
             debug_assert_ne!(f.power, Natural::ZERO);
         }
         Self {
-            ring,
+            ideals_r,
             base_prime,
             factors,
         }
     }
 
-    pub fn into_factors(self) -> Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R>> {
+    pub fn into_factors(self) -> Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<R, IdealsR>> {
         self.factors
     }
 
-    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R>, Natural)> {
+    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R, IdealsR>, Natural)> {
         self.factors
             .into_iter()
             .map(|f| (f.prime_ideal, f.power))
             .collect()
     }
 
-    pub fn unique_prime_factors(&self) -> Vec<&DedekindDomainPrimeIdeal<R>> {
+    pub fn unique_prime_factors(&self) -> Vec<&DedekindDomainPrimeIdeal<R, IdealsR>> {
         self.factors.iter().map(|f| &f.prime_ideal).collect()
     }
 
-    pub fn into_full_factorization(self) -> DedekindDomainIdealFactorization<R> {
+    pub fn into_full_factorization(self) -> DedekindDomainIdealFactorization<R, IdealsR> {
         DedekindDomainIdealFactorization::from_factor_powers(
-            self.ring,
+            self.ideals_r,
             self.factors
                 .into_iter()
                 .map(|f| (f.prime_ideal, f.power))
@@ -360,35 +374,41 @@ impl<Z: DedekindDomainSignature, R: DedekindDomainSignature>
 pub struct DedekindExtensionIdealFactorization<
     Z: DedekindDomainSignature,
     R: DedekindDomainSignature,
+    IdealsZ: DedekindDomainIdealsSignature<Z>,
+    IdealsR: DedekindDomainIdealsSignature<R>,
 > {
-    ring: R,
+    ideals_r: IdealsR,
     // Each should be above a different prime
-    factors_above_primes: Vec<DedekindExtensionIdealFactorsAbovePrime<Z, R>>,
+    factors_above_primes: Vec<DedekindExtensionIdealFactorsAbovePrime<Z, R, IdealsZ, IdealsR>>,
 }
 
-impl<Z: DedekindDomainSignature, R: DedekindDomainSignature>
-    DedekindExtensionIdealFactorization<Z, R>
+impl<
+    Z: DedekindDomainSignature,
+    R: DedekindDomainSignature,
+    IdealsZ: DedekindDomainIdealsSignature<Z>,
+    IdealsR: DedekindDomainIdealsSignature<R>,
+> DedekindExtensionIdealFactorization<Z, R, IdealsZ, IdealsR>
 {
     pub fn from_ideal_factors_above_primes(
-        ring: R,
-        factors_above_primes: Vec<DedekindExtensionIdealFactorsAbovePrime<Z, R>>,
+        ideals_r: IdealsR,
+        factors_above_primes: Vec<DedekindExtensionIdealFactorsAbovePrime<Z, R, IdealsZ, IdealsR>>,
     ) -> Self {
         for f in &factors_above_primes {
-            debug_assert_eq!(f.ring, ring);
+            debug_assert_eq!(f.ideals_r, ideals_r);
         }
         Self {
-            ring,
+            ideals_r,
             factors_above_primes,
         }
     }
 
-    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R>, Natural)> {
+    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<R, IdealsR>, Natural)> {
         self.into_ring_and_powers().1
     }
 
-    pub fn into_ring_and_powers(self) -> (R, Vec<(DedekindDomainPrimeIdeal<R>, Natural)>) {
+    pub fn into_ring_and_powers(self) -> (R, Vec<(DedekindDomainPrimeIdeal<R, IdealsR>, Natural)>) {
         (
-            self.ring,
+            self.ideals_r.ring().clone(),
             self.factors_above_primes
                 .into_iter()
                 .map(|factors| factors.into_powers())
@@ -397,8 +417,9 @@ impl<Z: DedekindDomainSignature, R: DedekindDomainSignature>
         )
     }
 
-    pub fn into_full_factorization(self) -> DedekindDomainIdealFactorization<R> {
-        let (ring, powers) = self.into_ring_and_powers();
-        DedekindDomainIdealFactorization::from_factor_powers(ring, powers)
+    pub fn into_full_factorization(self) -> DedekindDomainIdealFactorization<R, IdealsR> {
+        let ideals_r = self.ideals_r.clone();
+        let (_ring, powers) = self.into_ring_and_powers();
+        DedekindDomainIdealFactorization::from_factor_powers(ideals_r, powers)
     }
 }

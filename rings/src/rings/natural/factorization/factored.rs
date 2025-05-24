@@ -11,9 +11,9 @@ use std::{borrow::Borrow, collections::HashMap};
 impl FactoredSignature<FactoredNatural> for NaturalCanonicalStructure {
     type PrimeObject = Natural;
 
-    type Object = Natural;
+    type FactoredObject = Natural;
 
-    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
+    fn object_divides(&self, a: &Self::FactoredObject, b: &Self::FactoredObject) -> bool {
         b % a == Natural::ZERO
     }
 
@@ -21,11 +21,11 @@ impl FactoredSignature<FactoredNatural> for NaturalCanonicalStructure {
         is_prime(object)
     }
 
-    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object {
+    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::FactoredObject {
         prime
     }
 
-    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
+    fn object_product(&self, objects: Vec<&Self::FactoredObject>) -> Self::FactoredObject {
         self.product(objects)
     }
 }
