@@ -30,12 +30,7 @@ pub struct RingOfIntegersExtension<
     ideals_r: IdealsR,
 }
 
-impl
-    RingOfIntegersExtension<
-        <IntegerCanonicalStructure as CannonicalIdealsSignature>::Ideals,
-        <RingOfIntegersWithIntegralBasisStructure as CannonicalIdealsSignature>::Ideals,
-    >
-{
+impl RingOfIntegersExtension<IntegerIdealsStructure, RingOfIntegersIdealsStructure> {
     pub fn new_integer_extension(roi: RingOfIntegersWithIntegralBasisStructure) -> Self {
         let ideals_r = roi.ideals();
         let anf = roi.anf();
@@ -72,7 +67,12 @@ impl
     #[allow(non_snake_case)]
     pub fn is_S_integral(
         &self,
-        S: Vec<&DedekindDomainPrimeIdeal<RingOfIntegersWithIntegralBasisStructure>>,
+        S: Vec<
+            &DedekindDomainPrimeIdeal<
+                RingOfIntegersWithIntegralBasisStructure,
+                RingOfIntegersIdealsStructure,
+            >,
+        >,
         a: &Polynomial<Rational>,
     ) -> bool {
         let d = self.integralize_multiplier(a);
@@ -80,7 +80,7 @@ impl
         // for each prime factor P of d not in S, check if valuation_P(m) ≥ valuation_P(d)
 
         let d_as_roi = self.r.from_int(d.clone());
-        let principal_ideal_d = self.r.generated_ideal(vec![d_as_roi.clone()]);
+        let principal_ideal_d = self.ideals_r.generated_ideal(vec![d_as_roi.clone()]);
 
         let d_factorization = self.factor_ideal(&principal_ideal_d);
         if d_factorization.is_none() {
@@ -91,18 +91,18 @@ impl
             let prime_ideal = prime.0.into_ideal();
             // Skip primes in S
             if S.iter().any(|s_ideal| {
-                self.r
+                self.ideals_r
                     .ideal_equal(&(*s_ideal).clone().into_ideal(), &prime_ideal)
             }) {
                 continue;
             }
 
-            let m_val = self.r.padic_roi_element_valuation(
+            let m_val = self.ideals_r.padic_roi_element_valuation(
                 prime_ideal.clone(),
                 self.r.try_anf_to_roi(&m).unwrap(),
             );
             let d_val = self
-                .r
+                .ideals_r
                 .padic_roi_element_valuation(prime_ideal, d_as_roi.clone());
 
             if m_val < d_val {
