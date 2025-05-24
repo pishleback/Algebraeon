@@ -52,6 +52,8 @@ impl RingOfIntegersExtension {
                 .padic_roi_element_valuation(prime_ideal, self.r.from_int(d))
     }
 
+    // An element is S-integral, if its valuations at all primes not in S are nonnegative.
+    // If S is the empty set, this coincides with the usual integrality.
     #[allow(non_snake_case)]
     pub fn is_S_integral(
         &self,
