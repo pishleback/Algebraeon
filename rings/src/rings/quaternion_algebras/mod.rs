@@ -3,6 +3,8 @@ use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::fmt;
 
+pub mod quaternion_orders;
+
 #[derive(Debug, Clone)]
 pub struct QuaternionAlgebraStructure<Field: FieldSignature> {
     base: Field,
