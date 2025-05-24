@@ -53,13 +53,18 @@ impl RingOfIntegersExtension {
     }
 
     #[allow(non_snake_case)]
-    pub fn is_S_integral(&self, S: &[RingOfIntegersIdeal], a: &Polynomial<Rational>) -> bool {
+    pub fn is_S_integral(
+        &self,
+        S: Vec<&DedekindDomainPrimeIdeal<RingOfIntegersWithIntegralBasisStructure>>,
+        a: &Polynomial<Rational>,
+    ) -> bool {
         let d = self.integralize_multiplier(a);
         let m = self.k_field().mul(a, &self.z_to_k().image(&d));
         // for each prime factor P of d not in S, check if valuation_P(m) ≥ valuation_P(d)
 
         let d_as_roi = self.r.from_int(d.clone());
-        let principal_ideal_d = self.r.ideal_from_integer_span(vec![d_as_roi.clone()]);
+        let principal_ideal_d = self.r.generated_ideal(vec![d_as_roi.clone()]);
+
         let d_factorization = self.factor_ideal(&principal_ideal_d);
         if d_factorization.is_none() {
             return true;
@@ -68,9 +73,10 @@ impl RingOfIntegersExtension {
         for prime in d_factorization.unwrap().into_ring_and_powers().1 {
             let prime_ideal = prime.0.into_ideal();
             // Skip primes in S
-            if S.iter()
-                .any(|s_ideal| self.r.ideal_equal(s_ideal, &prime_ideal))
-            {
+            if S.iter().any(|s_ideal| {
+                self.r
+                    .ideal_equal(&(*s_ideal).clone().into_ideal(), &prime_ideal)
+            }) {
                 continue;
             }
 
@@ -342,5 +348,34 @@ mod tests {
         for ideal in f5.unique_prime_factors() {
             assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 5u32.into())
         }
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_is_S_integral() {
+        let x = &Polynomial::<Rational>::var().into_ergonomic();
+        let anf = (x.pow(2) + 5).into_verbose().algebraic_number_field();
+        let roi = anf.ring_of_integers();
+        let ext = RingOfIntegersExtension::new_integer_extension(roi.clone());
+
+        // Element: (1/2) + sqrt(-5)
+        let poly = Polynomial::<Rational>::from_coeffs(vec![Rational::ONE_HALF, Rational::ONE]);
+
+        // primes above (2)
+        let f2 =
+            ext.factor_prime_ideal(DedekindDomainPrimeIdeal::try_from_nat(2u32.into()).unwrap());
+        let prime_ideals_above_2 = f2.unique_prime_factors();
+
+        let d = ext.integralize_multiplier(&poly);
+        let m = ext.k_field().mul(&poly, &ext.z_to_k().image(&d));
+        println!("poly = {:?}", poly);
+        println!("d = {:?}", d);
+        println!("m = {:?}", m);
+        assert!(ext.r.try_anf_to_roi(&m).is_some(), "m not in ROI: {:?}", m);
+
+        // Case 1: S = empty set → should NOT be S-integral, denominator 2 not inverted
+        assert!(!ext.is_S_integral(vec![], &poly));
+        // Case 2: S = prime ideals above 2 → now we allow inversion of 2
+        assert!(ext.is_S_integral(prime_ideals_above_2, &poly));
     }
 }
