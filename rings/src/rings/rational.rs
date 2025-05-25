@@ -130,7 +130,9 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
     }
 }
 
-impl<B : BorrowedStructure<RationalCanonicalStructure>> FactorableSignature for PolynomialStructure<RationalCanonicalStructure, B> {
+impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
+    for PolynomialStructure<RationalCanonicalStructure, B>
+{
     fn factor(&self, p: &Self::Set) -> Option<FactoredElement<Self>> {
         factorize_by_factorize_primitive_part(
             &PrincipalSubringInclusion::new(self.coeff_ring().clone()),

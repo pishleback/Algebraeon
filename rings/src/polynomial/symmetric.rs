@@ -29,10 +29,11 @@ pub fn ss_num(n: usize) -> String {
 
 //express poly as a polynomial in the elementary symmetric polynomials in the given variables
 //return none if poly is not symmetric in the given variables
-impl<RS: IntegralDomainSignature> MultiPolynomialStructure<RS>
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS, RSB>
 //TODO: replace integral domain with division ring structure
 where
-    MultiPolynomialStructure<RS>: SetSignature<Set = MultiPolynomial<RS::Set>> + ToStringSignature,
+    MultiPolynomialStructure<RS, RSB>:
+        SetSignature<Set = MultiPolynomial<RS::Set>> + ToStringSignature,
 {
     pub fn is_symmetric(
         &self,
@@ -236,7 +237,8 @@ where
 impl<R: MetaType> MultiPolynomial<R>
 where
     R::Signature: IntegralDomainSignature,
-    MultiPolynomialStructure<R::Signature>: SetSignature<Set = Self> + ToStringSignature,
+    MultiPolynomialStructure<R::Signature, R::Signature>:
+        SetSignature<Set = Self> + ToStringSignature,
 {
     pub fn is_symmetric(&self, vars: Vec<impl Borrow<Variable>>) -> bool {
         Self::structure().is_symmetric(vars, self)

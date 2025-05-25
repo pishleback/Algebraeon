@@ -51,8 +51,14 @@ pub trait FiniteSetSignature: CountableSetSignature {
     }
 }
 
-pub trait BorrowedStructure<S: Signature>: Borrow<S> + Clone + std::fmt::Debug + PartialEq + Eq {}
-impl<S: Signature, BS: Borrow<S> + Clone + std::fmt::Debug + PartialEq + Eq> BorrowedStructure<S> for BS {}
+pub trait BorrowedStructure<S: Signature>:
+    Borrow<S> + Clone + std::fmt::Debug + PartialEq + Eq
+{
+}
+impl<S: Signature, BS: Borrow<S> + Clone + std::fmt::Debug + PartialEq + Eq> BorrowedStructure<S>
+    for BS
+{
+}
 
 #[cfg(test)]
 mod tests {

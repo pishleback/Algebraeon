@@ -1,13 +1,17 @@
 use crate::{polynomial::*, rings::integer::*};
 use std::rc::Rc;
 
-impl<B : BorrowedStructure<IntegerCanonicalStructure>> GreatestCommonDivisorSignature for PolynomialStructure<IntegerCanonicalStructure, B> {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> GreatestCommonDivisorSignature
+    for PolynomialStructure<IntegerCanonicalStructure, B>
+{
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         self.gcd_by_primitive_subresultant(x.clone(), y.clone())
     }
 }
 
-impl<B : BorrowedStructure<IntegerCanonicalStructure>> FactorableSignature for PolynomialStructure<IntegerCanonicalStructure, B> {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> FactorableSignature
+    for PolynomialStructure<IntegerCanonicalStructure, B>
+{
     fn factor(&self, p: &Self::Set) -> Option<FactoredElement<Self>> {
         use berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm;
         // self.factorize_by_kroneckers_method(p)

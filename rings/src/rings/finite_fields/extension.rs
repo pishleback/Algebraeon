@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use super::modulo::ModuloCanonicalStructure;
 
-impl<FS: FiniteFieldSignature, FSB : BorrowedStructure<FS>> FiniteUnitsSignature
+impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FiniteUnitsSignature
     for FieldExtensionByPolynomialQuotientStructure<FS, FSB>
 {
     fn all_units(&self) -> Vec<Self::Set> {
@@ -32,7 +32,7 @@ impl<FS: FiniteFieldSignature, FSB : BorrowedStructure<FS>> FiniteUnitsSignature
     }
 }
 
-impl<FS: FiniteFieldSignature, FSB : BorrowedStructure<FS>> FiniteFieldSignature
+impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FiniteFieldSignature
     for FieldExtensionByPolynomialQuotientStructure<FS, FSB>
 {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
@@ -55,7 +55,10 @@ where
     )
 }
 
-pub(crate) fn f9() -> FieldExtensionByPolynomialQuotientStructure<ModuloCanonicalStructure<3>, ModuloCanonicalStructure<3>> {
+pub(crate) fn f9() -> FieldExtensionByPolynomialQuotientStructure<
+    ModuloCanonicalStructure<3>,
+    ModuloCanonicalStructure<3>,
+> {
     use crate::rings::finite_fields::modulo::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(
         Modulo::<3>::structure().into(),

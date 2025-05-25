@@ -468,7 +468,9 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 /// No optimizations are used when searching for combinations of modular factors yielding true factors.
 pub fn factorize_by_berlekamp_zassenhaus_algorithm(
     poly: Polynomial<Integer>,
-) -> Option<FactoredElement<PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>>> {
+) -> Option<
+    FactoredElement<PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>>,
+> {
     if poly.is_zero() {
         None
     } else {
