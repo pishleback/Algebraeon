@@ -54,7 +54,9 @@ fn row_to_double_poly(
     Polynomial::from_coeffs(coeffs)
 }
 
-impl PolynomialStructure<AlgebraicNumberFieldStructure> {
+impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
+    PolynomialStructure<AlgebraicNumberFieldStructure, B>
+{
     /*
         input:  A polynomial f(x) over an algebraic number field K, return
         output: The polynomial \prod_{i=1}^n \sigma_i(f) over \mathbb{Q}
@@ -590,7 +592,9 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     }
 }
 
-impl FactorableSignature for PolynomialStructure<AlgebraicNumberFieldStructure> {
+impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>> FactorableSignature
+    for PolynomialStructure<AlgebraicNumberFieldStructure, B>
+{
     fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredElement<Self>> {
         if self.is_zero(a) {
             None

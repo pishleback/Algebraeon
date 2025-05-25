@@ -14,6 +14,7 @@ pub struct ConwayFiniteFieldStructure {
     n: usize,
     structure: FieldExtensionByPolynomialQuotientStructure<
         QuotientStructure<IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, true>,
     >,
 }
 

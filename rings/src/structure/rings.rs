@@ -353,7 +353,7 @@ impl<R: MetaRing> MetaFavoriteAssociate for R where
 pub trait GreatestCommonDivisorSignature: FavoriteAssociateSignature {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
-    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
+    fn gcd<'a>(&'a self, x: &Self::Set, y: &Self::Set) -> Self::Set;
     fn gcd_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut gcd = self.zero();
         for x in elems {
@@ -834,7 +834,8 @@ impl<R: MetaType> MetaPositiveRealNthRoot for R where
 
 pub trait AlgebraicClosureSignature: FieldSignature
 where
-    PolynomialStructure<Self::BFS>:
+    //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
+    PolynomialStructure<Self::BFS, Self::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
 {
     type BFS: FieldSignature; //base field structure
