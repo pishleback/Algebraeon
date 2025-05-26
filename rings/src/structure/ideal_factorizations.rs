@@ -30,7 +30,7 @@ pub struct DedekindDomainIdealFactorization<Ideal> {
 }
 
 impl<Ideal> DedekindDomainIdealFactorization<Ideal> {
-    pub fn from_factor_powers(factors: Vec<(DedekindDomainPrimeIdeal<Ideal>, Natural)>)->Self {
+    pub fn from_factor_powers(factors: Vec<(DedekindDomainPrimeIdeal<Ideal>, Natural)>) -> Self {
         Self { factors }
     }
 }

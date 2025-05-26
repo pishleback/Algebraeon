@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use super::natural::factorization::NaturalCanonicalFactorizationStructure;
 use super::natural::factorization::factor;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
@@ -95,7 +96,7 @@ impl UniqueFactorizationSignature for IntegerCanonicalStructure {
 }
 
 impl FactorableSignature for IntegerCanonicalStructure {
-    fn factor(&self, a: &Self::Set) -> Option<FactoredRingElement<Self>> {
+    fn factor(&self, a: &Self::Set) -> Option<FactoredRingElement<Integer>> {
         if a == &Integer::ZERO {
             None
         } else {
@@ -106,14 +107,17 @@ impl FactorableSignature for IntegerCanonicalStructure {
                 unit = Integer::from(1);
             }
             let f = factor(a.abs()).unwrap();
-            Some(FactoredRingElement::from_unit_and_factor_powers_unchecked(
-                self.clone().into(),
-                unit,
-                f.into_factor_powers()
-                    .into_iter()
-                    .map(|(p, k)| (Integer::from(p), Natural::from(k)))
-                    .collect(),
-            ))
+            Some(
+                Integer::factorizations().from_unit_and_factor_powers_unchecked(
+                    unit,
+                    Natural::structure()
+                        .factorizations()
+                        .into_factor_powers(f)
+                        .into_iter()
+                        .map(|(p, k)| (Integer::from(p), Natural::from(k)))
+                        .collect(),
+                ),
+            )
         }
     }
 }

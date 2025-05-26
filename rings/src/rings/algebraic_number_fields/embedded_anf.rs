@@ -116,7 +116,10 @@ pub fn as_poly_expr(
 
     let target_min_poly_factored = gen_anf_poly.factor(&target_min_poly).unwrap();
     let mut generator = generator.clone();
-    for (factor, _factor_mult) in target_min_poly_factored.factor_powers() {
+    for (factor, _factor_mult) in Polynomial::<Polynomial<Rational>>::structure()
+        .factorizations()
+        .factor_powers(&target_min_poly_factored)
+    {
         //the factor should be monic
         debug_assert!(gen_anf.equal(&factor.leading_coeff().unwrap(), &gen_anf.one()));
         if factor.degree().unwrap() == 1 {

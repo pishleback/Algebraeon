@@ -13,7 +13,7 @@ use crate::{
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
 use algebraeon_sets::{
     combinatorics::num_partitions_part_pool,
-    structure::{MetaType, SetSignature, Signature},
+    structure::{BorrowedStructure, MetaType, SetSignature, Signature},
 };
 use itertools::Itertools;
 
@@ -43,21 +43,32 @@ impl RingOfIntegersIdeal {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RingOfIntegersIdealsStructure {
-    roi: RingOfIntegersWithIntegralBasisStructure,
+pub struct RingOfIntegersIdealsStructure<
+    RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>,
+> {
+    roi: RingB,
 }
 
 impl CannonicalIdealsSignature for RingOfIntegersWithIntegralBasisStructure {
-    type Ideals = RingOfIntegersIdealsStructure;
+    type Ideals<SelfB: BorrowedStructure<Self>> = RingOfIntegersIdealsStructure<SelfB>;
 
-    fn ideals(&self) -> Self::Ideals {
-        RingOfIntegersIdealsStructure { roi: self.clone() }
+    fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self> {
+        RingOfIntegersIdealsStructure { roi: self }
+    }
+
+    fn into_ideals(self) -> Self::Ideals<Self> {
+        RingOfIntegersIdealsStructure { roi: self }
     }
 }
 
-impl Signature for RingOfIntegersIdealsStructure {}
+impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>> Signature
+    for RingOfIntegersIdealsStructure<RingB>
+{
+}
 
-impl SetSignature for RingOfIntegersIdealsStructure {
+impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>> SetSignature
+    for RingOfIntegersIdealsStructure<RingB>
+{
     type Set = RingOfIntegersIdeal;
 
     fn is_element(&self, ideal: &Self::Set) -> bool {
@@ -92,13 +103,18 @@ impl SetSignature for RingOfIntegersIdealsStructure {
     }
 }
 
-impl IdealsSignature<RingOfIntegersWithIntegralBasisStructure> for RingOfIntegersIdealsStructure {
+impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
+    IdealsSignature<RingOfIntegersWithIntegralBasisStructure, RingB>
+    for RingOfIntegersIdealsStructure<RingB>
+{
     fn ring(&self) -> &RingOfIntegersWithIntegralBasisStructure {
-        &self.roi
+        self.roi.borrow()
     }
 }
 
-impl RingOfIntegersIdealsStructure {
+impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
+    RingOfIntegersIdealsStructure<RingB>
+{
     /// Construct an ideal from a Z-linear span
     pub fn ideal_from_integer_span(
         &self,
@@ -123,9 +139,8 @@ impl RingOfIntegersIdealsStructure {
         match ideal {
             RingOfIntegersIdeal::Zero => None,
             RingOfIntegersIdeal::NonZero { .. } => Some(
-                self.factor_ideal(ideal)
-                    .unwrap()
-                    .into_factor_powers()
+                self.factorizations()
+                    .into_factor_powers(self.factor_ideal(ideal).unwrap())
                     .iter()
                     .map(|(prime_ideal, exponent)| {
                         let norm = self.ideal_norm(&prime_ideal.ideal());
@@ -146,7 +161,10 @@ impl RingOfIntegersIdealsStructure {
             Some(n) => {
                 let sq = RingOfIntegersExtension::new_integer_extension(self.ring().clone());
                 Box::new(
-                    n.into_factor_powers()
+                    Integer::structure()
+                        .ideals()
+                        .factorizations()
+                        .into_factor_powers(n)
                         .into_iter()
                         .map(|(p, k)| {
                             let k: usize = k.try_into().unwrap();
@@ -211,8 +229,9 @@ impl RingOfIntegersIdealsStructure {
     }
 }
 
-impl IdealsArithmeticSignature<RingOfIntegersWithIntegralBasisStructure>
-    for RingOfIntegersIdealsStructure
+impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
+    IdealsArithmeticSignature<RingOfIntegersWithIntegralBasisStructure, RingB>
+    for RingOfIntegersIdealsStructure<RingB>
 {
     fn principal_ideal(&self, a: &RingOfIntegersWithIntegralBasisElement) -> Self::Set {
         if self.ring().is_zero(a) {
@@ -347,23 +366,20 @@ impl IdealsArithmeticSignature<RingOfIntegersWithIntegralBasisStructure>
     }
 }
 
-impl DedekindDomainIdealsSignature<RingOfIntegersWithIntegralBasisStructure>
-    for RingOfIntegersIdealsStructure
+impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
+    DedekindDomainIdealsSignature<RingOfIntegersWithIntegralBasisStructure, RingB>
+    for RingOfIntegersIdealsStructure<RingB>
 {
 }
 
-impl FactorableIdealsSignature<RingOfIntegersWithIntegralBasisStructure>
-    for RingOfIntegersIdealsStructure
+impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
+    FactorableIdealsSignature<RingOfIntegersWithIntegralBasisStructure, RingB>
+    for RingOfIntegersIdealsStructure<RingB>
 {
     fn factor_ideal(
         &self,
         ideal: &Self::Set,
-    ) -> Option<
-        DedekindDomainIdealFactorization<
-            RingOfIntegersWithIntegralBasisStructure,
-            RingOfIntegersIdealsStructure,
-        >,
-    > {
+    ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
         Some(
             RingOfIntegersExtension::new_integer_extension(self.ring().clone())
                 .factor_ideal(ideal)?
@@ -372,7 +388,9 @@ impl FactorableIdealsSignature<RingOfIntegersWithIntegralBasisStructure>
     }
 }
 
-impl RingOfIntegersIdealsStructure {
+impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
+    RingOfIntegersIdealsStructure<RingB>
+{
     /// given an ideal I and element a find an element b such that I = (a, b)
     pub fn ideal_other_generator(
         &self,
@@ -390,8 +408,8 @@ impl RingOfIntegersIdealsStructure {
         // this is all b not in any q and in all p^{e_i}
         let b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
             FinitelyFreeModuleStructure::new(Integer::structure(), self.ring().degree()),
-            ideal_factored
-                .factor_powers()
+            self.factorizations()
+                .factor_powers(&ideal_factored)
                 .into_iter()
                 .map(|(p, k)| match self.ideal_nat_pow(p.ideal(), k) {
                     RingOfIntegersIdeal::Zero => unreachable!(),
@@ -402,12 +420,13 @@ impl RingOfIntegersIdealsStructure {
                     ),
                 })
                 .chain(
-                    g_factored
-                        .into_squarefree_factor_list()
+                    self.factorizations()
+                        .into_squarefree_factor_list(g_factored)
                         .into_iter()
                         .filter(|prime_ideal| {
-                            !ideal_factored
-                                .squarefree_factor_list()
+                            !self
+                                .factorizations()
+                                .squarefree_factor_list(&ideal_factored)
                                 .into_iter()
                                 .any(|p| self.ideal_equal(p.ideal(), prime_ideal.ideal()))
                         })
@@ -429,8 +448,8 @@ impl RingOfIntegersIdealsStructure {
         //need to filter out the b in some p^{e_i+1}
         let rm_b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
             FinitelyFreeModuleStructure::new(Integer::structure(), self.ring().degree()),
-            ideal_factored
-                .factor_powers()
+            self.factorizations()
+                .factor_powers(&ideal_factored)
                 .into_iter()
                 .map(
                     |(p, k)| match self.ideal_nat_pow(p.ideal(), &(k + Natural::ONE)) {

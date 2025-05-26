@@ -534,8 +534,9 @@ pub fn identify_real_root(
 ) -> RealAlgebraic {
     let poly = poly.primitive_squarefree_part();
     let factored_poly = poly.factor().unwrap();
-    let polys: Vec<_> = factored_poly
-        .factor_powers()
+    let polys: Vec<_> = Polynomial::<Integer>::structure()
+        .factorizations()
+        .factor_powers(&factored_poly)
         .into_iter()
         .map(|(f, _k)| f)
         .collect();
@@ -891,7 +892,10 @@ impl Polynomial<Integer> {
         assert_ne!(self, &Self::zero());
         let factors = self.factor().unwrap();
         let mut roots = vec![];
-        for (factor, k) in factors.factor_powers() {
+        for (factor, k) in Polynomial::<Integer>::structure()
+            .factorizations()
+            .factor_powers(&factors)
+        {
             for root in factor.real_roots_irreducible(a, b, include_a, include_b) {
                 let mut i = Natural::from(0u8);
                 while &i < k {

@@ -1,41 +1,50 @@
 use crate::{
-    rings::natural::factorization::{factor, primes::is_prime},
+    rings::natural::factorization::{
+        NaturalCanonicalFactorizationStructure, factor, primes::is_prime,
+    },
     structure::*,
 };
 use algebraeon_nzq::{traits::Abs, *};
-use algebraeon_sets::structure::{MetaType, SetSignature, Signature};
+use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature, Signature};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IntegerIdealsStructure {
-    integers: IntegerCanonicalStructure,
+pub struct IntegerIdealsStructure<B: BorrowedStructure<IntegerCanonicalStructure>> {
+    integers: B,
 }
 
 impl CannonicalIdealsSignature for IntegerCanonicalStructure {
-    type Ideals = IntegerIdealsStructure;
+    type Ideals<SelfB: BorrowedStructure<IntegerCanonicalStructure>> =
+        IntegerIdealsStructure<SelfB>;
 
-    fn ideals(&self) -> Self::Ideals {
-        IntegerIdealsStructure {
-            integers: Integer::structure(),
-        }
+    fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self> {
+        IntegerIdealsStructure { integers: self }
+    }
+
+    fn into_ideals(self) -> Self::Ideals<Self> {
+        IntegerIdealsStructure { integers: self }
     }
 }
 
-impl Signature for IntegerIdealsStructure {}
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> Signature for IntegerIdealsStructure<B> {}
 
-impl SetSignature for IntegerIdealsStructure {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> SetSignature for IntegerIdealsStructure<B> {
     type Set = Natural;
     fn is_element(&self, _x: &Self::Set) -> bool {
         true
     }
 }
 
-impl IdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> IdealsSignature<IntegerCanonicalStructure, B>
+    for IntegerIdealsStructure<B>
+{
     fn ring(&self) -> &IntegerCanonicalStructure {
-        &self.integers
+        self.integers.borrow()
     }
 }
 
-impl IdealsArithmeticSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>>
+    IdealsArithmeticSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
+{
     fn principal_ideal(&self, a: &Integer) -> Self::Set {
         a.abs()
     }
@@ -61,31 +70,41 @@ impl IdealsArithmeticSignature<IntegerCanonicalStructure> for IntegerIdealsStruc
     }
 }
 
-impl PrincipalIdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>>
+    PrincipalIdealsSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
+{
     fn ideal_generator(&self, ideal: &Natural) -> Integer {
         Integer::from(ideal)
     }
 }
 
-impl DedekindDomainIdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {}
+impl<B: BorrowedStructure<IntegerCanonicalStructure>>
+    DedekindDomainIdealsSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
+{
+}
 
-impl FactorableIdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>>
+    FactorableIdealsSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
+{
     fn factor_ideal(
         &self,
         ideal: &Self::Set,
-    ) -> Option<DedekindDomainIdealFactorization<IntegerCanonicalStructure, Self>> {
+    ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
         let f = factor(ideal.clone())?;
-        Some(DedekindDomainIdealFactorization::from_factor_powers(
-            Integer::ideals(),
-            f.into_factor_powers()
-                .into_iter()
-                .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k.into()))
-                .collect(),
-        ))
+        Some(
+            self.factorizations().from_factor_powers(
+                Natural::structure()
+                    .factorizations()
+                    .into_factor_powers(f)
+                    .into_iter()
+                    .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k.into()))
+                    .collect(),
+            ),
+        )
     }
 }
 
-impl DedekindDomainPrimeIdeal<IntegerCanonicalStructure, IntegerIdealsStructure> {
+impl DedekindDomainPrimeIdeal<Natural> {
     pub fn try_from_nat(n: Natural) -> Result<Self, ()> {
         if is_prime(&n) {
             Ok(DedekindDomainPrimeIdeal::from_ideal_unchecked(n))

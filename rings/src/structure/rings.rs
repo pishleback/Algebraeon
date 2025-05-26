@@ -866,7 +866,10 @@ where
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
         let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
-        for (factor, k) in base_field_poly.factorizations().into_factor_powers(base_field_poly.factor(poly)?) {
+        for (factor, k) in base_field_poly
+            .factorizations()
+            .into_factor_powers(base_field_poly.factor(poly)?)
+        {
             for root in self.all_roots_list(&factor).unwrap() {
                 root_powers.push((root, (&k).try_into().unwrap()))
             }

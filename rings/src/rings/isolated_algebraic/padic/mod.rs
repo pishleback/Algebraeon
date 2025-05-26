@@ -4,6 +4,7 @@ use crate::{
     structure::*,
 };
 use algebraeon_nzq::*;
+use algebraeon_sets::structure::MetaType;
 mod isolate;
 
 #[derive(Debug, Clone)]
@@ -418,7 +419,10 @@ impl Polynomial<Integer> {
         assert_ne!(self, &Self::zero());
         let factors = self.factor().unwrap();
         let mut roots = vec![];
-        for (factor, k) in factors.factor_powers() {
+        for (factor, k) in Polynomial::<Integer>::structure()
+            .factorizations()
+            .factor_powers(&factors)
+        {
             for root in factor.all_padic_roots_irreducible(p) {
                 let mut i = Natural::from(0u8);
                 while &i < k {

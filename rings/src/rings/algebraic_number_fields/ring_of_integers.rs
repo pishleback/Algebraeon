@@ -531,9 +531,8 @@ mod tests {
 
         // Factor the ideal
         for (prime_ideal, power) in roi_ideals
-            .factor_ideal(&ideal)
-            .unwrap()
-            .into_factor_powers()
+            .factorizations()
+            .into_factor_powers(roi_ideals.factor_ideal(&ideal).unwrap())
         {
             let (a, b) = roi_ideals.ideal_two_generators(prime_ideal.ideal());
             println!(

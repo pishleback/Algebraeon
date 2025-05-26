@@ -722,17 +722,13 @@ where
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
-        factor_poly: impl Fn(
-            &Polynomial<RS::Set>,
-        ) -> Option<FactoredRingElement<Polynomial<RS::Set>>>,
+        factor_poly: impl Fn(&Polynomial<RS::Set>) -> Option<FactoredRingElement<Polynomial<RS::Set>>>,
         factor_multipoly_coeff: impl Fn(
             &MultiPolynomial<RS::Set>,
-        ) -> Option<
-            FactoredRingElement<MultiPolynomial<RS::Set>>,
-        >,
+        )
+            -> Option<FactoredRingElement<MultiPolynomial<RS::Set>>>,
         mpoly: &<Self as SetSignature>::Set,
-    ) -> Option<FactoredRingElement<Polynomial<MultiPolynomial<RS::Set>>>>
-    {
+    ) -> Option<FactoredRingElement<Polynomial<MultiPolynomial<RS::Set>>>> {
         match |mpoly: &<Self as SetSignature>::Set| -> Option<Polynomial<RS::Set>> {
             let mut const_coeffs = vec![];
             for coeff in mpoly.coeffs() {
@@ -745,18 +741,20 @@ where
             // So we can defer to a univariate factoring algorithm
             Some(poly) => {
                 let (unit, factors) = factor_poly(&poly)?.into_unit_and_factor_powers();
-                Some(self.factorizations().from_unit_and_factor_powers(
-                    unit.apply_map_into(|c| MultiPolynomial::constant(c)),
-                    factors
-                        .into_iter()
-                        .map(|(factor, power)| {
-                            (
-                                factor.apply_map_into(|c| MultiPolynomial::constant(c)),
-                                power,
-                            )
-                        })
-                        .collect(),
-                ))
+                Some(
+                    self.factorizations().from_unit_and_factor_powers(
+                        unit.apply_map_into(|c| MultiPolynomial::constant(c)),
+                        factors
+                            .into_iter()
+                            .map(|(factor, power)| {
+                                (
+                                    factor.apply_map_into(|c| MultiPolynomial::constant(c)),
+                                    power,
+                                )
+                            })
+                            .collect(),
+                    ),
+                )
             }
             None => {
                 self.factorize_by_yuns_and_kroneckers_method(mpoly, |c| factor_multipoly_coeff(c))
@@ -785,9 +783,7 @@ where
         &self,
         factor_coeff: Rc<dyn Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>>,
         factor_poly: Rc<
-            dyn Fn(
-                &Polynomial<RS::Set>,
-            ) -> Option<FactoredRingElement<Polynomial<RS::Set>>>,
+            dyn Fn(&Polynomial<RS::Set>) -> Option<FactoredRingElement<Polynomial<RS::Set>>>,
         >,
         mpoly: &<Self as SetSignature>::Set,
     ) -> Option<FactoredRingElement<MultiPolynomial<RS::Set>>> {
@@ -811,15 +807,17 @@ where
                                 )
                                 .unwrap()
                                 .into_unit_and_factor_powers();
-                            Some(self.factorizations().from_unit_and_factor_powers(
-                                self.homogenize(&unit, &free_var),
-                                factors
-                                    .into_iter()
-                                    .map(|(factor, power)| {
-                                        (self.homogenize(&factor, &free_var), power)
-                                    })
-                                    .collect(),
-                            ))
+                            Some(
+                                self.factorizations().from_unit_and_factor_powers(
+                                    self.homogenize(&unit, &free_var),
+                                    factors
+                                        .into_iter()
+                                        .map(|(factor, power)| {
+                                            (self.homogenize(&factor, &free_var), power)
+                                        })
+                                        .collect(),
+                                ),
+                            )
                         }
                         HomogeneousOfDegreeResult::No => {
                             // Not homogeneous but
@@ -842,15 +840,17 @@ where
                                 )
                                 .unwrap()
                                 .into_unit_and_factor_powers();
-                            Some(self.factorizations().from_unit_and_factor_powers(
-                                poly_over_self.evaluate(&unit, &free_var),
-                                factors
-                                    .into_iter()
-                                    .map(|(factor, power)| {
-                                        (poly_over_self.evaluate(&factor, &free_var), power)
-                                    })
-                                    .collect(),
-                            ))
+                            Some(
+                                self.factorizations().from_unit_and_factor_powers(
+                                    poly_over_self.evaluate(&unit, &free_var),
+                                    factors
+                                        .into_iter()
+                                        .map(|(factor, power)| {
+                                            (poly_over_self.evaluate(&factor, &free_var), power)
+                                        })
+                                        .collect(),
+                                ),
+                            )
                         }
                         HomogeneousOfDegreeResult::Zero => unreachable!(),
                     }
@@ -860,13 +860,15 @@ where
                     let value = self.as_constant(mpoly).unwrap();
                     let factored = factor_coeff(&value)?;
                     let (unit, factors) = factored.into_unit_and_factor_powers();
-                    Some(self.factorizations().from_unit_and_factor_powers(
-                        MultiPolynomial::constant(unit),
-                        factors
-                            .into_iter()
-                            .map(|(factor, power)| (MultiPolynomial::constant(factor), power))
-                            .collect(),
-                    ))
+                    Some(
+                        self.factorizations().from_unit_and_factor_powers(
+                            MultiPolynomial::constant(unit),
+                            factors
+                                .into_iter()
+                                .map(|(factor, power)| (MultiPolynomial::constant(factor), power))
+                                .collect(),
+                        ),
+                    )
                 }
             }
         }

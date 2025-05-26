@@ -164,13 +164,13 @@ pub trait DedekindDomainIdealsSignature<
 pub trait FactorableIdealsSignature<Ring: DedekindDomainSignature, RingB: BorrowedStructure<Ring>>:
     DedekindDomainIdealsSignature<Ring, RingB>
 {
-    fn ideal_factorizations<'a>(
+    fn factorizations<'a>(
         &'a self,
     ) -> DedekindDomainIdealFactorizationStructure<Ring, RingB, Self, &'a Self> {
         DedekindDomainIdealFactorizationStructure::new(self)
     }
 
-    fn into_ideal_factorizations(
+    fn into_factorizations(
         self,
     ) -> DedekindDomainIdealFactorizationStructure<Ring, RingB, Self, Self> {
         DedekindDomainIdealFactorizationStructure::new(self)
@@ -183,7 +183,7 @@ pub trait FactorableIdealsSignature<Ring: DedekindDomainSignature, RingB: Borrow
 
     fn is_prime_ideal(&self, ideal: &Self::Set) -> bool {
         if let Some(f) = self.factor_ideal(ideal) {
-            self.ideal_factorizations().is_prime(&f)
+            self.factorizations().is_prime(&f)
         } else {
             false
         }
