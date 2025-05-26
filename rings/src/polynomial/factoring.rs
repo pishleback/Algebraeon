@@ -17,11 +17,11 @@ where
     pub fn factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
         &self,
         f: Polynomial<RS::Set>,
-        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredElement<RS>>,
+        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>,
         primitive_sqfree_factorize: &impl Fn(
             Polynomial<RS::Set>,
-        ) -> FactoredElement<PolynomialStructure<RS, RSB>>,
-    ) -> FactoredElement<PolynomialStructure<RS, RSB>> {
+        ) -> FactoredRingElement<Polynomial<RS::Set>>,
+    ) -> FactoredRingElement<Polynomial<RS::Set>> {
         debug_assert!(!self.is_zero(&f));
         //look for a squarefree factorization of the form
         //  f = x * a_1^1 * a_2^2 * a_3^3 * ... * a_k^k
@@ -32,8 +32,7 @@ where
             .unwrap()
             .into_unit_and_factor_powers();
 
-        let mut factors = FactoredElement::from_unit_and_factor_powers(
-            self.clone().into(),
+        let mut factors = self.factorizations().from_unit_and_factor_powers(
             Polynomial::constant(content_unit),
             content_factors
                 .into_iter()
@@ -53,14 +52,19 @@ where
             a = self.gcd(&b, &d);
 
             //a^i is a power of a squarefree factor of f
-            factors.mul_mut(primitive_sqfree_factorize(a.clone()).pow(&Natural::from(i)));
+            self.factorizations().mul_mut(
+                &mut factors,
+                self.factorizations()
+                    .pow(primitive_sqfree_factorize(a.clone()), &Natural::from(i)),
+            );
             f = self.div(&f, &self.nat_pow(&a, &Natural::from(i))).unwrap();
 
             (b, c) = (self.div(&b, &a).unwrap(), self.div(&d, &a).unwrap());
             i += 1;
             d = self.add(&self.neg(&self.derivative(b.clone())), &c);
         }
-        factors.mul_mut(FactoredElement::from_unit(self.clone().into(), f));
+        self.factorizations()
+            .mul_mut(&mut factors, self.factorizations().from_unit(f));
         factors
     }
 }
@@ -77,7 +81,7 @@ where
         &self,
         mut f: Polynomial<RS::Set>,
     ) -> (
-        FactoredElement<PolynomialStructure<RS, RSB>>,
+        FactoredRingElement<Polynomial<RS::Set>>,
         Polynomial<RS::Set>,
     ) {
         debug_assert!(self.is_primitive(f.clone()));
@@ -89,16 +93,15 @@ where
         so just factor c0 and cn and check all divisors
         */
 
-        let mut linear_factors = FactoredElement::new_trivial(self.clone().into());
+        let mut linear_factors = self.factorizations().new_trivial();
         'seek_linear_factor: while self.degree(&f).unwrap() > 0 {
             let c0 = self.coeff(&f, 0);
             if self.coeff_ring().is_zero(c0) {
                 //linear factor of x
                 f = self.div(&f, &self.var()).unwrap();
-                linear_factors = FactoredElement::mul(
-                    linear_factors,
-                    FactoredElement::from_prime(self.clone().into(), self.var()),
-                );
+                linear_factors = self
+                    .factorizations()
+                    .mul(linear_factors, self.factorizations().from_prime(self.var()));
                 continue 'seek_linear_factor;
             } else {
                 //look for linear factors of the form (a+bx)
@@ -107,10 +110,10 @@ where
                     .coeff_ring()
                     .factor(self.coeff(&f, self.degree(&f).unwrap()))
                     .unwrap();
-                for a_assoc in c0fs.divisors() {
+                for a_assoc in self.coeff_ring().factorizations().divisors(&c0fs) {
                     for u in self.coeff_ring().all_units() {
                         let a = self.coeff_ring().mul(&u, &a_assoc);
-                        for b in cnfs.divisors() {
+                        for b in self.coeff_ring().factorizations().divisors(&cnfs) {
                             //a ranges over all divisors of c0
                             //b ranges over all divisors factors of cn up to associates
                             //try the linear factor (a+bx)
@@ -118,10 +121,9 @@ where
                             match self.div(&f, &lin) {
                                 Ok(new_f) => {
                                     f = new_f;
-                                    linear_factors = FactoredElement::mul(
-                                        linear_factors,
-                                        FactoredElement::from_prime(self.clone().into(), lin),
-                                    );
+                                    linear_factors = self
+                                        .factorizations()
+                                        .mul(linear_factors, self.factorizations().from_prime(lin));
                                     continue 'seek_linear_factor;
                                 }
                                 Err(RingDivisionError::NotDivisible) => {}
@@ -148,8 +150,8 @@ where
     fn find_factor_primitive_by_kroneckers_algorithm(
         &self,
         f: &Polynomial<RS::Set>,
-        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredElement<RS>>,
-    ) -> FindFactorResult<PolynomialStructure<RS, RSB>> {
+        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>,
+    ) -> FindFactorResult<Polynomial<RS::Set>> {
         /*
         Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
         Assume it has a proper factor g(x). wlog g(x) has degree <= 2
@@ -180,7 +182,9 @@ where
             }
 
             //compute all factors of each y value. choose the y with the most divisors to only factor up to units
-            f_points.sort_by_cached_key(|(_x, yf)| yf.count_divisors());
+            f_points.sort_by_cached_key(|(_x, yf)| {
+                self.coeff_ring().factorizations().count_divisors(yf)
+            });
             let _ = f_points.split_off(max_factor_degree + 1);
             //possible_g_points is (x, possible_y_values)
             let all_possible_g_points: Vec<(RS::Set, Vec<RS::Set>)> = f_points
@@ -189,7 +193,7 @@ where
                 .enumerate()
                 .map(|(i, (x, yf))| {
                     let mut y_divs = vec![];
-                    for d in yf.divisors() {
+                    for d in self.coeff_ring().factorizations().divisors(&yf) {
                         if i == 0 {
                             //take divisors up to associates for one, because we only care about g up to associates
                             y_divs.push(d);
@@ -248,16 +252,15 @@ where
     pub fn factorize_by_kroneckers_method(
         &self,
         f: Polynomial<RS::Set>,
-        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredElement<RS>>,
-    ) -> Option<FactoredElement<Self>> {
+        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>,
+    ) -> Option<FactoredRingElement<Polynomial<RS::Set>>> {
         if self.is_zero(&f) {
             None
         } else {
             let (g, f_prim) = self.factor_primitive(f).unwrap();
             let g_factored = factor_coeff(&g).unwrap();
             let (g_unit, g_factors) = g_factored.into_unit_and_factor_powers();
-            let g_factored = FactoredElement::from_unit_and_factor_powers(
-                self.clone().into(),
+            let g_factored = self.factorizations().from_unit_and_factor_powers(
                 Polynomial::constant(g_unit),
                 g_factors
                     .into_iter()
@@ -267,7 +270,7 @@ where
             let mut factored = factorize_by_find_factor(self, f_prim, &|f| {
                 self.find_factor_primitive_by_kroneckers_algorithm(&f, |c| factor_coeff(c))
             });
-            factored.mul_mut(g_factored);
+            self.factorizations().mul_mut(&mut factored, g_factored);
 
             Some(factored)
         }
@@ -290,8 +293,8 @@ where
     pub fn factorize_by_yuns_and_kroneckers_method(
         &self,
         f: &Polynomial<RS::Set>,
-        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredElement<RS>>,
-    ) -> Option<FactoredElement<Self>> {
+        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>,
+    ) -> Option<FactoredRingElement<Polynomial<RS::Set>>> {
         if self.is_zero(f) {
             None
         } else {
@@ -326,8 +329,8 @@ where
 {
     pub fn factorize_by_kroneckers_method(
         &self,
-        factor_coeff: impl Fn(&R) -> Option<FactoredElement<R::Signature>>,
-    ) -> Option<FactoredElement<PolynomialStructure<R::Signature, R::Signature>>> {
+        factor_coeff: impl Fn(&R) -> Option<FactoredRingElement<R>>,
+    ) -> Option<FactoredRingElement<Polynomial<R>>> {
         Self::structure().factorize_by_yuns_and_kroneckers_method(self, factor_coeff)
     }
 }
@@ -335,14 +338,15 @@ where
 pub fn factorize_by_factorize_primitive_part<
     Ring: RingSignature,
     Field: FieldSignature,
+    FieldB: BorrowedStructure<Field>,
     Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
     fof_inclusion: &Fof,
-    poly_ring: &PolynomialStructure<Field, Field>,
+    poly_ring: &PolynomialStructure<Field, FieldB>,
     f: &Polynomial<Field::Set>,
-) -> Option<FactoredElement<PolynomialStructure<Field, Field>>>
+) -> Option<FactoredRingElement<Polynomial<Field::Set>>>
 where
-    PolynomialStructure<Field, Field>:
+    PolynomialStructure<Field, FieldB>:
         SetSignature<Set = Polynomial<Field::Set>> + UniqueFactorizationSignature,
     PolynomialStructure<Ring, Ring>:
         SetSignature<Set = Polynomial<Ring::Set>> + FactorableSignature,
@@ -360,8 +364,7 @@ where
         poly_ring.mul_mut(&mut fof_unit, &fof_factor_unit);
         fof_factors.push((fof_factor_prim, power));
     }
-    let factors = FactoredElement::from_unit_and_factor_powers(
-        poly_ring.clone().into(),
+    let factors = poly_ring.factorizations().from_unit_and_factor_powers(
         poly_ring.mul(&Polynomial::constant(unit), &fof_unit),
         fof_factors,
     );
@@ -376,7 +379,7 @@ where
     fn find_factor_by_trying_all_factors(
         &self,
         f: Polynomial<RS::Set>,
-    ) -> FindFactorResult<PolynomialStructure<RS, RSB>> {
+    ) -> FindFactorResult<Polynomial<RS::Set>> {
         let f_deg = self.degree(&f).unwrap();
         let max_factor_degree = f_deg / 2;
         for d in 0..max_factor_degree {
@@ -404,7 +407,7 @@ where
     pub fn factorize_by_trying_all_factors(
         &self,
         f: Polynomial<RS::Set>,
-    ) -> Option<FactoredElement<PolynomialStructure<RS, RSB>>> {
+    ) -> Option<FactoredRingElement<Polynomial<RS::Set>>> {
         if self.is_zero(&f) {
             None
         } else {
@@ -421,9 +424,7 @@ where
     PolynomialStructure<F::Signature, F::Signature>:
         SetSignature<Set = Polynomial<F>> + UniqueFactorizationSignature,
 {
-    pub fn factorize_by_trying_all_factors(
-        &self,
-    ) -> Option<FactoredElement<PolynomialStructure<F::Signature, F::Signature>>> {
+    pub fn factorize_by_trying_all_factors(&self) -> Option<FactoredRingElement<Polynomial<F>>> {
         Self::structure().factorize_by_trying_all_factors(self.clone())
     }
 }
@@ -437,12 +438,13 @@ mod tests {
     fn test_factor_by_kroneckers_method_over_integers() {
         let x = &Polynomial::<Integer>::var().into_ergonomic();
 
+        let int_poly_fs = PolynomialStructure::new(Integer::structure()).into_factorizations();
+
         //primitive cases
         let f = ((1 + x).pow(2)).into_verbose();
-        assert!(FactoredElement::equal(
+        assert!(int_poly_fs.equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &FactoredElement::from_unit_and_factor_powers(
-                Polynomial::<Integer>::structure().into(),
+            &int_poly_fs.from_unit_and_factor_powers(
                 Polynomial::one(),
                 vec![((1 + x).into_verbose(), Natural::from(2u8))]
             )
@@ -450,19 +452,17 @@ mod tests {
 
         let f = (-1 - 2 * x).into_verbose();
         let fs1 = f.factorize_by_kroneckers_method(Integer::factor).unwrap();
-        let fs2 = &FactoredElement::from_unit_and_factor_powers(
-            Polynomial::<Integer>::structure().into(),
+        let fs2 = &int_poly_fs.from_unit_and_factor_powers(
             Polynomial::neg(&Polynomial::one()),
             vec![((1 + 2 * x).into_verbose(), Natural::from(1u8))],
         );
         println!("fs1={} fs2={}", fs1, fs2);
-        assert!(FactoredElement::equal(&fs1, &fs2));
+        assert!(int_poly_fs.equal(&fs1, &fs2));
 
         let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).into_verbose();
-        assert!(FactoredElement::equal(
+        assert!(int_poly_fs.equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &FactoredElement::from_unit_and_factor_powers(
-                Polynomial::<Integer>::structure().into(),
+            &int_poly_fs.from_unit_and_factor_powers(
                 Polynomial::one(),
                 vec![
                     ((1 + x + x.pow(2)).into_verbose(), Natural::from(1u8)),
@@ -472,10 +472,9 @@ mod tests {
         ));
 
         let f = (1 + x + x.pow(2)).pow(2).into_verbose();
-        assert!(FactoredElement::equal(
+        assert!(int_poly_fs.equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &FactoredElement::from_unit_and_factor_powers(
-                Polynomial::<Integer>::structure().into(),
+            &int_poly_fs.from_unit_and_factor_powers(
                 Polynomial::one(),
                 vec![((1 + x + x.pow(2)).into_verbose(), Natural::from(2u8))]
             )
@@ -483,10 +482,9 @@ mod tests {
 
         //non-primitive cases
         let f = (2 + 2 * x).into_verbose();
-        assert!(FactoredElement::equal(
+        assert!(int_poly_fs.equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &FactoredElement::from_unit_and_factor_powers(
-                Polynomial::<Integer>::structure().into(),
+            &int_poly_fs.from_unit_and_factor_powers(
                 Polynomial::one(),
                 vec![
                     (Polynomial::from_int(Integer::from(2)), Natural::from(1u8)),
@@ -496,10 +494,9 @@ mod tests {
         ));
 
         let f = (12 * (2 + 3 * x) * (x - 1).pow(2)).into_verbose();
-        assert!(FactoredElement::equal(
+        assert!(int_poly_fs.equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &FactoredElement::from_unit_and_factor_powers(
-                Polynomial::<Integer>::structure().into(),
+            &int_poly_fs.from_unit_and_factor_powers(
                 Polynomial::one(),
                 vec![
                     (Polynomial::from_int(Integer::from(2)), Natural::from(2u8)),
@@ -511,20 +508,15 @@ mod tests {
         ));
 
         let f = Polynomial::<Integer>::one();
-        assert!(FactoredElement::equal(
+        assert!(int_poly_fs.equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &FactoredElement::from_unit_and_factor_powers(
-                Polynomial::<Integer>::structure().into(),
-                Polynomial::one(),
-                vec![]
-            )
+            &int_poly_fs.from_unit_and_factor_powers(Polynomial::one(), vec![])
         ));
 
         let f = ((x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_verbose();
-        assert!(FactoredElement::equal(
+        assert!(int_poly_fs.equal(
             &f.factorize_by_kroneckers_method(Integer::factor).unwrap(),
-            &FactoredElement::from_unit_and_factor_powers(
-                Polynomial::<Integer>::structure().into(),
+            &int_poly_fs.from_unit_and_factor_powers(
                 Polynomial::one(),
                 vec![
                     ((x.pow(4) + x + 1).into_verbose(), Natural::from(1u8)),
@@ -539,13 +531,13 @@ mod tests {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let f = (6 * (x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_verbose();
         let fs = f.factor().unwrap();
+        let rat_poly_fs = PolynomialStructure::new(Rational::structure()).into_factorizations();
 
         println!("fs = {}", fs);
 
-        assert!(FactoredElement::equal(
+        assert!(rat_poly_fs.equal(
             &f.factor().unwrap(),
-            &FactoredElement::from_unit_and_factor_powers(
-                Polynomial::<Rational>::structure().into(),
+            &rat_poly_fs.from_unit_and_factor_powers(
                 Polynomial::constant(Rational::from(6)),
                 vec![
                     ((x.pow(4) + x + 1).into_verbose(), Natural::from(1u8)),

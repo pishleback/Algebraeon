@@ -853,11 +853,11 @@ where
         &self,
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<Self::Set>> {
+        let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
         self.all_roots_list(
-            &PolynomialStructure::new(self.base_field().clone())
-                .factor(poly)
-                .unwrap()
-                .expanded_squarefree(),
+            &base_field_poly
+                .factorizations()
+                .expanded_squarefree(&base_field_poly.factor(poly).unwrap()),
         )
     }
     fn all_roots_powers(
@@ -865,10 +865,8 @@ where
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
-        for (factor, k) in PolynomialStructure::new(self.base_field().clone())
-            .factor(poly)?
-            .into_factor_powers()
-        {
+        let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
+        for (factor, k) in base_field_poly.factorizations().into_factor_powers(base_field_poly.factor(poly)?) {
             for root in self.all_roots_list(&factor).unwrap() {
                 root_powers.push((root, (&k).try_into().unwrap()))
             }

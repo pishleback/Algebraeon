@@ -367,8 +367,9 @@ impl SemigroupSignature for ModularFactorMultSemigrp {
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn factor_by_try_all_subsets<'a>(
         &'a self,
-    ) -> FactoredElement<PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>>
-    {
+    ) -> FactoredRingElement<
+        PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>,
+    > {
         let n = self.modular_factors.len();
 
         let mut dminusone_test =
@@ -380,7 +381,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
             self.modular_factors.iter().map(|g| g.clone()).collect(),
         );
 
-        let mut factored = FactoredElement::new_trivial(Polynomial::<Integer>::structure());
+        let mut factored = FactoredRingElement::new_trivial(Polynomial::<Integer>::structure());
         let mut excluded_modular_factors = vec![];
         let mut f = self.poly.clone();
         let mut k = 1; // The cardinality of the subset to search for each loop
@@ -429,7 +430,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                                 // Divide f by the found factor g
                                 f = h;
                                 // Add g to this list of found factors
-                                factored.mul_mut(FactoredElement::from_prime(
+                                factored.mul_mut(FactoredRingElement::from_prime(
                                     Polynomial::<Integer>::structure(),
                                     g,
                                 ));
@@ -454,7 +455,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 
         // The remaining modular factors must give the last irreducible factor in the factorization
         if m > 0 {
-            factored.mul_mut(FactoredElement::from_prime(
+            factored.mul_mut(FactoredRingElement::from_prime(
                 Polynomial::<Integer>::structure(),
                 f,
             ));
@@ -469,7 +470,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 pub fn factorize_by_berlekamp_zassenhaus_algorithm(
     poly: Polynomial<Integer>,
 ) -> Option<
-    FactoredElement<PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>>,
+    FactoredRingElement<PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>>,
 > {
     if poly.is_zero() {
         None
@@ -481,7 +482,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
                     Integer::factor,
                     &|f| {
                         if f.degree().unwrap() == 0 {
-                            FactoredElement::from_unit(Polynomial::<Integer>::structure(), f)
+                            FactoredRingElement::from_unit(Polynomial::<Integer>::structure(), f)
                         } else {
                             let state = BerlekampAassenhausAlgorithmState::new(f).next_prime();
                             state.factor_by_try_all_subsets()
@@ -576,7 +577,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
 pub fn factorize_by_berlekamp_zassenhaus_algorithm_naive(
     f: Polynomial<Integer>,
 ) -> Option<
-    FactoredElement<PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>>,
+    FactoredRingElement<PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>>,
 > {
     if f.is_zero() {
         None

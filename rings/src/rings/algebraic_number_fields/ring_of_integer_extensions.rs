@@ -114,18 +114,7 @@ impl RingOfIntegersExtension<IntegerIdealsStructure, RingOfIntegersIdealsStructu
     }
 }
 
-impl<
-    IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure>,
-    IdealsR: DedekindDomainIdealsSignature<RingOfIntegersWithIntegralBasisStructure>,
-> RingOfIntegersExtension<IdealsZ, IdealsR>
-{
-    fn z_ideals(&self) -> &IdealsZ {
-        &self.ideals_z
-    }
-    fn r_ideals(&self) -> &IdealsR {
-        &self.ideals_r
-    }
-}
+
 
 impl<
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure>,

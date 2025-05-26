@@ -1,25 +1,27 @@
 use super::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
-use std::{fmt::Debug, marker::PhantomData};
 
 pub trait DedekindDomainSignature: IntegralDomainSignature {}
 
 pub trait CannonicalIdealsSignature: RingSignature {
-    type Ideals: IdealsSignature<Self>;
-    fn ideals(&self) -> Self::Ideals;
+    type Ideals<SelfB: BorrowedStructure<Self>>: IdealsSignature<Self, SelfB>;
+    fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self>;
+    fn into_ideals(self) -> Self::Ideals<Self>;
 }
 pub trait MetaCannonicalIdealsSignature: MetaType
 where
     Self::Signature: CannonicalIdealsSignature,
 {
-    fn ideals() -> <Self::Signature as CannonicalIdealsSignature>::Ideals {
-        Self::structure().ideals()
+    fn ideals() -> <Self::Signature as CannonicalIdealsSignature>::Ideals<Self::Signature> {
+        Self::structure().into_ideals()
     }
 }
 impl<R: MetaType> MetaCannonicalIdealsSignature for R where R::Signature: CannonicalIdealsSignature {}
 
-pub trait IdealsSignature<Ring: RingSignature>: SetSignature {
+pub trait IdealsSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
+    SetSignature
+{
     fn ring(&self) -> &Ring;
 }
 // pub trait MetaIdealSignature<Ring: RingSignature>: MetaType
@@ -32,7 +34,9 @@ pub trait IdealsSignature<Ring: RingSignature>: SetSignature {
 // {
 // }
 
-pub trait IdealsArithmeticSignature<Ring: RingSignature>: IdealsSignature<Ring> {
+pub trait IdealsArithmeticSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
+    IdealsSignature<Ring, RingB>
+{
     // The zero ideal i.e. contains only 0
     fn zero_ideal(&self) -> Self::Set {
         self.principal_ideal(&self.ring().zero())
@@ -127,18 +131,22 @@ pub trait IdealsArithmeticSignature<Ring: RingSignature>: IdealsSignature<Ring> 
     }
 }
 
-pub trait PrincipalIdealsSignature<Ring: RingSignature>: IdealsSignature<Ring> {
+pub trait PrincipalIdealsSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
+    IdealsSignature<Ring, RingB>
+{
     fn ideal_generator(&self, ideal: &Self::Set) -> Ring::Set;
 }
 
 /// A ring in which all ideals uniquely factor as a product of powers of prime ideals
-pub trait DedekindDomainIdealsSignature<Ring: DedekindDomainSignature>:
-    IdealsArithmeticSignature<Ring>
+pub trait DedekindDomainIdealsSignature<
+    Ring: DedekindDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+>: IdealsArithmeticSignature<Ring, RingB>
 {
     /// Return the largest power of prime_ideal which divides ideal
     fn largest_prime_ideal_factor_power(
         &self,
-        prime_ideal: &DedekindDomainPrimeIdeal<Ring, Self>,
+        prime_ideal: &DedekindDomainPrimeIdeal<Self::Set>,
         ideal: &Self::Set,
     ) -> Natural {
         debug_assert!(!self.ideal_equal(prime_ideal.ideal(), &self.unit_ideal()));
@@ -153,155 +161,31 @@ pub trait DedekindDomainIdealsSignature<Ring: DedekindDomainSignature>:
     }
 }
 
-pub trait FactorableIdealsSignature<Ring: DedekindDomainSignature>:
-    DedekindDomainIdealsSignature<Ring>
+pub trait FactorableIdealsSignature<Ring: DedekindDomainSignature, RingB: BorrowedStructure<Ring>>:
+    DedekindDomainIdealsSignature<Ring, RingB>
 {
+    fn ideal_factorizations<'a>(
+        &'a self,
+    ) -> DedekindDomainIdealFactorizationStructure<Ring, RingB, Self, &'a Self> {
+        DedekindDomainIdealFactorizationStructure::new(self)
+    }
+
+    fn into_ideal_factorizations(
+        self,
+    ) -> DedekindDomainIdealFactorizationStructure<Ring, RingB, Self, Self> {
+        DedekindDomainIdealFactorizationStructure::new(self)
+    }
+
     fn factor_ideal(
         &self,
         ideal: &Self::Set,
-    ) -> Option<DedekindDomainIdealFactorization<Ring, Self>>;
+    ) -> Option<DedekindDomainIdealFactorization<Self::Set>>;
+
     fn is_prime_ideal(&self, ideal: &Self::Set) -> bool {
         if let Some(f) = self.factor_ideal(ideal) {
-            f.is_prime()
+            self.ideal_factorizations().is_prime(&f)
         } else {
             false
         }
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct DedekindDomainPrimeIdeal<
-    Ring: DedekindDomainSignature,
-    Ideals: DedekindDomainIdealsSignature<Ring>,
-> {
-    _ring: PhantomData<Ring>,
-    prime_ideal: Ideals::Set,
-}
-
-impl<Ring: DedekindDomainSignature, Ideals: DedekindDomainIdealsSignature<Ring>>
-    DedekindDomainPrimeIdeal<Ring, Ideals>
-{
-    pub fn from_ideal_unchecked(ideal: Ideals::Set) -> Self {
-        Self {
-            _ring: PhantomData::default(),
-            prime_ideal: ideal,
-        }
-    }
-
-    pub fn into_ideal(self) -> Ideals::Set {
-        self.prime_ideal
-    }
-
-    pub fn ideal(&self) -> &Ideals::Set {
-        &self.prime_ideal
-    }
-}
-
-impl<Ring: DedekindDomainSignature, Ideals: DedekindDomainIdealsSignature<Ring>>
-    FactoredSignature<DedekindDomainIdealFactorization<Ring, Ideals>> for Ideals
-{
-    type PrimeObject = DedekindDomainPrimeIdeal<Ring, Ideals>;
-
-    type FactoredObject = Ideals::Set;
-
-    fn object_divides(&self, a: &Self::FactoredObject, b: &Self::FactoredObject) -> bool {
-        self.ideal_contains(a, b)
-    }
-
-    fn object_is_prime(&self, _object: &Self::PrimeObject) -> bool {
-        true
-    }
-
-    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::FactoredObject {
-        prime.into_ideal()
-    }
-
-    fn object_product(&self, objects: Vec<&Self::FactoredObject>) -> Self::FactoredObject {
-        self.ideal_product(objects.into_iter().cloned().collect())
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct DedekindDomainIdealFactorization<
-    Ring: DedekindDomainSignature,
-    Ideals: DedekindDomainIdealsSignature<Ring>,
-> {
-    ideals: Ideals,
-    // The prime ideals should be distinct
-    // All powers should be non-zero
-    factors: Vec<(DedekindDomainPrimeIdeal<Ring, Ideals>, Natural)>,
-}
-
-impl<Ring: DedekindDomainSignature, Ideals: DedekindDomainIdealsSignature<Ring>> Factored
-    for DedekindDomainIdealFactorization<Ring, Ideals>
-{
-    type Structure = Ideals;
-
-    fn factored_structure<'a>(&'a self) -> impl 'a + std::borrow::Borrow<Self::Structure> {
-        &self.ideals
-    }
-
-    fn from_factor_powers_impl(
-        structure: Self::Structure,
-        factor_powers: Vec<(
-            <Self::Structure as FactoredSignature<Self>>::PrimeObject,
-            Natural,
-        )>,
-    ) -> Self {
-        Self {
-            ideals: structure,
-            factors: factor_powers,
-        }
-    }
-
-    fn factor_powers(
-        &self,
-    ) -> Vec<(
-        &<Self::Structure as FactoredSignature<Self>>::PrimeObject,
-        &Natural,
-    )> {
-        self.factors.iter().map(|(p, k)| (p, k)).collect()
-    }
-
-    fn into_factor_powers(
-        self,
-    ) -> Vec<(
-        <Self::Structure as FactoredSignature<Self>>::PrimeObject,
-        Natural,
-    )> {
-        self.factors
-    }
-
-    fn expanded(&self) -> <Self::Structure as FactoredSignature<Self>>::FactoredObject {
-        self.ideals.ideal_product(
-            self.factor_list()
-                .into_iter()
-                .map(|p| p.ideal().clone())
-                .collect(),
-        )
-    }
-
-    fn mul(mut a: Self, b: Self) -> Self {
-        let ring = common_structure::<Ideals>(a.factored_structure(), b.factored_structure());
-        for (q, l) in b.into_factor_powers() {
-            'SEARCH_A: {
-                for (p, k) in &mut a.factors {
-                    if ring.object_equivalent(p.ideal(), q.ideal()) {
-                        *k += l;
-                        break 'SEARCH_A;
-                    }
-                }
-                a.factors.push((q, l));
-            }
-        }
-        a
-    }
-}
-
-// #[derive(Debug, Clone)]
-// pub struct DedekindDomainFractionalIdeal<RS: DedekindDomainIdealsSignature> {
-//     ring: RS,
-//     // The prime ideals should be distinct
-//     // All powers should be non-zero
-//     factors: Vec<(DedekindDomainPrimeIdeal<RS>, Integer)>,
-// }

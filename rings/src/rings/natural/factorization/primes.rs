@@ -119,7 +119,9 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 if r < Natural::from(r0) {
                     continue;
                 }
-                match FactoredNatural::from_prime(Natural::structure(), r.clone())
+                match Natural::structure()
+                    .factorizations()
+                    .from_prime(r.clone())
                     .is_primitive_root(n)
                 {
                     factorization::IsPrimitiveRootResult::NonUnit => {

@@ -708,7 +708,7 @@ impl<
         + CharZeroRingSignature
         + FiniteUnitsSignature
         + 'static,
-    RSB: BorrowedStructure<RS>,
+    RSB: BorrowedStructure<RS> + 'static,
     MPB: BorrowedStructure<MultiPolynomialStructure<RS, RSB>>,
 > PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>
 where
@@ -724,13 +724,15 @@ where
         &self,
         factor_poly: impl Fn(
             &Polynomial<RS::Set>,
-        ) -> Option<FactoredElement<PolynomialStructure<RS, RSB>>>,
+        ) -> Option<FactoredRingElement<Polynomial<RS::Set>>>,
         factor_multipoly_coeff: impl Fn(
             &MultiPolynomial<RS::Set>,
-        )
-            -> Option<FactoredElement<MultiPolynomialStructure<RS, RSB>>>,
+        ) -> Option<
+            FactoredRingElement<MultiPolynomial<RS::Set>>,
+        >,
         mpoly: &<Self as SetSignature>::Set,
-    ) -> Option<FactoredElement<PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>>> {
+    ) -> Option<FactoredRingElement<Polynomial<MultiPolynomial<RS::Set>>>>
+    {
         match |mpoly: &<Self as SetSignature>::Set| -> Option<Polynomial<RS::Set>> {
             let mut const_coeffs = vec![];
             for coeff in mpoly.coeffs() {
@@ -743,8 +745,7 @@ where
             // So we can defer to a univariate factoring algorithm
             Some(poly) => {
                 let (unit, factors) = factor_poly(&poly)?.into_unit_and_factor_powers();
-                Some(FactoredElement::from_unit_and_factor_powers(
-                    self.clone().into(),
+                Some(self.factorizations().from_unit_and_factor_powers(
                     unit.apply_map_into(|c| MultiPolynomial::constant(c)),
                     factors
                         .into_iter()
@@ -770,7 +771,7 @@ impl<
         + CharZeroRingSignature
         + FiniteUnitsSignature
         + 'static,
-    RSB: BorrowedStructure<RS>,
+    RSB: BorrowedStructure<RS> + 'static,
 > MultiPolynomialStructure<RS, RSB>
 where
     MultiPolynomialStructure<RS, RSB>:
@@ -782,12 +783,14 @@ where
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
-        factor_coeff: Rc<dyn Fn(&RS::Set) -> Option<FactoredElement<RS>>>,
+        factor_coeff: Rc<dyn Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>>,
         factor_poly: Rc<
-            dyn Fn(&Polynomial<RS::Set>) -> Option<FactoredElement<PolynomialStructure<RS, RSB>>>,
+            dyn Fn(
+                &Polynomial<RS::Set>,
+            ) -> Option<FactoredRingElement<Polynomial<RS::Set>>>,
         >,
         mpoly: &<Self as SetSignature>::Set,
-    ) -> Option<FactoredElement<MultiPolynomialStructure<RS, RSB>>> {
+    ) -> Option<FactoredRingElement<MultiPolynomial<RS::Set>>> {
         if self.is_zero(mpoly) {
             None
         } else {
@@ -808,8 +811,7 @@ where
                                 )
                                 .unwrap()
                                 .into_unit_and_factor_powers();
-                            Some(FactoredElement::from_unit_and_factor_powers(
-                                self.clone().into(),
+                            Some(self.factorizations().from_unit_and_factor_powers(
                                 self.homogenize(&unit, &free_var),
                                 factors
                                     .into_iter()
@@ -840,8 +842,7 @@ where
                                 )
                                 .unwrap()
                                 .into_unit_and_factor_powers();
-                            Some(FactoredElement::from_unit_and_factor_powers(
-                                self.clone().into(),
+                            Some(self.factorizations().from_unit_and_factor_powers(
                                 poly_over_self.evaluate(&unit, &free_var),
                                 factors
                                     .into_iter()
@@ -859,8 +860,7 @@ where
                     let value = self.as_constant(mpoly).unwrap();
                     let factored = factor_coeff(&value)?;
                     let (unit, factors) = factored.into_unit_and_factor_powers();
-                    Some(FactoredElement::from_unit_and_factor_powers(
-                        self.clone().into(),
+                    Some(self.factorizations().from_unit_and_factor_powers(
                         MultiPolynomial::constant(unit),
                         factors
                             .into_iter()

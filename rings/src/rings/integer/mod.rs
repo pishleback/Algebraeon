@@ -95,7 +95,7 @@ impl UniqueFactorizationSignature for IntegerCanonicalStructure {
 }
 
 impl FactorableSignature for IntegerCanonicalStructure {
-    fn factor(&self, a: &Self::Set) -> Option<FactoredElement<Self>> {
+    fn factor(&self, a: &Self::Set) -> Option<FactoredRingElement<Self>> {
         if a == &Integer::ZERO {
             None
         } else {
@@ -106,7 +106,7 @@ impl FactorableSignature for IntegerCanonicalStructure {
                 unit = Integer::from(1);
             }
             let f = factor(a.abs()).unwrap();
-            Some(FactoredElement::from_unit_and_factor_powers_unchecked(
+            Some(FactoredRingElement::from_unit_and_factor_powers_unchecked(
                 self.clone().into(),
                 unit,
                 f.into_factor_powers()

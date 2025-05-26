@@ -10,7 +10,7 @@ pub mod quaternary_field;
 impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FactorableSignature
     for PolynomialStructure<FS, FSB>
 {
-    fn factor(&self, p: &Self::Set) -> Option<crate::structure::FactoredElement<Self>> {
+    fn factor(&self, p: &Self::Set) -> Option<crate::structure::FactoredRingElement<Self>> {
         Some(
             self.factorize_monic(p)?
                 .factorize_squarefree()

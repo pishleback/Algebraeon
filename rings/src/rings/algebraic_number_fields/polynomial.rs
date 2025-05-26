@@ -168,7 +168,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
         p: &<Self as SetSignature>::Set,
-    ) -> crate::structure::FactoredElement<Self> {
+    ) -> crate::structure::FactoredRingElement<Self> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
         debug_assert!(!self.is_zero(p));
@@ -225,7 +225,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 
         // println!("p_factors = {:?}", p_factors);
 
-        let factored = FactoredElement::from_unit_and_factor_powers(
+        let factored = FactoredRingElement::from_unit_and_factor_powers(
             self.clone().into(),
             self.one(),
             p_factors
@@ -240,7 +240,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
     pub fn factor_primitive_sqfree_by_reduced_ring(
         &self,
         p: &<Self as SetSignature>::Set,
-    ) -> FactoredElement<Self> {
+    ) -> FactoredRingElement<Self> {
         debug_assert!(!self.is_zero(p));
 
         /*
@@ -272,7 +272,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             .factor()
             .unwrap()
             .into_unit_and_factor_powers();
-            FactoredElement::from_unit_and_factor_powers(
+            FactoredRingElement::from_unit_and_factor_powers(
                 self.clone().into(),
                 Polynomial::constant(unit),
                 factors
@@ -545,7 +545,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             //     println!("pi = {}", pi);
             // }
 
-            FactoredElement::from_unit_and_factor_powers(
+            FactoredRingElement::from_unit_and_factor_powers(
                 self.clone().into(),
                 self.one(),
                 p_factors.into_iter().map(|pi| (pi, Natural::ONE)).collect(),
@@ -557,8 +557,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
     pub fn factorize_rational_factorize_first(
         &self,
         f: &<Self as SetSignature>::Set,
-        factorize: &impl Fn(&<Self as SetSignature>::Set) -> FactoredElement<Self>,
-    ) -> FactoredElement<Self> {
+        factorize: &impl Fn(&<Self as SetSignature>::Set) -> FactoredRingElement<Self>,
+    ) -> FactoredRingElement<Self> {
         debug_assert!(!self.is_zero(f));
         // println!("f = {}", f);
 
@@ -577,7 +577,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 
         let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_factor_powers();
         let mut factored =
-            FactoredElement::from_unit(self.clone().into(), Polynomial::constant(rat_unit));
+            FactoredRingElement::from_unit(self.clone().into(), Polynomial::constant(rat_unit));
         for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor
@@ -595,7 +595,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>> FactorableSignature
     for PolynomialStructure<AlgebraicNumberFieldStructure, B>
 {
-    fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredElement<Self>> {
+    fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredRingElement<Self>> {
         if self.is_zero(a) {
             None
         } else {

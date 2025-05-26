@@ -547,14 +547,16 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
 impl<
     RS: FactorableSignature + EuclideanDivisionSignature + GreatestCommonDivisorSignature,
     RSQB: BorrowedStructure<QuotientStructure<RS, true>>,
-> FactoredElement<PolynomialStructure<QuotientStructure<RS, true>, RSQB>>
+    RSQPB: BorrowedStructure<PolynomialStructure<QuotientStructure<RS, true>, RSQB>>,
+> FactoredRingElementStructure<PolynomialStructure<QuotientStructure<RS, true>, RSQB>, RSQPB>
 where
     PolynomialStructure<QuotientStructure<RS, true>, RSQB>:
         SetSignature<Set = Polynomial<RS::Set>> + FactorableSignature,
 {
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None
     pub fn into_hensel_factorization(
-        self,
+        &self,
+        a: FactoredRingElement<Polynomial<RS::Set>>,
         h: Polynomial<RS::Set>,
     ) -> Option<HenselFactorization<true, RS>>
     where
@@ -566,7 +568,7 @@ where
         // let poly_ring: PolynomialStructure<RS> = PolynomialStructure::new(ring.clone());
 
         let mut fs = vec![];
-        let (_unit, factors) = self.into_unit_and_factor_powers();
+        let (_unit, factors) = a.into_unit_and_factor_powers();
         for (factor, power) in factors {
             if power == Natural::ONE {
                 fs.push(factor);
