@@ -92,6 +92,14 @@ impl<
     type Set = DedekindDomainIdealFactorization<Ideals::Set>;
 
     fn is_element(&self, x: &Self::Set) -> bool {
+        for (prime, power) in self.to_powers_unchecked(x) {
+            if power == &Natural::ZERO {
+                return false;
+            }
+            if self.try_object_is_prime(prime) == Some(false) {
+                return false;
+            }
+        }
         true
     }
 }
@@ -110,7 +118,7 @@ impl<
         self.ideals().ideal_contains(a, b)
     }
 
-    fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
+    fn try_object_is_prime(&self, _object: &Self::PrimeObject) -> Option<bool> {
         None
     }
 

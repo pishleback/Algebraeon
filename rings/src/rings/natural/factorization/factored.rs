@@ -28,7 +28,15 @@ impl Signature for NaturalFactorizationStructure {}
 impl SetSignature for NaturalFactorizationStructure {
     type Set = FactoredNatural;
 
-    fn is_element(&self, f: &Self::Set) -> bool {
+    fn is_element(&self, x: &Self::Set) -> bool {
+        for (prime, power) in self.to_powers_unchecked(x) {
+            if power == &Natural::ZERO {
+                return false;
+            }
+            if self.try_object_is_prime(prime) == Some(false) {
+                return false;
+            }
+        }
         true
     }
 }
