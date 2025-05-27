@@ -149,7 +149,9 @@ macro_rules! impl_try_into_via_integer {
     };
 }
 
-impl_try_into_via_integer!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
+impl_try_into_via_integer!(
+    u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
+);
 
 impl FromStr for Rational {
     type Err = ();
@@ -164,6 +166,27 @@ impl Rational {
     pub const ONE: Self = Self(malachite_q::Rational::ONE);
     pub const TWO: Self = Self(malachite_q::Rational::TWO);
     pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
+
+    pub fn sqrt_if_square(&self) -> Option<Rational> {
+        if self < &Rational::ZERO {
+            None
+        } else {
+            let (num, den) = self.clone().into_abs_numerator_and_denominator();
+            let sqrt_num = num.sqrt_if_square().unwrap();
+            let sqrt_den = den.sqrt_if_square().unwrap();
+
+            Some(Rational::from_integers(sqrt_num, sqrt_den))
+        }
+    }
+
+    pub fn is_square(&self) -> bool {
+        if self < &Rational::ZERO {
+            false
+        } else {
+            let (num, den) = self.clone().into_abs_numerator_and_denominator();
+            num.is_square() && den.is_square()
+        }
+    }
 }
 
 impl PartialEq<Natural> for Rational {
