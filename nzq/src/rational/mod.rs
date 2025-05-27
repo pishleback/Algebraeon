@@ -166,6 +166,27 @@ impl Rational {
     pub const ONE: Self = Self(malachite_q::Rational::ONE);
     pub const TWO: Self = Self(malachite_q::Rational::TWO);
     pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
+
+    pub fn sqrt_if_square(&self) -> Option<Rational> {
+        if self < &Rational::ZERO {
+            None
+        } else {
+            let (num, den) = self.clone().into_abs_numerator_and_denominator();
+            let sqrt_num = num.sqrt_if_square()?;
+            let sqrt_den = den.sqrt_if_square()?;
+
+            Some(Rational::from_integers(sqrt_num, sqrt_den))
+        }
+    }
+
+    pub fn is_square(&self) -> bool {
+        if self < &Rational::ZERO {
+            false
+        } else {
+            let (num, den) = self.clone().into_abs_numerator_and_denominator();
+            num.is_square() && den.is_square()
+        }
+    }
 }
 
 impl PartialEq<Natural> for Rational {
@@ -718,5 +739,36 @@ mod tests {
             <&Rational as TryInto<u32>>::try_into(&Rational::ONE_HALF),
             Err(())
         );
+    }
+
+    #[test]
+    fn test_rational_is_square_true() {
+        assert!(Rational::from_integers(4, 9).is_square());
+        assert!(Rational::from_integers(1, 1).is_square());
+    }
+
+    #[test]
+    fn test_rational_is_square_false() {
+        assert!(!Rational::from_integers(2, 9).is_square());
+        assert!(!Rational::from_integers(-4, 9).is_square());
+    }
+
+    #[test]
+    fn test_rational_sqrt_if_square_some() {
+        let r = Rational::from_integers(4, 9);
+        let sqrt = r.sqrt_if_square();
+        assert_eq!(sqrt, Some(Rational::from_integers(2, 3)));
+    }
+
+    #[test]
+    fn test_rational_sqrt_if_square_none_negative() {
+        let r = Rational::from_integers(-4, 9);
+        assert_eq!(r.sqrt_if_square(), None);
+    }
+
+    #[test]
+    fn test_rational_sqrt_if_square_none_not_square() {
+        let r = Rational::from_integers(2, 9);
+        assert_eq!(r.sqrt_if_square(), None);
     }
 }
