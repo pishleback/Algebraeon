@@ -1,7 +1,11 @@
 use crate::{
-    rings::natural::factorization::{factor, primes::is_prime},
-    rings::quotient::QuotientStructure,
-    structure::{Factored, MetaFactorableSignature, SemiRingSignature},
+    rings::{
+        natural::factorization::{
+            NaturalCanonicalFactorizationStructure, factor, primes::is_prime,
+        },
+        quotient::QuotientStructure,
+    },
+    structure::{FactoredSignature, MetaFactorableSignature, SemiRingSignature},
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
 use algebraeon_sets::structure::MetaType;
@@ -114,7 +118,10 @@ pub fn jacobi_symbol(a: &Integer, n: &Natural) -> Result<QuadraticSymbolValue, J
         let mod_n = QuotientStructure::new_ring(Integer::structure(), Integer::from(n));
         let a = mod_n.reduce(a);
         let mut val = QuadraticSymbolValue::Pos;
-        for (p, k) in factor(n.clone()).unwrap().factor_powers() {
+        for (p, k) in Natural::structure()
+            .factorizations()
+            .to_powers(&factor(n.clone()).unwrap())
+        {
             val = val * legendre_symbol(&a, p).unwrap().nat_pow(k);
         }
         Ok(val)

@@ -86,6 +86,14 @@ pub trait SemiRingSignature: EqSignature {
             ans
         }
     }
+
+    fn polynomials<'a>(&'a self) -> PolynomialStructure<Self, &'a Self> {
+        PolynomialStructure::new(self)
+    }
+
+    fn into_polynomials(self) -> PolynomialStructure<Self, Self> {
+        PolynomialStructure::new(self)
+    }
 }
 
 pub trait MetaSemiRing: MetaType
@@ -153,6 +161,14 @@ pub trait RingSignature: SemiRingSignature {
         } else {
             self.from_nat(x.abs())
         }
+    }
+
+    fn multivariable_polynomials<'a>(&'a self) -> MultiPolynomialStructure<Self, &'a Self> {
+        MultiPolynomialStructure::new(self)
+    }
+
+    fn into_multivariable_polynomials(self) -> MultiPolynomialStructure<Self, Self> {
+        MultiPolynomialStructure::new(self)
     }
 }
 
@@ -353,7 +369,7 @@ impl<R: MetaRing> MetaFavoriteAssociate for R where
 pub trait GreatestCommonDivisorSignature: FavoriteAssociateSignature {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
-    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
+    fn gcd<'a>(&'a self, x: &Self::Set, y: &Self::Set) -> Self::Set;
     fn gcd_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut gcd = self.zero();
         for x in elems {
@@ -834,7 +850,8 @@ impl<R: MetaType> MetaPositiveRealNthRoot for R where
 
 pub trait AlgebraicClosureSignature: FieldSignature
 where
-    PolynomialStructure<Self::BFS>:
+    //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
+    PolynomialStructure<Self::BFS, Self::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
 {
     type BFS: FieldSignature; //base field structure
@@ -852,11 +869,11 @@ where
         &self,
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<Self::Set>> {
+        let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
         self.all_roots_list(
-            &PolynomialStructure::new(self.base_field().clone())
-                .factor(poly)
-                .unwrap()
-                .expanded_squarefree(),
+            &base_field_poly
+                .factorizations()
+                .expanded_squarefree(&base_field_poly.factor(poly).unwrap()),
         )
     }
     fn all_roots_powers(
@@ -864,9 +881,10 @@ where
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
-        for (factor, k) in PolynomialStructure::new(self.base_field().clone())
-            .factor(poly)?
-            .into_factor_powers()
+        let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
+        for (factor, k) in base_field_poly
+            .factorizations()
+            .into_powers(base_field_poly.factor(poly)?)
         {
             for root in self.all_roots_list(&factor).unwrap() {
                 root_powers.push((root, (&k).try_into().unwrap()))

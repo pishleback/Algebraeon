@@ -11,6 +11,6 @@ pub use morphism::{
     InjectiveFunction, Morphism,
 };
 pub use structure::{
-    CountableSetSignature, EqSignature, FiniteSetSignature, MetaType, SetSignature, Signature,
-    ToStringSignature, common_structure,
+    BorrowedStructure, CountableSetSignature, EqSignature, FiniteSetSignature, MetaType,
+    SetSignature, Signature, ToStringSignature, common_structure,
 };
