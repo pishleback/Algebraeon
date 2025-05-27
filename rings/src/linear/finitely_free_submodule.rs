@@ -1,156 +1,182 @@
-use super::{
-    finitely_free_coset::FinitelyFreeSubmoduleCoset,
-    finitely_free_modules::FinitelyFreeModuleStructure, matrix::Matrix,
-};
+use super::{finitely_free_coset::*, finitely_free_modules::*, matrix::Matrix};
 use crate::{linear::matrix::*, structure::*};
 use algebraeon_sets::structure::*;
+use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
-pub struct FinitelyFreeSubmodule<Ring: ReducedHermiteAlgorithmSignature> {
-    module: FinitelyFreeModuleStructure<Ring>,
+pub struct FinitelyFreeSubmodule<Set: Clone + Debug> {
     // a matrix in reduced hermite normal form with all non-zero rows whose rows form a basis for the submodule
-    row_basis: Matrix<Ring::Set>,
+    row_basis: Matrix<Set>,
     // the columns of the pivots of row_basis
     pivots: Vec<usize>,
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
-    pub fn ring(&self) -> &Ring {
-        self.module().ring()
-    }
-
-    pub fn module_rank(&self) -> usize {
-        self.row_basis.cols()
-    }
-
-    pub fn submodule_rank(&self) -> usize {
-        self.row_basis.rows()
-    }
-
-    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring> {
-        &self.module
-    }
-
-    pub fn submodule(&self) -> FinitelyFreeModuleStructure<Ring> {
-        FinitelyFreeModuleStructure::new(self.ring().clone(), self.submodule_rank())
-    }
-
-    pub fn into_row_basis_matrix(self) -> Matrix<Ring::Set> {
+impl<Set: Clone + Debug> FinitelyFreeSubmodule<Set> {
+    pub fn into_row_basis_matrix(self) -> Matrix<Set> {
         self.row_basis
     }
 
-    pub fn into_col_basis_matrix(self) -> Matrix<Ring::Set> {
+    pub fn into_col_basis_matrix(self) -> Matrix<Set> {
         self.row_basis.transpose()
     }
 
-    pub(crate) fn row_basis_matrix(&self) -> &Matrix<Ring::Set> {
+    pub(crate) fn row_basis_matrix(&self) -> &Matrix<Set> {
         &self.row_basis
     }
 
-    pub fn basis(&self) -> Vec<Vec<Ring::Set>> {
+    pub fn basis(&self) -> Vec<Vec<Set>> {
         (0..self.row_basis.rows())
             .map(|r| {
-                (0..self.module().rank())
+                (0..self.row_basis.cols())
                     .map(|c| self.row_basis.at(r, c).unwrap().clone())
                     .collect()
             })
             .collect()
     }
 
+    pub fn rank(&self) -> usize {
+        self.row_basis.rows()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FinitelyFreeSubmoduleStructure<
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> {
+    module: FinitelyFreeModuleStructure<Ring, RingB>,
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
+    FinitelyFreeSubmoduleStructure<Ring, RingB>
+{
+    pub fn new(module: FinitelyFreeModuleStructure<Ring, RingB>) -> Self {
+        Self { module }
+    }
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Signature
+    for FinitelyFreeSubmoduleStructure<Ring, RingB>
+{
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> SetSignature
+    for FinitelyFreeSubmoduleStructure<Ring, RingB>
+{
+    type Set = FinitelyFreeSubmodule<Ring::Set>;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        if x.row_basis.cols() != self.module.rank() {
+            return false;
+        }
+        // TODO: more checks
+        true
+    }
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
+    FinitelyFreeSubmoduleStructure<Ring, RingB>
+{
+    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring, RingB> {
+        &self.module
+    }
+
+    pub fn ring(&self) -> &Ring {
+        self.module().ring()
+    }
+
     pub fn matrix_row_span_and_basis(
-        ring: Ring,
+        &self,
         matrix: Matrix<Ring::Set>,
-    ) -> (Self, Matrix<Ring::Set>) {
+    ) -> (FinitelyFreeSubmodule<Ring::Set>, Matrix<Ring::Set>) {
+        let ring = self.ring();
         let rows = matrix.rows();
         let cols = matrix.cols();
+        debug_assert_eq!(cols, self.module().rank());
         let (h, u, _det, pivots) =
             MatrixStructure::new(ring.clone()).row_reduced_hermite_algorithm(matrix);
         let row_basis = h.submatrix((0..pivots.len()).collect(), (0..cols).collect());
         let u = u.submatrix((0..pivots.len()).collect(), (0..rows).collect());
-        (
-            FinitelyFreeSubmodule {
-                module: FinitelyFreeModuleStructure::new(ring, row_basis.cols()),
-                row_basis,
-                pivots,
-            },
-            u,
-        )
+        (FinitelyFreeSubmodule { row_basis, pivots }, u)
     }
 
     pub fn matrix_col_span_and_basis(
-        ring: Ring,
+        &self,
         matrix: Matrix<Ring::Set>,
-    ) -> (Self, Matrix<Ring::Set>) {
-        let (s, u) = Self::matrix_row_span_and_basis(ring, matrix.transpose());
+    ) -> (FinitelyFreeSubmodule<Ring::Set>, Matrix<Ring::Set>) {
+        let (s, u) = self.matrix_row_span_and_basis(matrix.transpose());
         (s, u.transpose())
     }
 
-    pub fn matrix_row_span(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {
-        Self::matrix_row_span_and_basis(ring, matrix).0
+    pub fn matrix_row_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+        self.matrix_row_span_and_basis(matrix).0
     }
 
-    pub fn matrix_col_span(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {
-        Self::matrix_col_span_and_basis(ring, matrix).0
+    pub fn matrix_col_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+        self.matrix_col_span_and_basis(matrix).0
     }
 
-    pub fn from_span(
-        module: FinitelyFreeModuleStructure<Ring>,
-        span: Vec<&Vec<Ring::Set>>,
-    ) -> Self {
+    pub fn from_span(&self, span: Vec<&Vec<Ring::Set>>) -> FinitelyFreeSubmodule<Ring::Set> {
         for v in &span {
-            debug_assert_eq!(v.len(), module.rank());
+            debug_assert_eq!(v.len(), self.module().rank());
         }
-        Self::matrix_row_span(
-            module.ring().clone(),
-            Matrix::construct(span.len(), module.rank(), |r, c| span[r][c].clone()),
-        )
+        self.matrix_row_span(Matrix::construct(
+            span.len(),
+            self.module().rank(),
+            |r, c| span[r][c].clone(),
+        ))
     }
 
-    pub fn matrix_row_kernel(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {
+    pub fn matrix_row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
         let rows = matrix.rows();
         let (_h, u, _u_det, pivs) =
-            MatrixStructure::new(ring.clone()).row_hermite_algorithm(matrix);
+            MatrixStructure::<Ring, _>::new(self.ring()).row_hermite_algorithm(matrix);
         debug_assert_eq!(rows, u.rows());
         debug_assert_eq!(rows, u.cols());
         let ker = u.submatrix((pivs.len()..rows).collect(), (0..rows).collect());
-        Self::matrix_row_span(ring, ker)
+        self.matrix_row_span(ker)
     }
 
-    pub fn matrix_col_kernel(ring: Ring, matrix: Matrix<Ring::Set>) -> Self {
-        Self::matrix_row_kernel(ring, matrix.transpose())
+    pub fn matrix_col_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+        self.matrix_row_kernel(matrix.transpose())
     }
 
-    pub fn full_submodule(module: FinitelyFreeModuleStructure<Ring>) -> Self {
-        Self::matrix_row_span(
-            module.ring().clone(),
-            MatrixStructure::new(module.ring().clone()).ident(module.rank()),
+    pub fn full_submodule(&self) -> FinitelyFreeSubmodule<Ring::Set> {
+        self.matrix_row_span(
+            MatrixStructure::<Ring, _>::new(self.ring().clone()).ident(self.module().rank()),
         )
     }
 
-    pub fn zero_submodule(module: FinitelyFreeModuleStructure<Ring>) -> Self {
-        let cols = module.rank();
-        Self {
-            module: module,
+    pub fn zero_submodule(&self) -> FinitelyFreeSubmodule<Ring::Set> {
+        let cols = self.module().rank();
+        FinitelyFreeSubmodule {
             row_basis: Matrix::construct(0, cols, |_, _| unreachable!()),
             pivots: vec![],
         }
     }
 
-    pub fn reduce_element(&self, element: &Vec<Ring::Set>) -> (Vec<Ring::Set>, Vec<Ring::Set>) {
+    pub fn reduce_element(
+        &self,
+        submodule: &FinitelyFreeSubmodule<Ring::Set>,
+        element: &Vec<Ring::Set>,
+    ) -> (Vec<Ring::Set>, Vec<Ring::Set>) {
+        debug_assert!(self.is_element(submodule));
         debug_assert!(self.module().is_element(&element));
         let mut reduced_element = element.clone();
         let mut coset = vec![];
-        for (r, &c) in self.pivots.iter().enumerate() {
+        for (r, &c) in submodule.pivots.iter().enumerate() {
             let quo = self
                 .ring()
-                .quo(&reduced_element[c], self.row_basis.at(r, c).unwrap())
+                .quo(&reduced_element[c], submodule.row_basis.at(r, c).unwrap())
                 .unwrap();
-            for c2 in 0..self.module_rank() {
+            for c2 in 0..self.module().rank() {
                 reduced_element[c2] = self.ring().add(
                     &reduced_element[c2],
-                    &self
-                        .ring()
-                        .neg(&self.ring().mul(&quo, &self.row_basis.at(r, c2).unwrap())),
+                    &self.ring().neg(
+                        &self
+                            .ring()
+                            .mul(&quo, &submodule.row_basis.at(r, c2).unwrap()),
+                    ),
                 );
             }
             coset.push(quo);
@@ -158,115 +184,148 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
         (coset, reduced_element)
     }
 
-    pub fn equal_slow(x: &Self, y: &Self) -> bool {
-        debug_assert_eq!(x.module(), y.module());
-        Self::contains(x, y) && Self::contains(y, x)
+    pub fn equal_slow(
+        &self,
+        x: &FinitelyFreeSubmodule<Ring::Set>,
+        y: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> bool {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
+        self.contains(x, y) && self.contains(y, x)
     }
 
-    pub fn contains_element(&self, element: &Vec<Ring::Set>) -> bool {
+    pub fn contains_element(
+        &self,
+        submodule: &FinitelyFreeSubmodule<Ring::Set>,
+        element: &Vec<Ring::Set>,
+    ) -> bool {
+        debug_assert!(self.is_element(submodule));
         debug_assert!(self.module().is_element(&element));
-        let (_offset, element_reduced) = self.reduce_element(element);
+        let (_offset, element_reduced) = self.reduce_element(submodule, element);
         element_reduced
             .iter()
             .all(|coeff| self.ring().is_zero(coeff))
     }
 
-    pub fn contains(x: &Self, y: &Self) -> bool {
-        debug_assert_eq!(x.module(), y.module());
+    pub fn contains(
+        &self,
+        x: &FinitelyFreeSubmodule<Ring::Set>,
+        y: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> bool {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
         for b in y.basis() {
-            if !Self::contains_element(&x, &b) {
+            if !self.contains_element(&x, &b) {
                 return false;
             }
         }
         true
     }
 
-    pub fn add(x: &Self, y: &Self) -> Self {
-        debug_assert_eq!(x.module(), y.module());
-        let ring = x.ring();
-        debug_assert_eq!(ring, y.ring());
-        let cols = x.module_rank();
-        debug_assert_eq!(cols, y.module_rank());
-        Self::matrix_row_span(
-            ring.clone(),
-            Matrix::join_rows(
-                cols,
-                vec![
-                    x.clone().into_row_basis_matrix(),
-                    y.clone().into_row_basis_matrix(),
-                ],
-            ),
-        )
+    pub fn add(
+        &self,
+        x: &FinitelyFreeSubmodule<Ring::Set>,
+        y: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
+        let cols = self.module().rank();
+        self.matrix_row_span(Matrix::join_rows(
+            cols,
+            vec![
+                x.clone().into_row_basis_matrix(),
+                y.clone().into_row_basis_matrix(),
+            ],
+        ))
     }
 
-    pub fn intersect(x: &Self, y: &Self) -> Self {
-        debug_assert_eq!(x.module(), y.module());
-        let ring = x.ring();
-        debug_assert_eq!(ring, y.ring());
-        let cols = x.module_rank();
-        debug_assert_eq!(cols, y.module_rank());
+    pub fn intersect(
+        &self,
+        x: &FinitelyFreeSubmodule<Ring::Set>,
+        y: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
+        let cols = self.module().rank();
         let x_rows = x.clone().into_row_basis_matrix();
         let y_rows = y.clone().into_row_basis_matrix();
         let matrix = Matrix::join_rows(cols, vec![&x_rows, &y_rows]);
-        let matrix_ker = Self::matrix_row_kernel(ring.clone(), matrix).into_row_basis_matrix();
+        let matrix_ker = self.matrix_row_kernel(matrix).into_row_basis_matrix();
         let matrix_ker_first_part = matrix_ker.submatrix(
             (0..matrix_ker.rows()).collect(),
             (0..x_rows.rows()).collect(),
         );
-        Self::matrix_row_span(
-            ring.clone(),
-            MatrixStructure::new(ring.clone())
+        self.matrix_row_span(
+            MatrixStructure::<Ring, _>::new(self.ring())
                 .mul(&matrix_ker_first_part, &x_rows)
                 .unwrap(),
         )
     }
 
-    //given a contained in b, find rank(b) - rank(a) basis vectors needed to extend a to b
-    pub fn extension_basis(lat_a: &Self, lat_b: &Self) -> Vec<Vec<Ring::Set>> {
-        //https://math.stackexchange.com/questions/2554408/how-to-find-the-basis-of-a-quotient-space
-        let module =
-            common_structure::<FinitelyFreeModuleStructure<Ring>>(lat_a.module(), lat_b.module());
-        debug_assert!(Self::contains(lat_b, lat_a));
+    //given x contained in y, find rank(y) - rank(x) basis vectors needed to extend x to y
+    pub fn extension_basis(
+        &self,
+        x: &FinitelyFreeSubmodule<Ring::Set>,
+        y: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> Vec<Vec<Ring::Set>> {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
 
-        let n = module.rank();
+        //https://math.stackexchange.com/questions/2554408/how-to-find-the-basis-of-a-quotient-space
+        debug_assert!(self.contains(y, x));
+
+        let n = self.module().rank();
         // form matrix of all vectors from [other self]
         // row reduce and get pivots - take cols from orig to form basies of the quotient space
 
-        let mat_structure = MatrixStructure::new(module.ring().clone());
-        let row_span = Matrix::join_rows(n, vec![&lat_a.row_basis, &lat_b.row_basis]);
+        let mat_structure = MatrixStructure::<Ring, _>::new(self.ring());
+        let row_span = Matrix::join_rows(n, vec![&x.row_basis, &y.row_basis]);
         let (_h, _u, _u_det, pivs) = mat_structure.col_hermite_algorithm(row_span.clone());
 
         let mut extension_basis = vec![];
         for r in pivs {
             //dont take vectors which form a basis of lat_a
-            if r >= lat_a.submodule_rank() {
+            if r >= x.rank() {
                 extension_basis.push(row_span.get_row(r));
             }
         }
 
-        debug_assert_eq!(
-            lat_a.submodule_rank() + extension_basis.len(),
-            lat_b.submodule_rank()
-        );
+        debug_assert_eq!(x.rank() + extension_basis.len(), y.rank());
 
         extension_basis
     }
 
-    pub fn coset(&self, offset: &Vec<Ring::Set>) -> FinitelyFreeSubmoduleCoset<Ring> {
-        FinitelyFreeSubmoduleCoset::from_offset_and_submodule(offset, self.clone())
+    pub fn coset(
+        &self,
+        x: &FinitelyFreeSubmodule<Ring::Set>,
+        offset: &Vec<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
+        self.module()
+            .cosets()
+            .from_offset_and_submodule(offset, x.clone())
     }
 
-    pub fn into_coset(self) -> FinitelyFreeSubmoduleCoset<Ring> {
-        FinitelyFreeSubmoduleCoset::from_offset_and_submodule(&self.module().zero(), self)
+    pub fn into_coset(
+        &self,
+        x: FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
+        self.module()
+            .cosets()
+            .from_offset_and_submodule(&self.module().zero(), x)
     }
 }
 
-impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmodule<Ring> {
-    pub fn equal(x: &Self, y: &Self) -> bool {
-        debug_assert_eq!(x.module(), y.module());
-        let ring = x.ring();
-        debug_assert_eq!(ring, y.ring());
-        MatrixStructure::new(ring.clone()).equal(&x.row_basis, &y.row_basis)
+impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> EqSignature
+    for FinitelyFreeSubmoduleStructure<Ring, RingB>
+{
+    fn equal(
+        &self,
+        x: &FinitelyFreeSubmodule<Ring::Set>,
+        y: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> bool {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
+        MatrixStructure::<Ring, _>::new(self.ring()).equal(&x.row_basis, &y.row_basis)
     }
 }
 
@@ -279,8 +338,11 @@ mod tests {
     fn test_finitely_free_submodule_reduction() {
         let a = Matrix::from_rows(vec![vec![1, 2, 4, 5], vec![1, 2, 3, 4]]);
         a.pprint();
-        let a_reduced =
-            FinitelyFreeSubmodule::matrix_row_span(Integer::structure(), a).into_row_basis_matrix();
+        let a_reduced = Integer::structure()
+            .free_module(4)
+            .submodules()
+            .matrix_row_span(a)
+            .into_row_basis_matrix();
         let a_expected = Matrix::from_rows(vec![vec![1, 2, 0, 1], vec![0, 0, 1, 1]]);
         a_reduced.pprint();
         a_expected.pprint();
@@ -289,53 +351,55 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_unreduced_equal() {
-        assert!(FinitelyFreeSubmodule::equal(
-            &FinitelyFreeSubmodule::matrix_row_span(
-                Integer::structure(),
-                Matrix::from_rows(vec![vec![1, 2, 3, 4], vec![0, 0, 1, 1]])
-            ),
-            &FinitelyFreeSubmodule::matrix_row_span(
-                Integer::structure(),
-                Matrix::from_rows(vec![vec![1, 2, 0, 1], vec![0, 0, 1, 1]])
+        let modules = Integer::structure().into_free_module(4);
+        assert!(
+            modules.submodules().equal(
+                &modules
+                    .submodules()
+                    .matrix_row_span(Matrix::from_rows(vec![vec![1, 2, 3, 4], vec![0, 0, 1, 1]])),
+                &modules
+                    .submodules()
+                    .matrix_row_span(Matrix::from_rows(vec![vec![1, 2, 0, 1], vec![0, 0, 1, 1]]))
             )
-        ))
+        )
     }
 
     #[test]
     fn test_finitely_free_submodule_intersect() {
-        let a = FinitelyFreeSubmodule::matrix_row_span(
-            Integer::structure(),
-            Matrix::from_rows(vec![
-                vec![2, 0, 0, 0],
-                vec![0, 2, 0, 0],
-                vec![0, 0, 2, 0],
-                vec![0, 0, 0, 2],
-            ]),
-        );
+        let modules = Integer::structure().into_free_module(4);
 
-        let b = FinitelyFreeSubmodule::matrix_row_span(
-            Integer::structure(),
-            Matrix::from_rows(vec![vec![3, 3, 3, 3], vec![3, 3, -3, -3]]),
-        );
+        let a = modules.submodules().matrix_row_span(Matrix::from_rows(vec![
+            vec![2, 0, 0, 0],
+            vec![0, 2, 0, 0],
+            vec![0, 0, 2, 0],
+            vec![0, 0, 0, 2],
+        ]));
 
-        let c = FinitelyFreeSubmodule::matrix_row_span(
-            Integer::structure(),
-            Matrix::from_rows(vec![vec![6, 6, 0, 0], vec![0, 0, 6, 6]]),
-        );
+        let b = modules.submodules().matrix_row_span(Matrix::from_rows(vec![
+            vec![3, 3, 3, 3],
+            vec![3, 3, -3, -3],
+        ]));
 
-        let s = FinitelyFreeSubmodule::intersect(&a, &b);
+        let c = modules
+            .submodules()
+            .matrix_row_span(Matrix::from_rows(vec![vec![6, 6, 0, 0], vec![0, 0, 6, 6]]));
+
+        let s = modules.submodules().intersect(&a, &b);
 
         s.clone().into_row_basis_matrix().pprint();
 
-        assert!(FinitelyFreeSubmodule::equal(&c, &s));
+        assert!(modules.submodules().equal(&c, &s));
     }
 
     #[test]
     fn test_finitely_free_submodule_element_reduction() {
-        let a = FinitelyFreeSubmodule::matrix_row_span(
-            Integer::structure(),
-            Matrix::from_rows(vec![vec![3, 2, 0, 3], vec![0, 14, 3, 1], vec![0, 0, 0, 10]]),
-        );
+        let modules = Integer::structure().into_free_module(4);
+
+        let a = modules.submodules().matrix_row_span(Matrix::from_rows(vec![
+            vec![3, 2, 0, 3],
+            vec![0, 14, 3, 1],
+            vec![0, 0, 0, 10],
+        ]));
         a.clone().into_row_basis_matrix().pprint();
 
         let element = vec![20, 20, 20, 20]
@@ -344,7 +408,7 @@ mod tests {
             .collect::<Vec<_>>();
         println!("element = {:?}", element);
 
-        let (offset, reduced_element) = a.reduce_element(&element);
+        let (offset, reduced_element) = modules.submodules().reduce_element(&a, &element);
 
         println!("offset = {:?}", offset);
         println!("reduced_element = {:?}", reduced_element);
@@ -359,6 +423,8 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_extension_basis() {
+        let modules = Rational::structure().into_free_module(3);
+
         let a = Matrix::<Rational>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 0], vec![-1, 0, 0]]);
 
         let b = Matrix::<Rational>::from_rows(vec![vec![1, 1, 0], vec![1, 1, 0], vec![1, -1, 0]]);
@@ -368,7 +434,9 @@ mod tests {
         println!("b");
         b.pprint();
 
-        let ext = FinitelyFreeSubmodule::extension_basis(&a.col_span(), &b.col_span());
+        let ext = modules
+            .submodules()
+            .extension_basis(&a.col_span(), &b.col_span());
 
         println!("ext");
         for v in ext {

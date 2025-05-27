@@ -1,89 +1,149 @@
-use crate::structure::ModuleSignature;
-
 use super::{
-    finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
-    finitely_free_modules::FinitelyFreeModuleStructure,
-    finitely_free_submodule::FinitelyFreeSubmodule,
+    finitely_free_affine::*,
+    finitely_free_modules::*,
+    finitely_free_submodule::*,
     matrix::{Matrix, ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
 };
+use crate::structure::{FinitelyFreeModuleSignature, ModuleSignature};
 use algebraeon_sets::structure::*;
+use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
-pub struct FinitelyFreeSubmoduleCoset<Ring: ReducedHermiteAlgorithmSignature> {
+pub struct FinitelyFreeSubmoduleCoset<Set: Clone + Debug> {
     // reduced coset offset
-    offset: Vec<Ring::Set>,
-    submodule: FinitelyFreeSubmodule<Ring>,
+    offset: Vec<Set>,
+    submodule: FinitelyFreeSubmodule<Set>,
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCoset<Ring> {
-    pub fn ring(&self) -> &Ring {
-        self.submodule.ring()
-    }
-
-    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring> {
-        self.submodule.module()
-    }
-
-    pub fn module_rank(&self) -> usize {
-        self.submodule.module_rank()
-    }
-
-    pub fn coset_rank(&self) -> usize {
-        self.submodule.submodule_rank()
-    }
-
-    pub fn offset(&self) -> &Vec<Ring::Set> {
+impl<Set: Clone + Debug> FinitelyFreeSubmoduleCoset<Set> {
+    pub fn offset(&self) -> &Vec<Set> {
         &self.offset
     }
 
-    pub fn submodule(&self) -> &FinitelyFreeSubmodule<Ring> {
+    pub fn submodule(&self) -> &FinitelyFreeSubmodule<Set> {
         &self.submodule
     }
 
-    pub fn into_offset_and_row_basis_matrix(self) -> (Vec<Ring::Set>, Matrix<Ring::Set>) {
+    pub fn rank(&self) -> usize {
+        self.submodule.rank()
+    }
+
+    pub fn into_offset_and_row_basis_matrix(self) -> (Vec<Set>, Matrix<Set>) {
         (self.offset, self.submodule.into_row_basis_matrix())
     }
 
-    pub fn into_offset_and_col_basis_matrix(self) -> (Vec<Ring::Set>, Matrix<Ring::Set>) {
+    pub fn into_offset_and_col_basis_matrix(self) -> (Vec<Set>, Matrix<Set>) {
         (self.offset, self.submodule.into_col_basis_matrix())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FinitelyFreeSubmoduleCosetStructure<
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> {
+    module: FinitelyFreeModuleStructure<Ring, RingB>,
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
+    FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+{
+    pub fn new(module: FinitelyFreeModuleStructure<Ring, RingB>) -> Self {
+        Self { module }
+    }
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Signature
+    for FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+{
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> SetSignature
+    for FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+{
+    type Set = FinitelyFreeSubmoduleCoset<Ring::Set>;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        //TODO: better checks here
+        true
+    }
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
+    FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+{
+    pub fn ring(&self) -> &Ring {
+        self.module.ring()
+    }
+
+    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring, RingB> {
+        &self.module
     }
 
     pub fn from_offset_and_submodule(
+        &self,
         offset: &Vec<Ring::Set>,
-        submodule: FinitelyFreeSubmodule<Ring>,
-    ) -> Self {
-        let (_, offset) = submodule.reduce_element(offset);
-        Self { offset, submodule }
+        submodule: FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
+        debug_assert!(self.module().is_element(offset));
+        debug_assert!(self.module().submodules().is_element(&submodule));
+        let (_, offset) = self
+            .module()
+            .submodules()
+            .reduce_element(&submodule, offset);
+        FinitelyFreeSubmoduleCoset { offset, submodule }
     }
 
-    pub fn from_submodule(submodule: FinitelyFreeSubmodule<Ring>) -> Self {
-        Self {
-            offset: submodule.module().zero(),
+    pub fn from_submodule(
+        &self,
+        submodule: FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
+        FinitelyFreeSubmoduleCoset {
+            offset: self.module().zero(),
             submodule,
         }
     }
 
-    pub fn equal_slow(x: &Self, y: &Self) -> bool {
-        let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
-        if !FinitelyFreeSubmodule::equal_slow(&x.submodule, &y.submodule) {
+    pub fn equal_slow(
+        &self,
+        x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
+        y: &FinitelyFreeSubmoduleCoset<Ring::Set>,
+    ) -> bool {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
+        if !self
+            .module()
+            .submodules()
+            .equal_slow(&x.submodule, &y.submodule)
+        {
             return false;
         }
-        x.submodule
-            .contains_element(&module.add(&x.offset, &module.neg(&y.offset)))
+        self.module()
+            .submodules()
+            .contains_element(&x.submodule, &self.module().sub(&x.offset, &y.offset))
     }
 
-    pub fn add(x: &Self, y: &Self) -> Self {
-        let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
-        Self::from_offset_and_submodule(
-            &module.add(&x.offset, &y.offset),
-            FinitelyFreeSubmodule::add(&x.submodule, &y.submodule),
+    pub fn add(
+        &self,
+        x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
+        y: &FinitelyFreeSubmoduleCoset<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
+        self.from_offset_and_submodule(
+            &self.module().add(&x.offset, &y.offset),
+            self.module().submodules().add(&x.submodule, &y.submodule),
         )
     }
 
-    pub fn intersect(x: &Self, y: &Self) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
-        let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
-        let cols = x.module_rank();
-        debug_assert_eq!(cols, y.module_rank());
+    pub fn intersect(
+        &self,
+        x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
+        y: &FinitelyFreeSubmoduleCoset<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
+        let cols = self.module().rank();
         let x_offset = x.offset();
         let y_offset = y.offset();
         let x_linear_row_basis = x.submodule().row_basis_matrix();
@@ -104,69 +164,72 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCoset<Ring> {
 
         let x_affine_row_basis = Matrix::construct(x_linear_row_basis.rows() + 1, cols, |r, c| {
             let v = if r == 0 {
-                &module.ring().zero()
+                &self.ring().zero()
             } else {
                 x_linear_row_basis.at(r - 1, c).unwrap()
             };
-            module.ring().add(v, &x_offset[c])
+            self.ring().add(v, &x_offset[c])
         });
 
         let y_affine_row_basis = Matrix::construct(y_linear_row_basis.rows() + 1, cols, |r, c| {
             let v = if r == 0 {
-                &module.ring().zero()
+                &self.ring().zero()
             } else {
                 y_linear_row_basis.at(r - 1, c).unwrap()
             };
-            module.ring().add(v, &y_offset[c])
+            self.ring().add(v, &y_offset[c])
         });
 
-        let linearlized_intersection_row_basis = FinitelyFreeSubmodule::intersect(
-            &FinitelyFreeSubmodule::matrix_row_span(
-                module.ring().clone(),
-                Matrix::join_cols(
-                    x_affine_row_basis.rows(),
-                    vec![
-                        &Matrix::construct(x_affine_row_basis.rows(), 1, |_, _| {
-                            module.ring().one()
-                        }),
-                        &x_affine_row_basis,
-                    ],
-                ),
-            ),
-            &FinitelyFreeSubmodule::matrix_row_span(
-                module.ring().clone(),
-                Matrix::join_cols(
-                    y_affine_row_basis.rows(),
-                    vec![
-                        &Matrix::construct(y_affine_row_basis.rows(), 1, |_, _| {
-                            module.ring().one()
-                        }),
-                        &y_affine_row_basis,
-                    ],
-                ),
-            ),
-        )
-        .into_row_basis_matrix();
+        let linearlized_intersection_row_basis = self
+            .module()
+            .submodules()
+            .intersect(
+                &self
+                    .module()
+                    .submodules()
+                    .matrix_row_span(Matrix::join_cols(
+                        x_affine_row_basis.rows(),
+                        vec![
+                            &Matrix::construct(x_affine_row_basis.rows(), 1, |_, _| {
+                                self.ring().one()
+                            }),
+                            &x_affine_row_basis,
+                        ],
+                    )),
+                &self
+                    .module()
+                    .submodules()
+                    .matrix_row_span(Matrix::join_cols(
+                        y_affine_row_basis.rows(),
+                        vec![
+                            &Matrix::construct(y_affine_row_basis.rows(), 1, |_, _| {
+                                self.ring().one()
+                            }),
+                            &y_affine_row_basis,
+                        ],
+                    )),
+            )
+            .into_row_basis_matrix();
         // the coordinates to keep track of coefficient sum will intersect somewhere
         debug_assert!(linearlized_intersection_row_basis.rows() >= 1);
         debug_assert!(linearlized_intersection_row_basis.cols() >= 1);
 
         #[cfg(debug_assertions)]
         {
-            if module
+            if self
                 .ring()
                 .is_unit(linearlized_intersection_row_basis.at(0, 0).unwrap())
             {
-                assert!(module.ring().equal(
+                assert!(self.ring().equal(
                     linearlized_intersection_row_basis.at(0, 0).unwrap(),
-                    &module.ring().one()
+                    &self.ring().one()
                 ));
             }
         }
 
-        if module.ring().equal(
+        if self.ring().equal(
             linearlized_intersection_row_basis.at(0, 0).unwrap(),
-            &module.ring().one(),
+            &self.ring().one(),
         ) {
             let offset = (0..cols)
                 .map(|c| {
@@ -176,31 +239,38 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCoset<Ring> {
                         .clone()
                 })
                 .collect();
-            FinitelyFreeSubmoduleAffineSubset::from_coset(Self::from_offset_and_submodule(
-                &offset,
-                FinitelyFreeSubmodule::intersect(x.submodule(), y.submodule()),
-            ))
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                self.from_offset_and_submodule(
+                    &offset,
+                    self.module()
+                        .submodules()
+                        .intersect(x.submodule(), y.submodule()),
+                ),
+            )
         } else {
-            FinitelyFreeSubmoduleAffineSubset::new_empty(module)
+            FinitelyFreeSubmoduleAffineSubset::Empty
         }
     }
 
-    pub fn contains_element(&self, p: &Vec<Ring::Set>) -> bool {
-        debug_assert_eq!(p.len(), self.module_rank());
-        self.submodule()
-            .contains_element(&self.module().add(p, &self.module().neg(self.offset())))
-    }
-
-    pub fn into_affine_subset(self) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
-        FinitelyFreeSubmoduleAffineSubset::from_coset(self)
+    pub fn contains_element(
+        &self,
+        x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
+        p: &Vec<Ring::Set>,
+    ) -> bool {
+        debug_assert_eq!(p.len(), self.module().rank());
+        self.module().submodules().contains_element(
+            x.submodule(),
+            &self.module().add(p, &self.module().neg(x.offset())),
+        )
     }
 }
 
-impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleCoset<Ring> {
-    pub fn equal(x: &Self, y: &Self) -> bool {
-        let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
-        module.equal(&x.offset, &y.offset)
-            && FinitelyFreeSubmodule::equal(&x.submodule, &y.submodule)
+impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> EqSignature
+    for FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+{
+    fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
+        self.module().equal(&x.offset, &y.offset)
+            && self.module().submodules().equal(&x.submodule, &y.submodule)
     }
 }
 
@@ -211,12 +281,16 @@ mod tests {
 
     #[test]
     fn test_cosets() {
-        let coset1 = Matrix::<Integer>::from_rows(vec![vec![15, 0], vec![0, 10]])
-            .row_span()
-            .coset(&vec![Integer::from(3), Integer::from(3)]);
-        let coset2 = Matrix::<Integer>::from_rows(vec![vec![10, 0], vec![0, 15]])
-            .row_span()
-            .coset(&vec![Integer::from(4), Integer::from(4)]);
+        let module = Integer::structure().into_free_module(2);
+
+        let coset1 = module.submodules().coset(
+            &Matrix::<Integer>::from_rows(vec![vec![15, 0], vec![0, 10]]).row_span(),
+            &vec![Integer::from(3), Integer::from(3)],
+        );
+        let coset2 = module.submodules().coset(
+            &Matrix::<Integer>::from_rows(vec![vec![10, 0], vec![0, 15]]).row_span(),
+            &vec![Integer::from(4), Integer::from(4)],
+        );
 
         println!("coset1");
         println!("{:?}", coset1.offset());
@@ -230,7 +304,7 @@ mod tests {
 
         println!();
 
-        let coset1_add_coset2 = FinitelyFreeSubmoduleCoset::add(&coset1, &coset2);
+        let coset1_add_coset2 = module.cosets().add(&coset1, &coset2);
         println!("coset1 + coset2");
         println!("{:?}", coset1_add_coset2.offset());
         coset1_add_coset2
@@ -242,23 +316,27 @@ mod tests {
             coset1_add_coset2.offset(),
             &vec![Integer::from(2), Integer::from(2)]
         );
-        assert!(FinitelyFreeSubmodule::equal(
+        assert!(module.submodules().equal(
             coset1_add_coset2.submodule(),
             &Matrix::<Integer>::from_rows(vec![vec![5, 0], vec![0, 5]]).row_span()
         ));
 
-        let coset1_intersect_coset2 = FinitelyFreeSubmoduleCoset::intersect(&coset1, &coset2);
+        let coset1_intersect_coset2 = module.cosets().intersect(&coset1, &coset2);
         assert!(coset1_intersect_coset2.is_empty());
     }
 
     #[test]
     fn test_cosets_intersect() {
-        let coset1 = Matrix::<Integer>::from_rows(vec![vec![6, 4], vec![0, 3]])
-            .row_span()
-            .coset(&vec![Integer::from(2), Integer::from(3)]);
-        let coset2 = Matrix::<Integer>::from_rows(vec![vec![15, 6], vec![0, 7]])
-            .row_span()
-            .coset(&vec![Integer::from(5), Integer::from(4)]);
+        let module = Integer::structure().into_free_module(2);
+
+        let coset1 = module.submodules().coset(
+            &Matrix::<Integer>::from_rows(vec![vec![6, 4], vec![0, 3]]).row_span(),
+            &vec![Integer::from(2), Integer::from(3)],
+        );
+        let coset2 = module.submodules().coset(
+            &Matrix::<Integer>::from_rows(vec![vec![15, 6], vec![0, 7]]).row_span(),
+            &vec![Integer::from(5), Integer::from(4)],
+        );
 
         println!("coset1");
         println!("{:?}", coset1.offset());
@@ -272,8 +350,10 @@ mod tests {
 
         println!();
 
-        let coset1_intersect_coset2 =
-            FinitelyFreeSubmoduleCoset::intersect(&coset1, &coset2).unwrap_to_coset();
+        let coset1_intersect_coset2 = module
+            .cosets()
+            .intersect(&coset1, &coset2)
+            .unwrap_to_coset();
         println!("coset1 & coset2");
         println!("{:?}", coset1_intersect_coset2.offset());
         coset1_intersect_coset2

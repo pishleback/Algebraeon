@@ -1,85 +1,45 @@
-use std::borrow::Borrow;
-
 use super::{
     finitely_free_coset::FinitelyFreeSubmoduleCoset,
     finitely_free_modules::FinitelyFreeModuleStructure,
-    finitely_free_submodule::FinitelyFreeSubmodule,
     matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
 };
 use crate::structure::{FinitelyFreeModuleSignature, ModuleSignature};
 use algebraeon_sets::structure::*;
+use std::borrow::Borrow;
+use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
-pub enum FinitelyFreeSubmoduleAffineSubset<Ring: ReducedHermiteAlgorithmSignature> {
-    Empty(FinitelyFreeModuleStructure<Ring>),
-    NonEmpty(FinitelyFreeSubmoduleCoset<Ring>),
+pub enum FinitelyFreeSubmoduleAffineSubset<Set: Clone + Debug> {
+    Empty,
+    NonEmpty(FinitelyFreeSubmoduleCoset<Set>),
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<Ring> {
-    pub fn ring(&self) -> &Ring {
-        self.module().ring()
+impl<Set: Clone + Debug> From<FinitelyFreeSubmoduleCoset<Set>>
+    for FinitelyFreeSubmoduleAffineSubset<Set>
+{
+    fn from(submodule: FinitelyFreeSubmoduleCoset<Set>) -> Self {
+        Self::NonEmpty(submodule)
     }
+}
 
-    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring> {
-        match &self {
-            FinitelyFreeSubmoduleAffineSubset::Empty(module) => module,
-            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset.module(),
-        }
-    }
-
-    pub fn module_rank(&self) -> usize {
-        match &self {
-            FinitelyFreeSubmoduleAffineSubset::Empty(module) => module.rank(),
-            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset.module_rank(),
-        }
-    }
-
-    pub fn subset_rank(&self) -> Option<usize> {
-        match &self {
-            FinitelyFreeSubmoduleAffineSubset::Empty { .. } => None,
-            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => Some(coset.coset_rank()),
-        }
-    }
-
-    pub fn new_empty(module: FinitelyFreeModuleStructure<Ring>) -> Self {
-        Self::Empty(module)
-    }
-
-    pub fn from_coset(coset: FinitelyFreeSubmoduleCoset<Ring>) -> Self {
-        Self::NonEmpty(coset)
-    }
-
-    pub fn from_affine_span(
-        module: FinitelyFreeModuleStructure<Ring>,
-        mut span: Vec<&Vec<Ring::Set>>,
-    ) -> Self {
-        for v in &span {
-            debug_assert_eq!(v.len(), module.rank());
-        }
-        if let Some(offset) = span.pop() {
-            let linear_span = span
-                .into_iter()
-                .map(|v| module.add(v, &module.neg(offset)))
-                .collect::<Vec<_>>();
-            Self::from_coset(FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
-                offset,
-                FinitelyFreeSubmodule::from_span(module, linear_span.iter().collect()),
-            ))
-        } else {
-            Self::new_empty(module)
+impl<Set: Clone + Debug> FinitelyFreeSubmoduleAffineSubset<Set> {
+    pub fn rank(&self) -> Option<usize> {
+        match self {
+            FinitelyFreeSubmoduleAffineSubset::Empty => None,
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => Some(coset.rank()),
         }
     }
 
     pub fn is_empty(&self) -> bool {
         match &self {
-            FinitelyFreeSubmoduleAffineSubset::Empty(..) => true,
+            FinitelyFreeSubmoduleAffineSubset::Empty => true,
             FinitelyFreeSubmoduleAffineSubset::NonEmpty(..) => false,
         }
     }
 
-    pub fn unwrap_to_coset(self) -> FinitelyFreeSubmoduleCoset<Ring> {
+    pub fn unwrap_to_coset(self) -> FinitelyFreeSubmoduleCoset<Set> {
         match self {
-            FinitelyFreeSubmoduleAffineSubset::Empty(..) => {
+            FinitelyFreeSubmoduleAffineSubset::Empty => {
                 panic!("unwrap called on empty affine subset")
             }
             FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset,
@@ -88,16 +48,86 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
 
     pub fn affine_rank(&self) -> usize {
         match &self {
-            FinitelyFreeSubmoduleAffineSubset::Empty(..) => 0,
-            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => {
-                coset.submodule().submodule_rank() + 1
-            }
+            FinitelyFreeSubmoduleAffineSubset::Empty => 0,
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset.submodule().rank() + 1,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FinitelyFreeSubmoduleAffineSubsetStructure<
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> {
+    module: FinitelyFreeModuleStructure<Ring, RingB>,
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
+    FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+{
+    pub fn new(module: FinitelyFreeModuleStructure<Ring, RingB>) -> Self {
+        Self { module }
+    }
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Signature
+    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+{
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> SetSignature
+    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+{
+    type Set = FinitelyFreeSubmoduleAffineSubset<Ring::Set>;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        //TODO: better checks
+        true
+    }
+}
+
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
+    FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+{
+    pub fn ring(&self) -> &Ring {
+        self.module().ring()
+    }
+
+    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring, RingB> {
+        &self.module
+    }
+
+    pub fn from_affine_span(
+        &self,
+        mut span: Vec<&Vec<Ring::Set>>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        for v in &span {
+            debug_assert_eq!(v.len(), self.module().rank());
+        }
+        if let Some(offset) = span.pop() {
+            let linear_span = span
+                .into_iter()
+                .map(|v| self.module().add(v, &self.module().neg(offset)))
+                .collect::<Vec<_>>();
+            FinitelyFreeSubmoduleAffineSubset::from(
+                self.module().cosets().from_offset_and_submodule(
+                    offset,
+                    self.module()
+                        .submodules()
+                        .from_span(linear_span.iter().collect()),
+                ),
+            )
+        } else {
+            FinitelyFreeSubmoduleAffineSubset::Empty
         }
     }
 
-    pub fn affine_basis(&self) -> Vec<Vec<Ring::Set>> {
-        match &self {
-            FinitelyFreeSubmoduleAffineSubset::Empty(..) => vec![],
+    pub fn affine_basis(
+        &self,
+        subset: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+    ) -> Vec<Vec<Ring::Set>> {
+        match &subset {
+            FinitelyFreeSubmoduleAffineSubset::Empty => vec![],
             FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => {
                 let mut affine_basis = vec![coset.offset().clone()];
                 for v in coset.submodule().basis() {
@@ -108,97 +138,135 @@ impl<Ring: ReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<R
         }
     }
 
-    pub fn add(x: &Self, y: &Self) -> Self {
-        let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
-        let module_rank = x.module_rank();
-        assert_eq!(module_rank, y.module_rank());
+    pub fn add(
+        &self,
+        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
         match (x, y) {
-            (Self::Empty(_), _) | (_, Self::Empty(_)) => Self::Empty(module),
-            (Self::NonEmpty(x_coset), Self::NonEmpty(y_coset)) => {
-                Self::NonEmpty(FinitelyFreeSubmoduleCoset::add(&x_coset, &y_coset))
+            (FinitelyFreeSubmoduleAffineSubset::Empty, _)
+            | (_, FinitelyFreeSubmoduleAffineSubset::Empty) => {
+                FinitelyFreeSubmoduleAffineSubset::Empty
             }
+            (
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
+            ) => FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                self.module().cosets().add(&x_coset, &y_coset),
+            ),
         }
     }
 
-    pub fn intersect(x: &Self, y: &Self) -> Self {
-        let module = common_structure::<FinitelyFreeModuleStructure<Ring>>(x.module(), y.module());
-        let module_rank = x.module_rank();
-        assert_eq!(module_rank, y.module_rank());
+    pub fn intersect(
+        &self,
+        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
         match (x, y) {
-            (Self::Empty(_), _) | (_, Self::Empty(_)) => Self::Empty(module),
-            (Self::NonEmpty(x_coset), Self::NonEmpty(y_coset)) => {
-                FinitelyFreeSubmoduleCoset::intersect(&x_coset, &y_coset)
+            (FinitelyFreeSubmoduleAffineSubset::Empty, _)
+            | (_, FinitelyFreeSubmoduleAffineSubset::Empty) => {
+                FinitelyFreeSubmoduleAffineSubset::Empty
             }
+            (
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
+                FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
+            ) => self.module().cosets().intersect(&x_coset, &y_coset),
         }
     }
 
     pub fn intersect_list(
-        module: FinitelyFreeModuleStructure<Ring>,
-        xs: Vec<impl Borrow<Self>>,
-    ) -> Self {
+        &self,
+        xs: Vec<impl Borrow<FinitelyFreeSubmoduleAffineSubset<Ring::Set>>>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
         for x in &xs {
-            debug_assert_eq!(x.borrow().module(), &module);
+            debug_assert!(self.is_element(x.borrow()));
         }
-        let mut i = Self::from_coset(FinitelyFreeSubmoduleCoset::from_submodule(
-            FinitelyFreeSubmodule::full_submodule(module),
-        ));
+
+        let mut i = FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+            self.module()
+                .cosets()
+                .from_submodule(self.module().submodules().full_submodule()),
+        );
         for x in xs {
-            i = Self::intersect(&i, x.borrow());
+            i = self.intersect(&i, x.borrow());
         }
         i
     }
 
-    pub fn contains_element(&self, p: &Vec<Ring::Set>) -> bool {
-        debug_assert_eq!(self.module_rank(), p.len());
-        match self {
-            FinitelyFreeSubmoduleAffineSubset::Empty(..) => false,
-            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => coset.contains_element(p),
+    pub fn contains_element(
+        &self,
+        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+        p: &Vec<Ring::Set>,
+    ) -> bool {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.module().is_element(p));
+        match x {
+            FinitelyFreeSubmoduleAffineSubset::Empty => false,
+            FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => {
+                self.module().cosets().contains_element(coset, p)
+            }
         }
     }
 
-    pub fn equal_slow(x: &Self, y: &Self) -> bool {
-        debug_assert_eq!(x.module(), y.module());
+    pub fn equal_slow(
+        &self,
+        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+    ) -> bool {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
         match (x, y) {
             (
-                FinitelyFreeSubmoduleAffineSubset::Empty(..),
-                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty,
+                FinitelyFreeSubmoduleAffineSubset::Empty,
             ) => true,
             (
-                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty,
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(..),
             ) => false,
             (
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(..),
-                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty,
             ) => false,
             (
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
-            ) => FinitelyFreeSubmoduleCoset::equal_slow(x_coset, y_coset),
+            ) => self.module().cosets().equal_slow(x_coset, y_coset),
         }
     }
 }
 
-impl<Ring: UniqueReducedHermiteAlgorithmSignature> FinitelyFreeSubmoduleAffineSubset<Ring> {
-    pub fn equal(x: &Self, y: &Self) -> bool {
-        debug_assert_eq!(x.module(), y.module());
+impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> EqSignature
+    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+{
+    fn equal(
+        &self,
+        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+    ) -> bool {
+        debug_assert!(self.is_element(x));
+        debug_assert!(self.is_element(y));
         match (x, y) {
             (
-                FinitelyFreeSubmoduleAffineSubset::Empty(..),
-                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty,
+                FinitelyFreeSubmoduleAffineSubset::Empty,
             ) => true,
             (
-                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty,
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(..),
             ) => false,
             (
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(..),
-                FinitelyFreeSubmoduleAffineSubset::Empty(..),
+                FinitelyFreeSubmoduleAffineSubset::Empty,
             ) => false,
             (
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
-            ) => FinitelyFreeSubmoduleCoset::equal(x_coset, y_coset),
+            ) => self.module().cosets().equal(x_coset, y_coset),
         }
     }
 }

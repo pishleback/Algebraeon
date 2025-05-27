@@ -316,7 +316,7 @@ where
         let mat = Matrix::construct(f_deg, f_deg, |i, j| self.coeff(&row_polys[i], j).clone());
         // mat.pprint();
         //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
-        let mat_struct = MatrixStructure::<FS>::new(self.coeff_ring().clone());
+        let mat_struct = MatrixStructure::<FS, _>::new(self.coeff_ring());
         let ker = mat_struct.row_kernel(mat);
         // ker.pprint();
         let ker_rank = ker.submodule_rank();
