@@ -110,11 +110,11 @@ impl<
         self.ideals().ideal_contains(a, b)
     }
 
-    fn object_is_prime(&self, _object: &Self::PrimeObject) -> bool {
-        true
+    fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
+        None
     }
 
-    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object {
+    fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
         prime.into_ideal()
     }
 
@@ -123,10 +123,7 @@ impl<
             .ideal_product(objects.into_iter().cloned().collect())
     }
 
-    fn new_powers_unchecked(
-        &self,
-        factor_powers: Vec<(Self::PrimeObject, Natural)>,
-    ) -> Self::Set {
+    fn new_powers_unchecked(&self, factor_powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set {
         Self::Set {
             factors: factor_powers,
         }

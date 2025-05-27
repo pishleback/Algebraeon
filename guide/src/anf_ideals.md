@@ -22,7 +22,7 @@ let ideal = roi
 for (prime_ideal, power) in roi
     .ideals()
     .factorizations()
-    .into_factor_powers(roi.ideals().factor_ideal(&ideal).unwrap())
+    .into_powers(roi.ideals().factor_ideal(&ideal).unwrap())
 {
     println!("power = {power} prime_ideal_factor = {:?}", prime_ideal);
 }

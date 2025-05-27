@@ -255,17 +255,11 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSigna
         self.ring().divisible(a, b)
     }
 
-    fn object_is_prime(&self, object: &Self::PrimeObject) -> bool {
-        match self.ring().try_is_irreducible(object) {
-            Some(answer) => answer,
-            None => {
-                // unsure, so we are allowed to return true here
-                true
-            }
-        }
+    fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
+        self.ring().try_is_irreducible(object)
     }
 
-    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object {
+    fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
         prime
     }
 
@@ -273,10 +267,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSigna
         self.ring().product(objects)
     }
 
-    fn new_powers_unchecked(
-        &self,
-        factor_powers: Vec<(Self::PrimeObject, Natural)>,
-    ) -> Self::Set {
+    fn new_powers_unchecked(&self, factor_powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set {
         self.from_unit_and_factor_powers(self.ring().one(), factor_powers)
     }
 
@@ -499,7 +490,7 @@ mod tests {
             let fs = Integer::structure().factor(&b).unwrap();
             println!("fs = {}", fs);
             assert_eq!(
-                Integer::factorizations().count_divisors(&fs).unwrap(),
+                Integer::factorizations().count_divisors(&fs),
                 Natural::from(
                     Integer::factorizations()
                         .divisors(&fs)

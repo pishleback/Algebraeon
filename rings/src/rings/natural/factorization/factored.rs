@@ -41,11 +41,11 @@ impl FactoredSignature for NaturalFactorizationStructure {
         b % a == Natural::ZERO
     }
 
-    fn object_is_prime(&self, object: &Self::PrimeObject) -> bool {
-        is_prime(object)
+    fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
+        Some(is_prime(object))
     }
 
-    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object {
+    fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
         prime
     }
 
