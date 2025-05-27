@@ -573,7 +573,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> UnitsSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> SemiRingUnitsSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {

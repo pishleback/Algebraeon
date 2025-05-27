@@ -313,7 +313,7 @@ impl RingSignature for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl UnitsSignature for RingOfIntegersWithIntegralBasisStructure {
+impl SemiRingUnitsSignature for RingOfIntegersWithIntegralBasisStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
         if self.is_zero(a) {
             Err(RingDivisionError::DivideByZero)

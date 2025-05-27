@@ -34,7 +34,7 @@ impl RingSignature for RationalCanonicalStructure {
     }
 }
 
-impl UnitsSignature for RationalCanonicalStructure {
+impl SemiRingUnitsSignature for RationalCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }

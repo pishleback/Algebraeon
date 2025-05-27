@@ -192,7 +192,7 @@ impl<const N: usize> RingSignature for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> UnitsSignature for ModuloCanonicalStructure<N> {
+impl<const N: usize> SemiRingUnitsSignature for ModuloCanonicalStructure<N> {
     fn inv(&self, x: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if x == &self.zero() {
             Err(RingDivisionError::DivideByZero)

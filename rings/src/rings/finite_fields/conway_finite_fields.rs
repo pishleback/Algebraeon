@@ -109,7 +109,7 @@ impl RingSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl UnitsSignature for ConwayFiniteFieldStructure {
+impl SemiRingUnitsSignature for ConwayFiniteFieldStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
         self.structure.inv(a)
     }
