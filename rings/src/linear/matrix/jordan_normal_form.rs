@@ -8,7 +8,7 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct JordanBlock<FS: AlgebraicClosureSignature>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     eigenvalue: FS::Set,
@@ -17,7 +17,7 @@ where
 
 impl<FS: AlgebraicClosureSignature> JordanBlock<FS>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn matrix(&self, field: &FS) -> Matrix<FS::Set> {
@@ -37,7 +37,7 @@ where
 #[derive(Debug, Clone)]
 pub struct JordanNormalForm<FS: AlgebraicClosureSignature>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     field: FS,
@@ -46,7 +46,7 @@ where
 
 impl<FS: AlgebraicClosureSignature> JordanNormalForm<FS>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn matrix(&self) -> Matrix<FS::Set> {
@@ -62,7 +62,7 @@ where
 
 impl<FS: AlgebraicClosureSignature> MatrixStructure<FS>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetSignature>::Set>) -> Vec<FS::Set> {
