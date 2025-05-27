@@ -29,7 +29,7 @@ impl SetSignature for NaturalFactorizationStructure {
     type Set = FactoredNatural;
 
     fn is_element(&self, f: &Self::Set) -> bool {
-        todo!()
+        true
     }
 }
 
@@ -53,17 +53,17 @@ impl FactoredSignature for NaturalFactorizationStructure {
         Natural::structure().product(objects)
     }
 
-    fn from_factor_powers_impl(&self, factor_powers: Vec<(Natural, Natural)>) -> Self::Set {
+    fn new_powers_unchecked(&self, factor_powers: Vec<(Natural, Natural)>) -> Self::Set {
         Self::Set {
             primes: factor_powers.into_iter().collect(),
         }
     }
 
-    fn factor_powers<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Natural, &'a Natural)> {
+    fn to_powers_unchecked<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Natural, &'a Natural)> {
         a.primes.iter().collect()
     }
 
-    fn into_factor_powers(&self, a: Self::Set) -> Vec<(Natural, Natural)> {
+    fn into_powers_unchecked(&self, a: Self::Set) -> Vec<(Natural, Natural)> {
         a.primes.into_iter().collect()
     }
 
@@ -76,7 +76,7 @@ impl FactoredSignature for NaturalFactorizationStructure {
     }
 
     fn mul(&self, mut a: Self::Set, b: Self::Set) -> Self::Set {
-        for (p, k) in self.into_factor_powers(b) {
+        for (p, k) in self.into_powers(b) {
             *a.primes.entry(p).or_insert(Natural::ZERO) += k;
         }
         a

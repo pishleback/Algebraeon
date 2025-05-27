@@ -67,6 +67,13 @@ pub struct PolynomialStructure<RS: SemiRingSignature, RSB: BorrowedStructure<RS>
 }
 
 impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+    pub fn new(coeff_ring: RSB) -> Self {
+        Self {
+            coeff_ring_zero: coeff_ring.borrow().zero(),
+            coeff_ring,
+        }
+    }
+
     pub fn coeff_ring(&self) -> &RS {
         self.coeff_ring.borrow()
     }
@@ -202,13 +209,6 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature for Polynomial
 }
 
 impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
-    pub fn new(coeff_ring: RSB) -> Self {
-        Self {
-            coeff_ring_zero: coeff_ring.borrow().zero(),
-            coeff_ring,
-        }
-    }
-
     pub fn reduce_poly(&self, mut a: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         loop {
             if a.coeffs.len() == 0 {

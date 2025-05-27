@@ -435,7 +435,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                                     &mut factored,
                                     Polynomial::<Integer>::structure()
                                         .factorizations()
-                                        .from_prime(g),
+                                        .new_prime(g),
                                 );
                                 // Remove the modular factors for g from future consideration
                                 m -= k;
@@ -462,7 +462,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                 &mut factored,
                 Polynomial::<Integer>::structure()
                     .factorizations()
-                    .from_prime(f),
+                    .new_prime(f),
             );
         }
 

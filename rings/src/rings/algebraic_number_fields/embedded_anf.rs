@@ -118,7 +118,7 @@ pub fn as_poly_expr(
     let mut generator = generator.clone();
     for (factor, _factor_mult) in Polynomial::<Polynomial<Rational>>::structure()
         .factorizations()
-        .factor_powers(&target_min_poly_factored)
+        .to_powers(&target_min_poly_factored)
     {
         //the factor should be monic
         debug_assert!(gen_anf.equal(&factor.leading_coeff().unwrap(), &gen_anf.one()));

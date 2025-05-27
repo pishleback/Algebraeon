@@ -238,7 +238,7 @@ impl
             prime_ideal,
             poly_mod_p
                 .factorizations()
-                .into_factor_powers(beta_min_poly_factored)
+                .into_powers(beta_min_poly_factored)
                 .into_iter()
                 .map(|(g, power)| {
                     debug_assert!(g.is_monic());
@@ -274,7 +274,7 @@ impl
             DedekindExtensionIdealFactorization::from_ideal_factors_above_primes(
                 Integer::ideals()
                     .factorizations()
-                    .into_squarefree_factor_list(norm_prime_factors)
+                    .into_prime_support(norm_prime_factors)
                     .into_iter()
                     .map(|prime| {
                         DedekindExtensionIdealFactorsAbovePrime::from_powers_unchecked(

@@ -101,7 +101,7 @@ where
                 f = self.div(&f, &self.var()).unwrap();
                 linear_factors = self
                     .factorizations()
-                    .mul(linear_factors, self.factorizations().from_prime(self.var()));
+                    .mul(linear_factors, self.factorizations().new_prime(self.var()));
                 continue 'seek_linear_factor;
             } else {
                 //look for linear factors of the form (a+bx)
@@ -123,7 +123,7 @@ where
                                     f = new_f;
                                     linear_factors = self
                                         .factorizations()
-                                        .mul(linear_factors, self.factorizations().from_prime(lin));
+                                        .mul(linear_factors, self.factorizations().new_prime(lin));
                                     continue 'seek_linear_factor;
                                 }
                                 Err(RingDivisionError::NotDivisible) => {}

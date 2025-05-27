@@ -92,10 +92,10 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
     ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
         let f = factor(ideal.clone())?;
         Some(
-            self.factorizations().from_factor_powers(
+            self.factorizations().new_powers(
                 Natural::structure()
                     .factorizations()
-                    .into_factor_powers(f)
+                    .into_powers(f)
                     .into_iter()
                     .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k.into()))
                     .collect(),

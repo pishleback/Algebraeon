@@ -121,7 +121,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 }
                 match Natural::structure()
                     .factorizations()
-                    .from_prime(r.clone())
+                    .new_prime(r.clone())
                     .is_primitive_root(n)
                 {
                     factorization::IsPrimitiveRootResult::NonUnit => {

@@ -547,7 +547,7 @@ where
                                 &mut fs,
                                 poly_ring
                                     .factorizations()
-                                    .pow(poly_ring.factorizations().from_prime(f), mult),
+                                    .pow(poly_ring.factorizations().new_prime(f), mult),
                             );
                             None
                         } else {

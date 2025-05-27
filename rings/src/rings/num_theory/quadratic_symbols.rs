@@ -120,7 +120,7 @@ pub fn jacobi_symbol(a: &Integer, n: &Natural) -> Result<QuadraticSymbolValue, J
         let mut val = QuadraticSymbolValue::Pos;
         for (p, k) in Natural::structure()
             .factorizations()
-            .factor_powers(&factor(n.clone()).unwrap())
+            .to_powers(&factor(n.clone()).unwrap())
         {
             val = val * legendre_symbol(&a, p).unwrap().nat_pow(k);
         }

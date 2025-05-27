@@ -39,7 +39,7 @@ pub trait FactorableSignature: UniqueFactorizationSignature {
     fn is_irreducible(&self, a: &Self::Set) -> bool {
         match self.factor(a) {
             None => false, //zero is not irreducible
-            Some(factored) => self.factorizations().is_prime(&factored),
+            Some(factored) => self.factorizations().is_prime_unchecked(&factored),
         }
     }
 
@@ -273,20 +273,21 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSigna
         self.ring().product(objects)
     }
 
-    fn from_factor_powers_impl(
+    fn new_powers_unchecked(
         &self,
         factor_powers: Vec<(Self::PrimeObject, Natural)>,
     ) -> Self::Set {
         self.from_unit_and_factor_powers(self.ring().one(), factor_powers)
     }
 
-    fn factor_powers<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
-        debug_assert!(self.is_element(a));
+    fn to_powers_unchecked<'a>(
+        &self,
+        a: &'a Self::Set,
+    ) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
         a.factors.iter().map(|(p, k)| (p, k)).collect()
     }
 
-    fn into_factor_powers(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
-        debug_assert!(self.is_element(&a));
+    fn into_powers_unchecked(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
         a.factors
     }
 
@@ -321,12 +322,11 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
         }
     }
 
-    pub fn from_unit_and_factor_powers_unchecked(
+    pub(crate) fn from_unit_and_factor_powers_unchecked(
         &self,
         unit: RS::Set,
         factor_powers: Vec<(RS::Set, Natural)>,
     ) -> FactoredRingElement<RS::Set> {
-        debug_assert!(self.ring().is_unit(&unit));
         FactoredRingElement {
             unit,
             factors: factor_powers,
@@ -406,7 +406,7 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationSignature>(
             ),
             FindFactorResult::Irreducible => {
                 //f is irreducible
-                ring.factorizations().from_prime(elem)
+                ring.factorizations().new_prime(elem)
             }
         }
     }

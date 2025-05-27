@@ -749,7 +749,7 @@ impl Polynomial<Integer> {
         let mut roots = vec![];
         for (factor, k) in Polynomial::<Integer>::structure()
             .factorizations()
-            .factor_powers(&factors)
+            .to_powers(&factors)
         {
             for root in factor.all_complex_roots_irreducible() {
                 let mut i = Natural::from(0u8);

@@ -140,7 +140,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
             RingOfIntegersIdeal::Zero => None,
             RingOfIntegersIdeal::NonZero { .. } => Some(
                 self.factorizations()
-                    .into_factor_powers(self.factor_ideal(ideal).unwrap())
+                    .into_powers(self.factor_ideal(ideal).unwrap())
                     .iter()
                     .map(|(prime_ideal, exponent)| {
                         let norm = self.ideal_norm(&prime_ideal.ideal());
@@ -164,7 +164,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                     Integer::structure()
                         .ideals()
                         .factorizations()
-                        .into_factor_powers(n)
+                        .into_powers(n)
                         .into_iter()
                         .map(|(p, k)| {
                             let k: usize = k.try_into().unwrap();
@@ -409,7 +409,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         let b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
             FinitelyFreeModuleStructure::new(Integer::structure(), self.ring().degree()),
             self.factorizations()
-                .factor_powers(&ideal_factored)
+                .to_powers(&ideal_factored)
                 .into_iter()
                 .map(|(p, k)| match self.ideal_nat_pow(p.ideal(), k) {
                     RingOfIntegersIdeal::Zero => unreachable!(),
@@ -421,12 +421,12 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                 })
                 .chain(
                     self.factorizations()
-                        .into_squarefree_factor_list(g_factored)
+                        .into_prime_support(g_factored)
                         .into_iter()
                         .filter(|prime_ideal| {
                             !self
                                 .factorizations()
-                                .squarefree_factor_list(&ideal_factored)
+                                .to_prime_support(&ideal_factored)
                                 .into_iter()
                                 .any(|p| self.ideal_equal(p.ideal(), prime_ideal.ideal()))
                         })
@@ -449,7 +449,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         let rm_b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
             FinitelyFreeModuleStructure::new(Integer::structure(), self.ring().degree()),
             self.factorizations()
-                .factor_powers(&ideal_factored)
+                .to_powers(&ideal_factored)
                 .into_iter()
                 .map(
                     |(p, k)| match self.ideal_nat_pow(p.ideal(), &(k + Natural::ONE)) {

@@ -210,7 +210,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
         let mut p_factors = vec![];
         for (ti, ti_pow) in Polynomial::<Rational>::structure()
             .factorizations()
-            .factor_powers(&t.factor().unwrap())
+            .to_powers(&t.factor().unwrap())
         {
             // println!("ti = {}", ti);
             debug_assert_eq!(ti_pow, &Natural::ONE);
@@ -451,7 +451,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 
             let p_factors = Polynomial::<Rational>::structure()
                 .factorizations()
-                .factor_powers(&q.factor().unwrap())
+                .to_powers(&q.factor().unwrap())
                 .into_iter()
                 .map(|(qi, pow)| {
                     // println!("");
@@ -634,7 +634,7 @@ mod tests {
         debug_assert_eq!(
             k_poly
                 .factorizations()
-                .factor_powers(&k_poly.factor(&(x.pow(2) - 12).into_verbose()).unwrap())
+                .to_powers(&k_poly.factor(&(x.pow(2) - 12).into_verbose()).unwrap())
                 .len(),
             2
         );
@@ -648,7 +648,7 @@ mod tests {
         debug_assert_eq!(
             k_poly
                 .factorizations()
-                .factor_powers(
+                .to_powers(
                     &k_poly
                         .factor(&(x.pow(4) - x.pow(2) + 1).into_verbose())
                         .unwrap()
@@ -662,7 +662,7 @@ mod tests {
         debug_assert_eq!(
             k_poly
                 .factorizations()
-                .factor_powers(&k_poly.factor(&(x.pow(3) - x + 1).into_verbose()).unwrap())
+                .to_powers(&k_poly.factor(&(x.pow(3) - x + 1).into_verbose()).unwrap())
                 .len(),
             2
         );
@@ -675,7 +675,7 @@ mod tests {
         debug_assert_eq!(
             k_poly
                 .factorizations()
-                .factor_powers(&k_poly.factor(&(x.pow(12) - 1).into_verbose()).unwrap())
+                .to_powers(&k_poly.factor(&(x.pow(12) - 1).into_verbose()).unwrap())
                 .len(),
             12
         );

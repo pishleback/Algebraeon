@@ -8,12 +8,11 @@ pub trait FactoredSignature: SetSignature {
     /// A type used to hold the prime objects.
     type PrimeObject: Clone + Debug;
 
-    fn from_factor_powers_impl(
-        &self,
-        factor_powers: Vec<(Self::PrimeObject, Natural)>,
-    ) -> Self::Set;
+    /// Same as new_powers but don't validate the input
+    fn new_powers_unchecked(&self, factor_powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set;
 
-    fn from_factor_powers(&self, factor_powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set {
+    /// Construct a new factorization object given a list of powers of primes
+    fn new_powers(&self, factor_powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set {
         #[cfg(debug_assertions)]
         {
             let mut ps: Vec<&Self::PrimeObject> = vec![];
@@ -23,7 +22,7 @@ pub trait FactoredSignature: SetSignature {
                 ps.push(p);
             }
         }
-        self.from_factor_powers_impl(
+        self.new_powers_unchecked(
             factor_powers
                 .into_iter()
                 .filter(|(_, k)| k != &Natural::ZERO)
@@ -31,23 +30,43 @@ pub trait FactoredSignature: SetSignature {
         )
     }
 
+    /// Return the trivial factorization
     fn new_trivial(&self) -> Self::Set {
-        self.from_factor_powers(vec![])
+        self.new_powers(vec![])
     }
 
-    fn from_prime(&self, prime: Self::PrimeObject) -> Self::Set {
+    /// Construct a factorization from a prime object
+    fn new_prime(&self, prime: Self::PrimeObject) -> Self::Set {
         debug_assert!(self.object_is_prime(&prime));
-        self.from_factor_powers(vec![(prime, Natural::ONE)])
+        self.new_powers(vec![(prime, Natural::ONE)])
     }
 
-    fn factor_powers<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Self::PrimeObject, &'a Natural)>;
+    /// Same as to_powers but don't validate the input
+    fn to_powers_unchecked<'a>(
+        &self,
+        a: &'a Self::Set,
+    ) -> Vec<(&'a Self::PrimeObject, &'a Natural)>;
 
-    fn into_factor_powers(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)>;
+    /// Given a factorization return a list of it's primes and their powers
+    fn to_powers<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
+        debug_assert!(self.is_element(a));
+        self.to_powers_unchecked(a)
+    }
 
-    fn factor_list<'a>(&self, a: &'a Self::Set) -> Vec<&'a Self::PrimeObject> {
+    /// Same as into_powers but don't validate the input
+    fn into_powers_unchecked(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)>;
+
+    /// Consume a factorization and return a list of it's primes and their powers
+    fn into_powers(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
+        debug_assert!(self.is_element(&a));
+        self.into_powers_unchecked(a)
+    }
+
+    /// Given a factorization return a list of it's prime factors with duplicate entries according to the multiplicity
+    fn to_primes<'a>(&self, a: &'a Self::Set) -> Vec<&'a Self::PrimeObject> {
         debug_assert!(self.is_element(a));
         let mut factors = vec![];
-        for (p, k) in self.factor_powers(a) {
+        for (p, k) in self.to_powers(a) {
             let k: usize = k.try_into().unwrap();
             for _ in 0..k {
                 factors.push(p);
@@ -56,10 +75,11 @@ pub trait FactoredSignature: SetSignature {
         factors
     }
 
-    fn into_factor_list(&self, a: Self::Set) -> Vec<Self::PrimeObject> {
+    /// Consume a factorization and return a list of it's prime factors with duplicate entries according to the multiplicity
+    fn into_primes(&self, a: Self::Set) -> Vec<Self::PrimeObject> {
         debug_assert!(self.is_element(&a));
         let mut factors = vec![];
-        for (p, k) in self.into_factor_powers(a) {
+        for (p, k) in self.into_powers(a) {
             let k: usize = k.try_into().unwrap();
             for _ in 0..k {
                 factors.push(p.clone())
@@ -68,27 +88,33 @@ pub trait FactoredSignature: SetSignature {
         factors
     }
 
-    fn squarefree_factor_list<'a>(&self, a: &'a Self::Set) -> Vec<&'a Self::PrimeObject> {
+    /// Given a factorization return a list of it's prime factors without multiplicity i.e. without repeats
+    fn to_prime_support<'a>(&self, a: &'a Self::Set) -> Vec<&'a Self::PrimeObject> {
         debug_assert!(self.is_element(a));
-        self.factor_powers(a).into_iter().map(|(p, _)| p).collect()
+        self.to_powers(a).into_iter().map(|(p, _)| p).collect()
     }
 
-    fn into_squarefree_factor_list(self, a: Self::Set) -> Vec<Self::PrimeObject> {
+    /// Consume a factorization and return a list of it's prime factors without multiplicity i.e. without repeats
+    fn into_prime_support(self, a: Self::Set) -> Vec<Self::PrimeObject> {
         debug_assert!(self.is_element(&a));
-        self.into_factor_powers(a)
-            .into_iter()
-            .map(|(p, _)| p)
-            .collect()
+        self.into_powers(a).into_iter().map(|(p, _)| p).collect()
     }
 
+    /// Return true if the factorization is trivial
     fn is_trivial(&self, a: &Self::Set) -> bool {
         debug_assert!(self.is_element(a));
-        self.factor_powers(a).into_iter().next().is_none()
+        self.to_powers(a).into_iter().next().is_none()
     }
 
+    /// Return true if the factorization is a single prime with multiplicity one
     fn is_prime(&self, a: &Self::Set) -> bool {
         debug_assert!(self.is_element(a));
-        let mut factor_powers = self.factor_powers(a).into_iter();
+        self.is_prime_unchecked(a)
+    }
+
+    /// Same as is_prime but don't validate inputs
+    fn is_prime_unchecked(&self, a: &Self::Set) -> bool {
+        let mut factor_powers = self.to_powers_unchecked(a).into_iter();
         match factor_powers.next() {
             Some((_, k)) => match factor_powers.next() {
                 Some(_) => false,
@@ -98,34 +124,13 @@ pub trait FactoredSignature: SetSignature {
         }
     }
 
+    /// Return true if the factorization is square-free i.e. all multiplicities are zero or one
     fn is_squarefree(&self, a: &Self::Set) -> bool {
         debug_assert!(self.is_element(a));
-        self.factor_powers(a)
+        self.to_powers(a)
             .into_iter()
             .all(|(_, k)| k == &Natural::ONE)
     }
-
-    /// return true iff a divides b
-    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool;
-
-    // not necessarily equal but equivalent wrt division
-    fn object_equivalent(&self, a: &Self::Object, b: &Self::Object) -> bool {
-        self.object_divides(a, b) && self.object_divides(b, a)
-    }
-
-    fn prime_object_equivalent(&self, a: &Self::PrimeObject, b: &Self::PrimeObject) -> bool {
-        self.object_equivalent(
-            &self.prime_to_object(a.clone()),
-            &self.prime_to_object(b.clone()),
-        )
-    }
-
-    /// return true if object actually is a prime object
-    /// may return true if object doesn't represent a prime object, but this is not so good for debugging
-    /// if returns false then object is definitely not a valid prime object
-    fn object_is_prime(&self, object: &Self::PrimeObject) -> bool;
-
-    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object;
 
     fn object_one(&self) -> Self::Object {
         self.object_product(vec![])
@@ -137,12 +142,63 @@ pub trait FactoredSignature: SetSignature {
 
     fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object;
 
+    /// Return true if the a divides b
+    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool;
+
+    // not necessarily equal but equivalent wrt division
+    fn object_equivalent(&self, a: &Self::Object, b: &Self::Object) -> bool {
+        self.object_divides(a, b) && self.object_divides(b, a)
+    }
+
+    /// return true if object actually is a prime object
+    /// may return true if object doesn't represent a prime object, but this is not so good for debugging
+    /// if returns false then object is definitely not a valid prime object
+    fn object_is_prime(&self, object: &Self::PrimeObject) -> bool;
+
+    fn prime_object_equivalent(&self, a: &Self::PrimeObject, b: &Self::PrimeObject) -> bool {
+        self.object_equivalent(
+            &self.prime_to_object(a.clone()),
+            &self.prime_to_object(b.clone()),
+        )
+    }
+
+    fn prime_to_object(&self, prime: Self::PrimeObject) -> Self::Object;
+
+    /// Return the product of two factorizations
+    fn mul(&self, a: Self::Set, b: Self::Set) -> Self::Set;
+
+    /// Return a natural power of a factorization
+    fn pow(self, a: Self::Set, n: &Natural) -> Self::Set {
+        debug_assert!(self.is_element(&a));
+        if *n == Natural::ZERO {
+            self.new_trivial()
+        } else if *n == Natural::ONE {
+            a
+        } else {
+            debug_assert!(*n >= Natural::TWO);
+            let bits: Vec<_> = n.bits().collect();
+            let mut pows = vec![a.clone()];
+            while pows.len() < bits.len() {
+                pows.push(self.mul(pows.last().unwrap().clone(), pows.last().unwrap().clone()));
+            }
+            let count = bits.len();
+            debug_assert_eq!(count, pows.len());
+            let mut ans = self.new_trivial();
+            for (i, pow) in pows.into_iter().enumerate() {
+                if bits[i] {
+                    ans = self.mul(ans, pow);
+                }
+            }
+            ans
+        }
+    }
+
     fn divides(&self, a: &Self::Set, b: &Self::Set) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
-        for (pa, ka) in self.factor_powers(a) {
+        for (pa, ka) in self.to_powers(a) {
             'EQUIV_PRIME_SEARCH: {
-                for (pb, kb) in self.factor_powers(b) {
+                for (pb, kb) in self.to_powers(b) {
                     if self.prime_object_equivalent(pa, pb) {
                         if !(ka <= kb) {
                             // `b` has the prime factor `pa` of `a` but its multiplicity is too small
@@ -170,8 +226,8 @@ pub trait FactoredSignature: SetSignature {
     fn expanded_squarefree(&self, a: &Self::Set) -> Self::Object {
         debug_assert!(self.is_element(a));
         self.expanded(
-            &self.from_factor_powers(
-                self.squarefree_factor_list(a)
+            &self.new_powers(
+                self.to_prime_support(a)
                     .into_iter()
                     .map(|p| (p.clone(), Natural::ONE))
                     .collect(),
@@ -179,35 +235,8 @@ pub trait FactoredSignature: SetSignature {
         )
     }
 
-    fn mul(&self, a: Self::Set, b: Self::Set) -> Self::Set;
-
-    fn pow(self, a: Self::Set, n: &Natural) -> Self::Set {
-        debug_assert!(self.is_element(&a));
-        if *n == Natural::ZERO {
-            self.new_trivial()
-        } else if *n == Natural::ONE {
-            a
-        } else {
-            debug_assert!(*n >= Natural::TWO);
-            let bits: Vec<_> = n.bits().collect();
-            let mut pows = vec![a.clone()];
-            while pows.len() < bits.len() {
-                pows.push(self.mul(pows.last().unwrap().clone(), pows.last().unwrap().clone()));
-            }
-            let count = bits.len();
-            debug_assert_eq!(count, pows.len());
-            let mut ans = self.new_trivial();
-            for (i, pow) in pows.into_iter().enumerate() {
-                if bits[i] {
-                    ans = self.mul(ans, pow);
-                }
-            }
-            ans
-        }
-    }
-
     fn divisors<'a>(&'a self, a: &'a Self::Set) -> Box<dyn Iterator<Item = Self::Object> + 'a> {
-        let factors = self.factor_powers(a);
+        let factors = self.to_powers(a);
         if factors.len() == 0 {
             Box::new(vec![self.object_one()].into_iter())
         } else {
@@ -238,7 +267,7 @@ pub trait FactoredSignature: SetSignature {
 
     fn count_divisors(&self, a: &Self::Set) -> Option<Natural> {
         debug_assert!(self.is_element(a));
-        let factors = self.factor_powers(a);
+        let factors = self.to_powers(a);
         let mut count = Natural::from(1u8);
         for (_p, k) in factors {
             count *= k + Natural::ONE;
@@ -248,10 +277,10 @@ pub trait FactoredSignature: SetSignature {
 
     fn gcd(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let factor_powers = self
-            .factor_powers(a)
+            .to_powers(a)
             .into_iter()
             .filter_map(|(p, pk)| {
-                for (q, qk) in self.factor_powers(b) {
+                for (q, qk) in self.to_powers(b) {
                     if self.prime_object_equivalent(&p, q) {
                         return Some((p.clone(), std::cmp::min(pk, qk).clone()));
                     }
@@ -259,6 +288,6 @@ pub trait FactoredSignature: SetSignature {
                 None
             })
             .collect();
-        self.from_factor_powers(factor_powers)
+        self.new_powers(factor_powers)
     }
 }

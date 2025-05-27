@@ -92,7 +92,7 @@ impl<
     type Set = DedekindDomainIdealFactorization<Ideals::Set>;
 
     fn is_element(&self, x: &Self::Set) -> bool {
-        todo!()
+        true
     }
 }
 
@@ -123,7 +123,7 @@ impl<
             .ideal_product(objects.into_iter().cloned().collect())
     }
 
-    fn from_factor_powers_impl(
+    fn new_powers_unchecked(
         &self,
         factor_powers: Vec<(Self::PrimeObject, Natural)>,
     ) -> Self::Set {
@@ -132,17 +132,20 @@ impl<
         }
     }
 
-    fn factor_powers<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
+    fn to_powers_unchecked<'a>(
+        &self,
+        a: &'a Self::Set,
+    ) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
         a.factors.iter().map(|(p, k)| (p, k)).collect()
     }
 
-    fn into_factor_powers(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
+    fn into_powers_unchecked(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
         a.factors
     }
 
     fn expanded(&self, a: &Self::Set) -> Self::Object {
         self.ideals().ideal_product(
-            self.factor_list(a)
+            self.to_primes(a)
                 .into_iter()
                 .map(|p| p.ideal().clone())
                 .collect(),
@@ -150,7 +153,7 @@ impl<
     }
 
     fn mul(&self, mut a: Self::Set, b: Self::Set) -> Self::Set {
-        for (q, l) in self.into_factor_powers(b) {
+        for (q, l) in self.into_powers(b) {
             'SEARCH_A: {
                 for (p, k) in &mut a.factors {
                     if self.object_equivalent(p.ideal(), q.ideal()) {

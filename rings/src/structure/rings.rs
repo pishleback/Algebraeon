@@ -86,6 +86,14 @@ pub trait SemiRingSignature: EqSignature {
             ans
         }
     }
+
+    fn polynomials<'a>(&'a self) -> PolynomialStructure<Self, &'a Self> {
+        PolynomialStructure::new(self)
+    }
+
+    fn into_polynomials(self) -> PolynomialStructure<Self, Self> {
+        PolynomialStructure::new(self)
+    }
 }
 
 pub trait MetaSemiRing: MetaType
@@ -153,6 +161,14 @@ pub trait RingSignature: SemiRingSignature {
         } else {
             self.from_nat(x.abs())
         }
+    }
+
+    fn multivariable_polynomials<'a>(&'a self) -> MultiPolynomialStructure<Self, &'a Self> {
+        MultiPolynomialStructure::new(self)
+    }
+
+    fn into_multivariable_polynomials(self) -> MultiPolynomialStructure<Self, Self> {
+        MultiPolynomialStructure::new(self)
     }
 }
 
@@ -868,7 +884,7 @@ where
         let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
         for (factor, k) in base_field_poly
             .factorizations()
-            .into_factor_powers(base_field_poly.factor(poly)?)
+            .into_powers(base_field_poly.factor(poly)?)
         {
             for root in self.all_roots_list(&factor).unwrap() {
                 root_powers.push((root, (&k).try_into().unwrap()))
