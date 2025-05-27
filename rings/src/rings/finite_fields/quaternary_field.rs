@@ -80,7 +80,7 @@ impl RingSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl UnitsSignature for QuaternaryFieldCanonicalStructure {
+impl SemiRingUnitsSignature for QuaternaryFieldCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }

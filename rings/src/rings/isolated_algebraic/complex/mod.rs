@@ -812,7 +812,7 @@ impl RingSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl UnitsSignature for ComplexAlgebraicCanonicalStructure {
+impl SemiRingUnitsSignature for ComplexAlgebraicCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         // println!("inv {:?}", a);
         // a.check_invariants().unwrap();

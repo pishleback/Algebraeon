@@ -196,7 +196,10 @@ where
 }
 impl<R: MetaType> MetaRingEq for R where Self::Signature: RingSignature + EqSignature {}
 
-pub trait UnitsSignature: RingSignature {
+pub trait SemiRingUnitsSignature: SemiRingSignature {
+    /// b such that a*b=1 and b*a=1
+    /// Err(DivideByZero) if b is zero
+    /// Err(NotDivisible) if no such b exists
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
     fn is_unit(&self, a: &Self::Set) -> bool {
@@ -207,9 +210,9 @@ pub trait UnitsSignature: RingSignature {
         }
     }
 }
-pub trait MetaUnitsSignature: MetaRing
+pub trait MetaSemiRingUnitsSignature: MetaType
 where
-    Self::Signature: UnitsSignature,
+    Self::Signature: SemiRingUnitsSignature,
 {
     fn inv(&self) -> Result<Self, RingDivisionError> {
         Self::structure().inv(self)
@@ -218,9 +221,15 @@ where
         Self::structure().is_unit(self)
     }
 }
-impl<R: MetaRing> MetaUnitsSignature for R where Self::Signature: UnitsSignature<Set = R> {}
+impl<R: MetaType> MetaSemiRingUnitsSignature for R where
+    Self::Signature: SemiRingUnitsSignature<Set = R>
+{
+}
 
-pub trait IntegralDomainSignature: UnitsSignature {
+pub trait RingUnitsSignature: RingSignature + SemiRingUnitsSignature {}
+impl<Ring: RingSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {}
+
+pub trait IntegralDomainSignature: RingUnitsSignature {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
@@ -465,10 +474,11 @@ where
 }
 impl<R: MetaRing> MetaBezoutDomain for R where Self::Signature: BezoutDomainSignature<Set = R> {}
 
-pub trait EuclideanDivisionSignature: IntegralDomainSignature {
-    //should return None for 0, and Some(norm) for everything else
+pub trait EuclideanDivisionSignature: SemiRingSignature {
+    /// None for 0 and Some(norm) for everything else
     fn norm(&self, elem: &Self::Set) -> Option<Natural>;
 
+    /// None if b is 0 and Some((q, r)) such that a=bq+r and r=0 or norm(r) < norm(b)
     fn quorem(&self, a: &Self::Set, b: &Self::Set) -> Option<(Self::Set, Self::Set)>;
 
     fn quo(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
@@ -544,7 +554,7 @@ pub trait EuclideanDivisionSignature: IntegralDomainSignature {
     }
 }
 
-pub trait MetaEuclideanDivision: MetaIntegralDomain
+pub trait MetaEuclideanDivision: MetaType
 where
     Self::Signature: EuclideanDivisionSignature,
 {
@@ -578,10 +588,13 @@ where
         Self::structure().euclidean_xgcd(x, y)
     }
 }
-impl<R: MetaRing> MetaEuclideanDivision for R where
+impl<R: MetaType> MetaEuclideanDivision for R where
     Self::Signature: EuclideanDivisionSignature<Set = R>
 {
 }
+
+pub trait EuclideanDomainSignature: EuclideanDivisionSignature + IntegralDomainSignature {}
+impl<Ring: EuclideanDivisionSignature + IntegralDomainSignature> EuclideanDomainSignature for Ring {}
 
 pub trait InfiniteSignature: SetSignature {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;

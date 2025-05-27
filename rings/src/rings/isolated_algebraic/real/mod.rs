@@ -605,7 +605,7 @@ impl RingSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl UnitsSignature for RealAlgebraicCanonicalStructure {
+impl SemiRingUnitsSignature for RealAlgebraicCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let mut a = a.clone();
         match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {

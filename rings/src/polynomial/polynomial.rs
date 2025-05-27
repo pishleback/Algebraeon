@@ -603,7 +603,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> UnitsSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> SemiRingUnitsSignature
     for PolynomialStructure<RS, RSB>
 {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {

@@ -13,10 +13,10 @@ impl<Ring: BezoutDomainSignature> HermiteAlgorithmSignature for Ring {}
 
 /// Rings for which reduced hermite normal forms can be computed
 pub trait ReducedHermiteAlgorithmSignature:
-    HermiteAlgorithmSignature + EuclideanDivisionSignature + FavoriteAssociateSignature
+    HermiteAlgorithmSignature + EuclideanDomainSignature + FavoriteAssociateSignature
 {
 }
-impl<Ring: HermiteAlgorithmSignature + EuclideanDivisionSignature + FavoriteAssociateSignature>
+impl<Ring: HermiteAlgorithmSignature + EuclideanDomainSignature + FavoriteAssociateSignature>
     ReducedHermiteAlgorithmSignature for Ring
 {
 }
@@ -352,7 +352,7 @@ where
 
 impl<R: MetaType> Matrix<R>
 where
-    R::Signature: EuclideanDivisionSignature + BezoutDomainSignature + FavoriteAssociateSignature,
+    R::Signature: EuclideanDomainSignature + BezoutDomainSignature + FavoriteAssociateSignature,
 {
     pub fn row_reduced_hermite_algorithm(&self) -> (Self, Self, R, Vec<usize>) {
         Self::structure().row_reduced_hermite_algorithm(self.clone())

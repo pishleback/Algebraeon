@@ -795,7 +795,7 @@ pub mod structure {
         }
     }
 
-    impl UnitsSignature for PAdicAlgebraicStructure {
+    impl SemiRingUnitsSignature for PAdicAlgebraicStructure {
         fn inv(&self, a: &PAdicAlgebraic) -> Result<PAdicAlgebraic, RingDivisionError> {
             debug_assert!(self.is_element(a));
             match a {

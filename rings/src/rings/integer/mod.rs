@@ -44,7 +44,7 @@ impl RingSignature for IntegerCanonicalStructure {
     }
 }
 
-impl UnitsSignature for IntegerCanonicalStructure {
+impl SemiRingUnitsSignature for IntegerCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }

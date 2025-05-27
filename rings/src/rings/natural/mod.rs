@@ -26,7 +26,7 @@ impl CharacteristicSignature for NaturalCanonicalStructure {
     }
 }
 
-impl UnitsSignature for NaturalCanonicalStructure {
+impl SemiRingUnitsSignature for NaturalCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match *a {
             Natural::ZERO => Err(RingDivisionError::DivideByZero),
@@ -36,7 +36,7 @@ impl UnitsSignature for NaturalCanonicalStructure {
     }
 }
 
-impl EuclideanDivisionSignature for NaturalCanonicalStructure {
+impl EuclideanDivisionSignature  for NaturalCanonicalStructure {
     fn norm(&self, elem: &Self::Set) -> Option<Natural> {
         if elem == &Natural::ZERO {
             None
