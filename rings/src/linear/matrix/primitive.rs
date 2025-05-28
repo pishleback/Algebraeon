@@ -1,6 +1,6 @@
 use super::*;
 
-impl<RS: GreatestCommonDivisorSignature> MatrixStructure<RS> {
+impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     pub fn factor_primitive(&self, mut mat: Matrix<RS::Set>) -> Option<(RS::Set, Matrix<RS::Set>)> {
         let entries = mat.entries_list();
         let g = self.ring().gcd_list(entries);

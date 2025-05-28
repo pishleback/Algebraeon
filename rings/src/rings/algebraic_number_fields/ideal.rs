@@ -3,41 +3,30 @@ use super::ring_of_integers::*;
 use crate::{
     linear::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
-        finitely_free_coset::FinitelyFreeSubmoduleCoset,
-        finitely_free_modules::FinitelyFreeModuleStructure,
         finitely_free_submodule::FinitelyFreeSubmodule, matrix::Matrix,
     },
     rings::valuation::Valuation,
     structure::*,
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
+use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::{
     combinatorics::num_partitions_part_pool,
-    structure::{BorrowedStructure, MetaType, SetSignature, Signature},
+    structure::{BorrowedStructure, EqSignature, MetaType, SetSignature, Signature},
 };
 use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub enum RingOfIntegersIdeal {
     Zero,
-    NonZero {
-        // 1 column and n rows
-        lattice: FinitelyFreeSubmodule<IntegerCanonicalStructure>,
-    },
+    NonZero(FinitelyFreeSubmodule<Integer>),
 }
 
 impl RingOfIntegersIdeal {
     /// A basis of this ideal as a Z-module.
-    pub fn integer_basis(&self) -> Option<Vec<RingOfIntegersWithIntegralBasisElement>> {
+    pub fn basis(&self) -> Option<Vec<Vec<Integer>>> {
         match self {
             RingOfIntegersIdeal::Zero => None,
-            RingOfIntegersIdeal::NonZero { lattice } => Some(
-                lattice
-                    .basis()
-                    .into_iter()
-                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_coefficients(m))
-                    .collect(),
-            ),
+            RingOfIntegersIdeal::NonZero(lattice) => Some(lattice.basis()),
         }
     }
 }
@@ -74,25 +63,21 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>> SetSign
     fn is_element(&self, ideal: &Self::Set) -> bool {
         match ideal {
             RingOfIntegersIdeal::Zero => true,
-            RingOfIntegersIdeal::NonZero { lattice } => {
-                assert_eq!(lattice.module_rank(), self.ring().degree());
-                // check it's actually an ideal
-                for ideal_basis_elem in lattice
-                    .basis()
-                    .into_iter()
-                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_coefficients(m))
-                {
-                    for integral_basis_elem in (0..self.ring().degree()).map(|i| {
-                        RingOfIntegersWithIntegralBasisElement::basis_element(
-                            self.ring().degree(),
-                            i,
-                        )
-                    }) {
-                        let x = self
+            RingOfIntegersIdeal::NonZero(lattice) => {
+                // check it's a submodule
+                self.ring().z_module().submodules().is_element(lattice);
+                // check it's an ideal
+                for ideal_basis_elem in lattice.basis() {
+                    for integral_basis_elem in
+                        (0..self.ring().degree()).map(|i| self.ring().z_module().basis_element(i))
+                    {
+                        let x = self.ring().mul(&ideal_basis_elem, &integral_basis_elem);
+                        if !self
                             .ring()
-                            .mul(&ideal_basis_elem, &integral_basis_elem)
-                            .into_coefficients();
-                        if !lattice.contains_element(&x) {
+                            .z_module()
+                            .submodules()
+                            .contains_element(&lattice, &x)
+                        {
                             return false;
                         }
                     }
@@ -116,18 +101,20 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     RingOfIntegersIdealsStructure<RingB>
 {
     /// Construct an ideal from a Z-linear span
-    pub fn ideal_from_integer_span(
-        &self,
-        span: Vec<RingOfIntegersWithIntegralBasisElement>,
-    ) -> RingOfIntegersIdeal {
+    pub fn ideal_from_integer_span(&self, span: Vec<Vec<Integer>>) -> RingOfIntegersIdeal {
         for elem in &span {
             debug_assert!(self.ring().is_element(elem));
         }
         let n = self.ring().degree();
-        RingOfIntegersIdeal::NonZero {
-            lattice: Matrix::join_cols(n, span.into_iter().map(|elem| elem.into_col()).collect())
-                .col_span(),
-        }
+        RingOfIntegersIdeal::NonZero(
+            Matrix::join_cols(
+                n,
+                span.into_iter()
+                    .map(|elem| Matrix::from_cols(vec![elem]))
+                    .collect(),
+            )
+            .col_span(),
+        )
     }
 
     pub fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
@@ -233,7 +220,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     IdealsArithmeticSignature<RingOfIntegersWithIntegralBasisStructure, RingB>
     for RingOfIntegersIdealsStructure<RingB>
 {
-    fn principal_ideal(&self, a: &RingOfIntegersWithIntegralBasisElement) -> Self::Set {
+    fn principal_ideal(&self, a: &Vec<Integer>) -> Self::Set {
         if self.ring().is_zero(a) {
             Self::Set::Zero
         } else {
@@ -262,10 +249,12 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         debug_assert!(self.is_element(b));
         match (a, b) {
             (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::Zero) => true,
-            (
-                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
-                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
-            ) => FinitelyFreeSubmodule::equal(a_lattice, b_lattice),
+            (RingOfIntegersIdeal::NonZero(a_lattice), RingOfIntegersIdeal::NonZero(b_lattice)) => {
+                self.ring()
+                    .z_module()
+                    .submodules()
+                    .equal(a_lattice, b_lattice)
+            }
             _ => false,
         }
     }
@@ -279,23 +268,25 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                 debug_assert_ne!(self.ring().degree(), 0);
                 false
             }
-            (
-                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
-                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
-            ) => FinitelyFreeSubmodule::contains(a_lattice, b_lattice),
+            (RingOfIntegersIdeal::NonZero(a_lattice), RingOfIntegersIdeal::NonZero(b_lattice)) => {
+                self.ring()
+                    .z_module()
+                    .submodules()
+                    .contains(a_lattice, b_lattice)
+            }
         }
     }
 
-    fn ideal_contains_element(
-        &self,
-        a: &Self::Set,
-        x: &RingOfIntegersWithIntegralBasisElement,
-    ) -> bool {
+    fn ideal_contains_element(&self, a: &Self::Set, x: &Vec<Integer>) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.ring().is_element(x));
         match a {
             RingOfIntegersIdeal::Zero => self.ring().is_zero(x),
-            RingOfIntegersIdeal::NonZero { lattice } => lattice.contains_element(x.coefficients()),
+            RingOfIntegersIdeal::NonZero(lattice) => self
+                .ring()
+                .z_module()
+                .submodules()
+                .contains_element(lattice, x),
         }
     }
 
@@ -303,12 +294,14 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         match (a, b) {
-            (
-                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
-                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
-            ) => Self::Set::NonZero {
-                lattice: FinitelyFreeSubmodule::intersect(a_lattice, b_lattice),
-            },
+            (RingOfIntegersIdeal::NonZero(a_lattice), RingOfIntegersIdeal::NonZero(b_lattice)) => {
+                Self::Set::NonZero(
+                    self.ring()
+                        .z_module()
+                        .submodules()
+                        .intersect(a_lattice, b_lattice),
+                )
+            }
             _ => Self::Set::Zero,
         }
     }
@@ -320,12 +313,14 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
             (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::Zero) => RingOfIntegersIdeal::Zero,
             (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::NonZero { .. }) => b.clone(),
             (RingOfIntegersIdeal::NonZero { .. }, RingOfIntegersIdeal::Zero) => a.clone(),
-            (
-                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
-                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
-            ) => Self::Set::NonZero {
-                lattice: FinitelyFreeSubmodule::add(a_lattice, b_lattice),
-            },
+            (RingOfIntegersIdeal::NonZero(a_lattice), RingOfIntegersIdeal::NonZero(b_lattice)) => {
+                Self::Set::NonZero(
+                    self.ring()
+                        .z_module()
+                        .submodules()
+                        .add(a_lattice, b_lattice),
+                )
+            }
         }
     }
 
@@ -333,23 +328,10 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         match (a, b) {
-            (
-                RingOfIntegersIdeal::NonZero { lattice: a_lattice },
-                RingOfIntegersIdeal::NonZero { lattice: b_lattice },
-            ) => {
+            (RingOfIntegersIdeal::NonZero(a_lattice), RingOfIntegersIdeal::NonZero(b_lattice)) => {
                 let n = self.ring().degree();
-
-                let a_basis = a_lattice
-                    .basis()
-                    .into_iter()
-                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_coefficients(m))
-                    .collect::<Vec<_>>();
-                let b_basis = b_lattice
-                    .basis()
-                    .into_iter()
-                    .map(|m| RingOfIntegersWithIntegralBasisElement::from_coefficients(m))
-                    .collect::<Vec<_>>();
-
+                let a_basis = a_lattice.basis();
+                let b_basis = b_lattice.basis();
                 debug_assert_eq!(a_basis.len(), n);
                 debug_assert_eq!(b_basis.len(), n);
 
@@ -394,9 +376,9 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     /// given an ideal I and element a find an element b such that I = (a, b)
     pub fn ideal_other_generator(
         &self,
-        g: &RingOfIntegersWithIntegralBasisElement,
+        g: &Vec<Integer>,
         ideal: &RingOfIntegersIdeal,
-    ) -> RingOfIntegersWithIntegralBasisElement {
+    ) -> Vec<Integer> {
         debug_assert!(self.ideal_contains_element(ideal, g));
         debug_assert!(!self.ring().is_zero(g));
         // prod_i p^{e_i}
@@ -406,18 +388,17 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         // want b not in any q and in all p^{e_i} and not in any p^{e_i+1}
 
         // this is all b not in any q and in all p^{e_i}
-        let b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
-            FinitelyFreeModuleStructure::new(Integer::structure(), self.ring().degree()),
+        let b_set = self.ring().z_module().affine_subsets().intersect_list(
             self.factorizations()
                 .to_powers(&ideal_factored)
                 .into_iter()
                 .map(|(p, k)| match self.ideal_nat_pow(p.ideal(), k) {
                     RingOfIntegersIdeal::Zero => unreachable!(),
-                    RingOfIntegersIdeal::NonZero {
-                        lattice: pk_lattice,
-                    } => FinitelyFreeSubmoduleAffineSubset::from_coset(
-                        FinitelyFreeSubmoduleCoset::from_submodule(pk_lattice),
-                    ),
+                    RingOfIntegersIdeal::NonZero(pk_lattice) => {
+                        FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                            self.ring().z_module().cosets().from_submodule(pk_lattice),
+                        )
+                    }
                 })
                 .chain(
                     self.factorizations()
@@ -432,12 +413,12 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                         })
                         .map(|q| match q.into_ideal() {
                             RingOfIntegersIdeal::Zero => unreachable!(),
-                            RingOfIntegersIdeal::NonZero { lattice: q_lattice } => {
-                                FinitelyFreeSubmoduleAffineSubset::from_coset(
-                                    FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
-                                        self.ring().one().coefficients(),
-                                        q_lattice,
-                                    ),
+                            RingOfIntegersIdeal::NonZero(q_lattice) => {
+                                FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                                    self.ring()
+                                        .z_module()
+                                        .cosets()
+                                        .from_offset_and_submodule(&self.ring().one(), q_lattice),
                                 )
                             }
                         }),
@@ -446,19 +427,18 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         );
 
         //need to filter out the b in some p^{e_i+1}
-        let rm_b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
-            FinitelyFreeModuleStructure::new(Integer::structure(), self.ring().degree()),
+        let rm_b_set = self.ring().z_module().affine_subsets().intersect_list(
             self.factorizations()
                 .to_powers(&ideal_factored)
                 .into_iter()
                 .map(
                     |(p, k)| match self.ideal_nat_pow(p.ideal(), &(k + Natural::ONE)) {
                         RingOfIntegersIdeal::Zero => unreachable!(),
-                        RingOfIntegersIdeal::NonZero {
-                            lattice: pk_lattice,
-                        } => FinitelyFreeSubmoduleAffineSubset::from_coset(
-                            FinitelyFreeSubmoduleCoset::from_submodule(pk_lattice),
-                        ),
+                        RingOfIntegersIdeal::NonZero(pk_lattice) => {
+                            FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                                self.ring().z_module().cosets().from_submodule(pk_lattice),
+                            )
+                        }
                     },
                 )
                 .collect(),
@@ -467,30 +447,31 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         //if all basis elements of b_set were contain in rm_b_set then we'd have b_set contained in rm_b_set
         //but this is not the case, so some basis of b_set is not in rm_b_set
 
-        RingOfIntegersWithIntegralBasisElement::from_coefficients(
-            b_set
-                .affine_basis()
-                .into_iter()
-                .filter(|b| !rm_b_set.contains_element(b))
-                .next()
-                .unwrap(),
-        )
+        self.ring()
+            .z_module()
+            .affine_subsets()
+            .affine_basis(&b_set)
+            .into_iter()
+            .filter(|b| {
+                !self
+                    .ring()
+                    .z_module()
+                    .affine_subsets()
+                    .contains_element(&rm_b_set, b)
+            })
+            .next()
+            .unwrap()
     }
 
     /// return two elements which generate the ideal
     pub fn ideal_two_generators(
         &self,
         ideal: &RingOfIntegersIdeal,
-    ) -> (
-        RingOfIntegersWithIntegralBasisElement,
-        RingOfIntegersWithIntegralBasisElement,
-    ) {
+    ) -> (Vec<Integer>, Vec<Integer>) {
         let (a, b) = match ideal {
             RingOfIntegersIdeal::Zero => (self.ring().zero(), self.ring().zero()),
-            RingOfIntegersIdeal::NonZero { lattice } => {
-                let a = RingOfIntegersWithIntegralBasisElement::from_coefficients(
-                    lattice.basis().into_iter().next().unwrap(),
-                );
+            RingOfIntegersIdeal::NonZero(lattice) => {
+                let a = lattice.basis().into_iter().next().unwrap();
                 let b = self.ideal_other_generator(&a, ideal);
                 (a, b)
             }
@@ -502,7 +483,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     pub fn padic_roi_element_valuation(
         &self,
         prime_ideal: RingOfIntegersIdeal,
-        a: RingOfIntegersWithIntegralBasisElement,
+        a: Vec<Integer>,
     ) -> Valuation {
         debug_assert!(self.ring().is_element(&a));
         debug_assert!(self.is_element(&prime_ideal));

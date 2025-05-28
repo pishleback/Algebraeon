@@ -152,7 +152,10 @@ pub struct ConwayFiniteFieldInclusion {
     // Linear map F_{p^m} -> F_{p^n} of column vectors of polynomial coefficients over F_p
     inclusion: Matrix<Integer>,
     // matricies modulo p
-    mat_mod_p: MatrixStructure<QuotientStructure<IntegerCanonicalStructure, true>>,
+    mat_mod_p: MatrixStructure<
+        QuotientStructure<IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, true>,
+    >,
 }
 
 impl ConwayFiniteFieldInclusion {

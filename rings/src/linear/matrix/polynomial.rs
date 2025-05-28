@@ -1,6 +1,6 @@
 use super::*;
 
-impl<FS: FieldSignature> MatrixStructure<FS> {
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
     pub fn presentation_matrix(
         &self,
         m: Matrix<FS::Set>,
