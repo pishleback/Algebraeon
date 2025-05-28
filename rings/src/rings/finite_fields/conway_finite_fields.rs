@@ -14,6 +14,7 @@ pub struct ConwayFiniteFieldStructure {
     n: usize,
     structure: FieldExtensionByPolynomialQuotientStructure<
         QuotientStructure<IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, true>,
     >,
 }
 
@@ -108,7 +109,7 @@ impl RingSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl UnitsSignature for ConwayFiniteFieldStructure {
+impl SemiRingUnitsSignature for ConwayFiniteFieldStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
         self.structure.inv(a)
     }
@@ -151,7 +152,10 @@ pub struct ConwayFiniteFieldInclusion {
     // Linear map F_{p^m} -> F_{p^n} of column vectors of polynomial coefficients over F_p
     inclusion: Matrix<Integer>,
     // matricies modulo p
-    mat_mod_p: MatrixStructure<QuotientStructure<IntegerCanonicalStructure, true>>,
+    mat_mod_p: MatrixStructure<
+        QuotientStructure<IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, true>,
+    >,
 }
 
 impl ConwayFiniteFieldInclusion {

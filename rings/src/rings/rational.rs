@@ -34,7 +34,7 @@ impl RingSignature for RationalCanonicalStructure {
     }
 }
 
-impl UnitsSignature for RationalCanonicalStructure {
+impl SemiRingUnitsSignature for RationalCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
@@ -130,8 +130,10 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
     }
 }
 
-impl FactorableSignature for PolynomialStructure<RationalCanonicalStructure> {
-    fn factor(&self, p: &Self::Set) -> Option<FactoredElement<Self>> {
+impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
+    for PolynomialStructure<RationalCanonicalStructure, B>
+{
+    fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Polynomial<Rational>>> {
         factorize_by_factorize_primitive_part(
             &PrincipalSubringInclusion::new(self.coeff_ring().clone()),
             self,

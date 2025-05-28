@@ -120,10 +120,13 @@ struct BerlekampZassenhausAlgorithmStateAtPrime {
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn new_at_prime(state: &BerlekampAassenhausAlgorithmState, p: Natural) -> Option<Self> {
         let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(&p));
-        let poly_mod_p = PolynomialStructure::new(mod_p.into());
+        let poly_mod_p = PolynomialStructure::new(mod_p);
         if poly_mod_p.degree(&state.poly) == Some(state.degree) {
             let facotred_f_mod_p = poly_mod_p.factor(&state.poly).unwrap();
-            match facotred_f_mod_p.into_hensel_factorization(state.poly.clone()) {
+            match poly_mod_p
+                .factorizations()
+                .into_hensel_factorization(facotred_f_mod_p, state.poly.clone())
+            {
                 Some(hensel_factorization_f_over_p) => {
                     let mut hensel_factorization_f_over_p =
                         hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
@@ -354,8 +357,10 @@ mod dminusone_test {
 }
 
 // Polynomial division test. This test is never wrong.
-type ModularFactorMultSemigrp =
-    PolynomialStructure<QuotientStructure<IntegerCanonicalStructure, false>>;
+type ModularFactorMultSemigrp = PolynomialStructure<
+    QuotientStructure<IntegerCanonicalStructure, false>,
+    QuotientStructure<IntegerCanonicalStructure, false>,
+>;
 impl SemigroupSignature for ModularFactorMultSemigrp {
     fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.mul(a, b)
@@ -363,9 +368,7 @@ impl SemigroupSignature for ModularFactorMultSemigrp {
 }
 
 impl BerlekampZassenhausAlgorithmStateAtPrime {
-    fn factor_by_try_all_subsets<'a>(
-        &'a self,
-    ) -> FactoredElement<PolynomialStructure<IntegerCanonicalStructure>> {
+    fn factor_by_try_all_subsets<'a>(&'a self) -> FactoredRingElement<Polynomial<Integer>> {
         let n = self.modular_factors.len();
 
         let mut dminusone_test =
@@ -377,7 +380,9 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
             self.modular_factors.iter().map(|g| g.clone()).collect(),
         );
 
-        let mut factored = FactoredElement::new_trivial(Polynomial::<Integer>::structure());
+        let mut factored = Polynomial::<Integer>::structure()
+            .factorizations()
+            .new_trivial();
         let mut excluded_modular_factors = vec![];
         let mut f = self.poly.clone();
         let mut k = 1; // The cardinality of the subset to search for each loop
@@ -426,10 +431,12 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                                 // Divide f by the found factor g
                                 f = h;
                                 // Add g to this list of found factors
-                                factored.mul_mut(FactoredElement::from_prime(
-                                    Polynomial::<Integer>::structure(),
-                                    g,
-                                ));
+                                Polynomial::<Integer>::structure().factorizations().mul_mut(
+                                    &mut factored,
+                                    Polynomial::<Integer>::structure()
+                                        .factorizations()
+                                        .new_prime(g),
+                                );
                                 // Remove the modular factors for g from future consideration
                                 m -= k;
                                 for i in subset {
@@ -451,10 +458,12 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 
         // The remaining modular factors must give the last irreducible factor in the factorization
         if m > 0 {
-            factored.mul_mut(FactoredElement::from_prime(
-                Polynomial::<Integer>::structure(),
-                f,
-            ));
+            Polynomial::<Integer>::structure().factorizations().mul_mut(
+                &mut factored,
+                Polynomial::<Integer>::structure()
+                    .factorizations()
+                    .new_prime(f),
+            );
         }
 
         factored
@@ -465,7 +474,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 /// No optimizations are used when searching for combinations of modular factors yielding true factors.
 pub fn factorize_by_berlekamp_zassenhaus_algorithm(
     poly: Polynomial<Integer>,
-) -> Option<FactoredElement<PolynomialStructure<IntegerCanonicalStructure>>> {
+) -> Option<FactoredRingElement<Polynomial<Integer>>> {
     if poly.is_zero() {
         None
     } else {
@@ -476,7 +485,9 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
                     Integer::factor,
                     &|f| {
                         if f.degree().unwrap() == 0 {
-                            FactoredElement::from_unit(Polynomial::<Integer>::structure(), f)
+                            PolynomialStructure::new(Integer::structure())
+                                .factorizations()
+                                .from_unit(f)
                         } else {
                             let state = BerlekampAassenhausAlgorithmState::new(f).next_prime();
                             state.factor_by_try_all_subsets()
@@ -490,7 +501,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
 /// Find a factor of a primitive squarefree integer polynomial by a naive implementation of the Berlekamp-Zassenhaus algorithm.
 fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     f: Polynomial<Integer>,
-) -> FindFactorResult<PolynomialStructure<IntegerCanonicalStructure>> {
+) -> FindFactorResult<Polynomial<Integer>> {
     let f_deg = f.degree().unwrap();
     debug_assert_ne!(f_deg, 0);
     let factor_coeff_bound = f.mignotte_factor_coefficient_bound().unwrap();
@@ -502,10 +513,13 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
         let prime_gen = primes();
         for p in prime_gen {
             let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(p));
-            let poly_mod_p = PolynomialStructure::new(mod_p.into());
+            let poly_mod_p = PolynomialStructure::new(mod_p);
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap();
-                match facotred_f_mod_p.into_hensel_factorization(f.clone()) {
+                match poly_mod_p
+                    .factorizations()
+                    .into_hensel_factorization(facotred_f_mod_p, f.clone())
+                {
                     Some(hensel_factorization_f_over_p) => {
                         let mut hensel_factorization_f_over_p =
                             hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
@@ -570,7 +584,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
 /// No optimizations are used when searching for combinations of modular factors yielding true factors.
 pub fn factorize_by_berlekamp_zassenhaus_algorithm_naive(
     f: Polynomial<Integer>,
-) -> Option<FactoredElement<PolynomialStructure<IntegerCanonicalStructure>>> {
+) -> Option<FactoredRingElement<Polynomial<Integer>>> {
     if f.is_zero() {
         None
     } else {

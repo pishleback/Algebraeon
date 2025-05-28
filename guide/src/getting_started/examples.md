@@ -59,12 +59,15 @@ for integers \\(a\\), \\(b\\) and \\(c\\).
 
 ```rust
 use algebraeon::nzq::Integer;
+use algebraeon::rings::linear::finitely_free_modules::RingToFinitelyFreeModuleStructure;
 use algebraeon::rings::linear::matrix::Matrix;
+use algebraeon::sets::structure::MetaType;
 let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
-let y = Matrix::<Integer>::from_rows(vec![vec![5, 5, 3]]);
-for x in m
-    .row_solution_set(&vec![5.into(), 5.into(), 3.into()])
-    .affine_basis()
+let y = vec![5.into(), 5.into(), 3.into()];
+for x in Integer::structure()
+    .free_module(3)
+    .affine_subsets()
+    .affine_basis(&m.row_solution_set(&y))
 {
     println!("{:?}", x);
 }

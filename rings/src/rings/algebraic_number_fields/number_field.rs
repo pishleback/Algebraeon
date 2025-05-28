@@ -10,8 +10,10 @@ use algebraeon_nzq::{
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
-pub type AlgebraicNumberFieldStructure =
-    FieldExtensionByPolynomialQuotientStructure<RationalCanonicalStructure>;
+pub type AlgebraicNumberFieldStructure = FieldExtensionByPolynomialQuotientStructure<
+    RationalCanonicalStructure,
+    RationalCanonicalStructure,
+>;
 
 impl Polynomial<Rational> {
     pub fn algebraic_number_field(self) -> AlgebraicNumberFieldStructure {

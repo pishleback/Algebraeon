@@ -100,6 +100,7 @@ impl Natural {
         self.nth_root_ceil(&Natural::TWO)
     }
 
+    /// If x is a square, compute the square root of x
     pub fn sqrt_if_square(&self) -> Option<Natural> {
         // implementation based on algorithm 1.7.3 of Cohen H - a course in computational algebraic number theory
 
@@ -146,6 +147,7 @@ impl Natural {
         }
     }
 
+    /// Check if `self` is a square
     pub fn is_square(&self) -> bool {
         self.sqrt_if_square().is_some()
     }
@@ -165,6 +167,7 @@ pub fn choose(a: impl Borrow<Natural>, b: impl Borrow<Natural>) -> Natural {
     }
 }
 
+/// The greatest common divisor of `x` and `y`
 pub fn gcd(mut x: Natural, mut y: Natural) -> Natural {
     while y != Natural::ZERO {
         let r = x % &y;
@@ -173,6 +176,7 @@ pub fn gcd(mut x: Natural, mut y: Natural) -> Natural {
     x
 }
 
+/// The least common multiple of `x` and `y`
 pub fn lcm(x: Natural, y: Natural) -> Natural {
     let g = gcd(x.clone(), y.clone());
     x * (y / g)

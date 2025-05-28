@@ -149,7 +149,9 @@ macro_rules! impl_try_into_via_integer {
     };
 }
 
-impl_try_into_via_integer!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
+impl_try_into_via_integer!(
+    u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
+);
 
 impl FromStr for Rational {
     type Err = ();
@@ -164,6 +166,45 @@ impl Rational {
     pub const ONE: Self = Self(malachite_q::Rational::ONE);
     pub const TWO: Self = Self(malachite_q::Rational::TWO);
     pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
+
+    fn latex(&self) -> String {
+        let (num, den) = self.numerator_and_denominator();
+        if den == Natural::ONE {
+            format!("{}", num)
+        } else {
+            format!("\\frac{{{}}}{{{}}}", num, den)
+        }
+    }
+
+    fn typst(&self) -> String {
+        let (num, den) = self.numerator_and_denominator();
+        if den == Natural::ONE {
+            format!("{}", num)
+        } else {
+            format!("{}/{}", num, den)
+        }
+    }
+
+    pub fn sqrt_if_square(&self) -> Option<Rational> {
+        if self < &Rational::ZERO {
+            None
+        } else {
+            let (num, den) = self.clone().into_abs_numerator_and_denominator();
+            let sqrt_num = num.sqrt_if_square()?;
+            let sqrt_den = den.sqrt_if_square()?;
+
+            Some(Rational::from_integers(sqrt_num, sqrt_den))
+        }
+    }
+
+    pub fn is_square(&self) -> bool {
+        if self < &Rational::ZERO {
+            false
+        } else {
+            let (num, den) = self.clone().into_abs_numerator_and_denominator();
+            num.is_square() && den.is_square()
+        }
+    }
 }
 
 impl PartialEq<Natural> for Rational {
@@ -716,5 +757,55 @@ mod tests {
             <&Rational as TryInto<u32>>::try_into(&Rational::ONE_HALF),
             Err(())
         );
+    }
+
+    #[test]
+    fn test_latex_and_typst() {
+        let r = Rational::from_integers(2, 3);
+        assert_eq!(r.latex(), "\\frac{2}{3}");
+        assert_eq!(r.typst(), "2/3");
+
+        let r2 = Rational::from_integers(4, 2);
+        assert_eq!(r2.latex(), "2");
+        assert_eq!(r2.typst(), "2");
+
+        let r3 = Rational::from_integers(-2, -4);
+        assert_eq!(r3.latex(), "\\frac{1}{2}");
+        assert_eq!(r3.typst(), "1/2");
+
+        let r4 = Rational::from_integers(-2, 4);
+        assert_eq!(r4.latex(), "\\frac{-1}{2}");
+        assert_eq!(r4.typst(), "-1/2");
+    }
+
+    #[test]
+    fn test_rational_is_square_true() {
+        assert!(Rational::from_integers(4, 9).is_square());
+        assert!(Rational::from_integers(1, 1).is_square());
+    }
+
+    #[test]
+    fn test_rational_is_square_false() {
+        assert!(!Rational::from_integers(2, 9).is_square());
+        assert!(!Rational::from_integers(-4, 9).is_square());
+    }
+
+    #[test]
+    fn test_rational_sqrt_if_square_some() {
+        let r = Rational::from_integers(4, 9);
+        let sqrt = r.sqrt_if_square();
+        assert_eq!(sqrt, Some(Rational::from_integers(2, 3)));
+    }
+
+    #[test]
+    fn test_rational_sqrt_if_square_none_negative() {
+        let r = Rational::from_integers(-4, 9);
+        assert_eq!(r.sqrt_if_square(), None);
+    }
+
+    #[test]
+    fn test_rational_sqrt_if_square_none_not_square() {
+        let r = Rational::from_integers(2, 9);
+        assert_eq!(r.sqrt_if_square(), None);
     }
 }

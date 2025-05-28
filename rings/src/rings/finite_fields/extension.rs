@@ -5,8 +5,8 @@ use itertools::Itertools;
 
 use super::modulo::ModuloCanonicalStructure;
 
-impl<FS: FiniteFieldSignature> FiniteUnitsSignature
-    for FieldExtensionByPolynomialQuotientStructure<FS>
+impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FiniteUnitsSignature
+    for FieldExtensionByPolynomialQuotientStructure<FS, FSB>
 {
     fn all_units(&self) -> Vec<Self::Set> {
         let mut all_base_elements = vec![self.ring().coeff_ring().zero()];
@@ -32,8 +32,8 @@ impl<FS: FiniteFieldSignature> FiniteUnitsSignature
     }
 }
 
-impl<FS: FiniteFieldSignature> FiniteFieldSignature
-    for FieldExtensionByPolynomialQuotientStructure<FS>
+impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FiniteFieldSignature
+    for FieldExtensionByPolynomialQuotientStructure<FS, FSB>
 {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         let (p, t) = self.ring().coeff_ring().characteristic_and_power();
@@ -44,18 +44,21 @@ impl<FS: FiniteFieldSignature> FiniteFieldSignature
 
 pub fn new_finite_field_extension<FS: FiniteFieldSignature>(
     finite_field: FS,
-    poly: <PolynomialStructure<FS> as SetSignature>::Set,
-) -> FieldExtensionByPolynomialQuotientStructure<FS>
+    poly: <PolynomialStructure<FS, FS> as SetSignature>::Set,
+) -> FieldExtensionByPolynomialQuotientStructure<FS, FS>
 where
-    PolynomialStructure<FS>: FactorableSignature,
+    PolynomialStructure<FS, FS>: FactorableSignature,
 {
-    FieldExtensionByPolynomialQuotientStructure::<FS>::new_field(
-        PolynomialStructure::new(finite_field.into()).into(),
+    FieldExtensionByPolynomialQuotientStructure::<FS, FS>::new_field(
+        PolynomialStructure::new(finite_field),
         poly,
     )
 }
 
-pub fn f9() -> FieldExtensionByPolynomialQuotientStructure<ModuloCanonicalStructure<3>> {
+pub(crate) fn f9() -> FieldExtensionByPolynomialQuotientStructure<
+    ModuloCanonicalStructure<3>,
+    ModuloCanonicalStructure<3>,
+> {
     use crate::rings::finite_fields::modulo::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(
         Modulo::<3>::structure().into(),

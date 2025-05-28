@@ -1,9 +1,11 @@
 use super::ideal::RingOfIntegersIdeal;
+use super::ideal::RingOfIntegersIdealsStructure;
 use super::number_field::*;
 use super::ring_of_integers::*;
 use crate::linear::matrix::Matrix;
 use crate::polynomial::Polynomial;
 use crate::polynomial::PolynomialStructure;
+use crate::rings::integer::ideal::IntegerIdealsStructure;
 use crate::rings::quotient::QuotientStructure;
 use crate::rings::valuation::Valuation;
 use crate::structure::*;
@@ -12,7 +14,13 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
-pub struct RingOfIntegersExtension {
+pub struct RingOfIntegersExtension<
+    IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
+    IdealsR: DedekindDomainIdealsSignature<
+            RingOfIntegersWithIntegralBasisStructure,
+            RingOfIntegersWithIntegralBasisStructure,
+        >,
+> {
     z: IntegerCanonicalStructure,
     q: RationalCanonicalStructure,
     r: RingOfIntegersWithIntegralBasisStructure,
@@ -21,10 +29,18 @@ pub struct RingOfIntegersExtension {
     z_to_r: PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
     q_to_k: PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
     r_to_k: RingOfIntegersToAlgebraicNumberFieldInclusion,
+    ideals_z: IdealsZ,
+    ideals_r: IdealsR,
 }
 
-impl RingOfIntegersExtension {
+impl
+    RingOfIntegersExtension<
+        IntegerIdealsStructure<IntegerCanonicalStructure>,
+        RingOfIntegersIdealsStructure<RingOfIntegersWithIntegralBasisStructure>,
+    >
+{
     pub fn new_integer_extension(roi: RingOfIntegersWithIntegralBasisStructure) -> Self {
+        let ideals_r = roi.clone().into_ideals();
         let anf = roi.anf();
         RingOfIntegersExtension {
             z: Integer::structure(),
@@ -35,6 +51,8 @@ impl RingOfIntegersExtension {
             z_to_r: PrincipalSubringInclusion::new(roi.clone()),
             q_to_k: PrincipalRationalSubfieldInclusion::new(anf.clone()),
             r_to_k: RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(roi),
+            ideals_z: Integer::ideals(),
+            ideals_r,
         }
     }
 
@@ -45,15 +63,67 @@ impl RingOfIntegersExtension {
     ) -> Valuation {
         let d = self.integralize_multiplier(a);
         let m = self.k_field().mul(a, &self.z_to_k().image(&d));
-        self.r
+        self.ideals_r
             .padic_roi_element_valuation(prime_ideal.clone(), self.r.try_anf_to_roi(&m).unwrap())
             - self
-                .r
+                .ideals_r
                 .padic_roi_element_valuation(prime_ideal, self.r.from_int(d))
+    }
+
+    // An element is S-integral, if its valuations at all primes not in S are nonnegative.
+    // If S is the empty set, this coincides with the usual integrality.
+    #[allow(non_snake_case)]
+    pub fn is_S_integral(
+        &self,
+        S: Vec<&DedekindDomainPrimeIdeal<RingOfIntegersIdeal>>,
+        a: &Polynomial<Rational>,
+    ) -> bool {
+        let d = self.integralize_multiplier(a);
+        let m = self.k_field().mul(a, &self.z_to_k().image(&d));
+        // for each prime factor P of d not in S, check if valuation_P(m) ≥ valuation_P(d)
+
+        let d_as_roi = self.r.from_int(d.clone());
+        let principal_ideal_d = self.ideals_r.generated_ideal(vec![d_as_roi.clone()]);
+
+        let d_factorization = self.factor_ideal(&principal_ideal_d);
+        if d_factorization.is_none() {
+            return true;
+        }
+
+        for prime in d_factorization.unwrap().into_powers() {
+            let prime_ideal = prime.0.into_ideal();
+            // Skip primes in S
+            if S.iter().any(|s_ideal| {
+                self.ideals_r
+                    .ideal_equal(&(*s_ideal).clone().into_ideal(), &prime_ideal)
+            }) {
+                continue;
+            }
+
+            let m_val = self.ideals_r.padic_roi_element_valuation(
+                prime_ideal.clone(),
+                self.r.try_anf_to_roi(&m).unwrap(),
+            );
+            let d_val = self
+                .ideals_r
+                .padic_roi_element_valuation(prime_ideal, d_as_roi.clone());
+
+            if m_val < d_val {
+                return false;
+            }
+        }
+
+        true
     }
 }
 
-impl
+impl<
+    IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
+    IdealsR: DedekindDomainIdealsSignature<
+            RingOfIntegersWithIntegralBasisStructure,
+            RingOfIntegersWithIntegralBasisStructure,
+        >,
+>
     IntegralClosureExtension<
         IntegerCanonicalStructure,
         RationalCanonicalStructure,
@@ -63,7 +133,7 @@ impl
         PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
         PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
         RingOfIntegersToAlgebraicNumberFieldInclusion,
-    > for RingOfIntegersExtension
+    > for RingOfIntegersExtension<IdealsZ, IdealsR>
 {
     fn z_ring(&self) -> &IntegerCanonicalStructure {
         &self.z
@@ -109,14 +179,27 @@ impl
         PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
         PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
         RingOfIntegersToAlgebraicNumberFieldInclusion,
-    > for RingOfIntegersExtension
+        IntegerIdealsStructure<IntegerCanonicalStructure>,
+        RingOfIntegersIdealsStructure<RingOfIntegersWithIntegralBasisStructure>,
+    >
+    for RingOfIntegersExtension<
+        IntegerIdealsStructure<IntegerCanonicalStructure>,
+        RingOfIntegersIdealsStructure<RingOfIntegersWithIntegralBasisStructure>,
+    >
 {
+    fn z_ideals(&self) -> &IntegerIdealsStructure<IntegerCanonicalStructure> {
+        &self.ideals_z
+    }
+
+    fn r_ideals(&self) -> &RingOfIntegersIdealsStructure<RingOfIntegersWithIntegralBasisStructure> {
+        &self.ideals_r
+    }
+
     fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
-        #[cfg(debug_assertions)]
-        self.r_ring().check_ideal(ideal);
+        debug_assert!(self.r_ideals().is_element(ideal));
         match ideal {
             RingOfIntegersIdeal::Zero => Natural::ZERO,
-            RingOfIntegersIdeal::NonZero { lattice } => {
+            RingOfIntegersIdeal::NonZero(lattice) => {
                 let n = self.r_ring().degree();
                 let cols = lattice.basis();
                 #[cfg(debug_assertions)]
@@ -131,15 +214,13 @@ impl
 
     fn factor_prime_ideal(
         &self,
-        prime_ideal: DedekindDomainPrimeIdeal<IntegerCanonicalStructure>,
-    ) -> DedekindExtensionIdealFactorsAbovePrime<
-        IntegerCanonicalStructure,
-        RingOfIntegersWithIntegralBasisStructure,
-    > {
+        prime_ideal: DedekindDomainPrimeIdeal<Natural>,
+    ) -> DedekindExtensionIdealFactorsAbovePrime<Natural, RingOfIntegersIdeal> {
         // https://en.wikipedia.org/wiki/Dedekind%E2%80%93Kummer_theorem
-        let p = Integer::ideal_generator(prime_ideal.ideal());
+        let p = Integer::ideals().ideal_generator(prime_ideal.ideal());
         let anf = self.k_field();
         let roi = self.r_ring();
+        let roi_ideals = roi.ideals();
         let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), p.clone());
         let poly_mod_p = PolynomialStructure::new(mod_p);
         let poly_roi = PolynomialStructure::new(roi.clone());
@@ -154,20 +235,20 @@ impl
         // there is one prime ideal factor for each irreducible factor of beta's minimal polynomial modulo p
         // the prime ideal coresponding to an irreducible factor g(x) is generated by (p, g(beta))
         DedekindExtensionIdealFactorsAbovePrime::from_powers_unchecked(
-            roi.clone(),
             prime_ideal,
-            beta_min_poly_factored
-                .into_factor_powers()
+            poly_mod_p
+                .factorizations()
+                .into_powers(beta_min_poly_factored)
                 .into_iter()
                 .map(|(g, power)| {
                     debug_assert!(g.is_monic());
-                    let prime_ideal = roi.generated_ideal(vec![
+                    let prime_ideal = roi_ideals.generated_ideal(vec![
                         self.z_to_r().image(&p),
                         poly_roi.evaluate(&g.apply_map(|c| self.z_to_r().image(&c)), &beta),
                     ]);
                     // norm(I) = p^deg(g)
                     debug_assert_eq!(
-                        roi.ideal_norm(&prime_ideal),
+                        roi_ideals.ideal_norm(&prime_ideal),
                         p.clone().abs().nat_pow(&g.degree().unwrap().into())
                     );
                     DedekindExtensionIdealFactorsAbovePrimeFactor {
@@ -183,32 +264,27 @@ impl
     fn factor_ideal(
         &self,
         ideal: &RingOfIntegersIdeal,
-    ) -> Option<
-        DedekindExtensionIdealFactorization<
-            IntegerCanonicalStructure,
-            RingOfIntegersWithIntegralBasisStructure,
-        >,
-    > {
+    ) -> Option<DedekindExtensionIdealFactorization<Natural, RingOfIntegersIdeal>> {
         let roi = self.r_ring();
+        let roi_ideals = roi.ideals();
         let extension_square = RingOfIntegersExtension::new_integer_extension(roi.clone());
         let norm = extension_square.ideal_norm(ideal);
-        let norm_prime_factors = Integer::factor_ideal(&norm)?;
+        let norm_prime_factors = Integer::ideals().factor_ideal(&norm)?;
         Some(
             DedekindExtensionIdealFactorization::from_ideal_factors_above_primes(
-                roi.clone(),
-                norm_prime_factors
-                    .into_squarefree_factor_list()
+                Integer::ideals()
+                    .factorizations()
+                    .into_prime_support(norm_prime_factors)
                     .into_iter()
                     .map(|prime| {
                         DedekindExtensionIdealFactorsAbovePrime::from_powers_unchecked(
-                            roi.clone(),
                             prime.clone(),
                             extension_square
                                 .factor_prime_ideal(prime.clone())
                                 .into_factors()
                                 .into_iter()
                                 .filter_map(|factor_above_prime| {
-                                    let k = roi.largest_prime_ideal_factor_power(
+                                    let k = roi_ideals.largest_prime_ideal_factor_power(
                                         &factor_above_prime.prime_ideal,
                                         ideal,
                                     );
@@ -304,5 +380,34 @@ mod tests {
         for ideal in f5.unique_prime_factors() {
             assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 5u32.into())
         }
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_is_S_integral() {
+        let x = &Polynomial::<Rational>::var().into_ergonomic();
+        let anf = (x.pow(2) + 5).into_verbose().algebraic_number_field();
+        let roi = anf.ring_of_integers();
+        let ext = RingOfIntegersExtension::new_integer_extension(roi.clone());
+
+        // Element: (1/2) + sqrt(-5)
+        let poly = Polynomial::<Rational>::from_coeffs(vec![Rational::ONE_HALF, Rational::ONE]);
+
+        // primes above (2)
+        let f2 =
+            ext.factor_prime_ideal(DedekindDomainPrimeIdeal::try_from_nat(2u32.into()).unwrap());
+        let prime_ideals_above_2 = f2.unique_prime_factors();
+
+        let d = ext.integralize_multiplier(&poly);
+        let m = ext.k_field().mul(&poly, &ext.z_to_k().image(&d));
+        println!("poly = {:?}", poly);
+        println!("d = {:?}", d);
+        println!("m = {:?}", m);
+        assert!(ext.r.try_anf_to_roi(&m).is_some(), "m not in ROI: {:?}", m);
+
+        // Case 1: S = empty set → should NOT be S-integral, denominator 2 not inverted
+        assert!(!ext.is_S_integral(vec![], &poly));
+        // Case 2: S = prime ideals above 2 → now we allow inversion of 2
+        assert!(ext.is_S_integral(prime_ideals_above_2, &poly));
     }
 }

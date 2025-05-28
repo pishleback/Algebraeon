@@ -8,7 +8,7 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct JordanBlock<FS: AlgebraicClosureSignature>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     eigenvalue: FS::Set,
@@ -17,7 +17,7 @@ where
 
 impl<FS: AlgebraicClosureSignature> JordanBlock<FS>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn matrix(&self, field: &FS) -> Matrix<FS::Set> {
@@ -37,7 +37,7 @@ where
 #[derive(Debug, Clone)]
 pub struct JordanNormalForm<FS: AlgebraicClosureSignature>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     field: FS,
@@ -46,7 +46,7 @@ where
 
 impl<FS: AlgebraicClosureSignature> JordanNormalForm<FS>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn matrix(&self) -> Matrix<FS::Set> {
@@ -60,9 +60,9 @@ where
     }
 }
 
-impl<FS: AlgebraicClosureSignature> MatrixStructure<FS>
+impl<FS: AlgebraicClosureSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB>
 where
-    PolynomialStructure<FS::BFS>:
+    PolynomialStructure<FS::BFS, FS::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetSignature>::Set>) -> Vec<FS::Set> {
@@ -106,7 +106,7 @@ where
         mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
         k: usize,
-    ) -> FinitelyFreeSubmodule<FS> {
+    ) -> FinitelyFreeSubmodule<FS::Set> {
         let n = mat.rows();
         assert_eq!(n, mat.cols());
         //compute ker((M - xI)^k)
@@ -129,7 +129,7 @@ where
         mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
         k: usize,
-    ) -> FinitelyFreeSubmodule<FS> {
+    ) -> FinitelyFreeSubmodule<FS::Set> {
         self.generalized_col_eigenspace(&mat.transpose_ref(), eigenvalue, k)
     }
 
@@ -137,7 +137,7 @@ where
         &self,
         mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
-    ) -> FinitelyFreeSubmodule<FS> {
+    ) -> FinitelyFreeSubmodule<FS::Set> {
         self.generalized_col_eigenspace(mat, eigenvalue, 1)
     }
 
@@ -145,7 +145,7 @@ where
         &self,
         mat: &Matrix<<FS::BFS as SetSignature>::Set>,
         eigenvalue: &FS::Set,
-    ) -> FinitelyFreeSubmodule<FS> {
+    ) -> FinitelyFreeSubmodule<FS::Set> {
         self.generalized_row_eigenspace(mat, eigenvalue, 1)
     }
 
@@ -167,7 +167,7 @@ where
         let mut eigenvalues = vec![]; //store (gesp_basis, eigenvalue, multiplicity)
         for (eigenvalue, multiplicity) in self.eigenvalues_powers(mat.clone()) {
             let eigenspace = self.generalized_col_eigenspace(mat, &eigenvalue, multiplicity);
-            debug_assert_eq!(eigenspace.submodule_rank(), multiplicity);
+            debug_assert_eq!(eigenspace.rank(), multiplicity);
             basis.append(&mut eigenspace.basis());
             eigenvalues.push((eigenvalue, multiplicity));
         }
@@ -245,24 +245,22 @@ where
                         .collect_vec();
                     // ker(S) in ker(S^2) in ker(S^3) in ...
 
-                    let mut accounted = FinitelyFreeSubmodule::zero_submodule(
-                        FinitelyFreeModuleStructure::new(ac_field.clone(), m),
-                    );
+                    let module = FinitelyFreeModuleStructure::<FS, _>::new(ac_field, m);
+                    let mut accounted = module.submodules().zero_submodule();
+
                     let mut jordan_block_bases = vec![];
                     for k in (0..m).rev() {
                         //extend the basis by stuff in ker(S^{k+1}) but not in ker(S^k) and their images under S, and which are not already accounted for
-                        let ker_ext = FinitelyFreeSubmodule::from_span(
-                            FinitelyFreeModuleStructure::new(ac_field.clone(), m),
-                            FinitelyFreeSubmodule::extension_basis(
-                                &mat_s_pow_kers[k],
-                                &mat_s_pow_kers[k + 1],
-                            )
-                            .iter()
-                            .collect(),
+                        let ker_ext = module.submodules().from_span(
+                            module
+                                .submodules()
+                                .extension_basis(&mat_s_pow_kers[k], &mat_s_pow_kers[k + 1])
+                                .iter()
+                                .collect(),
                         );
 
-                        let unaccounted_ker_ext_basis = FinitelyFreeSubmodule::extension_basis(
-                            &FinitelyFreeSubmodule::intersect(&accounted, &ker_ext),
+                        let unaccounted_ker_ext_basis = module.submodules().extension_basis(
+                            &module.submodules().intersect(&accounted, &ker_ext),
                             &ker_ext,
                         );
 
@@ -285,12 +283,9 @@ where
                                 jb_basis.push(ukeb_img.get_col(0));
                             }
 
-                            accounted = FinitelyFreeSubmodule::add(
+                            accounted = module.submodules().add(
                                 &accounted,
-                                &FinitelyFreeSubmodule::from_span(
-                                    FinitelyFreeModuleStructure::new(ac_field.clone(), m),
-                                    jb_basis.iter().collect(),
-                                ),
+                                &module.submodules().from_span(jb_basis.iter().collect()),
                             );
                             jordan_block_bases.push(jb_basis.into_iter().rev().collect_vec());
                         }
