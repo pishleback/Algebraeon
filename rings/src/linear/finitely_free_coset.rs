@@ -123,7 +123,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             .contains_element(&x.submodule, &self.module().sub(&x.offset, &y.offset))
     }
 
-    pub fn add(
+    pub fn sum(
         &self,
         x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
         y: &FinitelyFreeSubmoduleCoset<Ring::Set>,
@@ -132,7 +132,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         debug_assert!(self.is_element(y));
         self.from_offset_and_submodule(
             &self.module().add(&x.offset, &y.offset),
-            self.module().submodules().add(&x.submodule, &y.submodule),
+            self.module().submodules().sum(&x.submodule, &y.submodule),
         )
     }
 
@@ -303,7 +303,7 @@ mod tests {
 
         println!();
 
-        let coset1_add_coset2 = module.cosets().add(&coset1, &coset2);
+        let coset1_add_coset2 = module.cosets().sum(&coset1, &coset2);
         println!("coset1 + coset2");
         println!("{:?}", coset1_add_coset2.offset());
         coset1_add_coset2
