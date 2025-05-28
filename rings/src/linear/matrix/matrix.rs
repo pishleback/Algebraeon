@@ -1,4 +1,4 @@
-use crate::{linear::finitely_free_modules::FinitelyFreeModuleStructure, structure::*};
+use crate::structure::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, marker::PhantomData};

@@ -7,7 +7,7 @@ pub trait ModuleSignature<Ring: RingSignature>: SetSignature {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
     fn neg(&self, a: &Self::Set) -> Self::Set;
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.add(a, &self.neg(b));
+        self.add(a, &self.neg(b))
     }
     fn scalar_mul(&self, x: &Ring::Set, a: &Self::Set) -> Self::Set;
 }

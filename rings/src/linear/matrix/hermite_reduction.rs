@@ -1,6 +1,5 @@
 use crate::linear::{
     finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
-    finitely_free_coset::FinitelyFreeSubmoduleCoset,
     finitely_free_modules::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
 };

@@ -199,7 +199,7 @@ impl
         debug_assert!(self.r_ideals().is_element(ideal));
         match ideal {
             RingOfIntegersIdeal::Zero => Natural::ZERO,
-            RingOfIntegersIdeal::NonZero { lattice } => {
+            RingOfIntegersIdeal::NonZero(lattice) => {
                 let n = self.r_ring().degree();
                 let cols = lattice.basis();
                 #[cfg(debug_assertions)]

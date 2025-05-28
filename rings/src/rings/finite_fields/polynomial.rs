@@ -319,7 +319,7 @@ where
         let mat_struct = MatrixStructure::<FS, _>::new(self.coeff_ring());
         let ker = mat_struct.row_kernel(mat);
         // ker.pprint();
-        let ker_rank = ker.submodule_rank();
+        let ker_rank = ker.rank();
         let ker_basis = ker
             .basis()
             .into_iter()

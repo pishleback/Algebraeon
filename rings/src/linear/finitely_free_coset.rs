@@ -63,7 +63,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Set
 {
     type Set = FinitelyFreeSubmoduleCoset<Ring::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
+    fn is_element(&self, _x: &Self::Set) -> bool {
         //TODO: better checks here
         true
     }
@@ -150,9 +150,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         let y_linear_row_basis = y.submodule().row_basis_matrix();
 
         /*
-        The trick is to try and find one element in the intersection of x and y to take as the offset.
+        The trick is to find one element in the intersection of x and y to take as the offset.
          - If no such element exists then the intersection is empty
-         - If such an element does exist then we can take it as an offset for the intersection of the two submodules
+         - If such an element exists then we can take it as an offset for the intersection of the two submodules
 
         To test if x intersect y is non-empty we can express each as an affine span
         e.g. in the 2 dimensional case x and y can both be expressed as all sums of 3 points where the coefficients add to 1
@@ -180,12 +180,12 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             self.ring().add(v, &y_offset[c])
         });
 
-        let linearlized_intersection_row_basis = self
-            .module()
+        let larger_module = self.ring().free_module(self.module().rank() + 1);
+
+        let linearlized_intersection_row_basis = larger_module
             .submodules()
             .intersect(
-                &self
-                    .module()
+                &larger_module
                     .submodules()
                     .matrix_row_span(Matrix::join_cols(
                         x_affine_row_basis.rows(),
@@ -196,8 +196,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                             &x_affine_row_basis,
                         ],
                     )),
-                &self
-                    .module()
+                &larger_module
                     .submodules()
                     .matrix_row_span(Matrix::join_cols(
                         y_affine_row_basis.rows(),

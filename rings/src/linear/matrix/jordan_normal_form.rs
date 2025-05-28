@@ -246,20 +246,17 @@ where
                     // ker(S) in ker(S^2) in ker(S^3) in ...
 
                     let module = FinitelyFreeModuleStructure::<FS, _>::new(ac_field, m);
-                    let mut accounted = module
-                        .submodules()
-                        .zero_submodule();
+                    let mut accounted = module.submodules().zero_submodule();
 
                     let mut jordan_block_bases = vec![];
                     for k in (0..m).rev() {
                         //extend the basis by stuff in ker(S^{k+1}) but not in ker(S^k) and their images under S, and which are not already accounted for
                         let ker_ext = module.submodules().from_span(
-                            module.submodules().extension_basis(
-                                &mat_s_pow_kers[k],
-                                &mat_s_pow_kers[k + 1],
-                            )
-                            .iter()
-                            .collect(),
+                            module
+                                .submodules()
+                                .extension_basis(&mat_s_pow_kers[k], &mat_s_pow_kers[k + 1])
+                                .iter()
+                                .collect(),
                         );
 
                         let unaccounted_ker_ext_basis = module.submodules().extension_basis(
@@ -288,9 +285,7 @@ where
 
                             accounted = module.submodules().add(
                                 &accounted,
-                                &module.submodules().from_span(
-                                    jb_basis.iter().collect(),
-                                ),
+                                &module.submodules().from_span(jb_basis.iter().collect()),
                             );
                             jordan_block_bases.push(jb_basis.into_iter().rev().collect_vec());
                         }

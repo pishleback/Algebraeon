@@ -80,7 +80,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Set
 {
     type Set = FinitelyFreeSubmoduleAffineSubset<Ring::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
+    fn is_element(&self, _x: &Self::Set) -> bool {
         //TODO: better checks
         true
     }

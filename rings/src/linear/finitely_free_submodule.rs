@@ -128,6 +128,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 
     pub fn matrix_row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+        debug_assert_eq!(matrix.rows(), self.module().rank());
         let rows = matrix.rows();
         let (_h, u, _u_det, pivs) =
             MatrixStructure::<Ring, _>::new(self.ring()).row_hermite_algorithm(matrix);
@@ -138,6 +139,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 
     pub fn matrix_col_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+        debug_assert_eq!(matrix.cols(), self.module().rank());
         self.matrix_row_kernel(matrix.transpose())
     }
 
@@ -250,7 +252,12 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         let x_rows = x.clone().into_row_basis_matrix();
         let y_rows = y.clone().into_row_basis_matrix();
         let matrix = Matrix::join_rows(cols, vec![&x_rows, &y_rows]);
-        let matrix_ker = self.matrix_row_kernel(matrix).into_row_basis_matrix();
+        let matrix_ker = self
+            .ring()
+            .free_module(matrix.rows())
+            .submodules()
+            .matrix_row_kernel(matrix)
+            .into_row_basis_matrix();
         let matrix_ker_first_part = matrix_ker.submatrix(
             (0..matrix_ker.rows()).collect(),
             (0..x_rows.rows()).collect(),
