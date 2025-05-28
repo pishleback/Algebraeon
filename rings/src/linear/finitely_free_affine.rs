@@ -114,7 +114,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                     offset,
                     self.module()
                         .submodules()
-                        .from_span(linear_span.iter().collect()),
+                        .span(linear_span.iter().collect()),
                 ),
             )
         } else {
@@ -138,7 +138,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         }
     }
 
-    pub fn add(
+    pub fn sum(
         &self,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
@@ -154,7 +154,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
             ) => FinitelyFreeSubmoduleAffineSubset::NonEmpty(
-                self.module().cosets().add(&x_coset, &y_coset),
+                self.module().cosets().sum(&x_coset, &y_coset),
             ),
         }
     }

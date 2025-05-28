@@ -318,7 +318,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                     self.ring()
                         .z_module()
                         .submodules()
-                        .add(a_lattice, b_lattice),
+                        .sum(a_lattice, b_lattice),
                 )
             }
         }

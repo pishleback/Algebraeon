@@ -251,7 +251,7 @@ where
                     let mut jordan_block_bases = vec![];
                     for k in (0..m).rev() {
                         //extend the basis by stuff in ker(S^{k+1}) but not in ker(S^k) and their images under S, and which are not already accounted for
-                        let ker_ext = module.submodules().from_span(
+                        let ker_ext = module.submodules().span(
                             module
                                 .submodules()
                                 .extension_basis(&mat_s_pow_kers[k], &mat_s_pow_kers[k + 1])
@@ -283,9 +283,9 @@ where
                                 jb_basis.push(ukeb_img.get_col(0));
                             }
 
-                            accounted = module.submodules().add(
+                            accounted = module.submodules().sum(
                                 &accounted,
-                                &module.submodules().from_span(jb_basis.iter().collect()),
+                                &module.submodules().span(jb_basis.iter().collect()),
                             );
                             jordan_block_bases.push(jb_basis.into_iter().rev().collect_vec());
                         }
