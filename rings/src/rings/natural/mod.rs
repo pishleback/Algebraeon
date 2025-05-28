@@ -36,7 +36,7 @@ impl SemiRingUnitsSignature for NaturalCanonicalStructure {
     }
 }
 
-impl EuclideanDivisionSignature  for NaturalCanonicalStructure {
+impl EuclideanDivisionSignature for NaturalCanonicalStructure {
     fn norm(&self, elem: &Self::Set) -> Option<Natural> {
         if elem == &Natural::ZERO {
             None

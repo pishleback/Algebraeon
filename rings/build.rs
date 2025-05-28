@@ -7,10 +7,7 @@ fn main() {
             let _content = response.text().expect("Failed to read response. Please report this error at `https://github.com/pishleback/Algebraeon/issues`");
         }
         Err(err) => {
-            println!(
-                "cargo::warning=Unable to check for new Conway polynomials: {}.",
-                err
-            );
+            println!("cargo::warning=Unable to check for new Conway polynomials: {err}.");
         }
     }
 

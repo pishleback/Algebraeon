@@ -10,7 +10,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
 
     let name = input.ident;
     let vis = input.vis;
-    let newtype_name = Ident::new(&format!("{}CanonicalStructure", name), name.span());
+    let newtype_name = Ident::new(&format!("{name}CanonicalStructure"), name.span());
 
     let expanded = quote! {
         #[derive(Debug, Clone, PartialEq, Eq)]
