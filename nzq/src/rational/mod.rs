@@ -167,6 +167,24 @@ impl Rational {
     pub const TWO: Self = Self(malachite_q::Rational::TWO);
     pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
 
+    fn latex(&self) -> String {
+        let (num, den) = self.numerator_and_denominator();
+        if den == Natural::ONE {
+            format!("{}", num)
+        } else {
+            format!("\\frac{{{}}}{{{}}}", num, den)
+        }
+    }
+
+    fn typst(&self) -> String {
+        let (num, den) = self.numerator_and_denominator();
+        if den == Natural::ONE {
+            format!("{}", num)
+        } else {
+            format!("{}/{}", num, den)
+        }
+    }
+
     pub fn sqrt_if_square(&self) -> Option<Rational> {
         if self < &Rational::ZERO {
             None
@@ -739,6 +757,25 @@ mod tests {
             <&Rational as TryInto<u32>>::try_into(&Rational::ONE_HALF),
             Err(())
         );
+    }
+
+    #[test]
+    fn test_latex_and_typst() {
+        let r = Rational::from_integers(2, 3);
+        assert_eq!(r.latex(), "\\frac{2}{3}");
+        assert_eq!(r.typst(), "2/3");
+
+        let r2 = Rational::from_integers(4, 2);
+        assert_eq!(r2.latex(), "2");
+        assert_eq!(r2.typst(), "2");
+
+        let r3 = Rational::from_integers(-2, -4);
+        assert_eq!(r3.latex(), "\\frac{1}{2}");
+        assert_eq!(r3.typst(), "1/2");
+
+        let r4 = Rational::from_integers(-2, 4);
+        assert_eq!(r4.latex(), "\\frac{-1}{2}");
+        assert_eq!(r4.typst(), "-1/2");
     }
 
     #[test]
