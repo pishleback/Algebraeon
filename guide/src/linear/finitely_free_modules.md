@@ -205,12 +205,12 @@ assert!(!submodules.contains_element(&a, &vec![4.into(), 4.into(), 1.into()]));
 Check whether a submodule is a subset of another submodule using `.contains(..)`.
 
 ```rust
-use algebraeon::nzq::Integer;
-use algebraeon::rings::linear::finitely_free_modules::*;
-use algebraeon::sets::structure::*;
-
-let submodules = Integer::structure().into_free_module(3).into_submodules();
-
+# use algebraeon::nzq::Integer;
+# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::sets::structure::*;
+# 
+# let submodules = Integer::structure().into_free_module(3).into_submodules();
+# 
 let a = submodules.span(vec![&vec![3.into(), 3.into(), 3.into()]]);
 let b = submodules.span(vec![&vec![6.into(), 6.into(), 6.into()]]);
 
