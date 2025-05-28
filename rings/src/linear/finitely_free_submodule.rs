@@ -116,7 +116,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         self.matrix_col_span_and_basis(matrix).0
     }
 
-    pub fn from_span(&self, span: Vec<&Vec<Ring::Set>>) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn span(&self, span: Vec<&Vec<Ring::Set>>) -> FinitelyFreeSubmodule<Ring::Set> {
         for v in &span {
             debug_assert_eq!(v.len(), self.module().rank());
         }
@@ -125,6 +125,20 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             self.module().rank(),
             |r, c| span[r][c].clone(),
         ))
+    }
+
+    pub fn kernel(&self, items: Vec<&Vec<Ring::Set>>) -> FinitelyFreeSubmodule<Ring::Set> {
+        let n = self.module().rank();
+        debug_assert_eq!(items.len(), n);
+        if n == 0 {
+            self.zero_submodule()
+        } else {
+            let cols = items.first().unwrap().len();
+            for v in &items[1..] {
+                assert_eq!(v.len(), cols);
+            }
+            self.matrix_row_kernel(Matrix::construct(n, cols, |r, c| items[r][c].clone()))
+        }
     }
 
     pub fn matrix_row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
@@ -224,7 +238,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         true
     }
 
-    pub fn add(
+    pub fn sum(
         &self,
         x: &FinitelyFreeSubmodule<Ring::Set>,
         y: &FinitelyFreeSubmodule<Ring::Set>,
@@ -340,6 +354,21 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring
 mod tests {
     use super::*;
     use algebraeon_nzq::{Integer, Rational};
+
+    #[test]
+    fn test_finitely_free_submodule_kernel() {
+        let submodules = Integer::structure().into_free_module(3).into_submodules();
+
+        let a = submodules.span(vec![&vec![1.into(), 1.into(), (-1).into()]]);
+
+        let b = submodules.kernel(vec![
+            &vec![1.into(), 1.into(), 2.into(), 2.into()],
+            &vec![2.into(), 2.into(), 1.into(), 1.into()],
+            &vec![3.into(), 3.into(), 3.into(), 3.into()],
+        ]);
+
+        assert!(submodules.equal(&a, &b));
+    }
 
     #[test]
     fn test_finitely_free_submodule_reduction() {
