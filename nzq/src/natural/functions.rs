@@ -1,4 +1,4 @@
-use super::*;
+use super::{Borrow, Natural};
 
 impl Natural {
     /// Factorial
@@ -21,6 +21,7 @@ impl Natural {
     ///     Natural::from(120u32),
     /// );
     /// ```
+    #[allow(clippy::return_self_not_must_use)]
     pub fn factorial(&self) -> Self {
         let mut i = Natural::ZERO;
         let mut f = Natural::ONE;
@@ -31,6 +32,7 @@ impl Natural {
         f
     }
 
+    #[allow(clippy::return_self_not_must_use, clippy::missing_panics_doc)]
     pub fn pow(&self, n: &Natural) -> Natural {
         let x = self;
         if *n == Natural::ZERO {
@@ -57,6 +59,11 @@ impl Natural {
     }
 
     /// Compute the floor of the nth root of a
+    #[allow(
+        clippy::return_self_not_must_use,
+        clippy::missing_panics_doc,
+        clippy::many_single_char_names
+    )]
     pub fn nth_root_floor(&self, n: &Natural) -> Natural {
         let x = self;
         if n == &Natural::ZERO {
@@ -70,7 +77,7 @@ impl Natural {
             let mut b = x.clone();
             while &a + &Natural::ONE < b {
                 let m = (&a + &b) / Natural::TWO;
-                if m.pow(&n) <= *x {
+                if m.pow(n) <= *x {
                     a = m;
                 } else {
                     b = m;
@@ -81,11 +88,13 @@ impl Natural {
     }
 
     /// Compute the floor of the square root of x
+    #[allow(clippy::return_self_not_must_use)]
     pub fn sqrt_floor(&self) -> Natural {
         self.nth_root_floor(&Natural::TWO)
     }
 
     /// Compute the ceil of the nth root of a
+    #[allow(clippy::return_self_not_must_use)]
     pub fn nth_root_ceil(&self, n: &Natural) -> Natural {
         let x = self;
         let mut a = x.nth_root_floor(n);
@@ -96,11 +105,13 @@ impl Natural {
     }
 
     /// Compute the ceil of the square root of x
+    #[allow(clippy::return_self_not_must_use)]
     pub fn sqrt_ceil(&self) -> Natural {
         self.nth_root_ceil(&Natural::TWO)
     }
 
     /// If x is a square, compute the square root of x
+    #[allow(clippy::missing_panics_doc)]
     pub fn sqrt_if_square(&self) -> Option<Natural> {
         // implementation based on algorithm 1.7.3 of Cohen H - a course in computational algebraic number theory
 
@@ -171,7 +182,7 @@ pub fn choose(a: impl Borrow<Natural>, b: impl Borrow<Natural>) -> Natural {
 pub fn gcd(mut x: Natural, mut y: Natural) -> Natural {
     while y != Natural::ZERO {
         let r = x % &y;
-        (x, y) = (y, r)
+        (x, y) = (y, r);
     }
     x
 }

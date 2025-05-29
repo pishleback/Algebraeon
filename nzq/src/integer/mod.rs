@@ -1,9 +1,12 @@
 //! The Integer type and operations.
 
 use crate::Rational;
-use crate::natural::*;
-use crate::traits::*;
-use algebraeon_sets::structure::*;
+use crate::natural::Natural;
+use crate::traits::{Abs, AbsDiff, DivMod};
+use algebraeon_sets::structure::{
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, SetSignature, Signature,
+    ToStringSignature,
+};
 use malachite_base::num::basic::traits::{One, Two, Zero};
 use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
@@ -14,6 +17,7 @@ use std::{
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
 pub struct Integer(malachite_nz::integer::Integer);
 
+#[allow(clippy::wrong_self_convention)]
 impl Integer {
     pub(crate) fn from_malachite(value: malachite_nz::integer::Integer) -> Self {
         Self(value)
@@ -232,6 +236,7 @@ macro_rules! impl_try_into_signed {
 impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
 impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
 
+#[allow(clippy::from_over_into, clippy::cast_precision_loss)]
 impl Into<f64> for Integer {
     fn into(self) -> f64 {
         if self < Integer::ZERO {
@@ -240,12 +245,13 @@ impl Into<f64> for Integer {
             let limbs = self.to_malachite().into_twos_complement_limbs_asc();
             let mut flt = 0.0;
             for (i, k) in limbs.into_iter().enumerate() {
-                flt += (k as f64) * (2.0 as f64).powf(i as f64 * 64.0);
+                flt += (k as f64) * (2.0_f64).powf(i as f64 * 64.0);
             }
             flt
         }
     }
 }
+#[allow(clippy::from_over_into)]
 impl Into<f64> for &Integer {
     fn into(self) -> f64 {
         self.clone().into()
@@ -305,34 +311,34 @@ impl PartialOrd<&Natural> for Integer {
 
 impl AddAssign<Integer> for Integer {
     fn add_assign(&mut self, rhs: Integer) {
-        self.0.add_assign(rhs.0)
+        self.0.add_assign(rhs.0);
     }
 }
 impl AddAssign<&Integer> for Integer {
     fn add_assign(&mut self, rhs: &Integer) {
-        self.0.add_assign(&rhs.0)
+        self.0.add_assign(&rhs.0);
     }
 }
 
 impl SubAssign<Integer> for Integer {
     fn sub_assign(&mut self, rhs: Integer) {
-        self.0.sub_assign(rhs.0)
+        self.0.sub_assign(rhs.0);
     }
 }
 impl SubAssign<&Integer> for Integer {
     fn sub_assign(&mut self, rhs: &Integer) {
-        self.0.sub_assign(&rhs.0)
+        self.0.sub_assign(&rhs.0);
     }
 }
 
 impl MulAssign<Integer> for Integer {
     fn mul_assign(&mut self, rhs: Integer) {
-        self.0.mul_assign(rhs.0)
+        self.0.mul_assign(rhs.0);
     }
 }
 impl MulAssign<&Integer> for Integer {
     fn mul_assign(&mut self, rhs: &Integer) {
-        self.0.mul_assign(&rhs.0)
+        self.0.mul_assign(&rhs.0);
     }
 }
 
@@ -626,9 +632,7 @@ impl AbsDiff<&Integer> for &Integer {
 impl CountableSetSignature for IntegerCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         use malachite_nz::integer::exhaustive::exhaustive_integers;
-        exhaustive_integers()
-            .into_iter()
-            .map(|n| Integer::from_malachite(n))
+        exhaustive_integers().map(Integer::from_malachite)
     }
 }
 
