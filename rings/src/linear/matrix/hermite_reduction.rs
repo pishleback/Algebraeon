@@ -424,7 +424,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::linear::finitely_free_modules::RingToFinitelyFreeModuleStructure;
+    use crate::linear::finitely_free_modules::RingToFinitelyFreeModuleSignature;
 
     use super::*;
 

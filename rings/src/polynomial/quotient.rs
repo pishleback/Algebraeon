@@ -1,4 +1,4 @@
-use super::polynomial::*;
+use super::{Polynomial, polynomial_ring::*};
 use crate::{linear::matrix::*, rings::quotient::QuotientStructure, structure::*};
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
