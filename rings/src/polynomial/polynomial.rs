@@ -190,14 +190,8 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     }
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn one(&self) -> Self::Set {
-        Polynomial::from_coeffs(vec![self.coeff_ring().one()])
-    }
-
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+    fn mul_naive(&self, a: &Polynomial<RS::Set>, b: &Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         let mut coeffs = Vec::with_capacity(a.coeffs.len() + b.coeffs.len());
         for _k in 0..a.coeffs.len() + b.coeffs.len() {
             coeffs.push(self.coeff_ring().zero());
@@ -211,6 +205,26 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
             }
         }
         self.reduce_poly(Polynomial::from_coeffs(coeffs))
+    }
+
+    fn mul_karatsuba(
+        &self,
+        a: &Polynomial<RS::Set>,
+        b: &Polynomial<RS::Set>,
+    ) -> Polynomial<RS::Set> {
+        todo!()
+    }
+}
+
+impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+    for PolynomialStructure<RS, RSB>
+{
+    fn one(&self) -> Self::Set {
+        Polynomial::from_coeffs(vec![self.coeff_ring().one()])
+    }
+
+    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.mul_naive(a, b)
     }
 }
 
