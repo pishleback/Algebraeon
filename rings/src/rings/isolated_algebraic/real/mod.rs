@@ -123,10 +123,7 @@ impl Display for RealAlgebraicRoot {
                         f,
                         "{}{}{}√{}",
                         x,
-                        match sign {
-                            true => "+",
-                            false => "-",
-                        },
+                        if sign {"+"} else {"-"},
                         y,
                         r
                     )?;
@@ -150,11 +147,12 @@ impl Display for RealAlgebraicRoot {
 }
 
 impl RealAlgebraicRoot {
+    #[allow(clippy::op_ref)]
     pub fn check_invariants(&self) -> Result<(), &'static str> {
-        if !(self.tight_a < self.tight_b) {
+        if self.tight_a >= self.tight_b {
             return Err("tight a should be strictly less than b");
         }
-        if !(self.wide_a.clone() < self.wide_b.clone()) {
+        if self.wide_a.clone() >= self.wide_b.clone() {
             return Err("wide a should be strictly less than b");
         }
         if self.poly
@@ -182,7 +180,7 @@ impl RealAlgebraicRoot {
         if sign_a == sign_b {
             return Err("sign at a and b should be different");
         }
-        if self.dir != (sign_a == false) {
+        if self.dir != (!sign_a) {
             return Err("dir is incorrect");
         }
         Ok(())
@@ -219,13 +217,10 @@ impl RealAlgebraicRoot {
         .next()
         .unwrap();
         let m_sign = self.evaluate(&m) > Rational::from(0);
-        match self.dir == m_sign {
-            true => {
-                self.tight_b = m;
-            }
-            false => {
-                self.tight_a = m;
-            }
+        if self.dir == m_sign {
+            self.tight_b = m;
+        } else {
+            self.tight_a = m;
         }
     }
 
@@ -310,38 +305,37 @@ impl RealAlgebraicRoot {
 
     pub fn apply_poly(&mut self, poly: &Polynomial<Rational>) -> RealAlgebraic {
         let poly = Polynomial::rem(poly, &self.min_poly());
-        match poly.as_constant() {
-            Some(rat) => RealAlgebraic::Rational(rat),
-            None => {
-                let ans_poly = self
-                    .min_poly()
-                    .algebraic_number_field()
-                    .min_poly(&poly)
-                    .primitive_part_fof();
+        if let Some(rat) = poly.as_constant() {
+            RealAlgebraic::Rational(rat)
+        } else {
+            let ans_poly = self
+                .min_poly()
+                .algebraic_number_field()
+                .min_poly(&poly)
+                .primitive_part_fof();
 
-                identify_real_root(
-                    ans_poly,
-                    (0..).map(|i| {
+            identify_real_root(
+                ans_poly,
+                (0..).map(|i| {
+                    if i != 0 {
+                        self.refine();
+                    }
+
+                    // eg: c + bx + ax^2 = c + x(b + x(a))
+                    let mut coeffs = poly.coeffs().into_iter().rev();
+                    let lc = coeffs.next().unwrap();
+                    let mut ans = mul_interval_rat((&self.tight_a, &self.tight_b), lc);
+                    for (i, c) in coeffs.enumerate() {
                         if i != 0 {
-                            self.refine();
+                            ans =
+                                mul_intervals((&ans.0, &ans.1), (&self.tight_a, &self.tight_b));
                         }
+                        ans = add_interval_rat((&ans.0, &ans.1), c);
+                    }
 
-                        // eg: c + bx + ax^2 = c + x(b + x(a))
-                        let mut coeffs = poly.coeffs().into_iter().rev();
-                        let lc = coeffs.next().unwrap();
-                        let mut ans = mul_interval_rat((&self.tight_a, &self.tight_b), lc);
-                        for (i, c) in coeffs.enumerate() {
-                            if i != 0 {
-                                ans =
-                                    mul_intervals((&ans.0, &ans.1), (&self.tight_a, &self.tight_b));
-                            }
-                            ans = add_interval_rat((&ans.0, &ans.1), c);
-                        }
-
-                        ans
-                    }),
-                )
-            }
+                    ans
+                }),
+            )
         }
     }
 }
@@ -406,6 +400,7 @@ impl PositiveRealNthRootSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
+#[allow(clippy::derived_hash_with_manual_eq)]
 impl PartialEq for RealAlgebraic {
     fn eq(&self, other: &Self) -> bool {
         self.cmp(other).is_eq()
@@ -414,6 +409,7 @@ impl PartialEq for RealAlgebraic {
 
 impl Eq for RealAlgebraic {}
 
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for RealAlgebraic {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.clone().cmp_mut(&mut other.clone()))
@@ -537,6 +533,7 @@ impl SemiRingSignature for RealAlgebraicCanonicalStructure {
         debug_assert!(elem1 > &self.zero());
         debug_assert!(elem2 > &self.zero());
 
+        #[allow(clippy::items_after_statements)]
         fn mul_pos_rat(mut elem: RealAlgebraicRoot, rat: &Rational) -> RealAlgebraicRoot {
             debug_assert!(rat > &Rational::from(0));
             elem.tight_a *= rat;
@@ -839,17 +836,14 @@ mod tests {
         for root in f.all_real_roots() {
             println!();
             println!("root = {}", root);
-            match root.nth_root(n) {
-                Ok(nth_root) => {
-                    println!("YES {}-root = {}", n, nth_root);
-                    debug_assert!(RealAlgebraic::zero() <= root);
-                    debug_assert!(RealAlgebraic::zero() <= nth_root);
-                    debug_assert_eq!(nth_root.nat_pow(&Natural::from(n)), root);
-                }
-                Err(()) => {
-                    println!("NO {}-root", n);
-                    debug_assert!(RealAlgebraic::zero() > root);
-                }
+            if let Ok(nth_root) = root.nth_root(n) {
+                println!("YES {}-root = {}", n, nth_root);
+                debug_assert!(RealAlgebraic::zero() <= root);
+                debug_assert!(RealAlgebraic::zero() <= nth_root);
+                debug_assert_eq!(nth_root.nat_pow(&Natural::from(n)), root);
+            } else {
+                println!("NO {}-root", n);
+                debug_assert!(RealAlgebraic::zero() > root);
             }
         }
     }
@@ -857,7 +851,7 @@ mod tests {
     #[test]
     fn test_real_algebraic_ordering() {
         let mut all_roots = vec![];
-        for f in vec![
+        for f in [
             Polynomial::from_coeffs(vec![
                 Integer::from(-2),
                 Integer::from(-4),
@@ -903,7 +897,7 @@ mod tests {
             match &mut root {
                 RealAlgebraic::Rational(_a) => {}
                 RealAlgebraic::Real(a) => {
-                    a.refine_to_accuracy(&Rational::from_integers(1, i64::MAX))
+                    a.refine_to_accuracy(&Rational::from_integers(1, i64::MAX));
                 }
             }
             println!("    {} {:?}", root.to_string(), root);

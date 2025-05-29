@@ -578,7 +578,7 @@ impl Polynomial<Integer> {
         // println!("a = {:?}", crossings::<true>(&a_vert_re, a_vert_re_sqfr.clone(), &a_vert_im, a_vert_im_sqfr.clone(), c, d));
 
         let mut winding = vec![];
-        for cr in vec![
+        for cr in [
             crossings::<false>(&c_horz_re, c_horz_re_sqfr, &c_horz_im, c_horz_im_sqfr, a, b),
             crossings::<false>(&b_vert_re, b_vert_re_sqfr, &b_vert_im, b_vert_im_sqfr, c, d),
             crossings::<true>(&d_horz_re, d_horz_re_sqfr, &d_horz_im, d_horz_im_sqfr, a, b),

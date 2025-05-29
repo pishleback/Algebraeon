@@ -51,7 +51,7 @@ pub trait SemiRingSignature: EqSignature {
             let bits: Vec<_> = n.bits().collect();
             let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
-                pows.push(self.mul(&pows.last().unwrap(), &pows.last().unwrap()));
+                pows.push(self.mul(pows.last().unwrap(), pows.last().unwrap()));
             }
             let count = bits.len();
             debug_assert_eq!(count, pows.len());
@@ -205,8 +205,7 @@ pub trait SemiRingUnitsSignature: SemiRingSignature {
     fn is_unit(&self, a: &Self::Set) -> bool {
         match self.inv(a) {
             Ok(_inv) => true,
-            Err(RingDivisionError::DivideByZero) => false,
-            Err(RingDivisionError::NotDivisible) => false,
+            Err(RingDivisionError::DivideByZero) | Err(RingDivisionError::NotDivisible) => false,
         }
     }
 }
@@ -263,8 +262,7 @@ pub trait IntegralDomainSignature: RingUnitsSignature {
     fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
         match self.div(a, b) {
             Ok(_q) => true,
-            Err(RingDivisionError::NotDivisible) => false,
-            Err(RingDivisionError::DivideByZero) => false,
+            Err(RingDivisionError::NotDivisible) | Err(RingDivisionError::DivideByZero) => false,
         }
     }
     fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -482,18 +480,15 @@ pub trait EuclideanDivisionSignature: SemiRingSignature {
     fn quorem(&self, a: &Self::Set, b: &Self::Set) -> Option<(Self::Set, Self::Set)>;
 
     fn quo(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        match self.quorem(a, b) {
-            Some((q, _r)) => Some(q),
-            None => None,
-        }
+        self.quorem(a, b).map(|(q,_r)| q)
     }
 
     fn rem(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        if !self.is_zero(&b) {
+        if self.is_zero(b) {
+            a.clone()
+        } else {
             let (_q, r) = self.quorem(a, b).unwrap();
             r
-        } else {
-            a.clone()
         }
     }
 
@@ -504,7 +499,7 @@ pub trait EuclideanDivisionSignature: SemiRingSignature {
         //Euclidean algorithm
         while !self.is_zero(&y) {
             let r = self.rem(&x, &y);
-            (x, y) = (y, r)
+            (x, y) = (y, r);
         }
         let (_unit, assoc) = self.factor_fav_assoc(&x);
         assoc
@@ -799,10 +794,11 @@ where
 }
 impl<R: MetaType> MetaRealToFloat for R where Self::Signature: RealToFloatSignature {}
 
+#[allow(clippy::wrong_self_convention)]
 pub trait RealFromFloatSignature: RealSubsetSignature {
     fn from_f64_approx(&self, x: f64) -> Self::Set;
     fn from_f32_approx(&self, x: f32) -> Self::Set {
-        self.from_f64_approx(x as f64)
+        self.from_f64_approx(f64::from(x))
     }
 }
 
@@ -900,7 +896,7 @@ where
             .into_powers(base_field_poly.factor(poly)?)
         {
             for root in self.all_roots_list(&factor).unwrap() {
-                root_powers.push((root, (&k).try_into().unwrap()))
+                root_powers.push((root, (&k).try_into().unwrap()));
             }
         }
         Some(root_powers)

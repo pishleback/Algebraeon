@@ -132,7 +132,7 @@ impl FactoredNatural {
 
     pub fn distinct_prime_factors(&self) -> Vec<&Natural> {
         let mut primes = vec![];
-        for (p, _) in &self.primes {
+        for p in self.primes.keys() {
             primes.push(p);
         }
         primes
@@ -150,9 +150,7 @@ impl FactoredNatural {
     pub fn is_primitive_root(&self, x: &Natural) -> IsPrimitiveRootResult {
         let n_factored = self;
         let n = Natural::structure().factorizations().expanded(n_factored);
-        if gcd(x.clone(), n.clone()) != Natural::ONE {
-            IsPrimitiveRootResult::NonUnit
-        } else {
+        if gcd(x.clone(), n.clone()) == Natural::ONE {
             let phi_n = n_factored.euler_totient();
             let x_mod_n = x % &n;
             for p in factor(phi_n.clone()).unwrap().distinct_prime_factors() {
@@ -161,6 +159,8 @@ impl FactoredNatural {
                 }
             }
             IsPrimitiveRootResult::Yes
+        } else {
+            IsPrimitiveRootResult::NonUnit
         }
     }
 }

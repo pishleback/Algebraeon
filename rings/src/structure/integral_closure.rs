@@ -189,15 +189,15 @@ pub trait IntegralClosureExtension<
     fn r_to_k(&self) -> &RK;
 
     /// The square should commute, so this should be both
-    /// - z_to_q followed by q_to_k
-    /// - z_to_r followed by r_to_k
+    /// - `z_to_q` followed by `q_to_k`
+    /// - `z_to_r` followed by `r_to_k`
     fn z_to_k(&self) -> impl RingHomomorphism<Z, K> + InjectiveFunction<Z, K> {
         CompositionMorphism::new(self.z_to_q().clone(), self.q_to_k().clone())
     }
 
     /// The monic minimal polynomial of alpha in K over Q
     fn min_poly_k_over_q(&self, alpha: &K::Set) -> Polynomial<Q::Set> {
-        let alpha_min_poly_monic = self.q_to_k().min_poly(&alpha);
+        let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
         #[cfg(debug_assertions)]
         {
             let q_poly = PolynomialStructure::new(self.q_field().clone());
@@ -229,7 +229,7 @@ pub trait IntegralClosureExtension<
     }
 
     fn integral_scalar_multiple_k(&self, alpha: &K::Set) -> K::Set {
-        let d = self.integralize_multiplier(&alpha);
+        let d = self.integralize_multiplier(alpha);
         // This is the LCM of the denominators of the coefficients of a,
         // and thus it may well be > 1 even when the element is an algebraic integer.
         self.k_field()
@@ -372,10 +372,10 @@ impl<IdealZ, IdealR> DedekindExtensionIdealFactorization<IdealZ, IdealR> {
     }
 
     pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<IdealR>, Natural)> {
+        #[allow(clippy::redundant_closure_for_method_calls)]
         self.factors_above_primes
             .into_iter()
-            .map(|factors| factors.into_powers())
-            .flatten()
+            .flat_map(|factors| factors.into_powers())
             .collect()
     }
 

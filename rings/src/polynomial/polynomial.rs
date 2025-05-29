@@ -1144,6 +1144,7 @@ where
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use crate::rings::finite_fields::quaternary_field::*;
 
@@ -1203,16 +1204,18 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
+        #[allow(clippy::match_wild_err_arm, clippy::single_match_else)]
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
-                assert_eq!(a, b * c.into_ergonomic())
+                assert_eq!(a, b * c.into_ergonomic());
             }
             Err(_) => panic!(),
         }
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) + 1;
+        #[allow(clippy::match_wild_err_arm)]
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
@@ -1221,6 +1224,7 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
+        #[allow(clippy::match_wild_err_arm)]
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::NotDivisible) => {}
@@ -1228,18 +1232,22 @@ mod tests {
         }
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
+        #[allow(clippy::erasing_op)]
         let b = 0 * x;
+        #[allow(clippy::match_wild_err_arm)]
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(_c) => panic!(),
             Err(RingDivisionError::DivideByZero) => {}
             Err(_) => panic!(),
         }
 
+        #[allow(clippy::erasing_op)]
         let a = 0 * x;
         let b = (x - x) + 5;
+        #[allow(clippy::match_wild_err_arm)]
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
-                assert_eq!(c, Polynomial::zero())
+                assert_eq!(c, Polynomial::zero());
             }
             Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
@@ -1247,9 +1255,10 @@ mod tests {
 
         let a = 3087 * x - 8805 * x.pow(2) + 607 * x.pow(3) + x.pow(4);
         let b = (x - x) + 1;
+        #[allow(clippy::match_wild_err_arm)]
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
-                assert_eq!(c.into_ergonomic(), a)
+                assert_eq!(c.into_ergonomic(), a);
             }
             Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
@@ -1265,7 +1274,7 @@ mod tests {
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
-                assert_eq!(a, b * c.into_ergonomic())
+                assert_eq!(a, b * c.into_ergonomic());
             }
             Err(e) => panic!("{:?}", e),
         }
@@ -1277,14 +1286,14 @@ mod tests {
 
         let a = 1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5);
         let b = 1 + x + 3 * x.pow(2) + 2 * x.pow(3);
-        let (q, r) = Polynomial::quorem(&a.ref_set(), &b.ref_set()).unwrap();
+        let (q, r) = Polynomial::quorem(a.ref_set(), b.ref_set()).unwrap();
         let (q, r) = (q.into_ergonomic(), r.into_ergonomic());
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
 
         let a = 3 * x;
         let b = 2 * x;
-        let (q, r) = Polynomial::quorem(&a.ref_set(), &b.ref_set()).unwrap();
+        let (q, r) = Polynomial::quorem(a.ref_set(), b.ref_set()).unwrap();
         let (q, r) = (q.into_ergonomic(), r.into_ergonomic());
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
@@ -1298,8 +1307,8 @@ mod tests {
         let g = Polynomial::gcd(x.ref_set(), y.ref_set());
 
         println!("gcd({:?} , {:?}) = {:?}", x, y, g);
-        Polynomial::div(&g, &b.ref_set()).unwrap();
-        Polynomial::div(&b.ref_set(), &g).unwrap();
+        Polynomial::div(&g, b.ref_set()).unwrap();
+        Polynomial::div(b.ref_set(), &g).unwrap();
     }
 
     #[test]
@@ -1332,7 +1341,7 @@ mod tests {
             println!("f = {}", f.to_string());
             println!("g = {}", g.to_string());
 
-            if let None = Polynomial::pseudorem(&f, &g) {
+            if Polynomial::pseudorem(&f, &g).is_none() {
             } else {
                 assert!(false);
             }
@@ -1376,7 +1385,7 @@ mod tests {
 
     #[test]
     fn test_interpolate_by_lagrange_basis() {
-        for points in vec![
+        for points in [
             vec![
                 (Rational::from(-2), Rational::from(-5)),
                 (Rational::from(7), Rational::from(4)),
@@ -1394,37 +1403,35 @@ mod tests {
         ] {
             let f = Polynomial::interpolate_by_lagrange_basis(&points).unwrap();
             for (inp, out) in &points {
-                assert_eq!(&f.evaluate(&inp), out);
+                assert_eq!(&f.evaluate(inp), out);
             }
         }
 
         //f(x)=2x
-        match Polynomial::interpolate_by_lagrange_basis(&vec![
+        if let Some(f) = Polynomial::interpolate_by_lagrange_basis(&vec![
             (Integer::from(0), Integer::from(0)),
             (Integer::from(1), Integer::from(2)),
         ]) {
-            Some(f) => {
-                assert_eq!(
-                    f,
-                    Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(2)])
-                )
-            }
-            None => panic!(),
+            assert_eq!(
+                f,
+                Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(2)])
+            );
+        } else {
+            panic!();
         }
 
         //f(x)=1/2x does not have integer coefficients
-        match Polynomial::interpolate_by_lagrange_basis(&vec![
+        if let Some(_f) = Polynomial::interpolate_by_lagrange_basis(&vec![
             (Integer::from(0), Integer::from(0)),
             (Integer::from(2), Integer::from(1)),
         ]) {
-            Some(_f) => panic!(),
-            None => {}
+            panic!();
         }
     }
 
     #[test]
     fn test_interpolate_by_linear_system() {
-        for points in vec![
+        for points in [
             vec![
                 (Rational::from(-2), Rational::from(-5)),
                 (Rational::from(7), Rational::from(4)),
@@ -1442,31 +1449,29 @@ mod tests {
         ] {
             let f = Polynomial::interpolate_by_linear_system(&points).unwrap();
             for (inp, out) in &points {
-                assert_eq!(&f.evaluate(&inp), out);
+                assert_eq!(&f.evaluate(inp), out);
             }
         }
 
         //f(x)=2x
-        match Polynomial::interpolate_by_linear_system(&vec![
+        if let Some(f) = Polynomial::interpolate_by_linear_system(&vec![
             (Integer::from(0), Integer::from(0)),
             (Integer::from(1), Integer::from(2)),
         ]) {
-            Some(f) => {
-                assert_eq!(
-                    f,
-                    Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(2)])
-                )
-            }
-            None => panic!(),
+            assert_eq!(
+                f,
+                Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(2)])
+            );
+        } else {
+            panic!();
         }
 
         //f(x)=1/2x does not have integer coefficients
-        match Polynomial::interpolate_by_linear_system(&vec![
+        if let Some(_f) = Polynomial::interpolate_by_linear_system(&vec![
             (Integer::from(0), Integer::from(0)),
             (Integer::from(2), Integer::from(1)),
         ]) {
-            Some(_f) => panic!(),
-            None => {}
+            panic!();
         }
     }
 
@@ -1566,6 +1571,7 @@ mod tests {
     //     assert_eq!(squarefree_part_by_yuns(&f), g);
     // }
 
+    #[allow(clippy::erasing_op)]
     #[test]
     fn test_discriminant() {
         let x = &Polynomial::<Integer>::var().into_ergonomic();
@@ -1655,7 +1661,7 @@ mod tests {
 
     #[test]
     fn test_factor_primitive_fof() {
-        for (f, exp) in vec![
+        for (f, exp) in [
             (
                 Polynomial::from_coeffs(vec![
                     Rational::from_integers(1, 2),

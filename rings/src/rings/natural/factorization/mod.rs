@@ -74,7 +74,7 @@ pub fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> 
             }
         }
     }
-    return vec![Factor::StrictlyComposite(n)];
+    vec![Factor::StrictlyComposite(n)]
 }
 
 #[derive(Debug, Clone)]
@@ -142,7 +142,7 @@ impl Factorizer {
                         if terminate {
                             self.to_factor.push(ToFactor::new_composite(d));
                         } else {
-                            to_factor_now.push(ToFactor::new_composite(d))
+                            to_factor_now.push(ToFactor::new_composite(d));
                         }
                     }
                     Factor::StrictlyComposite(d) => {
@@ -151,7 +151,7 @@ impl Factorizer {
                         if terminate {
                             self.to_factor.push(ToFactor::new_strictly_composite(d));
                         } else {
-                            to_factor_now.push(ToFactor::new_strictly_composite(d))
+                            to_factor_now.push(ToFactor::new_strictly_composite(d));
                         }
                     }
                 }

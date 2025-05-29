@@ -177,7 +177,7 @@ impl<Set: Clone> Matrix<Set> {
             transpose: self.transpose,
             flip_rows: self.flip_rows,
             flip_cols: self.flip_cols,
-            elems: self.elems.iter().map(|x| f(x)).collect(),
+            elems: self.elems.iter().map(f).collect(),
         }
     }
 
@@ -623,7 +623,7 @@ where
     R::Signature: ToStringSignature,
 {
     pub fn pprint(&self) {
-        Self::structure().pprint(self)
+        Self::structure().pprint(self);
     }
 }
 
@@ -667,7 +667,7 @@ where
     }
 
     pub fn neg_mut(&mut self) {
-        Self::structure().neg_mut(self)
+        Self::structure().neg_mut(self);
     }
 
     pub fn neg(&self) -> Self {

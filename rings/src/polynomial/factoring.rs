@@ -1,7 +1,7 @@
 use super::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature};
 
 impl<
     RS: UniqueFactorizationSignature + GreatestCommonDivisorSignature + CharZeroRingSignature,
@@ -214,21 +214,18 @@ where
                     .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
             ) {
                 // println!("{:?}", possible_g_points);
-                match self.interpolate_by_lagrange_basis(&possible_g_points) {
-                    Some(g) => {
-                        if self.degree(&g).unwrap() >= 1 {
-                            //g is a possible proper divisor of f
-                            match self.div(&f, &g) {
-                                Ok(h) => {
-                                    //g really is a proper divisor of f
-                                    return FindFactorResult::Composite(g, h);
-                                }
-                                Err(RingDivisionError::NotDivisible) => {}
-                                Err(RingDivisionError::DivideByZero) => panic!(),
+                if let Some(g) = self.interpolate_by_lagrange_basis(&possible_g_points) {
+                    if self.degree(&g).unwrap() >= 1 {
+                        //g is a possible proper divisor of f
+                        match self.div(&f, &g) {
+                            Ok(h) => {
+                                //g really is a proper divisor of f
+                                return FindFactorResult::Composite(g, h);
                             }
+                            Err(RingDivisionError::NotDivisible) => {}
+                            Err(RingDivisionError::DivideByZero) => panic!(),
                         }
                     }
-                    None => {}
                 }
             }
             //f is irreducible
@@ -431,6 +428,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_sets::structure::EqSignature;
+
     use super::*;
     use crate::structure::IntoErgonomic;
 
@@ -457,7 +456,7 @@ mod tests {
             vec![((1 + 2 * x).into_verbose(), Natural::from(1u8))],
         );
         println!("fs1={} fs2={}", fs1, fs2);
-        assert!(int_poly_fs.equal(&fs1, &fs2));
+        assert!(int_poly_fs.equal(&fs1, fs2));
 
         let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).into_verbose();
         assert!(int_poly_fs.equal(

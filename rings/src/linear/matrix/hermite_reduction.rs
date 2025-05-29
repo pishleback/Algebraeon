@@ -430,7 +430,7 @@ mod tests {
 
     #[test]
     fn hermite_algorithm() {
-        for a in vec![
+        for a in [
             Matrix::from_rows(vec![
                 vec![
                     Integer::from(2),

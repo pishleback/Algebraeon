@@ -88,9 +88,7 @@ pub fn legendre_symbol(
     a: &Integer,
     p: &Natural,
 ) -> Result<QuadraticSymbolValue, LegendreSymbolError> {
-    if p % Natural::TWO == Natural::ZERO {
-        Err(LegendreSymbolError::BottomNotOddPrime)
-    } else if !is_prime(p) {
+    if p % Natural::TWO == Natural::ZERO || !is_prime(p) {
         Err(LegendreSymbolError::BottomNotOddPrime)
     } else {
         let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), Integer::from(p));

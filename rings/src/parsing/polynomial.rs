@@ -565,6 +565,7 @@ impl Expr {
                 } else if let Expr::Grouped(inner) = p.base.as_ref() {
                     // (expression)^n
                     if let Expr::Num(exp) = p.exponent.as_ref() {
+                        #[allow(clippy::comparison_chain)]
                         if exp.denominator == Integer::from(1) {
                             if exp.numerator == Integer::from(0) {
                                 // Anything^0 = 1
@@ -744,6 +745,7 @@ impl Expr {
                     // (expression)^n
                     if let Expr::Num(exp) = p.exponent.as_ref() {
                         if exp.denominator == Integer::from(1) {
+                            #[allow(clippy::comparison_chain)]
                             if exp.numerator == Integer::from(0) {
                                 // Anything^0 = 1
                                 *terms.entry(0).or_insert(Rational::from(0)) += coefficient;

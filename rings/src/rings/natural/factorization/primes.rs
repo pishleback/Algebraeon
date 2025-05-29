@@ -107,6 +107,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             // Use r0 ~ 0.01*log2(n)^2
             let r0 = {
                 let aprox_log2_n = n.bitcount() - 1;
+                #[allow(clippy::op_ref)]
                 let r0 = (&aprox_log2_n * &aprox_log2_n) / 100;
                 if r0 < 3 { 3 } else { r0 }
             };
@@ -126,14 +127,11 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 {
                     factorization::IsPrimitiveRootResult::NonUnit => {
                         // n is divisible by r
-                        match *n == r {
-                            true => {
-                                return PrimalityTestResult::Prime;
-                            }
-                            false => {
-                                return PrimalityTestResult::Composite;
-                            }
-                        }
+                        return if *n == r {
+                            PrimalityTestResult::Prime
+                        } else {
+                            PrimalityTestResult::Composite
+                        };
                     }
                     factorization::IsPrimitiveRootResult::No => {}
                     factorization::IsPrimitiveRootResult::Yes => {
@@ -248,15 +246,12 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             for b in &s_set {
                 let g = gcd(n.clone(), b.clone());
                 if g != Natural::ONE {
-                    match g == *n {
-                        true => {
-                            // b and thus also n=g is small, so we can do a naive test
-                            return try_divisors_primality_test(n);
-                        }
-                        false => {
-                            return PrimalityTestResult::Composite;
-                        }
-                    }
+                    return if g == *n {
+                        // b and thus also n=g is small, so we can do a naive test
+                        try_divisors_primality_test(n)
+                    } else {
+                        PrimalityTestResult::Composite
+                    };
                 }
             }
 
@@ -267,15 +262,12 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     let bj = &s_set[jdx];
                     let g = gcd(n.clone(), bi * bj - Natural::ONE);
                     if g != Natural::ONE {
-                        match g == *n {
-                            true => {
-                                // bi*bj-1 and thus also n=g is small, so we can do a naive test
-                                return try_divisors_primality_test(n);
-                            }
-                            false => {
-                                return PrimalityTestResult::Composite;
-                            }
-                        }
+                        return if g == *n {
+                            // bi*bj-1 and thus also n=g is small, so we can do a naive test
+                            try_divisors_primality_test(n)
+                        } else {
+                            PrimalityTestResult::Composite
+                        };
                     }
                 }
             }
@@ -287,15 +279,12 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     let bj = &s_set[jdx];
                     let g = gcd(n.clone(), bj - bi);
                     if g != Natural::ONE {
-                        match g == *n {
-                            true => {
-                                // bj-bi and thus also n=g is small, so we can do a naive test
-                                return try_divisors_primality_test(n);
-                            }
-                            false => {
-                                return PrimalityTestResult::Composite;
-                            }
-                        }
+                        return if g == *n {
+                            // bj-bi and thus also n=g is small, so we can do a naive test
+                            try_divisors_primality_test(n)
+                        } else {
+                            PrimalityTestResult::Composite
+                        };
                     }
                 }
             }
@@ -356,6 +345,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             // Reduce the coefficients of a modulo n
             let reduce_coeffs = |a: &Natural| -> Natural {
                 let mut b = Natural::ZERO;
+                #[allow(clippy::borrow_deref_ref)]
                 for i in 0..r_usize {
                     let coeff = ((&*a & (&coeff_mask << (i * coeff_size))) >> (i * coeff_size)) % n;
                     b |= coeff << (coeff_size * i);
@@ -466,6 +456,7 @@ pub fn primality_test(n: &Natural) -> PrimalityTestResult {
             // aks_primality_test(n) // This would always work but its too slow
             // Instead resort to 1000 miller rabin tests giving a heuristic chance of ~ 1 in 2^2000 of being wrong
 
+            #[allow(clippy::redundant_closure_for_method_calls)]
             match miller_rabin_primality_test(n, (2u32..1000).map(|a| a.into()).collect()) {
                 Ok(answer) => answer,
                 Err(InconclusivePrimalityTestResult::ProbablePrime { .. }) => {

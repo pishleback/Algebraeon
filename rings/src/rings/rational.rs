@@ -190,19 +190,19 @@ mod tests {
 
         assert_eq!(rat("-2").round(), Integer::from(-2));
         assert_eq!(rat("-7/4").round(), Integer::from(-2));
-        assert!(vec![Integer::from(-2), Integer::from(-1)].contains(&rat("-3/2").round()));
+        assert!([Integer::from(-2), Integer::from(-1)].contains(&rat("-3/2").round()));
         assert_eq!(rat("-5/4").round(), Integer::from(-1));
         assert_eq!(rat("-1").round(), Integer::from(-1));
         assert_eq!(rat("-3/4").round(), Integer::from(-1));
-        assert!(vec![Integer::from(-1), Integer::from(0)].contains(&rat("-1/2").round()));
+        assert!([Integer::from(-1), Integer::from(0)].contains(&rat("-1/2").round()));
         assert_eq!(rat("-1/4").round(), Integer::from(0));
         assert_eq!(rat("0").round(), Integer::from(0));
         assert_eq!(rat("1/4").round(), Integer::from(0));
-        assert!(vec![Integer::from(0), Integer::from(1)].contains(&rat("1/2").round()));
+        assert!([Integer::from(0), Integer::from(1)].contains(&rat("1/2").round()));
         assert_eq!(rat("3/4").round(), Integer::from(1));
         assert_eq!(rat("1").round(), Integer::from(1));
         assert_eq!(rat("5/4").round(), Integer::from(1));
-        assert!(vec![Integer::from(1), Integer::from(2)].contains(&rat("3/2").round()));
+        assert!([Integer::from(1), Integer::from(2)].contains(&rat("3/2").round()));
         assert_eq!(rat("7/4").round(), Integer::from(2));
         assert_eq!(rat("2").round(), Integer::from(2));
     }

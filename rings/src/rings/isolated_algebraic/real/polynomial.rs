@@ -632,6 +632,7 @@ impl Polynomial<Integer> {
                 &Self::from_coeffs(vec![Integer::from(1), Integer::from(1)]),
             )
             .sign_variations();
+            #[allow(clippy::comparison_chain)]
             if v == 1 {
                 isol.push((c, k, true)); //root
             } else if v > 1 {

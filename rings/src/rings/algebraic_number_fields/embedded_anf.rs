@@ -143,19 +143,13 @@ pub fn anf_pair_primitive_element_theorem(
     Polynomial<Rational>,
 ) {
     //try g = a
-    match as_poly_expr(b, a) {
-        Some(q) => {
-            return (a.clone(), Integer::ONE, Integer::ZERO, Polynomial::var(), q);
-        }
-        None => {}
+    if let Some(q) = as_poly_expr(b, a) {
+        return (a.clone(), Integer::ONE, Integer::ZERO, Polynomial::var(), q);
     }
 
     //try g = b
-    match as_poly_expr(a, b) {
-        Some(p) => {
-            return (b.clone(), Integer::ZERO, Integer::ONE, p, Polynomial::var());
-        }
-        None => {}
+    if let Some(p) = as_poly_expr(a, b) {
+        return (b.clone(), Integer::ZERO, Integer::ONE, p, Polynomial::var());
     }
 
     let mut nontrivial_linear_combinations = Rational::exhaustive_rationals().map(|r| {

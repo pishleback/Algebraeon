@@ -1,6 +1,11 @@
-use super::*;
+use super::{
+    FactoredSignature, FavoriteAssociateSignature, FieldSignature,
+    MetaFavoriteAssociate, MetaRing
+};
 use algebraeon_nzq::Natural;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::structure::{
+    BorrowedStructure, EqSignature, SetSignature, Signature, ToStringSignature,
+};
 use std::{fmt::Display, marker::PhantomData};
 
 pub trait UniqueFactorizationSignature: FavoriteAssociateSignature {
@@ -123,7 +128,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
 {
     pub fn new(ring: RSB) -> Self {
         Self {
-            _ring: PhantomData::default(),
+            _ring: PhantomData,
             ring,
         }
     }
@@ -167,7 +172,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> SetSignature
                 i += Natural::from(1u8);
             }
         }
-        return true;
+        true
     }
 }
 
@@ -186,6 +191,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> EqSignature
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         let ring = self.ring();
+        #[allow(clippy::if_not_else)]
         if !ring.equal(&a.unit, &b.unit) {
             false
         } else {
@@ -313,6 +319,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
         }
     }
 
+    #[allow(clippy::unused_self, clippy::wrong_self_convention)]
     pub(crate) fn from_unit_and_factor_powers_unchecked(
         &self,
         unit: RS::Set,
@@ -352,22 +359,19 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
     pub fn mul_mut(&self, a: &mut FactoredRingElement<RS::Set>, b: FactoredRingElement<RS::Set>) {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(&b));
-        *a = self.mul(a.clone(), b)
+        *a = self.mul(a.clone(), b);
     }
 
     fn mul_by_unchecked(&self, a: &mut FactoredRingElement<RS::Set>, p: RS::Set, k: Natural) {
         for (q, t) in &mut a.factors {
-            match (self.ring().div(&p, q), self.ring().div(q, &p)) {
-                (Ok(u), Ok(v)) => {
-                    if self.ring().is_unit(&u) && self.ring().is_unit(&v) {
-                        //q = v*p so q^k = v^kp^k and this is what we are multiplying by
-                        self.ring()
-                            .mul_mut(&mut a.unit, &self.ring().nat_pow(&v, &k));
-                        *t += k;
-                        return;
-                    }
+            if let (Ok(u), Ok(v)) = (self.ring().div(&p, q), self.ring().div(q, &p)) {
+                if self.ring().is_unit(&u) && self.ring().is_unit(&v) {
+                    //q = v*p so q^k = v^kp^k and this is what we are multiplying by
+                    self.ring()
+                        .mul_mut(&mut a.unit, &self.ring().nat_pow(&v, &k));
+                    *t += k;
+                    return;
                 }
-                _ => {}
             }
         }
         a.factors.push((p, k));
@@ -407,6 +411,7 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationSignature>(
 mod tests {
     use super::*;
     use algebraeon_nzq::Integer;
+    use algebraeon_sets::structure::MetaType;
 
     #[test]
     fn factorization_invariants() {

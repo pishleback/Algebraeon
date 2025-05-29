@@ -197,6 +197,7 @@ impl Monomial {
     fn lexicographic_order(a: &Self, b: &Self) -> std::cmp::Ordering {
         let mut i = 0;
         while i < std::cmp::min(a.prod.len(), b.prod.len()) {
+            #[allow(clippy::comparison_chain)]
             if a.prod[i].var.ident < b.prod[i].var.ident {
                 return std::cmp::Ordering::Less;
             } else if a.prod[i].var.ident > b.prod[i].var.ident {
@@ -211,6 +212,7 @@ impl Monomial {
                 }
             }
         }
+        #[allow(clippy::comparison_chain)]
         if a.prod.len() > b.prod.len() {
             return std::cmp::Ordering::Less;
         } else if a.prod.len() < b.prod.len() {
@@ -221,6 +223,7 @@ impl Monomial {
     }
 
     fn graded_lexicographic_order(a: &Self, b: &Self) -> std::cmp::Ordering {
+        #[allow(clippy::comparison_chain)]
         if a.degree() < b.degree() {
             std::cmp::Ordering::Greater
         } else if a.degree() > b.degree() {
@@ -1144,7 +1147,7 @@ mod tests {
                 one.clone(),
             ];
             let mut sorted_terms = terms.clone();
-            sorted_terms.sort_by(|a, b| Monomial::lexicographic_order(a, b));
+            sorted_terms.sort_by(Monomial::lexicographic_order);
 
             assert_eq!(terms, sorted_terms);
         }
@@ -1159,7 +1162,7 @@ mod tests {
                 one.clone(),
             ];
             let mut sorted_terms = terms.clone();
-            sorted_terms.sort_by(|a, b| Monomial::graded_lexicographic_order(a, b));
+            sorted_terms.sort_by(Monomial::graded_lexicographic_order);
 
             assert_eq!(terms, sorted_terms);
         }

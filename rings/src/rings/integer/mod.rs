@@ -79,6 +79,7 @@ impl FiniteUnitsSignature for IntegerCanonicalStructure {
 
 impl FavoriteAssociateSignature for IntegerCanonicalStructure {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+        #[allow(clippy::comparison_chain)]
         if a == &Integer::ZERO {
             (Integer::ONE, Integer::ZERO)
         } else if a < &Integer::ZERO {
