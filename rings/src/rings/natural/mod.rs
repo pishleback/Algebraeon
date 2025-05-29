@@ -5,16 +5,21 @@ use algebraeon_sets::structure::*;
 pub mod factorization;
 pub mod functions;
 
-impl SemiRingSignature for NaturalCanonicalStructure {
+impl AdditiveMonoidSignature for NaturalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Natural::ZERO
     }
-    fn one(&self) -> Self::Set {
-        Natural::ONE
-    }
+
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
+}
+
+impl SemiRingSignature for NaturalCanonicalStructure {
+    fn one(&self) -> Self::Set {
+        Natural::ONE
+    }
+
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
@@ -36,7 +41,7 @@ impl SemiRingUnitsSignature for NaturalCanonicalStructure {
     }
 }
 
-impl EuclideanDivisionSignature  for NaturalCanonicalStructure {
+impl EuclideanDivisionSignature for NaturalCanonicalStructure {
     fn norm(&self, elem: &Self::Set) -> Option<Natural> {
         if elem == &Natural::ZERO {
             None

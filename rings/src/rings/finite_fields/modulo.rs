@@ -152,21 +152,33 @@ impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {
+impl<const N: usize> AdditiveMonoidSignature for ModuloCanonicalStructure<N> {
     fn zero(&self) -> Self::Set {
         Modulo { x: 0 }
     }
 
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        Modulo { x: (a.x + b.x) % N }
+    }
+}
+
+impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        if a.x == 0 {
+            Modulo { x: 0 }
+        } else {
+            Modulo { x: N - a.x }
+        }
+    }
+}
+
+impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {
     fn one(&self) -> Self::Set {
         if N == 1 {
             Modulo { x: 0 }
         } else {
             Modulo { x: 1 }
         }
-    }
-
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        Modulo { x: (a.x + b.x) % N }
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -176,19 +188,11 @@ impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {
     }
 }
 
+impl<const N: usize> RingSignature for ModuloCanonicalStructure<N> {}
+
 impl<const N: usize> CharacteristicSignature for ModuloCanonicalStructure<N> {
     fn characteristic(&self) -> Natural {
         Natural::from(N)
-    }
-}
-
-impl<const N: usize> RingSignature for ModuloCanonicalStructure<N> {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        if a.x == 0 {
-            Modulo { x: 0 }
-        } else {
-            Modulo { x: N - a.x }
-        }
     }
 }
 

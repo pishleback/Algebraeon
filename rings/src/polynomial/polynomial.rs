@@ -153,15 +153,11 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> EqSignature
     }
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
     for PolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
         Polynomial { coeffs: vec![] }
-    }
-
-    fn one(&self) -> Self::Set {
-        Polynomial::from_coeffs(vec![self.coeff_ring().one()])
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -170,6 +166,35 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
                 .map(|i| self.coeff_ring().add(self.coeff(a, i), self.coeff(b, i)))
                 .collect(),
         ))
+    }
+}
+
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
+    for PolynomialStructure<RS, RSB>
+{
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        Polynomial::from_coeffs(
+            a.coeffs()
+                .into_iter()
+                .map(|c| self.coeff_ring().neg(&c))
+                .collect(),
+        )
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.reduce_poly(Polynomial::from_coeffs(
+            (0..std::cmp::max(a.coeffs.len(), b.coeffs.len()))
+                .map(|i| self.coeff_ring().sub(self.coeff(a, i), self.coeff(b, i)))
+                .collect(),
+        ))
+    }
+}
+
+impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+    for PolynomialStructure<RS, RSB>
+{
+    fn one(&self) -> Self::Set {
+        Polynomial::from_coeffs(vec![self.coeff_ring().one()])
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -197,16 +222,7 @@ impl<RS: CharacteristicSignature, RSB: BorrowedStructure<RS>> CharacteristicSign
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature for PolynomialStructure<RS, RSB> {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        Polynomial::from_coeffs(
-            a.coeffs()
-                .into_iter()
-                .map(|c| self.coeff_ring().neg(&c))
-                .collect(),
-        )
-    }
-}
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature for PolynomialStructure<RS, RSB> {}
 
 impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
     pub fn reduce_poly(&self, mut a: Polynomial<RS::Set>) -> Polynomial<RS::Set> {

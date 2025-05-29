@@ -105,19 +105,35 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> EqSignature
     }
 }
 
-impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> SemiRingSignature
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditiveMonoidSignature
     for QuotientStructure<RS, IS_FIELD>
 {
     fn zero(&self) -> Self::Set {
         self.ring.zero()
     }
 
-    fn one(&self) -> Self::Set {
-        self.ring.one()
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.ring.rem(&self.ring.add(a, b), &self.modulus)
+    }
+}
+
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditiveGroupSignature
+    for QuotientStructure<RS, IS_FIELD>
+{
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        self.ring.neg(a)
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.ring.sub(a, b)
+    }
+}
+
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> SemiRingSignature
+    for QuotientStructure<RS, IS_FIELD>
+{
+    fn one(&self) -> Self::Set {
+        self.ring.one()
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -128,9 +144,6 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> SemiRingSignature
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> RingSignature
     for QuotientStructure<RS, IS_FIELD>
 {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        self.ring.neg(a)
-    }
 }
 
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, const IS_FIELD: bool>

@@ -441,13 +441,9 @@ impl ToStringSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl SemiRingSignature for RealAlgebraicCanonicalStructure {
+impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(0))
-    }
-
-    fn one(&self) -> Self::Set {
-        RealAlgebraic::Rational(Rational::from(1))
     }
 
     fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
@@ -511,6 +507,21 @@ impl SemiRingSignature for RealAlgebraicCanonicalStructure {
                 )
             }
         }
+    }
+}
+
+impl AdditiveGroupSignature for RealAlgebraicCanonicalStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        match a {
+            RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
+            RealAlgebraic::Real(root) => RealAlgebraic::Real(root.clone().neg()),
+        }
+    }
+}
+
+impl SemiRingSignature for RealAlgebraicCanonicalStructure {
+    fn one(&self) -> Self::Set {
+        RealAlgebraic::Rational(Rational::from(1))
     }
 
     fn mul(&self, elem1: &Self::Set, elem2: &Self::Set) -> Self::Set {
@@ -590,18 +601,11 @@ impl SemiRingSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
+impl RingSignature for RealAlgebraicCanonicalStructure {}
+
 impl CharacteristicSignature for RealAlgebraicCanonicalStructure {
     fn characteristic(&self) -> Natural {
         Natural::ZERO
-    }
-}
-
-impl RingSignature for RealAlgebraicCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        match a {
-            RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
-            RealAlgebraic::Real(root) => RealAlgebraic::Real(root.clone().neg()),
-        }
     }
 }
 
