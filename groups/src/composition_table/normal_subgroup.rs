@@ -1,6 +1,6 @@
-use super::group::*;
-use super::partition::*;
-use super::subgroup::*;
+use super::group::FiniteGroupMultiplicationTable;
+use super::partition::Congruence;
+use super::subgroup::Subgroup;
 
 pub struct NormalSubgroup<'a> {
     subgroup: Subgroup<'a>,
@@ -9,7 +9,7 @@ pub struct NormalSubgroup<'a> {
 impl<'a> NormalSubgroup<'a> {
     pub fn check_state(&self) -> Result<(), &'static str> {
         match self.subgroup.check_state() {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(msg) => {
                 return Err(msg);
             }
@@ -53,6 +53,7 @@ impl<'a> NormalSubgroup<'a> {
 mod normal_subgroup_tests {
     use super::super::subset::*;
     use super::*;
+    use crate::composition_table::group::examples;
 
     #[test]
     fn normal_subgroup_state() {
