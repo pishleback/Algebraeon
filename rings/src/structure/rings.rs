@@ -91,14 +91,6 @@ pub trait SemiRingSignature: AdditiveMonoidSignature {
             ans
         }
     }
-
-    fn polynomials<'a>(&'a self) -> PolynomialStructure<Self, &'a Self> {
-        PolynomialStructure::new(self)
-    }
-
-    fn into_polynomials(self) -> PolynomialStructure<Self, Self> {
-        PolynomialStructure::new(self)
-    }
 }
 
 pub trait MetaSemiRing: MetaType

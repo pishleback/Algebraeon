@@ -24,7 +24,7 @@ For example, to obtain \\(\mathbb{Z}^3\\)
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::RingToFinitelyFreeModuleStructure;
+# use algebraeon::rings::linear::finitely_free_modules::RingToFinitelyFreeModuleSignature;
 # use algebraeon::sets::structure::MetaType;
 #
 let module = Integer::structure().into_free_module(3);
