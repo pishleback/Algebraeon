@@ -21,8 +21,8 @@ The approach taken by Algebraeon to represent such sets with additional structur
 In practice, this could look like
 
 ```rust
-use algebraeon::nzq::traits::AbsDiff;
 use algebraeon::nzq::{Integer, Natural};
+use algebraeon::rings::structure::*;
 use algebraeon::sets::structure::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
