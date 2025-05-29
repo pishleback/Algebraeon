@@ -1,14 +1,8 @@
 use crate::structure::*;
 use algebraeon_sets::structure::*;
 
-pub trait ModuleSignature<Ring: RingSignature>: SetSignature {
+pub trait ModuleSignature<Ring: RingSignature>: AdditiveGroupSignature {
     fn ring(&self) -> &Ring;
-    fn zero(&self) -> Self::Set;
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
-    fn neg(&self, a: &Self::Set) -> Self::Set;
-    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.add(a, &self.neg(b))
-    }
     fn scalar_mul(&self, x: &Ring::Set, a: &Self::Set) -> Self::Set;
 }
 
