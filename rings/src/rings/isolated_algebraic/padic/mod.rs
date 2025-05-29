@@ -729,18 +729,11 @@ pub mod structure {
         }
     }
 
-    impl SemiRingSignature for PAdicAlgebraicStructure {
+    impl AdditiveMonoidSignature for PAdicAlgebraicStructure {
         fn zero(&self) -> Self::Set {
             PAdicAlgebraic::Rational(PAdicRational {
                 p: self.p.clone(),
                 rat: Rational::ZERO,
-            })
-        }
-
-        fn one(&self) -> Self::Set {
-            PAdicAlgebraic::Rational(PAdicRational {
-                p: self.p.clone(),
-                rat: Rational::ONE,
             })
         }
 
@@ -762,6 +755,22 @@ pub mod structure {
                 }
             }
         }
+    }
+
+    impl AdditiveGroupSignature for PAdicAlgebraicStructure {
+        fn neg(&self, a: &Self::Set) -> Self::Set {
+            debug_assert!(self.is_element(a));
+            a.clone().neg()
+        }
+    }
+
+    impl SemiRingSignature for PAdicAlgebraicStructure {
+        fn one(&self) -> Self::Set {
+            PAdicAlgebraic::Rational(PAdicRational {
+                p: self.p.clone(),
+                rat: Rational::ONE,
+            })
+        }
 
         fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
             debug_assert!(self.is_element(a));
@@ -782,16 +791,11 @@ pub mod structure {
         }
     }
 
+    impl RingSignature for PAdicAlgebraicStructure {}
+
     impl CharacteristicSignature for PAdicAlgebraicStructure {
         fn characteristic(&self) -> Natural {
             Natural::ZERO
-        }
-    }
-
-    impl RingSignature for PAdicAlgebraicStructure {
-        fn neg(&self, a: &Self::Set) -> Self::Set {
-            debug_assert!(self.is_element(a));
-            a.clone().neg()
         }
     }
 

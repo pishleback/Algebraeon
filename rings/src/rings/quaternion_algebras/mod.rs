@@ -75,19 +75,10 @@ impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
     }
 }
 
-impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {
+impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructure<Field> {
     fn zero(&self) -> Self::Set {
         QuaternionAlgebraElement {
             x: self.base.zero(),
-            y: self.base.zero(),
-            z: self.base.zero(),
-            w: self.base.zero(),
-        }
-    }
-
-    fn one(&self) -> Self::Set {
-        QuaternionAlgebraElement {
-            x: self.base.one(),
             y: self.base.zero(),
             z: self.base.zero(),
             w: self.base.zero(),
@@ -100,6 +91,37 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
             y: self.base.add(&a.y, &b.y),
             z: self.base.add(&a.z, &b.z),
             w: self.base.add(&a.w, &b.w),
+        }
+    }
+}
+
+impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructure<Field> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        QuaternionAlgebraElement {
+            x: self.base.neg(&a.x),
+            y: self.base.neg(&a.y),
+            z: self.base.neg(&a.z),
+            w: self.base.neg(&a.w),
+        }
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        QuaternionAlgebraElement {
+            x: self.base.sub(&a.x, &b.x),
+            y: self.base.sub(&a.y, &b.y),
+            z: self.base.sub(&a.z, &b.z),
+            w: self.base.sub(&a.w, &b.w),
+        }
+    }
+}
+
+impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {
+    fn one(&self) -> Self::Set {
+        QuaternionAlgebraElement {
+            x: self.base.one(),
+            y: self.base.zero(),
+            z: self.base.zero(),
+            w: self.base.zero(),
         }
     }
 
@@ -165,16 +187,7 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
     }
 }
 
-impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        QuaternionAlgebraElement {
-            x: self.base.neg(&a.x),
-            y: self.base.neg(&a.y),
-            z: self.base.neg(&a.z),
-            w: self.base.neg(&a.w),
-        }
-    }
-}
+impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature + CharacteristicSignature> CharacteristicSignature
     for QuaternionAlgebraStructure<Field>
