@@ -74,9 +74,7 @@ impl ConwayPolynomialDatabase {
                     .or_insert(HashMap::new())
                     .insert(
                         n,
-                        Polynomial::from_coeffs(
-                            coeffs.into_iter().map(|x| Integer::from(x)).collect()
-                        )
+                        Polynomial::from_coeffs(coeffs.into_iter().map(Integer::from).collect())
                     )
                     .is_none()
             );

@@ -197,6 +197,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                         }
                     }
                     // Shrink s until we find the smallest s such that lhs(s) >= rhs
+                    #[allow(clippy::needless_continue)]
                     loop {
                         match lhs(&(&s - Natural::power_of_2(step_pow))).cmp(&rhs) {
                             std::cmp::Ordering::Less => {

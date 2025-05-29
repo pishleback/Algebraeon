@@ -90,9 +90,7 @@ impl<Set: Clone> Matrix<Set> {
     }
 
     pub fn at(&self, r: usize, c: usize) -> Result<&Set, MatOppErr> {
-        if r >= self.rows() {
-            Err(MatOppErr::InvalidIndex)
-        } else if c >= self.cols() {
+        if r >= self.rows() || c >= self.cols() {
             Err(MatOppErr::InvalidIndex)
         } else {
             let idx = self.rc_to_idx(r, c);
@@ -101,9 +99,7 @@ impl<Set: Clone> Matrix<Set> {
     }
 
     pub fn at_mut(&mut self, r: usize, c: usize) -> Result<&mut Set, MatOppErr> {
-        if r >= self.rows() {
-            Err(MatOppErr::InvalidIndex)
-        } else if c >= self.cols() {
+        if r >= self.rows() || c >= self.cols() {
             Err(MatOppErr::InvalidIndex)
         } else {
             let idx = self.rc_to_idx(r, c);
@@ -291,9 +287,7 @@ impl<RS: EqSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     pub fn equal(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> bool {
         let rows = a.rows();
         let cols = a.cols();
-        if rows != b.rows() {
-            false
-        } else if cols != b.cols() {
+        if rows != b.rows() || cols != b.cols() {
             false
         } else {
             for c in 0..cols {
@@ -359,7 +353,7 @@ impl<RS: ToStringSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB>
             } else {
                 print!(" |");
             }
-            print!("\n");
+            println!();
         }
     }
 }

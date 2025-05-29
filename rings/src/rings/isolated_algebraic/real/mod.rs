@@ -83,50 +83,18 @@ impl Display for RealAlgebraicRoot {
             }
 
             let sign = tight_a_abs < tight_b_abs;
-            if x == Rational::ZERO {
-                if y == Rational::ONE {
-                    write!(
-                        f,
-                        "{}√{}",
-                        match sign {
-                            true => "",
-                            false => "-",
-                        },
-                        r
-                    )?;
-                } else {
-                    write!(
-                        f,
-                        "{}{}√{}",
-                        match sign {
-                            true => "",
-                            false => "-",
-                        },
-                        y,
-                        r
-                    )?;
+            match (x, y) {
+                (Rational::ZERO, Rational::ONE) => {
+                    write!(f, "{}√{}", if sign { "" } else { "-" }, r)?;
                 }
-            } else {
-                if y == Rational::ONE {
-                    write!(
-                        f,
-                        "{}{}√{}",
-                        x,
-                        match sign {
-                            true => "+",
-                            false => "-",
-                        },
-                        r
-                    )?;
-                } else {
-                    write!(
-                        f,
-                        "{}{}{}√{}",
-                        x,
-                        if sign {"+"} else {"-"},
-                        y,
-                        r
-                    )?;
+                (Rational::ZERO, y) => {
+                    write!(f, "{}{}√{}", if sign { "" } else { "-" }, y, r)?;
+                }
+                (x, Rational::ONE) => {
+                    write!(f, "{}{}√{}", x, if sign { "+" } else { "-" }, r)?;
+                }
+                (x, y) => {
+                    write!(f, "{}{}{}√{}", x, if sign { "+" } else { "-" }, y, r)?;
                 }
             }
         } else {
@@ -180,7 +148,7 @@ impl RealAlgebraicRoot {
         if sign_a == sign_b {
             return Err("sign at a and b should be different");
         }
-        if self.dir != (!sign_a) {
+        if self.dir == sign_a {
             return Err("dir is incorrect");
         }
         Ok(())
@@ -327,8 +295,7 @@ impl RealAlgebraicRoot {
                     let mut ans = mul_interval_rat((&self.tight_a, &self.tight_b), lc);
                     for (i, c) in coeffs.enumerate() {
                         if i != 0 {
-                            ans =
-                                mul_intervals((&ans.0, &ans.1), (&self.tight_a, &self.tight_b));
+                            ans = mul_intervals((&ans.0, &ans.1), (&self.tight_a, &self.tight_b));
                         }
                         ans = add_interval_rat((&ans.0, &ans.1), c);
                     }

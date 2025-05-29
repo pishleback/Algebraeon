@@ -188,7 +188,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     ) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
         Box::new(
             (1usize..)
-                .map(|m| Natural::from(m))
+                .map(Natural::from)
                 .take_while(|m| m <= n)
                 .map(|m| self.all_ideals_norm_eq(&m))
                 .flatten(),
@@ -199,9 +199,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     pub fn all_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
         Box::new(
             (0usize..)
-                .map(|m| Natural::from(m))
-                .map(|m| self.all_ideals_norm_eq(&m))
-                .flatten(),
+                .map(Natural::from)
+                .flat_map(|m| self.all_ideals_norm_eq(&m)),
         )
     }
 
@@ -209,9 +208,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     pub fn all_nonzero_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
         Box::new(
             (1usize..)
-                .map(|m| Natural::from(m))
-                .map(|m| self.all_ideals_norm_eq(&m))
-                .flatten(),
+                .map(Natural::from)
+                .flat_map(|m| self.all_ideals_norm_eq(&m)),
         )
     }
 }

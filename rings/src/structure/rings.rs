@@ -205,7 +205,7 @@ pub trait SemiRingUnitsSignature: SemiRingSignature {
     fn is_unit(&self, a: &Self::Set) -> bool {
         match self.inv(a) {
             Ok(_inv) => true,
-            Err(RingDivisionError::DivideByZero) | Err(RingDivisionError::NotDivisible) => false,
+            Err(RingDivisionError::DivideByZero | RingDivisionError::NotDivisible) => false,
         }
     }
 }
@@ -262,7 +262,7 @@ pub trait IntegralDomainSignature: RingUnitsSignature {
     fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
         match self.div(a, b) {
             Ok(_q) => true,
-            Err(RingDivisionError::NotDivisible) | Err(RingDivisionError::DivideByZero) => false,
+            Err(RingDivisionError::NotDivisible | RingDivisionError::DivideByZero) => false,
         }
     }
     fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -480,7 +480,7 @@ pub trait EuclideanDivisionSignature: SemiRingSignature {
     fn quorem(&self, a: &Self::Set, b: &Self::Set) -> Option<(Self::Set, Self::Set)>;
 
     fn quo(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        self.quorem(a, b).map(|(q,_r)| q)
+        self.quorem(a, b).map(|(q, _r)| q)
     }
 
     fn rem(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {

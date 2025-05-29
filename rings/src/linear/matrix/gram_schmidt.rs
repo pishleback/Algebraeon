@@ -255,6 +255,7 @@ mod tests {
         assert_eq!(mat.gram_schmidt_col_orthogonalization(), mat_expected_gs);
     }
 
+    #[allow(clippy::erasing_op)]
     #[test]
     fn complex_gram_schmidt() {
         let i = &ComplexAlgebraic::i().into_ergonomic();

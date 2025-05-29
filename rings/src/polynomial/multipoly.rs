@@ -656,7 +656,7 @@ impl<RS: FiniteUnitsSignature, RSB: BorrowedStructure<RS>> FiniteUnitsSignature
         self.coeff_ring()
             .all_units()
             .into_iter()
-            .map(|u| MultiPolynomial::constant(u))
+            .map(MultiPolynomial::constant)
             .collect()
     }
 }
@@ -746,14 +746,11 @@ where
                 let (unit, factors) = factor_poly(&poly)?.into_unit_and_factor_powers();
                 Some(
                     self.factorizations().from_unit_and_factor_powers(
-                        unit.apply_map_into(|c| MultiPolynomial::constant(c)),
+                        unit.apply_map_into(MultiPolynomial::constant),
                         factors
                             .into_iter()
                             .map(|(factor, power)| {
-                                (
-                                    factor.apply_map_into(|c| MultiPolynomial::constant(c)),
-                                    power,
-                                )
+                                (factor.apply_map_into(MultiPolynomial::constant), power)
                             })
                             .collect(),
                     ),
@@ -971,7 +968,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
         for Term { coeff, monomial } in &p.terms {
             let k = monomial.get_var_pow(v);
             while coeffs.len() <= k {
-                coeffs.push(self.zero())
+                coeffs.push(self.zero());
             }
             self.add_mut(
                 &mut coeffs[k],

@@ -1,6 +1,5 @@
 use super::{
-    FactoredSignature, FavoriteAssociateSignature, FieldSignature,
-    MetaFavoriteAssociate, MetaRing
+    FactoredSignature, FavoriteAssociateSignature, FieldSignature, MetaFavoriteAssociate, MetaRing,
 };
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::{
@@ -220,10 +219,8 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> EqSignature
             //the powers of the factors are equal
             for (a_factor, a_power) in &a.factors {
                 for (b_factor, b_power) in &b.factors {
-                    if ring.equal(a_factor, b_factor) {
-                        if a_power != b_power {
-                            return false;
-                        }
+                    if ring.equal(a_factor, b_factor) && a_power != b_power {
+                        return false;
                     }
                 }
             }

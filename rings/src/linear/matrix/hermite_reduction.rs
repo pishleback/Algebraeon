@@ -529,6 +529,7 @@ mod tests {
             for (pr, pc) in pivs.iter().enumerate() {
                 assert!(h.at(pr, *pc).unwrap() != &Integer::zero());
                 for r in 0..h.rows() {
+                    #[allow(clippy::comparison_chain)]
                     if r > pr {
                         assert_eq!(h.at(r, *pc).unwrap(), &Integer::zero());
                     } else if r == pr {
@@ -574,6 +575,7 @@ mod tests {
             for (pc, pr) in pivs.iter().enumerate() {
                 assert!(h.at(*pr, pc).unwrap() != &Integer::zero());
                 for c in 0..h.cols() {
+                    #[allow(clippy::comparison_chain)]
                     if c > pc {
                         assert_eq!(h.at(*pr, c).unwrap(), &Integer::zero());
                     } else if c == pc {

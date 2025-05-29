@@ -192,9 +192,7 @@ impl<RS: IntegralDomainSignature> Div<&StructuredElement<RS>> for &StructuredEle
     fn div(self, rhs: &StructuredElement<RS>) -> Self::Output {
         StructuredElement::new(
             self.structure().clone(),
-            self.structure()
-                .div(self.ref_set(), rhs.ref_set())
-                .unwrap(),
+            self.structure().div(self.ref_set(), rhs.ref_set()).unwrap(),
         )
     }
 }

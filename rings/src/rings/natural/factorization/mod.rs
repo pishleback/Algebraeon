@@ -67,11 +67,11 @@ pub fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> 
         let d = gcd(Natural::abs_diff(x.clone(), &y), n.clone());
         if d > Natural::ONE {
             debug_assert!(d <= n);
-            if d == n {
-                return vec![Factor::StrictlyComposite(n)];
+            return if d == n {
+                vec![Factor::StrictlyComposite(n)]
             } else {
-                return vec![Factor::Composite(n / &d), Factor::Composite(d)];
-            }
+                vec![Factor::Composite(n / &d), Factor::Composite(d)]
+            };
         }
     }
     vec![Factor::StrictlyComposite(n)]

@@ -276,7 +276,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, 
         let mut y = self.coeff_ring().zero();
         for c in p.coeffs().into_iter().rev() {
             self.coeff_ring().mul_mut(&mut y, x);
-            self.coeff_ring().add_mut(&mut y, c)
+            self.coeff_ring().add_mut(&mut y, c);
         }
         y
     }
@@ -637,7 +637,7 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> PolynomialS
         } else {
             let g = self.coeff_ring().gcd_list(p.coeffs.iter().collect());
             for i in 0..p.coeffs.len() {
-                p.coeffs[i] = self.coeff_ring().div(&p.coeffs[i], &g).unwrap()
+                p.coeffs[i] = self.coeff_ring().div(&p.coeffs[i], &g).unwrap();
             }
             Some((g, p))
         }
@@ -726,7 +726,7 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStru
                 .coeff_ring()
                 .factor_fav_assoc(&a.coeffs[self.num_coeffs(&a) - 1]);
             for i in 0..a.coeffs.len() {
-                a.coeffs[i] = self.coeff_ring().div(&a.coeffs[i], &u).unwrap()
+                a.coeffs[i] = self.coeff_ring().div(&a.coeffs[i], &u).unwrap();
             }
             (Polynomial::constant(u), a.clone())
         }
@@ -748,7 +748,7 @@ impl<RS: IntegralDomainSignature + FiniteUnitsSignature, RSB: BorrowedStructure<
         self.coeff_ring()
             .all_units()
             .into_iter()
-            .map(|u| Polynomial::constant(u))
+            .map(Polynomial::constant)
             .collect()
     }
 }

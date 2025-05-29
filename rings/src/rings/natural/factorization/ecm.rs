@@ -376,11 +376,7 @@ pub fn ecm_one_factor_raw(
             } else {
                 let g = gcd(Natural::from(2u32) * u3 * v, n.clone());
                 debug_assert_ne!(g, Natural::ONE);
-                return if &g == n {
-                    None
-                } else {
-                    Some(g)
-                };
+                return if &g == n { None } else { Some(g) };
             };
             let v3 = (&v * &v * &v) % n;
 
@@ -452,7 +448,7 @@ pub fn ecm_one_factor_target_digits(
     rng: &mut Rng,
 ) -> Result<Natural, ()> {
     // The target factor has fith_target_factor_digits*5 many digits
-    let (b1, b2, max_curve) = match fith_target_factor_digits {        
+    let (b1, b2, max_curve) = match fith_target_factor_digits {
         0..=2 => (2_000, 160_000, 35),
         3 => (5_000, 500_000, 50),
         4 => (11_000, 1_900_000, 74),

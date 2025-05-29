@@ -440,7 +440,7 @@ mod tests {
 
         let element = vec![20, 20, 20, 20]
             .into_iter()
-            .map(|x| Integer::from(x))
+            .map(Integer::from)
             .collect::<Vec<_>>();
         println!("element = {:?}", element);
 
@@ -452,7 +452,7 @@ mod tests {
             reduced_element,
             vec![2, 8, 20, 2]
                 .into_iter()
-                .map(|x| Integer::from(x))
+                .map(Integer::from)
                 .collect::<Vec<_>>()
         )
     }

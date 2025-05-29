@@ -213,9 +213,8 @@ pub fn padic_nat_valuation(p: &Natural, mut n: Natural) -> Valuation {
             if r == Natural::ZERO {
                 k += 1;
                 continue;
-            } else {
-                break;
             }
+            break;
         }
         Valuation::Finite(Integer::from(k))
     }

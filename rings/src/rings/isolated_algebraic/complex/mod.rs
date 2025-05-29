@@ -362,6 +362,7 @@ impl ComplexAlgebraicRoot {
         (self.tight_c, self.tight_d) = (-self.tight_d.clone(), -self.tight_c.clone());
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn neg(mut self) -> Self {
         self.neg_mut();
         self
@@ -864,6 +865,7 @@ impl SemiRingUnitsSignature for ComplexAlgebraicCanonicalStructure {
 
                     // find 0 < lambda < 1 such that eps < (1 - lambda) * |a|
                     let mut lambda = Rational::ONE_HALF;
+                    #[allow(clippy::assign_op_pattern)]
                     while &eps * &eps >= (Rational::ONE - &lambda) * &w_mag_sq {
                         lambda = lambda * &Rational::ONE_HALF;
                     }

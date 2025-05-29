@@ -210,7 +210,7 @@ impl<const N: usize> SemiRingUnitsSignature for ModuloCanonicalStructure<N> {
 
 impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
-        (0..N).map(|n| Modulo::new(n))
+        (0..N).map(Modulo::new)
     }
 }
 
