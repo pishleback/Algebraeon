@@ -215,8 +215,7 @@ fn test_multivariate_rational_polynomial_fractions() {
     let y_var = Variable::new("y");
     let variable_mapping = [("x", x_var.clone()), ("y", y_var.clone())].into();
 
-    let result =
-        parse_multivariate_rational_polynomial("1/2*x + 3/4*y", variable_mapping).unwrap();
+    let result = parse_multivariate_rational_polynomial("1/2*x + 3/4*y", variable_mapping).unwrap();
 
     // Create expected polynomial using the same variables
     let x = MultiPolynomial::<Rational>::var(x_var);
@@ -266,10 +265,9 @@ fn test_multivariate_polynomial_large_expression() {
         ("y", y_var.clone()),
         ("z", z_var.clone()),
     ]
-        .into();
+    .into();
 
-    let result =
-        parse_multivariate_integer_polynomial("(x + y + z)^30", variable_mapping).unwrap();
+    let result = parse_multivariate_integer_polynomial("(x + y + z)^30", variable_mapping).unwrap();
 
     // Create expected polynomial using the same variables
     let x = MultiPolynomial::<Integer>::var(x_var);
@@ -411,13 +409,11 @@ fn test_integer_polynomial_big_constant() {
         "123456789123456789123456789123456789123456789123456789123456789",
         "x",
     )
-        .unwrap();
+    .unwrap();
     assert_eq!(
         result,
         Polynomial::from_coeffs(vec![
-            Integer::from_str(
-                "123456789123456789123456789123456789123456789123456789123456789"
-            )
+            Integer::from_str("123456789123456789123456789123456789123456789123456789123456789")
                 .unwrap()
         ])
     );
@@ -447,17 +443,11 @@ fn test_rational_polynomial_big_coefficients() {
     assert_eq!(
         result,
         Polynomial::from_coeffs(vec![
-            Rational::from_str(
-                "-123456789123456789123456789123456789123456789123456789123456789"
-            )
+            Rational::from_str("-123456789123456789123456789123456789123456789123456789123456789")
                 .unwrap(),
-            Rational::from_str(
-                "123456789123456789123456789123456789123456789123456789123456789"
-            )
+            Rational::from_str("123456789123456789123456789123456789123456789123456789123456789")
                 .unwrap(),
-            Rational::from_str(
-                "123456789123456789123456789123456789123456789123456789123456789"
-            )
+            Rational::from_str("123456789123456789123456789123456789123456789123456789123456789")
                 .unwrap()
         ])
     );
