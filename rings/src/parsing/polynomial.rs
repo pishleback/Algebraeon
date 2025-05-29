@@ -930,24 +930,6 @@ mod tests {
         );
     }
 
-    // TODO: this test case needs a potential grammar update (shelved for now)
-    // #[test]
-    // fn test_rational_polynomial_divide_polynomial_by_integer() {
-    //     // dividing by integers should be ok for polynomials with rational coefficients
-    //     // though dividing by polynomial expressions should not be valid
-    //
-    //     let result = parse_and_build_rational_poly("(x^2 + 3*x + 2)/3", "x").unwrap();
-    //
-    //     assert_eq!(
-    //         result,
-    //         Polynomial::from_coeffs(vec![
-    //             Rational::from_str("2/3").unwrap(),
-    //             Rational::from_str("1").unwrap(),
-    //             Rational::from_str("1/3").unwrap()
-    //         ])
-    //     );
-    // }
-
     #[test]
     fn test_integer_polynomial_expansion() {
         let result = parse_integer_polynomial("(x + 2)^3", "x").unwrap();
