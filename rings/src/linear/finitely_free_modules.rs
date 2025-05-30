@@ -195,7 +195,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveGroupSignature
     }
 }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> ModuleSignature<Ring>
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
     fn ring(&self) -> &Ring {

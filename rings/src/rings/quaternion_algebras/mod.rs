@@ -189,7 +189,7 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
 
 impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {}
 
-impl<Field: FieldSignature> ModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
+impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
     fn ring(&self) -> &Field {
         &self.base
     }

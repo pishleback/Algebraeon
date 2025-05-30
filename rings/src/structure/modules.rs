@@ -1,9 +1,18 @@
 use crate::structure::*;
 use algebraeon_sets::structure::*;
 
-pub trait ModuleSignature<Ring: RingSignature>: AdditiveGroupSignature {
+pub trait SemiModuleSignature<Ring: SemiRingSignature>: AdditiveMonoidSignature {
     fn ring(&self) -> &Ring;
     fn scalar_mul(&self, x: &Ring::Set, a: &Self::Set) -> Self::Set;
+}
+
+pub trait ModuleSignature<Ring: RingSignature>:
+    SemiModuleSignature<Ring> + AdditiveGroupSignature
+{
+}
+impl<Ring: RingSignature, Module: SemiModuleSignature<Ring> + AdditiveGroupSignature>
+    ModuleSignature<Ring> for Module
+{
 }
 
 pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {}
