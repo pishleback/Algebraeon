@@ -146,7 +146,7 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS
         self.unit = poly_ring.coeff_ring().mul(&self.unit, &other.unit);
         'OTHER_LOOP: for (poly, power) in &other.squarefree_factors {
             for (self_poly, self_power) in &mut self.squarefree_factors {
-                if poly_ring.equal(&poly, self_poly) {
+                if poly_ring.equal(poly, self_poly) {
                     *self_power += power;
                     continue 'OTHER_LOOP;
                 }

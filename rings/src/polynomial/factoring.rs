@@ -176,7 +176,7 @@ where
             while f_points.len() < 3 * (max_factor_degree + 1) {
                 //loop terminates because polynomial over integral domain has finitely many roots
                 let x = elem_gen.next().unwrap();
-                let y = self.evaluate(&f, &x);
+                let y = self.evaluate(f, &x);
                 if !self.coeff_ring().is_zero(&y) {
                     f_points.push((x, factor_coeff(&y).unwrap()));
                 }
@@ -218,7 +218,7 @@ where
                 if let Some(g) = self.interpolate_by_lagrange_basis(&possible_g_points) {
                     if self.degree(&g).unwrap() >= 1 {
                         //g is a possible proper divisor of f
-                        match self.div(&f, &g) {
+                        match self.div(f, &g) {
                             Ok(h) => {
                                 //g really is a proper divisor of f
                                 return FindFactorResult::Composite(g, h);

@@ -244,7 +244,7 @@ impl
                     debug_assert!(g.is_monic());
                     let prime_ideal = roi_ideals.generated_ideal(vec![
                         self.z_to_r().image(&p),
-                        poly_roi.evaluate(&g.apply_map(|c| self.z_to_r().image(&c)), &beta),
+                        poly_roi.evaluate(&g.apply_map(|c| self.z_to_r().image(c)), &beta),
                     ]);
                     // norm(I) = p^deg(g)
                     debug_assert_eq!(

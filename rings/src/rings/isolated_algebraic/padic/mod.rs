@@ -721,8 +721,7 @@ pub mod structure {
                     PAdicRational::equal(a, b)
                 }
                 (PAdicAlgebraic::Rational(_), PAdicAlgebraic::Algebraic(_))
-                | (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_))
-                => false,
+                | (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_)) => false,
                 (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => {
                     PAdicAlgebraicRoot::equal_mut(&mut a.clone(), &mut b.clone())
                 }

@@ -60,8 +60,7 @@ impl Add<&Valuation> for Valuation {
         match (self, other) {
             (Valuation::Infinity, Valuation::Infinity)
             | (Valuation::Infinity, Valuation::Finite(_))
-            | (Valuation::Finite(_), Valuation::Infinity)
-            => Valuation::Infinity,
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -73,8 +72,7 @@ impl Add<Valuation> for &Valuation {
         match (self, other) {
             (Valuation::Infinity, Valuation::Infinity)
             | (Valuation::Infinity, Valuation::Finite(_))
-            | (Valuation::Finite(_), Valuation::Infinity)
-            => Valuation::Infinity,
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -86,8 +84,7 @@ impl Add<Valuation> for Valuation {
         match (self, other) {
             (Valuation::Infinity, Valuation::Infinity)
             | (Valuation::Infinity, Valuation::Finite(_))
-            | (Valuation::Finite(_), Valuation::Infinity)
-            => Valuation::Infinity,
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -99,8 +96,7 @@ impl Add<&Valuation> for &Valuation {
         match (self, other) {
             (Valuation::Infinity, Valuation::Infinity)
             | (Valuation::Infinity, Valuation::Finite(_))
-            | (Valuation::Finite(_), Valuation::Infinity)
-            => Valuation::Infinity,
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -171,8 +167,7 @@ impl Mul<&Valuation> for Valuation {
         match (self, other) {
             (Valuation::Infinity, Valuation::Infinity)
             | (Valuation::Infinity, Valuation::Finite(_))
-            | (Valuation::Finite(_), Valuation::Infinity)
-            => Valuation::Infinity,
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -182,10 +177,9 @@ impl Mul<Valuation> for &Valuation {
     fn mul(self, other: Valuation) -> Self::Output {
         #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) 
+            (Valuation::Infinity, Valuation::Infinity)
             | (Valuation::Infinity, Valuation::Finite(_))
-            | (Valuation::Finite(_), Valuation::Infinity)
-            => Valuation::Infinity,
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -197,8 +191,7 @@ impl Mul<Valuation> for Valuation {
         match (self, other) {
             (Valuation::Infinity, Valuation::Infinity)
             | (Valuation::Infinity, Valuation::Finite(_))
-            | (Valuation::Finite(_), Valuation::Infinity)
-            => Valuation::Infinity,
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -210,8 +203,7 @@ impl Mul<&Valuation> for &Valuation {
         match (self, other) {
             (Valuation::Infinity, Valuation::Infinity)
             | (Valuation::Infinity, Valuation::Finite(_))
-            | (Valuation::Finite(_), Valuation::Infinity)
-            => Valuation::Infinity,
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }

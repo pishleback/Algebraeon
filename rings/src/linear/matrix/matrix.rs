@@ -448,7 +448,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         b: &Matrix<RS::Set>,
     ) -> Result<Matrix<RS::Set>, MatOppErr> {
         let mut new_a = a.clone();
-        match self.add_mut(&mut new_a, &b) {
+        match self.add_mut(&mut new_a, b) {
             Ok(()) => Ok(new_a),
             Err(e) => Err(e),
         }
@@ -582,7 +582,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
             let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
                 pows.push(
-                    self.mul(&pows.last().unwrap(), &pows.last().unwrap())
+                    self.mul(pows.last().unwrap(), &pows.last().unwrap())
                         .unwrap(),
                 );
             }
@@ -691,7 +691,7 @@ where
     }
 
     pub fn trace(&self) -> Result<R, MatOppErr> {
-        Self::structure().trace(&self)
+        Self::structure().trace(self)
     }
 }
 

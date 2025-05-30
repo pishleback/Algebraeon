@@ -39,6 +39,7 @@ impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        #[allow(clippy::match_same_arms)]
         match (a, b) {
             (_, QuaternaryField::Zero) => a.clone(),
             (QuaternaryField::Zero, _) => b.clone(),
@@ -55,6 +56,7 @@ impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        #[allow(clippy::match_same_arms)]
         match (a, b) {
             (_, QuaternaryField::Zero) => QuaternaryField::Zero,
             (QuaternaryField::Zero, _) => QuaternaryField::Zero,
@@ -88,6 +90,7 @@ impl SemiRingUnitsSignature for QuaternaryFieldCanonicalStructure {
 
 impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        #[allow(clippy::match_same_arms)]
         match (&a, &b) {
             (_, QuaternaryField::Zero) => Err(RingDivisionError::DivideByZero),
             (_, QuaternaryField::One) => Ok(a.clone()),

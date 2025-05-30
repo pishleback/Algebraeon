@@ -503,10 +503,10 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
             existing_monomials.insert(monomial, idx);
         }
         for Term { coeff, monomial } in &b.terms {
-            if existing_monomials.contains_key(&monomial) {
+            if existing_monomials.contains_key(monomial) {
                 self.coeff_ring().add_mut(
-                    &mut a.terms[*existing_monomials.get(&monomial).unwrap()].coeff,
-                    &coeff,
+                    &mut a.terms[*existing_monomials.get(monomial).unwrap()].coeff,
+                    coeff,
                 );
             } else {
                 a.terms.push(Term {
@@ -566,7 +566,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature
                          coeff: c,
                          monomial: m,
                      }| Term {
-                        coeff: self.coeff_ring().neg(&c),
+                        coeff: self.coeff_ring().neg(c),
                         monomial: m.clone(),
                     },
                 )
@@ -731,7 +731,7 @@ where
         match |mpoly: &<Self as SetSignature>::Set| -> Option<Polynomial<RS::Set>> {
             let mut const_coeffs = vec![];
             for coeff in mpoly.coeffs() {
-                const_coeffs.push(self.coeff_ring().as_constant(&coeff)?);
+                const_coeffs.push(self.coeff_ring().as_constant(coeff)?);
             }
             Some(Polynomial::from_coeffs(const_coeffs))
         }(mpoly)

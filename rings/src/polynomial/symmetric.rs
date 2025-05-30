@@ -180,7 +180,7 @@ where
             } else {
                 self.add_mut(
                     &mut total,
-                    &self.as_elementary_symmetric_polynomials_homogeneous_impl(vars, &hom_poly, &e),
+                    &self.as_elementary_symmetric_polynomials_homogeneous_impl(vars, &hom_poly, e),
                 );
             }
         }

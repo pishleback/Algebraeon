@@ -76,7 +76,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>> SetSign
                             .ring()
                             .z_module()
                             .submodules()
-                            .contains_element(&lattice, &x)
+                            .contains_element(lattice, &x)
                         {
                             return false;
                         }
@@ -130,7 +130,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                     .into_powers(self.factor_ideal(ideal).unwrap())
                     .iter()
                     .map(|(prime_ideal, exponent)| {
-                        let norm = self.ideal_norm(&prime_ideal.ideal());
+                        let norm = self.ideal_norm(prime_ideal.ideal());
                         let e_minus_1 = exponent - Natural::ONE;
                         (&norm - Natural::ONE) * norm.pow(&e_minus_1)
                     })
@@ -190,8 +190,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
             (1usize..)
                 .map(Natural::from)
                 .take_while(|m| m <= n)
-                .map(|m| self.all_ideals_norm_eq(&m))
-                .flatten(),
+                .flat_map(|m| self.all_ideals_norm_eq(&m)),
         )
     }
 
@@ -474,7 +473,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                 (a, b)
             }
         };
-        debug_assert!(self.ideal_equal(&ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
+        debug_assert!(self.ideal_equal(ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
         (a, b)
     }
 

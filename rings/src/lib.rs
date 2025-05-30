@@ -39,14 +39,10 @@
 )]
 #![allow(
     clippy::wildcard_imports,
-    clippy::needless_borrow,
     clippy::redundant_closure,
-    clippy::unreadable_literal,
     clippy::unnecessary_wraps,
     clippy::useless_conversion,
-    clippy::match_bool,
     clippy::nonminimal_bool,
-    clippy::range_plus_one,
     clippy::len_zero,
     clippy::while_let_loop,
     clippy::clone_on_copy,
@@ -67,7 +63,7 @@
     clippy::manual_find,
     clippy::if_not_else,
     clippy::default_constructed_unit_structs,
-    clippy::into_iter_on_ref,
+    clippy::into_iter_on_ref
 )]
 
 pub mod linear;

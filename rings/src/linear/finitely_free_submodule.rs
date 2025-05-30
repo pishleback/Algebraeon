@@ -177,7 +177,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         element: &Vec<Ring::Set>,
     ) -> (Vec<Ring::Set>, Vec<Ring::Set>) {
         debug_assert!(self.is_element(submodule));
-        debug_assert!(self.module().is_element(&element));
+        debug_assert!(self.module().is_element(element));
         let mut reduced_element = element.clone();
         let mut coset = vec![];
         for (r, &c) in submodule.pivots.iter().enumerate() {
@@ -191,7 +191,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                     &self.ring().neg(
                         &self
                             .ring()
-                            .mul(&quo, &submodule.row_basis.at(r, c2).unwrap()),
+                            .mul(&quo, submodule.row_basis.at(r, c2).unwrap()),
                     ),
                 );
             }
@@ -216,7 +216,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         element: &Vec<Ring::Set>,
     ) -> bool {
         debug_assert!(self.is_element(submodule));
-        debug_assert!(self.module().is_element(&element));
+        debug_assert!(self.module().is_element(element));
         let (_offset, element_reduced) = self.reduce_element(submodule, element);
         element_reduced
             .iter()
@@ -231,7 +231,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         debug_assert!(self.is_element(x));
         debug_assert!(self.is_element(y));
         for b in y.basis() {
-            if !self.contains_element(&x, &b) {
+            if !self.contains_element(x, &b) {
                 return false;
             }
         }

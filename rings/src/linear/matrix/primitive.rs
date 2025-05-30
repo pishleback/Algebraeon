@@ -40,7 +40,7 @@ pub fn factor_primitive_fof<
     let div = ring.lcm_list(
         mat.entries_list()
             .into_iter()
-            .map(|c| fof_inclusion.denominator(&c))
+            .map(|c| fof_inclusion.denominator(c))
             .collect(),
     );
 

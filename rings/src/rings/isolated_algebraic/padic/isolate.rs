@@ -96,7 +96,7 @@ mod balancable_pairs {
     impl Polynomial<Integer> {
         pub fn balancable_pairs<'a>(&'a self, p: &Natural) -> Vec<BalancablePair<'a>> {
             assert!(!self.is_zero());
-            debug_assert!(is_prime(&p));
+            debug_assert!(is_prime(p));
             let mut bps = vec![];
             let n = self.degree().unwrap();
             let coeff_valuations = (0..(n + 1))
@@ -110,7 +110,7 @@ mod balancable_pairs {
                             match Integer::div(&(vfi - vfj), &Integer::from(j - i)) {
                                 Ok(bv) => bps.push(BalancablePair {
                                     p: p.clone(),
-                                    f: &self,
+                                    f: self,
                                     n,
                                     i,
                                     j,
@@ -383,14 +383,14 @@ fn isorefine(
     debug_assert!(f.is_squarefree());
     debug_assert!(is_prime(p));
     debug_assert_eq!(&f.clone().derivative(), df);
-    let p_tothe_beta = p.nat_pow(&beta);
+    let p_tothe_beta = p.nat_pow(beta);
     let vdfi = padic_int_valuation(
         p,
         PolynomialStructure::new(QuotientStructure::new_ring(
             Integer::structure(),
             Integer::from(&p_tothe_beta),
         ))
-        .evaluate(&df, &Integer::from(i)),
+        .evaluate(df, &Integer::from(i)),
     );
     if vdfi < Valuation::Finite(Integer::from(beta)) {
         return isorefine1(p, f, alpha, i, beta);
@@ -445,7 +445,7 @@ fn isorefine1(
                 p,
                 f,
                 alpha,
-                &(i + &k * p.nat_pow(&beta)),
+                &(i + &k * p.nat_pow(beta)),
                 &beta_plus_one,
             ));
             k += Natural::ONE;
@@ -478,9 +478,7 @@ fn refine0(
                 let vdfa = padic_rat_valuation(p, dfa.clone());
                 vfa > match vdfa {
                     Valuation::Infinity => Valuation::Infinity,
-                    Valuation::Finite(vdfa_finite) => {
-                        Valuation::Finite(vdfa_finite * Integer::TWO)
-                    }
+                    Valuation::Finite(vdfa_finite) => Valuation::Finite(vdfa_finite * Integer::TWO),
                 }
             }
         };
@@ -526,7 +524,7 @@ fn refine0_impl(
             p,
             f,
             PAdicRationalBall {
-                a: c + Rational::from(&k) * Rational::from(p).int_pow(&beta).unwrap(),
+                a: c + Rational::from(&k) * Rational::from(p).int_pow(beta).unwrap(),
                 v: beta_plus_one.clone(),
             },
             target_beta,

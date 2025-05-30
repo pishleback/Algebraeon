@@ -288,7 +288,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
             } => {
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
-                let (_, _, lifted_f, lifted_g) = compute_lift_factors(ring, i, n, a, b, &f, &g, h);
+                let (_, _, lifted_f, lifted_g) = compute_lift_factors(ring, i, n, a, b, f, g, h);
                 f_factorization.h = lifted_f;
                 g_factorization.h = lifted_g;
 
@@ -322,7 +322,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
                 let (delta_f, delta_g, lifted_f, lifted_g) =
-                    compute_lift_factors(ring, &ring.nat_pow(i, n), &Natural::ONE, a, b, &f, &g, h);
+                    compute_lift_factors(ring, &ring.nat_pow(i, n), &Natural::ONE, a, b, f, g, h);
 
                 // beta = af + bg - 1 mod i^n
                 let beta = pring_mod_i2n.sum(vec![

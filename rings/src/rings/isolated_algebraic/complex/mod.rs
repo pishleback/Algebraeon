@@ -33,8 +33,8 @@ fn bisect_box(
         ) {
             #[allow(clippy::single_match)]
             match (
-                poly.count_complex_roots(&a, &m, &c, &d),
-                poly.count_complex_roots(&m, &b, &c, &d),
+                poly.count_complex_roots(a, &m, c, d),
+                poly.count_complex_roots(&m, b, c, d),
             ) {
                 (Some(n1), Some(n2)) => {
                     debug_assert_eq!(n1 + n2, n);
@@ -55,8 +55,8 @@ fn bisect_box(
         ) {
             #[allow(clippy::single_match)]
             match (
-                poly.count_complex_roots(&a, &b, &c, &m),
-                poly.count_complex_roots(&a, &b, &m, &d),
+                poly.count_complex_roots(a, b, c, &m),
+                poly.count_complex_roots(a, b, &m, d),
             ) {
                 (Some(n1), Some(n2)) => {
                     debug_assert_eq!(n1 + n2, n);
@@ -1003,7 +1003,7 @@ mod tests {
         let f = (x.pow(10)).into_verbose();
         assert_eq!(
             a.clone().apply_poly(&f),
-            (-341525 - 145668 * i).into_verbose()
+            (-341_525 - 145_668 * i).into_verbose()
         );
     }
 

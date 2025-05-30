@@ -202,7 +202,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature for Polynomial
         Polynomial::from_coeffs(
             a.coeffs()
                 .into_iter()
-                .map(|c| self.coeff_ring().neg(&c))
+                .map(|c| self.coeff_ring().neg(c))
                 .collect(),
         )
     }
@@ -408,13 +408,13 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 //a[i+n-1] = q[i] * b[n-1]
                 match self
                     .coeff_ring()
-                    .div(self.coeff(&a, i + n - 1), &self.coeff(b, n - 1))
+                    .div(self.coeff(&a, i + n - 1), self.coeff(b, n - 1))
                 {
                     Ok(qc) => {
                         //a -= qc*x^i*b
                         self.add_mut(
                             &mut a,
-                            &self.neg(&self.mul_var_pow(&self.mul_scalar(&b, &qc), i)),
+                            &self.neg(&self.mul_var_pow(&self.mul_scalar(b, &qc), i)),
                         );
                         q_coeffs[i] = qc;
                     }
@@ -433,9 +433,9 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
         a: &Polynomial<RS::Set>,
         b: &Polynomial<RS::Set>,
     ) -> Result<Polynomial<RS::Set>, RingDivisionError> {
-        match self.try_quorem(&a, &b) {
+        match self.try_quorem(a, b) {
             Ok((q, r)) => {
-                debug_assert!(self.equal(&self.add(&self.mul(&q, &b), &r), &a));
+                debug_assert!(self.equal(&self.add(&self.mul(&q, b), &r), a));
                 if self.is_zero(&r) {
                     Ok(q)
                 } else {
@@ -466,7 +466,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 &mut a,
                 &Polynomial::constant(
                     self.coeff_ring()
-                        .nat_pow(&self.coeff(b, n - 1), &Natural::from(m - n + 1)),
+                        .nat_pow(self.coeff(b, n - 1), &Natural::from(m - n + 1)),
                 ),
             );
 
@@ -507,6 +507,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 let mut ssres = vec![self.coeff_ring().one(), gamma.clone()];
                 gamma = self.coeff_ring().neg(&gamma);
                 loop {
+                    #[allow(clippy::single_match_else)]
                     match self.degree(&r) {
                         Some(r_deg) => {
                             prs.push(r.clone());
@@ -716,7 +717,7 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStru
         &self,
         a: &Polynomial<RS::Set>,
     ) -> (Polynomial<RS::Set>, Polynomial<RS::Set>) {
-        if self.is_zero(&a) {
+        if self.is_zero(a) {
             (self.one(), self.zero())
         } else {
             let mut a = a.clone();
@@ -922,7 +923,7 @@ pub fn factor_primitive_fof<
     let div = fof_inclusion.domain().lcm_list(
         p.coeffs()
             .into_iter()
-            .map(|c| fof_inclusion.denominator(&c))
+            .map(|c| fof_inclusion.denominator(c))
             .collect(),
     );
 
@@ -1534,7 +1535,7 @@ mod tests {
         let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_verbose();
         assert_eq!(
             Polynomial::subresultant_gcd(&f, &g),
-            Polynomial::constant(Integer::from(260708))
+            Polynomial::constant(Integer::from(260_708))
         );
 
         let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_verbose();
@@ -1542,7 +1543,7 @@ mod tests {
             .into_verbose();
         assert_eq!(
             Polynomial::subresultant_gcd(&f, &g),
-            Polynomial::constant(Integer::from(260708))
+            Polynomial::constant(Integer::from(260_708))
         );
 
         let f = ((x + 2).pow(2) * (2 * x - 3).pow(2)).into_verbose();

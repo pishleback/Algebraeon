@@ -165,7 +165,7 @@ pub fn kronecker_symbol(a: &Integer, n: &Integer) -> QuadraticSymbolValue {
                             }
                         }
                     } else {
-                        legendre_symbol(&a, &p.abs()).unwrap()
+                        legendre_symbol(a, &p.abs()).unwrap()
                     }
                 }
                 .nat_pow(&k);

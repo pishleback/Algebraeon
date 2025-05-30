@@ -428,7 +428,7 @@ pub fn primality_test(n: &Natural) -> PrimalityTestResult {
             d += Natural::ONE;
         }
 
-        if n < &Natural::from(3317044064679887385961981u128) {
+        if n < &Natural::from(3_317_044_064_679_887_385_961_981u128) {
             // Can determine primality by using Miller-Rabin on a known small set of bases when n is small enough
             match miller_rabin_primality_test(
                 n,
@@ -470,7 +470,9 @@ pub fn primality_test(n: &Natural) -> PrimalityTestResult {
 
 pub fn is_prime(n: &Natural) -> bool {
     match primality_test(n) {
-        PrimalityTestResult::Zero | PrimalityTestResult::One | PrimalityTestResult::Composite => false,
+        PrimalityTestResult::Zero | PrimalityTestResult::One | PrimalityTestResult::Composite => {
+            false
+        }
         PrimalityTestResult::Prime => true,
     }
 }

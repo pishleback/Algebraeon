@@ -444,7 +444,7 @@ impl Polynomial<Integer> {
                                         let re_root = re_roots.interval(root_idx);
                                         match re_root {
                                             SquarefreePolyRealRootInterval::Rational(x) => {
-                                                match evaluate_at_rational(&im, x)
+                                                match evaluate_at_rational(im, x)
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
@@ -459,7 +459,7 @@ impl Polynomial<Integer> {
                                                 }
                                             }
                                             SquarefreePolyRealRootInterval::Real(a, b, _) => {
-                                                match evaluate_at_rational(&im, a)
+                                                match evaluate_at_rational(im, a)
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
@@ -474,7 +474,7 @@ impl Polynomial<Integer> {
                                                         break;
                                                     }
                                                 }
-                                                match evaluate_at_rational(&im, b)
+                                                match evaluate_at_rational(im, b)
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
@@ -500,7 +500,7 @@ impl Polynomial<Integer> {
                                         let im_root = im_roots.interval(root_idx);
                                         match im_root {
                                             SquarefreePolyRealRootInterval::Rational(x) => {
-                                                match evaluate_at_rational(&re, x)
+                                                match evaluate_at_rational(re, x)
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
@@ -515,7 +515,7 @@ impl Polynomial<Integer> {
                                                 }
                                             }
                                             SquarefreePolyRealRootInterval::Real(a, b, _) => {
-                                                match evaluate_at_rational(&re, a)
+                                                match evaluate_at_rational(re, a)
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
@@ -530,7 +530,7 @@ impl Polynomial<Integer> {
                                                         break;
                                                     }
                                                 }
-                                                match evaluate_at_rational(&re, b)
+                                                match evaluate_at_rational(re, b)
                                                     .cmp(&Rational::from(0))
                                                 {
                                                     std::cmp::Ordering::Less => {
@@ -603,23 +603,19 @@ impl Polynomial<Integer> {
                     (Crossing::PosRe, Crossing::PosRe)
                     | (Crossing::PosIm, Crossing::PosIm)
                     | (Crossing::NegRe, Crossing::NegRe)
-                    | (Crossing::NegIm, Crossing::NegIm)
-                    => 0,
+                    | (Crossing::NegIm, Crossing::NegIm) => 0,
                     (Crossing::PosRe, Crossing::NegRe)
                     | (Crossing::NegRe, Crossing::PosRe)
                     | (Crossing::PosIm, Crossing::NegIm)
-                    | (Crossing::NegIm, Crossing::PosIm)
-                    => panic!(),
+                    | (Crossing::NegIm, Crossing::PosIm) => panic!(),
                     (Crossing::PosRe, Crossing::PosIm)
                     | (Crossing::PosIm, Crossing::NegRe)
                     | (Crossing::NegRe, Crossing::NegIm)
-                    | (Crossing::NegIm, Crossing::PosRe)
-                    => 1,
+                    | (Crossing::NegIm, Crossing::PosRe) => 1,
                     (Crossing::PosRe, Crossing::NegIm)
                     | (Crossing::NegIm, Crossing::NegRe)
                     | (Crossing::NegRe, Crossing::PosIm)
-                    | (Crossing::PosIm, Crossing::PosRe)
-                    => -1,
+                    | (Crossing::PosIm, Crossing::PosRe) => -1,
                 }
             }
 
@@ -685,7 +681,7 @@ impl Polynomial<Integer> {
             ) -> Vec<ComplexAlgebraicRoot> {
                 debug_assert!(a < b);
                 debug_assert!(c < d);
-                debug_assert_eq!(poly.count_complex_roots(&a, &b, &c, &d).unwrap(), n);
+                debug_assert_eq!(poly.count_complex_roots(a, b, c, d).unwrap(), n);
                 if n == 0 {
                     vec![]
                 } else if n == 1 {

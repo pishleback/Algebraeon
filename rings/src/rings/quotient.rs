@@ -146,7 +146,7 @@ impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, const IS_FIELD: 
                     &g,
                     &self
                         .ring
-                        .add(&self.ring.mul(&a, &x), &self.ring.mul(&b, &self.modulus))
+                        .add(&self.ring.mul(&a, x), &self.ring.mul(&b, &self.modulus))
                 )
             );
             if self.equal(&g, &self.one()) {

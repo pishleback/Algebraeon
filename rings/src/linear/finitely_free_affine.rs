@@ -154,7 +154,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
             ) => FinitelyFreeSubmoduleAffineSubset::NonEmpty(
-                self.module().cosets().sum(&x_coset, &y_coset),
+                self.module().cosets().sum(x_coset, y_coset),
             ),
         }
     }
@@ -174,7 +174,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             (
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
-            ) => self.module().cosets().intersect(&x_coset, &y_coset),
+            ) => self.module().cosets().intersect(x_coset, y_coset),
         }
     }
 

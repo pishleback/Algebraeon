@@ -609,7 +609,9 @@ impl SemiRingUnitsSignature for RealAlgebraicCanonicalStructure {
                             match root.wide_a {
                                 LowerBound::Inf => UpperBound::Inf,
                                 LowerBound::Finite(x) => match x.cmp(&Rational::from(0)) {
-                                    std::cmp::Ordering::Less | std::cmp::Ordering::Equal => UpperBound::Inf,
+                                    std::cmp::Ordering::Less | std::cmp::Ordering::Equal => {
+                                        UpperBound::Inf
+                                    }
                                     std::cmp::Ordering::Greater => {
                                         UpperBound::Finite(Rational::inv(&x).unwrap())
                                     }
@@ -677,7 +679,7 @@ impl RealToFloatSignature for RealAlgebraicCanonicalStructure {
                 let mut x = x.clone();
                 x.refine_to_accuracy(&Rational::from_integers(
                     Integer::from(1),
-                    Integer::from(1000000000000000i64),
+                    Integer::from(1_000_000_000_000_000i64),
                 ));
                 ((x.tight_a + x.tight_b) / Rational::from(2)).as_f64()
             }
