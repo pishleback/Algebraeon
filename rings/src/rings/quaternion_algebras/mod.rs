@@ -274,7 +274,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
             QuaternionAlgebraElement {
-                x: base.add(&a.x, &a.x),
+                x: base.add(&a.x, &a.y),
                 y: a.y.clone(),
                 z: a.z.clone(),
                 w: a.w.clone(),
