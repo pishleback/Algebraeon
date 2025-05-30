@@ -44,9 +44,9 @@ pub trait FactorableSignature: UniqueFactorizationSignature {
     }
 
     fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set
-// where
+    // where
     //     Self: FactoredAbstractStructure<Factored<Self>, Object = Self::Set, PrimeObject = Self::Set>,
-        // Factored<Self>: FactoredAbstract<Structure = Self>,
+    // Factored<Self>: FactoredAbstract<Structure = Self>,
     {
         match (self.factor(a), self.factor(b)) {
             (Some(factored_a), Some(factored_b)) => self
