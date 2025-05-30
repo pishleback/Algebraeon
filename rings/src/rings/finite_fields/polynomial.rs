@@ -345,6 +345,7 @@ where
             // println!("g = {}", g);
             let g_deg = self.degree(&g).unwrap();
             if g_deg != 0 && g_deg != f_deg {
+                #[allow(clippy::single_match_else)]
                 match self.div(&f, &g) {
                     Ok(g_prime) => {
                         return FindFactorResult::Composite(g, g_prime);
@@ -500,7 +501,7 @@ where
         DistinctDegreeFactored {
             poly_ring: self.poly_ring.clone(),
             unit: self.unit.clone(),
-            distinct_degree_factors: distinct_degree_factors,
+            distinct_degree_factors,
         }
     }
 }
@@ -590,7 +591,7 @@ where
                 };
                 to_factor = to_factor
                     .into_iter()
-                    .map(|u| {
+                    .flat_map(|u| {
                         let gcd = self
                             .poly_ring
                             .factorize_monic(&self.poly_ring.subresultant_gcd(u.clone(), g.clone()))
@@ -603,7 +604,6 @@ where
                             vec![self.poly_ring.div(&u, &gcd).unwrap(), gcd]
                         }
                     })
-                    .flatten()
                     .collect();
             }
         }

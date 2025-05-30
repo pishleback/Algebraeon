@@ -572,31 +572,29 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         let n = a.rows();
         if n != a.cols() {
             Err(MatOppErr::NotSquare)
+        } else if *k == Natural::ZERO {
+            Ok(self.ident(n))
+        } else if *k == Natural::ONE {
+            Ok(a.clone())
         } else {
-            if *k == Natural::ZERO {
-                Ok(self.ident(n))
-            } else if *k == Natural::ONE {
-                Ok(a.clone())
-            } else {
-                debug_assert!(*k >= Natural::TWO);
-                let bits: Vec<_> = k.bits().collect();
-                let mut pows = vec![a.clone()];
-                while pows.len() < bits.len() {
-                    pows.push(
-                        self.mul(&pows.last().unwrap(), &pows.last().unwrap())
-                            .unwrap(),
-                    );
-                }
-                let count = bits.len();
-                debug_assert_eq!(count, pows.len());
-                let mut ans = self.ident(n);
-                for i in 0..count {
-                    if bits[i] {
-                        ans = self.mul(&ans, &pows[i]).unwrap();
-                    }
-                }
-                Ok(ans)
+            debug_assert!(*k >= Natural::TWO);
+            let bits: Vec<_> = k.bits().collect();
+            let mut pows = vec![a.clone()];
+            while pows.len() < bits.len() {
+                pows.push(
+                    self.mul(&pows.last().unwrap(), &pows.last().unwrap())
+                        .unwrap(),
+                );
             }
+            let count = bits.len();
+            debug_assert_eq!(count, pows.len());
+            let mut ans = self.ident(n);
+            for i in 0..count {
+                if bits[i] {
+                    ans = self.mul(&ans, &pows[i]).unwrap();
+                }
+            }
+            Ok(ans)
         }
     }
 }
@@ -740,9 +738,8 @@ mod tests {
                 Integer::from(5),
             ],
         };
-        match m.check_invariants() {
-            Ok(()) => panic!(),
-            Err(_) => {}
+        if let Ok(()) = m.check_invariants() {
+            panic!();
         }
 
         let m = Matrix {

@@ -20,12 +20,11 @@ fn double_poly_to_row(
     Matrix::from_rows(vec![
         (0..outer_poly_len)
             .map(|i| a.coeff(i))
-            .map(|c| {
+            .flat_map(|c| {
                 (0..inner_poly_len)
                     .map(|j| c.coeff(j).clone())
                     .collect::<Vec<_>>()
             })
-            .flatten()
             .collect::<Vec<_>>(),
     ])
 }
@@ -481,7 +480,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 
                     //the basis (1, t, ..., t^{deg(K)-1}, x, tx, ..., t^{deg(K)-1}x, ..., x^{d-1}, tx^{d-1}, ..., t^{deg(K)-1}x^{d-1}) in that order
                     let lai_basis = (0..pi_deg)
-                        .map(|i| {
+                        .flat_map(|i| {
                             (0..k_deg)
                                 .map(|j| {
                                     lai_reduced_ring.mul(
@@ -491,7 +490,6 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                                 })
                                 .collect::<Vec<_>>()
                         })
-                        .flatten()
                         .collect::<Vec<_>>();
                     // for b in lai_basis.iter() {
                     //     println!("b = {}", b);

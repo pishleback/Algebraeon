@@ -600,22 +600,26 @@ impl Polynomial<Integer> {
         } else {
             fn axis_pair_to_num_offset(ax1: &Crossing, ax2: &Crossing) -> isize {
                 match (ax1, ax2) {
-                    (Crossing::PosRe, Crossing::PosRe) => 0,
-                    (Crossing::PosRe, Crossing::PosIm) => 1,
-                    (Crossing::PosRe, Crossing::NegRe) => panic!(),
-                    (Crossing::PosRe, Crossing::NegIm) => -1,
-                    (Crossing::PosIm, Crossing::PosRe) => -1,
-                    (Crossing::PosIm, Crossing::PosIm) => 0,
-                    (Crossing::PosIm, Crossing::NegRe) => 1,
-                    (Crossing::PosIm, Crossing::NegIm) => panic!(),
-                    (Crossing::NegRe, Crossing::PosRe) => panic!(),
-                    (Crossing::NegRe, Crossing::PosIm) => -1,
-                    (Crossing::NegRe, Crossing::NegRe) => 0,
-                    (Crossing::NegRe, Crossing::NegIm) => 1,
-                    (Crossing::NegIm, Crossing::PosRe) => 1,
-                    (Crossing::NegIm, Crossing::PosIm) => panic!(),
-                    (Crossing::NegIm, Crossing::NegRe) => -1,
-                    (Crossing::NegIm, Crossing::NegIm) => 0,
+                    (Crossing::PosRe, Crossing::PosRe)
+                    | (Crossing::PosIm, Crossing::PosIm)
+                    | (Crossing::NegRe, Crossing::NegRe)
+                    | (Crossing::NegIm, Crossing::NegIm)
+                    => 0,
+                    (Crossing::PosRe, Crossing::NegRe)
+                    | (Crossing::NegRe, Crossing::PosRe)
+                    | (Crossing::PosIm, Crossing::NegIm)
+                    | (Crossing::NegIm, Crossing::PosIm)
+                    => panic!(),
+                    (Crossing::PosRe, Crossing::PosIm)
+                    | (Crossing::PosIm, Crossing::NegRe)
+                    | (Crossing::NegRe, Crossing::NegIm)
+                    | (Crossing::NegIm, Crossing::PosRe)
+                    => 1,
+                    (Crossing::PosRe, Crossing::NegIm)
+                    | (Crossing::NegIm, Crossing::NegRe)
+                    | (Crossing::NegRe, Crossing::PosIm)
+                    | (Crossing::PosIm, Crossing::PosRe)
+                    => -1,
                 }
             }
 
@@ -657,16 +661,13 @@ impl Polynomial<Integer> {
             let mut d = Rational::from(2);
 
             loop {
-                match self.count_complex_roots(&a, &b, &c, &d) {
-                    Some(n) => {
-                        debug_assert!(n <= target_uhp_num);
-                        if n == target_uhp_num {
-                            break;
-                        }
+                if let Some(n) = self.count_complex_roots(&a, &b, &c, &d) {
+                    debug_assert!(n <= target_uhp_num);
+                    if n == target_uhp_num {
+                        break;
                     }
-                    None => {
-                        //boundary root
-                    }
+                } else {
+                    // boundary root
                 }
                 a *= Rational::from(2);
                 b *= Rational::from(2);

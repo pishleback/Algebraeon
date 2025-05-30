@@ -202,24 +202,23 @@ impl Monomial {
                 return std::cmp::Ordering::Less;
             } else if a.prod[i].var.ident > b.prod[i].var.ident {
                 return std::cmp::Ordering::Greater;
-            } else {
-                if a.prod[i].pow > b.prod[i].pow {
-                    return std::cmp::Ordering::Less;
-                } else if a.prod[i].pow < b.prod[i].pow {
-                    return std::cmp::Ordering::Greater;
-                } else {
-                    i += 1;
-                }
             }
+            if a.prod[i].pow > b.prod[i].pow {
+                return std::cmp::Ordering::Less;
+            }
+            if a.prod[i].pow < b.prod[i].pow {
+                return std::cmp::Ordering::Greater;
+            }
+            i += 1;
         }
         #[allow(clippy::comparison_chain)]
-        if a.prod.len() > b.prod.len() {
-            return std::cmp::Ordering::Less;
+        return if a.prod.len() > b.prod.len() {
+            std::cmp::Ordering::Less
         } else if a.prod.len() < b.prod.len() {
-            return std::cmp::Ordering::Greater;
+            std::cmp::Ordering::Greater
         } else {
-            return std::cmp::Ordering::Equal;
-        }
+            std::cmp::Ordering::Equal
+        };
     }
 
     fn graded_lexicographic_order(a: &Self, b: &Self) -> std::cmp::Ordering {
@@ -328,7 +327,7 @@ impl<R: Clone> MultiPolynomial<R> {
                          coeff,
                          monomial: Monomial { prod, .. },
                      }| Term {
-                        coeff: coeff,
+                        coeff,
                         monomial: Monomial::new(
                             prod.into_iter()
                                 .map(|VariablePower { var, pow }| VariablePower {
@@ -524,12 +523,12 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
         for Term {
             coeff: a_coeff,
             monomial: a_monomial,
-        } in a.terms.iter()
+        } in &a.terms
         {
             for Term {
                 coeff: b_coeff,
                 monomial: b_monomial,
-            } in b.terms.iter()
+            } in &b.terms
             {
                 let mon = Monomial::mul(a_monomial, b_monomial);
                 let coeff = self.coeff_ring().mul(a_coeff, b_coeff);
@@ -679,20 +678,17 @@ where
         SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>,
 {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
-        match x.free_vars().into_iter().chain(y.free_vars()).next() {
-            Some(free_var) => {
-                let poly_over_self = PolynomialStructure::new(self);
-                let x_poly = self.expand(x, &free_var);
-                let y_poly = self.expand(y, &free_var);
-                let g_poly = poly_over_self.gcd(&x_poly, &y_poly);
-                poly_over_self.evaluate(&g_poly, &self.var(free_var))
-            }
-            None => {
-                let x = self.as_constant(x).unwrap();
-                let y = self.as_constant(y).unwrap();
-                let g = self.coeff_ring().gcd(&x, &y);
-                MultiPolynomial::constant(g)
-            }
+        if let Some(free_var) = x.free_vars().into_iter().chain(y.free_vars()).next() {
+            let poly_over_self = PolynomialStructure::new(self);
+            let x_poly = self.expand(x, &free_var);
+            let y_poly = self.expand(y, &free_var);
+            let g_poly = poly_over_self.gcd(&x_poly, &y_poly);
+            poly_over_self.evaluate(&g_poly, &self.var(free_var))
+        } else {
+            let x = self.as_constant(x).unwrap();
+            let y = self.as_constant(y).unwrap();
+            let g = self.coeff_ring().gcd(&x, &y);
+            MultiPolynomial::constant(g)
         }
     }
 }
@@ -790,6 +786,7 @@ where
         if self.is_zero(mpoly) {
             None
         } else {
+            #[allow(clippy::single_match_else)]
             match mpoly.free_vars().into_iter().next() {
                 Some(free_var) => {
                     match mpoly.homogeneous_of_degree() {

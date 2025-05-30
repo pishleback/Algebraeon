@@ -73,8 +73,7 @@ impl Expr {
             Expr::Power(p) => p.validate(),
             Expr::Product(p) => p.validate(),
             Expr::Sum(s) => s.validate(),
-            Expr::Neg(e) => e.validate(),
-            Expr::Grouped(e) => e.validate(),
+            Expr::Grouped(e) | Expr::Neg(e) => e.validate(),
             _ => Ok(()),
         }
     }
@@ -433,8 +432,7 @@ impl Expr {
                 p.base.add_variables(vars);
                 // For a valid polynomial, exponent must be a constant
             }
-            Expr::Grouped(e) => e.add_variables(vars),
-            Expr::Neg(e) => e.add_variables(vars),
+            Expr::Grouped(e) | Expr::Neg(e) => e.add_variables(vars),
         }
     }
 
@@ -531,7 +529,7 @@ impl Expr {
 
                         // Multiply the terms using distributive property
                         for (left_exp, left_coef) in left_terms {
-                            for (right_exp, right_coef) in right_terms.iter() {
+                            for (right_exp, right_coef) in &right_terms {
                                 let new_exp = left_exp + right_exp;
                                 let new_coef =
                                     left_coef.clone() * right_coef.clone() * coefficient.clone();
@@ -710,7 +708,7 @@ impl Expr {
 
                         // Multiply the terms using distributive property
                         for (left_exp, left_coef) in left_terms {
-                            for (right_exp, right_coef) in right_terms.iter() {
+                            for (right_exp, right_coef) in &right_terms {
                                 let new_exp = left_exp + right_exp;
                                 let new_coef =
                                     left_coef.clone() * right_coef.clone() * coefficient.clone();

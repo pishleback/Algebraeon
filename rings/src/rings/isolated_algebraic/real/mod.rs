@@ -609,8 +609,7 @@ impl SemiRingUnitsSignature for RealAlgebraicCanonicalStructure {
                             match root.wide_a {
                                 LowerBound::Inf => UpperBound::Inf,
                                 LowerBound::Finite(x) => match x.cmp(&Rational::from(0)) {
-                                    std::cmp::Ordering::Less => UpperBound::Inf,
-                                    std::cmp::Ordering::Equal => UpperBound::Inf,
+                                    std::cmp::Ordering::Less | std::cmp::Ordering::Equal => UpperBound::Inf,
                                     std::cmp::Ordering::Greater => {
                                         UpperBound::Finite(Rational::inv(&x).unwrap())
                                     }

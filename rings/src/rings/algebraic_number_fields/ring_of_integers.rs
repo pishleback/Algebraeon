@@ -50,7 +50,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
             algebraic_number_field.compute_integral_basis_and_discriminant();
         debug_assert_eq!(discriminant, true_discriminant);
         for a in &integral_basis {
-            debug_assert!(algebraic_number_field.is_algebraic_integer(a))
+            debug_assert!(algebraic_number_field.is_algebraic_integer(a));
         }
         let mut roi = Self {
             algebraic_number_field,
@@ -314,6 +314,7 @@ impl RingSignature for RingOfIntegersWithIntegralBasisStructure {
 
 impl SemiRingUnitsSignature for RingOfIntegersWithIntegralBasisStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
+        #[allow(clippy::collapsible_else_if)]
         if self.is_zero(a) {
             Err(RingDivisionError::DivideByZero)
         } else {

@@ -169,27 +169,24 @@ pub fn anf_pair_primitive_element_theorem(
             ),
         );
 
-        match as_poly_expr(a, &generator) {
-            Some(a_rel_gen) => {
-                let anf = generator.min_poly().algebraic_number_field();
-                //gen = xa + yb
-                //so b = (gen - xa) / y
-                let b_rel_gen = anf.mul(
-                    &anf.add(
-                        &Polynomial::var(),
-                        &anf.mul(&a_rel_gen, &Polynomial::constant(Rational::from(-&x))),
-                    ),
-                    &Polynomial::constant(Rational::from_integers(Integer::from(1), y.clone())),
-                );
-                #[cfg(debug_assertions)]
-                {
-                    let mut gen_mut = generator.clone();
-                    assert_eq!(a, &gen_mut.apply_poly(&a_rel_gen));
-                    assert_eq!(b, &gen_mut.apply_poly(&b_rel_gen));
-                }
-                return (generator, x, y, a_rel_gen, b_rel_gen);
+        if let Some(a_rel_gen) = as_poly_expr(a, &generator) {
+            let anf = generator.min_poly().algebraic_number_field();
+            //gen = xa + yb
+            //so b = (gen - xa) / y
+            let b_rel_gen = anf.mul(
+                &anf.add(
+                    &Polynomial::var(),
+                    &anf.mul(&a_rel_gen, &Polynomial::constant(Rational::from(-&x))),
+                ),
+                &Polynomial::constant(Rational::from_integers(Integer::from(1), y.clone())),
+            );
+            #[cfg(debug_assertions)]
+            {
+                let mut gen_mut = generator.clone();
+                assert_eq!(a, &gen_mut.apply_poly(&a_rel_gen));
+                assert_eq!(b, &gen_mut.apply_poly(&b_rel_gen));
             }
-            None => {}
+            return (generator, x, y, a_rel_gen, b_rel_gen);
         }
     }
     unreachable!()

@@ -65,9 +65,8 @@ impl ConwayPolynomialDatabase {
                 coeffs.push(c);
                 if d == ']' {
                     break;
-                } else {
-                    assert_eq_or_err!(d, ',');
                 }
+                assert_eq_or_err!(d, ',');
             }
             assert_or_err!(
                 data.entry(p)

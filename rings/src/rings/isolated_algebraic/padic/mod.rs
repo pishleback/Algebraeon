@@ -190,8 +190,7 @@ pub mod truncation {
 
         pub fn string_repr(&self) -> String {
             let p = match self {
-                Truncated::Zero { p } => p,
-                Truncated::NonZero { p, .. } => p,
+                Truncated::Zero { p } | Truncated::NonZero { p, .. } => p,
             };
             match self.digits() {
                 None => "0".into(),
@@ -209,6 +208,7 @@ pub mod truncation {
                     write!(&mut s, "...").unwrap();
                     for (i, d) in rev_digits.into_iter().rev().enumerate().rev() {
                         write!(&mut s, "{}", d).unwrap();
+                        #[allow(clippy::collapsible_else_if)]
                         if i != 0 {
                             if seps {
                                 if Integer::from(i) == shift {
@@ -720,8 +720,9 @@ pub mod structure {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     PAdicRational::equal(a, b)
                 }
-                (PAdicAlgebraic::Rational(_), PAdicAlgebraic::Algebraic(_)) => false,
-                (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_)) => false,
+                (PAdicAlgebraic::Rational(_), PAdicAlgebraic::Algebraic(_))
+                | (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_))
+                => false,
                 (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => {
                     PAdicAlgebraicRoot::equal_mut(&mut a.clone(), &mut b.clone())
                 }
@@ -809,6 +810,7 @@ pub mod structure {
         fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
             debug_assert!(self.is_element(a));
             debug_assert!(self.is_element(b));
+            #[allow(clippy::single_match)]
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     return Ok(PAdicAlgebraic::Rational(PAdicRational {

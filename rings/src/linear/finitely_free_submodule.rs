@@ -397,7 +397,7 @@ mod tests {
                     .submodules()
                     .matrix_row_span(Matrix::from_rows(vec![vec![1, 2, 0, 1], vec![0, 0, 1, 1]]))
             )
-        )
+        );
     }
 
     #[test]
@@ -454,7 +454,7 @@ mod tests {
                 .into_iter()
                 .map(Integer::from)
                 .collect::<Vec<_>>()
-        )
+        );
     }
 
     #[test]

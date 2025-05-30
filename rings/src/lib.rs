@@ -34,29 +34,24 @@
     clippy::module_inception,
     clippy::implicit_hasher,
     clippy::unnecessary_box_returns,
-    clippy::no_effect_underscore_binding
+    clippy::no_effect_underscore_binding,
+    clippy::multiple_bound_locations
 )]
 #![allow(
-    clippy::single_match,
-    clippy::match_same_arms,
     clippy::wildcard_imports,
     clippy::needless_borrow,
     clippy::redundant_closure,
-    clippy::semicolon_if_nothing_returned,
     clippy::unreadable_literal,
-    clippy::match_wildcard_for_single_variants,
     clippy::unnecessary_wraps,
     clippy::useless_conversion,
     clippy::match_bool,
     clippy::nonminimal_bool,
-    clippy::single_match_else,
     clippy::range_plus_one,
     clippy::len_zero,
     clippy::while_let_loop,
     clippy::clone_on_copy,
     clippy::let_and_return,
     clippy::op_ref,
-    clippy::map_flatten,
     clippy::absurd_extreme_comparisons,
     clippy::needless_late_init,
     clippy::assign_op_pattern,
@@ -70,12 +65,9 @@
     clippy::map_entry,
     clippy::filter_next,
     clippy::manual_find,
-    clippy::explicit_iter_loop,
-    clippy::explicit_into_iter_loop,
     clippy::if_not_else,
     clippy::default_constructed_unit_structs,
     clippy::into_iter_on_ref,
-    clippy::unnecessary_semicolon
 )]
 
 pub mod linear;

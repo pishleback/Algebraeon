@@ -23,10 +23,8 @@ impl std::ops::Mul for QuadraticSymbolValue {
     fn mul(self, other: Self) -> Self::Output {
         match (self, other) {
             (Self::Zero, _) | (_, Self::Zero) => Self::Zero,
-            (Self::Pos, Self::Pos) => Self::Pos,
-            (Self::Pos, Self::Neg) => Self::Neg,
-            (Self::Neg, Self::Pos) => Self::Neg,
-            (Self::Neg, Self::Neg) => Self::Pos,
+            (Self::Pos, Self::Pos) | (Self::Neg, Self::Neg) => Self::Pos,
+            (Self::Pos, Self::Neg) | (Self::Neg, Self::Pos) => Self::Neg,
         }
     }
 }

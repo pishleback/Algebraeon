@@ -487,16 +487,15 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         debug_assert!(self.is_element(&prime_ideal));
         if self.ring().is_zero(&a) {
             return Valuation::Infinity;
-        } else {
-            let mut k = 1usize;
-            let mut prime_to_the_k = prime_ideal.clone();
-            loop {
-                if !self.ideal_contains_element(&prime_to_the_k, &a) {
-                    return Valuation::Finite((k - 1).into());
-                }
-                k = k + 1;
-                prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
+        }
+        let mut k = 1usize;
+        let mut prime_to_the_k = prime_ideal.clone();
+        loop {
+            if !self.ideal_contains_element(&prime_to_the_k, &a) {
+                return Valuation::Finite((k - 1).into());
             }
+            k = k + 1;
+            prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
         }
     }
 
@@ -509,16 +508,15 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         debug_assert!(self.is_element(&prime_ideal));
         if self.ideal_is_zero(&a) {
             return Valuation::Infinity;
-        } else {
-            let mut k = 1usize;
-            let mut prime_to_the_k = prime_ideal.clone();
-            loop {
-                if !self.ideal_contains(&prime_to_the_k, &a) {
-                    return Valuation::Finite((k - 1).into());
-                }
-                k = k + 1;
-                prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
+        }
+        let mut k = 1usize;
+        let mut prime_to_the_k = prime_ideal.clone();
+        loop {
+            if !self.ideal_contains(&prime_to_the_k, &a) {
+                return Valuation::Finite((k - 1).into());
             }
+            k = k + 1;
+            prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
         }
     }
 }

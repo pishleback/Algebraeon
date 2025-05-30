@@ -219,6 +219,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     ) -> bool {
         debug_assert!(self.is_element(x));
         debug_assert!(self.is_element(y));
+        #[allow(clippy::match_same_arms)]
         match (x, y) {
             (
                 FinitelyFreeSubmoduleAffineSubset::Empty,
@@ -250,6 +251,7 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring
     ) -> bool {
         debug_assert!(self.is_element(x));
         debug_assert!(self.is_element(y));
+        #[allow(clippy::match_same_arms)]
         match (x, y) {
             (
                 FinitelyFreeSubmoduleAffineSubset::Empty,

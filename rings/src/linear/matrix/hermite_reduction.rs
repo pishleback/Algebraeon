@@ -512,13 +512,10 @@ mod tests {
             //trace the boundary of zeros and check that everything under is zero
             let mut rz = 0;
             for cz in 0..h.cols() {
-                match pivs.get(rz) {
-                    Some(cp) => {
-                        if cp == &cz {
-                            rz += 1;
-                        }
+                if let Some(cp) = pivs.get(rz) {
+                    if cp == &cz {
+                        rz += 1;
                     }
-                    None => {}
                 }
                 for r in rz..h.rows() {
                     assert_eq!(h.at(r, cz).unwrap(), &Integer::zero());
@@ -557,13 +554,10 @@ mod tests {
             //trace the boundary of zeros and check that everything to the right is zero
             let mut cz = 0;
             for rz in 0..h.rows() {
-                match pivs.get(cz) {
-                    Some(rp) => {
-                        if rp == &rz {
-                            cz += 1;
-                        }
+                if let Some(rp) = pivs.get(cz) {
+                    if rp == &rz {
+                        cz += 1;
                     }
-                    None => {}
                 }
                 for c in cz..h.cols() {
                     assert_eq!(h.at(rz, c).unwrap(), &Integer::zero());

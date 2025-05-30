@@ -470,10 +470,8 @@ pub fn primality_test(n: &Natural) -> PrimalityTestResult {
 
 pub fn is_prime(n: &Natural) -> bool {
     match primality_test(n) {
-        PrimalityTestResult::Zero => false,
-        PrimalityTestResult::One => false,
+        PrimalityTestResult::Zero | PrimalityTestResult::One | PrimalityTestResult::Composite => false,
         PrimalityTestResult::Prime => true,
-        PrimalityTestResult::Composite => false,
     }
 }
 

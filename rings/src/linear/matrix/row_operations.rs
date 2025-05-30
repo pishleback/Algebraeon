@@ -162,7 +162,7 @@ impl<RS: IntegralDomainSignature> ElementaryOpp<RS> {
                     *m.at_mut(*j, col).unwrap() = tmp;
                 }
             }
-        };
+        }
         if self.transpose {
             m.transpose_mut();
         }

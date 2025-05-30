@@ -67,8 +67,8 @@ impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
                 let row_opp = ElementaryOpp::new_row_opp(
                     self.ring().clone(),
                     ElementaryOppType::AddRowMul {
-                        i: i,
-                        j: j,
+                        i,
+                        j,
                         x: self.ring().neg(&lambda),
                     },
                 );

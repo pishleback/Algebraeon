@@ -96,6 +96,7 @@ where
         let mut linear_factors = self.factorizations().new_trivial();
         'seek_linear_factor: while self.degree(&f).unwrap() > 0 {
             let c0 = self.coeff(&f, 0);
+            #[allow(clippy::redundant_else)]
             if self.coeff_ring().is_zero(c0) {
                 //linear factor of x
                 f = self.div(&f, &self.var()).unwrap();
@@ -355,7 +356,7 @@ where
         .into_unit_and_factor_powers();
     let mut fof_unit = prim_unit.apply_map(|c| fof_inclusion.image(c));
     let mut fof_factors = vec![];
-    for (factor, power) in prim_factors.into_iter() {
+    for (factor, power) in prim_factors {
         let fof_factor = factor.apply_map(|c| fof_inclusion.image(c));
         let (fof_factor_unit, fof_factor_prim) = poly_ring.factor_fav_assoc(&fof_factor);
         poly_ring.mul_mut(&mut fof_unit, &fof_factor_unit);

@@ -210,18 +210,15 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature for Polynomial
 
 impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
     pub fn reduce_poly(&self, mut a: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
+        let zero_val = self.coeff_ring().zero();
         loop {
-            if a.coeffs.len() == 0 {
+            if a.coeffs.is_empty() {
                 break;
+            }
+            if self.coeff_ring().equal(a.coeffs.last().unwrap(), &zero_val) {
+                a.coeffs.pop();
             } else {
-                if self
-                    .coeff_ring()
-                    .equal(&a.coeffs.last().unwrap(), &self.coeff_ring().zero())
-                {
-                    a.coeffs.pop();
-                } else {
-                    break;
-                }
+                break;
             }
         }
         a
@@ -473,6 +470,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 ),
             );
 
+            #[allow(clippy::single_match_else)]
             match self.try_quorem(&a, b) {
                 Ok((_q, r)) => Some(Ok(r)),
                 Err(_) => panic!(),

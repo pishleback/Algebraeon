@@ -82,6 +82,7 @@ impl<
                 }
 
                 //af + bg = 1 mod i^n
+                #[allow(clippy::collapsible_if)]
                 if LIFTED_BEZOUT_COEFFS {
                     if !poly_ring_mod_i_tothe_n.is_zero(&poly_ring_mod_i_tothe_n.sum(vec![
                         poly_ring_mod_i_tothe_n.mul(a, &f_factorization.h),
@@ -472,7 +473,7 @@ impl<
         // h and all fs monic
         assert!(fs.len() >= 1);
         // debug_assert!(poly_ring.is_monic(&h));
-        for f in fs.iter() {
+        for f in &fs {
             debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n

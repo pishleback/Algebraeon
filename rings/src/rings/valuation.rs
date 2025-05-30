@@ -56,10 +56,12 @@ impl Valuation {
 impl Add<&Valuation> for Valuation {
     type Output = Valuation;
     fn add(self, other: &Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity)
+            => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -67,10 +69,12 @@ impl Add<&Valuation> for Valuation {
 impl Add<Valuation> for &Valuation {
     type Output = Valuation;
     fn add(self, other: Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity)
+            => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -78,10 +82,12 @@ impl Add<Valuation> for &Valuation {
 impl Add<Valuation> for Valuation {
     type Output = Valuation;
     fn add(self, other: Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity)
+            => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -89,10 +95,12 @@ impl Add<Valuation> for Valuation {
 impl Add<&Valuation> for &Valuation {
     type Output = Valuation;
     fn add(self, other: &Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity)
+            => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -159,10 +167,12 @@ Infinity * Infinity = Infinity is justified in the same way by the p-adic norm s
 impl Mul<&Valuation> for Valuation {
     type Output = Valuation;
     fn mul(self, other: &Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity)
+            => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -170,10 +180,12 @@ impl Mul<&Valuation> for Valuation {
 impl Mul<Valuation> for &Valuation {
     type Output = Valuation;
     fn mul(self, other: Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity) 
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity)
+            => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -181,10 +193,12 @@ impl Mul<Valuation> for &Valuation {
 impl Mul<Valuation> for Valuation {
     type Output = Valuation;
     fn mul(self, other: Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity)
+            => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -192,10 +206,12 @@ impl Mul<Valuation> for Valuation {
 impl Mul<&Valuation> for &Valuation {
     type Output = Valuation;
     fn mul(self, other: &Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity)
+            => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }

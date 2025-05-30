@@ -127,6 +127,7 @@ impl SquarefreePolyRealRoots {
                         return Err("sign of poly should be different at a and at b");
                     }
 
+                    #[allow(clippy::collapsible_else_if)]
                     if *incr {
                         if !((at_a < Rational::from(0)) && (at_b > Rational::from(0))) {
                             return Err("sign of poly should go from neg to pos here");
@@ -244,6 +245,7 @@ impl SquarefreePolyRealRoots {
                     let sign_b = at_b >= Rational::ZERO;
                     // println!("at_a = {}", at_a);
                     // println!("at_b = {}", at_b);
+                    #[allow(clippy::collapsible_else_if)]
                     if deg == 1 {
                         if sign_a != sign_b {
                             return RealAlgebraic::Rational(unique_linear_root(&factor));
@@ -255,8 +257,8 @@ impl SquarefreePolyRealRoots {
                                 poly: factor,
                                 tight_a: a.clone(),
                                 tight_b: b.clone(),
-                                wide_a: wide_a,
-                                wide_b: wide_b,
+                                wide_a,
+                                wide_b,
                                 dir: false,
                             });
                         } else if !sign_a && sign_b {
@@ -265,8 +267,8 @@ impl SquarefreePolyRealRoots {
                                 poly: factor,
                                 tight_a: a.clone(),
                                 tight_b: b.clone(),
-                                wide_a: wide_a,
-                                wide_b: wide_b,
+                                wide_a,
+                                wide_b,
                                 dir: true,
                             });
                         }
@@ -670,11 +672,8 @@ impl Polynomial<Integer> {
             self.degree().unwrap()
         );
 
-        match (opt_a, opt_b) {
-            (Some(a), Some(b)) => {
-                assert!(a < b);
-            }
-            _ => {}
+        if let (Some(a), Some(b)) = (opt_a, opt_b) {
+            assert!(a < b);
         }
 
         let d = self.degree().unwrap();

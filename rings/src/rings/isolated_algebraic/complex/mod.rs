@@ -31,6 +31,7 @@ fn bisect_box(
             b,
             &Rational::from_integers(Integer::from(1), Integer::from(3)),
         ) {
+            #[allow(clippy::single_match)]
             match (
                 poly.count_complex_roots(&a, &m, &c, &d),
                 poly.count_complex_roots(&m, &b, &c, &d),
@@ -52,6 +53,7 @@ fn bisect_box(
             d,
             &Rational::from_integers(Integer::from(1), Integer::from(3)),
         ) {
+            #[allow(clippy::single_match)]
             match (
                 poly.count_complex_roots(&a, &b, &c, &m),
                 poly.count_complex_roots(&a, &b, &m, &d),
@@ -205,8 +207,8 @@ impl Display for ComplexAlgebraicRoot {
             }
 
             let sign = tight_c_abs < tight_d_abs;
-            if x == Rational::ZERO {
-                if y == Rational::ONE {
+            match (x, y) {
+                (Rational::ZERO, Rational::ONE) => {
                     write!(
                         f,
                         "{}{}",
@@ -216,7 +218,8 @@ impl Display for ComplexAlgebraicRoot {
                         },
                         r_str
                     )?;
-                } else {
+                }
+                (Rational::ZERO, y) => {
                     write!(
                         f,
                         "{}{}{}",
@@ -228,8 +231,7 @@ impl Display for ComplexAlgebraicRoot {
                         r_str
                     )?;
                 }
-            } else {
-                if y == Rational::ONE {
+                (x, Rational::ONE) => {
                     write!(
                         f,
                         "{}{}{}",
@@ -240,7 +242,8 @@ impl Display for ComplexAlgebraicRoot {
                         },
                         r_str
                     )?;
-                } else {
+                }
+                (x, y) => {
                     write!(
                         f,
                         "{}{}{}{}",
@@ -456,43 +459,42 @@ impl ComplexAlgebraicRoot {
 
     pub fn apply_poly(&mut self, poly: &Polynomial<Rational>) -> ComplexAlgebraic {
         let poly = Polynomial::rem(poly, &self.min_poly());
-        match poly.as_constant() {
-            Some(rat) => ComplexAlgebraic::Real(RealAlgebraic::Rational(rat)),
-            None => {
-                let ans_poly = self
-                    .min_poly()
-                    .algebraic_number_field()
-                    .min_poly(&poly)
-                    .primitive_part_fof();
+        if let Some(rat) = poly.as_constant() {
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(rat))
+        } else {
+            let ans_poly = self
+                .min_poly()
+                .algebraic_number_field()
+                .min_poly(&poly)
+                .primitive_part_fof();
 
-                identify_complex_root(
-                    ans_poly,
-                    (0..).map(|i| {
+            identify_complex_root(
+                ans_poly,
+                (0..).map(|i| {
+                    if i != 0 {
+                        self.refine();
+                    }
+
+                    // eg: c + bx + ax^2 = c + x(b + x(a))
+                    let mut coeffs = poly.coeffs().into_iter().rev();
+                    let lc = coeffs.next().unwrap();
+                    let mut ans = mul_box_rat(
+                        (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
+                        lc,
+                    );
+                    for (i, c) in coeffs.enumerate() {
                         if i != 0 {
-                            self.refine();
+                            ans = mul_boxes(
+                                (&ans.0, &ans.1, &ans.2, &ans.3),
+                                (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
+                            );
                         }
+                        ans = add_box_rat((&ans.0, &ans.1, &ans.2, &ans.3), c);
+                    }
 
-                        // eg: c + bx + ax^2 = c + x(b + x(a))
-                        let mut coeffs = poly.coeffs().into_iter().rev();
-                        let lc = coeffs.next().unwrap();
-                        let mut ans = mul_box_rat(
-                            (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
-                            lc,
-                        );
-                        for (i, c) in coeffs.enumerate() {
-                            if i != 0 {
-                                ans = mul_boxes(
-                                    (&ans.0, &ans.1, &ans.2, &ans.3),
-                                    (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
-                                );
-                            }
-                            ans = add_box_rat((&ans.0, &ans.1, &ans.2, &ans.3), c);
-                        }
-
-                        ans
-                    }),
-                )
-            }
+                    ans
+                }),
+            )
         }
     }
 
@@ -894,29 +896,26 @@ impl SemiRingUnitsSignature for ComplexAlgebraicCanonicalStructure {
                     //     decimal_string_approx(delta)
                     // );
 
-                    match inv_poly.count_complex_roots(
+                    if let Some(count) = inv_poly.count_complex_roots(
                         &inv_tight_a,
                         &inv_tight_b,
                         &inv_tight_c,
                         &inv_tight_d,
                     ) {
-                        Some(count) => {
-                            if count == 0 {
-                                unreachable!();
-                            } else if count == 1 {
-                                let ans = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
-                                    tight_a: inv_tight_a,
-                                    tight_b: inv_tight_b,
-                                    tight_c: inv_tight_c,
-                                    tight_d: inv_tight_d,
-                                    poly: inv_poly,
-                                });
-                                #[cfg(debug_assertions)]
-                                ans.check_invariants().unwrap();
-                                return Ok(ans);
-                            }
+                        if count == 0 {
+                            unreachable!();
+                        } else if count == 1 {
+                            let ans = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
+                                tight_a: inv_tight_a,
+                                tight_b: inv_tight_b,
+                                tight_c: inv_tight_c,
+                                tight_d: inv_tight_d,
+                                poly: inv_poly,
+                            });
+                            #[cfg(debug_assertions)]
+                            ans.check_invariants().unwrap();
+                            return Ok(ans);
                         }
-                        None => {}
                     }
 
                     root.refine();
