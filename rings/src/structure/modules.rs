@@ -52,10 +52,16 @@ pub trait FinitelyFreeModuleSignature<Ring: RingSignature>: FreeModuleSignature<
     }
 
     fn from_vec(&self, v: Vec<&Ring::Set>) -> Self::Set {
-        debug_assert_eq!(v.len(), self.rank());
+        let n = self.rank();
+        debug_assert_eq!(v.len(), n);
+        let basis = self.basis();
+        debug_assert_eq!(basis.len(), n);
         let mut t = self.zero();
-        for (i, b) in self.basis_vecs().into_iter().enumerate() {
-            t = self.add(&t, &self.scalar_mul(&v[i], &b));
+        for i in 0..n {
+            self.add_mut(
+                &mut t,
+                &self.scalar_mul(&v[i], &self.from_component(&basis[i], &self.ring().one())),
+            );
         }
         t
     }
