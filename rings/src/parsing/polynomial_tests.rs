@@ -1,3 +1,4 @@
+use crate::parsing::ast::*;
 use crate::parsing::polynomial::*;
 use crate::polynomial::{MultiPolynomial, Polynomial, Variable};
 use crate::structure::{MetaRing, MetaSemiRing};

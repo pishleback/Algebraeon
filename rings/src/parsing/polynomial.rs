@@ -1,188 +1,22 @@
+use crate::parsing::ast::*;
 use crate::polynomial::{MultiPolynomial, Polynomial, Variable};
 use crate::structure::{MetaRing, MetaSemiRing};
 use algebraeon_nzq::*;
 use lalrpop_util::lalrpop_mod;
 use std::collections::HashMap;
-use std::fmt;
 
 lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs"); // synthesized by LALRPOP
 
-#[derive(Debug, Clone, PartialEq)]
-struct ParseVar {
-    name: String,
-}
-
-impl ParseVar {
-    fn formatted(&self) -> String {
-        if self.name.len() > 1 {
-            format!("{{{}}}", self.name) // Add braces for multi-character variables
-        } else {
-            self.name.clone()
-        }
-    }
-}
-
-impl fmt::Display for ParseVar {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.formatted())
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-struct Number {
-    numerator: Integer,
-    denominator: Integer,
-}
-
-impl Number {
-    fn new(numerator: Integer, denominator: Integer) -> Self {
-        if denominator == Integer::from(0) {
-            panic!("Denominator cannot be zero");
-        }
-        Number {
-            numerator,
-            denominator,
-        }
-    }
-}
-
-impl fmt::Display for Number {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.denominator == Integer::from(1) {
-            write!(f, "{}", self.numerator)
-        } else {
-            write!(f, "{}/{}", self.numerator, self.denominator)
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-enum Expr {
-    Var(ParseVar),
-    Num(Number),
-    Sum(Sum),
-    Product(Product),
-    Power(Power),
-    Grouped(Box<Expr>),
-    Neg(Box<Expr>),
-}
-
 impl Expr {
-    fn validate(&self) -> Result<(), String> {
-        match self {
-            Expr::Power(p) => p.validate(),
-            Expr::Product(p) => p.validate(),
-            Expr::Sum(s) => s.validate(),
-            Expr::Neg(e) => e.validate(),
-            Expr::Grouped(e) => e.validate(),
-            _ => Ok(()),
-        }
-    }
-}
-
-impl fmt::Display for Expr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Var(v) => write!(f, "{}", v),
-            Self::Num(n) => write!(f, "{}", n),
-            Self::Sum(s) => write!(f, "{}", s),
-            Self::Product(p) => write!(f, "{}", p),
-            Self::Power(p) => write!(f, "{}", p),
-            Self::Grouped(e) => write!(f, "({})", e),
-            Self::Neg(e) => write!(f, "-{}", e),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-struct Sum {
-    left: Box<Expr>,
-    right: Box<Expr>,
-}
-
-impl Sum {
-    fn validate(&self) -> Result<(), String> {
-        self.left.validate()?;
-        self.right.validate()
-    }
-}
-
-impl fmt::Display for Sum {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.right.as_ref() {
-            Expr::Neg(inner) => write!(f, "{} - {}", self.left, inner),
-            _ => write!(f, "{} + {}", self.left, self.right),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-struct Product {
-    left: Box<Expr>,
-    right: Box<Expr>,
-}
-
-impl Product {
-    fn validate(&self) -> Result<(), String> {
-        if let Expr::Power(p) = self.right.as_ref() {
-            if let Expr::Num(n) = p.exponent.as_ref() {
-                if n.denominator == Integer::from(1) && n.numerator == Integer::from(-1) {
-                    return Err("Division not allowed in polynomials".to_string());
-                }
-            }
-        }
-        self.left.validate()?;
-        self.right.validate()
-    }
-}
-
-impl fmt::Display for Product {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} * {}", self.left, self.right)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-struct Power {
-    base: Box<Expr>,
-    exponent: Box<Expr>,
-}
-
-impl Power {
-    fn validate(&self) -> Result<(), String> {
-        match self.exponent.as_ref() {
-            Expr::Num(n) => {
-                if n.denominator != Integer::from(1) {
-                    return Err("Fractional exponents not allowed in polynomials".to_string());
-                }
-                if n.numerator < Integer::from(0) {
-                    return Err("Negative exponents not allowed in polynomials".to_string());
-                }
-            }
-            _ => return Err("Exponents must be integer constants in polynomials".to_string()),
-        }
-        self.base.validate()
-    }
-}
-
-impl fmt::Display for Power {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}^{}", self.base, self.exponent)
-    }
-}
-
-impl Expr {
-    fn from_string(input: String) -> Result<Self, String> {
+    pub fn from_string(input: String) -> Result<Self, String> {
         match polynomial_parser::ExprParser::new().parse(&input) {
             Ok(expr) => Ok(*expr),
             Err(err) => Err(format!("Failed to parse expression: {}", err)),
         }
     }
-}
 
-impl Expr {
     // Convert expression into univariate integer polynomial
-    fn build_univariate_integer_polynomial(
+    pub fn build_univariate_integer_polynomial(
         expression: &Expr,
         var: &str,
     ) -> Result<Polynomial<Integer>, String> {
@@ -225,7 +59,7 @@ impl Expr {
     }
 
     // New function: Convert expression into univariate rational polynomial
-    fn build_univariate_rational_polynomial(
+    pub fn build_univariate_rational_polynomial(
         expression: &Expr,
         var: &str,
     ) -> Result<Polynomial<Rational>, String> {
@@ -268,7 +102,7 @@ impl Expr {
     }
 
     // Convert expression into multivariate integer polynomial
-    fn build_multivariate_integer_polynomial(
+    pub fn build_multivariate_integer_polynomial(
         expression: &Expr,
         variable_mapping: HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Integer>, String> {
@@ -279,7 +113,7 @@ impl Expr {
         expression.to_multivariate_integer(&variable_mapping)
     }
 
-    fn to_multivariate_integer(
+    pub fn to_multivariate_integer(
         &self,
         variable_mapping: &HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Integer>, String> {
@@ -338,7 +172,7 @@ impl Expr {
     }
 
     // Convert expression into multivariate rational polynomial
-    fn build_multivariate_rational_polynomial(
+    pub fn build_multivariate_rational_polynomial(
         expression: &Expr,
         variable_mapping: HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Rational>, String> {
@@ -350,7 +184,7 @@ impl Expr {
     }
 
     // Convert this expression to a multivariate rational polynomial
-    fn to_multivariate_rational(
+    pub fn to_multivariate_rational(
         &self,
         variable_mapping: &HashMap<&str, Variable>,
     ) -> Result<MultiPolynomial<Rational>, String> {
@@ -407,39 +241,8 @@ impl Expr {
         }
     }
 
-    // Helper method to collect all variables in the expression
-    fn collect_variables(&self) -> std::collections::HashSet<String> {
-        let mut vars = std::collections::HashSet::new();
-        self.add_variables(&mut vars);
-        vars
-    }
-
-    fn add_variables(&self, vars: &mut std::collections::HashSet<String>) {
-        match self {
-            Expr::Var(v) => {
-                vars.insert(v.name.clone());
-            }
-            Expr::Num(_) => {}
-            Expr::Sum(s) => {
-                s.left.add_variables(vars);
-                s.right.add_variables(vars);
-            }
-            Expr::Product(p) => {
-                p.left.add_variables(vars);
-                p.right.add_variables(vars);
-            }
-            Expr::Power(p) => {
-                // Only collect variables from base, not exponent (for polynomials)
-                p.base.add_variables(vars);
-                // For a valid polynomial, exponent must be a constant
-            }
-            Expr::Grouped(e) => e.add_variables(vars),
-            Expr::Neg(e) => e.add_variables(vars),
-        }
-    }
-
     // Recursively extract terms from the expression with integer coefficients
-    fn extract_terms(&self, var: &str, terms: &mut HashMap<usize, Integer>, coefficient: Integer) {
+    pub fn extract_terms(&self, var: &str, terms: &mut HashMap<usize, Integer>, coefficient: Integer) {
         match self {
             Expr::Var(v) => {
                 if v.name == var {
@@ -616,7 +419,7 @@ impl Expr {
     }
 
     // Method for rational polynomial extraction
-    fn extract_rational_terms(
+    pub fn extract_rational_terms(
         &self,
         var: &str,
         terms: &mut HashMap<usize, Rational>,

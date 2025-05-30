@@ -1,7 +1,8 @@
 grammar;
 
 use std::str::FromStr;
-use crate::parsing::polynomial::*;
+use crate::parsing::ast::*;
+use algebraeon_nzq::*;
 
 pub Expr: Box<Expr> = {
     Sum,
