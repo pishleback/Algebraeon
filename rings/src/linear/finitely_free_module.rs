@@ -211,11 +211,28 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ri
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
+    type Basis = usize;
+
+    fn to_component(&self, b: &Self::Basis, v: &Self::Set) -> Ring::Set {
+        debug_assert!(*b < self.rank());
+        v[*b].clone()
+    }
+
+    fn from_component(&self, b: &Self::Basis, r: &<Ring>::Set) -> Self::Set {
+        debug_assert!(*b < self.rank());
+        let mut element = self.zero();
+        element[*b] = r.clone();
+        element
+    }
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleSignature<Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
+    fn basis(&self) -> Vec<Self::Basis> {
+        (0..self.rank).collect()
+    }
+
     fn rank(&self) -> usize {
         self.rank
     }
@@ -224,8 +241,8 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleSign
         v.clone()
     }
 
-    fn from_vec(&self, v: &Vec<Ring::Set>) -> Self::Set {
-        v.clone()
+    fn from_vec(&self, v: Vec<&Ring::Set>) -> Self::Set {
+        v.into_iter().cloned().collect()
     }
 }
 
@@ -543,7 +560,7 @@ mod tests {
             vec![Integer::from(5), Integer::from(0), Integer::from(0)]
         );
 
-        assert_eq!(m.basis(), vec![a, b, c]);
+        assert_eq!(m.basis_vecs(), vec![a, b, c]);
     }
 
     #[test]

@@ -155,6 +155,15 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > FreeModuleSignature<Ring> for FinitelyFreeModuleOverHashableSetStructure<Set, Ring, RingB>
 {
+    type Basis = Set;
+
+    fn to_component(&self, b: &Self::Basis, v: &Self::Set) -> <Ring>::Set {
+        self.free_module().to_component(b, v)
+    }
+
+    fn from_component(&self, b: &Self::Basis, r: &<Ring>::Set) -> Self::Set {
+        self.free_module().from_component(b, r)
+    }
 }
 
 impl<
@@ -164,29 +173,12 @@ impl<
 > FinitelyFreeModuleSignature<Ring>
     for FinitelyFreeModuleOverHashableSetStructure<Set, Ring, RingB>
 {
+    fn basis(&self) -> Vec<Self::Basis> {
+        self.basis.clone()
+    }
+
     fn rank(&self) -> usize {
         self.basis.len()
-    }
-
-    fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
-        debug_assert!(self.is_element(v));
-        self.basis
-            .iter()
-            .map(|b| match v.get(&b) {
-                Some(c) => c.clone(),
-                None => self.ring().zero(),
-            })
-            .collect()
-    }
-
-    fn from_vec(&self, v: &Vec<Ring::Set>) -> Self::Set {
-        self.reduce(
-            self.basis
-                .iter()
-                .enumerate()
-                .map(|(i, b)| (b.clone(), v[i].clone()))
-                .collect(),
-        )
     }
 }
 
@@ -230,7 +222,7 @@ mod tests {
 
         assert_eq!(m.scalar_mul(&5.into(), &a), [(Basis::A, 5.into())].into());
 
-        assert_eq!(m.basis(), vec![a, b, c]);
+        assert_eq!(m.basis_vecs(), vec![a, b, c]);
     }
 
     #[test]

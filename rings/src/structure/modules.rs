@@ -15,32 +15,46 @@ impl<Ring: RingSignature, Module: SemiModuleSignature<Ring> + AdditiveGroupSigna
 {
 }
 
-pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {}
+pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
+    type Basis: Eq;
+
+    fn to_component(&self, b: &Self::Basis, v: &Self::Set) -> Ring::Set;
+
+    fn from_component(&self, b: &Self::Basis, r: &Ring::Set) -> Self::Set;
+}
 
 pub trait FinitelyFreeModuleSignature<Ring: RingSignature>: FreeModuleSignature<Ring> {
-    fn basis(&self) -> Vec<Self::Set> {
+    fn basis(&self) -> Vec<Self::Basis>;
+
+    fn rank(&self) -> usize {
+        self.basis().len()
+    }
+
+    fn basis_vecs(&self) -> Vec<Self::Set> {
+        let zero = self.ring().zero();
+        let one = self.ring().one();
         (0..self.rank())
             .map(|j| {
                 self.from_vec(
-                    &(0..self.rank())
-                        .map(|i| {
-                            if i == j {
-                                self.ring().one()
-                            } else {
-                                self.ring().zero()
-                            }
-                        })
+                    (0..self.rank())
+                        .map(|i| if i == j { &one } else { &zero })
                         .collect(),
                 )
             })
             .collect()
     }
-    fn rank(&self) -> usize;
-    fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set>;
-    fn from_vec(&self, v: &Vec<Ring::Set>) -> Self::Set {
+
+    fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
+        self.basis()
+            .iter()
+            .map(|b| self.to_component(b, v))
+            .collect()
+    }
+
+    fn from_vec(&self, v: Vec<&Ring::Set>) -> Self::Set {
         debug_assert_eq!(v.len(), self.rank());
         let mut t = self.zero();
-        for (i, b) in self.basis().into_iter().enumerate() {
+        for (i, b) in self.basis_vecs().into_iter().enumerate() {
             t = self.add(&t, &self.scalar_mul(&v[i], &b));
         }
         t

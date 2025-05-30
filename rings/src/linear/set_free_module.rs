@@ -2,14 +2,14 @@ use crate::structure::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use std::fmt::Debug;
-use std::{collections::HashMap, hash::Hash, marker::PhantomData};
+use std::marker::PhantomData;
 
-pub trait FreeModuleOverHashableSetElement: Debug + Clone + Eq + Hash {}
-impl<Set: Debug + Clone + Eq + Hash> FreeModuleOverHashableSetElement for Set {}
+pub trait FreeModuleOverSetElement: Debug + Clone + Eq {}
+impl<Set: Debug + Clone + Eq> FreeModuleOverSetElement for Set {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FreeModuleOverHashableSetStructure<
-    Set: FreeModuleOverHashableSetElement,
+pub struct FreeModuleOverSetStructure<
+    Set: FreeModuleOverSetElement,
     Ring: SemiRingSignature,
     RingB: BorrowedStructure<Ring>,
 > {
@@ -18,22 +18,22 @@ pub struct FreeModuleOverHashableSetStructure<
     ring: RingB,
 }
 
-pub trait RingToFreeModuleOverHashableSetStructure: SemiRingSignature {
-    fn free_module_on_hashable_set<'a, Set: FreeModuleOverHashableSetElement>(
+pub trait RingToFreeModuleOverSetStructure: SemiRingSignature {
+    fn free_module_on_set<'a, Set: FreeModuleOverSetElement>(
         &'a self,
-    ) -> FreeModuleOverHashableSetStructure<Set, Self, &'a Self> {
-        FreeModuleOverHashableSetStructure::new(self)
+    ) -> FreeModuleOverSetStructure<Set, Self, &'a Self> {
+        FreeModuleOverSetStructure::new(self)
     }
-    fn into_free_module_on_hashable_set<Set: FreeModuleOverHashableSetElement>(
+    fn into_free_module_on_set<Set: FreeModuleOverSetElement>(
         self,
-    ) -> FreeModuleOverHashableSetStructure<Set, Self, Self> {
-        FreeModuleOverHashableSetStructure::new(self)
+    ) -> FreeModuleOverSetStructure<Set, Self, Self> {
+        FreeModuleOverSetStructure::new(self)
     }
 }
-impl<Ring: SemiRingSignature> RingToFreeModuleOverHashableSetStructure for Ring {}
+impl<Ring: SemiRingSignature> RingToFreeModuleOverSetStructure for Ring {}
 
-impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
-    FreeModuleOverHashableSetStructure<Set, Ring, RingB>
+impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
+    FreeModuleOverSetStructure<Set, Ring, RingB>
 {
     pub fn new(ring: RingB) -> Self {
         Self {
@@ -50,27 +50,28 @@ impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: Borr
     }
 
     pub fn basis_element(&self, b: Set) -> <Self as SetSignature>::Set {
-        [(b, self.ring().one())].into()
+        vec![(b, self.ring().one())]
     }
 }
 
-impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
-    Signature for FreeModuleOverHashableSetStructure<Set, Ring, RingB>
+impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
+    Signature for FreeModuleOverSetStructure<Set, Ring, RingB>
 {
 }
 
-impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
-    SetSignature for FreeModuleOverHashableSetStructure<Set, Ring, RingB>
+impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
+    SetSignature for FreeModuleOverSetStructure<Set, Ring, RingB>
 {
-    type Set = HashMap<Set, Ring::Set>;
+    type Set = Vec<(Set, Ring::Set)>;
 
     fn is_element(&self, v: &Self::Set) -> bool {
+        // duplicates in Set field allowed
         v.iter().all(|(_, r)| self.ring().is_element(r))
     }
 }
 
-impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
-    EqSignature for FreeModuleOverHashableSetStructure<Set, Ring, RingB>
+impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
+    EqSignature for FreeModuleOverSetStructure<Set, Ring, RingB>
 {
     fn equal(&self, v: &Self::Set, w: &Self::Set) -> bool {
         debug_assert!(self.is_element(v));
@@ -85,8 +86,8 @@ impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: Borr
     }
 }
 
-impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
-    AdditiveMonoidSignature for FreeModuleOverHashableSetStructure<Set, Ring, RingB>
+impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
+    AdditiveMonoidSignature for FreeModuleOverSetStructure<Set, Ring, RingB>
 {
     fn zero(&self) -> Self::Set {
         [].into()
@@ -113,8 +114,8 @@ impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: Borr
     }
 }
 
-impl<Set: FreeModuleOverHashableSetElement, Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-    AdditiveGroupSignature for FreeModuleOverHashableSetStructure<Set, Ring, RingB>
+impl<Set: FreeModuleOverSetElement, Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+    AdditiveGroupSignature for FreeModuleOverSetStructure<Set, Ring, RingB>
 {
     fn neg(&self, v: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(v));
@@ -124,8 +125,8 @@ impl<Set: FreeModuleOverHashableSetElement, Ring: RingSignature, RingB: Borrowed
     }
 }
 
-impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
-    SemiModuleSignature<Ring> for FreeModuleOverHashableSetStructure<Set, Ring, RingB>
+impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
+    SemiModuleSignature<Ring> for FreeModuleOverSetStructure<Set, Ring, RingB>
 {
     fn ring(&self) -> &Ring {
         self.ring.borrow()
@@ -144,18 +145,9 @@ impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: Borr
     }
 }
 
-impl<Set: FreeModuleOverHashableSetElement, Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-    FreeModuleSignature<Ring> for FreeModuleOverHashableSetStructure<Set, Ring, RingB>
+impl<Set: FreeModuleOverSetElement, Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+    FreeModuleSignature<Ring> for FreeModuleOverSetStructure<Set, Ring, RingB>
 {
-    type Basis = Set;
-
-    fn to_component(&self, b: &Self::Basis, v: &Self::Set) -> Ring::Set {
-        v.get(b).cloned().unwrap_or(self.ring().zero())
-    }
-
-    fn from_component(&self, b: &Self::Basis, r: &<Ring>::Set) -> Self::Set {
-        [(b.clone(), r.clone())].into()
-    }
 }
 
 #[cfg(test)]
