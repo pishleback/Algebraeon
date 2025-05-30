@@ -5,4 +5,4 @@ pub mod finitely_free_submodule;
 pub mod hashable_set_finitely_free_module;
 pub mod hashable_set_free_module;
 pub mod matrix;
-// pub mod set_free_module;
+pub mod set_free_module;

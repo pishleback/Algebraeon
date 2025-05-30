@@ -1,6 +1,5 @@
 use crate::structure::*;
 use algebraeon_sets::structure::*;
-use itertools::Itertools;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
@@ -43,9 +42,22 @@ impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStru
         }
     }
 
-    pub fn reduce(&self, v: <Self as SetSignature>::Set) -> <Self as SetSignature>::Set {
-        v.into_iter()
-            .filter(|(_, r)| !self.ring().is_zero(r))
+    pub fn reduce(&self, v: &<Self as SetSignature>::Set) -> <Self as SetSignature>::Set {
+        let mut v_reduced = vec![];
+        for (b, c) in v {
+            'SEARCH: {
+                for (existing_b, existing_c) in &mut v_reduced {
+                    if b == existing_b {
+                        self.ring().add_mut(existing_c, c);
+                        break 'SEARCH;
+                    }
+                }
+                v_reduced.push((b.clone(), c.clone()));
+            }
+        }
+        v_reduced
+            .into_iter()
+            .filter(|(_, c)| !self.ring().is_zero(c))
             .collect()
     }
 
@@ -76,13 +88,37 @@ impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStru
     fn equal(&self, v: &Self::Set, w: &Self::Set) -> bool {
         debug_assert!(self.is_element(v));
         debug_assert!(self.is_element(w));
-        let mut keys = v.keys().chain(w.keys()).unique();
-        keys.all(|k| match (v.get(k), w.get(k)) {
-            (None, None) => unreachable!(),
-            (None, Some(s)) => self.ring().is_zero(s),
-            (Some(r), None) => self.ring().is_zero(r),
-            (Some(r), Some(s)) => self.ring().equal(r, s),
-        })
+
+        let v = self.reduce(v);
+        let w = self.reduce(w);
+
+        //every non-zero component of v is in w
+        for (vb, vc) in &v {
+            if !self.ring().is_zero(vc) {
+                if !w.iter().any(|(wb, _)| vb == wb) {
+                    return false;
+                }
+            }
+        }
+        //every non-zero component of w is in v
+        for (wb, wc) in &w {
+            if !self.ring().is_zero(wc) {
+                if !v.iter().any(|(vb, _)| vb == wb) {
+                    return false;
+                }
+            }
+        }
+        //the components of all basis elements are equal
+        for (vb, vc) in &v {
+            for (wb, wc) in &w {
+                if vb == wb {
+                    if !self.ring().equal(vc, wc) {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
     }
 }
 
@@ -90,27 +126,13 @@ impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStru
     AdditiveMonoidSignature for FreeModuleOverSetStructure<Set, Ring, RingB>
 {
     fn zero(&self) -> Self::Set {
-        [].into()
+        vec![]
     }
 
     fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(v));
         debug_assert!(self.is_element(w));
-        let keys = v.keys().chain(w.keys()).unique();
-        self.reduce(
-            keys.map(|k| {
-                (
-                    k.clone(),
-                    match (v.get(k), w.get(k)) {
-                        (None, None) => unreachable!(),
-                        (None, Some(s)) => s.clone(),
-                        (Some(r), None) => r.clone(),
-                        (Some(r), Some(s)) => self.ring().add(r, s),
-                    },
-                )
-            })
-            .collect(),
-        )
+        self.reduce(&v.clone().into_iter().chain(w.clone().into_iter()).collect())
     }
 }
 
@@ -148,6 +170,21 @@ impl<Set: FreeModuleOverSetElement, Ring: SemiRingSignature, RingB: BorrowedStru
 impl<Set: FreeModuleOverSetElement, Ring: RingSignature, RingB: BorrowedStructure<Ring>>
     FreeModuleSignature<Ring> for FreeModuleOverSetStructure<Set, Ring, RingB>
 {
+    type Basis = Set;
+
+    fn to_component(&self, b: &Self::Basis, v: &Self::Set) -> Ring::Set {
+        let v = self.reduce(v);
+        for (vb, vc) in v {
+            if *b == vb {
+                return vc;
+            }
+        }
+        self.ring().zero()
+    }
+
+    fn from_component(&self, b: &Self::Basis, r: &<Ring>::Set) -> Self::Set {
+        vec![(b.clone(), r.clone())]
+    }
 }
 
 #[cfg(test)]
@@ -161,7 +198,7 @@ mod tests {
         #[derive(Debug, Clone, PartialEq, Eq, Hash)]
         struct T(usize);
 
-        let m = Natural::structure().into_free_module_on_hashable_set();
+        let m = Natural::structure().into_free_module_on_set();
 
         let v = [(T(5), Natural::from(2u32)), (T(7), Natural::from(3u32))].into();
         let w = [(T(5), Natural::from(1u32)), (T(10), Natural::from(4u32))].into();
@@ -172,7 +209,9 @@ mod tests {
                 &[
                     (T(5), Natural::from(3u32)),
                     (T(7), Natural::from(3u32)),
-                    (T(10), Natural::from(4u32))
+                    (T(10), Natural::from(1u32)),
+                    (T(10), Natural::from(3u32)),
+                    (T(6), Natural::from(0u32)),
                 ]
                 .into()
             )
