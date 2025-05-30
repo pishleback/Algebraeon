@@ -18,6 +18,20 @@ pub struct FreeModuleOverHashableSetStructure<
     ring: RingB,
 }
 
+pub trait RingToFreeModuleOverHashableSetStructure: SemiRingSignature {
+    fn free_module_on_hashable_set<'a, Set: FreeModuleOverHashableSetElement>(
+        &'a self,
+    ) -> FreeModuleOverHashableSetStructure<Set, Self, &'a Self> {
+        FreeModuleOverHashableSetStructure::new(self)
+    }
+    fn into_free_module_on_hashable_set<Set: FreeModuleOverHashableSetElement>(
+        self,
+    ) -> FreeModuleOverHashableSetStructure<Set, Self, Self> {
+        FreeModuleOverHashableSetStructure::new(self)
+    }
+}
+impl<Ring: SemiRingSignature> RingToFreeModuleOverHashableSetStructure for Ring {}
+
 impl<Set: FreeModuleOverHashableSetElement, Ring: SemiRingSignature, RingB: BorrowedStructure<Ring>>
     FreeModuleOverHashableSetStructure<Set, Ring, RingB>
 {
@@ -146,7 +160,7 @@ mod tests {
         #[derive(Debug, Clone, PartialEq, Eq, Hash)]
         struct T(usize);
 
-        let m = FreeModuleOverHashableSetStructure::<T, _, _>::new(Natural::structure());
+        let m = Natural::structure().into_free_module_on_hashable_set();
 
         let v = [(T(5), Natural::from(2u32)), (T(7), Natural::from(3u32))].into();
         let w = [(T(5), Natural::from(1u32)), (T(10), Natural::from(4u32))].into();
