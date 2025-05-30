@@ -1,5 +1,5 @@
 use algebraeon_nzq::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]

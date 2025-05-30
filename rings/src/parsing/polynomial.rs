@@ -242,7 +242,12 @@ impl Expr {
     }
 
     // Recursively extract terms from the expression with integer coefficients
-    pub fn extract_terms(&self, var: &str, terms: &mut HashMap<usize, Integer>, coefficient: Integer) {
+    pub fn extract_terms(
+        &self,
+        var: &str,
+        terms: &mut HashMap<usize, Integer>,
+        coefficient: Integer,
+    ) {
         match self {
             Expr::Var(v) => {
                 if v.name == var {
