@@ -21,23 +21,23 @@ impl Polynomial<Integer> {
                 // a_d^n(a_n/a_d)^k = a_n^k a_d^{n-k}
                 let mut a_numer_pow = vec![Integer::from(1)];
                 let mut a_denom_pow = vec![Integer::from(1)];
-                for k in 1..n + 1 {
+                for k in 1..=n {
                     a_numer_pow.push(&a_numer * &a_numer_pow[k - 1]);
                     a_denom_pow.push(&a_denom * &a_denom_pow[k - 1]);
                 }
                 let mut a_pow = vec![];
-                for k in 0..n + 1 {
+                for k in 0..=n {
                     a_pow.push(&a_numer_pow[k] * &a_denom_pow[n - k]);
                 }
 
                 let mut re = Vec::with_capacity(n + 1);
                 let mut im = Vec::with_capacity(n + 1);
-                for _ in 0..n + 1 {
+                for _ in 0..=n {
                     re.push(Integer::from(0));
                     im.push(Integer::from(0));
                 }
                 let mut n_choose = vec![Integer::from(1)];
-                for n in 0..n + 1 {
+                for n in 0..=n {
                     if n == 0 {
                         debug_assert_eq!(n_choose, vec![Integer::from(1)]);
                     } else if n == 1 {
@@ -82,73 +82,33 @@ impl Polynomial<Integer> {
                         let mut k = 0;
                         loop {
                             //k = 0 mod 4
-                            re[{
-                                match RE_OR_IM {
-                                    false => k,
-                                    true => n - k,
-                                }
-                            }] += self.coeff(n)
+                            re[if RE_OR_IM { n - k } else { k }] += self.coeff(n)
                                 * &n_choose[k]
-                                * &a_pow[{
-                                    match RE_OR_IM {
-                                        false => n - k,
-                                        true => k,
-                                    }
-                                }];
+                                * &a_pow[if RE_OR_IM { k } else { n - k }];
                             if k == n {
                                 break;
                             }
                             k += 1;
                             //k = 1 mod 4
-                            im[{
-                                match RE_OR_IM {
-                                    false => k,
-                                    true => n - k,
-                                }
-                            }] += self.coeff(n)
+                            im[if RE_OR_IM { n - k } else { k }] += self.coeff(n)
                                 * &n_choose[k]
-                                * &a_pow[{
-                                    match RE_OR_IM {
-                                        false => n - k,
-                                        true => k,
-                                    }
-                                }];
+                                * &a_pow[if RE_OR_IM { k } else { n - k }];
                             if k == n {
                                 break;
                             }
                             k += 1;
                             //k = 2 mod 4
-                            re[{
-                                match RE_OR_IM {
-                                    false => k,
-                                    true => n - k,
-                                }
-                            }] -= self.coeff(n)
+                            re[if RE_OR_IM { n - k } else { k }] -= self.coeff(n)
                                 * &n_choose[k]
-                                * &a_pow[{
-                                    match RE_OR_IM {
-                                        false => n - k,
-                                        true => k,
-                                    }
-                                }];
+                                * &a_pow[if RE_OR_IM { k } else { n - k }];
                             if k == n {
                                 break;
                             }
                             k += 1;
                             //k = 3 mod 4
-                            im[{
-                                match RE_OR_IM {
-                                    false => k,
-                                    true => n - k,
-                                }
-                            }] -= self.coeff(n)
+                            im[if RE_OR_IM { n - k } else { k }] -= self.coeff(n)
                                 * &n_choose[k]
-                                * &a_pow[{
-                                    match RE_OR_IM {
-                                        false => n - k,
-                                        true => k,
-                                    }
-                                }];
+                                * &a_pow[if RE_OR_IM { k } else { n - k }];
                             if k == n {
                                 break;
                             }
@@ -163,7 +123,7 @@ impl Polynomial<Integer> {
                     //[1, 3, 6, 4, 1]
                     //[1, 4, 6, 4, 1]
                     n_choose.push(Integer::from(1));
-                    for i in (1..n + 1).rev() {
+                    for i in (1..=n).rev() {
                         n_choose[i] = &n_choose[i] + &n_choose[i - 1];
                     }
                 }
@@ -300,7 +260,7 @@ impl Polynomial<Integer> {
             if re_sqfr == Polynomial::zero() {
                 //the image is doing a path confied to the imaginary axis
                 let roots_im = im.real_roots(Some(s), Some(t), true, true);
-                if roots_im.len() == 0 {
+                if roots_im.is_empty() {
                     //the image stays once side of the real axis
                     let val = evaluate_at_rational(im, s);
                     debug_assert_eq!(
@@ -319,7 +279,7 @@ impl Polynomial<Integer> {
             } else if im_sqfr == Polynomial::zero() {
                 //the image is doing a path confied to the real axis
                 let roots_re = re.real_roots(Some(s), Some(t), true, true);
-                if roots_re.len() == 0 {
+                if roots_re.is_empty() {
                     //the image stays one side of the imaginary axis
                     let val = evaluate_at_rational(re, s);
                     debug_assert_eq!(
@@ -346,12 +306,7 @@ impl Polynomial<Integer> {
                 let mut crossings = vec![];
 
                 //check the value of the real and imaginary part at the vertex at the start of this path
-                let v = {
-                    match REVERSE {
-                        false => s,
-                        true => t,
-                    }
-                };
+                let v = { if REVERSE { t } else { s } };
                 match (
                     evaluate_at_rational(re, v).cmp(&Rational::from(0)),
                     evaluate_at_rational(im, v).cmp(&Rational::from(0)),
@@ -426,14 +381,16 @@ impl Polynomial<Integer> {
                 debug_assert!(im_roots.check_invariants().is_ok());
 
                 match SquarefreePolyRealRoots::separate(&mut re_roots, &mut im_roots) {
-                    Ok(all_roots) => {
+                    Ok(mut all_roots) => {
                         //the isolating intervals for re_roots and im_roots no longer overlap
                         //we can use this to our advantage...
 
                         for (interleave, root_idx) in {
-                            match REVERSE {
-                                false => all_roots,
-                                true => all_roots.into_iter().rev().collect(),
+                            if REVERSE {
+                                all_roots.reverse();
+                                all_roots
+                            } else {
+                                all_roots
                             }
                         } {
                             // println!("interleave = {:?} root_idx = {:?}", interleave, root_idx);

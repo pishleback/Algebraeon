@@ -67,7 +67,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         roi.mul_crossterms = Some(
             (0..n)
                 .map(|j| {
-                    (0..(j + 1))
+                    (0..=j)
                         .map(|i| {
                             roi.try_anf_to_roi(
                                 &roi.algebraic_number_field
@@ -207,6 +207,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         );
         if let Some(s) = m.col_solve(&y) {
             debug_assert_eq!(s.len(), n);
+            #[allow(clippy::manual_ok_err)]
             if let Ok(coefficients) = (0..n).map(|i| Integer::try_from(s[i].clone())).collect() {
                 Some(coefficients)
             } else {

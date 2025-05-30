@@ -83,9 +83,10 @@ impl<Set: Clone> Matrix<Set> {
             c = self.cols() - c - 1;
         }
 
-        match self.transpose {
-            false => c + r * self.dim2,
-            true => r + c * self.dim2,
+        if self.transpose {
+            r + c * self.dim2
+        } else {
+            c + r * self.dim2
         }
     }
 
@@ -108,17 +109,11 @@ impl<Set: Clone> Matrix<Set> {
     }
 
     pub fn rows(&self) -> usize {
-        match self.transpose {
-            false => self.dim1,
-            true => self.dim2,
-        }
+        if self.transpose { self.dim2 } else { self.dim1 }
     }
 
     pub fn cols(&self) -> usize {
-        match self.transpose {
-            false => self.dim2,
-            true => self.dim1,
-        }
+        if self.transpose { self.dim1 } else { self.dim2 }
     }
 
     pub fn submatrix(&self, rows: Vec<usize>, cols: Vec<usize>) -> Self {
@@ -384,7 +379,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     }
 
     pub fn join_diag<MatT: Borrow<Matrix<RS::Set>>>(&self, mats: Vec<MatT>) -> Matrix<RS::Set> {
-        if mats.len() == 0 {
+        if mats.is_empty() {
             Matrix::construct(0, 0, |_r, _c| unreachable!())
         } else if mats.len() == 1 {
             mats[0].borrow().clone()
@@ -582,7 +577,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
             let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
                 pows.push(
-                    self.mul(pows.last().unwrap(), &pows.last().unwrap())
+                    self.mul(pows.last().unwrap(), pows.last().unwrap())
                         .unwrap(),
                 );
             }

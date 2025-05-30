@@ -382,7 +382,7 @@ where
         let max_factor_degree = f_deg / 2;
         for d in 0..max_factor_degree {
             for mut coeffs in
-                itertools::Itertools::multi_cartesian_product((0..d + 1).into_iter().map(|_d| {
+                itertools::Itertools::multi_cartesian_product((0..=d).into_iter().map(|_d| {
                     let mut all_elems = vec![self.coeff_ring().zero()];
                     all_elems.append(&mut self.coeff_ring().all_units());
                     all_elems

@@ -87,10 +87,8 @@ fn identify_complex_root(
         let mut possible_irr_poly_idxs: HashSet<_> = (0..irr_polys.len()).collect();
         loop {
             debug_assert!(!possible_irr_poly_idxs.is_empty());
-            possible_irr_poly_idxs = possible_irr_poly_idxs
-                .into_iter()
-                .filter(|idx| irr_polys[*idx].count_complex_roots(&a, &b, &c, &d) != Some(0))
-                .collect();
+            possible_irr_poly_idxs
+                .retain(|idx| irr_polys[*idx].count_complex_roots(&a, &b, &c, &d) != Some(0));
             if possible_irr_poly_idxs.len() == 1 {
                 break;
             }
@@ -107,23 +105,20 @@ fn identify_complex_root(
     let mut possible_roots: HashSet<_> = (0..roots.len()).collect();
     loop {
         debug_assert!(!possible_roots.is_empty());
-        possible_roots = possible_roots
-            .into_iter()
-            .filter(|idx| match &roots[*idx] {
-                ComplexAlgebraic::Real(RealAlgebraic::Rational(root)) => {
-                    &a < root && root < &b && c < Rational::ZERO && Rational::ZERO < d
-                }
-                ComplexAlgebraic::Real(RealAlgebraic::Real(root)) => {
-                    &a < root.tight_b()
-                        && root.tight_a() < &b
-                        && c < Rational::ZERO
-                        && Rational::ZERO < d
-                }
-                ComplexAlgebraic::Complex(root) => {
-                    a < root.tight_b && root.tight_a < b && c < root.tight_d && root.tight_c < d
-                }
-            })
-            .collect();
+        possible_roots.retain(|idx| match &roots[*idx] {
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(root)) => {
+                &a < root && root < &b && c < Rational::ZERO && Rational::ZERO < d
+            }
+            ComplexAlgebraic::Real(RealAlgebraic::Real(root)) => {
+                &a < root.tight_b()
+                    && root.tight_a() < &b
+                    && c < Rational::ZERO
+                    && Rational::ZERO < d
+            }
+            ComplexAlgebraic::Complex(root) => {
+                a < root.tight_b && root.tight_a < b && c < root.tight_d && root.tight_c < d
+            }
+        });
         if possible_roots.len() == 1 {
             break;
         }
@@ -209,52 +204,16 @@ impl Display for ComplexAlgebraicRoot {
             let sign = tight_c_abs < tight_d_abs;
             match (x, y) {
                 (Rational::ZERO, Rational::ONE) => {
-                    write!(
-                        f,
-                        "{}{}",
-                        match sign {
-                            true => "",
-                            false => "-",
-                        },
-                        r_str
-                    )?;
+                    write!(f, "{}{}", if sign { "" } else { "-" }, r_str)?;
                 }
                 (Rational::ZERO, y) => {
-                    write!(
-                        f,
-                        "{}{}{}",
-                        match sign {
-                            true => "",
-                            false => "-",
-                        },
-                        y,
-                        r_str
-                    )?;
+                    write!(f, "{}{}{}", if sign { "" } else { "-" }, y, r_str)?;
                 }
                 (x, Rational::ONE) => {
-                    write!(
-                        f,
-                        "{}{}{}",
-                        x,
-                        match sign {
-                            true => "+",
-                            false => "-",
-                        },
-                        r_str
-                    )?;
+                    write!(f, "{}{}{}", x, if sign { "+" } else { "-" }, r_str)?;
                 }
                 (x, y) => {
-                    write!(
-                        f,
-                        "{}{}{}{}",
-                        x,
-                        match sign {
-                            true => "+",
-                            false => "-",
-                        },
-                        y,
-                        r_str
-                    )?;
+                    write!(f, "{}{}{}{}", x, if sign { "+" } else { "-" }, y, r_str)?;
                 }
             }
         } else {

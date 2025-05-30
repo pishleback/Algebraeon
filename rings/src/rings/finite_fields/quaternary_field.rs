@@ -41,8 +41,8 @@ impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         #[allow(clippy::match_same_arms)]
         match (a, b) {
-            (_, QuaternaryField::Zero) => a.clone(),
-            (QuaternaryField::Zero, _) => b.clone(),
+            (_, QuaternaryField::Zero) => *a,
+            (QuaternaryField::Zero, _) => *b,
             (QuaternaryField::One, QuaternaryField::One) => QuaternaryField::Zero,
             (QuaternaryField::One, QuaternaryField::Alpha) => QuaternaryField::Beta,
             (QuaternaryField::One, QuaternaryField::Beta) => QuaternaryField::Alpha,
@@ -60,8 +60,8 @@ impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
         match (a, b) {
             (_, QuaternaryField::Zero) => QuaternaryField::Zero,
             (QuaternaryField::Zero, _) => QuaternaryField::Zero,
-            (_, QuaternaryField::One) => a.clone(),
-            (QuaternaryField::One, _) => b.clone(),
+            (_, QuaternaryField::One) => *a,
+            (QuaternaryField::One, _) => *b,
             (QuaternaryField::Alpha, QuaternaryField::Alpha) => QuaternaryField::Beta,
             (QuaternaryField::Alpha, QuaternaryField::Beta) => QuaternaryField::One,
             (QuaternaryField::Beta, QuaternaryField::Alpha) => QuaternaryField::One,
@@ -78,7 +78,7 @@ impl CharacteristicSignature for QuaternaryFieldCanonicalStructure {
 
 impl RingSignature for QuaternaryFieldCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        a.clone()
+        *a
     }
 }
 
@@ -93,7 +93,7 @@ impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {
         #[allow(clippy::match_same_arms)]
         match (&a, &b) {
             (_, QuaternaryField::Zero) => Err(RingDivisionError::DivideByZero),
-            (_, QuaternaryField::One) => Ok(a.clone()),
+            (_, QuaternaryField::One) => Ok(*a),
             (QuaternaryField::Zero, _) => Ok(QuaternaryField::Zero),
             (QuaternaryField::One, QuaternaryField::Alpha) => Ok(QuaternaryField::Beta),
             (QuaternaryField::One, QuaternaryField::Beta) => Ok(QuaternaryField::Alpha),

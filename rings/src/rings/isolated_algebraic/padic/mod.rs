@@ -541,9 +541,10 @@ pub mod structure {
                     .filter_map(|mut root| {
                         root.refine(&k);
                         let rball = root.isolating_ball();
-                        match IsolatingBall::overlap(&rball, &sball) {
-                            true => Some(root),
-                            false => None,
+                        if IsolatingBall::overlap(&rball, &sball) {
+                            Some(root)
+                        } else {
+                            None
                         }
                     })
                     .collect();
@@ -617,9 +618,10 @@ pub mod structure {
                     .filter_map(|mut root| {
                         root.refine(&k);
                         let rball = root.isolating_ball();
-                        match IsolatingBall::overlap(&rball, &sball) {
-                            true => Some(root),
-                            false => None,
+                        if IsolatingBall::overlap(&rball, &sball) {
+                            Some(root)
+                        } else {
+                            None
                         }
                     })
                     .collect();
@@ -665,9 +667,10 @@ pub mod structure {
                         .filter_map(|mut root| {
                             root.refine(&k);
                             let rball = root.isolating_ball();
-                            match IsolatingBall::overlap(&rball, &iball) {
-                                true => Some(root),
-                                false => None,
+                            if IsolatingBall::overlap(&rball, &iball) {
+                                Some(root)
+                            } else {
+                                None
                             }
                         })
                         .collect();

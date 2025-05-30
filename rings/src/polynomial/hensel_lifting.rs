@@ -388,7 +388,7 @@ impl<
         h: Polynomial<RS::Set>,
         mut fs: Vec<&Polynomial<RS::Set>>,
     ) -> Self {
-        debug_assert!(fs.len() >= 1);
+        debug_assert!(!fs.is_empty());
         match fs.len() {
             0 => panic!(),
             1 => Self {
@@ -399,8 +399,8 @@ impl<
                 debug_assert!(fs_len >= 2);
                 let second_fs = fs.split_off(fs_len / 2);
                 let first_fs = fs;
-                debug_assert!(first_fs.len() >= 1);
-                debug_assert!(second_fs.len() >= 1);
+                debug_assert!(!first_fs.is_empty());
+                debug_assert!(!second_fs.is_empty());
                 debug_assert_eq!(first_fs.len() + second_fs.len(), fs_len);
 
                 //find an inverse beta to alpha modulo p
@@ -471,7 +471,7 @@ impl<
         debug_assert!(ring.is_irreducible(&p));
 
         // h and all fs monic
-        assert!(fs.len() >= 1);
+        assert!(!fs.is_empty());
         // debug_assert!(poly_ring.is_monic(&h));
         for f in &fs {
             debug_assert!(poly_ring.is_monic(f));

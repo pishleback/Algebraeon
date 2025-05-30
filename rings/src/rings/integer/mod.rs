@@ -101,12 +101,11 @@ impl FactorableSignature for IntegerCanonicalStructure {
         if a == &Integer::ZERO {
             None
         } else {
-            let unit;
-            if a < &Integer::ZERO {
-                unit = Integer::from(-1);
+            let unit = if a < &Integer::ZERO {
+                Integer::from(-1)
             } else {
-                unit = Integer::from(1);
-            }
+                Integer::from(1)
+            };
             let f = factor(a.abs()).unwrap();
             Some(
                 Integer::factorizations().from_unit_and_factor_powers_unchecked(

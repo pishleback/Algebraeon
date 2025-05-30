@@ -29,7 +29,7 @@ impl Variable {
     pub fn new<S: Into<String>>(name: S) -> Self {
         static COUNTER: AtomicUsize = AtomicUsize::new(0);
         let name = name.into();
-        assert!(name.len() >= 1);
+        assert!(!name.is_empty());
         Self {
             ident: COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             name,
@@ -65,7 +65,7 @@ impl Hash for Monomial {
 
 impl Display for Monomial {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.prod.len() == 0 {
+        if self.prod.is_empty() {
             write!(f, "1")
         } else {
             for VariablePower { var, pow } in &self.prod {
@@ -106,10 +106,7 @@ impl Monomial {
     }
 
     fn new(mut prod: Vec<VariablePower>) -> Self {
-        prod = prod
-            .into_iter()
-            .filter(|VariablePower { var: _var, pow }| pow != &0)
-            .collect();
+        prod.retain(|VariablePower { var: _var, pow }| pow != &0);
         prod.sort_by_key(|vpow| vpow.var.ident);
         let mut ident_lookup = HashMap::new();
         for (idx, VariablePower { var, pow: _pow }) in prod.iter().enumerate() {
@@ -420,7 +417,7 @@ impl<RS: RingSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToString
     for MultiPolynomialStructure<RS, RSB>
 {
     fn to_string(&self, p: &Self::Set) -> String {
-        if p.terms.len() == 0 {
+        if p.terms.is_empty() {
             "0".into()
         } else {
             let mut s = String::new();
@@ -590,13 +587,13 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
         let mut vars = HashSet::new();
         vars.extend(a.free_vars());
         vars.extend(b.free_vars());
-        if vars.len() == 0 {
+        if vars.is_empty() {
             //a and b are constants
             debug_assert!(a.terms.len() <= 1);
             debug_assert!(b.terms.len() <= 1);
-            if b.terms.len() == 0 {
+            if b.terms.is_empty() {
                 Err(RingDivisionError::DivideByZero)
-            } else if a.terms.len() == 0 {
+            } else if a.terms.is_empty() {
                 Ok(self.zero())
             } else {
                 debug_assert!(a.terms.len() == 1);
@@ -896,7 +893,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
     }
 
     pub fn as_constant(&self, p: &MultiPolynomial<RS::Set>) -> Option<RS::Set> {
-        if p.terms.len() == 0 {
+        if p.terms.is_empty() {
             Some(self.coeff_ring().zero())
         } else if p.terms.len() == 1 {
             let Term { coeff, monomial } = &p.terms[0];

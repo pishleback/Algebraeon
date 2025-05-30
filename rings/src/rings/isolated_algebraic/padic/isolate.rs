@@ -40,7 +40,7 @@ mod balancable_pairs {
         /// If this is the case then the balancing value is called a critical value for $f$.
         /// If $\alpha \in \mathbb{Q}_p$ is such that $f(\alpha) = 0$ then $v_p(\alpha)$ is a critical value for $f$.
         pub fn is_critical(&self) -> bool {
-            let min = (0..(self.n + 1))
+            let min = (0..=self.n)
                 .filter_map(|k| match padic_int_valuation(&self.p, self.f.coeff(k)) {
                     Valuation::Infinity => None,
                     Valuation::Finite(vfk) => {
@@ -72,7 +72,7 @@ mod balancable_pairs {
             debug_assert!(self.is_critical());
             let cmbv = self.crossmul_balancing_value();
             Polynomial::from_coeffs(
-                (0..(self.n + 1))
+                (0..=self.n)
                     .map(|k| {
                         let p_pow = self.balancing_value() * Integer::from(k) - &cmbv;
                         // compute f_k*p^p_pow
@@ -99,11 +99,11 @@ mod balancable_pairs {
             debug_assert!(is_prime(p));
             let mut bps = vec![];
             let n = self.degree().unwrap();
-            let coeff_valuations = (0..(n + 1))
+            let coeff_valuations = (0..=n)
                 .map(|k| padic_int_valuation(p, self.coeff(k)))
                 .collect::<Vec<_>>();
-            for i in 0..(n + 1) {
-                for j in (i + 1)..(n + 1) {
+            for i in 0..=n {
+                for j in (i + 1)..=n {
                     #[allow(clippy::single_match_else)]
                     match (&coeff_valuations[i], &coeff_valuations[j]) {
                         (Valuation::Finite(vfi), Valuation::Finite(vfj)) => {

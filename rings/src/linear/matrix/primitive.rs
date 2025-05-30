@@ -18,10 +18,7 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> MatrixStruc
     }
 
     pub fn primitive_part(&self, mat: Matrix<RS::Set>) -> Option<Matrix<RS::Set>> {
-        match self.factor_primitive(mat) {
-            Some((_unit, prim)) => Some(prim),
-            None => None,
-        }
+        self.factor_primitive(mat).map(|(_unit, prim)| prim)
     }
 }
 

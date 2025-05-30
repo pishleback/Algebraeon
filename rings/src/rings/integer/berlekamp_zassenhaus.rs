@@ -142,7 +142,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                     Some(BerlekampZassenhausAlgorithmStateAtPrime {
                         poly: state.poly.clone(),
                         leading_coeff: state.poly.leading_coeff().unwrap(),
-                        degree: state.degree.clone(),
+                        degree: state.degree,
                         modulus,
                         modular_factors,
                     })

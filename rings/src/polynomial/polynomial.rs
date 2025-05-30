@@ -230,7 +230,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, 
 
     pub fn var_pow(&self, n: usize) -> Polynomial<RS::Set> {
         Polynomial::from_coeffs(
-            (0..n + 1)
+            (0..=n)
                 .map(|i| {
                     if i < n {
                         self.coeff_ring().zero()
@@ -244,7 +244,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, 
 
     fn constant_var_pow(&self, x: RS::Set, n: usize) -> Polynomial<RS::Set> {
         Polynomial::from_coeffs(
-            (0..n + 1)
+            (0..=n)
                 .map(|i| {
                     if i < n {
                         self.coeff_ring().zero()
@@ -650,10 +650,7 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> PolynomialS
     }
 
     pub fn primitive_part(&self, p: Polynomial<RS::Set>) -> Option<Polynomial<RS::Set>> {
-        match self.factor_primitive(p) {
-            Some((_unit, prim)) => Some(prim),
-            None => None,
-        }
+        self.factor_primitive(p).map(|(_unit, prim)| prim)
     }
 
     pub fn gcd_by_primitive_subresultant(
@@ -901,10 +898,9 @@ impl<RS: ReducedHermiteAlgorithmSignature, RSB: BorrowedStructure<RS>>
         //     *output_vec.at_mut(r, 0).unwrap() = y.clone();
         // }
 
-        match matrix_structure.col_solve(mat, &points.iter().map(|(_x, y)| y.clone()).collect()) {
-            Some(coeff_vec) => Some(Polynomial::from_coeffs(coeff_vec)),
-            None => None,
-        }
+        matrix_structure
+            .col_solve(mat, &points.iter().map(|(_x, y)| y.clone()).collect())
+            .map(Polynomial::from_coeffs)
     }
 }
 
