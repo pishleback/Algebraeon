@@ -137,7 +137,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                     let modular_factors = hensel_factorization_f_over_p
                         .factors()
                         .into_iter()
-                        .map(|g| g.clone())
+                        .cloned()
                         .collect();
                     Some(BerlekampZassenhausAlgorithmStateAtPrime {
                         poly: state.poly.clone(),
@@ -374,10 +374,11 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         let mut dminusone_test =
             dminusone_test::DMinusOneTest::new(&self.modulus, &self.poly, &self.modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
-            PolynomialStructure::new(
-                QuotientStructure::new_ring(Integer::structure(), self.modulus.clone()).into(),
-            ),
-            self.modular_factors.iter().map(|g| g.clone()).collect(),
+            PolynomialStructure::new(QuotientStructure::new_ring(
+                Integer::structure(),
+                self.modulus.clone(),
+            )),
+            self.modular_factors.clone(),
         );
 
         let mut factored = Polynomial::<Integer>::structure()
@@ -401,6 +402,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                 // Exclude any previously found modular factors from the search
                 k_combinations.exclude(*i);
             }
+            #[allow(clippy::while_let_loop)]
             loop {
                 match k_combinations.next() {
                     Some(subset) => {

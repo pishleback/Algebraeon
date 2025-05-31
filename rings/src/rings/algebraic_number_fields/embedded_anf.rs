@@ -212,7 +212,7 @@ pub fn anf_multi_primitive_element_theorem(
         let new_g_anf = new_g.min_poly().algebraic_number_field();
         p = p
             .into_iter()
-            .map(|old_p| new_g_anf.reduce(&Polynomial::compose(&old_p, &old_g_poly)))
+            .map(|old_p| new_g_anf.reduce(Polynomial::compose(&old_p, &old_g_poly)))
             .collect();
         p.push(num_poly);
         g = new_g;

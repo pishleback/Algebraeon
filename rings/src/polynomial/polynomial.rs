@@ -28,6 +28,7 @@ impl<Set> Polynomial<Set> {
     }
 
     pub fn from_coeffs(coeffs: Vec<impl Into<Set>>) -> Self {
+        #[allow(clippy::redundant_closure_for_method_calls)]
         Self {
             coeffs: coeffs.into_iter().map(|x| x.into()).collect(),
         }
@@ -342,6 +343,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, 
     //...
     pub fn degree(&self, p: &Polynomial<RS::Set>) -> Option<usize> {
         //the polynomial representation might not be reduced
+        #[allow(clippy::manual_find)]
         for i in (0..p.coeffs.len()).rev() {
             if !self.coeff_ring().is_zero(&p.coeffs[i]) {
                 return Some(i);
@@ -702,6 +704,7 @@ impl<RS: GreatestCommonDivisorSignature + CharZeroRingSignature, RSB: BorrowedSt
             let (_c, g_prim) = self.factor_primitive(g).unwrap();
             let (_c, f_prim) = self.factor_primitive(f).unwrap();
             let f_prim_sqfree = self.div(&f_prim, &g_prim).unwrap();
+            #[allow(clippy::let_and_return)]
             f_prim_sqfree
         }
     }

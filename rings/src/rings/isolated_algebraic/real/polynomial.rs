@@ -620,6 +620,7 @@ impl Polynomial<Integer> {
 
         let mut l = vec![(Natural::from(0u8), 0, self.clone())];
         let mut isol = vec![];
+        #[allow(clippy::manual_while_let_some)]
         while !l.is_empty() {
             let (c, k, mut q) = l.pop().unwrap();
             if q.evaluate(&Integer::from(0)) == Integer::from(0) {

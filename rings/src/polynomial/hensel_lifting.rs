@@ -138,9 +138,10 @@ impl<
 
         //find a, b such that af + bg = 1 mod i
         let (u, a, b) = poly_ring_mod_p.xgcd(&first_h, &second_h);
-        if !poly_ring_mod_p.equal(&u, &poly_ring_mod_p.one()) {
-            panic!("Factors should be coprime modulo i");
-        }
+        assert!(
+            poly_ring_mod_p.equal(&u, &poly_ring_mod_p.one()),
+            "Factors should be coprime modulo i"
+        );
 
         Self::Branch {
             f_factorization: Box::new(HenselFactorizationImpl::new(ring, p, n, first_h, first_fs)),

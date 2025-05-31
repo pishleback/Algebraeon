@@ -552,7 +552,7 @@ impl Polynomial<Integer> {
         // println!("winding = {:?}", winding);
 
         //compute the winding number = number of roots
-        if winding.len() <= 0 {
+        if winding.is_empty() {
             Some(0)
         } else {
             fn axis_pair_to_num_offset(ax1: &Crossing, ax2: &Crossing) -> isize {
@@ -582,9 +582,7 @@ impl Polynomial<Integer> {
                 num += axis_pair_to_num_offset(&winding[i], &winding[i + 1]);
             }
 
-            if num < 0 {
-                panic!("winding should always be overall anti-clockwise");
-            }
+            assert!(num >= 0, "winding should always be overall anti-clockwise");
             let num = num as usize;
             match num % 4 {
                 0 => Some(num / 4),
@@ -667,6 +665,7 @@ impl Polynomial<Integer> {
         &self,
         num_real_roots: usize,
     ) -> Vec<ComplexAlgebraicRoot> {
+        #[allow(clippy::redundant_closure_for_method_calls)]
         self.uhp_complex_roots_irreducible_impl(num_real_roots)
             .into_iter()
             .map(|root| root.conj())

@@ -19,7 +19,7 @@ pub struct FinitelyFreeModuleStructure<Ring: RingSignature, RingB: BorrowedStruc
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStructure<Ring, RingB> {
     pub fn new(ring: RingB, rank: usize) -> Self {
         Self {
-            _ring: PhantomData::default(),
+            _ring: PhantomData,
             ring,
             rank,
         }
@@ -551,13 +551,10 @@ mod tests {
                 if i == 0 {
                     vec![0, 2, 3, -4, 1]
                         .into_iter()
-                        .map(|x| Integer::from(x))
+                        .map(Integer::from)
                         .collect()
                 } else if i == 1 {
-                    vec![1, 2, 3, 2, 1]
-                        .into_iter()
-                        .map(|x| Integer::from(x))
-                        .collect()
+                    vec![1, 2, 3, 2, 1].into_iter().map(Integer::from).collect()
                 } else {
                     unreachable!()
                 }
@@ -568,7 +565,7 @@ mod tests {
             t.image(&vec![Integer::from(1), Integer::from(2)]),
             vec![2, 6, 9, 0, 3]
                 .into_iter()
-                .map(|x| Integer::from(x))
+                .map(Integer::from)
                 .collect::<Vec<_>>()
         );
     }

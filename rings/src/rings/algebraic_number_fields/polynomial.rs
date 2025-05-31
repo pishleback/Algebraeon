@@ -127,7 +127,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                 .modulus()
                 .coeffs()
                 .into_iter()
-                .map(|c| c.clone())
+                .cloned()
                 .collect::<Vec<_>>();
 
             let lc = min_poly_coeffs.pop().unwrap();
@@ -260,7 +260,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
         */
         // println!("p = {}", p);
 
-        let l_reduced_ring = QuotientStructure::new_ring(self.clone().into(), p.clone());
+        let l_reduced_ring = QuotientStructure::new_ring(self.clone(), p.clone());
         //n = degree over L over Q
         let k_deg = self.coeff_ring().degree();
         if k_deg == 1 {
@@ -416,9 +416,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             let l_to_la = |x_in_l: Polynomial<Polynomial<Rational>>| -> Polynomial<Rational> {
                 let x_in_q = l_to_vec(x_in_l);
                 let x_in_la_vec = alpha_pow_mat.clone().row_solve(&x_in_q.get_row(0)).unwrap();
-                let x_in_la =
-                    Polynomial::from_coeffs((0..n).map(|c| x_in_la_vec[c].clone()).collect());
-                x_in_la
+                Polynomial::from_coeffs((0..n).map(|c| x_in_la_vec[c].clone()).collect())
             };
             #[cfg(any())]
             let la_to_l = |x_in_la: Polynomial<Rational>| -> Polynomial<Polynomial<Rational>> {
@@ -459,7 +457,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 
                     // Q[y]/qi(y)
                     let lai_reduced_ring = QuotientStructure::new_field(
-                        PolynomialStructure::new(Rational::structure()).into(),
+                        PolynomialStructure::new(Rational::structure()),
                         qi.clone(),
                     );
 
@@ -533,6 +531,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                     // println!("pi_prime = {}", pi_prime);
                     let pi = self.add(&self.var_pow(pi_deg), &pi_prime.neg());
                     // println!("pi = {}", pi);
+                    #[allow(clippy::let_and_return)]
                     pi
                 })
                 .collect::<Vec<_>>();

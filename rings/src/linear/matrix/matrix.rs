@@ -268,7 +268,7 @@ impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature for MatrixStruct
 impl<RS: SetSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     pub fn new(ring: RSB) -> Self {
         Self {
-            _ring: PhantomData::default(),
+            _ring: PhantomData,
             ring,
         }
     }
@@ -306,6 +306,7 @@ impl<RS: ToStringSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB>
                 str_rows[r].push(self.ring().to_string(mat.at(r, c).unwrap()));
             }
         }
+        #[allow(clippy::redundant_closure_for_method_calls)]
         let cols_widths: Vec<usize> = (0..mat.cols())
             .map(|c| {
                 (0..mat.rows())
@@ -386,8 +387,10 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         } else {
             let i = mats.len() / 2;
             let (first, last) = mats.split_at(i);
-            let first = self.join_diag(first.into_iter().map(|m| m.borrow()).collect());
-            let last = self.join_diag(last.into_iter().map(|m| m.borrow()).collect());
+            #[allow(clippy::redundant_closure_for_method_calls)]
+            let first = self.join_diag(first.iter().map(|m| m.borrow()).collect());
+            #[allow(clippy::redundant_closure_for_method_calls)]
+            let last = self.join_diag(last.iter().map(|m| m.borrow()).collect());
             Matrix::construct(
                 first.rows() + last.rows(),
                 first.cols() + last.cols(),
@@ -529,9 +532,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
 
     pub fn det_naive(&self, a: &Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
         let n = a.rows();
-        if n != a.cols() {
-            Err(MatOppErr::NotSquare)
-        } else {
+        if n == a.cols() {
             let mut det = self.ring().zero();
             for perm in algebraeon_groups::permutation::Permutation::all_permutations(n) {
                 let mut prod = self.ring().one();
@@ -549,17 +550,19 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
                 self.ring().add_mut(&mut det, &prod);
             }
             Ok(det)
+        } else {
+            Err(MatOppErr::NotSquare)
         }
     }
 
     pub fn trace(&self, a: &Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
         let n = a.rows();
-        if n != a.cols() {
-            Err(MatOppErr::NotSquare)
-        } else {
+        if n == a.cols() {
             Ok(self
                 .ring()
                 .sum((0..n).map(|i| a.at(i, i).unwrap()).collect()))
+        } else {
+            Err(MatOppErr::NotSquare)
         }
     }
 

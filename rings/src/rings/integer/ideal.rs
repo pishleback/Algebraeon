@@ -97,7 +97,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
                     .factorizations()
                     .into_powers(f)
                     .into_iter()
-                    .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k.into()))
+                    .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k))
                     .collect(),
             ),
         )

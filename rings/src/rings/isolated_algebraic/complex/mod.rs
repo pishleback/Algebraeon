@@ -244,10 +244,10 @@ impl Display for ComplexAlgebraicRoot {
 
 impl ComplexAlgebraicRoot {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
-        if !(self.tight_a < self.tight_b) {
+        if self.tight_a >= self.tight_b {
             return Err("tight a should be strictly less than b");
         }
-        if !(self.tight_c < self.tight_d) {
+        if self.tight_c >= self.tight_d {
             return Err("tight c should be strictly less than d");
         }
         // if !(self.wide_a < self.wide_b) {

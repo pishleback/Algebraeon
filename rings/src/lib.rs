@@ -3,8 +3,6 @@
     clippy::uninlined_format_args,
     clippy::to_string_in_format_args,
     clippy::println_empty_string,
-    clippy::manual_assert,
-    clippy::manual_while_let_some,
     clippy::assertions_on_constants,
     clippy::must_use_candidate,
     clippy::return_self_not_must_use,
@@ -35,27 +33,9 @@
     clippy::implicit_hasher,
     clippy::unnecessary_box_returns,
     clippy::no_effect_underscore_binding,
-    clippy::multiple_bound_locations
-)]
-#![allow(
+    clippy::multiple_bound_locations,
     clippy::wildcard_imports,
-    clippy::redundant_closure,
-    clippy::unnecessary_wraps,
-    clippy::useless_conversion,
-    clippy::nonminimal_bool,
-    clippy::while_let_loop,
-    clippy::let_and_return,
-    clippy::op_ref,
-    clippy::absurd_extreme_comparisons,
-    clippy::assign_op_pattern,
-    clippy::redundant_closure_for_method_calls,
-    clippy::needless_return,
-    clippy::needless_borrows_for_generic_args,
-    clippy::filter_next,
-    clippy::manual_find,
-    clippy::if_not_else,
-    clippy::default_constructed_unit_structs,
-    clippy::into_iter_on_ref
+    clippy::manual_assert,
 )]
 
 pub mod linear;

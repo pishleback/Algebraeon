@@ -407,8 +407,7 @@ where
             let n = self.poly_ring.degree(poly).unwrap();
             debug_assert!(n >= 1);
 
-            let mod_poly_ring =
-                QuotientStructure::new_ring(self.poly_ring.clone().into(), poly.clone());
+            let mod_poly_ring = QuotientStructure::new_ring(self.poly_ring.clone(), poly.clone());
             let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring().clone());
             let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
             let qth_power_matrix = Matrix::join_cols(

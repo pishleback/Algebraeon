@@ -223,9 +223,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn inv(&self, a: Matrix<Ring::Set>) -> Result<Matrix<Ring::Set>, MatOppErr> {
         let n = a.rows();
-        if n != a.cols() {
-            Err(MatOppErr::NotSquare)
-        } else {
+        if n == a.cols() {
             let (h, u, _u_det, _pivs) = self.row_reduced_hermite_algorithm(a);
             //h = u*a
             if self.equal(&h, &self.ident(n)) {
@@ -233,6 +231,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             } else {
                 Err(MatOppErr::Singular)
             }
+        } else {
+            Err(MatOppErr::NotSquare)
         }
     }
 

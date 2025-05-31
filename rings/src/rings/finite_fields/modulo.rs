@@ -170,9 +170,7 @@ impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        Modulo {
-            x: (&a.x * &b.x) % N,
-        }
+        Modulo { x: (a.x * b.x) % N }
     }
 }
 

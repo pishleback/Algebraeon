@@ -398,7 +398,7 @@ pub struct MultiPolynomialStructure<RS: RingSignature, RSB: BorrowedStructure<RS
 impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS, RSB> {
     pub fn new(coeff_ring: RSB) -> Self {
         Self {
-            _coeff_ring: PhantomData::default(),
+            _coeff_ring: PhantomData,
             coeff_ring,
         }
     }
@@ -458,14 +458,14 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> EqSignature
         let b = self.reduce(b.clone());
 
         let n = a.terms.len();
-        if n != b.terms.len() {
-            false
-        } else {
+        if n == b.terms.len() {
             (0..n).all(|i| {
                 self.coeff_ring()
                     .equal(&a.terms[i].coeff, &b.terms[i].coeff)
-                    && &a.terms[i].monomial == &b.terms[i].monomial
+                    && a.terms[i].monomial == b.terms[i].monomial
             })
+        } else {
+            false
         }
     }
 }
@@ -908,7 +908,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
     }
 
     pub fn degree(&self, p: &MultiPolynomial<RS::Set>) -> Option<usize> {
-        p.terms.iter().map(|t| t.degree()).max()
+        p.terms.iter().map(Term::degree).max()
     }
 
     pub fn split_by_degree(
@@ -919,9 +919,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
         for term in p.terms {
             // let term = MultiPolynomial::new(vec![term]);
             let deg = term.degree();
-            if !p_by_deg.contains_key(&deg) {
-                p_by_deg.insert(deg, vec![]);
-            }
+            p_by_deg.entry(deg).or_insert_with(Vec::new);
             p_by_deg.get_mut(&deg).unwrap().push(term);
         }
         p_by_deg

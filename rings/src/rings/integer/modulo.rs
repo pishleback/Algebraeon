@@ -25,7 +25,7 @@ impl<const IS_FIELD: bool> CountableSetSignature
 {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         (0usize..)
-            .map(|n| Integer::from(n))
+            .map(Integer::from)
             .take_while(|n| n < self.modulus())
     }
 }

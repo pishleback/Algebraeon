@@ -163,7 +163,6 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                                     .map(|f| f.residue_class_degree)
                                     .collect(),
                             )
-                            .into_iter()
                             .map(|idxs| {
                                 self.ideal_product(
                                     idxs.into_iter()
@@ -449,14 +448,13 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
             .affine_subsets()
             .affine_basis(&b_set)
             .into_iter()
-            .filter(|b| {
+            .find(|b| {
                 !self
                     .ring()
                     .z_module()
                     .affine_subsets()
                     .contains_element(&rm_b_set, b)
             })
-            .next()
             .unwrap()
     }
 
@@ -493,7 +491,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
             if !self.ideal_contains_element(&prime_to_the_k, &a) {
                 return Valuation::Finite((k - 1).into());
             }
-            k = k + 1;
+            k += 1;
             prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
         }
     }
@@ -514,7 +512,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
             if !self.ideal_contains(&prime_to_the_k, &a) {
                 return Valuation::Finite((k - 1).into());
             }
-            k = k + 1;
+            k += 1;
             prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
         }
     }

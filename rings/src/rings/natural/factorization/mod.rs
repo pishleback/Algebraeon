@@ -122,6 +122,7 @@ impl Factorizer {
     fn partially_factor_by_method(&mut self, algorithm: impl Fn(ToFactor) -> (Vec<Factor>, bool)) {
         let mut to_factor_now = self.to_factor.clone();
         self.to_factor = vec![];
+        #[allow(clippy::manual_while_let_some)]
         while !to_factor_now.is_empty() {
             let n = to_factor_now.pop().unwrap();
             #[cfg(debug_assertions)]

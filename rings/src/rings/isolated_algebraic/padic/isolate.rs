@@ -43,9 +43,7 @@ mod balancable_pairs {
             let min = (0..=self.n)
                 .filter_map(|k| match padic_int_valuation(&self.p, self.f.coeff(k)) {
                     Valuation::Infinity => None,
-                    Valuation::Finite(vfk) => {
-                        Some(Integer::from(vfk) + Integer::from(k) * &self.bv)
-                    }
+                    Valuation::Finite(vfk) => Some(vfk + Integer::from(k) * &self.bv),
                 })
                 .min()
                 .unwrap();
@@ -426,7 +424,7 @@ fn isorefine1(
     debug_assert!(f.is_squarefree());
     debug_assert!(is_prime(p));
     let val_f_at_i = padic_int_valuation(p, f.evaluate(&Integer::from(i)));
-    if !(Valuation::Finite(Integer::from(beta)) <= val_f_at_i) {
+    if Valuation::Finite(Integer::from(beta)) > val_f_at_i {
         return vec![];
     }
     if Valuation::Finite(Integer::from(Natural::TWO * beta) - Integer::TWO) < val_f_at_i {
@@ -510,7 +508,7 @@ fn refine0_impl(
     debug_assert!(r.ndigits() >= &Integer::ZERO);
     let PAdicRationalBall { a: c, v: beta } = &r;
     let vfc = padic_rat_valuation(p, f.apply_map(|coeff| Rational::from(coeff)).evaluate(c));
-    if !(Valuation::Finite(beta.clone()) <= vfc) {
+    if Valuation::Finite(beta.clone()) > vfc {
         return None;
     }
     if target_beta < beta && Valuation::Finite(Integer::TWO * target_beta - Integer::TWO) < vfc {
@@ -563,8 +561,8 @@ pub fn isolate(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
             isolate0(p, &critical_balanced_pair.normalization())
         {
             roots.push(PAdicRationalBall {
-                a: Rational::from(p).int_pow(kappa).unwrap() * Rational::from(c),
-                v: Integer::from(beta) + kappa,
+                a: Rational::from(p).int_pow(kappa).unwrap() * c,
+                v: beta + kappa,
             });
         }
     }

@@ -631,6 +631,7 @@ pub mod structure {
             candidates.into_iter().next().unwrap()
         }
 
+        #[allow(clippy::unnecessary_wraps)]
         fn inv_mut(&mut self) -> Result<PAdicAlgebraic, RingDivisionError> {
             /*
             Let x be the root approximated by a: |x-a| <= v
@@ -708,9 +709,7 @@ pub mod structure {
 
     impl PAdicAlgebraicStructure {
         pub fn new(p: Natural) -> Self {
-            if !is_prime(&p) {
-                panic!("{} is not prime", p)
-            }
+            assert!(is_prime(&p), "{} is not prime", p);
             Self { p }
         }
     }

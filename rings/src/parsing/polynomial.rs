@@ -36,9 +36,10 @@ struct Number {
 
 impl Number {
     fn new(numerator: Integer, denominator: Integer) -> Self {
-        if denominator == Integer::from(0) {
-            panic!("Denominator cannot be zero");
-        }
+        assert!(
+            denominator != Integer::from(0),
+            "Denominator cannot be zero"
+        );
         Number {
             numerator,
             denominator,
@@ -454,13 +455,14 @@ impl Expr {
                 let denom_val = n.denominator.clone();
 
                 // Handle fractions by ensuring denominator=1 for integer polynomials
-                if denom_val != Integer::from(1) {
-                    if num_val.clone() % denom_val.clone() != Integer::from(0) {
-                        panic!("Non-integer coefficient in integer polynomial");
-                    }
-                    *terms.entry(0).or_insert(Integer::from(0)) += num_val / denom_val;
-                } else {
+                if denom_val == Integer::from(1) {
                     *terms.entry(0).or_insert(Integer::from(0)) += num_val;
+                } else {
+                    assert!(
+                        num_val.clone() % denom_val.clone() == Integer::from(0),
+                        "Non-integer coefficient in integer polynomial"
+                    );
+                    *terms.entry(0).or_insert(Integer::from(0)) += num_val / denom_val;
                 }
             }
             Expr::Sum(s) => {

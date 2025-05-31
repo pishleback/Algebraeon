@@ -125,11 +125,8 @@ where
         let (last_var, first_vars) = vars.split_last().unwrap();
 
         let p_tilde = p.clone().evaluate_var_zero(last_var);
-        let r_sym = self.as_elementary_symmetric_polynomials_impl(
-            &first_vars.iter().map(|v| v.clone()).collect(),
-            &p_tilde,
-            e,
-        );
+        let r_sym =
+            self.as_elementary_symmetric_polynomials_impl(&first_vars.to_vec(), &p_tilde, e);
         // println!("first_vars={:?} last_var={:?}", first_vars, last_var);
         // println!("r_sym = {}", self.elem_to_string(&r_sym));
         let r = MultiPolynomialStructure::new(self.clone()).evaluate(
@@ -164,6 +161,7 @@ where
 
         // println!("p_sym = {}", self.elem_to_string(&p_sym));
 
+        #[allow(clippy::let_and_return)]
         p_sym
     }
 
@@ -226,10 +224,10 @@ where
         vars: Vec<impl Borrow<Variable>>,
         poly: &MultiPolynomial<RS::Set>,
     ) -> Option<(Vec<Variable>, MultiPolynomial<RS::Set>)> {
-        if !self.is_symmetric(vars.iter().map(|v| v.borrow().clone()).collect(), poly) {
-            None
-        } else {
+        if self.is_symmetric(vars.iter().map(|v| v.borrow().clone()).collect(), poly) {
             Some(self.as_elementary_symmetric_polynomials_unchecked(vars, poly))
+        } else {
+            None
         }
     }
 }

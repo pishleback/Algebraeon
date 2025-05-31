@@ -306,6 +306,7 @@ where
                                 factor_coeff(c)
                             })
                         });
+                        #[allow(clippy::let_and_return)]
                         big_ff
                     },
                 ),
@@ -381,13 +382,11 @@ where
         let f_deg = self.degree(&f).unwrap();
         let max_factor_degree = f_deg / 2;
         for d in 0..max_factor_degree {
-            for mut coeffs in
-                itertools::Itertools::multi_cartesian_product((0..=d).into_iter().map(|_d| {
-                    let mut all_elems = vec![self.coeff_ring().zero()];
-                    all_elems.append(&mut self.coeff_ring().all_units());
-                    all_elems
-                }))
-            {
+            for mut coeffs in itertools::Itertools::multi_cartesian_product((0..=d).map(|_d| {
+                let mut all_elems = vec![self.coeff_ring().zero()];
+                all_elems.append(&mut self.coeff_ring().all_units());
+                all_elems
+            })) {
                 coeffs.push(self.coeff_ring().one());
                 let g = Polynomial::from_coeffs(coeffs);
                 match self.div(&f, &g) {
