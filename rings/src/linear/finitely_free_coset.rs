@@ -1,6 +1,6 @@
 use super::{
     finitely_free_affine::*,
-    finitely_free_modules::*,
+    finitely_free_module::*,
     finitely_free_submodule::*,
     matrix::{Matrix, ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
 };
