@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use crate::structure::*;
 use algebraeon_sets::structure::*;
 
@@ -16,18 +18,25 @@ impl<Ring: RingSignature, Module: SemiModuleSignature<Ring> + AdditiveGroupSigna
 }
 
 pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
-    type Basis: Eq;
+    type Basis: SetSignature;
 
-    fn to_component(&self, b: &Self::Basis, v: &Self::Set) -> Ring::Set;
+    fn basis_set(&self) -> impl Borrow<Self::Basis>;
 
-    fn from_component(&self, b: &Self::Basis, r: &Ring::Set) -> Self::Set;
+    fn to_component(&self, b: &<Self::Basis as SetSignature>::Set, v: &Self::Set) -> Ring::Set;
+
+    fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Ring::Set) -> Self::Set;
 }
 
-pub trait FinitelyFreeModuleSignature<Ring: RingSignature>: FreeModuleSignature<Ring> {
-    fn basis(&self) -> Vec<Self::Basis>;
+pub trait FinitelyFreeModuleSignature<Ring: RingSignature>: FreeModuleSignature<Ring>
+where
+    Self::Basis: FiniteSetSignature,
+{
+    fn basis(&self) -> Vec<<Self::Basis as SetSignature>::Set> {
+        self.basis_set().borrow().list_all_elements()
+    }
 
     fn rank(&self) -> usize {
-        self.basis().len()
+        self.basis_set().borrow().size()
     }
 
     fn basis_vecs(&self) -> Vec<Self::Set> {

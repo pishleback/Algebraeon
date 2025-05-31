@@ -1,4 +1,4 @@
-use super::SetSignature;
+use super::EqSignature;
 use std::{borrow::Borrow, cmp::Ordering};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,10 +66,10 @@ impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Set> Iterator for VecMerger<'
     }
 }
 
-pub trait OrdSignature: SetSignature {
+pub trait OrdSignature: EqSignature {
     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering;
 
-    fn is_sorted(&self, a: Vec<impl Borrow<Self::Set>>) -> bool {
+    fn is_sorted(&self, a: &Vec<impl Borrow<Self::Set>>) -> bool {
         for i in 1..a.len() {
             if self.cmp(&a[i - 1].borrow(), &a[i].borrow()) == Ordering::Greater {
                 return false;
@@ -78,8 +78,21 @@ pub trait OrdSignature: SetSignature {
         true
     }
 
-    fn is_sorted_by_key<X>(&self, a: Vec<X>, key: impl Fn(&X) -> &Self::Set) -> bool {
-        self.is_sorted(a.iter().map(key).collect())
+    fn is_sorted_by_key<X>(&self, a: &Vec<X>, key: impl Fn(&X) -> &Self::Set) -> bool {
+        self.is_sorted(&a.iter().map(key).collect())
+    }
+
+    fn is_sorted_and_unique(&self, a: &Vec<impl Borrow<Self::Set>>) -> bool {
+        for i in 1..a.len() {
+            if self.cmp(&a[i - 1].borrow(), &a[i].borrow()) != Ordering::Less {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn is_sorted_and_unique_by_key<X>(&self, a: &Vec<X>, key: impl Fn(&X) -> &Self::Set) -> bool {
+        self.is_sorted_and_unique(&a.iter().map(key).collect())
     }
 
     fn merge_sorted<'s, S: Borrow<Self::Set> + 's>(
@@ -96,8 +109,8 @@ pub trait OrdSignature: SetSignature {
         b: Vec<X>,
         key: impl Fn(&X) -> &Self::Set,
     ) -> impl Iterator<Item = (MergedSource, X)> {
-        debug_assert!(self.is_sorted_by_key(a.iter().collect(), |x| key(x)));
-        debug_assert!(self.is_sorted_by_key(b.iter().collect(), |x| key(x)));
+        debug_assert!(self.is_sorted_by_key(&a.iter().collect(), |x| key(x)));
+        debug_assert!(self.is_sorted_by_key(&b.iter().collect(), |x| key(x)));
         VecMerger::new(self, a, b, key)
     }
 
@@ -188,13 +201,13 @@ mod tests {
         assert_eq!(s.cmp(&1, &2), Ordering::Less);
         assert_eq!(s.cmp(&2, &1), Ordering::Greater);
 
-        assert!(s.is_sorted(Vec::<usize>::new()));
-        assert!(s.is_sorted(vec![7]));
-        assert!(s.is_sorted(vec![1, 2]));
-        assert!(!s.is_sorted(vec![2, 1]));
-        assert!(s.is_sorted(vec![1, 2, 3]));
-        assert!(s.is_sorted(vec![1, 1, 1]));
-        assert!(!s.is_sorted(vec![1, 2, 1]));
+        assert!(s.is_sorted(&Vec::<usize>::new()));
+        assert!(s.is_sorted(&vec![7]));
+        assert!(s.is_sorted(&vec![1, 2]));
+        assert!(!s.is_sorted(&vec![2, 1]));
+        assert!(s.is_sorted(&vec![1, 2, 3]));
+        assert!(s.is_sorted(&vec![1, 1, 1]));
+        assert!(!s.is_sorted(&vec![1, 2, 1]));
 
         assert_eq!(
             s.merge_sorted(Vec::<usize>::new(), Vec::<usize>::new())

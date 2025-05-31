@@ -12,7 +12,7 @@ use std::{
 
 /// Represent an integer {..., -2, -1, 0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
-#[canonical_structure(eq)]
+#[canonical_structure(eq, ord)]
 pub struct Integer(malachite_nz::integer::Integer);
 
 impl Integer {
