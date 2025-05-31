@@ -132,6 +132,21 @@ pub trait OrdSignature: SetSignature {
             }
         }
     }
+
+    fn sort_by_cached_by<X: 'static>(&self, a: Vec<X>, key: impl Fn(&X) -> Self::Set) -> Vec<X>
+    where
+        Self::Set: 'static,
+    {
+        let mut a = a.into_iter().map(|x| (x, None)).collect::<Vec<_>>();
+        for i in 0..a.len() {
+            let (x, k) = a.get_mut(i).unwrap();
+            *k = Some(key(x));
+        }
+        self.sort_by_key(a, &|(_, k)| k.as_ref().unwrap())
+            .into_iter()
+            .map(|(x, _)| x)
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -215,6 +230,10 @@ mod tests {
         assert_eq!(
             s.sort(vec![3, 3, 2, 2, 2, 1, 1, 1, 1]),
             vec![1, 1, 1, 1, 2, 2, 2, 3, 3]
+        );
+        assert_eq!(
+            s.sort_by_cached_by(vec![3, 3, 2, 2, 2, 1, 1, 1, 1], |x| 5 - x),
+            vec![3, 3, 2, 2, 2, 1, 1, 1, 1]
         );
     }
 }
