@@ -5,7 +5,8 @@ use crate::{
     linear::finitely_free_module::RingToFinitelyFreeModuleSignature,
     rings::algebraic_number_fields::number_field::AlgebraicNumberFieldStructure,
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature, FreeModuleSignature, ModuleSignature, SemiModuleSignature, SemiRingSignature
+        AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature,
+        FreeModuleSignature, ModuleSignature, SemiModuleSignature, SemiRingSignature,
     },
 };
 
@@ -42,7 +43,7 @@ impl SetSignature for QuaternionOrderZBasis {
             .algebra
             .ring()
             .free_module(self.algebra.rank())
-            .submodules();        
+            .submodules();
 
         unimplemented!("linear algebra")
     }
@@ -70,7 +71,7 @@ impl AdditiveGroupSignature for QuaternionOrderZBasis {
 
 impl FreeModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {}
 
-impl ModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
+impl SemiModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
     fn ring(&self) -> &IntegerCanonicalStructure {
         &self.integers
     }
@@ -79,6 +80,8 @@ impl ModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
         self.algebra.scalar_mul(x, a)
     }
 }
+
+// impl ModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {}
 
 impl QuaternionOrderZBasis {
     fn check_basis(self) -> bool {
