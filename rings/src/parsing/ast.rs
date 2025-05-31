@@ -52,6 +52,53 @@ impl fmt::Display for Number {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct SumTerm {
+    pub sign: bool,  // true for positive, false for negative
+    pub term: Box<Expr>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Sum {
+    pub terms: Vec<SumTerm>,
+}
+
+impl Sum {
+    pub fn validate(&self) -> Result<(), String> {
+        for term in &self.terms {
+            term.term.validate()?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for Sum {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.terms.is_empty() {
+            return write!(f, "0");
+        }
+
+        // Write the first term
+        let first_term = &self.terms[0];
+        if first_term.sign {
+            write!(f, "{}", first_term.term)?;
+        } else {
+            write!(f, "-{}", first_term.term)?;
+        }
+
+        // Write the remaining terms
+        for term in &self.terms[1..] {
+            if term.sign {
+                write!(f, " + {}", term.term)?;
+            } else {
+                write!(f, " - {}", term.term)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Var(ParseVar),
     Num(Number),
@@ -59,7 +106,6 @@ pub enum Expr {
     Product(Product),
     Power(Power),
     Grouped(Box<Expr>),
-    Neg(Box<Expr>),
 }
 
 impl Expr {
@@ -68,7 +114,6 @@ impl Expr {
             Expr::Power(p) => p.validate(),
             Expr::Product(p) => p.validate(),
             Expr::Sum(s) => s.validate(),
-            Expr::Neg(e) => e.validate(),
             Expr::Grouped(e) => e.validate(),
             _ => Ok(()),
         }
@@ -88,8 +133,9 @@ impl Expr {
             }
             Expr::Num(_) => {}
             Expr::Sum(s) => {
-                s.left.add_variables(vars);
-                s.right.add_variables(vars);
+                for term in &s.terms {
+                    term.term.add_variables(vars);
+                }
             }
             Expr::Product(p) => {
                 p.left.add_variables(vars);
@@ -101,7 +147,6 @@ impl Expr {
                 // For a valid polynomial, exponent must be a constant
             }
             Expr::Grouped(e) => e.add_variables(vars),
-            Expr::Neg(e) => e.add_variables(vars),
         }
     }
 }
@@ -115,29 +160,6 @@ impl fmt::Display for Expr {
             Self::Product(p) => write!(f, "{}", p),
             Self::Power(p) => write!(f, "{}", p),
             Self::Grouped(e) => write!(f, "({})", e),
-            Self::Neg(e) => write!(f, "-{}", e),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Sum {
-    pub left: Box<Expr>,
-    pub right: Box<Expr>,
-}
-
-impl Sum {
-    pub fn validate(&self) -> Result<(), String> {
-        self.left.validate()?;
-        self.right.validate()
-    }
-}
-
-impl fmt::Display for Sum {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.right.as_ref() {
-            Expr::Neg(inner) => write!(f, "{} - {}", self.left, inner),
-            _ => write!(f, "{} + {}", self.left, self.right),
         }
     }
 }
