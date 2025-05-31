@@ -53,7 +53,7 @@ impl fmt::Display for Number {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SumTerm {
-    pub sign: bool,  // true for positive, false for negative
+    pub sign: bool, // true for positive, false for negative
     pub term: Box<Expr>,
 }
 
