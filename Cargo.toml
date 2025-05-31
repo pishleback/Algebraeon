@@ -6,6 +6,7 @@ members = [
     "groups",
     "rings",
     "geometry",
+    "graphs",
     "drawing",
     "combinatorics",
     "examples",
