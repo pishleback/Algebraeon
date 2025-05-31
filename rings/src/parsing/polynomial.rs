@@ -132,9 +132,28 @@ impl Expr {
                 Ok(MultiPolynomial::<Integer>::constant(n.numerator.clone()))
             }
             Expr::Sum(s) => {
-                let left = s.left.to_multivariate_integer(variable_mapping)?;
-                let right = s.right.to_multivariate_integer(variable_mapping)?;
-                Ok(MultiPolynomial::add(&left, &right))
+                if s.terms.is_empty() {
+                    return Ok(MultiPolynomial::<Integer>::constant(Integer::from(0)));
+                }
+
+                // Process the first term
+                let first_term = &s.terms[0];
+                let mut result = first_term.term.to_multivariate_integer(variable_mapping)?;
+                if !first_term.sign {
+                    result = MultiPolynomial::neg(&result);
+                }
+
+                // Add/subtract the remaining terms
+                for term in &s.terms[1..] {
+                    let term_poly = term.term.to_multivariate_integer(variable_mapping)?;
+                    if term.sign {
+                        result = MultiPolynomial::add(&result, &term_poly);
+                    } else {
+                        result = MultiPolynomial::add(&result, &MultiPolynomial::neg(&term_poly));
+                    }
+                }
+
+                Ok(result)
             }
             Expr::Product(p) => {
                 let left = p.left.to_multivariate_integer(variable_mapping)?;
@@ -164,10 +183,6 @@ impl Expr {
                 }
             }
             Expr::Grouped(e) => e.to_multivariate_integer(variable_mapping),
-            Expr::Neg(e) => {
-                let inner = e.to_multivariate_integer(variable_mapping)?;
-                Ok(MultiPolynomial::neg(&inner))
-            }
         }
     }
 
@@ -202,9 +217,28 @@ impl Expr {
                 Ok(MultiPolynomial::<Rational>::constant(rational_coeff))
             }
             Expr::Sum(s) => {
-                let left = s.left.to_multivariate_rational(variable_mapping)?;
-                let right = s.right.to_multivariate_rational(variable_mapping)?;
-                Ok(MultiPolynomial::add(&left, &right))
+                if s.terms.is_empty() {
+                    return Ok(MultiPolynomial::<Rational>::constant(Rational::from(0)));
+                }
+
+                // Process the first term
+                let first_term = &s.terms[0];
+                let mut result = first_term.term.to_multivariate_rational(variable_mapping)?;
+                if !first_term.sign {
+                    result = MultiPolynomial::neg(&result);
+                }
+
+                // Add/subtract the remaining terms
+                for term in &s.terms[1..] {
+                    let term_poly = term.term.to_multivariate_rational(variable_mapping)?;
+                    if term.sign {
+                        result = MultiPolynomial::add(&result, &term_poly);
+                    } else {
+                        result = MultiPolynomial::add(&result, &MultiPolynomial::neg(&term_poly));
+                    }
+                }
+
+                Ok(result)
             }
             Expr::Product(p) => {
                 let left = p.left.to_multivariate_rational(variable_mapping)?;
@@ -234,10 +268,6 @@ impl Expr {
                 }
             }
             Expr::Grouped(e) => e.to_multivariate_rational(variable_mapping),
-            Expr::Neg(e) => {
-                let inner = e.to_multivariate_rational(variable_mapping)?;
-                Ok(MultiPolynomial::neg(&inner))
-            }
         }
     }
 
@@ -274,8 +304,24 @@ impl Expr {
                 }
             }
             Expr::Sum(s) => {
-                s.left.extract_terms(var, terms, coefficient.clone());
-                s.right.extract_terms(var, terms, coefficient);
+                for (i, term) in s.terms.iter().enumerate() {
+                    let term_coeff = if i == 0 {
+                        // First term uses the coefficient directly
+                        if term.sign {
+                            coefficient.clone()
+                        } else {
+                            -coefficient.clone()
+                        }
+                    } else {
+                        // Subsequent terms are added/subtracted
+                        if term.sign {
+                            coefficient.clone()
+                        } else {
+                            -coefficient.clone()
+                        }
+                    };
+                    term.term.extract_terms(var, terms, term_coeff);
+                }
             }
             Expr::Product(p) => {
                 match (p.left.as_ref(), p.right.as_ref()) {
@@ -419,7 +465,6 @@ impl Expr {
                 }
             }
             Expr::Grouped(e) => e.extract_terms(var, terms, coefficient),
-            Expr::Neg(e) => e.extract_terms(var, terms, -coefficient),
         }
     }
 
@@ -447,9 +492,24 @@ impl Expr {
                 *terms.entry(0).or_insert(Rational::from(0)) += coefficient * num_rational;
             }
             Expr::Sum(s) => {
-                s.left
-                    .extract_rational_terms(var, terms, coefficient.clone());
-                s.right.extract_rational_terms(var, terms, coefficient);
+                for (i, term) in s.terms.iter().enumerate() {
+                    let term_coeff = if i == 0 {
+                        // First term uses the coefficient directly
+                        if term.sign {
+                            coefficient.clone()
+                        } else {
+                            -coefficient.clone()
+                        }
+                    } else {
+                        // Subsequent terms are added/subtracted
+                        if term.sign {
+                            coefficient.clone()
+                        } else {
+                            -coefficient.clone()
+                        }
+                    };
+                    term.term.extract_rational_terms(var, terms, term_coeff);
+                }
             }
             Expr::Product(p) => {
                 match (p.left.as_ref(), p.right.as_ref()) {
@@ -599,7 +659,6 @@ impl Expr {
                 }
             }
             Expr::Grouped(e) => e.extract_rational_terms(var, terms, coefficient),
-            Expr::Neg(e) => e.extract_rational_terms(var, terms, -coefficient),
         }
     }
 }
