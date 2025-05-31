@@ -22,7 +22,11 @@ pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
 
     fn basis_set(&self) -> impl Borrow<Self::Basis>;
 
-    fn to_component(&self, b: &<Self::Basis as SetSignature>::Set, v: &Self::Set) -> Ring::Set;
+    fn to_component<'a>(
+        &'a self,
+        b: &<Self::Basis as SetSignature>::Set,
+        v: &'a Self::Set,
+    ) -> &'a Ring::Set;
 
     fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Ring::Set) -> Self::Set;
 }
@@ -56,7 +60,7 @@ where
     fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
         self.basis()
             .iter()
-            .map(|b| self.to_component(b, v))
+            .map(|b| self.to_component(b, v).clone())
             .collect()
     }
 

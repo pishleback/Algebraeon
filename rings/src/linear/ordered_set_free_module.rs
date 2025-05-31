@@ -2,7 +2,7 @@ use crate::structure::*;
 use algebraeon_sets::structure::*;
 use std::marker::PhantomData;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct FreeModuleOverOrderedSetStructure<
     Set: OrdSignature,
     SetB: BorrowedStructure<Set>,
@@ -13,6 +13,28 @@ pub struct FreeModuleOverOrderedSetStructure<
     set: SetB,
     _ring: PhantomData<Ring>,
     ring: RingB,
+    ring_zero: Ring::Set,
+}
+
+impl<
+    Set: OrdSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: SemiRingSignature,
+    RingB: BorrowedStructure<Ring>,
+> PartialEq for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.set == other.set && self.ring == other.ring
+    }
+}
+
+impl<
+    Set: OrdSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: SemiRingSignature,
+    RingB: BorrowedStructure<Ring>,
+> Eq for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
 }
 
 impl<
@@ -24,6 +46,7 @@ impl<
 {
     pub fn new(set: SetB, ring: RingB) -> Self {
         Self {
+            ring_zero: ring.borrow().zero(),
             _set: PhantomData::default(),
             set,
             _ring: PhantomData::default(),
@@ -213,8 +236,12 @@ impl<
         self.set()
     }
 
-    fn to_component(&self, x: &Set::Set, v: &Self::Set) -> Ring::Set {
-        todo!()
+    fn to_component<'a>(&'a self, x: &Set::Set, v: &'a Self::Set) -> &'a Ring::Set {
+        if let Some((_, a)) = self.set().binary_search_by_key(v, x, |(x, _)| x) {
+            a
+        } else {
+            &self.ring_zero
+        }
     }
 
     fn from_component(&self, x: &Set::Set, a: &Ring::Set) -> Self::Set {
@@ -226,14 +253,14 @@ impl<
     }
 }
 
-// impl<
-//     Set: OrdSignature + FiniteSetSignature,
-//     SetB: BorrowedStructure<Set>,
-//     Ring: RingSignature,
-//     RingB: BorrowedStructure<Ring>,
-// > FinitelyFreeModuleSignature<Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
-// {
-// }
+impl<
+    Set: OrdSignature + FiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: RingSignature,
+    RingB: BorrowedStructure<Ring>,
+> FinitelyFreeModuleSignature<Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
+}
 
 #[cfg(test)]
 mod tests {

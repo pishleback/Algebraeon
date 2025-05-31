@@ -95,6 +95,49 @@ pub trait OrdSignature: EqSignature {
         self.is_sorted_and_unique(&a.iter().map(key).collect())
     }
 
+    fn binary_search(&self, v: &Vec<impl Borrow<Self::Set>>, target: &Self::Set) -> bool {
+        self.binary_search_by_key(v, target, |x| x.borrow())
+            .is_some()
+    }
+
+    fn binary_search_by_key<'x, X>(
+        &self,
+        v: &'x Vec<X>,
+        target: &Self::Set,
+        key: impl Fn(&X) -> &Self::Set,
+    ) -> Option<&'x X> {
+        debug_assert!(self.is_sorted_by_key(v, &key));
+        if v.is_empty() {
+            return None;
+        }
+        let mut a = 0;
+        let mut b = v.len() - 1;
+
+        if self.equal(target, key(&v[a])) {
+            return Some(&v[a]);
+        }
+
+        if self.equal(target, key(&v[b])) {
+            return Some(&v[b]);
+        }
+
+        while b - a >= 2 {
+            println!("{:?} {:?}", a, b);
+
+            let m = (a + b) / 2;
+            let m_key = key(&v[m]);
+            match self.cmp(target, m_key) {
+                Ordering::Less => b = m,
+                Ordering::Equal => {
+                    return Some(&v[m]);
+                }
+                Ordering::Greater => a = m,
+            }
+        }
+
+        None
+    }
+
     fn merge_sorted<'s, S: Borrow<Self::Set> + 's>(
         &'s self,
         a: Vec<S>,
@@ -248,5 +291,16 @@ mod tests {
             s.sort_by_cached_by(vec![3, 3, 2, 2, 2, 1, 1, 1, 1], |x| 5 - x),
             vec![3, 3, 2, 2, 2, 1, 1, 1, 1]
         );
+
+        let v = vec![1, 2, 3, 3, 3, 4, 4, 5, 7, 8, 9, 10, 11];
+        assert!(!s.binary_search(&v, &0));
+        assert!(s.binary_search(&v, &1));
+        assert!(s.binary_search(&v, &3));
+        assert!(s.binary_search(&v, &4));
+        assert!(s.binary_search(&v, &5));
+        assert!(!s.binary_search(&v, &6));
+        assert!(s.binary_search(&v, &7));
+        assert!(s.binary_search(&v, &11));
+        assert!(!s.binary_search(&v, &12));
     }
 }

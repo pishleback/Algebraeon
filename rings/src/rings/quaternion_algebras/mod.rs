@@ -239,12 +239,12 @@ impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStru
         QuaternionAlgebraBasisCanonicalStructure {}
     }
 
-    fn to_component(&self, b: &QuaternionAlgebraBasis, v: &Self::Set) -> Field::Set {
+    fn to_component<'a>(&self, b: &QuaternionAlgebraBasis, v: &'a Self::Set) -> &'a Field::Set {
         match b {
-            QuaternionAlgebraBasis::R => v.x.clone(),
-            QuaternionAlgebraBasis::I => v.y.clone(),
-            QuaternionAlgebraBasis::J => v.z.clone(),
-            QuaternionAlgebraBasis::K => v.w.clone(),
+            QuaternionAlgebraBasis::R => &v.x,
+            QuaternionAlgebraBasis::I => &v.y,
+            QuaternionAlgebraBasis::J => &v.z,
+            QuaternionAlgebraBasis::K => &v.w,
         }
     }
 

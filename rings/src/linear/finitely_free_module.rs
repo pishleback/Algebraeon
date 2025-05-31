@@ -250,9 +250,9 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ri
         &self.basis_set
     }
 
-    fn to_component(&self, b: &usize, v: &Self::Set) -> Ring::Set {
+    fn to_component<'a>(&self, b: &usize, v: &'a Self::Set) -> &'a Ring::Set {
         debug_assert!(*b < self.rank());
-        v[*b].clone()
+        &v[*b]
     }
 
     fn from_component(&self, b: &usize, r: &<Ring>::Set) -> Self::Set {
