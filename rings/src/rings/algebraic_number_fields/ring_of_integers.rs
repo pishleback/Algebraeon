@@ -1,7 +1,7 @@
 use super::number_field::AlgebraicNumberFieldStructure;
 use crate::{
     linear::{
-        finitely_free_modules::{FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature},
+        finitely_free_module::{FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature},
         matrix::Matrix,
     },
     polynomial::Polynomial,

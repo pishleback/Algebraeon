@@ -24,7 +24,7 @@ For example, to obtain \\(\mathbb{Z}^3\\)
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::RingToFinitelyFreeModuleSignature;
+# use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 # use algebraeon::sets::structure::MetaType;
 #
 let module = Integer::structure().into_free_module(3);
@@ -34,7 +34,7 @@ Elements of \\(\mathbb{Z}^3\\) are represented by objects of type `Vec<Integer>`
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::rings::structure::*;
 # use algebraeon::sets::structure::*;
 # 
@@ -68,7 +68,7 @@ The scalar ring structure can be obtained from a module by calling `.ring()`.
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::sets::structure::*;
 # 
 # let module = Integer::structure().into_free_module(3);
@@ -85,7 +85,7 @@ For example, to obtain the set of all submodules of \\(\mathbb{Z}^3\\)
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::sets::structure::*;
 # 
 let submodules = Integer::structure().into_free_module(3).into_submodules();
@@ -99,7 +99,7 @@ The zero submodule \\(\{0\} \subseteq R^n\\) can be constructed using `.zero_sub
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::sets::structure::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
@@ -112,7 +112,7 @@ The submodule given by the span of some elements of the module can be constructe
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::sets::structure::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
@@ -133,7 +133,7 @@ The submodule given by the kernel of some elements can be constructed using `.ke
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::sets::structure::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
@@ -154,7 +154,7 @@ Test submodules for equality using `.equal(..)`.
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::sets::structure::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
@@ -187,7 +187,7 @@ Check whether a submodule contains an element using `.contains_element(..)`.
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::sets::structure::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
@@ -206,7 +206,7 @@ Check whether a submodule is a subset of another submodule using `.contains(..)`
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::sets::structure::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
@@ -222,7 +222,7 @@ Compute the sum of two submodules using `.sum(..)` and compute the intersection 
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::*;
+# use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::sets::structure::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();

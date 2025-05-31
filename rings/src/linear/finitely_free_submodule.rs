@@ -1,4 +1,4 @@
-use super::{finitely_free_coset::*, finitely_free_modules::*, matrix::Matrix};
+use super::{finitely_free_coset::*, finitely_free_module::*, matrix::Matrix};
 use crate::{linear::matrix::*, structure::*};
 use algebraeon_sets::structure::*;
 use std::fmt::Debug;

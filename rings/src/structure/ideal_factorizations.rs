@@ -174,9 +174,83 @@ impl<
 }
 
 // #[derive(Debug, Clone)]
-// pub struct DedekindDomainFractionalIdeal<RS: DedekindDomainIdealsSignature> {
-//     ring: RS,
+// pub struct DedekindDomainFractionalIdeal<Ideal> {
 //     // The prime ideals should be distinct
 //     // All powers should be non-zero
-//     factors: Vec<(DedekindDomainPrimeIdeal<RS>, Integer)>,
+//     factors: Vec<(DedekindDomainPrimeIdeal<Ideal>, Integer)>,
+// }
+
+// impl<Ideal> DedekindDomainFractionalIdeal<Ideal> {
+//     pub fn from_factor_powers(factors: Vec<(DedekindDomainPrimeIdeal<Ideal>, Integer)>) -> Self {
+//         Self { factors }
+//     }
+// }
+
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub struct DedekindDomainFractionalIdealStructure<
+//     RS: DedekindDomainSignature,
+//     RSB: BorrowedStructure<RS>,
+//     Ideals: DedekindDomainIdealsSignature<RS, RSB>,
+//     IdealsB: BorrowedStructure<Ideals>,
+// > {
+//     _ring: PhantomData<RS>,
+//     _ring_borrowed: PhantomData<RSB>,
+//     _ideals: PhantomData<Ideals>,
+//     ideals: IdealsB,
+// }
+
+// impl<
+//     RS: DedekindDomainSignature,
+//     RSB: BorrowedStructure<RS>,
+//     Ideals: DedekindDomainIdealsSignature<RS, RSB>,
+//     IdealsB: BorrowedStructure<Ideals>,
+// > DedekindDomainFractionalIdealStructure<RS, RSB, Ideals, IdealsB>
+// {
+//     pub fn new(ideals: IdealsB) -> Self {
+//         Self {
+//             _ring: PhantomData::default(),
+//             _ring_borrowed: PhantomData::default(),
+//             _ideals: PhantomData::default(),
+//             ideals,
+//         }
+//     }
+
+//     pub fn ring(&self) -> &RS {
+//         self.ideals().ring()
+//     }
+
+//     pub fn ideals(&self) -> &Ideals {
+//         self.ideals.borrow()
+//     }
+// }
+
+// impl<
+//     RS: DedekindDomainSignature,
+//     RSB: BorrowedStructure<RS>,
+//     Ideals: DedekindDomainIdealsSignature<RS, RSB>,
+//     IdealsB: BorrowedStructure<Ideals>,
+// > Signature for DedekindDomainFractionalIdealStructure<RS, RSB, Ideals, IdealsB>
+// {
+// }
+
+// impl<
+//     RS: DedekindDomainSignature,
+//     RSB: BorrowedStructure<RS>,
+//     Ideals: DedekindDomainIdealsSignature<RS, RSB>,
+//     IdealsB: BorrowedStructure<Ideals>,
+// > SetSignature for DedekindDomainFractionalIdealStructure<RS, RSB, Ideals, IdealsB>
+// {
+//     type Set = DedekindDomainFractionalIdeal<Ideals::Set>;
+
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         for (prime, power) in &x.factors {
+//             if power == &Integer::ZERO {
+//                 return false;
+//             }
+//             if self.try_object_is_prime(prime) == Some(false) {
+//                 return false;
+//             }
+//         }
+//         true
+//     }
 // }
