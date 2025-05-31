@@ -1,6 +1,5 @@
 use super::factor;
 use crate::{
-    linear::hashable_set_free_module::FreeModuleOverHashableSetStructure,
     rings::natural::factorization::primes::is_prime,
     structure::{FactoredSignature, SemiRingSignature},
 };
@@ -24,17 +23,17 @@ pub struct FactoredNatural {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NaturalFactorizationStructure {}
 
-impl NaturalFactorizationStructure {
-    fn powers_semimodule(
-        &self,
-    ) -> FreeModuleOverHashableSetStructure<
-        Natural,
-        NaturalCanonicalStructure,
-        NaturalCanonicalStructure,
-    > {
-        FreeModuleOverHashableSetStructure::new(Natural::structure())
-    }
-}
+// impl NaturalFactorizationStructure {
+//     fn powers_semimodule(
+//         &self,
+//     ) -> FreeModuleOverHashableSetStructure<
+//         Natural,
+//         NaturalCanonicalStructure,
+//         NaturalCanonicalStructure,
+//     > {
+//         FreeModuleOverHashableSetStructure::new(Natural::structure())
+//     }
+// }
 
 impl Signature for NaturalFactorizationStructure {}
 

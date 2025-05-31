@@ -43,6 +43,12 @@ impl ToStringSignature for NaturalCanonicalStructure {
     }
 }
 
+impl OrdSignature for NaturalCanonicalStructure {
+    fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+        Natural::cmp(a, b)
+    }
+}
+
 impl std::fmt::Display for Natural {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)

@@ -18,12 +18,13 @@ pub struct FreeModuleOverSetStructure<
 }
 
 pub trait RingToFreeModuleOverSetStructure: SemiRingSignature {
-    fn free_module_on_set<'a, Set: FreeModuleOverSetElement>(
+    fn free_module_on_unstructured_set<'a, Set: FreeModuleOverSetElement>(
         &'a self,
     ) -> FreeModuleOverSetStructure<Set, Self, &'a Self> {
         FreeModuleOverSetStructure::new(self)
     }
-    fn into_free_module_on_set<Set: FreeModuleOverSetElement>(
+
+    fn into_free_module_on_unstructured_set<Set: FreeModuleOverSetElement>(
         self,
     ) -> FreeModuleOverSetStructure<Set, Self, Self> {
         FreeModuleOverSetStructure::new(self)
@@ -198,7 +199,7 @@ mod tests {
         #[derive(Debug, Clone, PartialEq, Eq, Hash)]
         struct T(usize);
 
-        let m = Natural::structure().into_free_module_on_set();
+        let m = Natural::structure().into_free_module_on_unstructured_set();
 
         let v = [(T(5), Natural::from(2u32)), (T(7), Natural::from(3u32))].into();
         let w = [(T(5), Natural::from(1u32)), (T(10), Natural::from(4u32))].into();
