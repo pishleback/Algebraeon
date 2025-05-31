@@ -7,35 +7,37 @@ pub enum MergedSource {
     Second,
 }
 
-struct VecMerger<'s, S: Borrow<O::Set> + 's, O: OrdSignature> {
+struct VecMerger<'s, X, O: OrdSignature, K: Fn(&X) -> &O::Set> {
     ordering: &'s O,
     i: usize,
-    a: Vec<Option<S>>,
+    a: Vec<Option<X>>,
     j: usize,
-    b: Vec<Option<S>>,
+    b: Vec<Option<X>>,
+    key: K,
 }
 
-impl<'s, S: Borrow<O::Set> + 's, O: OrdSignature + 's> VecMerger<'s, S, O> {
-    fn new(ordering: &'s O, a: Vec<S>, b: Vec<S>) -> Self {
+impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Set> VecMerger<'s, X, O, K> {
+    fn new(ordering: &'s O, a: Vec<X>, b: Vec<X>, key: K) -> Self {
         Self {
             ordering,
             i: 0,
             a: a.into_iter().map(|x| Some(x)).collect(),
             j: 0,
             b: b.into_iter().map(|x| Some(x)).collect(),
+            key,
         }
     }
 }
 
-impl<'s, S: Borrow<O::Set> + 's, O: OrdSignature + 's> Iterator for VecMerger<'s, S, O> {
-    type Item = (MergedSource, S);
+impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Set> Iterator for VecMerger<'s, X, O, K> {
+    type Item = (MergedSource, X);
 
     fn next(&mut self) -> Option<Self::Item> {
         match (self.i < self.a.len(), self.j < self.b.len()) {
             (true, true) => {
                 match self.ordering.cmp(
-                    self.a[self.i].as_ref().unwrap().borrow(),
-                    self.b[self.j].as_ref().unwrap().borrow(),
+                    (self.key)(self.a[self.i].as_ref().unwrap()).borrow(),
+                    (self.key)(self.b[self.j].as_ref().unwrap()).borrow(),
                 ) {
                     Ordering::Less | Ordering::Equal => {
                         let a_item = self.a[self.i].take().unwrap();
@@ -69,11 +71,15 @@ pub trait OrdSignature: SetSignature {
 
     fn is_sorted(&self, a: Vec<impl Borrow<Self::Set>>) -> bool {
         for i in 1..a.len() {
-            if self.cmp(a[i - 1].borrow(), a[i].borrow()) == Ordering::Greater {
+            if self.cmp(&a[i - 1].borrow(), &a[i].borrow()) == Ordering::Greater {
                 return false;
             }
         }
         true
+    }
+
+    fn is_sorted_by<X>(&self, a: Vec<X>, key: impl Fn(&X) -> &Self::Set) -> bool {
+        self.is_sorted(a.iter().map(key).collect())
     }
 
     fn merge_sorted<'s, S: Borrow<Self::Set> + 's>(
@@ -81,9 +87,18 @@ pub trait OrdSignature: SetSignature {
         a: Vec<S>,
         b: Vec<S>,
     ) -> impl Iterator<Item = (MergedSource, S)> {
-        debug_assert!(self.is_sorted(a.iter().map(|x| (*x).borrow()).collect()));
-        debug_assert!(self.is_sorted(b.iter().map(|x| (*x).borrow()).collect()));
-        VecMerger::new(self, a, b)
+        self.merge_sorted_by(a, b, |x| (*x).borrow())
+    }
+
+    fn merge_sorted_by<'s, X>(
+        &'s self,
+        a: Vec<X>,
+        b: Vec<X>,
+        key: impl Fn(&X) -> &Self::Set,
+    ) -> impl Iterator<Item = (MergedSource, X)> {
+        debug_assert!(self.is_sorted_by(a.iter().collect(), |x| key(x)));
+        debug_assert!(self.is_sorted_by(b.iter().collect(), |x| key(x)));
+        VecMerger::new(self, a, b, key)
     }
 
     fn sort<S: Borrow<Self::Set>>(&self, mut a: Vec<S>) -> Vec<S> {
@@ -107,6 +122,34 @@ pub trait OrdSignature: SetSignature {
                 let a1_sorted = self.sort(a1);
 
                 self.merge_sorted(a0_sorted, a1_sorted)
+                    .into_iter()
+                    .map(|(_, s)| s)
+                    .collect()
+            }
+        }
+    }
+
+    fn sort_by<X>(&self, mut a: Vec<X>, key: impl Fn(&X) -> &Self::Set) -> Vec<X> {
+        match a.len() {
+            0 | 1 => a,
+            2 => match self.cmp(key(&a[0]).borrow(), key(&a[1]).borrow()) {
+                Ordering::Less | Ordering::Equal => a,
+                Ordering::Greater => {
+                    a.swap(0, 1);
+                    a
+                }
+            },
+            n => {
+                // merge sort
+                let k = n / 2;
+
+                let a1 = a.split_off(k);
+                let a0 = a;
+
+                let a0_sorted = self.sort_by(a0, &key);
+                let a1_sorted = self.sort_by(a1, &key);
+
+                self.merge_sorted_by(a0_sorted, a1_sorted, key)
                     .into_iter()
                     .map(|(_, s)| s)
                     .collect()

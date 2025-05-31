@@ -47,6 +47,11 @@ impl OrdSignature for NaturalCanonicalStructure {
     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         Natural::cmp(a, b)
     }
+
+    fn sort<S: Borrow<Self::Set>>(&self, mut a: Vec<S>) -> Vec<S> {
+        a.sort_unstable_by(|x, y| Natural::cmp(x.borrow(), y.borrow()));
+        a
+    }
 }
 
 impl std::fmt::Display for Natural {
