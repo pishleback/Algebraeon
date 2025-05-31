@@ -94,6 +94,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "algebraeon-graphs"
+version = "0.0.0"
+
+[[package]]
 name = "algebraeon-groups"
 version = "0.0.12"
 dependencies = [

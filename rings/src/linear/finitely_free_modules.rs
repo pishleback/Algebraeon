@@ -25,7 +25,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
         }
     }
 }
-pub trait RingToFinitelyFreeModuleStructure: RingSignature {
+pub trait RingToFinitelyFreeModuleSignature: RingSignature {
     fn free_module<'a>(&'a self, n: usize) -> FinitelyFreeModuleStructure<Self, &'a Self> {
         FinitelyFreeModuleStructure::new(self, n)
     }
@@ -33,7 +33,7 @@ pub trait RingToFinitelyFreeModuleStructure: RingSignature {
         FinitelyFreeModuleStructure::new(self, n)
     }
 }
-impl<Ring: RingSignature> RingToFinitelyFreeModuleStructure for Ring {}
+impl<Ring: RingSignature> RingToFinitelyFreeModuleSignature for Ring {}
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStructure<Ring, RingB> {
     pub fn ring(&self) -> &Ring {
@@ -162,13 +162,9 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
     }
 }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> ModuleSignature<Ring>
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveMonoidSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn ring(&self) -> &Ring {
-        self.ring.borrow()
-    }
-
     fn zero(&self) -> Self::Set {
         (0..self.rank).map(|_| self.ring().zero()).collect()
     }
@@ -180,7 +176,11 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> ModuleSignature<Ring>
             .map(|i| self.ring().add(&v[i], &w[i]))
             .collect()
     }
+}
 
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveGroupSignature
+    for FinitelyFreeModuleStructure<Ring, RingB>
+{
     fn neg(&self, v: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(v));
         v.iter().map(|r| self.ring().neg(r)).collect()
@@ -192,6 +192,14 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> ModuleSignature<Ring>
         (0..self.rank)
             .map(|i| self.ring().sub(&v[i], &w[i]))
             .collect()
+    }
+}
+
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> ModuleSignature<Ring>
+    for FinitelyFreeModuleStructure<Ring, RingB>
+{
+    fn ring(&self) -> &Ring {
+        self.ring.borrow()
     }
 
     fn scalar_mul(&self, r: &<Ring>::Set, v: &Self::Set) -> Self::Set {
