@@ -35,7 +35,7 @@
     clippy::no_effect_underscore_binding,
     clippy::multiple_bound_locations,
     clippy::wildcard_imports,
-    clippy::manual_assert,
+    clippy::manual_assert
 )]
 
 pub mod linear;

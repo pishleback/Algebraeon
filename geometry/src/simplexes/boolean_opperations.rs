@@ -78,12 +78,11 @@ where
                 for other_spx in other.simplexes() {
                     self_leftover = self_leftover
                         .into_iter()
-                        .map(|self_leftover_spx| {
+                        .flat_map(|self_leftover_spx| {
                             Simplex::venn(&self_leftover_spx, other_spx)
                                 .subset_by_label(&VennLabel::Left)
                                 .into_simplexes()
                         })
-                        .flatten()
                         .collect();
                 }
                 for spx in self_leftover {
@@ -130,7 +129,7 @@ where
         for spx in self.simplexes() {
             simplexes.insert(spx.clone());
         }
-        return Self::new_unchecked(ambient_space, simplexes);
+        Self::new_unchecked(ambient_space, simplexes)
     }
 }
 

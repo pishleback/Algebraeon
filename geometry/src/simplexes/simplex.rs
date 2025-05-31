@@ -10,6 +10,7 @@ pub struct Simplex<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineS
     points: Vec<Vector<FS, SP>>,
 }
 
+#[allow(clippy::missing_fields_in_debug)]
 impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
     for Simplex<FS, SP>
 {
@@ -52,16 +53,16 @@ where
             assert_eq!(ambient_space.borrow(), point.ambient_space().borrow());
         }
         points.sort_unstable();
-        if !ambient_space
+        if ambient_space
             .borrow()
             .are_points_affine_independent(points.iter().collect())
         {
-            Err("Can't make a simplex using degenerate points")
-        } else {
             Ok(Self {
                 ambient_space,
                 points,
             })
+        } else {
+            Err("Can't make a simplex using degenerate points")
         }
     }
 
@@ -89,6 +90,7 @@ where
         if skel_n < 0 {
             vec![]
         } else {
+            #[allow(clippy::cast_sign_loss)]
             let skel_n = skel_n as usize;
             let mut parts = vec![];
             for subset in (0..self.points.len()).combinations(skel_n) {
@@ -116,22 +118,23 @@ where
     }
 
     pub fn ridges(&self) -> Vec<Self> {
+        #[allow(clippy::cast_possible_wrap)]
         self.skeleton(self.points.len() as isize - 2)
     }
 
     pub fn facets(&self) -> Vec<Self> {
+        #[allow(clippy::cast_possible_wrap)]
         self.skeleton(self.points.len() as isize - 1)
     }
 
     pub fn facet(&self, k: usize) -> Self {
         assert!(k <= self.points.len());
-        let facet = Self::new(self.ambient_space.clone(), {
+        Self::new(self.ambient_space.clone(), {
             let mut facet_points = self.points.clone();
             facet_points.remove(k);
             facet_points
         })
-        .unwrap();
-        facet
+        .unwrap()
     }
 
     pub fn sub_simplices(&self) -> Vec<Self> {
@@ -157,6 +160,7 @@ where
             .collect()
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn sub_simplex(&self, pts: Vec<usize>) -> Self {
         Self::new(
             self.ambient_space(),
@@ -307,26 +311,22 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 
     pub fn flip(&mut self) {
         let negative_point = self.negative_point();
-        match &mut self.orientation {
-            Some(OrientedSimplexOrientation {
-                flip,
-                positive_point,
-            }) => {
-                (*flip, *positive_point) = (!*flip, negative_point.unwrap());
-            }
-            None => {}
+        if let Some(OrientedSimplexOrientation {
+            flip,
+            positive_point,
+        }) = &mut self.orientation
+        {
+            (*flip, *positive_point) = (!*flip, negative_point.unwrap());
         }
-        match &self.orientation {
-            Some(OrientedSimplexOrientation {
-                flip: _flip,
-                positive_point,
-            }) => {
-                debug_assert_eq!(
-                    self.classify_point(positive_point),
-                    OrientationSide::Positive
-                );
-            }
-            None => {}
+        if let Some(OrientedSimplexOrientation {
+            flip: _flip,
+            positive_point,
+        }) = &self.orientation
+        {
+            debug_assert_eq!(
+                self.classify_point(positive_point),
+                OrientationSide::Positive
+            );
         }
     }
 
@@ -502,7 +502,7 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
     }
 
     pub fn flip(&mut self) {
-        self.oriented_simplex.flip()
+        self.oriented_simplex.flip();
     }
 }
 
