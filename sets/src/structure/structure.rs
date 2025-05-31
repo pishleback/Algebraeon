@@ -93,7 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn foo() {
+    fn to_string_structure_impl() {
         #[derive(Debug, Clone, PartialEq, Eq)]
         struct A {
             t: usize,
