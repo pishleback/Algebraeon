@@ -23,6 +23,7 @@ pub use functions::lcm;
 
 /// Represents a natural number {0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
+#[canonical_structure(eq)]
 pub struct Natural(malachite_nz::natural::Natural);
 
 impl Natural {
@@ -40,17 +41,6 @@ impl Natural {
 impl ToStringSignature for NaturalCanonicalStructure {
     fn to_string(&self, elem: &Self::Set) -> String {
         format!("{}", elem)
-    }
-}
-
-impl OrdSignature for NaturalCanonicalStructure {
-    fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-        Natural::cmp(a, b)
-    }
-
-    fn sort<S: Borrow<Self::Set>>(&self, mut a: Vec<S>) -> Vec<S> {
-        a.sort_unstable_by(|x, y| Natural::cmp(x.borrow(), y.borrow()));
-        a
     }
 }
 

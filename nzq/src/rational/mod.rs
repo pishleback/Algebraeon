@@ -13,6 +13,7 @@ use std::{
 
 /// Represent a rational number - a number of the form `a`/`b` where `a` is an integer and `b` is a non-zero integer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
+#[canonical_structure(eq)]
 pub struct Rational(malachite_q::Rational);
 
 impl ToStringSignature for RationalCanonicalStructure {

@@ -347,6 +347,7 @@ impl RealAlgebraicRoot {
 }
 
 #[derive(Debug, Clone, Hash, CanonicalStructure)]
+#[canonical_structure(eq, ord)]
 pub enum RealAlgebraic {
     Rational(Rational),
     Real(RealAlgebraicRoot),

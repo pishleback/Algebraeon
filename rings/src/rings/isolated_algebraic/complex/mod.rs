@@ -501,6 +501,7 @@ impl ComplexAlgebraicRoot {
 }
 
 #[derive(Debug, Clone, CanonicalStructure)]
+#[canonical_structure(eq)]
 pub enum ComplexAlgebraic {
     Real(RealAlgebraic),
     Complex(ComplexAlgebraicRoot),

@@ -68,6 +68,7 @@ mod tests {
     #[test]
     fn canonical_structure() {
         #[derive(Debug, Clone, PartialEq, Eq, CanonicalStructure)]
+        #[canonical_structure(eq)]
         pub struct A {
             x: i32,
         }
