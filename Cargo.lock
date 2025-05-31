@@ -103,7 +103,7 @@ version = "0.0.12"
 dependencies = [
  "algebraeon-nzq",
  "algebraeon-sets",
- "itertools 0.11.0",
+ "itertools 0.14.0",
  "rayon",
 ]
 
@@ -121,7 +121,7 @@ name = "algebraeon-nzq"
 version = "0.0.12"
 dependencies = [
  "algebraeon-sets",
- "malachite-base 0.5.1",
+ "malachite-base 0.6.0",
  "malachite-nz",
  "malachite-q",
 ]
@@ -133,7 +133,7 @@ dependencies = [
  "algebraeon-groups",
  "algebraeon-nzq",
  "algebraeon-sets",
- "itertools 0.11.0",
+ "itertools 0.14.0",
  "lalrpop",
  "lalrpop-util",
  "rand 0.9.1",
@@ -1422,13 +1422,13 @@ dependencies = [
 
 [[package]]
 name = "malachite-base"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5063891d2cec8fd20cabccbd3fc277bf8d5666f481fb3f79d999559b39a62713"
+checksum = "554bcf7f816ff3c1eae8f2b95c4375156884c79988596a6d01b7b070710fa9e5"
 dependencies = [
  "getrandom 0.2.16",
  "hashbrown 0.15.3",
- "itertools 0.11.0",
+ "itertools 0.14.0",
  "libm",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
@@ -1438,23 +1438,23 @@ dependencies = [
 
 [[package]]
 name = "malachite-nz"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "175263cd5b846c552b9afb9d4b03ca465b4ad10717d789cad7dac24441c4fcbe"
+checksum = "f43d406336c42a59e07813b57efd651db00118af84c640a221d666964b2ec71f"
 dependencies = [
- "itertools 0.11.0",
+ "itertools 0.14.0",
  "libm",
- "malachite-base 0.5.1",
+ "malachite-base 0.6.0",
 ]
 
 [[package]]
 name = "malachite-q"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5261ba8feb1ad20cddab3d625af28206c663c08014b2e5c5f9bd54b0f230234f"
+checksum = "25911a58ea0426e0b7bb1dffc8324e82711c82abff868b8523ae69d8a47e8062"
 dependencies = [
- "itertools 0.11.0",
- "malachite-base 0.5.1",
+ "itertools 0.14.0",
+ "malachite-base 0.6.0",
  "malachite-nz",
 ]
 
