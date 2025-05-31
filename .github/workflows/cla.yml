@@ -34,7 +34,7 @@ jobs:
          # users (such as Dependabot or Greenkeeper) to sign a CLA, you may want to add them in allowlist. You can do so by adding their 
          # names in a comma separated string to the allowlist input in the CLA workflow file(in this case dependabot[bot],greenkeeper[bot]). 
          # You can also use wildcard symbol in case you want to allow all bot users something like bot*.
-          #allowlist: user1,bot*
+          allowlist: dependabot
 
          # the followings are the optional inputs - If the optional inputs are not given, then default values will be taken
           #remote-organization-name: enter the remote organization name where the signatures should be stored (Default is storing the signatures in the same repository)
