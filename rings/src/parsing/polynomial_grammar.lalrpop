@@ -1,19 +1,27 @@
 grammar;
-
 use std::str::FromStr;
-use crate::parsing::polynomial::*;
+use crate::parsing::ast::*;
+use algebraeon_nzq::*;
 
 pub Expr: Box<Expr> = {
     Sum,
 };
 
 Sum: Box<Expr> = {
-    <l:Sum> "+" <r:Product> => Box::new(Expr::Sum(Sum { left: l, right: r })),
-    <l:Sum> "-" <r:Product> => Box::new(Expr::Sum(Sum {
-        left: l,
-        right: Box::new(Expr::Neg(r))
-    })),
-    Product,
+    <first:Product> <rest:SumRest*> => {
+        if rest.is_empty() {
+            first
+        } else {
+            let mut terms = vec![SumTerm { sign: true, term: first }];
+            terms.extend(rest);
+            Box::new(Expr::Sum(Sum { terms }))
+        }
+    },
+};
+
+SumRest: SumTerm = {
+    "+" <term:Product> => SumTerm { sign: true, term },
+    "-" <term:Product> => SumTerm { sign: false, term },
 };
 
 Product: Box<Expr> = {
@@ -30,7 +38,11 @@ Atom: Box<Expr> = {
     Num => Box::new(Expr::Num(<>)),
     SingleVar => Box::new(Expr::Var(<>)),
     BracedVar => Box::new(Expr::Var(<>)),
-    "-" <e:Atom> => Box::new(Expr::Neg(e)),
+    "-" <e:Atom> => {
+        // Handle unary minus by creating a sum with a single negative term
+        let term = SumTerm { sign: false, term: e };
+        Box::new(Expr::Sum(Sum { terms: vec![term] }))
+    },
     "(" <e:Expr> ")" => Box::new(Expr::Grouped(e)),
 };
 
