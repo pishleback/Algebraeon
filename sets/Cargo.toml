@@ -16,4 +16,4 @@ name = "algebraeon_sets"
 algebraeon-macros = { version = "=0.0.12", path = "../macros", default-features = false }
 indexmap = "2.8.0"
 itertools = "0.14.0"
-malachite-base = "0.5.1"
+malachite-base = "0.6.0"
