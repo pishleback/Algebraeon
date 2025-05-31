@@ -1,12 +1,11 @@
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, RationalCanonicalStructure};
 use algebraeon_sets::structure::{EqSignature, MetaType, SetSignature, Signature};
 
 use crate::{
-    linear::finitely_free_modules::RingToFinitelyFreeModuleSignature,
+    linear::finitely_free_module::RingToFinitelyFreeModuleSignature,
     rings::algebraic_number_fields::number_field::AlgebraicNumberFieldStructure,
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature,
-        FreeModuleSignature, ModuleSignature, SemiRingSignature,
+        AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature, FreeModuleSignature, ModuleSignature, SemiModuleSignature, SemiRingSignature
     },
 };
 
@@ -43,7 +42,8 @@ impl SetSignature for QuaternionOrderZBasis {
             .algebra
             .ring()
             .free_module(self.algebra.rank())
-            .submodules();
+            .submodules();        
+
         unimplemented!("linear algebra")
     }
 }
