@@ -2,10 +2,11 @@ use algebraeon_nzq::{Integer, IntegerCanonicalStructure};
 use algebraeon_sets::structure::{EqSignature, MetaType, SetSignature, Signature};
 
 use crate::{
+    linear::finitely_free_modules::RingToFinitelyFreeModuleSignature,
     rings::algebraic_number_fields::number_field::AlgebraicNumberFieldStructure,
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, FreeModuleSignature, ModuleSignature,
-        SemiRingSignature,
+        AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature,
+        FreeModuleSignature, ModuleSignature, SemiRingSignature,
     },
 };
 
@@ -13,6 +14,7 @@ use super::{QuaternionAlgebraElement, QuaternionAlgebraStructure};
 
 #[derive(Debug, Clone)]
 pub struct QuaternionOrderZBasis {
+    integers: IntegerCanonicalStructure, // so we can return a reference to it in .ring()
     algebra: QuaternionAlgebraStructure<AlgebraicNumberFieldStructure>,
     basis: Vec<QuaternionAlgebraElement<AlgebraicNumberFieldStructure>>, // 4n elements
 }
@@ -37,7 +39,11 @@ impl SetSignature for QuaternionOrderZBasis {
     type Set = QuaternionAlgebraElement<AlgebraicNumberFieldStructure>;
 
     fn is_element(&self, x: &Self::Set) -> bool {
-        // let submodules = self.algebra.submodules();
+        let submodules = self
+            .algebra
+            .ring()
+            .free_module(self.algebra.rank())
+            .submodules();
         unimplemented!("linear algebra")
     }
 }
@@ -66,10 +72,10 @@ impl FreeModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {}
 
 impl ModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
     fn ring(&self) -> &IntegerCanonicalStructure {
-        &Integer::structure().clone()
+        &self.integers
     }
 
-    fn scalar_mul(&self, x: &<IntegerCanonicalStructure>::Set, a: &Self::Set) -> Self::Set {
+    fn scalar_mul(&self, x: &Integer, a: &Self::Set) -> Self::Set {
         self.algebra.scalar_mul(x, a)
     }
 }
