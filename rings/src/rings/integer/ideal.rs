@@ -12,7 +12,7 @@ pub struct IntegerIdealsStructure<B: BorrowedStructure<IntegerCanonicalStructure
     integers: B,
 }
 
-impl CannonicalIdealsSignature for IntegerCanonicalStructure {
+impl RingToIdealsSignature for IntegerCanonicalStructure {
     type Ideals<SelfB: BorrowedStructure<IntegerCanonicalStructure>> =
         IntegerIdealsStructure<SelfB>;
 

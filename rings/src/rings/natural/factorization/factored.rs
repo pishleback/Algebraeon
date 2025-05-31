@@ -23,6 +23,18 @@ pub struct FactoredNatural {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NaturalFactorizationStructure {}
 
+// impl NaturalFactorizationStructure {
+//     fn powers_semimodule(
+//         &self,
+//     ) -> FreeModuleOverHashableSetStructure<
+//         Natural,
+//         NaturalCanonicalStructure,
+//         NaturalCanonicalStructure,
+//     > {
+//         FreeModuleOverHashableSetStructure::new(Natural::structure())
+//     }
+// }
+
 impl Signature for NaturalFactorizationStructure {}
 
 impl SetSignature for NaturalFactorizationStructure {
