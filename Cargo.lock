@@ -148,7 +148,6 @@ dependencies = [
  "algebraeon-macros",
  "indexmap",
  "itertools 0.14.0",
- "malachite-base 0.5.1",
 ]
 
 [[package]]

@@ -61,9 +61,9 @@ some improvements
 use crate::polynomial::*;
 use crate::rings::quotient::QuotientStructure;
 use crate::structure::*;
+use algebraeon_nzq::primes;
 use algebraeon_nzq::*;
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
-use algebraeon_sets::number_theory::primes;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use std::ops::Rem;
