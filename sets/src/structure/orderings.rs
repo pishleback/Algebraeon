@@ -78,7 +78,7 @@ pub trait OrdSignature: SetSignature {
         true
     }
 
-    fn is_sorted_by<X>(&self, a: Vec<X>, key: impl Fn(&X) -> &Self::Set) -> bool {
+    fn is_sorted_by_key<X>(&self, a: Vec<X>, key: impl Fn(&X) -> &Self::Set) -> bool {
         self.is_sorted(a.iter().map(key).collect())
     }
 
@@ -87,49 +87,25 @@ pub trait OrdSignature: SetSignature {
         a: Vec<S>,
         b: Vec<S>,
     ) -> impl Iterator<Item = (MergedSource, S)> {
-        self.merge_sorted_by(a, b, |x| (*x).borrow())
+        self.merge_sorted_by_key(a, b, |x| (*x).borrow())
     }
 
-    fn merge_sorted_by<'s, X>(
+    fn merge_sorted_by_key<'s, X>(
         &'s self,
         a: Vec<X>,
         b: Vec<X>,
         key: impl Fn(&X) -> &Self::Set,
     ) -> impl Iterator<Item = (MergedSource, X)> {
-        debug_assert!(self.is_sorted_by(a.iter().collect(), |x| key(x)));
-        debug_assert!(self.is_sorted_by(b.iter().collect(), |x| key(x)));
+        debug_assert!(self.is_sorted_by_key(a.iter().collect(), |x| key(x)));
+        debug_assert!(self.is_sorted_by_key(b.iter().collect(), |x| key(x)));
         VecMerger::new(self, a, b, key)
     }
 
-    fn sort<S: Borrow<Self::Set>>(&self, mut a: Vec<S>) -> Vec<S> {
-        match a.len() {
-            0 | 1 => a,
-            2 => match self.cmp(a[0].borrow(), a[1].borrow()) {
-                Ordering::Less | Ordering::Equal => a,
-                Ordering::Greater => {
-                    a.swap(0, 1);
-                    a
-                }
-            },
-            n => {
-                // merge sort
-                let k = n / 2;
-
-                let a1 = a.split_off(k);
-                let a0 = a;
-
-                let a0_sorted = self.sort(a0);
-                let a1_sorted = self.sort(a1);
-
-                self.merge_sorted(a0_sorted, a1_sorted)
-                    .into_iter()
-                    .map(|(_, s)| s)
-                    .collect()
-            }
-        }
+    fn sort<S: Borrow<Self::Set>>(&self, a: Vec<S>) -> Vec<S> {
+        self.sort_by_key(a, &|x| x.borrow())
     }
 
-    fn sort_by<X>(&self, mut a: Vec<X>, key: impl Fn(&X) -> &Self::Set) -> Vec<X> {
+    fn sort_by_key<X>(&self, mut a: Vec<X>, key: &impl Fn(&X) -> &Self::Set) -> Vec<X> {
         match a.len() {
             0 | 1 => a,
             2 => match self.cmp(key(&a[0]).borrow(), key(&a[1]).borrow()) {
@@ -146,10 +122,10 @@ pub trait OrdSignature: SetSignature {
                 let a1 = a.split_off(k);
                 let a0 = a;
 
-                let a0_sorted = self.sort_by(a0, &key);
-                let a1_sorted = self.sort_by(a1, &key);
+                let a0_sorted = self.sort_by_key(a0, key);
+                let a1_sorted = self.sort_by_key(a1, key);
 
-                self.merge_sorted_by(a0_sorted, a1_sorted, key)
+                self.merge_sorted_by_key(a0_sorted, a1_sorted, key)
                     .into_iter()
                     .map(|(_, s)| s)
                     .collect()
