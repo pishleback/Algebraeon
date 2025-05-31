@@ -722,7 +722,7 @@ impl<FS: FiniteFieldSignature, R: Rng> Iterator for FiniteFieldRandomElementGene
         if self.all_elements.is_empty() {
             None
         } else {
-            let idx = self.rng.gen_range(0..self.all_elements.len());
+            let idx = self.rng.random_range(0..self.all_elements.len());
             Some(self.all_elements[idx].clone())
         }
     }
