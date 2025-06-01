@@ -331,7 +331,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> SetSign
                 return false;
             }
             if !self.ring().is_fav_assoc(p) {
-                // prime factor must be their favoriate associate
+                // each prime factor must be its favoriate associate
                 return false;
             }
             if self.ring().debug_try_is_irreducible(p) == Some(false) {
