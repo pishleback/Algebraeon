@@ -11,9 +11,7 @@ use std::{
 pub trait Group: Debug + Clone + PartialEq + Eq {
     fn identity() -> Self;
 
-    #[allow(clippy::return_self_not_must_use)]
     fn inverse(self) -> Self;
-    #[allow(clippy::return_self_not_must_use)]
     fn inverse_ref(&self) -> Self {
         self.clone().inverse()
     }
@@ -33,7 +31,6 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         Self::compose(a.clone(), b.clone())
     }
 
-    #[allow(clippy::must_use_candidate)]
     fn compose_list(elems: Vec<impl Borrow<Self>>) -> Self {
         let mut ans = Self::identity();
         for elem in elems {
@@ -42,7 +39,6 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         ans
     }
 
-    #[allow(clippy::return_self_not_must_use)]
     fn nat_pow(&self, n: &Natural) -> Self {
         if *n == Natural::ZERO {
             Self::identity()
@@ -70,7 +66,6 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         }
     }
 
-    #[allow(clippy::return_self_not_must_use)]
     fn int_pow(&self, n: &Integer) -> Self {
         #[allow(clippy::comparison_chain)]
         if *n == Integer::ZERO {
@@ -82,7 +77,6 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         }
     }
 
-    #[allow(clippy::must_use_candidate)]
     fn generated_finite_subgroup_table(
         generators: Vec<Self>,
     ) -> (
@@ -157,7 +151,7 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         (grp, idx_to_elem, elem_to_idx)
     }
 
-    #[allow(clippy::assigning_clones, clippy::must_use_candidate)]
+    #[allow(clippy::assigning_clones)]
     fn generated_finite_subgroup(gens: Vec<Self>) -> FiniteSubgroup<Self>
     where
         Self: Hash,
@@ -194,7 +188,6 @@ pub trait Pow<ExpT> {
     fn pow(&self, exp: ExpT) -> Self;
 }
 impl<G: Group> Pow<Natural> for G {
-    #[allow(clippy::return_self_not_must_use)]
     fn pow(&self, exp: Natural) -> Self {
         self.nat_pow(&exp)
     }
@@ -251,7 +244,6 @@ pub struct FiniteSubgroup<G: Group> {
 }
 
 impl<G: Group> FiniteSubgroup<G> {
-    #[allow(clippy::must_use_candidate)]
     pub fn size(&self) -> usize {
         self.elems.len()
     }
