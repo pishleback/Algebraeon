@@ -98,7 +98,7 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
 }
 
 impl UniqueFactorizationSignature for IntegerCanonicalStructure {
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+    fn is_irreducible(&self, a: &Self::Set) -> Option<bool> {
         Some(self.is_irreducible(a))
     }
 }
@@ -116,15 +116,17 @@ impl FactorableSignature for IntegerCanonicalStructure {
             }
             let f = factor(a.abs()).unwrap();
             Some(
-                Integer::factorizations().from_unit_and_factor_powers_unchecked(
-                    unit,
-                    Natural::structure()
-                        .factorizations()
-                        .into_powers(f)
-                        .into_iter()
-                        .map(|(p, k)| (Integer::from(p), Natural::from(k)))
-                        .collect(),
-                ),
+                Integer::structure()
+                    .factorizations()
+                    .from_unit_and_factor_powers_unchecked(
+                        unit,
+                        Natural::structure()
+                            .factorizations()
+                            .into_powers(f)
+                            .into_iter()
+                            .map(|(p, k)| (Integer::from(p), Natural::from(k)))
+                            .collect(),
+                    ),
             )
         }
     }

@@ -707,7 +707,7 @@ where
 impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> UniqueFactorizationSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+    fn is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         None
     }
 }
@@ -750,7 +750,7 @@ where
             // It is a polynomial with multipolynomial coefficients where all coefficients are constant
             // So we can defer to a univariate factoring algorithm
             Some(poly) => {
-                let (unit, factors) = factor_poly(&poly)?.into_unit_and_factor_powers();
+                let (unit, factors) = factor_poly(&poly)?.into_unit_and_powers();
                 Some(
                     self.factorizations().from_unit_and_factor_powers(
                         unit.apply_map_into(|c| MultiPolynomial::constant(c)),
@@ -816,7 +816,7 @@ where
                                     &dehom_mpoly,
                                 )
                                 .unwrap()
-                                .into_unit_and_factor_powers();
+                                .into_unit_and_powers();
                             Some(
                                 self.factorizations().from_unit_and_factor_powers(
                                     self.homogenize(&unit, &free_var),
@@ -849,7 +849,7 @@ where
                                     &expanded_poly,
                                 )
                                 .unwrap()
-                                .into_unit_and_factor_powers();
+                                .into_unit_and_powers();
                             Some(
                                 self.factorizations().from_unit_and_factor_powers(
                                     poly_over_self.evaluate(&unit, &free_var),

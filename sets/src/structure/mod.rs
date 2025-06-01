@@ -2,11 +2,13 @@
 //!
 //! The structure framework used by algebraeon_rings is established here.
 
+mod empty_set;
 mod morphism;
 mod orderings;
 mod structure;
 
 pub use algebraeon_macros::CanonicalStructure;
+pub use empty_set::EmptySetStructure;
 pub use morphism::{
     BijectiveFunction, CompositionMorphism, Function, Functions, IdentityMorphism,
     InjectiveFunction, Morphism,

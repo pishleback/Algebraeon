@@ -28,9 +28,8 @@ where
         //where each a_i is a squarefree primitive polynomial and x is an element of R
 
         let (content, prim) = self.factor_primitive(f.clone()).unwrap();
-        let (content_unit, content_factors) = factor_coeff(&content)
-            .unwrap()
-            .into_unit_and_factor_powers();
+        let (content_unit, content_factors) =
+            factor_coeff(&content).unwrap().into_unit_and_powers();
 
         let mut factors = self.factorizations().from_unit_and_factor_powers(
             Polynomial::constant(content_unit),
@@ -259,7 +258,7 @@ where
         } else {
             let (g, f_prim) = self.factor_primitive(f).unwrap();
             let g_factored = factor_coeff(&g).unwrap();
-            let (g_unit, g_factors) = g_factored.into_unit_and_factor_powers();
+            let (g_unit, g_factors) = g_factored.into_unit_and_powers();
             let g_factored = self.factorizations().from_unit_and_factor_powers(
                 Polynomial::constant(g_unit),
                 g_factors
@@ -355,7 +354,7 @@ where
     let (unit, prim) = factor_primitive_fof(fof_inclusion, f);
     let (prim_unit, prim_factors) = PolynomialStructure::new(fof_inclusion.domain().clone())
         .factor(&prim)?
-        .into_unit_and_factor_powers();
+        .into_unit_and_powers();
     let mut fof_unit = prim_unit.apply_map(|c| fof_inclusion.image(c));
     let mut fof_factors = vec![];
     for (factor, power) in prim_factors.into_iter() {

@@ -557,7 +557,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
 impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> UniqueFactorizationSignature
     for PolynomialStructure<RS, RSB>
 {
-    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+    fn is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         None
     }
 }
