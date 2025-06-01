@@ -1,5 +1,3 @@
-use crate::rings::isolated_algebraic::padic::structure;
-
 use super::*;
 use algebraeon_nzq::traits::{Abs, Fraction};
 
