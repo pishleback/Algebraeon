@@ -555,13 +555,13 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IrreduciblePolynomialsStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
+pub struct PolynomialFactorOrderingStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
     _coeff_ring: PhantomData<Ring>,
     coeff_ring: RingB,
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-    IrreduciblePolynomialsStructure<Ring, RingB>
+    PolynomialFactorOrderingStructure<Ring, RingB>
 {
     fn new(coeff_ring: RingB) -> Self {
         Self {
@@ -576,22 +576,22 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> Signature
-    for IrreduciblePolynomialsStructure<Ring, RingB>
+    for PolynomialFactorOrderingStructure<Ring, RingB>
 {
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
-    for IrreduciblePolynomialsStructure<Ring, RingB>
+    for PolynomialFactorOrderingStructure<Ring, RingB>
 {
     type Set = Polynomial<Ring::Set>;
 
     fn is_element(&self, x: &Self::Set) -> bool {
-        true
+        self.coeff_ring().polynomials().is_element(x)
     }
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
-    for IrreduciblePolynomialsStructure<Ring, RingB>
+    for PolynomialFactorOrderingStructure<Ring, RingB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.coeff_ring().polynomials().equal(a, b)
@@ -599,17 +599,17 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> OrdSignature
-    for IrreduciblePolynomialsStructure<Ring, RingB>
+    for PolynomialFactorOrderingStructure<Ring, RingB>
 {
     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         std::cmp::Ordering::Equal
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> UniqueFactorizationSignature
-    for PolynomialStructure<RS, RSB>
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
+    UniqueFactorizationDomainSignature for PolynomialStructure<RS, RSB>
 {
-    type Irreducibles = IrreduciblePolynomialsStructure<RS, RSB>;
+    type FactorOrdering = PolynomialFactorOrderingStructure<RS, RSB>;
 
     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
 
@@ -621,8 +621,12 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> UniqueFactori
         FactoredRingElementStructure::new(self)
     }
 
-    fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
-        IrreduciblePolynomialsStructure::new(self.coeff_ring.clone())
+    fn factor_ordering(&self) -> impl std::borrow::Borrow<Self::FactorOrdering> {
+        PolynomialFactorOrderingStructure::new(self.coeff_ring.clone())
+    }
+
+    fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+        None
     }
 }
 

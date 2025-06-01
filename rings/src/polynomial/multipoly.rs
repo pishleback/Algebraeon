@@ -705,14 +705,16 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IrreducibleMultiPolynomialsStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-{
+pub struct MultiPolynomialFactorOrderingStructure<
+    Ring: RingSignature,
+    RingB: BorrowedStructure<Ring>,
+> {
     _coeff_ring: PhantomData<Ring>,
     coeff_ring: RingB,
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-    IrreducibleMultiPolynomialsStructure<Ring, RingB>
+    MultiPolynomialFactorOrderingStructure<Ring, RingB>
 {
     fn new(coeff_ring: RingB) -> Self {
         Self {
@@ -727,22 +729,22 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> Signature
-    for IrreducibleMultiPolynomialsStructure<Ring, RingB>
+    for MultiPolynomialFactorOrderingStructure<Ring, RingB>
 {
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
-    for IrreducibleMultiPolynomialsStructure<Ring, RingB>
+    for MultiPolynomialFactorOrderingStructure<Ring, RingB>
 {
     type Set = MultiPolynomial<Ring::Set>;
 
     fn is_element(&self, x: &Self::Set) -> bool {
-        true
+        self.coeff_ring().multivariable_polynomials().is_element(x)
     }
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
-    for IrreducibleMultiPolynomialsStructure<Ring, RingB>
+    for MultiPolynomialFactorOrderingStructure<Ring, RingB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.coeff_ring().multivariable_polynomials().equal(a, b)
@@ -750,17 +752,17 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> OrdSignature
-    for IrreducibleMultiPolynomialsStructure<Ring, RingB>
+    for MultiPolynomialFactorOrderingStructure<Ring, RingB>
 {
     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
         std::cmp::Ordering::Equal
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> UniqueFactorizationSignature
-    for MultiPolynomialStructure<RS, RSB>
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
+    UniqueFactorizationDomainSignature for MultiPolynomialStructure<RS, RSB>
 {
-    type Irreducibles = IrreducibleMultiPolynomialsStructure<RS, RSB>;
+    type FactorOrdering = MultiPolynomialFactorOrderingStructure<RS, RSB>;
 
     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
 
@@ -772,13 +774,17 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> UniqueFactori
         FactoredRingElementStructure::new(self)
     }
 
-    fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
-        IrreducibleMultiPolynomialsStructure::new(self.coeff_ring.clone())
+    fn factor_ordering(&self) -> impl std::borrow::Borrow<Self::FactorOrdering> {
+        MultiPolynomialFactorOrderingStructure::new(self.coeff_ring.clone())
+    }
+
+    fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+        None
     }
 }
 
 impl<
-    RS: UniqueFactorizationSignature
+    RS: UniqueFactorizationDomainSignature
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -787,12 +793,12 @@ impl<
     MPB: BorrowedStructure<MultiPolynomialStructure<RS, RSB>>,
 > PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>
 where
-    PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>:
-        SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationSignature,
+    PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>: SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>
+        + UniqueFactorizationDomainSignature,
     PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationSignature,
+        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
     MultiPolynomialStructure<RS, RSB>: SetSignature<Set = MultiPolynomial<RS::Set>>
-        + UniqueFactorizationSignature
+        + UniqueFactorizationDomainSignature
         + GreatestCommonDivisorSignature,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
@@ -839,7 +845,7 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationSignature
+    RS: UniqueFactorizationDomainSignature
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -848,11 +854,11 @@ impl<
 > MultiPolynomialStructure<RS, RSB>
 where
     MultiPolynomialStructure<RS, RSB>:
-        SetSignature<Set = MultiPolynomial<RS::Set>> + UniqueFactorizationSignature,
+        SetSignature<Set = MultiPolynomial<RS::Set>> + UniqueFactorizationDomainSignature,
     PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationSignature,
-    for<'a> PolynomialStructure<Self, &'a Self>:
-        SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationSignature,
+        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
+    for<'a> PolynomialStructure<Self, &'a Self>: SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>
+        + UniqueFactorizationDomainSignature,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,

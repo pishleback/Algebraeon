@@ -40,7 +40,7 @@ impl<Element> FactoredRingElement<Element> {
 }
 
 pub trait RingFactorizationsSignature<
-    Ring: UniqueFactorizationSignature,
+    Ring: UniqueFactorizationDomainSignature,
     RingB: BorrowedStructure<Ring>,
 >:
     SetSignature<Set = FactoredRingElement<Ring::Set>>
@@ -67,36 +67,42 @@ pub trait RingFactorizationsSignature<
     fn mul_by_unchecked(&self, a: &mut FactoredRingElement<Ring::Set>, p: Ring::Set, k: Natural);
 }
 
-pub trait UniqueFactorizationSignature: FavoriteAssociateSignature {
-    type Irreducibles: OrdSignature<Set = Self::Set>;
+pub trait UniqueFactorizationDomainSignature: FavoriteAssociateSignature {
+    type FactorOrdering: OrdSignature<Set = Self::Set>;
     type Factorizations<SelfB: BorrowedStructure<Self>>: RingFactorizationsSignature<Self, SelfB>;
 
     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self>;
 
     fn into_factorizations(self) -> Self::Factorizations<Self>;
 
-    fn irreducibles(&self) -> impl Borrow<Self::Irreducibles>;
+    fn factor_ordering(&self) -> impl Borrow<Self::FactorOrdering>;
 
-    fn is_irreducible(&self, a: &Self::Set) -> bool {
-        self.irreducibles().borrow().is_element(a)
-    }
+    fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
 }
 
 pub trait MetaUniqueFactorizationSignature: MetaType
 where
-    Self::Signature: UniqueFactorizationSignature,
+    Self::Signature: UniqueFactorizationDomainSignature,
 {
-    fn is_irreducible(&self) -> bool {
-        Self::structure().is_irreducible(self)
+    fn debug_try_is_irreducible(&self) -> Option<bool> {
+        Self::structure().debug_try_is_irreducible(self)
     }
 }
 impl<T: MetaType> MetaUniqueFactorizationSignature for T where
-    T::Signature: UniqueFactorizationSignature
+    T::Signature: UniqueFactorizationDomainSignature
 {
 }
 
-pub trait FactorableSignature: UniqueFactorizationSignature {
+pub trait FactorableSignature: UniqueFactorizationDomainSignature {
     fn factor(&self, element: &Self::Set) -> Option<FactoredRingElement<Self::Set>>;
+
+    fn is_irreducible(&self, element: &Self::Set) -> bool {
+        if let Some(factored) = self.factor(element) {
+            self.factorizations().is_prime(&factored)
+        } else {
+            false
+        }
+    }
 
     fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         match (self.factor(a), self.factor(b)) {
@@ -118,14 +124,18 @@ where
         Self::structure().factor(self)
     }
 
+    fn is_irreducible(&self) -> bool {
+        Self::structure().is_irreducible(self)
+    }
+
     fn gcd_by_factor(a: &Self, b: &Self) -> Self {
         Self::structure().gcd_by_factor(a, b)
     }
 }
 impl<T: MetaType> MetaFactorableSignature for T where T::Signature: FactorableSignature {}
 
-impl<FS: FieldSignature> UniqueFactorizationSignature for FS {
-    type Irreducibles = EmptySetStructure<Self::Set>;
+impl<FS: FieldSignature> UniqueFactorizationDomainSignature for FS {
+    type FactorOrdering = EmptySetStructure<Self::Set>;
     type Factorizations<SelfB: BorrowedStructure<Self>> =
         FieldElementFactorizationsStructure<Self, SelfB>;
 
@@ -137,8 +147,12 @@ impl<FS: FieldSignature> UniqueFactorizationSignature for FS {
         FieldElementFactorizationsStructure::new(self)
     }
 
-    fn irreducibles(&self) -> impl Borrow<Self::Irreducibles> {
+    fn factor_ordering(&self) -> impl Borrow<Self::FactorOrdering> {
         EmptySetStructure::new()
+    }
+
+    fn debug_try_is_irreducible(&self, _: &Self::Set) -> Option<bool> {
+        Some(false)
     }
 }
 
@@ -206,7 +220,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> FactoredSignature
     }
 
     fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
-        Some(self.field().is_irreducible(object))
+        self.field().debug_try_is_irreducible(object)
     }
 
     fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
@@ -278,14 +292,14 @@ impl<FS: FieldSignature> FactorableSignature for FS {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FactoredRingElementStructure<
-    RS: UniqueFactorizationSignature,
+    RS: UniqueFactorizationDomainSignature,
     RSB: BorrowedStructure<RS>,
 > {
     _ring: PhantomData<RS>,
     ring: RSB,
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
     FactoredRingElementStructure<RS, RSB>
 {
     pub fn new(ring: RSB) -> Self {
@@ -296,12 +310,12 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> Signature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> Signature
     for FactoredRingElementStructure<RS, RSB>
 {
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> SetSignature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> SetSignature
     for FactoredRingElementStructure<RS, RSB>
 {
     type Set = FactoredRingElement<RS::Set>;
@@ -320,7 +334,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> SetSignature
                 // prime factor must be their favoriate associate
                 return false;
             }
-            if !self.ring().is_irreducible(p) {
+            if self.ring().debug_try_is_irreducible(p) == Some(false) {
                 // prime factor must be irreducible
                 return false;
             }
@@ -334,7 +348,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> SetSignature
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> ToStringSignature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> ToStringSignature
     for FactoredRingElementStructure<RS, RSB>
 where
     RS: ToStringSignature,
@@ -344,7 +358,7 @@ where
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> EqSignature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> EqSignature
     for FactoredRingElementStructure<RS, RSB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -408,7 +422,7 @@ where
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSignature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> FactoredSignature
     for FactoredRingElementStructure<RS, RSB>
 {
     type PrimeObject = RS::Set;
@@ -419,7 +433,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSigna
     }
 
     fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
-        Some(self.ring().is_irreducible(object))
+        self.ring().debug_try_is_irreducible(object)
     }
 
     fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
@@ -465,7 +479,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSigna
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
     RingFactorizationsSignature<RS, RSB> for FactoredRingElementStructure<RS, RSB>
 {
     fn ring(&self) -> &RS {
@@ -544,7 +558,7 @@ pub enum FindFactorResult<Element> {
     Composite(Element, Element),
 }
 
-pub fn factorize_by_find_factor<RS: UniqueFactorizationSignature>(
+pub fn factorize_by_find_factor<RS: UniqueFactorizationDomainSignature>(
     ring: &RS,
     elem: RS::Set,
     partial_factor: &impl Fn(RS::Set) -> FindFactorResult<RS::Set>,
