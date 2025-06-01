@@ -3,7 +3,7 @@ use super::{
     finitely_free_modules::FinitelyFreeModuleStructure,
     matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
 };
-use crate::structure::{FinitelyFreeModuleSignature, ModuleSignature};
+use crate::structure::*;
 use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
 use std::fmt::Debug;

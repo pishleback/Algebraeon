@@ -1,6 +1,6 @@
 use super::functions::*;
 use super::*;
-use crate::polynomial::Polynomial;
+use crate::polynomial::{Polynomial, SemiRingToPolynomialSemiRingSignature};
 use algebraeon_nzq::traits::AbsDiff;
 pub use factored::*;
 use primes::is_prime;
@@ -55,15 +55,17 @@ pub fn trial_division(mut n: Natural, max_d: usize) -> Vec<Factor> {
 pub fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> {
     debug_assert!(!is_prime(&n));
 
+    let nat_polys = Natural::structure().into_polynomials_semiring();
+
     // g(x) = x^2 + 1
     let g1 = Polynomial::<Natural>::from_coeffs(vec![Natural::ONE, Natural::ZERO, Natural::ONE]);
     // g(g(x))
-    let g2 = Polynomial::compose(&g1, &g1);
+    let g2 = nat_polys.compose(&g1, &g1);
 
     let mut y = x.clone();
     for _ in 0..max_steps {
-        x = g1.evaluate(&x) % &n;
-        y = g2.evaluate(&y) % &n;
+        x = nat_polys.evaluate(&g1, &x) % &n;
+        y = nat_polys.evaluate(&g2, &y) % &n;
         let d = gcd(Natural::abs_diff(x.clone(), &y), n.clone());
         if d > Natural::ONE {
             debug_assert!(d <= n);

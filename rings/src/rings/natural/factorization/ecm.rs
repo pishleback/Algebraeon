@@ -32,8 +32,8 @@ DAMAGE.
 */
 
 use crate::{rings::natural::factorization::primes::is_prime, structure::MetaSemiRing};
+use algebraeon_nzq::primes;
 use algebraeon_nzq::{Natural, Rng, gcd, traits::ModInv};
-use algebraeon_sets::number_theory::primes;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;
 

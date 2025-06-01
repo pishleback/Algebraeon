@@ -23,6 +23,7 @@ mod functions;
 pub use functions::choose;
 pub use functions::gcd;
 pub use functions::lcm;
+pub use functions::primes;
 
 /// Represents a natural number {0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]

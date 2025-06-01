@@ -1,4 +1,5 @@
-use super::polynomial::*;
+use super::Polynomial;
+use super::polynomial_ring::*;
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
@@ -470,20 +471,11 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> EqSignature
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
         MultiPolynomial { terms: vec![] }
-    }
-
-    fn one(&self) -> Self::Set {
-        MultiPolynomial {
-            terms: vec![Term {
-                coeff: self.coeff_ring().one(),
-                monomial: Monomial::one(),
-            }],
-        }
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -514,6 +506,41 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
         }
         self.reduce(a) //sort the coeffs
     }
+}
+
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        MultiPolynomial {
+            terms: a
+                .terms
+                .iter()
+                .map(
+                    |Term {
+                         coeff: c,
+                         monomial: m,
+                     }| Term {
+                        coeff: self.coeff_ring().neg(&c),
+                        monomial: m.clone(),
+                    },
+                )
+                .collect(),
+        }
+    }
+}
+
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
+    fn one(&self) -> Self::Set {
+        MultiPolynomial {
+            terms: vec![Term {
+                coeff: self.coeff_ring().one(),
+                monomial: Monomial::one(),
+            }],
+        }
+    }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let mut terms: HashMap<Monomial, RS::Set> = HashMap::new();
@@ -540,6 +567,11 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
                 .collect(),
         ))
     }
+}
+
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: CharacteristicSignature + RingSignature, RSB: BorrowedStructure<RS>>
@@ -571,6 +603,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature
         }
     }
 }
+
 
 impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> SemiRingUnitsSignature
     for MultiPolynomialStructure<RS, RSB>

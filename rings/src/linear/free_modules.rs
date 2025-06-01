@@ -67,15 +67,11 @@ where
     }
 }
 
-impl<Set: SetSignature, Ring: RingSignature> ModuleSignature<Ring>
+impl<Set: SetSignature, Ring: RingSignature> AdditiveMonoidSignature
     for FreeModuleOverSetStructure<Set, Ring>
 where
     Set::Set: Eq + Hash,
 {
-    fn ring(&self) -> &Ring {
-        &self.ring
-    }
-
     fn zero(&self) -> Self::Set {
         [].into()
     }
@@ -99,12 +95,28 @@ where
             .collect(),
         )
     }
+}
 
+impl<Set: SetSignature, Ring: RingSignature> AdditiveGroupSignature
+    for FreeModuleOverSetStructure<Set, Ring>
+where
+    Set::Set: Eq + Hash,
+{
     fn neg(&self, v: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(v));
         v.iter()
             .map(|(b, r)| (b.clone(), self.ring.neg(r)))
             .collect()
+    }
+}
+
+impl<Set: SetSignature, Ring: RingSignature> ModuleSignature<Ring>
+    for FreeModuleOverSetStructure<Set, Ring>
+where
+    Set::Set: Eq + Hash,
+{
+    fn ring(&self) -> &Ring {
+        &self.ring
     }
 
     fn scalar_mul(&self, r: &<Ring>::Set, v: &Self::Set) -> Self::Set {

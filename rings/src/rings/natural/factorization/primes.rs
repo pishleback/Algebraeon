@@ -1,12 +1,8 @@
+use super::*;
+use crate::rings::quotient::QuotientStructure;
 use algebraeon_nzq::traits::DivMod;
-use algebraeon_nzq::*;
-use algebraeon_sets::number_theory::primes;
 use std::ops::Rem;
 use traits::ModPow;
-
-use crate::rings::quotient::QuotientStructure;
-
-use super::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PrimalityTestResult {

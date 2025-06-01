@@ -548,13 +548,9 @@ impl ToStringSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {
+impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
-    }
-
-    fn one(&self) -> Self::Set {
-        ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::one()))
     }
 
     fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
@@ -626,6 +622,21 @@ impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {
                 )
             }
         }
+    }
+}
+
+impl AdditiveGroupSignature for ComplexAlgebraicCanonicalStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        match a {
+            ComplexAlgebraic::Real(root) => ComplexAlgebraic::Real(RealAlgebraic::neg(root)),
+            ComplexAlgebraic::Complex(root) => ComplexAlgebraic::Complex(root.clone().neg()),
+        }
+    }
+}
+
+impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {
+    fn one(&self) -> Self::Set {
+        ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::one()))
     }
 
     fn mul(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
@@ -759,18 +770,11 @@ impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
+impl RingSignature for ComplexAlgebraicCanonicalStructure {}
+
 impl CharacteristicSignature for ComplexAlgebraicCanonicalStructure {
     fn characteristic(&self) -> Natural {
         Natural::ZERO
-    }
-}
-
-impl RingSignature for ComplexAlgebraicCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        match a {
-            ComplexAlgebraic::Real(root) => ComplexAlgebraic::Real(RealAlgebraic::neg(root)),
-            ComplexAlgebraic::Complex(root) => ComplexAlgebraic::Complex(root.clone().neg()),
-        }
     }
 }
 

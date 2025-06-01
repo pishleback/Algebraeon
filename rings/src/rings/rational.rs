@@ -4,17 +4,29 @@ use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
-impl SemiRingSignature for RationalCanonicalStructure {
+impl AdditiveMonoidSignature for RationalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Rational::ZERO
     }
 
-    fn one(&self) -> Self::Set {
-        Rational::ONE
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
+    }
+}
+
+impl AdditiveGroupSignature for RationalCanonicalStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        -a
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        a - b
+    }
+}
+
+impl SemiRingSignature for RationalCanonicalStructure {
+    fn one(&self) -> Self::Set {
+        Rational::ONE
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -22,15 +34,11 @@ impl SemiRingSignature for RationalCanonicalStructure {
     }
 }
 
+impl RingSignature for RationalCanonicalStructure {}
+
 impl CharacteristicSignature for RationalCanonicalStructure {
     fn characteristic(&self) -> Natural {
         Natural::ZERO
-    }
-}
-
-impl RingSignature for RationalCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        -a
     }
 }
 

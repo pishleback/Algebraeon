@@ -1,7 +1,7 @@
 use super::number_field::AlgebraicNumberFieldStructure;
 use crate::{
     linear::{
-        finitely_free_modules::{FinitelyFreeModuleStructure, RingToFinitelyFreeModuleStructure},
+        finitely_free_modules::{FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature},
         matrix::Matrix,
     },
     polynomial::Polynomial,
@@ -236,11 +236,27 @@ impl EqSignature for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
+impl AdditiveMonoidSignature for RingOfIntegersWithIntegralBasisStructure {
     fn zero(&self) -> Self::Set {
         self.z_module().zero()
     }
 
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.z_module().add(a, b)
+    }
+}
+
+impl AdditiveGroupSignature for RingOfIntegersWithIntegralBasisStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        self.z_module().neg(a)
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.z_module().sub(a, b)
+    }
+}
+
+impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
     fn one(&self) -> Self::Set {
         match &self.one {
             Some(one) => one.clone(),
@@ -248,10 +264,6 @@ impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
                 .try_anf_to_roi(&self.algebraic_number_field.one())
                 .unwrap(),
         }
-    }
-
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.z_module().add(a, b)
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -297,19 +309,11 @@ impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
+impl RingSignature for RingOfIntegersWithIntegralBasisStructure {}
+
 impl CharacteristicSignature for RingOfIntegersWithIntegralBasisStructure {
     fn characteristic(&self) -> Natural {
         Natural::ZERO
-    }
-}
-
-impl RingSignature for RingOfIntegersWithIntegralBasisStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        self.z_module().neg(a)
-    }
-
-    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.z_module().sub(a, b)
     }
 }
 

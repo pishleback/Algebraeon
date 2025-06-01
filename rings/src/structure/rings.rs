@@ -10,18 +10,19 @@ pub enum RingDivisionError {
     NotDivisible,
 }
 
-pub trait SemiRingSignature: EqSignature {
+pub trait AdditiveMonoidSignature: EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
     }
 
     fn zero(&self) -> Self::Set;
-    fn one(&self) -> Self::Set;
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+
     fn add_mut(&self, a: &mut Self::Set, b: &Self::Set) {
         *a = self.add(a, b);
     }
+
     fn sum(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut sum = self.zero();
         for val in vals {
@@ -29,6 +30,10 @@ pub trait SemiRingSignature: EqSignature {
         }
         sum
     }
+}
+
+pub trait SemiRingSignature: AdditiveMonoidSignature {
+    fn one(&self) -> Self::Set;
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
     fn mul_mut(&self, a: &mut Self::Set, b: &Self::Set) {
         *a = self.mul(a, b);
@@ -86,14 +91,6 @@ pub trait SemiRingSignature: EqSignature {
             ans
         }
     }
-
-    fn polynomials<'a>(&'a self) -> PolynomialStructure<Self, &'a Self> {
-        PolynomialStructure::new(self)
-    }
-
-    fn into_polynomials(self) -> PolynomialStructure<Self, Self> {
-        PolynomialStructure::new(self)
-    }
 }
 
 pub trait MetaSemiRing: MetaType
@@ -143,13 +140,15 @@ where
 }
 impl<R: MetaType> MetaCharacteristic for R where Self::Signature: CharacteristicSignature {}
 
-pub trait RingSignature: SemiRingSignature {
+pub trait AdditiveGroupSignature: AdditiveMonoidSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.add(a, &self.neg(b))
     }
+}
 
+pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
     fn bracket(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.sub(&self.mul(a, b), &self.mul(b, a))
     }
@@ -718,7 +717,7 @@ impl<FS: FiniteFieldSignature, R: Rng> Iterator for FiniteFieldRandomElementGene
         if self.all_elements.is_empty() {
             None
         } else {
-            let idx = self.rng.gen_range(0..self.all_elements.len());
+            let idx = self.rng.random_range(0..self.all_elements.len());
             Some(self.all_elements[idx].clone())
         }
     }

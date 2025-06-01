@@ -29,13 +29,9 @@ impl Display for QuaternaryField {
     }
 }
 
-impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
+impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
     fn zero(&self) -> Self::Set {
         QuaternaryField::Zero
-    }
-
-    fn one(&self) -> Self::Set {
-        QuaternaryField::One
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -54,6 +50,18 @@ impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
             (QuaternaryField::Beta, QuaternaryField::Beta) => QuaternaryField::Zero,
         }
     }
+}
+
+impl AdditiveGroupSignature for QuaternaryFieldCanonicalStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        a.clone()
+    }
+}
+
+impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
+    fn one(&self) -> Self::Set {
+        QuaternaryField::One
+    }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         #[allow(clippy::match_same_arms)]
@@ -70,6 +78,8 @@ impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
+impl RingSignature for QuaternaryFieldCanonicalStructure {}
+
 impl CharacteristicSignature for QuaternaryFieldCanonicalStructure {
     fn characteristic(&self) -> Natural {
         Natural::TWO
@@ -81,6 +91,7 @@ impl RingSignature for QuaternaryFieldCanonicalStructure {
         *a
     }
 }
+
 
 impl SemiRingUnitsSignature for QuaternaryFieldCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {

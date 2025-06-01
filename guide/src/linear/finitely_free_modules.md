@@ -24,7 +24,7 @@ For example, to obtain \\(\mathbb{Z}^3\\)
 
 ```rust
 # use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_modules::RingToFinitelyFreeModuleStructure;
+# use algebraeon::rings::linear::finitely_free_modules::RingToFinitelyFreeModuleSignature;
 # use algebraeon::sets::structure::MetaType;
 #
 let module = Integer::structure().into_free_module(3);
@@ -79,7 +79,7 @@ assert_eq!(ring, &Integer::structure());
 
 ## Submodules
 
-The set of submodules of the free module \\(R^n\\) is represented by objects of type `FinitelyFreeSubmoduleStructure`. This structure can be obtained from the ring of scalars by calling `.submodules()` (the structure will take the module structure by reference) or `.into_submodules()` (the structure will take ownership of the module structure).
+The set of submodules of the free module \\(R^n\\) is represented by objects of type `FinitelyFreeSubmoduleStructure`. This structure can be obtained from a module by calling `.submodules()` (the structure will take the module structure by reference) or `.into_submodules()` (the structure will take ownership of the module structure).
 
 For example, to obtain the set of all submodules of \\(\mathbb{Z}^3\\)
 

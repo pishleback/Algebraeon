@@ -328,7 +328,10 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                                     Polynomial::from_coeffs(
                                         (0..k_deg)
                                             .map(|_j| {
-                                                if rand::Rng::gen_range(&mut rng, 0..=(n / 3)) != 0
+
+                                                if rand::Rng::random_range(&mut rng, 0..(1 + n / 3))
+                                                    != 0
+                                              
                                                 //try to keep the choice of alpha simple by choosing lots of zeros
                                                 {
                                                     Rational::ZERO

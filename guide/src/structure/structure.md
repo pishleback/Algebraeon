@@ -21,62 +21,66 @@ The approach taken by Algebraeon to represent such sets with additional structur
 In practice, this could look like
 
 ```rust
-use algebraeon::nzq::traits::AbsDiff;
-  use algebraeon::nzq::{Integer, Natural};
-  use algebraeon::sets::structure::*;
+use algebraeon::nzq::{Integer, Natural};
+use algebraeon::rings::structure::*;
+use algebraeon::sets::structure::*;
 
-  #[derive(Debug, Clone, PartialEq, Eq)]
-  struct IntegersModuloN {
-      n: Natural,
-  }
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct IntegersModuloN {
+    n: Natural,
+}
 
-  impl Signature for IntegersModuloN {}
+impl Signature for IntegersModuloN {}
 
-  impl SetSignature for IntegersModuloN {
-      type Set = Integer;
+impl SetSignature for IntegersModuloN {
+    type Set = Integer;
 
-      fn is_element(&self, x: &Integer) -> bool {
-          x < &self.n
-      }
-  }
+    fn is_element(&self, x: &Integer) -> bool {
+        x < &self.n
+    }
+}
 
-  impl EqSignature for IntegersModuloN {
-      fn equal(&self, a: &Integer, b: &Integer) -> bool {
-          a == b
-      }
-  }
+impl EqSignature for IntegersModuloN {
+    fn equal(&self, a: &Integer, b: &Integer) -> bool {
+        a == b
+    }
+}
 
-  use algebraeon::rings::structure::{RingSignature, SemiRingSignature};
+use algebraeon::rings::structure::{RingSignature, SemiRingSignature};
 
-  impl SemiRingSignature for IntegersModuloN {
-      fn zero(&self) -> Self::Set {
-          Integer::ZERO
-      }
+impl AdditiveMonoidSignature for IntegersModuloN {
+    fn zero(&self) -> Self::Set {
+        Integer::ZERO
+    }
 
-      fn one(&self) -> Self::Set {
-          (Integer::ONE % &self.n).into()
-      }
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        ((a + b) % &self.n).into()
+    }
+}
 
-      fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-          ((a + b) % &self.n).into()
-      }
+impl AdditiveGroupSignature for IntegersModuloN {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        (-a % &self.n).into()
+    }
+}
 
-      fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-          ((a * b) % &self.n).into()
-      }
-  }
+impl SemiRingSignature for IntegersModuloN {
+    fn one(&self) -> Self::Set {
+        (Integer::ONE % &self.n).into()
+    }
 
-  impl RingSignature for IntegersModuloN {
-      fn neg(&self, a: &Self::Set) -> Self::Set {
-          (-a % &self.n).into()
-      }
-  }
+    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        ((a * b) % &self.n).into()
+    }
+}
 
-  let mod_6 = IntegersModuloN { n: 6u32.into() };
-  // Since we've given `mod_6` the structure of a ring, Algebraeon implements
-  // the repeated squaring algorithm for taking very large powers modulo `n`.
-  assert!(mod_6.equal(
-      &mod_6.nat_pow(&2.into(), &1000000000000u64.into()),
-      &4.into()
-  ));
+impl RingSignature for IntegersModuloN {}
+
+let mod_6 = IntegersModuloN { n: 6u32.into() };
+// Since we've given `mod_6` the structure of a ring, Algebraeon implements
+// the repeated squaring algorithm for taking very large powers modulo `n`.
+assert!(mod_6.equal(
+    &mod_6.nat_pow(&2.into(), &1000000000000u64.into()),
+    &4.into()
+));
 ```

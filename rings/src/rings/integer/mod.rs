@@ -14,17 +14,29 @@ pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
 
-impl SemiRingSignature for IntegerCanonicalStructure {
+impl AdditiveMonoidSignature for IntegerCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
 
-    fn one(&self) -> Self::Set {
-        Integer::ONE
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
+    }
+}
+
+impl AdditiveGroupSignature for IntegerCanonicalStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        -a
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        a - b
+    }
+}
+
+impl SemiRingSignature for IntegerCanonicalStructure {
+    fn one(&self) -> Self::Set {
+        Integer::ONE
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -32,15 +44,11 @@ impl SemiRingSignature for IntegerCanonicalStructure {
     }
 }
 
+impl RingSignature for IntegerCanonicalStructure {}
+
 impl CharacteristicSignature for IntegerCanonicalStructure {
     fn characteristic(&self) -> Natural {
         Natural::ZERO
-    }
-}
-
-impl RingSignature for IntegerCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        -a
     }
 }
 
