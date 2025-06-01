@@ -4,6 +4,7 @@ use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Display;
@@ -774,8 +775,10 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
         FactoredRingElementStructure::new(self)
     }
 
-    fn factor_ordering(&self) -> impl std::borrow::Borrow<Self::FactorOrdering> {
-        MultiPolynomialFactorOrderingStructure::new(self.coeff_ring.clone())
+    fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+        Cow::Owned(MultiPolynomialFactorOrderingStructure::new(
+            self.coeff_ring.clone(),
+        ))
     }
 
     fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {

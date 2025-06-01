@@ -1,7 +1,7 @@
 use super::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
-use std::borrow::Borrow;
+use std::borrow::Cow;
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
@@ -75,7 +75,7 @@ pub trait UniqueFactorizationDomainSignature: FavoriteAssociateSignature {
 
     fn into_factorizations(self) -> Self::Factorizations<Self>;
 
-    fn factor_ordering(&self) -> impl Borrow<Self::FactorOrdering>;
+    fn factor_ordering(&self) -> Cow<Self::FactorOrdering>;
 
     fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
 }
@@ -147,8 +147,8 @@ impl<FS: FieldSignature> UniqueFactorizationDomainSignature for FS {
         FieldElementFactorizationsStructure::new(self)
     }
 
-    fn factor_ordering(&self) -> impl Borrow<Self::FactorOrdering> {
-        EmptySetStructure::new()
+    fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+        Cow::Owned(EmptySetStructure::new())
     }
 
     fn debug_try_is_irreducible(&self, _: &Self::Set) -> Option<bool> {

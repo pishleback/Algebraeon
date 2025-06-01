@@ -4,7 +4,11 @@ use crate::polynomial::polynomial_semiring::SemiRingToPolynomialSemiRingSignatur
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use std::{borrow::Borrow, fmt::Display, marker::PhantomData};
+use std::{
+    borrow::{Borrow, Cow},
+    fmt::Display,
+    marker::PhantomData,
+};
 
 #[derive(Debug, Clone)]
 pub struct PolynomialStructure<RS: RingSignature, RSB: BorrowedStructure<RS>> {
@@ -621,8 +625,10 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
         FactoredRingElementStructure::new(self)
     }
 
-    fn factor_ordering(&self) -> impl std::borrow::Borrow<Self::FactorOrdering> {
-        PolynomialFactorOrderingStructure::new(self.coeff_ring.clone())
+    fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+        Cow::Owned(PolynomialFactorOrderingStructure::new(
+            self.coeff_ring.clone(),
+        ))
     }
 
     fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
