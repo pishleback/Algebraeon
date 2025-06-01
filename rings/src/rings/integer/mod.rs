@@ -1,7 +1,9 @@
+use std::cmp::Ordering;
 use std::collections::HashSet;
 
 use super::natural::factorization::NaturalCanonicalFactorizationStructure;
 use super::natural::factorization::factor;
+use super::natural::factorization::primes::is_prime;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
@@ -97,9 +99,45 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IntegerPrimesStructure {}
+
+impl Signature for IntegerPrimesStructure {}
+
+impl SetSignature for IntegerPrimesStructure {
+    type Set = Integer;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        is_prime(&x.abs())
+    }
+}
+
+impl EqSignature for IntegerPrimesStructure {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        a == b
+    }
+}
+
+impl OrdSignature for IntegerPrimesStructure {
+    fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering {
+        a.cmp(b)
+    }
+}
+
 impl UniqueFactorizationSignature for IntegerCanonicalStructure {
-    fn is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(self.is_irreducible(a))
+    type Irreducibles = IntegerPrimesStructure;
+    type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    fn into_factorizations(self) -> Self::Factorizations<Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
+        IntegerPrimesStructure {}
     }
 }
 

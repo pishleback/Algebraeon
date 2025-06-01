@@ -9,6 +9,51 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> GreatestCommonDivisorSigna
     }
 }
 
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// struct IrreducibleIntegerPolynomialsStructure {}
+
+// impl Signature for IrreducibleIntegerPolynomialsStructure {}
+
+// impl SetSignature for IrreducibleIntegerPolynomialsStructure {
+//     type Set = Polynomial<Integer>;
+
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         todo!()
+//     }
+// }
+
+// impl EqSignature for IrreducibleIntegerPolynomialsStructure {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         Integer::structure().polynomials().equal(a, b)
+//     }
+// }
+
+// impl OrdSignature for IrreducibleIntegerPolynomialsStructure {
+//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering {
+//         todo!()
+//     }
+// }
+
+// impl<B: BorrowedStructure<IntegerCanonicalStructure>> UniqueFactorizationSignature
+//     for PolynomialStructure<IntegerCanonicalStructure, B>
+// {
+//     type Irreducibles = IrreducibleIntegerPolynomialsStructure;
+
+//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn into_factorizations(self) -> Self::Factorizations<Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
+//         IrreducibleIntegerPolynomialsStructure {}
+//     }
+// }
+
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> FactorableSignature
     for PolynomialStructure<IntegerCanonicalStructure, B>
 {
@@ -51,6 +96,57 @@ impl Polynomial<Integer> {
         }
     }
 }
+
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// struct IrreducibleIntegerMultiPolynomialStructure {}
+
+// impl Signature for IrreducibleIntegerMultiPolynomialStructure {}
+
+// impl SetSignature for IrreducibleIntegerMultiPolynomialStructure {
+//     type Set = MultiPolynomial<Integer>;
+
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         todo!()
+//     }
+// }
+
+// impl EqSignature for IrreducibleIntegerMultiPolynomialStructure {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         Integer::structure().multivariable_polynomials().equal(a, b)
+//     }
+// }
+
+// impl OrdSignature for IrreducibleIntegerMultiPolynomialStructure {
+//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering {
+//         todo!()
+//     }
+// }
+
+// impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> UniqueFactorizationSignature
+//     for MultiPolynomialStructure<IntegerCanonicalStructure, B>
+// {
+//     type Irreducibles = IrreducibleIntegerMultiPolynomialStructure;
+
+//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn into_factorizations(self) -> Self::Factorizations<Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
+//         IrreducibleIntegerMultiPolynomialStructure {}
+//     }
+// }
+
+// impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> UniqueFactorizationSignature
+//     for MultiPolynomialStructure<PolynomialStructure<IntegerCanonicalStructure, B>, B>
+// {
+
+// }
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> FactorableSignature
     for MultiPolynomialStructure<IntegerCanonicalStructure, B>

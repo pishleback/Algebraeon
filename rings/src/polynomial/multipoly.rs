@@ -704,11 +704,76 @@ where
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IrreducibleMultiPolynomialsStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+{
+    _coeff_ring: PhantomData<Ring>,
+    coeff_ring: RingB,
+}
+
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+    IrreducibleMultiPolynomialsStructure<Ring, RingB>
+{
+    fn new(coeff_ring: RingB) -> Self {
+        Self {
+            _coeff_ring: PhantomData::default(),
+            coeff_ring,
+        }
+    }
+
+    fn coeff_ring(&self) -> &Ring {
+        self.coeff_ring.borrow()
+    }
+}
+
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> Signature
+    for IrreducibleMultiPolynomialsStructure<Ring, RingB>
+{
+}
+
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
+    for IrreducibleMultiPolynomialsStructure<Ring, RingB>
+{
+    type Set = MultiPolynomial<Ring::Set>;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        todo!()
+    }
+}
+
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
+    for IrreducibleMultiPolynomialsStructure<Ring, RingB>
+{
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        self.coeff_ring().multivariable_polynomials().equal(a, b)
+    }
+}
+
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> OrdSignature
+    for IrreducibleMultiPolynomialsStructure<Ring, RingB>
+{
+    fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+        todo!()
+    }
+}
+
 impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> UniqueFactorizationSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
-        None
+    type Irreducibles = IrreducibleMultiPolynomialsStructure<RS, RSB>;
+
+    type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    fn into_factorizations(self) -> Self::Factorizations<Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
+        IrreducibleMultiPolynomialsStructure::new(self.coeff_ring.clone())
     }
 }
 
@@ -869,7 +934,7 @@ where
                     // Just an element of the coefficient ring
                     let value = self.as_constant(mpoly).unwrap();
                     let factored = factor_coeff(&value)?;
-                    let (unit, factors) = factored.into_unit_and_factor_powers();
+                    let (unit, factors) = factored.into_unit_and_powers();
                     Some(
                         self.factorizations().from_unit_and_factor_powers(
                             MultiPolynomial::constant(unit),

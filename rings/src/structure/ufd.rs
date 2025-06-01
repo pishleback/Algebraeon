@@ -2,7 +2,6 @@ use super::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
-use std::rc::Rc;
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
@@ -49,8 +48,6 @@ pub trait RingFactorizationsSignature<
 {
     fn ring(&self) -> &Ring;
 
-    fn factor(&self, element: &Ring::Set) -> Option<FactoredRingElement<Ring::Set>>;
-
     fn from_unit(&self, unit: Ring::Set) -> FactoredRingElement<Ring::Set>;
 
     fn from_unit_and_factor_powers_unchecked(
@@ -72,6 +69,11 @@ pub trait RingFactorizationsSignature<
 
 pub trait UniqueFactorizationSignature: FavoriteAssociateSignature {
     type Irreducibles: OrdSignature<Set = Self::Set>;
+    type Factorizations<SelfB: BorrowedStructure<Self>>: RingFactorizationsSignature<Self, SelfB>;
+
+    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self>;
+
+    fn into_factorizations(self) -> Self::Factorizations<Self>;
 
     fn irreducibles(&self) -> impl Borrow<Self::Irreducibles>;
 
@@ -80,16 +82,21 @@ pub trait UniqueFactorizationSignature: FavoriteAssociateSignature {
     }
 }
 
-pub trait FactorableSignature: UniqueFactorizationSignature {
-    type Factorizations<SelfB: BorrowedStructure<Self>>: RingFactorizationsSignature<Self, SelfB>;
-
-    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self>;
-
-    fn into_factorizations(self) -> Self::Factorizations<Self>;
-
-    fn factor(&self, element: &Self::Set) -> Option<FactoredRingElement<Self::Set>> {
-        self.factorizations().factor(element)
+pub trait MetaUniqueFactorizationSignature: MetaType
+where
+    Self::Signature: UniqueFactorizationSignature,
+{
+    fn is_irreducible(&self) -> bool {
+        Self::structure().is_irreducible(self)
     }
+}
+impl<T: MetaType> MetaUniqueFactorizationSignature for T where
+    T::Signature: UniqueFactorizationSignature
+{
+}
+
+pub trait FactorableSignature: UniqueFactorizationSignature {
+    fn factor(&self, element: &Self::Set) -> Option<FactoredRingElement<Self::Set>>;
 
     fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         match (self.factor(a), self.factor(b)) {
@@ -103,8 +110,32 @@ pub trait FactorableSignature: UniqueFactorizationSignature {
     }
 }
 
+pub trait MetaFactorableSignature: MetaType
+where
+    Self::Signature: FactorableSignature,
+{
+    fn factor(&self) -> Option<FactoredRingElement<Self>> {
+        Self::structure().factor(self)
+    }
+
+    fn gcd_by_factor(a: &Self, b: &Self) -> Self {
+        Self::structure().gcd_by_factor(a, b)
+    }
+}
+impl<T: MetaType> MetaFactorableSignature for T where T::Signature: FactorableSignature {}
+
 impl<FS: FieldSignature> UniqueFactorizationSignature for FS {
     type Irreducibles = EmptySetStructure<Self::Set>;
+    type Factorizations<SelfB: BorrowedStructure<Self>> =
+        FieldElementFactorizationsStructure<Self, SelfB>;
+
+    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+        FieldElementFactorizationsStructure::new(self)
+    }
+
+    fn into_factorizations(self) -> Self::Factorizations<Self> {
+        FieldElementFactorizationsStructure::new(self)
+    }
 
     fn irreducibles(&self) -> impl Borrow<Self::Irreducibles> {
         EmptySetStructure::new()
@@ -201,17 +232,6 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> RingFactorizationsSignature
         self.field()
     }
 
-    fn factor(&self, element: &FS::Set) -> Option<FactoredRingElement<FS::Set>> {
-        if self.field().is_zero(element) {
-            None
-        } else {
-            Some(FactoredRingElement::from_unit_and_powers(
-                element.clone(),
-                vec![],
-            ))
-        }
-    }
-
     fn from_unit(&self, unit: FS::Set) -> FactoredRingElement<FS::Set> {
         FactoredRingElement::new_unit(unit)
     }
@@ -244,62 +264,34 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> RingFactorizationsSignature
 }
 
 impl<FS: FieldSignature> FactorableSignature for FS {
-    type Factorizations<SelfB: BorrowedStructure<Self>> =
-        FieldElementFactorizationsStructure<Self, SelfB>;
-
-    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
-        FieldElementFactorizationsStructure::new(self)
-    }
-
-    fn into_factorizations(self) -> Self::Factorizations<Self> {
-        FieldElementFactorizationsStructure::new(self)
+    fn factor(&self, element: &FS::Set) -> Option<FactoredRingElement<FS::Set>> {
+        if self.is_zero(element) {
+            None
+        } else {
+            Some(FactoredRingElement::from_unit_and_powers(
+                element.clone(),
+                vec![],
+            ))
+        }
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FactoredRingElementStructure<
     RS: UniqueFactorizationSignature,
     RSB: BorrowedStructure<RS>,
 > {
     _ring: PhantomData<RS>,
     ring: RSB,
-    factor: Rc<dyn Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>>,
-}
-
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> Debug
-    for FactoredRingElementStructure<RS, RSB>
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("FactoredRingElementStructure")
-            .field("ring", &self.ring)
-            .finish()
-    }
-}
-
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> PartialEq
-    for FactoredRingElementStructure<RS, RSB>
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.ring == other.ring
-    }
-}
-
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> Eq
-    for FactoredRingElementStructure<RS, RSB>
-{
 }
 
 impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
     FactoredRingElementStructure<RS, RSB>
 {
-    pub fn new(
-        ring: RSB,
-        factor: Rc<dyn Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>>,
-    ) -> Self {
+    pub fn new(ring: RSB) -> Self {
         Self {
             _ring: PhantomData::default(),
             ring,
-            factor,
         }
     }
 }
@@ -480,10 +472,6 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
         self.ring.borrow()
     }
 
-    fn factor(&self, element: &<RS>::Set) -> Option<FactoredRingElement<RS::Set>> {
-        (self.factor)(element)
-    }
-
     fn from_unit(&self, unit: RS::Set) -> FactoredRingElement<RS::Set> {
         debug_assert!(self.ring().is_unit(&unit));
         FactoredRingElement {
@@ -556,7 +544,7 @@ pub enum FindFactorResult<Element> {
     Composite(Element, Element),
 }
 
-pub fn factorize_by_find_factor<RS: FactorableSignature>(
+pub fn factorize_by_find_factor<RS: UniqueFactorizationSignature>(
     ring: &RS,
     elem: RS::Set,
     partial_factor: &impl Fn(RS::Set) -> FindFactorResult<RS::Set>,
