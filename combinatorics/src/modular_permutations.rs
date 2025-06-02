@@ -5,8 +5,9 @@ pub fn modular_permutation<const N: usize>(
     f: impl Fn(Modulo<N>) -> Modulo<N>,
 ) -> Result<Permutation<N>, &'static str> {
     let mut perm = [0; N];
+    #[allow(clippy::needless_range_loop)]
     for i in 0..N {
-        perm[i] = f(i.into()).into()
+        perm[i] = f(i.into()).into();
     }
     Permutation::new(perm)
 }

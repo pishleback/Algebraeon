@@ -4,7 +4,7 @@ pub fn compositions_sized(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>
     } else if n == 0 || x == 0 {
         Box::new(vec![].into_iter())
     } else {
-        Box::new(super::subsets(n - 1, x - 1).into_iter().map(move |mut s| {
+        Box::new(super::subsets(n - 1, x - 1).map(move |mut s| {
             s.push(n - 1);
             let mut c = vec![];
             c.push(s[0] + 1);
@@ -22,9 +22,7 @@ pub fn compositions_sized_zero(n: usize, x: usize) -> impl Iterator<Item = Vec<u
 }
 
 pub fn compositions(n: usize) -> impl Iterator<Item = Vec<usize>> {
-    (0..(n + 1))
-        .map(move |x| compositions_sized(n, x))
-        .flatten()
+    (0..=n).flat_map(move |x| compositions_sized(n, x))
 }
 
 #[cfg(test)]

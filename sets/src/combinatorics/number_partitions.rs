@@ -44,9 +44,10 @@ impl<P: Fn(usize) -> bool + Clone> Iterator for NumPartitionIterator<P> {
             //the only partition of n into 1 piece is [n]
             if self.first <= self.n {
                 self.first = self.n + 1;
-                match (self.predicate)(self.n) {
-                    true => Some(vec![self.n]),
-                    false => None,
+                if (self.predicate)(self.n) {
+                    Some(vec![self.n])
+                } else {
+                    None
                 }
             } else {
                 None
@@ -73,19 +74,16 @@ impl<P: Fn(usize) -> bool + Clone> Iterator for NumPartitionIterator<P> {
                 return self.next();
             }
 
-            match self.rest.as_mut().unwrap().as_mut().next().as_mut() {
-                Some(rest_part) => {
-                    //yield [self.first, ...rest_part...]
-                    let mut part = vec![self.first];
-                    part.append(rest_part);
-                    Some(part)
-                }
-                None => {
-                    //exhausted all partitions of the form [self.first, ...]
-                    self.first += 1;
-                    self.rest = None;
-                    self.next()
-                }
+            if let Some(rest_part) = self.rest.as_mut().unwrap().as_mut().next().as_mut() {
+                //yield [self.first, ...rest_part...]
+                let mut part = vec![self.first];
+                part.append(rest_part);
+                Some(part)
+            } else {
+                //exhausted all partitions of the form [self.first, ...]
+                self.first += 1;
+                self.rest = None;
+                self.next()
             }
         }
     }
@@ -152,7 +150,7 @@ pub fn num_partitions_predicated<P: Fn(usize) -> bool + Clone>(
     n: usize,
     predicate: P,
 ) -> impl Iterator<Item = Vec<usize>> {
-    (1..n + 1).flat_map(move |x| num_partitions_sized_predicated::<P>(n, x, predicate.clone()))
+    (1..=n).flat_map(move |x| num_partitions_sized_predicated::<P>(n, x, predicate.clone()))
 }
 
 /// Returns all partitions of n into exactly x parts where all parts are non-zero.
@@ -212,19 +210,20 @@ pub fn num_partitions(n: usize) -> impl Iterator<Item = Vec<usize>> {
 ///     vec![0, 0, 0, 0]
 /// ]);
 /// ```
+#[allow(clippy::needless_pass_by_value)]
 pub fn num_partitions_part_pool(
     n: usize,
     part_pool: Vec<usize>,
 ) -> impl Iterator<Item = Vec<usize>> {
     let mut allowed_sizes: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
     for (idx, size) in part_pool.iter().enumerate() {
+        #[allow(clippy::unwrap_or_default)]
         allowed_sizes.entry(*size).or_insert(vec![]).push(idx);
     }
-    let allowed_sizes_set = allowed_sizes.keys().cloned().collect::<HashSet<_>>();
+    let allowed_sizes_set = allowed_sizes.keys().copied().collect::<HashSet<_>>();
 
-    num_partitions_predicated(n, move |k| allowed_sizes_set.contains(&k))
-        .into_iter()
-        .map(move |partition| {
+    num_partitions_predicated(n, move |k| allowed_sizes_set.contains(&k)).flat_map(
+        move |partition| {
             let mut counts: BTreeMap<usize, usize> =
                 allowed_sizes.keys().map(|x| (*x, 0)).collect();
             for p in partition {
@@ -234,7 +233,7 @@ pub fn num_partitions_part_pool(
                 .into_iter()
                 .map(|(size, count)| {
                     (0..count)
-                        .map(|_| allowed_sizes.get(&size).unwrap().iter().cloned())
+                        .map(|_| allowed_sizes.get(&size).unwrap().iter().copied())
                         .multi_cartesian_product()
                         .collect::<Vec<_>>()
                 })
@@ -242,8 +241,8 @@ pub fn num_partitions_part_pool(
                 .map(|z| z.into_iter().flatten().collect::<Vec<_>>())
                 // .flatten()
                 .collect::<Vec<_>>()
-        })
-        .flatten()
+        },
+    )
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use super::*;
+use super::{FactoredSignature, FavoriteAssociateSignature, FieldSignature};
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::{
@@ -164,7 +164,7 @@ pub struct FieldElementFactorizationsStructure<FS: FieldSignature, FSB: Borrowed
 impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> FieldElementFactorizationsStructure<FS, FSB> {
     pub fn new(field: FSB) -> Self {
         Self {
-            _field: PhantomData::default(),
+            _field: PhantomData,
             field,
         }
     }
@@ -303,7 +303,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
 {
     pub fn new(ring: RSB) -> Self {
         Self {
-            _ring: PhantomData::default(),
+            _ring: PhantomData,
             ring,
         }
     }
@@ -343,7 +343,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> SetSign
                 i += Natural::from(1u8);
             }
         }
-        return true;
+        true
     }
 }
 
@@ -362,6 +362,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> EqSigna
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         let ring = self.ring();
+        #[allow(clippy::if_not_else)]
         if !ring.equal(&a.unit, &b.unit) {
             false
         } else {
@@ -390,10 +391,8 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> EqSigna
             //the powers of the factors are equal
             for (a_factor, a_power) in &a.powers {
                 for (b_factor, b_power) in &b.powers {
-                    if ring.equal(a_factor, b_factor) {
-                        if a_power != b_power {
-                            return false;
-                        }
+                    if ring.equal(a_factor, b_factor) && a_power != b_power {
+                        return false;
                     }
                 }
             }
@@ -498,10 +497,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
         unit: RS::Set,
         powers: Vec<(RS::Set, Natural)>,
     ) -> FactoredRingElement<RS::Set> {
-        FactoredRingElement {
-            unit,
-            powers: powers,
-        }
+        FactoredRingElement { unit, powers }
     }
 
     fn from_unit_and_factor_powers(
@@ -529,22 +525,19 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
     fn mul_mut(&self, a: &mut FactoredRingElement<RS::Set>, b: FactoredRingElement<RS::Set>) {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(&b));
-        *a = self.mul(a.clone(), b)
+        *a = self.mul(a.clone(), b);
     }
 
     fn mul_by_unchecked(&self, a: &mut FactoredRingElement<RS::Set>, p: RS::Set, k: Natural) {
         for (q, t) in &mut a.powers {
-            match (self.ring().div(&p, q), self.ring().div(q, &p)) {
-                (Ok(u), Ok(v)) => {
-                    if self.ring().is_unit(&u) && self.ring().is_unit(&v) {
-                        //q = v*p so q^k = v^kp^k and this is what we are multiplying by
-                        self.ring()
-                            .mul_mut(&mut a.unit, &self.ring().nat_pow(&v, &k));
-                        *t += k;
-                        return;
-                    }
+            if let (Ok(u), Ok(v)) = (self.ring().div(&p, q), self.ring().div(q, &p)) {
+                if self.ring().is_unit(&u) && self.ring().is_unit(&v) {
+                    //q = v*p so q^k = v^kp^k and this is what we are multiplying by
+                    self.ring()
+                        .mul_mut(&mut a.unit, &self.ring().nat_pow(&v, &k));
+                    *t += k;
+                    return;
                 }
-                _ => {}
             }
         }
         a.powers.push((p, k));
@@ -584,6 +577,7 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationDomainSignature>(
 mod tests {
     use super::*;
     use algebraeon_nzq::Integer;
+    use algebraeon_sets::structure::MetaType;
 
     #[test]
     fn factorization_invariants() {

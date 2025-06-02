@@ -82,6 +82,7 @@ impl<
                 }
 
                 //af + bg = 1 mod i^n
+                #[allow(clippy::collapsible_if)]
                 if LIFTED_BEZOUT_COEFFS {
                     if !poly_ring_mod_i_tothe_n.is_zero(&poly_ring_mod_i_tothe_n.sum(vec![
                         poly_ring_mod_i_tothe_n.mul(a, &f_factorization.h),
@@ -137,9 +138,10 @@ impl<
 
         //find a, b such that af + bg = 1 mod i
         let (u, a, b) = poly_ring_mod_p.xgcd(&first_h, &second_h);
-        if !poly_ring_mod_p.equal(&u, &poly_ring_mod_p.one()) {
-            panic!("Factors should be coprime modulo i");
-        }
+        assert!(
+            poly_ring_mod_p.equal(&u, &poly_ring_mod_p.one()),
+            "Factors should be coprime modulo i"
+        );
 
         Self::Branch {
             f_factorization: Box::new(HenselFactorizationImpl::new(ring, p, n, first_h, first_fs)),
@@ -287,7 +289,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
             } => {
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
-                let (_, _, lifted_f, lifted_g) = compute_lift_factors(ring, i, n, a, b, &f, &g, h);
+                let (_, _, lifted_f, lifted_g) = compute_lift_factors(ring, i, n, a, b, f, g, h);
                 f_factorization.h = lifted_f;
                 g_factorization.h = lifted_g;
 
@@ -321,7 +323,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
                 let (delta_f, delta_g, lifted_f, lifted_g) =
-                    compute_lift_factors(ring, &ring.nat_pow(i, n), &Natural::ONE, a, b, &f, &g, h);
+                    compute_lift_factors(ring, &ring.nat_pow(i, n), &Natural::ONE, a, b, f, g, h);
 
                 // beta = af + bg - 1 mod i^n
                 let beta = pring_mod_i2n.sum(vec![
@@ -387,7 +389,7 @@ impl<
         h: Polynomial<RS::Set>,
         mut fs: Vec<&Polynomial<RS::Set>>,
     ) -> Self {
-        debug_assert!(fs.len() >= 1);
+        debug_assert!(!fs.is_empty());
         match fs.len() {
             0 => panic!(),
             1 => Self {
@@ -398,8 +400,8 @@ impl<
                 debug_assert!(fs_len >= 2);
                 let second_fs = fs.split_off(fs_len / 2);
                 let first_fs = fs;
-                debug_assert!(first_fs.len() >= 1);
-                debug_assert!(second_fs.len() >= 1);
+                debug_assert!(!first_fs.is_empty());
+                debug_assert!(!second_fs.is_empty());
                 debug_assert_eq!(first_fs.len() + second_fs.len(), fs_len);
 
                 //find an inverse beta to alpha modulo p
@@ -470,9 +472,9 @@ impl<
         debug_assert!(ring.is_irreducible(&p));
 
         // h and all fs monic
-        assert!(fs.len() >= 1);
+        assert!(!fs.is_empty());
         // debug_assert!(poly_ring.is_monic(&h));
-        for f in fs.iter() {
+        for f in &fs {
             debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n

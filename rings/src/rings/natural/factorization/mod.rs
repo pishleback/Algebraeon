@@ -69,14 +69,14 @@ pub fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> 
         let d = gcd(Natural::abs_diff(x.clone(), &y), n.clone());
         if d > Natural::ONE {
             debug_assert!(d <= n);
-            if d == n {
-                return vec![Factor::StrictlyComposite(n)];
+            return if d == n {
+                vec![Factor::StrictlyComposite(n)]
             } else {
-                return vec![Factor::Composite(n / &d), Factor::Composite(d)];
-            }
+                vec![Factor::Composite(n / &d), Factor::Composite(d)]
+            };
         }
     }
-    return vec![Factor::StrictlyComposite(n)];
+    vec![Factor::StrictlyComposite(n)]
 }
 
 #[derive(Debug, Clone)]
@@ -125,6 +125,7 @@ impl Factorizer {
         let factorizations = Natural::structure().factorizations();
         let mut to_factor_now = self.to_factor.clone();
         self.to_factor = vec![];
+        #[allow(clippy::manual_while_let_some)]
         while !to_factor_now.is_empty() {
             let n = to_factor_now.pop().unwrap();
             #[cfg(debug_assertions)]
@@ -145,7 +146,7 @@ impl Factorizer {
                         if terminate {
                             self.to_factor.push(ToFactor::new_composite(d));
                         } else {
-                            to_factor_now.push(ToFactor::new_composite(d))
+                            to_factor_now.push(ToFactor::new_composite(d));
                         }
                     }
                     Factor::StrictlyComposite(d) => {
@@ -154,7 +155,7 @@ impl Factorizer {
                         if terminate {
                             self.to_factor.push(ToFactor::new_strictly_composite(d));
                         } else {
-                            to_factor_now.push(ToFactor::new_strictly_composite(d))
+                            to_factor_now.push(ToFactor::new_strictly_composite(d));
                         }
                     }
                 }
@@ -211,7 +212,7 @@ pub fn factor(n: Natural) -> Option<Vec<(Natural, Natural)>> {
     } else {
         let mut f = Factorizer::new(n);
         // Trial division
-        f.partially_factor_by_method(|n| (trial_division(n.n, 100000), true));
+        f.partially_factor_by_method(|n| (trial_division(n.n, 100_000), true));
 
         // Pollard-Rho
         for x in [2u32, 3, 4] {

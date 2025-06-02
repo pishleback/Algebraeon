@@ -76,7 +76,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>> SetSign
                             .ring()
                             .z_module()
                             .submodules()
-                            .contains_element(&lattice, &x)
+                            .contains_element(lattice, &x)
                         {
                             return false;
                         }
@@ -130,7 +130,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                     .into_powers(self.factor_ideal(ideal).unwrap())
                     .iter()
                     .map(|(prime_ideal, exponent)| {
-                        let norm = self.ideal_norm(&prime_ideal.ideal());
+                        let norm = self.ideal_norm(prime_ideal.ideal());
                         let e_minus_1 = exponent - Natural::ONE;
                         (&norm - Natural::ONE) * norm.pow(&e_minus_1)
                     })
@@ -163,7 +163,6 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                                     .map(|f| f.residue_class_degree)
                                     .collect(),
                             )
-                            .into_iter()
                             .map(|idxs| {
                                 self.ideal_product(
                                     idxs.into_iter()
@@ -188,10 +187,9 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     ) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
         Box::new(
             (1usize..)
-                .map(|m| Natural::from(m))
+                .map(Natural::from)
                 .take_while(|m| m <= n)
-                .map(|m| self.all_ideals_norm_eq(&m))
-                .flatten(),
+                .flat_map(|m| self.all_ideals_norm_eq(&m)),
         )
     }
 
@@ -199,9 +197,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     pub fn all_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
         Box::new(
             (0usize..)
-                .map(|m| Natural::from(m))
-                .map(|m| self.all_ideals_norm_eq(&m))
-                .flatten(),
+                .map(Natural::from)
+                .flat_map(|m| self.all_ideals_norm_eq(&m)),
         )
     }
 
@@ -209,9 +206,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     pub fn all_nonzero_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
         Box::new(
             (1usize..)
-                .map(|m| Natural::from(m))
-                .map(|m| self.all_ideals_norm_eq(&m))
-                .flatten(),
+                .map(Natural::from)
+                .flat_map(|m| self.all_ideals_norm_eq(&m)),
         )
     }
 }
@@ -452,14 +448,13 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
             .affine_subsets()
             .affine_basis(&b_set)
             .into_iter()
-            .filter(|b| {
+            .find(|b| {
                 !self
                     .ring()
                     .z_module()
                     .affine_subsets()
                     .contains_element(&rm_b_set, b)
             })
-            .next()
             .unwrap()
     }
 
@@ -476,7 +471,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                 (a, b)
             }
         };
-        debug_assert!(self.ideal_equal(&ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
+        debug_assert!(self.ideal_equal(ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
         (a, b)
     }
 
@@ -489,16 +484,15 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         debug_assert!(self.is_element(&prime_ideal));
         if self.ring().is_zero(&a) {
             return Valuation::Infinity;
-        } else {
-            let mut k = 1usize;
-            let mut prime_to_the_k = prime_ideal.clone();
-            loop {
-                if !self.ideal_contains_element(&prime_to_the_k, &a) {
-                    return Valuation::Finite((k - 1).into());
-                }
-                k = k + 1;
-                prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
+        }
+        let mut k = 1usize;
+        let mut prime_to_the_k = prime_ideal.clone();
+        loop {
+            if !self.ideal_contains_element(&prime_to_the_k, &a) {
+                return Valuation::Finite((k - 1).into());
             }
+            k += 1;
+            prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
         }
     }
 
@@ -511,16 +505,15 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         debug_assert!(self.is_element(&prime_ideal));
         if self.ideal_is_zero(&a) {
             return Valuation::Infinity;
-        } else {
-            let mut k = 1usize;
-            let mut prime_to_the_k = prime_ideal.clone();
-            loop {
-                if !self.ideal_contains(&prime_to_the_k, &a) {
-                    return Valuation::Finite((k - 1).into());
-                }
-                k = k + 1;
-                prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
+        }
+        let mut k = 1usize;
+        let mut prime_to_the_k = prime_ideal.clone();
+        loop {
+            if !self.ideal_contains(&prime_to_the_k, &a) {
+                return Valuation::Finite((k - 1).into());
             }
+            k += 1;
+            prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
         }
     }
 }

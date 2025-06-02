@@ -45,7 +45,7 @@ fn find_md_files<P: AsRef<Path>>(dir: P) -> io::Result<Vec<PathBuf>> {
 
         if path.is_dir() {
             md_files.extend(find_md_files(path)?);
-        } else if path.extension().map_or(false, |ext| ext == "md") {
+        } else if path.extension().is_some_and(|ext| ext == "md") {
             md_files.push(path);
         }
     }

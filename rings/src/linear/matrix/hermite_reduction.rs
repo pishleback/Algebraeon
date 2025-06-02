@@ -223,9 +223,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn inv(&self, a: Matrix<Ring::Set>) -> Result<Matrix<Ring::Set>, MatOppErr> {
         let n = a.rows();
-        if n != a.cols() {
-            Err(MatOppErr::NotSquare)
-        } else {
+        if n == a.cols() {
             let (h, u, _u_det, _pivs) = self.row_reduced_hermite_algorithm(a);
             //h = u*a
             if self.equal(&h, &self.ident(n)) {
@@ -233,6 +231,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             } else {
                 Err(MatOppErr::Singular)
             }
+        } else {
+            Err(MatOppErr::NotSquare)
         }
     }
 
@@ -430,7 +430,7 @@ mod tests {
 
     #[test]
     fn hermite_algorithm() {
-        for a in vec![
+        for a in [
             Matrix::from_rows(vec![
                 vec![
                     Integer::from(2),
@@ -512,13 +512,10 @@ mod tests {
             //trace the boundary of zeros and check that everything under is zero
             let mut rz = 0;
             for cz in 0..h.cols() {
-                match pivs.get(rz) {
-                    Some(cp) => {
-                        if cp == &cz {
-                            rz += 1;
-                        }
+                if let Some(cp) = pivs.get(rz) {
+                    if cp == &cz {
+                        rz += 1;
                     }
-                    None => {}
                 }
                 for r in rz..h.rows() {
                     assert_eq!(h.at(r, cz).unwrap(), &Integer::zero());
@@ -529,6 +526,7 @@ mod tests {
             for (pr, pc) in pivs.iter().enumerate() {
                 assert!(h.at(pr, *pc).unwrap() != &Integer::zero());
                 for r in 0..h.rows() {
+                    #[allow(clippy::comparison_chain)]
                     if r > pr {
                         assert_eq!(h.at(r, *pc).unwrap(), &Integer::zero());
                     } else if r == pr {
@@ -556,13 +554,10 @@ mod tests {
             //trace the boundary of zeros and check that everything to the right is zero
             let mut cz = 0;
             for rz in 0..h.rows() {
-                match pivs.get(cz) {
-                    Some(rp) => {
-                        if rp == &rz {
-                            cz += 1;
-                        }
+                if let Some(rp) = pivs.get(cz) {
+                    if rp == &rz {
+                        cz += 1;
                     }
-                    None => {}
                 }
                 for c in cz..h.cols() {
                     assert_eq!(h.at(rz, c).unwrap(), &Integer::zero());
@@ -574,6 +569,7 @@ mod tests {
             for (pc, pr) in pivs.iter().enumerate() {
                 assert!(h.at(*pr, pc).unwrap() != &Integer::zero());
                 for c in 0..h.cols() {
+                    #[allow(clippy::comparison_chain)]
                     if c > pc {
                         assert_eq!(h.at(*pr, c).unwrap(), &Integer::zero());
                     } else if c == pc {

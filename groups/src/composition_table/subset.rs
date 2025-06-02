@@ -1,6 +1,6 @@
-use super::group::*;
-use super::normal_subgroup::*;
-use super::subgroup::*;
+use super::group::FiniteGroupMultiplicationTable;
+use super::normal_subgroup::NormalSubgroup;
+use super::subgroup::Subgroup;
 use std::collections::HashSet;
 
 pub struct Subset<'a> {
@@ -11,7 +11,7 @@ pub struct Subset<'a> {
 impl<'a> Subset<'a> {
     pub fn check_state(&self) -> Result<(), &'static str> {
         for x in &self.elems {
-            if !(*x < self.group.size()) {
+            if *x >= self.group.size() {
                 return Err("invalid subset element");
             }
         }
@@ -24,7 +24,7 @@ impl<'a> Subset<'a> {
     }
 
     pub fn group(&self) -> &FiniteGroupMultiplicationTable {
-        &self.group
+        self.group
     }
 
     pub fn elems(&self) -> &HashSet<usize> {
@@ -38,7 +38,7 @@ impl<'a> Subset<'a> {
     pub fn add_elem(&mut self, x: usize) -> Result<(), ()> {
         if self.elems.contains(&x) {
             return Ok(());
-        } else if !(x < self.group.size()) {
+        } else if x >= self.group.size() {
             return Err(());
         }
         self.elems.insert(x);
@@ -46,7 +46,7 @@ impl<'a> Subset<'a> {
     }
 
     pub fn left_mul(&self, g: usize) -> Result<Subset, ()> {
-        if !(g < self.group.size()) {
+        if g >= self.group.size() {
             return Err(());
         }
         Ok(Subset {
@@ -56,7 +56,7 @@ impl<'a> Subset<'a> {
     }
 
     pub fn right_mul(&self, g: usize) -> Result<Subset, ()> {
-        if !(g < self.group.size()) {
+        if g >= self.group.size() {
             return Err(());
         }
         Ok(Subset {
@@ -77,17 +77,18 @@ impl<'a> Subset<'a> {
     }
 
     pub fn to_subgroup(&self) -> Option<Subgroup> {
-        match self.is_subgroup() {
-            true => Some(Subgroup {
+        if self.is_subgroup() {
+            Some(Subgroup {
                 subset: self.clone(),
-            }),
-            false => None,
+            })
+        } else {
+            None
         }
     }
 
     pub fn generated_subgroup(&self) -> Result<Subgroup<'a>, ()> {
         for g in &self.elems {
-            if !(*g < self.group.size()) {
+            if *g >= self.group.size() {
                 return Err(());
             }
         }
@@ -99,7 +100,8 @@ impl<'a> Subset<'a> {
         let mut boundary = vec![self.group.ident()];
         let mut next_boundary = vec![];
         let mut y;
-        while boundary.len() > 0 {
+        #[allow(clippy::assigning_clones)]
+        while !boundary.is_empty() {
             for x in &boundary {
                 for g in &self.elems {
                     y = self.group.mul(*x, *g);
@@ -122,7 +124,7 @@ impl<'a> Subset<'a> {
 
     pub fn normal_closure(&self) -> Result<NormalSubgroup<'a>, &'static str> {
         for g in &self.elems {
-            if !(*g < self.group.size()) {
+            if *g >= self.group.size() {
                 return Err("gen out of range");
             }
         }
@@ -135,7 +137,8 @@ impl<'a> Subset<'a> {
 
         let mut boundary = vec![self.group.ident()];
         let mut next_boundary = vec![];
-        while boundary.len() > 0 {
+        #[allow(clippy::assigning_clones)]
+        while !boundary.is_empty() {
             for x in &boundary {
                 for g in &self.elems {
                     for y in conj_info.class_containing(self.group.mul(*x, *g)) {

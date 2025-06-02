@@ -26,6 +26,10 @@ impl<const N: usize> Cycle<N> {
     pub fn len(&self) -> usize {
         self.cyc.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.cyc.is_empty()
+    }
 }
 
 impl<const N: usize> std::convert::From<Cycle<N>> for Permutation<N> {
@@ -69,7 +73,7 @@ impl<const N: usize> Permutation<N> {
         //check that the numbers in forward are 0, 1, ..., n-1 in some order
         let mut present = [false; N];
         for i in &perm {
-            if !(*i < N) {
+            if *i >= N {
                 return Err("Permutation value out of range");
             }
             present[*i] = true;
@@ -91,13 +95,13 @@ impl<const N: usize> Permutation<N> {
         Ok(Self::compose_list(
             parsed_cycles
                 .into_iter()
-                .map(|c| Into::<Permutation<N>>::into(c))
+                .map(Into::<Permutation<N>>::into)
                 .collect(),
         ))
     }
 
     pub fn call(&self, x: usize) -> Result<usize, &'static str> {
-        if !(x < self.perm.len()) {
+        if x >= self.perm.len() {
             return Err("argument too large");
         }
         Ok(self.perm[x])
@@ -118,7 +122,7 @@ impl<const N: usize> Permutation<N> {
     pub fn disjoint_cycles(&self) -> Vec<Cycle<N>> {
         let mut missing: std::collections::HashSet<usize> = (0..N).collect();
         let mut cycles = vec![];
-        while missing.len() > 0 {
+        while !missing.is_empty() {
             let mut cycle = vec![];
             let x = *missing.iter().min().unwrap();
             let mut i = x;
@@ -136,8 +140,8 @@ impl<const N: usize> Permutation<N> {
     }
 
     pub fn cycle_shape(&self) -> Vec<usize> {
-        let mut shape = self.disjoint_cycles().iter().map(|c| c.len()).collect_vec();
-        shape.sort();
+        let mut shape = self.disjoint_cycles().iter().map(Cycle::len).collect_vec();
+        shape.sort_unstable();
         shape
     }
 
@@ -173,7 +177,7 @@ impl<const N: usize> std::fmt::Display for Permutation<N> {
         let mut cycles = self.disjoint_cycles();
         cycles.retain(|cycle| cycle.len() != 1);
 
-        if cycles.len() == 0 {
+        if cycles.is_empty() {
             f.write_str("()")?;
         }
 
@@ -184,7 +188,7 @@ impl<const N: usize> std::fmt::Display for Permutation<N> {
                     + &cycle
                         .cyc
                         .iter()
-                        .map(|x| x.to_string())
+                        .map(std::string::ToString::to_string)
                         .collect::<Vec<String>>()
                         .join(" ")
                     + ")"

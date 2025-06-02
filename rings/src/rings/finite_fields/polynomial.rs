@@ -146,7 +146,7 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS
         self.unit = poly_ring.coeff_ring().mul(&self.unit, &other.unit);
         'OTHER_LOOP: for (poly, power) in &other.squarefree_factors {
             for (self_poly, self_power) in &mut self.squarefree_factors {
-                if poly_ring.equal(&poly, self_poly) {
+                if poly_ring.equal(poly, self_poly) {
                     *self_power += power;
                     continue 'OTHER_LOOP;
                 }
@@ -345,6 +345,7 @@ where
             // println!("g = {}", g);
             let g_deg = self.degree(&g).unwrap();
             if g_deg != 0 && g_deg != f_deg {
+                #[allow(clippy::single_match_else)]
                 match self.div(&f, &g) {
                     Ok(g_prime) => {
                         return FindFactorResult::Composite(g, g_prime);
@@ -406,8 +407,7 @@ where
             let n = self.poly_ring.degree(poly).unwrap();
             debug_assert!(n >= 1);
 
-            let mod_poly_ring =
-                QuotientStructure::new_ring(self.poly_ring.clone().into(), poly.clone());
+            let mod_poly_ring = QuotientStructure::new_ring(self.poly_ring.clone(), poly.clone());
             let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring().clone());
             let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
             let qth_power_matrix = Matrix::join_cols(
@@ -500,7 +500,7 @@ where
         DistinctDegreeFactored {
             poly_ring: self.poly_ring.clone(),
             unit: self.unit.clone(),
-            distinct_degree_factors: distinct_degree_factors,
+            distinct_degree_factors,
         }
     }
 }
@@ -590,7 +590,7 @@ where
                 };
                 to_factor = to_factor
                     .into_iter()
-                    .map(|u| {
+                    .flat_map(|u| {
                         let gcd = self
                             .poly_ring
                             .factorize_monic(&self.poly_ring.subresultant_gcd(u.clone(), g.clone()))
@@ -603,7 +603,6 @@ where
                             vec![self.poly_ring.div(&u, &gcd).unwrap(), gcd]
                         }
                     })
-                    .flatten()
                     .collect();
             }
         }

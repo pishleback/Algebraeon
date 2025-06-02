@@ -41,6 +41,7 @@ impl<RS: EuclideanDomainSignature> QuotientStructure<RS, true> {
 
 impl<RS: EuclideanDomainSignature + FactorableSignature> QuotientStructure<RS, true> {
     pub fn new_field(ring: RS, modulus: RS::Set) -> Self {
+        #[allow(clippy::manual_assert)]
         #[cfg(debug_assertions)]
         if !ring.is_irreducible(&modulus) {
             panic!(
@@ -159,7 +160,7 @@ impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, const IS_FIELD: 
                     &g,
                     &self
                         .ring
-                        .add(&self.ring.mul(&a, &x), &self.ring.mul(&b, &self.modulus))
+                        .add(&self.ring.mul(&a, x), &self.ring.mul(&b, &self.modulus))
                 )
             );
             if self.equal(&g, &self.one()) {

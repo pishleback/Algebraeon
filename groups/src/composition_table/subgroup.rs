@@ -3,10 +3,10 @@ use std::collections::HashSet;
 
 use algebraeon_sets::combinatorics::Partition;
 
-use super::group::*;
-use super::normal_subgroup::*;
-use super::partition::*;
-use super::subset::*;
+use super::group::FiniteGroupMultiplicationTable;
+use super::normal_subgroup::NormalSubgroup;
+use super::partition::GroupPartition;
+use super::subset::Subset;
 use std::hash::Hash;
 
 #[derive(Clone)]
@@ -35,7 +35,7 @@ impl<'a> Hash for Subgroup<'a> {
 impl<'a> Subgroup<'a> {
     pub fn check_state(&self) -> Result<(), &'static str> {
         match self.subset.check_state() {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(msg) => {
                 return Err(msg);
             }
@@ -85,7 +85,7 @@ impl<'a> Subgroup<'a> {
         let mut cosets: Vec<HashSet<usize>> = vec![];
         let mut coset_lookup = vec![0; self.subset.group().size()];
         let mut missing: HashSet<usize> = self.subset.group().elems().collect();
-        while missing.len() > 0 {
+        while !missing.is_empty() {
             let g = missing.iter().next().unwrap();
             let coset = self.subset.left_mul(*g).unwrap().elems().clone();
             for h in &coset {
@@ -104,7 +104,7 @@ impl<'a> Subgroup<'a> {
         let mut cosets: Vec<HashSet<usize>> = vec![];
         let mut coset_lookup = vec![0; self.subset.group().size()];
         let mut missing: HashSet<usize> = self.subset.group().elems().collect();
-        while missing.len() > 0 {
+        while !missing.is_empty() {
             let g = missing.iter().next().unwrap();
             let coset = self.subset.right_mul(*g).unwrap().elems().clone();
             for h in &coset {
@@ -138,9 +138,10 @@ impl<'a> Subgroup<'a> {
     }
 
     pub fn to_normal_subgroup(&self) -> Option<NormalSubgroup> {
-        match self.is_normal_subgroup() {
-            true => Some(NormalSubgroup::new_unchecked(self.clone())),
-            false => None,
+        if self.is_normal_subgroup() {
+            Some(NormalSubgroup::new_unchecked(self.clone()))
+        } else {
+            None
         }
     }
 }
@@ -148,6 +149,7 @@ impl<'a> Subgroup<'a> {
 #[cfg(test)]
 mod subgroup_tests {
     use super::*;
+    use crate::composition_table::group::examples;
 
     #[test]
     fn subgroup_counts() {

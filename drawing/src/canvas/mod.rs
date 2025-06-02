@@ -18,6 +18,7 @@ pub trait Canvas {
     where
         Self: Sized + 'static,
     {
+        #[allow(clippy::identity_op)]
         let display_size = (1 * 1024, 1 * 768);
 
         // 1. We start by creating the EventLoop, this can only be done once per process.
@@ -27,8 +28,8 @@ pub trait Canvas {
         // 2. Parameters for building the Window.
         let wb = glium::glutin::window::WindowBuilder::new()
             .with_inner_size(glium::glutin::dpi::LogicalSize::new(
-                display_size.0 as f64,
-                display_size.1 as f64,
+                f64::from(display_size.0),
+                f64::from(display_size.1),
             ))
             .with_title("Hello world");
 
@@ -59,6 +60,7 @@ pub trait Canvas {
             // println!("{:?}", ev);
 
             //events
+            #[allow(clippy::single_match)]
             match &ev {
                 glium::glutin::event::Event::WindowEvent { event, .. } => match event {
                     glium::glutin::event::WindowEvent::CloseRequested => {
@@ -83,13 +85,10 @@ pub trait Canvas {
             canvas.draw(&state, &display);
 
             //control flow
-            match stop {
-                true => {
-                    *control_flow = glium::glutin::event_loop::ControlFlow::Exit;
-                }
-                false => {
-                    *control_flow = glium::glutin::event_loop::ControlFlow::Poll;
-                }
+            if stop {
+                *control_flow = glium::glutin::event_loop::ControlFlow::Exit;
+            } else {
+                *control_flow = glium::glutin::event_loop::ControlFlow::Poll;
             }
         });
     }

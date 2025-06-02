@@ -123,8 +123,8 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
         mut b: &'a Polynomial<C>,
     ) -> Polynomial<RS::Set> {
         if a.coeffs.len() > b.coeffs.len() {
-            (a, b) = (b, a)
-        };
+            (a, b) = (b, a);
+        }
         let x = a.coeffs.len();
         let y = b.coeffs.len();
 
@@ -203,17 +203,16 @@ impl<RS: CharacteristicSignature, RSB: BorrowedStructure<RS>> CharacteristicSign
 impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStructure<RS, RSB> {
     pub fn reduce_poly(&self, mut a: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         loop {
-            if a.coeffs.len() == 0 {
+            if a.coeffs.is_empty() {
                 break;
+            }
+            if self
+                .coeff_ring()
+                .equal(a.coeffs.last().unwrap(), &self.coeff_ring().zero())
+            {
+                a.coeffs.pop();
             } else {
-                if self
-                    .coeff_ring()
-                    .equal(&a.coeffs.last().unwrap(), &self.coeff_ring().zero())
-                {
-                    a.coeffs.pop();
-                } else {
-                    break;
-                }
+                break;
             }
         }
         a
@@ -225,7 +224,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
 
     pub fn var_pow(&self, n: usize) -> Polynomial<RS::Set> {
         Polynomial::from_coeffs(
-            (0..n + 1)
+            (0..=n)
                 .map(|i| {
                     if i < n {
                         self.coeff_ring().zero()
@@ -239,7 +238,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
 
     pub fn constant_var_pow(&self, x: RS::Set, n: usize) -> Polynomial<RS::Set> {
         Polynomial::from_coeffs(
-            (0..n + 1)
+            (0..=n)
                 .map(|i| {
                     if i < n {
                         self.coeff_ring().zero()
@@ -268,7 +267,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
         let mut y = self.coeff_ring().zero();
         for c in p.coeffs().into_iter().rev() {
             self.coeff_ring().mul_mut(&mut y, x);
-            self.coeff_ring().add_mut(&mut y, c)
+            self.coeff_ring().add_mut(&mut y, c);
         }
         y
     }
@@ -337,6 +336,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
     //...
     pub fn degree(&self, p: &Polynomial<RS::Set>) -> Option<usize> {
         //the polynomial representation might not be reduced
+        #[allow(clippy::manual_find)]
         for i in (0..p.coeffs.len()).rev() {
             if !self.coeff_ring().is_zero(&p.coeffs[i]) {
                 return Some(i);

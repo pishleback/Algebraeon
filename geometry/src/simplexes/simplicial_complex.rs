@@ -12,6 +12,7 @@ pub struct SCSpxInfo<
     label: T,
 }
 
+#[allow(clippy::missing_fields_in_debug)]
 impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     std::fmt::Debug for SCSpxInfo<FS, SP, T>
 {
@@ -34,6 +35,7 @@ pub struct LabelledSimplicialComplex<
 
 pub type SimplicialComplex<FS, SP> = LabelledSimplicialComplex<FS, SP, ()>;
 
+#[allow(clippy::missing_fields_in_debug)]
 impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
     std::fmt::Debug for LabelledSimplicialComplex<FS, SP, T>
 {
@@ -58,7 +60,7 @@ where
     ) -> Result<Self, &'static str> {
         for simplex in simplexes.keys() {
             assert_eq!(simplex.ambient_space().borrow(), ambient_space.borrow());
-            if simplex.points().len() == 0 {
+            if simplex.points().is_empty() {
                 return Err("Simplicial complex musn't contain the null simplex");
             }
         }
@@ -76,7 +78,7 @@ where
             })
             .collect::<HashMap<_, _>>();
 
-        for simplex in simplexes.keys().map(|s| s.clone()).collect::<Vec<_>>() {
+        for simplex in simplexes.keys().cloned().collect::<Vec<_>>() {
             for bdry_spx in simplex.proper_sub_simplices_not_null() {
                 match simplexes.get_mut(&bdry_spx) {
                     Some(entry) => {
@@ -139,6 +141,7 @@ where
             inv_bdry_map.insert(spx.clone(), HashSet::new());
         }
 
+        #[allow(clippy::for_kv_map)]
         for (spx, _info) in &self.simplexes {
             for bdry_spx in spx.proper_sub_simplices_not_null() {
                 assert!(self.simplexes.contains_key(&bdry_spx));
@@ -207,6 +210,7 @@ where
                 } else {
                     //rank < n-1 simplex is part of the interior iff it is part of the boundary of at least one simplex and every such simplex is part of the interior
                     debug_assert!(r < n - 1);
+                    #[allow(clippy::collapsible_else_if)]
                     if inv_bdry.is_empty() {
                         simplexes.insert(simplex, InteriorBoundaryLabel::Boundary);
                     } else {
@@ -250,6 +254,7 @@ Output:
     If it can: return the simplicies to use to fill in the interior region
 
 */
+#[allow(clippy::needless_pass_by_value)]
 fn simplify_in_region<
     FS: OrderedRingSignature + FieldSignature,
     SP: Borrow<AffineSpace<FS>> + Clone,
@@ -283,8 +288,7 @@ where
 
         if nonadjacent_facets.iter().all(|idx| {
             match boundary_facets[*idx].classify_point(&boundary_point) {
-                OrientationSide::Positive => false,
-                OrientationSide::Neutral => false,
+                OrientationSide::Positive | OrientationSide::Neutral => false,
                 OrientationSide::Negative => true,
             }
         }) {
@@ -363,7 +367,7 @@ where
 
                 debug_assert_eq!(star.len() + link.len(), nbd.len());
                 for link_spx in &link {
-                    debug_assert!(self.simplexes.contains_key(&link_spx));
+                    debug_assert!(self.simplexes.contains_key(link_spx));
                 }
 
                 (star, link)
@@ -418,6 +422,7 @@ where
             .unwrap();
             let nbd_interior = nbd.interior().into_simplexes();
 
+            #[allow(clippy::if_not_else)]
             if !nbd_interior.contains(&pt_img_spx) {
                 /*
                 pt is on the boundary of nbd and nbd looks something like this
@@ -445,7 +450,7 @@ where
 
                 let boundary_img = star_img
                     .iter()
-                    .filter(|spx| !nbd_interior.contains(&spx))
+                    .filter(|spx| !nbd_interior.contains(spx))
                     .collect::<HashSet<_>>();
 
                 let boundary = boundary_img
@@ -696,14 +701,12 @@ where
 
     //remove simplexes and remove them from the inverse boundary of any others
     //self may not be in a valid state after this operation
+    #[allow(clippy::needless_pass_by_value)]
     fn remove_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, SP>>) {
         for spx in &simplexes {
             for bdry_spx in spx.proper_sub_simplices_not_null() {
-                match self.simplexes.get_mut(&bdry_spx) {
-                    Some(info) => {
-                        info.inv_bdry.remove(spx);
-                    }
-                    None => {}
+                if let Some(info) = self.simplexes.get_mut(&bdry_spx) {
+                    info.inv_bdry.remove(spx);
                 }
             }
         }
@@ -721,6 +724,7 @@ where
     //add the given simplexes and add them to the inverse boundary map on anything on their boundaries
     //must be added together to cover the case where there are mutual boundary relations
     //self may not be in a valid state after this operation
+    #[allow(clippy::needless_pass_by_value)]
     fn add_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, SP>>, label: &T) {
         for spx in &simplexes {
             self.simplexes.insert(
