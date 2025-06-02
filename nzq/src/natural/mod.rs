@@ -1,8 +1,11 @@
 //! The Natural type and operations.
 
-use crate::integer::*;
-use crate::traits::*;
-use algebraeon_sets::structure::*;
+use crate::integer::Integer;
+use crate::traits::{AbsDiff, DivMod, ModInv, ModPow};
+use algebraeon_sets::structure::{
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
+    Signature, ToStringSignature,
+};
 use malachite_base::num::{
     arithmetic::traits::PowerOf2,
     basic::traits::{One, Two, Zero},
@@ -27,6 +30,7 @@ pub use functions::primes;
 #[canonical_structure(eq, ord)]
 pub struct Natural(malachite_nz::natural::Natural);
 
+#[allow(clippy::wrong_self_convention)]
 impl Natural {
     pub(crate) fn from_malachite(value: malachite_nz::natural::Natural) -> Self {
         Self(value)
@@ -103,67 +107,67 @@ impl Natural {
 
 impl AddAssign<Natural> for Natural {
     fn add_assign(&mut self, rhs: Natural) {
-        self.0.add_assign(rhs.0)
+        self.0.add_assign(rhs.0);
     }
 }
 impl AddAssign<&Natural> for Natural {
     fn add_assign(&mut self, rhs: &Natural) {
-        self.0.add_assign(&rhs.0)
+        self.0.add_assign(&rhs.0);
     }
 }
 
 impl SubAssign<Natural> for Natural {
     fn sub_assign(&mut self, rhs: Natural) {
-        self.0.sub_assign(rhs.0)
+        self.0.sub_assign(rhs.0);
     }
 }
 impl SubAssign<&Natural> for Natural {
     fn sub_assign(&mut self, rhs: &Natural) {
-        self.0.sub_assign(&rhs.0)
+        self.0.sub_assign(&rhs.0);
     }
 }
 
 impl MulAssign<Natural> for Natural {
     fn mul_assign(&mut self, rhs: Natural) {
-        self.0.mul_assign(rhs.0)
+        self.0.mul_assign(rhs.0);
     }
 }
 impl MulAssign<&Natural> for Natural {
     fn mul_assign(&mut self, rhs: &Natural) {
-        self.0.mul_assign(&rhs.0)
+        self.0.mul_assign(&rhs.0);
     }
 }
 
 impl BitAndAssign<Natural> for Natural {
     fn bitand_assign(&mut self, rhs: Natural) {
-        self.0.bitand_assign(rhs.0)
+        self.0.bitand_assign(rhs.0);
     }
 }
 impl BitAndAssign<&Natural> for Natural {
     fn bitand_assign(&mut self, rhs: &Natural) {
-        self.0.bitand_assign(&rhs.0)
+        self.0.bitand_assign(&rhs.0);
     }
 }
 
 impl BitOrAssign<Natural> for Natural {
     fn bitor_assign(&mut self, rhs: Natural) {
-        self.0.bitor_assign(rhs.0)
+        self.0.bitor_assign(rhs.0);
     }
 }
 impl BitOrAssign<&Natural> for Natural {
     fn bitor_assign(&mut self, rhs: &Natural) {
-        self.0.bitor_assign(&rhs.0)
+        self.0.bitor_assign(&rhs.0);
     }
 }
 
 impl BitXorAssign<Natural> for Natural {
     fn bitxor_assign(&mut self, rhs: Natural) {
-        self.0.bitxor_assign(rhs.0)
+        self.0.bitxor_assign(rhs.0);
     }
 }
 impl BitXorAssign<&Natural> for Natural {
     fn bitxor_assign(&mut self, rhs: &Natural) {
-        self.0.bitxor_assign(&rhs.0)
+        self.0.bitxor_assign(&rhs.0);
     }
 }
 
@@ -704,9 +708,7 @@ impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
 impl CountableSetSignature for NaturalCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         use malachite_nz::natural::exhaustive::exhaustive_naturals;
-        exhaustive_naturals()
-            .into_iter()
-            .map(|n| Natural::from_malachite(n))
+        exhaustive_naturals().map(Natural::from_malachite)
     }
 }
 
@@ -860,6 +862,7 @@ mod tests {
         );
     }
 
+    #[allow(clippy::redundant_closure_for_method_calls)]
     #[test]
     fn natural_countable_list() {
         assert_eq!(

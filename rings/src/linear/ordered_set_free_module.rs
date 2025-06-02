@@ -47,9 +47,9 @@ impl<
     pub fn new(set: SetB, ring: RingB) -> Self {
         Self {
             ring_zero: ring.borrow().zero(),
-            _set: PhantomData::default(),
+            _set: PhantomData,
             set,
-            _ring: PhantomData::default(),
+            _ring: PhantomData,
             ring,
         }
     }
@@ -63,6 +63,7 @@ impl<
     ///  - ordered
     ///  - has no duplicate set elements
     ///  - has no ring elements equal to 0
+    ///
     /// and is equal to the sum of the input vectors terms. In other words, the returned vector will pass self.is_element(..)
     pub fn collapse_terms(&self, v: <Self as SetSignature>::Set) -> <Self as SetSignature>::Set {
         let mut v = self.set().sort_by_key(v, &|(x, _)| x).into_iter();
@@ -163,7 +164,7 @@ impl<
         // since elements are sorted and exclude entries with zero coefficients, we just need to check if they are identically equal
         let n = v.len();
         if n != w.len() {
-            return false;
+            false
         } else {
             (0..n).all(|i| {
                 let (vx, va) = &v[i];

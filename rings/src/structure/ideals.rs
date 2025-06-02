@@ -143,7 +143,7 @@ pub trait DedekindDomainIdealsSignature<
     RingB: BorrowedStructure<Ring>,
 >: IdealsArithmeticSignature<Ring, RingB>
 {
-    /// Return the largest power of prime_ideal which divides ideal
+    /// Return the largest power of `prime_ideal` which divides `ideal`
     fn largest_prime_ideal_factor_power(
         &self,
         prime_ideal: &DedekindDomainPrimeIdeal<Self::Set>,
@@ -155,7 +155,7 @@ pub trait DedekindDomainIdealsSignature<
         while self.ideal_contains(&prime_ideal_to_the_k_plus_one, ideal) {
             k += Natural::ONE;
             prime_ideal_to_the_k_plus_one =
-                self.ideal_mul(&prime_ideal_to_the_k_plus_one, prime_ideal.ideal())
+                self.ideal_mul(&prime_ideal_to_the_k_plus_one, prime_ideal.ideal());
         }
         k
     }

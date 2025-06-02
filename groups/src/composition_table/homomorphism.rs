@@ -2,8 +2,8 @@ use std::borrow::Borrow;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 
-use super::generating_set::*;
-use super::group::*;
+use super::generating_set::GeneratingSet;
+use super::group::FiniteGroupMultiplicationTable;
 
 #[derive(Clone)]
 pub struct Homomorphism<
@@ -27,7 +27,7 @@ impl<
         }
 
         for x in self.domain.borrow().elems() {
-            if !(self.func[x] < self.range.borrow().size()) {
+            if self.func[x] >= self.range.borrow().size() {
                 return Err("func image is too big for an element of the range");
             }
         }
@@ -61,6 +61,7 @@ impl<
         }
 
         let mut inv = vec![None; n];
+        #[allow(clippy::match_on_vec_items)]
         for x in 0..n {
             match inv[self.func[x]] {
                 Some(_y) => {
@@ -73,10 +74,7 @@ impl<
 
         let inv = inv
             .into_iter()
-            .map(|x| match x {
-                Some(x_val) => x_val,
-                None => panic!(),
-            })
+            .map(|x| if let Some(x_val) = x { x_val } else { panic!() })
             .collect::<Vec<usize>>();
 
         Some(Isomorphism {
@@ -147,6 +145,7 @@ impl<
 
 //return an isomorphism from domain to range if one exists
 //return None if no isomorphism exists
+#[allow(clippy::too_many_lines)]
 pub fn find_isomorphism<'a, 'b>(
     domain: &'a FiniteGroupMultiplicationTable,
     range: &'b FiniteGroupMultiplicationTable,
@@ -159,6 +158,7 @@ pub fn find_isomorphism<'a, 'b>(
     //an element profile can be generated for each element in the range and domain
     //an isomorphism can only every map elements of the same profile to each other
     //use this is restrict the number of things to check
+    #[allow(clippy::items_after_statements)]
     #[derive(Debug, PartialEq, Eq, Hash)]
     struct ElementProfile {
         order: usize,
@@ -197,7 +197,7 @@ pub fn find_isomorphism<'a, 'b>(
             None => {
                 range_elem_profiles.insert(p, vec![x]);
             }
-        };
+        }
     }
 
     // println!("range_elem_profiles {:?}", range_elem_profiles);
@@ -211,7 +211,7 @@ pub fn find_isomorphism<'a, 'b>(
 
     fn find_new_gen_info<'c>(
         domain: &'c FiniteGroupMultiplicationTable,
-        domain_elem_profiles: &Vec<ElementProfile>,
+        domain_elem_profiles: &[ElementProfile],
         range_elem_profiles: &HashMap<ElementProfile, Vec<usize>>,
     ) -> Result<GenInfo<'c>, ()> {
         let domain_gen_set = domain.generating_set();
@@ -248,7 +248,7 @@ pub fn find_isomorphism<'a, 'b>(
     let mut current_gen_info;
     match find_new_gen_info(domain, &domain_elem_profiles, &range_elem_profiles) {
         Ok(gen_info) => current_gen_info = gen_info,
-        Err(_) => {
+        Err(()) => {
             return None;
         }
     }
@@ -275,14 +275,14 @@ pub fn find_isomorphism<'a, 'b>(
                             continue 'outer_loop;
                         }
                     }
-                    Err(_) => {
+                    Err(()) => {
                         return None;
                     }
                 }
             }
 
             //compute homomorphism sending domain_gens -> image_gens
-            match current_gen_info
+            if let Some(f) = current_gen_info
                 .gen_set
                 .generated_homomorphism(
                     &image_option_counter
@@ -294,13 +294,9 @@ pub fn find_isomorphism<'a, 'b>(
                 )
                 .unwrap()
             {
-                Some(f) => match f.to_isomorphism() {
-                    Some(f_iso) => {
-                        return Some(f_iso);
-                    }
-                    None => {}
-                },
-                None => {}
+                if let Some(f_iso) = f.to_isomorphism() {
+                    return Some(f_iso);
+                }
             }
             already_checked += 1;
 
@@ -323,7 +319,10 @@ pub fn find_isomorphism<'a, 'b>(
 
 #[cfg(test)]
 mod homomorphism_tests {
-    use crate::free_group::todd_coxeter::FinitelyGeneratedGroupPresentation;
+    use crate::{
+        composition_table::group::examples,
+        free_group::todd_coxeter::FinitelyGeneratedGroupPresentation,
+    };
 
     use super::*;
 
@@ -338,9 +337,8 @@ mod homomorphism_tests {
                 range: &grp_h,
                 func: vec![0, 1, 2, 3, 4, 5],
             };
-            match f.check_state() {
-                Ok(()) => {}
-                Err(_) => panic!(),
+            if f.check_state().is_err() {
+                panic!()
             }
         }
 
@@ -353,9 +351,8 @@ mod homomorphism_tests {
                 range: &grp_h,
                 func: vec![0, 2, 4],
             };
-            match f.check_state() {
-                Ok(()) => {}
-                Err(_) => panic!(),
+            if f.check_state().is_err() {
+                panic!()
             }
         }
 
@@ -368,9 +365,8 @@ mod homomorphism_tests {
                 range: &grp_h,
                 func: vec![0, 1, 2, 0, 1, 2],
             };
-            match f.check_state() {
-                Ok(()) => {}
-                Err(_) => panic!(),
+            if f.check_state().is_err() {
+                panic!()
             }
         }
 
@@ -383,9 +379,8 @@ mod homomorphism_tests {
                 range: &grp_h,
                 func: vec![0, 1, 2, 3],
             };
-            match f.check_state() {
-                Ok(()) => panic!(),
-                Err(_) => {}
+            if let Ok(()) = f.check_state() {
+                panic!()
             }
         }
 
@@ -398,9 +393,8 @@ mod homomorphism_tests {
                 range: &grp_h,
                 func: vec![0, 1, 2, 3, 4, 5, 6],
             };
-            match f.check_state() {
-                Ok(()) => panic!(),
-                Err(_) => {}
+            if let Ok(()) = f.check_state() {
+                panic!()
             }
         }
 
@@ -413,9 +407,8 @@ mod homomorphism_tests {
                 range: &grp_h,
                 func: vec![0, 1, 2],
             };
-            match f.check_state() {
-                Ok(()) => panic!(),
-                Err(_) => {}
+            if let Ok(()) = f.check_state() {
+                panic!()
             }
         }
     }
@@ -432,9 +425,8 @@ mod homomorphism_tests {
                 left_func: vec![0, 5, 4, 3, 2, 1],
                 right_func: vec![0, 5, 4, 3, 2, 1],
             };
-            match f.check_state() {
-                Ok(()) => {}
-                Err(_) => panic!(),
+            if f.check_state().is_err() {
+                panic!()
             }
         }
 
@@ -448,9 +440,8 @@ mod homomorphism_tests {
                 left_func: vec![0, 2, 4],
                 right_func: vec![0, 1, 2, 0, 1, 2],
             };
-            match f.check_state() {
-                Ok(()) => panic!(),
-                Err(_) => {}
+            if let Ok(()) = f.check_state() {
+                panic!()
             }
         }
 
@@ -464,9 +455,8 @@ mod homomorphism_tests {
                 left_func: vec![0, 2, 4, 0, 2, 4],
                 right_func: vec![0, 5, 4, 3, 2, 1],
             };
-            match f.check_state() {
-                Ok(()) => panic!(),
-                Err(_) => {}
+            if let Ok(()) = f.check_state() {
+                panic!()
             }
         }
     }
@@ -483,9 +473,9 @@ mod homomorphism_tests {
                 func: vec![0, 3, 6, 2, 5, 1, 4],
             };
             f.check_state().unwrap();
-            match f.to_isomorphism() {
-                Some(_f_iso) => {}
-                None => panic!(),
+            if let Some(_f_iso) = f.to_isomorphism() {
+            } else {
+                panic!()
             }
         }
 
@@ -499,9 +489,8 @@ mod homomorphism_tests {
                 func: vec![0, 2, 4],
             };
             f.check_state().unwrap();
-            match f.to_isomorphism() {
-                Some(_f_iso) => panic!(),
-                None => {}
+            if let Some(_f_iso) = f.to_isomorphism() {
+                panic!()
             }
         }
 
@@ -515,9 +504,8 @@ mod homomorphism_tests {
                 func: vec![0, 2, 4, 0, 2, 4],
             };
             f.check_state().unwrap();
-            match f.to_isomorphism() {
-                Some(__iso) => panic!(),
-                None => {}
+            if let Some(__iso) = f.to_isomorphism() {
+                panic!()
             }
         }
     }
@@ -528,12 +516,11 @@ mod homomorphism_tests {
             let grp_g = examples::symmetric_group_structure(3);
             let grp_h = examples::dihedral_group_structure(3);
 
-            match find_isomorphism(&grp_g, &grp_h) {
-                Some(f) => {
-                    assert!(std::ptr::eq(&grp_g, f.left_group));
-                    assert!(std::ptr::eq(&grp_h, f.right_group));
-                }
-                None => panic!(),
+            if let Some(f) = find_isomorphism(&grp_g, &grp_h) {
+                assert!(std::ptr::eq(&grp_g, f.left_group));
+                assert!(std::ptr::eq(&grp_h, f.right_group));
+            } else {
+                panic!()
             }
         }
 
@@ -541,9 +528,8 @@ mod homomorphism_tests {
             let grp_g = examples::symmetric_group_structure(3);
             let grp_h = examples::cyclic_group_structure(6);
 
-            match find_isomorphism(&grp_g, &grp_h) {
-                Some(_f) => panic!(),
-                None => {}
+            if let Some(_f) = find_isomorphism(&grp_g, &grp_h) {
+                panic!();
             }
         }
 
@@ -561,9 +547,8 @@ mod homomorphism_tests {
             grp_h.add_relation((&b * &c).pow(5));
             let grp_h = grp_h.into_finite_group(); //A5 x C2
 
-            match find_isomorphism(&grp_g, &grp_h) {
-                Some(_f) => panic!(),
-                None => {}
+            if let Some(_f) = find_isomorphism(&grp_g, &grp_h) {
+                panic!()
             }
         }
     }

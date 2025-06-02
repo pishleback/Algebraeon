@@ -6,9 +6,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
         m: Matrix<FS::Set>,
     ) -> Result<Matrix<Polynomial<FS::Set>>, MatOppErr> {
         let n = m.rows();
-        if n != m.cols() {
-            Err(MatOppErr::NotSquare)
-        } else {
+        if n == m.cols() {
             let poly_ring = PolynomialStructure::new(self.ring().clone());
             let poly_mat_struct = MatrixStructure::new(poly_ring.clone());
             Ok(poly_mat_struct
@@ -18,6 +16,8 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
                         .neg(poly_mat_struct.diag(&(0..n).map(|_i| poly_ring.var()).collect())),
                 )
                 .unwrap())
+        } else {
+            Err(MatOppErr::NotSquare)
         }
     }
 
@@ -47,7 +47,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
                 debug_assert!(k > 0); //cant be all zero because we are taking SNF of a non-zero matrix
                 let mut char_poly = poly_ring.one();
                 for i in 0..k {
-                    poly_ring.mul_mut(&mut char_poly, s.at(i, i).unwrap())
+                    poly_ring.mul_mut(&mut char_poly, s.at(i, i).unwrap());
                 }
                 Ok(char_poly)
             }

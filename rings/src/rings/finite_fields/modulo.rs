@@ -182,9 +182,7 @@ impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        Modulo {
-            x: (&a.x * &b.x) % N,
-        }
+        Modulo { x: (a.x * b.x) % N }
     }
 }
 
@@ -214,7 +212,7 @@ impl<const N: usize> SemiRingUnitsSignature for ModuloCanonicalStructure<N> {
 
 impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
-        (0..N).map(|n| Modulo::new(n))
+        (0..N).map(Modulo::new)
     }
 }
 

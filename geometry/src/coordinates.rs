@@ -10,6 +10,7 @@ pub struct Vector<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSp
     coordinates: Vec<FS::Set>, //length equal to ambient_space.dimension()
 }
 
+#[allow(clippy::missing_fields_in_debug)]
 impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> std::fmt::Debug
     for Vector<FS, SP>
 {
@@ -63,6 +64,7 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Vec
     }
 
     pub fn construct(ambient_space: SP, mut coordinate_func: impl FnMut(usize) -> FS::Set) -> Self {
+        #[allow(clippy::redundant_closure)]
         let coordinates = (0..ambient_space.borrow().linear_dimension().unwrap())
             .map(|i| coordinate_func(i))
             .collect();

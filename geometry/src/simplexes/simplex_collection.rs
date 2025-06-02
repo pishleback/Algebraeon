@@ -43,16 +43,10 @@ pub trait LabelledSimplexCollection<
     where
         T: 'a,
     {
-        self.labelled_simplexes()
-            .into_iter()
-            .map(|(spx, _)| spx)
-            .collect()
+        self.labelled_simplexes().into_keys().collect()
     }
     fn into_simplexes(self) -> HashSet<Simplex<FS, SP>> {
-        self.into_labelled_simplexes()
-            .into_iter()
-            .map(|(spx, _)| spx)
-            .collect()
+        self.into_labelled_simplexes().into_keys().collect()
     }
 
     fn labelled_simplexes(&self) -> HashMap<&Simplex<FS, SP>, &T>;

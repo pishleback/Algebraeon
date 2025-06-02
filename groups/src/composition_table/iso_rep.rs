@@ -1,5 +1,5 @@
-use super::group::*;
-use super::homomorphism::*;
+use super::group::{FiniteGroupMultiplicationTable, direct_product_structure, examples};
+use super::homomorphism::find_isomorphism;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -23,7 +23,7 @@ pub fn isomorphism_class(group: &FiniteGroupMultiplicationTable) -> IsomorphismC
 impl IsomorphismClass {
     fn check_state(&self) -> Result<(), &'static str> {
         match self {
-            Self::Trivial => {}
+            Self::Trivial | Self::Quaternion => {}
             Self::Cyclic(n) => {
                 if *n == 0 {
                     return Err("C0 is not a group");
@@ -34,9 +34,7 @@ impl IsomorphismClass {
                     return Err("D0 is not a group");
                 }
             }
-            Self::Quaternion => {}
-            Self::Alternating(_n) => {}
-            Self::Symmetric(_n) => {}
+            Self::Symmetric(_n) | Self::Alternating(_n) => {}
             Self::DirectProduct(_factors) => {
                 todo!();
             }
@@ -59,11 +57,8 @@ impl IsomorphismClass {
         }
 
         //cyclic
-        match find_isomorphism(group, &examples::cyclic_group_structure(n)) {
-            Some(_f) => {
-                return Self::Cyclic(n);
-            }
-            None => {}
+        if let Some(_f) = find_isomorphism(group, &examples::cyclic_group_structure(n)) {
+            return Self::Cyclic(n);
         }
 
         //direct products
@@ -78,25 +73,19 @@ impl IsomorphismClass {
                 let prod_group = direct_product_structure(&nsg_group, &quo_group);
                 nsg_group.check_state().unwrap();
                 quo_group.check_state().unwrap();
-                let isom_result = find_isomorphism(&prod_group, &group);
-                match isom_result {
-                    Some(_f) => {
-                        return IsomorphismClass::from_group(&nsg_group)
-                            * IsomorphismClass::from_group(&quo_group);
-                    }
-                    None => {}
+                let isom_result = find_isomorphism(&prod_group, group);
+                if let Some(_f) = isom_result {
+                    return IsomorphismClass::from_group(&nsg_group)
+                        * IsomorphismClass::from_group(&quo_group);
                 }
             }
         }
 
-        debug_assert_eq!(false, group.is_abelian());
+        debug_assert!(!group.is_abelian());
 
         //quaternion
-        match find_isomorphism(group, &examples::quaternion_group_structure()) {
-            Some(_f) => {
-                return Self::Quaternion;
-            }
-            None => {}
+        if let Some(_f) = find_isomorphism(group, &examples::quaternion_group_structure()) {
+            return Self::Quaternion;
         }
 
         //symmetric
@@ -107,11 +96,8 @@ impl IsomorphismClass {
             k_fact *= k;
         }
         if n == k_fact {
-            match find_isomorphism(group, &examples::symmetric_group_structure(k)) {
-                Some(_f) => {
-                    return Self::Symmetric(k);
-                }
-                None => {}
+            if let Some(_f) = find_isomorphism(group, &examples::symmetric_group_structure(k)) {
+                return Self::Symmetric(k);
             }
         }
 
@@ -123,21 +109,15 @@ impl IsomorphismClass {
             half_k_fact *= k;
         }
         if n == half_k_fact {
-            match find_isomorphism(group, &examples::alternating_group_structure(k)) {
-                Some(_f) => {
-                    return Self::Alternating(k);
-                }
-                None => {}
+            if let Some(_f) = find_isomorphism(group, &examples::alternating_group_structure(k)) {
+                return Self::Alternating(k);
             }
         }
 
         //dihedral
         if n % 2 == 0 {
-            match find_isomorphism(group, &examples::dihedral_group_structure(n / 2)) {
-                Some(_f) => {
-                    return Self::Dihedral(n / 2);
-                }
-                None => {}
+            if let Some(_f) = find_isomorphism(group, &examples::dihedral_group_structure(n / 2)) {
+                return Self::Dihedral(n / 2);
             }
         }
 
@@ -176,6 +156,7 @@ impl IsomorphismClass {
         }
     }
 
+    #[allow(clippy::inherent_to_string)]
     pub fn to_string(&self) -> String {
         match self {
             Self::Trivial => "T".to_owned(),
@@ -185,7 +166,7 @@ impl IsomorphismClass {
             Self::Alternating(n) => "A".to_owned() + &n.to_string(),
             Self::Symmetric(n) => "S".to_owned() + &n.to_string(),
             Self::DirectProduct(factors) => {
-                let mut ans = "".to_owned();
+                let mut ans = String::new();
                 let mut first = true;
                 for (factor, power) in factors.iter() {
                     for _i in 0..*power {
@@ -207,17 +188,11 @@ impl std::ops::Mul<IsomorphismClass> for IsomorphismClass {
     type Output = IsomorphismClass;
 
     fn mul(self, other: IsomorphismClass) -> Self::Output {
-        match self {
-            IsomorphismClass::Trivial => {
-                return self;
-            }
-            _ => {}
+        if self == IsomorphismClass::Trivial {
+            return other;
         }
-        match other {
-            IsomorphismClass::Trivial => {
-                return other;
-            }
-            _ => {}
+        if other == IsomorphismClass::Trivial {
+            return other;
         }
 
         let mut factors: BTreeMap<IsomorphismClass, usize> = BTreeMap::new();
@@ -263,6 +238,6 @@ mod isom_class_tests {
                 IsomorphismClass::Cyclic(2),
                 2
             )])))
-        )
+        );
     }
 }

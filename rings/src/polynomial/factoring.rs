@@ -1,7 +1,7 @@
 use super::{Polynomial, polynomial_ring::*};
 use crate::structure::*;
 use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature};
 
 impl<
     RS: UniqueFactorizationDomainSignature + GreatestCommonDivisorSignature + CharZeroRingSignature,
@@ -95,6 +95,7 @@ where
         let mut linear_factors = self.factorizations().new_trivial();
         'seek_linear_factor: while self.degree(&f).unwrap() > 0 {
             let c0 = self.coeff(&f, 0);
+            #[allow(clippy::redundant_else)]
             if self.coeff_ring().is_zero(c0) {
                 //linear factor of x
                 f = self.div(&f, &self.var()).unwrap();
@@ -174,7 +175,7 @@ where
             while f_points.len() < 3 * (max_factor_degree + 1) {
                 //loop terminates because polynomial over integral domain has finitely many roots
                 let x = elem_gen.next().unwrap();
-                let y = self.evaluate(&f, &x);
+                let y = self.evaluate(f, &x);
                 if !self.coeff_ring().is_zero(&y) {
                     f_points.push((x, factor_coeff(&y).unwrap()));
                 }
@@ -213,21 +214,18 @@ where
                     .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
             ) {
                 // println!("{:?}", possible_g_points);
-                match self.interpolate_by_lagrange_basis(&possible_g_points) {
-                    Some(g) => {
-                        if self.degree(&g).unwrap() >= 1 {
-                            //g is a possible proper divisor of f
-                            match self.div(&f, &g) {
-                                Ok(h) => {
-                                    //g really is a proper divisor of f
-                                    return FindFactorResult::Composite(g, h);
-                                }
-                                Err(RingDivisionError::NotDivisible) => {}
-                                Err(RingDivisionError::DivideByZero) => panic!(),
+                if let Some(g) = self.interpolate_by_lagrange_basis(&possible_g_points) {
+                    if self.degree(&g).unwrap() >= 1 {
+                        //g is a possible proper divisor of f
+                        match self.div(f, &g) {
+                            Ok(h) => {
+                                //g really is a proper divisor of f
+                                return FindFactorResult::Composite(g, h);
                             }
+                            Err(RingDivisionError::NotDivisible) => {}
+                            Err(RingDivisionError::DivideByZero) => panic!(),
                         }
                     }
-                    None => {}
                 }
             }
             //f is irreducible
@@ -307,6 +305,7 @@ where
                                 factor_coeff(c)
                             })
                         });
+                        #[allow(clippy::let_and_return)]
                         big_ff
                     },
                 ),
@@ -357,7 +356,7 @@ where
         .into_unit_and_powers();
     let mut fof_unit = prim_unit.apply_map(|c| fof_inclusion.image(c));
     let mut fof_factors = vec![];
-    for (factor, power) in prim_factors.into_iter() {
+    for (factor, power) in prim_factors {
         let fof_factor = factor.apply_map(|c| fof_inclusion.image(c));
         let (fof_factor_unit, fof_factor_prim) = poly_ring.factor_fav_assoc(&fof_factor);
         poly_ring.mul_mut(&mut fof_unit, &fof_factor_unit);
@@ -382,13 +381,11 @@ where
         let f_deg = self.degree(&f).unwrap();
         let max_factor_degree = f_deg / 2;
         for d in 0..max_factor_degree {
-            for mut coeffs in
-                itertools::Itertools::multi_cartesian_product((0..d + 1).into_iter().map(|_d| {
-                    let mut all_elems = vec![self.coeff_ring().zero()];
-                    all_elems.append(&mut self.coeff_ring().all_units());
-                    all_elems
-                }))
-            {
+            for mut coeffs in itertools::Itertools::multi_cartesian_product((0..=d).map(|_d| {
+                let mut all_elems = vec![self.coeff_ring().zero()];
+                all_elems.append(&mut self.coeff_ring().all_units());
+                all_elems
+            })) {
                 coeffs.push(self.coeff_ring().one());
                 let g = Polynomial::from_coeffs(coeffs);
                 match self.div(&f, &g) {
@@ -430,6 +427,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_sets::structure::EqSignature;
+
     use super::*;
     use crate::structure::IntoErgonomic;
 
@@ -456,7 +455,7 @@ mod tests {
             vec![((1 + 2 * x).into_verbose(), Natural::from(1u8))],
         );
         println!("fs1={} fs2={}", fs1, fs2);
-        assert!(int_poly_fs.equal(&fs1, &fs2));
+        assert!(int_poly_fs.equal(&fs1, fs2));
 
         let f = (x.pow(5) + x.pow(4) + x.pow(2) + x + 2).into_verbose();
         assert!(int_poly_fs.equal(

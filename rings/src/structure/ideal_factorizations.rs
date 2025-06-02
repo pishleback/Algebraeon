@@ -57,9 +57,9 @@ impl<
 {
     pub fn new(ideals: IdealsB) -> Self {
         Self {
-            _ring: PhantomData::default(),
-            _ring_borrowed: PhantomData::default(),
-            _ideals: PhantomData::default(),
+            _ring: PhantomData,
+            _ring_borrowed: PhantomData,
+            _ideals: PhantomData,
             ideals,
         }
     }

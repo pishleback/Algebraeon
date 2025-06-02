@@ -8,7 +8,7 @@ pub trait FactoredSignature: SetSignature {
     /// A type used to hold the prime objects.
     type PrimeObject: Clone + Debug;
 
-    /// Same as new_powers but don't validate the input
+    /// Same as `new_powers` but don't validate the input
     fn new_powers_unchecked(&self, factor_powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set;
 
     /// Construct a new factorization object given a list of powers of primes
@@ -41,7 +41,7 @@ pub trait FactoredSignature: SetSignature {
         self.new_powers(vec![(prime, Natural::ONE)])
     }
 
-    /// Same as to_powers but don't validate the input
+    /// Same as `to_powers` but don't validate the input
     fn to_powers_unchecked<'a>(
         &self,
         a: &'a Self::Set,
@@ -53,7 +53,7 @@ pub trait FactoredSignature: SetSignature {
         self.to_powers_unchecked(a)
     }
 
-    /// Same as into_powers but don't validate the input
+    /// Same as `into_powers` but don't validate the input
     fn into_powers_unchecked(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)>;
 
     /// Consume a factorization and return a list of it's primes and their powers
@@ -82,7 +82,7 @@ pub trait FactoredSignature: SetSignature {
         for (p, k) in self.into_powers(a) {
             let k: usize = k.try_into().unwrap();
             for _ in 0..k {
-                factors.push(p.clone())
+                factors.push(p.clone());
             }
         }
         factors
@@ -112,7 +112,7 @@ pub trait FactoredSignature: SetSignature {
         self.is_prime_unchecked(a)
     }
 
-    /// Same as is_prime but don't validate inputs
+    /// Same as `is_prime` but don't validate inputs
     fn is_prime_unchecked(&self, a: &Self::Set) -> bool {
         let mut factor_powers = self.to_powers_unchecked(a).into_iter();
         match factor_powers.next() {
@@ -205,7 +205,7 @@ pub trait FactoredSignature: SetSignature {
             'EQUIV_PRIME_SEARCH: {
                 for (pb, kb) in self.to_powers(b) {
                     if self.prime_object_equivalent(pa, pb) {
-                        if !(ka <= kb) {
+                        if ka > kb {
                             // `b` has the prime factor `pa` of `a` but its multiplicity is too small
                             return false;
                         }
@@ -246,7 +246,7 @@ pub trait FactoredSignature: SetSignature {
     /// Return an iterator over all divisors of a factorization
     fn divisors<'a>(&'a self, a: &'a Self::Set) -> Box<dyn Iterator<Item = Self::Object> + 'a> {
         let factors = self.to_powers(a);
-        if factors.len() == 0 {
+        if factors.is_empty() {
             Box::new(vec![self.object_one()].into_iter())
         } else {
             let mut factor_powers = vec![];
@@ -262,6 +262,7 @@ pub trait FactoredSignature: SetSignature {
                 }
             }
 
+            #[allow(clippy::redundant_closure_for_method_calls)]
             Box::new(
                 itertools::Itertools::multi_cartesian_product(
                     factor_powers.into_iter().map(|p_pows| p_pows.into_iter()),
@@ -292,7 +293,7 @@ pub trait FactoredSignature: SetSignature {
             .into_iter()
             .filter_map(|(p, pk)| {
                 for (q, qk) in self.to_powers(b) {
-                    if self.prime_object_equivalent(&p, q) {
+                    if self.prime_object_equivalent(p, q) {
                         return Some((p.clone(), std::cmp::min(pk, qk).clone()));
                     }
                 }

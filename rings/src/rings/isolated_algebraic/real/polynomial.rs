@@ -55,7 +55,7 @@ impl SquarefreePolyRealRoots {
         }
 
         //check the isolating intervals
-        if self.intervals.len() != 0 {
+        if !self.intervals.is_empty() {
             for i in 0..self.intervals.len() - 1 {
                 let int1 = &self.intervals[i];
                 let int2 = &self.intervals[i + 1];
@@ -64,7 +64,7 @@ impl SquarefreePolyRealRoots {
                         SquarefreePolyRealRootInterval::Rational(a),
                         SquarefreePolyRealRootInterval::Rational(x),
                     ) => {
-                        if !(a < x) {
+                        if a >= x {
                             return Err("interval values should be strictly increasing");
                         }
                     }
@@ -72,10 +72,10 @@ impl SquarefreePolyRealRoots {
                         SquarefreePolyRealRootInterval::Rational(a),
                         SquarefreePolyRealRootInterval::Real(x, y, _),
                     ) => {
-                        if !(a < x) {
+                        if a >= x {
                             return Err("interval values should be strictly increasing");
                         }
-                        if !(x < y) {
+                        if x >= y {
                             return Err("interval values should be strictly increasing");
                         }
                     }
@@ -83,10 +83,10 @@ impl SquarefreePolyRealRoots {
                         SquarefreePolyRealRootInterval::Real(a, b, _),
                         SquarefreePolyRealRootInterval::Rational(x),
                     ) => {
-                        if !(a < b) {
+                        if a >= b {
                             return Err("interval values should be strictly increasing");
                         }
-                        if !(b < x) {
+                        if b >= x {
                             return Err("interval values should be strictly increasing");
                         }
                     }
@@ -94,13 +94,13 @@ impl SquarefreePolyRealRoots {
                         SquarefreePolyRealRootInterval::Real(a, b, _),
                         SquarefreePolyRealRootInterval::Real(x, y, _),
                     ) => {
-                        if !(a < b) {
+                        if a >= b {
                             return Err("interval values should be strictly increasing");
                         }
-                        if !(b <= x) {
+                        if b > x {
                             return Err("interval values should be increasing");
                         }
-                        if !(x < y) {
+                        if x >= y {
                             return Err("interval values should be strictly increasing");
                         }
                     }
@@ -108,7 +108,7 @@ impl SquarefreePolyRealRoots {
             }
         }
 
-        for interval in self.intervals.iter() {
+        for interval in &self.intervals {
             match interval {
                 SquarefreePolyRealRootInterval::Rational(a) => {
                     if evaluate_at_rational(&self.poly_sqfr, a) != Rational::from(0) {
@@ -127,6 +127,7 @@ impl SquarefreePolyRealRoots {
                         return Err("sign of poly should be different at a and at b");
                     }
 
+                    #[allow(clippy::collapsible_else_if)]
                     if *incr {
                         if !((at_a < Rational::from(0)) && (at_b > Rational::from(0))) {
                             return Err("sign of poly should go from neg to pos here");
@@ -240,6 +241,7 @@ impl SquarefreePolyRealRoots {
                     let sign_b = at_b >= Rational::ZERO;
                     // println!("at_a = {}", at_a);
                     // println!("at_b = {}", at_b);
+                    #[allow(clippy::collapsible_else_if)]
                     if deg == 1 {
                         if sign_a != sign_b {
                             return RealAlgebraic::Rational(unique_linear_root(&factor));
@@ -251,8 +253,8 @@ impl SquarefreePolyRealRoots {
                                 poly: factor,
                                 tight_a: a.clone(),
                                 tight_b: b.clone(),
-                                wide_a: wide_a,
-                                wide_b: wide_b,
+                                wide_a,
+                                wide_b,
                                 dir: false,
                             });
                         } else if !sign_a && sign_b {
@@ -261,8 +263,8 @@ impl SquarefreePolyRealRoots {
                                 poly: factor,
                                 tight_a: a.clone(),
                                 tight_b: b.clone(),
-                                wide_a: wide_a,
-                                wide_b: wide_b,
+                                wide_a,
+                                wide_b,
                                 dir: true,
                             });
                         }
@@ -281,7 +283,7 @@ impl SquarefreePolyRealRoots {
         if deg == 0 {
             vec![]
         } else if deg == 1 {
-            if self.intervals.len() == 0 {
+            if self.intervals.is_empty() {
                 vec![]
             } else if self.intervals.len() == 1 {
                 match self.intervals.into_iter().next().unwrap() {
@@ -539,6 +541,7 @@ pub fn identify_real_root(
     //the root we are after is exactly one of the roots of the irreducible polynomials in polys
     //the task now is to refine alg1 and alg2 until the root is identified
 
+    #[allow(clippy::redundant_closure_for_method_calls)]
     let mut root_groups: Vec<_> = polys
         .into_iter()
         .map(|p| p.all_real_roots_squarefree())
@@ -555,15 +558,12 @@ pub fn identify_real_root(
     while possible.len() > 1 {
         let (ans_tight_a, ans_tight_b) = interval_gen.next().unwrap();
         //filter out roots which dont overlap with the known range for the sum root
-        possible = possible
-            .into_iter()
-            .filter(|(i, j)| match &root_groups[*i].intervals[*j] {
-                SquarefreePolyRealRootInterval::Rational(x) => &ans_tight_a < x && x < &ans_tight_b,
-                SquarefreePolyRealRootInterval::Real(ta, tb, _dir) => {
-                    ta < &ans_tight_b && &ans_tight_a < tb
-                }
-            })
-            .collect();
+        possible.retain(|(i, j)| match &root_groups[*i].intervals[*j] {
+            SquarefreePolyRealRootInterval::Rational(x) => &ans_tight_a < x && x < &ans_tight_b,
+            SquarefreePolyRealRootInterval::Real(ta, tb, _dir) => {
+                ta < &ans_tight_b && &ans_tight_a < tb
+            }
+        });
 
         for (i, j) in &possible {
             root_groups[*i].refine(*j);
@@ -616,18 +616,20 @@ impl Polynomial<Integer> {
 
         let mut l = vec![(Natural::from(0u8), 0, self.clone())];
         let mut isol = vec![];
-        while l.len() != 0 {
+        #[allow(clippy::manual_while_let_some)]
+        while !l.is_empty() {
             let (c, k, mut q) = l.pop().unwrap();
             if q.evaluate(&Integer::from(0)) == Integer::from(0) {
                 //q = q/x
                 q = Self::div(&q, &Self::var()).unwrap();
-                isol.push((c.clone(), k.clone(), false)); //rational root
+                isol.push((c.clone(), k, false)); //rational root
             }
             let v = Self::compose(
                 &q.reversed(),
                 &Self::from_coeffs(vec![Integer::from(1), Integer::from(1)]),
             )
             .sign_variations();
+            #[allow(clippy::comparison_chain)]
             if v == 1 {
                 isol.push((c, k, true)); //root
             } else if v > 1 {
@@ -667,11 +669,8 @@ impl Polynomial<Integer> {
             self.degree().unwrap()
         );
 
-        match (opt_a, opt_b) {
-            (Some(a), Some(b)) => {
-                assert!(a < b);
-            }
-            _ => {}
+        if let (Some(a), Some(b)) = (opt_a, opt_b) {
+            assert!(a < b);
         }
 
         let d = self.degree().unwrap();
@@ -727,22 +726,20 @@ impl Polynomial<Integer> {
 
                 debug_assert!(m > Rational::ZERO);
 
-                return match opt_a {
-                    Some(a_val) => match opt_b {
-                        Some(_b_val) => panic!(),
-                        None => {
-                            self.real_roots_squarefree(Some(a_val), Some(&m), include_a, include_b)
-                        }
-                    },
-                    None => match opt_b {
-                        Some(b_val) => {
-                            self.real_roots_squarefree(Some(&-m), Some(b_val), include_a, include_b)
-                        }
-                        None => {
-                            let neg_m = -m.clone();
-                            self.real_roots_squarefree(Some(&neg_m), Some(&m), include_a, include_b)
-                        }
-                    },
+                return match (opt_a, opt_b) {
+                    (None, None) => {
+                        let neg_m = -m.clone();
+                        self.real_roots_squarefree(Some(&neg_m), Some(&m), include_a, include_b)
+                    }
+                    (None, Some(b_val)) => {
+                        self.real_roots_squarefree(Some(&-m), Some(b_val), include_a, include_b)
+                    }
+                    (Some(a_val), None) => {
+                        self.real_roots_squarefree(Some(a_val), Some(&m), include_a, include_b)
+                    }
+                    (Some(_a_val), Some(_b_val)) => {
+                        panic!()
+                    }
                 };
             }
             let (a, b) = (opt_a.unwrap(), opt_b.unwrap());
@@ -921,7 +918,7 @@ pub fn nth_root(x: &RealAlgebraic, n: usize) -> Result<RealAlgebraic, ()> {
     } else if n == 1 {
         Ok(x.clone())
     } else {
-        match x.cmp(&mut RealAlgebraic::zero()) {
+        match x.cmp(&RealAlgebraic::zero()) {
             std::cmp::Ordering::Less => Err(()),
             std::cmp::Ordering::Equal => Ok(RealAlgebraic::zero()),
             std::cmp::Ordering::Greater => {
@@ -938,7 +935,7 @@ pub fn nth_root(x: &RealAlgebraic, n: usize) -> Result<RealAlgebraic, ()> {
                             coeffs.push(Integer::ZERO);
                         }
                     }
-                    coeffs.push(c)
+                    coeffs.push(c);
                 }
                 let nthroot_poly = Polynomial::from_coeffs(coeffs).primitive_squarefree_part();
                 // println!("nthroot_poly = {:?}", nthroot_poly);

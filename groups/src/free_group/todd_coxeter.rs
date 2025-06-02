@@ -4,7 +4,7 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{permutation::*, structure::Group};
+use crate::{permutation::Permutation, structure::Group};
 
 #[derive(Clone, Copy)]
 enum Neighbor {
@@ -31,7 +31,7 @@ impl SchreierGraph {
         while self.idents[c] != c {
             c = self.idents[c];
         }
-        return c;
+        c
     }
 
     fn new_coset(&mut self) -> usize {
@@ -42,7 +42,7 @@ impl SchreierGraph {
             new_nbs.push(Neighbor::None());
         }
         self.neighbors.push(new_nbs);
-        return c;
+        c
     }
 
     fn unify(&mut self, c1: usize, c2: usize) {
@@ -74,24 +74,23 @@ impl SchreierGraph {
 
     fn follow(&mut self, mut c: usize, d: usize) -> usize {
         c = self.find_coset(c);
+        #[allow(clippy::match_on_vec_items)]
         match self.neighbors[c][d] {
             Neighbor::None() => {
                 let nc = self.new_coset();
                 self.neighbors[c][d] = Neighbor::Coset(nc);
-                return nc;
+                nc
             }
-            Neighbor::Coset(nc) => {
-                return self.find_coset(nc);
-            }
+            Neighbor::Coset(nc) => self.find_coset(nc),
         }
     }
 
-    fn follow_path(&mut self, mut c: usize, ds: &Vec<usize>) -> usize {
+    fn follow_path(&mut self, mut c: usize, ds: &[usize]) -> usize {
         c = self.find_coset(c);
         for d in ds.iter().rev() {
             c = self.follow(c, *d);
         }
-        return c;
+        c
     }
 }
 
@@ -142,9 +141,10 @@ fn enumerate_cosets_impl(
                 scg.unify(b, c);
             }
         }
-        to_visit += 1
+        to_visit += 1;
     }
 
+    #[allow(clippy::items_after_statements)]
     enum CosetIndexEntry {
         None,
         Index(usize),
@@ -162,6 +162,7 @@ fn enumerate_cosets_impl(
     }
 
     let mut perms = vec![];
+    #[allow(clippy::match_on_vec_items)]
     for g in 0..num_gens {
         perms.push(
             Permutation::new(
@@ -182,7 +183,7 @@ fn enumerate_cosets_impl(
         );
     }
 
-    return (cosets.len(), perms);
+    (cosets.len(), perms)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -222,11 +223,7 @@ impl Mul<FinitelyGeneratedGroupElement> for FinitelyGeneratedGroupElement {
     type Output = FinitelyGeneratedGroupElement;
     fn mul(self, other: FinitelyGeneratedGroupElement) -> Self::Output {
         Self {
-            product: self
-                .product
-                .into_iter()
-                .chain(other.product.into_iter())
-                .collect(),
+            product: self.product.into_iter().chain(other.product).collect(),
         }
     }
 }
@@ -264,6 +261,7 @@ pub struct FinitelyGeneratedGroupPresentation {
 
 impl FinitelyGeneratedGroupPresentation {
     /// Create a new empty group presentation.
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             generators: HashMap::new(),
@@ -277,10 +275,9 @@ impl FinitelyGeneratedGroupPresentation {
         let ident = COUNTER.fetch_add(1, Ordering::Relaxed);
         let idx = self.generators.len();
         self.generators.insert(ident, idx);
-        let g = FinitelyGeneratedGroupElement {
+        FinitelyGeneratedGroupElement {
             product: vec![ident as isize],
-        };
-        g
+        }
     }
 
     fn translate_generator_expression(&self, expr: FinitelyGeneratedGroupElement) -> Vec<usize> {
@@ -304,7 +301,7 @@ the list of generators for this finitely generated group"
                     Some(index) => {
                         let mut val = 2 * index;
                         if sign {
-                            val += 1
+                            val += 1;
                         }
                         val
                     }
@@ -348,6 +345,7 @@ the list of generators for this finitely generated group"
     ) -> super::super::composition_table::group::FiniteGroupMultiplicationTable {
         let num_gens = self.generators.len();
         let (n, gen_perms) = self.enumerate_elements();
+        #[allow(clippy::redundant_closure_for_method_calls)]
         let inv_gen_perms = gen_perms
             .iter()
             .map(|perm| perm.inverse_ref())
@@ -361,10 +359,11 @@ the list of generators for this finitely generated group"
 
         let mut boundary = vec![0];
         let mut new_boundary = vec![];
-        while boundary.len() > 0 {
+        while !boundary.is_empty() {
             for b_idx in boundary {
                 let (b_done, b_path) = paths[b_idx].clone();
                 debug_assert!(b_done);
+                #[allow(clippy::needless_range_loop)]
                 for g in 0..num_gens {
                     let c = gen_perms[g].call(b_idx);
                     if !paths[c].0 {
@@ -410,10 +409,10 @@ the list of generators for this finitely generated group"
                     (0..n)
                         .map(|y| {
                             let mut z = 0;
-                            for g in paths[x].iter() {
+                            for g in &paths[x] {
                                 z = gen_perms[*g].call(z);
                             }
-                            for g in paths[y].iter() {
+                            for g in &paths[y] {
                                 z = gen_perms[*g].call(z);
                             }
                             z
@@ -531,6 +530,7 @@ mod tests {
         assert_eq!(n, 1);
     }
 
+    #[allow(clippy::many_single_char_names)]
     #[test]
     fn test_ergonomic_todd_coxeter() {
         let mut g = FinitelyGeneratedGroupPresentation::new();

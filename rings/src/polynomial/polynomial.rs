@@ -21,6 +21,7 @@ impl<Set> Polynomial<Set> {
     }
 
     pub fn from_coeffs(coeffs: Vec<impl Into<Set>>) -> Self {
+        #[allow(clippy::redundant_closure_for_method_calls)]
         Self {
             coeffs: coeffs.into_iter().map(|x| x.into()).collect(),
         }

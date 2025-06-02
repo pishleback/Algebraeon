@@ -15,7 +15,7 @@ impl Partition {
         let mut present = HashMap::new();
         let n = self.lookup.len();
         for (idx, part) in self.partition.iter().enumerate() {
-            if part.len() == 0 {
+            if part.is_empty() {
                 return Err("Partition contains an empty part");
             }
             for &x in part {
@@ -54,13 +54,14 @@ impl Partition {
         for x in 0..n {
             t_lookup.push(f(x));
         }
-        let mut t_partition = IndexMap::new();
+        let mut t_partition: IndexMap<_, Vec<usize>> = IndexMap::new();
+        #[allow(clippy::needless_range_loop)]
         for x in 0..n {
             let t = &t_lookup[x];
-            if !t_partition.contains_key(&t) {
-                t_partition.insert(t, vec![x]);
+            if t_partition.contains_key(&t) {
+                t_partition.get_mut(&t).unwrap().push(x);
             } else {
-                t_partition.get_mut(&t).unwrap().push(x)
+                t_partition.insert(t, vec![x]);
             }
         }
 
@@ -69,7 +70,7 @@ impl Partition {
             .collect();
         let partition = t_partition
             .iter()
-            .map(|(_t, part)| part.iter().cloned().collect())
+            .map(|(_t, part)| part.iter().copied().collect())
             .collect();
 
         let partition = Partition::new_unchecked(partition, lookup);
@@ -128,6 +129,7 @@ pub struct LexicographicPartitionsNumPartsInRange {
 }
 
 impl LexicographicPartitionsNumPartsInRange {
+    #[allow(clippy::unnecessary_wraps)]
     #[cfg(debug_assertions)]
     fn check(&self) -> Result<(), ()> {
         // check invariants
@@ -135,16 +137,16 @@ impl LexicographicPartitionsNumPartsInRange {
             assert_eq!(self.elements.len(), self.n);
             assert_eq!(self.elements[0].x, 0);
             assert_eq!(self.elements[0].cum_x, 0);
-            assert_eq!(self.elements[0].pivot, true);
+            assert!(self.elements[0].pivot);
             let mut cum_max = 0;
             for i in 1..self.n {
                 if self.elements[i].x <= cum_max {
                     assert_eq!(self.elements[i].cum_x, cum_max);
-                    assert_eq!(self.elements[i].pivot, false);
+                    assert!(!self.elements[i].pivot);
                 } else if self.elements[i].x == cum_max + 1 {
                     cum_max += 1;
                     assert_eq!(self.elements[i].cum_x, cum_max);
-                    assert_eq!(self.elements[i].pivot, true);
+                    assert!(self.elements[i].pivot);
                 } else {
                     panic!();
                 }
@@ -163,7 +165,7 @@ impl LexicographicPartitionsNumPartsInRange {
                 x: 0,
                 cum_x: 0,
                 pivot: i == 0,
-            })
+            });
         }
         let mut s = Self {
             n,
@@ -219,6 +221,7 @@ impl Iterator for LexicographicPartitionsNumPartsInRange {
                         let max = self.elements[i].cum_x;
                         let x = &mut self.elements[i].x;
                         if *x + 1 < self.max_x {
+                            #[allow(clippy::comparison_chain)]
                             if *x < max {
                                 *x += 1;
                                 self.reset_tail(i);
@@ -261,20 +264,17 @@ pub fn set_partitions_range(
 }
 
 pub fn set_compositions_eq(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
-    (0..x)
-        .permutations(x)
-        .map(move |perm| {
-            set_partitions_eq(n, x)
-                .into_iter()
-                .map(move |partition| partition.into_iter().map(|i| perm[i]).collect())
-        })
-        .flatten()
+    (0..x).permutations(x).flat_map(move |perm| {
+        set_partitions_eq(n, x)
+            .map(move |partition| partition.into_iter().map(|i| perm[i]).collect())
+    })
 }
 
 #[cfg(test)]
 mod partition_tests {
     use super::*;
 
+    #[allow(clippy::assertions_on_constants)]
     #[test]
     fn partition_check_bad_state() {
         //not a covering set
@@ -285,9 +285,8 @@ mod partition_tests {
             ],
             lookup: vec![0, 0, 0, 1, 1, 1],
         };
-        match p.check_state() {
-            Ok(()) => assert!(false),
-            Err(_) => {}
+        if let Ok(()) = p.check_state() {
+            assert!(false);
         }
 
         //not disjoint
@@ -298,9 +297,8 @@ mod partition_tests {
             ],
             lookup: vec![0, 0, 0, 0, 1, 1],
         };
-        match p.check_state() {
-            Ok(()) => assert!(false),
-            Err(_) => {}
+        if let Ok(()) = p.check_state() {
+            assert!(false);
         }
 
         //lookup values too big
@@ -311,9 +309,8 @@ mod partition_tests {
             ],
             lookup: vec![0, 0, 0, 1, 1, 2],
         };
-        match p.check_state() {
-            Ok(()) => assert!(false),
-            Err(_) => {}
+        if let Ok(()) = p.check_state() {
+            assert!(false);
         }
 
         //incorrect lookup values
@@ -324,9 +321,8 @@ mod partition_tests {
             ],
             lookup: vec![0, 0, 1, 1, 1, 1],
         };
-        match p.check_state() {
-            Ok(()) => assert!(false),
-            Err(_) => {}
+        if let Ok(()) = p.check_state() {
+            assert!(false);
         }
     }
 
@@ -338,6 +334,7 @@ mod partition_tests {
         assert_eq!(p.num_classes(), 2);
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn generate_set_partitions() {
         assert_eq!(

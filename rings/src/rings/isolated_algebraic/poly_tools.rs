@@ -77,7 +77,7 @@ pub fn root_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomia
 }
 
 pub fn evaluate_at_rational(poly: &Polynomial<Integer>, val: &Rational) -> Rational {
-    poly.apply_map(|x| Rational::from(x)).evaluate(&val)
+    poly.apply_map(|x| Rational::from(x)).evaluate(val)
 }
 
 #[cfg(test)]

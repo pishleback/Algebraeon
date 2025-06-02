@@ -40,12 +40,10 @@ mod balancable_pairs {
         /// If this is the case then the balancing value is called a critical value for $f$.
         /// If $\alpha \in \mathbb{Q}_p$ is such that $f(\alpha) = 0$ then $v_p(\alpha)$ is a critical value for $f$.
         pub fn is_critical(&self) -> bool {
-            let min = (0..(self.n + 1))
+            let min = (0..=self.n)
                 .filter_map(|k| match padic_int_valuation(&self.p, self.f.coeff(k)) {
                     Valuation::Infinity => None,
-                    Valuation::Finite(vfk) => {
-                        Some(Integer::from(vfk) + Integer::from(k) * &self.bv)
-                    }
+                    Valuation::Finite(vfk) => Some(vfk + Integer::from(k) * &self.bv),
                 })
                 .min()
                 .unwrap();
@@ -72,7 +70,7 @@ mod balancable_pairs {
             debug_assert!(self.is_critical());
             let cmbv = self.crossmul_balancing_value();
             Polynomial::from_coeffs(
-                (0..(self.n + 1))
+                (0..=self.n)
                     .map(|k| {
                         let p_pow = self.balancing_value() * Integer::from(k) - &cmbv;
                         // compute f_k*p^p_pow
@@ -96,20 +94,21 @@ mod balancable_pairs {
     impl Polynomial<Integer> {
         pub fn balancable_pairs<'a>(&'a self, p: &Natural) -> Vec<BalancablePair<'a>> {
             assert!(!self.is_zero());
-            debug_assert!(is_prime(&p));
+            debug_assert!(is_prime(p));
             let mut bps = vec![];
             let n = self.degree().unwrap();
-            let coeff_valuations = (0..(n + 1))
+            let coeff_valuations = (0..=n)
                 .map(|k| padic_int_valuation(p, self.coeff(k)))
                 .collect::<Vec<_>>();
-            for i in 0..(n + 1) {
-                for j in (i + 1)..(n + 1) {
+            for i in 0..=n {
+                for j in (i + 1)..=n {
+                    #[allow(clippy::single_match_else)]
                     match (&coeff_valuations[i], &coeff_valuations[j]) {
                         (Valuation::Finite(vfi), Valuation::Finite(vfj)) => {
                             match Integer::div(&(vfi - vfj), &Integer::from(j - i)) {
                                 Ok(bv) => bps.push(BalancablePair {
                                     p: p.clone(),
-                                    f: &self,
+                                    f: self,
                                     n,
                                     i,
                                     j,
@@ -320,6 +319,7 @@ fn isolatebf0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
         let mut i = Natural::ONE;
         let max_i = p.nat_pow(&(&two_alpha + Natural::ONE));
         while i < max_i {
+            #[allow(clippy::collapsible_if)]
             if &i % p != Natural::ZERO {
                 if padic_int_valuation(p, f.evaluate(&Integer::from(&i)))
                     > Valuation::Finite(Integer::from(&two_alpha))
@@ -329,7 +329,7 @@ fn isolatebf0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
                         padic_int_valuation(p, &int_i - alt_i)
                             > Valuation::Finite(Integer::from(&alpha))
                     }) {
-                        roots.push(int_i)
+                        roots.push(int_i);
                     }
                 }
             }
@@ -381,14 +381,14 @@ fn isorefine(
     debug_assert!(f.is_squarefree());
     debug_assert!(is_prime(p));
     debug_assert_eq!(&f.clone().derivative(), df);
-    let p_tothe_beta = p.nat_pow(&beta);
+    let p_tothe_beta = p.nat_pow(beta);
     let vdfi = padic_int_valuation(
         p,
         PolynomialStructure::new(QuotientStructure::new_ring(
             Integer::structure(),
             Integer::from(&p_tothe_beta),
         ))
-        .evaluate(&df, &Integer::from(i)),
+        .evaluate(df, &Integer::from(i)),
     );
     if vdfi < Valuation::Finite(Integer::from(beta)) {
         return isorefine1(p, f, alpha, i, beta);
@@ -424,7 +424,7 @@ fn isorefine1(
     debug_assert!(f.is_squarefree());
     debug_assert!(is_prime(p));
     let val_f_at_i = padic_int_valuation(p, f.evaluate(&Integer::from(i)));
-    if !(Valuation::Finite(Integer::from(beta)) <= val_f_at_i) {
+    if Valuation::Finite(Integer::from(beta)) > val_f_at_i {
         return vec![];
     }
     if Valuation::Finite(Integer::from(Natural::TWO * beta) - Integer::TWO) < val_f_at_i {
@@ -443,7 +443,7 @@ fn isorefine1(
                 p,
                 f,
                 alpha,
-                &(i + &k * p.nat_pow(&beta)),
+                &(i + &k * p.nat_pow(beta)),
                 &beta_plus_one,
             ));
             k += Natural::ONE;
@@ -471,17 +471,12 @@ fn refine0(
             .evaluate(r.center());
 
         do_hensel_lift = {
-            match do_hensel_lift {
-                true => true,
-                false => {
-                    let vfa = padic_rat_valuation(p, fa.clone());
-                    let vdfa = padic_rat_valuation(p, dfa.clone());
-                    vfa > match vdfa {
-                        Valuation::Infinity => Valuation::Infinity,
-                        Valuation::Finite(vdfa_finite) => {
-                            Valuation::Finite(vdfa_finite * Integer::TWO)
-                        }
-                    }
+            do_hensel_lift || {
+                let vfa = padic_rat_valuation(p, fa.clone());
+                let vdfa = padic_rat_valuation(p, dfa.clone());
+                vfa > match vdfa {
+                    Valuation::Infinity => Valuation::Infinity,
+                    Valuation::Finite(vdfa_finite) => Valuation::Finite(vdfa_finite * Integer::TWO),
                 }
             }
         };
@@ -513,7 +508,7 @@ fn refine0_impl(
     debug_assert!(r.ndigits() >= &Integer::ZERO);
     let PAdicRationalBall { a: c, v: beta } = &r;
     let vfc = padic_rat_valuation(p, f.apply_map(|coeff| Rational::from(coeff)).evaluate(c));
-    if !(Valuation::Finite(beta.clone()) <= vfc) {
+    if Valuation::Finite(beta.clone()) > vfc {
         return None;
     }
     if target_beta < beta && Valuation::Finite(Integer::TWO * target_beta - Integer::TWO) < vfc {
@@ -523,19 +518,16 @@ fn refine0_impl(
     let mut k = Natural::ZERO;
     while &k < p {
         // k = 0, ..., p-1
-        match refine0_impl(
+        if let Some(refined_r) = refine0_impl(
             p,
             f,
             PAdicRationalBall {
-                a: c + Rational::from(&k) * Rational::from(p).int_pow(&beta).unwrap(),
+                a: c + Rational::from(&k) * Rational::from(p).int_pow(beta).unwrap(),
                 v: beta_plus_one.clone(),
             },
             target_beta,
         ) {
-            Some(refined_r) => {
-                return Some(refined_r);
-            }
-            None => {}
+            return Some(refined_r);
         }
         k += Natural::ONE;
     }
@@ -569,8 +561,8 @@ pub fn isolate(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
             isolate0(p, &critical_balanced_pair.normalization())
         {
             roots.push(PAdicRationalBall {
-                a: Rational::from(p).int_pow(kappa).unwrap() * Rational::from(c),
-                v: Integer::from(beta) + kappa,
+                a: Rational::from(p).int_pow(kappa).unwrap() * c,
+                v: beta + kappa,
             });
         }
     }
@@ -588,10 +580,8 @@ pub fn refine(
     let vd = padic_rat_valuation(p, d.clone()).unwrap_int(); // d != 0 since it should come from a finite shift of something of valuation 0
     let bp = (|| {
         for bp in f.balancable_pairs(p) {
-            if bp.is_critical() {
-                if vd == bp.balancing_value().clone() {
-                    return bp;
-                }
+            if bp.is_critical() && vd == bp.balancing_value().clone() {
+                return bp;
             }
         }
         unreachable!()

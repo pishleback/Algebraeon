@@ -8,7 +8,7 @@ pub trait Signature: Clone + Debug + PartialEq + Eq {}
 pub trait SetSignature: Signature {
     type Set: Clone + Debug;
 
-    /// Some instances of Self::Set may not be valid to represent elements of this set.
+    /// Some instances of `Self::Set` may not be valid to represent elements of this set.
     /// Return `true` if `x` is a valid element and `false` if not.
     fn is_element(&self, x: &Self::Set) -> bool;
 }
@@ -88,7 +88,7 @@ mod tests {
         let a = A { x: 3 };
         let b = A { x: 4 };
         let v = A::structure().equal(&a, &b);
-        assert_eq!(v, false);
+        assert!(!v);
         println!("{}", A::structure().to_string(&a));
     }
 

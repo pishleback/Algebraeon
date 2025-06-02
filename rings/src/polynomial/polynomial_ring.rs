@@ -120,6 +120,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB>
 
     So a(x) * b(x) can be found with 3 multiplications
     */
+    #[allow(clippy::redundant_closure_for_method_calls)]
     fn mul_karatsuba<'a, C: Borrow<RS::Set>>(
         &self,
         a: &'a Polynomial<C>,
@@ -202,7 +203,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
         Polynomial::from_coeffs(
             a.coeffs()
                 .into_iter()
-                .map(|c| self.coeff_ring().neg(&c))
+                .map(|c| self.coeff_ring().neg(c))
                 .collect(),
         )
     }
@@ -346,13 +347,13 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 //a[i+n-1] = q[i] * b[n-1]
                 match self
                     .coeff_ring()
-                    .div(self.coeff(&a, i + n - 1), &self.coeff(b, n - 1))
+                    .div(self.coeff(&a, i + n - 1), self.coeff(b, n - 1))
                 {
                     Ok(qc) => {
                         //a -= qc*x^i*b
                         self.add_mut(
                             &mut a,
-                            &self.neg(&self.mul_var_pow(&self.mul_scalar(&b, &qc), i)),
+                            &self.neg(&self.mul_var_pow(&self.mul_scalar(b, &qc), i)),
                         );
                         q_coeffs[i] = qc;
                     }
@@ -371,9 +372,9 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
         a: &Polynomial<RS::Set>,
         b: &Polynomial<RS::Set>,
     ) -> Result<Polynomial<RS::Set>, RingDivisionError> {
-        match self.try_quorem(&a, &b) {
+        match self.try_quorem(a, b) {
             Ok((q, r)) => {
-                debug_assert!(self.equal(&self.add(&self.mul(&q, &b), &r), &a));
+                debug_assert!(self.equal(&self.add(&self.mul(&q, b), &r), a));
                 if self.is_zero(&r) {
                     Ok(q)
                 } else {
@@ -404,13 +405,14 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 &mut a,
                 &Polynomial::constant(
                     self.coeff_ring()
-                        .nat_pow(&self.coeff(b, n - 1), &Natural::from(m - n + 1)),
+                        .nat_pow(self.coeff(b, n - 1), &Natural::from(m - n + 1)),
                 ),
             );
 
-            match self.try_quorem(&a, b) {
-                Ok((_q, r)) => Some(Ok(r)),
-                Err(_) => panic!(),
+            if let Ok((_q, r)) = self.try_quorem(&a, b) {
+                Some(Ok(r))
+            } else {
+                panic!();
             }
         }
     }
@@ -444,6 +446,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 let mut ssres = vec![self.coeff_ring().one(), gamma.clone()];
                 gamma = self.coeff_ring().neg(&gamma);
                 loop {
+                    #[allow(clippy::single_match_else)]
                     match self.degree(&r) {
                         Some(r_deg) => {
                             prs.push(r.clone());
@@ -642,7 +645,7 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> PolynomialS
         } else {
             let g = self.coeff_ring().gcd_list(p.coeffs.iter().collect());
             for i in 0..p.coeffs.len() {
-                p.coeffs[i] = self.coeff_ring().div(&p.coeffs[i], &g).unwrap()
+                p.coeffs[i] = self.coeff_ring().div(&p.coeffs[i], &g).unwrap();
             }
             Some((g, p))
         }
@@ -656,10 +659,7 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> PolynomialS
     }
 
     pub fn primitive_part(&self, p: Polynomial<RS::Set>) -> Option<Polynomial<RS::Set>> {
-        match self.factor_primitive(p) {
-            Some((_unit, prim)) => Some(prim),
-            None => None,
-        }
+        self.factor_primitive(p).map(|(_unit, prim)| prim)
     }
 
     pub fn gcd_by_primitive_subresultant(
@@ -703,6 +703,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> BezoutDomainSignature
 impl<RS: GreatestCommonDivisorSignature + CharZeroRingSignature, RSB: BorrowedStructure<RS>>
     PolynomialStructure<RS, RSB>
 {
+    #[allow(clippy::let_and_return)]
     pub fn primitive_squarefree_part(&self, f: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         if self.is_zero(&f) {
             f
@@ -723,7 +724,7 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStru
         &self,
         a: &Polynomial<RS::Set>,
     ) -> (Polynomial<RS::Set>, Polynomial<RS::Set>) {
-        if self.is_zero(&a) {
+        if self.is_zero(a) {
             (self.one(), self.zero())
         } else {
             let mut a = a.clone();
@@ -731,7 +732,7 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStru
                 .coeff_ring()
                 .factor_fav_assoc(&a.coeffs[self.num_coeffs(&a) - 1]);
             for i in 0..a.coeffs.len() {
-                a.coeffs[i] = self.coeff_ring().div(&a.coeffs[i], &u).unwrap()
+                a.coeffs[i] = self.coeff_ring().div(&a.coeffs[i], &u).unwrap();
             }
             (Polynomial::constant(u), a.clone())
         }
@@ -753,7 +754,7 @@ impl<RS: IntegralDomainSignature + FiniteUnitsSignature, RSB: BorrowedStructure<
         self.coeff_ring()
             .all_units()
             .into_iter()
-            .map(|u| Polynomial::constant(u))
+            .map(Polynomial::constant)
             .collect()
     }
 }
@@ -907,10 +908,9 @@ impl<RS: ReducedHermiteAlgorithmSignature, RSB: BorrowedStructure<RS>>
         //     *output_vec.at_mut(r, 0).unwrap() = y.clone();
         // }
 
-        match matrix_structure.col_solve(mat, &points.iter().map(|(_x, y)| y.clone()).collect()) {
-            Some(coeff_vec) => Some(Polynomial::from_coeffs(coeff_vec)),
-            None => None,
-        }
+        matrix_structure
+            .col_solve(mat, &points.iter().map(|(_x, y)| y.clone()).collect())
+            .map(Polynomial::from_coeffs)
     }
 }
 
@@ -929,7 +929,7 @@ pub fn factor_primitive_fof<
     let div = fof_inclusion.domain().lcm_list(
         p.coeffs()
             .into_iter()
-            .map(|c| fof_inclusion.denominator(&c))
+            .map(|c| fof_inclusion.denominator(c))
             .collect(),
     );
 
@@ -1147,6 +1147,7 @@ where
     }
 }
 
+#[allow(clippy::single_match, clippy::single_match_else, clippy::erasing_op)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1211,7 +1212,7 @@ mod tests {
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
-                assert_eq!(a, b * c.into_ergonomic())
+                assert_eq!(a, b * c.into_ergonomic());
             }
             Err(_) => panic!(),
         }
@@ -1244,7 +1245,7 @@ mod tests {
         let b = (x - x) + 5;
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
-                assert_eq!(c, Polynomial::zero())
+                assert_eq!(c, Polynomial::zero());
             }
             Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
@@ -1254,7 +1255,7 @@ mod tests {
         let b = (x - x) + 1;
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
-                assert_eq!(c.into_ergonomic(), a)
+                assert_eq!(c.into_ergonomic(), a);
             }
             Err(RingDivisionError::DivideByZero) => panic!(),
             Err(_) => panic!(),
@@ -1270,7 +1271,7 @@ mod tests {
         match Polynomial::div(a.ref_set(), b.ref_set()) {
             Ok(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
-                assert_eq!(a, b * c.into_ergonomic())
+                assert_eq!(a, b * c.into_ergonomic());
             }
             Err(e) => panic!("{:?}", e),
         }
@@ -1282,14 +1283,14 @@ mod tests {
 
         let a = 1 + x + 3 * x.pow(2) + x.pow(3) + 7 * x.pow(4) + x.pow(5);
         let b = 1 + x + 3 * x.pow(2) + 2 * x.pow(3);
-        let (q, r) = Polynomial::quorem(&a.ref_set(), &b.ref_set()).unwrap();
+        let (q, r) = Polynomial::quorem(a.ref_set(), b.ref_set()).unwrap();
         let (q, r) = (q.into_ergonomic(), r.into_ergonomic());
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
 
         let a = 3 * x;
         let b = 2 * x;
-        let (q, r) = Polynomial::quorem(&a.ref_set(), &b.ref_set()).unwrap();
+        let (q, r) = Polynomial::quorem(a.ref_set(), b.ref_set()).unwrap();
         let (q, r) = (q.into_ergonomic(), r.into_ergonomic());
         println!("{:?} = {:?} * {:?} + {:?}", a, b, q, r);
         assert_eq!(a, &b * &q + &r);
@@ -1303,8 +1304,8 @@ mod tests {
         let g = Polynomial::gcd(x.ref_set(), y.ref_set());
 
         println!("gcd({:?} , {:?}) = {:?}", x, y, g);
-        Polynomial::div(&g, &b.ref_set()).unwrap();
-        Polynomial::div(&b.ref_set(), &g).unwrap();
+        Polynomial::div(&g, b.ref_set()).unwrap();
+        Polynomial::div(b.ref_set(), &g).unwrap();
     }
 
     #[test]
@@ -1337,8 +1338,7 @@ mod tests {
             println!("f = {}", f.to_string());
             println!("g = {}", g.to_string());
 
-            if let None = Polynomial::pseudorem(&f, &g) {
-            } else {
+            if Polynomial::pseudorem(&f, &g).is_some() {
                 assert!(false);
             }
         }
@@ -1381,7 +1381,7 @@ mod tests {
 
     #[test]
     fn test_interpolate_by_lagrange_basis() {
-        for points in vec![
+        for points in [
             vec![
                 (Rational::from(-2), Rational::from(-5)),
                 (Rational::from(7), Rational::from(4)),
@@ -1399,37 +1399,35 @@ mod tests {
         ] {
             let f = Polynomial::interpolate_by_lagrange_basis(&points).unwrap();
             for (inp, out) in &points {
-                assert_eq!(&f.evaluate(&inp), out);
+                assert_eq!(&f.evaluate(inp), out);
             }
         }
 
         //f(x)=2x
-        match Polynomial::interpolate_by_lagrange_basis(&vec![
+        if let Some(f) = Polynomial::interpolate_by_lagrange_basis(&vec![
             (Integer::from(0), Integer::from(0)),
             (Integer::from(1), Integer::from(2)),
         ]) {
-            Some(f) => {
-                assert_eq!(
-                    f,
-                    Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(2)])
-                )
-            }
-            None => panic!(),
+            assert_eq!(
+                f,
+                Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(2)])
+            );
+        } else {
+            panic!();
         }
 
         //f(x)=1/2x does not have integer coefficients
-        match Polynomial::interpolate_by_lagrange_basis(&vec![
+        if let Some(_f) = Polynomial::interpolate_by_lagrange_basis(&vec![
             (Integer::from(0), Integer::from(0)),
             (Integer::from(2), Integer::from(1)),
         ]) {
-            Some(_f) => panic!(),
-            None => {}
+            panic!();
         }
     }
 
     #[test]
     fn test_interpolate_by_linear_system() {
-        for points in vec![
+        for points in [
             vec![
                 (Rational::from(-2), Rational::from(-5)),
                 (Rational::from(7), Rational::from(4)),
@@ -1447,31 +1445,29 @@ mod tests {
         ] {
             let f = Polynomial::interpolate_by_linear_system(&points).unwrap();
             for (inp, out) in &points {
-                assert_eq!(&f.evaluate(&inp), out);
+                assert_eq!(&f.evaluate(inp), out);
             }
         }
 
         //f(x)=2x
-        match Polynomial::interpolate_by_linear_system(&vec![
+        if let Some(f) = Polynomial::interpolate_by_linear_system(&vec![
             (Integer::from(0), Integer::from(0)),
             (Integer::from(1), Integer::from(2)),
         ]) {
-            Some(f) => {
-                assert_eq!(
-                    f,
-                    Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(2)])
-                )
-            }
-            None => panic!(),
+            assert_eq!(
+                f,
+                Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(2)])
+            );
+        } else {
+            panic!();
         }
 
         //f(x)=1/2x does not have integer coefficients
-        match Polynomial::interpolate_by_linear_system(&vec![
+        if let Some(_f) = Polynomial::interpolate_by_linear_system(&vec![
             (Integer::from(0), Integer::from(0)),
             (Integer::from(2), Integer::from(1)),
         ]) {
-            Some(_f) => panic!(),
-            None => {}
+            panic!();
         }
     }
 
@@ -1536,7 +1532,7 @@ mod tests {
         let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_verbose();
         assert_eq!(
             Polynomial::subresultant_gcd(&f, &g),
-            Polynomial::constant(Integer::from(260708))
+            Polynomial::constant(Integer::from(260_708))
         );
 
         let f = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_verbose();
@@ -1544,7 +1540,7 @@ mod tests {
             .into_verbose();
         assert_eq!(
             Polynomial::subresultant_gcd(&f, &g),
-            Polynomial::constant(Integer::from(260708))
+            Polynomial::constant(Integer::from(260_708))
         );
 
         let f = ((x + 2).pow(2) * (2 * x - 3).pow(2)).into_verbose();
@@ -1660,7 +1656,7 @@ mod tests {
 
     #[test]
     fn test_factor_primitive_fof() {
-        for (f, exp) in vec![
+        for (f, exp) in [
             (
                 Polynomial::from_coeffs(vec![
                     Rational::from_integers(1, 2),

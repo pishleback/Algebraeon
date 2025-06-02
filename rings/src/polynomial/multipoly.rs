@@ -30,7 +30,7 @@ impl Variable {
     pub fn new<S: Into<String>>(name: S) -> Self {
         static COUNTER: AtomicUsize = AtomicUsize::new(0);
         let name = name.into();
-        assert!(name.len() >= 1);
+        assert!(!name.is_empty());
         Self {
             ident: COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             name,
@@ -66,7 +66,7 @@ impl Hash for Monomial {
 
 impl Display for Monomial {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.prod.len() == 0 {
+        if self.prod.is_empty() {
             write!(f, "1")
         } else {
             for VariablePower { var, pow } in &self.prod {
@@ -107,10 +107,7 @@ impl Monomial {
     }
 
     fn new(mut prod: Vec<VariablePower>) -> Self {
-        prod = prod
-            .into_iter()
-            .filter(|VariablePower { var: _var, pow }| pow != &0)
-            .collect();
+        prod.retain(|VariablePower { var: _var, pow }| pow != &0);
         prod.sort_by_key(|vpow| vpow.var.ident);
         let mut ident_lookup = HashMap::new();
         for (idx, VariablePower { var, pow: _pow }) in prod.iter().enumerate() {
@@ -198,30 +195,32 @@ impl Monomial {
     fn lexicographic_order(a: &Self, b: &Self) -> std::cmp::Ordering {
         let mut i = 0;
         while i < std::cmp::min(a.prod.len(), b.prod.len()) {
+            #[allow(clippy::comparison_chain)]
             if a.prod[i].var.ident < b.prod[i].var.ident {
                 return std::cmp::Ordering::Less;
             } else if a.prod[i].var.ident > b.prod[i].var.ident {
                 return std::cmp::Ordering::Greater;
-            } else {
-                if a.prod[i].pow > b.prod[i].pow {
-                    return std::cmp::Ordering::Less;
-                } else if a.prod[i].pow < b.prod[i].pow {
-                    return std::cmp::Ordering::Greater;
-                } else {
-                    i += 1;
-                }
             }
+            if a.prod[i].pow > b.prod[i].pow {
+                return std::cmp::Ordering::Less;
+            }
+            if a.prod[i].pow < b.prod[i].pow {
+                return std::cmp::Ordering::Greater;
+            }
+            i += 1;
         }
-        if a.prod.len() > b.prod.len() {
-            return std::cmp::Ordering::Less;
+        #[allow(clippy::comparison_chain)]
+        return if a.prod.len() > b.prod.len() {
+            std::cmp::Ordering::Less
         } else if a.prod.len() < b.prod.len() {
-            return std::cmp::Ordering::Greater;
+            std::cmp::Ordering::Greater
         } else {
-            return std::cmp::Ordering::Equal;
-        }
+            std::cmp::Ordering::Equal
+        };
     }
 
     fn graded_lexicographic_order(a: &Self, b: &Self) -> std::cmp::Ordering {
+        #[allow(clippy::comparison_chain)]
         if a.degree() < b.degree() {
             std::cmp::Ordering::Greater
         } else if a.degree() > b.degree() {
@@ -326,7 +325,7 @@ impl<R: Clone> MultiPolynomial<R> {
                          coeff,
                          monomial: Monomial { prod, .. },
                      }| Term {
-                        coeff: coeff,
+                        coeff,
                         monomial: Monomial::new(
                             prod.into_iter()
                                 .map(|VariablePower { var, pow }| VariablePower {
@@ -400,7 +399,7 @@ pub struct MultiPolynomialStructure<RS: RingSignature, RSB: BorrowedStructure<RS
 impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS, RSB> {
     pub fn new(coeff_ring: RSB) -> Self {
         Self {
-            _coeff_ring: PhantomData::default(),
+            _coeff_ring: PhantomData,
             coeff_ring,
         }
     }
@@ -419,7 +418,7 @@ impl<RS: RingSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToString
     for MultiPolynomialStructure<RS, RSB>
 {
     fn to_string(&self, p: &Self::Set) -> String {
-        if p.terms.len() == 0 {
+        if p.terms.is_empty() {
             "0".into()
         } else {
             let mut s = String::new();
@@ -460,14 +459,14 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> EqSignature
         let b = self.reduce(b.clone());
 
         let n = a.terms.len();
-        if n != b.terms.len() {
-            false
-        } else {
+        if n == b.terms.len() {
             (0..n).all(|i| {
                 self.coeff_ring()
                     .equal(&a.terms[i].coeff, &b.terms[i].coeff)
-                    && &a.terms[i].monomial == &b.terms[i].monomial
+                    && a.terms[i].monomial == b.terms[i].monomial
             })
+        } else {
+            false
         }
     }
 }
@@ -493,10 +492,10 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
             existing_monomials.insert(monomial, idx);
         }
         for Term { coeff, monomial } in &b.terms {
-            if existing_monomials.contains_key(&monomial) {
+            if existing_monomials.contains_key(monomial) {
                 self.coeff_ring().add_mut(
-                    &mut a.terms[*existing_monomials.get(&monomial).unwrap()].coeff,
-                    &coeff,
+                    &mut a.terms[*existing_monomials.get(monomial).unwrap()].coeff,
+                    coeff,
                 );
             } else {
                 a.terms.push(Term {
@@ -522,7 +521,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
                          coeff: c,
                          monomial: m,
                      }| Term {
-                        coeff: self.coeff_ring().neg(&c),
+                        coeff: self.coeff_ring().neg(c),
                         monomial: m.clone(),
                     },
                 )
@@ -548,12 +547,12 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
         for Term {
             coeff: a_coeff,
             monomial: a_monomial,
-        } in a.terms.iter()
+        } in &a.terms
         {
             for Term {
                 coeff: b_coeff,
                 monomial: b_monomial,
-            } in b.terms.iter()
+            } in &b.terms
             {
                 let mon = Monomial::mul(a_monomial, b_monomial);
                 let coeff = self.coeff_ring().mul(a_coeff, b_coeff);
@@ -598,13 +597,13 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
         let mut vars = HashSet::new();
         vars.extend(a.free_vars());
         vars.extend(b.free_vars());
-        if vars.len() == 0 {
+        if vars.is_empty() {
             //a and b are constants
             debug_assert!(a.terms.len() <= 1);
             debug_assert!(b.terms.len() <= 1);
-            if b.terms.len() == 0 {
+            if b.terms.is_empty() {
                 Err(RingDivisionError::DivideByZero)
-            } else if a.terms.len() == 0 {
+            } else if a.terms.is_empty() {
                 Ok(self.zero())
             } else {
                 debug_assert!(a.terms.len() == 1);
@@ -663,7 +662,7 @@ impl<RS: FiniteUnitsSignature, RSB: BorrowedStructure<RS>> FiniteUnitsSignature
         self.coeff_ring()
             .all_units()
             .into_iter()
-            .map(|u| MultiPolynomial::constant(u))
+            .map(MultiPolynomial::constant)
             .collect()
     }
 }
@@ -686,20 +685,17 @@ where
         SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>,
 {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
-        match x.free_vars().into_iter().chain(y.free_vars()).next() {
-            Some(free_var) => {
-                let poly_over_self = PolynomialStructure::new(self);
-                let x_poly = self.expand(x, &free_var);
-                let y_poly = self.expand(y, &free_var);
-                let g_poly = poly_over_self.gcd(&x_poly, &y_poly);
-                poly_over_self.evaluate(&g_poly, &self.var(free_var))
-            }
-            None => {
-                let x = self.as_constant(x).unwrap();
-                let y = self.as_constant(y).unwrap();
-                let g = self.coeff_ring().gcd(&x, &y);
-                MultiPolynomial::constant(g)
-            }
+        if let Some(free_var) = x.free_vars().into_iter().chain(y.free_vars()).next() {
+            let poly_over_self = PolynomialStructure::new(self);
+            let x_poly = self.expand(x, &free_var);
+            let y_poly = self.expand(y, &free_var);
+            let g_poly = poly_over_self.gcd(&x_poly, &y_poly);
+            poly_over_self.evaluate(&g_poly, &self.var(free_var))
+        } else {
+            let x = self.as_constant(x).unwrap();
+            let y = self.as_constant(y).unwrap();
+            let g = self.coeff_ring().gcd(&x, &y);
+            MultiPolynomial::constant(g)
         }
     }
 }
@@ -815,7 +811,7 @@ where
         match |mpoly: &<Self as SetSignature>::Set| -> Option<Polynomial<RS::Set>> {
             let mut const_coeffs = vec![];
             for coeff in mpoly.coeffs() {
-                const_coeffs.push(self.coeff_ring().as_constant(&coeff)?);
+                const_coeffs.push(self.coeff_ring().as_constant(coeff)?);
             }
             Some(Polynomial::from_coeffs(const_coeffs))
         }(mpoly)
@@ -826,14 +822,11 @@ where
                 let (unit, factors) = factor_poly(&poly)?.into_unit_and_powers();
                 Some(
                     self.factorizations().from_unit_and_factor_powers(
-                        unit.apply_map_into(|c| MultiPolynomial::constant(c)),
+                        unit.apply_map_into(MultiPolynomial::constant),
                         factors
                             .into_iter()
                             .map(|(factor, power)| {
-                                (
-                                    factor.apply_map_into(|c| MultiPolynomial::constant(c)),
-                                    power,
-                                )
+                                (factor.apply_map_into(MultiPolynomial::constant), power)
                             })
                             .collect(),
                     ),
@@ -873,6 +866,7 @@ where
         if self.is_zero(mpoly) {
             None
         } else {
+            #[allow(clippy::single_match_else)]
             match mpoly.free_vars().into_iter().next() {
                 Some(free_var) => {
                     match mpoly.homogeneous_of_degree() {
@@ -982,7 +976,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
     }
 
     pub fn as_constant(&self, p: &MultiPolynomial<RS::Set>) -> Option<RS::Set> {
-        if p.terms.len() == 0 {
+        if p.terms.is_empty() {
             Some(self.coeff_ring().zero())
         } else if p.terms.len() == 1 {
             let Term { coeff, monomial } = &p.terms[0];
@@ -997,7 +991,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
     }
 
     pub fn degree(&self, p: &MultiPolynomial<RS::Set>) -> Option<usize> {
-        p.terms.iter().map(|t| t.degree()).max()
+        p.terms.iter().map(Term::degree).max()
     }
 
     pub fn split_by_degree(
@@ -1008,9 +1002,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
         for term in p.terms {
             // let term = MultiPolynomial::new(vec![term]);
             let deg = term.degree();
-            if !p_by_deg.contains_key(&deg) {
-                p_by_deg.insert(deg, vec![]);
-            }
+            p_by_deg.entry(deg).or_insert_with(Vec::new);
             p_by_deg.get_mut(&deg).unwrap().push(term);
         }
         p_by_deg
@@ -1051,7 +1043,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
         for Term { coeff, monomial } in &p.terms {
             let k = monomial.get_var_pow(v);
             while coeffs.len() <= k {
-                coeffs.push(self.zero())
+                coeffs.push(self.zero());
             }
             self.add_mut(
                 &mut coeffs[k],
@@ -1227,7 +1219,7 @@ mod tests {
                 one.clone(),
             ];
             let mut sorted_terms = terms.clone();
-            sorted_terms.sort_by(|a, b| Monomial::lexicographic_order(a, b));
+            sorted_terms.sort_by(Monomial::lexicographic_order);
 
             assert_eq!(terms, sorted_terms);
         }
@@ -1242,7 +1234,7 @@ mod tests {
                 one.clone(),
             ];
             let mut sorted_terms = terms.clone();
-            sorted_terms.sort_by(|a, b| Monomial::graded_lexicographic_order(a, b));
+            sorted_terms.sort_by(Monomial::graded_lexicographic_order);
 
             assert_eq!(terms, sorted_terms);
         }

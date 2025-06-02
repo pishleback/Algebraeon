@@ -2,6 +2,7 @@ use super::*;
 
 // It is helpful for computational reasons to put an ordering on the vectors
 // so that the points of a simplex can be ordered
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> PartialOrd
     for Vector<FS, SP>
 {
@@ -31,9 +32,10 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
     for Vector<FS, SP>
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        match self.partial_cmp(other) {
-            Some(ans) => ans,
-            None => panic!(),
+        if let Some(ans) = self.partial_cmp(other) {
+            ans
+        } else {
+            panic!();
         }
     }
 }

@@ -18,7 +18,7 @@ pub type AlgebraicNumberFieldStructure = FieldExtensionByPolynomialQuotientStruc
 impl Polynomial<Rational> {
     pub fn algebraic_number_field(self) -> AlgebraicNumberFieldStructure {
         AlgebraicNumberFieldStructure::new_field(
-            PolynomialStructure::new(Rational::structure()).into(),
+            PolynomialStructure::new(Rational::structure()),
             self,
         )
     }

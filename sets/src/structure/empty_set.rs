@@ -8,9 +8,7 @@ pub struct EmptySetStructure<Set> {
 
 impl<Set> Clone for EmptySetStructure<Set> {
     fn clone(&self) -> Self {
-        Self {
-            _set: PhantomData::default(),
-        }
+        Self { _set: PhantomData }
     }
 }
 
@@ -28,11 +26,9 @@ impl<Set> PartialEq for EmptySetStructure<Set> {
 
 impl<Set> Eq for EmptySetStructure<Set> {}
 
-impl<Set> EmptySetStructure<Set> {
-    pub fn new() -> Self {
-        Self {
-            _set: PhantomData::default(),
-        }
+impl<Set> Default for EmptySetStructure<Set> {
+    fn default() -> Self {
+        Self { _set: PhantomData }
     }
 }
 

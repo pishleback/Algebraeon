@@ -1,7 +1,7 @@
 use algebraeon_sets::combinatorics::Partition;
 
-use super::group::*;
-use super::subset::*;
+use super::group::FiniteGroupMultiplicationTable;
+use super::subset::Subset;
 use std::collections::HashSet;
 
 #[derive(Debug)]
@@ -26,6 +26,7 @@ impl<'a> PartialEq for GroupPartition<'a> {
         //equal iff lookups are equal up to permutation
         //build up a permutation f from indices of self.lookup to indices of other.lookup
         let mut f: Vec<Option<usize>> = vec![None; n];
+        #[allow(clippy::match_on_vec_items)]
         for i in 0..grp.size() {
             match f[self.partition.project(i)] {
                 Some(expected_other_lookup_i) => {
@@ -90,7 +91,7 @@ impl<'a> GroupPartition<'a> {
         let mut lookup = vec![0; group.size()];
         for (class_idx, class) in classes.iter().enumerate() {
             for x in class {
-                if !(*x < group.size()) {
+                if *x >= group.size() {
                     return Err(());
                 }
                 lookup[*x] = class_idx;
@@ -101,7 +102,7 @@ impl<'a> GroupPartition<'a> {
             partition: Partition::new_unchecked(classes, lookup),
         };
         match partition.check_state() {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(_) => {
                 return Err(());
             }
@@ -123,9 +124,8 @@ impl<'a> Congruence<'a> {
             }
         }
 
-        match self.partition.is_congruence() {
-            false => return Err("congruence is not a congruence"),
-            true => {}
+        if !self.partition.is_congruence() {
+            return Err("congruence is not a congruence");
         }
 
         Ok(())
@@ -175,6 +175,7 @@ impl<'a> Congruence<'a> {
 #[cfg(test)]
 mod partition_tests {
     use super::*;
+    use crate::composition_table::group::examples;
 
     #[test]
     fn congruence_check_state() {
@@ -185,23 +186,20 @@ mod partition_tests {
                     let cong: Congruence<'_> = Congruence {
                         partition: sg.left_cosets(),
                     };
-                    match cong.check_state() {
-                        Ok(_) => panic!(),
-                        Err(_) => {}
+                    if let Ok(()) = cong.check_state() {
+                        panic!();
                     }
                     let cong: Congruence<'_> = Congruence {
                         partition: sg.right_cosets(),
                     };
-                    match cong.check_state() {
-                        Ok(_) => panic!(),
-                        Err(_) => {}
+                    if let Ok(()) = cong.check_state() {
+                        panic!();
                     }
                 }
                 Some(nsg) => {
                     let cong = nsg.cosets();
-                    match cong.check_state() {
-                        Ok(_) => {}
-                        Err(_) => panic!(),
+                    if cong.check_state().is_err() {
+                        panic!();
                     }
                 }
             }

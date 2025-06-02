@@ -294,13 +294,14 @@ impl Expr {
                 let denom_val = n.denominator.clone();
 
                 // Handle fractions by ensuring denominator=1 for integer polynomials
-                if denom_val != Integer::from(1) {
-                    if num_val.clone() % denom_val.clone() != Integer::from(0) {
-                        panic!("Non-integer coefficient in integer polynomial");
-                    }
-                    *terms.entry(0).or_insert(Integer::from(0)) += num_val / denom_val;
-                } else {
+                if denom_val == Integer::from(1) {
                     *terms.entry(0).or_insert(Integer::from(0)) += num_val;
+                } else {
+                    assert!(
+                        num_val.clone() % denom_val.clone() == Integer::from(0),
+                        "Non-integer coefficient in integer polynomial"
+                    );
+                    *terms.entry(0).or_insert(Integer::from(0)) += num_val / denom_val;
                 }
             }
             Expr::Sum(s) => {
@@ -385,7 +386,7 @@ impl Expr {
 
                         // Multiply the terms using distributive property
                         for (left_exp, left_coef) in left_terms {
-                            for (right_exp, right_coef) in right_terms.iter() {
+                            for (right_exp, right_coef) in &right_terms {
                                 let new_exp = left_exp + right_exp;
                                 let new_coef =
                                     left_coef.clone() * right_coef.clone() * coefficient.clone();
@@ -419,6 +420,7 @@ impl Expr {
                 } else if let Expr::Grouped(inner) = p.base.as_ref() {
                     // (expression)^n
                     if let Expr::Num(exp) = p.exponent.as_ref() {
+                        #[allow(clippy::comparison_chain)]
                         if exp.denominator == Integer::from(1) {
                             if exp.numerator == Integer::from(0) {
                                 // Anything^0 = 1
@@ -577,7 +579,7 @@ impl Expr {
 
                         // Multiply the terms using distributive property
                         for (left_exp, left_coef) in left_terms {
-                            for (right_exp, right_coef) in right_terms.iter() {
+                            for (right_exp, right_coef) in &right_terms {
                                 let new_exp = left_exp + right_exp;
                                 let new_coef =
                                     left_coef.clone() * right_coef.clone() * coefficient.clone();
@@ -612,6 +614,7 @@ impl Expr {
                     // (expression)^n
                     if let Expr::Num(exp) = p.exponent.as_ref() {
                         if exp.denominator == Integer::from(1) {
+                            #[allow(clippy::comparison_chain)]
                             if exp.numerator == Integer::from(0) {
                                 // Anything^0 = 1
                                 *terms.entry(0).or_insert(Rational::from(0)) += coefficient;

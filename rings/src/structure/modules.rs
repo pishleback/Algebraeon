@@ -73,7 +73,7 @@ where
         for i in 0..n {
             self.add_mut(
                 &mut t,
-                &self.scalar_mul(&v[i], &self.from_component(&basis[i], &self.ring().one())),
+                &self.scalar_mul(v[i], &self.from_component(&basis[i], &self.ring().one())),
             );
         }
         t

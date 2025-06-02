@@ -87,6 +87,7 @@ impl FiniteUnitsSignature for IntegerCanonicalStructure {
 
 impl FavoriteAssociateSignature for IntegerCanonicalStructure {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+        #[allow(clippy::comparison_chain)]
         if a == &Integer::ZERO {
             (Integer::ONE, Integer::ZERO)
         } else if a < &Integer::ZERO {
@@ -123,12 +124,11 @@ impl FactorableSignature for IntegerCanonicalStructure {
         if a == &Integer::ZERO {
             None
         } else {
-            let unit;
-            if a < &Integer::ZERO {
-                unit = Integer::from(-1);
+            let unit = if a < &Integer::ZERO {
+                Integer::from(-1)
             } else {
-                unit = Integer::from(1);
-            }
+                Integer::from(1)
+            };
             let f = factor(a.abs()).unwrap();
             Some(
                 Integer::structure()
@@ -139,7 +139,7 @@ impl FactorableSignature for IntegerCanonicalStructure {
                             .factorizations()
                             .into_powers(f)
                             .into_iter()
-                            .map(|(p, k)| (Integer::from(p), Natural::from(k)))
+                            .map(|(p, k)| (Integer::from(p), k))
                             .collect(),
                     ),
             )
