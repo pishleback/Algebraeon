@@ -29,8 +29,8 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> Signature for IntegerIdeal
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> SetSignature for IntegerIdealsStructure<B> {
     type Set = Natural;
-    fn is_element(&self, _x: &Self::Set) -> bool {
-        true
+    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        Ok(())
     }
 }
 

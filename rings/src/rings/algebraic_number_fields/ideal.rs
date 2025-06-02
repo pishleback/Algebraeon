@@ -60,12 +60,12 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>> SetSign
 {
     type Set = RingOfIntegersIdeal;
 
-    fn is_element(&self, ideal: &Self::Set) -> bool {
+    fn is_element(&self, ideal: &Self::Set) -> Result<(), String> {
         match ideal {
-            RingOfIntegersIdeal::Zero => true,
+            RingOfIntegersIdeal::Zero => Ok(()),
             RingOfIntegersIdeal::NonZero(lattice) => {
                 // check it's a submodule
-                self.ring().z_module().submodules().is_element(lattice);
+                self.ring().z_module().submodules().is_element(lattice)?;
                 // check it's an ideal
                 for ideal_basis_elem in lattice.basis() {
                     for integral_basis_elem in
@@ -78,11 +78,11 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>> SetSign
                             .submodules()
                             .contains_element(lattice, &x)
                         {
-                            return false;
+                            return Err("submodule is not an ideal".to_string());
                         }
                     }
                 }
-                true
+                Ok(())
             }
         }
     }
@@ -103,7 +103,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     /// Construct an ideal from a Z-linear span
     pub fn ideal_from_integer_span(&self, span: Vec<Vec<Integer>>) -> RingOfIntegersIdeal {
         for elem in &span {
-            debug_assert!(self.ring().is_element(elem));
+            debug_assert!(self.ring().is_element(elem).is_ok());
         }
         let n = self.ring().degree();
         RingOfIntegersIdeal::NonZero(
@@ -235,14 +235,14 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                     })
                     .collect(),
             );
-            debug_assert!(self.is_element(&ideal));
+            debug_assert!(self.is_element(&ideal).is_ok());
             ideal
         }
     }
 
     fn ideal_equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(b));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
             (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::Zero) => true,
             (RingOfIntegersIdeal::NonZero(a_lattice), RingOfIntegersIdeal::NonZero(b_lattice)) => {
@@ -256,8 +256,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     }
 
     fn ideal_contains(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(b));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
             (_, RingOfIntegersIdeal::Zero) => true,
             (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::NonZero { .. }) => {
@@ -274,8 +274,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     }
 
     fn ideal_contains_element(&self, a: &Self::Set, x: &Vec<Integer>) -> bool {
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.ring().is_element(x));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.ring().is_element(x).is_ok());
         match a {
             RingOfIntegersIdeal::Zero => self.ring().is_zero(x),
             RingOfIntegersIdeal::NonZero(lattice) => self
@@ -287,8 +287,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     }
 
     fn ideal_intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(b));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
             (RingOfIntegersIdeal::NonZero(a_lattice), RingOfIntegersIdeal::NonZero(b_lattice)) => {
                 Self::Set::NonZero(
@@ -303,8 +303,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     }
 
     fn ideal_add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(b));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
             (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::Zero) => RingOfIntegersIdeal::Zero,
             (RingOfIntegersIdeal::Zero, RingOfIntegersIdeal::NonZero { .. }) => b.clone(),
@@ -321,8 +321,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     }
 
     fn ideal_mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(b));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
             (RingOfIntegersIdeal::NonZero(a_lattice), RingOfIntegersIdeal::NonZero(b_lattice)) => {
                 let n = self.ring().degree();
@@ -480,8 +480,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         prime_ideal: RingOfIntegersIdeal,
         a: Vec<Integer>,
     ) -> Valuation {
-        debug_assert!(self.ring().is_element(&a));
-        debug_assert!(self.is_element(&prime_ideal));
+        debug_assert!(self.ring().is_element(&a).is_ok());
+        debug_assert!(self.is_element(&prime_ideal).is_ok());
         if self.ring().is_zero(&a) {
             return Valuation::Infinity;
         }
@@ -501,8 +501,8 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         prime_ideal: RingOfIntegersIdeal,
         a: RingOfIntegersIdeal,
     ) -> Valuation {
-        debug_assert!(self.is_element(&a));
-        debug_assert!(self.is_element(&prime_ideal));
+        debug_assert!(self.is_element(&a).is_ok());
+        debug_assert!(self.is_element(&prime_ideal).is_ok());
         if self.ideal_is_zero(&a) {
             return Valuation::Infinity;
         }

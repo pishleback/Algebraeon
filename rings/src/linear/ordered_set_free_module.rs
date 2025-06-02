@@ -111,7 +111,7 @@ impl<
             .into_iter()
             .filter(|(_, a)| !self.ring().is_zero(a))
             .collect();
-        debug_assert!(self.is_element(&w));
+        debug_assert!(self.is_element(&w).is_ok());
         w
     }
 }
@@ -136,16 +136,16 @@ impl<
     // all ring elements in the second argument must be non-zero
     type Set = Vec<(Set::Set, Ring::Set)>;
 
-    fn is_element(&self, v: &Self::Set) -> bool {
+    fn is_element(&self, v: &Self::Set) -> Result<(), String> {
         if !self.set().is_sorted_and_unique_by_key(v, |(x, _)| x) {
-            return false;
+            return Err("not sorted or has duplicate".to_string());
         }
         for (_, a) in v {
             if self.ring().is_zero(a) {
-                return false;
+                return Err("multiplicity zero".to_string());
             }
         }
-        true
+        Ok(())
     }
 }
 
@@ -157,8 +157,8 @@ impl<
 > EqSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
     fn equal(&self, v: &Self::Set, w: &Self::Set) -> bool {
-        debug_assert!(self.is_element(v));
-        debug_assert!(self.is_element(w));
+        debug_assert!(self.is_element(v).is_ok());
+        debug_assert!(self.is_element(w).is_ok());
         // since elements are sorted and exclude entries with zero coefficients, we just need to check if they are identically equal
         let n = v.len();
         if n != w.len() {

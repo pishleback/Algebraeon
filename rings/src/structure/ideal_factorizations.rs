@@ -91,16 +91,16 @@ impl<
 {
     type Set = DedekindDomainIdealFactorization<Ideals::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
         for (prime, power) in self.to_powers_unchecked(x) {
             if power == &Natural::ZERO {
-                return false;
+                return Err("Powers must be non-zero".to_string());
             }
             if self.try_object_is_prime(prime) == Some(false) {
-                return false;
+                return Err("Factors must be irreducible".to_string());
             }
         }
-        true
+        Ok(())
     }
 }
 

@@ -97,8 +97,8 @@ impl<Field: FieldSignature> Signature for QuaternionAlgebraStructure<Field> {}
 impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
     type Set = QuaternionAlgebraElement<Field>;
 
-    fn is_element(&self, _x: &Self::Set) -> bool {
-        true
+    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        Ok(())
     }
 }
 

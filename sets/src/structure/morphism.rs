@@ -181,8 +181,14 @@ impl<Domain: SetSignature, Range: SetSignature> Signature for Functions<Domain, 
 impl<Domain: FiniteSetSignature, Range: EqSignature> SetSignature for Functions<Domain, Range> {
     type Set = Vec<Range::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
-        x.len() == self.domain.size() && x.iter().all(|y| self.range.is_element(y))
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+        if x.len() != self.domain.size() {
+            return Err("Incorrect vector length".to_string());
+        }
+        for y in x {
+            self.range.is_element(y)?;
+        }
+        Ok(())
     }
 }
 

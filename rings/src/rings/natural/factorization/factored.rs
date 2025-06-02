@@ -36,16 +36,14 @@ impl Signature for NaturalFactorizationStructure {}
 impl SetSignature for NaturalFactorizationStructure {
     type Set = Vec<(Natural, Natural)>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
-        if !self.powers_semimodule().is_element(x) {
-            return false;
-        }
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+        self.powers_semimodule().is_element(x)?;
         for (prime, _) in self.to_powers_unchecked(x) {
             if !is_prime(prime) {
-                return false;
+                return Err("not prime".to_string());
             }
         }
-        true
+        Ok(())
     }
 }
 

@@ -446,8 +446,8 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SetSignature
 {
     type Set = MultiPolynomial<RS::Set>;
 
-    fn is_element(&self, _x: &Self::Set) -> bool {
-        true
+    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        Ok(())
     }
 }
 

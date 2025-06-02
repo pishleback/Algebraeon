@@ -196,7 +196,7 @@ impl
     }
 
     fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
-        debug_assert!(self.r_ideals().is_element(ideal));
+        debug_assert!(self.r_ideals().is_element(ideal).is_ok());
         match ideal {
             RingOfIntegersIdeal::Zero => Natural::ZERO,
             RingOfIntegersIdeal::NonZero(lattice) => {

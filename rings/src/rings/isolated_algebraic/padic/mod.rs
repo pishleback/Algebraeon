@@ -702,8 +702,11 @@ pub mod structure {
     impl SetSignature for PAdicAlgebraicStructure {
         type Set = PAdicAlgebraic;
 
-        fn is_element(&self, x: &Self::Set) -> bool {
-            &self.p == x.p()
+        fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+            if &self.p != x.p() {
+                return Err("primes don't match".to_string());
+            }
+            Ok(())
         }
     }
 
@@ -716,8 +719,8 @@ pub mod structure {
 
     impl EqSignature for PAdicAlgebraicStructure {
         fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-            debug_assert!(self.is_element(a));
-            debug_assert!(self.is_element(b));
+            debug_assert!(self.is_element(a).is_ok());
+            debug_assert!(self.is_element(b).is_ok());
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     PAdicRational::equal(a, b)
@@ -740,8 +743,8 @@ pub mod structure {
         }
 
         fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-            debug_assert!(self.is_element(a));
-            debug_assert!(self.is_element(b));
+            debug_assert!(self.is_element(a).is_ok());
+            debug_assert!(self.is_element(b).is_ok());
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     PAdicAlgebraic::Rational(PAdicRational::add(a, b))
@@ -761,7 +764,7 @@ pub mod structure {
 
     impl AdditiveGroupSignature for PAdicAlgebraicStructure {
         fn neg(&self, a: &Self::Set) -> Self::Set {
-            debug_assert!(self.is_element(a));
+            debug_assert!(self.is_element(a).is_ok());
             a.clone().neg()
         }
     }
@@ -775,8 +778,8 @@ pub mod structure {
         }
 
         fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-            debug_assert!(self.is_element(a));
-            debug_assert!(self.is_element(b));
+            debug_assert!(self.is_element(a).is_ok());
+            debug_assert!(self.is_element(b).is_ok());
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     PAdicAlgebraic::Rational(PAdicRational {
@@ -803,7 +806,7 @@ pub mod structure {
 
     impl SemiRingUnitsSignature for PAdicAlgebraicStructure {
         fn inv(&self, a: &PAdicAlgebraic) -> Result<PAdicAlgebraic, RingDivisionError> {
-            debug_assert!(self.is_element(a));
+            debug_assert!(self.is_element(a).is_ok());
             match a {
                 PAdicAlgebraic::Rational(a) => Ok(PAdicAlgebraic::Rational(a.clone().inv()?)),
                 PAdicAlgebraic::Algebraic(a) => Ok(a.clone().inv_mut()?),
@@ -813,8 +816,8 @@ pub mod structure {
 
     impl IntegralDomainSignature for PAdicAlgebraicStructure {
         fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-            debug_assert!(self.is_element(a));
-            debug_assert!(self.is_element(b));
+            debug_assert!(self.is_element(a).is_ok());
+            debug_assert!(self.is_element(b).is_ok());
             #[allow(clippy::single_match)]
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
