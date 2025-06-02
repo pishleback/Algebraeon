@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-
 use super::{
     finitely_free_affine::FinitelyFreeSubmoduleAffineSubsetStructure,
     finitely_free_coset::FinitelyFreeSubmoduleCosetStructure,
@@ -10,43 +9,10 @@ use crate::{linear::matrix::MatrixStructure, structure::*};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelyFreeModuleBasisStructure {
-    rank: usize,
-}
-
-impl Signature for FinitelyFreeModuleBasisStructure {}
-
-impl SetSignature for FinitelyFreeModuleBasisStructure {
-    type Set = usize;
-
-    fn is_element(&self, a: &Self::Set) -> bool {
-        a < &self.rank
-    }
-}
-
-impl EqSignature for FinitelyFreeModuleBasisStructure {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
-    }
-}
-
-impl CountableSetSignature for FinitelyFreeModuleBasisStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
-        0..self.rank
-    }
-}
-
-impl FiniteSetSignature for FinitelyFreeModuleBasisStructure {
-    fn size(&self) -> usize {
-        self.rank
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeModuleStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
     _ring: PhantomData<Ring>,
     ring: RingB,
-    basis_set: FinitelyFreeModuleBasisStructure,
+    basis_set: EnumeratedFiniteSetStructure,
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStructure<Ring, RingB> {
@@ -54,7 +20,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
         Self {
             _ring: PhantomData,
             ring,
-            basis_set: FinitelyFreeModuleBasisStructure { rank },
+            basis_set: EnumeratedFiniteSetStructure::new(rank),
         }
     }
 }
@@ -244,7 +210,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ri
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    type Basis = FinitelyFreeModuleBasisStructure;
+    type Basis = EnumeratedFiniteSetStructure;
 
     fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
         &self.basis_set
@@ -271,7 +237,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleSign
     }
 
     fn rank(&self) -> usize {
-        self.basis_set.rank
+        self.basis_set.size()
     }
 
     fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
