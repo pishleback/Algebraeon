@@ -1,0 +1,48 @@
+use super::{EqSignature, OrdSignature, SetSignature, Signature};
+use crate::structure::{CountableSetSignature, FiniteSetSignature};
+use std::fmt::Debug;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnumeratedFiniteSetStructure {
+    n: usize,
+}
+
+impl EnumeratedFiniteSetStructure {
+    pub fn new(n: usize) -> Self {
+        Self { n }
+    }
+}
+
+impl Signature for EnumeratedFiniteSetStructure {}
+
+impl SetSignature for EnumeratedFiniteSetStructure {
+    type Set = usize;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        x < &self.n
+    }
+}
+
+impl EqSignature for EnumeratedFiniteSetStructure {
+    fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
+        x == y
+    }
+}
+
+impl OrdSignature for EnumeratedFiniteSetStructure {
+    fn cmp(&self, x: &Self::Set, y: &Self::Set) -> std::cmp::Ordering {
+        x.cmp(y)
+    }
+}
+
+impl CountableSetSignature for EnumeratedFiniteSetStructure {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        0..self.n
+    }
+}
+
+impl FiniteSetSignature for EnumeratedFiniteSetStructure {
+    fn size(&self) -> usize {
+        self.n
+    }
+}

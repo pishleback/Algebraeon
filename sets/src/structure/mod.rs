@@ -3,6 +3,7 @@
 //! The structure framework used by `algebraeon_rings` is established here.
 
 mod empty_set;
+mod finite_set;
 mod morphism;
 mod orderings;
 #[allow(clippy::module_inception)]
@@ -10,6 +11,7 @@ mod structure;
 
 pub use algebraeon_macros::CanonicalStructure;
 pub use empty_set::EmptySetStructure;
+pub use finite_set::EnumeratedFiniteSetStructure;
 pub use morphism::{
     BijectiveFunction, CompositionMorphism, Function, Functions, IdentityMorphism,
     InjectiveFunction, Morphism,
