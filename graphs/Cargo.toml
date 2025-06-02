@@ -1,0 +1,15 @@
+[package]
+name = "algebraeon-graphs"
+# version = "0.0.12"
+edition = "2024"
+license = "GPL-3.0-only"
+description = "Algorithms for graphs."
+repository = "https://github.com/pishleback/Algebraeon"
+keywords = ["maths", "graph", "network"]
+categories = ["mathematics"]
+readme = "../README.md"
+
+[lib]
+name = "algebraeon_graphs"
+
+[dependencies]

@@ -37,6 +37,33 @@ impl<Field: FieldSignature + ToStringSignature + fmt::Display> fmt::Display
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, CanonicalStructure)]
+#[canonical_structure(eq)]
+pub enum QuaternionAlgebraBasis {
+    R,
+    I,
+    J,
+    K,
+}
+
+impl CountableSetSignature for QuaternionAlgebraBasisCanonicalStructure {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        vec![
+            QuaternionAlgebraBasis::R,
+            QuaternionAlgebraBasis::I,
+            QuaternionAlgebraBasis::J,
+            QuaternionAlgebraBasis::K,
+        ]
+        .into_iter()
+    }
+}
+
+impl FiniteSetSignature for QuaternionAlgebraBasisCanonicalStructure {
+    fn size(&self) -> usize {
+        4
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct QuaternionAlgebraElement<Field: FieldSignature> {
     // represent x + yi + zj + wk
@@ -75,19 +102,10 @@ impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
     }
 }
 
-impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {
+impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructure<Field> {
     fn zero(&self) -> Self::Set {
         QuaternionAlgebraElement {
             x: self.base.zero(),
-            y: self.base.zero(),
-            z: self.base.zero(),
-            w: self.base.zero(),
-        }
-    }
-
-    fn one(&self) -> Self::Set {
-        QuaternionAlgebraElement {
-            x: self.base.one(),
             y: self.base.zero(),
             z: self.base.zero(),
             w: self.base.zero(),
@@ -100,6 +118,37 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
             y: self.base.add(&a.y, &b.y),
             z: self.base.add(&a.z, &b.z),
             w: self.base.add(&a.w, &b.w),
+        }
+    }
+}
+
+impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructure<Field> {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        QuaternionAlgebraElement {
+            x: self.base.neg(&a.x),
+            y: self.base.neg(&a.y),
+            z: self.base.neg(&a.z),
+            w: self.base.neg(&a.w),
+        }
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        QuaternionAlgebraElement {
+            x: self.base.sub(&a.x, &b.x),
+            y: self.base.sub(&a.y, &b.y),
+            z: self.base.sub(&a.z, &b.z),
+            w: self.base.sub(&a.w, &b.w),
+        }
+    }
+}
+
+impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {
+    fn one(&self) -> Self::Set {
+        QuaternionAlgebraElement {
+            x: self.base.one(),
+            y: self.base.zero(),
+            z: self.base.zero(),
+            w: self.base.zero(),
         }
     }
 
@@ -165,15 +214,55 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
     }
 }
 
-impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {}
+
+impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
+    fn ring(&self) -> &Field {
+        &self.base
+    }
+
+    fn scalar_mul(&self, x: &<Field>::Set, a: &Self::Set) -> Self::Set {
+        let base = &self.base;
         QuaternionAlgebraElement {
-            x: self.base.neg(&a.x),
-            y: self.base.neg(&a.y),
-            z: self.base.neg(&a.z),
-            w: self.base.neg(&a.w),
+            x: base.mul(x, &a.x),
+            y: base.mul(x, &a.y),
+            z: base.mul(x, &a.z),
+            w: base.mul(x, &a.w),
         }
     }
+}
+
+impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
+    type Basis = QuaternionAlgebraBasisCanonicalStructure;
+
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+        QuaternionAlgebraBasisCanonicalStructure {}
+    }
+
+    fn to_component<'a>(&self, b: &QuaternionAlgebraBasis, v: &'a Self::Set) -> &'a Field::Set {
+        match b {
+            QuaternionAlgebraBasis::R => &v.x,
+            QuaternionAlgebraBasis::I => &v.y,
+            QuaternionAlgebraBasis::J => &v.z,
+            QuaternionAlgebraBasis::K => &v.w,
+        }
+    }
+
+    fn from_component(&self, b: &QuaternionAlgebraBasis, r: &Field::Set) -> Self::Set {
+        let mut v = self.zero();
+        match b {
+            QuaternionAlgebraBasis::R => v.x = r.clone(),
+            QuaternionAlgebraBasis::I => v.y = r.clone(),
+            QuaternionAlgebraBasis::J => v.z = r.clone(),
+            QuaternionAlgebraBasis::K => v.w = r.clone(),
+        }
+        v
+    }
+}
+
+impl<Field: FieldSignature> FinitelyFreeModuleSignature<Field>
+    for QuaternionAlgebraStructure<Field>
+{
 }
 
 impl<Field: FieldSignature + CharacteristicSignature> CharacteristicSignature
@@ -231,7 +320,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
             QuaternionAlgebraElement {
-                x: base.add(&a.x, &a.x),
+                x: base.add(&a.x, &a.y),
                 y: a.y.clone(),
                 z: a.z.clone(),
                 w: a.w.clone(),

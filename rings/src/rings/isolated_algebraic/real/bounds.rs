@@ -74,7 +74,7 @@ impl PartialEq<Rational> for LowerBound {
     fn eq(&self, b: &Rational) -> bool {
         match self {
             LowerBound::Finite(a) => a == b,
-            _ => false,
+            LowerBound::Inf => false,
         }
     }
 }
@@ -83,7 +83,7 @@ impl PartialOrd<Rational> for LowerBound {
     fn partial_cmp(&self, b: &Rational) -> Option<std::cmp::Ordering> {
         match self {
             LowerBound::Finite(a) => a.partial_cmp(b),
-            _ => Some(std::cmp::Ordering::Less),
+            LowerBound::Inf => Some(std::cmp::Ordering::Less),
         }
     }
 }
@@ -92,7 +92,7 @@ impl PartialEq<UpperBound> for Rational {
     fn eq(&self, other: &UpperBound) -> bool {
         match other {
             UpperBound::Finite(b) => self == b,
-            _ => false,
+            UpperBound::Inf => false,
         }
     }
 }
@@ -101,7 +101,7 @@ impl PartialOrd<UpperBound> for Rational {
     fn partial_cmp(&self, other: &UpperBound) -> Option<std::cmp::Ordering> {
         match other {
             UpperBound::Finite(b) => self.partial_cmp(b),
-            _ => Some(std::cmp::Ordering::Less),
+            UpperBound::Inf => Some(std::cmp::Ordering::Less),
         }
     }
 }

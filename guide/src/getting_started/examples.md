@@ -5,12 +5,21 @@
 To factor large integers using Algebraeon
 
 ```rust
-use std::str::FromStr;
-use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
-
+# use algebraeon::sets::structure::ToStringSignature;
+# use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
+# use algebraeon::{
+    rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure,
+    sets::structure::MetaType,
+};
+# use std::str::FromStr;
+# 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
 let f = factor(n.clone()).unwrap();
-println!("{} = {}", n, f);
+println!(
+    "{} = {}",
+    n,
+    Natural::structure().factorizations().to_string(&f)
+);;
 /*
 Output:
     706000565581575429997696139445280900 = 2^2 × 5^2 × 6988699669998001 × 1010203040506070809
@@ -59,12 +68,15 @@ for integers \\(a\\), \\(b\\) and \\(c\\).
 
 ```rust
 use algebraeon::nzq::Integer;
+use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 use algebraeon::rings::linear::matrix::Matrix;
+use algebraeon::sets::structure::MetaType;
 let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
-let y = Matrix::<Integer>::from_rows(vec![vec![5, 5, 3]]);
-for x in m
-    .row_solution_set(&vec![5.into(), 5.into(), 3.into()])
-    .affine_basis()
+let y = vec![5.into(), 5.into(), 3.into()];
+for x in Integer::structure()
+    .free_module(3)
+    .affine_subsets()
+    .affine_basis(&m.row_solution_set(&y))
 {
     println!("{:?}", x);
 }

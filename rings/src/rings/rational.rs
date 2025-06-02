@@ -4,17 +4,29 @@ use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
-impl SemiRingSignature for RationalCanonicalStructure {
+impl AdditiveMonoidSignature for RationalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Rational::ZERO
     }
 
-    fn one(&self) -> Self::Set {
-        Rational::ONE
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
+    }
+}
+
+impl AdditiveGroupSignature for RationalCanonicalStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        -a
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        a - b
+    }
+}
+
+impl SemiRingSignature for RationalCanonicalStructure {
+    fn one(&self) -> Self::Set {
+        Rational::ONE
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -22,19 +34,15 @@ impl SemiRingSignature for RationalCanonicalStructure {
     }
 }
 
+impl RingSignature for RationalCanonicalStructure {}
+
 impl CharacteristicSignature for RationalCanonicalStructure {
     fn characteristic(&self) -> Natural {
         Natural::ZERO
     }
 }
 
-impl RingSignature for RationalCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        -a
-    }
-}
-
-impl UnitsSignature for RationalCanonicalStructure {
+impl SemiRingUnitsSignature for RationalCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
@@ -134,8 +142,55 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
     }
 }
 
-impl FactorableSignature for PolynomialStructure<RationalCanonicalStructure> {
-    fn factor(&self, p: &Self::Set) -> Option<FactoredElement<Self>> {
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// struct IrreducibleRationalPolynomialStructure {}
+
+// impl Signature for IrreducibleRationalPolynomialStructure {}
+
+// impl SetSignature for IrreducibleRationalPolynomialStructure {
+//     type Set = Polynomial<Rational>;
+
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         todo!()
+//     }
+// }
+
+// impl EqSignature for IrreducibleRationalPolynomialStructure {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         Rational::structure().polynomials().equal(a, b)
+//     }
+// }
+
+// impl OrdSignature for IrreducibleRationalPolynomialStructure {
+//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+//         todo!()
+//     }
+// }
+
+// impl<B: BorrowedStructure<RationalCanonicalStructure>> UniqueFactorizationSignature
+//     for PolynomialStructure<RationalCanonicalStructure, B>
+// {
+//     type Irreducibles = IrreducibleRationalPolynomialStructure;
+
+//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn into_factorizations(self) -> Self::Factorizations<Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
+//         IrreducibleRationalPolynomialStructure {}
+//     }
+// }
+
+impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
+    for PolynomialStructure<RationalCanonicalStructure, B>
+{
+    fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Polynomial<Rational>>> {
         factorize_by_factorize_primitive_part(
             &PrincipalSubringInclusion::new(self.coeff_ring().clone()),
             self,
@@ -192,19 +247,19 @@ mod tests {
 
         assert_eq!(rat("-2").round(), Integer::from(-2));
         assert_eq!(rat("-7/4").round(), Integer::from(-2));
-        assert!(vec![Integer::from(-2), Integer::from(-1)].contains(&rat("-3/2").round()));
+        assert!([Integer::from(-2), Integer::from(-1)].contains(&rat("-3/2").round()));
         assert_eq!(rat("-5/4").round(), Integer::from(-1));
         assert_eq!(rat("-1").round(), Integer::from(-1));
         assert_eq!(rat("-3/4").round(), Integer::from(-1));
-        assert!(vec![Integer::from(-1), Integer::from(0)].contains(&rat("-1/2").round()));
+        assert!([Integer::from(-1), Integer::from(0)].contains(&rat("-1/2").round()));
         assert_eq!(rat("-1/4").round(), Integer::from(0));
         assert_eq!(rat("0").round(), Integer::from(0));
         assert_eq!(rat("1/4").round(), Integer::from(0));
-        assert!(vec![Integer::from(0), Integer::from(1)].contains(&rat("1/2").round()));
+        assert!([Integer::from(0), Integer::from(1)].contains(&rat("1/2").round()));
         assert_eq!(rat("3/4").round(), Integer::from(1));
         assert_eq!(rat("1").round(), Integer::from(1));
         assert_eq!(rat("5/4").round(), Integer::from(1));
-        assert!(vec![Integer::from(1), Integer::from(2)].contains(&rat("3/2").round()));
+        assert!([Integer::from(1), Integer::from(2)].contains(&rat("3/2").round()));
         assert_eq!(rat("7/4").round(), Integer::from(2));
         assert_eq!(rat("2").round(), Integer::from(2));
     }

@@ -1,11 +1,12 @@
-use std::collections::HashSet;
-
+use super::natural::factorization::NaturalCanonicalFactorizationStructure;
 use super::natural::factorization::factor;
+use super::natural::factorization::primes::is_prime;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use std::collections::HashSet;
 
 pub mod berlekamp_zassenhaus;
 pub mod ideal;
@@ -13,17 +14,29 @@ pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
 
-impl SemiRingSignature for IntegerCanonicalStructure {
+impl AdditiveMonoidSignature for IntegerCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
 
-    fn one(&self) -> Self::Set {
-        Integer::ONE
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
+    }
+}
+
+impl AdditiveGroupSignature for IntegerCanonicalStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        -a
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        a - b
+    }
+}
+
+impl SemiRingSignature for IntegerCanonicalStructure {
+    fn one(&self) -> Self::Set {
+        Integer::ONE
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -31,19 +44,15 @@ impl SemiRingSignature for IntegerCanonicalStructure {
     }
 }
 
+impl RingSignature for IntegerCanonicalStructure {}
+
 impl CharacteristicSignature for IntegerCanonicalStructure {
     fn characteristic(&self) -> Natural {
         Natural::ZERO
     }
 }
 
-impl RingSignature for IntegerCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        -a
-    }
-}
-
-impl UnitsSignature for IntegerCanonicalStructure {
+impl SemiRingUnitsSignature for IntegerCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         self.div(&self.one(), a)
     }
@@ -78,6 +87,7 @@ impl FiniteUnitsSignature for IntegerCanonicalStructure {
 
 impl FavoriteAssociateSignature for IntegerCanonicalStructure {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+        #[allow(clippy::comparison_chain)]
         if a == &Integer::ZERO {
             (Integer::ONE, Integer::ZERO)
         } else if a < &Integer::ZERO {
@@ -88,32 +98,51 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
     }
 }
 
-impl UniqueFactorizationSignature for IntegerCanonicalStructure {
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(self.is_irreducible(a))
+impl UniqueFactorizationDomainSignature for IntegerCanonicalStructure {
+    // type FactorOrdering = Self;
+    type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    fn into_factorizations(self) -> Self::Factorizations<Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+    //     Cow::Borrowed(self)
+    // }
+
+    fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+        Some(is_prime(&a.abs()))
     }
 }
 
 impl FactorableSignature for IntegerCanonicalStructure {
-    fn factor(&self, a: &Self::Set) -> Option<FactoredElement<Self>> {
+    fn factor(&self, a: &Self::Set) -> Option<FactoredRingElement<Integer>> {
         if a == &Integer::ZERO {
             None
         } else {
-            let unit;
-            if a < &Integer::ZERO {
-                unit = Integer::from(-1);
+            let unit = if a < &Integer::ZERO {
+                Integer::from(-1)
             } else {
-                unit = Integer::from(1);
-            }
+                Integer::from(1)
+            };
             let f = factor(a.abs()).unwrap();
-            Some(FactoredElement::from_unit_and_factor_powers_unchecked(
-                self.clone().into(),
-                unit,
-                f.into_factor_powers()
-                    .into_iter()
-                    .map(|(p, k)| (Integer::from(p), Natural::from(k)))
-                    .collect(),
-            ))
+            Some(
+                Integer::structure()
+                    .factorizations()
+                    .from_unit_and_factor_powers_unchecked(
+                        unit,
+                        Natural::structure()
+                            .factorizations()
+                            .into_powers(f)
+                            .into_iter()
+                            .map(|(p, k)| (Integer::from(p), k))
+                            .collect(),
+                    ),
+            )
         }
     }
 }
@@ -147,6 +176,8 @@ impl BezoutDomainSignature for IntegerCanonicalStructure {
         Integer::euclidean_xgcd(x.clone(), y.clone())
     }
 }
+
+impl DedekindDomainSignature for IntegerCanonicalStructure {}
 
 impl CharZeroRingSignature for IntegerCanonicalStructure {
     fn try_to_int(&self, x: &Integer) -> Option<Integer> {

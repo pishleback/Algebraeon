@@ -20,12 +20,11 @@ fn double_poly_to_row(
     Matrix::from_rows(vec![
         (0..outer_poly_len)
             .map(|i| a.coeff(i))
-            .map(|c| {
+            .flat_map(|c| {
                 (0..inner_poly_len)
                     .map(|j| c.coeff(j).clone())
                     .collect::<Vec<_>>()
             })
-            .flatten()
             .collect::<Vec<_>>(),
     ])
 }
@@ -54,7 +53,9 @@ fn row_to_double_poly(
     Polynomial::from_coeffs(coeffs)
 }
 
-impl PolynomialStructure<AlgebraicNumberFieldStructure> {
+impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
+    PolynomialStructure<AlgebraicNumberFieldStructure, B>
+{
     /*
         input:  A polynomial f(x) over an algebraic number field K, return
         output: The polynomial \prod_{i=1}^n \sigma_i(f) over \mathbb{Q}
@@ -126,7 +127,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
                 .modulus()
                 .coeffs()
                 .into_iter()
-                .map(|c| c.clone())
+                .cloned()
                 .collect::<Vec<_>>();
 
             let lc = min_poly_coeffs.pop().unwrap();
@@ -166,7 +167,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
         p: &<Self as SetSignature>::Set,
-    ) -> crate::structure::FactoredElement<Self> {
+    ) -> crate::structure::FactoredRingElement<<Self as SetSignature>::Set> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
         debug_assert!(!self.is_zero(p));
@@ -206,7 +207,10 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
         //the factors of p are gcd(p(x), t_i(x + kθ)) for each squarefree factor t_i of t
 
         let mut p_factors = vec![];
-        for (ti, ti_pow) in t.factor().unwrap().factor_powers() {
+        for (ti, ti_pow) in Polynomial::<Rational>::structure()
+            .factorizations()
+            .to_powers(&t.factor().unwrap())
+        {
             // println!("ti = {}", ti);
             debug_assert_eq!(ti_pow, &Natural::ONE);
             p_factors.push(
@@ -223,8 +227,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
         // println!("p_factors = {:?}", p_factors);
 
-        let factored = FactoredElement::from_unit_and_factor_powers(
-            self.clone().into(),
+        let factored = self.factorizations().from_unit_and_factor_powers(
             self.one(),
             p_factors
                 .into_iter()
@@ -238,7 +241,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     pub fn factor_primitive_sqfree_by_reduced_ring(
         &self,
         p: &<Self as SetSignature>::Set,
-    ) -> FactoredElement<Self> {
+    ) -> FactoredRingElement<<Self as SetSignature>::Set> {
         debug_assert!(!self.is_zero(p));
 
         /*
@@ -257,7 +260,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
         */
         // println!("p = {}", p);
 
-        let l_reduced_ring = QuotientStructure::new_ring(self.clone().into(), p.clone());
+        let l_reduced_ring = QuotientStructure::new_ring(self.clone(), p.clone());
         //n = degree over L over Q
         let k_deg = self.coeff_ring().degree();
         if k_deg == 1 {
@@ -269,9 +272,8 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             )
             .factor()
             .unwrap()
-            .into_unit_and_factor_powers();
-            FactoredElement::from_unit_and_factor_powers(
-                self.clone().into(),
+            .into_unit_and_powers();
+            self.factorizations().from_unit_and_factor_powers(
                 Polynomial::constant(unit),
                 factors
                     .into_iter()
@@ -326,7 +328,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
                                     Polynomial::from_coeffs(
                                         (0..k_deg)
                                             .map(|_j| {
-                                                if rand::Rng::gen_range(&mut rng, 0..(1 + n / 3))
+                                                if rand::Rng::random_range(&mut rng, 0..=(n / 3))
                                                     != 0
                                                 //try to keep the choice of alpha simple by choosing lots of zeros
                                                 {
@@ -415,9 +417,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             let l_to_la = |x_in_l: Polynomial<Polynomial<Rational>>| -> Polynomial<Rational> {
                 let x_in_q = l_to_vec(x_in_l);
                 let x_in_la_vec = alpha_pow_mat.clone().row_solve(&x_in_q.get_row(0)).unwrap();
-                let x_in_la =
-                    Polynomial::from_coeffs((0..n).map(|c| x_in_la_vec[c].clone()).collect());
-                x_in_la
+                Polynomial::from_coeffs((0..n).map(|c| x_in_la_vec[c].clone()).collect())
             };
             #[cfg(any())]
             let la_to_l = |x_in_la: Polynomial<Rational>| -> Polynomial<Polynomial<Rational>> {
@@ -446,10 +446,9 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             // println!("gen in la = {}", gen_in_la);
             // println!("x in la {}", &x_in_la);
 
-            let p_factors = q
-                .factor()
-                .unwrap()
-                .factor_powers()
+            let p_factors = Polynomial::<Rational>::structure()
+                .factorizations()
+                .to_powers(&q.factor().unwrap())
                 .into_iter()
                 .map(|(qi, pow)| {
                     // println!("");
@@ -459,7 +458,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
                     // Q[y]/qi(y)
                     let lai_reduced_ring = QuotientStructure::new_field(
-                        PolynomialStructure::new(Rational::structure()).into(),
+                        PolynomialStructure::new(Rational::structure()),
                         qi.clone(),
                     );
 
@@ -479,7 +478,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
 
                     //the basis (1, t, ..., t^{deg(K)-1}, x, tx, ..., t^{deg(K)-1}x, ..., x^{d-1}, tx^{d-1}, ..., t^{deg(K)-1}x^{d-1}) in that order
                     let lai_basis = (0..pi_deg)
-                        .map(|i| {
+                        .flat_map(|i| {
                             (0..k_deg)
                                 .map(|j| {
                                     lai_reduced_ring.mul(
@@ -489,7 +488,6 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
                                 })
                                 .collect::<Vec<_>>()
                         })
-                        .flatten()
                         .collect::<Vec<_>>();
                     // for b in lai_basis.iter() {
                     //     println!("b = {}", b);
@@ -534,6 +532,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
                     // println!("pi_prime = {}", pi_prime);
                     let pi = self.add(&self.var_pow(pi_deg), &pi_prime.neg());
                     // println!("pi = {}", pi);
+                    #[allow(clippy::let_and_return)]
                     pi
                 })
                 .collect::<Vec<_>>();
@@ -543,8 +542,7 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             //     println!("pi = {}", pi);
             // }
 
-            FactoredElement::from_unit_and_factor_powers(
-                self.clone().into(),
+            self.factorizations().from_unit_and_factor_powers(
                 self.one(),
                 p_factors.into_iter().map(|pi| (pi, Natural::ONE)).collect(),
             )
@@ -555,8 +553,10 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
     pub fn factorize_rational_factorize_first(
         &self,
         f: &<Self as SetSignature>::Set,
-        factorize: &impl Fn(&<Self as SetSignature>::Set) -> FactoredElement<Self>,
-    ) -> FactoredElement<Self> {
+        factorize: &impl Fn(
+            &<Self as SetSignature>::Set,
+        ) -> FactoredRingElement<<Self as SetSignature>::Set>,
+    ) -> FactoredRingElement<<Self as SetSignature>::Set> {
         debug_assert!(!self.is_zero(f));
         // println!("f = {}", f);
 
@@ -573,9 +573,10 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
             Polynomial::<Rational>::from_coeffs(rat_coeffs)
         };
 
-        let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_factor_powers();
-        let mut factored =
-            FactoredElement::from_unit(self.clone().into(), Polynomial::constant(rat_unit));
+        let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_powers();
+        let mut factored = self
+            .factorizations()
+            .from_unit(Polynomial::constant(rat_unit));
         for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor
@@ -584,14 +585,66 @@ impl PolynomialStructure<AlgebraicNumberFieldStructure> {
                     .map(|c| Polynomial::constant(c.clone()))
                     .collect(),
             );
-            factored.mul_mut(factorize(&anf_unfactor));
+            self.factorizations()
+                .mul_mut(&mut factored, factorize(&anf_unfactor));
         }
         factored
     }
 }
 
-impl FactorableSignature for PolynomialStructure<AlgebraicNumberFieldStructure> {
-    fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredElement<Self>> {
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// struct IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//     anf: AlgebraicNumberFieldStructure,
+// }
+
+// impl Signature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {}
+
+// impl SetSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//     type Set = Polynomial<<AlgebraicNumberFieldStructure as SetSignature>::Set>;
+
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         todo!()
+//     }
+// }
+
+// impl EqSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         self.anf.polynomials().equal(a, b)
+//     }
+// }
+
+// impl OrdSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+//         todo!()
+//     }
+// }
+
+// impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>> UniqueFactorizationSignature
+//     for PolynomialStructure<AlgebraicNumberFieldStructure, B>
+// {
+//     type Irreducibles = IrreducibleAlgebraicNumberFieldPolynomialsStructure;
+
+//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn into_factorizations(self) -> Self::Factorizations<Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
+//         IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//             anf: self.coeff_ring().clone(),
+//         }
+//     }
+// }
+
+impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>> FactorableSignature
+    for PolynomialStructure<AlgebraicNumberFieldStructure, B>
+{
+    fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredRingElement<Self::Set>> {
         if self.is_zero(a) {
             None
         } else {
@@ -616,7 +669,7 @@ impl FactorableSignature for PolynomialStructure<AlgebraicNumberFieldStructure> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::{Factored, IntoErgonomic};
+    use crate::structure::IntoErgonomic;
 
     #[test]
     fn test_anf_poly_factor_count() {
@@ -626,9 +679,8 @@ mod tests {
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
-                .factor(&(x.pow(2) - 12).into_verbose())
-                .unwrap()
-                .factor_powers()
+                .factorizations()
+                .to_powers(&k_poly.factor(&(x.pow(2) - 12).into_verbose()).unwrap())
                 .len(),
             2
         );
@@ -641,9 +693,12 @@ mod tests {
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
-                .factor(&(x.pow(4) - x.pow(2) + 1).into_verbose())
-                .unwrap()
-                .factor_powers()
+                .factorizations()
+                .to_powers(
+                    &k_poly
+                        .factor(&(x.pow(4) - x.pow(2) + 1).into_verbose())
+                        .unwrap()
+                )
                 .len(),
             4
         );
@@ -652,9 +707,8 @@ mod tests {
         let k_poly = PolynomialStructure::new(k.clone());
         debug_assert_eq!(
             k_poly
-                .factor(&(x.pow(3) - x + 1).into_verbose())
-                .unwrap()
-                .factor_powers()
+                .factorizations()
+                .to_powers(&k_poly.factor(&(x.pow(3) - x + 1).into_verbose()).unwrap())
                 .len(),
             2
         );
@@ -666,9 +720,8 @@ mod tests {
         let x = &k_poly.var().into_ergonomic();
         debug_assert_eq!(
             k_poly
-                .factor(&(x.pow(12) - 1).into_verbose())
-                .unwrap()
-                .factor_powers()
+                .factorizations()
+                .to_powers(&k_poly.factor(&(x.pow(12) - 1).into_verbose()).unwrap())
                 .len(),
             12
         );

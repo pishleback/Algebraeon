@@ -1,14 +1,18 @@
 use crate::{polynomial::*, rings::integer::*};
 use std::rc::Rc;
 
-impl GreatestCommonDivisorSignature for PolynomialStructure<IntegerCanonicalStructure> {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> GreatestCommonDivisorSignature
+    for PolynomialStructure<IntegerCanonicalStructure, B>
+{
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         self.gcd_by_primitive_subresultant(x.clone(), y.clone())
     }
 }
 
-impl FactorableSignature for PolynomialStructure<IntegerCanonicalStructure> {
-    fn factor(&self, p: &Self::Set) -> Option<FactoredElement<Self>> {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> FactorableSignature
+    for PolynomialStructure<IntegerCanonicalStructure, B>
+{
+    fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Polynomial<Integer>>> {
         use berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm;
         // self.factorize_by_kroneckers_method(p)
         factorize_by_berlekamp_zassenhaus_algorithm(p.clone())
@@ -48,8 +52,61 @@ impl Polynomial<Integer> {
     }
 }
 
-impl FactorableSignature for MultiPolynomialStructure<IntegerCanonicalStructure> {
-    fn factor(&self, p: &Self::Set) -> Option<FactoredElement<Self>> {
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// struct IrreducibleIntegerMultiPolynomialStructure {}
+
+// impl Signature for IrreducibleIntegerMultiPolynomialStructure {}
+
+// impl SetSignature for IrreducibleIntegerMultiPolynomialStructure {
+//     type Set = MultiPolynomial<Integer>;
+
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         todo!()
+//     }
+// }
+
+// impl EqSignature for IrreducibleIntegerMultiPolynomialStructure {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         Integer::structure().multivariable_polynomials().equal(a, b)
+//     }
+// }
+
+// impl OrdSignature for IrreducibleIntegerMultiPolynomialStructure {
+//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering {
+//         todo!()
+//     }
+// }
+
+// impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> UniqueFactorizationSignature
+//     for MultiPolynomialStructure<IntegerCanonicalStructure, B>
+// {
+//     type Irreducibles = IrreducibleIntegerMultiPolynomialStructure;
+
+//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn into_factorizations(self) -> Self::Factorizations<Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
+//         IrreducibleIntegerMultiPolynomialStructure {}
+//     }
+// }
+
+// impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> UniqueFactorizationSignature
+//     for MultiPolynomialStructure<PolynomialStructure<IntegerCanonicalStructure, B>, B>
+// {
+
+// }
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> FactorableSignature
+    for MultiPolynomialStructure<IntegerCanonicalStructure, B>
+{
+    fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Self::Set>> {
         self.factor_by_yuns_and_kroneckers_inductively(
             Rc::new(Integer::factor),
             Rc::new(Polynomial::factor),
@@ -79,11 +136,11 @@ mod tests {
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
         // println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
-        assert!(FactoredElement::equal(
+        assert!(Polynomial::<Integer>::structure().factorizations().equal(
             &fs,
             &factorize_by_berlekamp_zassenhaus_algorithm_naive(f.clone()).unwrap()
         ));
-        assert!(FactoredElement::equal(
+        assert!(Polynomial::<Integer>::structure().factorizations().equal(
             &fs,
             &factorize_by_berlekamp_zassenhaus_algorithm(f.clone()).unwrap()
         ));
@@ -96,11 +153,11 @@ mod tests {
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
         // println!("{}", f.clone().factorize_by_zassenhaus_algorithm().unwrap());
-        assert!(FactoredElement::equal(
+        assert!(Polynomial::<Integer>::structure().factorizations().equal(
             &fs,
             &factorize_by_berlekamp_zassenhaus_algorithm_naive(f.clone()).unwrap()
         ));
-        assert!(FactoredElement::equal(
+        assert!(Polynomial::<Integer>::structure().factorizations().equal(
             &fs,
             &factorize_by_berlekamp_zassenhaus_algorithm(f.clone()).unwrap()
         ));

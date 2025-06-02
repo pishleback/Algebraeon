@@ -1,14 +1,13 @@
-use super::{ideal::RingOfIntegersIdeal, number_field::AlgebraicNumberFieldStructure};
+use super::number_field::AlgebraicNumberFieldStructure;
 use crate::{
     linear::{
-        finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
-        finitely_free_coset::FinitelyFreeSubmoduleCoset,
-        finitely_free_modules::FinitelyFreeModuleStructure, matrix::Matrix,
+        finitely_free_module::{FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature},
+        matrix::Matrix,
     },
     polynomial::Polynomial,
     structure::*,
 };
-use algebraeon_nzq::{Integer, Natural, Rational};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, Rational};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
@@ -17,8 +16,8 @@ pub struct RingOfIntegersWithIntegralBasisStructure {
     integral_basis: Vec<Polynomial<Rational>>,
     discriminant: Integer,
     // The below just aid in the efficiency of calculations
-    one: Option<RingOfIntegersWithIntegralBasisElement>, // store 1
-    mul_crossterms: Option<Vec<Vec<RingOfIntegersWithIntegralBasisElement>>>,
+    one: Option<Vec<Integer>>, // store 1
+    mul_crossterms: Option<Vec<Vec<Vec<Integer>>>>,
 }
 
 impl ToStringSignature for RingOfIntegersWithIntegralBasisStructure {
@@ -51,7 +50,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
             algebraic_number_field.compute_integral_basis_and_discriminant();
         debug_assert_eq!(discriminant, true_discriminant);
         for a in &integral_basis {
-            debug_assert!(algebraic_number_field.is_algebraic_integer(a))
+            debug_assert!(algebraic_number_field.is_algebraic_integer(a));
         }
         let mut roi = Self {
             algebraic_number_field,
@@ -68,7 +67,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         roi.mul_crossterms = Some(
             (0..n)
                 .map(|j| {
-                    (0..(j + 1))
+                    (0..=j)
                         .map(|i| {
                             roi.try_anf_to_roi(
                                 &roi.algebraic_number_field
@@ -91,6 +90,12 @@ impl RingOfIntegersWithIntegralBasisStructure {
         self.integral_basis.len()
     }
 
+    pub fn z_module(
+        &self,
+    ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
+        Integer::structure().into_free_module(self.degree())
+    }
+
     pub fn integral_basis(&self) -> &Vec<Polynomial<Rational>> {
         &self.integral_basis
     }
@@ -105,101 +110,90 @@ impl RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RingOfIntegersWithIntegralBasisElement {
-    coefficients: Vec<Integer>,
-}
+// impl RingOfIntegersWithIntegralBasisElement {
+//     pub fn basis_element(n: usize, i: usize) -> Self {
+//         Self {
+//             coefficients: (0..n)
+//                 .map(|j| if i == j { Integer::ONE } else { Integer::ZERO })
+//                 .collect(),
+//         }
+//     }
 
-impl RingOfIntegersWithIntegralBasisElement {
-    pub fn basis_element(n: usize, i: usize) -> Self {
-        Self {
-            coefficients: (0..n)
-                .map(|j| if i == j { Integer::ONE } else { Integer::ZERO })
-                .collect(),
-        }
-    }
+//     pub fn into_col(self) -> Matrix<Integer> {
+//         Matrix::from_cols(vec![self.coefficients])
+//     }
 
-    pub fn into_col(self) -> Matrix<Integer> {
-        Matrix::from_cols(vec![self.coefficients])
-    }
+//     pub fn from_col(m: &Matrix<Integer>) -> Self {
+//         debug_assert_eq!(m.cols(), 1);
+//         let n = m.rows();
+//         Self {
+//             coefficients: (0..n).map(|i| m.at(i, 0).unwrap().clone()).collect(),
+//         }
+//     }
 
-    pub fn from_col(m: &Matrix<Integer>) -> Self {
-        debug_assert_eq!(m.cols(), 1);
-        let n = m.rows();
-        Self {
-            coefficients: (0..n).map(|i| m.at(i, 0).unwrap().clone()).collect(),
-        }
-    }
+//     pub fn into_row(self) -> Matrix<Integer> {
+//         Matrix::from_cols(vec![self.coefficients])
+//     }
 
-    pub fn into_row(self) -> Matrix<Integer> {
-        Matrix::from_cols(vec![self.coefficients])
-    }
+//     pub fn from_row(m: &Matrix<Integer>) -> Self {
+//         debug_assert_eq!(m.rows(), 1);
+//         let n = m.cols();
+//         Self {
+//             coefficients: (0..n).map(|i| m.at(0, i).unwrap().clone()).collect(),
+//         }
+//     }
 
-    pub fn from_row(m: &Matrix<Integer>) -> Self {
-        debug_assert_eq!(m.rows(), 1);
-        let n = m.cols();
-        Self {
-            coefficients: (0..n).map(|i| m.at(0, i).unwrap().clone()).collect(),
-        }
-    }
+//     pub fn into_coefficients(self) -> Vec<Integer> {
+//         self.coefficients
+//     }
 
-    pub fn into_coefficients(self) -> Vec<Integer> {
-        self.coefficients
-    }
+//     pub fn coefficients(&self) -> &Vec<Integer> {
+//         &self.coefficients
+//     }
 
-    pub fn coefficients(&self) -> &Vec<Integer> {
-        &self.coefficients
-    }
+//     pub fn from_coefficients(coefficients: Vec<Integer>) -> Self {
+//         Self {
+//             coefficients: coefficients,
+//         }
+//     }
 
-    pub fn from_coefficients(coefficients: Vec<Integer>) -> Self {
-        Self {
-            coefficients: coefficients,
-        }
-    }
+//     pub fn scalar_mul(self, a: &Integer) -> Self {
+//         Self {
+//             coefficients: self.coefficients.into_iter().map(|c| c * a).collect(),
+//         }
+//     }
 
-    pub fn scalar_mul(self, a: &Integer) -> Self {
-        Self {
-            coefficients: self.coefficients.into_iter().map(|c| c * a).collect(),
-        }
-    }
+//     pub fn scalar_mul_ref(&self, a: &Integer) -> Self {
+//         Self {
+//             coefficients: self.coefficients.iter().map(|c| c * a).collect(),
+//         }
+//     }
 
-    pub fn scalar_mul_ref(&self, a: &Integer) -> Self {
-        Self {
-            coefficients: self.coefficients.iter().map(|c| c * a).collect(),
-        }
-    }
+//     pub fn neg(self) -> Self {
+//         Self {
+//             coefficients: self.coefficients.into_iter().map(|c| -c).collect(),
+//         }
+//     }
 
-    pub fn neg(self) -> Self {
-        Self {
-            coefficients: self.coefficients.into_iter().map(|c| -c).collect(),
-        }
-    }
-
-    pub fn neg_ref(&self) -> Self {
-        Self {
-            coefficients: self.coefficients.iter().map(|c| -c).collect(),
-        }
-    }
-}
+//     pub fn neg_ref(&self) -> Self {
+//         Self {
+//             coefficients: self.coefficients.iter().map(|c| -c).collect(),
+//         }
+//     }
+// }
 
 impl RingOfIntegersWithIntegralBasisStructure {
-    pub fn roi_to_anf(
-        &self,
-        elem: &RingOfIntegersWithIntegralBasisElement,
-    ) -> Polynomial<Rational> {
-        let n = self.degree();
+    pub fn roi_to_anf(&self, elem: &Vec<Integer>) -> Polynomial<Rational> {
         debug_assert!(self.is_element(elem));
+        let n = self.degree();
         self.algebraic_number_field.sum(
             (0..n)
-                .map(|i| self.integral_basis[i].mul_scalar(&Rational::from(&elem.coefficients[i])))
+                .map(|i| self.integral_basis[i].mul_scalar(&Rational::from(&elem[i])))
                 .collect(),
         )
     }
 
-    pub fn try_anf_to_roi(
-        &self,
-        elem: &Polynomial<Rational>,
-    ) -> Option<RingOfIntegersWithIntegralBasisElement> {
+    pub fn try_anf_to_roi(&self, elem: &Polynomial<Rational>) -> Option<Vec<Integer>> {
         let n = self.degree();
         let y = self.algebraic_number_field.to_vector(elem);
         let m = Matrix::join_cols(
@@ -213,8 +207,9 @@ impl RingOfIntegersWithIntegralBasisStructure {
         );
         if let Some(s) = m.col_solve(&y) {
             debug_assert_eq!(s.len(), n);
+            #[allow(clippy::manual_ok_err)]
             if let Ok(coefficients) = (0..n).map(|i| Integer::try_from(s[i].clone())).collect() {
-                Some(RingOfIntegersWithIntegralBasisElement { coefficients })
+                Some(coefficients)
             } else {
                 None
             }
@@ -223,122 +218,15 @@ impl RingOfIntegersWithIntegralBasisStructure {
             unreachable!()
         }
     }
-
-    /// given an ideal I and element a find an element b such that I = (a, b)
-    pub fn ideal_other_generator(
-        &self,
-        g: &RingOfIntegersWithIntegralBasisElement,
-        ideal: &RingOfIntegersIdeal,
-    ) -> RingOfIntegersWithIntegralBasisElement {
-        debug_assert!(self.ideal_contains_element(ideal, g));
-        debug_assert!(!self.is_zero(g));
-        // prod_i p^{e_i}
-        let ideal_factored = self.factor_ideal(ideal).unwrap();
-        // prod_i p^{f_i} * prod_j q^{g_j}
-        let g_factored = self.factor_ideal(&self.principal_ideal(g)).unwrap();
-        // want b not in any q and in all p^{e_i} and not in any p^{e_i+1}
-
-        // this is all b not in any q and in all p^{e_i}
-        let b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
-            FinitelyFreeModuleStructure::new(Integer::structure(), self.degree()),
-            ideal_factored
-                .factor_powers()
-                .into_iter()
-                .map(|(p, k)| match self.ideal_nat_pow(p.ideal(), k) {
-                    RingOfIntegersIdeal::Zero => unreachable!(),
-                    RingOfIntegersIdeal::NonZero {
-                        lattice: pk_lattice,
-                    } => FinitelyFreeSubmoduleAffineSubset::from_coset(
-                        FinitelyFreeSubmoduleCoset::from_submodule(pk_lattice),
-                    ),
-                })
-                .chain(
-                    g_factored
-                        .into_squarefree_factor_list()
-                        .into_iter()
-                        .filter(|prime_ideal| {
-                            !ideal_factored
-                                .squarefree_factor_list()
-                                .into_iter()
-                                .any(|p| self.ideal_equal(p.ideal(), prime_ideal.ideal()))
-                        })
-                        .map(|q| match q.into_ideal() {
-                            RingOfIntegersIdeal::Zero => unreachable!(),
-                            RingOfIntegersIdeal::NonZero { lattice: q_lattice } => {
-                                FinitelyFreeSubmoduleAffineSubset::from_coset(
-                                    FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
-                                        self.one().coefficients(),
-                                        q_lattice,
-                                    ),
-                                )
-                            }
-                        }),
-                )
-                .collect(),
-        );
-
-        //need to filter out the b in some p^{e_i+1}
-        let rm_b_set = FinitelyFreeSubmoduleAffineSubset::intersect_list(
-            FinitelyFreeModuleStructure::new(Integer::structure(), self.degree()),
-            ideal_factored
-                .factor_powers()
-                .into_iter()
-                .map(
-                    |(p, k)| match self.ideal_nat_pow(p.ideal(), &(k + Natural::ONE)) {
-                        RingOfIntegersIdeal::Zero => unreachable!(),
-                        RingOfIntegersIdeal::NonZero {
-                            lattice: pk_lattice,
-                        } => FinitelyFreeSubmoduleAffineSubset::from_coset(
-                            FinitelyFreeSubmoduleCoset::from_submodule(pk_lattice),
-                        ),
-                    },
-                )
-                .collect(),
-        );
-
-        //if all basis elements of b_set were contain in rm_b_set then we'd have b_set contained in rm_b_set
-        //but this is not the case, so some basis of b_set is not in rm_b_set
-
-        RingOfIntegersWithIntegralBasisElement::from_coefficients(
-            b_set
-                .affine_basis()
-                .into_iter()
-                .filter(|b| !rm_b_set.contains_element(b))
-                .next()
-                .unwrap(),
-        )
-    }
-
-    /// return two elements which generate the ideal
-    pub fn ideal_two_generators(
-        &self,
-        ideal: &RingOfIntegersIdeal,
-    ) -> (
-        RingOfIntegersWithIntegralBasisElement,
-        RingOfIntegersWithIntegralBasisElement,
-    ) {
-        let (a, b) = match ideal {
-            RingOfIntegersIdeal::Zero => (self.zero(), self.zero()),
-            RingOfIntegersIdeal::NonZero { lattice } => {
-                let a = RingOfIntegersWithIntegralBasisElement::from_coefficients(
-                    lattice.basis().into_iter().next().unwrap(),
-                );
-                let b = self.ideal_other_generator(&a, ideal);
-                (a, b)
-            }
-        };
-        debug_assert!(self.ideal_equal(&ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
-        (a, b)
-    }
 }
 
 impl Signature for RingOfIntegersWithIntegralBasisStructure {}
 
 impl SetSignature for RingOfIntegersWithIntegralBasisStructure {
-    type Set = RingOfIntegersWithIntegralBasisElement;
+    type Set = Vec<Integer>;
 
     fn is_element(&self, x: &Self::Set) -> bool {
-        x.coefficients.len() == self.degree()
+        x.len() == self.degree()
     }
 }
 
@@ -348,12 +236,27 @@ impl EqSignature for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
+impl AdditiveMonoidSignature for RingOfIntegersWithIntegralBasisStructure {
     fn zero(&self) -> Self::Set {
-        let coefficients = vec![Integer::ZERO; self.degree()];
-        RingOfIntegersWithIntegralBasisElement { coefficients }
+        self.z_module().zero()
     }
 
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.z_module().add(a, b)
+    }
+}
+
+impl AdditiveGroupSignature for RingOfIntegersWithIntegralBasisStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        self.z_module().neg(a)
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.z_module().sub(a, b)
+    }
+}
+
+impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
     fn one(&self) -> Self::Set {
         match &self.one {
             Some(one) => one.clone(),
@@ -361,16 +264,6 @@ impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
                 .try_anf_to_roi(&self.algebraic_number_field.one())
                 .unwrap(),
         }
-    }
-
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        let n = self.degree();
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(b));
-        let coefficients = (0..n)
-            .map(|i| &a.coefficients[i] + &b.coefficients[i])
-            .collect();
-        RingOfIntegersWithIntegralBasisElement { coefficients }
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -383,10 +276,10 @@ impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
                 let mut t = self.zero();
                 for i in 0..n {
                     for j in 0..n {
-                        let c = &a.coefficients[i] * &b.coefficients[j];
+                        let c = &a[i] * &b[j];
                         // Sort i and j for indexing into mul_crossterms which is a triangular array
                         let (i, j) = if j <= i { (i, j) } else { (j, i) };
-                        t = self.add(&t, &mul_crossterms[i][j].clone().scalar_mul(&c));
+                        t = self.add(&t, &mul_crossterms[i][j].iter().map(|x| x * &c).collect());
                     }
                 }
                 debug_assert!(
@@ -416,20 +309,17 @@ impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
+impl RingSignature for RingOfIntegersWithIntegralBasisStructure {}
+
 impl CharacteristicSignature for RingOfIntegersWithIntegralBasisStructure {
     fn characteristic(&self) -> Natural {
         Natural::ZERO
     }
 }
 
-impl RingSignature for RingOfIntegersWithIntegralBasisStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        a.neg_ref()
-    }
-}
-
-impl UnitsSignature for RingOfIntegersWithIntegralBasisStructure {
+impl SemiRingUnitsSignature for RingOfIntegersWithIntegralBasisStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
+        #[allow(clippy::collapsible_else_if)]
         if self.is_zero(a) {
             Err(RingDivisionError::DivideByZero)
         } else {
@@ -459,6 +349,8 @@ impl IntegralDomainSignature for RingOfIntegersWithIntegralBasisStructure {
         }
     }
 }
+
+impl DedekindDomainSignature for RingOfIntegersWithIntegralBasisStructure {}
 
 impl CharZeroRingSignature for RingOfIntegersWithIntegralBasisStructure {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
@@ -549,9 +441,7 @@ mod tests {
 
         {
             assert_eq!(
-                roi.roi_to_anf(&RingOfIntegersWithIntegralBasisElement {
-                    coefficients: vec![Integer::from(1), Integer::from(4)]
-                }),
+                roi.roi_to_anf(&vec![Integer::from(1), Integer::from(4)]),
                 (2 + 3 * &x).into_verbose()
             );
         }
@@ -570,8 +460,7 @@ mod tests {
                     Rational::from(2),
                     Rational::from(3),
                 ]))
-                .unwrap()
-                .coefficients;
+                .unwrap();
             assert_eq!(c.len(), 2);
             assert_eq!(c[0], Integer::from(1));
             assert_eq!(c[1], Integer::from(4));
@@ -579,7 +468,7 @@ mod tests {
 
         {
             // 0 = 0 * (0+x) + 0 * (1/2 + 1/2x)
-            let zero = roi.zero().coefficients;
+            let zero = roi.zero();
             assert_eq!(zero.len(), 2);
             assert_eq!(zero[0], Integer::ZERO);
             assert_eq!(zero[1], Integer::ZERO);
@@ -587,7 +476,7 @@ mod tests {
 
         {
             // 1 = -1 * (0+x) + 2 * (1/2 + 1/2x)
-            let one = roi.one().coefficients;
+            let one = roi.one();
             assert_eq!(one.len(), 2);
             assert_eq!(one[0], Integer::from(-1));
             assert_eq!(one[1], Integer::from(2));
@@ -633,16 +522,21 @@ mod tests {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
         let roi = anf.ring_of_integers();
+        let roi_ideals = roi.ideals();
 
         // The ideal (27i - 9) in Z[i]
-        let ideal = roi.principal_ideal(&roi.try_anf_to_roi(&(27 * x - 9).into_verbose()).unwrap());
+        let ideal =
+            roi_ideals.principal_ideal(&roi.try_anf_to_roi(&(27 * x - 9).into_verbose()).unwrap());
 
-        let (a, b) = roi.ideal_two_generators(&ideal);
+        let (a, b) = roi_ideals.ideal_two_generators(&ideal);
         println!("I = ({}, {})", roi.to_string(&a), roi.to_string(&b));
 
         // Factor the ideal
-        for (prime_ideal, power) in roi.factor_ideal(&ideal).unwrap().into_factor_powers() {
-            let (a, b) = roi.ideal_two_generators(prime_ideal.ideal());
+        for (prime_ideal, power) in roi_ideals
+            .factorizations()
+            .into_powers(roi_ideals.factor_ideal(&ideal).unwrap())
+        {
+            let (a, b) = roi_ideals.ideal_two_generators(prime_ideal.ideal());
             println!(
                 "P = ({}, {})    power = {power}",
                 roi.to_string(&a),

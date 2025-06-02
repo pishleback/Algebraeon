@@ -55,7 +55,7 @@ where
 impl<RS: RingSignature> PartialEq for StructuredElement<RS> {
     fn eq(&self, other: &Self) -> bool {
         let structure = common_structure::<RS>(self.structure(), other.structure());
-        structure.equal(&self.ref_set(), &other.ref_set())
+        structure.equal(self.ref_set(), other.ref_set())
     }
 }
 
@@ -67,7 +67,7 @@ impl<RS: RingSignature> Neg for &StructuredElement<RS> {
     fn neg(self) -> Self::Output {
         StructuredElement::new(
             self.structure().clone(),
-            self.structure().neg(&self.ref_set()),
+            self.structure().neg(self.ref_set()),
         )
     }
 }
@@ -86,7 +86,7 @@ impl<RS: RingSignature> Add<&StructuredElement<RS>> for &StructuredElement<RS> {
     fn add(self, rhs: &StructuredElement<RS>) -> Self::Output {
         StructuredElement::new(
             self.structure().clone(),
-            self.structure().add(&self.ref_set(), &rhs.ref_set()),
+            self.structure().add(self.ref_set(), rhs.ref_set()),
         )
     }
 }
@@ -122,7 +122,7 @@ impl<RS: RingSignature> Sub<&StructuredElement<RS>> for &StructuredElement<RS> {
         StructuredElement::new(
             self.structure().clone(),
             self.structure()
-                .add(&self.ref_set(), &self.structure().neg(&rhs.ref_set())),
+                .add(self.ref_set(), &self.structure().neg(rhs.ref_set())),
         )
     }
 }
@@ -157,7 +157,7 @@ impl<RS: RingSignature> Mul<&StructuredElement<RS>> for &StructuredElement<RS> {
     fn mul(self, rhs: &StructuredElement<RS>) -> Self::Output {
         StructuredElement::new(
             self.structure().clone(),
-            self.structure().mul(&self.ref_set(), &rhs.ref_set()),
+            self.structure().mul(self.ref_set(), rhs.ref_set()),
         )
     }
 }
@@ -192,9 +192,7 @@ impl<RS: IntegralDomainSignature> Div<&StructuredElement<RS>> for &StructuredEle
     fn div(self, rhs: &StructuredElement<RS>) -> Self::Output {
         StructuredElement::new(
             self.structure().clone(),
-            self.structure()
-                .div(&self.ref_set(), &rhs.ref_set())
-                .unwrap(),
+            self.structure().div(self.ref_set(), rhs.ref_set()).unwrap(),
         )
     }
 }
@@ -228,7 +226,7 @@ impl<RS: IntegralDomainSignature> StructuredElement<RS> {
         StructuredElement::new(
             self.structure().clone(),
             self.structure()
-                .int_pow(&self.ref_set(), &Integer::from(n))
+                .int_pow(self.ref_set(), &Integer::from(n))
                 .unwrap(),
         )
     }

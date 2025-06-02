@@ -1,5 +1,5 @@
 use super::*;
-use algebraeon_sets::number_theory::primes;
+use algebraeon_nzq::primes;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IsPowerTestResult {

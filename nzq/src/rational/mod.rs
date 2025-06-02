@@ -1,9 +1,11 @@
 //! The Rational type and operations.
-
-use crate::integer::*;
-use crate::natural::*;
-use crate::traits::*;
-use algebraeon_sets::structure::*;
+use crate::integer::Integer;
+use crate::natural::Natural;
+use crate::traits::{Abs, Ceil, Floor, Fraction};
+use algebraeon_sets::structure::{
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
+    Signature, ToStringSignature,
+};
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
 use std::{
@@ -13,6 +15,7 @@ use std::{
 
 /// Represent a rational number - a number of the form `a`/`b` where `a` is an integer and `b` is a non-zero integer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
+#[canonical_structure(eq, ord)]
 pub struct Rational(malachite_q::Rational);
 
 impl ToStringSignature for RationalCanonicalStructure {
@@ -21,6 +24,7 @@ impl ToStringSignature for RationalCanonicalStructure {
     }
 }
 
+#[allow(clippy::wrong_self_convention)]
 impl Rational {
     pub(crate) fn from_malachite(value: malachite_q::Rational) -> Self {
         Self(value)
@@ -125,6 +129,34 @@ impl From<&Rational> for Rational {
     }
 }
 
+macro_rules! impl_try_into_via_integer {
+    ($($t:ty),*) => {
+        $(
+            impl TryInto<$t> for Rational {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    (&self).try_into()
+                }
+            }
+            impl TryInto<$t> for &Rational {
+                type Error = ();
+
+                fn try_into(self) -> Result<$t, Self::Error> {
+                    // First check if this rational represents a whole number
+                    let integer: Integer = Integer::try_from(self)?;
+                    // Then try to convert the integer to the target type
+                    integer.try_into()
+                }
+            }
+        )*
+    };
+}
+
+impl_try_into_via_integer!(
+    u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
+);
+
 impl FromStr for Rational {
     type Err = ();
 
@@ -138,6 +170,45 @@ impl Rational {
     pub const ONE: Self = Self(malachite_q::Rational::ONE);
     pub const TWO: Self = Self(malachite_q::Rational::TWO);
     pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
+
+    fn latex(&self) -> String {
+        let (num, den) = self.numerator_and_denominator();
+        if den == Natural::ONE {
+            format!("{}", num)
+        } else {
+            format!("\\frac{{{}}}{{{}}}", num, den)
+        }
+    }
+
+    fn typst(&self) -> String {
+        let (num, den) = self.numerator_and_denominator();
+        if den == Natural::ONE {
+            format!("{}", num)
+        } else {
+            format!("{}/{}", num, den)
+        }
+    }
+
+    pub fn sqrt_if_square(&self) -> Option<Rational> {
+        if self < &Rational::ZERO {
+            None
+        } else {
+            let (num, den) = self.clone().into_abs_numerator_and_denominator();
+            let sqrt_num = num.sqrt_if_square()?;
+            let sqrt_den = den.sqrt_if_square()?;
+
+            Some(Rational::from_integers(sqrt_num, sqrt_den))
+        }
+    }
+
+    pub fn is_square(&self) -> bool {
+        if self < &Rational::ZERO {
+            false
+        } else {
+            let (num, den) = self.clone().into_abs_numerator_and_denominator();
+            num.is_square() && den.is_square()
+        }
+    }
 }
 
 impl PartialEq<Natural> for Rational {
@@ -184,34 +255,34 @@ impl PartialOrd<&Integer> for Rational {
 
 impl AddAssign<Rational> for Rational {
     fn add_assign(&mut self, rhs: Rational) {
-        self.0.add_assign(rhs.0)
+        self.0.add_assign(rhs.0);
     }
 }
 impl AddAssign<&Rational> for Rational {
     fn add_assign(&mut self, rhs: &Rational) {
-        self.0.add_assign(&rhs.0)
+        self.0.add_assign(&rhs.0);
     }
 }
 
 impl SubAssign<Rational> for Rational {
     fn sub_assign(&mut self, rhs: Rational) {
-        self.0.sub_assign(rhs.0)
+        self.0.sub_assign(rhs.0);
     }
 }
 impl SubAssign<&Rational> for Rational {
     fn sub_assign(&mut self, rhs: &Rational) {
-        self.0.sub_assign(&rhs.0)
+        self.0.sub_assign(&rhs.0);
     }
 }
 
 impl MulAssign<Rational> for Rational {
     fn mul_assign(&mut self, rhs: Rational) {
-        self.0.mul_assign(rhs.0)
+        self.0.mul_assign(rhs.0);
     }
 }
 impl MulAssign<&Rational> for Rational {
     fn mul_assign(&mut self, rhs: &Rational) {
-        self.0.mul_assign(&rhs.0)
+        self.0.mul_assign(&rhs.0);
     }
 }
 
@@ -465,15 +536,17 @@ impl Rational {
         ))
     }
 
+    #[allow(clippy::return_self_not_must_use)]
     pub fn approximate(self, max_denominator: &Natural) -> Self {
         Self(self.0.approximate(max_denominator.to_malachite_ref()))
     }
 
     /// An iterator over all rational numbers.
     pub fn exhaustive_rationals() -> impl Iterator<Item = Rational> {
-        malachite_q::exhaustive::exhaustive_rationals().map(|v| Rational(v))
+        malachite_q::exhaustive::exhaustive_rationals().map(Rational)
     }
 
+    #[allow(clippy::result_unit_err, clippy::missing_errors_doc)]
     pub fn try_from_float_simplest(x: f64) -> Result<Self, ()> {
         match malachite_q::Rational::try_from_float_simplest(x) {
             Ok(x) => Ok(Self(x)),
@@ -481,6 +554,7 @@ impl Rational {
         }
     }
 
+    #[allow(clippy::missing_panics_doc)]
     pub fn decimal_string_approx(&self) -> String {
         if self == &Rational::ZERO {
             return "0".into();
@@ -492,6 +566,7 @@ impl Rational {
                 malachite_base::rounding_modes::RoundingMode::Nearest,
             )
             .unwrap();
+        #[allow(clippy::unnecessary_cast, clippy::cast_precision_loss)]
         let mut b = (2.0 as f64).powf(exp as f64) * mant;
         if neg {
             b = -b;
@@ -504,9 +579,7 @@ impl Rational {
 impl CountableSetSignature for RationalCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         use malachite_q::exhaustive::exhaustive_rationals;
-        exhaustive_rationals()
-            .into_iter()
-            .map(|x| Rational::from_malachite(x))
+        exhaustive_rationals().map(Rational::from_malachite)
     }
 }
 
@@ -520,5 +593,225 @@ mod tests {
         let (n, d) = ((&x).numerator(), (&x).denominator());
         assert_eq!(n, Integer::from(-2));
         assert_eq!(d, Natural::from(3u32));
+    }
+
+    #[test]
+    fn test_rational_to_unsigned() {
+        // Test successful conversions for whole numbers
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("0").unwrap()),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("255").unwrap()),
+            Ok(255)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u16>>::try_into(&Rational::from_str("65535").unwrap()),
+            Ok(65535)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::from_str("4294967295").unwrap()),
+            Ok(4294967295)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u64>>::try_into(
+                &Rational::from_str("18446744073709551615").unwrap()
+            ),
+            Ok(18446744073709551615)
+        );
+
+        // Test failure for fractional numbers
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("1/2").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::from_str("5/3").unwrap()),
+            Err(())
+        );
+
+        // Test failure for negative numbers (unsigned types)
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("-1").unwrap()),
+            Err(())
+        );
+
+        // Test failure for out-of-range values
+        assert_eq!(
+            <&Rational as TryInto<u8>>::try_into(&Rational::from_str("256").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<u16>>::try_into(&Rational::from_str("65536").unwrap()),
+            Err(())
+        );
+
+        // Test owned version
+        assert_eq!(
+            <Rational as TryInto<u8>>::try_into(Rational::from_str("42").unwrap()),
+            Ok(42)
+        );
+    }
+
+    #[test]
+    fn test_rational_to_signed() {
+        // Test successful conversions for whole numbers
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("-128").unwrap()),
+            Ok(-128)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("127").unwrap()),
+            Ok(127)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i16>>::try_into(&Rational::from_str("-32768").unwrap()),
+            Ok(-32768)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("2147483647").unwrap()),
+            Ok(2147483647)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i64>>::try_into(
+                &Rational::from_str("-9223372036854775808").unwrap()
+            ),
+            Ok(-9223372036854775808)
+        );
+
+        // Test failure for fractional numbers
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("-1/2").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("7/4").unwrap()),
+            Err(())
+        );
+
+        // Test failure for out-of-range values
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("-129").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<i8>>::try_into(&Rational::from_str("128").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<i16>>::try_into(&Rational::from_str("32768").unwrap()),
+            Err(())
+        );
+
+        // Test owned version
+        assert_eq!(
+            <Rational as TryInto<i32>>::try_into(Rational::from_str("-42").unwrap()),
+            Ok(-42)
+        );
+    }
+
+    #[test]
+    fn test_rational_whole_numbers_with_denominators() {
+        // Test that rationals like 6/3 = 2 convert correctly
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("6/3").unwrap()),
+            Ok(2)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::from_str("8/4").unwrap()),
+            Ok(2)
+        );
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("-12/4").unwrap()),
+            Ok(-3)
+        );
+
+        // Test that non-whole rationals fail
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::from_str("7/3").unwrap()),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::from_str("5/2").unwrap()),
+            Err(())
+        );
+    }
+
+    #[test]
+    fn test_rational_edge_cases() {
+        // Test zero
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::ZERO),
+            Ok(0)
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::ZERO),
+            Ok(0)
+        );
+
+        // Test one
+        assert_eq!(<&Rational as TryInto<i32>>::try_into(&Rational::ONE), Ok(1));
+        assert_eq!(<&Rational as TryInto<u32>>::try_into(&Rational::ONE), Ok(1));
+
+        // Test that ONE_HALF fails
+        assert_eq!(
+            <&Rational as TryInto<i32>>::try_into(&Rational::ONE_HALF),
+            Err(())
+        );
+        assert_eq!(
+            <&Rational as TryInto<u32>>::try_into(&Rational::ONE_HALF),
+            Err(())
+        );
+    }
+
+    #[test]
+    fn test_latex_and_typst() {
+        let r = Rational::from_integers(2, 3);
+        assert_eq!(r.latex(), "\\frac{2}{3}");
+        assert_eq!(r.typst(), "2/3");
+
+        let r2 = Rational::from_integers(4, 2);
+        assert_eq!(r2.latex(), "2");
+        assert_eq!(r2.typst(), "2");
+
+        let r3 = Rational::from_integers(-2, -4);
+        assert_eq!(r3.latex(), "\\frac{1}{2}");
+        assert_eq!(r3.typst(), "1/2");
+
+        let r4 = Rational::from_integers(-2, 4);
+        assert_eq!(r4.latex(), "\\frac{-1}{2}");
+        assert_eq!(r4.typst(), "-1/2");
+    }
+
+    #[test]
+    fn test_rational_is_square_true() {
+        assert!(Rational::from_integers(4, 9).is_square());
+        assert!(Rational::from_integers(1, 1).is_square());
+    }
+
+    #[test]
+    fn test_rational_is_square_false() {
+        assert!(!Rational::from_integers(2, 9).is_square());
+        assert!(!Rational::from_integers(-4, 9).is_square());
+    }
+
+    #[test]
+    fn test_rational_sqrt_if_square_some() {
+        let r = Rational::from_integers(4, 9);
+        let sqrt = r.sqrt_if_square();
+        assert_eq!(sqrt, Some(Rational::from_integers(2, 3)));
+    }
+
+    #[test]
+    fn test_rational_sqrt_if_square_none_negative() {
+        let r = Rational::from_integers(-4, 9);
+        assert_eq!(r.sqrt_if_square(), None);
+    }
+
+    #[test]
+    fn test_rational_sqrt_if_square_none_not_square() {
+        let r = Rational::from_integers(2, 9);
+        assert_eq!(r.sqrt_if_square(), None);
     }
 }

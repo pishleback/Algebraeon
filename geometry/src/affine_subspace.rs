@@ -27,6 +27,7 @@ impl<
     ESP: Borrow<AffineSpace<FS>> + From<AffineSpace<FS>> + Clone,
 > EmbeddedAffineSubspace<FS, SP, ESP>
 {
+    #[allow(clippy::type_complexity)]
     pub fn new_affine_span(
         ambient_space: SP,
         points: Vec<Vector<FS, SP>>,
@@ -49,11 +50,10 @@ impl<
                 Vector::construct(embedded_space.clone(), |j| {
                     if i == 0 {
                         ordered_field.zero()
+                    } else if i == j + 1 {
+                        ordered_field.one()
                     } else {
-                        match i == j + 1 {
-                            true => ordered_field.one(),
-                            false => ordered_field.zero(),
-                        }
+                        ordered_field.zero()
                     }
                 })
             })
@@ -76,6 +76,7 @@ impl<
 impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
     EmbeddedAffineSubspace<FS, SP, AffineSpace<FS>>
 {
+    #[allow(clippy::needless_pass_by_value, clippy::type_complexity)]
     pub fn new(
         ambient_space: SP,
         root: Vector<FS, SP>,
@@ -137,6 +138,7 @@ impl<
     //  f : A -> B
     //  g : B -> S
     //  pt is pt in B
+    #[allow(clippy::type_complexity)]
     pub fn extend_dimension_by_point_unsafe(
         &self,
         pt: Vector<FS, SP>,
@@ -165,9 +167,10 @@ impl<
                                     ordered_field.zero()
                                 } else {
                                     let j = k - 1;
-                                    match i == j {
-                                        true => ordered_field.one(),
-                                        false => ordered_field.zero(),
+                                    if i == j {
+                                        ordered_field.one()
+                                    } else {
+                                        ordered_field.zero()
                                     }
                                 }
                             })
@@ -184,13 +187,17 @@ impl<
                     pts
                 },
             },
-            Vector::construct(extended_embedded_space.clone(), |i| match i + 1 == n {
-                true => ordered_field.one(),
-                false => ordered_field.zero(),
+            Vector::construct(extended_embedded_space.clone(), |i| {
+                if i + 1 == n {
+                    ordered_field.one()
+                } else {
+                    ordered_field.zero()
+                }
             }),
         )
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn get_root_and_span(&self) -> Option<(Vector<FS, SP>, Vec<Vector<FS, SP>>)> {
         let mut points = self.embedding_points.iter();
         let root = points.next()?;
@@ -215,10 +222,7 @@ impl<
     pub fn embed_simplex(&self, spx: &Simplex<FS, ESP>) -> Simplex<FS, SP> {
         Simplex::new(
             self.ambient_space(),
-            spx.points()
-                .into_iter()
-                .map(|p| self.embed_point(p))
-                .collect(),
+            spx.points().iter().map(|p| self.embed_point(p)).collect(),
         )
         .unwrap()
     }
@@ -270,15 +274,17 @@ impl<
                         span[c].coordinate(r).clone()
                     } else {
                         let c = c - dim_ss;
-                        match r == c {
-                            false => ordered_field.zero(),
-                            true => ordered_field.one(),
+                        if r == c {
+                            ordered_field.one()
+                        } else {
+                            ordered_field.zero()
                         }
                     }
                 });
                 let (_, _, _, pivs) =
                     MatrixStructure::new(ordered_field.clone()).row_hermite_algorithm(mat);
                 debug_assert_eq!(pivs.len(), dim_amb);
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..dim_ss {
                     debug_assert_eq!(pivs[i], i); //span is linearly independent so we expect this
                 }
@@ -295,9 +301,10 @@ impl<
                             Vector::construct(ambient_space.clone(), |l| {
                                 ordered_field.add(
                                     root.coordinate(l),
-                                    &match l == k {
-                                        false => ordered_field.zero(),
-                                        true => ordered_field.one(),
+                                    &if l == k {
+                                        ordered_field.one()
+                                    } else {
+                                        ordered_field.zero()
                                     },
                                 )
                             })
@@ -309,18 +316,23 @@ impl<
                                 for s in &span {
                                     points.push(&root + s);
                                 }
+                                #[allow(clippy::needless_range_loop)]
                                 for j in 0..extension_elementary_basis_vectors.len() {
                                     if i != j {
                                         let k = extension_elementary_basis_vectors[j];
                                         //push root + e_k
-                                        points.push(Vector::construct(ambient_space.clone(), |l| {
-                                            ordered_field.add(root.coordinate(l), &{
-                                                match l == k {
-                                                    false => ordered_field.zero(),
-                                                    true => ordered_field.one(),
-                                                }
-                                            })
-                                        }))
+                                        points.push(Vector::construct(
+                                            ambient_space.clone(),
+                                            |l| {
+                                                ordered_field.add(root.coordinate(l), &{
+                                                    if l == k {
+                                                        ordered_field.one()
+                                                    } else {
+                                                        ordered_field.zero()
+                                                    }
+                                                })
+                                            },
+                                        ));
                                     }
                                 }
                                 points

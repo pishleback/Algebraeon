@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
  - Added Legendre Jacobi and Kronecker symbols.
  - Listing ring of algebraic integers ideals of a given norm.
  - Added trait for getting the characteristic of a ring.
+ - Allow certain structures to borrow other structures.
 
 ## [0.0.12] - 2025-04-12
 

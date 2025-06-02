@@ -65,18 +65,15 @@ impl ConwayPolynomialDatabase {
                 coeffs.push(c);
                 if d == ']' {
                     break;
-                } else {
-                    assert_eq_or_err!(d, ',');
                 }
+                assert_eq_or_err!(d, ',');
             }
             assert_or_err!(
                 data.entry(p)
                     .or_insert(HashMap::new())
                     .insert(
                         n,
-                        Polynomial::from_coeffs(
-                            coeffs.into_iter().map(|x| Integer::from(x)).collect()
-                        )
+                        Polynomial::from_coeffs(coeffs.into_iter().map(Integer::from).collect())
                     )
                     .is_none()
             );

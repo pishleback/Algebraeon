@@ -2,7 +2,9 @@
 
 Algebraeon is a computational algebra system (CAS) written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API subject to change. Algebraeon uses [Malachite](https://www.malachite.rs/) under the hood for arbitrary sized integer and rational numbers.
 
-See the [user guide](https://pishleback.github.io/Algebraeon/) to get started.
+See the [user guide](https://pishleback.github.io/Algebraeon/) (a work in progress) to get started. 
+
+There is [![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?logo=discord&logoColor=white)](https://discord.gg/DBqbPqPMKR) for informal discussions on the project.
 
 The latest published version of Algebraeon is hosted on crates.io [here](https://crates.io/crates/algebraeon) and the formal documentation for the most recent release is [here](https://docs.rs/algebraeon/latest/algebraeon/).
 
@@ -12,13 +14,22 @@ The latest published version of Algebraeon is hosted on crates.io [here](https:/
 
 To factor large integers using Algebraeon
 
-```
-use std::str::FromStr;
-use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
-
+```rust
+# use algebraeon::sets::structure::ToStringSignature;
+# use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
+# use algebraeon::{
+    rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure,
+    sets::structure::MetaType,
+};
+# use std::str::FromStr;
+# 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
 let f = factor(n.clone()).unwrap();
-println!("{} = {}", n, f);
+println!(
+    "{} = {}",
+    n,
+    Natural::structure().factorizations().to_string(&f)
+);;
 /*
 Output:
     706000565581575429997696139445280900 = 2^2 × 5^2 × 6988699669998001 × 1010203040506070809
@@ -31,10 +42,10 @@ Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedi
 
 Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
 
-```
-use algebraeon::rings::{polynomial::*, structure::*};
-use algebraeon::nzq::Integer;
-
+```rust
+# use algebraeon::rings::{polynomial::*, structure::*};
+# use algebraeon::nzq::Integer;
+# 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(2) - 5*x + 6).into_verbose();
 println!("f(λ) = {}", f.factor().unwrap());
@@ -71,14 +82,17 @@ a \begin{pmatrix}3 \\ 4 \\ 1\end{pmatrix} + b \begin{pmatrix}2 \\ 1 \\ 2\end{pma
 
 for integers $a$, $b$ and $c$.
 
-```
-use algebraeon::nzq::Integer;
-use algebraeon::rings::linear::matrix::Matrix;
+```rust
+# use algebraeon::nzq::Integer;
+# use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
+# use algebraeon::rings::linear::matrix::Matrix;
+# use algebraeon::sets::structure::MetaType;
 let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
-let y = Matrix::<Integer>::from_rows(vec![vec![5, 5, 3]]);
-for x in m
-    .row_solution_set(&vec![5.into(), 5.into(), 3.into()])
-    .affine_basis()
+let y = vec![5.into(), 5.into(), 3.into()];
+for x in Integer::structure()
+    .free_module(3)
+    .affine_subsets()
+    .affine_basis(&m.row_solution_set(&y))
 {
     println!("{:?}", x);
 }
@@ -102,10 +116,10 @@ where $s$ and $t$ are integers such that $s + t = 1$.
 Find all complex roots of the polynomial
 $$f(x) = x^5 + x^2 - x + 1$$
 
-```
-use algebraeon::rings::{polynomial::*, structure::*};
-use algebraeon::nzq::Integer;
-
+```rust
+# use algebraeon::rings::{polynomial::*, structure::*};
+# use algebraeon::nzq::Integer;
+# 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(5) + x.pow(2) - x + 1).into_verbose();
 // Find the complex roots of f(x)
@@ -126,24 +140,32 @@ Despite the output, the roots found are _not_ numerical approximations. Rather, 
 
 # Contributing
 
-Contributions are welcome. There are two primary ways to contribute:
+Contributions are welcome and I am happy to do some hand-holding to help out new contributors. See below for the best ways to get started with contributions.
 
 ## Using the issue tracker
 
 Use the issue tracker if you have questions, feature requests, bugs reports, etc.
 
+## What to work on?
+
+If you're unsure what you could do to help:
+ - Have a look through the issue tracker for unassigned issues.
+ - Ask in the discord server.
+
 ## Changing the code-base
 
 Fork this repository, make changes, and submit a pull request.
 
-If you're unsure what needs doing, have a look through the issue tracker for unassigned issues.
+## Getting started
 
 Algebraeon is organized as a [cargo workspace](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). Run `cargo test` in the root directory to build and run all tests.
 
-A suggested workflow for testing new features:
+A suggested workflow for getting started:
+- Checkout the repository.
 - Create a new binary in `examples/src/bin`, for example `my_main.rs`.
-- To run, use `cargo run --bin my_main` in the root directory.
+- Copy an example into `my_main.rs`.
+- Run it with `cargo run --bin my_main` in the root directory.
 
 ## CLA
 
-If you wish to contribute code we ask that you sign a CLA. The CLA allows us to relicense future versions of Algebraeon, including your contribution, under any licences the Free Software Foundation classifies as a Free Software Licence and which are approved by the Open Source Initiative as Open Source licences. It does not allow us to relicense of your contribution under any other more restrictive licences. The CLA can be signed on GitHub after you submit a pull request.
+If you wish to contribute code we ask that you sign a CLA. The CLA allows us to relicense future versions of Algebraeon, including your contribution, under any licences the Free Software Foundation classifies as a Free Software Licence and which are approved by the Open Source Initiative as Open Source licences. It does not allow us to relicense of your contribution under any other more restrictive licences. The CLA can be signed on GitHub once you submit a pull request.

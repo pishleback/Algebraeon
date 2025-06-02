@@ -14,6 +14,7 @@ pub struct ConwayFiniteFieldStructure {
     n: usize,
     structure: FieldExtensionByPolynomialQuotientStructure<
         QuotientStructure<IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, true>,
     >,
 }
 
@@ -78,17 +79,25 @@ impl EqSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl SemiRingSignature for ConwayFiniteFieldStructure {
+impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {
     fn zero(&self) -> Self::Set {
         self.structure.zero()
     }
 
-    fn one(&self) -> Self::Set {
-        self.structure.one()
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.structure.add(a, b)
+    }
+}
+
+impl AdditiveGroupSignature for ConwayFiniteFieldStructure {
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        self.structure.neg(a)
+    }
+}
+
+impl SemiRingSignature for ConwayFiniteFieldStructure {
+    fn one(&self) -> Self::Set {
+        self.structure.one()
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -96,19 +105,15 @@ impl SemiRingSignature for ConwayFiniteFieldStructure {
     }
 }
 
+impl RingSignature for ConwayFiniteFieldStructure {}
+
 impl CharacteristicSignature for ConwayFiniteFieldStructure {
     fn characteristic(&self) -> Natural {
         self.characteristic_and_power().0
     }
 }
 
-impl RingSignature for ConwayFiniteFieldStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        self.structure.neg(a)
-    }
-}
-
-impl UnitsSignature for ConwayFiniteFieldStructure {
+impl SemiRingUnitsSignature for ConwayFiniteFieldStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
         self.structure.inv(a)
     }
@@ -151,7 +156,10 @@ pub struct ConwayFiniteFieldInclusion {
     // Linear map F_{p^m} -> F_{p^n} of column vectors of polynomial coefficients over F_p
     inclusion: Matrix<Integer>,
     // matricies modulo p
-    mat_mod_p: MatrixStructure<QuotientStructure<IntegerCanonicalStructure, true>>,
+    mat_mod_p: MatrixStructure<
+        QuotientStructure<IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, true>,
+    >,
 }
 
 impl ConwayFiniteFieldInclusion {

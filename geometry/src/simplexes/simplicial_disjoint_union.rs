@@ -100,6 +100,7 @@ where
     FS::Set: Hash,
 {
     pub(super) fn check(&self) {
+        #[allow(clippy::for_kv_map)]
         for (spx_a, _label_a) in &self.simplexes {
             for (spx_b, _label_b) in &self.simplexes {
                 let bdry_a = spx_a
@@ -141,6 +142,7 @@ where
                 if i != j {
                     let spx_i = simplexes[i];
                     let spx_j = simplexes[j];
+                    #[allow(clippy::unwrap_or_default)]
                     pairs_todo
                         .entry(spx_i.clone())
                         .or_insert(HashSet::new())
@@ -149,8 +151,9 @@ where
             }
         }
 
+        #[allow(clippy::unwrap_or_default)]
         while !pairs_todo.is_empty() {
-            let spx1 = pairs_todo.keys().into_iter().next().unwrap().clone();
+            let spx1 = pairs_todo.keys().next().unwrap().clone();
             match pairs_todo.get(&spx1).unwrap().iter().next().cloned() {
                 None => {
                     pairs_todo.remove(&spx1);
@@ -169,17 +172,18 @@ where
                         &ConvexHull::from_simplex(spx2.clone()),
                     );
 
+                    #[allow(clippy::collapsible_if)]
                     if !overlap.is_empty() {
                         if match Simplex::new(
                             ambient_space.clone(),
                             overlap.defining_points().into_iter().collect(),
                         ) {
                             Ok(overlap_spx) => {
-                                let spx1_points = spx1.points().into_iter().collect::<HashSet<_>>();
-                                let spx2_points = spx2.points().into_iter().collect::<HashSet<_>>();
+                                let spx1_points = spx1.points().iter().collect::<HashSet<_>>();
+                                let spx2_points = spx2.points().iter().collect::<HashSet<_>>();
                                 !overlap_spx
                                     .points()
-                                    .into_iter()
+                                    .iter()
                                     .all(|pt| spx1_points.contains(pt) && spx2_points.contains(pt))
                             }
                             Err(_) => true,

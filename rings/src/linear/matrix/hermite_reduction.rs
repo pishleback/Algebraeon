@@ -1,7 +1,6 @@
 use crate::linear::{
     finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
-    finitely_free_coset::FinitelyFreeSubmoduleCoset,
-    finitely_free_modules::FinitelyFreeModuleStructure,
+    finitely_free_module::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
 };
 
@@ -13,10 +12,10 @@ impl<Ring: BezoutDomainSignature> HermiteAlgorithmSignature for Ring {}
 
 /// Rings for which reduced hermite normal forms can be computed
 pub trait ReducedHermiteAlgorithmSignature:
-    HermiteAlgorithmSignature + EuclideanDivisionSignature + FavoriteAssociateSignature
+    HermiteAlgorithmSignature + EuclideanDomainSignature + FavoriteAssociateSignature
 {
 }
-impl<Ring: HermiteAlgorithmSignature + EuclideanDivisionSignature + FavoriteAssociateSignature>
+impl<Ring: HermiteAlgorithmSignature + EuclideanDomainSignature + FavoriteAssociateSignature>
     ReducedHermiteAlgorithmSignature for Ring
 {
 }
@@ -26,7 +25,7 @@ pub trait UniqueReducedHermiteAlgorithmSignature: ReducedHermiteAlgorithmSignatu
 impl UniqueReducedHermiteAlgorithmSignature for IntegerCanonicalStructure {}
 impl<Field: FieldSignature> UniqueReducedHermiteAlgorithmSignature for Field {}
 
-impl<Ring: HermiteAlgorithmSignature> MatrixStructure<Ring> {
+impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStructure<Ring, RingB> {
     /// Return (H, U, u_det, pivots) such that
     /// - H is in row hermite normal form, meaning
     /// - U is invertible
@@ -168,7 +167,9 @@ impl<Ring: HermiteAlgorithmSignature> MatrixStructure<Ring> {
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
+impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
+    MatrixStructure<Ring, RingB>
+{
     /// Returns (H, U, u_det, pivots) such that
     /// - H is in row reduced hermite normal form, meaning entries above pivots have euclidean norm strictly less than the pivot
     /// - U is invertible
@@ -222,9 +223,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
 
     pub fn inv(&self, a: Matrix<Ring::Set>) -> Result<Matrix<Ring::Set>, MatOppErr> {
         let n = a.rows();
-        if n != a.cols() {
-            Err(MatOppErr::NotSquare)
-        } else {
+        if n == a.cols() {
             let (h, u, _u_det, _pivs) = self.row_reduced_hermite_algorithm(a);
             //h = u*a
             if self.equal(&h, &self.ident(n)) {
@@ -232,42 +231,51 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
             } else {
                 Err(MatOppErr::Singular)
             }
+        } else {
+            Err(MatOppErr::NotSquare)
         }
     }
 
-    pub fn row_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
-        FinitelyFreeSubmodule::matrix_row_span(self.ring().clone(), matrix)
+    pub fn row_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
+            .into_submodules()
+            .matrix_row_span(matrix)
     }
 
-    pub fn col_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
-        FinitelyFreeSubmodule::matrix_col_span(self.ring().clone(), matrix)
+    pub fn col_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
+            .into_submodules()
+            .matrix_col_span(matrix)
     }
 
-    pub fn row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
-        FinitelyFreeSubmodule::matrix_row_kernel(self.ring().clone(), matrix)
+    pub fn row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
+            .into_submodules()
+            .matrix_row_kernel(matrix)
     }
 
-    pub fn col_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring> {
-        FinitelyFreeSubmodule::matrix_col_kernel(self.ring().clone(), matrix)
+    pub fn col_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
+            .into_submodules()
+            .matrix_col_kernel(matrix)
     }
 
     pub fn row_affine_span(
         &self,
         matrix: Matrix<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
         let span = (0..matrix.rows())
             .map(|r| matrix.get_row(r))
             .collect::<Vec<_>>();
-        FinitelyFreeSubmoduleAffineSubset::from_affine_span(
-            FinitelyFreeModuleStructure::new(self.ring().clone(), matrix.cols()),
-            span.iter().collect(),
-        )
+        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
+            .affine_subsets()
+            .from_affine_span(span.iter().collect())
     }
 
     pub fn col_affine_span(
         &self,
         matrix: Matrix<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
         self.row_affine_span(matrix.transpose())
     }
 
@@ -276,9 +284,11 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
         matrix: Matrix<Ring::Set>,
         y: &Vec<Ring::Set>,
     ) -> Option<Vec<Ring::Set>> {
+        let submodules = FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
+            .into_submodules();
         let (row_span_submodule, basis_in_terms_of_matrix_rows) =
-            FinitelyFreeSubmodule::matrix_row_span_and_basis(self.ring().clone(), matrix);
-        let (offset, y_reduced) = row_span_submodule.reduce_element(y);
+            submodules.matrix_row_span_and_basis(matrix);
+        let (offset, y_reduced) = submodules.reduce_element(&row_span_submodule, y);
         if y_reduced.iter().all(|v| self.ring().is_zero(v)) {
             Some(
                 self.mul(
@@ -305,18 +315,15 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
         &self,
         matrix: Matrix<Ring::Set>,
         y: &Vec<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        let module = FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows());
         match self.row_solve(matrix.clone(), y) {
-            Some(offset) => FinitelyFreeSubmoduleAffineSubset::from_coset(
-                FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
-                    &offset,
-                    self.row_kernel(matrix),
-                ),
+            Some(offset) => FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                module
+                    .cosets()
+                    .from_offset_and_submodule(&offset, self.row_kernel(matrix)),
             ),
-            None => FinitelyFreeSubmoduleAffineSubset::new_empty(FinitelyFreeModuleStructure::new(
-                self.ring().clone(),
-                matrix.rows(),
-            )),
+            None => FinitelyFreeSubmoduleAffineSubset::Empty,
         }
     }
 
@@ -324,7 +331,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
         &self,
         matrix: Matrix<Ring::Set>,
         y: &Vec<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring> {
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
         self.row_solution_set(matrix.transpose(), y)
     }
 }
@@ -352,7 +359,7 @@ where
 
 impl<R: MetaType> Matrix<R>
 where
-    R::Signature: EuclideanDivisionSignature + BezoutDomainSignature + FavoriteAssociateSignature,
+    R::Signature: EuclideanDomainSignature + BezoutDomainSignature + FavoriteAssociateSignature,
 {
     pub fn row_reduced_hermite_algorithm(&self) -> (Self, Self, R, Vec<usize>) {
         Self::structure().row_reduced_hermite_algorithm(self.clone())
@@ -374,27 +381,27 @@ where
         Self::structure().inv(self.clone())
     }
 
-    pub fn row_span(self) -> FinitelyFreeSubmodule<R::Signature> {
+    pub fn row_span(self) -> FinitelyFreeSubmodule<R> {
         Self::structure().row_span(self)
     }
 
-    pub fn col_span(self) -> FinitelyFreeSubmodule<R::Signature> {
+    pub fn col_span(self) -> FinitelyFreeSubmodule<R> {
         Self::structure().col_span(self)
     }
 
-    pub fn row_kernel(self) -> FinitelyFreeSubmodule<R::Signature> {
+    pub fn row_kernel(self) -> FinitelyFreeSubmodule<R> {
         Self::structure().row_kernel(self)
     }
 
-    pub fn col_kernel(self) -> FinitelyFreeSubmodule<R::Signature> {
+    pub fn col_kernel(self) -> FinitelyFreeSubmodule<R> {
         Self::structure().col_kernel(self)
     }
 
-    pub fn row_affine_span(self) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+    pub fn row_affine_span(self) -> FinitelyFreeSubmoduleAffineSubset<R> {
         Self::structure().row_affine_span(self)
     }
 
-    pub fn col_affine_span(self) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+    pub fn col_affine_span(self) -> FinitelyFreeSubmoduleAffineSubset<R> {
         Self::structure().col_affine_span(self)
     }
 
@@ -406,22 +413,24 @@ where
         Self::structure().col_solve(self, y)
     }
 
-    pub fn row_solution_set(self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+    pub fn row_solution_set(self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R> {
         Self::structure().row_solution_set(self, y)
     }
 
-    pub fn col_solution_set(self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R::Signature> {
+    pub fn col_solution_set(self, y: &Vec<R>) -> FinitelyFreeSubmoduleAffineSubset<R> {
         Self::structure().col_solution_set(self, y)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
+
     use super::*;
 
     #[test]
     fn hermite_algorithm() {
-        for a in vec![
+        for a in [
             Matrix::from_rows(vec![
                 vec![
                     Integer::from(2),
@@ -503,13 +512,10 @@ mod tests {
             //trace the boundary of zeros and check that everything under is zero
             let mut rz = 0;
             for cz in 0..h.cols() {
-                match pivs.get(rz) {
-                    Some(cp) => {
-                        if cp == &cz {
-                            rz += 1;
-                        }
+                if let Some(cp) = pivs.get(rz) {
+                    if cp == &cz {
+                        rz += 1;
                     }
-                    None => {}
                 }
                 for r in rz..h.rows() {
                     assert_eq!(h.at(r, cz).unwrap(), &Integer::zero());
@@ -520,6 +526,7 @@ mod tests {
             for (pr, pc) in pivs.iter().enumerate() {
                 assert!(h.at(pr, *pc).unwrap() != &Integer::zero());
                 for r in 0..h.rows() {
+                    #[allow(clippy::comparison_chain)]
                     if r > pr {
                         assert_eq!(h.at(r, *pc).unwrap(), &Integer::zero());
                     } else if r == pr {
@@ -547,13 +554,10 @@ mod tests {
             //trace the boundary of zeros and check that everything to the right is zero
             let mut cz = 0;
             for rz in 0..h.rows() {
-                match pivs.get(cz) {
-                    Some(rp) => {
-                        if rp == &rz {
-                            cz += 1;
-                        }
+                if let Some(rp) = pivs.get(cz) {
+                    if rp == &rz {
+                        cz += 1;
                     }
-                    None => {}
                 }
                 for c in cz..h.cols() {
                     assert_eq!(h.at(rz, c).unwrap(), &Integer::zero());
@@ -565,6 +569,7 @@ mod tests {
             for (pc, pr) in pivs.iter().enumerate() {
                 assert!(h.at(*pr, pc).unwrap() != &Integer::zero());
                 for c in 0..h.cols() {
+                    #[allow(clippy::comparison_chain)]
                     if c > pc {
                         assert_eq!(h.at(*pr, c).unwrap(), &Integer::zero());
                     } else if c == pc {
@@ -725,15 +730,17 @@ mod tests {
             vec![Integer::from(1), Integer::from(1), Integer::from(1)],
         ]);
 
-        assert_eq!(mat.clone().row_span().submodule_rank(), 2);
-        assert_eq!(mat.clone().col_span().submodule_rank(), 2);
-        assert_eq!(mat.clone().row_kernel().submodule_rank(), 2);
-        assert_eq!(mat.clone().col_kernel().submodule_rank(), 1);
+        assert_eq!(mat.clone().row_span().rank(), 2);
+        assert_eq!(mat.clone().col_span().rank(), 2);
+        assert_eq!(mat.clone().row_kernel().rank(), 2);
+        assert_eq!(mat.clone().col_kernel().rank(), 1);
     }
 
     #[test]
     fn affine_span() {
         {
+            let module = Integer::structure().into_free_module(2);
+
             //row affine span
             let lat1 = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(1), Integer::from(1)],
@@ -742,8 +749,8 @@ mod tests {
             ])
             .row_affine_span();
 
-            let lat2 = FinitelyFreeSubmoduleAffineSubset::from_coset(
-                FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
+            let lat2 = FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                module.cosets().from_offset_and_submodule(
                     &vec![Integer::from(2), Integer::from(3)],
                     Matrix::<Integer>::from_rows(vec![vec![1, 2], vec![-1, 2]]).row_span(),
                 ),
@@ -752,11 +759,13 @@ mod tests {
             println!("lat1 = {:?}", lat1);
             println!("lat2 = {:?}", lat2);
 
-            assert!(FinitelyFreeSubmoduleAffineSubset::equal(&lat1, &lat2));
-            assert!(FinitelyFreeSubmoduleAffineSubset::equal_slow(&lat1, &lat2));
+            assert!(module.affine_subsets().equal(&lat1, &lat2));
+            assert!(module.affine_subsets().equal_slow(&lat1, &lat2));
         }
 
         {
+            let module = Integer::structure().into_free_module(2);
+
             //column affine span
             let lat1 = Matrix::<Integer>::from_rows(vec![
                 vec![Integer::from(1), Integer::from(3), Integer::from(2)],
@@ -764,8 +773,8 @@ mod tests {
             ])
             .col_affine_span();
 
-            let lat2 = FinitelyFreeSubmoduleAffineSubset::from_coset(
-                FinitelyFreeSubmoduleCoset::from_offset_and_submodule(
+            let lat2 = FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                module.cosets().from_offset_and_submodule(
                     &vec![Integer::from(2), Integer::from(3)],
                     Matrix::<Integer>::from_rows(vec![vec![1, -1], vec![2, 2]]).col_span(),
                 ),
@@ -774,13 +783,15 @@ mod tests {
             println!("lat1 = {:?}", lat1);
             println!("lat2 = {:?}", lat2);
 
-            assert!(FinitelyFreeSubmoduleAffineSubset::equal(&lat1, &lat2));
-            assert!(FinitelyFreeSubmoduleAffineSubset::equal_slow(&lat1, &lat2));
+            assert!(module.affine_subsets().equal(&lat1, &lat2));
+            assert!(module.affine_subsets().equal_slow(&lat1, &lat2));
         }
     }
 
     #[test]
     fn span_and_kernel_points() {
+        let module = Integer::structure().into_free_module(4);
+
         let mat = Matrix::<Integer>::from_rows(vec![
             vec![
                 Integer::from(1),
@@ -807,16 +818,21 @@ mod tests {
 
         let k = mat.col_kernel();
 
-        assert!(k.contains_element(&vec![
-            Integer::from(-1),
-            Integer::from(1),
-            Integer::from(5),
-            Integer::from(-3)
-        ]));
+        assert!(module.submodules().contains_element(
+            &k,
+            &vec![
+                Integer::from(-1),
+                Integer::from(1),
+                Integer::from(5),
+                Integer::from(-3)
+            ]
+        ));
     }
 
     #[test]
     fn test_row_solve() {
+        let module = Integer::structure().into_free_module(3);
+
         let matrix =
             Matrix::<Integer>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 1], vec![1, 1, 1]]);
         let x =
@@ -830,7 +846,7 @@ mod tests {
 
         let a = Matrix::<Integer>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 1]])
             .row_solution_set(&vec![Integer::from(2), Integer::from(3), Integer::from(2)]);
-        for s in a.affine_basis() {
+        for s in module.affine_subsets().affine_basis(&a) {
             println!("{:?}", s);
         }
     }

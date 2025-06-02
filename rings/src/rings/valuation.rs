@@ -1,12 +1,17 @@
-use super::*;
-use algebraeon_nzq::traits::{Abs, DivMod};
+use algebraeon_nzq::{
+    Integer, Natural, Rational,
+    traits::{Abs, DivMod},
+};
 use std::ops::{Add, Mul, Sub};
+
+use crate::rings::natural::factorization::primes::is_prime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Valuation {
     Infinity,
     Finite(Integer),
 }
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for Valuation {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some({
@@ -51,10 +56,11 @@ impl Valuation {
 impl Add<&Valuation> for Valuation {
     type Output = Valuation;
     fn add(self, other: &Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -62,10 +68,11 @@ impl Add<&Valuation> for Valuation {
 impl Add<Valuation> for &Valuation {
     type Output = Valuation;
     fn add(self, other: Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -73,10 +80,11 @@ impl Add<Valuation> for &Valuation {
 impl Add<Valuation> for Valuation {
     type Output = Valuation;
     fn add(self, other: Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -84,10 +92,11 @@ impl Add<Valuation> for Valuation {
 impl Add<&Valuation> for &Valuation {
     type Output = Valuation;
     fn add(self, other: &Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a + b),
         }
     }
@@ -154,10 +163,11 @@ Infinity * Infinity = Infinity is justified in the same way by the p-adic norm s
 impl Mul<&Valuation> for Valuation {
     type Output = Valuation;
     fn mul(self, other: &Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -165,10 +175,11 @@ impl Mul<&Valuation> for Valuation {
 impl Mul<Valuation> for &Valuation {
     type Output = Valuation;
     fn mul(self, other: Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -176,10 +187,11 @@ impl Mul<Valuation> for &Valuation {
 impl Mul<Valuation> for Valuation {
     type Output = Valuation;
     fn mul(self, other: Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -187,10 +199,11 @@ impl Mul<Valuation> for Valuation {
 impl Mul<&Valuation> for &Valuation {
     type Output = Valuation;
     fn mul(self, other: &Valuation) -> Self::Output {
+        #[allow(clippy::unnested_or_patterns)]
         match (self, other) {
-            (Valuation::Infinity, Valuation::Infinity) => Valuation::Infinity,
-            (Valuation::Infinity, Valuation::Finite(_)) => Valuation::Infinity,
-            (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
+            (Valuation::Infinity, Valuation::Infinity)
+            | (Valuation::Infinity, Valuation::Finite(_))
+            | (Valuation::Finite(_), Valuation::Infinity) => Valuation::Infinity,
             (Valuation::Finite(a), Valuation::Finite(b)) => Valuation::Finite(a * b),
         }
     }
@@ -208,9 +221,8 @@ pub fn padic_nat_valuation(p: &Natural, mut n: Natural) -> Valuation {
             if r == Natural::ZERO {
                 k += 1;
                 continue;
-            } else {
-                break;
             }
+            break;
         }
         Valuation::Finite(Integer::from(k))
     }

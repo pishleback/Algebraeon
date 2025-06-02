@@ -1,0 +1,75 @@
+grammar;
+use std::str::FromStr;
+use crate::parsing::ast::*;
+use algebraeon_nzq::*;
+
+pub Expr: Box<Expr> = {
+    Sum,
+};
+
+Sum: Box<Expr> = {
+    <first:Product> <rest:SumRest*> => {
+        if rest.is_empty() {
+            first
+        } else {
+            let mut terms = vec![SumTerm { sign: true, term: first }];
+            terms.extend(rest);
+            Box::new(Expr::Sum(Sum { terms }))
+        }
+    },
+};
+
+SumRest: SumTerm = {
+    "+" <term:Product> => SumTerm { sign: true, term },
+    "-" <term:Product> => SumTerm { sign: false, term },
+};
+
+Product: Box<Expr> = {
+    <l:Product> "*" <r:Power> => Box::new(Expr::Product(Product { left: l, right: r })),
+    Power,
+};
+
+Power: Box<Expr> = {
+    <l:Atom> "^" <r:Atom> => Box::new(Expr::Power(Power { base: l, exponent: r })),
+    Atom,
+};
+
+Atom: Box<Expr> = {
+    Num => Box::new(Expr::Num(<>)),
+    SingleVar => Box::new(Expr::Var(<>)),
+    BracedVar => Box::new(Expr::Var(<>)),
+    "-" <e:Atom> => {
+        // Handle unary minus by creating a sum with a single negative term
+        let term = SumTerm { sign: false, term: e };
+        Box::new(Expr::Sum(Sum { terms: vec![term] }))
+    },
+    "(" <e:Expr> ")" => Box::new(Expr::Grouped(e)),
+};
+
+Num: Number = {
+    r"\d+/\d+" => {
+        let parts: Vec<&str> = <>.split('/').collect();
+        let numerator = Integer::from_str(parts[0]).unwrap();
+        let denominator = Integer::from_str(parts[1]).unwrap();
+        if denominator == Integer::from(0) {
+            panic!("Denominator cannot be zero");
+        }
+        Number { numerator, denominator }
+    },
+    r"\d+" => {
+        let numerator = Integer::from_str(<>).unwrap();
+        Number { numerator, denominator: Integer::from(1) }
+    },
+};
+
+SingleVar: ParseVar = {
+    r"[a-zA-Z]" => ParseVar { name: <>.to_string() },
+};
+
+// Modified BracedVar to use a regex that captures braced multi-character variables
+BracedVar: ParseVar = {
+    r"\{[a-zA-Z][a-zA-Z0-9]*\}" => {
+        let name = <>.trim_start_matches('{').trim_end_matches('}').to_string();
+        ParseVar { name }
+    },
+};

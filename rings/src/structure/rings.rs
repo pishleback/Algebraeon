@@ -10,18 +10,19 @@ pub enum RingDivisionError {
     NotDivisible,
 }
 
-pub trait SemiRingSignature: EqSignature {
+pub trait AdditiveMonoidSignature: EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
     }
 
     fn zero(&self) -> Self::Set;
-    fn one(&self) -> Self::Set;
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+
     fn add_mut(&self, a: &mut Self::Set, b: &Self::Set) {
         *a = self.add(a, b);
     }
+
     fn sum(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut sum = self.zero();
         for val in vals {
@@ -29,6 +30,10 @@ pub trait SemiRingSignature: EqSignature {
         }
         sum
     }
+}
+
+pub trait SemiRingSignature: AdditiveMonoidSignature {
+    fn one(&self) -> Self::Set;
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
     fn mul_mut(&self, a: &mut Self::Set, b: &Self::Set) {
         *a = self.mul(a, b);
@@ -51,7 +56,7 @@ pub trait SemiRingSignature: EqSignature {
             let bits: Vec<_> = n.bits().collect();
             let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
-                pows.push(self.mul(&pows.last().unwrap(), &pows.last().unwrap()));
+                pows.push(self.mul(pows.last().unwrap(), pows.last().unwrap()));
             }
             let count = bits.len();
             debug_assert_eq!(count, pows.len());
@@ -135,11 +140,17 @@ where
 }
 impl<R: MetaType> MetaCharacteristic for R where Self::Signature: CharacteristicSignature {}
 
-pub trait RingSignature: SemiRingSignature {
+pub trait AdditiveGroupSignature: AdditiveMonoidSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.add(a, &self.neg(b))
+    }
+}
+
+pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
+    fn bracket(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.sub(&self.mul(a, b), &self.mul(b, a))
     }
 
     fn from_int(&self, x: impl Into<Integer>) -> Self::Set {
@@ -149,6 +160,14 @@ pub trait RingSignature: SemiRingSignature {
         } else {
             self.from_nat(x.abs())
         }
+    }
+
+    fn multivariable_polynomials<'a>(&'a self) -> MultiPolynomialStructure<Self, &'a Self> {
+        MultiPolynomialStructure::new(self)
+    }
+
+    fn into_multivariable_polynomials(self) -> MultiPolynomialStructure<Self, Self> {
+        MultiPolynomialStructure::new(self)
     }
 }
 
@@ -176,20 +195,22 @@ where
 }
 impl<R: MetaType> MetaRingEq for R where Self::Signature: RingSignature + EqSignature {}
 
-pub trait UnitsSignature: RingSignature {
+pub trait SemiRingUnitsSignature: SemiRingSignature {
+    /// b such that a*b=1 and b*a=1
+    /// Err(DivideByZero) if b is zero
+    /// Err(NotDivisible) if no such b exists
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
     fn is_unit(&self, a: &Self::Set) -> bool {
         match self.inv(a) {
             Ok(_inv) => true,
-            Err(RingDivisionError::DivideByZero) => false,
-            Err(RingDivisionError::NotDivisible) => false,
+            Err(RingDivisionError::DivideByZero | RingDivisionError::NotDivisible) => false,
         }
     }
 }
-pub trait MetaUnitsSignature: MetaRing
+pub trait MetaSemiRingUnitsSignature: MetaType
 where
-    Self::Signature: UnitsSignature,
+    Self::Signature: SemiRingUnitsSignature,
 {
     fn inv(&self) -> Result<Self, RingDivisionError> {
         Self::structure().inv(self)
@@ -198,9 +219,15 @@ where
         Self::structure().is_unit(self)
     }
 }
-impl<R: MetaRing> MetaUnitsSignature for R where Self::Signature: UnitsSignature<Set = R> {}
+impl<R: MetaType> MetaSemiRingUnitsSignature for R where
+    Self::Signature: SemiRingUnitsSignature<Set = R>
+{
+}
 
-pub trait IntegralDomainSignature: UnitsSignature {
+pub trait RingUnitsSignature: RingSignature + SemiRingUnitsSignature {}
+impl<Ring: RingSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {}
+
+pub trait IntegralDomainSignature: RingUnitsSignature {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
@@ -234,8 +261,7 @@ pub trait IntegralDomainSignature: UnitsSignature {
     fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
         match self.div(a, b) {
             Ok(_q) => true,
-            Err(RingDivisionError::NotDivisible) => false,
-            Err(RingDivisionError::DivideByZero) => false,
+            Err(RingDivisionError::NotDivisible | RingDivisionError::DivideByZero) => false,
         }
     }
     fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -349,7 +375,7 @@ impl<R: MetaRing> MetaFavoriteAssociate for R where
 pub trait GreatestCommonDivisorSignature: FavoriteAssociateSignature {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
-    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
+    fn gcd<'a>(&'a self, x: &Self::Set, y: &Self::Set) -> Self::Set;
     fn gcd_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut gcd = self.zero();
         for x in elems {
@@ -445,25 +471,23 @@ where
 }
 impl<R: MetaRing> MetaBezoutDomain for R where Self::Signature: BezoutDomainSignature<Set = R> {}
 
-pub trait EuclideanDivisionSignature: IntegralDomainSignature {
-    //should return None for 0, and Some(norm) for everything else
+pub trait EuclideanDivisionSignature: SemiRingSignature {
+    /// None for 0 and Some(norm) for everything else
     fn norm(&self, elem: &Self::Set) -> Option<Natural>;
 
+    /// None if b is 0 and Some((q, r)) such that a=bq+r and r=0 or norm(r) < norm(b)
     fn quorem(&self, a: &Self::Set, b: &Self::Set) -> Option<(Self::Set, Self::Set)>;
 
     fn quo(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        match self.quorem(a, b) {
-            Some((q, _r)) => Some(q),
-            None => None,
-        }
+        self.quorem(a, b).map(|(q, _r)| q)
     }
 
     fn rem(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        if !self.is_zero(&b) {
+        if self.is_zero(b) {
+            a.clone()
+        } else {
             let (_q, r) = self.quorem(a, b).unwrap();
             r
-        } else {
-            a.clone()
         }
     }
 
@@ -474,7 +498,7 @@ pub trait EuclideanDivisionSignature: IntegralDomainSignature {
         //Euclidean algorithm
         while !self.is_zero(&y) {
             let r = self.rem(&x, &y);
-            (x, y) = (y, r)
+            (x, y) = (y, r);
         }
         let (_unit, assoc) = self.factor_fav_assoc(&x);
         assoc
@@ -524,7 +548,7 @@ pub trait EuclideanDivisionSignature: IntegralDomainSignature {
     }
 }
 
-pub trait MetaEuclideanDivision: MetaIntegralDomain
+pub trait MetaEuclideanDivision: MetaType
 where
     Self::Signature: EuclideanDivisionSignature,
 {
@@ -558,10 +582,13 @@ where
         Self::structure().euclidean_xgcd(x, y)
     }
 }
-impl<R: MetaRing> MetaEuclideanDivision for R where
+impl<R: MetaType> MetaEuclideanDivision for R where
     Self::Signature: EuclideanDivisionSignature<Set = R>
 {
 }
+
+pub trait EuclideanDomainSignature: EuclideanDivisionSignature + IntegralDomainSignature {}
+impl<Ring: EuclideanDivisionSignature + IntegralDomainSignature> EuclideanDomainSignature for Ring {}
 
 pub trait InfiniteSignature: SetSignature {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
@@ -690,7 +717,7 @@ impl<FS: FiniteFieldSignature, R: Rng> Iterator for FiniteFieldRandomElementGene
         if self.all_elements.is_empty() {
             None
         } else {
-            let idx = self.rng.gen_range(0..self.all_elements.len());
+            let idx = self.rng.random_range(0..self.all_elements.len());
             Some(self.all_elements[idx].clone())
         }
     }
@@ -777,10 +804,11 @@ where
 }
 impl<R: MetaType> MetaRealToFloat for R where Self::Signature: RealToFloatSignature {}
 
+#[allow(clippy::wrong_self_convention)]
 pub trait RealFromFloatSignature: RealSubsetSignature {
     fn from_f64_approx(&self, x: f64) -> Self::Set;
     fn from_f32_approx(&self, x: f32) -> Self::Set {
-        self.from_f64_approx(x as f64)
+        self.from_f64_approx(f64::from(x))
     }
 }
 
@@ -841,7 +869,8 @@ impl<R: MetaType> MetaPositiveRealNthRoot for R where
 
 pub trait AlgebraicClosureSignature: FieldSignature
 where
-    PolynomialStructure<Self::BFS>:
+    //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
+    PolynomialStructure<Self::BFS, Self::BFS>:
         FactorableSignature + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
 {
     type BFS: FieldSignature; //base field structure
@@ -859,11 +888,11 @@ where
         &self,
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<Self::Set>> {
+        let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
         self.all_roots_list(
-            &PolynomialStructure::new(self.base_field().clone())
-                .factor(poly)
-                .unwrap()
-                .expanded_squarefree(),
+            &base_field_poly
+                .factorizations()
+                .expanded_squarefree(&base_field_poly.factor(poly).unwrap()),
         )
     }
     fn all_roots_powers(
@@ -871,12 +900,13 @@ where
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
-        for (factor, k) in PolynomialStructure::new(self.base_field().clone())
-            .factor(poly)?
-            .into_factor_powers()
+        let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
+        for (factor, k) in base_field_poly
+            .factorizations()
+            .into_powers(base_field_poly.factor(poly)?)
         {
             for root in self.all_roots_list(&factor).unwrap() {
-                root_powers.push((root, (&k).try_into().unwrap()))
+                root_powers.push((root, (&k).try_into().unwrap()));
             }
         }
         Some(root_powers)

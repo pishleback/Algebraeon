@@ -69,6 +69,7 @@ impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS> {
         self.affine_dimension
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn rows_from_vectors(&self, vecs: Vec<&Vector<FS, impl Borrow<Self>>>) -> Matrix<FS::Set> {
         for vec in &vecs {
             assert_eq!(self, vec.ambient_space().borrow());
@@ -92,6 +93,7 @@ impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS> {
         MatrixStructure::new(self.ordered_field().clone()).rank(self.rows_from_vectors(vecs))
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn are_points_affine_independent(
         &self,
         points: Vec<&Vector<FS, impl Borrow<Self> + Clone>>,
@@ -99,7 +101,9 @@ impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS> {
         for point in &points {
             assert_eq!(self, point.ambient_space().borrow());
         }
-        if points.len() != 0 {
+        if points.is_empty() {
+            true
+        } else {
             let vecs = (1..points.len())
                 .map(|i| points[i] - points[0])
                 .collect::<Vec<_>>();
@@ -107,8 +111,6 @@ impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS> {
             // println!("{:?}", mat);
             // println!("{:?} {:?}", vecs.len(), MatrixStructure::new(self.ordered_field()).rank(mat.clone()));
             MatrixStructure::new(self.ordered_field().clone()).rank(mat) == vecs.len()
-        } else {
-            true
         }
     }
 }

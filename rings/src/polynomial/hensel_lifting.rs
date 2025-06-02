@@ -1,4 +1,4 @@
-use super::polynomial::*;
+use super::{Polynomial, polynomial_ring::*};
 use crate::{rings::quotient::QuotientStructure, structure::*};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
@@ -6,7 +6,7 @@ use algebraeon_sets::structure::*;
 #[derive(Debug, Clone)]
 enum HenselProduct<
     const LIFTED_BEZOUT_COEFFS: bool,
-    RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature,
+    RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature,
 > {
     Leaf,
     Branch {
@@ -24,7 +24,7 @@ enum HenselProduct<
 #[derive(Debug, Clone)]
 struct HenselFactorizationImpl<
     const LIFTED_BEZOUT_COEFFS: bool,
-    RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature,
+    RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature,
 > {
     h: Polynomial<RS::Set>,
     factorization: HenselProduct<LIFTED_BEZOUT_COEFFS, RS>,
@@ -34,7 +34,7 @@ struct HenselFactorizationImpl<
 #[derive(Debug, Clone)]
 pub struct HenselFactorization<
     const LIFTED_BEZOUT_COEFFS: bool,
-    RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature,
+    RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature,
 > {
     ring: RS,
     i: RS::Set,
@@ -44,7 +44,7 @@ pub struct HenselFactorization<
 
 impl<
     const LIFTED_BEZOUT_COEFFS: bool,
-    RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature,
+    RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature,
 > HenselProduct<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(
@@ -82,6 +82,7 @@ impl<
                 }
 
                 //af + bg = 1 mod i^n
+                #[allow(clippy::collapsible_if)]
                 if LIFTED_BEZOUT_COEFFS {
                     if !poly_ring_mod_i_tothe_n.is_zero(&poly_ring_mod_i_tothe_n.sum(vec![
                         poly_ring_mod_i_tothe_n.mul(a, &f_factorization.h),
@@ -137,9 +138,10 @@ impl<
 
         //find a, b such that af + bg = 1 mod i
         let (u, a, b) = poly_ring_mod_p.xgcd(&first_h, &second_h);
-        if !poly_ring_mod_p.equal(&u, &poly_ring_mod_p.one()) {
-            panic!("Factors should be coprime modulo i");
-        }
+        assert!(
+            poly_ring_mod_p.equal(&u, &poly_ring_mod_p.one()),
+            "Factors should be coprime modulo i"
+        );
 
         Self::Branch {
             f_factorization: Box::new(HenselFactorizationImpl::new(ring, p, n, first_h, first_fs)),
@@ -169,7 +171,7 @@ impl<
     }
 }
 
-impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature>
+impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature>
     HenselProduct<true, RS>
 {
     fn dont_lift_bezout_coeffs(self) -> HenselProduct<false, RS> {
@@ -191,7 +193,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
 }
 
 fn compute_lift_factors<
-    RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature,
+    RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature,
 >(
     ring: &RS,
     i: &RS::Set,
@@ -273,7 +275,7 @@ fn compute_lift_factors<
     (delta_f, delta_g, lifted_f, lifted_g)
 }
 
-impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature>
+impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature>
     HenselProduct<false, RS>
 {
     fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
@@ -287,7 +289,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
             } => {
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
-                let (_, _, lifted_f, lifted_g) = compute_lift_factors(ring, i, n, a, b, &f, &g, h);
+                let (_, _, lifted_f, lifted_g) = compute_lift_factors(ring, i, n, a, b, f, g, h);
                 f_factorization.h = lifted_f;
                 g_factorization.h = lifted_g;
 
@@ -301,7 +303,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
     }
 }
 
-impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature>
+impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature>
     HenselProduct<true, RS>
 {
     fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
@@ -321,7 +323,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
                 let (delta_f, delta_g, lifted_f, lifted_g) =
-                    compute_lift_factors(ring, &ring.nat_pow(i, n), &Natural::ONE, a, b, &f, &g, h);
+                    compute_lift_factors(ring, &ring.nat_pow(i, n), &Natural::ONE, a, b, f, g, h);
 
                 // beta = af + bg - 1 mod i^n
                 let beta = pring_mod_i2n.sum(vec![
@@ -368,7 +370,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
 
 impl<
     const LIFTED_BEZOUT_COEFFS: bool,
-    RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature,
+    RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature,
 > HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(&self, ring: &RS, i: &RS::Set, n: &Natural) -> Result<(), &'static str> {
@@ -387,7 +389,7 @@ impl<
         h: Polynomial<RS::Set>,
         mut fs: Vec<&Polynomial<RS::Set>>,
     ) -> Self {
-        debug_assert!(fs.len() >= 1);
+        debug_assert!(!fs.is_empty());
         match fs.len() {
             0 => panic!(),
             1 => Self {
@@ -398,8 +400,8 @@ impl<
                 debug_assert!(fs_len >= 2);
                 let second_fs = fs.split_off(fs_len / 2);
                 let first_fs = fs;
-                debug_assert!(first_fs.len() >= 1);
-                debug_assert!(second_fs.len() >= 1);
+                debug_assert!(!first_fs.is_empty());
+                debug_assert!(!second_fs.is_empty());
                 debug_assert_eq!(first_fs.len() + second_fs.len(), fs_len);
 
                 //find an inverse beta to alpha modulo p
@@ -422,7 +424,7 @@ impl<
     }
 }
 
-impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature>
+impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature>
     HenselFactorizationImpl<true, RS>
 {
     fn dont_lift_bezout_coeffs(self) -> HenselFactorizationImpl<false, RS> {
@@ -433,7 +435,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
     }
 }
 
-impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature>
+impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature>
     HenselFactorizationImpl<false, RS>
 {
     fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
@@ -441,7 +443,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
     }
 }
 
-impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature>
+impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature>
     HenselFactorizationImpl<true, RS>
 {
     fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
@@ -451,7 +453,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
 
 impl<
     const LIFTED_BEZOUT_COEFFS: bool,
-    RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature,
+    RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature,
 > HenselFactorization<LIFTED_BEZOUT_COEFFS, RS>
 {
     fn check(&self) -> Result<(), &'static str> {
@@ -470,9 +472,9 @@ impl<
         debug_assert!(ring.is_irreducible(&p));
 
         // h and all fs monic
-        assert!(fs.len() >= 1);
+        assert!(!fs.is_empty());
         // debug_assert!(poly_ring.is_monic(&h));
-        for f in fs.iter() {
+        for f in &fs {
             debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n
@@ -512,7 +514,7 @@ impl<
     }
 }
 
-impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature>
+impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature>
     HenselFactorization<true, RS>
 {
     pub fn dont_lift_bezout_coeffs(self) -> HenselFactorization<false, RS> {
@@ -525,7 +527,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
     }
 }
 
-impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature>
+impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature>
     HenselFactorization<false, RS>
 {
     pub fn linear_lift(&mut self) {
@@ -534,7 +536,7 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
     }
 }
 
-impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + FactorableSignature>
+impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableSignature>
     HenselFactorization<true, RS>
 {
     pub fn quadratic_lift(&mut self) {
@@ -544,19 +546,23 @@ impl<RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature + Factorabl
     }
 }
 
-impl<RS: FactorableSignature + EuclideanDivisionSignature + GreatestCommonDivisorSignature>
-    FactoredElement<PolynomialStructure<QuotientStructure<RS, true>>>
+impl<
+    RS: FactorableSignature + EuclideanDomainSignature + GreatestCommonDivisorSignature,
+    RSQB: BorrowedStructure<QuotientStructure<RS, true>>,
+    RSQPB: BorrowedStructure<PolynomialStructure<QuotientStructure<RS, true>, RSQB>>,
+> FactoredRingElementStructure<PolynomialStructure<QuotientStructure<RS, true>, RSQB>, RSQPB>
 where
-    PolynomialStructure<QuotientStructure<RS, true>>:
+    PolynomialStructure<QuotientStructure<RS, true>, RSQB>:
         SetSignature<Set = Polynomial<RS::Set>> + FactorableSignature,
 {
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None
     pub fn into_hensel_factorization(
-        self,
+        &self,
+        a: FactoredRingElement<Polynomial<RS::Set>>,
         h: Polynomial<RS::Set>,
     ) -> Option<HenselFactorization<true, RS>>
     where
-        RS: EuclideanDivisionSignature + GreatestCommonDivisorSignature,
+        RS: EuclideanDomainSignature + GreatestCommonDivisorSignature,
     {
         let poly_ring_mod = self.ring().clone();
         let ring_mod = poly_ring_mod.coeff_ring();
@@ -564,7 +570,7 @@ where
         // let poly_ring: PolynomialStructure<RS> = PolynomialStructure::new(ring.clone());
 
         let mut fs = vec![];
-        let (_unit, factors) = self.into_unit_and_factor_powers();
+        let (_unit, factors) = a.into_unit_and_powers();
         for (factor, power) in factors {
             if power == Natural::ONE {
                 fs.push(factor);

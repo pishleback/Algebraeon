@@ -1,9 +1,11 @@
-use crate::{polynomial::*, rings::natural::factorization::primes::*, structure::*};
+use crate::{
+    polynomial::*,
+    rings::{natural::factorization::primes::*, valuation::*},
+    structure::*,
+};
 use algebraeon_nzq::*;
-use valuation::*;
-
+use algebraeon_sets::structure::MetaType;
 mod isolate;
-pub mod valuation;
 
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {
@@ -188,8 +190,7 @@ pub mod truncation {
 
         pub fn string_repr(&self) -> String {
             let p = match self {
-                Truncated::Zero { p } => p,
-                Truncated::NonZero { p, .. } => p,
+                Truncated::Zero { p } | Truncated::NonZero { p, .. } => p,
             };
             match self.digits() {
                 None => "0".into(),
@@ -207,6 +208,7 @@ pub mod truncation {
                     write!(&mut s, "...").unwrap();
                     for (i, d) in rev_digits.into_iter().rev().enumerate().rev() {
                         write!(&mut s, "{}", d).unwrap();
+                        #[allow(clippy::collapsible_else_if)]
                         if i != 0 {
                             if seps {
                                 if Integer::from(i) == shift {
@@ -417,7 +419,10 @@ impl Polynomial<Integer> {
         assert_ne!(self, &Self::zero());
         let factors = self.factor().unwrap();
         let mut roots = vec![];
-        for (factor, k) in factors.factor_powers() {
+        for (factor, k) in Polynomial::<Integer>::structure()
+            .factorizations()
+            .to_powers(&factors)
+        {
             for root in factor.all_padic_roots_irreducible(p) {
                 let mut i = Natural::from(0u8);
                 while &i < k {
@@ -536,9 +541,10 @@ pub mod structure {
                     .filter_map(|mut root| {
                         root.refine(&k);
                         let rball = root.isolating_ball();
-                        match IsolatingBall::overlap(&rball, &sball) {
-                            true => Some(root),
-                            false => None,
+                        if IsolatingBall::overlap(&rball, &sball) {
+                            Some(root)
+                        } else {
+                            None
                         }
                     })
                     .collect();
@@ -612,9 +618,10 @@ pub mod structure {
                     .filter_map(|mut root| {
                         root.refine(&k);
                         let rball = root.isolating_ball();
-                        match IsolatingBall::overlap(&rball, &sball) {
-                            true => Some(root),
-                            false => None,
+                        if IsolatingBall::overlap(&rball, &sball) {
+                            Some(root)
+                        } else {
+                            None
                         }
                     })
                     .collect();
@@ -624,6 +631,7 @@ pub mod structure {
             candidates.into_iter().next().unwrap()
         }
 
+        #[allow(clippy::unnecessary_wraps)]
         fn inv_mut(&mut self) -> Result<PAdicAlgebraic, RingDivisionError> {
             /*
             Let x be the root approximated by a: |x-a| <= v
@@ -660,9 +668,10 @@ pub mod structure {
                         .filter_map(|mut root| {
                             root.refine(&k);
                             let rball = root.isolating_ball();
-                            match IsolatingBall::overlap(&rball, &iball) {
-                                true => Some(root),
-                                false => None,
+                            if IsolatingBall::overlap(&rball, &iball) {
+                                Some(root)
+                            } else {
+                                None
                             }
                         })
                         .collect();
@@ -700,9 +709,7 @@ pub mod structure {
 
     impl PAdicAlgebraicStructure {
         pub fn new(p: Natural) -> Self {
-            if !is_prime(&p) {
-                panic!("{} is not prime", p)
-            }
+            assert!(is_prime(&p), "{} is not prime", p);
             Self { p }
         }
     }
@@ -715,8 +722,8 @@ pub mod structure {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     PAdicRational::equal(a, b)
                 }
-                (PAdicAlgebraic::Rational(_), PAdicAlgebraic::Algebraic(_)) => false,
-                (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_)) => false,
+                (PAdicAlgebraic::Rational(_), PAdicAlgebraic::Algebraic(_))
+                | (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_)) => false,
                 (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => {
                     PAdicAlgebraicRoot::equal_mut(&mut a.clone(), &mut b.clone())
                 }
@@ -724,18 +731,11 @@ pub mod structure {
         }
     }
 
-    impl SemiRingSignature for PAdicAlgebraicStructure {
+    impl AdditiveMonoidSignature for PAdicAlgebraicStructure {
         fn zero(&self) -> Self::Set {
             PAdicAlgebraic::Rational(PAdicRational {
                 p: self.p.clone(),
                 rat: Rational::ZERO,
-            })
-        }
-
-        fn one(&self) -> Self::Set {
-            PAdicAlgebraic::Rational(PAdicRational {
-                p: self.p.clone(),
-                rat: Rational::ONE,
             })
         }
 
@@ -757,6 +757,22 @@ pub mod structure {
                 }
             }
         }
+    }
+
+    impl AdditiveGroupSignature for PAdicAlgebraicStructure {
+        fn neg(&self, a: &Self::Set) -> Self::Set {
+            debug_assert!(self.is_element(a));
+            a.clone().neg()
+        }
+    }
+
+    impl SemiRingSignature for PAdicAlgebraicStructure {
+        fn one(&self) -> Self::Set {
+            PAdicAlgebraic::Rational(PAdicRational {
+                p: self.p.clone(),
+                rat: Rational::ONE,
+            })
+        }
 
         fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
             debug_assert!(self.is_element(a));
@@ -777,20 +793,15 @@ pub mod structure {
         }
     }
 
+    impl RingSignature for PAdicAlgebraicStructure {}
+
     impl CharacteristicSignature for PAdicAlgebraicStructure {
         fn characteristic(&self) -> Natural {
             Natural::ZERO
         }
     }
 
-    impl RingSignature for PAdicAlgebraicStructure {
-        fn neg(&self, a: &Self::Set) -> Self::Set {
-            debug_assert!(self.is_element(a));
-            a.clone().neg()
-        }
-    }
-
-    impl UnitsSignature for PAdicAlgebraicStructure {
+    impl SemiRingUnitsSignature for PAdicAlgebraicStructure {
         fn inv(&self, a: &PAdicAlgebraic) -> Result<PAdicAlgebraic, RingDivisionError> {
             debug_assert!(self.is_element(a));
             match a {
@@ -804,6 +815,7 @@ pub mod structure {
         fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
             debug_assert!(self.is_element(a));
             debug_assert!(self.is_element(b));
+            #[allow(clippy::single_match)]
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     return Ok(PAdicAlgebraic::Rational(PAdicRational {

@@ -1,5 +1,5 @@
 use algebraeon_nzq::traits::Abs;
-use algebraeon_nzq::*;
+use algebraeon_nzq::{Integer, Natural};
 use itertools::Itertools;
 use std::{
     borrow::Borrow,
@@ -50,8 +50,8 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
             let mut pows = vec![self.clone()];
             while pows.len() < bits.len() {
                 pows.push(Self::compose_refs(
-                    &pows.last().unwrap(),
-                    &pows.last().unwrap(),
+                    pows.last().unwrap(),
+                    pows.last().unwrap(),
                 ));
             }
             let count = bits.len();
@@ -67,6 +67,7 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
     }
 
     fn int_pow(&self, n: &Integer) -> Self {
+        #[allow(clippy::comparison_chain)]
         if *n == Integer::ZERO {
             Self::identity()
         } else if *n > Integer::ZERO {
@@ -123,8 +124,9 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         for g in generators {
             add_elem!(g);
         }
+        #[allow(clippy::manual_while_let_some)]
         while !to_mul.is_empty() {
-            let (i, j) = to_mul.pop().unwrap().clone();
+            let (i, j) = to_mul.pop().unwrap();
             let k = add_elem!(Self::compose_refs(&idx_to_elem[i], &idx_to_elem[j]));
             debug_assert!(mul[i][j].is_none());
             mul[i][j] = Some(k);
@@ -149,6 +151,7 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         (grp, idx_to_elem, elem_to_idx)
     }
 
+    #[allow(clippy::assigning_clones)]
     fn generated_finite_subgroup(gens: Vec<Self>) -> FiniteSubgroup<Self>
     where
         Self: Hash,
@@ -160,7 +163,7 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         let mut boundary = vec![Self::identity()];
         let mut next_boundary = vec![];
         let mut y;
-        while boundary.len() > 0 {
+        while !boundary.is_empty() {
             println!("{}", sg.len());
             for x in &boundary {
                 for g in &gens {

@@ -3,12 +3,12 @@ use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
 
 #[derive(Debug, Clone)]
-pub struct QuotientStructure<RS: EuclideanDivisionSignature, const IS_FIELD: bool> {
+pub struct QuotientStructure<RS: EuclideanDomainSignature, const IS_FIELD: bool> {
     ring: RS,
     modulus: RS::Set,
 }
 
-impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> QuotientStructure<RS, IS_FIELD> {
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> QuotientStructure<RS, IS_FIELD> {
     pub fn new_unchecked(ring: RS, modulus: RS::Set) -> Self {
         assert!(!ring.is_zero(&modulus));
         Self { ring, modulus }
@@ -27,20 +27,21 @@ impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> QuotientStructure<RS,
     }
 }
 
-impl<RS: EuclideanDivisionSignature> QuotientStructure<RS, false> {
+impl<RS: EuclideanDomainSignature> QuotientStructure<RS, false> {
     pub fn new_ring(ring: RS, modulus: RS::Set) -> Self {
         Self::new_unchecked(ring, modulus)
     }
 }
 
-impl<RS: EuclideanDivisionSignature> QuotientStructure<RS, true> {
+impl<RS: EuclideanDomainSignature> QuotientStructure<RS, true> {
     pub fn new_field_unchecked(ring: RS, modulus: RS::Set) -> Self {
         Self::new_unchecked(ring, modulus)
     }
 }
 
-impl<RS: EuclideanDivisionSignature + FactorableSignature> QuotientStructure<RS, true> {
+impl<RS: EuclideanDomainSignature + FactorableSignature> QuotientStructure<RS, true> {
     pub fn new_field(ring: RS, modulus: RS::Set) -> Self {
+        #[allow(clippy::manual_assert)]
         #[cfg(debug_assertions)]
         if !ring.is_irreducible(&modulus) {
             panic!(
@@ -52,7 +53,7 @@ impl<RS: EuclideanDivisionSignature + FactorableSignature> QuotientStructure<RS,
     }
 }
 
-impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> PartialEq
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> PartialEq
     for QuotientStructure<RS, IS_FIELD>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -68,14 +69,14 @@ impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> PartialEq
     }
 }
 
-impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> Eq for QuotientStructure<RS, IS_FIELD> {}
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> Eq for QuotientStructure<RS, IS_FIELD> {}
 
-impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> Signature
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> Signature
     for QuotientStructure<RS, IS_FIELD>
 {
 }
 
-impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> SetSignature
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> SetSignature
     for QuotientStructure<RS, IS_FIELD>
 {
     type Set = RS::Set;
@@ -85,7 +86,7 @@ impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> SetSignature
     }
 }
 
-impl<RS: EuclideanDivisionSignature + ToStringSignature, const IS_FIELD: bool> ToStringSignature
+impl<RS: EuclideanDomainSignature + ToStringSignature, const IS_FIELD: bool> ToStringSignature
     for QuotientStructure<RS, IS_FIELD>
 {
     fn to_string(&self, elem: &Self::Set) -> String {
@@ -93,7 +94,7 @@ impl<RS: EuclideanDivisionSignature + ToStringSignature, const IS_FIELD: bool> T
     }
 }
 
-impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> EqSignature
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> EqSignature
     for QuotientStructure<RS, IS_FIELD>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -105,19 +106,35 @@ impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> EqSignature
     }
 }
 
-impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> SemiRingSignature
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditiveMonoidSignature
     for QuotientStructure<RS, IS_FIELD>
 {
     fn zero(&self) -> Self::Set {
         self.ring.zero()
     }
 
-    fn one(&self) -> Self::Set {
-        self.ring.one()
-    }
-
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.ring.rem(&self.ring.add(a, b), &self.modulus)
+    }
+}
+
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditiveGroupSignature
+    for QuotientStructure<RS, IS_FIELD>
+{
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        self.ring.neg(a)
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.ring.sub(a, b)
+    }
+}
+
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> SemiRingSignature
+    for QuotientStructure<RS, IS_FIELD>
+{
+    fn one(&self) -> Self::Set {
+        self.ring.one()
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -125,16 +142,13 @@ impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> SemiRingSignature
     }
 }
 
-impl<RS: EuclideanDivisionSignature, const IS_FIELD: bool> RingSignature
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> RingSignature
     for QuotientStructure<RS, IS_FIELD>
 {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        self.ring.neg(a)
-    }
 }
 
-impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature, const IS_FIELD: bool>
-    UnitsSignature for QuotientStructure<RS, IS_FIELD>
+impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, const IS_FIELD: bool>
+    SemiRingUnitsSignature for QuotientStructure<RS, IS_FIELD>
 {
     fn inv(&self, x: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if self.is_zero(x) {
@@ -146,7 +160,7 @@ impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature, const IS_FIELD
                     &g,
                     &self
                         .ring
-                        .add(&self.ring.mul(&a, &x), &self.ring.mul(&b, &self.modulus))
+                        .add(&self.ring.mul(&a, x), &self.ring.mul(&b, &self.modulus))
                 )
             );
             if self.equal(&g, &self.one()) {
@@ -158,7 +172,7 @@ impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature, const IS_FIELD
     }
 }
 
-impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature> IntegralDomainSignature
+impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature> IntegralDomainSignature
     for QuotientStructure<RS, true>
 {
     fn div(&self, top: &Self::Set, bot: &Self::Set) -> Result<Self::Set, RingDivisionError> {
@@ -169,7 +183,7 @@ impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature> IntegralDomain
     }
 }
 
-impl<RS: EuclideanDivisionSignature + FavoriteAssociateSignature> FieldSignature
+impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature> FieldSignature
     for QuotientStructure<RS, true>
 {
 }

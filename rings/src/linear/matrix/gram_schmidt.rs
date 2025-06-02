@@ -22,7 +22,7 @@ use super::*;
 
 // impl<Ring: ComplexSubsetStructure> Eq for FiniteDimensionalInnerProductSpaceStructure<Ring> {}
 
-impl<FS: ComplexConjugateSignature> MatrixStructure<FS> {
+impl<FS: ComplexConjugateSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
     pub fn conjugate(&self, mat: &Matrix<FS::Set>) -> Matrix<FS::Set> {
         mat.apply_map(|x| self.ring().conjugate(x))
     }
@@ -32,14 +32,18 @@ impl<FS: ComplexConjugateSignature> MatrixStructure<FS> {
     }
 }
 
-impl<FS: ComplexConjugateSignature + RingSignature> MatrixStructure<FS> {
+impl<FS: ComplexConjugateSignature + RingSignature, FSB: BorrowedStructure<FS>>
+    MatrixStructure<FS, FSB>
+{
     // dot product of a and conj(b)
     pub fn inner_product(&self, a: &Matrix<FS::Set>, b: &Matrix<FS::Set>) -> FS::Set {
         self.dot(a, &self.conjugate(b))
     }
 }
 
-impl<FS: ComplexConjugateSignature + FieldSignature> MatrixStructure<FS> {
+impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
+    MatrixStructure<FS, FSB>
+{
     //return mat=LQ where L is lower triangular and Q is row-orthogonal (not orthonormal)
     pub fn gram_schmidt_row_orthogonalization_algorithm(
         &self,
@@ -63,8 +67,8 @@ impl<FS: ComplexConjugateSignature + FieldSignature> MatrixStructure<FS> {
                 let row_opp = ElementaryOpp::new_row_opp(
                     self.ring().clone(),
                     ElementaryOppType::AddRowMul {
-                        i: i,
-                        j: j,
+                        i,
+                        j,
                         x: self.ring().neg(&lambda),
                     },
                 );
@@ -105,8 +109,10 @@ impl<FS: ComplexConjugateSignature + FieldSignature> MatrixStructure<FS> {
     }
 }
 
-impl<FS: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature>
-    MatrixStructure<FS>
+impl<
+    FS: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+> MatrixStructure<FS, FSB>
 {
     //return L*mat=Q where L is lower triangular and Q is orthonormal
     pub fn lq_decomposition_algorithm(
@@ -249,6 +255,7 @@ mod tests {
         assert_eq!(mat.gram_schmidt_col_orthogonalization(), mat_expected_gs);
     }
 
+    #[allow(clippy::erasing_op)]
     #[test]
     fn complex_gram_schmidt() {
         let i = &ComplexAlgebraic::i().into_ergonomic();

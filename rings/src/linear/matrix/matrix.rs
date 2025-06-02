@@ -1,7 +1,7 @@
 use crate::structure::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
-use std::borrow::Borrow;
+use std::{borrow::Borrow, marker::PhantomData};
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -83,16 +83,15 @@ impl<Set: Clone> Matrix<Set> {
             c = self.cols() - c - 1;
         }
 
-        match self.transpose {
-            false => c + r * self.dim2,
-            true => r + c * self.dim2,
+        if self.transpose {
+            r + c * self.dim2
+        } else {
+            c + r * self.dim2
         }
     }
 
     pub fn at(&self, r: usize, c: usize) -> Result<&Set, MatOppErr> {
-        if r >= self.rows() {
-            Err(MatOppErr::InvalidIndex)
-        } else if c >= self.cols() {
+        if r >= self.rows() || c >= self.cols() {
             Err(MatOppErr::InvalidIndex)
         } else {
             let idx = self.rc_to_idx(r, c);
@@ -101,9 +100,7 @@ impl<Set: Clone> Matrix<Set> {
     }
 
     pub fn at_mut(&mut self, r: usize, c: usize) -> Result<&mut Set, MatOppErr> {
-        if r >= self.rows() {
-            Err(MatOppErr::InvalidIndex)
-        } else if c >= self.cols() {
+        if r >= self.rows() || c >= self.cols() {
             Err(MatOppErr::InvalidIndex)
         } else {
             let idx = self.rc_to_idx(r, c);
@@ -112,17 +109,11 @@ impl<Set: Clone> Matrix<Set> {
     }
 
     pub fn rows(&self) -> usize {
-        match self.transpose {
-            false => self.dim1,
-            true => self.dim2,
-        }
+        if self.transpose { self.dim2 } else { self.dim1 }
     }
 
     pub fn cols(&self) -> usize {
-        match self.transpose {
-            false => self.dim2,
-            true => self.dim1,
-        }
+        if self.transpose { self.dim1 } else { self.dim2 }
     }
 
     pub fn submatrix(&self, rows: Vec<usize>, cols: Vec<usize>) -> Self {
@@ -177,7 +168,7 @@ impl<Set: Clone> Matrix<Set> {
             transpose: self.transpose,
             flip_rows: self.flip_rows,
             flip_cols: self.flip_cols,
-            elems: self.elems.iter().map(|x| f(x)).collect(),
+            elems: self.elems.iter().map(f).collect(),
         }
     }
 
@@ -259,13 +250,14 @@ impl<Set: Clone> Matrix<Set> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MatrixStructure<RS: SetSignature> {
-    ring: RS,
+pub struct MatrixStructure<RS: SetSignature, RSB: BorrowedStructure<RS>> {
+    _ring: PhantomData<RS>,
+    ring: RSB,
 }
 
-impl<RS: SetSignature> Signature for MatrixStructure<RS> {}
+impl<RS: SetSignature, RSB: BorrowedStructure<RS>> Signature for MatrixStructure<RS, RSB> {}
 
-impl<RS: SetSignature> SetSignature for MatrixStructure<RS> {
+impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature for MatrixStructure<RS, RSB> {
     type Set = Matrix<RS::Set>;
 
     fn is_element(&self, _x: &Self::Set) -> bool {
@@ -273,28 +265,29 @@ impl<RS: SetSignature> SetSignature for MatrixStructure<RS> {
     }
 }
 
-impl<RS: SetSignature> MatrixStructure<RS> {
-    pub fn new(ring: RS) -> Self {
-        Self { ring }
+impl<RS: SetSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
+    pub fn new(ring: RSB) -> Self {
+        Self {
+            _ring: PhantomData,
+            ring,
+        }
     }
 
     pub fn ring(&self) -> &RS {
-        &self.ring
+        self.ring.borrow()
     }
 }
 
-impl<RS: EqSignature> MatrixStructure<RS> {
+impl<RS: EqSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     pub fn equal(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> bool {
         let rows = a.rows();
         let cols = a.cols();
-        if rows != b.rows() {
-            false
-        } else if cols != b.cols() {
+        if rows != b.rows() || cols != b.cols() {
             false
         } else {
             for c in 0..cols {
                 for r in 0..rows {
-                    if !self.ring.equal(a.at(r, c).unwrap(), b.at(r, c).unwrap()) {
+                    if !self.ring().equal(a.at(r, c).unwrap(), b.at(r, c).unwrap()) {
                         return false;
                     }
                 }
@@ -304,15 +297,16 @@ impl<RS: EqSignature> MatrixStructure<RS> {
     }
 }
 
-impl<RS: ToStringSignature> MatrixStructure<RS> {
+impl<RS: ToStringSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     pub fn pprint(&self, mat: &Matrix<RS::Set>) {
         let mut str_rows = vec![];
         for r in 0..mat.rows() {
             str_rows.push(vec![]);
             for c in 0..mat.cols() {
-                str_rows[r].push(self.ring.to_string(mat.at(r, c).unwrap()));
+                str_rows[r].push(self.ring().to_string(mat.at(r, c).unwrap()));
             }
         }
+        #[allow(clippy::redundant_closure_for_method_calls)]
         let cols_widths: Vec<usize> = (0..mat.cols())
             .map(|c| {
                 (0..mat.rows())
@@ -355,22 +349,22 @@ impl<RS: ToStringSignature> MatrixStructure<RS> {
             } else {
                 print!(" |");
             }
-            print!("\n");
+            println!();
         }
     }
 }
 
-impl<RS: RingSignature> MatrixStructure<RS> {
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     pub fn zero(&self, rows: usize, cols: usize) -> Matrix<RS::Set> {
-        Matrix::construct(rows, cols, |_r, _c| self.ring.zero())
+        Matrix::construct(rows, cols, |_r, _c| self.ring().zero())
     }
 
     pub fn ident(&self, n: usize) -> Matrix<RS::Set> {
         Matrix::construct(n, n, |r, c| {
             if r == c {
-                self.ring.one()
+                self.ring().one()
             } else {
-                self.ring.zero()
+                self.ring().zero()
             }
         })
     }
@@ -380,21 +374,23 @@ impl<RS: RingSignature> MatrixStructure<RS> {
             if r == c {
                 diag[r].clone()
             } else {
-                self.ring.zero()
+                self.ring().zero()
             }
         })
     }
 
     pub fn join_diag<MatT: Borrow<Matrix<RS::Set>>>(&self, mats: Vec<MatT>) -> Matrix<RS::Set> {
-        if mats.len() == 0 {
+        if mats.is_empty() {
             Matrix::construct(0, 0, |_r, _c| unreachable!())
         } else if mats.len() == 1 {
             mats[0].borrow().clone()
         } else {
             let i = mats.len() / 2;
             let (first, last) = mats.split_at(i);
-            let first = self.join_diag(first.into_iter().map(|m| m.borrow()).collect());
-            let last = self.join_diag(last.into_iter().map(|m| m.borrow()).collect());
+            #[allow(clippy::redundant_closure_for_method_calls)]
+            let first = self.join_diag(first.iter().map(|m| m.borrow()).collect());
+            #[allow(clippy::redundant_closure_for_method_calls)]
+            let last = self.join_diag(last.iter().map(|m| m.borrow()).collect());
             Matrix::construct(
                 first.rows() + last.rows(),
                 first.cols() + last.cols(),
@@ -416,12 +412,12 @@ impl<RS: RingSignature> MatrixStructure<RS> {
         let cols = a.cols();
         assert_eq!(rows, b.rows());
         assert_eq!(cols, b.cols());
-        let mut tot = self.ring.zero();
+        let mut tot = self.ring().zero();
         for r in 0..rows {
             for c in 0..cols {
-                self.ring.add_mut(
+                self.ring().add_mut(
                     &mut tot,
-                    &self.ring.mul(a.at(r, c).unwrap(), b.at(r, c).unwrap()),
+                    &self.ring().mul(a.at(r, c).unwrap(), b.at(r, c).unwrap()),
                 );
             }
         }
@@ -436,7 +432,7 @@ impl<RS: RingSignature> MatrixStructure<RS> {
             let cols = a.cols();
             for c in 0..cols {
                 for r in 0..rows {
-                    self.ring
+                    self.ring()
                         .add_mut(a.at_mut(r, c).unwrap(), b.at(r, c).unwrap());
                 }
             }
@@ -450,7 +446,7 @@ impl<RS: RingSignature> MatrixStructure<RS> {
         b: &Matrix<RS::Set>,
     ) -> Result<Matrix<RS::Set>, MatOppErr> {
         let mut new_a = a.clone();
-        match self.add_mut(&mut new_a, &b) {
+        match self.add_mut(&mut new_a, b) {
             Ok(()) => Ok(new_a),
             Err(e) => Err(e),
         }
@@ -459,7 +455,7 @@ impl<RS: RingSignature> MatrixStructure<RS> {
     pub fn neg_mut(&self, a: &mut Matrix<RS::Set>) {
         for r in 0..a.rows() {
             for c in 0..a.cols() {
-                let neg_elem = self.ring.neg(a.at(r, c).unwrap());
+                let neg_elem = self.ring().neg(a.at(r, c).unwrap());
                 *a.at_mut(r, c).unwrap() = neg_elem;
             }
         }
@@ -485,9 +481,9 @@ impl<RS: RingSignature> MatrixStructure<RS> {
         for r in 0..rows {
             for c in 0..cols {
                 for m in 0..mids {
-                    self.ring.add_mut(
+                    self.ring().add_mut(
                         s.at_mut(r, c).unwrap(),
-                        &self.ring.mul(a.at(r, m).unwrap(), b.at(m, c).unwrap()),
+                        &self.ring().mul(a.at(r, m).unwrap(), b.at(m, c).unwrap()),
                     );
                 }
             }
@@ -524,7 +520,7 @@ impl<RS: RingSignature> MatrixStructure<RS> {
     pub fn mul_scalar(&self, mut a: Matrix<RS::Set>, scalar: &RS::Set) -> Matrix<RS::Set> {
         for r in 0..a.rows() {
             for c in 0..a.cols() {
-                self.ring.mul_mut(a.at_mut(r, c).unwrap(), scalar);
+                self.ring().mul_mut(a.at_mut(r, c).unwrap(), scalar);
             }
         }
         a
@@ -536,34 +532,37 @@ impl<RS: RingSignature> MatrixStructure<RS> {
 
     pub fn det_naive(&self, a: &Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
         let n = a.rows();
-        if n != a.cols() {
-            Err(MatOppErr::NotSquare)
-        } else {
-            let mut det = self.ring.zero();
+        if n == a.cols() {
+            let mut det = self.ring().zero();
             for perm in algebraeon_groups::permutation::Permutation::all_permutations(n) {
-                let mut prod = self.ring.one();
+                let mut prod = self.ring().one();
                 for k in 0..n {
-                    self.ring.mul_mut(&mut prod, a.at(k, perm.call(k)).unwrap());
+                    self.ring()
+                        .mul_mut(&mut prod, a.at(k, perm.call(k)).unwrap());
                 }
                 match perm.sign() {
                     algebraeon_groups::examples::c2::C2::Identity => {}
                     algebraeon_groups::examples::c2::C2::Flip => {
-                        prod = self.ring.neg(&prod);
+                        prod = self.ring().neg(&prod);
                     }
                 }
 
-                self.ring.add_mut(&mut det, &prod);
+                self.ring().add_mut(&mut det, &prod);
             }
             Ok(det)
+        } else {
+            Err(MatOppErr::NotSquare)
         }
     }
 
     pub fn trace(&self, a: &Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
         let n = a.rows();
-        if n != a.cols() {
-            Err(MatOppErr::NotSquare)
+        if n == a.cols() {
+            Ok(self
+                .ring()
+                .sum((0..n).map(|i| a.at(i, i).unwrap()).collect()))
         } else {
-            Ok(self.ring.sum((0..n).map(|i| a.at(i, i).unwrap()).collect()))
+            Err(MatOppErr::NotSquare)
         }
     }
 
@@ -571,31 +570,29 @@ impl<RS: RingSignature> MatrixStructure<RS> {
         let n = a.rows();
         if n != a.cols() {
             Err(MatOppErr::NotSquare)
+        } else if *k == Natural::ZERO {
+            Ok(self.ident(n))
+        } else if *k == Natural::ONE {
+            Ok(a.clone())
         } else {
-            if *k == Natural::ZERO {
-                Ok(self.ident(n))
-            } else if *k == Natural::ONE {
-                Ok(a.clone())
-            } else {
-                debug_assert!(*k >= Natural::TWO);
-                let bits: Vec<_> = k.bits().collect();
-                let mut pows = vec![a.clone()];
-                while pows.len() < bits.len() {
-                    pows.push(
-                        self.mul(&pows.last().unwrap(), &pows.last().unwrap())
-                            .unwrap(),
-                    );
-                }
-                let count = bits.len();
-                debug_assert_eq!(count, pows.len());
-                let mut ans = self.ident(n);
-                for i in 0..count {
-                    if bits[i] {
-                        ans = self.mul(&ans, &pows[i]).unwrap();
-                    }
-                }
-                Ok(ans)
+            debug_assert!(*k >= Natural::TWO);
+            let bits: Vec<_> = k.bits().collect();
+            let mut pows = vec![a.clone()];
+            while pows.len() < bits.len() {
+                pows.push(
+                    self.mul(pows.last().unwrap(), pows.last().unwrap())
+                        .unwrap(),
+                );
             }
+            let count = bits.len();
+            debug_assert_eq!(count, pows.len());
+            let mut ans = self.ident(n);
+            for i in 0..count {
+                if bits[i] {
+                    ans = self.mul(&ans, &pows[i]).unwrap();
+                }
+            }
+            Ok(ans)
         }
     }
 }
@@ -604,7 +601,7 @@ impl<R: MetaType> MetaType for Matrix<R>
 where
     R::Signature: SetSignature,
 {
-    type Signature = MatrixStructure<R::Signature>;
+    type Signature = MatrixStructure<R::Signature, R::Signature>;
 
     fn structure() -> Self::Signature {
         MatrixStructure::new(R::structure())
@@ -616,7 +613,7 @@ where
     R::Signature: ToStringSignature,
 {
     pub fn pprint(&self) {
-        Self::structure().pprint(self)
+        Self::structure().pprint(self);
     }
 }
 
@@ -660,7 +657,7 @@ where
     }
 
     pub fn neg_mut(&mut self) {
-        Self::structure().neg_mut(self)
+        Self::structure().neg_mut(self);
     }
 
     pub fn neg(&self) -> Self {
@@ -692,7 +689,7 @@ where
     }
 
     pub fn trace(&self) -> Result<R, MatOppErr> {
-        Self::structure().trace(&self)
+        Self::structure().trace(self)
     }
 }
 
@@ -739,9 +736,8 @@ mod tests {
                 Integer::from(5),
             ],
         };
-        match m.check_invariants() {
-            Ok(()) => panic!(),
-            Err(_) => {}
+        if let Ok(()) = m.check_invariants() {
+            panic!();
         }
 
         let m = Matrix {
