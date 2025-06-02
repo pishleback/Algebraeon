@@ -184,7 +184,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
 
 impl RingOfIntegersWithIntegralBasisStructure {
     pub fn roi_to_anf(&self, elem: &Vec<Integer>) -> Polynomial<Rational> {
-        debug_assert!(self.is_element(elem));
+        debug_assert!(self.is_element(elem).is_ok());
         let n = self.degree();
         self.algebraic_number_field.sum(
             (0..n)
@@ -225,8 +225,11 @@ impl Signature for RingOfIntegersWithIntegralBasisStructure {}
 impl SetSignature for RingOfIntegersWithIntegralBasisStructure {
     type Set = Vec<Integer>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
-        x.len() == self.degree()
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+        if x.len() != self.degree() {
+            return Err("wrong length".to_string());
+        }
+        Ok(())
     }
 }
 
@@ -268,8 +271,8 @@ impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let n = self.degree();
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(b));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(b).is_ok());
         match &self.mul_crossterms {
             Some(mul_crossterms) => {
                 // Used cached cross-terms

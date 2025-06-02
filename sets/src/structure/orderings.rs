@@ -218,8 +218,8 @@ mod tests {
     impl SetSignature for UsizeStructure {
         type Set = usize;
 
-        fn is_element(&self, _x: &Self::Set) -> bool {
-            true
+        fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+            Ok(())
         }
     }
 

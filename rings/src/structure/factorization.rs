@@ -49,7 +49,7 @@ pub trait FactoredSignature: SetSignature {
 
     /// Given a factorization return a list of it's primes and their powers
     fn to_powers<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         self.to_powers_unchecked(a)
     }
 
@@ -58,13 +58,13 @@ pub trait FactoredSignature: SetSignature {
 
     /// Consume a factorization and return a list of it's primes and their powers
     fn into_powers(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
-        debug_assert!(self.is_element(&a));
+        debug_assert!(self.is_element(&a).is_ok());
         self.into_powers_unchecked(a)
     }
 
     /// Given a factorization return a list of it's prime factors with duplicate entries according to the multiplicity
     fn to_primes<'a>(&self, a: &'a Self::Set) -> Vec<&'a Self::PrimeObject> {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         let mut factors = vec![];
         for (p, k) in self.to_powers(a) {
             let k: usize = k.try_into().unwrap();
@@ -77,7 +77,7 @@ pub trait FactoredSignature: SetSignature {
 
     /// Consume a factorization and return a list of it's prime factors with duplicate entries according to the multiplicity
     fn into_primes(&self, a: Self::Set) -> Vec<Self::PrimeObject> {
-        debug_assert!(self.is_element(&a));
+        debug_assert!(self.is_element(&a).is_ok());
         let mut factors = vec![];
         for (p, k) in self.into_powers(a) {
             let k: usize = k.try_into().unwrap();
@@ -90,25 +90,25 @@ pub trait FactoredSignature: SetSignature {
 
     /// Given a factorization return a list of it's prime factors without multiplicity i.e. without repeats
     fn to_prime_support<'a>(&self, a: &'a Self::Set) -> Vec<&'a Self::PrimeObject> {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         self.to_powers(a).into_iter().map(|(p, _)| p).collect()
     }
 
     /// Consume a factorization and return a list of it's prime factors without multiplicity i.e. without repeats
     fn into_prime_support(self, a: Self::Set) -> Vec<Self::PrimeObject> {
-        debug_assert!(self.is_element(&a));
+        debug_assert!(self.is_element(&a).is_ok());
         self.into_powers(a).into_iter().map(|(p, _)| p).collect()
     }
 
     /// Return true if the factorization is trivial
     fn is_trivial(&self, a: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         self.to_powers(a).into_iter().next().is_none()
     }
 
     /// Return true if the factorization is a single prime with multiplicity one
     fn is_prime(&self, a: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         self.is_prime_unchecked(a)
     }
 
@@ -126,7 +126,7 @@ pub trait FactoredSignature: SetSignature {
 
     /// Return true if the factorization is square-free i.e. all multiplicities are zero or one
     fn is_squarefree(&self, a: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         self.to_powers(a)
             .into_iter()
             .all(|(_, k)| k == &Natural::ONE)
@@ -173,7 +173,7 @@ pub trait FactoredSignature: SetSignature {
 
     /// Return a natural power of a factorization
     fn pow(self, a: Self::Set, n: &Natural) -> Self::Set {
-        debug_assert!(self.is_element(&a));
+        debug_assert!(self.is_element(&a).is_ok());
         if *n == Natural::ZERO {
             self.new_trivial()
         } else if *n == Natural::ONE {
@@ -199,8 +199,8 @@ pub trait FactoredSignature: SetSignature {
 
     /// Determine whether a divides b
     fn divides(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(b));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(b).is_ok());
         for (pa, ka) in self.to_powers(a) {
             'EQUIV_PRIME_SEARCH: {
                 for (pb, kb) in self.to_powers(b) {
@@ -222,8 +222,8 @@ pub trait FactoredSignature: SetSignature {
 
     /// Are a and b equivalent with respect to division?
     fn equivalent(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(b));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(b).is_ok());
         self.divides(a, b) && self.divides(b, a)
     }
 
@@ -232,7 +232,7 @@ pub trait FactoredSignature: SetSignature {
 
     /// Expand a factorization into an object by seeing all multiplicities to one
     fn expanded_squarefree(&self, a: &Self::Set) -> Self::Object {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         self.expanded(
             &self.new_powers(
                 self.to_prime_support(a)
@@ -277,7 +277,7 @@ pub trait FactoredSignature: SetSignature {
 
     /// The number of divisors of a factorization
     fn count_divisors(&self, a: &Self::Set) -> Natural {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         let factors = self.to_powers(a);
         let mut count = Natural::from(1u8);
         for (_p, k) in factors {

@@ -184,8 +184,14 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> SetSignature
 {
     type Set = FactoredRingElement<FS::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
-        self.field().is_unit(x.unit()) && x.powers().is_empty()
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+        if !self.field().is_unit(x.unit()) {
+            return Err("Factorization unit is not a unit".to_string());
+        }
+        if !x.powers().is_empty() {
+            return Err("Factorization on a field cannot have an irreducible factor ".to_string());
+        }
+        Ok(())
     }
 }
 
@@ -227,13 +233,13 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> FactoredSignature
     }
 
     fn mul(&self, a: Self::Set, b: Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(&a));
-        debug_assert!(self.is_element(&b));
+        debug_assert!(self.is_element(&a).is_ok());
+        debug_assert!(self.is_element(&b).is_ok());
         FactoredRingElement::new_unit(self.field().mul(a.unit(), b.unit()))
     }
 
     fn expanded(&self, a: &Self::Set) -> Self::Object {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         a.unit().clone()
     }
 }
@@ -263,7 +269,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> RingFactorizationsSignature
         powers: Vec<(FS::Set, Natural)>,
     ) -> FactoredRingElement<FS::Set> {
         let f = FactoredRingElement::from_unit_and_powers(unit, powers);
-        debug_assert!(self.is_element(&f));
+        debug_assert!(self.is_element(&f).is_ok());
         f
     }
 
@@ -319,23 +325,19 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> SetSign
 {
     type Set = FactoredRingElement<RS::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
         if !self.ring().is_unit(&x.unit) {
-            // unit must be a unit
-            return false;
+            return Err("unit must be a unit".to_string());
         }
         for (p, k) in &x.powers {
             if k == &Natural::ZERO {
-                // prime powers must not be zero
-                return false;
+                return Err("prime powers must not be zero".to_string());
             }
             if !self.ring().is_fav_assoc(p) {
-                // each prime factor must be its favoriate associate
-                return false;
+                return Err("each prime factor must be its favoriate associate".to_string());
             }
             if self.ring().debug_try_is_irreducible(p) == Some(false) {
-                // prime factor must be irreducible
-                return false;
+                return Err("prime factor must be irreducible".to_string());
             }
 
             let mut i = Natural::from(0u8);
@@ -343,7 +345,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> SetSign
                 i += Natural::from(1u8);
             }
         }
-        true
+        Ok(())
     }
 }
 
@@ -458,7 +460,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> Factore
     }
 
     fn expanded(&self, a: &Self::Set) -> Self::Object {
-        debug_assert!(self.is_element(a));
+        debug_assert!(self.is_element(a).is_ok());
         let mut ans = a.unit.clone();
         for (p, k) in &a.powers {
             self.ring().mul_mut(&mut ans, &self.ring().nat_pow(p, k));
@@ -467,8 +469,8 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> Factore
     }
 
     fn mul(&self, mut a: Self::Set, b: Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(&a));
-        debug_assert!(self.is_element(&b));
+        debug_assert!(self.is_element(&a).is_ok());
+        debug_assert!(self.is_element(&b).is_ok());
         self.ring().mul_mut(&mut a.unit, &b.unit);
         for (p, k) in b.powers {
             self.mul_by_unchecked(&mut a, p, k);
@@ -523,8 +525,8 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
     }
 
     fn mul_mut(&self, a: &mut FactoredRingElement<RS::Set>, b: FactoredRingElement<RS::Set>) {
-        debug_assert!(self.is_element(a));
-        debug_assert!(self.is_element(&b));
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(&b).is_ok());
         *a = self.mul(a.clone(), b);
     }
 
@@ -590,12 +592,18 @@ mod tests {
                     (Integer::from(3), Natural::from(1u8)),
                 ],
             );
-        assert!(Integer::structure().factorizations().is_element(&f));
+        Integer::structure()
+            .factorizations()
+            .is_element(&f)
+            .unwrap();
 
         let f = Integer::structure()
             .factorizations()
             .from_unit_and_factor_powers(Integer::from(1), vec![]);
-        assert!(Integer::structure().factorizations().is_element(&f));
+        Integer::structure()
+            .factorizations()
+            .is_element(&f)
+            .unwrap();
 
         let f = Integer::structure()
             .factorizations()
@@ -608,7 +616,10 @@ mod tests {
                 ],
             );
         assert!(
-            !Integer::structure().factorizations().is_element(&f),
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
             "can't have a power of zero"
         );
 
@@ -619,7 +630,10 @@ mod tests {
                 vec![(Integer::from(2), Natural::from(2u8))],
             );
         assert!(
-            !Integer::structure().factorizations().is_element(&f),
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
             "unit should be a unit"
         );
 
@@ -633,7 +647,10 @@ mod tests {
                 ],
             );
         assert!(
-            !Integer::structure().factorizations().is_element(&f),
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
             "prime factors must not be zero"
         );
 
@@ -647,7 +664,10 @@ mod tests {
                 ],
             );
         assert!(
-            !Integer::structure().factorizations().is_element(&f),
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
             "prime factors must be prime"
         );
 
@@ -661,7 +681,10 @@ mod tests {
                 ],
             );
         assert!(
-            !Integer::structure().factorizations().is_element(&f),
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
             "prime factors must be favoriate associate"
         );
     }
