@@ -743,7 +743,18 @@ pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature {
 }
 
 //is a subset of the complex numbers
-pub trait ComplexSubsetSignature: IntegralDomainSignature {}
+pub trait ComplexSubsetSignature: IntegralDomainSignature {
+    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64);
+}
+pub trait MetaComplexSubset: MetaType
+where
+    Self::Signature: ComplexSubsetSignature,
+{
+    fn as_f64_real_and_imaginary_parts(z: &Self) -> (f64, f64) {
+        Self::structure().as_f64_real_and_imaginary_parts(z)
+    }
+}
+impl<R: MetaType> MetaComplexSubset for R where Self::Signature: ComplexSubsetSignature<Set = R> {}
 
 //is a subset of the real numbers
 pub trait RealSubsetSignature: ComplexSubsetSignature {}
