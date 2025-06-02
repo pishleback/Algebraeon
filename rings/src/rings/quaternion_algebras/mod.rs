@@ -1,7 +1,7 @@
 use crate::structure::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 #[derive(Debug, Clone)]
 pub struct QuaternionAlgebraStructure<Field: FieldSignature> {
@@ -239,13 +239,17 @@ impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStru
         QuaternionAlgebraBasisCanonicalStructure {}
     }
 
-    fn to_component<'a>(&self, b: &QuaternionAlgebraBasis, v: &'a Self::Set) -> &'a Field::Set {
-        match b {
+    fn to_component<'a>(
+        &self,
+        b: &QuaternionAlgebraBasis,
+        v: &'a Self::Set,
+    ) -> Cow<'a, Field::Set> {
+        Cow::Borrowed(match b {
             QuaternionAlgebraBasis::R => &v.x,
             QuaternionAlgebraBasis::I => &v.y,
             QuaternionAlgebraBasis::J => &v.z,
             QuaternionAlgebraBasis::K => &v.w,
-        }
+        })
     }
 
     fn from_component(&self, b: &QuaternionAlgebraBasis, r: &Field::Set) -> Self::Set {

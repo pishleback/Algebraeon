@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use super::{
     finitely_free_affine::FinitelyFreeSubmoduleAffineSubsetStructure,
     finitely_free_coset::FinitelyFreeSubmoduleCosetStructure,
@@ -7,6 +6,7 @@ use super::{
 };
 use crate::{linear::matrix::MatrixStructure, structure::*};
 use algebraeon_sets::structure::*;
+use std::{borrow::Cow, marker::PhantomData};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeModuleStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
@@ -216,9 +216,9 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ri
         &self.basis_set
     }
 
-    fn to_component<'a>(&self, b: &usize, v: &'a Self::Set) -> &'a Ring::Set {
+    fn to_component<'a>(&self, b: &usize, v: &'a Self::Set) -> Cow<'a, Ring::Set> {
         debug_assert!(*b < self.rank());
-        &v[*b]
+        Cow::Borrowed(&v[*b])
     }
 
     fn from_component(&self, b: &usize, r: &<Ring>::Set) -> Self::Set {

@@ -1,3 +1,5 @@
+use std::borrow::{Borrow, Cow};
+
 use super::{
     embedded_anf::anf_multi_primitive_element_theorem,
     ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
@@ -197,13 +199,27 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldStructure {
     }
 }
 
+impl FiniteRankFreeRingExtension<RationalCanonicalStructure, AlgebraicNumberFieldStructure>
+    for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>
+{
+    type Basis = EnumeratedFiniteSetStructure;
+
+    fn basis_set(&self) -> impl Borrow<Self::Basis> {
+        self.range().field_inclusion().basis_set().borrow().clone()
+    }
+
+    fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
+        self.range().field_inclusion().to_component(b, v)
+    }
+
+    fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
+        self.range().field_inclusion().from_component(b, r)
+    }
+}
+
 impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, AlgebraicNumberFieldStructure>
     for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>
 {
-    fn degree(&self) -> usize {
-        self.range().degree()
-    }
-
     fn norm(&self, a: &<AlgebraicNumberFieldStructure as SetSignature>::Set) -> Rational {
         self.range().norm(a)
     }
