@@ -1,12 +1,13 @@
-use std::collections::HashSet;
-
 use super::natural::factorization::NaturalCanonicalFactorizationStructure;
 use super::natural::factorization::factor;
+use super::natural::factorization::primes::is_prime;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use std::borrow::Cow;
+use std::collections::HashSet;
 
 pub mod berlekamp_zassenhaus;
 pub mod ideal;
@@ -97,9 +98,24 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
     }
 }
 
-impl UniqueFactorizationSignature for IntegerCanonicalStructure {
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(self.is_irreducible(a))
+impl UniqueFactorizationDomainSignature for IntegerCanonicalStructure {
+    type FactorOrdering = Self;
+    type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    fn into_factorizations(self) -> Self::Factorizations<Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+        Cow::Borrowed(self)
+    }
+
+    fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+        Some(is_prime(&a.abs()))
     }
 }
 
@@ -116,15 +132,17 @@ impl FactorableSignature for IntegerCanonicalStructure {
             }
             let f = factor(a.abs()).unwrap();
             Some(
-                Integer::factorizations().from_unit_and_factor_powers_unchecked(
-                    unit,
-                    Natural::structure()
-                        .factorizations()
-                        .into_powers(f)
-                        .into_iter()
-                        .map(|(p, k)| (Integer::from(p), Natural::from(k)))
-                        .collect(),
-                ),
+                Integer::structure()
+                    .factorizations()
+                    .from_unit_and_factor_powers_unchecked(
+                        unit,
+                        Natural::structure()
+                            .factorizations()
+                            .into_powers(f)
+                            .into_iter()
+                            .map(|(p, k)| (Integer::from(p), Natural::from(k)))
+                            .collect(),
+                    ),
             )
         }
     }

@@ -1,53 +1,110 @@
 use super::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
-use std::{fmt::Display, marker::PhantomData};
+use std::borrow::Cow;
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+};
 
-pub trait UniqueFactorizationSignature: FavoriteAssociateSignature {
-    /// Try to determine if a is irreducible. May fail to produce an answer.
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
-
-    fn factorizations<'a>(&'a self) -> FactoredRingElementStructure<Self, &'a Self> {
-        FactoredRingElementStructure::new(self)
-    }
-
-    fn into_factorizations(self) -> FactoredRingElementStructure<Self, Self> {
-        FactoredRingElementStructure::new(self)
-    }
-}
-pub trait MetaUniqueFactorizationSignature: MetaFavoriteAssociate
-where
-    Self::Signature: UniqueFactorizationSignature,
-{
-    fn try_is_irreducible(&self) -> Option<bool> {
-        Self::structure().try_is_irreducible(self)
-    }
-
-    fn factorizations() -> FactoredRingElementStructure<Self::Signature, Self::Signature> {
-        Self::structure().into_factorizations()
-    }
-}
-impl<R: MetaRing> MetaUniqueFactorizationSignature for R where
-    Self::Signature: UniqueFactorizationSignature<Set = R>
-{
+#[derive(Debug, Clone)]
+pub struct FactoredRingElement<Element> {
+    unit: Element,
+    // all prime factors should satisfy is_fav_assoc()
+    powers: Vec<(Element, Natural)>,
 }
 
-pub trait FactorableSignature: UniqueFactorizationSignature {
-    //a UFD with an explicit algorithm to compute unique factorizations
-    fn factor(&self, a: &Self::Set) -> Option<FactoredRingElement<Self::Set>>;
-
-    fn is_irreducible(&self, a: &Self::Set) -> bool {
-        match self.factor(a) {
-            None => false, //zero is not irreducible
-            Some(factored) => self.factorizations().is_prime_unchecked(&factored),
+impl<Element> FactoredRingElement<Element> {
+    pub fn new_unit(unit: Element) -> Self {
+        Self {
+            unit,
+            powers: vec![],
         }
     }
 
-    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set
-// where
-    //     Self: FactoredAbstractStructure<Factored<Self>, Object = Self::Set, PrimeObject = Self::Set>,
-        // Factored<Self>: FactoredAbstract<Structure = Self>,
-    {
+    pub fn unit(&self) -> &Element {
+        &self.unit
+    }
+
+    pub fn powers(&self) -> &Vec<(Element, Natural)> {
+        &self.powers
+    }
+
+    pub fn from_unit_and_powers(unit: Element, powers: Vec<(Element, Natural)>) -> Self {
+        Self { unit, powers }
+    }
+
+    pub fn into_unit_and_powers(self) -> (Element, Vec<(Element, Natural)>) {
+        (self.unit, self.powers)
+    }
+}
+
+pub trait RingFactorizationsSignature<
+    Ring: UniqueFactorizationDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+>:
+    SetSignature<Set = FactoredRingElement<Ring::Set>>
+    + FactoredSignature<Object = Ring::Set, PrimeObject = Ring::Set>
+{
+    fn ring(&self) -> &Ring;
+
+    fn from_unit(&self, unit: Ring::Set) -> FactoredRingElement<Ring::Set>;
+
+    fn from_unit_and_factor_powers_unchecked(
+        &self,
+        unit: Ring::Set,
+        factor_powers: Vec<(Ring::Set, Natural)>,
+    ) -> FactoredRingElement<Ring::Set>;
+
+    fn from_unit_and_factor_powers(
+        &self,
+        unit: Ring::Set,
+        factor_powers: Vec<(Ring::Set, Natural)>,
+    ) -> FactoredRingElement<Ring::Set>;
+
+    fn mul_mut(&self, a: &mut FactoredRingElement<Ring::Set>, b: FactoredRingElement<Ring::Set>);
+
+    fn mul_by_unchecked(&self, a: &mut FactoredRingElement<Ring::Set>, p: Ring::Set, k: Natural);
+}
+
+pub trait UniqueFactorizationDomainSignature: FavoriteAssociateSignature {
+    type FactorOrdering: OrdSignature<Set = Self::Set>;
+    type Factorizations<SelfB: BorrowedStructure<Self>>: RingFactorizationsSignature<Self, SelfB>;
+
+    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self>;
+
+    fn into_factorizations(self) -> Self::Factorizations<Self>;
+
+    fn factor_ordering(&self) -> Cow<Self::FactorOrdering>;
+
+    fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
+}
+
+pub trait MetaUniqueFactorizationSignature: MetaType
+where
+    Self::Signature: UniqueFactorizationDomainSignature,
+{
+    fn debug_try_is_irreducible(&self) -> Option<bool> {
+        Self::structure().debug_try_is_irreducible(self)
+    }
+}
+impl<T: MetaType> MetaUniqueFactorizationSignature for T where
+    T::Signature: UniqueFactorizationDomainSignature
+{
+}
+
+pub trait FactorableSignature: UniqueFactorizationDomainSignature {
+    fn factor(&self, element: &Self::Set) -> Option<FactoredRingElement<Self::Set>>;
+
+    fn is_irreducible(&self, element: &Self::Set) -> bool {
+        if let Some(factored) = self.factor(element) {
+            self.factorizations().is_prime(&factored)
+        } else {
+            false
+        }
+    }
+
+    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         match (self.factor(a), self.factor(b)) {
             (Some(factored_a), Some(factored_b)) => self
                 .factorizations()
@@ -59,7 +116,7 @@ pub trait FactorableSignature: UniqueFactorizationSignature {
     }
 }
 
-pub trait MetaFactorableSignature: MetaFavoriteAssociate
+pub trait MetaFactorableSignature: MetaType
 where
     Self::Signature: FactorableSignature,
 {
@@ -75,50 +132,174 @@ where
         Self::structure().gcd_by_factor(a, b)
     }
 }
-impl<R: MetaRing> MetaFactorableSignature for R where Self::Signature: FactorableSignature<Set = R> {}
+impl<T: MetaType> MetaFactorableSignature for T where T::Signature: FactorableSignature {}
 
-impl<FS: FieldSignature> UniqueFactorizationSignature for FS {
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(self.is_irreducible(a))
+impl<FS: FieldSignature> UniqueFactorizationDomainSignature for FS {
+    type FactorOrdering = EmptySetStructure<Self::Set>;
+    type Factorizations<SelfB: BorrowedStructure<Self>> =
+        FieldElementFactorizationsStructure<Self, SelfB>;
+
+    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+        FieldElementFactorizationsStructure::new(self)
     }
-}
 
-impl<FS: FieldSignature> FactorableSignature for FS {
-    fn factor(&self, a: &Self::Set) -> Option<FactoredRingElement<Self::Set>> {
-        if self.is_zero(a) {
-            None
-        } else {
-            Some(
-                self.factorizations()
-                    .from_unit_and_factor_powers(a.clone(), vec![]),
-            )
-        }
+    fn into_factorizations(self) -> Self::Factorizations<Self> {
+        FieldElementFactorizationsStructure::new(self)
     }
-}
 
-#[derive(Debug, Clone)]
-pub struct FactoredRingElement<Element> {
-    unit: Element,
-    // all prime factors should satisfy is_fav_assoc()
-    factors: Vec<(Element, Natural)>,
-}
+    fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+        Cow::Owned(EmptySetStructure::new())
+    }
 
-impl<Element> FactoredRingElement<Element> {
-    pub fn into_unit_and_factor_powers(self) -> (Element, Vec<(Element, Natural)>) {
-        (self.unit, self.factors)
+    fn debug_try_is_irreducible(&self, _: &Self::Set) -> Option<bool> {
+        Some(false)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FieldElementFactorizationsStructure<FS: FieldSignature, FSB: BorrowedStructure<FS>> {
+    _field: PhantomData<FS>,
+    field: FSB,
+}
+
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> FieldElementFactorizationsStructure<FS, FSB> {
+    pub fn new(field: FSB) -> Self {
+        Self {
+            _field: PhantomData::default(),
+            field,
+        }
+    }
+
+    pub fn field(&self) -> &FS {
+        self.field.borrow()
+    }
+}
+
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> Signature
+    for FieldElementFactorizationsStructure<FS, FSB>
+{
+}
+
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> SetSignature
+    for FieldElementFactorizationsStructure<FS, FSB>
+{
+    type Set = FactoredRingElement<FS::Set>;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        self.field().is_unit(x.unit()) && x.powers().is_empty()
+    }
+}
+
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> FactoredSignature
+    for FieldElementFactorizationsStructure<FS, FSB>
+{
+    type Object = FS::Set;
+    type PrimeObject = FS::Set;
+
+    fn new_powers_unchecked(&self, powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set {
+        FactoredRingElement::from_unit_and_powers(self.field().one(), powers)
+    }
+
+    fn to_powers_unchecked<'a>(
+        &self,
+        a: &'a Self::Set,
+    ) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
+        a.powers().iter().map(|(p, k)| (p, k)).collect()
+    }
+
+    fn into_powers_unchecked(&self, powers: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
+        powers.into_unit_and_powers().1
+    }
+
+    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
+        self.field().product(objects)
+    }
+
+    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
+        self.field().is_zero(a) || self.field().is_unit(b)
+    }
+
+    fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
+        self.field().debug_try_is_irreducible(object)
+    }
+
+    fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
+        prime
+    }
+
+    fn mul(&self, a: Self::Set, b: Self::Set) -> Self::Set {
+        debug_assert!(self.is_element(&a));
+        debug_assert!(self.is_element(&b));
+        FactoredRingElement::new_unit(self.field().mul(a.unit(), b.unit()))
+    }
+
+    fn expanded(&self, a: &Self::Set) -> Self::Object {
+        debug_assert!(self.is_element(a));
+        a.unit().clone()
+    }
+}
+
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> RingFactorizationsSignature<FS, FSB>
+    for FieldElementFactorizationsStructure<FS, FSB>
+{
+    fn ring(&self) -> &FS {
+        self.field()
+    }
+
+    fn from_unit(&self, unit: FS::Set) -> FactoredRingElement<FS::Set> {
+        FactoredRingElement::new_unit(unit)
+    }
+
+    fn from_unit_and_factor_powers_unchecked(
+        &self,
+        unit: FS::Set,
+        powers: Vec<(FS::Set, Natural)>,
+    ) -> FactoredRingElement<FS::Set> {
+        FactoredRingElement::from_unit_and_powers(unit, powers)
+    }
+
+    fn from_unit_and_factor_powers(
+        &self,
+        unit: FS::Set,
+        powers: Vec<(FS::Set, Natural)>,
+    ) -> FactoredRingElement<FS::Set> {
+        let f = FactoredRingElement::from_unit_and_powers(unit, powers);
+        debug_assert!(self.is_element(&f));
+        f
+    }
+
+    fn mul_mut(&self, a: &mut FactoredRingElement<FS::Set>, b: FactoredRingElement<FS::Set>) {
+        *a = self.mul(a.clone(), b);
+    }
+
+    fn mul_by_unchecked(&self, _a: &mut FactoredRingElement<FS::Set>, _p: FS::Set, _k: Natural) {
+        panic!();
+    }
+}
+
+impl<FS: FieldSignature> FactorableSignature for FS {
+    fn factor(&self, element: &FS::Set) -> Option<FactoredRingElement<FS::Set>> {
+        if self.is_zero(element) {
+            None
+        } else {
+            Some(FactoredRingElement::from_unit_and_powers(
+                element.clone(),
+                vec![],
+            ))
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FactoredRingElementStructure<
-    RS: UniqueFactorizationSignature,
+    RS: UniqueFactorizationDomainSignature,
     RSB: BorrowedStructure<RS>,
 > {
     _ring: PhantomData<RS>,
     ring: RSB,
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
     FactoredRingElementStructure<RS, RSB>
 {
     pub fn new(ring: RSB) -> Self {
@@ -127,18 +308,14 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
             ring,
         }
     }
-
-    pub fn ring(&self) -> &RS {
-        self.ring.borrow()
-    }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> Signature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> Signature
     for FactoredRingElementStructure<RS, RSB>
 {
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> SetSignature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> SetSignature
     for FactoredRingElementStructure<RS, RSB>
 {
     type Set = FactoredRingElement<RS::Set>;
@@ -148,16 +325,16 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> SetSignature
             // unit must be a unit
             return false;
         }
-        for (p, k) in &x.factors {
+        for (p, k) in &x.powers {
             if k == &Natural::ZERO {
                 // prime powers must not be zero
                 return false;
             }
             if !self.ring().is_fav_assoc(p) {
-                // prime factor must be their favoriate associate
+                // each prime factor must be its favoriate associate
                 return false;
             }
-            if self.ring().try_is_irreducible(p) == Some(false) {
+            if self.ring().debug_try_is_irreducible(p) == Some(false) {
                 // prime factor must be irreducible
                 return false;
             }
@@ -171,17 +348,17 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> SetSignature
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> ToStringSignature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> ToStringSignature
     for FactoredRingElementStructure<RS, RSB>
 where
-    Self::Set: std::fmt::Display,
+    RS: ToStringSignature,
 {
     fn to_string(&self, elem: &Self::Set) -> String {
-        format!("{}", elem)
+        format!("{:?}", elem)
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> EqSignature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> EqSignature
     for FactoredRingElementStructure<RS, RSB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -190,10 +367,10 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> EqSignature
             false
         } else {
             //every a_factor is a b_factor
-            for (a_factor, _a_power) in &a.factors {
+            for (a_factor, _a_power) in &a.powers {
                 debug_assert!(ring.is_fav_assoc(a_factor));
                 if !b
-                    .factors
+                    .powers
                     .iter()
                     .any(|(b_factor, _b_power)| ring.equal(a_factor, b_factor))
                 {
@@ -201,10 +378,10 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> EqSignature
                 }
             }
             //every b_factor is an a_factor
-            for (b_factor, _b_power) in &b.factors {
+            for (b_factor, _b_power) in &b.powers {
                 debug_assert!(ring.is_fav_assoc(b_factor));
                 if !a
-                    .factors
+                    .powers
                     .iter()
                     .any(|(a_factor, _a_power)| ring.equal(a_factor, b_factor))
                 {
@@ -212,8 +389,8 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> EqSignature
                 }
             }
             //the powers of the factors are equal
-            for (a_factor, a_power) in &a.factors {
-                for (b_factor, b_power) in &b.factors {
+            for (a_factor, a_power) in &a.powers {
+                for (b_factor, b_power) in &b.powers {
                     if ring.equal(a_factor, b_factor) {
                         if a_power != b_power {
                             return false;
@@ -232,11 +409,11 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.unit)?;
-        for (factor, k) in &self.factors {
+        for (factor, k) in &self.powers {
             write!(f, " * (")?;
             write!(f, "{}", factor)?;
             write!(f, ")")?;
-            if k != &Natural::from(1u8) {
+            if k != &Natural::ONE {
                 write!(f, "^")?;
                 write!(f, "{}", k)?;
             }
@@ -245,7 +422,7 @@ where
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSignature
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> FactoredSignature
     for FactoredRingElementStructure<RS, RSB>
 {
     type PrimeObject = RS::Set;
@@ -256,7 +433,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSigna
     }
 
     fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
-        self.ring().try_is_irreducible(object)
+        self.ring().debug_try_is_irreducible(object)
     }
 
     fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
@@ -275,17 +452,17 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSigna
         &self,
         a: &'a Self::Set,
     ) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
-        a.factors.iter().map(|(p, k)| (p, k)).collect()
+        a.powers.iter().map(|(p, k)| (p, k)).collect()
     }
 
     fn into_powers_unchecked(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
-        a.factors
+        a.powers
     }
 
     fn expanded(&self, a: &Self::Set) -> Self::Object {
         debug_assert!(self.is_element(a));
         let mut ans = a.unit.clone();
-        for (p, k) in &a.factors {
+        for (p, k) in &a.powers {
             self.ring().mul_mut(&mut ans, &self.ring().nat_pow(p, k));
         }
         ans
@@ -295,68 +472,69 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> FactoredSigna
         debug_assert!(self.is_element(&a));
         debug_assert!(self.is_element(&b));
         self.ring().mul_mut(&mut a.unit, &b.unit);
-        for (p, k) in b.factors {
+        for (p, k) in b.powers {
             self.mul_by_unchecked(&mut a, p, k);
         }
         a
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
-    FactoredRingElementStructure<RS, RSB>
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
+    RingFactorizationsSignature<RS, RSB> for FactoredRingElementStructure<RS, RSB>
 {
-    pub fn from_unit(&self, unit: RS::Set) -> FactoredRingElement<RS::Set> {
+    fn ring(&self) -> &RS {
+        self.ring.borrow()
+    }
+
+    fn from_unit(&self, unit: RS::Set) -> FactoredRingElement<RS::Set> {
         debug_assert!(self.ring().is_unit(&unit));
         FactoredRingElement {
             unit,
-            factors: vec![],
+            powers: vec![],
         }
     }
 
-    pub(crate) fn from_unit_and_factor_powers_unchecked(
+    fn from_unit_and_factor_powers_unchecked(
         &self,
         unit: RS::Set,
-        factor_powers: Vec<(RS::Set, Natural)>,
+        powers: Vec<(RS::Set, Natural)>,
     ) -> FactoredRingElement<RS::Set> {
         FactoredRingElement {
             unit,
-            factors: factor_powers,
+            powers: powers,
         }
     }
 
-    pub fn from_unit_and_factor_powers(
+    fn from_unit_and_factor_powers(
         &self,
         mut unit: RS::Set,
         factor_powers: Vec<(RS::Set, Natural)>,
     ) -> FactoredRingElement<RS::Set> {
         debug_assert!(self.ring().is_unit(&unit));
-        let mut factor_powers = factor_powers
+        let mut powers = factor_powers
             .into_iter()
             .filter(|(_, k)| k > &Natural::ZERO)
             .collect::<Vec<_>>();
-        for i in 0..factor_powers.len() {
-            let (p, k) = &mut factor_powers[i];
+        for i in 0..powers.len() {
+            let (p, k) = &mut powers[i];
             let (u, q) = self.ring().factor_fav_assoc(p);
             *p = q;
             unit = self.ring().mul(&unit, &self.ring().nat_pow(&u, k));
         }
-        for (p, _) in &factor_powers {
+        for (p, _) in &powers {
             debug_assert!(self.ring().is_fav_assoc(p));
         }
-        FactoredRingElement {
-            unit,
-            factors: factor_powers,
-        }
+        FactoredRingElement { unit, powers }
     }
 
-    pub fn mul_mut(&self, a: &mut FactoredRingElement<RS::Set>, b: FactoredRingElement<RS::Set>) {
+    fn mul_mut(&self, a: &mut FactoredRingElement<RS::Set>, b: FactoredRingElement<RS::Set>) {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(&b));
         *a = self.mul(a.clone(), b)
     }
 
     fn mul_by_unchecked(&self, a: &mut FactoredRingElement<RS::Set>, p: RS::Set, k: Natural) {
-        for (q, t) in &mut a.factors {
+        for (q, t) in &mut a.powers {
             match (self.ring().div(&p, q), self.ring().div(q, &p)) {
                 (Ok(u), Ok(v)) => {
                     if self.ring().is_unit(&u) && self.ring().is_unit(&v) {
@@ -370,7 +548,7 @@ impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>>
                 _ => {}
             }
         }
-        a.factors.push((p, k));
+        a.powers.push((p, k));
     }
 }
 
@@ -380,7 +558,7 @@ pub enum FindFactorResult<Element> {
     Composite(Element, Element),
 }
 
-pub fn factorize_by_find_factor<RS: UniqueFactorizationSignature>(
+pub fn factorize_by_find_factor<RS: UniqueFactorizationDomainSignature>(
     ring: &RS,
     elem: RS::Set,
     partial_factor: &impl Fn(RS::Set) -> FindFactorResult<RS::Set>,
@@ -410,73 +588,87 @@ mod tests {
 
     #[test]
     fn factorization_invariants() {
-        let f = Integer::factorizations().from_unit_and_factor_powers_unchecked(
-            Integer::from(-1),
-            vec![
-                (Integer::from(2), Natural::from(2u8)),
-                (Integer::from(3), Natural::from(1u8)),
-            ],
-        );
-        assert!(Integer::factorizations().is_element(&f));
+        let f = Integer::structure()
+            .factorizations()
+            .from_unit_and_factor_powers_unchecked(
+                Integer::from(-1),
+                vec![
+                    (Integer::from(2), Natural::from(2u8)),
+                    (Integer::from(3), Natural::from(1u8)),
+                ],
+            );
+        assert!(Integer::structure().factorizations().is_element(&f));
 
-        let f = Integer::factorizations().from_unit_and_factor_powers(Integer::from(1), vec![]);
-        assert!(Integer::factorizations().is_element(&f));
+        let f = Integer::structure()
+            .factorizations()
+            .from_unit_and_factor_powers(Integer::from(1), vec![]);
+        assert!(Integer::structure().factorizations().is_element(&f));
 
-        let f = Integer::factorizations().from_unit_and_factor_powers_unchecked(
-            Integer::from(-1),
-            vec![
-                (Integer::from(2), Natural::from(2u8)),
-                (Integer::from(3), Natural::from(1u8)),
-                (Integer::from(5), Natural::from(0u8)),
-            ],
-        );
+        let f = Integer::structure()
+            .factorizations()
+            .from_unit_and_factor_powers_unchecked(
+                Integer::from(-1),
+                vec![
+                    (Integer::from(2), Natural::from(2u8)),
+                    (Integer::from(3), Natural::from(1u8)),
+                    (Integer::from(5), Natural::from(0u8)),
+                ],
+            );
         assert!(
-            !Integer::factorizations().is_element(&f),
+            !Integer::structure().factorizations().is_element(&f),
             "can't have a power of zero"
         );
 
-        let f = Integer::factorizations().from_unit_and_factor_powers_unchecked(
-            Integer::from(3),
-            vec![(Integer::from(2), Natural::from(2u8))],
-        );
+        let f = Integer::structure()
+            .factorizations()
+            .from_unit_and_factor_powers_unchecked(
+                Integer::from(3),
+                vec![(Integer::from(2), Natural::from(2u8))],
+            );
         assert!(
-            !Integer::factorizations().is_element(&f),
+            !Integer::structure().factorizations().is_element(&f),
             "unit should be a unit"
         );
 
-        let f = Integer::factorizations().from_unit_and_factor_powers_unchecked(
-            Integer::from(1),
-            vec![
-                (Integer::from(0), Natural::from(1u8)),
-                (Integer::from(3), Natural::from(1u8)),
-            ],
-        );
+        let f = Integer::structure()
+            .factorizations()
+            .from_unit_and_factor_powers_unchecked(
+                Integer::from(1),
+                vec![
+                    (Integer::from(0), Natural::from(1u8)),
+                    (Integer::from(3), Natural::from(1u8)),
+                ],
+            );
         assert!(
-            !Integer::factorizations().is_element(&f),
+            !Integer::structure().factorizations().is_element(&f),
             "prime factors must not be zero"
         );
 
-        let f = Integer::factorizations().from_unit_and_factor_powers_unchecked(
-            Integer::from(-1),
-            vec![
-                (Integer::from(4), Natural::from(1u8)),
-                (Integer::from(3), Natural::from(1u8)),
-            ],
-        );
+        let f = Integer::structure()
+            .factorizations()
+            .from_unit_and_factor_powers_unchecked(
+                Integer::from(-1),
+                vec![
+                    (Integer::from(4), Natural::from(1u8)),
+                    (Integer::from(3), Natural::from(1u8)),
+                ],
+            );
         assert!(
-            !Integer::factorizations().is_element(&f),
+            !Integer::structure().factorizations().is_element(&f),
             "prime factors must be prime"
         );
 
-        let f = Integer::factorizations().from_unit_and_factor_powers_unchecked(
-            Integer::from(-1),
-            vec![
-                (Integer::from(-2), Natural::from(2u8)),
-                (Integer::from(3), Natural::from(1u8)),
-            ],
-        );
+        let f = Integer::structure()
+            .factorizations()
+            .from_unit_and_factor_powers_unchecked(
+                Integer::from(-1),
+                vec![
+                    (Integer::from(-2), Natural::from(2u8)),
+                    (Integer::from(3), Natural::from(1u8)),
+                ],
+            );
         assert!(
-            !Integer::factorizations().is_element(&f),
+            !Integer::structure().factorizations().is_element(&f),
             "prime factors must be favoriate associate"
         );
     }
@@ -488,11 +680,12 @@ mod tests {
             let b = Integer::from(a);
             println!("b = {}", b);
             let fs = Integer::structure().factor(&b).unwrap();
-            println!("fs = {}", fs);
+            println!("fs = {:?}", fs);
             assert_eq!(
-                Integer::factorizations().count_divisors(&fs),
+                Integer::structure().factorizations().count_divisors(&fs),
                 Natural::from(
-                    Integer::factorizations()
+                    Integer::structure()
+                        .factorizations()
                         .divisors(&fs)
                         .collect::<Vec<Integer>>()
                         .len()

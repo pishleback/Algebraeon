@@ -47,15 +47,17 @@ For exponentiation, use the method `.pow(&exp)` instead of `^` (which is xor).
 
 ```rust
 use algebraeon::nzq::*;
+use algebraeon::rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure;
+use algebraeon::sets::structure::*;
 
 let a = Natural::from(12u32);
 let b = Natural::from(5u32);
 
 // Basic operations
-let sum = &a + &b;             // 17
-let product = &a * &b;         // 60
-let power = a.pow(&b);         // 248832
-let modulo = &a % &b;          // 2
+let sum = &a + &b; // 17
+let product = &a * &b; // 60
+let power = a.pow(&b); // 248832
+let modulo = &a % &b; // 2
 
 assert_eq!(sum, Natural::from(17u32));
 assert_eq!(product, Natural::from(60u32));
@@ -91,12 +93,22 @@ assert_eq!(lcm(a.clone(), b.clone()), Natural::from(60u32));
 // is_prime
 use algebraeon::rings::rings::natural::factorization::primes::is_prime;
 assert!(!is_prime(&a)); // 12 is not prime
-assert!(is_prime(&b));  // 5 is prime
+assert!(is_prime(&b)); // 5 is prime
 
 // Euler's totient function
 use algebraeon::rings::rings::natural::factorization::factor;
-assert_eq!(factor(a).unwrap().euler_totient(), Natural::from(4u32)); // φ(12) = 4
-assert_eq!(factor(b).unwrap().euler_totient(), Natural::from(4u32)); // φ(5) = 4
+assert_eq!(
+    Natural::structure()
+        .factorizations()
+        .euler_totient(&factor(a).unwrap()),
+    Natural::from(4u32)
+); // φ(12) = 4
+assert_eq!(
+    Natural::structure()
+        .factorizations()
+        .euler_totient(&factor(b).unwrap()),
+    Natural::from(4u32)
+); // φ(5) = 4
 ```
 
 ## Factoring
@@ -104,12 +116,21 @@ assert_eq!(factor(b).unwrap().euler_totient(), Natural::from(4u32)); // φ(5) = 
 Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization) for quickly finding prime factors up to around 20 digits.
 
 ```rust
-use std::str::FromStr;
-use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
-
+# use algebraeon::sets::structure::ToStringSignature;
+# use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
+# use algebraeon::{
+    rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure,
+    sets::structure::MetaType,
+};
+# use std::str::FromStr;
+# 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
 let f = factor(n.clone()).unwrap();
-println!("{} = {}", n, f);
+println!(
+    "{} = {}",
+    n,
+    Natural::structure().factorizations().to_string(&f)
+);;
 /*
 Output:
     706000565581575429997696139445280900 = 2^2 × 5^2 × 6988699669998001 × 1010203040506070809

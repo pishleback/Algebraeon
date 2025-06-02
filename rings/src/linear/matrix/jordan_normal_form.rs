@@ -1,5 +1,5 @@
 use crate::linear::{
-    finitely_free_modules::FinitelyFreeModuleStructure,
+    finitely_free_module::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
 };
 

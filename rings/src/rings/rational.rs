@@ -138,6 +138,51 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
     }
 }
 
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// struct IrreducibleRationalPolynomialStructure {}
+
+// impl Signature for IrreducibleRationalPolynomialStructure {}
+
+// impl SetSignature for IrreducibleRationalPolynomialStructure {
+//     type Set = Polynomial<Rational>;
+
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         todo!()
+//     }
+// }
+
+// impl EqSignature for IrreducibleRationalPolynomialStructure {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         Rational::structure().polynomials().equal(a, b)
+//     }
+// }
+
+// impl OrdSignature for IrreducibleRationalPolynomialStructure {
+//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+//         todo!()
+//     }
+// }
+
+// impl<B: BorrowedStructure<RationalCanonicalStructure>> UniqueFactorizationSignature
+//     for PolynomialStructure<RationalCanonicalStructure, B>
+// {
+//     type Irreducibles = IrreducibleRationalPolynomialStructure;
+
+//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn into_factorizations(self) -> Self::Factorizations<Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
+//         IrreducibleRationalPolynomialStructure {}
+//     }
+// }
+
 impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
     for PolynomialStructure<RationalCanonicalStructure, B>
 {
