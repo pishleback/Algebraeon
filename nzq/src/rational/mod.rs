@@ -3,8 +3,8 @@ use crate::integer::Integer;
 use crate::natural::Natural;
 use crate::traits::{Abs, Ceil, Floor, Fraction};
 use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, SetSignature, Signature,
-    ToStringSignature,
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
+    Signature, ToStringSignature,
 };
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};

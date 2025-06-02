@@ -3,8 +3,8 @@
 use crate::integer::Integer;
 use crate::traits::{AbsDiff, DivMod, ModInv, ModPow};
 use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, SetSignature, Signature,
-    ToStringSignature,
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
+    Signature, ToStringSignature,
 };
 use malachite_base::num::{
     arithmetic::traits::PowerOf2,

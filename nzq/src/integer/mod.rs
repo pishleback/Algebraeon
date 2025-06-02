@@ -4,8 +4,8 @@ use crate::Rational;
 use crate::natural::Natural;
 use crate::traits::{Abs, AbsDiff, DivMod};
 use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, SetSignature, Signature,
-    ToStringSignature,
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
+    Signature, ToStringSignature,
 };
 use malachite_base::num::basic::traits::{One, Two, Zero};
 use std::{

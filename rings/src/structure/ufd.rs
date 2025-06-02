@@ -1,6 +1,4 @@
-use super::{
-    FactoredSignature, FavoriteAssociateSignature, FieldSignature, MetaFavoriteAssociate, MetaRing,
-};
+use super::{FactoredSignature, FavoriteAssociateSignature, FieldSignature};
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::{
@@ -391,8 +389,8 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> EqSigna
                 }
             }
             //the powers of the factors are equal
-            for (a_factor, a_power) in &a.factors {
-                for (b_factor, b_power) in &b.factors {
+            for (a_factor, a_power) in &a.powers {
+                for (b_factor, b_power) in &b.powers {
                     if ring.equal(a_factor, b_factor) {
                         if a_power != b_power {
                             return false;
@@ -536,7 +534,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
     }
 
     fn mul_by_unchecked(&self, a: &mut FactoredRingElement<RS::Set>, p: RS::Set, k: Natural) {
-        for (q, t) in &mut a.factors {
+        for (q, t) in &mut a.powers {
             match (self.ring().div(&p, q), self.ring().div(q, &p)) {
                 (Ok(u), Ok(v)) => {
                     if self.ring().is_unit(&u) && self.ring().is_unit(&v) {
