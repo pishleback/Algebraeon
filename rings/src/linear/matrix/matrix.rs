@@ -5,7 +5,7 @@ use std::{borrow::Borrow, marker::PhantomData};
 
 #[derive(Debug)]
 pub enum MatOppErr {
-    DimMissmatch,
+    DimMismatch,
     InvalidIndex,
     NotSquare,
     Singular,
@@ -426,7 +426,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
 
     pub fn add_mut(&self, a: &mut Matrix<RS::Set>, b: &Matrix<RS::Set>) -> Result<(), MatOppErr> {
         if a.rows() != b.rows() || a.cols() != b.cols() {
-            Err(MatOppErr::DimMissmatch)
+            Err(MatOppErr::DimMismatch)
         } else {
             let rows = a.rows();
             let cols = a.cols();
@@ -473,7 +473,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     ) -> Result<Matrix<RS::Set>, MatOppErr> {
         let mids = a.cols();
         if mids != b.rows() {
-            return Err(MatOppErr::DimMissmatch);
+            return Err(MatOppErr::DimMismatch);
         }
         let rows = a.rows();
         let cols = b.cols();
@@ -1012,7 +1012,7 @@ mod tests {
 
             match a.add_mut(&b) {
                 Ok(()) => panic!(),
-                Err(MatOppErr::DimMissmatch) => {}
+                Err(MatOppErr::DimMismatch) => {}
                 Err(_) => panic!(),
             }
         }

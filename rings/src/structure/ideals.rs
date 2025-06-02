@@ -9,7 +9,7 @@ pub trait RingToIdealsSignature: RingSignature {
     fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self>;
     fn into_ideals(self) -> Self::Ideals<Self>;
 }
-pub trait MetaCannonicalIdealsSignature: MetaType
+pub trait MetaCanonicalIdealsSignature: MetaType
 where
     Self::Signature: RingToIdealsSignature,
 {
@@ -17,7 +17,7 @@ where
         Self::structure().into_ideals()
     }
 }
-impl<R: MetaType> MetaCannonicalIdealsSignature for R where R::Signature: RingToIdealsSignature {}
+impl<R: MetaType> MetaCanonicalIdealsSignature for R where R::Signature: RingToIdealsSignature {}
 
 pub trait IdealsSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
     SetSignature

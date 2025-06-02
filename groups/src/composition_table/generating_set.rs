@@ -54,7 +54,7 @@ impl<'a> GeneratingSet<'a> {
         &'static str,
     > {
         if partial_func.len() != self.gens.len() {
-            return Err("partial func entries should corespond to images for each generator");
+            return Err("partial func entries should correspond to images for each generator");
         }
         for x in partial_func {
             if *x >= range_group.size() {

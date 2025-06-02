@@ -216,7 +216,7 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                 row_opp.apply(&mut m);
                 row_opp.apply(&mut u);
 
-                //row(n) goes from (g, a1, a2, ..., an) to (gcd, 0, 0, ..., 0) by applying col opps
+                //row(n) goes from (g, a1, a2, ..., an) to (gcd, 0, 0, ..., 0) by applying col operations
                 for c in n + 1..m.cols() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(n, c).unwrap();

@@ -188,7 +188,7 @@ fn enumerate_cosets_impl(
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FinitelyGeneratedGroupElement {
-    // Positive entires are idents of generators
+    // Positive entries are idents of generators
     // Negative entries are inverses of the generator
     product: Vec<isize>,
 }
@@ -325,7 +325,7 @@ the list of generators for this finitely generated group"
         self.add_relation(rel1 * rel2.inv());
     }
 
-    /// If finite, return the number of elemts of the finitely generated group
+    /// If finite, return the number of elements of the finitely generated group
     /// and return a vector, in the order each generator was added, of the action of each generator on the elements
     /// If the number of elements is infinite, a call to this function will never halt.
     /// The identity element is always labelled by 0

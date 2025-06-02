@@ -547,7 +547,7 @@ pub fn identify_real_root(
         .map(|p| p.all_real_roots_squarefree())
         .collect();
 
-    //store indicies of possible roots
+    //store indices of possible roots
     let mut possible = std::collections::HashSet::new();
     for i in 0..root_groups.len() {
         for j in 0..root_groups[i].intervals.len() {

@@ -163,7 +163,7 @@ struct MemoryStack<SG: SemigroupSignature> {
     semigroup: SG,
     modular_factor_values: Vec<SG::Set>,
     // Store the partial products of a previous calculation
-    // Since subsets are visited in lexographic order, if a test is performed frequently, values towards the right will need to be updated
+    // Since subsets are visited in lexcographic order, if a test is performed frequently, values towards the right will need to be updated
     /*
     For example if this vector contains
         [(0, a), (2, b), (3, c)]
@@ -237,7 +237,7 @@ impl<SG: SemigroupSignature> MemoryStack<SG> {
 /// A bound is found for the (d-1)st coefficient of any factors of $f(x)$.
 /// The (d-1)st coefficient of the product of modular factors is easily computed as the sum of the (d-1)st coefficients of each modular factor.
 /// The (d-1)st coefficients of the modular factors can be quickly summed and checked whether they are in the possible range for true factors.
-/// Even better, this summing can be translated to machine arithmetic taking advantage of the wrapping behavour of binary addition. This is at the cost of a slight lossening of the bound on the (d-1)st coefficient.
+/// Even better, this summing can be translated to machine arithmetic taking advantage of the wrapping behaviour of binary addition. This is at the cost of a slight lossening of the bound on the (d-1)st coefficient.
 mod dminusone_test {
     use algebraeon_nzq::traits::Abs;
 
@@ -389,14 +389,14 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         let mut k = 1; // The cardinality of the subset to search for each loop
         let mut m = n; // Keep track of the number of remaining modular factors i.e. m = n - excluded_modular_factors.len()
 
-        // Loop over subsets of modular factors in order of increasing cardinality, then in lexographic order for each cardinality
+        // Loop over subsets of modular factors in order of increasing cardinality, then in lexicographic order for each cardinality
         // Only half of the cardinalities need to be checked since complimentary subsets need not be checked
         // Keep searching for cardinalities up to and including half the number of remaining modular factors
         while k <= m / 2 {
             let mut k_combinations = LexicographicSubsetsWithRemovals::new(n, k);
             if 2 * k == m {
                 // When m is even and k = m/2 we only need to iterate over half the subsets of size k
-                k_combinations.exclude(n - 1); // Since modular factor n-1 is checked last in the lexographic ordering, this trick works
+                k_combinations.exclude(n - 1); // Since modular factor n-1 is checked last in the lexicographic ordering, this trick works
             }
             for i in &excluded_modular_factors {
                 // Exclude any previously found modular factors from the search

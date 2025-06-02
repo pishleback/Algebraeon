@@ -143,8 +143,8 @@ pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set>;
 }
 
-/// A seperable finite dimensional field extension F -> K
-pub trait SeperableFiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
+/// A separable finite dimensional field extension F -> K
+pub trait SeparableFiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     FiniteDimensionalFieldExtension<F, K>
 {
 }
