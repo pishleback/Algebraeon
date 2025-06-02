@@ -521,7 +521,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
                          coeff: c,
                          monomial: m,
                      }| Term {
-                        coeff: self.coeff_ring().neg(&c),
+                        coeff: self.coeff_ring().neg(c),
                         monomial: m.clone(),
                     },
                 )
@@ -581,29 +581,6 @@ impl<RS: CharacteristicSignature + RingSignature, RSB: BorrowedStructure<RS>>
         self.coeff_ring().characteristic()
     }
 }
-
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature
-    for MultiPolynomialStructure<RS, RSB>
-{
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        MultiPolynomial {
-            terms: a
-                .terms
-                .iter()
-                .map(
-                    |Term {
-                         coeff: c,
-                         monomial: m,
-                     }| Term {
-                        coeff: self.coeff_ring().neg(c),
-                        monomial: m.clone(),
-                    },
-                )
-                .collect(),
-        }
-    }
-}
-
 
 impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> SemiRingUnitsSignature
     for MultiPolynomialStructure<RS, RSB>

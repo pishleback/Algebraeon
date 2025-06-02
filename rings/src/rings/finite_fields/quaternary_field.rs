@@ -52,12 +52,6 @@ impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl AdditiveGroupSignature for QuaternaryFieldCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        a.clone()
-    }
-}
-
 impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
     fn one(&self) -> Self::Set {
         QuaternaryField::One
@@ -86,12 +80,11 @@ impl CharacteristicSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl RingSignature for QuaternaryFieldCanonicalStructure {
+impl AdditiveGroupSignature for QuaternaryFieldCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         *a
     }
 }
-
 
 impl SemiRingUnitsSignature for QuaternaryFieldCanonicalStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
