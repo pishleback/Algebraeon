@@ -20,6 +20,7 @@ pub struct QuaternionOrderZBasis {
 }
 
 impl PartialEq for QuaternionOrderZBasis {
+    #[allow(clippy::overly_complex_bool_expr)]
     fn eq(&self, other: &Self) -> bool {
         self.algebra == other.algebra && false
     }
