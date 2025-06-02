@@ -1,6 +1,6 @@
 use super::{
     finitely_free_coset::FinitelyFreeSubmoduleCoset,
-    finitely_free_modules::FinitelyFreeModuleStructure,
+    finitely_free_module::FinitelyFreeModuleStructure,
     matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
 };
 use crate::structure::*;

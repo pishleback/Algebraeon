@@ -5,6 +5,7 @@ use std::fmt::Display;
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, CanonicalStructure)]
+#[canonical_structure(eq)]
 pub enum QuaternaryField {
     Zero,
     One,

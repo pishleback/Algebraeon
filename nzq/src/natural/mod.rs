@@ -24,6 +24,7 @@ pub use functions::primes;
 
 /// Represents a natural number {0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
+#[canonical_structure(eq, ord)]
 pub struct Natural(malachite_nz::natural::Natural);
 
 impl Natural {

@@ -568,7 +568,7 @@ where
         // let poly_ring: PolynomialStructure<RS> = PolynomialStructure::new(ring.clone());
 
         let mut fs = vec![];
-        let (_unit, factors) = a.into_unit_and_factor_powers();
+        let (_unit, factors) = a.into_unit_and_powers();
         for (factor, power) in factors {
             if power == Natural::ONE {
                 fs.push(factor);
