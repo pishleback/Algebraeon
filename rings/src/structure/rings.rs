@@ -169,6 +169,10 @@ pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
     fn into_multivariable_polynomials(self) -> MultiPolynomialStructure<Self, Self> {
         MultiPolynomialStructure::new(self)
     }
+
+    fn principal_subring_inclusion(&self) -> PrincipalSubringInclusion<Self> {
+        PrincipalSubringInclusion::new(self.clone())
+    }
 }
 
 pub trait MetaRing: MetaType
