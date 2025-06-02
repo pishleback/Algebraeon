@@ -149,7 +149,7 @@ Use the issue tracker if you have questions, feature requests, bugs reports, etc
 ## What to work on?
 
 If you're unsure what you could do to help:
- - Have a look through the issue tracker for unassigned issues.
+ - Have a look through the issue tracker for unassigned issues and leave a comment.
  - Ask in the discord server.
 
 ## Changing the code-base
