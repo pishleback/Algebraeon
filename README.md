@@ -4,6 +4,8 @@ Algebraeon is a computational algebra system (CAS) written purely in Rust. It im
 
 See the [user guide](https://pishleback.github.io/Algebraeon/) (a work in progress) to get started. 
 
+Contributions are welcome and I am happy to do some hand-holding to help out new contributors. See below for the best ways to contribute.
+
 There is [![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?logo=discord&logoColor=white)](https://discord.gg/DBqbPqPMKR) for informal discussions on the project.
 
 The latest published version of Algebraeon is hosted on crates.io [here](https://crates.io/crates/algebraeon) and the formal documentation for the most recent release is [here](https://docs.rs/algebraeon/latest/algebraeon/).
@@ -139,8 +141,6 @@ Output:
 Despite the output, the roots found are _not_ numerical approximations. Rather, they are stored internally as exact algebraic numbers by using isolating boxes in the complex plane.
 
 # Contributing
-
-Contributions are welcome and I am happy to do some hand-holding to help out new contributors. See below for the best ways to get started with contributions.
 
 ## Using the issue tracker
 
