@@ -1,5 +1,5 @@
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, RationalCanonicalStructure};
-use algebraeon_sets::structure::{EqSignature, MetaType, SetSignature, Signature};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational, RationalCanonicalStructure};
+use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
 
 use crate::{
     linear::finitely_free_module::RingToFinitelyFreeModuleSignature,
@@ -95,7 +95,14 @@ impl SemiModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
     }
 
     fn scalar_mul(&self, x: &Integer, a: &Self::Set) -> Self::Set {
-        self.algebra.scalar_mul(x, a)
+        self.algebra.scalar_mul(
+            &self
+                .algebra
+                .base_field()
+                .field_inclusion()
+                .image(&Rational::from(x)),
+            a,
+        )
     }
 }
 
