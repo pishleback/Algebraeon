@@ -19,7 +19,6 @@ The approach taken by Algebraeon to represent such sets with additional structur
    - `SemiRingSignature` so that `Integer`s can be added and multiplied modulo \\(n\\).
    - `RingSignature` so that `Integer`s can be subtracted modulo \\(n\\).
 In practice, this could look like
-
 ```rust
 use algebraeon::nzq::{Integer, Natural};
 use algebraeon::rings::structure::*;

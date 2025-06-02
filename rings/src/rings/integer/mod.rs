@@ -139,7 +139,7 @@ impl FactorableSignature for IntegerCanonicalStructure {
                             .factorizations()
                             .into_powers(f)
                             .into_iter()
-                            .map(|(p, k)| (Integer::from(p), Natural::from(k)))
+                            .map(|(p, k)| (Integer::from(p), k))
                             .collect(),
                     ),
             )

@@ -5,6 +5,7 @@
 mod empty_set;
 mod morphism;
 mod orderings;
+#[allow(clippy::module_inception)]
 mod structure;
 
 pub use algebraeon_macros::CanonicalStructure;

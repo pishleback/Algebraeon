@@ -74,12 +74,12 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
     }
 
     pub fn to_col(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
-        debug_assert!(self.is_element(&v));
+        debug_assert!(self.is_element(v));
         Matrix::construct(self.rank(), 1, |r, _| v[r].clone())
     }
 
     pub fn to_row(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
-        debug_assert!(self.is_element(&v));
+        debug_assert!(self.is_element(v));
         Matrix::construct(1, self.rank(), |_, c| v[c].clone())
     }
 
