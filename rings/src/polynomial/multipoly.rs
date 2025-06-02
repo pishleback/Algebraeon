@@ -4,7 +4,6 @@ use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Display;
@@ -705,65 +704,65 @@ where
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MultiPolynomialFactorOrderingStructure<
-    Ring: RingSignature,
-    RingB: BorrowedStructure<Ring>,
-> {
-    _coeff_ring: PhantomData<Ring>,
-    coeff_ring: RingB,
-}
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub struct MultiPolynomialFactorOrderingStructure<
+//     Ring: RingSignature,
+//     RingB: BorrowedStructure<Ring>,
+// > {
+//     _coeff_ring: PhantomData<Ring>,
+//     coeff_ring: RingB,
+// }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-    MultiPolynomialFactorOrderingStructure<Ring, RingB>
-{
-    fn new(coeff_ring: RingB) -> Self {
-        Self {
-            _coeff_ring: PhantomData::default(),
-            coeff_ring,
-        }
-    }
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+//     MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+//     fn new(coeff_ring: RingB) -> Self {
+//         Self {
+//             _coeff_ring: PhantomData::default(),
+//             coeff_ring,
+//         }
+//     }
 
-    fn coeff_ring(&self) -> &Ring {
-        self.coeff_ring.borrow()
-    }
-}
+//     fn coeff_ring(&self) -> &Ring {
+//         self.coeff_ring.borrow()
+//     }
+// }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> Signature
-    for MultiPolynomialFactorOrderingStructure<Ring, RingB>
-{
-}
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> Signature
+//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+// }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
-    for MultiPolynomialFactorOrderingStructure<Ring, RingB>
-{
-    type Set = MultiPolynomial<Ring::Set>;
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
+//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+//     type Set = MultiPolynomial<Ring::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
-        self.coeff_ring().multivariable_polynomials().is_element(x)
-    }
-}
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         self.coeff_ring().multivariable_polynomials().is_element(x)
+//     }
+// }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
-    for MultiPolynomialFactorOrderingStructure<Ring, RingB>
-{
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.coeff_ring().multivariable_polynomials().equal(a, b)
-    }
-}
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
+//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         self.coeff_ring().multivariable_polynomials().equal(a, b)
+//     }
+// }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> OrdSignature
-    for MultiPolynomialFactorOrderingStructure<Ring, RingB>
-{
-    fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-        std::cmp::Ordering::Equal
-    }
-}
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> OrdSignature
+//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+//         std::cmp::Ordering::Equal
+//     }
+// }
 
 impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
     UniqueFactorizationDomainSignature for MultiPolynomialStructure<RS, RSB>
 {
-    type FactorOrdering = MultiPolynomialFactorOrderingStructure<RS, RSB>;
+    // type FactorOrdering = MultiPolynomialFactorOrderingStructure<RS, RSB>;
 
     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
 
@@ -775,13 +774,13 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
         FactoredRingElementStructure::new(self)
     }
 
-    fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
-        Cow::Owned(MultiPolynomialFactorOrderingStructure::new(
-            self.coeff_ring.clone(),
-        ))
-    }
+    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+    //     Cow::Owned(MultiPolynomialFactorOrderingStructure::new(
+    //         self.coeff_ring.clone(),
+    //     ))
+    // }
 
-    fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+    fn debug_try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         None
     }
 }

@@ -1,7 +1,6 @@
 use super::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
-use std::borrow::Cow;
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
@@ -68,14 +67,14 @@ pub trait RingFactorizationsSignature<
 }
 
 pub trait UniqueFactorizationDomainSignature: FavoriteAssociateSignature {
-    type FactorOrdering: OrdSignature<Set = Self::Set>;
+    // type FactorOrdering: OrdSignature<Set = Self::Set>;
     type Factorizations<SelfB: BorrowedStructure<Self>>: RingFactorizationsSignature<Self, SelfB>;
 
     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self>;
 
     fn into_factorizations(self) -> Self::Factorizations<Self>;
 
-    fn factor_ordering(&self) -> Cow<Self::FactorOrdering>;
+    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering>;
 
     fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
 }
@@ -135,7 +134,7 @@ where
 impl<T: MetaType> MetaFactorableSignature for T where T::Signature: FactorableSignature {}
 
 impl<FS: FieldSignature> UniqueFactorizationDomainSignature for FS {
-    type FactorOrdering = EmptySetStructure<Self::Set>;
+    // type FactorOrdering = EmptySetStructure<Self::Set>;
     type Factorizations<SelfB: BorrowedStructure<Self>> =
         FieldElementFactorizationsStructure<Self, SelfB>;
 
@@ -147,9 +146,9 @@ impl<FS: FieldSignature> UniqueFactorizationDomainSignature for FS {
         FieldElementFactorizationsStructure::new(self)
     }
 
-    fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
-        Cow::Owned(EmptySetStructure::new())
-    }
+    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+    //     Cow::Owned(EmptySetStructure::new())
+    // }
 
     fn debug_try_is_irreducible(&self, _: &Self::Set) -> Option<bool> {
         Some(false)

@@ -6,7 +6,6 @@ use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
-use std::borrow::Cow;
 use std::collections::HashSet;
 
 pub mod berlekamp_zassenhaus;
@@ -99,7 +98,7 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
 }
 
 impl UniqueFactorizationDomainSignature for IntegerCanonicalStructure {
-    type FactorOrdering = Self;
+    // type FactorOrdering = Self;
     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
 
     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
@@ -110,9 +109,9 @@ impl UniqueFactorizationDomainSignature for IntegerCanonicalStructure {
         FactoredRingElementStructure::new(self)
     }
 
-    fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
-        Cow::Borrowed(self)
-    }
+    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+    //     Cow::Borrowed(self)
+    // }
 
     fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
         Some(is_prime(&a.abs()))
