@@ -18,7 +18,7 @@ mod balancable_pairs {
     /// A balancable pair of a polynomial consists of two of the monomial terms satisfying some conditions.
     ///
     /// For a fixed choice of prime $p$, a balancable pair of a polynomial $$f(x) = f_nx^n + ... + f_2x^2 + f_1x + f_0$$ is
-    /// a pair of indicies $0 \le i < j \le n$ such that
+    /// a pair of indices $0 \le i < j \le n$ such that
     /// - $f_i \ne 0$
     /// - $f_j \ne 0$
     /// - $\frac{v_p(f_j) - v_p(f_i)}{j - i}$ is an integer, called the balancing value
@@ -266,8 +266,8 @@ mod balancable_pairs {
 pub struct PAdicRationalBall {
     a: Rational,
     // Note: this value is one larger than what's in the paper
-    // In the paper, v is the valuation coresponding the radius of an _open_ ball
-    // Here v, is the (signed) number of correct p-adic digits i.e. the valuation coresponding the radius of a _closed_ ball
+    // In the paper, v is the valuation corresponding the radius of an _open_ ball
+    // Here v, is the (signed) number of correct p-adic digits i.e. the valuation corresponding the radius of a _closed_ ball
     v: Integer,
 }
 

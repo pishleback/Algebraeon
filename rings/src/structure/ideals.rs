@@ -4,20 +4,20 @@ use algebraeon_sets::structure::*;
 
 pub trait DedekindDomainSignature: IntegralDomainSignature {}
 
-pub trait CannonicalIdealsSignature: RingSignature {
+pub trait CanonicalIdealsSignature: RingSignature {
     type Ideals<SelfB: BorrowedStructure<Self>>: IdealsSignature<Self, SelfB>;
     fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self>;
     fn into_ideals(self) -> Self::Ideals<Self>;
 }
-pub trait MetaCannonicalIdealsSignature: MetaType
+pub trait MetaCanonicalIdealsSignature: MetaType
 where
-    Self::Signature: CannonicalIdealsSignature,
+    Self::Signature: CanonicalIdealsSignature,
 {
-    fn ideals() -> <Self::Signature as CannonicalIdealsSignature>::Ideals<Self::Signature> {
+    fn ideals() -> <Self::Signature as CanonicalIdealsSignature>::Ideals<Self::Signature> {
         Self::structure().into_ideals()
     }
 }
-impl<R: MetaType> MetaCannonicalIdealsSignature for R where R::Signature: CannonicalIdealsSignature {}
+impl<R: MetaType> MetaCanonicalIdealsSignature for R where R::Signature: CanonicalIdealsSignature {}
 
 pub trait IdealsSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
     SetSignature

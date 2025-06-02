@@ -362,7 +362,7 @@ where
         self.jordan_algorithm(mat).0.matrix()
     }
 
-    //TODO: find basis which make two matricies similar if one exists
+    //TODO: find basis which make two matrices similar if one exists
     /*
     def similar_basis(self, other):
     #find a basis in which self looks like other
@@ -370,9 +370,9 @@ where
     if type(self) == type(other) == Matrix:
         if self.n == other.n:
             if self.jcf_spec() == other.jcf_spec():
-                #need to find a jcf basis for self and other such that the jcf matricies are identical (including order (thats the only hard part))
+                #need to find a jcf basis for self and other such that the jcf matrices are identical (including order (thats the only hard part))
                 #NOTE - by the implementation of the algorithm used, each eigen block will be consistently ordered - largest first
-                #HOWEVER, the order of the eigen block is still unknown (and an order cant be imposed in the algorhtm becasue in general, arbitrary number things cant be ordered in a consistent way)
+                #HOWEVER, the order of the eigen block is still unknown (and an order cant be imposed in the algorithm because in general, arbitrary number things cant be ordered in a consistent way)
                 self_jcf_info = self.jcf_info()
                 other_jcf_info = other.jcf_info()
                 #rewrite these in terms of {e_val : info}
@@ -389,7 +389,7 @@ where
                 other_jcf_basis = Matrix.jcf_info_to_jcf_basis(other_jcf_info)
                 return self_jcf_basis * other_jcf_basis ** -1
             else:
-                raise Exception("Matricies are not similar so cant find a basis in which one looks like the other")
+                raise Exception("Matrices are not similar so cant find a basis in which one looks like the other")
     raise NotImplementedError
     */
 }

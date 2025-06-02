@@ -399,7 +399,7 @@ where
             // a key step in this algorithm is the computation of g = gcd(f, x^{q^i} - x)
             // the naive approach isn't great since x^{q^i} gets quite big
             // instead the GCD can be computed after first reducing x^{q^i} modulo poly, since f divides poly
-            // to quickly compute x^{q^i} we can compute x^{q^1}, x^{q^2}, ... in sucessive loops, each time raising the previous value to the power of q
+            // to quickly compute x^{q^i} we can compute x^{q^1}, x^{q^2}, ... in successive loops, each time raising the previous value to the power of q
             // raising polynomials mod poly to the power of q is a linear map (freshmans dream over finite field)
             // so the qth power can be obtained by pre-computing the qth power matrix for polynomials mod poly
 

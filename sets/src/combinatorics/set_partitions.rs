@@ -117,7 +117,7 @@ pub struct Element {
 }
 
 #[derive(Debug, Clone)]
-pub struct LexographicPartitionsNumPartsInRange {
+pub struct LexicographicPartitionsNumPartsInRange {
     // how many elements in the set
     n: usize,
     // min and max number of parts in the partition
@@ -127,7 +127,7 @@ pub struct LexographicPartitionsNumPartsInRange {
     finished: bool,
 }
 
-impl LexographicPartitionsNumPartsInRange {
+impl LexicographicPartitionsNumPartsInRange {
     #[cfg(debug_assertions)]
     fn check(&self) -> Result<(), ()> {
         // check invariants
@@ -205,7 +205,7 @@ impl LexographicPartitionsNumPartsInRange {
     }
 }
 
-impl Iterator for LexographicPartitionsNumPartsInRange {
+impl Iterator for LexicographicPartitionsNumPartsInRange {
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -241,15 +241,15 @@ impl Iterator for LexographicPartitionsNumPartsInRange {
 }
 
 pub fn set_partitions_eq(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
-    LexographicPartitionsNumPartsInRange::new(n, x, x)
+    LexicographicPartitionsNumPartsInRange::new(n, x, x)
 }
 
 pub fn set_partitions_le(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
-    LexographicPartitionsNumPartsInRange::new(n, 0, x)
+    LexicographicPartitionsNumPartsInRange::new(n, 0, x)
 }
 
 pub fn set_partitions_ge(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
-    LexographicPartitionsNumPartsInRange::new(n, x, n)
+    LexicographicPartitionsNumPartsInRange::new(n, x, n)
 }
 
 pub fn set_partitions_range(
@@ -257,7 +257,7 @@ pub fn set_partitions_range(
     min_x: usize,
     max_x: usize,
 ) -> impl Iterator<Item = Vec<usize>> {
-    LexographicPartitionsNumPartsInRange::new(n, min_x, max_x)
+    LexicographicPartitionsNumPartsInRange::new(n, min_x, max_x)
 }
 
 pub fn set_compositions_eq(n: usize, x: usize) -> impl Iterator<Item = Vec<usize>> {
@@ -341,107 +341,107 @@ mod partition_tests {
     #[test]
     fn generate_set_partitions() {
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(0, 0, 0)
+            LexicographicPartitionsNumPartsInRange::new(0, 0, 0)
                 .collect::<Vec<_>>()
                 .len(),
             1
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(0, 1, 1)
+            LexicographicPartitionsNumPartsInRange::new(0, 1, 1)
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(0, 2, 2)
+            LexicographicPartitionsNumPartsInRange::new(0, 2, 2)
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(0, 3, 3)
+            LexicographicPartitionsNumPartsInRange::new(0, 3, 3)
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
 
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(1, 0, 0)
+            LexicographicPartitionsNumPartsInRange::new(1, 0, 0)
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(1, 1, 1)
+            LexicographicPartitionsNumPartsInRange::new(1, 1, 1)
                 .collect::<Vec<_>>()
                 .len(),
             1
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(1, 2, 2)
+            LexicographicPartitionsNumPartsInRange::new(1, 2, 2)
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(1, 3, 3)
+            LexicographicPartitionsNumPartsInRange::new(1, 3, 3)
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
 
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(2, 0, 0)
+            LexicographicPartitionsNumPartsInRange::new(2, 0, 0)
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(2, 1, 1)
+            LexicographicPartitionsNumPartsInRange::new(2, 1, 1)
                 .collect::<Vec<_>>()
                 .len(),
             1
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(2, 2, 2)
+            LexicographicPartitionsNumPartsInRange::new(2, 2, 2)
                 .collect::<Vec<_>>()
                 .len(),
             1
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(2, 3, 3)
+            LexicographicPartitionsNumPartsInRange::new(2, 3, 3)
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
 
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(3, 0, 0)
+            LexicographicPartitionsNumPartsInRange::new(3, 0, 0)
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(3, 1, 1)
+            LexicographicPartitionsNumPartsInRange::new(3, 1, 1)
                 .collect::<Vec<_>>()
                 .len(),
             1
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(3, 2, 2)
+            LexicographicPartitionsNumPartsInRange::new(3, 2, 2)
                 .collect::<Vec<_>>()
                 .len(),
             3
         );
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(3, 3, 3)
+            LexicographicPartitionsNumPartsInRange::new(3, 3, 3)
                 .collect::<Vec<_>>()
                 .len(),
             1
         );
 
         assert_eq!(
-            LexographicPartitionsNumPartsInRange::new(4, 5, 3)
+            LexicographicPartitionsNumPartsInRange::new(4, 5, 3)
                 .collect::<Vec<_>>()
                 .len(),
             0

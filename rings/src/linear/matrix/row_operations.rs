@@ -69,7 +69,7 @@ impl<RS: IntegralDomainSignature> ElementaryOpp<RS> {
                         .det_naive(&m)
                         .unwrap(),
                 ) {
-                    return Err("can only apply an invertible row opperation to two rows");
+                    return Err("can only apply an invertible row operation to two rows");
                 }
             }
         }

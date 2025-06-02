@@ -504,7 +504,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_poly_elem_opps() {
+    fn test_poly_elem_operations() {
         let x = &Polynomial::<Integer>::var().into_ergonomic();
 
         let f = 4 * x.pow(2) - 1;

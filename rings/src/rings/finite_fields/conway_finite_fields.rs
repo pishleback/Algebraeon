@@ -155,7 +155,7 @@ pub struct ConwayFiniteFieldInclusion {
     degree: usize,
     // Linear map F_{p^m} -> F_{p^n} of column vectors of polynomial coefficients over F_p
     inclusion: Matrix<Integer>,
-    // matricies modulo p
+    // matrices modulo p
     mat_mod_p: MatrixStructure<
         QuotientStructure<IntegerCanonicalStructure, true>,
         QuotientStructure<IntegerCanonicalStructure, true>,
@@ -299,7 +299,7 @@ mod tests {
     }
 
     #[test]
-    fn conway_finite_fields_compatability() {
+    fn conway_finite_fields_compatibility() {
         /*
                  x
         f_{3^2} ===> f_{3^4}

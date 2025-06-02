@@ -38,7 +38,7 @@ pub struct RingOfIntegersIdealsStructure<
     roi: RingB,
 }
 
-impl CannonicalIdealsSignature for RingOfIntegersWithIntegralBasisStructure {
+impl CanonicalIdealsSignature for RingOfIntegersWithIntegralBasisStructure {
     type Ideals<SelfB: BorrowedStructure<Self>> = RingOfIntegersIdealsStructure<SelfB>;
 
     fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self> {

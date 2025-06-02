@@ -27,7 +27,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
                 let poly_ring = PolynomialStructure::new(self.ring().clone());
                 let poly_mat_struct = MatrixStructure::new(poly_ring.clone());
                 let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
-                debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
+                debug_assert!(k > 0); //cant be all zero because we are taking SNF of a non-zero matrix
                 Ok(s.at(k - 1, k - 1).unwrap().clone())
             }
             Err(MatOppErr::NotSquare) => Err(MatOppErr::NotSquare),
@@ -44,7 +44,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
                 let poly_ring = PolynomialStructure::new(self.ring().clone());
                 let poly_mat_struct = MatrixStructure::new(poly_ring.clone());
                 let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
-                debug_assert!(k > 0); //cant be all zero becasue we are taking SNF of a non-zero matrix
+                debug_assert!(k > 0); //cant be all zero because we are taking SNF of a non-zero matrix
                 let mut char_poly = poly_ring.one();
                 for i in 0..k {
                     poly_ring.mul_mut(&mut char_poly, s.at(i, i).unwrap())

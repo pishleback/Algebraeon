@@ -62,5 +62,5 @@ pub use partial_simplicial_complex::*;
 mod simplicial_disjoint_union;
 pub use simplicial_disjoint_union::*;
 
-mod boolean_opperations;
-// pub use boolean_opperations::*;
+mod boolean_operations;
+// pub use boolean_operations::*;

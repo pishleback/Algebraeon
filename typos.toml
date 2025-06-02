@@ -1,0 +1,12 @@
+[default.extend-words]
+anf = "anf" # algebraic number field
+aks = "aks"
+ba = "ba"
+fith = "fith"
+fof = "fof" # field of fractions
+hom = "hom"
+iy = "iy"
+numer = "numer"
+pn = "pn"
+pring = "pring"
+Serie = "Serie"

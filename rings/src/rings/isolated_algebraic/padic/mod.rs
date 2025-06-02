@@ -840,7 +840,7 @@ pub mod structure {
         use super::*;
 
         #[test]
-        fn test_padic_field_opps() {
+        fn test_padic_field_operations() {
             let ring = PAdicAlgebraicStructure::new(Natural::from(5u32));
             let x = Polynomial::<Integer>::var().into_ergonomic();
 

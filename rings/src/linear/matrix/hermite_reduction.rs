@@ -36,7 +36,7 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
         &self,
         mut m: Matrix<Ring::Set>,
     ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>) {
-        //build up U by applying row opps to the identity as we go
+        //build up U by applying row operations to the identity as we go
         let mut u = self.ident(m.rows());
         let mut u_det = self.ring().one();
         let mut pivs = vec![];
@@ -78,7 +78,7 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
                                 &d
                             )
                         );
-                        // perform the following row opps on self
+                        // perform the following row operations on self
                         // / x  -b/d \
                         // \ y   a/d /
                         let row_opp = ElementaryOpp::new_row_opp(

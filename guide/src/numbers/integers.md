@@ -27,7 +27,7 @@ Integer supports the following operators:
 
 - `+` (addition)
 
-- `-` (substraction or negation)
+- `-` (subtraction or negation)
 
 - `*` (multiplication)
 

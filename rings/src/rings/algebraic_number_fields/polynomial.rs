@@ -251,11 +251,11 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             idea:
                 Let L = K[x] / p(x)
                 Note that L is a reduced ring
-                So L is product of distinct fields coresponding to the distinct factors of p
+                So L is product of distinct fields corresponding to the distinct factors of p
                 Find with good probability an element α in L such that 1, α, α², ..., αⁿ⁻¹ span L over Q
                 Find degree n-1 q(y) in Q[y] such that αⁿ = q(α)
                 Factor q(y) in Q[y]
-                L is product of distinct fields coresponding to the distinct factors of q since L = K[y]/q(y)
+                L is product of distinct fields corresponding to the distinct factors of q since L = K[y]/q(y)
                 Compute the image of x in each factor field of L
                 The factors of p(x) are the minimal polynomials of x in each factor field of L as a vector space over K
         */
@@ -433,8 +433,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             };
 
             // l_reduced_ring and la_reduced_ring are isomorphic
-            // so the unique decomposition of l_reduced_ring coresponding to the distinct factors pi(x) of p(x)
-            // is the same as the unique decomposition of la_reduced_ring coresponding to the distinct factors qi(y) of q(y)
+            // so the unique decomposition of l_reduced_ring corresponding to the distinct factors pi(x) of p(x)
+            // is the same as the unique decomposition of la_reduced_ring corresponding to the distinct factors qi(y) of q(y)
             // Q[y]/qi = K[x]/pi
             // so to compute pi we embed K and x into Q[y]/qi and compute the minimal polynomial of the embedded x over the embedded K
 
@@ -474,7 +474,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                     // x^{d-1}, tx^{d-1}, ..., t^{deg(K)-1}x^{d-1}
                     //lets say that lai_reduced_ring with respect to this basis is called li_reduced_ring
 
-                    //compute the degree of the coresponding factor pi(x) of p(x)
+                    //compute the degree of the corresponding factor pi(x) of p(x)
                     let qi_deg = lai_reduced_ring.degree();
                     debug_assert_eq!(qi_deg % k_deg, 0);
                     let pi_deg = qi_deg / k_deg;

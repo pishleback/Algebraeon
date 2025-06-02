@@ -1,5 +1,5 @@
 /*
-This module is derived from sympy https://www.sympy.org/en/index.html and is included under the following lisence
+This module is derived from sympy https://www.sympy.org/en/index.html and is included under the following licence
 
 Copyright (c) 2006-2023 SymPy Development Team
 

@@ -30,7 +30,7 @@ pub struct ConvexHull<
     0    | 1 null  | 1 pt
     null | 0 n/a   | 1 null
 
-    This highlights what the behavour should been in the case where the dimension is null and 0
+    This highlights what the behaviour should been in the case where the dimension is null and 0
     */
 }
 
@@ -78,7 +78,7 @@ where
                     return Err("Facet must belong to the embedded subspace");
                 }
             }
-            //interior simplicies must have dimenion equal to self.subspace
+            //interior simplicies must have dimension equal to self.subspace
             for spx in &self.interior {
                 if spx.ambient_space() != self.subspace.embedded_space() {
                     return Err("Interior simplex must belong to the embedded subspace");
@@ -228,7 +228,7 @@ where
         match self.subspace.borrow().embedded_space().affine_dimension() {
             0 => HashSet::new(),
             1 => {
-                //need to handle affine_dim = 1 case seperately from higher dimensional cases
+                //need to handle affine_dim = 1 case separately from higher dimensional cases
                 //because the facet in the 1d case is the null simplex with no points
                 let (root, span) = self.subspace.get_root_and_span().unwrap();
                 debug_assert_eq!(span.len(), 0);
@@ -383,7 +383,7 @@ where
                                     },
                                     &{
                                         //If old_facet is null living inside 0D space then take the iota-embedding of the unique point in the 0D space as the reference
-                                        //If old_facet is not null then it comes equiped with a reference point which we embed via iota and use
+                                        //If old_facet is not null then it comes equipped with a reference point which we embed via iota and use
                                         match old_facet.positive_point() {
                                             Some(pos_pt) => iota.embed_point(&pos_pt),
                                             None => {

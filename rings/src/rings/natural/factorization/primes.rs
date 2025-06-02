@@ -102,8 +102,8 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
             // Select r0 >= 3
             // Use r0 ~ 0.01*log2(n)^2
             let r0 = {
-                let aprox_log2_n = n.bitcount() - 1;
-                let r0 = (&aprox_log2_n * &aprox_log2_n) / 100;
+                let approx_log2_n = n.bitcount() - 1;
+                let r0 = (&approx_log2_n * &approx_log2_n) / 100;
                 if r0 < 3 { 3 } else { r0 }
             };
 

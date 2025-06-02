@@ -148,7 +148,7 @@ pub trait FactoredSignature: SetSignature {
     /// Does a divide b?
     fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool;
 
-    /// Are objects equivelent with respect to divisibility?
+    /// Are objects equivalent with respect to divisibility?
     fn object_equivalent(&self, a: &Self::Object, b: &Self::Object) -> bool {
         self.object_divides(a, b) && self.object_divides(b, a)
     }
@@ -157,7 +157,7 @@ pub trait FactoredSignature: SetSignature {
     /// May be inconclusive but this is bad for debugging
     fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool>;
 
-    /// Are prime objects equivelent with respect to divisibility?
+    /// Are prime objects equivalent with respect to divisibility?
     fn prime_object_equivalent(&self, a: &Self::PrimeObject, b: &Self::PrimeObject) -> bool {
         self.object_equivalent(
             &self.prime_into_object(a.clone()),
@@ -220,7 +220,7 @@ pub trait FactoredSignature: SetSignature {
         true
     }
 
-    /// Are a and b equivelent with respect to division?
+    /// Are a and b equivalent with respect to division?
     fn equivalent(&self, a: &Self::Set, b: &Self::Set) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
