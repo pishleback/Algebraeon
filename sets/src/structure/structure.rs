@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, fmt::Debug};
 
-pub trait Signature: Clone + Debug + PartialEq + Eq {}
+pub trait Signature: Clone + Debug + Eq {}
 
 /// Instances of a type implementing this trait represent
 /// a set of elements of type `Self::Set` with some
@@ -16,14 +16,6 @@ pub trait SetSignature: Signature {
 pub trait MetaType: Clone + Debug {
     type Signature: SetSignature<Set = Self>;
     fn structure() -> Self::Signature;
-}
-
-pub fn common_structure<S: Signature>(structure1: impl Borrow<S>, structure2: impl Borrow<S>) -> S {
-    if structure1.borrow() == structure2.borrow() {
-        structure1.borrow().clone()
-    } else {
-        panic!("Unequal ring structures")
-    }
 }
 
 pub trait ToStringSignature: SetSignature {
@@ -51,14 +43,8 @@ pub trait FiniteSetSignature: CountableSetSignature {
     }
 }
 
-pub trait BorrowedStructure<S: Signature>:
-    Borrow<S> + Clone + std::fmt::Debug + PartialEq + Eq
-{
-}
-impl<S: Signature, BS: Borrow<S> + Clone + std::fmt::Debug + PartialEq + Eq> BorrowedStructure<S>
-    for BS
-{
-}
+pub trait BorrowedStructure<S: Signature>: Borrow<S> + Clone + std::fmt::Debug + Eq {}
+impl<S: Signature, BS: Borrow<S> + Clone + std::fmt::Debug + Eq> BorrowedStructure<S> for BS {}
 
 #[cfg(test)]
 mod tests {

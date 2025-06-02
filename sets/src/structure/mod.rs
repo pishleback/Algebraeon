@@ -6,6 +6,7 @@ mod empty_set;
 mod finite_set;
 mod morphism;
 mod orderings;
+mod singleton_set;
 #[allow(clippy::module_inception)]
 mod structure;
 
@@ -17,7 +18,8 @@ pub use morphism::{
     InjectiveFunction, Morphism,
 };
 pub use orderings::OrdSignature;
+pub use singleton_set::SingletonSetStructure;
 pub use structure::{
     BorrowedStructure, CountableSetSignature, EqSignature, FiniteSetSignature, MetaType,
-    SetSignature, Signature, ToStringSignature, common_structure,
+    SetSignature, Signature, ToStringSignature,
 };

@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
@@ -80,13 +82,27 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
     }
 }
 
+impl FiniteRankFreeRingExtension<RationalCanonicalStructure, RationalCanonicalStructure>
+    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure>
+{
+    type Basis = SingletonSetStructure;
+
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+        SingletonSetStructure::default()
+    }
+
+    fn to_component<'a>(&self, _: &(), v: &'a Rational) -> Cow<'a, Rational> {
+        Cow::Borrowed(v)
+    }
+
+    fn from_component(&self, _: &(), r: &Rational) -> Rational {
+        r.clone()
+    }
+}
+
 impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, RationalCanonicalStructure>
     for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure>
 {
-    fn degree(&self) -> usize {
-        1
-    }
-
     fn norm(&self, a: &Rational) -> Rational {
         a.clone()
     }

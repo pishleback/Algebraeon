@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use super::{Polynomial, polynomial_ring::*};
 use crate::{linear::matrix::*, rings::quotient::QuotientStructure, structure::*};
 use algebraeon_nzq::Natural;
@@ -13,6 +15,16 @@ where
 {
     fn characteristic(&self) -> Natural {
         self.ring().characteristic()
+    }
+}
+
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>>
+    FieldExtensionByPolynomialQuotientStructure<FS, FSB>
+where
+    PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>,
+{
+    pub fn field_inclusion<'a>(&'a self) -> FieldExtensionByPolynomialQuotientInclusion<FS, FSB> {
+        FieldExtensionByPolynomialQuotientInclusion::new(self.clone())
     }
 }
 
@@ -108,7 +120,7 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FieldExtensionByPolynomialQuotient<
+pub struct FieldExtensionByPolynomialQuotientInclusion<
     Field: FieldSignature,
     FieldB: BorrowedStructure<Field>,
 > {
@@ -116,7 +128,7 @@ pub struct FieldExtensionByPolynomialQuotient<
 }
 
 impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
-    FieldExtensionByPolynomialQuotient<Field, FieldB>
+    FieldExtensionByPolynomialQuotientInclusion<Field, FieldB>
 {
     pub fn new(
         extension_field: FieldExtensionByPolynomialQuotientStructure<Field, FieldB>,
@@ -127,7 +139,7 @@ impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
 
 impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
     Morphism<Field, FieldExtensionByPolynomialQuotientStructure<Field, FieldB>>
-    for FieldExtensionByPolynomialQuotient<Field, FieldB>
+    for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB>
 {
     fn domain(&self) -> &Field {
         self.extension_field.ring().coeff_ring()
@@ -140,7 +152,7 @@ impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
 
 impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
     Function<Field, FieldExtensionByPolynomialQuotientStructure<Field, FieldB>>
-    for FieldExtensionByPolynomialQuotient<Field, FieldB>
+    for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB>
 {
     fn image(&self, x: &Field::Set) -> Polynomial<Field::Set> {
         Polynomial::constant(x.clone())
@@ -149,13 +161,13 @@ impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
 
 impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
     RingHomomorphism<Field, FieldExtensionByPolynomialQuotientStructure<Field, FieldB>>
-    for FieldExtensionByPolynomialQuotient<Field, FieldB>
+    for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB>
 {
 }
 
 impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
     InjectiveFunction<Field, FieldExtensionByPolynomialQuotientStructure<Field, FieldB>>
-    for FieldExtensionByPolynomialQuotient<Field, FieldB>
+    for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB>
 {
     fn try_preimage(&self, x: &Polynomial<Field::Set>) -> Option<Field::Set> {
         PolynomialStructure::new(self.domain().clone()).as_constant(&self.range().reduce(x))
@@ -163,15 +175,35 @@ impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
 }
 
 impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
+    FiniteRankFreeRingExtension<Field, FieldExtensionByPolynomialQuotientStructure<Field, FieldB>>
+    for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB>
+{
+    type Basis = EnumeratedFiniteSetStructure;
+
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+        EnumeratedFiniteSetStructure::new(self.range().degree())
+    }
+
+    fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Field::Set>) -> Cow<'a, Field::Set> {
+        Cow::Owned(
+            self.domain()
+                .polynomials()
+                .coeff(&self.range().reduce(v), *b)
+                .clone(),
+        )
+    }
+
+    fn from_component(&self, b: &usize, r: &Field::Set) -> Polynomial<Field::Set> {
+        self.domain().polynomials().constant_var_pow(r.clone(), *b)
+    }
+}
+
+impl<Field: FieldSignature, FieldB: BorrowedStructure<Field>>
     FiniteDimensionalFieldExtension<
         Field,
         FieldExtensionByPolynomialQuotientStructure<Field, FieldB>,
-    > for FieldExtensionByPolynomialQuotient<Field, FieldB>
+    > for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB>
 {
-    fn degree(&self) -> usize {
-        self.range().degree()
-    }
-
     fn norm(&self, a: &Polynomial<Field::Set>) -> Field::Set {
         self.range().norm(a)
     }
@@ -199,7 +231,7 @@ mod tests {
         {
             let p = (x.pow(3) + &x - 1).into_verbose();
             let f = p.algebraic_number_field();
-            let ext = FieldExtensionByPolynomialQuotient::new(f);
+            let ext = FieldExtensionByPolynomialQuotientInclusion::new(f);
             assert_eq!(ext.degree(), 3);
             assert_eq!(
                 ext.image(&Rational::from_str("4").unwrap()),
@@ -220,7 +252,7 @@ mod tests {
             // Z[i]
             let p = (x.pow(2) + 1).into_verbose();
             let f = p.algebraic_number_field();
-            let ext = FieldExtensionByPolynomialQuotient::new(f);
+            let ext = FieldExtensionByPolynomialQuotientInclusion::new(f);
             assert_eq!(ext.degree(), 2);
             // a^2 + b^2
             assert_eq!(

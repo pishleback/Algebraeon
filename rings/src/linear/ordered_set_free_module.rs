@@ -1,6 +1,6 @@
 use crate::structure::*;
 use algebraeon_sets::structure::*;
-use std::marker::PhantomData;
+use std::{borrow::Cow, marker::PhantomData};
 
 #[derive(Debug, Clone)]
 pub struct FreeModuleOverOrderedSetStructure<
@@ -13,7 +13,6 @@ pub struct FreeModuleOverOrderedSetStructure<
     set: SetB,
     _ring: PhantomData<Ring>,
     ring: RingB,
-    ring_zero: Ring::Set,
 }
 
 impl<
@@ -46,7 +45,6 @@ impl<
 {
     pub fn new(set: SetB, ring: RingB) -> Self {
         Self {
-            ring_zero: ring.borrow().zero(),
             _set: PhantomData,
             set,
             _ring: PhantomData,
@@ -237,11 +235,11 @@ impl<
         self.set()
     }
 
-    fn to_component<'a>(&'a self, x: &Set::Set, v: &'a Self::Set) -> &'a Ring::Set {
+    fn to_component<'a>(&self, x: &Set::Set, v: &'a Self::Set) -> Cow<'a, Ring::Set> {
         if let Some((_, a)) = self.set().binary_search_by_key(v, x, |(x, _)| x) {
-            a
+            Cow::Borrowed(a)
         } else {
-            &self.ring_zero
+            Cow::Owned(self.ring().zero())
         }
     }
 

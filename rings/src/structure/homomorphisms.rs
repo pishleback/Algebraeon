@@ -1,14 +1,138 @@
-use std::collections::{HashMap, HashSet};
-
-use crate::polynomial::Polynomial;
-
 use super::*;
+use crate::polynomial::Polynomial;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use std::borrow::{Borrow, Cow};
+use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
+use std::marker::PhantomData;
+
+#[derive(Debug, Clone)]
+pub struct RingHomomorphismRangeModuleStructure<
+    'h,
+    Domain: RingSignature,
+    Range: RingSignature,
+    Hom: RingHomomorphism<Domain, Range>,
+> {
+    _domain: PhantomData<Domain>,
+    _range: PhantomData<Range>,
+    hom: &'h Hom,
+}
+
+impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+    RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+    fn new(hom: &'h Hom) -> Self {
+        Self {
+            _domain: PhantomData,
+            _range: PhantomData,
+            hom,
+        }
+    }
+}
+
+impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+    PartialEq for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.hom, other.hom)
+    }
+}
+
+impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>> Eq
+    for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+}
+
+impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+    Signature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+}
+
+impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+    SetSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+    type Set = Range::Set;
+
+    fn is_element(&self, x: &Self::Set) -> bool {
+        self.hom.range().is_element(x)
+    }
+}
+
+impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+    EqSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        self.hom.range().equal(a, b)
+    }
+}
+
+impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+    AdditiveMonoidSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+    fn zero(&self) -> Self::Set {
+        self.hom.range().zero()
+    }
+
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.hom.range().add(a, b)
+    }
+}
+
+impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+    AdditiveGroupSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        self.hom.range().neg(a)
+    }
+}
+
+impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+    SemiModuleSignature<Domain> for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+    fn ring(&self) -> &Domain {
+        self.hom.domain()
+    }
+
+    fn scalar_mul(&self, x: &Domain::Set, a: &Self::Set) -> Self::Set {
+        self.hom.range().mul(&self.hom.image(x), a)
+    }
+}
+
+impl<
+    'h,
+    Domain: RingSignature,
+    Range: RingSignature,
+    Hom: FiniteRankFreeRingExtension<Domain, Range>,
+> FreeModuleSignature<Domain> for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+{
+    type Basis = Hom::Basis;
+
+    fn basis_set(&self) -> impl Borrow<Self::Basis> {
+        self.hom.basis_set()
+    }
+
+    fn to_component<'a>(
+        &self,
+        b: &<Self::Basis as SetSignature>::Set,
+        v: &'a Self::Set,
+    ) -> Cow<'a, Domain::Set> {
+        self.hom.to_component(b, v)
+    }
+
+    fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Domain::Set) -> Self::Set {
+        self.hom.from_component(b, r)
+    }
+}
 
 pub trait RingHomomorphism<Domain: RingSignature, Range: RingSignature>:
     Function<Domain, Range>
 {
+    fn range_module_structure<'h>(
+        &'h self,
+    ) -> RingHomomorphismRangeModuleStructure<'h, Domain, Range, Self> {
+        RingHomomorphismRangeModuleStructure::new(self)
+    }
 }
 
 impl<
@@ -132,11 +256,27 @@ pub trait FieldOfFractionsInclusion<Ring: RingSignature, Field: FieldSignature>:
     }
 }
 
+/// An injective homomorphism of rings A -> B such that B is a finite rank free A module
+pub trait FiniteRankFreeRingExtension<A: RingSignature, B: RingSignature>:
+    RingHomomorphism<A, B> + InjectiveFunction<A, B>
+{
+    type Basis: FiniteSetSignature;
+    fn basis_set(&self) -> impl Borrow<Self::Basis>;
+    fn to_component<'a>(
+        &self,
+        b: &<Self::Basis as SetSignature>::Set,
+        v: &'a B::Set,
+    ) -> Cow<'a, A::Set>;
+    fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &A::Set) -> B::Set;
+}
+
 /// A finite dimensional field extension F -> K
 pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
-    RingHomomorphism<F, K> + InjectiveFunction<F, K>
+    FiniteRankFreeRingExtension<F, K>
 {
-    fn degree(&self) -> usize;
+    fn degree(&self) -> usize {
+        self.basis_set().borrow().size()
+    }
     fn norm(&self, a: &K::Set) -> F::Set;
     fn trace(&self, a: &K::Set) -> F::Set;
     /// The monic minimal polynomial of a

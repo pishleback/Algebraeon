@@ -1,4 +1,4 @@
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 
 use crate::structure::*;
 use algebraeon_sets::structure::*;
@@ -23,10 +23,10 @@ pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
     fn basis_set(&self) -> impl Borrow<Self::Basis>;
 
     fn to_component<'a>(
-        &'a self,
+        &self,
         b: &<Self::Basis as SetSignature>::Set,
         v: &'a Self::Set,
-    ) -> &'a Ring::Set;
+    ) -> Cow<'a, Ring::Set>;
 
     fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Ring::Set) -> Self::Set;
 }
@@ -60,7 +60,7 @@ where
     fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
         self.basis()
             .iter()
-            .map(|b| self.to_component(b, v).clone())
+            .map(|b| self.to_component(b, v).as_ref().clone())
             .collect()
     }
 

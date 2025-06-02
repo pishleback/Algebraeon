@@ -1,4 +1,7 @@
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::{
+    borrow::Borrow,
+    ops::{Add, Div, Mul, Neg, Sub},
+};
 
 use super::rings::*;
 use algebraeon_sets::structure::*;
@@ -18,6 +21,14 @@ pub trait IntoErgonomic: MetaType {
     }
 }
 impl<T: MetaType> IntoErgonomic for T {}
+
+fn common_structure<S: Signature>(structure1: impl Borrow<S>, structure2: impl Borrow<S>) -> S {
+    if structure1.borrow() == structure2.borrow() {
+        structure1.borrow().clone()
+    } else {
+        panic!("Unequal ring structures")
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct StructuredElement<S: SetSignature> {
