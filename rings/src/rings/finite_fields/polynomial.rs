@@ -184,7 +184,7 @@ where
         a: FactoredRingElement<Polynomial<FS::Set>>,
     ) -> DistinctDegreeFactored<FS, FSB> {
         let poly_ring = self.ring().clone();
-        let (unit, factors) = a.into_unit_and_factor_powers();
+        let (unit, factors) = a.into_unit_and_powers();
         let unit = poly_ring.as_constant(&unit).unwrap();
         let distinct_degree_factors = factors
             .into_iter()

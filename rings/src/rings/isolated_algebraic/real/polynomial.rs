@@ -227,12 +227,8 @@ impl SquarefreePolyRealRoots {
         match &self.intervals[idx] {
             SquarefreePolyRealRootInterval::Rational(rat) => RealAlgebraic::Rational(rat.clone()),
             SquarefreePolyRealRootInterval::Real(a, b, _dir) => {
-                let (_unit, factors) = self
-                    .poly_sqfr
-                    .factor()
-                    .unwrap()
-                    .into_unit_and_factor_powers();
-                for (factor, k) in factors {
+                let (_unit, factors) = self.poly_sqfr.factor().unwrap().into_unit_and_powers();
+                for (factor, k) in factors.into_iter() {
                     // println!("factor = {}", factor);
                     debug_assert_eq!(k, Natural::ONE); //square free
                     let deg = factor.degree().unwrap();
@@ -536,12 +532,12 @@ pub fn identify_real_root(
 ) -> RealAlgebraic {
     let poly = poly.primitive_squarefree_part();
     let factored_poly = poly.factor().unwrap();
-    let polys: Vec<_> = Polynomial::<Integer>::structure()
-        .factorizations()
+    let polys = Polynomial::<Integer>::structure()
+        .into_factorizations()
         .to_powers(&factored_poly)
         .into_iter()
         .map(|(f, _k)| f)
-        .collect();
+        .collect::<Vec<_>>();
     //the root we are after is exactly one of the roots of the irreducible polynomials in polys
     //the task now is to refine alg1 and alg2 until the root is identified
 

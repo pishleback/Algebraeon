@@ -1,5 +1,5 @@
 use crate::{polynomial::*, structure::*};
-use algebraeon_sets::structure::BorrowedStructure;
+use algebraeon_sets::structure::*;
 pub mod conway_finite_fields;
 pub mod conway_polynomials;
 pub mod extension;

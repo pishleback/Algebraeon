@@ -137,7 +137,7 @@ pub fn kronecker_symbol(a: &Integer, n: &Integer) -> QuadraticSymbolValue {
             }
         }
         Some(n) => {
-            let (u, powers) = n.into_unit_and_factor_powers();
+            let (u, powers) = n.into_unit_and_powers();
             let mut val = if u == Integer::ONE {
                 QuadraticSymbolValue::Pos
             } else {

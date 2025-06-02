@@ -4,13 +4,13 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature};
 
 impl<
-    RS: UniqueFactorizationSignature + GreatestCommonDivisorSignature + CharZeroRingSignature,
+    RS: UniqueFactorizationDomainSignature + GreatestCommonDivisorSignature + CharZeroRingSignature,
     RSB: BorrowedStructure<RS>,
 > PolynomialStructure<RS, RSB>
 where
     PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
         + GreatestCommonDivisorSignature
-        + UniqueFactorizationSignature,
+        + UniqueFactorizationDomainSignature,
 {
     /// Reduce a factorization problem for polynomials over a ring of characteristic 0 to a factorization of primitive squarefree polynomials over the ring
     //https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
@@ -28,9 +28,8 @@ where
         //where each a_i is a squarefree primitive polynomial and x is an element of R
 
         let (content, prim) = self.factor_primitive(f.clone()).unwrap();
-        let (content_unit, content_factors) = factor_coeff(&content)
-            .unwrap()
-            .into_unit_and_factor_powers();
+        let (content_unit, content_factors) =
+            factor_coeff(&content).unwrap().into_unit_and_powers();
 
         let mut factors = self.factorizations().from_unit_and_factor_powers(
             Polynomial::constant(content_unit),
@@ -75,7 +74,7 @@ impl<
 > PolynomialStructure<RS, RSB>
 where
     PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationSignature,
+        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
 {
     fn factor_primitive_linear_part(
         &self,
@@ -142,7 +141,7 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationSignature + CharZeroRingSignature + FiniteUnitsSignature + 'static,
+    RS: UniqueFactorizationDomainSignature + CharZeroRingSignature + FiniteUnitsSignature + 'static,
     RSB: BorrowedStructure<RS>,
 > PolynomialStructure<RS, RSB>
 where
@@ -236,7 +235,7 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationSignature
+    RS: UniqueFactorizationDomainSignature
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -245,7 +244,7 @@ impl<
 > PolynomialStructure<RS, RSB>
 where
     PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationSignature,
+        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
 {
     pub fn factorize_by_kroneckers_method(
         &self,
@@ -257,7 +256,7 @@ where
         } else {
             let (g, f_prim) = self.factor_primitive(f).unwrap();
             let g_factored = factor_coeff(&g).unwrap();
-            let (g_unit, g_factors) = g_factored.into_unit_and_factor_powers();
+            let (g_unit, g_factors) = g_factored.into_unit_and_powers();
             let g_factored = self.factorizations().from_unit_and_factor_powers(
                 Polynomial::constant(g_unit),
                 g_factors
@@ -276,7 +275,7 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationSignature
+    RS: UniqueFactorizationDomainSignature
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -286,7 +285,7 @@ impl<
 where
     PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
         + GreatestCommonDivisorSignature
-        + UniqueFactorizationSignature,
+        + UniqueFactorizationDomainSignature,
 {
     pub fn factorize_by_yuns_and_kroneckers_method(
         &self,
@@ -317,14 +316,14 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Signature: UniqueFactorizationSignature
+    R::Signature: UniqueFactorizationDomainSignature
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
         + 'static,
     PolynomialStructure<R::Signature, R::Signature>: SetSignature<Set = Polynomial<R>>
         + GreatestCommonDivisorSignature
-        + UniqueFactorizationSignature,
+        + UniqueFactorizationDomainSignature,
 {
     pub fn factorize_by_kroneckers_method(
         &self,
@@ -346,7 +345,7 @@ pub fn factorize_by_factorize_primitive_part<
 ) -> Option<FactoredRingElement<Polynomial<Field::Set>>>
 where
     PolynomialStructure<Field, FieldB>:
-        SetSignature<Set = Polynomial<Field::Set>> + UniqueFactorizationSignature,
+        SetSignature<Set = Polynomial<Field::Set>> + UniqueFactorizationDomainSignature,
     PolynomialStructure<Ring, Ring>:
         SetSignature<Set = Polynomial<Ring::Set>> + FactorableSignature,
     Ring: GreatestCommonDivisorSignature,
@@ -354,7 +353,7 @@ where
     let (unit, prim) = factor_primitive_fof(fof_inclusion, f);
     let (prim_unit, prim_factors) = PolynomialStructure::new(fof_inclusion.domain().clone())
         .factor(&prim)?
-        .into_unit_and_factor_powers();
+        .into_unit_and_powers();
     let mut fof_unit = prim_unit.apply_map(|c| fof_inclusion.image(c));
     let mut fof_factors = vec![];
     for (factor, power) in prim_factors {
@@ -373,7 +372,7 @@ where
 impl<RS: FieldSignature + FiniteUnitsSignature, RSB: BorrowedStructure<RS>>
     PolynomialStructure<RS, RSB>
 where
-    Self: SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationSignature,
+    Self: SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
 {
     fn find_factor_by_trying_all_factors(
         &self,
@@ -419,7 +418,7 @@ impl<F: MetaType> Polynomial<F>
 where
     F::Signature: FieldSignature + FiniteUnitsSignature,
     PolynomialStructure<F::Signature, F::Signature>:
-        SetSignature<Set = Polynomial<F>> + UniqueFactorizationSignature,
+        SetSignature<Set = Polynomial<F>> + UniqueFactorizationDomainSignature,
 {
     pub fn factorize_by_trying_all_factors(&self) -> Option<FactoredRingElement<Polynomial<F>>> {
         Self::structure().factorize_by_trying_all_factors(self.clone())

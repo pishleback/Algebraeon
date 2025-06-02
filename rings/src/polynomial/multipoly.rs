@@ -700,16 +700,89 @@ where
     }
 }
 
-impl<RS: UniqueFactorizationSignature, RSB: BorrowedStructure<RS>> UniqueFactorizationSignature
-    for MultiPolynomialStructure<RS, RSB>
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub struct MultiPolynomialFactorOrderingStructure<
+//     Ring: RingSignature,
+//     RingB: BorrowedStructure<Ring>,
+// > {
+//     _coeff_ring: PhantomData<Ring>,
+//     coeff_ring: RingB,
+// }
+
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+//     MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+//     fn new(coeff_ring: RingB) -> Self {
+//         Self {
+//             _coeff_ring: PhantomData::default(),
+//             coeff_ring,
+//         }
+//     }
+
+//     fn coeff_ring(&self) -> &Ring {
+//         self.coeff_ring.borrow()
+//     }
+// }
+
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> Signature
+//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+// }
+
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
+//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+//     type Set = MultiPolynomial<Ring::Set>;
+
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         self.coeff_ring().multivariable_polynomials().is_element(x)
+//     }
+// }
+
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
+//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         self.coeff_ring().multivariable_polynomials().equal(a, b)
+//     }
+// }
+
+// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> OrdSignature
+//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
+// {
+//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+//         std::cmp::Ordering::Equal
+//     }
+// }
+
+impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
+    UniqueFactorizationDomainSignature for MultiPolynomialStructure<RS, RSB>
 {
-    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+    // type FactorOrdering = MultiPolynomialFactorOrderingStructure<RS, RSB>;
+
+    type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    fn into_factorizations(self) -> Self::Factorizations<Self> {
+        FactoredRingElementStructure::new(self)
+    }
+
+    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
+    //     Cow::Owned(MultiPolynomialFactorOrderingStructure::new(
+    //         self.coeff_ring.clone(),
+    //     ))
+    // }
+
+    fn debug_try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         None
     }
 }
 
 impl<
-    RS: UniqueFactorizationSignature
+    RS: UniqueFactorizationDomainSignature
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -718,12 +791,12 @@ impl<
     MPB: BorrowedStructure<MultiPolynomialStructure<RS, RSB>>,
 > PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>
 where
-    PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>:
-        SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationSignature,
+    PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>: SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>
+        + UniqueFactorizationDomainSignature,
     PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationSignature,
+        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
     MultiPolynomialStructure<RS, RSB>: SetSignature<Set = MultiPolynomial<RS::Set>>
-        + UniqueFactorizationSignature
+        + UniqueFactorizationDomainSignature
         + GreatestCommonDivisorSignature,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
@@ -746,7 +819,7 @@ where
             // It is a polynomial with multipolynomial coefficients where all coefficients are constant
             // So we can defer to a univariate factoring algorithm
             Some(poly) => {
-                let (unit, factors) = factor_poly(&poly)?.into_unit_and_factor_powers();
+                let (unit, factors) = factor_poly(&poly)?.into_unit_and_powers();
                 Some(
                     self.factorizations().from_unit_and_factor_powers(
                         unit.apply_map_into(MultiPolynomial::constant),
@@ -767,7 +840,7 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationSignature
+    RS: UniqueFactorizationDomainSignature
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -776,11 +849,11 @@ impl<
 > MultiPolynomialStructure<RS, RSB>
 where
     MultiPolynomialStructure<RS, RSB>:
-        SetSignature<Set = MultiPolynomial<RS::Set>> + UniqueFactorizationSignature,
+        SetSignature<Set = MultiPolynomial<RS::Set>> + UniqueFactorizationDomainSignature,
     PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationSignature,
-    for<'a> PolynomialStructure<Self, &'a Self>:
-        SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>> + UniqueFactorizationSignature,
+        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
+    for<'a> PolynomialStructure<Self, &'a Self>: SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>
+        + UniqueFactorizationDomainSignature,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
@@ -810,7 +883,7 @@ where
                                     &dehom_mpoly,
                                 )
                                 .unwrap()
-                                .into_unit_and_factor_powers();
+                                .into_unit_and_powers();
                             Some(
                                 self.factorizations().from_unit_and_factor_powers(
                                     self.homogenize(&unit, &free_var),
@@ -843,7 +916,7 @@ where
                                     &expanded_poly,
                                 )
                                 .unwrap()
-                                .into_unit_and_factor_powers();
+                                .into_unit_and_powers();
                             Some(
                                 self.factorizations().from_unit_and_factor_powers(
                                     poly_over_self.evaluate(&unit, &free_var),
@@ -863,7 +936,7 @@ where
                     // Just an element of the coefficient ring
                     let value = self.as_constant(mpoly).unwrap();
                     let factored = factor_coeff(&value)?;
-                    let (unit, factors) = factored.into_unit_and_factor_powers();
+                    let (unit, factors) = factored.into_unit_and_powers();
                     Some(
                         self.factorizations().from_unit_and_factor_powers(
                             MultiPolynomial::constant(unit),

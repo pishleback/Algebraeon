@@ -68,6 +68,7 @@ mod tests {
     #[test]
     fn canonical_structure() {
         #[derive(Debug, Clone, PartialEq, Eq, CanonicalStructure)]
+        #[canonical_structure(eq)]
         pub struct A {
             x: i32,
         }
@@ -92,7 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn foo() {
+    fn to_string_structure_impl() {
         #[derive(Debug, Clone, PartialEq, Eq)]
         struct A {
             t: usize,

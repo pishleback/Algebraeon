@@ -116,7 +116,7 @@ pub fn as_poly_expr(
 
     let target_min_poly_factored = gen_anf_poly.factor(&target_min_poly).unwrap();
     let mut generator = generator.clone();
-    for (factor, _factor_mult) in Polynomial::<Polynomial<Rational>>::structure()
+    for (factor, _factor_mult) in gen_anf_poly
         .factorizations()
         .to_powers(&target_min_poly_factored)
     {
