@@ -69,7 +69,25 @@ impl AdditiveGroupSignature for QuaternionOrderZBasis {
     }
 }
 
-impl FreeModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {}
+// impl FreeModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
+//     type Basis;
+
+//     fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+//         todo!()
+//     }
+
+//     fn to_component<'a>(
+//         &'a self,
+//         b: &<Self::Basis as SetSignature>::Set,
+//         v: &'a Self::Set,
+//     ) -> &'a Integer {
+//         todo!()
+//     }
+
+//     fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Integer) -> Self::Set {
+//         todo!()
+//     }
+// }
 
 impl SemiModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
     fn ring(&self) -> &IntegerCanonicalStructure {
