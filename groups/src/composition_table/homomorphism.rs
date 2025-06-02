@@ -132,7 +132,7 @@ impl<
         }
 
         //are mutually inverse
-        //only need to check one of left/right inverse becasue injective/surjective individually imply bijective once the sizes are the same
+        //only need to check one of left/right inverse because injective/surjective individually imply bijective once the sizes are the same
         for x in self.left_group.borrow().elems() {
             if x != self.right_func[self.left_func[x]] {
                 return Err("isomorphism not inv");
@@ -431,7 +431,7 @@ mod homomorphism_tests {
         }
 
         {
-            //size missmatch
+            //size mismatch
             let grp_g = examples::cyclic_group_structure(3);
             let grp_h = examples::cyclic_group_structure(6);
             let f = Isomorphism {
@@ -480,7 +480,7 @@ mod homomorphism_tests {
         }
 
         {
-            //size missmatch
+            //size mismatch
             let grp_g = examples::cyclic_group_structure(3);
             let grp_h = examples::cyclic_group_structure(6);
             let f = Homomorphism {

@@ -5,7 +5,7 @@ use std::borrow::Borrow;
 
 #[derive(Debug, Clone)]
 pub struct PolynomialSemiRingStructure<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> {
-    coeff_ring_zero: RS::Set, //so that we can return a refernece to zero when getting polynomial coefficients out of range
+    coeff_ring_zero: RS::Set, //so that we can return a reference to zero when getting polynomial coefficients out of range
     coeff_ring: RSB,
 }
 

@@ -100,7 +100,11 @@ impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, RationalCanonic
     }
 }
 
-impl ComplexSubsetSignature for RationalCanonicalStructure {}
+impl ComplexSubsetSignature for RationalCanonicalStructure {
+    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
+        (self.as_f64(z), 0.0)
+    }
+}
 
 impl RealSubsetSignature for RationalCanonicalStructure {}
 

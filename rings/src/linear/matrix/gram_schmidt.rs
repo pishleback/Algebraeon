@@ -50,7 +50,7 @@ impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
         mut mat: Matrix<FS::Set>,
     ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
         #[cfg(debug_assertions)]
-        let origional_mat = mat.clone();
+        let original_mat = mat.clone();
 
         let mut lt = self.ident(mat.rows());
         for i in 0..mat.rows() {
@@ -86,7 +86,7 @@ impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
         }
 
         #[cfg(debug_assertions)]
-        assert!(self.equal(&mat, &self.mul(&lt, &origional_mat).unwrap()));
+        assert!(self.equal(&mat, &self.mul(&lt, &original_mat).unwrap()));
 
         (lt, mat)
     }

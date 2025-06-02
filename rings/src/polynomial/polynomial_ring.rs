@@ -8,7 +8,7 @@ use std::{borrow::Borrow, fmt::Display};
 
 #[derive(Debug, Clone)]
 pub struct PolynomialStructure<RS: RingSignature, RSB: BorrowedStructure<RS>> {
-    coeff_ring_zero: RS::Set, //so that we can return a refernece to zero when getting polynomial coefficients out of range
+    coeff_ring_zero: RS::Set, //so that we can return a reference to zero when getting polynomial coefficients out of range
     coeff_ring: RSB,
 }
 
@@ -1172,7 +1172,7 @@ mod tests {
             ],
         };
 
-        //test that this compliles
+        //test that this compiles
         println!("{}", f);
         println!("{}", f.into_ergonomic());
         //    Integer : Display

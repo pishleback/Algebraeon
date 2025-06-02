@@ -1,4 +1,4 @@
-/// Provides an iterator over the k-element subsets of {0, 1, ..., n-1} in lexographic order such that some elements of {0, 1, ..., n-1} can be excluded from future subsets at any point during the iteration.
+/// Provides an iterator over the k-element subsets of {0, 1, ..., n-1} in lexicographic order such that some elements of {0, 1, ..., n-1} can be excluded from future subsets at any point during the iteration.
 #[derive(Debug)]
 pub struct LexicographicSubsetsWithRemovals {
     n: usize,
@@ -162,7 +162,7 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn lexographic_subsets_with_removals_test_edge_cases() {
+    pub fn lexicographic_subsets_with_removals_test_edge_cases() {
         let x = subsets(0, 1).collect::<Vec<_>>();
         println!("{:?}", x);
         assert_eq!(x.len(), 0);
@@ -177,7 +177,7 @@ mod tests {
     }
 
     #[test]
-    pub fn lexographic_subsets_with_removals_test_1() {
+    pub fn lexicographic_subsets_with_removals_test_1() {
         let mut c = LexicographicSubsetsWithRemovals::new(7, 3);
         for _ in 0..19 {
             let x = c.next().unwrap();
@@ -198,7 +198,7 @@ mod tests {
     }
 
     #[test]
-    pub fn lexographic_subsets_with_removals_test_2() {
+    pub fn lexicographic_subsets_with_removals_test_2() {
         let mut c = LexicographicSubsetsWithRemovals::new(7, 3);
         c.exclude(0);
         c.exclude(1);

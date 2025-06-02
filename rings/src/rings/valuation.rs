@@ -103,9 +103,9 @@ impl Add<&Valuation> for &Valuation {
 }
 
 /*
-Infinite - Infinite is undefined since it coresponds in valuation land to zero/zero
-Infinite - Finite is Infinite since it coresponds in valuation land to zero/finite
-Finite - Infinite is undefined since it coresponds in valuation land to finite/zero
+Infinite - Infinite is undefined since it corresponds in valuation land to zero/zero
+Infinite - Finite is Infinite since it corresponds in valuation land to zero/finite
+Finite - Infinite is undefined since it corresponds in valuation land to finite/zero
 */
 impl Sub<&Valuation> for Valuation {
     type Output = Valuation;

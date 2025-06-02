@@ -18,4 +18,4 @@
 )]
 
 pub mod canvas;
-pub mod simplexes;
+pub mod canvas2d;

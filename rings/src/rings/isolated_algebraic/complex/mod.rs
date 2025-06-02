@@ -906,7 +906,26 @@ impl CharZeroRingSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {}
+impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
+    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
+        match z {
+            ComplexAlgebraic::Real(z) => {
+                RealAlgebraic::structure().as_f64_real_and_imaginary_parts(z)
+            }
+            ComplexAlgebraic::Complex(z) => {
+                let mut z = z.clone();
+                z.refine_to_accuracy(&Rational::from_integers(
+                    Integer::from(1),
+                    Integer::from(1000000000000000i64),
+                ));
+                (
+                    ((z.tight_a + z.tight_b) / Rational::from(2)).as_f64(),
+                    ((z.tight_c + z.tight_d) / Rational::from(2)).as_f64(),
+                )
+            }
+        }
+    }
+}
 
 impl ComplexConjugateSignature for ComplexAlgebraicCanonicalStructure {
     fn conjugate(&self, x: &Self::Set) -> Self::Set {
