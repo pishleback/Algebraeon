@@ -37,8 +37,8 @@ impl<Set> Signature for EmptySetStructure<Set> {}
 impl<Set: Debug + Clone> SetSignature for EmptySetStructure<Set> {
     type Set = Set;
 
-    fn is_element(&self, _: &Self::Set) -> bool {
-        false
+    fn is_element(&self, _: &Self::Set) -> Result<(), String> {
+        Err("Empty set has no elements".to_string())
     }
 }
 

@@ -260,8 +260,8 @@ impl<RS: SetSignature, RSB: BorrowedStructure<RS>> Signature for MatrixStructure
 impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature for MatrixStructure<RS, RSB> {
     type Set = Matrix<RS::Set>;
 
-    fn is_element(&self, _x: &Self::Set) -> bool {
-        true
+    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        Ok(())
     }
 }
 

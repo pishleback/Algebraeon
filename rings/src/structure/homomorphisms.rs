@@ -54,7 +54,7 @@ impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Doma
 {
     type Set = Range::Set;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
         self.hom.range().is_element(x)
     }
 }
@@ -309,8 +309,15 @@ impl<Domain: FreeRingSignature, Range: RingSignature> SetSignature
 {
     type Set = HashMap<Domain::Generator, Range::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
-        self.domain.free_generators() == x.keys().cloned().collect::<HashSet<_>>()
-            && x.iter().all(|(_, v)| self.range.is_element(v))
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+        if self.domain.free_generators() != x.keys().cloned().collect::<HashSet<_>>() {
+            return Err("missing key".to_string());
+        }
+
+        for v in x.values() {
+            self.range.is_element(v)?;
+        }
+
+        Ok(())
     }
 }

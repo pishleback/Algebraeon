@@ -42,8 +42,8 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> Signature for PolynomialStru
 impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SetSignature for PolynomialStructure<RS, RSB> {
     type Set = Polynomial<RS::Set>;
 
-    fn is_element(&self, _x: &Self::Set) -> bool {
-        true
+    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        Ok(())
     }
 }
 

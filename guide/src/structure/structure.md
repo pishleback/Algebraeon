@@ -34,8 +34,11 @@ impl Signature for IntegersModuloN {}
 impl SetSignature for IntegersModuloN {
     type Set = Integer;
 
-    fn is_element(&self, x: &Integer) -> bool {
-        x < &self.n
+    fn is_element(&self, x: &Integer) -> Result<(), String> {
+        if x >= &self.n {
+            return Err("too big".to_string());
+        }
+        Ok(())
     }
 }
 

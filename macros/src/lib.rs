@@ -86,8 +86,8 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         impl SetSignature for #newtype_name {
             type Set = #name;
 
-            fn is_element(&self, _x : &Self::Set) -> bool {
-                true
+            fn is_element(&self, _x : &Self::Set) -> Result<(), String> {
+                Ok(())
             }
         }
 

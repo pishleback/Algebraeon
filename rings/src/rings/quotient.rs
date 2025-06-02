@@ -81,8 +81,8 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> SetSignature
 {
     type Set = RS::Set;
 
-    fn is_element(&self, _x: &Self::Set) -> bool {
-        true
+    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        Ok(())
     }
 }
 

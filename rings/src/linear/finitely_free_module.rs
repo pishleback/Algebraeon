@@ -40,12 +40,12 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
     }
 
     pub fn to_col(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
-        debug_assert!(self.is_element(v));
+        debug_assert!(self.is_element(v).is_ok());
         Matrix::construct(self.rank(), 1, |r, _| v[r].clone())
     }
 
     pub fn to_row(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
-        debug_assert!(self.is_element(v));
+        debug_assert!(self.is_element(v).is_ok());
         Matrix::construct(1, self.rank(), |_, c| v[c].clone())
     }
 
@@ -127,7 +127,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         generators: Vec<&Vec<Ring::Set>>,
     ) -> FinitelyFreeSubmodule<Ring::Set> {
         for generator in &generators {
-            debug_assert!(self.is_element(generator));
+            debug_assert!(self.is_element(generator).is_ok());
         }
         let row_span = Matrix::construct(generators.len(), self.rank(), |r, c| {
             generators[r][c].clone()
@@ -146,8 +146,14 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
 {
     type Set = Vec<Ring::Set>;
 
-    fn is_element(&self, v: &Self::Set) -> bool {
-        self.rank() == v.len() && v.iter().all(|r| self.ring().is_element(r))
+    fn is_element(&self, v: &Self::Set) -> Result<(), String> {
+        if self.rank() != v.len() {
+            return Err("wrong size".to_string());
+        }
+        for r in v {
+            self.ring().is_element(r)?;
+        }
+        Ok(())
     }
 }
 
@@ -155,8 +161,8 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
     fn equal(&self, v: &Self::Set, w: &Self::Set) -> bool {
-        debug_assert!(self.is_element(v));
-        debug_assert!(self.is_element(w));
+        debug_assert!(self.is_element(v).is_ok());
+        debug_assert!(self.is_element(w).is_ok());
         (0..self.rank()).all(|i| self.ring().equal(&v[i], &w[i]))
     }
 }
@@ -169,8 +175,8 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveMonoidSignatur
     }
 
     fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(v));
-        debug_assert!(self.is_element(w));
+        debug_assert!(self.is_element(v).is_ok());
+        debug_assert!(self.is_element(w).is_ok());
         (0..self.rank())
             .map(|i| self.ring().add(&v[i], &w[i]))
             .collect()
@@ -181,13 +187,13 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveGroupSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
     fn neg(&self, v: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(v));
+        debug_assert!(self.is_element(v).is_ok());
         v.iter().map(|r| self.ring().neg(r)).collect()
     }
 
     fn sub(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(v));
-        debug_assert!(self.is_element(w));
+        debug_assert!(self.is_element(v).is_ok());
+        debug_assert!(self.is_element(w).is_ok());
         (0..self.rank())
             .map(|i| self.ring().sub(&v[i], &w[i]))
             .collect()
@@ -202,7 +208,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ri
     }
 
     fn scalar_mul(&self, r: &<Ring>::Set, v: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(v));
+        debug_assert!(self.is_element(v).is_ok());
         v.iter().map(|s| self.ring().mul(r, s)).collect()
     }
 }
@@ -317,7 +323,7 @@ impl<
             (0..domain.rank())
                 .map(|i| {
                     let img_i = basis_image(i);
-                    debug_assert!(range.is_element(&img_i));
+                    debug_assert!(range.is_element(&img_i).is_ok());
                     img_i
                 })
                 .collect(),
