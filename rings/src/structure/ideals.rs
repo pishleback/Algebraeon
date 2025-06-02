@@ -17,7 +17,7 @@ where
         Self::structure().into_ideals()
     }
 }
-impl<R: MetaType> MetaCannonicalIdealsSignature for R where R::Signature: RingToIdealsSignature {}
+impl<R: MetaType> MetaCanonicalIdealsSignature for R where R::Signature: RingToIdealsSignature {}
 
 pub trait IdealsSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
     SetSignature
