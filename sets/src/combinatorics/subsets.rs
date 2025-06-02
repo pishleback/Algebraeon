@@ -13,7 +13,7 @@ impl LexicographicSubsetsWithRemovals {
     pub fn new(n: usize, k: usize) -> Self {
         Self {
             n,
-            all_items_idx: (0..n).map(|x| Some(x)).collect(),
+            all_items_idx: (0..n).map(Some).collect(),
             remaining_items: (0..n).collect(),
             subset: (0..k).collect(),
             finished: k > n,
@@ -42,14 +42,11 @@ impl LexicographicSubsetsWithRemovals {
             self.remaining_items.remove(a_idx);
             self.all_items_idx[a] = None;
             for i in (a + 1)..self.all_items_idx.len() {
-                match self.all_items_idx[i].as_mut() {
-                    Some(idx) => {
-                        *idx -= 1;
-                    }
-                    None => {}
+                if let Some(idx) = self.all_items_idx[i].as_mut() {
+                    *idx -= 1;
                 }
             }
-            for x in self.subset.iter_mut() {
+            for x in &mut self.subset {
                 match (*x).cmp(&a_idx) {
                     std::cmp::Ordering::Less => {}
                     std::cmp::Ordering::Equal => {
@@ -69,16 +66,15 @@ impl Iterator for LexicographicSubsetsWithRemovals {
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = match self.finished {
-            true => {
-                return None;
-            }
-            false => Some(
+        let next = if self.finished {
+            return None;
+        } else {
+            Some(
                 self.subset
                     .iter()
                     .map(|i| self.remaining_items[*i])
                     .collect(),
-            ),
+            )
         };
 
         let k = self.subset.len();
@@ -215,6 +211,6 @@ mod tests {
     #[test]
     pub fn run() {
         println!("{:?}", subsets(5, 3).collect::<Vec<_>>());
-        assert_eq!(subsets(5, 3).collect::<Vec<_>>().len(), 10)
+        assert_eq!(subsets(5, 3).collect::<Vec<_>>().len(), 10);
     }
 }

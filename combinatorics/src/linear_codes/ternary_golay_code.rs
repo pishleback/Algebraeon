@@ -17,6 +17,6 @@ mod tests {
     fn test_something() {
         let a = Permutation::new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).unwrap();
 
-        println!("hiya {:?}", a);
+        println!("hiya {a:?}");
     }
 }

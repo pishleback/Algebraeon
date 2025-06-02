@@ -10,18 +10,51 @@ use crate::{linear::matrix::MatrixStructure, structure::*};
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FinitelyFreeModuleBasisStructure {
+    rank: usize,
+}
+
+impl Signature for FinitelyFreeModuleBasisStructure {}
+
+impl SetSignature for FinitelyFreeModuleBasisStructure {
+    type Set = usize;
+
+    fn is_element(&self, a: &Self::Set) -> bool {
+        a < &self.rank
+    }
+}
+
+impl EqSignature for FinitelyFreeModuleBasisStructure {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        a == b
+    }
+}
+
+impl CountableSetSignature for FinitelyFreeModuleBasisStructure {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        0..self.rank
+    }
+}
+
+impl FiniteSetSignature for FinitelyFreeModuleBasisStructure {
+    fn size(&self) -> usize {
+        self.rank
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeModuleStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
     _ring: PhantomData<Ring>,
     ring: RingB,
-    rank: usize,
+    basis_set: FinitelyFreeModuleBasisStructure,
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStructure<Ring, RingB> {
     pub fn new(ring: RingB, rank: usize) -> Self {
         Self {
-            _ring: PhantomData::default(),
+            _ring: PhantomData,
             ring,
-            rank,
+            basis_set: FinitelyFreeModuleBasisStructure { rank },
         }
     }
 }
@@ -41,34 +74,34 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
     }
 
     pub fn to_col(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
-        debug_assert!(self.is_element(&v));
-        Matrix::construct(self.rank, 1, |r, _| v[r].clone())
+        debug_assert!(self.is_element(v));
+        Matrix::construct(self.rank(), 1, |r, _| v[r].clone())
     }
 
     pub fn to_row(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
-        debug_assert!(self.is_element(&v));
-        Matrix::construct(1, self.rank, |_, c| v[c].clone())
+        debug_assert!(self.is_element(v));
+        Matrix::construct(1, self.rank(), |_, c| v[c].clone())
     }
 
     pub fn from_row(&self, m: &Matrix<Ring::Set>) -> <Self as SetSignature>::Set {
         debug_assert_eq!(m.rows(), 1);
-        debug_assert_eq!(m.cols(), self.rank);
-        (0..self.rank)
+        debug_assert_eq!(m.cols(), self.rank());
+        (0..self.rank())
             .map(|i| m.at(0, i).unwrap().clone())
             .collect()
     }
 
     pub fn from_col(&self, m: &Matrix<Ring::Set>) -> <Self as SetSignature>::Set {
         debug_assert_eq!(m.cols(), 1);
-        debug_assert_eq!(m.rows(), self.rank);
-        (0..self.rank)
+        debug_assert_eq!(m.rows(), self.rank());
+        (0..self.rank())
             .map(|i| m.at(i, 0).unwrap().clone())
             .collect()
     }
 
     pub fn basis_element(&self, i: usize) -> <Self as SetSignature>::Set {
-        debug_assert!(i < self.rank);
-        (0..self.rank)
+        debug_assert!(i < self.rank());
+        (0..self.rank())
             .map(|j| {
                 if i == j {
                     self.ring().one()
@@ -148,7 +181,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
     type Set = Vec<Ring::Set>;
 
     fn is_element(&self, v: &Self::Set) -> bool {
-        self.rank == v.len() && v.iter().all(|r| self.ring().is_element(r))
+        self.rank() == v.len() && v.iter().all(|r| self.ring().is_element(r))
     }
 }
 
@@ -158,7 +191,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
     fn equal(&self, v: &Self::Set, w: &Self::Set) -> bool {
         debug_assert!(self.is_element(v));
         debug_assert!(self.is_element(w));
-        (0..self.rank).all(|i| self.ring().equal(&v[i], &w[i]))
+        (0..self.rank()).all(|i| self.ring().equal(&v[i], &w[i]))
     }
 }
 
@@ -166,13 +199,13 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveMonoidSignatur
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
     fn zero(&self) -> Self::Set {
-        (0..self.rank).map(|_| self.ring().zero()).collect()
+        (0..self.rank()).map(|_| self.ring().zero()).collect()
     }
 
     fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(v));
         debug_assert!(self.is_element(w));
-        (0..self.rank)
+        (0..self.rank())
             .map(|i| self.ring().add(&v[i], &w[i]))
             .collect()
     }
@@ -189,7 +222,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveGroupSignature
     fn sub(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(v));
         debug_assert!(self.is_element(w));
-        (0..self.rank)
+        (0..self.rank())
             .map(|i| self.ring().sub(&v[i], &w[i]))
             .collect()
     }
@@ -211,14 +244,18 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ri
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    type Basis = usize;
+    type Basis = FinitelyFreeModuleBasisStructure;
 
-    fn to_component(&self, b: &Self::Basis, v: &Self::Set) -> Ring::Set {
-        debug_assert!(*b < self.rank());
-        v[*b].clone()
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+        &self.basis_set
     }
 
-    fn from_component(&self, b: &Self::Basis, r: &<Ring>::Set) -> Self::Set {
+    fn to_component<'a>(&self, b: &usize, v: &'a Self::Set) -> &'a Ring::Set {
+        debug_assert!(*b < self.rank());
+        &v[*b]
+    }
+
+    fn from_component(&self, b: &usize, r: &<Ring>::Set) -> Self::Set {
         debug_assert!(*b < self.rank());
         let mut element = self.zero();
         element[*b] = r.clone();
@@ -229,12 +266,12 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ri
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleSignature<Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn basis(&self) -> Vec<Self::Basis> {
-        (0..self.rank).collect()
+    fn basis(&self) -> Vec<usize> {
+        (0..self.rank()).collect()
     }
 
     fn rank(&self) -> usize {
-        self.rank
+        self.basis_set.rank
     }
 
     fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
@@ -504,7 +541,7 @@ impl<
     >
 {
     fn try_preimage(&self, y: &Vec<Ring::Set>) -> Option<Vec<Ring::Set>> {
-        MatrixStructure::new(self.ring.clone()).col_solve(self.matrix.clone(), &y)
+        MatrixStructure::new(self.ring.clone()).col_solve(self.matrix.clone(), y)
     }
 }
 
@@ -576,13 +613,10 @@ mod tests {
                 if i == 0 {
                     vec![0, 2, 3, -4, 1]
                         .into_iter()
-                        .map(|x| Integer::from(x))
+                        .map(Integer::from)
                         .collect()
                 } else if i == 1 {
-                    vec![1, 2, 3, 2, 1]
-                        .into_iter()
-                        .map(|x| Integer::from(x))
-                        .collect()
+                    vec![1, 2, 3, 2, 1].into_iter().map(Integer::from).collect()
                 } else {
                     unreachable!()
                 }
@@ -593,7 +627,7 @@ mod tests {
             t.image(&vec![Integer::from(1), Integer::from(2)]),
             vec![2, 6, 9, 0, 3]
                 .into_iter()
-                .map(|x| Integer::from(x))
+                .map(Integer::from)
                 .collect::<Vec<_>>()
         );
     }

@@ -32,8 +32,8 @@ DAMAGE.
 */
 
 use crate::{rings::natural::factorization::primes::is_prime, structure::MetaSemiRing};
+use algebraeon_nzq::primes;
 use algebraeon_nzq::{Natural, Rng, gcd, traits::ModInv};
-use algebraeon_sets::number_theory::primes;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;
 
@@ -157,6 +157,7 @@ impl PartialEq for Point {
     }
 }
 
+#[allow(clippy::items_after_test_module)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -350,7 +351,7 @@ pub fn ecm_one_factor_raw(
             deltas.insert((q.abs_diff(r) - 1) / 2);
         }
         // d in deltas iff r+(2d+1) and/or r-(2d+1) is prime
-        deltas_list.push(deltas.into_iter().collect::<Vec<_>>())
+        deltas_list.push(deltas.into_iter().collect::<Vec<_>>());
     }
 
     debug_assert!(n >= &Natural::from(7u32));
@@ -370,19 +371,12 @@ pub fn ecm_one_factor_raw(
             // However, we do not declare a because it is more convenient
             // to use a24 = (a + 2)*invert(4, n) in the calculation.
             let u3_16_v = Natural::from(16u32) * &u3 * &v;
-            let a24 = match u3_16_v.mod_inv(n) {
-                Some(u3_16_v_inv) => {
-                    (&diff * &diff * &diff * (Natural::from(3u32) * &u + &v) * u3_16_v_inv) % n
-                }
-                None => {
-                    let g = gcd(Natural::from(2u32) * u3 * v, n.clone());
-                    debug_assert_ne!(g, Natural::ONE);
-                    if &g == n {
-                        return None;
-                    } else {
-                        return Some(g);
-                    }
-                }
+            let a24 = if let Some(u3_16_v_inv) = u3_16_v.mod_inv(n) {
+                (&diff * &diff * &diff * (Natural::from(3u32) * &u + &v) * u3_16_v_inv) % n
+            } else {
+                let g = gcd(Natural::from(2u32) * u3 * v, n.clone());
+                debug_assert_ne!(g, Natural::ONE);
+                return if &g == n { None } else { Some(g) };
             };
             let v3 = (&v * &v * &v) % n;
 
@@ -455,7 +449,7 @@ pub fn ecm_one_factor_target_digits(
 ) -> Result<Natural, ()> {
     // The target factor has fith_target_factor_digits*5 many digits
     let (b1, b2, max_curve) = match fith_target_factor_digits {
-        0 | 1 | 2 => (2_000, 160_000, 35),
+        0..=2 => (2_000, 160_000, 35),
         3 => (5_000, 500_000, 50),
         4 => (11_000, 1_900_000, 74),
         5 => (50_000, 13_000_000, 214),

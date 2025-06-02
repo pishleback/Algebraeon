@@ -16,9 +16,9 @@ name = "algebraeon_rings"
 algebraeon-sets = { version = "=0.0.12", path = "../sets", default-features = false }
 algebraeon-nzq = { version = "=0.0.12", path = "../nzq", default-features = false }
 algebraeon-groups = { version = "=0.0.12", path = "../groups", default-features = false }
-rand = "0.8.5"
+rand = "0.9.1"
 rayon = "1.7.0"
-itertools = "0.11.0"
+itertools = "0.14.0"
 lalrpop-util = { version = "0.22.1", features = ["lexer"] }
 
 [build-dependencies]

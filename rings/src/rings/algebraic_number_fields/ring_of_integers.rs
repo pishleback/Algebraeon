@@ -50,7 +50,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
             algebraic_number_field.compute_integral_basis_and_discriminant();
         debug_assert_eq!(discriminant, true_discriminant);
         for a in &integral_basis {
-            debug_assert!(algebraic_number_field.is_algebraic_integer(a))
+            debug_assert!(algebraic_number_field.is_algebraic_integer(a));
         }
         let mut roi = Self {
             algebraic_number_field,
@@ -67,7 +67,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         roi.mul_crossterms = Some(
             (0..n)
                 .map(|j| {
-                    (0..(j + 1))
+                    (0..=j)
                         .map(|i| {
                             roi.try_anf_to_roi(
                                 &roi.algebraic_number_field
@@ -207,6 +207,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         );
         if let Some(s) = m.col_solve(&y) {
             debug_assert_eq!(s.len(), n);
+            #[allow(clippy::manual_ok_err)]
             if let Ok(coefficients) = (0..n).map(|i| Integer::try_from(s[i].clone())).collect() {
                 Some(coefficients)
             } else {
@@ -318,6 +319,7 @@ impl CharacteristicSignature for RingOfIntegersWithIntegralBasisStructure {
 
 impl SemiRingUnitsSignature for RingOfIntegersWithIntegralBasisStructure {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
+        #[allow(clippy::collapsible_else_if)]
         if self.is_zero(a) {
             Err(RingDivisionError::DivideByZero)
         } else {

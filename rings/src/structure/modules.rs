@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use crate::structure::*;
 use algebraeon_sets::structure::*;
 
@@ -16,18 +18,29 @@ impl<Ring: RingSignature, Module: SemiModuleSignature<Ring> + AdditiveGroupSigna
 }
 
 pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
-    type Basis: Eq;
+    type Basis: SetSignature;
 
-    fn to_component(&self, b: &Self::Basis, v: &Self::Set) -> Ring::Set;
+    fn basis_set(&self) -> impl Borrow<Self::Basis>;
 
-    fn from_component(&self, b: &Self::Basis, r: &Ring::Set) -> Self::Set;
+    fn to_component<'a>(
+        &'a self,
+        b: &<Self::Basis as SetSignature>::Set,
+        v: &'a Self::Set,
+    ) -> &'a Ring::Set;
+
+    fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Ring::Set) -> Self::Set;
 }
 
-pub trait FinitelyFreeModuleSignature<Ring: RingSignature>: FreeModuleSignature<Ring> {
-    fn basis(&self) -> Vec<Self::Basis>;
+pub trait FinitelyFreeModuleSignature<Ring: RingSignature>: FreeModuleSignature<Ring>
+where
+    Self::Basis: FiniteSetSignature,
+{
+    fn basis(&self) -> Vec<<Self::Basis as SetSignature>::Set> {
+        self.basis_set().borrow().list_all_elements()
+    }
 
     fn rank(&self) -> usize {
-        self.basis().len()
+        self.basis_set().borrow().size()
     }
 
     fn basis_vecs(&self) -> Vec<Self::Set> {
@@ -47,7 +60,7 @@ pub trait FinitelyFreeModuleSignature<Ring: RingSignature>: FreeModuleSignature<
     fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
         self.basis()
             .iter()
-            .map(|b| self.to_component(b, v))
+            .map(|b| self.to_component(b, v).clone())
             .collect()
     }
 
@@ -60,7 +73,7 @@ pub trait FinitelyFreeModuleSignature<Ring: RingSignature>: FreeModuleSignature<
         for i in 0..n {
             self.add_mut(
                 &mut t,
-                &self.scalar_mul(&v[i], &self.from_component(&basis[i], &self.ring().one())),
+                &self.scalar_mul(v[i], &self.from_component(&basis[i], &self.ring().one())),
             );
         }
         t

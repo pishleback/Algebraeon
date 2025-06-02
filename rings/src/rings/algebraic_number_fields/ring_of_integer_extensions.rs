@@ -244,7 +244,7 @@ impl
                     debug_assert!(g.is_monic());
                     let prime_ideal = roi_ideals.generated_ideal(vec![
                         self.z_to_r().image(&p),
-                        poly_roi.evaluate(&g.apply_map(|c| self.z_to_r().image(&c)), &beta),
+                        poly_roi.evaluate(&g.apply_map(|c| self.z_to_r().image(c)), &beta),
                     ]);
                     // norm(I) = p^deg(g)
                     debug_assert_eq!(
@@ -360,7 +360,7 @@ mod tests {
         assert!(f2.is_ramified());
         println!("f2 = {:?}", f2);
         for ideal in f2.unique_prime_factors() {
-            assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 2u32.into())
+            assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 2u32.into());
         }
 
         let f3 =
@@ -369,7 +369,7 @@ mod tests {
         assert!(!f3.is_ramified());
         println!("f3 = {:?}", f3);
         for ideal in f3.unique_prime_factors() {
-            assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 9u32.into())
+            assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 9u32.into());
         }
 
         let f5 =
@@ -378,7 +378,7 @@ mod tests {
         assert!(!f5.is_ramified());
         println!("f5 = {:?}", f5);
         for ideal in f5.unique_prime_factors() {
-            assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 5u32.into())
+            assert_eq!(sq.ideal_norm(&ideal.clone().into_ideal()), 5u32.into());
         }
     }
 

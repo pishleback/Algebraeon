@@ -1,12 +1,15 @@
 //! Abtractions over sets with certain structure.
 //!
-//! The structure framework used by algebraeon_rings is established here.
+//! The structure framework used by `algebraeon_rings` is established here.
 
+mod empty_set;
 mod morphism;
 mod orderings;
+#[allow(clippy::module_inception)]
 mod structure;
 
 pub use algebraeon_macros::CanonicalStructure;
+pub use empty_set::EmptySetStructure;
 pub use morphism::{
     BijectiveFunction, CompositionMorphism, Function, Functions, IdentityMorphism,
     InjectiveFunction, Morphism,

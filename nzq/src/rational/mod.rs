@@ -1,9 +1,11 @@
 //! The Rational type and operations.
-
-use crate::integer::*;
-use crate::natural::*;
-use crate::traits::*;
-use algebraeon_sets::structure::*;
+use crate::integer::Integer;
+use crate::natural::Natural;
+use crate::traits::{Abs, Ceil, Floor, Fraction};
+use algebraeon_sets::structure::{
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
+    Signature, ToStringSignature,
+};
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
 use std::{
@@ -13,6 +15,7 @@ use std::{
 
 /// Represent a rational number - a number of the form `a`/`b` where `a` is an integer and `b` is a non-zero integer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
+#[canonical_structure(eq, ord)]
 pub struct Rational(malachite_q::Rational);
 
 impl ToStringSignature for RationalCanonicalStructure {
@@ -21,6 +24,7 @@ impl ToStringSignature for RationalCanonicalStructure {
     }
 }
 
+#[allow(clippy::wrong_self_convention)]
 impl Rational {
     pub(crate) fn from_malachite(value: malachite_q::Rational) -> Self {
         Self(value)
@@ -251,34 +255,34 @@ impl PartialOrd<&Integer> for Rational {
 
 impl AddAssign<Rational> for Rational {
     fn add_assign(&mut self, rhs: Rational) {
-        self.0.add_assign(rhs.0)
+        self.0.add_assign(rhs.0);
     }
 }
 impl AddAssign<&Rational> for Rational {
     fn add_assign(&mut self, rhs: &Rational) {
-        self.0.add_assign(&rhs.0)
+        self.0.add_assign(&rhs.0);
     }
 }
 
 impl SubAssign<Rational> for Rational {
     fn sub_assign(&mut self, rhs: Rational) {
-        self.0.sub_assign(rhs.0)
+        self.0.sub_assign(rhs.0);
     }
 }
 impl SubAssign<&Rational> for Rational {
     fn sub_assign(&mut self, rhs: &Rational) {
-        self.0.sub_assign(&rhs.0)
+        self.0.sub_assign(&rhs.0);
     }
 }
 
 impl MulAssign<Rational> for Rational {
     fn mul_assign(&mut self, rhs: Rational) {
-        self.0.mul_assign(rhs.0)
+        self.0.mul_assign(rhs.0);
     }
 }
 impl MulAssign<&Rational> for Rational {
     fn mul_assign(&mut self, rhs: &Rational) {
-        self.0.mul_assign(&rhs.0)
+        self.0.mul_assign(&rhs.0);
     }
 }
 
@@ -532,15 +536,17 @@ impl Rational {
         ))
     }
 
+    #[allow(clippy::return_self_not_must_use)]
     pub fn approximate(self, max_denominator: &Natural) -> Self {
         Self(self.0.approximate(max_denominator.to_malachite_ref()))
     }
 
     /// An iterator over all rational numbers.
     pub fn exhaustive_rationals() -> impl Iterator<Item = Rational> {
-        malachite_q::exhaustive::exhaustive_rationals().map(|v| Rational(v))
+        malachite_q::exhaustive::exhaustive_rationals().map(Rational)
     }
 
+    #[allow(clippy::result_unit_err, clippy::missing_errors_doc)]
     pub fn try_from_float_simplest(x: f64) -> Result<Self, ()> {
         match malachite_q::Rational::try_from_float_simplest(x) {
             Ok(x) => Ok(Self(x)),
@@ -548,6 +554,7 @@ impl Rational {
         }
     }
 
+    #[allow(clippy::missing_panics_doc)]
     pub fn decimal_string_approx(&self) -> String {
         if self == &Rational::ZERO {
             return "0".into();
@@ -559,6 +566,7 @@ impl Rational {
                 malachite_base::rounding_modes::RoundingMode::Nearest,
             )
             .unwrap();
+        #[allow(clippy::unnecessary_cast, clippy::cast_precision_loss)]
         let mut b = (2.0 as f64).powf(exp as f64) * mant;
         if neg {
             b = -b;
@@ -571,9 +579,7 @@ impl Rational {
 impl CountableSetSignature for RationalCanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         use malachite_q::exhaustive::exhaustive_rationals;
-        exhaustive_rationals()
-            .into_iter()
-            .map(|x| Rational::from_malachite(x))
+        exhaustive_rationals().map(Rational::from_malachite)
     }
 }
 

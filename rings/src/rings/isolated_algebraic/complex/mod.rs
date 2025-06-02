@@ -31,9 +31,10 @@ fn bisect_box(
             b,
             &Rational::from_integers(Integer::from(1), Integer::from(3)),
         ) {
+            #[allow(clippy::single_match)]
             match (
-                poly.count_complex_roots(&a, &m, &c, &d),
-                poly.count_complex_roots(&m, &b, &c, &d),
+                poly.count_complex_roots(a, &m, c, d),
+                poly.count_complex_roots(&m, b, c, d),
             ) {
                 (Some(n1), Some(n2)) => {
                     debug_assert_eq!(n1 + n2, n);
@@ -52,9 +53,10 @@ fn bisect_box(
             d,
             &Rational::from_integers(Integer::from(1), Integer::from(3)),
         ) {
+            #[allow(clippy::single_match)]
             match (
-                poly.count_complex_roots(&a, &b, &c, &m),
-                poly.count_complex_roots(&a, &b, &m, &d),
+                poly.count_complex_roots(a, b, c, &m),
+                poly.count_complex_roots(a, b, &m, d),
             ) {
                 (Some(n1), Some(n2)) => {
                     debug_assert_eq!(n1 + n2, n);
@@ -80,15 +82,13 @@ fn identify_complex_root(
     let (mut a, mut b, mut c, mut d) = box_gen.next().unwrap();
 
     let irr_poly = {
-        let (_unit, factors) = poly.factor().unwrap().into_unit_and_factor_powers();
+        let (_unit, factors) = poly.factor().unwrap().into_unit_and_powers();
         let irr_polys = factors.into_iter().map(|(f, _k)| f).collect::<Vec<_>>();
         let mut possible_irr_poly_idxs: HashSet<_> = (0..irr_polys.len()).collect();
         loop {
             debug_assert!(!possible_irr_poly_idxs.is_empty());
-            possible_irr_poly_idxs = possible_irr_poly_idxs
-                .into_iter()
-                .filter(|idx| irr_polys[*idx].count_complex_roots(&a, &b, &c, &d) != Some(0))
-                .collect();
+            possible_irr_poly_idxs
+                .retain(|idx| irr_polys[*idx].count_complex_roots(&a, &b, &c, &d) != Some(0));
             if possible_irr_poly_idxs.len() == 1 {
                 break;
             }
@@ -105,23 +105,20 @@ fn identify_complex_root(
     let mut possible_roots: HashSet<_> = (0..roots.len()).collect();
     loop {
         debug_assert!(!possible_roots.is_empty());
-        possible_roots = possible_roots
-            .into_iter()
-            .filter(|idx| match &roots[*idx] {
-                ComplexAlgebraic::Real(RealAlgebraic::Rational(root)) => {
-                    &a < root && root < &b && c < Rational::ZERO && Rational::ZERO < d
-                }
-                ComplexAlgebraic::Real(RealAlgebraic::Real(root)) => {
-                    &a < root.tight_b()
-                        && root.tight_a() < &b
-                        && c < Rational::ZERO
-                        && Rational::ZERO < d
-                }
-                ComplexAlgebraic::Complex(root) => {
-                    a < root.tight_b && root.tight_a < b && c < root.tight_d && root.tight_c < d
-                }
-            })
-            .collect();
+        possible_roots.retain(|idx| match &roots[*idx] {
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(root)) => {
+                &a < root && root < &b && c < Rational::ZERO && Rational::ZERO < d
+            }
+            ComplexAlgebraic::Real(RealAlgebraic::Real(root)) => {
+                &a < root.tight_b()
+                    && root.tight_a() < &b
+                    && c < Rational::ZERO
+                    && Rational::ZERO < d
+            }
+            ComplexAlgebraic::Complex(root) => {
+                a < root.tight_b && root.tight_a < b && c < root.tight_d && root.tight_c < d
+            }
+        });
         if possible_roots.len() == 1 {
             break;
         }
@@ -170,7 +167,7 @@ impl Display for ComplexAlgebraicRoot {
             let d = &b * &b - Integer::from(4) * &a * &c;
             let mut d_sq = Integer::ONE;
             let mut d_sqfreee = Integer::ONE;
-            let (d_sign, d_factors) = d.factor().unwrap().into_unit_and_factor_powers();
+            let (d_sign, d_factors) = d.factor().unwrap().into_unit_and_powers();
             for (d_factor, k) in d_factors {
                 d_sq *= d_factor.nat_pow(&(&k / Natural::TWO));
                 if k % Natural::TWO == Natural::ONE {
@@ -205,53 +202,18 @@ impl Display for ComplexAlgebraicRoot {
             }
 
             let sign = tight_c_abs < tight_d_abs;
-            if x == Rational::ZERO {
-                if y == Rational::ONE {
-                    write!(
-                        f,
-                        "{}{}",
-                        match sign {
-                            true => "",
-                            false => "-",
-                        },
-                        r_str
-                    )?;
-                } else {
-                    write!(
-                        f,
-                        "{}{}{}",
-                        match sign {
-                            true => "",
-                            false => "-",
-                        },
-                        y,
-                        r_str
-                    )?;
+            match (x, y) {
+                (Rational::ZERO, Rational::ONE) => {
+                    write!(f, "{}{}", if sign { "" } else { "-" }, r_str)?;
                 }
-            } else {
-                if y == Rational::ONE {
-                    write!(
-                        f,
-                        "{}{}{}",
-                        x,
-                        match sign {
-                            true => "+",
-                            false => "-",
-                        },
-                        r_str
-                    )?;
-                } else {
-                    write!(
-                        f,
-                        "{}{}{}{}",
-                        x,
-                        match sign {
-                            true => "+",
-                            false => "-",
-                        },
-                        y,
-                        r_str
-                    )?;
+                (Rational::ZERO, y) => {
+                    write!(f, "{}{}{}", if sign { "" } else { "-" }, y, r_str)?;
+                }
+                (x, Rational::ONE) => {
+                    write!(f, "{}{}{}", x, if sign { "+" } else { "-" }, r_str)?;
+                }
+                (x, y) => {
+                    write!(f, "{}{}{}{}", x, if sign { "+" } else { "-" }, y, r_str)?;
                 }
             }
         } else {
@@ -282,10 +244,10 @@ impl Display for ComplexAlgebraicRoot {
 
 impl ComplexAlgebraicRoot {
     pub fn check_invariants(&self) -> Result<(), &'static str> {
-        if !(self.tight_a < self.tight_b) {
+        if self.tight_a >= self.tight_b {
             return Err("tight a should be strictly less than b");
         }
-        if !(self.tight_c < self.tight_d) {
+        if self.tight_c >= self.tight_d {
             return Err("tight c should be strictly less than d");
         }
         // if !(self.wide_a < self.wide_b) {
@@ -362,6 +324,7 @@ impl ComplexAlgebraicRoot {
         (self.tight_c, self.tight_d) = (-self.tight_d.clone(), -self.tight_c.clone());
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn neg(mut self) -> Self {
         self.neg_mut();
         self
@@ -455,43 +418,42 @@ impl ComplexAlgebraicRoot {
 
     pub fn apply_poly(&mut self, poly: &Polynomial<Rational>) -> ComplexAlgebraic {
         let poly = Polynomial::rem(poly, &self.min_poly());
-        match poly.as_constant() {
-            Some(rat) => ComplexAlgebraic::Real(RealAlgebraic::Rational(rat)),
-            None => {
-                let ans_poly = self
-                    .min_poly()
-                    .algebraic_number_field()
-                    .min_poly(&poly)
-                    .primitive_part_fof();
+        if let Some(rat) = poly.as_constant() {
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(rat))
+        } else {
+            let ans_poly = self
+                .min_poly()
+                .algebraic_number_field()
+                .min_poly(&poly)
+                .primitive_part_fof();
 
-                identify_complex_root(
-                    ans_poly,
-                    (0..).map(|i| {
+            identify_complex_root(
+                ans_poly,
+                (0..).map(|i| {
+                    if i != 0 {
+                        self.refine();
+                    }
+
+                    // eg: c + bx + ax^2 = c + x(b + x(a))
+                    let mut coeffs = poly.coeffs().into_iter().rev();
+                    let lc = coeffs.next().unwrap();
+                    let mut ans = mul_box_rat(
+                        (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
+                        lc,
+                    );
+                    for (i, c) in coeffs.enumerate() {
                         if i != 0 {
-                            self.refine();
+                            ans = mul_boxes(
+                                (&ans.0, &ans.1, &ans.2, &ans.3),
+                                (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
+                            );
                         }
+                        ans = add_box_rat((&ans.0, &ans.1, &ans.2, &ans.3), c);
+                    }
 
-                        // eg: c + bx + ax^2 = c + x(b + x(a))
-                        let mut coeffs = poly.coeffs().into_iter().rev();
-                        let lc = coeffs.next().unwrap();
-                        let mut ans = mul_box_rat(
-                            (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
-                            lc,
-                        );
-                        for (i, c) in coeffs.enumerate() {
-                            if i != 0 {
-                                ans = mul_boxes(
-                                    (&ans.0, &ans.1, &ans.2, &ans.3),
-                                    (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
-                                );
-                            }
-                            ans = add_box_rat((&ans.0, &ans.1, &ans.2, &ans.3), c);
-                        }
-
-                        ans
-                    }),
-                )
-            }
+                    ans
+                }),
+            )
         }
     }
 
@@ -501,6 +463,7 @@ impl ComplexAlgebraicRoot {
 }
 
 #[derive(Debug, Clone, CanonicalStructure)]
+#[canonical_structure(eq)]
 pub enum ComplexAlgebraic {
     Real(RealAlgebraic),
     Complex(ComplexAlgebraicRoot),
@@ -868,6 +831,7 @@ impl SemiRingUnitsSignature for ComplexAlgebraicCanonicalStructure {
 
                     // find 0 < lambda < 1 such that eps < (1 - lambda) * |a|
                     let mut lambda = Rational::ONE_HALF;
+                    #[allow(clippy::assign_op_pattern)]
                     while &eps * &eps >= (Rational::ONE - &lambda) * &w_mag_sq {
                         lambda = lambda * &Rational::ONE_HALF;
                     }
@@ -896,29 +860,26 @@ impl SemiRingUnitsSignature for ComplexAlgebraicCanonicalStructure {
                     //     decimal_string_approx(delta)
                     // );
 
-                    match inv_poly.count_complex_roots(
+                    if let Some(count) = inv_poly.count_complex_roots(
                         &inv_tight_a,
                         &inv_tight_b,
                         &inv_tight_c,
                         &inv_tight_d,
                     ) {
-                        Some(count) => {
-                            if count == 0 {
-                                unreachable!();
-                            } else if count == 1 {
-                                let ans = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
-                                    tight_a: inv_tight_a,
-                                    tight_b: inv_tight_b,
-                                    tight_c: inv_tight_c,
-                                    tight_d: inv_tight_d,
-                                    poly: inv_poly,
-                                });
-                                #[cfg(debug_assertions)]
-                                ans.check_invariants().unwrap();
-                                return Ok(ans);
-                            }
+                        if count == 0 {
+                            unreachable!();
+                        } else if count == 1 {
+                            let ans = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
+                                tight_a: inv_tight_a,
+                                tight_b: inv_tight_b,
+                                tight_c: inv_tight_c,
+                                tight_d: inv_tight_d,
+                                poly: inv_poly,
+                            });
+                            #[cfg(debug_assertions)]
+                            ans.check_invariants().unwrap();
+                            return Ok(ans);
                         }
-                        None => {}
                     }
 
                     root.refine();
@@ -1006,7 +967,7 @@ mod tests {
         let f = (x.pow(10)).into_verbose();
         assert_eq!(
             a.clone().apply_poly(&f),
-            (-341525 - 145668 * i).into_verbose()
+            (-341_525 - 145_668 * i).into_verbose()
         );
     }
 

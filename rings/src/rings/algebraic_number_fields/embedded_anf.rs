@@ -116,7 +116,7 @@ pub fn as_poly_expr(
 
     let target_min_poly_factored = gen_anf_poly.factor(&target_min_poly).unwrap();
     let mut generator = generator.clone();
-    for (factor, _factor_mult) in Polynomial::<Polynomial<Rational>>::structure()
+    for (factor, _factor_mult) in gen_anf_poly
         .factorizations()
         .to_powers(&target_min_poly_factored)
     {
@@ -143,19 +143,13 @@ pub fn anf_pair_primitive_element_theorem(
     Polynomial<Rational>,
 ) {
     //try g = a
-    match as_poly_expr(b, a) {
-        Some(q) => {
-            return (a.clone(), Integer::ONE, Integer::ZERO, Polynomial::var(), q);
-        }
-        None => {}
+    if let Some(q) = as_poly_expr(b, a) {
+        return (a.clone(), Integer::ONE, Integer::ZERO, Polynomial::var(), q);
     }
 
     //try g = b
-    match as_poly_expr(a, b) {
-        Some(p) => {
-            return (b.clone(), Integer::ZERO, Integer::ONE, p, Polynomial::var());
-        }
-        None => {}
+    if let Some(p) = as_poly_expr(a, b) {
+        return (b.clone(), Integer::ZERO, Integer::ONE, p, Polynomial::var());
     }
 
     let mut nontrivial_linear_combinations = Rational::exhaustive_rationals().map(|r| {
@@ -175,27 +169,24 @@ pub fn anf_pair_primitive_element_theorem(
             ),
         );
 
-        match as_poly_expr(a, &generator) {
-            Some(a_rel_gen) => {
-                let anf = generator.min_poly().algebraic_number_field();
-                //gen = xa + yb
-                //so b = (gen - xa) / y
-                let b_rel_gen = anf.mul(
-                    &anf.add(
-                        &Polynomial::var(),
-                        &anf.mul(&a_rel_gen, &Polynomial::constant(Rational::from(-&x))),
-                    ),
-                    &Polynomial::constant(Rational::from_integers(Integer::from(1), y.clone())),
-                );
-                #[cfg(debug_assertions)]
-                {
-                    let mut gen_mut = generator.clone();
-                    assert_eq!(a, &gen_mut.apply_poly(&a_rel_gen));
-                    assert_eq!(b, &gen_mut.apply_poly(&b_rel_gen));
-                }
-                return (generator, x, y, a_rel_gen, b_rel_gen);
+        if let Some(a_rel_gen) = as_poly_expr(a, &generator) {
+            let anf = generator.min_poly().algebraic_number_field();
+            //gen = xa + yb
+            //so b = (gen - xa) / y
+            let b_rel_gen = anf.mul(
+                &anf.add(
+                    &Polynomial::var(),
+                    &anf.mul(&a_rel_gen, &Polynomial::constant(Rational::from(-&x))),
+                ),
+                &Polynomial::constant(Rational::from_integers(Integer::from(1), y.clone())),
+            );
+            #[cfg(debug_assertions)]
+            {
+                let mut gen_mut = generator.clone();
+                assert_eq!(a, &gen_mut.apply_poly(&a_rel_gen));
+                assert_eq!(b, &gen_mut.apply_poly(&b_rel_gen));
             }
-            None => {}
+            return (generator, x, y, a_rel_gen, b_rel_gen);
         }
     }
     unreachable!()
@@ -221,7 +212,7 @@ pub fn anf_multi_primitive_element_theorem(
         let new_g_anf = new_g.min_poly().algebraic_number_field();
         p = p
             .into_iter()
-            .map(|old_p| new_g_anf.reduce(&Polynomial::compose(&old_p, &old_g_poly)))
+            .map(|old_p| new_g_anf.reduce(Polynomial::compose(&old_p, &old_g_poly)))
             .collect();
         p.push(num_poly);
         g = new_g;

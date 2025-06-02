@@ -29,12 +29,17 @@ impl Cycle {
     pub fn len(&self) -> usize {
         self.cyc.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.cyc.is_empty()
+    }
 }
 
 impl std::convert::From<Cycle> for Permutation {
     fn from(cyc: Cycle) -> Self {
         let n = *cyc.cyc.iter().max().unwrap_or(&0);
         let mut perm = vec![0; n];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..n {
             perm[i] = i;
         }
@@ -73,7 +78,7 @@ impl Permutation {
         //check that the numbers in forward are 0, 1, ..., n-1 in some order
         let mut present = (0..n).map(|_| false).collect_vec();
         for i in &perm {
-            if !(*i < n) {
+            if *i >= n {
                 return Err("Permutation value out of range");
             }
             present[*i] = true;
@@ -120,7 +125,7 @@ impl Permutation {
         let n = self.perm.len();
         let mut missing: std::collections::HashSet<usize> = (0..n).collect();
         let mut cycles = vec![];
-        while missing.len() > 0 {
+        while !missing.is_empty() {
             let mut cycle = vec![];
             let x = *missing.iter().min().unwrap();
             let mut i = x;
@@ -140,13 +145,13 @@ impl Permutation {
     }
 
     pub fn cycle_shape(&self) -> Vec<usize> {
-        let mut shape = self.disjoint_cycles().iter().map(|c| c.len()).collect_vec();
-        shape.sort();
+        let mut shape = self.disjoint_cycles().iter().map(Cycle::len).collect_vec();
+        shape.sort_unstable();
         shape
     }
 
     pub fn all_permutations(n: usize) -> impl Iterator<Item = Self> {
-        (0..n).permutations(n).map(|perm| Self::new_unchecked(perm))
+        (0..n).permutations(n).map(Self::new_unchecked)
     }
 
     pub fn symmetric_composition_table(
@@ -223,10 +228,11 @@ impl std::fmt::Display for Permutation {
         let mut cycles = self.disjoint_cycles();
         cycles.retain(|cycle| cycle.len() != 1);
 
-        if cycles.len() == 0 {
+        if cycles.is_empty() {
             f.write_str("()")?;
         }
 
+        #[allow(clippy::redundant_closure_for_method_calls)]
         let string = cycles
             .iter()
             .map(|cycle| {

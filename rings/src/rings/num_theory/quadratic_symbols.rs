@@ -23,10 +23,8 @@ impl std::ops::Mul for QuadraticSymbolValue {
     fn mul(self, other: Self) -> Self::Output {
         match (self, other) {
             (Self::Zero, _) | (_, Self::Zero) => Self::Zero,
-            (Self::Pos, Self::Pos) => Self::Pos,
-            (Self::Pos, Self::Neg) => Self::Neg,
-            (Self::Neg, Self::Pos) => Self::Neg,
-            (Self::Neg, Self::Neg) => Self::Pos,
+            (Self::Pos, Self::Pos) | (Self::Neg, Self::Neg) => Self::Pos,
+            (Self::Pos, Self::Neg) | (Self::Neg, Self::Pos) => Self::Neg,
         }
     }
 }
@@ -88,9 +86,7 @@ pub fn legendre_symbol(
     a: &Integer,
     p: &Natural,
 ) -> Result<QuadraticSymbolValue, LegendreSymbolError> {
-    if p % Natural::TWO == Natural::ZERO {
-        Err(LegendreSymbolError::BottomNotOddPrime)
-    } else if !is_prime(p) {
+    if p % Natural::TWO == Natural::ZERO || !is_prime(p) {
         Err(LegendreSymbolError::BottomNotOddPrime)
     } else {
         let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), Integer::from(p));
@@ -141,7 +137,7 @@ pub fn kronecker_symbol(a: &Integer, n: &Integer) -> QuadraticSymbolValue {
             }
         }
         Some(n) => {
-            let (u, powers) = n.into_unit_and_factor_powers();
+            let (u, powers) = n.into_unit_and_powers();
             let mut val = if u == Integer::ONE {
                 QuadraticSymbolValue::Pos
             } else {
@@ -169,7 +165,7 @@ pub fn kronecker_symbol(a: &Integer, n: &Integer) -> QuadraticSymbolValue {
                             }
                         }
                     } else {
-                        legendre_symbol(&a, &p.abs()).unwrap()
+                        legendre_symbol(a, &p.abs()).unwrap()
                     }
                 }
                 .nat_pow(&k);

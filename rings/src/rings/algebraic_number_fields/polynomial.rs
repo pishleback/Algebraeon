@@ -20,12 +20,11 @@ fn double_poly_to_row(
     Matrix::from_rows(vec![
         (0..outer_poly_len)
             .map(|i| a.coeff(i))
-            .map(|c| {
+            .flat_map(|c| {
                 (0..inner_poly_len)
                     .map(|j| c.coeff(j).clone())
                     .collect::<Vec<_>>()
             })
-            .flatten()
             .collect::<Vec<_>>(),
     ])
 }
@@ -128,7 +127,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                 .modulus()
                 .coeffs()
                 .into_iter()
-                .map(|c| c.clone())
+                .cloned()
                 .collect::<Vec<_>>();
 
             let lc = min_poly_coeffs.pop().unwrap();
@@ -261,7 +260,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
         */
         // println!("p = {}", p);
 
-        let l_reduced_ring = QuotientStructure::new_ring(self.clone().into(), p.clone());
+        let l_reduced_ring = QuotientStructure::new_ring(self.clone(), p.clone());
         //n = degree over L over Q
         let k_deg = self.coeff_ring().degree();
         if k_deg == 1 {
@@ -273,7 +272,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             )
             .factor()
             .unwrap()
-            .into_unit_and_factor_powers();
+            .into_unit_and_powers();
             self.factorizations().from_unit_and_factor_powers(
                 Polynomial::constant(unit),
                 factors
@@ -329,7 +328,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                                     Polynomial::from_coeffs(
                                         (0..k_deg)
                                             .map(|_j| {
-                                                if rand::Rng::gen_range(&mut rng, 0..(1 + n / 3))
+                                                if rand::Rng::random_range(&mut rng, 0..=(n / 3))
                                                     != 0
                                                 //try to keep the choice of alpha simple by choosing lots of zeros
                                                 {
@@ -418,9 +417,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             let l_to_la = |x_in_l: Polynomial<Polynomial<Rational>>| -> Polynomial<Rational> {
                 let x_in_q = l_to_vec(x_in_l);
                 let x_in_la_vec = alpha_pow_mat.clone().row_solve(&x_in_q.get_row(0)).unwrap();
-                let x_in_la =
-                    Polynomial::from_coeffs((0..n).map(|c| x_in_la_vec[c].clone()).collect());
-                x_in_la
+                Polynomial::from_coeffs((0..n).map(|c| x_in_la_vec[c].clone()).collect())
             };
             #[cfg(any())]
             let la_to_l = |x_in_la: Polynomial<Rational>| -> Polynomial<Polynomial<Rational>> {
@@ -461,7 +458,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 
                     // Q[y]/qi(y)
                     let lai_reduced_ring = QuotientStructure::new_field(
-                        PolynomialStructure::new(Rational::structure()).into(),
+                        PolynomialStructure::new(Rational::structure()),
                         qi.clone(),
                     );
 
@@ -481,7 +478,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 
                     //the basis (1, t, ..., t^{deg(K)-1}, x, tx, ..., t^{deg(K)-1}x, ..., x^{d-1}, tx^{d-1}, ..., t^{deg(K)-1}x^{d-1}) in that order
                     let lai_basis = (0..pi_deg)
-                        .map(|i| {
+                        .flat_map(|i| {
                             (0..k_deg)
                                 .map(|j| {
                                     lai_reduced_ring.mul(
@@ -491,7 +488,6 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                                 })
                                 .collect::<Vec<_>>()
                         })
-                        .flatten()
                         .collect::<Vec<_>>();
                     // for b in lai_basis.iter() {
                     //     println!("b = {}", b);
@@ -536,6 +532,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                     // println!("pi_prime = {}", pi_prime);
                     let pi = self.add(&self.var_pow(pi_deg), &pi_prime.neg());
                     // println!("pi = {}", pi);
+                    #[allow(clippy::let_and_return)]
                     pi
                 })
                 .collect::<Vec<_>>();
@@ -576,7 +573,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             Polynomial::<Rational>::from_coeffs(rat_coeffs)
         };
 
-        let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_factor_powers();
+        let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_powers();
         let mut factored = self
             .factorizations()
             .from_unit(Polynomial::constant(rat_unit));
@@ -594,6 +591,55 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
         factored
     }
 }
+
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// struct IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//     anf: AlgebraicNumberFieldStructure,
+// }
+
+// impl Signature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {}
+
+// impl SetSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//     type Set = Polynomial<<AlgebraicNumberFieldStructure as SetSignature>::Set>;
+
+//     fn is_element(&self, x: &Self::Set) -> bool {
+//         todo!()
+//     }
+// }
+
+// impl EqSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+//         self.anf.polynomials().equal(a, b)
+//     }
+// }
+
+// impl OrdSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+//         todo!()
+//     }
+// }
+
+// impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>> UniqueFactorizationSignature
+//     for PolynomialStructure<AlgebraicNumberFieldStructure, B>
+// {
+//     type Irreducibles = IrreducibleAlgebraicNumberFieldPolynomialsStructure;
+
+//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+
+//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn into_factorizations(self) -> Self::Factorizations<Self> {
+//         FactoredRingElementStructure::new(self)
+//     }
+
+//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
+//         IrreducibleAlgebraicNumberFieldPolynomialsStructure {
+//             anf: self.coeff_ring().clone(),
+//         }
+//     }
+// }
 
 impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>> FactorableSignature
     for PolynomialStructure<AlgebraicNumberFieldStructure, B>

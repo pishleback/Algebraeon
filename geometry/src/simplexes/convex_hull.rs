@@ -34,6 +34,7 @@ pub struct ConvexHull<
     */
 }
 
+#[allow(clippy::missing_fields_in_debug)]
 impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
     for ConvexHull<FS, SP>
 where
@@ -91,7 +92,7 @@ where
 
         match self.subspace.borrow().embedded_space().affine_dimension() {
             0 => {
-                if self.facets.len() != 0 {
+                if !self.facets.is_empty() {
                     return Err("Empty convex hull should have no facets");
                 }
                 if self.interior
@@ -125,13 +126,11 @@ where
         }
 
         //facets should be non-empty whenenver self.subspace has dimension >= 1
-        match self.subspace.borrow().embedded_space().linear_dimension() {
-            Some(_) => {
-                if self.facets.is_empty() {
-                    return Err("Facets should be non-empty whenenver the subspace is non-empty");
-                }
+        #[allow(clippy::redundant_pattern_matching)]
+        if let Some(_) = self.subspace.borrow().embedded_space().linear_dimension() {
+            if self.facets.is_empty() {
+                return Err("Facets should be non-empty whenenver the subspace is non-empty");
             }
-            None => {}
         }
 
         //check that facets each share exactly one ridge
@@ -246,6 +245,7 @@ where
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn extend_by_point(&mut self, pt: Vector<FS, SP>) {
         assert_eq!(pt.ambient_space().borrow(), self.ambient_space.borrow());
         #[cfg(debug_assertions)]
@@ -280,13 +280,11 @@ where
                     let facet_simplex = facet.simplex();
                     for i in 0..facet_simplex.n() {
                         let (ridge, pt) = (facet_simplex.facet(i), &facet_simplex.points()[i]);
-                        match horizon.contains_key(&ridge) {
-                            true => {
-                                horizon.remove(&ridge);
-                            }
-                            false => {
-                                horizon.insert(ridge, (facet, pt));
-                            }
+                        #[allow(clippy::map_entry)]
+                        if horizon.contains_key(&ridge) {
+                            horizon.remove(&ridge);
+                        } else {
+                            horizon.insert(ridge, (facet, pt));
                         }
                     }
                 }
@@ -295,20 +293,14 @@ where
                     let mut horizon_alt = HashSet::new();
                     for facet in &hidden {
                         for ridge in facet.simplex().facets() {
-                            match horizon_alt.contains(&ridge) {
-                                true => {
-                                    horizon_alt.remove(&ridge);
-                                }
-                                false => {
-                                    horizon_alt.insert(ridge);
-                                }
+                            if horizon_alt.contains(&ridge) {
+                                horizon_alt.remove(&ridge);
+                            } else {
+                                horizon_alt.insert(ridge);
                             }
                         }
                     }
-                    assert_eq!(
-                        horizon.keys().map(|r| r.clone()).collect::<HashSet<_>>(),
-                        horizon_alt
-                    );
+                    assert_eq!(horizon.keys().cloned().collect::<HashSet<_>>(), horizon_alt);
                 }
 
                 // println!(
@@ -333,7 +325,7 @@ where
                             )
                             .unwrap()
                         })
-                        .chain(hidden.into_iter().map(|f| f.clone()))
+                        .chain(hidden.into_iter().cloned())
                         .collect::<Vec<_>>(),
                     visible
                         .into_iter()
@@ -345,7 +337,7 @@ where
                             })
                             .unwrap()
                         })
-                        .chain(self.interior.iter().map(|s| s.clone()))
+                        .chain(self.interior.iter().cloned())
                         .collect::<Vec<_>>(),
                 );
             }
@@ -384,23 +376,16 @@ where
                                     &{
                                         //If old_facet is null living inside 0D space then take the iota-embedding of the unique point in the 0D space as the reference
                                         //If old_facet is not null then it comes equiped with a reference point which we embed via iota and use
-                                        match old_facet.positive_point() {
-                                            Some(pos_pt) => iota.embed_point(&pos_pt),
-                                            None => {
-                                                debug_assert_eq!(
-                                                    self.subspace
-                                                        .embedded_space()
-                                                        .affine_dimension(),
-                                                    1
-                                                );
-                                                iota.embed_point(
-                                                    &self
-                                                        .subspace
-                                                        .embedded_space()
-                                                        .origin()
-                                                        .unwrap(),
-                                                )
-                                            }
+                                        if let Some(pos_pt) = old_facet.positive_point() {
+                                            iota.embed_point(&pos_pt)
+                                        } else {
+                                            debug_assert_eq!(
+                                                self.subspace.embedded_space().affine_dimension(),
+                                                1
+                                            );
+                                            iota.embed_point(
+                                                &self.subspace.embedded_space().origin().unwrap(),
+                                            )
                                         }
                                     },
                                 )
@@ -442,7 +427,7 @@ where
                     }
                 }
             }
-        };
+        }
 
         #[cfg(debug_assertions)]
         self.check().unwrap();
@@ -487,8 +472,7 @@ where
         let boundary_simplexes = self
             .embedded_facet_simplexes()
             .into_iter()
-            .map(|spx| spx.sub_simplices_not_null())
-            .flatten()
+            .flat_map(|spx| spx.sub_simplices_not_null())
             .collect::<HashSet<_>>();
 
         let all_simplexes = boundary_simplexes
@@ -497,8 +481,7 @@ where
             .chain(
                 self.embedded_interior_simplexes()
                     .into_iter()
-                    .map(|spx| spx.sub_simplices_not_null())
-                    .flatten(),
+                    .flat_map(|spx| spx.sub_simplices_not_null()),
             )
             .collect::<HashSet<_>>();
 
@@ -507,9 +490,10 @@ where
             all_simplexes
                 .into_iter()
                 .map(|spx| {
-                    let label = match boundary_simplexes.contains(&spx) {
-                        false => InteriorBoundaryLabel::Interior,
-                        true => InteriorBoundaryLabel::Boundary,
+                    let label = if boundary_simplexes.contains(&spx) {
+                        InteriorBoundaryLabel::Boundary
+                    } else {
+                        InteriorBoundaryLabel::Interior
                     };
                     (spx, label)
                 })
@@ -629,7 +613,7 @@ where
         let mut middle_points = HashSet::new();
         let mut negative_points = HashSet::new();
         for point in &self.points {
-            match hyperplane.classify_point(&point) {
+            match hyperplane.classify_point(point) {
                 OrientationSide::Positive => {
                     positive_points.insert(point.clone());
                 }
@@ -644,7 +628,7 @@ where
         let mut positive_edges = HashSet::new();
         let mut negative_edges = HashSet::new();
         for (a, b) in &self.edges {
-            match hyperplane.intersect_line(&a, &b) {
+            match hyperplane.intersect_line(a, b) {
                 OrientedHyperplaneIntersectLineSegmentResult::PositivePositive
                 | OrientedHyperplaneIntersectLineSegmentResult::PositiveNeutral
                 | OrientedHyperplaneIntersectLineSegmentResult::NeutralPositive => {
@@ -762,7 +746,7 @@ where
                     self.subspace.embedded_space().affine_dimension()
                 );
                 let mut embedded_self_in_other_subspace =
-                    ConvexHullWireframe::from_convex_hull(&embedded_self_in_other_subspace);
+                    ConvexHullWireframe::from_convex_hull(embedded_self_in_other_subspace);
                 // step3 : intersect self with each oriented facet of other
                 for facet in &other.facets {
                     embedded_self_in_other_subspace = embedded_self_in_other_subspace

@@ -35,10 +35,7 @@ impl core::fmt::Debug for Vector24 {
         let mut bits = self.points.bits();
         let mut pts = vec![];
         for i in 0..24usize {
-            if match bits.next() {
-                Some(b) => b,
-                None => false,
-            } {
+            if bits.next().unwrap_or(false) {
                 pts.push(i);
             }
         }
@@ -49,9 +46,8 @@ impl Vector24 {
     pub fn new(contains: impl Fn(usize) -> bool) -> Self {
         let mut points = 0;
         for i in 0..24usize {
-            match contains(i) {
-                true => points |= 1 << i,
-                false => {}
+            if contains(i) {
+                points |= 1 << i;
             }
         }
         Self { points }
@@ -63,7 +59,7 @@ impl Vector24 {
         let mut data = 0;
         for i in pts {
             assert!(i < 24);
-            data |= 1 << i
+            data |= 1 << i;
         }
         Self { points: data }
     }
@@ -77,10 +73,7 @@ impl Vector24 {
     pub fn into_row(&self) -> Matrix<BinaryField> {
         Matrix::construct(1, 24, |r, c| {
             debug_assert_eq!(r, 0);
-            match { self.contains(c) } {
-                true => ONE,
-                false => ZERO,
-            }
+            if self.contains(c) { ONE } else { ZERO }
         })
     }
     pub fn from_row(m: &Matrix<BinaryField>) -> Option<Self> {
@@ -98,10 +91,11 @@ impl Vector24 {
     }
     /// As a 4x6 matrix representing an element of the MOG
     pub fn into_mat(&self) -> Matrix<BinaryField> {
-        Matrix::construct(4, 6, |r, c| match self.contains(c + 6 * r) {
-            true => ONE,
-            false => ZERO,
-        })
+        Matrix::construct(
+            4,
+            6,
+            |r, c| if self.contains(c + 6 * r) { ONE } else { ZERO },
+        )
     }
     /// From a 4x6 matrix representing an element of the MOG
     pub fn from_mat(m: &Matrix<BinaryField>) -> Option<Self> {
@@ -119,6 +113,7 @@ impl Vector24 {
 impl std::ops::Add<Vector24> for Vector24 {
     type Output = Self;
     fn add(self, other: Vector24) -> Self::Output {
+        #[allow(clippy::suspicious_arithmetic_impl)]
         Self {
             points: self.points ^ other.points,
         }
@@ -266,6 +261,7 @@ pub struct ExtendedBinaryGolayCode {
 }
 
 impl ExtendedBinaryGolayCode {
+    #[allow(clippy::needless_pass_by_value)]
     pub fn from_row_basis_matrix(m: Matrix<BinaryField>) -> Result<Self, &'static str> {
         if m.rows() != 12 || m.cols() != 24 {
             return Err("Matrix has the wrong dimensions");
@@ -326,16 +322,15 @@ impl ExtendedBinaryGolayCode {
         for i in 0..5 {
             debug_assert_eq!(other_pts.len(), 20 - 4 * i);
             let five_pts =
-                Vector24::from_points(other_pts.iter().take(1).cloned().chain(four_pts.points()));
+                Vector24::from_points(other_pts.iter().take(1).copied().chain(four_pts.points()));
             let octad = self.complete_octad(five_pts);
             parts[i + 1] = Vector24::from_points(
                 Vector24::from(octad)
                     .points()
                     .filter(|pt| !four_pts.contains(*pt))
-                    .map(|pt| {
-                        debug_assert!(other_pts.contains(&pt));
-                        other_pts.remove(&pt);
-                        pt
+                    .inspect(|pt| {
+                        debug_assert!(other_pts.contains(pt));
+                        other_pts.remove(pt);
                     }),
             );
         }
@@ -385,6 +380,7 @@ impl ExtendedBinaryGolayCode {
 
         let _ = t1; //It's not used
 
+        #[allow(clippy::items_after_statements)]
         fn take_unique_pt(v: Vector24) -> usize {
             let mut pts = v.points();
             let pt = pts.next().unwrap();
@@ -433,7 +429,7 @@ impl ExtendedBinaryGolayCode {
         // Use the sextet formed by completing (T1 \ {x}) U {y} to label the rest of T3 U T4 U T5 U T6
         let t2345 = t2 | t3 | t4 | t5;
         debug_assert_eq!(t2345.weight(), 16);
-        for (_i, li, wi) in vec![
+        for (_i, li, wi) in [
             (2, alpha, w2),
             (3, beta, w3),
             (4, gamma, w4),
@@ -468,7 +464,7 @@ impl ExtendedBinaryGolayCode {
         for q in t3.points() {
             let l = labels[q];
             let octad = self.complete_octad(Vector24::from_points(
-                final_four.iter().cloned().chain(vec![q]),
+                final_four.iter().copied().chain(vec![q]),
             ));
             for p in octad.points() {
                 if !t4.contains(p) && !t5.contains(p) {
@@ -515,11 +511,12 @@ impl ExtendedBinaryGolayCode {
 }
 
 fn ebgc_from_string(values: &'static str) -> ExtendedBinaryGolayCode {
-    let rows = values.split("\n").collect::<Vec<_>>();
+    let rows = values.split('\n').collect::<Vec<_>>();
     for row in &rows {
         assert_eq!(row.len(), 24);
     }
     ExtendedBinaryGolayCode::from_row_basis_matrix(Matrix::construct(12, 24, |r, c| {
+        #[allow(clippy::iter_nth)]
         match rows.iter().nth(r).unwrap().chars().nth(c).unwrap() {
             '0' => BinaryField::zero(),
             '1' => BinaryField::one(),

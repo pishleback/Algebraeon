@@ -18,7 +18,7 @@ pub type AlgebraicNumberFieldStructure = FieldExtensionByPolynomialQuotientStruc
 impl Polynomial<Rational> {
     pub fn algebraic_number_field(self) -> AlgebraicNumberFieldStructure {
         AlgebraicNumberFieldStructure::new_field(
-            PolynomialStructure::new(Rational::structure()).into(),
+            PolynomialStructure::new(Rational::structure()),
             self,
         )
     }
@@ -62,7 +62,7 @@ impl AlgebraicNumberFieldStructure {
             let disc = disc.numerator();
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
             //    println!("{}", disc);
-            let (_sign, mut disc_factors) = disc.factor().unwrap().into_unit_and_factor_powers();
+            let (_sign, mut disc_factors) = disc.factor().unwrap().into_unit_and_powers();
             // If p is a prime such that p^2 divides Disc
             // then can find an alg int of the form
             // 1/p (x_1a_1 + ... + x_na_n)

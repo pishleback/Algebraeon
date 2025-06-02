@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use super::*;
+use super::{CountableSetSignature, EqSignature, FiniteSetSignature, SetSignature, Signature};
 use std::fmt::Debug;
 use std::marker::PhantomData;
 

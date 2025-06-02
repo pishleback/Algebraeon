@@ -1,4 +1,4 @@
-use super::SetSignature;
+use super::EqSignature;
 use std::{borrow::Borrow, cmp::Ordering};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,20 +66,76 @@ impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Set> Iterator for VecMerger<'
     }
 }
 
-pub trait OrdSignature: SetSignature {
+pub trait OrdSignature: EqSignature {
     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering;
 
-    fn is_sorted(&self, a: Vec<impl Borrow<Self::Set>>) -> bool {
+    fn is_sorted(&self, a: &[impl Borrow<Self::Set>]) -> bool {
         for i in 1..a.len() {
-            if self.cmp(&a[i - 1].borrow(), &a[i].borrow()) == Ordering::Greater {
+            if self.cmp(a[i - 1].borrow(), a[i].borrow()) == Ordering::Greater {
                 return false;
             }
         }
         true
     }
 
-    fn is_sorted_by<X>(&self, a: Vec<X>, key: impl Fn(&X) -> &Self::Set) -> bool {
-        self.is_sorted(a.iter().map(key).collect())
+    fn is_sorted_by_key<X>(&self, a: &[X], key: impl Fn(&X) -> &Self::Set) -> bool {
+        self.is_sorted(&a.iter().map(key).collect::<Vec<_>>())
+    }
+
+    fn is_sorted_and_unique(&self, a: &[impl Borrow<Self::Set>]) -> bool {
+        for i in 1..a.len() {
+            if self.cmp(a[i - 1].borrow(), a[i].borrow()) != Ordering::Less {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn is_sorted_and_unique_by_key<X>(&self, a: &[X], key: impl Fn(&X) -> &Self::Set) -> bool {
+        self.is_sorted_and_unique(&a.iter().map(key).collect::<Vec<_>>())
+    }
+
+    fn binary_search(&self, v: &[impl Borrow<Self::Set>], target: &Self::Set) -> bool {
+        self.binary_search_by_key(v, target, |x| x.borrow())
+            .is_some()
+    }
+
+    fn binary_search_by_key<'x, X>(
+        &self,
+        v: &'x [X],
+        target: &Self::Set,
+        key: impl Fn(&X) -> &Self::Set,
+    ) -> Option<&'x X> {
+        debug_assert!(self.is_sorted_by_key(v, &key));
+        if v.is_empty() {
+            return None;
+        }
+        let mut a = 0;
+        let mut b = v.len() - 1;
+
+        if self.equal(target, key(&v[a])) {
+            return Some(&v[a]);
+        }
+
+        if self.equal(target, key(&v[b])) {
+            return Some(&v[b]);
+        }
+
+        while b - a >= 2 {
+            println!("{:?} {:?}", a, b);
+
+            let m = (a + b) / 2;
+            let m_key = key(&v[m]);
+            match self.cmp(target, m_key) {
+                Ordering::Less => b = m,
+                Ordering::Equal => {
+                    return Some(&v[m]);
+                }
+                Ordering::Greater => a = m,
+            }
+        }
+
+        None
     }
 
     fn merge_sorted<'s, S: Borrow<Self::Set> + 's>(
@@ -87,49 +143,25 @@ pub trait OrdSignature: SetSignature {
         a: Vec<S>,
         b: Vec<S>,
     ) -> impl Iterator<Item = (MergedSource, S)> {
-        self.merge_sorted_by(a, b, |x| (*x).borrow())
+        self.merge_sorted_by_key(a, b, |x| (*x).borrow())
     }
 
-    fn merge_sorted_by<'s, X>(
-        &'s self,
+    fn merge_sorted_by_key<X>(
+        &self,
         a: Vec<X>,
         b: Vec<X>,
         key: impl Fn(&X) -> &Self::Set,
     ) -> impl Iterator<Item = (MergedSource, X)> {
-        debug_assert!(self.is_sorted_by(a.iter().collect(), |x| key(x)));
-        debug_assert!(self.is_sorted_by(b.iter().collect(), |x| key(x)));
+        debug_assert!(self.is_sorted_by_key(&a.iter().collect::<Vec<_>>(), |x| key(x)));
+        debug_assert!(self.is_sorted_by_key(&b.iter().collect::<Vec<_>>(), |x| key(x)));
         VecMerger::new(self, a, b, key)
     }
 
-    fn sort<S: Borrow<Self::Set>>(&self, mut a: Vec<S>) -> Vec<S> {
-        match a.len() {
-            0 | 1 => a,
-            2 => match self.cmp(a[0].borrow(), a[1].borrow()) {
-                Ordering::Less | Ordering::Equal => a,
-                Ordering::Greater => {
-                    a.swap(0, 1);
-                    a
-                }
-            },
-            n => {
-                // merge sort
-                let k = n / 2;
-
-                let a1 = a.split_off(k);
-                let a0 = a;
-
-                let a0_sorted = self.sort(a0);
-                let a1_sorted = self.sort(a1);
-
-                self.merge_sorted(a0_sorted, a1_sorted)
-                    .into_iter()
-                    .map(|(_, s)| s)
-                    .collect()
-            }
-        }
+    fn sort<S: Borrow<Self::Set>>(&self, a: Vec<S>) -> Vec<S> {
+        self.sort_by_key(a, &|x| x.borrow())
     }
 
-    fn sort_by<X>(&self, mut a: Vec<X>, key: impl Fn(&X) -> &Self::Set) -> Vec<X> {
+    fn sort_by_key<X>(&self, mut a: Vec<X>, key: &impl Fn(&X) -> &Self::Set) -> Vec<X> {
         match a.len() {
             0 | 1 => a,
             2 => match self.cmp(key(&a[0]).borrow(), key(&a[1]).borrow()) {
@@ -146,15 +178,29 @@ pub trait OrdSignature: SetSignature {
                 let a1 = a.split_off(k);
                 let a0 = a;
 
-                let a0_sorted = self.sort_by(a0, &key);
-                let a1_sorted = self.sort_by(a1, &key);
+                let a0_sorted = self.sort_by_key(a0, key);
+                let a1_sorted = self.sort_by_key(a1, key);
 
-                self.merge_sorted_by(a0_sorted, a1_sorted, key)
-                    .into_iter()
+                self.merge_sorted_by_key(a0_sorted, a1_sorted, key)
                     .map(|(_, s)| s)
                     .collect()
             }
         }
+    }
+
+    fn sort_by_cached_by<X: 'static>(&self, a: Vec<X>, key: impl Fn(&X) -> Self::Set) -> Vec<X>
+    where
+        Self::Set: 'static,
+    {
+        let mut a = a.into_iter().map(|x| (x, None)).collect::<Vec<_>>();
+        for i in 0..a.len() {
+            let (x, k) = a.get_mut(i).unwrap();
+            *k = Some(key(x));
+        }
+        self.sort_by_key(a, &|(_, k)| k.as_ref().unwrap())
+            .into_iter()
+            .map(|(x, _)| x)
+            .collect()
     }
 }
 
@@ -197,13 +243,13 @@ mod tests {
         assert_eq!(s.cmp(&1, &2), Ordering::Less);
         assert_eq!(s.cmp(&2, &1), Ordering::Greater);
 
-        assert!(s.is_sorted(Vec::<usize>::new()));
-        assert!(s.is_sorted(vec![7]));
-        assert!(s.is_sorted(vec![1, 2]));
-        assert!(!s.is_sorted(vec![2, 1]));
-        assert!(s.is_sorted(vec![1, 2, 3]));
-        assert!(s.is_sorted(vec![1, 1, 1]));
-        assert!(!s.is_sorted(vec![1, 2, 1]));
+        assert!(s.is_sorted(&Vec::<usize>::new()));
+        assert!(s.is_sorted(&[7]));
+        assert!(s.is_sorted(&[1, 2]));
+        assert!(!s.is_sorted(&[2, 1]));
+        assert!(s.is_sorted(&[1, 2, 3]));
+        assert!(s.is_sorted(&[1, 1, 1]));
+        assert!(!s.is_sorted(&[1, 2, 1]));
 
         assert_eq!(
             s.merge_sorted(Vec::<usize>::new(), Vec::<usize>::new())
@@ -240,5 +286,20 @@ mod tests {
             s.sort(vec![3, 3, 2, 2, 2, 1, 1, 1, 1]),
             vec![1, 1, 1, 1, 2, 2, 2, 3, 3]
         );
+        assert_eq!(
+            s.sort_by_cached_by(vec![3, 3, 2, 2, 2, 1, 1, 1, 1], |x| 5 - x),
+            vec![3, 3, 2, 2, 2, 1, 1, 1, 1]
+        );
+
+        let v = vec![1, 2, 3, 3, 3, 4, 4, 5, 7, 8, 9, 10, 11];
+        assert!(!s.binary_search(&v, &0));
+        assert!(s.binary_search(&v, &1));
+        assert!(s.binary_search(&v, &3));
+        assert!(s.binary_search(&v, &4));
+        assert!(s.binary_search(&v, &5));
+        assert!(!s.binary_search(&v, &6));
+        assert!(s.binary_search(&v, &7));
+        assert!(s.binary_search(&v, &11));
+        assert!(!s.binary_search(&v, &12));
     }
 }

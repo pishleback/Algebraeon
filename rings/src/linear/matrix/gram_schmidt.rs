@@ -67,8 +67,8 @@ impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
                 let row_opp = ElementaryOpp::new_row_opp(
                     self.ring().clone(),
                     ElementaryOppType::AddRowMul {
-                        i: i,
-                        j: j,
+                        i,
+                        j,
                         x: self.ring().neg(&lambda),
                     },
                 );
@@ -255,6 +255,7 @@ mod tests {
         assert_eq!(mat.gram_schmidt_col_orthogonalization(), mat_expected_gs);
     }
 
+    #[allow(clippy::erasing_op)]
     #[test]
     fn complex_gram_schmidt() {
         let i = &ComplexAlgebraic::i().into_ergonomic();

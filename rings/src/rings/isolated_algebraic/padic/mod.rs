@@ -190,8 +190,7 @@ pub mod truncation {
 
         pub fn string_repr(&self) -> String {
             let p = match self {
-                Truncated::Zero { p } => p,
-                Truncated::NonZero { p, .. } => p,
+                Truncated::Zero { p } | Truncated::NonZero { p, .. } => p,
             };
             match self.digits() {
                 None => "0".into(),
@@ -209,6 +208,7 @@ pub mod truncation {
                     write!(&mut s, "...").unwrap();
                     for (i, d) in rev_digits.into_iter().rev().enumerate().rev() {
                         write!(&mut s, "{}", d).unwrap();
+                        #[allow(clippy::collapsible_else_if)]
                         if i != 0 {
                             if seps {
                                 if Integer::from(i) == shift {
@@ -541,9 +541,10 @@ pub mod structure {
                     .filter_map(|mut root| {
                         root.refine(&k);
                         let rball = root.isolating_ball();
-                        match IsolatingBall::overlap(&rball, &sball) {
-                            true => Some(root),
-                            false => None,
+                        if IsolatingBall::overlap(&rball, &sball) {
+                            Some(root)
+                        } else {
+                            None
                         }
                     })
                     .collect();
@@ -617,9 +618,10 @@ pub mod structure {
                     .filter_map(|mut root| {
                         root.refine(&k);
                         let rball = root.isolating_ball();
-                        match IsolatingBall::overlap(&rball, &sball) {
-                            true => Some(root),
-                            false => None,
+                        if IsolatingBall::overlap(&rball, &sball) {
+                            Some(root)
+                        } else {
+                            None
                         }
                     })
                     .collect();
@@ -629,6 +631,7 @@ pub mod structure {
             candidates.into_iter().next().unwrap()
         }
 
+        #[allow(clippy::unnecessary_wraps)]
         fn inv_mut(&mut self) -> Result<PAdicAlgebraic, RingDivisionError> {
             /*
             Let x be the root approximated by a: |x-a| <= v
@@ -665,9 +668,10 @@ pub mod structure {
                         .filter_map(|mut root| {
                             root.refine(&k);
                             let rball = root.isolating_ball();
-                            match IsolatingBall::overlap(&rball, &iball) {
-                                true => Some(root),
-                                false => None,
+                            if IsolatingBall::overlap(&rball, &iball) {
+                                Some(root)
+                            } else {
+                                None
                             }
                         })
                         .collect();
@@ -705,9 +709,7 @@ pub mod structure {
 
     impl PAdicAlgebraicStructure {
         pub fn new(p: Natural) -> Self {
-            if !is_prime(&p) {
-                panic!("{} is not prime", p)
-            }
+            assert!(is_prime(&p), "{} is not prime", p);
             Self { p }
         }
     }
@@ -720,8 +722,8 @@ pub mod structure {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     PAdicRational::equal(a, b)
                 }
-                (PAdicAlgebraic::Rational(_), PAdicAlgebraic::Algebraic(_)) => false,
-                (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_)) => false,
+                (PAdicAlgebraic::Rational(_), PAdicAlgebraic::Algebraic(_))
+                | (PAdicAlgebraic::Algebraic(_), PAdicAlgebraic::Rational(_)) => false,
                 (PAdicAlgebraic::Algebraic(a), PAdicAlgebraic::Algebraic(b)) => {
                     PAdicAlgebraicRoot::equal_mut(&mut a.clone(), &mut b.clone())
                 }
@@ -813,6 +815,7 @@ pub mod structure {
         fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
             debug_assert!(self.is_element(a));
             debug_assert!(self.is_element(b));
+            #[allow(clippy::single_match)]
             match (a, b) {
                 (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                     return Ok(PAdicAlgebraic::Rational(PAdicRational {

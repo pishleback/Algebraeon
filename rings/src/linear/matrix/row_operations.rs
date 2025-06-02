@@ -134,14 +134,14 @@ impl<RS: IntegralDomainSignature> ElementaryOpp<RS> {
             ElementaryOppType::AddRowMul { i, j, x } => {
                 for col in 0..m.cols() {
                     let offset = self.ring.mul(m.at(*j, col).unwrap(), x);
-                    self.ring.add_mut(m.at_mut(*i, col).unwrap(), &offset)
+                    self.ring.add_mut(m.at_mut(*i, col).unwrap(), &offset);
                 }
             }
             // /u 0\
             // \0 1/
             ElementaryOppType::UnitMul { row, unit } => {
                 for col in 0..m.cols() {
-                    self.ring.mul_mut(m.at_mut(*row, col).unwrap(), unit)
+                    self.ring.mul_mut(m.at_mut(*row, col).unwrap(), unit);
                 }
             }
             // /a b\
@@ -162,7 +162,7 @@ impl<RS: IntegralDomainSignature> ElementaryOpp<RS> {
                     *m.at_mut(*j, col).unwrap() = tmp;
                 }
             }
-        };
+        }
         if self.transpose {
             m.transpose_mut();
         }

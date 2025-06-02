@@ -1,12 +1,12 @@
 use super::factor;
 use crate::{
+    linear::ordered_set_free_module::FreeModuleOverOrderedSetStructure,
     rings::natural::factorization::primes::is_prime,
-    structure::{FactoredSignature, SemiRingSignature},
+    structure::{AdditiveMonoidSignature, FactoredSignature, SemiRingSignature},
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure, gcd, traits::ModPow};
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use std::collections::HashMap;
 
 pub trait NaturalCanonicalFactorizationStructure {
     fn factorizations(&self) -> NaturalFactorizationStructure {
@@ -15,37 +15,33 @@ pub trait NaturalCanonicalFactorizationStructure {
 }
 impl NaturalCanonicalFactorizationStructure for NaturalCanonicalStructure {}
 
-#[derive(Debug, Clone)]
-pub struct FactoredNatural {
-    primes: HashMap<Natural, Natural>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NaturalFactorizationStructure {}
 
-// impl NaturalFactorizationStructure {
-//     fn powers_semimodule(
-//         &self,
-//     ) -> FreeModuleOverHashableSetStructure<
-//         Natural,
-//         NaturalCanonicalStructure,
-//         NaturalCanonicalStructure,
-//     > {
-//         FreeModuleOverHashableSetStructure::new(Natural::structure())
-//     }
-// }
+impl NaturalFactorizationStructure {
+    fn powers_semimodule(
+        &self,
+    ) -> FreeModuleOverOrderedSetStructure<
+        NaturalCanonicalStructure,
+        NaturalCanonicalStructure,
+        NaturalCanonicalStructure,
+        NaturalCanonicalStructure,
+    > {
+        FreeModuleOverOrderedSetStructure::new(Natural::structure(), Natural::structure())
+    }
+}
 
 impl Signature for NaturalFactorizationStructure {}
 
 impl SetSignature for NaturalFactorizationStructure {
-    type Set = FactoredNatural;
+    type Set = Vec<(Natural, Natural)>;
 
     fn is_element(&self, x: &Self::Set) -> bool {
-        for (prime, power) in self.to_powers_unchecked(x) {
-            if power == &Natural::ZERO {
-                return false;
-            }
-            if self.try_object_is_prime(prime) == Some(false) {
+        if !self.powers_semimodule().is_element(x) {
+            return false;
+        }
+        for (prime, _) in self.to_powers_unchecked(x) {
+            if !is_prime(prime) {
                 return false;
             }
         }
@@ -74,77 +70,73 @@ impl FactoredSignature for NaturalFactorizationStructure {
     }
 
     fn new_powers_unchecked(&self, factor_powers: Vec<(Natural, Natural)>) -> Self::Set {
-        Self::Set {
-            primes: factor_powers.into_iter().collect(),
-        }
+        factor_powers
     }
 
     fn to_powers_unchecked<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Natural, &'a Natural)> {
-        a.primes.iter().collect()
+        a.iter().map(|(p, k)| (p, k)).collect()
     }
 
     fn into_powers_unchecked(&self, a: Self::Set) -> Vec<(Natural, Natural)> {
-        a.primes.into_iter().collect()
+        a
     }
 
     fn expanded(&self, a: &Self::Set) -> Natural {
         let mut t = Natural::ONE;
-        for (p, k) in &a.primes {
+        for (p, k) in a {
             t *= p.pow(k);
         }
         t
     }
 
-    fn mul(&self, mut a: Self::Set, b: Self::Set) -> Self::Set {
-        for (p, k) in self.into_powers(b) {
-            *a.primes.entry(p).or_insert(Natural::ZERO) += k;
-        }
-        a
+    fn mul(&self, a: Self::Set, b: Self::Set) -> Self::Set {
+        self.powers_semimodule().add(&a, &b)
     }
 }
 
-impl std::fmt::Display for FactoredNatural {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.primes.is_empty() {
-            write!(f, "1")?;
+impl ToStringSignature for NaturalFactorizationStructure {
+    fn to_string(&self, elem: &Self::Set) -> String {
+        use std::fmt::Write;
+        let mut f = String::new();
+        if elem.is_empty() {
+            write!(f, "1").unwrap();
         } else {
-            for (i, (p, k)) in self
-                .primes
+            for (i, (p, k)) in elem
                 .iter()
                 .sorted_by_cached_key(|(p, _k)| (*p).clone())
                 .enumerate()
             {
                 if i != 0 {
-                    write!(f, " × ")?;
+                    write!(f, " × ").unwrap();
                 }
-                write!(f, "{}", p)?;
+                write!(f, "{}", p).unwrap();
                 if k != &Natural::ONE {
-                    write!(f, "^")?;
-                    write!(f, "{}", k)?;
+                    write!(f, "^").unwrap();
+                    write!(f, "{}", k).unwrap();
                 }
             }
         }
-        Ok(())
+        f
     }
 }
 
-impl FactoredNatural {
-    pub fn mul_prime(&mut self, p: Natural) {
+impl NaturalFactorizationStructure {
+    pub fn mul_prime(&self, f: &mut Vec<(Natural, Natural)>, p: Natural) {
         debug_assert!(is_prime(&p));
-        *self.primes.entry(p).or_insert(Natural::ZERO) += Natural::ONE;
+        *f = self.powers_semimodule().add(f, &vec![(p, Natural::ONE)]);
     }
 
-    pub fn euler_totient(&self) -> Natural {
+    pub fn euler_totient(&self, f: &Vec<(Natural, Natural)>) -> Natural {
         let mut t = Natural::ONE;
-        for (p, k) in &self.primes {
+        for (p, k) in f {
             t *= (p - &Natural::ONE) * p.pow(&(k - &Natural::ONE));
         }
         t
     }
 
-    pub fn distinct_prime_factors(&self) -> Vec<&Natural> {
+    pub fn distinct_prime_factors<'a>(&self, f: &'a Vec<(Natural, Natural)>) -> Vec<&'a Natural> {
         let mut primes = vec![];
-        for (p, _) in &self.primes {
+        for (p, _) in f {
             primes.push(p);
         }
         primes
@@ -157,17 +149,21 @@ pub enum IsPrimitiveRootResult {
     No,
     Yes,
 }
-impl FactoredNatural {
-    /// Return whether x is a primitive root modulo the value represented by self
-    pub fn is_primitive_root(&self, x: &Natural) -> IsPrimitiveRootResult {
-        let n_factored = self;
-        let n = Natural::structure().factorizations().expanded(n_factored);
+impl NaturalFactorizationStructure {
+    /// Return whether x is a primitive root modulo the factorized value
+    pub fn is_primitive_root(
+        &self,
+        x: &Natural,
+        n_factored: &Vec<(Natural, Natural)>,
+    ) -> IsPrimitiveRootResult {
+        let factorizations = Natural::structure().factorizations();
+        let n = factorizations.expanded(n_factored);
         if gcd(x.clone(), n.clone()) != Natural::ONE {
             IsPrimitiveRootResult::NonUnit
         } else {
-            let phi_n = n_factored.euler_totient();
+            let phi_n = factorizations.euler_totient(n_factored);
             let x_mod_n = x % &n;
-            for p in factor(phi_n.clone()).unwrap().distinct_prime_factors() {
+            for p in factorizations.distinct_prime_factors(&factor(phi_n.clone()).unwrap()) {
                 if (&x_mod_n).mod_pow(&phi_n / p, &n) == Natural::ONE {
                     return IsPrimitiveRootResult::No;
                 }

@@ -2,7 +2,7 @@
 
 use std::borrow::Borrow;
 
-use super::natural::*;
+use super::natural::Natural;
 
 /// For generating pseudo-random numbers.
 pub struct Rng {

@@ -1,5 +1,5 @@
 use glium::{
-    Display, Program, Surface, VertexBuffer, backend::Facade, glutin::event::Event,
+    Display, DrawParameters, Program, Surface, VertexBuffer, backend::Facade, glutin::event::Event,
     implement_vertex, uniform,
 };
 
@@ -15,7 +15,7 @@ impl Camera {
     fn pos_to_pixel(&self, size_px: (u32, u32), pos: (f64, f64)) -> (f64, f64) {
         assert!(size_px.0 > 0);
         assert!(size_px.1 > 0);
-        let size_px = (size_px.0 as f64, size_px.1 as f64);
+        let size_px = (f64::from(size_px.0), f64::from(size_px.1));
         let side = (size_px.0 * size_px.1).sqrt();
         (
             size_px.0 * ((pos.0 - self.center.0) * self.scale * side / size_px.0 + 0.5),
@@ -26,7 +26,7 @@ impl Camera {
     fn pixel_to_pos(&self, size_px: (u32, u32), pixels: (f64, f64)) -> (f64, f64) {
         assert!(size_px.0 > 0);
         assert!(size_px.1 > 0);
-        let size_px = (size_px.0 as f64, size_px.1 as f64);
+        let size_px = (f64::from(size_px.0), f64::from(size_px.1));
         let side = (size_px.0 * size_px.1).sqrt();
         (
             self.center.0 + size_px.0 * (pixels.0 / size_px.0 - 0.5) / (self.scale * side),
@@ -51,6 +51,7 @@ pub struct Canvas2D {
 }
 
 impl Canvas2D {
+    #[allow(clippy::needless_raw_string_hashes)]
     fn make_program(&mut self, display: &Display) {
         if self.program.is_none() {
             let vertex_shader_src = r#"
@@ -118,6 +119,7 @@ impl super::Canvas for Canvas2D {
 
         target.clear_color(0.0, 0.0, 0.0, 1.0);
 
+        #[allow(clippy::items_after_statements)]
         #[derive(Copy, Clone)]
         struct Vertex {
             position: [f32; 2],
@@ -161,15 +163,15 @@ impl super::Canvas for Canvas2D {
         target
             .draw(
                 (&vertex_buffer, instance_buffer.per_instance().unwrap()),
-                &indices,
-                &self.program.as_ref().unwrap(),
+                indices,
+                self.program.as_ref().unwrap(),
                 // &glium::uniforms::EmptyUniforms,
                 &uniform! {
                     camera_scale : self.camera.scale as f32,
                     camera_center : (self.camera.center.0 as f32, self.camera.center.1 as f32),
                     display_size : (state.display_size.0 as f32, state.display_size.1 as f32)
                 },
-                &Default::default(),
+                &DrawParameters::default(),
             )
             .unwrap();
 
@@ -178,6 +180,7 @@ impl super::Canvas for Canvas2D {
 
     fn event(&mut self, state: &super::State, ev: &Event<'_, ()>) {
         // println!("{:?}", ev);
+        #[allow(clippy::single_match, clippy::collapsible_match)]
         match ev {
             Event::WindowEvent { event, .. } => match event {
                 glium::glutin::event::WindowEvent::MouseWheel { delta, .. } => match delta {
@@ -185,7 +188,7 @@ impl super::Canvas for Canvas2D {
                         self.camera.change_zoom(
                             state.display_size,
                             state.mouse_pos,
-                            (1.1 as f64).powf(*y as f64),
+                            (1.1_f64).powf(f64::from(*y)),
                         );
                         // println!("{:?}", self.camera);
 
@@ -195,7 +198,7 @@ impl super::Canvas for Canvas2D {
                         let px_again = self.camera.pos_to_pixel(state.display_size, pos);
                         println!("{:?} {:?} {:?}", state.mouse_pos, pos, px_again);
                     }
-                    _ => {}
+                    glium::glutin::event::MouseScrollDelta::PixelDelta(_) => {}
                 },
                 _ => {}
             },
@@ -231,6 +234,7 @@ pub struct Diagram2dCanvas {
 }
 
 impl Diagram2dCanvas {
+    #[allow(clippy::needless_raw_string_hashes)]
     fn make_program(&mut self, display: &Display) {
         if self.point_program.is_none() {
             self.point_program = Some(
@@ -466,7 +470,7 @@ impl Diagram2dCanvas {
     }
 
     pub fn draw(&mut self, obj: &impl Drawable, colour: (f32, f32, f32)) {
-        obj.draw(self, colour)
+        obj.draw(self, colour);
     }
 
     pub fn draw_point(&mut self, pt: (f32, f32), colour: (f32, f32, f32)) {
@@ -625,11 +629,12 @@ impl super::Canvas for Diagram2dCanvas {
 
         target.clear_color(0.0, 0.0, 0.0, 1.0);
 
+        #[allow(clippy::cast_precision_loss)]
         target
             .draw(
                 self.triangles_vertex_buffer.as_ref().unwrap(),
-                &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
-                &self.triangle_program.as_ref().unwrap(),
+                glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+                self.triangle_program.as_ref().unwrap(),
                 &uniform! {
                     camera_scale : self.camera.scale as f32,
                     camera_center : (self.camera.center.0 as f32, self.camera.center.1 as f32),
@@ -642,31 +647,33 @@ impl super::Canvas for Diagram2dCanvas {
             )
             .unwrap();
 
+        #[allow(clippy::cast_precision_loss)]
         target
             .draw(
                 self.lines_vertex_buffer.as_ref().unwrap(),
-                &glium::index::NoIndices(glium::index::PrimitiveType::LinesList),
-                &self.line_program.as_ref().unwrap(),
+                glium::index::NoIndices(glium::index::PrimitiveType::LinesList),
+                self.line_program.as_ref().unwrap(),
                 &uniform! {
                     camera_scale : self.camera.scale as f32,
                     camera_center : (self.camera.center.0 as f32, self.camera.center.1 as f32),
                     display_size : (state.display_size.0 as f32, state.display_size.1 as f32)
                 },
-                &Default::default(),
+                &DrawParameters::default(),
             )
             .unwrap();
 
+        #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
         target
             .draw(
                 self.points_vertex_buffer.as_ref().unwrap(),
-                &glium::index::NoIndices(glium::index::PrimitiveType::Points),
-                &self.point_program.as_ref().unwrap(),
+                glium::index::NoIndices(glium::index::PrimitiveType::Points),
+                self.point_program.as_ref().unwrap(),
                 &uniform! {
                     camera_scale : self.camera.scale as f32,
                     camera_center : (self.camera.center.0 as f32, self.camera.center.1 as f32),
                     display_size : (state.display_size.0 as f32, state.display_size.1 as f32)
                 },
-                &Default::default(),
+                &DrawParameters::default(),
             )
             .unwrap();
 
@@ -675,6 +682,7 @@ impl super::Canvas for Diagram2dCanvas {
 
     fn event(&mut self, state: &super::State, ev: &Event<'_, ()>) {
         // println!("{:?}", ev);
+        #[allow(clippy::single_match, clippy::collapsible_match)]
         match ev {
             Event::WindowEvent { event, .. } => match event {
                 glium::glutin::event::WindowEvent::MouseWheel { delta, .. } => match delta {
@@ -682,10 +690,10 @@ impl super::Canvas for Diagram2dCanvas {
                         self.camera.change_zoom(
                             state.display_size,
                             state.mouse_pos,
-                            (1.1 as f64).powf(*y as f64),
+                            (1.1_f64).powf(f64::from(*y)),
                         );
                     }
-                    _ => {}
+                    glium::glutin::event::MouseScrollDelta::PixelDelta(_) => {}
                 },
                 _ => {}
             },

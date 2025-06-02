@@ -1,7 +1,7 @@
 use std::collections::{BTreeSet, HashSet};
 
-use super::group::*;
-use super::homomorphism::*;
+use super::group::FiniteGroupMultiplicationTable;
+use super::homomorphism::Homomorphism;
 
 pub struct GeneratingSet<'a> {
     group: &'a FiniteGroupMultiplicationTable,
@@ -12,7 +12,7 @@ pub struct GeneratingSet<'a> {
 impl<'a> GeneratingSet<'a> {
     pub fn check_state(&self) -> Result<(), &'static str> {
         for g in &self.gens {
-            if !(*g < self.group.size()) {
+            if *g >= self.group.size() {
                 return Err("bad generator");
             }
         }
@@ -57,7 +57,7 @@ impl<'a> GeneratingSet<'a> {
             return Err("partial func entries should corespond to images for each generator");
         }
         for x in partial_func {
-            if !(*x < range_group.size()) {
+            if *x >= range_group.size() {
                 return Err("partial func has invalid element from range group");
             }
         }
@@ -102,15 +102,13 @@ impl FiniteGroupMultiplicationTable {
         let mut gen_words = vec![vec![]; self.size()];
         gen_words[self.ident()] = vec![];
         let mut gens = vec![];
+        #[allow(clippy::assigning_clones)]
         while sg.len() < self.size() {
             //if we are going to need more gens than max_size allows, then give up
-            match max_size {
-                Some(max_size_val) => {
-                    if gens.len() == max_size_val {
-                        return Err(());
-                    }
+            if let Some(max_size_val) = max_size {
+                if gens.len() == max_size_val {
+                    return Err(());
                 }
-                None => {}
             }
 
             //add a new generator
@@ -131,7 +129,7 @@ impl FiniteGroupMultiplicationTable {
                 }
             }
             let mut next_boundary: Vec<usize> = vec![];
-            while boundary.len() > 0 {
+            while !boundary.is_empty() {
                 for x in &boundary {
                     for (g_idx, g) in gens.iter().enumerate() {
                         y = self.mul(*x, *g);
@@ -150,8 +148,8 @@ impl FiniteGroupMultiplicationTable {
         }
 
         Ok(GeneratingSet {
-            group: &self,
-            gens: gens,
+            group: self,
+            gens,
             elems: gen_words,
         })
     }
@@ -166,21 +164,18 @@ impl FiniteGroupMultiplicationTable {
 
         let mut smallest_gens = self.generating_set();
         for _i in 0..a - 1 {
-            match self.try_find_generating_set(Some(smallest_gens.size() - 1)) {
-                Ok(gens) => {
-                    smallest_gens = gens;
-                }
-                Err(_) => {}
+            if let Ok(gens) = self.try_find_generating_set(Some(smallest_gens.size() - 1)) {
+                smallest_gens = gens;
             }
         }
 
-        return smallest_gens;
+        smallest_gens
     }
 }
 
 #[cfg(test)]
 mod generating_set_tests {
-    use super::*;
+    use crate::composition_table::group::examples;
 
     #[test]
     fn test_generating_set() {

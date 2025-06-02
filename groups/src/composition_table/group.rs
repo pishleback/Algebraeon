@@ -1,7 +1,7 @@
-use super::normal_subgroup::*;
-use super::partition::*;
-use super::subgroup::*;
-use super::subset::*;
+use super::normal_subgroup::NormalSubgroup;
+use super::partition::GroupPartition;
+use super::subgroup::Subgroup;
+use super::subset::Subset;
 use algebraeon_sets::combinatorics::Partition;
 use rayon::prelude::*;
 use std::collections::HashMap;
@@ -23,28 +23,28 @@ pub struct FiniteGroupMultiplicationTable {
 impl FiniteGroupMultiplicationTable {
     pub fn check_state(&self) -> Result<(), &'static str> {
         //check ident
-        if !(self.ident < self.n) {
+        if self.ident >= self.n {
             return Err("bad ident elem");
         }
         //check inv
-        if !(self.inv.len() == self.n) {
+        if self.inv.len() != self.n {
             return Err("bad inv len");
         }
         for x in &self.inv {
-            if !(*x < self.n) {
+            if *x >= self.n {
                 return Err("bad inv elem");
             }
         }
         //check mul
-        if !(self.mul.len() == self.n) {
+        if self.mul.len() != self.n {
             return Err("bad mul left len");
         }
         for m in &self.mul {
-            if !(m.len() == self.n) {
+            if m.len() != self.n {
                 return Err("bad mul right len");
             }
             for x in m {
-                if !(*x < self.n) {
+                if *x >= self.n {
                     return Err("bad mul elem");
                 }
             }
@@ -62,6 +62,7 @@ impl FiniteGroupMultiplicationTable {
             }
         }
         //assoc axiom
+        #[allow(clippy::nonminimal_bool)]
         for x in 0..self.n {
             for y in 0..self.n {
                 for z in 0..self.n {
@@ -73,23 +74,17 @@ impl FiniteGroupMultiplicationTable {
         }
 
         //cached is_abelian if present
-        match self.is_abelian {
-            Some(claimed_is_abelian) => {
-                if claimed_is_abelian != self.compute_is_abelian() {
-                    return Err("incorrect is_abelian flag");
-                }
+        if let Some(claimed_is_abelian) = self.is_abelian {
+            if claimed_is_abelian != self.compute_is_abelian() {
+                return Err("incorrect is_abelian flag");
             }
-            None => {}
-        };
+        }
 
         //check is_simple
-        match &self.is_simple {
-            Some(is_simple) => {
-                if (self.normal_subgroups().len() == 2) != *is_simple {
-                    return Err("is_simple flag is incorrect");
-                }
+        if let Some(claimed_is_simple) = self.is_simple {
+            if (self.normal_subgroups().len() == 2) != claimed_is_simple {
+                return Err("is_simple flag is incorrect");
             }
-            None => {}
         }
 
         Ok(())
@@ -207,8 +202,9 @@ impl FiniteGroupMultiplicationTable {
         0..self.n
     }
 
+    #[allow(clippy::ptr_arg)]
     pub fn mul_many(&self, elems: &Vec<usize>) -> usize {
-        if elems.len() == 0 {
+        if elems.is_empty() {
             return self.ident;
         }
         let mut prod = elems[0];
@@ -219,7 +215,7 @@ impl FiniteGroupMultiplicationTable {
     }
 
     pub fn order(&self, x: usize) -> Result<usize, ()> {
-        if !(x < self.n) {
+        if x >= self.n {
             return Err(());
         }
         let mut y = x;
@@ -229,7 +225,7 @@ impl FiniteGroupMultiplicationTable {
             ord += 1;
             debug_assert!(ord <= self.n);
         }
-        return Ok(ord);
+        Ok(ord)
     }
 
     fn compute_is_abelian(&self) -> bool {
@@ -245,20 +241,16 @@ impl FiniteGroupMultiplicationTable {
 
     pub fn is_abelian(&self) -> bool {
         match &self.is_abelian {
-            Some(flag) => {
-                return *flag;
-            }
-            None => {
-                return self.compute_is_abelian();
-            }
+            Some(flag) => *flag,
+            None => self.compute_is_abelian(),
         }
     }
 
     fn compute_conjugacy_classes(&self) -> Partition {
-        let mut unclassified_elems = HashSet::<_>::from_iter(self.elems());
+        let mut unclassified_elems = self.elems().collect::<HashSet<_>>();
         let mut classes = vec![];
         let mut lookup = vec![0; self.n];
-        while unclassified_elems.len() > 0 {
+        while !unclassified_elems.is_empty() {
             let x = unclassified_elems.iter().next().unwrap();
             let mut class = HashSet::new();
             for g in self.elems() {
@@ -274,20 +266,21 @@ impl FiniteGroupMultiplicationTable {
     }
 
     pub fn cache_conjugacy_classes(&mut self) {
-        self.conjugacy_classes = Some(self.compute_conjugacy_classes())
+        self.conjugacy_classes = Some(self.compute_conjugacy_classes());
     }
 
     pub fn conjugacy_class(&mut self, x: usize) -> Result<Subset, ()> {
-        if !(x < self.n) {
+        if x >= self.n {
             return Err(());
         }
         self.cache_conjugacy_classes();
-        match &self.conjugacy_classes {
-            Some(conj_state) => Ok(Subset::new_unchecked(
+        if let Some(conj_state) = &self.conjugacy_classes {
+            Ok(Subset::new_unchecked(
                 self,
                 conj_state.class_containing(x).clone(),
-            )),
-            None => panic!(),
+            ))
+        } else {
+            panic!()
         }
     }
 
@@ -308,11 +301,13 @@ impl FiniteGroupMultiplicationTable {
         let mut distinguished_gens = vec![];
         let mut subgroups: HashMap<Subgroup, Subset> = HashMap::new();
         for x in self.elems() {
-            let singleton_x_subset = Subset::new_unchecked(&self, HashSet::from_iter(vec![x]));
-            let cyclic_sg = match only_normal {
-                false => singleton_x_subset.generated_subgroup().unwrap(),
-                true => singleton_x_subset.normal_closure().unwrap().to_subgroup(),
+            let singleton_x_subset = Subset::new_unchecked(self, HashSet::from_iter(vec![x]));
+            let cyclic_sg = if only_normal {
+                singleton_x_subset.normal_closure().unwrap().to_subgroup()
+            } else {
+                singleton_x_subset.generated_subgroup().unwrap()
             };
+            #[allow(clippy::map_entry)]
             if !subgroups.contains_key(&cyclic_sg) {
                 subgroups.insert(cyclic_sg, singleton_x_subset.clone());
                 distinguished_gens.push(x);
@@ -321,11 +316,12 @@ impl FiniteGroupMultiplicationTable {
 
         //generate all subgroups by itteratively adding generators
         let mut boundary = HashMap::new();
-        for (sg, gens) in subgroups.clone().into_iter() {
+        for (sg, gens) in subgroups.clone() {
             boundary.insert(sg, gens);
         }
         let mut next_boundary = HashMap::new();
-        while boundary.len() > 0 {
+        while !boundary.is_empty() {
+            #[allow(clippy::for_kv_map)]
             for (_sg, sg_gens) in &boundary {
                 //compute and sort the next subgroups in parallel threads
                 for (new_sg, new_gens) in distinguished_gens
@@ -333,15 +329,17 @@ impl FiniteGroupMultiplicationTable {
                     .map(|dgen| {
                         let mut new_gens = sg_gens.clone();
                         new_gens.add_elem(*dgen).unwrap();
-                        let new_sg = match only_normal {
-                            false => new_gens.generated_subgroup().unwrap(),
-                            true => new_gens.normal_closure().unwrap().to_subgroup(),
+                        let new_sg = if only_normal {
+                            new_gens.normal_closure().unwrap().to_subgroup()
+                        } else {
+                            new_gens.generated_subgroup().unwrap()
                         };
-                        return (new_sg, new_gens);
+                        (new_sg, new_gens)
                     })
                     .collect::<Vec<(Subgroup, Subset)>>()
                 {
                     //collect the computed subgroups in the main thread
+                    #[allow(clippy::map_entry)]
                     if !subgroups.contains_key(&new_sg) {
                         next_boundary.insert(new_sg.clone(), new_gens.clone());
                         subgroups.insert(new_sg, new_gens);
@@ -351,6 +349,7 @@ impl FiniteGroupMultiplicationTable {
             boundary = next_boundary;
             next_boundary = HashMap::new();
         }
+        #[allow(clippy::map_identity)]
         return subgroups
             .into_iter()
             .map(|(elems, gens)| (elems, gens))
@@ -408,7 +407,7 @@ pub fn direct_product_structure(
 pub mod examples {
     use crate::free_group::todd_coxeter::FinitelyGeneratedGroupPresentation;
 
-    use super::*;
+    use super::{FiniteGroupMultiplicationTable, direct_product_structure};
 
     pub fn trivial_group_structure() -> FiniteGroupMultiplicationTable {
         cyclic_group_structure(1)
@@ -480,7 +479,7 @@ mod group_tests {
 
     #[test]
     fn test_cyclic() {
-        for k in vec![1, 2, 3, 81, 91, 97, 100, 128] {
+        for k in [1, 2, 3, 81, 91, 97, 100, 128] {
             let mut grp = examples::cyclic_group_structure(k);
             grp.cache_conjugacy_classes();
             grp.check_state().unwrap();
@@ -490,7 +489,7 @@ mod group_tests {
 
     #[test]
     fn test_dihedral() {
-        for k in vec![1, 2, 3, 16, 17, 18, 50] {
+        for k in [1, 2, 3, 16, 17, 18, 50] {
             let mut grp = examples::dihedral_group_structure(k);
             grp.cache_conjugacy_classes();
             grp.check_state().unwrap();

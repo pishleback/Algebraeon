@@ -61,9 +61,9 @@ some improvements
 use crate::polynomial::*;
 use crate::rings::quotient::QuotientStructure;
 use crate::structure::*;
+use algebraeon_nzq::primes;
 use algebraeon_nzq::*;
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
-use algebraeon_sets::number_theory::primes;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use std::ops::Rem;
@@ -137,12 +137,12 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                     let modular_factors = hensel_factorization_f_over_p
                         .factors()
                         .into_iter()
-                        .map(|g| g.clone())
+                        .cloned()
                         .collect();
                     Some(BerlekampZassenhausAlgorithmStateAtPrime {
                         poly: state.poly.clone(),
                         leading_coeff: state.poly.leading_coeff().unwrap(),
-                        degree: state.degree.clone(),
+                        degree: state.degree,
                         modulus,
                         modular_factors,
                     })
@@ -374,10 +374,11 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         let mut dminusone_test =
             dminusone_test::DMinusOneTest::new(&self.modulus, &self.poly, &self.modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
-            PolynomialStructure::new(
-                QuotientStructure::new_ring(Integer::structure(), self.modulus.clone()).into(),
-            ),
-            self.modular_factors.iter().map(|g| g.clone()).collect(),
+            PolynomialStructure::new(QuotientStructure::new_ring(
+                Integer::structure(),
+                self.modulus.clone(),
+            )),
+            self.modular_factors.clone(),
         );
 
         let mut factored = Polynomial::<Integer>::structure()
@@ -401,6 +402,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                 // Exclude any previously found modular factors from the search
                 k_combinations.exclude(*i);
             }
+            #[allow(clippy::while_let_loop)]
             loop {
                 match k_combinations.next() {
                     Some(subset) => {
@@ -516,63 +518,60 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
             let poly_mod_p = PolynomialStructure::new(mod_p);
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap();
-                match poly_mod_p
+                if let Some(hensel_factorization_f_over_p) = poly_mod_p
                     .factorizations()
                     .into_hensel_factorization(facotred_f_mod_p, f.clone())
                 {
-                    Some(hensel_factorization_f_over_p) => {
-                        let mut hensel_factorization_f_over_p =
-                            hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
-                        while hensel_factorization_f_over_p.modolus() < minimum_modolus {
-                            hensel_factorization_f_over_p.linear_lift();
-                        }
+                    let mut hensel_factorization_f_over_p =
+                        hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
+                    while hensel_factorization_f_over_p.modolus() < minimum_modolus {
+                        hensel_factorization_f_over_p.linear_lift();
+                    }
 
-                        let modulus = hensel_factorization_f_over_p.modolus();
+                    let modulus = hensel_factorization_f_over_p.modolus();
 
-                        let modular_factors = hensel_factorization_f_over_p.factors();
+                    let modular_factors = hensel_factorization_f_over_p.factors();
 
-                        for subset in (0..modular_factors.len())
-                            .map(|_i| vec![false, true])
-                            .multi_cartesian_product()
+                    for subset in (0..modular_factors.len())
+                        .map(|_i| vec![false, true])
+                        .multi_cartesian_product()
+                    {
+                        let possible_factor = Polynomial::mul(
+                            &Polynomial::constant(f.leading_coeff().unwrap()),
+                            &Polynomial::product(
+                                (0..modular_factors.len())
+                                    .filter(|i| subset[*i])
+                                    .map(|i| modular_factors[i])
+                                    .collect(),
+                            ),
+                        )
+                        .apply_map(|c| {
+                            let c = c.rem(&modulus);
+                            if c > Integer::quo(&modulus, &Integer::TWO).unwrap() {
+                                c - &modulus
+                            } else {
+                                c.clone()
+                            }
+                        })
+                        .primitive_part() //factoring f(x) = 49x^2-10000 had possible_factor = 49x-700, which is only a factor over the rationals and not over the integers unless we take the primitive part which is 7x-100, soo this seems to make sense though I cant properly justify it right now.
+                        .unwrap();
+
+                        if possible_factor.degree().unwrap() != 0
+                            && possible_factor.degree().unwrap() != f_deg
                         {
-                            let possible_factor = Polynomial::mul(
-                                &Polynomial::constant(f.leading_coeff().unwrap()),
-                                &Polynomial::product(
-                                    (0..modular_factors.len())
-                                        .filter(|i| subset[*i])
-                                        .map(|i| modular_factors[i])
-                                        .collect(),
-                                ),
-                            )
-                            .apply_map(|c| {
-                                let c = c.rem(&modulus);
-                                if c > Integer::quo(&modulus, &Integer::TWO).unwrap() {
-                                    c - &modulus
-                                } else {
-                                    c.clone()
+                            match Polynomial::div(&f, &possible_factor) {
+                                Ok(other_factor) => {
+                                    return FindFactorResult::Composite(
+                                        possible_factor,
+                                        other_factor,
+                                    );
                                 }
-                            })
-                            .primitive_part() //factoring f(x) = 49x^2-10000 had possible_factor = 49x-700, which is only a factor over the rationals and not over the integers unless we take the primitive part which is 7x-100, soo this seems to make sense though I cant properly justify it right now.
-                            .unwrap();
-
-                            if possible_factor.degree().unwrap() != 0
-                                && possible_factor.degree().unwrap() != f_deg
-                            {
-                                match Polynomial::div(&f, &possible_factor) {
-                                    Ok(other_factor) => {
-                                        return FindFactorResult::Composite(
-                                            possible_factor,
-                                            other_factor,
-                                        );
-                                    }
-                                    Err(RingDivisionError::NotDivisible) => {}
-                                    Err(RingDivisionError::DivideByZero) => unreachable!(),
-                                }
+                                Err(RingDivisionError::NotDivisible) => {}
+                                Err(RingDivisionError::DivideByZero) => unreachable!(),
                             }
                         }
-                        return FindFactorResult::Irreducible;
                     }
-                    None => {}
+                    return FindFactorResult::Irreducible;
                 }
             }
         }
