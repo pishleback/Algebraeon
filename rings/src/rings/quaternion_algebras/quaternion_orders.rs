@@ -40,7 +40,7 @@ impl Signature for QuaternionOrderZBasis {}
 impl SetSignature for QuaternionOrderZBasis {
     type Set = QuaternionAlgebraElement<AlgebraicNumberFieldStructure>;
 
-    fn is_element(&self, x: &Self::Set) -> bool {
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
         let submodules = self
             .algebra
             .ring()
@@ -113,7 +113,7 @@ impl SemiModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
 impl QuaternionOrderZBasis {
     fn check_basis(self) -> bool {
         // 1. check that 1 belongs to the order
-        if !self.is_element(&self.algebra.clone().one()) {
+        if self.is_element(&self.algebra.clone().one()).is_err() {
             return false;
         }
 
@@ -121,7 +121,7 @@ impl QuaternionOrderZBasis {
         for (i, bi) in self.basis.iter().enumerate() {
             for (j, bj) in self.basis.iter().enumerate() {
                 let product = self.algebra.mul(&bi, &bj);
-                if !&self.is_element(&product) {
+                if self.is_element(&product).is_err() {
                     println!(
                         "Basis not closed under multiplication: b[{}] * b[{}] = {:?} not in order",
                         i, j, product
