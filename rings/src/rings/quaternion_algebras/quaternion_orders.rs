@@ -6,7 +6,8 @@ use crate::{
     rings::algebraic_number_fields::number_field::AlgebraicNumberFieldStructure,
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature,
-        FreeModuleSignature, ModuleSignature, SemiModuleSignature, SemiRingSignature,
+        FreeModuleSignature, ModuleSignature, RingSignature, SemiModuleSignature,
+        SemiRingSignature,
     },
 };
 
@@ -100,8 +101,8 @@ impl SemiModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
             &self
                 .algebra
                 .base_field()
-                .field_inclusion()
-                .image(&Rational::from(x)),
+                .principal_subring_inclusion()
+                .image(x),
             a,
         )
     }
