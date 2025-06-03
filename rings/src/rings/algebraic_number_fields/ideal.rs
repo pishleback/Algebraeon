@@ -600,7 +600,7 @@ mod tests {
     fn test_count_all_ideals_norm_eq() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
-        let roi = anf.ring_of_integers();
+        let roi = anf.compute_ring_of_integers();
         let roi_ideals = roi.ideals();
 
         assert_eq!(
@@ -625,7 +625,7 @@ mod tests {
 
         // Construct the number field Q(i), which has ring of integers Z[i]
         let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
-        let roi = anf.ring_of_integers();
+        let roi = anf.compute_ring_of_integers();
         let roi_ideals = roi.ideals();
 
         // Consider the ideal (5)

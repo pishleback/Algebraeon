@@ -142,7 +142,7 @@ impl AlgebraicNumberFieldStructure {
         }
     }
 
-    pub fn ring_of_integers(&self) -> RingOfIntegersWithIntegralBasisStructure {
+    pub fn compute_ring_of_integers(&self) -> RingOfIntegersWithIntegralBasisStructure {
         let (integral_basis, discriminant) = self.compute_integral_basis_and_discriminant();
         RingOfIntegersWithIntegralBasisStructure::new(self.clone(), integral_basis, discriminant)
     }

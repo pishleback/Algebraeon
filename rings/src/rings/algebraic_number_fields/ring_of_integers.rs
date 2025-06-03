@@ -370,7 +370,7 @@ pub struct RingOfIntegersToAlgebraicNumberFieldInclusion {
 impl RingOfIntegersToAlgebraicNumberFieldInclusion {
     pub fn from_algebraic_number_field(anf: AlgebraicNumberFieldStructure) -> Self {
         Self {
-            roi: anf.ring_of_integers(),
+            roi: anf.compute_ring_of_integers(),
             anf,
         }
     }
@@ -524,7 +524,7 @@ mod tests {
         // Construct the ring of integers Z[i]
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
-        let roi = anf.ring_of_integers();
+        let roi = anf.compute_ring_of_integers();
         let roi_ideals = roi.ideals();
 
         // The ideal (27i - 9) in Z[i]
