@@ -196,50 +196,61 @@ impl<Ring: RingSignature> RingHomomorphism<IntegerCanonicalStructure, Ring>
 
 /// The unique field embedding Q -> K of the rationals into any field of characteristic zero
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PrincipalRationalSubfieldInclusion<Field: CharZeroFieldSignature> {
+pub struct PrincipalRationalSubfieldInclusion<
+    Field: CharZeroFieldSignature,
+    FieldB: BorrowedStructure<Field>,
+> {
     rational_structure: RationalCanonicalStructure,
-    field: Field,
+    _field: PhantomData<Field>,
+    field: FieldB,
 }
 
-impl<Field: CharZeroFieldSignature> PrincipalRationalSubfieldInclusion<Field> {
-    pub fn new(field: Field) -> Self {
+impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
+    PrincipalRationalSubfieldInclusion<Field, FieldB>
+{
+    pub fn new(field: FieldB) -> Self {
         Self {
             rational_structure: Rational::structure(),
+            _field: PhantomData,
             field,
         }
     }
 }
 
-impl<Field: CharZeroFieldSignature> Morphism<RationalCanonicalStructure, Field>
-    for PrincipalRationalSubfieldInclusion<Field>
+impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
+    Morphism<RationalCanonicalStructure, Field>
+    for PrincipalRationalSubfieldInclusion<Field, FieldB>
 {
     fn domain(&self) -> &RationalCanonicalStructure {
         &self.rational_structure
     }
 
     fn range(&self) -> &Field {
-        &self.field
+        self.field.borrow()
     }
 }
 
-impl<Field: CharZeroFieldSignature> Function<RationalCanonicalStructure, Field>
-    for PrincipalRationalSubfieldInclusion<Field>
+impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
+    Function<RationalCanonicalStructure, Field>
+    for PrincipalRationalSubfieldInclusion<Field, FieldB>
 {
     fn image(&self, x: &Rational) -> <Field as SetSignature>::Set {
         self.range().from_rat(x).unwrap()
     }
 }
 
-impl<Field: CharZeroFieldSignature> InjectiveFunction<RationalCanonicalStructure, Field>
-    for PrincipalRationalSubfieldInclusion<Field>
+impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
+    InjectiveFunction<RationalCanonicalStructure, Field>
+    for PrincipalRationalSubfieldInclusion<Field, FieldB>
 {
     fn try_preimage(&self, x: &<Field as SetSignature>::Set) -> Option<Rational> {
         self.range().try_to_rat(x)
     }
 }
 
-impl<Field: CharZeroFieldSignature> RingHomomorphism<RationalCanonicalStructure, Field>
-    for PrincipalRationalSubfieldInclusion<Field>
+impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
+    RingHomomorphism<RationalCanonicalStructure, Field>
+    for PrincipalRationalSubfieldInclusion<Field, FieldB>
 {
 }
 

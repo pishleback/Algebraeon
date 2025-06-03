@@ -2,7 +2,6 @@ use super::*;
 use crate::polynomial::*;
 use algebraeon_nzq::{Integer, Natural, Rational, traits::*};
 use algebraeon_sets::structure::*;
-use std::marker::PhantomData;
 use std::{borrow::Borrow, fmt::Debug};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -694,33 +693,14 @@ impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
     }
 }
 
-pub struct CharZeroFieldRationalExtension<
-    Field: CharZeroFieldSignature,
-    FieldB: BorrowedStructure<Field>,
-> {
-    _field: PhantomData<Field>,
-    field: FieldB,
-}
-
-impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
-    CharZeroFieldRationalExtension<Field, FieldB>
-{
-    fn new(field: FieldB) -> Self {
-        Self {
-            _field: PhantomData,
-            field,
-        }
-    }
-}
-
 pub trait CharZeroFieldSignature: FieldSignature + CharZeroRingSignature {
     fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
 
-    fn rational_extension<'a>(&'a self) -> CharZeroFieldRationalExtension<Self, &'a Self> {
-        CharZeroFieldRationalExtension::new(self)
+    fn rational_extension<'a>(&'a self) -> PrincipalRationalSubfieldInclusion<Self, &'a Self> {
+        PrincipalRationalSubfieldInclusion::new(self)
     }
-    fn into_rational_extension(self) -> CharZeroFieldRationalExtension<Self, Self> {
-        CharZeroFieldRationalExtension::new(self)
+    fn into_rational_extension(self) -> PrincipalRationalSubfieldInclusion<Self, Self> {
+        PrincipalRationalSubfieldInclusion::new(self)
     }
 }
 pub trait MetaCharZeroField: MetaRing

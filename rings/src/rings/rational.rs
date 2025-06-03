@@ -83,7 +83,7 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
 }
 
 impl FiniteRankFreeRingExtension<RationalCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure>
+    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
 {
     type Basis = SingletonSetStructure;
 
@@ -101,7 +101,7 @@ impl FiniteRankFreeRingExtension<RationalCanonicalStructure, RationalCanonicalSt
 }
 
 impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure>
+    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
 {
     fn norm(&self, a: &Rational) -> Rational {
         a.clone()

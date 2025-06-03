@@ -200,7 +200,10 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldStructure {
 }
 
 impl FiniteRankFreeRingExtension<RationalCanonicalStructure, AlgebraicNumberFieldStructure>
-    for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>
+    for PrincipalRationalSubfieldInclusion<
+        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldStructure,
+    >
 {
     type Basis = EnumeratedFiniteSetStructure;
 
@@ -218,7 +221,10 @@ impl FiniteRankFreeRingExtension<RationalCanonicalStructure, AlgebraicNumberFiel
 }
 
 impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, AlgebraicNumberFieldStructure>
-    for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>
+    for PrincipalRationalSubfieldInclusion<
+        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldStructure,
+    >
 {
     fn norm(&self, a: &<AlgebraicNumberFieldStructure as SetSignature>::Set) -> Rational {
         self.range().norm(a)

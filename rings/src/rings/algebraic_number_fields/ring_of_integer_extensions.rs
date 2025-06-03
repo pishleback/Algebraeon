@@ -27,7 +27,10 @@ pub struct RingOfIntegersExtension<
     k: AlgebraicNumberFieldStructure,
     z_to_q: PrincipalSubringInclusion<RationalCanonicalStructure>,
     z_to_r: PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
-    q_to_k: PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
+    q_to_k: PrincipalRationalSubfieldInclusion<
+        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldStructure,
+    >,
     r_to_k: RingOfIntegersToAlgebraicNumberFieldInclusion,
     ideals_z: IdealsZ,
     ideals_r: IdealsR,
@@ -131,7 +134,10 @@ impl<
         AlgebraicNumberFieldStructure,
         PrincipalSubringInclusion<RationalCanonicalStructure>,
         PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
-        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
+        PrincipalRationalSubfieldInclusion<
+            AlgebraicNumberFieldStructure,
+            AlgebraicNumberFieldStructure,
+        >,
         RingOfIntegersToAlgebraicNumberFieldInclusion,
     > for RingOfIntegersExtension<IdealsZ, IdealsR>
 {
@@ -153,7 +159,12 @@ impl<
     fn z_to_r(&self) -> &PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure> {
         &self.z_to_r
     }
-    fn q_to_k(&self) -> &PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure> {
+    fn q_to_k(
+        &self,
+    ) -> &PrincipalRationalSubfieldInclusion<
+        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldStructure,
+    > {
         &self.q_to_k
     }
     fn r_to_k(&self) -> &RingOfIntegersToAlgebraicNumberFieldInclusion {
@@ -177,7 +188,10 @@ impl
         AlgebraicNumberFieldStructure,
         PrincipalSubringInclusion<RationalCanonicalStructure>,
         PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
-        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldStructure>,
+        PrincipalRationalSubfieldInclusion<
+            AlgebraicNumberFieldStructure,
+            AlgebraicNumberFieldStructure,
+        >,
         RingOfIntegersToAlgebraicNumberFieldInclusion,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
         RingOfIntegersIdealsStructure<RingOfIntegersWithIntegralBasisStructure>,
