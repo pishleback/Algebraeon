@@ -1,6 +1,9 @@
 use crate::{
     polynomial::*,
-    rings::{natural::factorization::primes::*, valuation::*},
+    rings::{
+        isolated_algebraic::padic::structure::PAdicAlgebraicStructure,
+        natural::factorization::primes::*, valuation::*,
+    },
     structure::*,
 };
 use algebraeon_nzq::*;
@@ -99,6 +102,12 @@ impl PAdicRational {
 pub enum PAdicAlgebraic {
     Rational(PAdicRational),
     Algebraic(PAdicAlgebraicRoot),
+}
+
+impl PAdicAlgebraic {
+    pub fn structure(p: Natural) -> PAdicAlgebraicStructure {
+        PAdicAlgebraicStructure::new(p)
+    }
 }
 
 impl PAdicAlgebraic {
@@ -840,6 +849,26 @@ pub mod structure {
     }
 
     impl FieldSignature for PAdicAlgebraicStructure {}
+
+    impl CharZeroRingSignature for PAdicAlgebraicStructure {
+        fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
+            match x {
+                PAdicAlgebraic::Rational(padic_rational) => {
+                    Rational::structure().try_to_int(&padic_rational.rat)
+                }
+                PAdicAlgebraic::Algebraic(_) => None,
+            }
+        }
+    }
+
+    impl CharZeroFieldSignature for PAdicAlgebraicStructure {
+        fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
+            match x {
+                PAdicAlgebraic::Rational(padic_rational) => Some(padic_rational.rat.clone()),
+                PAdicAlgebraic::Algebraic(_) => None,
+            }
+        }
+    }
 
     #[cfg(test)]
     mod tests {

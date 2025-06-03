@@ -906,6 +906,17 @@ impl CharZeroRingSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
+impl CharZeroFieldSignature for ComplexAlgebraicCanonicalStructure {
+    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
+        match x {
+            ComplexAlgebraic::Real(real_algebraic) => {
+                RealAlgebraic::structure().try_to_rat(real_algebraic)
+            }
+            ComplexAlgebraic::Complex(_) => None,
+        }
+    }
+}
+
 impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
         match z {
