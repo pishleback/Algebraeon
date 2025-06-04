@@ -695,6 +695,13 @@ impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
 
 pub trait CharZeroFieldSignature: FieldSignature + CharZeroRingSignature {
     fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
+
+    fn rational_extension<'a>(&'a self) -> PrincipalRationalSubfieldInclusion<Self, &'a Self> {
+        PrincipalRationalSubfieldInclusion::new(self)
+    }
+    fn into_rational_extension(self) -> PrincipalRationalSubfieldInclusion<Self, Self> {
+        PrincipalRationalSubfieldInclusion::new(self)
+    }
 }
 pub trait MetaCharZeroField: MetaRing
 where

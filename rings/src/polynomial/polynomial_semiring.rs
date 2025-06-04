@@ -377,3 +377,9 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
         p
     }
 }
+
+// impl Display for Polynomial<Natural> {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", Self::structure().to_string(self))
+//     }
+// }

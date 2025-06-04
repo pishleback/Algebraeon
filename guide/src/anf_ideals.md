@@ -11,7 +11,7 @@ use algebraeon::{
 // Construct the ring of integers Z[i]
 let x = &Polynomial::<Rational>::var().into_ergonomic();
 let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
-let roi = anf.ring_of_integers();
+let roi = anf.compute_ring_of_integers();
 
 // The ideal (27i - 9) in Z[i]
 let ideal = roi

@@ -38,8 +38,16 @@
     clippy::manual_assert
 )]
 
-pub mod linear;
+pub mod algebraic_number_field;
+pub mod finite_fields;
+pub mod integer;
+pub mod isolated_algebraic;
+pub mod module;
+pub mod matrix;
+pub mod natural;
 pub mod parsing;
 pub mod polynomial;
-pub mod rings;
+pub mod quaternion_algebras;
+pub mod rational;
 pub mod structure;
+pub mod valuation;

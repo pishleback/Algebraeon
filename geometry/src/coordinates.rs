@@ -1,4 +1,4 @@
-use algebraeon_rings::linear::matrix::Matrix;
+use algebraeon_rings::matrix::Matrix;
 use std::borrow::Borrow;
 use std::hash::Hash;
 

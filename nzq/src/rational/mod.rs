@@ -209,6 +209,11 @@ impl Rational {
             num.is_square() && den.is_square()
         }
     }
+
+    pub fn height(&self) -> Natural {
+        let (n, d) = self.clone().into_abs_numerator_and_denominator();
+        Natural::max(n, d)
+    }
 }
 
 impl PartialEq<Natural> for Rational {
@@ -813,5 +818,20 @@ mod tests {
     fn test_rational_sqrt_if_square_none_not_square() {
         let r = Rational::from_integers(2, 9);
         assert_eq!(r.sqrt_if_square(), None);
+    }
+
+    #[test]
+    fn test_height_of_rational() {
+        let r1 = Rational::from_integers(4, 3);
+        assert_eq!(r1.height(), Natural::from(4u32));
+
+        let r2 = Rational::from_integers(3, 7);
+        assert_eq!(r2.height(), Natural::from(7u32));
+
+        let r3 = Rational::from_integers(-2, 5);
+        assert_eq!(r3.height(), Natural::from(5u32));
+
+        let r4 = Rational::from_integers(0, 1);
+        assert_eq!(r4.height(), Natural::from(1u32));
     }
 }

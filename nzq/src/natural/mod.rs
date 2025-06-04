@@ -1,5 +1,6 @@
 //! The Natural type and operations.
 
+use crate::Rational;
 use crate::integer::Integer;
 use crate::traits::{AbsDiff, DivMod, ModInv, ModPow};
 use algebraeon_sets::structure::{
@@ -96,6 +97,46 @@ impl FromStr for Natural {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(malachite_nz::natural::Natural::from_str(s)?))
+    }
+}
+
+impl TryFrom<Integer> for Natural {
+    type Error = ();
+
+    fn try_from(value: Integer) -> Result<Self, Self::Error> {
+        Ok(Self::from_malachite(
+            malachite_nz::natural::Natural::try_from(value.to_malachite()).map_err(|_| ())?,
+        ))
+    }
+}
+
+impl TryFrom<&Integer> for Natural {
+    type Error = ();
+
+    fn try_from(value: &Integer) -> Result<Self, Self::Error> {
+        Ok(Self::from_malachite(
+            malachite_nz::natural::Natural::try_from(value.to_malachite_ref()).map_err(|_| ())?,
+        ))
+    }
+}
+
+impl TryFrom<Rational> for Natural {
+    type Error = ();
+
+    fn try_from(value: Rational) -> Result<Self, Self::Error> {
+        Ok(Self::from_malachite(
+            malachite_nz::natural::Natural::try_from(value.to_malachite()).map_err(|_| ())?,
+        ))
+    }
+}
+
+impl TryFrom<&Rational> for Natural {
+    type Error = ();
+
+    fn try_from(value: &Rational) -> Result<Self, Self::Error> {
+        Ok(Self::from_malachite(
+            malachite_nz::natural::Natural::try_from(value.to_malachite_ref()).map_err(|_| ())?,
+        ))
     }
 }
 

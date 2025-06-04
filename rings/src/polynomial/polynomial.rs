@@ -1,3 +1,6 @@
+use crate::parsing::polynomial::{parse_integer_polynomial, parse_rational_polynomial};
+use algebraeon_nzq::{Integer, Natural, Rational};
+
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {
     //vec![c0, c1, c2, c3, ..., cn] represents the polynomial c0 + c1*x + c2*x^2 + c3*x^3 + ... + cn * x^n
@@ -53,3 +56,81 @@ impl<Set> Polynomial<Set> {
         Polynomial::from_coeffs(self.coeffs.into_iter().enumerate().map(f).collect())
     }
 }
+
+pub trait PolynomialFromStr: Sized {
+    type Err;
+
+    fn from_str(polynomial_str: &str, var: &str) -> Result<Self, Self::Err>;
+}
+
+impl PolynomialFromStr for Polynomial<Natural> {
+    type Err = ();
+
+    fn from_str(polynomial_str: &str, var: &str) -> Result<Self, ()> {
+        Ok(Self::from_coeffs(
+            Polynomial::<Integer>::from_str(polynomial_str, var)?
+                .into_coeffs()
+                .into_iter()
+                .map(Natural::try_from)
+                .collect::<Result<Vec<_>, _>>()?,
+        ))
+    }
+}
+
+impl PolynomialFromStr for Polynomial<Integer> {
+    type Err = ();
+
+    fn from_str(polynomial_str: &str, var: &str) -> Result<Self, ()> {
+        parse_integer_polynomial(polynomial_str, var).map_err(|_| ())
+    }
+}
+
+impl PolynomialFromStr for Polynomial<Rational> {
+    type Err = ();
+
+    fn from_str(polynomial_str: &str, var: &str) -> Result<Self, ()> {
+        parse_rational_polynomial(polynomial_str, var).map_err(|_| ())
+    }
+}
+
+// impl MetaType for Polynomial<Natural> {
+//     type Signature =
+//         PolynomialSemiRingStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>;
+
+//     fn structure() -> Self::Signature {
+//         PolynomialSemiRingStructure::new(Natural::structure())
+//     }
+// }
+
+// impl MetaType for Polynomial<Integer> {
+//     type Signature = PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>;
+
+//     fn structure() -> Self::Signature {
+//         PolynomialStructure::new(Integer::structure())
+//     }
+// }
+
+// impl MetaType for Polynomial<Rational> {
+//     type Signature = PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>;
+
+//     fn structure() -> Self::Signature {
+//         PolynomialStructure::new(Rational::structure())
+//     }
+// }
+
+// impl MetaType for Polynomial<QuaternaryField> {
+//     type Signature =
+//         PolynomialStructure<QuaternaryFieldCanonicalStructure, QuaternaryFieldCanonicalStructure>;
+
+//     fn structure() -> Self::Signature {
+//         PolynomialStructure::new(QuaternaryField::structure())
+//     }
+// }
+
+// impl<const N: usize> MetaType for Polynomial<Modulo<N>> {
+//     type Signature = PolynomialStructure<ModuloCanonicalStructure<N>, ModuloCanonicalStructure<N>>;
+
+//     fn structure() -> Self::Signature {
+//         PolynomialStructure::new(Modulo::structure())
+//     }
+// }

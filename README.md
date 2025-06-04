@@ -17,21 +17,21 @@ The latest published version of Algebraeon is hosted on crates.io [here](https:/
 To factor large integers using Algebraeon
 
 ```rust
-# use algebraeon::sets::structure::ToStringSignature;
-# use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
-# use algebraeon::{
-    rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure,
+use algebraeon::sets::structure::ToStringSignature;
+use algebraeon::{nzq::Natural, rings::natural::factorization::factor};
+use algebraeon::{
+    rings::natural::factorization::NaturalCanonicalFactorizationStructure,
     sets::structure::MetaType,
 };
-# use std::str::FromStr;
-# 
+use std::str::FromStr;
+
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
 let f = factor(n.clone()).unwrap();
 println!(
     "{} = {}",
     n,
     Natural::structure().factorizations().to_string(&f)
-);;
+);
 /*
 Output:
     706000565581575429997696139445280900 = 2^2 × 5^2 × 6988699669998001 × 1010203040506070809
@@ -45,9 +45,9 @@ Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedi
 Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
 
 ```rust
-# use algebraeon::rings::{polynomial::*, structure::*};
-# use algebraeon::nzq::Integer;
-# 
+use algebraeon::rings::{polynomial::*, structure::*};
+use algebraeon::nzq::Integer;
+
 let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(2) - 5*x + 6).into_verbose();
 println!("f(λ) = {}", f.factor().unwrap());
@@ -85,10 +85,11 @@ a \begin{pmatrix}3 \\ 4 \\ 1\end{pmatrix} + b \begin{pmatrix}2 \\ 1 \\ 2\end{pma
 for integers $a$, $b$ and $c$.
 
 ```rust
-# use algebraeon::nzq::Integer;
-# use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
-# use algebraeon::rings::linear::matrix::Matrix;
-# use algebraeon::sets::structure::MetaType;
+use algebraeon::nzq::Integer;
+use algebraeon::rings::module::finitely_free_module::RingToFinitelyFreeModuleSignature;
+use algebraeon::rings::matrix::Matrix;
+use algebraeon::sets::structure::MetaType;
+
 let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
 let y = vec![5.into(), 5.into(), 3.into()];
 for x in Integer::structure()
@@ -119,9 +120,9 @@ Find all complex roots of the polynomial
 $$f(x) = x^5 + x^2 - x + 1$$
 
 ```rust
-# use algebraeon::rings::{polynomial::*, structure::*};
-# use algebraeon::nzq::Integer;
-# 
+use algebraeon::rings::{polynomial::*, structure::*};
+use algebraeon::nzq::Integer;
+
 let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(5) + x.pow(2) - x + 1).into_verbose();
 // Find the complex roots of f(x)
@@ -149,7 +150,7 @@ Use the issue tracker if you have questions, feature requests, bugs reports, etc
 ## What to work on?
 
 If you're unsure what you could do to help:
- - Have a look through the issue tracker for unassigned issues.
+ - Have a look through the issue tracker for unassigned issues and leave a comment.
  - Ask in the discord server.
 
 ## Changing the code-base
