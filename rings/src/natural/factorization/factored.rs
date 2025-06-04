@@ -1,6 +1,6 @@
 use super::factor;
 use crate::{
-    linear::ordered_set_free_module::FreeModuleOverOrderedSetStructure,
+    module::ordered_set_free_module::FreeModuleOverOrderedSetStructure,
     natural::factorization::primes::is_prime,
     structure::{AdditiveMonoidSignature, FactoredSignature, SemiRingSignature},
 };

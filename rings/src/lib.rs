@@ -42,7 +42,7 @@ pub mod algebraic_number_field;
 pub mod finite_fields;
 pub mod integer;
 pub mod isolated_algebraic;
-pub mod linear;
+pub mod module;
 pub mod matrix;
 pub mod natural;
 pub mod parsing;

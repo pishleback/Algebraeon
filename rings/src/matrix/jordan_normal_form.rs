@@ -1,4 +1,4 @@
-use crate::linear::{
+use crate::module::{
     finitely_free_module::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
 };

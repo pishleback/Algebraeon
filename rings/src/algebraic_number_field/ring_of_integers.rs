@@ -1,6 +1,6 @@
 use super::number_field::AlgebraicNumberFieldStructure;
 use crate::{
-    linear::finitely_free_module::{
+    module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
     },
     matrix::Matrix,
