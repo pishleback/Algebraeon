@@ -1,4 +1,4 @@
-use crate::{polynomial::*, rings::integer::*};
+use crate::{polynomial::*, integer::*};
 use std::rc::Rc;
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> GreatestCommonDivisorSignature

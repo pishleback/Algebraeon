@@ -1,7 +1,7 @@
 use super::factor;
 use crate::{
     linear::ordered_set_free_module::FreeModuleOverOrderedSetStructure,
-    rings::natural::factorization::primes::is_prime,
+    natural::factorization::primes::is_prime,
     structure::{AdditiveMonoidSignature, FactoredSignature, SemiRingSignature},
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure, gcd, traits::ModPow};

@@ -5,7 +5,7 @@ use crate::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
         finitely_free_submodule::FinitelyFreeSubmodule, matrix::Matrix,
     },
-    rings::valuation::Valuation,
+    valuation::Valuation,
     structure::*,
 };
 use algebraeon_nzq::{Integer, Natural};

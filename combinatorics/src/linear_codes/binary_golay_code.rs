@@ -10,7 +10,7 @@ use malachite_base::num::logic::traits::BitIterable;
 use algebraeon_groups::examples::symmetric::*;
 use algebraeon_rings::{
     linear::matrix::Matrix,
-    rings::finite_fields::{modulo::Modulo, quaternary_field::QuaternaryField},
+    finite_fields::{modulo::Modulo, quaternary_field::QuaternaryField},
     structure::*,
 };
 

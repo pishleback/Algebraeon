@@ -1,6 +1,6 @@
 use crate::{
     polynomial::*,
-    rings::{
+    {
         isolated_algebraic::padic::structure::PAdicAlgebraicStructure,
         natural::factorization::primes::*, valuation::*,
     },
@@ -445,7 +445,7 @@ impl Polynomial<Integer> {
 }
 
 pub mod structure {
-    use crate::rings::isolated_algebraic::poly_tools::{
+    use crate::isolated_algebraic::poly_tools::{
         root_product_poly, root_rat_mul_poly, root_sum_poly,
     };
 

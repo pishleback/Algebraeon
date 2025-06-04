@@ -4,7 +4,7 @@ use algebraeon_nzq::{
 };
 use std::ops::{Add, Mul, Sub};
 
-use crate::rings::natural::factorization::primes::is_prime;
+use crate::natural::factorization::primes::is_prime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Valuation {

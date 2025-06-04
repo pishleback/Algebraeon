@@ -1,5 +1,5 @@
 use crate::{
-    rings::natural::factorization::{
+    natural::factorization::{
             factor, primes::is_prime, NaturalCanonicalFactorizationStructure
         },
     structure::{FactoredSignature, MetaFactorableSignature, QuotientStructure, SemiRingSignature},

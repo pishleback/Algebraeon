@@ -253,7 +253,7 @@ pub fn factor(n: Natural) -> Option<Vec<(Natural, Natural)>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::rings::natural::factorization::factored::IsPrimitiveRootResult;
+    use crate::natural::factorization::factored::IsPrimitiveRootResult;
 
     use super::*;
 

@@ -1,5 +1,5 @@
 use super::*;
-use crate::rings::natural::factorization::primes::is_prime;
+use crate::natural::factorization::primes::is_prime;
 use algebraeon_sets::structure::MetaType;
 use std::collections::HashSet;
 

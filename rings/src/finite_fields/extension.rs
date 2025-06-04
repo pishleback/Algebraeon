@@ -59,7 +59,7 @@ pub(crate) fn f9() -> FieldExtensionByPolynomialQuotientStructure<
     ModuloCanonicalStructure<3>,
     ModuloCanonicalStructure<3>,
 > {
-    use crate::rings::finite_fields::modulo::*;
+    use crate::finite_fields::modulo::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(
         Modulo::<3>::structure(),
         Polynomial::from_coeffs(vec![1, 1, 2]),
