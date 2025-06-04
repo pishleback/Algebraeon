@@ -1,5 +1,5 @@
 use crate::{
-    isolated_algebraics::poly_tools::{root_product_poly, root_rat_mul_poly, root_sum_poly},
+    isolated_algebraic::poly_tools::{root_product_poly, root_rat_mul_poly, root_sum_poly},
     natural::factorization::primes::*,
     polynomial::*,
     structure::*,

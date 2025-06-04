@@ -213,7 +213,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::isolated_algebraics::{ComplexAlgebraic, RealAlgebraic};
+    use crate::isolated_algebraic::{ComplexAlgebraic, RealAlgebraic};
     use std::str::FromStr;
 
     #[test]
