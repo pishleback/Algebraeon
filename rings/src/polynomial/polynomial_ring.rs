@@ -983,7 +983,6 @@ where
 impl<R: MetaType> Polynomial<R>
 where
     R::Signature: RingSignature<Set = R>,
-    Polynomial<R>: MetaType<Signature = PolynomialStructure<R::Signature, R::Signature>>,
 {
     fn reduce(self) -> Self {
         Self::structure().reduce_poly(self)
@@ -993,7 +992,6 @@ where
 impl<R: MetaType> Display for Polynomial<R>
 where
     R::Signature: RingSignature + ToStringSignature,
-    Polynomial<R>: MetaType<Signature = PolynomialStructure<R::Signature, R::Signature>>,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Self::structure().to_string(self))
@@ -1003,7 +1001,6 @@ where
 impl<R: MetaType> PartialEq for Polynomial<R>
 where
     R::Signature: RingSignature,
-    Polynomial<R>: MetaType<Signature = PolynomialStructure<R::Signature, R::Signature>>,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
@@ -1013,14 +1010,12 @@ where
 impl<R: MetaType> Eq for Polynomial<R>
 where
     R::Signature: RingSignature,
-    Polynomial<R>: MetaType<Signature = PolynomialStructure<R::Signature, R::Signature>>,
 {
 }
 
 impl<R: MetaType> Polynomial<R>
 where
     R::Signature: RingSignature<Set = R>,
-    Polynomial<R>: MetaType<Signature = PolynomialStructure<R::Signature, R::Signature>>,
 {
     pub fn var() -> Self {
         Self::structure().var()
@@ -1089,7 +1084,6 @@ where
 impl<R: MetaType> Polynomial<R>
 where
     R::Signature: IntegralDomainSignature,
-    Polynomial<R>: MetaType<Signature = PolynomialStructure<R::Signature, R::Signature>>,
 {
     pub fn try_quorem(a: &Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
         Self::structure().try_quorem(a, b)
@@ -1127,7 +1121,6 @@ where
 impl<R: MetaType> Polynomial<R>
 where
     R::Signature: ReducedHermiteAlgorithmSignature,
-    Polynomial<R>: MetaType<Signature = PolynomialStructure<R::Signature, R::Signature>>,
 {
     pub fn interpolate_by_linear_system(points: &Vec<(R, R)>) -> Option<Self> {
         Self::structure().interpolate_by_linear_system(points)
@@ -1137,7 +1130,6 @@ where
 impl<R: MetaType> Polynomial<R>
 where
     R::Signature: GreatestCommonDivisorSignature,
-    Polynomial<R>: MetaType<Signature = PolynomialStructure<R::Signature, R::Signature>>,
 {
     pub fn factor_primitive(self) -> Option<(R, Polynomial<R>)> {
         Self::structure().factor_primitive(self)
@@ -1155,7 +1147,6 @@ where
 impl<R: MetaType> Polynomial<R>
 where
     R::Signature: GreatestCommonDivisorSignature + CharZeroRingSignature,
-    Polynomial<R>: MetaType<Signature = PolynomialStructure<R::Signature, R::Signature>>,
 {
     pub fn primitive_squarefree_part(&self) -> Self {
         Self::structure().primitive_squarefree_part(self.clone())
