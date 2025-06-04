@@ -6,9 +6,9 @@ To factor large integers using Algebraeon
 
 ```rust
 # use algebraeon::sets::structure::ToStringSignature;
-# use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
+# use algebraeon::{nzq::Natural, rings::natural::factorization::factor};
 # use algebraeon::{
-    rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure,
+    rings::natural::factorization::NaturalCanonicalFactorizationStructure,
     sets::structure::MetaType,
 };
 # use std::str::FromStr;
@@ -204,7 +204,7 @@ assert_eq!(n, 120);
 
 ```rust
 use algebraeon::nzq::{Rational};
-use algebraeon::rings::{linear::matrix::*, rings::isolated_algebraic::complex::*};
+use algebraeon::rings::{linear::matrix::*, isolated_algebraic::complex::*};
 use algebraeon::sets::structure::*;
 // Construct a matrix
 let a = Matrix::<Rational>::from_rows(vec![

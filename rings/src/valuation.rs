@@ -11,7 +11,7 @@ pub enum Valuation {
     Infinity,
     Finite(Integer),
 }
-#[allow(clippy::non_canonical_partial_ord_impl)]
+
 impl PartialOrd for Valuation {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some({
@@ -26,11 +26,13 @@ impl PartialOrd for Valuation {
         })
     }
 }
+
 impl Ord for Valuation {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.partial_cmp(other).unwrap()
     }
 }
+
 impl Valuation {
     pub fn unwrap_int(self) -> Integer {
         match self {

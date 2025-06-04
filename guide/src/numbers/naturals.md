@@ -47,7 +47,7 @@ For exponentiation, use the method `.pow(&exp)` instead of `^` (which is xor).
 
 ```rust
 use algebraeon::nzq::*;
-use algebraeon::rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure;
+use algebraeon::rings::natural::factorization::NaturalCanonicalFactorizationStructure;
 use algebraeon::sets::structure::*;
 
 let a = Natural::from(12u32);
@@ -91,12 +91,12 @@ assert_eq!(gcd(a.clone(), b.clone()), Natural::from(1u32));
 assert_eq!(lcm(a.clone(), b.clone()), Natural::from(60u32));
 
 // is_prime
-use algebraeon::rings::rings::natural::factorization::primes::is_prime;
+use algebraeon::rings::natural::factorization::primes::is_prime;
 assert!(!is_prime(&a)); // 12 is not prime
 assert!(is_prime(&b)); // 5 is prime
 
 // Euler's totient function
-use algebraeon::rings::rings::natural::factorization::factor;
+use algebraeon::rings::natural::factorization::factor;
 assert_eq!(
     Natural::structure()
         .factorizations()
@@ -117,9 +117,9 @@ Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedi
 
 ```rust
 # use algebraeon::sets::structure::ToStringSignature;
-# use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
+# use algebraeon::{nzq::Natural, rings::natural::factorization::factor};
 # use algebraeon::{
-    rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure,
+    rings::natural::factorization::NaturalCanonicalFactorizationStructure,
     sets::structure::MetaType,
 };
 # use std::str::FromStr;

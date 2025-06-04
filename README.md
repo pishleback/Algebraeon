@@ -18,9 +18,9 @@ To factor large integers using Algebraeon
 
 ```rust
 use algebraeon::sets::structure::ToStringSignature;
-use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
+use algebraeon::{nzq::Natural, rings::natural::factorization::factor};
 use algebraeon::{
-    rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure,
+    rings::natural::factorization::NaturalCanonicalFactorizationStructure,
     sets::structure::MetaType,
 };
 use std::str::FromStr;
