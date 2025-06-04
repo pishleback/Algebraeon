@@ -38,7 +38,7 @@
     clippy::manual_assert
 )]
 
-pub mod algebraic_number_fields;
+pub mod algebraic_number_field;
 pub mod finite_fields;
 pub mod integer;
 pub mod isolated_algebraic;
