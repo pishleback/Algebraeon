@@ -7,7 +7,6 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use boxes::*;
 use std::{collections::HashSet, fmt::Display, str::FromStr};
-
 mod boxes;
 pub mod polynomial;
 
