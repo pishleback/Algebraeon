@@ -1,11 +1,11 @@
 use super::ring_of_integer_extensions::RingOfIntegersExtension;
 use super::ring_of_integers::*;
 use crate::{
+    matrix::Matrix,
     module::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
-    matrix::Matrix,
     structure::*,
     valuation::Valuation,
 };

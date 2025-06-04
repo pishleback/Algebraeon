@@ -24,8 +24,11 @@ pub struct RingOfIntegersExtension<
     q: RationalCanonicalStructure,
     r: RingOfIntegersWithIntegralBasisStructure,
     k: AlgebraicNumberFieldStructure,
-    z_to_q: PrincipalSubringInclusion<RationalCanonicalStructure>,
-    z_to_r: PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
+    z_to_q: PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+    z_to_r: PrincipalSubringInclusion<
+        RingOfIntegersWithIntegralBasisStructure,
+        RingOfIntegersWithIntegralBasisStructure,
+    >,
     q_to_k: PrincipalRationalSubfieldInclusion<
         AlgebraicNumberFieldStructure,
         AlgebraicNumberFieldStructure,
@@ -131,8 +134,11 @@ impl<
         RationalCanonicalStructure,
         RingOfIntegersWithIntegralBasisStructure,
         AlgebraicNumberFieldStructure,
-        PrincipalSubringInclusion<RationalCanonicalStructure>,
-        PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
+        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+        PrincipalSubringInclusion<
+            RingOfIntegersWithIntegralBasisStructure,
+            RingOfIntegersWithIntegralBasisStructure,
+        >,
         PrincipalRationalSubfieldInclusion<
             AlgebraicNumberFieldStructure,
             AlgebraicNumberFieldStructure,
@@ -152,10 +158,17 @@ impl<
     fn k_field(&self) -> &AlgebraicNumberFieldStructure {
         &self.k
     }
-    fn z_to_q(&self) -> &PrincipalSubringInclusion<RationalCanonicalStructure> {
+    fn z_to_q(
+        &self,
+    ) -> &PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure> {
         &self.z_to_q
     }
-    fn z_to_r(&self) -> &PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure> {
+    fn z_to_r(
+        &self,
+    ) -> &PrincipalSubringInclusion<
+        RingOfIntegersWithIntegralBasisStructure,
+        RingOfIntegersWithIntegralBasisStructure,
+    > {
         &self.z_to_r
     }
     fn q_to_k(
@@ -185,8 +198,11 @@ impl
         RationalCanonicalStructure,
         RingOfIntegersWithIntegralBasisStructure,
         AlgebraicNumberFieldStructure,
-        PrincipalSubringInclusion<RationalCanonicalStructure>,
-        PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
+        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+        PrincipalSubringInclusion<
+            RingOfIntegersWithIntegralBasisStructure,
+            RingOfIntegersWithIntegralBasisStructure,
+        >,
         PrincipalRationalSubfieldInclusion<
             AlgebraicNumberFieldStructure,
             AlgebraicNumberFieldStructure,

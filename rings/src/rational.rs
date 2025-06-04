@@ -131,8 +131,9 @@ impl RealToFloatSignature for RationalCanonicalStructure {
     }
 }
 
-impl FieldOfFractionsInclusion<IntegerCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalSubringInclusion<RationalCanonicalStructure>
+impl<B: BorrowedStructure<RationalCanonicalStructure>>
+    FieldOfFractionsInclusion<IntegerCanonicalStructure, RationalCanonicalStructure>
+    for PrincipalSubringInclusion<RationalCanonicalStructure, B>
 {
     fn numerator_and_denominator(&self, a: &Rational) -> (Integer, Integer) {
         (a.numerator(), a.denominator().into())

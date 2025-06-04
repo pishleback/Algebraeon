@@ -717,6 +717,28 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
+impl<B: BorrowedStructure<RealAlgebraicCanonicalStructure>>
+    IntegralDomainExtensionAllPolynomialRoots<
+        IntegerCanonicalStructure,
+        RealAlgebraicCanonicalStructure,
+    > for PrincipalSubringInclusion<RealAlgebraicCanonicalStructure, B>
+{
+    fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<RealAlgebraic> {
+        polynomial.all_real_roots()
+    }
+}
+
+impl<B: BorrowedStructure<RealAlgebraicCanonicalStructure>>
+    IntegralDomainExtensionAllPolynomialRoots<
+        RationalCanonicalStructure,
+        RealAlgebraicCanonicalStructure,
+    > for PrincipalRationalSubfieldInclusion<RealAlgebraicCanonicalStructure, B>
+{
+    fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<RealAlgebraic> {
+        polynomial.all_real_roots()
+    }
+}
+
 #[cfg(test)]
 mod tests {
 

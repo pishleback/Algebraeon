@@ -73,7 +73,7 @@ where
 impl<Field: MetaType> Matrix<Field>
 where
     Field::Signature: FieldSignature,
-    PrincipalSubringInclusion<Field::Signature>:
+    PrincipalSubringInclusion<Field::Signature, Field::Signature>:
         FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Signature>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Matrix<Integer>) {

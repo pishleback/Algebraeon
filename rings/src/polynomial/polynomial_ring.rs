@@ -954,7 +954,7 @@ where
     Field::Signature: FieldSignature,
     Polynomial<Field>:
         MetaType<Signature = PolynomialStructure<Field::Signature, Field::Signature>>,
-    PrincipalSubringInclusion<Field::Signature>:
+    PrincipalSubringInclusion<Field::Signature, Field::Signature>:
         FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Signature>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {

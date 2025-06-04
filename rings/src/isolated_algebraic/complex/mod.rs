@@ -964,6 +964,28 @@ impl ComplexAlgebraic {
     }
 }
 
+impl<B: BorrowedStructure<ComplexAlgebraicCanonicalStructure>>
+    IntegralDomainExtensionAllPolynomialRoots<
+        IntegerCanonicalStructure,
+        ComplexAlgebraicCanonicalStructure,
+    > for PrincipalSubringInclusion<ComplexAlgebraicCanonicalStructure, B>
+{
+    fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<ComplexAlgebraic> {
+        polynomial.all_complex_roots()
+    }
+}
+
+impl<B: BorrowedStructure<ComplexAlgebraicCanonicalStructure>>
+    IntegralDomainExtensionAllPolynomialRoots<
+        RationalCanonicalStructure,
+        ComplexAlgebraicCanonicalStructure,
+    > for PrincipalRationalSubfieldInclusion<ComplexAlgebraicCanonicalStructure, B>
+{
+    fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<ComplexAlgebraic> {
+        polynomial.all_complex_roots()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

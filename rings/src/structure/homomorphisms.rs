@@ -159,50 +159,54 @@ mod principal_subring_inclusion {
 
     /// The unique ring homomorphism Z -> R of the integers into any ring R
     #[derive(Debug, Clone, PartialEq, Eq)]
-    pub struct PrincipalSubringInclusion<Ring: RingSignature> {
+    pub struct PrincipalSubringInclusion<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
         integer_structure: IntegerCanonicalStructure,
-        ring: Ring,
+        _ring: PhantomData<Ring>,
+        ring: RingB,
     }
 
-    impl<Ring: RingSignature> PrincipalSubringInclusion<Ring> {
-        pub fn new(ring: Ring) -> Self {
+    impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> PrincipalSubringInclusion<Ring, RingB> {
+        pub fn new(ring: RingB) -> Self {
             Self {
                 integer_structure: Integer::structure(),
+                _ring: PhantomData,
                 ring,
             }
         }
     }
 
-    impl<Ring: RingSignature> Morphism<IntegerCanonicalStructure, Ring>
-        for PrincipalSubringInclusion<Ring>
+    impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+        Morphism<IntegerCanonicalStructure, Ring> for PrincipalSubringInclusion<Ring, RingB>
     {
         fn domain(&self) -> &IntegerCanonicalStructure {
             &self.integer_structure
         }
 
         fn range(&self) -> &Ring {
-            &self.ring
+            self.ring.borrow()
         }
     }
 
-    impl<Ring: RingSignature> Function<IntegerCanonicalStructure, Ring>
-        for PrincipalSubringInclusion<Ring>
+    impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+        Function<IntegerCanonicalStructure, Ring> for PrincipalSubringInclusion<Ring, RingB>
     {
         fn image(&self, x: &Integer) -> <Ring as SetSignature>::Set {
             self.range().from_int(x)
         }
     }
 
-    impl<Ring: CharZeroRingSignature> InjectiveFunction<IntegerCanonicalStructure, Ring>
-        for PrincipalSubringInclusion<Ring>
+    impl<Ring: CharZeroRingSignature, RingB: BorrowedStructure<Ring>>
+        InjectiveFunction<IntegerCanonicalStructure, Ring>
+        for PrincipalSubringInclusion<Ring, RingB>
     {
         fn try_preimage(&self, x: &<Ring as SetSignature>::Set) -> Option<Integer> {
             self.range().try_to_int(x)
         }
     }
 
-    impl<Ring: RingSignature> RingHomomorphism<IntegerCanonicalStructure, Ring>
-        for PrincipalSubringInclusion<Ring>
+    impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+        RingHomomorphism<IntegerCanonicalStructure, Ring>
+        for PrincipalSubringInclusion<Ring, RingB>
     {
     }
 
@@ -279,6 +283,13 @@ pub trait FieldOfFractionsInclusion<Ring: RingSignature, Field: FieldSignature>:
     fn denominator(&self, a: &Field::Set) -> Ring::Set {
         self.numerator_and_denominator(a).1
     }
+}
+
+/// An injective homomorphism A -> B of integral domains where there is a way to get all roots in B of a polynomial over A
+pub trait IntegralDomainExtensionAllPolynomialRoots<A: IntegralDomainSignature, B: IntegralDomainSignature>:
+    RingHomomorphism<A, B> + InjectiveFunction<A, B>
+{
+    fn all_roots(&self, polynomial: &Polynomial<A::Set>) -> Vec<B::Set>;
 }
 
 /// An injective homomorphism of rings A -> B such that B is a finite rank free A module

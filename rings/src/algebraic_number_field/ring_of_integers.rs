@@ -1,9 +1,9 @@
 use super::number_field::AlgebraicNumberFieldStructure;
 use crate::{
+    matrix::Matrix,
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
     },
-    matrix::Matrix,
     polynomial::Polynomial,
     structure::*,
 };

@@ -170,8 +170,12 @@ pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
         MultiPolynomialStructure::new(self)
     }
 
-    fn principal_subring_inclusion(&self) -> PrincipalSubringInclusion<Self> {
-        PrincipalSubringInclusion::new(self.clone())
+    fn principal_subring_inclusion<'a>(&'a self) -> PrincipalSubringInclusion<Self, &'a Self> {
+        PrincipalSubringInclusion::new(self)
+    }
+
+    fn into_principal_subring_inclusion(self) -> PrincipalSubringInclusion<Self, Self> {
+        PrincipalSubringInclusion::new(self)
     }
 }
 
