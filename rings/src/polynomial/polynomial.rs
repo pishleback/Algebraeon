@@ -1,17 +1,5 @@
-use algebraeon_nzq::{
-    Integer, IntegerCanonicalStructure, Natural, NaturalCanonicalStructure, Rational,
-    RationalCanonicalStructure,
-};
-use algebraeon_sets::structure::MetaType;
-
-use crate::{
-    parsing::polynomial::{parse_integer_polynomial, parse_rational_polynomial},
-    polynomial::{PolynomialSemiRingStructure, PolynomialStructure},
-    rings::finite_fields::{
-        modulo::{Modulo, ModuloCanonicalStructure},
-        quaternary_field::{QuaternaryField, QuaternaryFieldCanonicalStructure},
-    },
-};
+use crate::parsing::polynomial::{parse_integer_polynomial, parse_rational_polynomial};
+use algebraeon_nzq::{Integer, Natural, Rational};
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {
@@ -105,44 +93,44 @@ impl PolynomialFromStr for Polynomial<Rational> {
     }
 }
 
-impl MetaType for Polynomial<Natural> {
-    type Signature =
-        PolynomialSemiRingStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>;
+// impl MetaType for Polynomial<Natural> {
+//     type Signature =
+//         PolynomialSemiRingStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>;
 
-    fn structure() -> Self::Signature {
-        PolynomialSemiRingStructure::new(Natural::structure())
-    }
-}
+//     fn structure() -> Self::Signature {
+//         PolynomialSemiRingStructure::new(Natural::structure())
+//     }
+// }
 
-impl MetaType for Polynomial<Integer> {
-    type Signature = PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>;
+// impl MetaType for Polynomial<Integer> {
+//     type Signature = PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>;
 
-    fn structure() -> Self::Signature {
-        PolynomialStructure::new(Integer::structure())
-    }
-}
+//     fn structure() -> Self::Signature {
+//         PolynomialStructure::new(Integer::structure())
+//     }
+// }
 
-impl MetaType for Polynomial<Rational> {
-    type Signature = PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>;
+// impl MetaType for Polynomial<Rational> {
+//     type Signature = PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>;
 
-    fn structure() -> Self::Signature {
-        PolynomialStructure::new(Rational::structure())
-    }
-}
+//     fn structure() -> Self::Signature {
+//         PolynomialStructure::new(Rational::structure())
+//     }
+// }
 
-impl MetaType for Polynomial<QuaternaryField> {
-    type Signature =
-        PolynomialStructure<QuaternaryFieldCanonicalStructure, QuaternaryFieldCanonicalStructure>;
+// impl MetaType for Polynomial<QuaternaryField> {
+//     type Signature =
+//         PolynomialStructure<QuaternaryFieldCanonicalStructure, QuaternaryFieldCanonicalStructure>;
 
-    fn structure() -> Self::Signature {
-        PolynomialStructure::new(QuaternaryField::structure())
-    }
-}
+//     fn structure() -> Self::Signature {
+//         PolynomialStructure::new(QuaternaryField::structure())
+//     }
+// }
 
-impl<const N: usize> MetaType for Polynomial<Modulo<N>> {
-    type Signature = PolynomialStructure<ModuloCanonicalStructure<N>, ModuloCanonicalStructure<N>>;
+// impl<const N: usize> MetaType for Polynomial<Modulo<N>> {
+//     type Signature = PolynomialStructure<ModuloCanonicalStructure<N>, ModuloCanonicalStructure<N>>;
 
-    fn structure() -> Self::Signature {
-        PolynomialStructure::new(Modulo::structure())
-    }
-}
+//     fn structure() -> Self::Signature {
+//         PolynomialStructure::new(Modulo::structure())
+//     }
+// }

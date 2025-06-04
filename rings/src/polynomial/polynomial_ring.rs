@@ -969,16 +969,16 @@ where
     }
 }
 
-// impl<R: MetaType> MetaType for Polynomial<R>
-// where
-//     R::Signature: RingSignature,
-// {
-//     type Signature = PolynomialStructure<R::Signature, R::Signature>;
+impl<R: MetaType> MetaType for Polynomial<R>
+where
+    R::Signature: RingSignature,
+{
+    type Signature = PolynomialStructure<R::Signature, R::Signature>;
 
-//     fn structure() -> Self::Signature {
-//         PolynomialStructure::new(R::structure())
-//     }
-// }
+    fn structure() -> Self::Signature {
+        PolynomialStructure::new(R::structure())
+    }
+}
 
 impl<R: MetaType> Polynomial<R>
 where

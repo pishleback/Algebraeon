@@ -230,9 +230,8 @@ Output:
 Algebraeon can find an expression for the discriminant of a polynomial in terms of the polynomials coefficients.
 
 ```rust
-use algebraeon::nzq::Integer;
 use algebraeon::rings::polynomial::*;
-use algebraeon::sets::structure::ToStringSignature;
+use algebraeon::nzq::Integer;
 
 let a_var = Variable::new("a");
 let b_var = Variable::new("b");
@@ -246,14 +245,10 @@ let c = MultiPolynomial::<Integer>::var(c_var);
 let d = MultiPolynomial::<Integer>::var(d_var);
 let e = MultiPolynomial::<Integer>::var(e_var);
 
-let ring = Integer::structure()
-    .into_multivariable_polynomials()
-    .into_polynomials();
-
 let p =
     Polynomial::<MultiPolynomial<Integer>>::from_coeffs(vec![c.clone(), b.clone(), a.clone()]);
-println!("p(λ) = {}", ring.to_string(&p));
-println!("disc(p) = {}", ring.discriminant(p).unwrap());
+println!("p(λ) = {}", p);
+println!("disc(p) = {}", p.discriminant().unwrap());
 
 println!();
 
@@ -263,8 +258,8 @@ let p = Polynomial::<MultiPolynomial<Integer>>::from_coeffs(vec![
     b.clone(),
     a.clone(),
 ]);
-println!("p(λ) = {}", ring.to_string(&p));
-println!("disc(p) = {}", ring.discriminant(p).unwrap());
+println!("p(λ) = {}", p);
+println!("disc(p) = {}", p.discriminant().unwrap());
 
 println!();
 
@@ -275,8 +270,8 @@ let p = Polynomial::<MultiPolynomial<Integer>>::from_coeffs(vec![
     b.clone(),
     a.clone(),
 ]);
-println!("p(λ) = {}", ring.to_string(&p));
-println!("disc(p) = {}", ring.discriminant(p).unwrap());
+println!("p(λ) = {}", p);
+println!("disc(p) = {}", p.discriminant().unwrap());
 
 /*
 Output:
