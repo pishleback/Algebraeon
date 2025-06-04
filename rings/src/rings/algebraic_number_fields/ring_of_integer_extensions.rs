@@ -6,7 +6,6 @@ use crate::linear::matrix::Matrix;
 use crate::polynomial::Polynomial;
 use crate::polynomial::PolynomialStructure;
 use crate::rings::integer::ideal::IntegerIdealsStructure;
-use crate::rings::quotient::QuotientStructure;
 use crate::rings::valuation::Valuation;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;

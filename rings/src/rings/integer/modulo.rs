@@ -1,5 +1,3 @@
-use crate::rings::quotient::QuotientStructure;
-
 use super::*;
 
 impl FiniteUnitsSignature for QuotientStructure<IntegerCanonicalStructure, true> {

@@ -1,11 +1,8 @@
 use crate::{
-    rings::{
-        natural::factorization::{
-            NaturalCanonicalFactorizationStructure, factor, primes::is_prime,
+    rings::natural::factorization::{
+            factor, primes::is_prime, NaturalCanonicalFactorizationStructure
         },
-        quotient::QuotientStructure,
-    },
-    structure::{FactoredSignature, MetaFactorableSignature, SemiRingSignature},
+    structure::{FactoredSignature, MetaFactorableSignature, QuotientStructure, SemiRingSignature},
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
 use algebraeon_sets::structure::MetaType;

@@ -1,5 +1,4 @@
 use super::*;
-use crate::rings::quotient::QuotientStructure;
 use algebraeon_nzq::traits::DivMod;
 use std::ops::Rem;
 use traits::ModPow;

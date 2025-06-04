@@ -59,7 +59,6 @@ some improvements
 */
 
 use crate::polynomial::*;
-use crate::rings::quotient::QuotientStructure;
 use crate::structure::*;
 use algebraeon_nzq::primes;
 use algebraeon_nzq::*;
