@@ -1,9 +1,9 @@
 use super::number_field::AlgebraicNumberFieldStructure;
-use crate::isolated_algebraic::complex::ComplexAlgebraicCanonicalStructure;
+use crate::isolated_algebraics::ComplexAlgebraicCanonicalStructure;
 use crate::structure::*;
 use crate::{
     polynomial::*,
-    isolated_algebraic::{complex::ComplexAlgebraic, real::RealAlgebraic},
+    isolated_algebraics::{ComplexAlgebraic, RealAlgebraic},
 };
 use algebraeon_nzq::traits::Fraction;
 use algebraeon_nzq::*;

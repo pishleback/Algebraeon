@@ -204,7 +204,7 @@ assert_eq!(n, 120);
 
 ```rust
 use algebraeon::nzq::{Rational};
-use algebraeon::rings::{linear::matrix::*, isolated_algebraic::complex::*};
+use algebraeon::rings::{linear::matrix::*, isolated_algebraic::*};
 use algebraeon::sets::structure::*;
 // Construct a matrix
 let a = Matrix::<Rational>::from_rows(vec![
