@@ -2,8 +2,8 @@ use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational, RationalCanon
 use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
 
 use crate::{
-    linear::finitely_free_module::RingToFinitelyFreeModuleSignature,
-    rings::algebraic_number_fields::number_field::AlgebraicNumberFieldStructure,
+    algebraic_number_field::number_field::AlgebraicNumberFieldStructure,
+    module::finitely_free_module::RingToFinitelyFreeModuleSignature,
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature,
         FreeModuleSignature, ModuleSignature, RingSignature, SemiModuleSignature,
