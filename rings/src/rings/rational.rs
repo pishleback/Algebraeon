@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
