@@ -6,7 +6,7 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 //convert between nested polynomials with bounded degree and rational vectors
-//e.g. (a + bx) + (c + dc)x <-> (a, b, c, d)
+//e.g. (a + bx) + (c + dx)x <-> (a, b, c, d)
 fn double_poly_to_row(
     outer_poly_len: usize,
     inner_poly_len: usize,
