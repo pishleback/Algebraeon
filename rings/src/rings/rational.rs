@@ -1,9 +1,9 @@
-use std::borrow::Cow;
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use std::borrow::Cow;
 
 impl AdditiveMonoidSignature for RationalCanonicalStructure {
     fn zero(&self) -> Self::Set {

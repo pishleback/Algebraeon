@@ -230,6 +230,7 @@ impl<F: MetaType> Polynomial<F>
 where
     F::Signature: FiniteFieldSignature,
     PolynomialStructure<F::Signature, F::Signature>: SetSignature<Set = Polynomial<F>>,
+    Self: MetaType<Signature = PolynomialStructure<F::Signature, F::Signature>>,
 {
     pub fn factorize_monic(&self) -> Option<MonicFactored<F::Signature, F::Signature>> {
         Self::structure().factorize_monic(self)
@@ -671,7 +672,9 @@ mod tests {
                 ],
             );
 
-        let f = p.factorize_by_trying_all_factors().unwrap();
+        let f = Polynomial::<Modulo<2>>::structure()
+            .factorize_by_trying_all_factors(p.clone())
+            .unwrap();
         println!("{} = {}", p, f);
         assert!(
             Polynomial::<Modulo<2>>::structure()
@@ -713,7 +716,9 @@ mod tests {
                 ],
             );
 
-        let f = p.factorize_by_trying_all_factors().unwrap();
+        let f = Polynomial::<Modulo<2>>::structure()
+            .factorize_by_trying_all_factors(p.clone())
+            .unwrap();
         println!("{} = {}", p, f);
         assert!(
             Polynomial::<Modulo<2>>::structure()
@@ -747,7 +752,9 @@ mod tests {
             ],
         );
 
-        let f = p.factorize_by_trying_all_factors().unwrap();
+        let f = Polynomial::<Modulo<5>>::structure()
+            .factorize_by_trying_all_factors(p.clone())
+            .unwrap();
         println!("{} = {}", p, f);
         assert!(fs.equal(&f, &ans));
 
@@ -771,7 +778,9 @@ mod tests {
                 vec![((2 + x.pow(2)).into_verbose(), Natural::from(3u8))],
             );
 
-        let f = p.factorize_by_trying_all_factors().unwrap();
+        let f = Polynomial::<Modulo<5>>::structure()
+            .factorize_by_trying_all_factors(p.clone())
+            .unwrap();
         println!("{} = {}", p, f);
         assert!(
             Polynomial::<Modulo<5>>::structure()
@@ -863,7 +872,10 @@ mod tests {
                 ],
             );
 
-        let f = p.factorize_by_trying_all_factors().unwrap();
+        let f = QuaternaryField::structure()
+            .polynomials()
+            .factorize_by_trying_all_factors(p.clone())
+            .unwrap();
         println!("{} = {}", p, f);
         assert!(
             Polynomial::<QuaternaryField>::structure()

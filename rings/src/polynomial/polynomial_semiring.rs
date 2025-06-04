@@ -1,7 +1,7 @@
 use super::{super::structure::*, Polynomial};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
-use std::borrow::Borrow;
+use std::{borrow::Borrow, fmt::Display};
 
 #[derive(Debug, Clone)]
 pub struct PolynomialSemiRingStructure<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> {
@@ -375,5 +375,11 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
             p.coeffs.pop();
         }
         p
+    }
+}
+
+impl Display for Polynomial<Natural> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", Self::structure().to_string(self))
     }
 }

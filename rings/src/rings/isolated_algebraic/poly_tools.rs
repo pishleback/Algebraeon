@@ -1,5 +1,6 @@
 use crate::{polynomial::*, structure::*};
 use algebraeon_nzq::{traits::Fraction, *};
+use algebraeon_sets::structure::MetaType;
 
 pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));
@@ -7,14 +8,22 @@ pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polyno
 
     let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
     let q = q.apply_map(|c| MultiPolynomial::constant(c.clone()));
-    let r = q
-        .evaluate(&MultiPolynomial::add(
-            &MultiPolynomial::var(z.clone()),
-            &MultiPolynomial::neg(&MultiPolynomial::var(x.clone())),
-        ))
+    let r = Integer::structure()
+        .multivariable_polynomials()
+        .polynomials()
+        .evaluate(
+            &q,
+            &MultiPolynomial::add(
+                &MultiPolynomial::var(z.clone()),
+                &MultiPolynomial::neg(&MultiPolynomial::var(x.clone())),
+            ),
+        )
         .expand(&x);
 
-    let root_sum_poly = Polynomial::resultant(&p, &r)
+    let root_sum_poly = Integer::structure()
+        .multivariable_polynomials()
+        .polynomials()
+        .resultant(p.clone(), r.clone())
         .expand(&z)
         .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
     root_sum_poly.primitive_squarefree_part()
@@ -25,13 +34,20 @@ pub fn root_product_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Po
     let t = Variable::new(String::from("t"));
 
     let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
-    let q = q
-        .apply_map(|c| MultiPolynomial::constant(c.clone()))
-        .evaluate(&MultiPolynomial::var(x.clone()));
+    let q = Integer::structure()
+        .multivariable_polynomials()
+        .polynomials()
+        .evaluate(
+            &q.apply_map(|c| MultiPolynomial::constant(c.clone())),
+            &MultiPolynomial::var(x.clone()),
+        );
     let r = q.homogenize(&t).expand(&t);
     //x ** q.degree() * q(t * x ** -1)
 
-    let root_prod_poly = Polynomial::resultant(&p, &r)
+    let root_prod_poly = Integer::structure()
+        .multivariable_polynomials()
+        .polynomials()
+        .resultant(p.clone(), r.clone())
         .expand(&x)
         .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
     root_prod_poly.primitive_squarefree_part()
@@ -143,12 +159,16 @@ mod tests {
             println!(
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
-                exp.factorize_by_kroneckers_method(Integer::factor)
+                Integer::structure()
+                    .polynomials()
+                    .factorize_by_kroneckers_method(exp.clone(), Integer::factor)
             );
             println!(
                 "rsp = {}    rsp_factored = {:?}",
                 Polynomial::to_string(&rsp),
-                rsp.factorize_by_kroneckers_method(Integer::factor)
+                Integer::structure()
+                    .polynomials()
+                    .factorize_by_kroneckers_method(rsp.clone(), Integer::factor)
             );
             assert!(Polynomial::are_associate(&exp, &rsp));
         }
@@ -231,12 +251,16 @@ mod tests {
             println!(
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
-                exp.factorize_by_kroneckers_method(Integer::factor)
+                Integer::structure()
+                    .polynomials()
+                    .factorize_by_kroneckers_method(exp.clone(), Integer::factor)
             );
             println!(
                 "rpp = {}    rpp_factored = {:?}",
                 Polynomial::to_string(&rpp),
-                rpp.factorize_by_kroneckers_method(Integer::factor)
+                Integer::structure()
+                    .polynomials()
+                    .factorize_by_kroneckers_method(rpp.clone(), Integer::factor)
             );
             assert!(Polynomial::are_associate(&exp, &rpp));
         }

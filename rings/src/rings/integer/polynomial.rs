@@ -129,9 +129,9 @@ mod tests {
 
         let f =
             ((2 * x.pow(3) + 6 * x.pow(2) - 4) * (6 * x.pow(5) + 7 * x.pow(4) - 4)).into_verbose();
-        let fs = f
-            .clone()
-            .factorize_by_kroneckers_method(Integer::factor)
+        let fs = Integer::structure()
+            .polynomials()
+            .factorize_by_kroneckers_method(f.clone(), Integer::factor)
             .unwrap();
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());
@@ -146,9 +146,9 @@ mod tests {
         ));
 
         let f = (49 * x.pow(2) - 10000).into_verbose();
-        let fs = f
-            .clone()
-            .factorize_by_kroneckers_method(Integer::factor)
+        let fs = Integer::structure()
+            .polynomials()
+            .factorize_by_kroneckers_method(f.clone(), Integer::factor)
             .unwrap();
         println!("{}", f);
         // println!("{}", f.clone().factorize_by_kroneckers_method().unwrap());

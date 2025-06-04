@@ -121,9 +121,9 @@ pub fn as_poly_expr(
         .to_powers(&target_min_poly_factored)
     {
         //the factor should be monic
-        debug_assert!(gen_anf.equal(&factor.leading_coeff().unwrap(), &gen_anf.one()));
-        if factor.degree().unwrap() == 1 {
-            let possible_embedded_target = gen_anf.neg(&factor.coeff(0));
+        debug_assert!(gen_anf.equal(gen_anf_poly.leading_coeff(factor).unwrap(), &gen_anf.one()));
+        if gen_anf_poly.degree(factor).unwrap() == 1 {
+            let possible_embedded_target = gen_anf.neg(gen_anf_poly.coeff(factor, 0));
             if generator.apply_poly(&possible_embedded_target) == *target {
                 return Some(possible_embedded_target);
             }
