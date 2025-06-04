@@ -1,7 +1,5 @@
 use crate::{
-    natural::factorization::{
-        NaturalCanonicalFactorizationStructure, factor, primes::is_prime,
-    },
+    natural::factorization::{NaturalCanonicalFactorizationStructure, factor, primes::is_prime},
     structure::*,
 };
 use algebraeon_nzq::{traits::Abs, *};

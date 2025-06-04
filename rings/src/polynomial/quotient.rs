@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use super::{Polynomial, polynomial_ring::*};
-use crate::{linear::matrix::*, structure::*};
+use crate::{matrix::*, structure::*};
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 

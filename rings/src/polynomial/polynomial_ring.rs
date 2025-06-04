@@ -1,5 +1,5 @@
 use super::{super::structure::*, Polynomial};
-use crate::linear::matrix::*;
+use crate::matrix::*;
 use crate::polynomial::polynomial_semiring::SemiRingToPolynomialSemiRingSignature;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;

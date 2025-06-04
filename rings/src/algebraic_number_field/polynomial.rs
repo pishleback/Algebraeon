@@ -1,7 +1,5 @@
 use super::number_field::AlgebraicNumberFieldStructure;
-use crate::{
-    linear::matrix::Matrix, polynomial::*, structure::*,
-};
+use crate::{matrix::Matrix, polynomial::*, structure::*};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 

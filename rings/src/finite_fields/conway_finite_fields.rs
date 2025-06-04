@@ -1,6 +1,6 @@
 use super::conway_polynomials::conway_polynomial;
 use crate::{
-    linear::matrix::{Matrix, MatrixStructure},
+    matrix::{Matrix, MatrixStructure},
     polynomial::*,
     structure::*,
 };

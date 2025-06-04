@@ -1,4 +1,4 @@
-use crate::{linear::matrix::*, polynomial::*, structure::*};
+use crate::{matrix::*, polynomial::*, structure::*};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;

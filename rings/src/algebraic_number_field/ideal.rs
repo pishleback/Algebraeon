@@ -3,10 +3,11 @@ use super::ring_of_integers::*;
 use crate::{
     linear::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
-        finitely_free_submodule::FinitelyFreeSubmodule, matrix::Matrix,
+        finitely_free_submodule::FinitelyFreeSubmodule,
     },
-    valuation::Valuation,
+    matrix::Matrix,
     structure::*,
+    valuation::Valuation,
 };
 use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::{

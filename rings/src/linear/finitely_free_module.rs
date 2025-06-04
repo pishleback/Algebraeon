@@ -2,9 +2,11 @@ use super::{
     finitely_free_affine::FinitelyFreeSubmoduleAffineSubsetStructure,
     finitely_free_coset::FinitelyFreeSubmoduleCosetStructure,
     finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
-    matrix::{Matrix, ReducedHermiteAlgorithmSignature},
 };
-use crate::{linear::matrix::MatrixStructure, structure::*};
+use crate::{
+    matrix::{Matrix, MatrixStructure, ReducedHermiteAlgorithmSignature},
+    structure::*,
+};
 use algebraeon_sets::structure::*;
 use std::{borrow::Cow, marker::PhantomData};
 

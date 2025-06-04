@@ -4,7 +4,7 @@ use super::{
     embedded_anf::anf_multi_primitive_element_theorem,
     ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
 };
-use crate::{linear::matrix::*, polynomial::*, structure::*};
+use crate::{matrix::*, polynomial::*, structure::*};
 use algebraeon_nzq::{
     Integer, Natural, Rational, RationalCanonicalStructure,
     traits::{Abs, Fraction},

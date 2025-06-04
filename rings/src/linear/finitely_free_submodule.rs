@@ -1,5 +1,5 @@
-use super::{finitely_free_coset::*, finitely_free_module::*, matrix::Matrix};
-use crate::{linear::matrix::*, structure::*};
+use super::{finitely_free_coset::*, finitely_free_module::*};
+use crate::{matrix::*, structure::*};
 use algebraeon_sets::structure::*;
 use std::fmt::Debug;
 

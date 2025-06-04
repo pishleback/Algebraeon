@@ -1,10 +1,8 @@
-use super::{
-    finitely_free_affine::*,
-    finitely_free_module::*,
-    finitely_free_submodule::*,
+use super::{finitely_free_affine::*, finitely_free_module::*, finitely_free_submodule::*};
+use crate::{
     matrix::{Matrix, ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
+    structure::*,
 };
-use crate::structure::*;
 use algebraeon_sets::structure::*;
 use std::fmt::Debug;
 
