@@ -65,12 +65,12 @@ impl<
                 f_factorization.check(ring, i, n)?;
                 g_factorization.check(ring, i, n)?;
 
-                let poly_ring = PolynomialStructure::new(ring.clone());
-                let ring_mod_i = QuotientStructure::new_ring(ring.clone(), i.clone());
-                let poly_ring_mod_i = PolynomialStructure::new(ring_mod_i.clone());
-                let poly_ring_mod_i_tothe_n = PolynomialStructure::new(
-                    QuotientStructure::new_ring(ring.clone(), ring.nat_pow(i, n)),
-                );
+                let poly_ring = ring.polynomial_ring();
+                let ring_mod_i = ring.quotient_ring(i.clone());
+                let poly_ring_mod_i = ring_mod_i.polynomial_ring();
+                let poly_ring_mod_i_tothe_n = ring
+                    .quotient_ring(ring.nat_pow(i, n))
+                    .into_polynomial_ring();
 
                 //af + bg = 1 mod i
                 if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(vec![
@@ -124,9 +124,10 @@ impl<
         first_fs: Vec<&Polynomial<RS::Set>>,
         second_fs: Vec<&Polynomial<RS::Set>>,
     ) -> Self {
-        let poly_ring = PolynomialStructure::new(ring.clone());
-        let poly_ring_mod_p =
-            PolynomialStructure::new(QuotientStructure::new_field(ring.clone(), p.clone()));
+        let poly_ring = ring.polynomial_ring();
+        let poly_ring_mod_p = ring
+            .quotient_field_unchecked(p.clone())
+            .into_polynomial_ring();
 
         //first_h and second_h are defined modulo p^n
         let first_h = poly_ring
@@ -209,7 +210,7 @@ fn compute_lift_factors<
     Polynomial<RS::Set>,
     Polynomial<RS::Set>,
 ) {
-    let poly_ring = PolynomialStructure::new(ring.clone());
+    let poly_ring = ring.polynomial_ring();
 
     let alpha = poly_ring.leading_coeff(h).unwrap();
     let (gcd, beta, gamma) = ring.euclidean_xgcd(alpha.clone(), i.clone());
@@ -217,7 +218,7 @@ fn compute_lift_factors<
     drop(gcd);
     drop(gamma);
 
-    let ring_mod_i = QuotientStructure::new_ring(ring.clone(), i.clone());
+    let ring_mod_i = ring.quotient_ring(i.clone());
     debug_assert!(ring_mod_i.equal(alpha, poly_ring.leading_coeff(h).unwrap()));
 
     let delta_h = poly_ring
@@ -229,10 +230,9 @@ fn compute_lift_factors<
 
     //found delta_h such that
     //delta_h = h - alpha*f*g mod i^n+1
-    let poly_ring_mod_i_tothe_nplusone = PolynomialStructure::new(QuotientStructure::new_ring(
-        ring.clone(),
-        ring.nat_pow(i, &(n + Natural::ONE)),
-    ));
+    let poly_ring_mod_i_tothe_nplusone = ring
+        .quotient_ring(ring.nat_pow(i, &(n + Natural::ONE)))
+        .into_polynomial_ring();
     debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
         &delta_h,
         &poly_ring_mod_i_tothe_nplusone.add(
@@ -244,7 +244,7 @@ fn compute_lift_factors<
             ]))
         ),
     ));
-    let poly_ring = PolynomialStructure::new(ring.clone());
+    let poly_ring = ring.polynomial_ring();
 
     debug_assert!(poly_ring.degree(&delta_h).unwrap_or(0) < poly_ring.degree(h).unwrap());
 
@@ -315,10 +315,9 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
                 a,
                 b,
             } => {
-                let pring_mod_i2n = PolynomialStructure::new(QuotientStructure::new_ring(
-                    ring.clone(),
-                    ring.nat_pow(i, &(n * Natural::TWO)),
-                ));
+                let pring_mod_i2n = ring
+                    .quotient_ring(ring.nat_pow(i, &(n * Natural::TWO)))
+                    .into_polynomial_ring();
 
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
@@ -405,9 +404,7 @@ impl<
                 debug_assert_eq!(first_fs.len() + second_fs.len(), fs_len);
 
                 //find an inverse beta to alpha modulo p
-                let alpha = PolynomialStructure::new(ring.clone())
-                    .leading_coeff(&h)
-                    .unwrap();
+                let alpha = ring.polynomial_ring().leading_coeff(&h).unwrap();
                 let (g, _beta, _gamma) = ring.euclidean_xgcd(alpha.clone(), p.clone());
                 debug_assert!(ring.equal(&g, &ring.one()));
 
@@ -467,7 +464,7 @@ impl<
         h: Polynomial<RS::Set>,
         fs: Vec<Polynomial<RS::Set>>,
     ) -> Self {
-        let poly_ring = PolynomialStructure::new(ring.clone());
+        let poly_ring = ring.polynomial_ring();
 
         debug_assert!(ring.is_irreducible(&p));
 
@@ -478,10 +475,9 @@ impl<
             debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n
-        let poly_ring_mod_p_tothe_n = PolynomialStructure::new(QuotientStructure::new_ring(
-            ring.clone(),
-            ring.nat_pow(&p, &n),
-        ));
+        let poly_ring_mod_p_tothe_n = ring
+            .quotient_ring(ring.nat_pow(&p, &n))
+            .into_polynomial_ring();
         let alpha = poly_ring.leading_coeff(&h).unwrap();
         debug_assert!(poly_ring_mod_p_tothe_n.equal(
             &h,
@@ -548,11 +544,12 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
 
 impl<
     RS: FactorableSignature + EuclideanDomainSignature + GreatestCommonDivisorSignature,
-    RSQB: BorrowedStructure<QuotientStructure<RS, true>>,
-    RSQPB: BorrowedStructure<PolynomialStructure<QuotientStructure<RS, true>, RSQB>>,
-> FactoredRingElementStructure<PolynomialStructure<QuotientStructure<RS, true>, RSQB>, RSQPB>
+    RSB: BorrowedStructure<RS>,
+    RSQB: BorrowedStructure<QuotientStructure<RS, RSB, true>>,
+    RSQPB: BorrowedStructure<PolynomialStructure<QuotientStructure<RS, RSB, true>, RSQB>>,
+> FactoredRingElementStructure<PolynomialStructure<QuotientStructure<RS, RSB, true>, RSQB>, RSQPB>
 where
-    PolynomialStructure<QuotientStructure<RS, true>, RSQB>:
+    PolynomialStructure<QuotientStructure<RS, RSB, true>, RSQB>:
         SetSignature<Set = Polynomial<RS::Set>> + FactorableSignature,
 {
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None

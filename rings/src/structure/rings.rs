@@ -162,16 +162,12 @@ pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
         }
     }
 
-    fn multivariable_polynomials<'a>(&'a self) -> MultiPolynomialStructure<Self, &'a Self> {
-        MultiPolynomialStructure::new(self)
+    fn principal_subring_inclusion<'a>(&'a self) -> PrincipalSubringInclusion<Self, &'a Self> {
+        PrincipalSubringInclusion::new(self)
     }
 
-    fn into_multivariable_polynomials(self) -> MultiPolynomialStructure<Self, Self> {
-        MultiPolynomialStructure::new(self)
-    }
-
-    fn principal_subring_inclusion(&self) -> PrincipalSubringInclusion<Self> {
-        PrincipalSubringInclusion::new(self.clone())
+    fn into_principal_subring_inclusion(self) -> PrincipalSubringInclusion<Self, Self> {
+        PrincipalSubringInclusion::new(self)
     }
 }
 
@@ -878,6 +874,7 @@ impl<R: MetaType> MetaPositiveRealNthRoot for R where
 {
 }
 
+//TODO: Move this sort of struture to the field inclusion homomorphism
 pub trait AlgebraicClosureSignature: FieldSignature
 where
     //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
@@ -895,23 +892,25 @@ where
         &self,
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<Self::Set>>;
+
     fn all_roots_unique(
         &self,
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<Self::Set>> {
-        let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
+        let base_field_poly = self.base_field().into_polynomial_ring();
         self.all_roots_list(
             &base_field_poly
                 .factorizations()
                 .expanded_squarefree(&base_field_poly.factor(poly).unwrap()),
         )
     }
+
     fn all_roots_powers(
         &self,
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
-        let base_field_poly = &PolynomialStructure::new(self.base_field().clone());
+        let base_field_poly = self.base_field().into_polynomial_ring();
         for (factor, k) in base_field_poly
             .factorizations()
             .into_powers(base_field_poly.factor(poly)?)

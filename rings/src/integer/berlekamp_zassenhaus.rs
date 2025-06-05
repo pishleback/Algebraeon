@@ -58,6 +58,7 @@ some improvements
 
 */
 
+use crate::natural::factorization::primes::is_prime;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::primes;
@@ -118,8 +119,9 @@ struct BerlekampZassenhausAlgorithmStateAtPrime {
 
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn new_at_prime(state: &BerlekampAassenhausAlgorithmState, p: Natural) -> Option<Self> {
-        let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(&p));
-        let poly_mod_p = PolynomialStructure::new(mod_p);
+        debug_assert!(is_prime(&p));
+        let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p));
+        let poly_mod_p = mod_p.polynomial_ring();
         if poly_mod_p.degree(&state.poly) == Some(state.degree) {
             let facotred_f_mod_p = poly_mod_p.factor(&state.poly).unwrap();
             match poly_mod_p
@@ -310,7 +312,8 @@ mod dminusone_test {
                         .iter()
                         .map(|g| {
                             let d = g.degree().unwrap();
-                            let coeff = (f.leading_coeff().unwrap() * g.coeff(d - 1)).rem(modulus);
+                            let coeff =
+                                (f.leading_coeff().unwrap() * g.coeff(d - 1).as_ref()).rem(modulus);
                             DMinusOneTestSemigroupElem {
                                 approx_coeff_lower_bound: (Rational::from(coeff)
                                     * &conversion_mult)
@@ -357,8 +360,8 @@ mod dminusone_test {
 
 // Polynomial division test. This test is never wrong.
 type ModularFactorMultSemigrp = PolynomialStructure<
-    QuotientStructure<IntegerCanonicalStructure, false>,
-    QuotientStructure<IntegerCanonicalStructure, false>,
+    QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, false>,
+    QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, false>,
 >;
 impl SemigroupSignature for ModularFactorMultSemigrp {
     fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -373,10 +376,9 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         let mut dminusone_test =
             dminusone_test::DMinusOneTest::new(&self.modulus, &self.poly, &self.modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
-            PolynomialStructure::new(QuotientStructure::new_ring(
-                Integer::structure(),
-                self.modulus.clone(),
-            )),
+            Integer::structure()
+                .into_quotient_ring(self.modulus.clone())
+                .into_polynomial_ring(),
             self.modular_factors.clone(),
         );
 
@@ -486,7 +488,8 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
                     Integer::factor,
                     &|f| {
                         if f.degree().unwrap() == 0 {
-                            PolynomialStructure::new(Integer::structure())
+                            Integer::structure()
+                                .into_polynomial_ring()
                                 .factorizations()
                                 .from_unit(f)
                         } else {
@@ -513,8 +516,8 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     } else {
         let prime_gen = primes();
         for p in prime_gen {
-            let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(p));
-            let poly_mod_p = PolynomialStructure::new(mod_p);
+            let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(p));
+            let poly_mod_p = mod_p.polynomial_ring();
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap();
                 if let Some(hensel_factorization_f_over_p) = poly_mod_p

@@ -15,21 +15,27 @@ use itertools::Itertools;
 pub type AlgebraicNumberFieldStructure = FieldExtensionByPolynomialQuotientStructure<
     RationalCanonicalStructure,
     RationalCanonicalStructure,
+    PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>,
 >;
 
 impl Polynomial<Rational> {
-    pub fn algebraic_number_field(self) -> AlgebraicNumberFieldStructure {
-        AlgebraicNumberFieldStructure::new_field(
-            PolynomialStructure::new(Rational::structure()),
-            self,
-        )
+    pub fn algebraic_number_field(self) -> Result<AlgebraicNumberFieldStructure, ()> {
+        Rational::structure()
+            .into_polynomial_ring()
+            .into_quotient_field(self)
+    }
+
+    pub fn algebraic_number_field_unchecked(self) -> AlgebraicNumberFieldStructure {
+        Rational::structure()
+            .into_polynomial_ring()
+            .into_quotient_field_unchecked(self)
     }
 
     //return the splitting field and the roots of f in the splitting field
     pub fn splitting_field(&self) -> (AlgebraicNumberFieldStructure, Vec<Polynomial<Rational>>) {
         let roots = self.primitive_part_fof().all_complex_roots();
         let (g, roots_rel_g) = anf_multi_primitive_element_theorem(roots.iter().collect());
-        (g.min_poly().algebraic_number_field(), roots_rel_g)
+        (g.generated_algebraic_number_field(), roots_rel_g)
     }
 }
 
@@ -109,7 +115,8 @@ impl AlgebraicNumberFieldStructure {
                             // println!("alpha = {:?} {}", alpha, self.min_poly(&alpha));
 
                             guess.push(alpha);
-                            let guess_mat = Matrix::construct(n + 1, n, |r, c| guess[r].coeff(c));
+                            let guess_mat =
+                                Matrix::construct(n + 1, n, |r, c| guess[r].coeff(c).into_owned());
                             let (mul, guess_mat_prim) = guess_mat.factor_primitive_fof();
                             let guess_mat_prim_hnf = guess_mat_prim
                                 .flip_cols()
@@ -193,7 +200,7 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldStructure {
         let x = self.reduce(x);
         match x.degree() {
             None => Some(Rational::ZERO),
-            Some(0) => Some(x.coeff(0)),
+            Some(0) => Some(x.coeff(0).into_owned()),
             Some(_) => None,
         }
     }
@@ -242,6 +249,50 @@ impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, AlgebraicNumber
     }
 }
 
+impl
+    IntegralDomainExtensionAllPolynomialRoots<
+        RationalCanonicalStructure,
+        AlgebraicNumberFieldStructure,
+    >
+    for PrincipalRationalSubfieldInclusion<
+        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldStructure,
+    >
+{
+    fn all_roots(
+        &self,
+        polynomial: &Polynomial<Rational>,
+    ) -> Vec<<AlgebraicNumberFieldStructure as SetSignature>::Set> {
+        let anf = self.range();
+        anf.polynomial_ring()
+            .factor(&polynomial.apply_map(|x| self.image(x)))
+            .unwrap()
+            .into_powers()
+            .into_iter()
+            .filter_map(|(factor, power)| {
+                match anf.polynomial_ring().degree(&factor) {
+                    None | Some(0) => unreachable!(),
+                    Some(1) => {
+                        // factor = a + bx
+                        // so root = -a/b
+                        let a = anf.polynomial_ring().coeff(&factor, 0);
+                        let b = anf.polynomial_ring().coeff(&factor, 1);
+                        Some(vec![
+                            anf.neg(&anf.div(a.as_ref(), b.as_ref()).unwrap());
+                            power.try_into().unwrap()
+                        ])
+                    }
+                    Some(n) => {
+                        debug_assert!(n >= 2);
+                        None
+                    }
+                }
+            })
+            .flatten()
+            .collect()
+    }
+}
+
 struct RingOfIntegers {
     anf: AlgebraicNumberFieldStructure,
     basis: Vec<Polynomial<Rational>>,
@@ -255,7 +306,10 @@ mod tests {
     #[test]
     fn test_anf_to_and_from_vector() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(5) - x + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(5) - x + 1)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let alpha = (x.pow(9) + 5).into_verbose();
 
         println!("{}", alpha);

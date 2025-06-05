@@ -10,7 +10,7 @@ pub struct PolynomialSemiRingStructure<RS: SemiRingSignature, RSB: BorrowedStruc
 }
 
 impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStructure<RS, RSB> {
-    pub fn new(coeff_ring: RSB) -> Self {
+    fn new(coeff_ring: RSB) -> Self {
         Self {
             coeff_ring_zero: coeff_ring.borrow().zero(),
             coeff_ring,
@@ -23,11 +23,11 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
 }
 
 pub trait SemiRingToPolynomialSemiRingSignature: SemiRingSignature {
-    fn polynomials_semiring<'a>(&'a self) -> PolynomialSemiRingStructure<Self, &'a Self> {
+    fn polynomial_semiring<'a>(&'a self) -> PolynomialSemiRingStructure<Self, &'a Self> {
         PolynomialSemiRingStructure::new(self)
     }
 
-    fn into_polynomials_semiring(self) -> PolynomialSemiRingStructure<Self, Self> {
+    fn into_polynomial_semiring(self) -> PolynomialSemiRingStructure<Self, Self> {
         PolynomialSemiRingStructure::new(self)
     }
 }

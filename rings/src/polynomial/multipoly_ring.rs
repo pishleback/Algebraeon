@@ -397,7 +397,7 @@ pub struct MultiPolynomialStructure<RS: RingSignature, RSB: BorrowedStructure<RS
 }
 
 impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS, RSB> {
-    pub fn new(coeff_ring: RSB) -> Self {
+    fn new(coeff_ring: RSB) -> Self {
         Self {
             _coeff_ring: PhantomData,
             coeff_ring,
@@ -408,6 +408,17 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
         self.coeff_ring.borrow()
     }
 }
+
+pub trait RingToMultiPolynomialRingSignature: RingSignature {
+    fn multivariable_polynomial_ring<'a>(&'a self) -> MultiPolynomialStructure<Self, &'a Self> {
+        MultiPolynomialStructure::new(self)
+    }
+
+    fn into_multivariable_polynomial_ring(self) -> MultiPolynomialStructure<Self, Self> {
+        MultiPolynomialStructure::new(self)
+    }
+}
+impl<RS: RingSignature> RingToMultiPolynomialRingSignature for RS {}
 
 impl<RS: RingSignature, RSB: BorrowedStructure<RS>> Signature
     for MultiPolynomialStructure<RS, RSB>
@@ -618,7 +629,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
             let var = vars.iter().next().unwrap();
             let a_poly = self.expand(a, var);
             let b_poly = self.expand(b, var);
-            let poly_ring = PolynomialStructure::<Self, &'_ Self>::new(self);
+            let poly_ring = self.polynomial_ring();
             match poly_ring.div(&a_poly, &b_poly) {
                 Ok(c_poly) => Ok(poly_ring.evaluate(&c_poly, &self.var(var.clone()))),
                 Err(e) => Err(e),
@@ -686,7 +697,7 @@ where
 {
     fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
         if let Some(free_var) = x.free_vars().into_iter().chain(y.free_vars()).next() {
-            let poly_over_self = PolynomialStructure::new(self);
+            let poly_over_self = self.polynomial_ring();
             let x_poly = self.expand(x, &free_var);
             let y_poly = self.expand(y, &free_var);
             let g_poly = poly_over_self.gcd(&x_poly, &y_poly);
@@ -900,7 +911,7 @@ where
                             // Not homogeneous but
                             // There exists a free variable
                             // So turn ourself into a polynomial with respect to that free variable
-                            let poly_over_self = PolynomialStructure::new(self);
+                            let poly_over_self = self.polynomial_ring();
                             let expanded_poly = self.expand(mpoly, &free_var);
                             let free_var = self.var(free_var);
                             let (unit, factors) = poly_over_self

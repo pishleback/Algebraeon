@@ -78,11 +78,11 @@ impl Polynomial<Integer> {
                     //               k = 2 mod 4        - \binom{n}{k} a^{n-k} x^k
                     //               k = 3 mod 4        - \binom{n}{k} a^{n-k} x^k i
                     //
-                    if self.coeff(n) != Integer::from(0) {
+                    if self.coeff(n).as_ref() != &Integer::ZERO {
                         let mut k = 0;
                         loop {
                             //k = 0 mod 4
-                            re[if RE_OR_IM { n - k } else { k }] += self.coeff(n)
+                            re[if RE_OR_IM { n - k } else { k }] += self.coeff(n).as_ref()
                                 * &n_choose[k]
                                 * &a_pow[if RE_OR_IM { k } else { n - k }];
                             if k == n {
@@ -90,7 +90,7 @@ impl Polynomial<Integer> {
                             }
                             k += 1;
                             //k = 1 mod 4
-                            im[if RE_OR_IM { n - k } else { k }] += self.coeff(n)
+                            im[if RE_OR_IM { n - k } else { k }] += self.coeff(n).as_ref()
                                 * &n_choose[k]
                                 * &a_pow[if RE_OR_IM { k } else { n - k }];
                             if k == n {
@@ -98,7 +98,7 @@ impl Polynomial<Integer> {
                             }
                             k += 1;
                             //k = 2 mod 4
-                            re[if RE_OR_IM { n - k } else { k }] -= self.coeff(n)
+                            re[if RE_OR_IM { n - k } else { k }] -= self.coeff(n).as_ref()
                                 * &n_choose[k]
                                 * &a_pow[if RE_OR_IM { k } else { n - k }];
                             if k == n {
@@ -106,7 +106,7 @@ impl Polynomial<Integer> {
                             }
                             k += 1;
                             //k = 3 mod 4
-                            im[if RE_OR_IM { n - k } else { k }] -= self.coeff(n)
+                            im[if RE_OR_IM { n - k } else { k }] -= self.coeff(n).as_ref()
                                 * &n_choose[k]
                                 * &a_pow[if RE_OR_IM { k } else { n - k }];
                             if k == n {

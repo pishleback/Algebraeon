@@ -5,7 +5,7 @@ use super::ring_of_integers::*;
 use crate::integer::ideal::IntegerIdealsStructure;
 use crate::matrix::Matrix;
 use crate::polynomial::Polynomial;
-use crate::polynomial::PolynomialStructure;
+use crate::polynomial::RingToPolynomialSignature;
 use crate::structure::*;
 use crate::valuation::Valuation;
 use algebraeon_nzq::traits::Abs;
@@ -24,8 +24,11 @@ pub struct RingOfIntegersExtension<
     q: RationalCanonicalStructure,
     r: RingOfIntegersWithIntegralBasisStructure,
     k: AlgebraicNumberFieldStructure,
-    z_to_q: PrincipalSubringInclusion<RationalCanonicalStructure>,
-    z_to_r: PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
+    z_to_q: PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+    z_to_r: PrincipalSubringInclusion<
+        RingOfIntegersWithIntegralBasisStructure,
+        RingOfIntegersWithIntegralBasisStructure,
+    >,
     q_to_k: PrincipalRationalSubfieldInclusion<
         AlgebraicNumberFieldStructure,
         AlgebraicNumberFieldStructure,
@@ -131,8 +134,11 @@ impl<
         RationalCanonicalStructure,
         RingOfIntegersWithIntegralBasisStructure,
         AlgebraicNumberFieldStructure,
-        PrincipalSubringInclusion<RationalCanonicalStructure>,
-        PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
+        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+        PrincipalSubringInclusion<
+            RingOfIntegersWithIntegralBasisStructure,
+            RingOfIntegersWithIntegralBasisStructure,
+        >,
         PrincipalRationalSubfieldInclusion<
             AlgebraicNumberFieldStructure,
             AlgebraicNumberFieldStructure,
@@ -152,10 +158,17 @@ impl<
     fn k_field(&self) -> &AlgebraicNumberFieldStructure {
         &self.k
     }
-    fn z_to_q(&self) -> &PrincipalSubringInclusion<RationalCanonicalStructure> {
+    fn z_to_q(
+        &self,
+    ) -> &PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure> {
         &self.z_to_q
     }
-    fn z_to_r(&self) -> &PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure> {
+    fn z_to_r(
+        &self,
+    ) -> &PrincipalSubringInclusion<
+        RingOfIntegersWithIntegralBasisStructure,
+        RingOfIntegersWithIntegralBasisStructure,
+    > {
         &self.z_to_r
     }
     fn q_to_k(
@@ -185,8 +198,11 @@ impl
         RationalCanonicalStructure,
         RingOfIntegersWithIntegralBasisStructure,
         AlgebraicNumberFieldStructure,
-        PrincipalSubringInclusion<RationalCanonicalStructure>,
-        PrincipalSubringInclusion<RingOfIntegersWithIntegralBasisStructure>,
+        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+        PrincipalSubringInclusion<
+            RingOfIntegersWithIntegralBasisStructure,
+            RingOfIntegersWithIntegralBasisStructure,
+        >,
         PrincipalRationalSubfieldInclusion<
             AlgebraicNumberFieldStructure,
             AlgebraicNumberFieldStructure,
@@ -234,9 +250,9 @@ impl
         let anf = self.k_field();
         let roi = self.r_ring();
         let roi_ideals = roi.ideals();
-        let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), p.clone());
-        let poly_mod_p = PolynomialStructure::new(mod_p);
-        let poly_roi = PolynomialStructure::new(roi.clone());
+        let mod_p = Integer::structure().into_quotient_field_unchecked(p.clone());
+        let poly_mod_p = mod_p.polynomial_ring();
+        let poly_roi = roi.polynomial_ring();
 
         // alpha generates the algebraic number field but it is not necessarily an algebraic integer
         let alpha = anf.generator();
@@ -329,7 +345,10 @@ mod tests {
     #[test]
     fn integral_multiplier() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(3) + x + 1)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let roi = anf.compute_ring_of_integers();
         let sq = RingOfIntegersExtension::new_integer_extension(roi.clone());
         let r_to_k_fof = sq.r_to_k_field_of_fractions();
@@ -363,7 +382,10 @@ mod tests {
     #[test]
     fn ideals_operations_roi_extension_for_gaussian_integers() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(2) + 1)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let roi = anf.compute_ring_of_integers();
         let sq = RingOfIntegersExtension::new_integer_extension(roi.clone());
 
@@ -399,7 +421,10 @@ mod tests {
     #[allow(non_snake_case)]
     fn test_is_S_integral() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(2) + 5).into_verbose().algebraic_number_field();
+        let anf = (x.pow(2) + 5)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let roi = anf.compute_ring_of_integers();
         let ext = RingOfIntegersExtension::new_integer_extension(roi.clone());
 

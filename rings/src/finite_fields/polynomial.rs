@@ -314,7 +314,9 @@ where
                 )
             })
             .collect::<Vec<_>>();
-        let mat = Matrix::construct(f_deg, f_deg, |i, j| self.coeff(&row_polys[i], j).clone());
+        let mat = Matrix::construct(f_deg, f_deg, |i, j| {
+            self.coeff(&row_polys[i], j).into_owned()
+        });
         // mat.pprint();
         //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
         let mat_struct = MatrixStructure::<FS, _>::new(self.coeff_ring());
@@ -408,7 +410,7 @@ where
             let n = self.poly_ring.degree(poly).unwrap();
             debug_assert!(n >= 1);
 
-            let mod_poly_ring = QuotientStructure::new_ring(self.poly_ring.clone(), poly.clone());
+            let mod_poly_ring = self.poly_ring.quotient_ring(poly.clone());
             let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring().clone());
             let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
             let qth_power_matrix = Matrix::join_cols(
@@ -581,8 +583,7 @@ where
                     sum
                 } else {
                     // when char != 2 use h^{(q^d-1)/2}-1 mod f
-                    let poly_mod_f =
-                        QuotientStructure::new_ring(self.poly_ring.clone(), ddf.polynomial.clone());
+                    let poly_mod_f = self.poly_ring.quotient_ring(ddf.polynomial.clone());
                     let a = (q.nat_pow(&d.into()) - Natural::ONE) / Natural::TWO;
                     poly_mod_f.add(
                         &poly_mod_f.nat_pow(&h, &a),
@@ -873,7 +874,7 @@ mod tests {
             );
 
         let f = QuaternaryField::structure()
-            .polynomials()
+            .polynomial_ring()
             .factorize_by_trying_all_factors(p.clone())
             .unwrap();
         println!("{} = {}", p, f);

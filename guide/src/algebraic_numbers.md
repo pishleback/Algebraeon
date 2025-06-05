@@ -1,0 +1,11 @@
+# Algebraic Numbers
+
+Let \\(F\\) and \\(K\\) be fields with \\(F \subseteq K\\). A number \\(\alpha \in K\\) is said to be algebraic over \\(F\\) if there exists a polynomial \\(p(x) \in F[x]\\) such that \\(f(\alpha) = 0\\). If \\(\alpha \in K\\) is algebraic over \\(F\\) then the subset \\(I\\) of \\(F[x]\\) given by the set of all polynomials \\(p(x) \in F[x]\\) satisfying \\(f(\alpha) = 0\\) is an ideal of \\(F[x]\\).
+\\[I := \\{p(x) \in F[x] : p(\alpha) = 0\\} \text{ is an ideal of } F[x]\\]
+\\(F[x]\\) is a principal ideal domain and the unique monic polynomial \\(m(x) \in F[x]\\) which generates \\(I\\) is called the minimal polynomial of \\(\alpha\\).
+
+Algebraon supports the following algebraic numbers:
+- Real numbers \\(\alpha \in \mathbb{R}\\) which are algebraic over \\(\mathbb{Q}\\). Represented by the minimal polynomial \\(m(x) \in \mathbb{Q}[x]\\) of \\(\alpha\\) and a rational isolating interval \\((a, b) \subseteq \mathbb{R}\\) consisting a pair of rational numbers \\(a, b \in \mathbb{Q}\\) such that \\(\alpha \in (a, b)\\) and no other root of \\(m(x)\\) is contained in \\((a, b)\\).
+- Complex numbers \\(\alpha \in \mathbb{C}\\) which are algebraic over \\(\mathbb{Q}\\). Represented by the minimal polynomial \\(m(x) \in \mathbb{Q}[x]\\) of \\(\alpha\\) and a rational isolating box in the complex plane.
+- For a prime \\(p \in \mathbb{N}\\), \\(p\\)-adic numbers \\(\alpha \in \mathbb{Q}_p\\) which are algebraic over \\(\mathbb{Q}\\). Represented by the minimal polynomial \\(m(x) \in \mathbb{Q}[x]\\) of \\(\alpha\\) and a \\(p\\)-adic isolating ball consisting of a rational number \\(c \in \mathbb{Q}\\) and a valuation \\(v \in \mathbb{N} \sqcup \{\infty\}\\) such that \\(\alpha - c\\) has \\(p\\)-adic valuation at least \\(v\\) and no other root \\(\beta\\) of \\(m(x)\\) is such that \\(\beta - c\\) has valuation \\(p\\)-adic at least \\(v\\).
+- If \\(m(x) \in \mathbb{Q}[x]\\) is irreducible then the quotient field \\(K := \frac{\mathbb{Q}[x]}{m(x)}\\) is a finite dimensional extension of \\(\mathbb{Q}\\), also known as an algebraic number field. Every element of \\(K\\) is algebraic over \\(\mathbb{Q}\\). Elements of \\(K\\) are represented by rational polynomials up to adding rational polynomial multiples of \\(m(x)\\).

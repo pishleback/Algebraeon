@@ -42,13 +42,13 @@ impl AlgebraicNumberFieldStructure {
 }
 
 impl ComplexAlgebraic {
-    pub fn abstract_generated_algebraic_number_field(&self) -> AlgebraicNumberFieldStructure {
-        self.min_poly().algebraic_number_field()
+    pub fn generated_algebraic_number_field(&self) -> AlgebraicNumberFieldStructure {
+        self.min_poly().algebraic_number_field_unchecked()
     }
 
     pub fn embedded_generated_algebraic_number_field(self) -> EmbeddedAnf {
         EmbeddedAnf {
-            anf: self.abstract_generated_algebraic_number_field().into(),
+            anf: self.generated_algebraic_number_field().into(),
             generator: self,
         }
     }
@@ -106,8 +106,8 @@ pub fn as_poly_expr(
     //loop through the linear factors (x - a) and check if a = target
 
     //let K = Q[generator]
-    let gen_anf = generator.min_poly().algebraic_number_field();
-    let gen_anf_poly = PolynomialStructure::new(gen_anf.clone());
+    let gen_anf = generator.generated_algebraic_number_field();
+    let gen_anf_poly = gen_anf.polynomial_ring();
 
     //the minimal polynomial of target in K[x]
     let target_min_poly = target
@@ -123,7 +123,7 @@ pub fn as_poly_expr(
         //the factor should be monic
         debug_assert!(gen_anf.equal(gen_anf_poly.leading_coeff(factor).unwrap(), &gen_anf.one()));
         if gen_anf_poly.degree(factor).unwrap() == 1 {
-            let possible_embedded_target = gen_anf.neg(gen_anf_poly.coeff(factor, 0));
+            let possible_embedded_target = gen_anf.neg(gen_anf_poly.coeff(factor, 0).as_ref());
             if generator.apply_poly(&possible_embedded_target) == *target {
                 return Some(possible_embedded_target);
             }
@@ -170,7 +170,7 @@ pub fn anf_pair_primitive_element_theorem(
         );
 
         if let Some(a_rel_gen) = as_poly_expr(a, &generator) {
-            let anf = generator.min_poly().algebraic_number_field();
+            let anf = generator.generated_algebraic_number_field();
             //gen = xa + yb
             //so b = (gen - xa) / y
             let b_rel_gen = anf.mul(
@@ -209,7 +209,7 @@ pub fn anf_multi_primitive_element_theorem(
     let mut p = vec![Polynomial::var()];
     for num in nums {
         let (new_g, _x, _y, old_g_poly, num_poly) = anf_pair_primitive_element_theorem(&g, num);
-        let new_g_anf = new_g.min_poly().algebraic_number_field();
+        let new_g_anf = new_g.generated_algebraic_number_field();
         p = p
             .into_iter()
             .map(|old_p| new_g_anf.reduce(Polynomial::compose(&old_p, &old_g_poly)))
@@ -241,7 +241,7 @@ mod tests {
         for root in f.all_complex_roots() {
             println!(
                 "{:?}",
-                root.abstract_generated_algebraic_number_field()
+                root.generated_algebraic_number_field()
                     .compute_integral_basis_and_discriminant()
             );
         }

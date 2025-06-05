@@ -161,9 +161,9 @@ impl Display for ComplexAlgebraicRoot {
             let a = self.poly.coeff(2);
             let b = self.poly.coeff(1);
             let c = self.poly.coeff(0);
-            debug_assert!(a > Integer::ZERO);
+            debug_assert!(a.as_ref() > &Integer::ZERO);
 
-            let d = &b * &b - Integer::from(4) * &a * &c;
+            let d = b.as_ref() * b.as_ref() - Integer::from(4) * a.as_ref() * c.as_ref();
             let mut d_sq = Integer::ONE;
             let mut d_sqfreee = Integer::ONE;
             let (d_sign, d_factors) = d.factor().unwrap().into_unit_and_powers();
@@ -176,9 +176,9 @@ impl Display for ComplexAlgebraicRoot {
             debug_assert_eq!(d_sign, -Integer::ONE); //because we are a real number
             debug_assert_eq!(-d, &d_sqfreee * &d_sq * &d_sq);
 
-            let two_a = Integer::TWO * a;
+            let two_a = Integer::TWO * a.as_ref();
 
-            let x = Rational::from_integers(-b, two_a.clone());
+            let x = Rational::from_integers(-b.as_ref(), two_a.clone());
             let y = Rational::from_integers(d_sq, two_a);
             debug_assert!(y > Rational::ZERO);
             let r = d_sqfreee;
@@ -422,7 +422,7 @@ impl ComplexAlgebraicRoot {
         } else {
             let ans_poly = self
                 .min_poly()
-                .algebraic_number_field()
+                .algebraic_number_field_unchecked()
                 .min_poly(&poly)
                 .primitive_part_fof();
 
@@ -961,6 +961,28 @@ impl ComplexAlgebraic {
             ComplexAlgebraic::Real(real_algebraic) => real_algebraic.min_poly(),
             ComplexAlgebraic::Complex(complex_root) => complex_root.min_poly(),
         }
+    }
+}
+
+impl<B: BorrowedStructure<ComplexAlgebraicCanonicalStructure>>
+    IntegralDomainExtensionAllPolynomialRoots<
+        IntegerCanonicalStructure,
+        ComplexAlgebraicCanonicalStructure,
+    > for PrincipalSubringInclusion<ComplexAlgebraicCanonicalStructure, B>
+{
+    fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<ComplexAlgebraic> {
+        polynomial.all_complex_roots()
+    }
+}
+
+impl<B: BorrowedStructure<ComplexAlgebraicCanonicalStructure>>
+    IntegralDomainExtensionAllPolynomialRoots<
+        RationalCanonicalStructure,
+        ComplexAlgebraicCanonicalStructure,
+    > for PrincipalRationalSubfieldInclusion<ComplexAlgebraicCanonicalStructure, B>
+{
+    fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<ComplexAlgebraic> {
+        polynomial.all_complex_roots()
     }
 }
 

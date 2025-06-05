@@ -1,11 +1,11 @@
 use super::ring_of_integer_extensions::RingOfIntegersExtension;
 use super::ring_of_integers::*;
 use crate::{
+    matrix::Matrix,
     module::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
-    matrix::Matrix,
     structure::*,
     valuation::Valuation,
 };
@@ -533,7 +533,10 @@ mod tests {
         let b = Polynomial::<Rational>::from_coeffs(vec![Rational::ZERO, Rational::ONE]);
 
         // Q[sqrt(2)]
-        let anf = (x.pow(2) - 2).into_verbose().algebraic_number_field();
+        let anf = (x.pow(2) - 2)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let roi = RingOfIntegersWithIntegralBasisStructure::new(
             anf.clone(),
             vec![a.clone(), b.clone()],
@@ -600,7 +603,10 @@ mod tests {
     #[test]
     fn test_count_all_ideals_norm_eq() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(2) + 1)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let roi = anf.compute_ring_of_integers();
         let roi_ideals = roi.ideals();
 
@@ -625,7 +631,10 @@ mod tests {
         let x = Polynomial::<Rational>::var().into_ergonomic();
 
         // Construct the number field Q(i), which has ring of integers Z[i]
-        let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(2) + 1)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let roi = anf.compute_ring_of_integers();
         let roi_ideals = roi.ideals();
 

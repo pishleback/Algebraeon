@@ -406,7 +406,7 @@ impl Polynomial<Integer> {
             // root = -b/a
             vec![PAdicAlgebraic::Rational(PAdicRational {
                 p: p.clone(),
-                rat: -Rational::from_integers(b, a),
+                rat: -Rational::from_integers(b.as_ref(), a.as_ref()),
             })]
         } else {
             isolate::isolate(p, self)
@@ -440,6 +440,13 @@ impl Polynomial<Integer> {
             }
         }
         roots
+    }
+}
+
+impl Polynomial<Rational> {
+    pub fn all_padic_roots(&self, p: &Natural) -> Vec<PAdicAlgebraic> {
+        assert_ne!(self, &Self::zero());
+        self.primitive_part_fof().all_padic_roots(p)
     }
 }
 
@@ -643,9 +650,10 @@ impl PAdicAlgebraicRoot {
             <= v / max(|x - a|, |a|).|a|
             <= v / max(v, |a|).|a|
         */
-        let inv_poly =
-            Polynomial::from_coeffs(self.poly.clone().into_coeffs().into_iter().rev().collect())
-                .fav_assoc();
+        let inv_poly = Polynomial::<Integer>::from_coeffs(
+            self.poly.clone().into_coeffs().into_iter().rev().collect(),
+        )
+        .fav_assoc();
         debug_assert!(inv_poly.is_irreducible());
         let p = self.p.clone();
         let mut candidates = inv_poly.all_padic_roots(&p);
@@ -857,6 +865,24 @@ impl CharZeroFieldSignature for PAdicAlgebraicStructure {
             PAdicAlgebraic::Rational(padic_rational) => Some(padic_rational.rat.clone()),
             PAdicAlgebraic::Algebraic(_) => None,
         }
+    }
+}
+
+impl<B: BorrowedStructure<PAdicAlgebraicStructure>>
+    IntegralDomainExtensionAllPolynomialRoots<IntegerCanonicalStructure, PAdicAlgebraicStructure>
+    for PrincipalSubringInclusion<PAdicAlgebraicStructure, B>
+{
+    fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<PAdicAlgebraic> {
+        polynomial.all_padic_roots(&self.range().p)
+    }
+}
+
+impl<B: BorrowedStructure<PAdicAlgebraicStructure>>
+    IntegralDomainExtensionAllPolynomialRoots<RationalCanonicalStructure, PAdicAlgebraicStructure>
+    for PrincipalRationalSubfieldInclusion<PAdicAlgebraicStructure, B>
+{
+    fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<PAdicAlgebraic> {
+        polynomial.all_padic_roots(&self.range().p)
     }
 }
 

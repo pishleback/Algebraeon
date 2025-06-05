@@ -1,9 +1,9 @@
 use super::number_field::AlgebraicNumberFieldStructure;
 use crate::{
+    matrix::Matrix,
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
     },
-    matrix::Matrix,
     polynomial::Polynomial,
     structure::*,
 };
@@ -435,7 +435,10 @@ mod tests {
         let a = Polynomial::<Rational>::from_coeffs(vec![Rational::ZERO, Rational::ONE]);
         let b = Polynomial::<Rational>::from_coeffs(vec![Rational::ONE_HALF, Rational::ONE_HALF]);
 
-        let anf = (x.pow(2) + 7).into_verbose().algebraic_number_field();
+        let anf = (x.pow(2) + 7)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let roi = RingOfIntegersWithIntegralBasisStructure::new(
             anf.clone(),
             vec![a.clone(), b.clone()],
@@ -523,7 +526,10 @@ mod tests {
     fn ideal_factoring() {
         // Construct the ring of integers Z[i]
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(3) + x + 1)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let roi = anf.compute_ring_of_integers();
         let roi_ideals = roi.ideals();
 
