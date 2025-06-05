@@ -1007,11 +1007,7 @@ where
     }
 }
 
-impl<R: MetaType> Eq for Polynomial<R>
-where
-    R::Signature: RingSignature,
-{
-}
+impl<R: MetaType> Eq for Polynomial<R> where R::Signature: RingSignature {}
 
 impl<R: MetaType> Polynomial<R>
 where

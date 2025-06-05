@@ -66,11 +66,10 @@ impl<
                 g_factorization.check(ring, i, n)?;
 
                 let poly_ring = PolynomialStructure::new(ring.clone());
-                let ring_mod_i = QuotientStructure::new_ring(ring.clone(), i.clone());
+                let ring_mod_i = ring.quotient_ring(i.clone());
                 let poly_ring_mod_i = PolynomialStructure::new(ring_mod_i.clone());
-                let poly_ring_mod_i_tothe_n = PolynomialStructure::new(
-                    QuotientStructure::new_ring(ring.clone(), ring.nat_pow(i, n)),
-                );
+                let poly_ring_mod_i_tothe_n =
+                    PolynomialStructure::new(ring.quotient_ring(ring.nat_pow(i, n)));
 
                 //af + bg = 1 mod i
                 if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(vec![
@@ -125,8 +124,7 @@ impl<
         second_fs: Vec<&Polynomial<RS::Set>>,
     ) -> Self {
         let poly_ring = PolynomialStructure::new(ring.clone());
-        let poly_ring_mod_p =
-            PolynomialStructure::new(QuotientStructure::new_field_unchecked(ring.clone(), p.clone()));
+        let poly_ring_mod_p = PolynomialStructure::new(ring.quotient_field_unchecked(p.clone()));
 
         //first_h and second_h are defined modulo p^n
         let first_h = poly_ring
@@ -217,7 +215,7 @@ fn compute_lift_factors<
     drop(gcd);
     drop(gamma);
 
-    let ring_mod_i = QuotientStructure::new_ring(ring.clone(), i.clone());
+    let ring_mod_i = ring.quotient_ring(i.clone());
     debug_assert!(ring_mod_i.equal(alpha, poly_ring.leading_coeff(h).unwrap()));
 
     let delta_h = poly_ring
@@ -229,10 +227,8 @@ fn compute_lift_factors<
 
     //found delta_h such that
     //delta_h = h - alpha*f*g mod i^n+1
-    let poly_ring_mod_i_tothe_nplusone = PolynomialStructure::new(QuotientStructure::new_ring(
-        ring.clone(),
-        ring.nat_pow(i, &(n + Natural::ONE)),
-    ));
+    let poly_ring_mod_i_tothe_nplusone =
+        PolynomialStructure::new(ring.quotient_ring(ring.nat_pow(i, &(n + Natural::ONE))));
     debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
         &delta_h,
         &poly_ring_mod_i_tothe_nplusone.add(
@@ -315,10 +311,9 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
                 a,
                 b,
             } => {
-                let pring_mod_i2n = PolynomialStructure::new(QuotientStructure::new_ring(
-                    ring.clone(),
-                    ring.nat_pow(i, &(n * Natural::TWO)),
-                ));
+                let pring_mod_i2n = PolynomialStructure::new(
+                    ring.quotient_ring(ring.nat_pow(i, &(n * Natural::TWO))),
+                );
 
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
@@ -478,10 +473,8 @@ impl<
             debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n
-        let poly_ring_mod_p_tothe_n = PolynomialStructure::new(QuotientStructure::new_ring(
-            ring.clone(),
-            ring.nat_pow(&p, &n),
-        ));
+        let poly_ring_mod_p_tothe_n =
+            PolynomialStructure::new(ring.quotient_ring(ring.nat_pow(&p, &n)));
         let alpha = poly_ring.leading_coeff(&h).unwrap();
         debug_assert!(poly_ring_mod_p_tothe_n.equal(
             &h,
@@ -548,11 +541,12 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
 
 impl<
     RS: FactorableSignature + EuclideanDomainSignature + GreatestCommonDivisorSignature,
-    RSQB: BorrowedStructure<QuotientStructure<RS, true>>,
-    RSQPB: BorrowedStructure<PolynomialStructure<QuotientStructure<RS, true>, RSQB>>,
-> FactoredRingElementStructure<PolynomialStructure<QuotientStructure<RS, true>, RSQB>, RSQPB>
+    RSB: BorrowedStructure<RS>,
+    RSQB: BorrowedStructure<QuotientStructure<RS, RSB, true>>,
+    RSQPB: BorrowedStructure<PolynomialStructure<QuotientStructure<RS, RSB, true>, RSQB>>,
+> FactoredRingElementStructure<PolynomialStructure<QuotientStructure<RS, RSB, true>, RSQB>, RSQPB>
 where
-    PolynomialStructure<QuotientStructure<RS, true>, RSQB>:
+    PolynomialStructure<QuotientStructure<RS, RSB, true>, RSQB>:
         SetSignature<Set = Polynomial<RS::Set>> + FactorableSignature,
 {
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None

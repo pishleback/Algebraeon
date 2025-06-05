@@ -286,8 +286,10 @@ pub trait FieldOfFractionsInclusion<Ring: RingSignature, Field: FieldSignature>:
 }
 
 /// An injective homomorphism A -> B of integral domains where there is a way to get all roots in B of a polynomial over A
-pub trait IntegralDomainExtensionAllPolynomialRoots<A: IntegralDomainSignature, B: IntegralDomainSignature>:
-    RingHomomorphism<A, B> + InjectiveFunction<A, B>
+pub trait IntegralDomainExtensionAllPolynomialRoots<
+    A: IntegralDomainSignature,
+    B: IntegralDomainSignature,
+>: RingHomomorphism<A, B> + InjectiveFunction<A, B>
 {
     fn all_roots(&self, polynomial: &Polynomial<A::Set>) -> Vec<B::Set>;
 }

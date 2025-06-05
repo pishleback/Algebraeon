@@ -120,7 +120,7 @@ struct BerlekampZassenhausAlgorithmStateAtPrime {
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn new_at_prime(state: &BerlekampAassenhausAlgorithmState, p: Natural) -> Option<Self> {
         debug_assert!(is_prime(&p));
-        let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), Integer::from(&p));
+        let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p));
         let poly_mod_p = PolynomialStructure::new(mod_p);
         if poly_mod_p.degree(&state.poly) == Some(state.degree) {
             let facotred_f_mod_p = poly_mod_p.factor(&state.poly).unwrap();
@@ -359,8 +359,8 @@ mod dminusone_test {
 
 // Polynomial division test. This test is never wrong.
 type ModularFactorMultSemigrp = PolynomialStructure<
-    QuotientStructure<IntegerCanonicalStructure, false>,
-    QuotientStructure<IntegerCanonicalStructure, false>,
+    QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, false>,
+    QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, false>,
 >;
 impl SemigroupSignature for ModularFactorMultSemigrp {
     fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -375,10 +375,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         let mut dminusone_test =
             dminusone_test::DMinusOneTest::new(&self.modulus, &self.poly, &self.modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
-            PolynomialStructure::new(QuotientStructure::new_ring(
-                Integer::structure(),
-                self.modulus.clone(),
-            )),
+            PolynomialStructure::new(Integer::structure().into_quotient_ring(self.modulus.clone())),
             self.modular_factors.clone(),
         );
 
@@ -515,7 +512,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     } else {
         let prime_gen = primes();
         for p in prime_gen {
-            let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), Integer::from(p));
+            let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(p));
             let poly_mod_p = PolynomialStructure::new(mod_p);
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap();

@@ -12,8 +12,12 @@ pub struct ConwayFiniteFieldStructure {
     p: usize,
     n: usize,
     structure: FieldExtensionByPolynomialQuotientStructure<
-        QuotientStructure<IntegerCanonicalStructure, true>,
-        QuotientStructure<IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
+        PolynomialStructure<
+            QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
+            QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
+        >,
     >,
 }
 
@@ -23,13 +27,10 @@ impl ConwayFiniteFieldStructure {
         Ok(Self {
             p,
             n,
-            structure: FieldExtensionByPolynomialQuotientStructure::new_field_unchecked(
-                PolynomialStructure::new(QuotientStructure::new_field_unchecked(
-                    Integer::structure(),
-                    Integer::from(p),
-                )),
-                f.clone(),
-            ),
+            structure: PolynomialStructure::new(
+                Integer::structure().into_quotient_field_unchecked(Integer::from(p)),
+            )
+            .into_quotient_field_unchecked(f.clone()),
         })
     }
 
@@ -156,8 +157,8 @@ pub struct ConwayFiniteFieldInclusion {
     inclusion: Matrix<Integer>,
     // matrices modulo p
     mat_mod_p: MatrixStructure<
-        QuotientStructure<IntegerCanonicalStructure, true>,
-        QuotientStructure<IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
+        QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
     >,
 }
 
@@ -188,10 +189,12 @@ impl ConwayFiniteFieldInclusion {
                 range,
                 degree,
                 inclusion,
-                mat_mod_p: MatrixStructure::new(QuotientStructure::new_field(
-                    Integer::structure(),
-                    p.into(),
-                ).map_err(|_| "p not prime").unwrap()),
+                mat_mod_p: MatrixStructure::new(
+                    Integer::structure()
+                        .into_quotient_field(p.into())
+                        .map_err(|_| "p not prime")
+                        .unwrap(),
+                ),
             })
         } else {
             Err("m must divide n")

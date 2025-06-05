@@ -408,7 +408,7 @@ where
             let n = self.poly_ring.degree(poly).unwrap();
             debug_assert!(n >= 1);
 
-            let mod_poly_ring = QuotientStructure::new_ring(self.poly_ring.clone(), poly.clone());
+            let mod_poly_ring = self.poly_ring.quotient_ring(poly.clone());
             let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring().clone());
             let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
             let qth_power_matrix = Matrix::join_cols(
@@ -581,8 +581,7 @@ where
                     sum
                 } else {
                     // when char != 2 use h^{(q^d-1)/2}-1 mod f
-                    let poly_mod_f =
-                        QuotientStructure::new_ring(self.poly_ring.clone(), ddf.polynomial.clone());
+                    let poly_mod_f = self.poly_ring.quotient_ring(ddf.polynomial.clone());
                     let a = (q.nat_pow(&d.into()) - Natural::ONE) / Natural::TWO;
                     poly_mod_f.add(
                         &poly_mod_f.nat_pow(&h, &a),

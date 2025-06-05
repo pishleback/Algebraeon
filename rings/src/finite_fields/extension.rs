@@ -5,8 +5,11 @@ use itertools::Itertools;
 
 use super::modulo::ModuloCanonicalStructure;
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FiniteUnitsSignature
-    for FieldExtensionByPolynomialQuotientStructure<FS, FSB>
+impl<
+    FS: FiniteFieldSignature,
+    FSB: BorrowedStructure<FS>,
+    FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
+> FiniteUnitsSignature for FieldExtensionByPolynomialQuotientStructure<FS, FSB, FSPB>
 {
     fn all_units(&self) -> Vec<Self::Set> {
         let mut all_base_elements = vec![self.ring().coeff_ring().zero()];
@@ -32,8 +35,11 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FiniteUnitsSignature
     }
 }
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FiniteFieldSignature
-    for FieldExtensionByPolynomialQuotientStructure<FS, FSB>
+impl<
+    FS: FiniteFieldSignature,
+    FSB: BorrowedStructure<FS>,
+    FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
+> FiniteFieldSignature for FieldExtensionByPolynomialQuotientStructure<FS, FSB, FSPB>
 {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         let (p, t) = self.ring().coeff_ring().characteristic_and_power();
@@ -45,20 +51,19 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FiniteFieldSignature
 pub fn new_finite_field_extension<FS: FiniteFieldSignature>(
     finite_field: FS,
     poly: Polynomial<FS::Set>,
-) -> FieldExtensionByPolynomialQuotientStructure<FS, FS>
+) -> FieldExtensionByPolynomialQuotientStructure<FS, FS, PolynomialStructure<FS, FS>>
 where
     PolynomialStructure<FS, FS>: FactorableSignature<Set = Polynomial<FS::Set>>,
 {
-    debug_assert!(finite_field.polynomials().is_irreducible(&poly));
-    FieldExtensionByPolynomialQuotientStructure::<FS, FS>::new_field_unchecked(
-        PolynomialStructure::new(finite_field),
-        poly,
-    )
+    finite_field
+        .into_polynomials()
+        .into_quotient_field_unchecked(poly)
 }
 
 pub(crate) fn f9() -> FieldExtensionByPolynomialQuotientStructure<
     ModuloCanonicalStructure<3>,
     ModuloCanonicalStructure<3>,
+    PolynomialStructure<ModuloCanonicalStructure<3>, ModuloCanonicalStructure<3>>,
 > {
     use crate::finite_fields::modulo::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(

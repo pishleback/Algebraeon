@@ -15,21 +15,16 @@ use itertools::Itertools;
 pub type AlgebraicNumberFieldStructure = FieldExtensionByPolynomialQuotientStructure<
     RationalCanonicalStructure,
     RationalCanonicalStructure,
+    PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>,
 >;
 
 impl Polynomial<Rational> {
     pub fn algebraic_number_field(self) -> Result<AlgebraicNumberFieldStructure, ()> {
-        AlgebraicNumberFieldStructure::new_field(
-            PolynomialStructure::new(Rational::structure()),
-            self,
-        )
+        PolynomialStructure::new(Rational::structure()).into_quotient_field(self)
     }
 
     pub fn algebraic_number_field_unchecked(self) -> AlgebraicNumberFieldStructure {
-        AlgebraicNumberFieldStructure::new_field_unchecked(
-            PolynomialStructure::new(Rational::structure()),
-            self,
-        )
+        PolynomialStructure::new(Rational::structure()).into_quotient_field_unchecked(self)
     }
 
     //return the splitting field and the roots of f in the splitting field
@@ -262,7 +257,10 @@ mod tests {
     #[test]
     fn test_anf_to_and_from_vector() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(5) - x + 1).into_verbose().algebraic_number_field().unwrap();
+        let anf = (x.pow(5) - x + 1)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
         let alpha = (x.pow(9) + 5).into_verbose();
 
         println!("{}", alpha);
