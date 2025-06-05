@@ -406,7 +406,7 @@ impl Polynomial<Integer> {
             // root = -b/a
             vec![PAdicAlgebraic::Rational(PAdicRational {
                 p: p.clone(),
-                rat: -Rational::from_integers(b, a),
+                rat: -Rational::from_integers(b.as_ref(), a.as_ref()),
             })]
         } else {
             isolate::isolate(p, self)

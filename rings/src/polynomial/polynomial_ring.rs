@@ -4,18 +4,22 @@ use crate::polynomial::polynomial_semiring::SemiRingToPolynomialSemiRingSignatur
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-use std::{borrow::Borrow, fmt::Display};
+use std::{
+    borrow::{Borrow, Cow},
+    fmt::Display,
+    marker::PhantomData,
+};
 
 #[derive(Debug, Clone)]
 pub struct PolynomialStructure<RS: RingSignature, RSB: BorrowedStructure<RS>> {
-    coeff_ring_zero: RS::Set, //so that we can return a reference to zero when getting polynomial coefficients out of range
+    _coeff_ring: PhantomData<RS>,
     coeff_ring: RSB,
 }
 
 impl<RS: RingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
     fn new(coeff_ring: RSB) -> Self {
         Self {
-            coeff_ring_zero: coeff_ring.borrow().zero(),
+            _coeff_ring: PhantomData,
             coeff_ring,
         }
     }
@@ -211,7 +215,10 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.reduce_poly(Polynomial::from_coeffs(
             (0..std::cmp::max(a.coeffs.len(), b.coeffs.len()))
-                .map(|i| self.coeff_ring().sub(self.coeff(a, i), self.coeff(b, i)))
+                .map(|i| {
+                    self.coeff_ring()
+                        .sub(self.coeff(a, i).as_ref(), self.coeff(b, i).as_ref())
+                })
                 .collect(),
         ))
     }
@@ -258,10 +265,10 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB>
             .constant_var_pow(x, n)
     }
 
-    pub fn coeff<'a>(&'a self, a: &'a Polynomial<RS::Set>, i: usize) -> &'a RS::Set {
+    pub fn coeff<'a>(&self, a: &'a Polynomial<RS::Set>, i: usize) -> Cow<'a, RS::Set> {
         match a.coeffs.get(i) {
-            Some(c) => c,
-            None => &self.coeff_ring_zero,
+            Some(c) => Cow::Borrowed(c),
+            None => Cow::Owned(self.coeff_ring().zero()),
         }
     }
 
@@ -345,10 +352,10 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
             let mut q_coeffs = (0..k).map(|_i| self.coeff_ring().zero()).collect_vec();
             for i in (0..k).rev() {
                 //a[i+n-1] = q[i] * b[n-1]
-                match self
-                    .coeff_ring()
-                    .div(self.coeff(&a, i + n - 1), self.coeff(b, n - 1))
-                {
+                match self.coeff_ring().div(
+                    self.coeff(&a, i + n - 1).as_ref(),
+                    self.coeff(b, n - 1).as_ref(),
+                ) {
                     Ok(qc) => {
                         //a -= qc*x^i*b
                         self.add_mut(
@@ -405,7 +412,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 &mut a,
                 &Polynomial::constant(
                     self.coeff_ring()
-                        .nat_pow(self.coeff(b, n - 1), &Natural::from(m - n + 1)),
+                        .nat_pow(self.coeff(b, n - 1).as_ref(), &Natural::from(m - n + 1)),
                 ),
             );
 
@@ -525,7 +532,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 if n == 0 {
                     Err("Discriminant of a constant polynomial is undefined.")
                 } else {
-                    let an = self.coeff(&p, n).clone(); // leading coeff
+                    let an = self.coeff(&p, n).as_ref().clone(); // leading coeff
                     let dp = self.derivative(p.clone());
                     let disc = self.coeff_ring().div(&self.resultant(p, dp), &an).unwrap();
                     // multiply by (-1)^{n(n+1)/2}
@@ -1021,7 +1028,7 @@ where
         Self::structure().var_pow(n)
     }
 
-    pub fn coeff(&self, i: usize) -> R {
+    pub fn coeff<'a>(&'a self, i: usize) -> Cow<'a, R> {
         Self::structure().coeff(self, i).clone()
     }
 

@@ -96,7 +96,7 @@ where
         'seek_linear_factor: while self.degree(&f).unwrap() > 0 {
             let c0 = self.coeff(&f, 0);
             #[allow(clippy::redundant_else)]
-            if self.coeff_ring().is_zero(c0) {
+            if self.coeff_ring().is_zero(c0.as_ref()) {
                 //linear factor of x
                 f = self.div(&f, &self.var()).unwrap();
                 linear_factors = self
@@ -105,10 +105,13 @@ where
                 continue 'seek_linear_factor;
             } else {
                 //look for linear factors of the form (a+bx)
-                let c0fs = self.coeff_ring().factor(self.coeff(&f, 0)).unwrap();
+                let c0fs = self
+                    .coeff_ring()
+                    .factor(self.coeff(&f, 0).as_ref())
+                    .unwrap();
                 let cnfs = self
                     .coeff_ring()
-                    .factor(self.coeff(&f, self.degree(&f).unwrap()))
+                    .factor(self.coeff(&f, self.degree(&f).unwrap()).as_ref())
                     .unwrap();
                 for a_assoc in self.coeff_ring().factorizations().divisors(&c0fs) {
                     for u in self.coeff_ring().all_units() {

@@ -44,7 +44,10 @@ impl Polynomial<Integer> {
             Some(
                 Rational::ONE
                     + (0..d)
-                        .map(|i| Rational::from_integers(self.coeff(i), self.coeff(d)).abs())
+                        .map(|i| {
+                            Rational::from_integers(self.coeff(i).as_ref(), self.coeff(d).as_ref())
+                                .abs()
+                        })
                         .max()
                         .unwrap(),
             )

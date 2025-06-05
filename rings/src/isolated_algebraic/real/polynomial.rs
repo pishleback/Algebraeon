@@ -3,7 +3,7 @@ use algebraeon_nzq::traits::{Abs, Fraction};
 
 fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
     debug_assert_eq!(poly.degree().unwrap(), 1);
-    -Rational::from_integers(poly.coeff(0), poly.coeff(1))
+    -Rational::from_integers(poly.coeff(0).into_owned(), poly.coeff(1).into_owned())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -720,8 +720,9 @@ impl Polynomial<Integer> {
                 //m = (Cauchy's bound + 1) https://captainblack.wordpress.com/2009/03/08/cauchys-upper-bound-for-the-roots-of-a-polynomial/
                 let m = Rational::from(2)
                     + Rational::from_integers(
-                        itertools::max((0..d).map(|i| self.coeff(i).abs().clone())).unwrap(),
-                        self.coeff(d).abs().clone(),
+                        itertools::max((0..d).map(|i| self.coeff(i).as_ref().abs().clone()))
+                            .unwrap(),
+                        self.coeff(d).as_ref().abs().clone(),
                     );
 
                 debug_assert!(m > Rational::ZERO);

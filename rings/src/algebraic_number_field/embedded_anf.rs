@@ -123,7 +123,7 @@ pub fn as_poly_expr(
         //the factor should be monic
         debug_assert!(gen_anf.equal(gen_anf_poly.leading_coeff(factor).unwrap(), &gen_anf.one()));
         if gen_anf_poly.degree(factor).unwrap() == 1 {
-            let possible_embedded_target = gen_anf.neg(gen_anf_poly.coeff(factor, 0));
+            let possible_embedded_target = gen_anf.neg(gen_anf_poly.coeff(factor, 0).as_ref());
             if generator.apply_poly(&possible_embedded_target) == *target {
                 return Some(possible_embedded_target);
             }

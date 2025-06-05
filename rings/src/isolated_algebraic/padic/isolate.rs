@@ -40,10 +40,12 @@ mod balancable_pairs {
         /// If $\alpha \in \mathbb{Q}_p$ is such that $f(\alpha) = 0$ then $v_p(\alpha)$ is a critical value for $f$.
         pub fn is_critical(&self) -> bool {
             let min = (0..=self.n)
-                .filter_map(|k| match padic_int_valuation(&self.p, self.f.coeff(k)) {
-                    Valuation::Infinity => None,
-                    Valuation::Finite(vfk) => Some(vfk + Integer::from(k) * &self.bv),
-                })
+                .filter_map(
+                    |k| match padic_int_valuation(&self.p, self.f.coeff(k).into_owned()) {
+                        Valuation::Infinity => None,
+                        Valuation::Finite(vfk) => Some(vfk + Integer::from(k) * &self.bv),
+                    },
+                )
                 .min()
                 .unwrap();
             min == self.crossmul_balancing_value()
@@ -75,7 +77,7 @@ mod balancable_pairs {
                         // compute f_k*p^p_pow
                         if p_pow >= Integer::ZERO {
                             let p_pow = p_pow.abs();
-                            self.f.coeff(k) * Integer::from(self.p.nat_pow(&p_pow))
+                            self.f.coeff(k).as_ref() * Integer::from(self.p.nat_pow(&p_pow))
                         } else {
                             let neg_p_pow = (-p_pow).abs();
                             Integer::div(
@@ -97,7 +99,7 @@ mod balancable_pairs {
             let mut bps = vec![];
             let n = self.degree().unwrap();
             let coeff_valuations = (0..=n)
-                .map(|k| padic_int_valuation(p, self.coeff(k)))
+                .map(|k| padic_int_valuation(p, self.coeff(k).into_owned()))
                 .collect::<Vec<_>>();
             for i in 0..=n {
                 for j in (i + 1)..=n {

@@ -78,7 +78,7 @@ where
     pub fn to_col_vector(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
         let a_reduced = self.reduce(a);
         Matrix::construct(self.degree(), 1, |r, _c| {
-            self.ring().coeff(&a_reduced, r).clone()
+            self.ring().coeff(&a_reduced, r).into_owned()
         })
     }
     pub fn to_row_vector(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
@@ -226,12 +226,14 @@ impl<
             self.domain()
                 .polynomial_ring()
                 .coeff(&self.range().reduce(v), *b)
-                .clone(),
+                .into_owned(),
         )
     }
 
     fn from_component(&self, b: &usize, r: &Field::Set) -> Polynomial<Field::Set> {
-        self.domain().polynomial_ring().constant_var_pow(r.clone(), *b)
+        self.domain()
+            .polynomial_ring()
+            .constant_var_pow(r.clone(), *b)
     }
 }
 

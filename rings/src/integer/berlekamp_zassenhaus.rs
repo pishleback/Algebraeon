@@ -312,7 +312,8 @@ mod dminusone_test {
                         .iter()
                         .map(|g| {
                             let d = g.degree().unwrap();
-                            let coeff = (f.leading_coeff().unwrap() * g.coeff(d - 1)).rem(modulus);
+                            let coeff =
+                                (f.leading_coeff().unwrap() * g.coeff(d - 1).as_ref()).rem(modulus);
                             DMinusOneTestSemigroupElem {
                                 approx_coeff_lower_bound: (Rational::from(coeff)
                                     * &conversion_mult)

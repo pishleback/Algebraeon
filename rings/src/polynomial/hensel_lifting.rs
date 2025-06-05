@@ -68,8 +68,9 @@ impl<
                 let poly_ring = ring.polynomial_ring();
                 let ring_mod_i = ring.quotient_ring(i.clone());
                 let poly_ring_mod_i = ring_mod_i.polynomial_ring();
-                let poly_ring_mod_i_tothe_n =
-                    ring.quotient_ring(ring.nat_pow(i, n)).into_polynomial_ring();
+                let poly_ring_mod_i_tothe_n = ring
+                    .quotient_ring(ring.nat_pow(i, n))
+                    .into_polynomial_ring();
 
                 //af + bg = 1 mod i
                 if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(vec![
@@ -124,7 +125,9 @@ impl<
         second_fs: Vec<&Polynomial<RS::Set>>,
     ) -> Self {
         let poly_ring = ring.polynomial_ring();
-        let poly_ring_mod_p = ring.quotient_field_unchecked(p.clone()).into_polynomial_ring();
+        let poly_ring_mod_p = ring
+            .quotient_field_unchecked(p.clone())
+            .into_polynomial_ring();
 
         //first_h and second_h are defined modulo p^n
         let first_h = poly_ring
@@ -472,7 +475,9 @@ impl<
             debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n
-        let poly_ring_mod_p_tothe_n = ring.quotient_ring(ring.nat_pow(&p, &n)).into_polynomial_ring();
+        let poly_ring_mod_p_tothe_n = ring
+            .quotient_ring(ring.nat_pow(&p, &n))
+            .into_polynomial_ring();
         let alpha = poly_ring.leading_coeff(&h).unwrap();
         debug_assert!(poly_ring_mod_p_tothe_n.equal(
             &h,
