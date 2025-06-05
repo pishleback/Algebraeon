@@ -1,4 +1,4 @@
-# Examples
+# Quickstart Examples
 
 ## Factoring Integers
 

@@ -1,4 +1,4 @@
-# Naturals
+# Natural Numbers
 
 ## Constructing naturals
 
