@@ -28,7 +28,7 @@
   - [Obtaining Polynomial Roots](./obtaining_polynomial_roots.md)
   - [Real Algebraic Numbers]()
   - [Complex Algebraic Numbers]()
-  - [p-Adic Algebraic Numbers]()
+  - [p-Adic Algebraic Numbers](./isolated_padic_algebraic.md)
   - [Algebraic Number Fields]()
     - [Embedded Number Fields]()
     - [Ideals](./anf_ideals.md)
