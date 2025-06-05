@@ -162,7 +162,7 @@ pub struct ConwayFiniteFieldInclusion {
 }
 
 impl ConwayFiniteFieldInclusion {
-    pub fn new(p: usize, m: usize, n: usize) -> Result<Self, ()> {
+    pub fn new(p: usize, m: usize, n: usize) -> Result<Self, &'static str> {
         if n % m == 0 {
             let degree = n / m;
 
@@ -191,10 +191,10 @@ impl ConwayFiniteFieldInclusion {
                 mat_mod_p: MatrixStructure::new(QuotientStructure::new_field(
                     Integer::structure(),
                     p.into(),
-                )),
+                ).map_err(|_| "p not prime").unwrap()),
             })
         } else {
-            Err(())
+            Err("m must divide n")
         }
     }
 }

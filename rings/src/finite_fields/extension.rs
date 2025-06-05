@@ -44,12 +44,13 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FiniteFieldSignature
 
 pub fn new_finite_field_extension<FS: FiniteFieldSignature>(
     finite_field: FS,
-    poly: <PolynomialStructure<FS, FS> as SetSignature>::Set,
+    poly: Polynomial<FS::Set>,
 ) -> FieldExtensionByPolynomialQuotientStructure<FS, FS>
 where
-    PolynomialStructure<FS, FS>: FactorableSignature,
+    PolynomialStructure<FS, FS>: FactorableSignature<Set = Polynomial<FS::Set>>,
 {
-    FieldExtensionByPolynomialQuotientStructure::<FS, FS>::new_field(
+    debug_assert!(finite_field.polynomials().is_irreducible(&poly));
+    FieldExtensionByPolynomialQuotientStructure::<FS, FS>::new_field_unchecked(
         PolynomialStructure::new(finite_field),
         poly,
     )

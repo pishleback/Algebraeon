@@ -345,7 +345,7 @@ mod tests {
     #[test]
     fn integral_multiplier() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(3) + x + 1).into_verbose().algebraic_number_field().unwrap();
         let roi = anf.compute_ring_of_integers();
         let sq = RingOfIntegersExtension::new_integer_extension(roi.clone());
         let r_to_k_fof = sq.r_to_k_field_of_fractions();
@@ -379,7 +379,7 @@ mod tests {
     #[test]
     fn ideals_operations_roi_extension_for_gaussian_integers() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(2) + 1).into_verbose().algebraic_number_field().unwrap();
         let roi = anf.compute_ring_of_integers();
         let sq = RingOfIntegersExtension::new_integer_extension(roi.clone());
 
@@ -415,7 +415,7 @@ mod tests {
     #[allow(non_snake_case)]
     fn test_is_S_integral() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(2) + 5).into_verbose().algebraic_number_field();
+        let anf = (x.pow(2) + 5).into_verbose().algebraic_number_field().unwrap();
         let roi = anf.compute_ring_of_integers();
         let ext = RingOfIntegersExtension::new_integer_extension(roi.clone());
 

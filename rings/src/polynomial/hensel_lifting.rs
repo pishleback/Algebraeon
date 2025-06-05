@@ -126,7 +126,7 @@ impl<
     ) -> Self {
         let poly_ring = PolynomialStructure::new(ring.clone());
         let poly_ring_mod_p =
-            PolynomialStructure::new(QuotientStructure::new_field(ring.clone(), p.clone()));
+            PolynomialStructure::new(QuotientStructure::new_field_unchecked(ring.clone(), p.clone()));
 
         //first_h and second_h are defined modulo p^n
         let first_h = poly_ring

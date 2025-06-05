@@ -18,8 +18,15 @@ pub type AlgebraicNumberFieldStructure = FieldExtensionByPolynomialQuotientStruc
 >;
 
 impl Polynomial<Rational> {
-    pub fn algebraic_number_field(self) -> AlgebraicNumberFieldStructure {
+    pub fn algebraic_number_field(self) -> Result<AlgebraicNumberFieldStructure, ()> {
         AlgebraicNumberFieldStructure::new_field(
+            PolynomialStructure::new(Rational::structure()),
+            self,
+        )
+    }
+
+    pub fn algebraic_number_field_unchecked(self) -> AlgebraicNumberFieldStructure {
+        AlgebraicNumberFieldStructure::new_field_unchecked(
             PolynomialStructure::new(Rational::structure()),
             self,
         )
@@ -29,7 +36,7 @@ impl Polynomial<Rational> {
     pub fn splitting_field(&self) -> (AlgebraicNumberFieldStructure, Vec<Polynomial<Rational>>) {
         let roots = self.primitive_part_fof().all_complex_roots();
         let (g, roots_rel_g) = anf_multi_primitive_element_theorem(roots.iter().collect());
-        (g.min_poly().algebraic_number_field(), roots_rel_g)
+        (g.generated_algebraic_number_field(), roots_rel_g)
     }
 }
 
@@ -255,7 +262,7 @@ mod tests {
     #[test]
     fn test_anf_to_and_from_vector() {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
-        let anf = (x.pow(5) - x + 1).into_verbose().algebraic_number_field();
+        let anf = (x.pow(5) - x + 1).into_verbose().algebraic_number_field().unwrap();
         let alpha = (x.pow(9) + 5).into_verbose();
 
         println!("{}", alpha);

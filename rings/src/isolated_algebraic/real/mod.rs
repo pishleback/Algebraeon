@@ -278,7 +278,7 @@ impl RealAlgebraicRoot {
         } else {
             let ans_poly = self
                 .min_poly()
-                .algebraic_number_field()
+                .algebraic_number_field_unchecked()
                 .min_poly(&poly)
                 .primitive_part_fof();
 

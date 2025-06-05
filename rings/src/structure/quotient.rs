@@ -33,23 +33,18 @@ impl<RS: EuclideanDomainSignature> QuotientStructure<RS, false> {
     }
 }
 
-impl<RS: EuclideanDomainSignature> QuotientStructure<RS, true> {
+impl<RS: EuclideanDomainSignature + FactorableSignature> QuotientStructure<RS, true> {
     pub fn new_field_unchecked(ring: RS, modulus: RS::Set) -> Self {
+        debug_assert!(ring.is_irreducible(&modulus));
         Self::new_unchecked(ring, modulus)
     }
-}
 
-impl<RS: EuclideanDomainSignature + FactorableSignature> QuotientStructure<RS, true> {
-    pub fn new_field(ring: RS, modulus: RS::Set) -> Self {
-        #[allow(clippy::manual_assert)]
-        #[cfg(debug_assertions)]
-        if !ring.is_irreducible(&modulus) {
-            panic!(
-                "The modulus must be irreducible to form a quotient field. Got {:?}.",
-                modulus
-            );
+    pub fn new_field(ring: RS, modulus: RS::Set) -> Result<Self, ()> {
+        if ring.is_irreducible(&modulus) {
+            Ok(Self::new_unchecked(ring, modulus))
+        } else {
+            Err(())
         }
-        Self::new_unchecked(ring, modulus)
     }
 }
 
@@ -195,7 +190,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let mod5 = QuotientStructure::new_field(Integer::structure(), Integer::from(5));
+        let mod5 = QuotientStructure::new_field(Integer::structure(), Integer::from(5)).unwrap();
 
         assert!(mod5.equal(
             &mod5.div(&Integer::from(3), &Integer::from(2)).unwrap(),

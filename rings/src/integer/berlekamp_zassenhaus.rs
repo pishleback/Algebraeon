@@ -58,6 +58,7 @@ some improvements
 
 */
 
+use crate::natural::factorization::primes::is_prime;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::primes;
@@ -118,7 +119,8 @@ struct BerlekampZassenhausAlgorithmStateAtPrime {
 
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn new_at_prime(state: &BerlekampAassenhausAlgorithmState, p: Natural) -> Option<Self> {
-        let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(&p));
+        debug_assert!(is_prime(&p));
+        let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), Integer::from(&p));
         let poly_mod_p = PolynomialStructure::new(mod_p);
         if poly_mod_p.degree(&state.poly) == Some(state.degree) {
             let facotred_f_mod_p = poly_mod_p.factor(&state.poly).unwrap();
@@ -513,7 +515,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     } else {
         let prime_gen = primes();
         for p in prime_gen {
-            let mod_p = QuotientStructure::new_field(Integer::structure(), Integer::from(p));
+            let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), Integer::from(p));
             let poly_mod_p = PolynomialStructure::new(mod_p);
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap();

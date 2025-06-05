@@ -463,7 +463,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                     let _ = pow;
 
                     // Q[y]/qi(y)
-                    let lai_reduced_ring = QuotientStructure::new_field(
+                    let lai_reduced_ring = QuotientStructure::new_field_unchecked(
                         PolynomialStructure::new(Rational::structure()),
                         qi.clone(),
                     );
@@ -680,7 +680,7 @@ mod tests {
     #[test]
     fn test_anf_poly_factor_count() {
         let y = &Polynomial::<Rational>::var().into_ergonomic();
-        let k = (y.pow(2) - 3).into_verbose().algebraic_number_field();
+        let k = (y.pow(2) - 3).into_verbose().algebraic_number_field().unwrap();
         let k_poly = PolynomialStructure::new(k.clone());
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
@@ -694,7 +694,7 @@ mod tests {
         let y = &Polynomial::<Rational>::var().into_ergonomic();
         let k = (y.pow(4) - y.pow(2) + 1)
             .into_verbose()
-            .algebraic_number_field();
+            .algebraic_number_field().unwrap();
         let k_poly = PolynomialStructure::new(k.clone());
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
@@ -709,7 +709,7 @@ mod tests {
             4
         );
 
-        let k = (y.pow(3) - y + 1).into_verbose().algebraic_number_field();
+        let k = (y.pow(3) - y + 1).into_verbose().algebraic_number_field().unwrap();
         let k_poly = PolynomialStructure::new(k.clone());
         debug_assert_eq!(
             k_poly
@@ -721,7 +721,7 @@ mod tests {
 
         let k = (y.pow(4) - y.pow(2) + 1)
             .into_verbose()
-            .algebraic_number_field();
+            .algebraic_number_field().unwrap();
         let k_poly = PolynomialStructure::new(k.clone());
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(

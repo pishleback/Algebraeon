@@ -230,7 +230,7 @@ mod tests {
             .into_ergonomic();
         {
             let p = (x.pow(3) + &x - 1).into_verbose();
-            let f = p.algebraic_number_field();
+            let f = p.algebraic_number_field().unwrap();
             let ext = FieldExtensionByPolynomialQuotientInclusion::new(f);
             assert_eq!(ext.degree(), 3);
             assert_eq!(
@@ -251,7 +251,7 @@ mod tests {
         {
             // Z[i]
             let p = (x.pow(2) + 1).into_verbose();
-            let f = p.algebraic_number_field();
+            let f = p.algebraic_number_field().unwrap();
             let ext = FieldExtensionByPolynomialQuotientInclusion::new(f);
             assert_eq!(ext.degree(), 2);
             // a^2 + b^2
