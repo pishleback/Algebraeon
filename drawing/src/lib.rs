@@ -25,7 +25,7 @@
     clippy::default_trait_access,
     clippy::redundant_field_names,
     clippy::unreadable_literal,
-    clippy::needless_raw_string_hashes,
+    clippy::needless_raw_string_hashes
 )]
 
 pub mod canvas;

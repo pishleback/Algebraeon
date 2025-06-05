@@ -1,8 +1,8 @@
 //! The Natural type and operations.
 
+use crate::Rational;
 use crate::integer::Integer;
 use crate::traits::{AbsDiff, DivMod, ModInv, ModPow};
-use crate::Rational;
 use algebraeon_sets::structure::{
     CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
     Signature, ToStringSignature,
@@ -139,7 +139,6 @@ impl TryFrom<&Rational> for Natural {
         ))
     }
 }
-
 
 impl Natural {
     pub const ZERO: Self = Self(malachite_nz::natural::Natural::ZERO);

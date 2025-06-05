@@ -6,5 +6,6 @@ pub mod natural;
 pub mod num_theory;
 pub mod quaternion_algebras;
 pub mod quotient;
+pub mod quotient_morphism;
 pub mod rational;
 pub mod valuation;
