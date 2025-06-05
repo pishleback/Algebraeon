@@ -929,16 +929,8 @@ pub fn nth_root(x: &RealAlgebraic, n: usize) -> Result<RealAlgebraic, ()> {
                     }
                     RealAlgebraic::Real(real) => real.poly.clone(),
                 };
-                let mut coeffs = vec![];
-                for (i, c) in poly.into_coeffs().into_iter().enumerate() {
-                    if i != 0 {
-                        for _j in 0..(n - 1) {
-                            coeffs.push(Integer::ZERO);
-                        }
-                    }
-                    coeffs.push(c);
-                }
-                let nthroot_poly = Polynomial::from_coeffs(coeffs).primitive_squarefree_part();
+
+                let nthroot_poly = poly.evaluate_at_var_pow(n).primitive_squarefree_part();
                 // println!("nthroot_poly = {:?}", nthroot_poly);
                 let possible_nthroots = nthroot_poly.all_real_roots_squarefree();
                 //search through the intervals starting from the largest.

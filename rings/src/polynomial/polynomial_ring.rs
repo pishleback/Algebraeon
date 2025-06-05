@@ -280,6 +280,11 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB>
         self.coeff_ring().polynomial_semiring().evaluate(p, x)
     }
 
+    /// evaluate p(x^k)
+    pub fn evaluate_at_var_pow(&self, p: Polynomial<RS::Set>, k: usize) -> Polynomial<RS::Set> {
+         self.coeff_ring().polynomial_semiring().evaluate_at_var_pow(p, k)
+    }
+
     //find p(q(x))
     pub fn compose(&self, p: &Polynomial<RS::Set>, q: &Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         self.coeff_ring().polynomial_semiring().compose(p, q)
@@ -1042,6 +1047,10 @@ where
 
     pub fn evaluate(&self, x: &R) -> R {
         Self::structure().evaluate(self, x)
+    }
+
+    pub fn evaluate_at_var_pow(self, k : usize) -> Self {
+        Self::structure().evaluate_at_var_pow(self, k)
     }
 
     pub fn mul_var_pow(&self, n: usize) -> Self {

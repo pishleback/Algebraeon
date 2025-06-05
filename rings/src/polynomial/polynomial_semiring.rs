@@ -272,6 +272,24 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
         y
     }
 
+    /// evaluate p(x^k)
+    pub fn evaluate_at_var_pow(&self, p: Polynomial<RS::Set>, k: usize) -> Polynomial<RS::Set> {
+        if k == 0 {
+            Polynomial::constant(self.coeff_ring().sum(p.coeffs()))
+        } else {
+            let mut coeffs = vec![];
+            for (i, c) in p.into_coeffs().into_iter().enumerate() {
+                if i != 0 {
+                    for _j in 0..(k - 1) {
+                        coeffs.push(self.coeff_ring().zero());
+                    }
+                }
+                coeffs.push(c);
+            }
+            Polynomial::from_coeffs(coeffs)
+        }
+    }
+
     //find p(q(x))
     pub fn compose(&self, p: &Polynomial<RS::Set>, q: &Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         PolynomialSemiRingStructure::new(self.clone())
