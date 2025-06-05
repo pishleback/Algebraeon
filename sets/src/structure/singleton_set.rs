@@ -10,7 +10,7 @@ impl Signature for SingletonSetStructure {}
 impl SetSignature for SingletonSetStructure {
     type Set = ();
 
-    fn is_element(&self, _: &Self::Set) -> Result<(), String> {
+    fn is_element(&self, (): &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

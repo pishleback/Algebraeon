@@ -1,5 +1,6 @@
 #![allow(
     clippy::uninlined_format_args,
+    clippy::useless_format,
     clippy::to_string_in_format_args,
     clippy::must_use_candidate,
     clippy::return_self_not_must_use,
@@ -14,7 +15,17 @@
     clippy::wildcard_imports,
     clippy::needless_lifetimes,
     clippy::cast_possible_truncation,
-    clippy::cast_precision_loss
+    clippy::cast_precision_loss,
+    clippy::cast_lossless,
+    clippy::unnecessary_cast,
+    clippy::single_match,
+    clippy::new_without_default,
+    clippy::new_ret_no_self,
+    clippy::unnecessary_join,
+    clippy::default_trait_access,
+    clippy::redundant_field_names,
+    clippy::unreadable_literal,
+    clippy::needless_raw_string_hashes,
 )]
 
 pub mod canvas;

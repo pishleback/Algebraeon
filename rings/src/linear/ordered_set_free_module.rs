@@ -161,14 +161,14 @@ impl<
         debug_assert!(self.is_element(w).is_ok());
         // since elements are sorted and exclude entries with zero coefficients, we just need to check if they are identically equal
         let n = v.len();
-        if n != w.len() {
-            false
-        } else {
+        if n == w.len() {
             (0..n).all(|i| {
                 let (vx, va) = &v[i];
                 let (wx, wa) = &w[i];
                 self.set().equal(vx, wx) && self.ring().equal(va, wa)
             })
+        } else {
+            false
         }
     }
 }

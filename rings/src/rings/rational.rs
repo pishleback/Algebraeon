@@ -90,11 +90,11 @@ impl FiniteRankFreeRingExtension<RationalCanonicalStructure, RationalCanonicalSt
         SingletonSetStructure::default()
     }
 
-    fn to_component<'a>(&self, _: &(), v: &'a Rational) -> Cow<'a, Rational> {
+    fn to_component<'a>(&self, (): &(), v: &'a Rational) -> Cow<'a, Rational> {
         Cow::Borrowed(v)
     }
 
-    fn from_component(&self, _: &(), r: &Rational) -> Rational {
+    fn from_component(&self, (): &(), r: &Rational) -> Rational {
         r.clone()
     }
 }

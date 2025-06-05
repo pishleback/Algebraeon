@@ -19,6 +19,7 @@ impl NaturalCanonicalFactorizationStructure for NaturalCanonicalStructure {}
 pub struct NaturalFactorizationStructure {}
 
 impl NaturalFactorizationStructure {
+    #[allow(clippy::unused_self)]
     fn powers_semimodule(
         &self,
     ) -> FreeModuleOverOrderedSetStructure<
@@ -156,9 +157,7 @@ impl NaturalFactorizationStructure {
     ) -> IsPrimitiveRootResult {
         let factorizations = Natural::structure().factorizations();
         let n = factorizations.expanded(n_factored);
-        if gcd(x.clone(), n.clone()) != Natural::ONE {
-            IsPrimitiveRootResult::NonUnit
-        } else {
+        if gcd(x.clone(), n.clone()) == Natural::ONE {
             let phi_n = factorizations.euler_totient(n_factored);
             let x_mod_n = x % &n;
             for p in factorizations.distinct_prime_factors(&factor(phi_n.clone()).unwrap()) {
@@ -167,6 +166,8 @@ impl NaturalFactorizationStructure {
                 }
             }
             IsPrimitiveRootResult::Yes
+        } else {
+            IsPrimitiveRootResult::NonUnit
         }
     }
 }
