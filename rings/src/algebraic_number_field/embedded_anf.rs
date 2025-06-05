@@ -107,7 +107,7 @@ pub fn as_poly_expr(
 
     //let K = Q[generator]
     let gen_anf = generator.generated_algebraic_number_field();
-    let gen_anf_poly = PolynomialStructure::new(gen_anf.clone());
+    let gen_anf_poly = gen_anf.polynomial_ring();
 
     //the minimal polynomial of target in K[x]
     let target_min_poly = target

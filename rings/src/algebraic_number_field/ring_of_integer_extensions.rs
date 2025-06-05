@@ -5,7 +5,7 @@ use super::ring_of_integers::*;
 use crate::integer::ideal::IntegerIdealsStructure;
 use crate::matrix::Matrix;
 use crate::polynomial::Polynomial;
-use crate::polynomial::PolynomialStructure;
+use crate::polynomial::RingToPolynomialSignature;
 use crate::structure::*;
 use crate::valuation::Valuation;
 use algebraeon_nzq::traits::Abs;
@@ -251,8 +251,8 @@ impl
         let roi = self.r_ring();
         let roi_ideals = roi.ideals();
         let mod_p = Integer::structure().into_quotient_field_unchecked(p.clone());
-        let poly_mod_p = PolynomialStructure::new(mod_p);
-        let poly_roi = PolynomialStructure::new(roi.clone());
+        let poly_mod_p = mod_p.polynomial_ring();
+        let poly_roi = roi.polynomial_ring();
 
         // alpha generates the algebraic number field but it is not necessarily an algebraic integer
         let alpha = anf.generator();

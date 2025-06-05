@@ -200,7 +200,7 @@ pub trait IntegralClosureExtension<
         let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
         #[cfg(debug_assertions)]
         {
-            let q_poly = PolynomialStructure::new(self.q_field().clone());
+            let q_poly = self.q_field().polynomial_ring();
             assert!(q_poly.is_monic(&alpha_min_poly_monic));
         }
         alpha_min_poly_monic
@@ -213,7 +213,7 @@ pub trait IntegralClosureExtension<
             .apply_map_into(|c| self.z_to_q().try_preimage(&c).unwrap());
         #[cfg(debug_assertions)]
         {
-            let z_poly = PolynomialStructure::new(self.z_ring().clone());
+            let z_poly = self.z_ring().polynomial_ring();
             assert!(z_poly.is_monic(&alpha_min_poly_monic));
         }
         alpha_min_poly_monic

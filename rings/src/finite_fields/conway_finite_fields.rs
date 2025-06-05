@@ -27,10 +27,10 @@ impl ConwayFiniteFieldStructure {
         Ok(Self {
             p,
             n,
-            structure: PolynomialStructure::new(
-                Integer::structure().into_quotient_field_unchecked(Integer::from(p)),
-            )
-            .into_quotient_field_unchecked(f.clone()),
+            structure: Integer::structure()
+                .into_quotient_field_unchecked(Integer::from(p))
+                .into_polynomial_ring()
+                .into_quotient_field_unchecked(f.clone()),
         })
     }
 

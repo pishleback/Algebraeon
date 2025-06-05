@@ -20,11 +20,15 @@ pub type AlgebraicNumberFieldStructure = FieldExtensionByPolynomialQuotientStruc
 
 impl Polynomial<Rational> {
     pub fn algebraic_number_field(self) -> Result<AlgebraicNumberFieldStructure, ()> {
-        PolynomialStructure::new(Rational::structure()).into_quotient_field(self)
+        Rational::structure()
+            .into_polynomial_ring()
+            .into_quotient_field(self)
     }
 
     pub fn algebraic_number_field_unchecked(self) -> AlgebraicNumberFieldStructure {
-        PolynomialStructure::new(Rational::structure()).into_quotient_field_unchecked(self)
+        Rational::structure()
+            .into_polynomial_ring()
+            .into_quotient_field_unchecked(self)
     }
 
     //return the splitting field and the roots of f in the splitting field

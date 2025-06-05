@@ -346,12 +346,14 @@ pub fn factorize_by_factorize_primitive_part<
 where
     PolynomialStructure<Field, FieldB>:
         SetSignature<Set = Polynomial<Field::Set>> + UniqueFactorizationDomainSignature,
-    PolynomialStructure<Ring, Ring>:
+    for<'a> PolynomialStructure<Ring, &'a Ring>:
         SetSignature<Set = Polynomial<Ring::Set>> + FactorableSignature,
     Ring: GreatestCommonDivisorSignature,
 {
     let (unit, prim) = factor_primitive_fof(fof_inclusion, f);
-    let (prim_unit, prim_factors) = PolynomialStructure::new(fof_inclusion.domain().clone())
+    let (prim_unit, prim_factors) = fof_inclusion
+        .domain()
+        .polynomial_ring()
         .factor(&prim)?
         .into_unit_and_powers();
     let mut fof_unit = prim_unit.apply_map(|c| fof_inclusion.image(c));
@@ -436,14 +438,16 @@ mod tests {
     fn test_factor_by_kroneckers_method_over_integers() {
         let x = &Polynomial::<Integer>::var().into_ergonomic();
 
-        let int_poly_fs = PolynomialStructure::new(Integer::structure()).into_factorizations();
+        let int_poly_fs = Integer::structure()
+            .into_polynomial_ring()
+            .into_factorizations();
 
         //primitive cases
         let f = ((1 + x).pow(2)).into_verbose();
         assert!(
             int_poly_fs.equal(
                 &Integer::structure()
-                    .polynomials()
+                    .polynomial_ring()
                     .factorize_by_kroneckers_method(f, Integer::factor)
                     .unwrap(),
                 &int_poly_fs.from_unit_and_factor_powers(
@@ -455,7 +459,7 @@ mod tests {
 
         let f = (-1 - 2 * x).into_verbose();
         let fs1 = Integer::structure()
-            .polynomials()
+            .polynomial_ring()
             .factorize_by_kroneckers_method(f, Integer::factor)
             .unwrap();
         let fs2 = &int_poly_fs.from_unit_and_factor_powers(
@@ -469,7 +473,7 @@ mod tests {
         assert!(
             int_poly_fs.equal(
                 &Integer::structure()
-                    .polynomials()
+                    .polynomial_ring()
                     .factorize_by_kroneckers_method(f, Integer::factor)
                     .unwrap(),
                 &int_poly_fs.from_unit_and_factor_powers(
@@ -486,7 +490,7 @@ mod tests {
         assert!(
             int_poly_fs.equal(
                 &Integer::structure()
-                    .polynomials()
+                    .polynomial_ring()
                     .factorize_by_kroneckers_method(f, Integer::factor)
                     .unwrap(),
                 &int_poly_fs.from_unit_and_factor_powers(
@@ -501,7 +505,7 @@ mod tests {
         assert!(
             int_poly_fs.equal(
                 &Integer::structure()
-                    .polynomials()
+                    .polynomial_ring()
                     .factorize_by_kroneckers_method(f, Integer::factor)
                     .unwrap(),
                 &int_poly_fs.from_unit_and_factor_powers(
@@ -518,7 +522,7 @@ mod tests {
         assert!(
             int_poly_fs.equal(
                 &Integer::structure()
-                    .polynomials()
+                    .polynomial_ring()
                     .factorize_by_kroneckers_method(f, Integer::factor)
                     .unwrap(),
                 &int_poly_fs.from_unit_and_factor_powers(
@@ -537,7 +541,7 @@ mod tests {
         assert!(
             int_poly_fs.equal(
                 &Integer::structure()
-                    .polynomials()
+                    .polynomial_ring()
                     .factorize_by_kroneckers_method(f, Integer::factor)
                     .unwrap(),
                 &int_poly_fs.from_unit_and_factor_powers(Polynomial::one(), vec![])
@@ -548,7 +552,7 @@ mod tests {
         assert!(
             int_poly_fs.equal(
                 &Integer::structure()
-                    .polynomials()
+                    .polynomial_ring()
                     .factorize_by_kroneckers_method(f, Integer::factor)
                     .unwrap(),
                 &int_poly_fs.from_unit_and_factor_powers(
@@ -567,7 +571,9 @@ mod tests {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let f = (6 * (x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_verbose();
         let fs = f.factor().unwrap();
-        let rat_poly_fs = PolynomialStructure::new(Rational::structure()).into_factorizations();
+        let rat_poly_fs = Rational::structure()
+            .into_polynomial_ring()
+            .into_factorizations();
 
         println!("fs = {}", fs);
 

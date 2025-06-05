@@ -5,7 +5,7 @@ use itertools::Itertools;
 use crate::structure::*;
 use algebraeon_sets::structure::*;
 
-use super::multipoly::*;
+use super::multipoly_ring::*;
 
 pub fn ss_num(n: usize) -> String {
     let mut ss = String::new();
@@ -101,7 +101,7 @@ where
         n: usize,
         vars: &Vec<impl Borrow<Variable>>,
     ) -> MultiPolynomial<RS::Set> {
-        let mp_ring = MultiPolynomialStructure::new(self.coeff_ring().clone());
+        let mp_ring = self.coeff_ring().multivariable_polynomial_ring();
         let mut e = mp_ring.zero();
         for vs in algebraeon_sets::combinatorics::subsets_of_vec(vars.iter().collect(), n) {
             let mut p = mp_ring.one();
@@ -129,7 +129,7 @@ where
             self.as_elementary_symmetric_polynomials_impl(&first_vars.to_vec(), &p_tilde, e);
         // println!("first_vars={:?} last_var={:?}", first_vars, last_var);
         // println!("r_sym = {}", self.elem_to_string(&r_sym));
-        let r = MultiPolynomialStructure::new(self.clone()).evaluate(
+        let r = self.multivariable_polynomial_ring().evaluate(
             &r_sym.apply_map(|x| MultiPolynomial::constant(x.clone())),
             (0..first_vars.len())
                 .map(|i| (e[i].clone(), self.elementary_symmetric(i + 1, vars)))
@@ -206,7 +206,7 @@ where
 
         #[cfg(debug_assertions)]
         {
-            let poly_check = MultiPolynomialStructure::new(self.clone()).evaluate(
+            let poly_check = self.multivariable_polynomial_ring().evaluate(
                 &poly_sym.apply_map(|x| MultiPolynomial::constant(x.clone())),
                 (0..e.len())
                     .map(|i| (e[i].clone(), self.elementary_symmetric(i + 1, &vars_clone)))

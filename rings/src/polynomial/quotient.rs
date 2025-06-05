@@ -199,7 +199,9 @@ impl<
     for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>
 {
     fn try_preimage(&self, x: &Polynomial<Field::Set>) -> Option<Field::Set> {
-        PolynomialStructure::new(self.domain().clone()).as_constant(&self.range().reduce(x))
+        self.domain()
+            .polynomial_ring()
+            .as_constant(&self.range().reduce(x))
     }
 }
 
@@ -222,14 +224,14 @@ impl<
     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Field::Set>) -> Cow<'a, Field::Set> {
         Cow::Owned(
             self.domain()
-                .polynomials()
+                .polynomial_ring()
                 .coeff(&self.range().reduce(v), *b)
                 .clone(),
         )
     }
 
     fn from_component(&self, b: &usize, r: &Field::Set) -> Polynomial<Field::Set> {
-        self.domain().polynomials().constant_var_pow(r.clone(), *b)
+        self.domain().polynomial_ring().constant_var_pow(r.clone(), *b)
     }
 }
 
@@ -264,7 +266,8 @@ mod tests {
 
     #[test]
     fn finite_dimensional_field_extension_structure() {
-        let x = PolynomialStructure::new(Rational::structure())
+        let x = Rational::structure()
+            .into_polynomial_ring()
             .var()
             .into_ergonomic();
         {

@@ -173,7 +173,7 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
 
 // impl EqSignature for IrreducibleRationalPolynomialStructure {
 //     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-//         Rational::structure().polynomials().equal(a, b)
+//         Rational::structure().polynomial_ring().equal(a, b)
 //     }
 // }
 

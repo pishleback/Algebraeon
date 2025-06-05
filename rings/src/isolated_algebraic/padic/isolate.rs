@@ -383,10 +383,10 @@ fn isorefine(
     let p_tothe_beta = p.nat_pow(beta);
     let vdfi = padic_int_valuation(
         p,
-        PolynomialStructure::new(
-            Integer::structure().into_quotient_ring(Integer::from(&p_tothe_beta)),
-        )
-        .evaluate(df, &Integer::from(i)),
+        Integer::structure()
+            .into_quotient_ring(Integer::from(&p_tothe_beta))
+            .into_polynomial_ring()
+            .evaluate(df, &Integer::from(i)),
     );
     if vdfi < Valuation::Finite(Integer::from(beta)) {
         return isorefine1(p, f, alpha, i, beta);

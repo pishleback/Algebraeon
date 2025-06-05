@@ -55,7 +55,7 @@ pub fn trial_division(mut n: Natural, max_d: usize) -> Vec<Factor> {
 pub fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> {
     debug_assert!(!is_prime(&n));
 
-    let nat_polys = Natural::structure().into_polynomials_semiring();
+    let nat_polys = Natural::structure().into_polynomial_semiring();
 
     // g(x) = x^2 + 1
     let g1 = Polynomial::<Natural>::from_coeffs(vec![Natural::ONE, Natural::ZERO, Natural::ONE]);

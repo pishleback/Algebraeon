@@ -11,7 +11,7 @@ fn double_poly_to_row(
     a: Polynomial<Polynomial<Rational>>,
 ) -> Matrix<Rational> {
     // let n = outer_poly_len * inner_poly_len;
-    let rat_poly_poly = Rational::structure().into_polynomials().into_polynomials();
+    let rat_poly_poly = Rational::structure().into_polynomial_ring().into_polynomial_ring();
 
     debug_assert!(rat_poly_poly.num_coeffs(&a) <= outer_poly_len);
     for c in a.coeffs() {
@@ -100,8 +100,9 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             .collect::<Vec<_>>();
         // println!("embeddings = {:?}", embedding_vars);
 
-        let rational_poly_multipoly_structure =
-            PolynomialStructure::new(MultiPolynomialStructure::new(Rational::structure()));
+        let rational_poly_multipoly_structure = Rational::structure()
+            .into_multivariable_polynomial_ring()
+            .into_polynomial_ring();
 
         let norm_f_sym = rational_poly_multipoly_structure.product(
             embedding_vars
@@ -171,9 +172,9 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
         let rat_poly_poly_poly = Rational::structure()
-            .into_polynomials()
-            .into_polynomials()
-            .into_polynomials();
+            .into_polynomial_ring()
+            .into_polynomial_ring()
+            .into_polynomial_ring();
 
         debug_assert!(!self.is_zero(p));
         //Let K = Q[θ] be the number field over which we are factoring
@@ -405,14 +406,14 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
             );
             let q = Polynomial::add(&Polynomial::var_pow(n), &q_prime.neg());
             //assert q(α) = 0
-            debug_assert!(l_reduced_ring.is_zero(
-                &PolynomialStructure::new(l_reduced_ring.clone()).evaluate(
+            debug_assert!(
+                l_reduced_ring.is_zero(&l_reduced_ring.polynomial_ring().evaluate(
                     &q.apply_map::<Polynomial<Polynomial<Rational>>>(|c| {
                         Polynomial::from_coeffs(vec![Polynomial::from_coeffs(vec![c.clone()])])
                     }),
                     &alpha
-                )
-            ));
+                ))
+            );
 
             //Let la be L represented by rational polynomials in α modulo q(x) and set up isomorphisms between l and la
             #[cfg(any())]
@@ -463,7 +464,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                     let _ = pow;
 
                     // Q[y]/qi(y)
-                    let lai_reduced_ring = PolynomialStructure::new(Rational::structure())
+                    let lai_reduced_ring = Rational::structure()
+                        .into_polynomial_ring()
                         .into_quotient_field_unchecked(qi.clone());
 
                     //pi(x) can now be computed as the degree d minimal polynomial of x in K[x]/pi(x) = Q[y]/qi(y)
@@ -613,7 +615,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 
 // impl EqSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
 //     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-//         self.anf.polynomials().equal(a, b)
+//         self.anf.polynomial_ring().equal(a, b)
 //     }
 // }
 
@@ -682,7 +684,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let k_poly = PolynomialStructure::new(k.clone());
+        let k_poly = k.polynomial_ring();
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
             k_poly
@@ -697,7 +699,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let k_poly = PolynomialStructure::new(k.clone());
+        let k_poly = k.polynomial_ring();
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
             k_poly
@@ -715,7 +717,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let k_poly = PolynomialStructure::new(k.clone());
+        let k_poly = k.polynomial_ring();
         debug_assert_eq!(
             k_poly
                 .factorizations()
@@ -728,7 +730,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let k_poly = PolynomialStructure::new(k.clone());
+        let k_poly = k.polynomial_ring();
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
             k_poly
