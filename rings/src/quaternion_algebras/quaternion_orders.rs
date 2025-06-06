@@ -1,20 +1,15 @@
 use std::fmt::Result;
 
-use algebraeon_nzq::{
-    Integer, IntegerCanonicalStructure, Natural, Rational, RationalCanonicalStructure,
-    traits::{Ceil, Floor, Fraction},
-};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
 use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
 use itertools::Itertools;
-use rand::{distr::uniform::Error, seq::IndexedRandom};
 
 use crate::{
     algebraic_number_field::number_field::AlgebraicNumberFieldStructure,
     module::finitely_free_module::RingToFinitelyFreeModuleSignature,
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature,
-        FreeModuleSignature, ModuleSignature, RingSignature, SemiModuleSignature,
-        SemiRingSignature,
+        RingSignature, SemiModuleSignature, SemiRingSignature,
     },
 };
 
@@ -79,8 +74,11 @@ impl SetSignature for QuaternionOrderZBasis {
         let (coset, element_reduced) = submodules.reduce_element(&V, &x_vec);
         debug_assert!(element_reduced.iter().all(|coeff| rat.is_zero(coeff)));
 
-        // coset.iter().all(|coeff| coeff.is_integer())
-        unimplemented!("check if all coordinates are integers")
+        if coset.iter().all(|coeff| coeff.is_integer()) {
+            Ok(())
+        } else {
+            Err("Element not in order".to_string())
+        }
     }
 }
 
