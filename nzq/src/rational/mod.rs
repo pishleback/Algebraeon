@@ -189,6 +189,10 @@ impl Rational {
         }
     }
 
+    pub fn is_integer(&self) -> bool {
+        self.denominator() == Natural::ONE
+    }
+
     pub fn sqrt_if_square(&self) -> Option<Rational> {
         if self < &Rational::ZERO {
             None
