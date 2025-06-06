@@ -1,6 +1,6 @@
 use algebraeon_drawing::{
     canvas::Canvas,
-    canvas2d::{complex_polynomial::PolynomialPlot, *},
+    canvas2d::{Canvas2D, MouseWheelZoomCamera, complex_polynomial::PolynomialPlot},
 };
 use algebraeon_nzq::Integer;
 use algebraeon_rings::{polynomial::Polynomial, structure::IntoErgonomic};

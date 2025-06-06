@@ -3,13 +3,14 @@ use std::ops::{Add, Mul, Sub};
 use crate::{
     rings::{
         integer::ideal::IntegerIdealsStructure,
+        localization::{LocalizationInclusionFoF, LocalizationPrime, LocalizationResidueField},
         quotient::QuotientStructure,
         quotient_morphism::EuclideanDomainQuotienting,
         valuation::{Valuation, padic_rat_valuation},
     },
     structure::{
-        AdditiveGroupSignature, FieldSignature, IdealsSignature, MetaRingEq,
-        PrincipalSubringInclusion, RingHomomorphism, RingSignature,
+        AdditiveGroupSignature, FieldSignature, IdealsArithmeticSignature, MetaRingEq,
+        PrincipalSubringInclusion, RingHomomorphism, RingSignature, RingToIdealsSignature,
     },
 };
 use algebraeon_nzq::{
@@ -103,7 +104,9 @@ where
     }
 }
 
-pub trait GeneralPlace {
+/// not necessarily obeying ultra-metric
+/// so Archimedean absolute value also below
+pub trait PreAdditiveValuation {
     type DomainFieldSignature: FieldSignature;
     type ValuationGamma: Ord + Default + Add<Self::ValuationGamma, Output = Self::ValuationGamma>;
 
@@ -113,10 +116,8 @@ pub trait GeneralPlace {
     ) -> AdditiveValueGroup<Self::ValuationGamma>;
 }
 
-pub trait PlaceSignature : GeneralPlace {
-    
+pub trait AdditiveValuation: PreAdditiveValuation {
     type ValuationRing: RingSignature;
-    type MaximalIdealSignature: IdealsSignature<Self::ValuationRing, Self::ValuationRing>;
     type ResidueField: FieldSignature;
 
     fn try_to_valuation_ring(
@@ -148,7 +149,7 @@ pub trait PlaceSignature : GeneralPlace {
 
 pub struct PAdicValuation(Natural);
 
-impl GeneralPlace for PAdicValuation {
+impl PreAdditiveValuation for PAdicValuation {
     type DomainFieldSignature = RationalCanonicalStructure;
 
     type ValuationGamma = Integer;
@@ -164,15 +165,12 @@ impl GeneralPlace for PAdicValuation {
     }
 }
 
-impl PlaceSignature for PAdicValuation {
-
-    // TODO: localize, this is only a smaller subset
-    // don't see that implementor of RingSignature right now
-    // so put something temporarily
-    type ValuationRing = IntegerCanonicalStructure;
-
-    // TODO: correspondingly change this ideal to be in the correct ambient ring
-    type MaximalIdealSignature = IntegerIdealsStructure<Self::ValuationRing>;
+impl AdditiveValuation for PAdicValuation {
+    type ValuationRing = LocalizationPrime<
+        IntegerCanonicalStructure,
+        IntegerCanonicalStructure,
+        IntegerIdealsStructure<IntegerCanonicalStructure>,
+    >;
 
     type ResidueField = QuotientStructure<IntegerCanonicalStructure, true>;
     fn residue_field(&self) -> Self::ResidueField {
@@ -182,17 +180,34 @@ impl PlaceSignature for PAdicValuation {
         )
     }
 
-    // TODO: extend this inclusion to also take in sfuff without p in denominator
     fn valuation_inclusion(
         &self,
     ) -> impl RingHomomorphism<Self::ValuationRing, Self::DomainFieldSignature>
     + InjectiveFunction<Self::ValuationRing, Self::DomainFieldSignature> {
-        PrincipalSubringInclusion::<RationalCanonicalStructure>::new(RationalCanonicalStructure {})
+        let z_to_q = PrincipalSubringInclusion::<_>::new(RationalCanonicalStructure {});
+        let z = IntegerCanonicalStructure {};
+        let all_is = z.into_ideals();
+        let prime_ideal = all_is.principal_ideal(&self.0.clone().into());
+        let source =
+            LocalizationPrime::new_unchecked(IntegerCanonicalStructure {}, all_is, prime_ideal);
+        LocalizationInclusionFoF::new(source, z_to_q)
     }
 
-    // TODO: modify to take into account localization
     fn valuation_quotient(&self) -> impl RingHomomorphism<Self::ValuationRing, Self::ResidueField> {
-        EuclideanDomainQuotienting::new(IntegerCanonicalStructure {}, self.residue_field())
+        let z = IntegerCanonicalStructure {};
+        let all_is = z.into_ideals();
+        let prime_ideal = all_is.principal_ideal(&self.0.clone().into());
+        let source =
+            LocalizationPrime::new_unchecked(IntegerCanonicalStructure {}, all_is, prime_ideal);
+        let target = self.residue_field();
+        let map_restricted = EuclideanDomainQuotienting::new(IntegerCanonicalStructure {}, target);
+        LocalizationResidueField::<
+            IntegerCanonicalStructure,
+            IntegerCanonicalStructure,
+            IntegerIdealsStructure<IntegerCanonicalStructure>,
+            Self::ResidueField,
+            EuclideanDomainQuotienting<IntegerCanonicalStructure, true>,
+        >::new(source, map_restricted)
     }
 }
 
@@ -246,7 +261,7 @@ impl<T: Ord + Mul<T, Output = T>> Add<Self> for LogRatio<T> {
 }
 pub struct ArchimedeanPlace;
 
-impl GeneralPlace for ArchimedeanPlace {
+impl PreAdditiveValuation for ArchimedeanPlace {
     type DomainFieldSignature = RationalCanonicalStructure;
 
     type ValuationGamma = LogRatio<Natural>;
