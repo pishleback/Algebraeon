@@ -232,6 +232,8 @@ impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStru
     }
 }
 
+impl<Field: FieldSignature> AlgebraSignature<Field> for QuaternionAlgebraStructure<Field> {}
+
 impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
     type Basis = QuaternionAlgebraBasisCanonicalStructure;
 
