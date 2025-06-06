@@ -163,3 +163,36 @@ impl QuaternionOrderZBasis {
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use algebraeon_nzq::Rational;
+
+    #[test]
+    fn test_lipschitz_order() {
+        let rat = Rational::structure();
+        let a = -Rational::ONE;
+        let b = -Rational::ONE;
+
+        // Hamilton quaternion algebra: H = (-1, -1 / QQ)
+        let h = QuaternionAlgebraStructure::new(rat.clone(), a.clone(), b.clone());
+        let one = h.one();
+        let i = h.i();
+        let j = h.j();
+        let k = h.k();
+
+        // Lipschitz order <1, i, j, k>_QQ
+        let order = QuaternionOrderZBasis {
+            integers: Integer::structure(),
+            algebra: h,
+            basis: vec![one.clone(), i.clone(), j.clone(), k.clone()],
+        };
+
+        for (idx, b) in order.basis.iter().enumerate() {
+            assert!(order.is_element(b).is_ok(),);
+        }
+
+        assert!(order.check_basis());
+    }
+}
