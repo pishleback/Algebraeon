@@ -1,3 +1,4 @@
+mod algebra;
 mod elements;
 mod factorization;
 mod homomorphisms;
@@ -9,6 +10,7 @@ mod quotient;
 mod rings;
 mod ufd;
 
+pub use algebra::*;
 pub use elements::*;
 pub use factorization::*;
 pub use homomorphisms::*;
