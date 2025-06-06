@@ -1,5 +1,7 @@
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational, RationalCanonicalStructure};
 use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
+use itertools::Itertools;
+use rand::seq::IndexedRandom;
 
 use crate::{
     algebraic_number_field::number_field::AlgebraicNumberFieldStructure,
@@ -41,13 +43,37 @@ impl SetSignature for QuaternionOrderZBasis {
     type Set = QuaternionAlgebraElement<AlgebraicNumberFieldStructure>;
 
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
-        let submodules = self
-            .algebra
-            .ring()
-            .free_module(self.algebra.rank())
-            .submodules();
+        let A = &self.algebra;
+        let rat = Rational::structure();
+        let free_mod = rat.free_module(self.basis.len());
+        let submodules = free_mod.submodules();
 
-        unimplemented!("linear algebra")
+        let basis_vecs: Vec<Vec<Rational>> = self
+            .basis
+            .iter()
+            .map(|b| {
+                A.to_vec(b)
+                    .into_iter()
+                    .map(|p| p.into_coeffs())
+                    .flatten()
+                    .collect_vec()
+            })
+            .collect_vec();
+
+        let basis_refs: Vec<&Vec<Rational>> = basis_vecs.iter().collect();
+
+        let V = submodules.span(basis_refs);
+
+        let x_vec = A
+            .to_vec(x)
+            .into_iter()
+            .map(|p| p.into_coeffs())
+            .flatten()
+            .collect_vec();
+
+        unimplemented!("get coordinates of x_vec in the basis");
+
+        unimplemented!("check that coordinates are integers.");
     }
 }
 
