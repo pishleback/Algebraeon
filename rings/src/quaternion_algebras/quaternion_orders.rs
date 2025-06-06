@@ -1,7 +1,12 @@
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational, RationalCanonicalStructure};
+use std::fmt::Result;
+
+use algebraeon_nzq::{
+    Integer, IntegerCanonicalStructure, Natural, Rational, RationalCanonicalStructure,
+    traits::{Ceil, Floor, Fraction},
+};
 use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
 use itertools::Itertools;
-use rand::seq::IndexedRandom;
+use rand::{distr::uniform::Error, seq::IndexedRandom};
 
 use crate::{
     algebraic_number_field::number_field::AlgebraicNumberFieldStructure,
@@ -71,9 +76,11 @@ impl SetSignature for QuaternionOrderZBasis {
             .flatten()
             .collect_vec();
 
-        unimplemented!("get coordinates of x_vec in the basis");
+        let (coset, element_reduced) = submodules.reduce_element(&V, &x_vec);
+        debug_assert!(element_reduced.iter().all(|coeff| rat.is_zero(coeff)));
 
-        unimplemented!("check that coordinates are integers.");
+        // coset.iter().all(|coeff| coeff.is_integer())
+        unimplemented!("check if all coordinates are integers")
     }
 }
 
