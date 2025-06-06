@@ -1,5 +1,3 @@
-use std::fmt::Result;
-
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
 use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
 use itertools::Itertools;
