@@ -288,11 +288,12 @@ pub trait FactoredSignature: SetSignature {
 
     /// The greatest common divisor of two factorizations
     fn gcd(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        let b_powers = self.to_powers(b);
         let factor_powers = self
             .to_powers(a)
             .into_iter()
             .filter_map(|(p, pk)| {
-                for (q, qk) in self.to_powers(b) {
+                for (q, qk) in &b_powers {
                     if self.prime_object_equivalent(p, q) {
                         return Some((p.clone(), std::cmp::min(pk, qk).clone()));
                     }

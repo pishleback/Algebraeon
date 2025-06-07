@@ -1,22 +1,32 @@
 use algebraeon_nzq::Integer;
 use algebraeon_sets::structure::{Function, SetSignature};
 
-use crate::rings::{
-    algebraic_number_fields::{embedded_anf::EmbeddedAnf, number_field::AlgebraicNumberFieldStructure},
-    isolated_algebraic::complex::ComplexAlgebraic, valuation::AdditiveValueGroup
-};
 use super::AdditiveValuation;
+use crate::rings::{
+    algebraic_number_fields::{
+        embedded_anf::EmbeddedAnf, number_field::AlgebraicNumberFieldStructure,
+    },
+    isolated_algebraic::complex::ComplexAlgebraic,
+    valuation::AdditiveValueGroup,
+};
 
 pub enum Place<V>
 where
-    V: AdditiveValuation<ValuationGamma = Integer, DomainFieldSignature = AlgebraicNumberFieldStructure>
+    V: AdditiveValuation<
+            ValuationGamma = Integer,
+            DomainFieldSignature = AlgebraicNumberFieldStructure,
+        >,
 {
-    Embedding(EmbeddedAnf),
+    Embedding(Box<EmbeddedAnf>),
     Valuation(V),
 }
 
-impl<V> Place<V> where 
-    V: AdditiveValuation<ValuationGamma = Integer, DomainFieldSignature = AlgebraicNumberFieldStructure>
+impl<V> Place<V>
+where
+    V: AdditiveValuation<
+            ValuationGamma = Integer,
+            DomainFieldSignature = AlgebraicNumberFieldStructure,
+        >,
 {
     pub fn is_finite(&self) -> bool {
         matches!(self, Self::Valuation(_))
@@ -32,25 +42,26 @@ impl<V> Place<V> where
 
     /// if we are at an Archimedean place, use the embedding to embed this `element`
     /// as a `ComplexAlgebraic`
-    fn embed_archimedian(&self, element: &<AlgebraicNumberFieldStructure as SetSignature>::Set) -> Result<ComplexAlgebraic, ()> {
+    fn embed_archimedian(
+        &self,
+        element: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
+    ) -> Result<ComplexAlgebraic, ()> {
         match self {
             Place::Embedding(embedded_anf) => Ok(embedded_anf.embed(element)),
-            Place::Valuation(_) => Err(())
+            Place::Valuation(_) => Err(()),
         }
     }
-    
+
     /// If we are at an non-Archimedean place and the element is in the corresponding `ValuationRing`
     /// give the quotient in `ResidueField`.
     /// If it is not in the corresponding `ValuationRing`, give the valuation which should be less than `0`.
-    fn try_to_residue(&self,
-        element: &<AlgebraicNumberFieldStructure as SetSignature>::Set)
-        -> Result<
-            Result<
-                <V::ResidueField as SetSignature>::Set,
-                AdditiveValueGroup<V::ValuationGamma>
-            >,
-            ()>
-    {
+    fn try_to_residue(
+        &self,
+        element: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
+    ) -> Result<
+        Result<<V::ResidueField as SetSignature>::Set, AdditiveValueGroup<V::ValuationGamma>>,
+        (),
+    > {
         match self {
             Place::Embedding(_) => Err(()),
             Place::Valuation(v) => {

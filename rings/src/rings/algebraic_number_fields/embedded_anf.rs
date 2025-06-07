@@ -83,24 +83,29 @@ impl EmbeddedAnf {
         matches!(self.generator, ComplexAlgebraic::Real(_))
     }
     pub fn is_rational(&self) -> bool {
-        self.is_real() && match &self.generator {
-            ComplexAlgebraic::Real(real_algebraic) => {
-                match real_algebraic {
+        self.is_real()
+            && match &self.generator {
+                ComplexAlgebraic::Real(real_algebraic) => match real_algebraic {
                     RealAlgebraic::Rational(_) => true,
                     RealAlgebraic::Real(_) => false,
-                }
+                },
+                ComplexAlgebraic::Complex(_) => false,
             }
-            ComplexAlgebraic::Complex(_ ) => false,
-        }
     }
 
-    pub fn embed(&self, element: &<AlgebraicNumberFieldStructure as SetSignature>::Set) -> ComplexAlgebraic {
+    pub fn embed(
+        &self,
+        element: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
+    ) -> ComplexAlgebraic {
         let complex_alg_canonical = ComplexAlgebraicCanonicalStructure {};
-        let mut answer : ComplexAlgebraic = ComplexAlgebraic::Real(RealAlgebraic::Rational(element.coeff(0)));
+        let mut answer: ComplexAlgebraic =
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(element.coeff(0)));
         let mut x_to_idx = self.generator.clone();
         for coeff in element.coeffs().into_iter().skip(1) {
-            let cur_contribution : ComplexAlgebraic = complex_alg_canonical.mul(&x_to_idx, 
-                &ComplexAlgebraic::Real(RealAlgebraic::Rational(coeff.clone())));
+            let cur_contribution: ComplexAlgebraic = complex_alg_canonical.mul(
+                &x_to_idx,
+                &ComplexAlgebraic::Real(RealAlgebraic::Rational(coeff.clone())),
+            );
             complex_alg_canonical.add_mut(&mut answer, &cur_contribution);
             complex_alg_canonical.mul_mut(&mut x_to_idx, &self.generator);
         }
