@@ -280,29 +280,29 @@ pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set>;
 }
 
-impl<F: FieldSignature, K: FieldSignature, Hom : RingHomomorphism<F, K> + InjectiveFunction<F, K>> FiniteDimensionalFieldExtension<F, K> for Hom
-
-
+impl<F: FieldSignature, K: FieldSignature, Hom: RingHomomorphism<F, K> + InjectiveFunction<F, K>>
+    FiniteDimensionalFieldExtension<F, K> for Hom
 where
-for<'h> RingHomomorphismRangeModuleStructure<'h, F, K, Self>: FinitelyFreeModuleSignature<F>,
-for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignature<F>>::Basis:
-    FiniteSetSignature {
-        fn degree(&self) -> usize {
+    for<'h> RingHomomorphismRangeModuleStructure<'h, F, K, Self>: FinitelyFreeModuleSignature<F>,
+    for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignature<F>>::Basis:
+        FiniteSetSignature,
+{
+    fn degree(&self) -> usize {
+        self.range_module_structure().rank()
+    }
+
+    fn norm(&self, a: &K::Set) -> F::Set {
         todo!()
     }
-    
-        fn norm(&self, a: &<K>::Set) -> <F>::Set {
+
+    fn trace(&self, a: &K::Set) -> F::Set {
         todo!()
     }
-    
-        fn trace(&self, a: &<K>::Set) -> <F>::Set {
+
+    fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set> {
         todo!()
     }
-    
-        fn min_poly(&self, a: &<K>::Set) -> Polynomial<<F>::Set> {
-        todo!()
-    }
-    }
+}
 
 /// Represent all ring homomorphisms from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]

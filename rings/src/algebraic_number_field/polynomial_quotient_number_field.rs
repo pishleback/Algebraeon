@@ -230,24 +230,25 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure 
 //     }
 // }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FiniteDimensionalFieldExtension<
-        RationalCanonicalStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-    > for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
-{
-    fn norm(&self, a: &Polynomial<Rational>) -> Rational {
-        self.range().norm(a)
-    }
+compile_error!("sus");
+// impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+//     FiniteDimensionalFieldExtension<
+//         RationalCanonicalStructure,
+//         AlgebraicNumberFieldPolynomialQuotientStructure,
+//     > for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
+// {
+//     fn norm(&self, a: &Polynomial<Rational>) -> Rational {
+//         self.range().norm(a)
+//     }
 
-    fn trace(&self, a: &Polynomial<Rational>) -> Rational {
-        self.range().trace(a)
-    }
+//     fn trace(&self, a: &Polynomial<Rational>) -> Rational {
+//         self.range().trace(a)
+//     }
 
-    fn min_poly(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
-        self.range().min_poly(a)
-    }
-}
+//     fn min_poly(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
+//         self.range().min_poly(a)
+//     }
+// }
 
 impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     AlgebraicNumberField<AlgebraicNumberFieldPolynomialQuotientStructure>

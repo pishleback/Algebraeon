@@ -124,6 +124,7 @@ where
         Polynomial::from_coeffs(v)
     }
 
+
     pub fn min_poly(&self, a: &Polynomial<FS::Set>) -> Polynomial<FS::Set> {
         MatrixStructure::new(self.ring().coeff_ring().clone())
             .minimal_polynomial(self.col_multiplication_matrix(a))
@@ -145,6 +146,7 @@ where
             .trace(&self.col_multiplication_matrix(a))
             .unwrap()
     }
+
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -225,10 +227,7 @@ impl<
     Field: FieldSignature,
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
->
-   FreeModuleSignature<
-        Field,
-    >
+> FreeModuleSignature<Field>
     for RingHomomorphismRangeModuleStructure<
         'h,
         Field,
@@ -263,10 +262,7 @@ impl<
     Field: FieldSignature,
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
->
-    FinitelyFreeModuleSignature<
-        Field,
-    >
+> FinitelyFreeModuleSignature<Field>
     for RingHomomorphismRangeModuleStructure<
         'h,
         Field,
@@ -274,31 +270,31 @@ impl<
         FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>,
     >
 {
-    
 }
 
-impl<
-    Field: FieldSignature,
-    FieldB: BorrowedStructure<Field>,
-    FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
->
-    FiniteDimensionalFieldExtension<
-        Field,
-        FieldExtensionByPolynomialQuotientStructure<Field, FieldB, FieldPolyB>,
-    > for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>
-{
-    fn norm(&self, a: &Polynomial<Field::Set>) -> Field::Set {
-        self.range().norm(a)
-    }
+compile_error!("sus");
+// impl<
+//     Field: FieldSignature,
+//     FieldB: BorrowedStructure<Field>,
+//     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
+// >
+//     FiniteDimensionalFieldExtension<
+//         Field,
+//         FieldExtensionByPolynomialQuotientStructure<Field, FieldB, FieldPolyB>,
+//     > for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>
+// {
+//     fn norm(&self, a: &Polynomial<Field::Set>) -> Field::Set {
+//         self.range().norm(a)
+//     }
 
-    fn trace(&self, a: &Polynomial<Field::Set>) -> Field::Set {
-        self.range().trace(a)
-    }
+//     fn trace(&self, a: &Polynomial<Field::Set>) -> Field::Set {
+//         self.range().trace(a)
+//     }
 
-    fn min_poly(&self, a: &Polynomial<Field::Set>) -> Polynomial<<Field>::Set> {
-        self.range().min_poly(a)
-    }
-}
+//     fn min_poly(&self, a: &Polynomial<Field::Set>) -> Polynomial<<Field>::Set> {
+//         self.range().min_poly(a)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

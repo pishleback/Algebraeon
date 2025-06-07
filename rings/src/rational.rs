@@ -82,7 +82,12 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
 }
 
 impl<'h> FreeModuleSignature<RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<'h, RationalCanonicalStructure,RationalCanonicalStructure,PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        RationalCanonicalStructure,
+        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+    >
 {
     type Basis = SingletonSetStructure;
 
@@ -100,28 +105,31 @@ impl<'h> FreeModuleSignature<RationalCanonicalStructure>
 }
 
 impl<'h> FinitelyFreeModuleSignature<RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<'h, RationalCanonicalStructure,RationalCanonicalStructure,PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        RationalCanonicalStructure,
+        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+    >
 {
-    
 }
 
-impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
-{
+compile_error!("sus");
+// impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, RationalCanonicalStructure>
+//     for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
+// {
+//     fn norm(&self, a: &Rational) -> Rational {
+//         a.clone()
+//     }
 
+//     fn trace(&self, a: &Rational) -> Rational {
+//         a.clone()
+//     }
 
-    fn norm(&self, a: &Rational) -> Rational {
-        a.clone()
-    }
-
-    fn trace(&self, a: &Rational) -> Rational {
-        a.clone()
-    }
-
-    fn min_poly(&self, a: &Rational) -> Polynomial<Rational> {
-        Polynomial::from_coeffs(vec![-a, Rational::ONE])
-    }
-}
+//     fn min_poly(&self, a: &Rational) -> Polynomial<Rational> {
+//         Polynomial::from_coeffs(vec![-a, Rational::ONE])
+//     }
+// }
 
 impl ComplexSubsetSignature for RationalCanonicalStructure {
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
