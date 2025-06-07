@@ -1,7 +1,7 @@
 use std::borrow::{Borrow, Cow};
 
 use super::{
-    embedded_anf::anf_multi_primitive_element_theorem,
+    embedded_anf::anf_multi_primitive_element_theorem, number_field_traits::AlgebraicNumberField,
     ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
 };
 use crate::{matrix::*, polynomial::*, structure::*};
@@ -12,34 +12,44 @@ use algebraeon_nzq::{
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
-pub type AlgebraicNumberFieldStructure = FieldExtensionByPolynomialQuotientStructure<
-    RationalCanonicalStructure,
-    RationalCanonicalStructure,
-    PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>,
->;
+pub type AlgebraicNumberFieldPolynomialQuotientStructure =
+    FieldExtensionByPolynomialQuotientStructure<
+        RationalCanonicalStructure,
+        RationalCanonicalStructure,
+        PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>,
+    >;
 
 impl Polynomial<Rational> {
-    pub fn algebraic_number_field(self) -> Result<AlgebraicNumberFieldStructure, ()> {
+    pub fn algebraic_number_field(
+        self,
+    ) -> Result<AlgebraicNumberFieldPolynomialQuotientStructure, ()> {
         Rational::structure()
             .into_polynomial_ring()
             .into_quotient_field(self)
     }
 
-    pub fn algebraic_number_field_unchecked(self) -> AlgebraicNumberFieldStructure {
+    pub fn algebraic_number_field_unchecked(
+        self,
+    ) -> AlgebraicNumberFieldPolynomialQuotientStructure {
         Rational::structure()
             .into_polynomial_ring()
             .into_quotient_field_unchecked(self)
     }
 
     //return the splitting field and the roots of f in the splitting field
-    pub fn splitting_field(&self) -> (AlgebraicNumberFieldStructure, Vec<Polynomial<Rational>>) {
+    pub fn splitting_field(
+        &self,
+    ) -> (
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        Vec<Polynomial<Rational>>,
+    ) {
         let roots = self.primitive_part_fof().all_complex_roots();
         let (g, roots_rel_g) = anf_multi_primitive_element_theorem(roots.iter().collect());
         (g.generated_algebraic_number_field(), roots_rel_g)
     }
 }
 
-impl AlgebraicNumberFieldStructure {
+impl AlgebraicNumberFieldPolynomialQuotientStructure {
     pub fn trace_form_matrix(&self, elems: &Vec<Polynomial<Rational>>) -> Matrix<Rational> {
         let n = self.degree();
         assert_eq!(n, elems.len());
@@ -188,14 +198,7 @@ impl AlgebraicNumberFieldStructure {
     }
 }
 
-impl CharZeroRingSignature for AlgebraicNumberFieldStructure {
-    fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
-        let x = self.reduce(x);
-        x.try_to_int()
-    }
-}
-
-impl CharZeroFieldSignature for AlgebraicNumberFieldStructure {
+impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
     fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
         let x = self.reduce(x);
         match x.degree() {
@@ -206,11 +209,11 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldStructure {
     }
 }
 
-impl FiniteRankFreeRingExtension<RationalCanonicalStructure, AlgebraicNumberFieldStructure>
-    for PrincipalRationalSubfieldInclusion<
-        AlgebraicNumberFieldStructure,
-        AlgebraicNumberFieldStructure,
-    >
+impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    FiniteRankFreeRingExtension<
+        RationalCanonicalStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
     type Basis = EnumeratedFiniteSetStructure;
 
@@ -227,42 +230,45 @@ impl FiniteRankFreeRingExtension<RationalCanonicalStructure, AlgebraicNumberFiel
     }
 }
 
-impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, AlgebraicNumberFieldStructure>
-    for PrincipalRationalSubfieldInclusion<
-        AlgebraicNumberFieldStructure,
-        AlgebraicNumberFieldStructure,
-    >
+impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    FiniteDimensionalFieldExtension<
+        RationalCanonicalStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
-    fn norm(&self, a: &<AlgebraicNumberFieldStructure as SetSignature>::Set) -> Rational {
+    fn norm(&self, a: &Polynomial<Rational>) -> Rational {
         self.range().norm(a)
     }
 
-    fn trace(&self, a: &<AlgebraicNumberFieldStructure as SetSignature>::Set) -> Rational {
+    fn trace(&self, a: &Polynomial<Rational>) -> Rational {
         self.range().trace(a)
     }
 
-    fn min_poly(
-        &self,
-        a: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
-    ) -> Polynomial<Rational> {
+    fn min_poly(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
         self.range().min_poly(a)
     }
+}
+
+impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    AlgebraicNumberField<AlgebraicNumberFieldPolynomialQuotientStructure>
+    for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
+{
 }
 
 impl
     IntegralDomainExtensionAllPolynomialRoots<
         RationalCanonicalStructure,
-        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
     >
     for PrincipalRationalSubfieldInclusion<
-        AlgebraicNumberFieldStructure,
-        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
     >
 {
     fn all_roots(
         &self,
         polynomial: &Polynomial<Rational>,
-    ) -> Vec<<AlgebraicNumberFieldStructure as SetSignature>::Set> {
+    ) -> Vec<<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set> {
         let anf = self.range();
         anf.polynomial_ring()
             .factor(&polynomial.apply_map(|x| self.image(x)))
@@ -294,7 +300,7 @@ impl
 }
 
 struct RingOfIntegers {
-    anf: AlgebraicNumberFieldStructure,
+    anf: AlgebraicNumberFieldPolynomialQuotientStructure,
     basis: Vec<Polynomial<Rational>>,
 }
 

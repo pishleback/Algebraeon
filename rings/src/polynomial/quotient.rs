@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use super::{Polynomial, polynomial_ring::*};
 use crate::{matrix::*, structure::*};
-use algebraeon_nzq::Natural;
+use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::*;
 
 pub type FieldExtensionByPolynomialQuotientStructure<FS, FSB, FSPB> =
@@ -19,6 +19,21 @@ where
 {
     fn characteristic(&self) -> Natural {
         self.ring().characteristic()
+    }
+}
+
+impl<
+    FS: FieldSignature + CharZeroRingSignature,
+    FSB: BorrowedStructure<FS>,
+    FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
+    const IS_FIELD: bool,
+> CharZeroRingSignature for QuotientStructure<PolynomialStructure<FS, FSB>, FSPB, IS_FIELD>
+where
+    PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>,
+{
+    fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
+        let x_reduced = self.reduce(x);
+        self.ring().try_to_int(&x_reduced)
     }
 }
 
