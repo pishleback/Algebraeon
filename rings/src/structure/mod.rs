@@ -9,6 +9,7 @@ mod modules;
 mod quotient;
 mod rings;
 mod ufd;
+mod quotient_morphism;
 
 pub use algebra::*;
 pub use elements::*;
@@ -21,3 +22,4 @@ pub use modules::*;
 pub use quotient::*;
 pub use rings::*;
 pub use ufd::*;
+pub use quotient_morphism::*;

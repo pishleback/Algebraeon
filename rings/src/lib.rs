@@ -51,3 +51,4 @@ pub mod quaternion_algebras;
 pub mod rational;
 pub mod structure;
 pub mod valuation;
+pub mod localization;

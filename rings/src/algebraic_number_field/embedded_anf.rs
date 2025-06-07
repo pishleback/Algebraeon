@@ -99,7 +99,7 @@ impl EmbeddedAnf {
     ) -> ComplexAlgebraic {
         let complex_alg_canonical = ComplexAlgebraicCanonicalStructure {};
         let mut answer: ComplexAlgebraic =
-            ComplexAlgebraic::Real(RealAlgebraic::Rational(element.coeff(0)));
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(element.coeff(0).into_owned()));
         let mut x_to_idx = self.generator.clone();
         for coeff in element.coeffs().into_iter().skip(1) {
             let cur_contribution: ComplexAlgebraic = complex_alg_canonical.mul(

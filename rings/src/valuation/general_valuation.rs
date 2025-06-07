@@ -1,21 +1,11 @@
 use std::ops::{Add, Mul, Sub};
-
 use crate::{
-    rings::{
-        integer::ideal::IntegerIdealsStructure,
-        localization::{LocalizationInclusionFoF, LocalizationPrime, LocalizationResidueField},
-        quotient::QuotientStructure,
-        quotient_morphism::EuclideanDomainQuotienting,
-        valuation::{Valuation, padic_rat_valuation},
-    },
-    structure::{
-        AdditiveGroupSignature, FieldSignature, IdealsArithmeticSignature, MetaRingEq,
-        PrincipalSubringInclusion, RingHomomorphism, RingSignature, RingToIdealsSignature,
-    },
+        integer::ideal::IntegerIdealsStructure, localization::{LocalizationInclusionFoF, LocalizationPrime, LocalizationResidueField}, structure::{
+        AdditiveGroupSignature, EuclideanDomainQuotienting, FieldSignature, IdealsArithmeticSignature, MetaRingEq, QuotientStructure, RingHomomorphism, RingSignature, RingToIdealsSignature, RingToQuotientFieldSignature
+    }, valuation::{padic_rat_valuation, Valuation}
 };
 use algebraeon_nzq::{
-    Integer, IntegerCanonicalStructure, Natural, RationalCanonicalStructure,
-    traits::{Abs, Fraction},
+    traits::{Abs, Fraction}, Integer, IntegerCanonicalStructure, Natural, Rational, RationalCanonicalStructure
 };
 use algebraeon_sets::structure::{InjectiveFunction, MetaType, SetSignature};
 
@@ -172,20 +162,18 @@ impl AdditiveValuation for PAdicValuation {
         IntegerIdealsStructure<IntegerCanonicalStructure>,
     >;
 
-    type ResidueField = QuotientStructure<IntegerCanonicalStructure, true>;
+    type ResidueField = QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>;
+
     fn residue_field(&self) -> Self::ResidueField {
-        QuotientStructure::<IntegerCanonicalStructure, true>::new_field(
-            IntegerCanonicalStructure {},
-            self.0.clone().into(),
-        )
+        Integer::structure().into_quotient_field_unchecked(self.0.clone().into())
     }
 
     fn valuation_inclusion(
         &self,
     ) -> impl RingHomomorphism<Self::ValuationRing, Self::DomainFieldSignature>
     + InjectiveFunction<Self::ValuationRing, Self::DomainFieldSignature> {
-        let z_to_q = PrincipalSubringInclusion::<_>::new(RationalCanonicalStructure {});
-        let z = IntegerCanonicalStructure {};
+        let z_to_q =Rational::structure().into_principal_subring_inclusion();
+        let z = Integer::structure();
         let all_is = z.into_ideals();
         let prime_ideal = all_is.principal_ideal(&self.0.clone().into());
         let source =

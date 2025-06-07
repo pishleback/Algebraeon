@@ -2,11 +2,11 @@ use algebraeon_nzq::Integer;
 use algebraeon_sets::structure::{Function, SetSignature};
 
 use super::AdditiveValuation;
-use crate::rings::{
-    algebraic_number_fields::{
+use crate::{
+    algebraic_number_field::{
         embedded_anf::EmbeddedAnf, number_field::AlgebraicNumberFieldStructure,
     },
-    isolated_algebraic::complex::ComplexAlgebraic,
+    isolated_algebraic::ComplexAlgebraic,
     valuation::AdditiveValueGroup,
 };
 
