@@ -1,5 +1,5 @@
 use super::*;
-use algebraeon_rings::linear::matrix::{Matrix, MatrixStructure};
+use algebraeon_rings::matrix::{Matrix, MatrixStructure};
 use std::sync::atomic::AtomicUsize;
 
 #[derive(Debug, Clone)]

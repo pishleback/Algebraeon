@@ -29,6 +29,10 @@ impl<Element> FactoredRingElement<Element> {
         &self.powers
     }
 
+    pub fn into_powers(self) -> Vec<(Element, Natural)> {
+        self.powers
+    }
+
     pub fn from_unit_and_powers(unit: Element, powers: Vec<(Element, Natural)>) -> Self {
         Self { unit, powers }
     }

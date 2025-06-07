@@ -1,6 +1,6 @@
 mod factoring;
 mod hensel_lifting;
-mod multipoly;
+mod multipoly_ring;
 mod polynomial;
 mod polynomial_ring;
 mod polynomial_semiring;
@@ -9,7 +9,7 @@ mod symmetric;
 
 pub use factoring::*;
 pub use hensel_lifting::*;
-pub use multipoly::*;
+pub use multipoly_ring::*;
 pub use polynomial::*;
 pub use polynomial_ring::*;
 pub use polynomial_semiring::*;
