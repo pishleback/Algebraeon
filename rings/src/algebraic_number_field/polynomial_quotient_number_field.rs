@@ -209,26 +209,26 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure 
     }
 }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FiniteRankFreeRingExtension<
-        RationalCanonicalStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-    > for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
-{
-    type Basis = EnumeratedFiniteSetStructure;
+// impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+//     FiniteRankFreeRingExtension<
+//         RationalCanonicalStructure,
+//         AlgebraicNumberFieldPolynomialQuotientStructure,
+//     > for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
+// {
+//     type Basis = EnumeratedFiniteSetStructure;
 
-    fn basis_set(&self) -> impl Borrow<Self::Basis> {
-        self.range().field_inclusion().basis_set().borrow().clone()
-    }
+//     fn basis_set(&self) -> impl Borrow<Self::Basis> {
+//         self.range().field_inclusion().basis_set().borrow().clone()
+//     }
 
-    fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
-        self.range().field_inclusion().to_component(b, v)
-    }
+//     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
+//         self.range().field_inclusion().to_component(b, v)
+//     }
 
-    fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
-        self.range().field_inclusion().from_component(b, r)
-    }
-}
+//     fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
+//         self.range().field_inclusion().from_component(b, r)
+//     }
+// }
 
 impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     FiniteDimensionalFieldExtension<
@@ -297,11 +297,6 @@ impl
             .flatten()
             .collect()
     }
-}
-
-struct RingOfIntegers {
-    anf: AlgebraicNumberFieldPolynomialQuotientStructure,
-    basis: Vec<Polynomial<Rational>>,
 }
 
 #[cfg(test)]

@@ -221,35 +221,60 @@ impl<
 }
 
 impl<
+    'h,
     Field: FieldSignature,
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
 >
-    FiniteRankFreeRingExtension<
+   FreeModuleSignature<
+        Field,
+    >
+    for RingHomomorphismRangeModuleStructure<
+        'h,
         Field,
         FieldExtensionByPolynomialQuotientStructure<Field, FieldB, FieldPolyB>,
-    > for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>
+        FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>,
+    >
 {
     type Basis = EnumeratedFiniteSetStructure;
 
     fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
-        EnumeratedFiniteSetStructure::new(self.range().degree())
+        EnumeratedFiniteSetStructure::new(self.module().degree())
     }
 
     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Field::Set>) -> Cow<'a, Field::Set> {
         Cow::Owned(
-            self.domain()
+            self.ring()
                 .polynomial_ring()
-                .coeff(&self.range().reduce(v), *b)
+                .coeff(&self.module().reduce(v), *b)
                 .into_owned(),
         )
     }
 
     fn from_component(&self, b: &usize, r: &Field::Set) -> Polynomial<Field::Set> {
-        self.domain()
+        self.ring()
             .polynomial_ring()
             .constant_var_pow(r.clone(), *b)
     }
+}
+
+impl<
+    'h,
+    Field: FieldSignature,
+    FieldB: BorrowedStructure<Field>,
+    FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
+>
+    FinitelyFreeModuleSignature<
+        Field,
+    >
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        Field,
+        FieldExtensionByPolynomialQuotientStructure<Field, FieldB, FieldPolyB>,
+        FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>,
+    >
+{
+    
 }
 
 impl<

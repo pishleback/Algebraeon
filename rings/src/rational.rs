@@ -81,8 +81,8 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
     }
 }
 
-impl FiniteRankFreeRingExtension<RationalCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
+impl<'h> FreeModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<'h, RationalCanonicalStructure,RationalCanonicalStructure,PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>>
 {
     type Basis = SingletonSetStructure;
 
@@ -99,9 +99,17 @@ impl FiniteRankFreeRingExtension<RationalCanonicalStructure, RationalCanonicalSt
     }
 }
 
+impl<'h> FinitelyFreeModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<'h, RationalCanonicalStructure,RationalCanonicalStructure,PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>>
+{
+    
+}
+
 impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, RationalCanonicalStructure>
     for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
 {
+
+
     fn norm(&self, a: &Rational) -> Rational {
         a.clone()
     }

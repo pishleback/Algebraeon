@@ -1,7 +1,7 @@
 use super::*;
 use crate::polynomial::Polynomial;
 use algebraeon_sets::structure::*;
-use std::borrow::{Borrow, Cow};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -29,6 +29,10 @@ mod range_module {
                 _range: PhantomData,
                 hom,
             }
+        }
+
+        pub fn module(&self) -> &Range {
+            self.hom.range()
         }
     }
 
@@ -98,36 +102,6 @@ mod range_module {
 
         fn scalar_mul(&self, x: &Domain::Set, a: &Self::Set) -> Self::Set {
             self.hom.range().mul(&self.hom.image(x), a)
-        }
-    }
-
-    impl<
-        'h,
-        Domain: RingSignature,
-        Range: RingSignature,
-        Hom: FiniteRankFreeRingExtension<Domain, Range>,
-    > FreeModuleSignature<Domain> for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
-    {
-        type Basis = Hom::Basis;
-
-        fn basis_set(&self) -> impl Borrow<Self::Basis> {
-            self.hom.basis_set()
-        }
-
-        fn to_component<'a>(
-            &self,
-            b: &<Self::Basis as SetSignature>::Set,
-            v: &'a Self::Set,
-        ) -> Cow<'a, Domain::Set> {
-            self.hom.to_component(b, v)
-        }
-
-        fn from_component(
-            &self,
-            b: &<Self::Basis as SetSignature>::Set,
-            r: &Domain::Set,
-        ) -> Self::Set {
-            self.hom.from_component(b, r)
         }
     }
 
@@ -295,37 +269,21 @@ pub trait IntegralDomainExtensionAllPolynomialRoots<
     fn all_roots(&self, polynomial: &Polynomial<A::Set>) -> Vec<B::Set>;
 }
 
-/// An injective homomorphism of rings A -> B such that B is a finite rank free A module
-pub trait FiniteRankFreeRingExtension<A: RingSignature, B: RingSignature>:
-    RingHomomorphism<A, B> + InjectiveFunction<A, B>
-{
-    type Basis: FiniteSetSignature;
-    fn basis_set(&self) -> impl Borrow<Self::Basis>;
-    fn to_component<'a>(
-        &self,
-        b: &<Self::Basis as SetSignature>::Set,
-        v: &'a B::Set,
-    ) -> Cow<'a, A::Set>;
-    fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &A::Set) -> B::Set;
-}
-
 /// A finite dimensional field extension F -> K
 pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
-    FiniteRankFreeRingExtension<F, K>
+    RingHomomorphism<F, K> + InjectiveFunction<F, K>
+where
+    for<'h> RingHomomorphismRangeModuleStructure<'h, F, K, Self>: FinitelyFreeModuleSignature<F>,
+    for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignature<F>>::Basis:
+        FiniteSetSignature,
 {
     fn degree(&self) -> usize {
-        self.basis_set().borrow().size()
+        self.range_module_structure().rank()
     }
     fn norm(&self, a: &K::Set) -> F::Set;
     fn trace(&self, a: &K::Set) -> F::Set;
     /// The monic minimal polynomial of a
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set>;
-}
-
-/// A separable finite dimensional field extension F -> K
-pub trait SeparableFiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
-    FiniteDimensionalFieldExtension<F, K>
-{
 }
 
 /// Represent all ring homomorphisms from `domain` to `range`
