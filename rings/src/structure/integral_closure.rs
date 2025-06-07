@@ -5,6 +5,13 @@ use algebraeon_sets::structure::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
+/// Given a commuting square for an integral closure
+///
+/// Q → K
+/// ↑   ↑
+/// Z → R
+///
+/// Provide an implementation of K as the field of fractions of R
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct FieldOfFractionsInclusionForIntegralClosure<
     Z: IntegralDomainSignature,
@@ -254,7 +261,7 @@ pub trait IntegralClosureExtension<
 ///  - R is the integral closure of Z in K
 ///  - Z and R are Dedekind domains
 ///
-/// This trait allows, for each prime ideal p of Z, the ideal pR of R to be factored into prime ideals in R
+/// This trait allows the ideal pR of R to be factored into prime ideals in R for each prime ideal p of Z
 pub trait DedekindDomainExtension<
     Z: DedekindDomainSignature,
     Q: FieldSignature,

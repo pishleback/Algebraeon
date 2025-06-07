@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use super::{Polynomial, polynomial_ring::*};
 use crate::{matrix::*, structure::*};
-use algebraeon_nzq::Natural;
+use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::*;
 
 pub type FieldExtensionByPolynomialQuotientStructure<FS, FSB, FSPB> =
@@ -19,6 +19,21 @@ where
 {
     fn characteristic(&self) -> Natural {
         self.ring().characteristic()
+    }
+}
+
+impl<
+    FS: FieldSignature + CharZeroRingSignature,
+    FSB: BorrowedStructure<FS>,
+    FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
+    const IS_FIELD: bool,
+> CharZeroRingSignature for QuotientStructure<PolynomialStructure<FS, FSB>, FSPB, IS_FIELD>
+where
+    PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>,
+{
+    fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
+        let x_reduced = self.reduce(x);
+        self.ring().try_to_int(&x_reduced)
     }
 }
 
@@ -109,6 +124,7 @@ where
         Polynomial::from_coeffs(v)
     }
 
+
     pub fn min_poly(&self, a: &Polynomial<FS::Set>) -> Polynomial<FS::Set> {
         MatrixStructure::new(self.ring().coeff_ring().clone())
             .minimal_polynomial(self.col_multiplication_matrix(a))
@@ -130,6 +146,7 @@ where
             .trace(&self.col_multiplication_matrix(a))
             .unwrap()
     }
+
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -206,59 +223,78 @@ impl<
 }
 
 impl<
+    'h,
     Field: FieldSignature,
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
->
-    FiniteRankFreeRingExtension<
+> FreeModuleSignature<Field>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
         Field,
         FieldExtensionByPolynomialQuotientStructure<Field, FieldB, FieldPolyB>,
-    > for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>
+        FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>,
+    >
 {
     type Basis = EnumeratedFiniteSetStructure;
 
     fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
-        EnumeratedFiniteSetStructure::new(self.range().degree())
+        EnumeratedFiniteSetStructure::new(self.module().degree())
     }
 
     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Field::Set>) -> Cow<'a, Field::Set> {
         Cow::Owned(
-            self.domain()
+            self.ring()
                 .polynomial_ring()
-                .coeff(&self.range().reduce(v), *b)
+                .coeff(&self.module().reduce(v), *b)
                 .into_owned(),
         )
     }
 
     fn from_component(&self, b: &usize, r: &Field::Set) -> Polynomial<Field::Set> {
-        self.domain()
+        self.ring()
             .polynomial_ring()
             .constant_var_pow(r.clone(), *b)
     }
 }
 
 impl<
+    'h,
     Field: FieldSignature,
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
->
-    FiniteDimensionalFieldExtension<
+> FinitelyFreeModuleSignature<Field>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
         Field,
         FieldExtensionByPolynomialQuotientStructure<Field, FieldB, FieldPolyB>,
-    > for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>
+        FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>,
+    >
 {
-    fn norm(&self, a: &Polynomial<Field::Set>) -> Field::Set {
-        self.range().norm(a)
-    }
-
-    fn trace(&self, a: &Polynomial<Field::Set>) -> Field::Set {
-        self.range().trace(a)
-    }
-
-    fn min_poly(&self, a: &Polynomial<Field::Set>) -> Polynomial<<Field>::Set> {
-        self.range().min_poly(a)
-    }
 }
+
+compile_error!("sus");
+// impl<
+//     Field: FieldSignature,
+//     FieldB: BorrowedStructure<Field>,
+//     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
+// >
+//     FiniteDimensionalFieldExtension<
+//         Field,
+//         FieldExtensionByPolynomialQuotientStructure<Field, FieldB, FieldPolyB>,
+//     > for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>
+// {
+//     fn norm(&self, a: &Polynomial<Field::Set>) -> Field::Set {
+//         self.range().norm(a)
+//     }
+
+//     fn trace(&self, a: &Polynomial<Field::Set>) -> Field::Set {
+//         self.range().trace(a)
+//     }
+
+//     fn min_poly(&self, a: &Polynomial<Field::Set>) -> Polynomial<<Field>::Set> {
+//         self.range().min_poly(a)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

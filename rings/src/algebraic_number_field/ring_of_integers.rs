@@ -1,4 +1,4 @@
-use super::number_field::AlgebraicNumberFieldStructure;
+use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{
     matrix::Matrix,
     module::finitely_free_module::{
@@ -12,7 +12,7 @@ use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct RingOfIntegersWithIntegralBasisStructure {
-    algebraic_number_field: AlgebraicNumberFieldStructure,
+    algebraic_number_field: AlgebraicNumberFieldPolynomialQuotientStructure,
     integral_basis: Vec<Polynomial<Rational>>,
     discriminant: Integer,
     // The below just aid in the efficiency of calculations
@@ -37,7 +37,7 @@ impl Eq for RingOfIntegersWithIntegralBasisStructure {}
 
 impl RingOfIntegersWithIntegralBasisStructure {
     pub fn new(
-        algebraic_number_field: AlgebraicNumberFieldStructure,
+        algebraic_number_field: AlgebraicNumberFieldPolynomialQuotientStructure,
         integral_basis: Vec<Polynomial<Rational>>,
         discriminant: Integer,
     ) -> Self {
@@ -105,7 +105,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         &self.integral_basis[i]
     }
 
-    pub fn anf(&self) -> &AlgebraicNumberFieldStructure {
+    pub fn anf(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
         &self.algebraic_number_field
     }
 }
@@ -364,11 +364,13 @@ impl CharZeroRingSignature for RingOfIntegersWithIntegralBasisStructure {
 #[derive(Debug, Clone)]
 pub struct RingOfIntegersToAlgebraicNumberFieldInclusion {
     roi: RingOfIntegersWithIntegralBasisStructure,
-    anf: AlgebraicNumberFieldStructure,
+    anf: AlgebraicNumberFieldPolynomialQuotientStructure,
 }
 
 impl RingOfIntegersToAlgebraicNumberFieldInclusion {
-    pub fn from_algebraic_number_field(anf: AlgebraicNumberFieldStructure) -> Self {
+    pub fn from_algebraic_number_field(
+        anf: AlgebraicNumberFieldPolynomialQuotientStructure,
+    ) -> Self {
         Self {
             roi: anf.compute_ring_of_integers(),
             anf,
@@ -383,42 +385,54 @@ impl RingOfIntegersToAlgebraicNumberFieldInclusion {
     }
 }
 
-impl Morphism<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
+impl
+    Morphism<
+        RingOfIntegersWithIntegralBasisStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
     fn domain(&self) -> &RingOfIntegersWithIntegralBasisStructure {
         &self.roi
     }
 
-    fn range(&self) -> &AlgebraicNumberFieldStructure {
+    fn range(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
         &self.anf
     }
 }
 
-impl Function<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
+impl
+    Function<
+        RingOfIntegersWithIntegralBasisStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
     fn image(
         &self,
         x: &<RingOfIntegersWithIntegralBasisStructure as SetSignature>::Set,
-    ) -> <AlgebraicNumberFieldStructure as SetSignature>::Set {
+    ) -> <AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set {
         self.roi.roi_to_anf(x)
     }
 }
 
-impl InjectiveFunction<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
+impl
+    InjectiveFunction<
+        RingOfIntegersWithIntegralBasisStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
     fn try_preimage(
         &self,
-        x: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
+        x: &<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set,
     ) -> Option<<RingOfIntegersWithIntegralBasisStructure as SetSignature>::Set> {
         self.roi.try_anf_to_roi(x)
     }
 }
 
-impl RingHomomorphism<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
+impl
+    RingHomomorphism<
+        RingOfIntegersWithIntegralBasisStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
 }
 

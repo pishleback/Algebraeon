@@ -1,6 +1,6 @@
 use super::ideal::RingOfIntegersIdeal;
 use super::ideal::RingOfIntegersIdealsStructure;
-use super::number_field::*;
+use super::polynomial_quotient_number_field::*;
 use super::ring_of_integers::*;
 use crate::integer::ideal::IntegerIdealsStructure;
 use crate::matrix::Matrix;
@@ -23,15 +23,15 @@ pub struct RingOfIntegersExtension<
     z: IntegerCanonicalStructure,
     q: RationalCanonicalStructure,
     r: RingOfIntegersWithIntegralBasisStructure,
-    k: AlgebraicNumberFieldStructure,
+    k: AlgebraicNumberFieldPolynomialQuotientStructure,
     z_to_q: PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
     z_to_r: PrincipalSubringInclusion<
         RingOfIntegersWithIntegralBasisStructure,
         RingOfIntegersWithIntegralBasisStructure,
     >,
     q_to_k: PrincipalRationalSubfieldInclusion<
-        AlgebraicNumberFieldStructure,
-        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
     >,
     r_to_k: RingOfIntegersToAlgebraicNumberFieldInclusion,
     ideals_z: IdealsZ,
@@ -133,15 +133,15 @@ impl<
         IntegerCanonicalStructure,
         RationalCanonicalStructure,
         RingOfIntegersWithIntegralBasisStructure,
-        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
         PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
         PrincipalSubringInclusion<
             RingOfIntegersWithIntegralBasisStructure,
             RingOfIntegersWithIntegralBasisStructure,
         >,
         PrincipalRationalSubfieldInclusion<
-            AlgebraicNumberFieldStructure,
-            AlgebraicNumberFieldStructure,
+            AlgebraicNumberFieldPolynomialQuotientStructure,
+            AlgebraicNumberFieldPolynomialQuotientStructure,
         >,
         RingOfIntegersToAlgebraicNumberFieldInclusion,
     > for RingOfIntegersExtension<IdealsZ, IdealsR>
@@ -155,7 +155,7 @@ impl<
     fn q_field(&self) -> &RationalCanonicalStructure {
         &self.q
     }
-    fn k_field(&self) -> &AlgebraicNumberFieldStructure {
+    fn k_field(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
         &self.k
     }
     fn z_to_q(
@@ -174,8 +174,8 @@ impl<
     fn q_to_k(
         &self,
     ) -> &PrincipalRationalSubfieldInclusion<
-        AlgebraicNumberFieldStructure,
-        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
     > {
         &self.q_to_k
     }
@@ -197,15 +197,15 @@ impl
         IntegerCanonicalStructure,
         RationalCanonicalStructure,
         RingOfIntegersWithIntegralBasisStructure,
-        AlgebraicNumberFieldStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
         PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
         PrincipalSubringInclusion<
             RingOfIntegersWithIntegralBasisStructure,
             RingOfIntegersWithIntegralBasisStructure,
         >,
         PrincipalRationalSubfieldInclusion<
-            AlgebraicNumberFieldStructure,
-            AlgebraicNumberFieldStructure,
+            AlgebraicNumberFieldPolynomialQuotientStructure,
+            AlgebraicNumberFieldPolynomialQuotientStructure,
         >,
         RingOfIntegersToAlgebraicNumberFieldInclusion,
         IntegerIdealsStructure<IntegerCanonicalStructure>,

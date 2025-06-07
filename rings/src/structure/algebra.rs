@@ -1,3 +1,5 @@
 use crate::structure::*;
 
-pub trait AlgebraSignature<Ring: RingSignature>: ModuleSignature<Ring> + RingSignature {}
+/// Algebras over `Ring`
+pub trait AlgebraSignature<Ring: RingSignature>: ModuleSignature<Ring> + RingSignature {
+}

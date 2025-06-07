@@ -1,4 +1,4 @@
-use super::number_field::AlgebraicNumberFieldStructure;
+use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{matrix::Matrix, polynomial::*, structure::*};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
@@ -55,8 +55,8 @@ fn row_to_double_poly(
     Polynomial::from_coeffs(coeffs)
 }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
-    PolynomialStructure<AlgebraicNumberFieldStructure, B>
+impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
     /*
         input:  A polynomial f(x) over an algebraic number field K, return
@@ -649,8 +649,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 //     }
 // }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>> FactorableSignature
-    for PolynomialStructure<AlgebraicNumberFieldStructure, B>
+impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactorableSignature
+    for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
     fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredRingElement<Self::Set>> {
         if self.is_zero(a) {
