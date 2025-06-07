@@ -10,7 +10,7 @@ pub struct LocalizationPrime<
 > {
     pub(crate) ring: RS,
     pub(crate) ring_borrow: PhantomData<RSB>,
-    pub(crate) prime_ideal_signature: PS,
+    pub(crate) ideal_signature: PS,
     pub(crate) prime_ideal: PS::Set,
 }
 
@@ -20,19 +20,19 @@ impl<
     PS: IdealsArithmeticSignature<RS, RSB>,
 > LocalizationPrime<RS, RSB, PS>
 {
-    pub fn new_unchecked(ring: RS, prime_ideal_signature: PS, prime_ideal: PS::Set) -> Self {
+    pub fn new_unchecked(ring: RS, ideal_signature: PS, prime_ideal: PS::Set) -> Self {
         assert!(
-            !prime_ideal_signature.ideal_equal(&prime_ideal_signature.unit_ideal(), &prime_ideal),
+            !ideal_signature.ideal_equal(&ideal_signature.unit_ideal(), &prime_ideal),
             "The provided prime ideal was the full ring"
         );
         debug_assert!(
-            !prime_ideal_signature.ideal_is_zero(&prime_ideal),
+            !ideal_signature.ideal_is_zero(&prime_ideal),
             "The provided prime ideal was just 0"
         );
         Self {
             ring,
             ring_borrow: PhantomData,
-            prime_ideal_signature,
+            ideal_signature,
             prime_ideal,
         }
     }
@@ -46,9 +46,9 @@ impl<
 {
     fn eq(&self, other: &Self) -> bool {
         self.ring == other.ring
-            && self.prime_ideal_signature == other.prime_ideal_signature
+            && self.ideal_signature == other.ideal_signature
             && self
-                .prime_ideal_signature
+                .ideal_signature
                 .ideal_equal(&self.prime_ideal, &other.prime_ideal)
     }
 }
@@ -85,7 +85,7 @@ impl<
             );
         }
         if self
-            .prime_ideal_signature
+            .ideal_signature
             .ideal_contains_element(&self.prime_ideal, s)
         {
             Err("s is not in the multiplicative set R minus p".to_string())
