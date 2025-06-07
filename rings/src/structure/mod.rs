@@ -7,9 +7,9 @@ mod ideals;
 mod integral_closure;
 mod modules;
 mod quotient;
+mod quotient_morphism;
 mod rings;
 mod ufd;
-mod quotient_morphism;
 
 pub use algebra::*;
 pub use elements::*;
@@ -20,6 +20,6 @@ pub use ideals::*;
 pub use integral_closure::*;
 pub use modules::*;
 pub use quotient::*;
+pub use quotient_morphism::*;
 pub use rings::*;
 pub use ufd::*;
-pub use quotient_morphism::*;
