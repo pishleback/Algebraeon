@@ -3,6 +3,8 @@ use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::{borrow::Cow, fmt};
 
+pub mod quaternion_orders;
+
 #[derive(Debug, Clone)]
 pub struct QuaternionAlgebraStructure<Field: FieldSignature> {
     base: Field,
@@ -12,6 +14,10 @@ pub struct QuaternionAlgebraStructure<Field: FieldSignature> {
 }
 
 impl<Field: FieldSignature + CharacteristicSignature> QuaternionAlgebraStructure<Field> {
+    pub fn base_field(&self) -> &Field {
+        &self.base
+    }
+
     pub fn new(base: Field, a: Field::Set, b: Field::Set) -> Self {
         let is_char_2 = base.characteristic() == Natural::TWO;
         Self {
