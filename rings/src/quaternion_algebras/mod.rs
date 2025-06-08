@@ -221,6 +221,10 @@ impl<Field: FieldSignature + SemiRingUnitsSignature> SemiRingUnitsSignature
         let n_inv = self.base.inv(&self.reduced_norm(a))?;
         Ok(self.scalar_mul(&n_inv, &self.conjugate(a)))
     }
+
+    fn is_unit(&self, a: &Self::Set) -> bool {
+        self.base.is_unit(&self.reduced_norm(a))
+    }
 }
 
 impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {}
