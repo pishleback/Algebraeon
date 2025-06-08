@@ -224,3 +224,41 @@ impl<Domain: FiniteSetSignature, Range: EqSignature + FiniteSetSignature> Finite
     for Functions<Domain, Range>
 {
 }
+
+/// Represent all endofunctions on a finite set X: functions X → X
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Endofunctions<X: FiniteSetSignature + EqSignature> {
+    set: X,
+}
+
+impl<X: FiniteSetSignature + EqSignature> Endofunctions<X> {
+    pub fn new(set: X) -> Self {
+        Self { set }
+    }
+}
+
+impl<X: FiniteSetSignature + EqSignature> Signature for Endofunctions<X> {}
+
+impl<X: FiniteSetSignature + EqSignature> SetSignature for Endofunctions<X> {
+    type Set = Vec<X::Set>;
+
+    fn is_element(&self, f: &Self::Set) -> Result<(), String> {
+        if f.len() != self.set.size() {
+            return Err("Function must have one value per element in the domain.".to_string());
+        }
+        for y in f {
+            self.set.is_element(y)?;
+        }
+        Ok(())
+    }
+}
+
+impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for Endofunctions<X> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        (0..self.set.size())
+            .map(|_| self.set.list_all_elements())
+            .multi_cartesian_product()
+    }
+}
+
+impl<X: FiniteSetSignature + EqSignature> FiniteSetSignature for Endofunctions<X> {}
