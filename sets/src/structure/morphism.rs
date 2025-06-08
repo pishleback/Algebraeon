@@ -18,12 +18,9 @@ pub trait Function<Domain: SetSignature, Range: SetSignature>: Morphism<Domain, 
 impl<X: Signature, T: Morphism<X, X>> Endomorphism<X> for T {}
 
 /// A function from a set into itself
-pub trait Endofunction<X: SetSignature>: Function<X, X> {
+pub trait Endofunction<X: SetSignature + EqSignature>: Function<X, X> {
+    // TODO: remove EqSignature requirement and use specialization once it is stable.
     /// check if an element is fixed
-    fn is_fixed_point(&self, x: X::Set) -> bool;
-}
-
-impl<X: SetSignature + EqSignature, T: Function<X, X>> Endofunction<X> for T {
     fn is_fixed_point(&self, x: X::Set) -> bool {
         self.domain().equal(&self.image(&x), &x)
     }
