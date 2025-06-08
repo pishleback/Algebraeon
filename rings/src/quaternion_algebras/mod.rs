@@ -214,9 +214,7 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
     }
 }
 
-impl<Field: FieldSignature + SemiRingUnitsSignature> SemiRingUnitsSignature
-    for QuaternionAlgebraStructure<Field>
-{
+impl<Field: FieldSignature> SemiRingUnitsSignature for QuaternionAlgebraStructure<Field> {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let n_inv = self.base.inv(&self.reduced_norm(a))?;
         Ok(self.scalar_mul(&n_inv, &self.conjugate(a)))
