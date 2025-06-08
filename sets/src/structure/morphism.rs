@@ -9,8 +9,24 @@ pub trait Morphism<Domain: Signature, Range: Signature>: Debug + Clone {
     fn range(&self) -> &Range;
 }
 
+pub trait Endomorphism<X: Signature>: Morphism<X, X> {}
+
 pub trait Function<Domain: SetSignature, Range: SetSignature>: Morphism<Domain, Range> {
     fn image(&self, x: &Domain::Set) -> Range::Set;
+}
+
+impl<X: Signature, T: Morphism<X, X>> Endomorphism<X> for T {}
+
+/// A function from a set into itself
+pub trait Endofunction<X: SetSignature>: Function<X, X> {
+    /// check if an element is fixed
+    fn is_fixed_point(&self, x: X::Set) -> bool;
+}
+
+impl<X: SetSignature + EqSignature, T: Function<X, X>> Endofunction<X> for T {
+    fn is_fixed_point(&self, x: X::Set) -> bool {
+        self.domain().equal(&self.image(&x), &x)
+    }
 }
 
 pub trait InjectiveFunction<Domain: SetSignature, Range: SetSignature>:
@@ -26,6 +42,11 @@ pub trait BijectiveFunction<Domain: SetSignature, Range: SetSignature>:
         self.try_preimage(y).unwrap()
     }
 }
+
+/// A permutation is a bijection from a set into itself
+pub trait Permutation<X: SetSignature>: BijectiveFunction<X, X> {}
+
+impl<X: SetSignature, T: BijectiveFunction<X, X>> Permutation<X> for T {}
 
 /// The identity morphism X -> X
 #[derive(Debug, Clone, PartialEq, Eq)]
