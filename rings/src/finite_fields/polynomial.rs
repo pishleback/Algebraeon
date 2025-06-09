@@ -314,7 +314,9 @@ where
                 )
             })
             .collect::<Vec<_>>();
-        let mat = Matrix::construct(f_deg, f_deg, |i, j| self.coeff(&row_polys[i], j).clone());
+        let mat = Matrix::construct(f_deg, f_deg, |i, j| {
+            self.coeff(&row_polys[i], j).into_owned()
+        });
         // mat.pprint();
         //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
         let mat_struct = MatrixStructure::<FS, _>::new(self.coeff_ring());

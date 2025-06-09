@@ -11,7 +11,9 @@ fn double_poly_to_row(
     a: Polynomial<Polynomial<Rational>>,
 ) -> Matrix<Rational> {
     // let n = outer_poly_len * inner_poly_len;
-    let rat_poly_poly = Rational::structure().into_polynomial_ring().into_polynomial_ring();
+    let rat_poly_poly = Rational::structure()
+        .into_polynomial_ring()
+        .into_polynomial_ring();
 
     debug_assert!(rat_poly_poly.num_coeffs(&a) <= outer_poly_len);
     for c in a.coeffs() {
@@ -19,10 +21,10 @@ fn double_poly_to_row(
     }
     Matrix::from_rows(vec![
         (0..outer_poly_len)
-            .map(|i| rat_poly_poly.coeff(&a, i))
+            .map(|i| rat_poly_poly.coeff(&a, i).into_owned())
             .flat_map(|c| {
                 (0..inner_poly_len)
-                    .map(|j| c.coeff(j).clone())
+                    .map(|j| c.coeff(j).into_owned())
                     .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>(),

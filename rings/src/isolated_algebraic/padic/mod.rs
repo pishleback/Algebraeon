@@ -134,6 +134,15 @@ impl PAdicAlgebraic {
             PAdicAlgebraic::Algebraic(x) => x.refine(ndigits),
         }
     }
+
+    pub fn min_poly(&self) -> Polynomial<Rational> {
+        match self {
+            PAdicAlgebraic::Rational(PAdicRational { rat, .. }) => {
+                Polynomial::from_coeffs(vec![-rat, Rational::ONE])
+            }
+            PAdicAlgebraic::Algebraic(alg) => alg.poly.apply_map(|c| Rational::from(c)),
+        }
+    }
 }
 
 impl std::fmt::Display for PAdicAlgebraic {
@@ -406,7 +415,7 @@ impl Polynomial<Integer> {
             // root = -b/a
             vec![PAdicAlgebraic::Rational(PAdicRational {
                 p: p.clone(),
-                rat: -Rational::from_integers(b, a),
+                rat: -Rational::from_integers(b.as_ref(), a.as_ref()),
             })]
         } else {
             isolate::isolate(p, self)
@@ -704,6 +713,17 @@ pub struct PAdicAlgebraicStructure {
     p: Natural,
 }
 
+impl PAdicAlgebraicStructure {
+    pub fn new(p: Natural) -> Self {
+        assert!(is_prime(&p), "{} is not prime", p);
+        Self { p }
+    }
+
+    pub fn p(&self) -> &Natural {
+        &self.p
+    }
+}
+
 impl Signature for PAdicAlgebraicStructure {}
 
 impl SetSignature for PAdicAlgebraicStructure {
@@ -714,13 +734,6 @@ impl SetSignature for PAdicAlgebraicStructure {
             return Err("primes don't match".to_string());
         }
         Ok(())
-    }
-}
-
-impl PAdicAlgebraicStructure {
-    pub fn new(p: Natural) -> Self {
-        assert!(is_prime(&p), "{} is not prime", p);
-        Self { p }
     }
 }
 
@@ -883,6 +896,39 @@ impl<B: BorrowedStructure<PAdicAlgebraicStructure>>
 {
     fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<PAdicAlgebraic> {
         polynomial.all_padic_roots(&self.range().p)
+    }
+}
+
+impl PAdicAlgebraicStructure {
+    pub fn nth_roots(&self, a: &PAdicAlgebraic, n: usize) -> Vec<PAdicAlgebraic> {
+        let mut roots = vec![];
+        for root in a
+            .min_poly()
+            .evaluate_at_var_pow(n)
+            .all_padic_roots(self.p())
+        {
+            if self.equal(a, &self.nat_pow(&root, &n.into())) {
+                roots.push(root);
+            }
+        }
+        roots
+    }
+
+    pub fn square_roots(&self, a: &PAdicAlgebraic) -> Option<(PAdicAlgebraic, PAdicAlgebraic)> {
+        let square_roots = self.nth_roots(a, 2);
+        if square_roots.is_empty() {
+            None
+        } else {
+            assert_eq!(square_roots.len(), 2);
+            let mut square_roots = square_roots.into_iter();
+            let r1 = square_roots.next().unwrap();
+            let r2 = square_roots.next().unwrap();
+            Some((r1, r2))
+        }
+    }
+
+    pub fn is_square(&self, a: &PAdicAlgebraic) -> bool {
+        self.square_roots(a).is_some()
     }
 }
 

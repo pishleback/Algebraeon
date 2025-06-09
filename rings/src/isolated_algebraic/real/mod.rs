@@ -50,9 +50,9 @@ impl Display for RealAlgebraicRoot {
             let a = self.poly.coeff(2);
             let b = self.poly.coeff(1);
             let c = self.poly.coeff(0);
-            debug_assert!(a > Integer::ZERO);
+            debug_assert!(a.as_ref() > &Integer::ZERO);
 
-            let d = &b * &b - Integer::from(4) * &a * &c;
+            let d = b.as_ref() * b.as_ref() - Integer::from(4) * a.as_ref() * c.as_ref();
             let mut d_sq = Integer::ONE;
             let mut d_sqfreee = Integer::ONE;
             let (d_sign, d_factors) = d.factor().unwrap().into_unit_and_powers();
@@ -65,9 +65,9 @@ impl Display for RealAlgebraicRoot {
             debug_assert_eq!(d_sign, Integer::ONE); //because we are a real number
             debug_assert_eq!(d, &d_sqfreee * &d_sq * &d_sq);
 
-            let two_a = Integer::TWO * a;
+            let two_a = Integer::TWO * a.as_ref();
 
-            let x = Rational::from_integers(-b, two_a.clone());
+            let x = Rational::from_integers(-b.as_ref(), two_a.clone());
             let y = Rational::from_integers(d_sq, two_a);
             debug_assert!(y > Rational::ZERO);
             let r = d_sqfreee;

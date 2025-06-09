@@ -291,6 +291,7 @@ pub trait IntegralDomainExtensionAllPolynomialRoots<
     B: IntegralDomainSignature,
 >: RingHomomorphism<A, B> + InjectiveFunction<A, B>
 {
+    /// Return all roots of the polynomial in B with duplicate elements according to multiplicity
     fn all_roots(&self, polynomial: &Polynomial<A::Set>) -> Vec<B::Set>;
 }
 

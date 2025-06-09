@@ -214,6 +214,17 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
     }
 }
 
+impl<Field: FieldSignature> SemiRingUnitsSignature for QuaternionAlgebraStructure<Field> {
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        let n_inv = self.base.inv(&self.reduced_norm(a))?;
+        Ok(self.scalar_mul(&n_inv, &self.conjugate(a)))
+    }
+
+    fn is_unit(&self, a: &Self::Set) -> bool {
+        self.base.is_unit(&self.reduced_norm(a))
+    }
+}
+
 impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
@@ -231,6 +242,8 @@ impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStru
         }
     }
 }
+
+impl<Field: FieldSignature> AlgebraSignature<Field> for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
     type Basis = QuaternionAlgebraBasisCanonicalStructure;

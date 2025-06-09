@@ -153,11 +153,7 @@ If you're unsure what you could do to help:
  - Have a look through the issue tracker for unassigned issues and leave a comment.
  - Ask in the discord server.
 
-## Changing the code-base
-
-Fork this repository, make changes, and submit a pull request.
-
-## Getting started
+## Getting started using the code-base
 
 Algebraeon is organized as a [cargo workspace](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). Run `cargo test` in the root directory to build and run all tests.
 
@@ -166,6 +162,10 @@ A suggested workflow for getting started:
 - Create a new binary in `examples/src/bin`, for example `my_main.rs`.
 - Copy an example into `my_main.rs`.
 - Run it with `cargo run --bin my_main` in the root directory.
+
+## Submitting changes
+
+To submit changes for inclusion in the main branch: Fork this repository, make changes, and submit a pull request.
 
 ## CLA
 
