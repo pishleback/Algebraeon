@@ -1,4 +1,7 @@
-use crate::structure::*;
+use crate::{
+    rings::localization::{LocalRingSignature, local_ring::LocalRingIdealsSignature},
+    structure::*,
+};
 use algebraeon_sets::structure::*;
 use std::marker::PhantomData;
 
@@ -482,4 +485,130 @@ where
     FS: FieldSignature,
     FSQ: RingHomomorphism<RS, FS>,
 {
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct LocalizedIdeals<RS, RSB, PS>
+where
+    RS: IntegralDomainSignature,
+    RSB: BorrowedStructure<RS>,
+    PS: IdealsArithmeticSignature<RS, RSB>,
+{
+    ambient_ring: LocalizationPrime<RS, RSB, PS>,
+}
+
+impl<RS, RSB, PS> Signature for LocalizedIdeals<RS, RSB, PS>
+where
+    RS: IntegralDomainSignature,
+    RSB: BorrowedStructure<RS>,
+    PS: IdealsArithmeticSignature<RS, RSB>,
+{
+}
+
+impl<RS, RSB, PS> SetSignature for LocalizedIdeals<RS, RSB, PS>
+where
+    RS: IntegralDomainSignature,
+    RSB: BorrowedStructure<RS>,
+    PS: IdealsArithmeticSignature<RS, RSB>,
+{
+    type Set = PS::Set;
+
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+        let localized_prime = &self.ambient_ring.prime_ideal;
+        let _intersect = self
+            .ambient_ring
+            .ideal_signature
+            .ideal_intersect(x, localized_prime);
+        todo!(
+            "Do we just consider the extension of x and do not care about intersection with localized_prime?
+            not considering if two different I_1,2 of R give the same extension S^-1 I_1,2
+            "
+        )
+    }
+}
+
+impl<RS, RSB, PS, LRB> IdealsSignature<LocalizationPrime<RS, RSB, PS>, LRB>
+    for LocalizedIdeals<RS, RSB, PS>
+where
+    RS: IntegralDomainSignature,
+    RSB: BorrowedStructure<RS>,
+    PS: IdealsArithmeticSignature<RS, RSB>,
+    LRB: BorrowedStructure<LocalizationPrime<RS, RSB, PS>>,
+{
+    fn ring(&self) -> &LocalizationPrime<RS, RSB, PS> {
+        &self.ambient_ring
+    }
+}
+
+impl<RS, RSB, PS, LRB> IdealsArithmeticSignature<LocalizationPrime<RS, RSB, PS>, LRB>
+    for LocalizedIdeals<RS, RSB, PS>
+where
+    RS: IntegralDomainSignature,
+    RSB: BorrowedStructure<RS>,
+    PS: IdealsArithmeticSignature<RS, RSB>,
+    LRB: BorrowedStructure<LocalizationPrime<RS, RSB, PS>>,
+{
+    fn principal_ideal(
+        &self,
+        a: &<LocalizationPrime<RS, RSB, PS> as SetSignature>::Set,
+    ) -> Self::Set {
+        let (_s, r) = a;
+        self.ambient_ring.ideal_signature.principal_ideal(r)
+    }
+
+    fn ideal_contains(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        todo!()
+    }
+
+    fn ideal_intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        todo!()
+    }
+
+    fn ideal_add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        todo!()
+    }
+
+    fn ideal_mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        todo!()
+    }
+}
+
+impl<RS, RSB, PS> LocalRingSignature for LocalizationPrime<RS, RSB, PS>
+where
+    RS: IntegralDomainSignature,
+    RSB: BorrowedStructure<RS>,
+    PS: IdealsArithmeticSignature<RS, RSB>,
+{
+}
+
+impl<RS, RSB, PS, LRB> LocalRingIdealsSignature<LocalizationPrime<RS, RSB, PS>, LRB>
+    for LocalizedIdeals<RS, RSB, PS>
+where
+    RS: IntegralDomainSignature,
+    RSB: BorrowedStructure<RS>,
+    PS: IdealsArithmeticSignature<RS, RSB>,
+    LRB: BorrowedStructure<LocalizationPrime<RS, RSB, PS>>,
+{
+    fn unique_maximal(&self) -> Self::Set {
+        self.ambient_ring.prime_ideal.clone()
+    }
+}
+
+impl<RS, RSB, PS> RingToIdealsSignature for LocalizationPrime<RS, RSB, PS>
+where
+    RS: IntegralDomainSignature,
+    RSB: BorrowedStructure<RS>,
+    PS: IdealsArithmeticSignature<RS, RSB>,
+{
+    type Ideals<SelfB: BorrowedStructure<Self>> = LocalizedIdeals<RS, RSB, PS>;
+
+    fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self> {
+        LocalizedIdeals {
+            ambient_ring: self.clone(),
+        }
+    }
+
+    fn into_ideals(self) -> Self::Ideals<Self> {
+        LocalizedIdeals { ambient_ring: self }
+    }
 }
