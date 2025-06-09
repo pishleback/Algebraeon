@@ -541,9 +541,9 @@ where
 impl<RS, RSB, PS, LRB> IdealsArithmeticSignature<LocalizationPrime<RS, RSB, PS>, LRB>
     for LocalizedIdeals<RS, RSB, PS>
 where
-    RS: IntegralDomainSignature,
+    RS: DedekindDomainSignature,
     RSB: BorrowedStructure<RS>,
-    PS: IdealsArithmeticSignature<RS, RSB>,
+    PS: FactorableIdealsSignature<RS,RSB>,
     LRB: BorrowedStructure<LocalizationPrime<RS, RSB, PS>>,
 {
     fn principal_ideal(
@@ -554,20 +554,27 @@ where
         self.ambient_ring.ideal_signature.principal_ideal(r)
     }
 
-    fn ideal_contains(&self, _a: &Self::Set, _b: &Self::Set) -> bool {
-        todo!()
+    fn ideal_contains(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        // S^{-1} a >= S^{-1} b
+        if self.ambient_ring.ideal_signature.ideal_contains(a, b) {
+            true
+        } else if self.ambient_ring.ideal_signature.ideal_is_zero(a) {
+            false
+        } else {
+            todo!()
+        }
     }
 
-    fn ideal_intersect(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
-        todo!()
+    fn ideal_intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.ambient_ring.ideal_signature.ideal_intersect(a, b)
     }
 
-    fn ideal_add(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
-        todo!()
+    fn ideal_add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.ambient_ring.ideal_signature.ideal_add(a, b)
     }
 
-    fn ideal_mul(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
-        todo!()
+    fn ideal_mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.ambient_ring.ideal_signature.ideal_mul(a, b)
     }
 }
 
