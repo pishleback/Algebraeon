@@ -19,7 +19,7 @@ impl SetSignature for EnumeratedFiniteSetStructure {
     type Set = usize;
 
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
-        if x < &self.n {
+        if x >= &self.n {
             return Err("Too big to be an element".to_string());
         }
         Ok(())
