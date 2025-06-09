@@ -3,7 +3,11 @@ use algebraeon_sets::structure::SetSignature;
 pub trait GraphSignature<Vertices: SetSignature> {
     fn vertices(&self) -> &Vertices;
 
-    fn has_directed_edge(&self, source: &Vertices::Set, target: &Vertices::Set) -> bool;
+    fn has_directed_edge(
+        &self,
+        source: &Vertices::Set,
+        target: &Vertices::Set,
+    ) -> Result<(), String>;
 }
 
 /// A graph such that has_directed_edge(u, v) == has_directed_edge(v, u)
