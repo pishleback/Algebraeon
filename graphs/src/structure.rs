@@ -11,6 +11,9 @@ pub trait GraphSignature<Vertices: SetSignature> {
     ) -> Result<(), String>;
 }
 
+/// A graph without loops
+pub trait LooplessGraphSignature<Vertices: SetSignature>: GraphSignature<Vertices> {}
+
 /// A graph such that has_directed_edge(u, v) == has_directed_edge(v, u)
 pub trait UndirectedGraphSignature<Vertices: SetSignature>: GraphSignature<Vertices> {}
 

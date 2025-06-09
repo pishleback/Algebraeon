@@ -1,6 +1,6 @@
 use algebraeon_sets::structure::SetSignature;
 
-use crate::structure::{GraphSignature, UndirectedGraphSignature};
+use crate::structure::{GraphSignature, LooplessGraphSignature, UndirectedGraphSignature};
 
 struct CompleteGraph<Vertices: SetSignature> {
     vertices: Vertices,
@@ -24,6 +24,8 @@ impl<Vertices: SetSignature> GraphSignature<Vertices> for CompleteGraph<Vertices
         Ok(())
     }
 }
+
+impl<Vertices: SetSignature> LooplessGraphSignature<Vertices> for CompleteGraph<Vertices> {}
 
 impl<Vertices: SetSignature> UndirectedGraphSignature<Vertices> for CompleteGraph<Vertices> {}
 
