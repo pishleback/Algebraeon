@@ -1,33 +1,34 @@
 use algebraeon_sets::structure::SetSignature;
 
-/// A directed simple graph permitting loops
-pub trait GraphSignature<Vertices: SetSignature> {
-    fn vertices(&self) -> &Vertices;
+/// A directed graph permitting loops.
+pub trait GraphSignature {
+    type Vertices: SetSignature;
 
     fn has_directed_edge(
         &self,
-        source: &Vertices::Set,
-        target: &Vertices::Set,
+        source: &<Self::Vertices as SetSignature>::Set,
+        target: &<Self::Vertices as SetSignature>::Set,
     ) -> Result<(), String>;
 }
 
-/// A graph without loops
-pub trait LooplessGraphSignature<Vertices: SetSignature>: GraphSignature<Vertices> {}
+/// A graph with no loops.
+pub trait LooplessGraphSignature: GraphSignature {}
 
 /// A graph such that has_directed_edge(u, v) == has_directed_edge(v, u)
-pub trait UndirectedGraphSignature<Vertices: SetSignature>: GraphSignature<Vertices> {}
+pub trait UndirectedGraphSignature: GraphSignature {}
 
-pub trait GraphWithEdgesSignature<Vertices: SetSignature, Edges: SetSignature>:
-    GraphSignature<Vertices>
-{
-    /// return an edge if has_directed_edge is true
-    fn directed_edge(
+pub trait GraphWithEdgesSignature: GraphSignature {
+    type Edges: SetSignature;
+
+    /// Return the source vertex of an edge.
+    fn source(
         &self,
-        source: &Vertices::Set,
-        target: &Vertices::Set,
-    ) -> Result<&Edges::Set, String>;
+        edge: &<Self::Edges as SetSignature>::Set,
+    ) -> &<Self::Vertices as SetSignature>::Set;
 
-    fn source(&self, edge: &Edges::Set) -> &Vertices::Set;
-    fn target(&self, edge: &Edges::Set) -> &Vertices::Set;
-    fn opposite(&self, edge: &Edges::Set) -> &Edges::Set;
+    /// Return the target vertex of an edge.
+    fn target(
+        &self,
+        edge: &<Self::Edges as SetSignature>::Set,
+    ) -> &<Self::Vertices as SetSignature>::Set;
 }

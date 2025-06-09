@@ -6,10 +6,9 @@ struct CompleteGraph<Vertices: SetSignature> {
     vertices: Vertices,
 }
 
-impl<Vertices: SetSignature + EqSignature> GraphSignature<Vertices> for CompleteGraph<Vertices> {
-    fn vertices(&self) -> &Vertices {
-        &self.vertices
-    }
+impl<Vertices: SetSignature + EqSignature> GraphSignature for CompleteGraph<Vertices> {
+    type Vertices = Vertices;
+
     fn has_directed_edge(
         &self,
         source: &Vertices::Set,
@@ -28,15 +27,9 @@ impl<Vertices: SetSignature + EqSignature> GraphSignature<Vertices> for Complete
     }
 }
 
-impl<Vertices: SetSignature + EqSignature> LooplessGraphSignature<Vertices>
-    for CompleteGraph<Vertices>
-{
-}
+impl<Vertices: SetSignature + EqSignature> LooplessGraphSignature for CompleteGraph<Vertices> {}
 
-impl<Vertices: SetSignature + EqSignature> UndirectedGraphSignature<Vertices>
-    for CompleteGraph<Vertices>
-{
-}
+impl<Vertices: SetSignature + EqSignature> UndirectedGraphSignature for CompleteGraph<Vertices> {}
 
 #[cfg(test)]
 mod tests {
