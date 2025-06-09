@@ -15,6 +15,10 @@ use algebraeon_nzq::{
 use algebraeon_sets::structure::{InjectiveFunction, MetaType, SetSignature};
 use std::ops::{Add, Mul, Sub};
 
+/// `AdditiveGroup<T>` is an extension of
+/// a totally ordered abelian monoid `T` with an
+/// `Infinity` which is greater than everything else and
+/// absorbs the sum as `Infintity + x = x + Infinity = Infinity`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AdditiveValueGroup<T>
 where
@@ -100,8 +104,14 @@ where
     }
 }
 
-/// not necessarily obeying ultra-metric
-/// so Archimedean absolute value also below
+/// A type implementing `PreAdditiveValuation`
+/// has the `nu` map to `AdditiveValueGroup<T>`
+/// but is not necessarily obeying the ultra-metric property
+/// For example, -`log` of the ordinary Archimedean absolute value
+/// obeys
+/// `-log(|ab|) = -log(|a|) + -log(|b|)`
+/// but not
+/// `-log(|a+b|)` being bound by the minimum of `-log(|a|)` and `-log(|b|)`
 pub trait PreAdditiveValuation {
     type DomainFieldSignature: FieldSignature;
     type ValuationGamma: Ord + Default + Add<Self::ValuationGamma, Output = Self::ValuationGamma>;
@@ -112,10 +122,22 @@ pub trait PreAdditiveValuation {
     ) -> AdditiveValueGroup<Self::ValuationGamma>;
 }
 
+/// A type implementing `AdditiveValuation`
+/// does obeying the ultra-metric property
+/// For example, the `padic_rat_valuation`
+/// In this situation, we have a valuation ring
+/// with unique maximal ideal by taking the inverse
+/// image of `>=0` and `>0` of the `nu` map.
+/// `0` is the `default` for the `T` of `AdditiveValueGroup<T>`
 pub trait AdditiveValuation: PreAdditiveValuation {
     type ValuationRing: RingSignature;
     type ResidueField: FieldSignature;
 
+    /// Evaluate the `nu` for this `r`
+    /// If it is `>=0`, then it is in the valuation ring
+    /// so we get an `Ok(Self::ValuationRing::Set)`
+    /// If it is not, then `Err(AdditiveValueGroup<Self::ValuationGamma>)`
+    /// showing that it was `<0`
     fn try_to_valuation_ring(
         &self,
         r: &<Self::DomainFieldSignature as SetSignature>::Set,
@@ -133,13 +155,17 @@ pub trait AdditiveValuation: PreAdditiveValuation {
         }
     }
 
+    /// Give the signature for the residue field which is the quotient of the valuation ring
+    /// by the maximal ideal determined by the preimage of `>0` under `nu`
     fn residue_field(&self) -> Self::ResidueField;
 
+    /// Give the homomorphism for the valuation ring including into the field
     fn valuation_inclusion(
         &self,
     ) -> impl RingHomomorphism<Self::ValuationRing, Self::DomainFieldSignature>
     + InjectiveFunction<Self::ValuationRing, Self::DomainFieldSignature>;
 
+    /// Give the homomorphism for the quotient map from the valuation ring to `self.residue_field()`
     fn valuation_quotient(&self) -> impl RingHomomorphism<Self::ValuationRing, Self::ResidueField>;
 }
 

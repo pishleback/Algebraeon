@@ -3,6 +3,8 @@ use crate::structure::*;
 use algebraeon_sets::structure::*;
 use std::marker::PhantomData;
 
+/// The ring obtained by localizing at the
+/// multiplicative set (R - p)
 #[derive(Debug, Clone)]
 pub struct LocalizationPrime<
     RS: IntegralDomainSignature,
@@ -21,6 +23,11 @@ impl<
     PS: IdealsArithmeticSignature<RS, RSB>,
 > LocalizationPrime<RS, RSB, PS>
 {
+    /// Assuming that `prime_ideal` was actually a prime ideal
+    /// for `ring`, then create an instance of this struct
+    /// in order to implement `RingSignature` for the localized ring.
+    /// This does not check that `prime_ideal` was actually prime,
+    /// but we do the sanity checks that it is a proper ideal.
     pub fn new_unchecked(ring: RS, ideal_signature: PS, prime_ideal: PS::Set) -> Self {
         assert!(
             !ideal_signature.ideal_equal(&ideal_signature.unit_ideal(), &prime_ideal),
@@ -223,6 +230,7 @@ impl<
     }
 }
 
+/// R includes into S^-1 R
 #[derive(Clone, Debug)]
 pub struct LocalizationInclusion<RS, RSB, PS>
 where
@@ -301,6 +309,7 @@ where
 {
 }
 
+/// S^-1 R has an inclusion map to the field of fractions of R
 #[derive(Clone, Debug)]
 pub struct LocalizationInclusionFoF<RS, RSB, PS, FS, FSI>
 where
@@ -406,6 +415,7 @@ where
 {
 }
 
+/// (R - p)^-1 R has a quotient map to R/p
 #[derive(Clone, Debug)]
 pub struct LocalizationResidueField<RS, RSB, PS, FS, FSQ>
 where
@@ -485,6 +495,7 @@ where
 {
 }
 
+/// This allows storage and manipulations of the ideals of (R-p)^-1 R
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct LocalizedIdeals<RS, RSB, PS>
 where
@@ -543,7 +554,7 @@ impl<RS, RSB, PS, LRB> IdealsArithmeticSignature<LocalizationPrime<RS, RSB, PS>,
 where
     RS: DedekindDomainSignature,
     RSB: BorrowedStructure<RS>,
-    PS: FactorableIdealsSignature<RS,RSB>,
+    PS: FactorableIdealsSignature<RS, RSB>,
     LRB: BorrowedStructure<LocalizationPrime<RS, RSB, PS>>,
 {
     fn principal_ideal(

@@ -10,6 +10,12 @@ use crate::{
     valuation::AdditiveValueGroup,
 };
 
+/// A place for an `AlgebraicNumberFieldStructure` can be
+/// a `Valuation` to the integers
+/// or an embedding specified by `EmbeddedAnf` which fixes
+/// where the `generator` goes in the real or complex numbers.
+/// The `Valuation` variant really represents it's equivalence class
+/// of valuations
 pub enum Place<V>
 where
     V: AdditiveValuation<
@@ -40,8 +46,8 @@ where
         matches!(self, Self::Embedding(e) if e.is_real())
     }
 
-    /// if we are at an Archimedean place, use the embedding to embed this `element`
-    /// as a `ComplexAlgebraic`
+    /// If we are at an Archimedean place, use the embedding to embed this `element`
+    /// as a `ComplexAlgebraic`.
     fn embed_archimedian(
         &self,
         element: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
