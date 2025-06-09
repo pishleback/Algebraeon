@@ -1,4 +1,4 @@
-use algebraeon_sets::structure::SetSignature;
+use algebraeon_sets::structure::{EqSignature, SetSignature};
 
 use crate::structure::{GraphSignature, LooplessGraphSignature, UndirectedGraphSignature};
 
@@ -6,7 +6,7 @@ struct CompleteGraph<Vertices: SetSignature> {
     vertices: Vertices,
 }
 
-impl<Vertices: SetSignature> GraphSignature<Vertices> for CompleteGraph<Vertices> {
+impl<Vertices: SetSignature + EqSignature> GraphSignature<Vertices> for CompleteGraph<Vertices> {
     fn vertices(&self) -> &Vertices {
         &self.vertices
     }
@@ -21,13 +21,22 @@ impl<Vertices: SetSignature> GraphSignature<Vertices> for CompleteGraph<Vertices
         if let Err(e) = self.vertices.is_element(target) {
             return Err(format!("Target is not an element of Vertices: {}", e));
         }
+        if self.vertices.equal(source, target) {
+            return Err("Complete graphs do not contain loops.".to_string());
+        }
         Ok(())
     }
 }
 
-impl<Vertices: SetSignature> LooplessGraphSignature<Vertices> for CompleteGraph<Vertices> {}
+impl<Vertices: SetSignature + EqSignature> LooplessGraphSignature<Vertices>
+    for CompleteGraph<Vertices>
+{
+}
 
-impl<Vertices: SetSignature> UndirectedGraphSignature<Vertices> for CompleteGraph<Vertices> {}
+impl<Vertices: SetSignature + EqSignature> UndirectedGraphSignature<Vertices>
+    for CompleteGraph<Vertices>
+{
+}
 
 #[cfg(test)]
 mod tests {
@@ -41,6 +50,7 @@ mod tests {
         let k5 = CompleteGraph { vertices: fin5 };
 
         assert!(k5.has_directed_edge(&1, &2).is_ok());
+        assert!(k5.has_directed_edge(&1, &1).is_err());
         assert!(k5.has_directed_edge(&5, &1).is_err());
     }
 }
