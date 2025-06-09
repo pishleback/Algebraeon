@@ -1,6 +1,6 @@
 use algebraeon_sets::structure::SetSignature;
 
-use crate::structure::GraphSignature;
+use crate::structure::{GraphSignature, UndirectedGraphSignature};
 
 struct CompleteGraph<Vertices: SetSignature> {
     vertices: Vertices,
@@ -25,9 +25,11 @@ impl<Vertices: SetSignature> GraphSignature<Vertices> for CompleteGraph<Vertices
     }
 }
 
+impl<Vertices: SetSignature> UndirectedGraphSignature<Vertices> for CompleteGraph<Vertices> {}
+
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::{EnumeratedFiniteSetStructure, SetSignature};
+    use algebraeon_sets::structure::EnumeratedFiniteSetStructure;
 
     use crate::{examples::CompleteGraph, structure::GraphSignature};
 
