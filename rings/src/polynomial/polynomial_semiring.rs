@@ -10,7 +10,7 @@ pub struct PolynomialSemiRingStructure<RS: SemiRingSignature, RSB: BorrowedStruc
 }
 
 impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStructure<RS, RSB> {
-    pub fn new(coeff_ring: RSB) -> Self {
+    fn new(coeff_ring: RSB) -> Self {
         Self {
             coeff_ring_zero: coeff_ring.borrow().zero(),
             coeff_ring,
@@ -23,11 +23,11 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
 }
 
 pub trait SemiRingToPolynomialSemiRingSignature: SemiRingSignature {
-    fn polynomials_semiring<'a>(&'a self) -> PolynomialSemiRingStructure<Self, &'a Self> {
+    fn polynomial_semiring<'a>(&'a self) -> PolynomialSemiRingStructure<Self, &'a Self> {
         PolynomialSemiRingStructure::new(self)
     }
 
-    fn into_polynomials_semiring(self) -> PolynomialSemiRingStructure<Self, Self> {
+    fn into_polynomial_semiring(self) -> PolynomialSemiRingStructure<Self, Self> {
         PolynomialSemiRingStructure::new(self)
     }
 }
@@ -272,6 +272,24 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
         y
     }
 
+    /// evaluate p(x^k)
+    pub fn evaluate_at_var_pow(&self, p: Polynomial<RS::Set>, k: usize) -> Polynomial<RS::Set> {
+        if k == 0 {
+            Polynomial::constant(self.coeff_ring().sum(p.coeffs()))
+        } else {
+            let mut coeffs = vec![];
+            for (i, c) in p.into_coeffs().into_iter().enumerate() {
+                if i != 0 {
+                    for _j in 0..(k - 1) {
+                        coeffs.push(self.coeff_ring().zero());
+                    }
+                }
+                coeffs.push(c);
+            }
+            Polynomial::from_coeffs(coeffs)
+        }
+    }
+
     //find p(q(x))
     pub fn compose(&self, p: &Polynomial<RS::Set>, q: &Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         PolynomialSemiRingStructure::new(self.clone())
@@ -377,3 +395,9 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
         p
     }
 }
+
+// impl Display for Polynomial<Natural> {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", Self::structure().to_string(self))
+//     }
+// }

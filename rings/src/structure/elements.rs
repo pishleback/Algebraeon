@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Div, Mul, Neg, Sub},
 };
 
-use super::rings::*;
+use super::*;
 use algebraeon_sets::structure::*;
 
 use algebraeon_nzq::*;

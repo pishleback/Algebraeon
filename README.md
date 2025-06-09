@@ -18,9 +18,9 @@ To factor large integers using Algebraeon
 
 ```rust
 use algebraeon::sets::structure::ToStringSignature;
-use algebraeon::{nzq::Natural, rings::rings::natural::factorization::factor};
+use algebraeon::{nzq::Natural, rings::natural::factorization::factor};
 use algebraeon::{
-    rings::rings::natural::factorization::NaturalCanonicalFactorizationStructure,
+    rings::natural::factorization::NaturalCanonicalFactorizationStructure,
     sets::structure::MetaType,
 };
 use std::str::FromStr;
@@ -31,7 +31,7 @@ println!(
     "{} = {}",
     n,
     Natural::structure().factorizations().to_string(&f)
-);;
+);
 /*
 Output:
     706000565581575429997696139445280900 = 2^2 × 5^2 × 6988699669998001 × 1010203040506070809
@@ -86,8 +86,8 @@ for integers $a$, $b$ and $c$.
 
 ```rust
 use algebraeon::nzq::Integer;
-use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
-use algebraeon::rings::linear::matrix::Matrix;
+use algebraeon::rings::module::finitely_free_module::RingToFinitelyFreeModuleSignature;
+use algebraeon::rings::matrix::Matrix;
 use algebraeon::sets::structure::MetaType;
 
 let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
