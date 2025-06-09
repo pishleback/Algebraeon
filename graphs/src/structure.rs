@@ -1,5 +1,6 @@
 use algebraeon_sets::structure::SetSignature;
 
+/// A directed simple graph permitting loops
 pub trait GraphSignature<Vertices: SetSignature> {
     fn vertices(&self) -> &Vertices;
 
