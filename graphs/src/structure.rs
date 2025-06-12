@@ -1,4 +1,4 @@
-use algebraeon_sets::structure::SetSignature;
+use algebraeon_sets::structure::{SetSignature, UnorderedPair};
 
 /// A directed graph permitting loops.
 pub trait GraphSignature {
@@ -20,15 +20,9 @@ pub trait UndirectedGraphSignature: GraphSignature {}
 pub trait GraphWithEdgesSignature: GraphSignature {
     type Edges: SetSignature;
 
-    /// Return the source vertex of an edge.
-    fn source(
+    /// Return the endpoints of an edge.
+    fn endpoints(
         &self,
         edge: &<Self::Edges as SetSignature>::Set,
-    ) -> &<Self::Vertices as SetSignature>::Set;
-
-    /// Return the target vertex of an edge.
-    fn target(
-        &self,
-        edge: &<Self::Edges as SetSignature>::Set,
-    ) -> &<Self::Vertices as SetSignature>::Set;
+    ) -> UnorderedPair<<Self::Vertices as SetSignature>::Set>;
 }
