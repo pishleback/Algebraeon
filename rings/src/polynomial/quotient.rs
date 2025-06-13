@@ -124,7 +124,6 @@ where
         Polynomial::from_coeffs(v)
     }
 
-
     pub fn min_poly(&self, a: &Polynomial<FS::Set>) -> Polynomial<FS::Set> {
         MatrixStructure::new(self.ring().coeff_ring().clone())
             .minimal_polynomial(self.col_multiplication_matrix(a))
@@ -146,7 +145,6 @@ where
             .trace(&self.col_multiplication_matrix(a))
             .unwrap()
     }
-
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

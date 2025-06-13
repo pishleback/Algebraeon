@@ -221,15 +221,26 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     type Basis = EnumeratedFiniteSetStructure;
 
     fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
-       self.module().field_inclusion().range_module_structure().basis_set().borrow().clone()
+        self.module()
+            .field_inclusion()
+            .range_module_structure()
+            .basis_set()
+            .borrow()
+            .clone()
     }
 
     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
-        self.module().field_inclusion().range_module_structure().to_component(b, v)
+        self.module()
+            .field_inclusion()
+            .range_module_structure()
+            .to_component(b, v)
     }
 
     fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
-        self.module().field_inclusion().range_module_structure().from_component(b, r)
+        self.module()
+            .field_inclusion()
+            .range_module_structure()
+            .from_component(b, r)
     }
 }
 
