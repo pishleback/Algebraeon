@@ -103,7 +103,7 @@ mod range_module {
             self.hom.domain()
         }
 
-        fn scalar_mul(&self, x: &Domain::Set, a: &Self::Set) -> Self::Set {
+        fn scalar_mul(&self, a: &Self::Set, x: &Domain::Set) -> Self::Set {
             self.hom.range().mul(&self.hom.image(x), a)
         }
     }
@@ -272,11 +272,29 @@ pub trait IntegralDomainExtensionAllPolynomialRoots<
     fn all_roots(&self, polynomial: &Polynomial<A::Set>) -> Vec<B::Set>;
 }
 
+/// A ring extension Z -> R such that R is a finitely free Z-module
+pub trait FiniteRankFreeRingExtension<Z: RingSignature, R: RingSignature>:
+    RingHomomorphism<Z, R> + InjectiveFunction<Z, R>
+{
+    fn degree(&self) -> usize;
+}
+
+impl<Z: RingSignature, R: RingSignature, Hom: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>>
+    FiniteRankFreeRingExtension<Z, R> for Hom
+where
+    for<'h> RingHomomorphismRangeModuleStructure<'h, Z, R, Self>: FinitelyFreeModuleSignature<Z>,
+    for<'h> <RingHomomorphismRangeModuleStructure<'h, Z, R, Self> as FreeModuleSignature<Z>>::Basis:
+        FiniteSetSignature,
+{
+    fn degree(&self) -> usize {
+        self.range_module_structure().rank()
+    }
+}
+
 /// A finite dimensional field extension F -> K
 pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     RingHomomorphism<F, K> + InjectiveFunction<F, K>
 {
-    fn degree(&self) -> usize;
     fn norm(&self, a: &K::Set) -> F::Set;
     fn trace(&self, a: &K::Set) -> F::Set;
     /// The monic minimal polynomial of a
@@ -290,10 +308,6 @@ where
     for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignature<F>>::Basis:
         FiniteSetSignature,
 {
-    fn degree(&self) -> usize {
-        self.range_module_structure().rank()
-    }
-
     fn norm(&self, a: &K::Set) -> F::Set {
         todo!()
     }

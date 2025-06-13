@@ -1,11 +1,24 @@
 use std::borrow::{Borrow, Cow};
 
-use crate::structure::*;
+use crate::{matrix::Matrix, structure::*};
 use algebraeon_sets::structure::*;
 
 pub trait SemiModuleSignature<Ring: SemiRingSignature>: AdditiveMonoidSignature {
     fn ring(&self) -> &Ring;
-    fn scalar_mul(&self, x: &Ring::Set, a: &Self::Set) -> Self::Set;
+    fn scalar_mul(&self, a: &Self::Set, x: &Ring::Set) -> Self::Set;
+}
+
+pub trait MetaSemiModule<Ring: SemiRingSignature>: MetaType
+where
+    Self::Signature: SemiModuleSignature<Ring>,
+{
+    fn scalar_mul(&self, x: &Ring::Set) -> Self {
+        Self::structure().scalar_mul(self, x)
+    }
+}
+impl<Ring: SemiRingSignature, T: MetaType> MetaSemiModule<Ring> for T where
+    Self::Signature: SemiModuleSignature<Ring>
+{
 }
 
 pub trait ModuleSignature<Ring: RingSignature>:
@@ -73,10 +86,31 @@ where
         for i in 0..n {
             self.add_mut(
                 &mut t,
-                &self.scalar_mul(v[i], &self.from_component(&basis[i], &self.ring().one())),
+                &self.scalar_mul(&self.from_component(&basis[i], &self.ring().one()), v[i]),
             );
         }
         t
+    }
+
+    fn to_col_vec(&self, a: &Self::Set) -> Matrix<Ring::Set> {
+        let basis = self.basis();
+        Matrix::construct(self.rank(), 1, |r, _c| {
+            self.to_component(&basis[r], a).into_owned()
+        })
+    }
+
+    fn from_col_vec(&self, v: Matrix<Ring::Set>) -> Self::Set {
+        assert_eq!(v.cols(), 1);
+        assert_eq!(v.rows(), self.rank());
+        self.from_vec((0..self.rank()).map(|r| v.at(r, 0).unwrap()).collect())
+    }
+
+    fn to_row_vector(&self, a: &Self::Set) -> Matrix<Ring::Set> {
+        self.to_col_vec(a).transpose()
+    }
+
+    fn from_row_vec(&self, v: Matrix<Ring::Set>) -> Self::Set {
+        self.from_col_vec(v.transpose())
     }
 }
 
@@ -87,30 +121,3 @@ pub trait LinearTransformation<
 >: Function<Domain, Range>
 {
 }
-
-// pub trait SubModuleSignature<Ring: RingSignature, Module: ModuleSignature<Ring>>:
-//     EqSignature
-// {
-//     fn ring(&self) -> &Ring;
-//     fn module(&self) -> &Module;
-//     fn zero_submodule(&self) -> Self::Set {
-//         self.generated(vec![])
-//     }
-//     fn improper_submodule(&self) -> Self::Set;
-//     fn add(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
-//     fn intersect(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
-//     fn generated(&self, generators: Vec<&Module::Set>) -> Self::Set;
-//     /// Does x contain p
-//     fn contains_element(&self, x: &Self::Set, p: &Module::Set) -> bool;
-//     /// Does x contain y
-//     fn contains(&self, x: &Self::Set, y: &Self::Set) -> bool;
-// }
-
-// pub trait SubModuleCosetSignature<Ring: RingSignature, Module: ModuleSignature<Ring>>:
-//     EqSignature
-// {
-//     fn ring(&self) -> &Ring;
-//     fn module(&self) -> &Module;
-//     fn add(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
-//     fn intersect(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
-// }

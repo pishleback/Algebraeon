@@ -221,7 +221,7 @@ impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStru
         &self.base
     }
 
-    fn scalar_mul(&self, x: &<Field>::Set, a: &Self::Set) -> Self::Set {
+    fn scalar_mul(&self, a: &Self::Set, x: &Field::Set) -> Self::Set {
         let base = &self.base;
         QuaternionAlgebraElement {
             x: base.mul(x, &a.x),

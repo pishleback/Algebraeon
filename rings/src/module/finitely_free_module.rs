@@ -209,7 +209,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ri
         self.ring.borrow()
     }
 
-    fn scalar_mul(&self, r: &<Ring>::Set, v: &Self::Set) -> Self::Set {
+    fn scalar_mul(&self, v: &Self::Set, r: &Ring::Set) -> Self::Set {
         debug_assert!(self.is_element(v).is_ok());
         v.iter().map(|s| self.ring().mul(r, s)).collect()
     }
@@ -567,7 +567,7 @@ mod tests {
         );
 
         assert_eq!(
-            m.scalar_mul(&5.into(), &a),
+            m.scalar_mul(&a, &5.into()),
             vec![Integer::from(5), Integer::from(0), Integer::from(0)]
         );
 
