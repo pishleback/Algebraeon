@@ -59,7 +59,7 @@ assert!(
 ));
 
 assert!(module.equal(
-    &module.scalar_mul(&5.into(), &a),
+    &module.scalar_mul(&a, &5.into()),
     &vec![5.into(), 10.into(), 15.into()]
 ));
 ```

@@ -214,7 +214,7 @@ impl<
         self.ring.borrow()
     }
 
-    fn scalar_mul(&self, b: &Ring::Set, v: &Self::Set) -> Self::Set {
+    fn scalar_mul(&self, v: &Self::Set, b: &Ring::Set) -> Self::Set {
         v.iter()
             .map(|(x, a)| (x.clone(), self.ring().mul(a, b)))
             .filter(|(_, a)| !self.ring().is_zero(a))

@@ -9,7 +9,7 @@ impl<
     FS: FiniteFieldSignature,
     FSB: BorrowedStructure<FS>,
     FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
-> FiniteUnitsSignature for FieldExtensionByPolynomialQuotientStructure<FS, FSB, FSPB>
+> FiniteUnitsSignature for PolynomialQuotientRingStructure<FS, FSB, FSPB, true>
 {
     fn all_units(&self) -> Vec<Self::Set> {
         let mut all_base_elements = vec![self.ring().coeff_ring().zero()];
@@ -39,7 +39,7 @@ impl<
     FS: FiniteFieldSignature,
     FSB: BorrowedStructure<FS>,
     FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
-> FiniteFieldSignature for FieldExtensionByPolynomialQuotientStructure<FS, FSB, FSPB>
+> FiniteFieldSignature for PolynomialQuotientRingStructure<FS, FSB, FSPB, true>
 {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         let (p, t) = self.ring().coeff_ring().characteristic_and_power();
@@ -51,7 +51,7 @@ impl<
 pub fn new_finite_field_extension<FS: FiniteFieldSignature>(
     finite_field: FS,
     poly: Polynomial<FS::Set>,
-) -> FieldExtensionByPolynomialQuotientStructure<FS, FS, PolynomialStructure<FS, FS>>
+) -> PolynomialQuotientRingStructure<FS, FS, PolynomialStructure<FS, FS>, true>
 where
     PolynomialStructure<FS, FS>: FactorableSignature<Set = Polynomial<FS::Set>>,
 {
@@ -60,10 +60,11 @@ where
         .into_quotient_field_unchecked(poly)
 }
 
-pub(crate) fn f9() -> FieldExtensionByPolynomialQuotientStructure<
+pub(crate) fn f9() -> PolynomialQuotientRingStructure<
     ModuloCanonicalStructure<3>,
     ModuloCanonicalStructure<3>,
     PolynomialStructure<ModuloCanonicalStructure<3>, ModuloCanonicalStructure<3>>,
+    true,
 > {
     use crate::finite_fields::modulo::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(

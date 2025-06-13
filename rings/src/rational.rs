@@ -81,8 +81,13 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
     }
 }
 
-impl FiniteRankFreeRingExtension<RationalCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
+impl<'h> FreeModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        RationalCanonicalStructure,
+        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+    >
 {
     type Basis = SingletonSetStructure;
 
@@ -99,20 +104,14 @@ impl FiniteRankFreeRingExtension<RationalCanonicalStructure, RationalCanonicalSt
     }
 }
 
-impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
+impl<'h> FinitelyFreeModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        RationalCanonicalStructure,
+        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+    >
 {
-    fn norm(&self, a: &Rational) -> Rational {
-        a.clone()
-    }
-
-    fn trace(&self, a: &Rational) -> Rational {
-        a.clone()
-    }
-
-    fn min_poly(&self, a: &Rational) -> Polynomial<Rational> {
-        Polynomial::from_coeffs(vec![-a, Rational::ONE])
-    }
 }
 
 impl ComplexSubsetSignature for RationalCanonicalStructure {
