@@ -113,7 +113,7 @@ where
     }
 
     pub fn degree(&self) -> usize {
-        self.coefficient_ring_inclusion().degree()
+        self.ring().degree(self.modulus()).unwrap()
     }
 }
 
