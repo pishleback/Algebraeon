@@ -1,5 +1,5 @@
 use super::*;
-use crate::matrix::Matrix;
+use crate::matrix::{Matrix, MatrixStructure};
 use crate::polynomial::Polynomial;
 use algebraeon_sets::structure::*;
 use std::collections::{HashMap, HashSet};
@@ -317,7 +317,7 @@ where
 
 /// A finite dimensional field extension F -> K
 pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
-    RingHomomorphism<F, K> + InjectiveFunction<F, K>
+    RingHomomorphism<F, K> + InjectiveFunction<F, K> + FiniteRankFreeRingExtension<F, K>
 {
     fn norm(&self, a: &K::Set) -> F::Set;
     fn trace(&self, a: &K::Set) -> F::Set;
@@ -328,20 +328,27 @@ pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
 impl<F: FieldSignature, K: FieldSignature, Hom: RingHomomorphism<F, K> + InjectiveFunction<F, K>>
     FiniteDimensionalFieldExtension<F, K> for Hom
 where
-    for<'h> RingHomomorphismRangeModuleStructure<'h, F, K, Self>: FinitelyFreeModuleSignature<F>,
+    for<'h> RingHomomorphismRangeModuleStructure<'h, F, K, Self>:
+        FinitelyFreeModuleSignature<F, Set = K::Set>,
     for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignature<F>>::Basis:
         FiniteSetSignature,
 {
     fn norm(&self, a: &K::Set) -> F::Set {
-        todo!()
+        MatrixStructure::new(self.domain().clone())
+            .det(self.col_multiplication_matrix(a))
+            .unwrap()
     }
 
     fn trace(&self, a: &K::Set) -> F::Set {
-        todo!()
+        MatrixStructure::new(self.domain().clone())
+            .trace(&self.col_multiplication_matrix(a))
+            .unwrap()
     }
 
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set> {
-        todo!()
+        MatrixStructure::new(self.domain().clone())
+            .minimal_polynomial(self.col_multiplication_matrix(a))
+            .unwrap()
     }
 }
 

@@ -112,26 +112,29 @@ where
             .from_vec(v)
     }
 
-    pub fn min_poly(&self, a: &Polynomial<FS::Set>) -> Polynomial<FS::Set> {
-        MatrixStructure::new(self.ring().coeff_ring().clone())
-            .minimal_polynomial(self.col_multiplication_matrix(a))
-            .unwrap()
-    }
-
     pub fn degree(&self) -> usize {
-        self.ring().degree(self.modulus()).unwrap()
+        self.coefficient_ring_inclusion().degree()
+    }
+}
+
+impl<
+    FS: FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
+> PolynomialQuotientRingStructure<FS, FSB, FSPB, true>
+where
+    PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>,
+{
+    pub fn min_poly(&self, a: &Polynomial<FS::Set>) -> Polynomial<FS::Set> {
+        self.coefficient_ring_inclusion().min_poly(a)
     }
 
     pub fn norm(&self, a: &Polynomial<FS::Set>) -> FS::Set {
-        MatrixStructure::new(self.ring().coeff_ring().clone())
-            .det(self.col_multiplication_matrix(a))
-            .unwrap()
+        self.coefficient_ring_inclusion().norm(a)
     }
 
     pub fn trace(&self, a: &Polynomial<FS::Set>) -> FS::Set {
-        MatrixStructure::new(self.ring().coeff_ring().clone())
-            .trace(&self.col_multiplication_matrix(a))
-            .unwrap()
+        self.coefficient_ring_inclusion().trace(a)
     }
 }
 
