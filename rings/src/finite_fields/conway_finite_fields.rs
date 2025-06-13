@@ -11,13 +11,14 @@ use algebraeon_sets::structure::*;
 pub struct ConwayFiniteFieldStructure {
     p: usize,
     n: usize,
-    structure: FieldExtensionByPolynomialQuotientStructure<
+    structure: PolynomialQuotientRingStructure<
         QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
         QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
         PolynomialStructure<
             QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
             QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
         >,
+        true,
     >,
 }
 

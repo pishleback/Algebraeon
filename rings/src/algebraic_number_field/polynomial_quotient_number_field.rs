@@ -12,12 +12,12 @@ use algebraeon_nzq::{
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
-pub type AlgebraicNumberFieldPolynomialQuotientStructure =
-    FieldExtensionByPolynomialQuotientStructure<
-        RationalCanonicalStructure,
-        RationalCanonicalStructure,
-        PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>,
-    >;
+pub type AlgebraicNumberFieldPolynomialQuotientStructure = PolynomialQuotientRingStructure<
+    RationalCanonicalStructure,
+    RationalCanonicalStructure,
+    PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>,
+    true,
+>;
 
 impl Polynomial<Rational> {
     pub fn algebraic_number_field(
@@ -222,7 +222,7 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
     fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
         self.module()
-            .field_inclusion()
+            .coefficient_ring_inclusion()
             .range_module_structure()
             .basis_set()
             .borrow()
@@ -231,14 +231,14 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
         self.module()
-            .field_inclusion()
+            .coefficient_ring_inclusion()
             .range_module_structure()
             .to_component(b, v)
     }
 
     fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
         self.module()
-            .field_inclusion()
+            .coefficient_ring_inclusion()
             .range_module_structure()
             .from_component(b, r)
     }
