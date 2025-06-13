@@ -1,13 +1,22 @@
 use algebraeon_sets::structure::{EqSignature, Pairs, SetSignature, UnorderedPair, UnorderedPairs};
 
 use crate::structure::{
-    GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
+    GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature,
 };
 
-struct CompleteDirectedGraph<Vertices: SetSignature> {
+pub struct CompleteDirectedGraph<Vertices: SetSignature> {
     vertices: Vertices,
-
     pairs_of_vertices: UnorderedPairs<Vertices>,
+}
+
+impl<Vertices: SetSignature> CompleteDirectedGraph<Vertices> {
+    pub fn new(vertices: Vertices) -> Self {
+        let pairs_of_vertices = UnorderedPairs::new(vertices.clone());
+        Self {
+            vertices,
+            pairs_of_vertices,
+        }
+    }
 }
 
 impl<Vertices: SetSignature + EqSignature> GraphSignature for CompleteDirectedGraph<Vertices> {
@@ -61,13 +70,9 @@ mod tests {
     };
 
     #[test]
-    fn test_k5() {
+    fn test_k5_directed() {
         let fin5 = EnumeratedFiniteSetStructure::new(5);
-        let fin5_unordered_pairs = UnorderedPairs::new(fin5.clone());
-        let k5 = CompleteDirectedGraph {
-            vertices: fin5.clone(),
-            pairs_of_vertices: fin5_unordered_pairs.clone(),
-        };
+        let k5 = CompleteDirectedGraph::new(fin5.clone());
 
         assert!(k5.has_directed_edge(&1, &2).is_ok());
         assert!(k5.has_directed_edge(&1, &1).is_err());
@@ -77,6 +82,6 @@ mod tests {
 
         let e1 = fin5_pairs.clone().new_pair(1.clone(), 2.clone()).unwrap();
         let e2 = fin5_pairs.clone().new_pair(2.clone(), 1.clone()).unwrap();
-        assert!(fin5_unordered_pairs.equal(&k5.endpoints(&e1), &k5.endpoints(&e2)));
+        assert!(k5.pairs_of_vertices.equal(&k5.endpoints(&e1), &k5.endpoints(&e2)));
     }
 }

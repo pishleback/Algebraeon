@@ -40,8 +40,9 @@ impl<S: SetSignature + EqSignature> EqSignature for Pairs<S> {
     }
 }
 
+/// The set of unordered Pairs of distinct elements
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UnorderedPairs<Set: SetSignature> {
+pub struct UnorderedPairs<Set> {
     set: Set,
 }
 

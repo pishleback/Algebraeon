@@ -1,4 +1,4 @@
 use algebraeon_sets::structure::SetSignature;
 
-mod examples;
-mod structure;
+pub mod examples;
+pub mod structure;
