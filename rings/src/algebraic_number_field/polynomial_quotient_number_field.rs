@@ -141,7 +141,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
                             guess = (0..n)
                                 .rev()
                                 .map(|i| {
-                                    self.from_row_vector(
+                                    self.from_row(
                                         guess_mat_prim_hnf
                                             .get_row_submatrix(i)
                                             .apply_map(|v| Rational::from(v) * &mul),
@@ -322,10 +322,10 @@ mod tests {
         println!("{}", alpha);
         println!("{}", anf.reduce(&alpha));
         println!("{}", anf.min_poly(&alpha));
-        anf.to_col_vector(&alpha).pprint();
+        anf.to_col(&alpha).pprint();
 
         assert_eq!(
-            anf.to_col_vector(&alpha),
+            anf.to_col(&alpha),
             Matrix::from_cols(vec![vec![
                 Rational::from(4),
                 Rational::from(1),
@@ -336,7 +336,7 @@ mod tests {
         );
 
         assert!(anf.equal(
-            &anf.from_col_vector(Matrix::from_cols(vec![vec![
+            &anf.from_col(Matrix::from_cols(vec![vec![
                 Rational::from(4),
                 Rational::from(1),
                 Rational::from(0),

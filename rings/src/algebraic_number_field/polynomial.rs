@@ -505,7 +505,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                         qi_deg,
                         lai_basis
                             .iter()
-                            .map(|b| lai_reduced_ring.to_row_vector(b))
+                            .map(|b| lai_reduced_ring.to_row(b))
                             .collect::<Vec<_>>(),
                     );
                     // lai_basis_mat.pprint();
@@ -523,7 +523,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                     // );
 
                     let x_wrapping_pow_vec = lai_reduced_ring
-                        .to_vector(&lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg)));
+                        .to_vec(&lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg)));
                     // x_wrapping_pow_vec.pprint();
                     //this is a vector containing the coefficients of (the coefficients of elements of K of) the polynomial pi_prime(x) in K[x] such that
                     //x^n = pi_prime(x)

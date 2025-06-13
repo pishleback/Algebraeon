@@ -195,14 +195,11 @@ impl RingOfIntegersWithIntegralBasisStructure {
 
     pub fn try_anf_to_roi(&self, elem: &Polynomial<Rational>) -> Option<Vec<Integer>> {
         let n = self.degree();
-        let y = self.algebraic_number_field.to_vector(elem);
+        let y = self.algebraic_number_field.to_vec(elem);
         let m = Matrix::join_cols(
             n,
             (0..n)
-                .map(|i| {
-                    self.algebraic_number_field
-                        .to_col_vector(&self.integral_basis[i])
-                })
+                .map(|i| self.algebraic_number_field.to_col(&self.integral_basis[i]))
                 .collect(),
         );
         if let Some(s) = m.col_solve(&y) {

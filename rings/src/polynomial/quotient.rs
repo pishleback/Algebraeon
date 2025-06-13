@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::borrow::{Borrow, Cow};
 
 use super::{Polynomial, polynomial_ring::*};
 use crate::{matrix::*, structure::*};
@@ -91,38 +91,40 @@ where
         self.col_multiplication_matrix(a).transpose()
     }
 
-    pub fn to_col_vector(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
-        let a_reduced = self.reduce(a);
-        Matrix::construct(self.degree(), 1, |r, _c| {
-            self.ring().coeff(&a_reduced, r).into_owned()
-        })
-    }
-    pub fn to_row_vector(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
-        self.to_col_vector(a).transpose()
-    }
-    pub fn to_vector(&self, a: &Polynomial<FS::Set>) -> Vec<FS::Set> {
-        let mut v = self.reduce(a).into_coeffs();
-        debug_assert!(v.len() <= self.degree());
-        while v.len() < self.degree() {
-            v.push(self.ring().coeff_ring().zero());
-        }
-        v
+    pub fn to_col(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
+        self.coefficient_ring_inclusion()
+            .range_module_structure()
+            .to_col(a)
     }
 
-    pub fn from_col_vector(&self, v: Matrix<FS::Set>) -> Polynomial<FS::Set> {
-        assert_eq!(v.cols(), 1);
-        assert_eq!(v.rows(), self.degree());
-        Polynomial::from_coeffs(
-            (0..self.degree())
-                .map(|i| v.at(i, 0).unwrap().clone())
-                .collect(),
-        )
+    pub fn to_row(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
+        self.coefficient_ring_inclusion()
+            .range_module_structure()
+            .to_row(a)
     }
-    pub fn from_row_vector(&self, v: Matrix<FS::Set>) -> Polynomial<FS::Set> {
-        self.from_col_vector(v.transpose())
+
+    pub fn to_vec(&self, a: &Polynomial<FS::Set>) -> Vec<FS::Set> {
+        self.coefficient_ring_inclusion()
+            .range_module_structure()
+            .to_vec(a)
     }
-    pub fn from_vector(&self, v: Vec<FS::Set>) -> Polynomial<FS::Set> {
-        Polynomial::from_coeffs(v)
+
+    pub fn from_col(&self, v: Matrix<FS::Set>) -> Polynomial<FS::Set> {
+        self.coefficient_ring_inclusion()
+            .range_module_structure()
+            .from_col(v)
+    }
+
+    pub fn from_row(&self, v: Matrix<FS::Set>) -> Polynomial<FS::Set> {
+        self.coefficient_ring_inclusion()
+            .range_module_structure()
+            .from_row(v)
+    }
+
+    pub fn from_vec(&self, v: Vec<impl Borrow<FS::Set>>) -> Polynomial<FS::Set> {
+        self.coefficient_ring_inclusion()
+            .range_module_structure()
+            .from_vec(v)
     }
 
     pub fn min_poly(&self, a: &Polynomial<FS::Set>) -> Polynomial<FS::Set> {

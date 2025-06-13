@@ -8,7 +8,10 @@ use crate::{
     structure::*,
 };
 use algebraeon_sets::structure::*;
-use std::{borrow::Cow, marker::PhantomData};
+use std::{
+    borrow::{Borrow, Cow},
+    marker::PhantomData,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeModuleStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
@@ -252,8 +255,8 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleSign
         v.clone()
     }
 
-    fn from_vec(&self, v: Vec<&Ring::Set>) -> Self::Set {
-        v.into_iter().cloned().collect()
+    fn from_vec(&self, v: Vec<impl Borrow<Ring::Set>>) -> Self::Set {
+        v.into_iter().map(|x| x.borrow().clone()).collect()
     }
 }
 

@@ -40,27 +40,27 @@ impl ConwayFiniteFieldStructure {
     }
 
     pub fn to_row_vector(&self, f: &Polynomial<Integer>) -> Matrix<Integer> {
-        self.structure.to_row_vector(f)
+        self.structure.to_row(f)
     }
 
     pub fn to_col_vector(&self, f: &Polynomial<Integer>) -> Matrix<Integer> {
-        self.structure.to_col_vector(f)
+        self.structure.to_col(f)
     }
 
     pub fn to_vector(&self, f: &Polynomial<Integer>) -> Vec<Integer> {
-        self.structure.to_vector(f)
+        self.structure.to_vec(f)
     }
 
     pub fn from_row_vector(&self, v: Matrix<Integer>) -> Polynomial<Integer> {
-        self.structure.from_row_vector(v)
+        self.structure.from_row(v)
     }
 
     pub fn from_col_vector(&self, v: Matrix<Integer>) -> Polynomial<Integer> {
-        self.structure.from_col_vector(v)
+        self.structure.from_col(v)
     }
 
     pub fn from_vector(&self, v: Vec<Integer>) -> Polynomial<Integer> {
-        self.structure.from_vector(v)
+        self.structure.from_vec(v)
     }
 }
 

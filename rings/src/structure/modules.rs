@@ -77,7 +77,7 @@ where
             .collect()
     }
 
-    fn from_vec(&self, v: Vec<&Ring::Set>) -> Self::Set {
+    fn from_vec(&self, v: Vec<impl Borrow<Ring::Set>>) -> Self::Set {
         let n = self.rank();
         debug_assert_eq!(v.len(), n);
         let basis = self.basis();
@@ -86,31 +86,34 @@ where
         for i in 0..n {
             self.add_mut(
                 &mut t,
-                &self.scalar_mul(&self.from_component(&basis[i], &self.ring().one()), v[i]),
+                &self.scalar_mul(
+                    &self.from_component(&basis[i], &self.ring().one()),
+                    v[i].borrow(),
+                ),
             );
         }
         t
     }
 
-    fn to_col_vec(&self, a: &Self::Set) -> Matrix<Ring::Set> {
+    fn to_col(&self, a: &Self::Set) -> Matrix<Ring::Set> {
         let basis = self.basis();
         Matrix::construct(self.rank(), 1, |r, _c| {
             self.to_component(&basis[r], a).into_owned()
         })
     }
 
-    fn from_col_vec(&self, v: Matrix<Ring::Set>) -> Self::Set {
+    fn from_col(&self, v: Matrix<Ring::Set>) -> Self::Set {
         assert_eq!(v.cols(), 1);
         assert_eq!(v.rows(), self.rank());
         self.from_vec((0..self.rank()).map(|r| v.at(r, 0).unwrap()).collect())
     }
 
-    fn to_row_vector(&self, a: &Self::Set) -> Matrix<Ring::Set> {
-        self.to_col_vec(a).transpose()
+    fn to_row(&self, a: &Self::Set) -> Matrix<Ring::Set> {
+        self.to_col(a).transpose()
     }
 
-    fn from_row_vec(&self, v: Matrix<Ring::Set>) -> Self::Set {
-        self.from_col_vec(v.transpose())
+    fn from_row(&self, v: Matrix<Ring::Set>) -> Self::Set {
+        self.from_col(v.transpose())
     }
 }
 
