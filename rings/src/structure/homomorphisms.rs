@@ -1,4 +1,5 @@
 use super::*;
+use crate::matrix::Matrix;
 use crate::polynomial::Polynomial;
 use algebraeon_sets::structure::*;
 use std::collections::{HashMap, HashSet};
@@ -277,17 +278,41 @@ pub trait FiniteRankFreeRingExtension<Z: RingSignature, R: RingSignature>:
     RingHomomorphism<Z, R> + InjectiveFunction<Z, R>
 {
     fn degree(&self) -> usize;
+
+    /// matrix representing column vector multiplication by `a` on the left
+    fn col_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set>;
+
+    /// matrix representing row vector multiplication by `a` on the right
+    fn row_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set>;
 }
 
 impl<Z: RingSignature, R: RingSignature, Hom: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>>
     FiniteRankFreeRingExtension<Z, R> for Hom
 where
-    for<'h> RingHomomorphismRangeModuleStructure<'h, Z, R, Self>: FinitelyFreeModuleSignature<Z>,
+    for<'h> RingHomomorphismRangeModuleStructure<'h, Z, R, Self>:
+        FinitelyFreeModuleSignature<Z, Set = R::Set>,
     for<'h> <RingHomomorphismRangeModuleStructure<'h, Z, R, Self> as FreeModuleSignature<Z>>::Basis:
         FiniteSetSignature,
 {
     fn degree(&self) -> usize {
         self.range_module_structure().rank()
+    }
+
+    fn col_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set> {
+        let basis = self.range_module_structure().basis_vecs();
+        let deg = self.degree();
+        Matrix::from_cols(
+            (0..self.degree())
+                .map(|i| {
+                    self.range_module_structure()
+                        .to_vec(&self.range().mul(a, &basis[i]))
+                })
+                .collect(),
+        )
+    }
+
+    fn row_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set> {
+        self.col_multiplication_matrix(a).transpose()
     }
 }
 

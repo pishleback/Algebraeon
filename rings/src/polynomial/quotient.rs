@@ -66,29 +66,14 @@ where
         self.ring().var()
     }
 
-    //matrix representing column vector multiplication by a on the left
     pub fn col_multiplication_matrix(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
-        let poly_ring = self.ring();
-        let field = poly_ring.coeff_ring();
-        let deg = self.degree();
-        Matrix::from_cols(
-            (0..self.degree())
-                .map(|i| {
-                    let mut coeffs = self
-                        .reduce(&poly_ring.mul(a, &poly_ring.var_pow(i)))
-                        .into_coeffs();
-                    debug_assert!(coeffs.len() <= deg);
-                    while coeffs.len() < deg {
-                        coeffs.push(field.zero());
-                    }
-                    coeffs
-                })
-                .collect(),
-        )
+        self.coefficient_ring_inclusion()
+            .col_multiplication_matrix(a)
     }
-    //matrix representing row vector multiplication by a on the right
+
     pub fn row_multiplication_matrix(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
-        self.col_multiplication_matrix(a).transpose()
+        self.coefficient_ring_inclusion()
+            .row_multiplication_matrix(a)
     }
 
     pub fn to_col(&self, a: &Polynomial<FS::Set>) -> Matrix<FS::Set> {
