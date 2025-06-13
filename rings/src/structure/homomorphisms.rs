@@ -287,7 +287,7 @@ impl<F: FieldSignature, K: FieldSignature, Hom: RingHomomorphism<F, K> + Injecti
     FiniteDimensionalFieldExtension<F, K> for Hom
 where
     for<'h> RingHomomorphismRangeModuleStructure<'h, F, K, Self>: FinitelyFreeModuleSignature<F>,
-    for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignatureF>::Basis:
+    for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignature<F>>::Basis:
         FiniteSetSignature,
 {
     fn degree(&self) -> usize {
