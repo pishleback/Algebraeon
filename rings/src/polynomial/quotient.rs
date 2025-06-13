@@ -272,30 +272,6 @@ impl<
 {
 }
 
-compile_error!("sus");
-// impl<
-//     Field: FieldSignature,
-//     FieldB: BorrowedStructure<Field>,
-//     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
-// >
-//     FiniteDimensionalFieldExtension<
-//         Field,
-//         FieldExtensionByPolynomialQuotientStructure<Field, FieldB, FieldPolyB>,
-//     > for FieldExtensionByPolynomialQuotientInclusion<Field, FieldB, FieldPolyB>
-// {
-//     fn norm(&self, a: &Polynomial<Field::Set>) -> Field::Set {
-//         self.range().norm(a)
-//     }
-
-//     fn trace(&self, a: &Polynomial<Field::Set>) -> Field::Set {
-//         self.range().trace(a)
-//     }
-
-//     fn min_poly(&self, a: &Polynomial<Field::Set>) -> Polynomial<<Field>::Set> {
-//         self.range().min_poly(a)
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,7 +1,6 @@
 use super::*;
 use crate::polynomial::Polynomial;
 use algebraeon_sets::structure::*;
-use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -33,6 +32,10 @@ mod range_module {
 
         pub fn module(&self) -> &Range {
             self.hom.range()
+        }
+
+        pub fn homomorphism(&self) -> &'h Hom {
+            self.hom
         }
     }
 
@@ -284,7 +287,7 @@ impl<F: FieldSignature, K: FieldSignature, Hom: RingHomomorphism<F, K> + Injecti
     FiniteDimensionalFieldExtension<F, K> for Hom
 where
     for<'h> RingHomomorphismRangeModuleStructure<'h, F, K, Self>: FinitelyFreeModuleSignature<F>,
-    for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignature<F>>::Basis:
+    for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignatureF>::Basis:
         FiniteSetSignature,
 {
     fn degree(&self) -> usize {

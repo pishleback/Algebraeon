@@ -209,46 +209,40 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure 
     }
 }
 
-// impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-//     FiniteRankFreeRingExtension<
-//         RationalCanonicalStructure,
-//         AlgebraicNumberFieldPolynomialQuotientStructure,
-//     > for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
-// {
-//     type Basis = EnumeratedFiniteSetStructure;
+impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    FreeModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
+    >
+{
+    type Basis = EnumeratedFiniteSetStructure;
 
-//     fn basis_set(&self) -> impl Borrow<Self::Basis> {
-//         self.range().field_inclusion().basis_set().borrow().clone()
-//     }
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+       self.module().field_inclusion().range_module_structure().basis_set().borrow().clone()
+    }
 
-//     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
-//         self.range().field_inclusion().to_component(b, v)
-//     }
+    fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
+        self.module().field_inclusion().range_module_structure().to_component(b, v)
+    }
 
-//     fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
-//         self.range().field_inclusion().from_component(b, r)
-//     }
-// }
+    fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
+        self.module().field_inclusion().range_module_structure().from_component(b, r)
+    }
+}
 
-compile_error!("sus");
-// impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-//     FiniteDimensionalFieldExtension<
-//         RationalCanonicalStructure,
-//         AlgebraicNumberFieldPolynomialQuotientStructure,
-//     > for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
-// {
-//     fn norm(&self, a: &Polynomial<Rational>) -> Rational {
-//         self.range().norm(a)
-//     }
-
-//     fn trace(&self, a: &Polynomial<Rational>) -> Rational {
-//         self.range().trace(a)
-//     }
-
-//     fn min_poly(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
-//         self.range().min_poly(a)
-//     }
-// }
+impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    FinitelyFreeModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
+    >
+{
+}
 
 impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     AlgebraicNumberField<AlgebraicNumberFieldPolynomialQuotientStructure>
