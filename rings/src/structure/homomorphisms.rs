@@ -300,7 +300,6 @@ where
 
     fn col_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set> {
         let basis = self.range_module_structure().basis_vecs();
-        let deg = self.degree();
         Matrix::from_cols(
             (0..self.degree())
                 .map(|i| {
