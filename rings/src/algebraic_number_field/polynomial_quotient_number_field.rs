@@ -177,9 +177,9 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
             .all(|c| c.denominator() == Natural::ONE)
     }
 
-    // This is the LCM of the denominators of the coefficients of a,
-    // and thus it may well be > 1 even when the element is an algebraic integer.
-    pub(crate) fn denominator(&self, a: &Polynomial<Rational>) -> Integer {
+    // This is the LCM of the denominators of the coefficients of the minimal polynomial of a,
+    // and thus it may well be >1 even when the element a is an algebraic integer.
+    pub(crate) fn min_poly_denominator_lcm(&self, a: &Polynomial<Rational>) -> Integer {
         Integer::lcm_list(
             self.min_poly(a)
                 .coeffs()
@@ -189,9 +189,9 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
         )
     }
 
-    //return a scalar multiple of $a$ which is an algebraic integer
+    // return a scalar multiple of $a$ which is an algebraic integer
     pub fn integral_multiple(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
-        let m = self.denominator(a);
+        let m = self.min_poly_denominator_lcm(a);
         let b = Polynomial::mul(&Polynomial::constant(Rational::from(m)), a);
         debug_assert!(self.is_algebraic_integer(&b));
         b
@@ -309,6 +309,20 @@ impl
 mod tests {
     use super::*;
     use crate::structure::IntoErgonomic;
+
+    #[test]
+    fn test_anf_integral_multiple() {
+        let anf = Polynomial::<Rational>::from_str("200 * x^2 - 1", "x")
+            .unwrap()
+            .algebraic_number_field()
+            .unwrap();
+
+        println!("anf = {:?}", anf);
+
+        let a = Polynomial::<Rational>::from_str("x", "x").unwrap();
+
+        println!("{:?}", anf.integral_multiple(&a));
+    }
 
     #[test]
     fn test_anf_to_and_from_vector() {

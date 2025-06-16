@@ -187,7 +187,7 @@ impl<
         if self.k_field().is_algebraic_integer(alpha) {
             Integer::ONE
         } else {
-            self.k_field().denominator(alpha)
+            self.k_field().min_poly_denominator_lcm(alpha)
         }
     }
 }
