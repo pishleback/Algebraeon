@@ -1,5 +1,5 @@
+use super::integer_lattice_ring_of_integers::*;
 use super::ring_of_integer_extensions::RingOfIntegersExtension;
-use super::ring_of_integers::*;
 use crate::{
     matrix::Matrix,
     module::{

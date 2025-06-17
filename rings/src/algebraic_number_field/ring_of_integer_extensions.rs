@@ -1,8 +1,8 @@
 use super::ideal::RingOfIntegersIdeal;
 use super::ideal::RingOfIntegersIdealsStructure;
+use super::integer_lattice_ring_of_integers::*;
 use super::number_field_traits::AlgebraicNumberFieldSignature;
 use super::polynomial_quotient_number_field::*;
-use super::ring_of_integers::*;
 use crate::integer::ideal::IntegerIdealsStructure;
 use crate::matrix::Matrix;
 use crate::polynomial::Polynomial;
