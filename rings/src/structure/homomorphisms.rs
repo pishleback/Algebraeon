@@ -320,9 +320,25 @@ pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     RingHomomorphism<F, K> + InjectiveFunction<F, K> + FiniteRankFreeRingExtension<F, K>
 {
     fn norm(&self, a: &K::Set) -> F::Set;
+
     fn trace(&self, a: &K::Set) -> F::Set;
+
     /// The monic minimal polynomial of a
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set>;
+
+    fn trace_form_matrix(&self, elems: &Vec<K::Set>) -> Matrix<F::Set> {
+        let n = self.degree();
+        assert_eq!(n, elems.len());
+        Matrix::construct(n, n, |r, c| {
+            self.trace(&self.range().mul(&elems[r], &elems[c]))
+        })
+    }
+
+    fn discriminant(&self, elems: &Vec<K::Set>) -> F::Set {
+        MatrixStructure::new(self.domain().clone())
+            .det(self.trace_form_matrix(elems))
+            .unwrap()
+    }
 }
 
 impl<F: FieldSignature, K: FieldSignature, Hom: RingHomomorphism<F, K> + InjectiveFunction<F, K>>

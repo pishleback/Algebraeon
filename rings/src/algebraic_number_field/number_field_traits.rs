@@ -1,7 +1,52 @@
-use crate::structure::{FieldSignature, FiniteDimensionalFieldExtension};
-use algebraeon_nzq::RationalCanonicalStructure;
+use crate::structure::{
+    CharZeroFieldSignature, CharZeroRingSignature, FiniteDimensionalFieldExtension,
+    IntegralDomainSignature, MetaGreatestCommonDivisor, PrincipalRationalSubfieldInclusion,
+};
+use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Fraction};
 
-pub trait AlgebraicNumberField<K: FieldSignature>:
-    FiniteDimensionalFieldExtension<RationalCanonicalStructure, K>
+/// An algebraic number field is a field of characteristic zero such that
+/// the inclusion of its rational subfield is finite dimensional
+pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature
+where
+    PrincipalRationalSubfieldInclusion<Self, Self>:
+        FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>,
+    for<'b> PrincipalRationalSubfieldInclusion<Self, &'b Self>:
+        FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>,
 {
+    fn compute_integral_basis_and_discriminant(&self) -> (Vec<Self::Set>, Integer);
+
+    fn is_algebraic_integer(&self, a: &Self::Set) -> bool;
+
+    // This is the LCM of the denominators of the coefficients of the minimal polynomial of a,
+    // and thus it may well be >1 even when the element a is an algebraic integer.
+    fn min_poly_denominator_lcm(&self, a: &Self::Set) -> Integer {
+        Integer::lcm_list(
+            self.rational_extension()
+                .min_poly(a)
+                .coeffs()
+                .into_iter()
+                .map(|c| Integer::from(c.denominator()))
+                .collect(),
+        )
+    }
+
+    /// return a scalar multiple of $a$ which is an algebraic integer
+    /// need not return $a$ itself when $a$ is already an algebraic integer
+    fn integral_multiple(&self, a: &Self::Set) -> Self::Set {
+        let m = self.min_poly_denominator_lcm(a);
+        let b = self.mul(&self.from_rat(&Rational::from(m)).unwrap(), a);
+        debug_assert!(self.is_algebraic_integer(&b));
+        b
+    }
+}
+
+/// The integral closure of the integers in an algebraic number field
+pub trait AlgebraicIntegerRingSignature: IntegralDomainSignature + CharZeroRingSignature
+where
+    PrincipalRationalSubfieldInclusion<Self::AlgebraicNumberField, Self::AlgebraicNumberField>:
+        FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self::AlgebraicNumberField>,
+    for<'b> PrincipalRationalSubfieldInclusion<Self::AlgebraicNumberField, &'b Self::AlgebraicNumberField>:
+        FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self::AlgebraicNumberField>,
+{
+    type AlgebraicNumberField: AlgebraicNumberFieldSignature;
 }

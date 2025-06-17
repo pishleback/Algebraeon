@@ -1,7 +1,8 @@
 use std::borrow::{Borrow, Cow};
 
 use super::{
-    embedded_anf::anf_multi_primitive_element_theorem, number_field_traits::AlgebraicNumberField,
+    embedded_anf::anf_multi_primitive_element_theorem,
+    number_field_traits::AlgebraicNumberFieldSignature,
     ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
 };
 use crate::{matrix::*, polynomial::*, structure::*};
@@ -49,33 +50,78 @@ impl Polynomial<Rational> {
     }
 }
 
-impl AlgebraicNumberFieldPolynomialQuotientStructure {
-    pub fn trace_form_matrix(&self, elems: &Vec<Polynomial<Rational>>) -> Matrix<Rational> {
-        let n = self.degree();
-        assert_eq!(n, elems.len());
-        Matrix::construct(n, n, |r, c| {
-            self.trace(&Polynomial::mul(&elems[r], &elems[c]))
-        })
+impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
+    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
+        let x = self.reduce(x);
+        match x.degree() {
+            None => Some(Rational::ZERO),
+            Some(0) => Some(x.coeff(0).into_owned()),
+            Some(_) => None,
+        }
+    }
+}
+
+impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    FreeModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
+    >
+{
+    type Basis = EnumeratedFiniteSetStructure;
+
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+        self.module()
+            .coefficient_ring_inclusion()
+            .range_module_structure()
+            .basis_set()
+            .borrow()
+            .clone()
     }
 
-    pub fn discriminant(&self, elems: &Vec<Polynomial<Rational>>) -> Rational {
-        self.trace_form_matrix(elems).det().unwrap()
+    fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
+        self.module()
+            .coefficient_ring_inclusion()
+            .range_module_structure()
+            .to_component(b, v)
     }
 
-    pub fn compute_integral_basis_and_discriminant(&self) -> (Vec<Polynomial<Rational>>, Integer) {
+    fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
+        self.module()
+            .coefficient_ring_inclusion()
+            .range_module_structure()
+            .from_component(b, r)
+    }
+}
+
+impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    FinitelyFreeModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
+    >
+{
+}
+
+impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
+    fn compute_integral_basis_and_discriminant(&self) -> (Vec<Polynomial<Rational>>, Integer) {
         //https://www.ucl.ac.uk/~ucahmki/intbasis.pdf
         // println!("compute_basis_ring_of_integers");
         let n = self.degree();
         let mut guess = (0..n)
             .map(|i| self.integral_multiple(&Polynomial::<Rational>::var_pow(i)))
-            .collect_vec();
+            .collect::<Vec<_>>();
 
         'search: loop {
             for algint in &guess {
                 debug_assert!(algint.num_coeffs() <= n); //lets keep our basis alg ints reduced
             }
 
-            let disc = self.discriminant(&guess);
+            let disc = self.rational_extension().discriminant(&guess);
             debug_assert_eq!(disc.clone().denominator(), Natural::ONE); //discriminant of algebraic integers is an integer
             let disc = disc.numerator();
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
@@ -159,12 +205,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
         }
     }
 
-    pub fn compute_ring_of_integers(&self) -> RingOfIntegersWithIntegralBasisStructure {
-        let (integral_basis, discriminant) = self.compute_integral_basis_and_discriminant();
-        RingOfIntegersWithIntegralBasisStructure::new(self.clone(), integral_basis, discriminant)
-    }
-
-    pub fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
+    fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
         if self.trace(a).denominator() != Natural::ONE {
             return false;
         }
@@ -176,89 +217,13 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
             .into_iter()
             .all(|c| c.denominator() == Natural::ONE)
     }
-
-    // This is the LCM of the denominators of the coefficients of the minimal polynomial of a,
-    // and thus it may well be >1 even when the element a is an algebraic integer.
-    pub(crate) fn min_poly_denominator_lcm(&self, a: &Polynomial<Rational>) -> Integer {
-        Integer::lcm_list(
-            self.min_poly(a)
-                .coeffs()
-                .into_iter()
-                .map(|c| Integer::from(c.denominator()))
-                .collect(),
-        )
-    }
-
-    // return a scalar multiple of $a$ which is an algebraic integer
-    pub fn integral_multiple(&self, a: &Polynomial<Rational>) -> Polynomial<Rational> {
-        let m = self.min_poly_denominator_lcm(a);
-        let b = Polynomial::mul(&Polynomial::constant(Rational::from(m)), a);
-        debug_assert!(self.is_algebraic_integer(&b));
-        b
-    }
 }
 
-impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
-    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
-        let x = self.reduce(x);
-        match x.degree() {
-            None => Some(Rational::ZERO),
-            Some(0) => Some(x.coeff(0).into_owned()),
-            Some(_) => None,
-        }
+impl AlgebraicNumberFieldPolynomialQuotientStructure {
+    pub fn compute_ring_of_integers(&self) -> RingOfIntegersWithIntegralBasisStructure {
+        let (integral_basis, discriminant) = self.compute_integral_basis_and_discriminant();
+        RingOfIntegersWithIntegralBasisStructure::new(self.clone(), integral_basis, discriminant)
     }
-}
-
-impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FreeModuleSignature<RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        RationalCanonicalStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
-    >
-{
-    type Basis = EnumeratedFiniteSetStructure;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
-        self.module()
-            .coefficient_ring_inclusion()
-            .range_module_structure()
-            .basis_set()
-            .borrow()
-            .clone()
-    }
-
-    fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
-        self.module()
-            .coefficient_ring_inclusion()
-            .range_module_structure()
-            .to_component(b, v)
-    }
-
-    fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
-        self.module()
-            .coefficient_ring_inclusion()
-            .range_module_structure()
-            .from_component(b, r)
-    }
-}
-
-impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FinitelyFreeModuleSignature<RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        RationalCanonicalStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
-    >
-{
-}
-
-impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    AlgebraicNumberField<AlgebraicNumberFieldPolynomialQuotientStructure>
-    for PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>
-{
 }
 
 impl

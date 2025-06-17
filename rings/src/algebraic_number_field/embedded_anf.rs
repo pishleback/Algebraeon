@@ -232,7 +232,10 @@ pub fn anf_multi_primitive_element_theorem(
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::IntoErgonomic;
+    use crate::{
+        algebraic_number_field::number_field_traits::AlgebraicNumberFieldSignature,
+        structure::IntoErgonomic,
+    };
 
     use super::*;
 
