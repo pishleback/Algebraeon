@@ -233,7 +233,7 @@ pub fn anf_multi_primitive_element_theorem(
 #[cfg(test)]
 mod tests {
     use crate::{
-        algebraic_number_field::number_field_traits::AlgebraicNumberFieldSignature,
+        algebraic_number_field::structure::AlgebraicNumberFieldSignature,
         structure::IntoErgonomic,
     };
 

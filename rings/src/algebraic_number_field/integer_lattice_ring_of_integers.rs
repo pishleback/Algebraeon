@@ -1,6 +1,6 @@
 use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{
-    algebraic_number_field::number_field_traits::AlgebraicNumberFieldSignature,
+    algebraic_number_field::structure::AlgebraicNumberFieldSignature,
     matrix::Matrix,
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,

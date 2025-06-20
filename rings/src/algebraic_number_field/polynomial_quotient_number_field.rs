@@ -3,7 +3,7 @@ use std::borrow::{Borrow, Cow};
 use super::{
     embedded_anf::anf_multi_primitive_element_theorem,
     integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
-    number_field_traits::AlgebraicNumberFieldSignature,
+    structure::AlgebraicNumberFieldSignature,
 };
 use crate::{matrix::*, polynomial::*, structure::*};
 use algebraeon_nzq::{
