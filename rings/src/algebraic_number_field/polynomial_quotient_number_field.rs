@@ -1,17 +1,24 @@
-use std::borrow::{Borrow, Cow};
-
 use super::{
     embedded_anf::anf_multi_primitive_element_theorem,
     integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
     structure::AlgebraicNumberFieldSignature,
 };
-use crate::{matrix::*, polynomial::*, structure::*};
+use crate::{
+    algebraic_number_field::{
+        integer_lattice_ring_of_integers::RingOfIntegersToAlgebraicNumberFieldInclusion,
+        structure::AlgebraicIntegerRingInAlgebraicNumberField,
+    },
+    matrix::*,
+    polynomial::*,
+    structure::*,
+};
 use algebraeon_nzq::{
     Integer, Natural, Rational, RationalCanonicalStructure,
     traits::{Abs, Fraction},
 };
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
+use std::borrow::{Borrow, Cow};
 
 pub type AlgebraicNumberFieldPolynomialQuotientStructure = PolynomialQuotientRingStructure<
     RationalCanonicalStructure,
@@ -107,7 +114,34 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 {
 }
 
+impl AlgebraicIntegerRingInAlgebraicNumberField<AlgebraicNumberFieldPolynomialQuotientStructure>
+    for RingOfIntegersToAlgebraicNumberFieldInclusion
+{
+}
+
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
+    type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
+    type RingOfIntegersInclusion<B: BorrowedStructure<Self>> =
+        RingOfIntegersToAlgebraicNumberFieldInclusion;
+
+    fn finite_dimensional_rational_extension<'a>(
+        &'a self,
+    ) -> impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self> {
+        self.rational_extension()
+    }
+    fn into_finite_dimensional_rational_extension(
+        self,
+    ) -> impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self> {
+        self.into_rational_extension()
+    }
+
+    fn ring_of_integer_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self> {
+        RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self.clone())
+    }
+    fn into_ring_of_integer_extension(self) -> Self::RingOfIntegersInclusion<Self> {
+        RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self)
+    }
+
     fn compute_integral_basis_and_discriminant(&self) -> (Vec<Polynomial<Rational>>, Integer) {
         //https://www.ucl.ac.uk/~ucahmki/intbasis.pdf
         // println!("compute_basis_ring_of_integers");

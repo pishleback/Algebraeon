@@ -1,3 +1,6 @@
+use crate::algebraic_number_field::structure::{
+    AlgebraicIntegerRingInAlgebraicNumberField, AlgebraicNumberFieldSignature,
+};
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
@@ -81,12 +84,13 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
     }
 }
 
-impl<'h> FreeModuleSignature<RationalCanonicalStructure>
+impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
+    FreeModuleSignature<RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
         RationalCanonicalStructure,
-        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
     >
 {
     type Basis = SingletonSetStructure;
@@ -104,12 +108,13 @@ impl<'h> FreeModuleSignature<RationalCanonicalStructure>
     }
 }
 
-impl<'h> FinitelyFreeModuleSignature<RationalCanonicalStructure>
+impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
+    FinitelyFreeModuleSignature<RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
         RationalCanonicalStructure,
-        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
+        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
     >
 {
 }
@@ -157,50 +162,42 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
     }
 }
 
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// struct IrreducibleRationalPolynomialStructure {}
+impl<B: BorrowedStructure<RationalCanonicalStructure>>
+    AlgebraicIntegerRingInAlgebraicNumberField<RationalCanonicalStructure>
+    for PrincipalSubringInclusion<RationalCanonicalStructure, B>
+{
+}
 
-// impl Signature for IrreducibleRationalPolynomialStructure {}
+impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
+    type RingOfIntegers = IntegerCanonicalStructure;
+    type RingOfIntegersInclusion<B: BorrowedStructure<Self>> = PrincipalSubringInclusion<Self, B>;
 
-// impl SetSignature for IrreducibleRationalPolynomialStructure {
-//     type Set = Polynomial<Rational>;
+    fn finite_dimensional_rational_extension<'a>(
+        &'a self,
+    ) -> impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self> {
+        self.rational_extension()
+    }
+    fn into_finite_dimensional_rational_extension(
+        self,
+    ) -> impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self> {
+        self.into_rational_extension()
+    }
 
-//     fn is_element(&self, x: &Self::Set) -> bool {
-//         todo!()
-//     }
-// }
+    fn ring_of_integer_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self> {
+        self.principal_subring_inclusion()
+    }
+    fn into_ring_of_integer_extension(self) -> Self::RingOfIntegersInclusion<Self> {
+        self.into_principal_subring_inclusion()
+    }
 
-// impl EqSignature for IrreducibleRationalPolynomialStructure {
-//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-//         Rational::structure().polynomial_ring().equal(a, b)
-//     }
-// }
+    fn compute_integral_basis_and_discriminant(&self) -> (Vec<Self::Set>, Integer) {
+        (vec![Rational::ONE], Integer::ONE)
+    }
 
-// impl OrdSignature for IrreducibleRationalPolynomialStructure {
-//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-//         todo!()
-//     }
-// }
-
-// impl<B: BorrowedStructure<RationalCanonicalStructure>> UniqueFactorizationSignature
-//     for PolynomialStructure<RationalCanonicalStructure, B>
-// {
-//     type Irreducibles = IrreducibleRationalPolynomialStructure;
-
-//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
-
-//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
-//         FactoredRingElementStructure::new(self)
-//     }
-
-//     fn into_factorizations(self) -> Self::Factorizations<Self> {
-//         FactoredRingElementStructure::new(self)
-//     }
-
-//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
-//         IrreducibleRationalPolynomialStructure {}
-//     }
-// }
+    fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
+        self.try_to_int(a).is_some()
+    }
+}
 
 impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
     for PolynomialStructure<RationalCanonicalStructure, B>
