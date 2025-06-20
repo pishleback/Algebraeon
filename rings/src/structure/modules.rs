@@ -4,7 +4,7 @@ use crate::{matrix::Matrix, structure::*};
 use algebraeon_sets::structure::*;
 
 pub trait SemiModuleSignature<Ring: SemiRingSignature>: AdditiveMonoidSignature {
-    fn ring(&self) -> &Ring;
+    fn ring(&self) -> Cow<Ring>;
     fn scalar_mul(&self, a: &Self::Set, x: &Ring::Set) -> Self::Set;
 }
 

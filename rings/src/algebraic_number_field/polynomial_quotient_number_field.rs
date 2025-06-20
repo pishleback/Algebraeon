@@ -123,15 +123,13 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
     type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
     type RingOfIntegersInclusion<B: BorrowedStructure<Self>> =
         RingOfIntegersToAlgebraicNumberFieldInclusion;
+    type RationalInclusion<B: BorrowedStructure<Self>> =
+        PrincipalRationalSubfieldInclusion<Self, B>;
 
-    fn finite_dimensional_rational_extension<'a>(
-        &'a self,
-    ) -> impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self> {
+    fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
         self.rational_extension()
     }
-    fn into_finite_dimensional_rational_extension(
-        self,
-    ) -> impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self> {
+    fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
         self.into_rational_extension()
     }
 

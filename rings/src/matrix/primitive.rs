@@ -32,7 +32,7 @@ pub fn factor_primitive_fof<
 ) -> (Field::Set, Matrix<Ring::Set>) {
     let ring = fof_inclusion.domain();
     let field = fof_inclusion.range();
-    let mat_ring = MatrixStructure::new(ring.clone());
+    let mat_ring = MatrixStructure::new(ring.as_ref().clone());
 
     let div = ring.lcm_list(
         mat.entries_list()

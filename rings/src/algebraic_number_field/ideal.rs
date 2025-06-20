@@ -119,7 +119,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     }
 
     pub fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
-        RingOfIntegersExtension::new_integer_extension(self.ring().clone()).ideal_norm(ideal)
+        RingOfIntegersExtension::new_integer_extension(self.ring().into_owned()).ideal_norm(ideal)
     }
 
     // Order of the multiplicative group of the quotient modulo the ideal.
@@ -147,7 +147,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     ) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
         match Integer::ideals().factor_ideal(n) {
             Some(n) => {
-                let sq = RingOfIntegersExtension::new_integer_extension(self.ring().clone());
+                let sq = RingOfIntegersExtension::new_integer_extension(self.ring().into_owned());
                 Box::new(
                     Integer::structure()
                         .ideals()
@@ -360,7 +360,7 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         ideal: &Self::Set,
     ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
         Some(
-            RingOfIntegersExtension::new_integer_extension(self.ring().clone())
+            RingOfIntegersExtension::new_integer_extension(self.ring().into_owned())
                 .factor_ideal(ideal)?
                 .into_full_factorization(),
         )

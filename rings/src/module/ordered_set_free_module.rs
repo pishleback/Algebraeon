@@ -210,8 +210,8 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > SemiModuleSignature<Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
-    fn ring(&self) -> &Ring {
-        self.ring.borrow()
+    fn ring(&self) -> Cow<Ring> {
+        Cow::Borrowed(self.ring.borrow())
     }
 
     fn scalar_mul(&self, v: &Self::Set, b: &Ring::Set) -> Self::Set {

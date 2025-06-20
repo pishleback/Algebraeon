@@ -177,12 +177,12 @@ impl<
 > Morphism<Field, PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>>
     for PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>
 {
-    fn domain(&self) -> &Field {
-        self.polynomial_quotient_ring.ring().coeff_ring()
+    fn domain(&self) -> Cow<Field> {
+        Cow::Borrowed(self.polynomial_quotient_ring.ring().coeff_ring())
     }
 
-    fn range(&self) -> &PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD> {
-        &self.polynomial_quotient_ring
+    fn range(&self) -> Cow<PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>> {
+        Cow::Borrowed(&self.polynomial_quotient_ring)
     }
 }
 

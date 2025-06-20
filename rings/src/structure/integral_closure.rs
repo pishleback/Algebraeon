@@ -2,6 +2,7 @@ use super::*;
 use crate::polynomial::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
+use std::borrow::Cow;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
@@ -74,11 +75,11 @@ impl<
     ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
 > Morphism<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
 {
-    fn domain(&self) -> &R {
+    fn domain(&self) -> Cow<R> {
         self.square.r_ring()
     }
 
-    fn range(&self) -> &K {
+    fn range(&self) -> Cow<K> {
         self.square.k_field()
     }
 }
@@ -185,21 +186,21 @@ pub trait IntegralClosureExtension<
     RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
 >: Debug + Clone
 {
-    fn z_ring(&self) -> &Z;
-    fn q_field(&self) -> &Q;
-    fn r_ring(&self) -> &R;
-    fn k_field(&self) -> &K;
+    fn z_ring(&self) -> Cow<Z>;
+    fn q_field(&self) -> Cow<Q>;
+    fn r_ring(&self) -> Cow<R>;
+    fn k_field(&self) -> Cow<K>;
 
-    fn z_to_q(&self) -> &ZQ;
-    fn z_to_r(&self) -> &ZR;
-    fn q_to_k(&self) -> &QK;
-    fn r_to_k(&self) -> &RK;
+    fn z_to_q(&self) -> Cow<ZQ>;
+    fn z_to_r(&self) -> Cow<ZR>;
+    fn q_to_k(&self) -> Cow<QK>;
+    fn r_to_k(&self) -> Cow<RK>;
 
     /// The square should commute, so this should be both
     /// - `z_to_q` followed by `q_to_k`
     /// - `z_to_r` followed by `r_to_k`
     fn z_to_k(&self) -> impl RingHomomorphism<Z, K> + InjectiveFunction<Z, K> {
-        CompositionMorphism::new(self.z_to_q().clone(), self.q_to_k().clone())
+        CompositionMorphism::new(self.z_to_q().into_owned(), self.q_to_k().into_owned())
     }
 
     /// The monic minimal polynomial of alpha in K over Q
@@ -207,7 +208,8 @@ pub trait IntegralClosureExtension<
         let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
         #[cfg(debug_assertions)]
         {
-            let q_poly = self.q_field().polynomial_ring();
+            let q_field = self.q_field();
+            let q_poly = q_field.polynomial_ring();
             assert!(q_poly.is_monic(&alpha_min_poly_monic));
         }
         alpha_min_poly_monic
@@ -220,7 +222,8 @@ pub trait IntegralClosureExtension<
             .apply_map_into(|c| self.z_to_q().try_preimage(&c).unwrap());
         #[cfg(debug_assertions)]
         {
-            let z_poly = self.z_ring().polynomial_ring();
+            let z_ring = self.z_ring();
+            let z_poly = z_ring.polynomial_ring();
             assert!(z_poly.is_monic(&alpha_min_poly_monic));
         }
         alpha_min_poly_monic

@@ -10,13 +10,10 @@ use algebraeon_sets::structure::{BorrowedStructure, InjectiveFunction};
 pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type RingOfIntegers: DedekindDomainSignature + CharZeroRingSignature;
     type RingOfIntegersInclusion<B: BorrowedStructure<Self>>: AlgebraicIntegerRingInAlgebraicNumberField<Self>;
+    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
 
-    fn finite_dimensional_rational_extension<'a>(
-        &'a self,
-    ) -> impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
-    fn into_finite_dimensional_rational_extension(
-        self,
-    ) -> impl FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
+    fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self>;
+    fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
 
     fn ring_of_integer_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self>;
     fn into_ring_of_integer_extension(self) -> Self::RingOfIntegersInclusion<Self>;

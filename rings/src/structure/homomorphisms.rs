@@ -7,6 +7,8 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 
 mod range_module {
+    use std::borrow::Cow;
+
     use super::*;
     #[derive(Debug, Clone)]
     pub struct RingHomomorphismRangeModuleStructure<
@@ -31,7 +33,7 @@ mod range_module {
             }
         }
 
-        pub fn module(&self) -> &Range {
+        pub fn module(&self) -> Cow<Range> {
             self.hom.range()
         }
 
@@ -100,7 +102,7 @@ mod range_module {
         SemiModuleSignature<Domain>
         for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
-        fn ring(&self) -> &Domain {
+        fn ring(&self) -> Cow<Domain> {
             self.hom.domain()
         }
 
@@ -132,13 +134,14 @@ mod range_module {
 pub use range_module::*;
 
 mod principal_subring_inclusion {
+    use std::borrow::Cow;
+
     use super::*;
     use algebraeon_nzq::*;
 
     /// The unique ring homomorphism Z -> R of the integers into any ring R
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct PrincipalSubringInclusion<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
-        integer_structure: IntegerCanonicalStructure,
         _ring: PhantomData<Ring>,
         ring: RingB,
     }
@@ -146,7 +149,6 @@ mod principal_subring_inclusion {
     impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> PrincipalSubringInclusion<Ring, RingB> {
         pub fn new(ring: RingB) -> Self {
             Self {
-                integer_structure: Integer::structure(),
                 _ring: PhantomData,
                 ring,
             }
@@ -156,12 +158,12 @@ mod principal_subring_inclusion {
     impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
         Morphism<IntegerCanonicalStructure, Ring> for PrincipalSubringInclusion<Ring, RingB>
     {
-        fn domain(&self) -> &IntegerCanonicalStructure {
-            &self.integer_structure
+        fn domain(&self) -> Cow<IntegerCanonicalStructure> {
+            Cow::Owned(Integer::structure())
         }
 
-        fn range(&self) -> &Ring {
-            self.ring.borrow()
+        fn range(&self) -> Cow<Ring> {
+            Cow::Borrowed(self.ring.borrow())
         }
     }
 
@@ -194,7 +196,6 @@ mod principal_subring_inclusion {
         Field: CharZeroFieldSignature,
         FieldB: BorrowedStructure<Field>,
     > {
-        rational_structure: RationalCanonicalStructure,
         _field: PhantomData<Field>,
         field: FieldB,
     }
@@ -204,7 +205,6 @@ mod principal_subring_inclusion {
     {
         pub fn new(field: FieldB) -> Self {
             Self {
-                rational_structure: Rational::structure(),
                 _field: PhantomData,
                 field,
             }
@@ -215,12 +215,12 @@ mod principal_subring_inclusion {
         Morphism<RationalCanonicalStructure, Field>
         for PrincipalRationalSubfieldInclusion<Field, FieldB>
     {
-        fn domain(&self) -> &RationalCanonicalStructure {
-            &self.rational_structure
+        fn domain(&self) -> Cow<RationalCanonicalStructure> {
+            Cow::Owned(Rational::structure())
         }
 
-        fn range(&self) -> &Field {
-            self.field.borrow()
+        fn range(&self) -> Cow<Field> {
+            Cow::Borrowed(self.field.borrow())
         }
     }
 
@@ -335,7 +335,7 @@ pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     }
 
     fn discriminant(&self, elems: &Vec<K::Set>) -> F::Set {
-        MatrixStructure::new(self.domain().clone())
+        MatrixStructure::new(self.domain().into_owned())
             .det(self.trace_form_matrix(elems))
             .unwrap()
     }
@@ -350,19 +350,19 @@ where
         FiniteSetSignature,
 {
     fn norm(&self, a: &K::Set) -> F::Set {
-        MatrixStructure::new(self.domain().clone())
+        MatrixStructure::new(self.domain().into_owned())
             .det(self.col_multiplication_matrix(a))
             .unwrap()
     }
 
     fn trace(&self, a: &K::Set) -> F::Set {
-        MatrixStructure::new(self.domain().clone())
+        MatrixStructure::new(self.domain().into_owned())
             .trace(&self.col_multiplication_matrix(a))
             .unwrap()
     }
 
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set> {
-        MatrixStructure::new(self.domain().clone())
+        MatrixStructure::new(self.domain().into_owned())
             .minimal_polynomial(self.col_multiplication_matrix(a))
             .unwrap()
     }
