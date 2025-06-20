@@ -9,13 +9,13 @@ pub trait Morphism<Domain: Signature, Range: Signature>: Debug + Clone {
     fn range(&self) -> &Range;
 }
 
+/// A morphism from an object to itself
 pub trait Endomorphism<X: Signature>: Morphism<X, X> {}
+impl<X: Signature, T: Morphism<X, X>> Endomorphism<X> for T {}
 
 pub trait Function<Domain: SetSignature, Range: SetSignature>: Morphism<Domain, Range> {
     fn image(&self, x: &Domain::Set) -> Range::Set;
 }
-
-impl<X: Signature, T: Morphism<X, X>> Endomorphism<X> for T {}
 
 /// A function from a set into itself
 pub trait Endofunction<X: SetSignature + EqSignature>: Function<X, X> {
@@ -40,7 +40,7 @@ pub trait BijectiveFunction<Domain: SetSignature, Range: SetSignature>:
     }
 }
 
-/// A permutation is a bijection from a set into itself
+/// A permutation is a bijective function from a set to itself
 pub trait Permutation<X: SetSignature>: BijectiveFunction<X, X> {}
 
 impl<X: SetSignature, T: BijectiveFunction<X, X>> Permutation<X> for T {}
@@ -225,21 +225,21 @@ impl<Domain: FiniteSetSignature, Range: EqSignature + FiniteSetSignature> Finite
 {
 }
 
-/// Represent all endofunctions on a finite set X: functions X → X
+/// The set of all endofunctions on a finite set X: functions X → X
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Endofunctions<X: FiniteSetSignature + EqSignature> {
+pub struct FiniteSetEndofunctions<X: FiniteSetSignature + EqSignature> {
     set: X,
 }
 
-impl<X: FiniteSetSignature + EqSignature> Endofunctions<X> {
+impl<X: FiniteSetSignature + EqSignature> FiniteSetEndofunctions<X> {
     pub fn new(set: X) -> Self {
         Self { set }
     }
 }
 
-impl<X: FiniteSetSignature + EqSignature> Signature for Endofunctions<X> {}
+impl<X: FiniteSetSignature + EqSignature> Signature for FiniteSetEndofunctions<X> {}
 
-impl<X: FiniteSetSignature + EqSignature> SetSignature for Endofunctions<X> {
+impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunctions<X> {
     type Set = Vec<X::Set>;
 
     fn is_element(&self, f: &Self::Set) -> Result<(), String> {
@@ -253,7 +253,7 @@ impl<X: FiniteSetSignature + EqSignature> SetSignature for Endofunctions<X> {
     }
 }
 
-impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for Endofunctions<X> {
+impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEndofunctions<X> {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
         (0..self.set.size())
             .map(|_| self.set.list_all_elements())
@@ -261,4 +261,4 @@ impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for Endofunction
     }
 }
 
-impl<X: FiniteSetSignature + EqSignature> FiniteSetSignature for Endofunctions<X> {}
+impl<X: FiniteSetSignature + EqSignature> FiniteSetSignature for FiniteSetEndofunctions<X> {}

@@ -57,7 +57,7 @@ pub struct UnorderedPair<T>(T, T);
 
 impl<S: SetSignature + EqSignature> UnorderedPairs<S> {
     pub fn new_pair(&self, a: &S::Set, b: &S::Set) -> Result<UnorderedPair<S::Set>, String> {
-        if self.set.equal(&a, &b) {
+        if self.set.equal(a, b) {
             Err("UnorderedPair elements must be distinct".to_string())
         } else {
             Ok(UnorderedPair(a.clone(), b.clone()))
