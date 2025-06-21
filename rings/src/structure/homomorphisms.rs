@@ -7,8 +7,6 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 
 mod range_module {
-    use std::borrow::Cow;
-
     use super::*;
     #[derive(Debug, Clone)]
     pub struct RingHomomorphismRangeModuleStructure<
@@ -33,7 +31,7 @@ mod range_module {
             }
         }
 
-        pub fn module(&self) -> Cow<Range> {
+        pub fn module(&self) -> &Range {
             self.hom.range()
         }
 
@@ -102,7 +100,7 @@ mod range_module {
         SemiModuleSignature<Domain>
         for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
-        fn ring(&self) -> Cow<Domain> {
+        fn ring(&self) -> &Domain {
             self.hom.domain()
         }
 
@@ -134,8 +132,6 @@ mod range_module {
 pub use range_module::*;
 
 mod principal_subring_inclusion {
-    use std::borrow::Cow;
-
     use super::*;
     use algebraeon_nzq::*;
 
@@ -158,12 +154,12 @@ mod principal_subring_inclusion {
     impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
         Morphism<IntegerCanonicalStructure, Ring> for PrincipalSubringInclusion<Ring, RingB>
     {
-        fn domain(&self) -> Cow<IntegerCanonicalStructure> {
-            Cow::Owned(Integer::structure())
+        fn domain(&self) -> &IntegerCanonicalStructure {
+            Integer::structure_ref()
         }
 
-        fn range(&self) -> Cow<Ring> {
-            Cow::Borrowed(self.ring.borrow())
+        fn range(&self) -> &Ring {
+            self.ring.borrow()
         }
     }
 
@@ -215,12 +211,12 @@ mod principal_subring_inclusion {
         Morphism<RationalCanonicalStructure, Field>
         for PrincipalRationalSubfieldInclusion<Field, FieldB>
     {
-        fn domain(&self) -> Cow<RationalCanonicalStructure> {
-            Cow::Owned(Rational::structure())
+        fn domain(&self) -> &RationalCanonicalStructure {
+            Rational::structure_ref()
         }
 
-        fn range(&self) -> Cow<Field> {
-            Cow::Borrowed(self.field.borrow())
+        fn range(&self) -> &Field {
+            self.field.borrow()
         }
     }
 
@@ -335,7 +331,7 @@ pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     }
 
     fn discriminant(&self, elems: &Vec<K::Set>) -> F::Set {
-        MatrixStructure::new(self.domain().into_owned())
+        MatrixStructure::new(self.domain().clone())
             .det(self.trace_form_matrix(elems))
             .unwrap()
     }
@@ -350,19 +346,19 @@ where
         FiniteSetSignature,
 {
     fn norm(&self, a: &K::Set) -> F::Set {
-        MatrixStructure::new(self.domain().into_owned())
+        MatrixStructure::new(self.domain().clone())
             .det(self.col_multiplication_matrix(a))
             .unwrap()
     }
 
     fn trace(&self, a: &K::Set) -> F::Set {
-        MatrixStructure::new(self.domain().into_owned())
+        MatrixStructure::new(self.domain().clone())
             .trace(&self.col_multiplication_matrix(a))
             .unwrap()
     }
 
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set> {
-        MatrixStructure::new(self.domain().into_owned())
+        MatrixStructure::new(self.domain().clone())
             .minimal_polynomial(self.col_multiplication_matrix(a))
             .unwrap()
     }

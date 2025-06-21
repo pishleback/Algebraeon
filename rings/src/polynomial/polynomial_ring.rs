@@ -239,8 +239,8 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
 impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiModuleSignature<RS>
     for PolynomialStructure<RS, RSB>
 {
-    fn ring(&self) -> Cow<RS> {
-        Cow::Borrowed(self.coeff_ring())
+    fn ring(&self) -> &RS {
+        self.coeff_ring()
     }
 
     fn scalar_mul(&self, p: &Self::Set, x: &RS::Set) -> Self::Set {
@@ -960,7 +960,7 @@ pub fn factor_primitive_fof<
 ) -> (Field::Set, Polynomial<Ring::Set>) {
     let ring = fof_inclusion.domain();
     let field = fof_inclusion.range();
-    let poly_ring = PolynomialStructure::new(ring.into_owned());
+    let poly_ring = PolynomialStructure::new(ring.clone());
 
     let div = fof_inclusion.domain().lcm_list(
         p.coeffs()

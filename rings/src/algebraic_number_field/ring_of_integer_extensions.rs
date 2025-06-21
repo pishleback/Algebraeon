@@ -1,12 +1,9 @@
-use std::borrow::Cow;
-
 use super::ideal::RingOfIntegersIdeal;
 use super::ideal::RingOfIntegersIdealsStructure;
 use super::integer_lattice_ring_of_integers::*;
 use super::polynomial_quotient_number_field::*;
 use super::structure::AlgebraicNumberFieldSignature;
 use crate::integer::ideal::IntegerIdealsStructure;
-use crate::matrix::Matrix;
 use crate::polynomial::Polynomial;
 use crate::polynomial::RingToPolynomialSignature;
 use crate::structure::*;
@@ -14,6 +11,8 @@ use crate::valuation::Valuation;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use std::borrow::Cow;
+use std::marker::PhantomData;
 
 ///
 /// Q -> K
@@ -25,26 +24,30 @@ use algebraeon_sets::structure::*;
 #[derive(Debug, Clone)]
 pub struct RingOfIntegersExtension<
     ANF: AlgebraicNumberFieldSignature,
+    ROItoANF: BorrowedMorphism<ANF::RingOfIntegers, ANF, ANF::RingOfIntegersInclusion>,
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
-    IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, ANF::RingOfIntegers>,
+    RB: BorrowedStructure<ANF::RingOfIntegers>,
+    IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, RB>,
 > {
-    r_to_k: ANF::RingOfIntegersInclusion<ANF>,
+    _anf: PhantomData<ANF>,
+    _roi: PhantomData<RB>,
+    r_to_k: ROItoANF,
     ideals_z: IdealsZ,
     ideals_r: IdealsR,
 }
 
 impl<
     ANF: AlgebraicNumberFieldSignature,
+    ROItoANF: BorrowedMorphism<ANF::RingOfIntegers, ANF, ANF::RingOfIntegersInclusion>,
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
-    IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, ANF::RingOfIntegers>,
-> RingOfIntegersExtension<ANF, IdealsZ, IdealsR>
+    RB: BorrowedStructure<ANF::RingOfIntegers>,
+    IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, RB>,
+> RingOfIntegersExtension<ANF, ROItoANF, IdealsZ, RB, IdealsR>
 {
-    pub fn new_integer_extension(
-        r_to_k: ANF::RingOfIntegersInclusion<ANF>,
-        ideals_z: IdealsZ,
-        ideals_r: IdealsR,
-    ) -> Self {
+    pub fn new_integer_extension(r_to_k: ROItoANF, ideals_z: IdealsZ, ideals_r: IdealsR) -> Self {
         Self {
+            _anf: PhantomData,
+            _roi: PhantomData,
             r_to_k,
             ideals_z,
             ideals_r,
@@ -114,54 +117,49 @@ impl<
 
 impl<
     ANF: AlgebraicNumberFieldSignature,
+    ROItoANF: BorrowedMorphism<ANF::RingOfIntegers, ANF, ANF::RingOfIntegersInclusion>,
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
-    IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, ANF::RingOfIntegers>,
->
-    IntegralClosureExtension<
-        IntegerCanonicalStructure,
-        RationalCanonicalStructure,
-        ANF::RingOfIntegers,
-        ANF,
-        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
-        PrincipalSubringInclusion<ANF::RingOfIntegers, ANF::RingOfIntegers>,
-        ANF::RationalInclusion<ANF>,
-        ANF::RingOfIntegersInclusion<ANF>,
-    > for RingOfIntegersExtension<ANF, IdealsZ, IdealsR>
+    RB: BorrowedStructure<ANF::RingOfIntegers>,
+    IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, RB>,
+> IntegralClosureExtension for RingOfIntegersExtension<ANF, ROItoANF, IdealsZ, RB, IdealsR>
 {
-    fn z_ring(&self) -> Cow<IntegerCanonicalStructure> {
-        Cow::Owned(Integer::structure())
+    type Z = IntegerCanonicalStructure;
+    type Q = RationalCanonicalStructure;
+    type R = ANF::RingOfIntegers;
+    type K = ANF;
+    type ZQ<BZ: BorrowedStructure<Self::Z>, BQ: BorrowedStructure<Self::Q>> =
+        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>;
+    type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>> =
+        PrincipalSubringInclusion<ANF::RingOfIntegers, BR>;
+    type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>> =
+        ANF::RationalInclusion<BK>;
+    type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>> =
+        ANF::RingOfIntegersInclusion;
+
+    fn z_ring(&self) -> &Self::Z {
+        Integer::structure_ref()
     }
-    fn r_ring(&self) -> Cow<ANF::RingOfIntegers> {
-        self.r_to_k.domain()
+    fn r_ring(&self) -> &Self::R {
+        self.r_to_k.borrow().domain()
     }
-    fn q_field(&self) -> Cow<RationalCanonicalStructure> {
-        Cow::Owned(Rational::structure())
+    fn q_field(&self) -> &Self::Q {
+        Rational::structure_ref()
     }
-    fn k_field(&self) -> Cow<ANF> {
-        self.r_to_k.range()
+    fn k_field(&self) -> &Self::K {
+        self.r_to_k.borrow().range()
     }
-    fn z_to_q(
-        &self,
-    ) -> Cow<PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>>
-    {
+
+    fn z_to_q<'a>(&'a self) -> Cow<'a, Self::ZQ<&'a Self::Z, &'a Self::Q>> {
         Cow::Owned(Rational::structure().into_principal_subring_inclusion())
     }
-    fn z_to_r(&self) -> Cow<PrincipalSubringInclusion<ANF::RingOfIntegers, ANF::RingOfIntegers>> {
-        Cow::Owned(
-            self.r_ring()
-                .into_owned()
-                .into_principal_subring_inclusion(),
-        )
+    fn z_to_r<'a>(&'a self) -> Cow<'a, Self::ZR<&'a Self::Z, &'a Self::R>> {
+        Cow::Owned(self.r_ring().principal_subring_inclusion())
     }
-    fn q_to_k(&self) -> Cow<ANF::RationalInclusion<ANF>> {
-        Cow::Owned(
-            self.k_field()
-                .into_owned()
-                .into_finite_dimensional_rational_extension(),
-        )
+    fn q_to_k<'a>(&'a self) -> Cow<'a, Self::QK<&'a Self::Q, &'a Self::K>> {
+        Cow::Owned(self.k_field().finite_dimensional_rational_extension())
     }
-    fn r_to_k(&self) -> Cow<ANF::RingOfIntegersInclusion<ANF>> {
-        Cow::Borrowed(&self.r_to_k)
+    fn r_to_k<'a>(&'a self) -> Cow<'a, Self::RK<&'a Self::R, &'a Self::K>> {
+        Cow::Borrowed(self.r_to_k.borrow())
     }
 
     fn integralize_multiplier(&self, alpha: &ANF::Set) -> Integer {
@@ -173,54 +171,35 @@ impl<
     }
 }
 
-impl
-    DedekindDomainExtension<
-        IntegerCanonicalStructure,
-        RationalCanonicalStructure,
-        RingOfIntegersWithIntegralBasisStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
-        PrincipalSubringInclusion<
+impl<
+    ROItoANF: BorrowedMorphism<
             RingOfIntegersWithIntegralBasisStructure,
-            RingOfIntegersWithIntegralBasisStructure,
-        >,
-        PrincipalRationalSubfieldInclusion<
             AlgebraicNumberFieldPolynomialQuotientStructure,
-            AlgebraicNumberFieldPolynomialQuotientStructure,
+            RingOfIntegersToAlgebraicNumberFieldInclusion,
         >,
-        RingOfIntegersToAlgebraicNumberFieldInclusion,
-        IntegerIdealsStructure<IntegerCanonicalStructure>,
-        RingOfIntegersIdealsStructure<RingOfIntegersWithIntegralBasisStructure>,
-    >
+    RB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>,
+> DedekindDomainExtension<IntegerCanonicalStructure, RB>
     for RingOfIntegersExtension<
         AlgebraicNumberFieldPolynomialQuotientStructure,
+        ROItoANF,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
-        RingOfIntegersIdealsStructure<RingOfIntegersWithIntegralBasisStructure>,
+        RB,
+        RingOfIntegersIdealsStructure<RB>,
     >
 {
-    fn z_ideals(&self) -> &IntegerIdealsStructure<IntegerCanonicalStructure> {
+    type IdealsZ = IntegerIdealsStructure<IntegerCanonicalStructure>;
+    type IdealsR = RingOfIntegersIdealsStructure<RB>;
+
+    fn z_ideals(&self) -> &Self::IdealsZ {
         &self.ideals_z
     }
 
-    fn r_ideals(&self) -> &RingOfIntegersIdealsStructure<RingOfIntegersWithIntegralBasisStructure> {
+    fn r_ideals(&self) -> &Self::IdealsR {
         &self.ideals_r
     }
 
     fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
-        debug_assert!(self.r_ideals().is_element(ideal).is_ok());
-        match ideal {
-            RingOfIntegersIdeal::Zero => Natural::ZERO,
-            RingOfIntegersIdeal::NonZero(lattice) => {
-                let n = self.r_ring().degree();
-                let cols = lattice.basis();
-                #[cfg(debug_assertions)]
-                for col in &cols {
-                    assert_eq!(col.len(), n);
-                }
-                let mat = Matrix::construct(n, n, |i, j| cols[i][j].clone());
-                mat.det().unwrap().abs()
-            }
-        }
+        self.r_ideals().ideal_norm(ideal)
     }
 
     fn factor_prime_ideal(
@@ -318,7 +297,10 @@ impl
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::polynomial::Polynomial;
+    use crate::{
+        algebraic_number_field::structure::AlgebraicIntegerRingInAlgebraicNumberField,
+        polynomial::Polynomial,
+    };
 
     #[test]
     fn integral_multiplier() {
@@ -327,12 +309,9 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = anf.compute_ring_of_integers();
-        let sq = RingOfIntegersExtension::<AlgebraicNumberFieldPolynomialQuotientStructure,_,_>::new_integer_extension(
-            roi.clone(),
-            Integer::structure().into_ideals(),
-            roi.into_ideals(),
-        );
+        let roi_to_anf = anf.clone().into_ring_of_integers_extension();
+        let sq = roi_to_anf.zq_extension();
+
         let r_to_k_fof = sq.r_to_k_field_of_fractions();
 
         let sample_rats = Rational::exhaustive_rationals()
@@ -368,10 +347,8 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = anf.compute_ring_of_integers();
-        let sq = RingOfIntegersExtension::new_integer_extension::<
-            AlgebraicNumberFieldPolynomialQuotientStructure,
-        >(roi.clone());
+        let roi_to_anf = anf.clone().into_ring_of_integers_extension();
+        let sq = roi_to_anf.zq_extension();
 
         let f2 =
             sq.factor_prime_ideal(DedekindDomainPrimeIdeal::try_from_nat(2u32.into()).unwrap());
@@ -409,27 +386,27 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = anf.compute_ring_of_integers();
-        let ext = RingOfIntegersExtension::new_integer_extension(roi.clone());
+        let roi_to_anf = anf.clone().into_ring_of_integers_extension();
+        let sq = roi_to_anf.zq_extension();
 
         // Element: (1/2) + sqrt(-5)
         let poly = Polynomial::<Rational>::from_coeffs(vec![Rational::ONE_HALF, Rational::ONE]);
 
         // primes above (2)
         let f2 =
-            ext.factor_prime_ideal(DedekindDomainPrimeIdeal::try_from_nat(2u32.into()).unwrap());
+            sq.factor_prime_ideal(DedekindDomainPrimeIdeal::try_from_nat(2u32.into()).unwrap());
         let prime_ideals_above_2 = f2.unique_prime_factors();
 
-        let d = ext.integralize_multiplier(&poly);
-        let m = ext.k_field().mul(&poly, &ext.z_to_k().image(&d));
+        let d = sq.integralize_multiplier(&poly);
+        let m = sq.k_field().mul(&poly, &sq.z_to_k().image(&d));
         println!("poly = {:?}", poly);
         println!("d = {:?}", d);
         println!("m = {:?}", m);
-        assert!(ext.r.try_anf_to_roi(&m).is_some(), "m not in ROI: {:?}", m);
+        assert!(sq.r_ring().try_anf_to_roi(&m).is_some(), "m not in ROI: {:?}", m);
 
         // Case 1: S = empty set → should NOT be S-integral, denominator 2 not inverted
-        assert!(!ext.is_S_integral(vec![], &poly));
+        assert!(!sq.is_S_integral(vec![], &poly));
         // Case 2: S = prime ideals above 2 → now we allow inversion of 2
-        assert!(ext.is_S_integral(prime_ideals_above_2, &poly));
+        assert!(sq.is_S_integral(prime_ideals_above_2, &poly));
     }
 }

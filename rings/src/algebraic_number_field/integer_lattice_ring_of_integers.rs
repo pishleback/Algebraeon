@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{
     algebraic_number_field::structure::AlgebraicNumberFieldSignature,
@@ -321,12 +319,12 @@ impl
         AlgebraicNumberFieldPolynomialQuotientStructure,
     > for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
-    fn domain(&self) -> Cow<RingOfIntegersWithIntegralBasisStructure> {
-        Cow::Borrowed(&self.roi)
+    fn domain(&self) -> &RingOfIntegersWithIntegralBasisStructure {
+        &self.roi
     }
 
-    fn range(&self) -> Cow<AlgebraicNumberFieldPolynomialQuotientStructure> {
-        Cow::Borrowed(&self.anf)
+    fn range(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
+        &self.anf
     }
 }
 

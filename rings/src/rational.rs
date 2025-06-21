@@ -162,15 +162,14 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
     }
 }
 
-impl<B: BorrowedStructure<RationalCanonicalStructure>>
-    AlgebraicIntegerRingInAlgebraicNumberField<RationalCanonicalStructure>
-    for PrincipalSubringInclusion<RationalCanonicalStructure, B>
+impl AlgebraicIntegerRingInAlgebraicNumberField<RationalCanonicalStructure>
+    for PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
 {
 }
 
 impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     type RingOfIntegers = IntegerCanonicalStructure;
-    type RingOfIntegersInclusion<B: BorrowedStructure<Self>> = PrincipalSubringInclusion<Self, B>;
+    type RingOfIntegersInclusion = PrincipalSubringInclusion<Self, Self>;
     type RationalInclusion<B: BorrowedStructure<Self>> =
         PrincipalRationalSubfieldInclusion<Self, B>;
 
@@ -181,10 +180,7 @@ impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
         self.into_rational_extension()
     }
 
-    fn ring_of_integer_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self> {
-        self.principal_subring_inclusion()
-    }
-    fn into_ring_of_integer_extension(self) -> Self::RingOfIntegersInclusion<Self> {
+    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion {
         self.into_principal_subring_inclusion()
     }
 

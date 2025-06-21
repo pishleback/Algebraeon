@@ -208,8 +208,8 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveGroupSignature
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn ring(&self) -> Cow<Ring> {
-        Cow::Borrowed(self.ring.borrow())
+    fn ring(&self) -> &Ring {
+        self.ring.borrow()
     }
 
     fn scalar_mul(&self, v: &Self::Set, r: &Ring::Set) -> Self::Set {
@@ -458,12 +458,12 @@ impl<
         SURJECTIVE,
     >
 {
-    fn domain(&self) -> Cow<FinitelyFreeModuleStructure<Ring, RingDomainB>> {
-        Cow::Borrowed(&self.domain)
+    fn domain(&self) -> &FinitelyFreeModuleStructure<Ring, RingDomainB> {
+        &self.domain
     }
 
-    fn range(&self) -> Cow<FinitelyFreeModuleStructure<Ring, RingRangeB>> {
-        Cow::Borrowed(&self.range)
+    fn range(&self) -> &FinitelyFreeModuleStructure<Ring, RingRangeB> {
+        &self.range
     }
 }
 

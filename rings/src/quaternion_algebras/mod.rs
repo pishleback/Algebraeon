@@ -228,8 +228,8 @@ impl<Field: FieldSignature> SemiRingUnitsSignature for QuaternionAlgebraStructur
 impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
-    fn ring(&self) -> Cow<Field> {
-        Cow::Borrowed(&self.base)
+    fn ring(&self) -> &Field {
+        &self.base
     }
 
     fn scalar_mul(&self, a: &Self::Set, x: &Field::Set) -> Self::Set {

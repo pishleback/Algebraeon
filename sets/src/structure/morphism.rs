@@ -1,12 +1,12 @@
 use super::{CountableSetSignature, EqSignature, FiniteSetSignature, SetSignature, Signature};
 use itertools::Itertools;
-use std::borrow::Cow;
+use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
 pub trait Morphism<Domain: Signature, Range: Signature>: Debug + Clone {
-    fn domain(&self) -> Cow<Domain>;
-    fn range(&self) -> Cow<Range>;
+    fn domain(&self) -> &Domain;
+    fn range(&self) -> &Range;
 }
 
 /// A morphism from an object to itself
@@ -58,12 +58,12 @@ impl<X: Signature> IdentityMorphism<X> {
 }
 
 impl<X: Signature> Morphism<X, X> for IdentityMorphism<X> {
-    fn domain(&self) -> Cow<X> {
-        Cow::Borrowed(&self.x)
+    fn domain(&self) -> &X {
+        &self.x
     }
 
-    fn range(&self) -> Cow<X> {
-        Cow::Borrowed(&self.x)
+    fn range(&self) -> &X {
+        &self.x
     }
 }
 
@@ -112,17 +112,17 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
         }
     }
 
-    pub fn a(&self) -> Cow<A> {
+    pub fn a(&self) -> &A {
         self.a_to_b.domain()
     }
 
-    pub fn b(&self) -> Cow<B> {
+    pub fn b(&self) -> &B {
         let b = self.a_to_b.range();
         debug_assert_eq!(b, self.b_to_c.domain());
         b
     }
 
-    pub fn c(&self) -> Cow<C> {
+    pub fn c(&self) -> &C {
         self.b_to_c.range()
     }
 
@@ -138,11 +138,11 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
 impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<B, C>>
     Morphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn domain(&self) -> Cow<A> {
+    fn domain(&self) -> &A {
         self.a()
     }
 
-    fn range(&self) -> Cow<C> {
+    fn range(&self) -> &C {
         self.c()
     }
 }
@@ -262,3 +262,12 @@ impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEnd
 }
 
 impl<X: FiniteSetSignature + EqSignature> FiniteSetSignature for FiniteSetEndofunctions<X> {}
+
+pub trait BorrowedMorphism<Domain: Signature, Range: Signature, M: Morphism<Domain, Range>>:
+    Borrow<M> + Clone + Debug
+{
+}
+impl<Domain: Signature, Range: Signature, M: Morphism<Domain, Range>, BM: Borrow<M> + Clone + Debug>
+    BorrowedMorphism<Domain, Range, M> for BM
+{
+}

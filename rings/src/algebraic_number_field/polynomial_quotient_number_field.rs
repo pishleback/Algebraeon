@@ -121,8 +121,7 @@ impl AlgebraicIntegerRingInAlgebraicNumberField<AlgebraicNumberFieldPolynomialQu
 
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
     type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
-    type RingOfIntegersInclusion<B: BorrowedStructure<Self>> =
-        RingOfIntegersToAlgebraicNumberFieldInclusion;
+    type RingOfIntegersInclusion = RingOfIntegersToAlgebraicNumberFieldInclusion;
     type RationalInclusion<B: BorrowedStructure<Self>> =
         PrincipalRationalSubfieldInclusion<Self, B>;
 
@@ -133,10 +132,7 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         self.into_rational_extension()
     }
 
-    fn ring_of_integer_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self> {
-        RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self.clone())
-    }
-    fn into_ring_of_integer_extension(self) -> Self::RingOfIntegersInclusion<Self> {
+    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion {
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self)
     }
 

@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use super::conway_polynomials::conway_polynomial;
 use crate::{
     matrix::{Matrix, MatrixStructure},
@@ -208,12 +206,12 @@ impl ConwayFiniteFieldInclusion {
 impl Morphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
-    fn domain(&self) -> Cow<ConwayFiniteFieldStructure> {
-        Cow::Borrowed(&self.domain)
+    fn domain(&self) -> &ConwayFiniteFieldStructure {
+        &self.domain
     }
 
-    fn range(&self) -> Cow<ConwayFiniteFieldStructure> {
-        Cow::Borrowed(&self.range)
+    fn range(&self) -> &ConwayFiniteFieldStructure {
+        &self.range
     }
 }
 
