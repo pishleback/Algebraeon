@@ -228,7 +228,7 @@ impl SquarefreePolyRealRoots {
             SquarefreePolyRealRootInterval::Rational(rat) => RealAlgebraic::Rational(rat.clone()),
             SquarefreePolyRealRootInterval::Real(a, b, _dir) => {
                 let (_unit, factors) = self.poly_sqfr.factor().unwrap().into_unit_and_powers();
-                for (factor, k) in factors.into_iter() {
+                for (factor, k) in factors {
                     // println!("factor = {}", factor);
                     debug_assert_eq!(k, Natural::ONE); //square free
                     let deg = factor.degree().unwrap();
