@@ -2,7 +2,7 @@ use crate::structure::{EuclideanDomainSignature, QuotientStructure, RingHomomorp
 use algebraeon_sets::structure::{Function, Morphism, SetSignature};
 
 #[derive(Clone, Debug)]
-pub struct EuclideanDomainQuotienting<RS, const IS_FIELD: bool>
+pub struct EuclideanDomainQuotientRing<RS, const IS_FIELD: bool>
 where
     RS: EuclideanDomainSignature,
 {
@@ -10,14 +10,14 @@ where
     target: QuotientStructure<RS, RS, IS_FIELD>,
 }
 
-impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> EuclideanDomainQuotienting<RS, IS_FIELD> {
+impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> EuclideanDomainQuotientRing<RS, IS_FIELD> {
     pub fn new(source: RS, target: QuotientStructure<RS, RS, IS_FIELD>) -> Self {
         Self { source, target }
     }
 }
 
 impl<RS, const IS_FIELD: bool> Morphism<RS, QuotientStructure<RS, RS, IS_FIELD>>
-    for EuclideanDomainQuotienting<RS, IS_FIELD>
+    for EuclideanDomainQuotientRing<RS, IS_FIELD>
 where
     RS: EuclideanDomainSignature,
 {
@@ -31,7 +31,7 @@ where
 }
 
 impl<RS, const IS_FIELD: bool> Function<RS, QuotientStructure<RS, RS, IS_FIELD>>
-    for EuclideanDomainQuotienting<RS, IS_FIELD>
+    for EuclideanDomainQuotientRing<RS, IS_FIELD>
 where
     RS: EuclideanDomainSignature,
 {
@@ -44,7 +44,7 @@ where
 }
 
 impl<RS, const IS_FIELD: bool> RingHomomorphism<RS, QuotientStructure<RS, RS, IS_FIELD>>
-    for EuclideanDomainQuotienting<RS, IS_FIELD>
+    for EuclideanDomainQuotientRing<RS, IS_FIELD>
 where
     RS: EuclideanDomainSignature,
 {

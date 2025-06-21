@@ -1,8 +1,8 @@
 use crate::{
     integer::ideal::IntegerIdealsStructure,
-    localization::{LocalizationInclusionFoF, LocalizationPrime, LocalizationResidueField},
+    localization::{LocalizationInclusionFoF, LocalizationResidueField, LocalizedRingAtPrime},
     structure::{
-        AdditiveGroupSignature, EuclideanDomainQuotienting, FieldSignature,
+        AdditiveGroupSignature, EuclideanDomainQuotientRing, FieldSignature,
         IdealsArithmeticSignature, MetaRingEq, QuotientStructure, RingHomomorphism, RingSignature,
         RingToIdealsSignature, RingToQuotientFieldSignature,
     },
@@ -130,8 +130,16 @@ pub trait PreAdditiveValuation {
 /// image of `>=0` and `>0` of the `nu` map.
 /// `0` is the `default` for the `T` of `AdditiveValueGroup<T>`
 pub trait AdditiveValuation: PreAdditiveValuation {
+    // the subring of elements with valuation >= 0
     type ValuationRing: RingSignature;
+    // the quotient of the valuation ring by its unique prime ideal
     type ResidueField: FieldSignature;
+
+    /// Give the homomorphism for the valuation ring including into the field
+    fn valuation_ring_inclusion(
+        &self,
+    ) -> impl RingHomomorphism<Self::ValuationRing, Self::DomainFieldSignature>
+    + InjectiveFunction<Self::ValuationRing, Self::DomainFieldSignature>;
 
     /// Evaluate the `nu` for this `r`
     /// If it is `>=0`, then it is in the valuation ring
@@ -147,7 +155,7 @@ pub trait AdditiveValuation: PreAdditiveValuation {
         let r_val = self.nu(r);
         if r_val >= zero_val {
             Ok(self
-                .valuation_inclusion()
+                .valuation_ring_inclusion()
                 .try_preimage(r)
                 .expect("The valuation was nonnegative so it should be in the valuation ring"))
         } else {
@@ -158,12 +166,6 @@ pub trait AdditiveValuation: PreAdditiveValuation {
     /// Give the signature for the residue field which is the quotient of the valuation ring
     /// by the maximal ideal determined by the preimage of `>0` under `nu`
     fn residue_field(&self) -> Self::ResidueField;
-
-    /// Give the homomorphism for the valuation ring including into the field
-    fn valuation_inclusion(
-        &self,
-    ) -> impl RingHomomorphism<Self::ValuationRing, Self::DomainFieldSignature>
-    + InjectiveFunction<Self::ValuationRing, Self::DomainFieldSignature>;
 
     /// Give the homomorphism for the quotient map from the valuation ring to `self.residue_field()`
     fn valuation_quotient(&self) -> impl RingHomomorphism<Self::ValuationRing, Self::ResidueField>;
@@ -188,7 +190,7 @@ impl PreAdditiveValuation for PAdicValuation {
 }
 
 impl AdditiveValuation for PAdicValuation {
-    type ValuationRing = LocalizationPrime<
+    type ValuationRing = LocalizedRingAtPrime<
         IntegerCanonicalStructure,
         IntegerCanonicalStructure,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
@@ -201,7 +203,7 @@ impl AdditiveValuation for PAdicValuation {
         Integer::structure().into_quotient_field_unchecked(self.0.clone().into())
     }
 
-    fn valuation_inclusion(
+    fn valuation_ring_inclusion(
         &self,
     ) -> impl RingHomomorphism<Self::ValuationRing, Self::DomainFieldSignature>
     + InjectiveFunction<Self::ValuationRing, Self::DomainFieldSignature> {
@@ -210,7 +212,7 @@ impl AdditiveValuation for PAdicValuation {
         let all_is = z.into_ideals();
         let prime_ideal = all_is.principal_ideal(&self.0.clone().into());
         let source =
-            LocalizationPrime::new_unchecked(IntegerCanonicalStructure {}, all_is, prime_ideal);
+            LocalizedRingAtPrime::new_unchecked(IntegerCanonicalStructure {}, all_is, prime_ideal);
         LocalizationInclusionFoF::new(source, z_to_q)
     }
 
@@ -219,15 +221,15 @@ impl AdditiveValuation for PAdicValuation {
         let all_is = z.into_ideals();
         let prime_ideal = all_is.principal_ideal(&self.0.clone().into());
         let source =
-            LocalizationPrime::new_unchecked(IntegerCanonicalStructure {}, all_is, prime_ideal);
+            LocalizedRingAtPrime::new_unchecked(IntegerCanonicalStructure {}, all_is, prime_ideal);
         let target = self.residue_field();
-        let map_restricted = EuclideanDomainQuotienting::new(IntegerCanonicalStructure {}, target);
+        let map_restricted = EuclideanDomainQuotientRing::new(IntegerCanonicalStructure {}, target);
         LocalizationResidueField::<
             IntegerCanonicalStructure,
             IntegerCanonicalStructure,
             IntegerIdealsStructure<IntegerCanonicalStructure>,
             Self::ResidueField,
-            EuclideanDomainQuotienting<IntegerCanonicalStructure, true>,
+            EuclideanDomainQuotientRing<IntegerCanonicalStructure, true>,
         >::new(source, map_restricted)
     }
 }
