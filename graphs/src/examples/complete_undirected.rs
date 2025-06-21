@@ -4,6 +4,7 @@ use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
 
+#[allow(dead_code)]
 pub struct CompleteUndirectedGraph<Vertices: SetSignature> {
     vertices: Vertices,
     pairs_of_vertices: UnorderedPairs<Vertices>,
