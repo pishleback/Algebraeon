@@ -246,7 +246,7 @@ mod tests {
             println!(
                 "{:?}",
                 root.generated_algebraic_number_field()
-                    .compute_integral_basis_and_discriminant()
+                    .into_ring_of_integers_extension()
             );
         }
     }

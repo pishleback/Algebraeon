@@ -117,6 +117,9 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 impl AlgebraicIntegerRingInAlgebraicNumberField<AlgebraicNumberFieldPolynomialQuotientStructure>
     for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
+    fn discriminant(&self) -> Integer {
+        self.domain().discriminant().clone()
+    }
 }
 
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
@@ -136,6 +139,23 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self)
     }
 
+
+    fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
+        if self.trace(a).denominator() != Natural::ONE {
+            return false;
+        }
+        if self.norm(a).denominator() != Natural::ONE {
+            return false;
+        }
+        self.min_poly(a)
+            .coeffs()
+            .into_iter()
+            .all(|c| c.denominator() == Natural::ONE)
+    }
+}
+
+impl AlgebraicNumberFieldPolynomialQuotientStructure {
+    
     fn compute_integral_basis_and_discriminant(&self) -> (Vec<Polynomial<Rational>>, Integer) {
         //https://www.ucl.ac.uk/~ucahmki/intbasis.pdf
         // println!("compute_basis_ring_of_integers");
@@ -233,21 +253,6 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         }
     }
 
-    fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
-        if self.trace(a).denominator() != Natural::ONE {
-            return false;
-        }
-        if self.norm(a).denominator() != Natural::ONE {
-            return false;
-        }
-        self.min_poly(a)
-            .coeffs()
-            .into_iter()
-            .all(|c| c.denominator() == Natural::ONE)
-    }
-}
-
-impl AlgebraicNumberFieldPolynomialQuotientStructure {
     pub fn compute_ring_of_integers(&self) -> RingOfIntegersWithIntegralBasisStructure {
         let (integral_basis, discriminant) = self.compute_integral_basis_and_discriminant();
         RingOfIntegersWithIntegralBasisStructure::new(self.clone(), integral_basis, discriminant)

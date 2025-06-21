@@ -165,6 +165,9 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
 impl AlgebraicIntegerRingInAlgebraicNumberField<RationalCanonicalStructure>
     for PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
 {
+    fn discriminant(&self) -> Integer {
+        Integer::ONE
+    }
 }
 
 impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
@@ -182,10 +185,6 @@ impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
 
     fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion {
         self.into_principal_subring_inclusion()
-    }
-
-    fn compute_integral_basis_and_discriminant(&self) -> (Vec<Self::Set>, Integer) {
-        (vec![Rational::ONE], Integer::ONE)
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {

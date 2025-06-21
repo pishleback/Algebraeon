@@ -24,8 +24,6 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
 
     fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion;
 
-    fn compute_integral_basis_and_discriminant(&self) -> (Vec<Self::Set>, Integer);
-
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool;
 
     // This is the LCM of the denominators of the coefficients of the minimal polynomial of a,
@@ -56,6 +54,8 @@ pub trait AlgebraicIntegerRingInAlgebraicNumberField<
 >:
     RingHomomorphism<ANF::RingOfIntegers, ANF> + InjectiveFunction<ANF::RingOfIntegers, ANF>
 {
+    fn discriminant(&self) -> Integer;
+
     fn zq_extension<'a>(
         &'a self,
     ) -> RingOfIntegersExtension<
