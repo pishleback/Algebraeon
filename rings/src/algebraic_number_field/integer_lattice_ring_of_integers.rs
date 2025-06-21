@@ -1,5 +1,6 @@
-use super::number_field::AlgebraicNumberFieldStructure;
+use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{
+    algebraic_number_field::structure::AlgebraicNumberFieldSignature,
     matrix::Matrix,
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
@@ -12,7 +13,7 @@ use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
 pub struct RingOfIntegersWithIntegralBasisStructure {
-    algebraic_number_field: AlgebraicNumberFieldStructure,
+    algebraic_number_field: AlgebraicNumberFieldPolynomialQuotientStructure,
     integral_basis: Vec<Polynomial<Rational>>,
     discriminant: Integer,
     // The below just aid in the efficiency of calculations
@@ -37,13 +38,15 @@ impl Eq for RingOfIntegersWithIntegralBasisStructure {}
 
 impl RingOfIntegersWithIntegralBasisStructure {
     pub fn new(
-        algebraic_number_field: AlgebraicNumberFieldStructure,
+        algebraic_number_field: AlgebraicNumberFieldPolynomialQuotientStructure,
         integral_basis: Vec<Polynomial<Rational>>,
         discriminant: Integer,
     ) -> Self {
         debug_assert_eq!(integral_basis.len(), algebraic_number_field.degree());
         debug_assert_eq!(
-            algebraic_number_field.discriminant(&integral_basis),
+            algebraic_number_field
+                .rational_extension()
+                .discriminant(&integral_basis),
             discriminant
         );
         let (_, true_discriminant) =
@@ -82,6 +85,10 @@ impl RingOfIntegersWithIntegralBasisStructure {
         roi
     }
 
+    pub fn discriminant(&self) -> &Integer {
+        &self.discriminant
+    }
+
     pub fn degree(&self) -> usize {
         debug_assert_eq!(
             self.integral_basis.len(),
@@ -105,82 +112,10 @@ impl RingOfIntegersWithIntegralBasisStructure {
         &self.integral_basis[i]
     }
 
-    pub fn anf(&self) -> &AlgebraicNumberFieldStructure {
+    pub fn anf(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
         &self.algebraic_number_field
     }
 }
-
-// impl RingOfIntegersWithIntegralBasisElement {
-//     pub fn basis_element(n: usize, i: usize) -> Self {
-//         Self {
-//             coefficients: (0..n)
-//                 .map(|j| if i == j { Integer::ONE } else { Integer::ZERO })
-//                 .collect(),
-//         }
-//     }
-
-//     pub fn into_col(self) -> Matrix<Integer> {
-//         Matrix::from_cols(vec![self.coefficients])
-//     }
-
-//     pub fn from_col(m: &Matrix<Integer>) -> Self {
-//         debug_assert_eq!(m.cols(), 1);
-//         let n = m.rows();
-//         Self {
-//             coefficients: (0..n).map(|i| m.at(i, 0).unwrap().clone()).collect(),
-//         }
-//     }
-
-//     pub fn into_row(self) -> Matrix<Integer> {
-//         Matrix::from_cols(vec![self.coefficients])
-//     }
-
-//     pub fn from_row(m: &Matrix<Integer>) -> Self {
-//         debug_assert_eq!(m.rows(), 1);
-//         let n = m.cols();
-//         Self {
-//             coefficients: (0..n).map(|i| m.at(0, i).unwrap().clone()).collect(),
-//         }
-//     }
-
-//     pub fn into_coefficients(self) -> Vec<Integer> {
-//         self.coefficients
-//     }
-
-//     pub fn coefficients(&self) -> &Vec<Integer> {
-//         &self.coefficients
-//     }
-
-//     pub fn from_coefficients(coefficients: Vec<Integer>) -> Self {
-//         Self {
-//             coefficients: coefficients,
-//         }
-//     }
-
-//     pub fn scalar_mul(self, a: &Integer) -> Self {
-//         Self {
-//             coefficients: self.coefficients.into_iter().map(|c| c * a).collect(),
-//         }
-//     }
-
-//     pub fn scalar_mul_ref(&self, a: &Integer) -> Self {
-//         Self {
-//             coefficients: self.coefficients.iter().map(|c| c * a).collect(),
-//         }
-//     }
-
-//     pub fn neg(self) -> Self {
-//         Self {
-//             coefficients: self.coefficients.into_iter().map(|c| -c).collect(),
-//         }
-//     }
-
-//     pub fn neg_ref(&self) -> Self {
-//         Self {
-//             coefficients: self.coefficients.iter().map(|c| -c).collect(),
-//         }
-//     }
-// }
 
 impl RingOfIntegersWithIntegralBasisStructure {
     pub fn roi_to_anf(&self, elem: &Vec<Integer>) -> Polynomial<Rational> {
@@ -195,14 +130,11 @@ impl RingOfIntegersWithIntegralBasisStructure {
 
     pub fn try_anf_to_roi(&self, elem: &Polynomial<Rational>) -> Option<Vec<Integer>> {
         let n = self.degree();
-        let y = self.algebraic_number_field.to_vector(elem);
+        let y = self.algebraic_number_field.to_vec(elem);
         let m = Matrix::join_cols(
             n,
             (0..n)
-                .map(|i| {
-                    self.algebraic_number_field
-                        .to_col_vector(&self.integral_basis[i])
-                })
+                .map(|i| self.algebraic_number_field.to_col(&self.integral_basis[i]))
                 .collect(),
         );
         if let Some(s) = m.col_solve(&y) {
@@ -364,11 +296,13 @@ impl CharZeroRingSignature for RingOfIntegersWithIntegralBasisStructure {
 #[derive(Debug, Clone)]
 pub struct RingOfIntegersToAlgebraicNumberFieldInclusion {
     roi: RingOfIntegersWithIntegralBasisStructure,
-    anf: AlgebraicNumberFieldStructure,
+    anf: AlgebraicNumberFieldPolynomialQuotientStructure,
 }
 
 impl RingOfIntegersToAlgebraicNumberFieldInclusion {
-    pub fn from_algebraic_number_field(anf: AlgebraicNumberFieldStructure) -> Self {
+    pub fn from_algebraic_number_field(
+        anf: AlgebraicNumberFieldPolynomialQuotientStructure,
+    ) -> Self {
         Self {
             roi: anf.compute_ring_of_integers(),
             anf,
@@ -383,42 +317,54 @@ impl RingOfIntegersToAlgebraicNumberFieldInclusion {
     }
 }
 
-impl Morphism<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
+impl
+    Morphism<
+        RingOfIntegersWithIntegralBasisStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
     fn domain(&self) -> &RingOfIntegersWithIntegralBasisStructure {
         &self.roi
     }
 
-    fn range(&self) -> &AlgebraicNumberFieldStructure {
+    fn range(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
         &self.anf
     }
 }
 
-impl Function<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
+impl
+    Function<
+        RingOfIntegersWithIntegralBasisStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
     fn image(
         &self,
         x: &<RingOfIntegersWithIntegralBasisStructure as SetSignature>::Set,
-    ) -> <AlgebraicNumberFieldStructure as SetSignature>::Set {
+    ) -> <AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set {
         self.roi.roi_to_anf(x)
     }
 }
 
-impl InjectiveFunction<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
+impl
+    InjectiveFunction<
+        RingOfIntegersWithIntegralBasisStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
     fn try_preimage(
         &self,
-        x: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
+        x: &<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set,
     ) -> Option<<RingOfIntegersWithIntegralBasisStructure as SetSignature>::Set> {
         self.roi.try_anf_to_roi(x)
     }
 }
 
-impl RingHomomorphism<RingOfIntegersWithIntegralBasisStructure, AlgebraicNumberFieldStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
+impl
+    RingHomomorphism<
+        RingOfIntegersWithIntegralBasisStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+    > for RingOfIntegersToAlgebraicNumberFieldInclusion
 {
 }
 

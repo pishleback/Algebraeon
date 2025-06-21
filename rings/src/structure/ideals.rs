@@ -1,3 +1,5 @@
+use crate::valuation::Valuation;
+
 use super::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
@@ -159,6 +161,52 @@ pub trait DedekindDomainIdealsSignature<
                 self.ideal_mul(&prime_ideal_to_the_k_plus_one, prime_ideal.ideal());
         }
         k
+    }
+
+    /// return the valuation of an element `a` with respect to an ideal `I`
+    /// this is the largest power `k` such that `I^k` contains `a`
+    fn padic_r_element_valuation(
+        &self,
+        prime: &DedekindDomainPrimeIdeal<Self::Set>,
+        a: &Ring::Set,
+    ) -> Valuation {
+        debug_assert!(self.ring().is_element(a).is_ok());
+        debug_assert!(self.is_element(prime.ideal()).is_ok());
+        if self.ring().is_zero(a) {
+            return Valuation::Infinity;
+        }
+        let mut k = 1usize;
+        let mut prime_to_the_k = prime.ideal().clone();
+        loop {
+            if !self.ideal_contains_element(&prime_to_the_k, a) {
+                return Valuation::Finite((k - 1).into());
+            }
+            k += 1;
+            prime_to_the_k = self.ideal_mul(&prime_to_the_k, prime.ideal());
+        }
+    }
+
+    /// return the valuation of an ideal `a` with respect to an ideal `I`
+    /// this is the largest power `k` such that `I^k` contains `a`
+    fn padic_r_ideal_valuation(
+        &self,
+        prime: &DedekindDomainPrimeIdeal<Self::Set>,
+        a: &Self::Set,
+    ) -> Valuation {
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(prime.ideal()).is_ok());
+        if self.ideal_is_zero(a) {
+            return Valuation::Infinity;
+        }
+        let mut k = 1usize;
+        let mut prime_to_the_k = prime.ideal().clone();
+        loop {
+            if !self.ideal_contains(&prime_to_the_k, a) {
+                return Valuation::Finite((k - 1).into());
+            }
+            k += 1;
+            prime_to_the_k = self.ideal_mul(&prime_to_the_k, prime.ideal());
+        }
     }
 }
 

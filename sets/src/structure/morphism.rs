@@ -1,6 +1,6 @@
-use itertools::Itertools;
-
 use super::{CountableSetSignature, EqSignature, FiniteSetSignature, SetSignature, Signature};
+use itertools::Itertools;
+use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
@@ -9,8 +9,21 @@ pub trait Morphism<Domain: Signature, Range: Signature>: Debug + Clone {
     fn range(&self) -> &Range;
 }
 
+/// A morphism from an object to itself
+pub trait Endomorphism<X: Signature>: Morphism<X, X> {}
+impl<X: Signature, T: Morphism<X, X>> Endomorphism<X> for T {}
+
 pub trait Function<Domain: SetSignature, Range: SetSignature>: Morphism<Domain, Range> {
     fn image(&self, x: &Domain::Set) -> Range::Set;
+}
+
+/// A function from a set into itself
+pub trait Endofunction<X: SetSignature + EqSignature>: Function<X, X> {
+    // TODO: remove EqSignature requirement and use specialization once it is stable.
+    /// check if an element is fixed
+    fn is_fixed_point(&self, x: X::Set) -> bool {
+        self.domain().equal(&self.image(&x), &x)
+    }
 }
 
 pub trait InjectiveFunction<Domain: SetSignature, Range: SetSignature>:
@@ -26,6 +39,11 @@ pub trait BijectiveFunction<Domain: SetSignature, Range: SetSignature>:
         self.try_preimage(y).unwrap()
     }
 }
+
+/// A permutation is a bijective function from a set to itself
+pub trait Permutation<X: SetSignature>: BijectiveFunction<X, X> {}
+
+impl<X: SetSignature, T: BijectiveFunction<X, X>> Permutation<X> for T {}
 
 /// The identity morphism X -> X
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -204,5 +222,52 @@ impl<Domain: FiniteSetSignature, Range: EqSignature + FiniteSetSignature> Counta
 
 impl<Domain: FiniteSetSignature, Range: EqSignature + FiniteSetSignature> FiniteSetSignature
     for Functions<Domain, Range>
+{
+}
+
+/// The set of all endofunctions on a finite set X: functions X → X
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FiniteSetEndofunctions<X: FiniteSetSignature + EqSignature> {
+    set: X,
+}
+
+impl<X: FiniteSetSignature + EqSignature> FiniteSetEndofunctions<X> {
+    pub fn new(set: X) -> Self {
+        Self { set }
+    }
+}
+
+impl<X: FiniteSetSignature + EqSignature> Signature for FiniteSetEndofunctions<X> {}
+
+impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunctions<X> {
+    type Set = Vec<X::Set>;
+
+    fn is_element(&self, f: &Self::Set) -> Result<(), String> {
+        if f.len() != self.set.size() {
+            return Err("Function must have one value per element in the domain.".to_string());
+        }
+        for y in f {
+            self.set.is_element(y)?;
+        }
+        Ok(())
+    }
+}
+
+impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEndofunctions<X> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+        (0..self.set.size())
+            .map(|_| self.set.list_all_elements())
+            .multi_cartesian_product()
+    }
+}
+
+impl<X: FiniteSetSignature + EqSignature> FiniteSetSignature for FiniteSetEndofunctions<X> {}
+
+pub trait BorrowedMorphism<Domain: Signature, Range: Signature, M: Morphism<Domain, Range>>:
+    Borrow<M> + Clone + Debug
+{
+}
+impl<Domain: Signature, Range: Signature, M: Morphism<Domain, Range>, BM: Borrow<M> + Clone + Debug>
+    BorrowedMorphism<Domain, Range, M> for BM
 {
 }

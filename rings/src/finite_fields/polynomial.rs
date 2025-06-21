@@ -418,8 +418,7 @@ where
                 (0..n)
                     .map(|c| {
                         //compute (x^c)^q mod poly as a length n column vector of coefficients
-                        mod_poly_ring
-                            .to_col_vector(&mod_poly_ring.nat_pow(&self.poly_ring.var_pow(c), &q))
+                        mod_poly_ring.to_col(&mod_poly_ring.nat_pow(&self.poly_ring.var_pow(c), &q))
                     })
                     .collect(),
             );
@@ -484,9 +483,9 @@ where
                     ));
                 }
                 i += 1;
-                xqi = mod_poly_ring.from_col_vector(
+                xqi = mod_poly_ring.from_col(
                     mat_structure
-                        .mul(&qth_power_matrix, &mod_poly_ring.to_col_vector(&xqi))
+                        .mul(&qth_power_matrix, &mod_poly_ring.to_col(&xqi))
                         .unwrap(),
                 );
             }

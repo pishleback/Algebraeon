@@ -1,5 +1,5 @@
 mod algebra;
-mod elements;
+mod ergonomic;
 mod factorization;
 mod homomorphisms;
 mod ideal_factorizations;
@@ -12,7 +12,7 @@ mod rings;
 mod ufd;
 
 pub use algebra::*;
-pub use elements::*;
+pub use ergonomic::*;
 pub use factorization::*;
 pub use homomorphisms::*;
 pub use ideal_factorizations::*;
