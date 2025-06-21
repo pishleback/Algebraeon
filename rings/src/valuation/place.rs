@@ -4,7 +4,8 @@ use algebraeon_sets::structure::{Function, SetSignature};
 use super::AdditiveValuation;
 use crate::{
     algebraic_number_field::{
-        embedded_anf::EmbeddedAnf, number_field::AlgebraicNumberFieldStructure,
+        embedded_anf::EmbeddedAnf,
+        polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure,
     },
     isolated_algebraic::ComplexAlgebraic,
     valuation::AdditiveValueGroup,
@@ -20,7 +21,7 @@ pub enum Place<V>
 where
     V: AdditiveValuation<
             ValuationGamma = Integer,
-            DomainFieldSignature = AlgebraicNumberFieldStructure,
+            DomainFieldSignature = AlgebraicNumberFieldPolynomialQuotientStructure,
         >,
 {
     Embedding(Box<EmbeddedAnf>),
@@ -31,7 +32,7 @@ impl<V> Place<V>
 where
     V: AdditiveValuation<
             ValuationGamma = Integer,
-            DomainFieldSignature = AlgebraicNumberFieldStructure,
+            DomainFieldSignature = AlgebraicNumberFieldPolynomialQuotientStructure,
         >,
 {
     pub fn is_finite(&self) -> bool {
@@ -50,7 +51,7 @@ where
     /// as a `ComplexAlgebraic`.
     fn embed_archimedian(
         &self,
-        element: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
+        element: &<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set,
     ) -> Result<ComplexAlgebraic, ()> {
         match self {
             Place::Embedding(embedded_anf) => Ok(embedded_anf.embed(element)),
@@ -63,7 +64,7 @@ where
     /// If it is not in the corresponding `ValuationRing`, give the valuation which should be less than `0`.
     fn try_to_residue(
         &self,
-        element: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
+        element: &<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set,
     ) -> Result<
         Result<<V::ResidueField as SetSignature>::Set, AdditiveValueGroup<V::ValuationGamma>>,
         (),

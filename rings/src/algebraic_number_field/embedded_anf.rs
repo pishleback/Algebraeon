@@ -97,7 +97,7 @@ impl EmbeddedAnf {
 
     pub fn embed(
         &self,
-        element: &<AlgebraicNumberFieldStructure as SetSignature>::Set,
+        element: &<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set,
     ) -> ComplexAlgebraic {
         let complex_alg_canonical = ComplexAlgebraicCanonicalStructure {};
         let mut answer: ComplexAlgebraic =
