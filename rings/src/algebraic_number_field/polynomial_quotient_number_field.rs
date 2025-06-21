@@ -139,7 +139,6 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self)
     }
 
-
     fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
         if self.trace(a).denominator() != Natural::ONE {
             return false;
@@ -155,8 +154,7 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
 }
 
 impl AlgebraicNumberFieldPolynomialQuotientStructure {
-    
-    fn compute_integral_basis_and_discriminant(&self) -> (Vec<Polynomial<Rational>>, Integer) {
+    pub fn compute_integral_basis_and_discriminant(&self) -> (Vec<Polynomial<Rational>>, Integer) {
         //https://www.ucl.ac.uk/~ucahmki/intbasis.pdf
         // println!("compute_basis_ring_of_integers");
         let n = self.degree();

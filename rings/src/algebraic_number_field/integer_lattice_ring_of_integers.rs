@@ -1,6 +1,6 @@
 use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{
-    algebraic_number_field::structure::{AlgebraicIntegerRingInAlgebraicNumberField, AlgebraicNumberFieldSignature},
+    algebraic_number_field::structure::AlgebraicNumberFieldSignature,
     matrix::Matrix,
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
@@ -49,8 +49,8 @@ impl RingOfIntegersWithIntegralBasisStructure {
                 .discriminant(&integral_basis),
             discriminant
         );
-        let true_discriminant =
-            algebraic_number_field.clone().into_ring_of_integers_extension().discriminant();
+        let (_, true_discriminant) =
+            algebraic_number_field.compute_integral_basis_and_discriminant();
         debug_assert_eq!(discriminant, true_discriminant);
         for a in &integral_basis {
             debug_assert!(algebraic_number_field.is_algebraic_integer(a));
