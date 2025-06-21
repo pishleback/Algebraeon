@@ -78,13 +78,11 @@ pub fn root_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomia
         }
         debug_assert_eq!(n_pows.len(), degree + 1);
         debug_assert_eq!(d_pows.len(), degree + 1);
-        let coeffs = poly
-            .into_coeffs()
+        poly.into_coeffs()
             .iter()
             .enumerate()
             .map(|(i, c)| &d_pows[i] * &n_pows[degree - i] * c)
-            .collect();
-        coeffs
+            .collect()
     })
     .primitive_part()
     .unwrap();
