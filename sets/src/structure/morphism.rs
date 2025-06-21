@@ -263,6 +263,7 @@ impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEnd
 
 impl<X: FiniteSetSignature + EqSignature> FiniteSetSignature for FiniteSetEndofunctions<X> {}
 
+
 pub trait BorrowedMorphism<Domain: Signature, Range: Signature, M: Morphism<Domain, Range>>:
     Borrow<M> + Clone + Debug
 {
