@@ -237,6 +237,7 @@ impl<X: FiniteSetSignature + EqSignature> Endofunctions<X> {
     }
 }
 
+
 impl<X: FiniteSetSignature + EqSignature> Signature for Endofunctions<X> {}
 
 impl<X: FiniteSetSignature + EqSignature> SetSignature for Endofunctions<X> {
