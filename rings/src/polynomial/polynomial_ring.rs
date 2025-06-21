@@ -236,6 +236,28 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
     }
 }
 
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiModuleSignature<RS>
+    for PolynomialStructure<RS, RSB>
+{
+    fn ring(&self) -> &RS {
+        self.coeff_ring()
+    }
+
+    fn scalar_mul(&self, p: &Self::Set, x: &RS::Set) -> Self::Set {
+        self.reduce_poly(Polynomial::from_coeffs(
+            p.coeffs
+                .iter()
+                .map(|c| self.coeff_ring().mul(c, x))
+                .collect(),
+        ))
+    }
+}
+
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AlgebraSignature<RS>
+    for PolynomialStructure<RS, RSB>
+{
+}
+
 impl<RS: RingSignature + CharacteristicSignature, RSB: BorrowedStructure<RS>>
     CharacteristicSignature for PolynomialStructure<RS, RSB>
 {

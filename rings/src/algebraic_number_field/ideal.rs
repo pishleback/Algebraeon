@@ -1,15 +1,14 @@
-use super::ring_of_integer_extensions::RingOfIntegersExtension;
-use super::ring_of_integers::*;
+use super::integer_lattice_ring_of_integers::*;
 use crate::{
+    algebraic_number_field::structure::AlgebraicIntegerRingInAlgebraicNumberField,
     matrix::Matrix,
     module::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
     structure::*,
-    valuation::Valuation,
 };
-use algebraeon_nzq::{Integer, Natural};
+use algebraeon_nzq::{Integer, Natural, traits::Abs};
 use algebraeon_sets::{
     combinatorics::num_partitions_part_pool,
     structure::{BorrowedStructure, EqSignature, MetaType, SetSignature, Signature},
@@ -119,7 +118,20 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     }
 
     pub fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
-        RingOfIntegersExtension::new_integer_extension(self.ring().clone()).ideal_norm(ideal)
+        debug_assert!(self.is_element(ideal).is_ok());
+        match ideal {
+            RingOfIntegersIdeal::Zero => Natural::ZERO,
+            RingOfIntegersIdeal::NonZero(lattice) => {
+                let n = self.ring().degree();
+                let cols = lattice.basis();
+                #[cfg(debug_assertions)]
+                for col in &cols {
+                    assert_eq!(col.len(), n);
+                }
+                let mat = Matrix::construct(n, n, |i, j| cols[i][j].clone());
+                mat.det().unwrap().abs()
+            }
+        }
     }
 
     // Order of the multiplicative group of the quotient modulo the ideal.
@@ -147,7 +159,11 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     ) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
         match Integer::ideals().factor_ideal(n) {
             Some(n) => {
-                let sq = RingOfIntegersExtension::new_integer_extension(self.ring().clone());
+                let roi_to_anf =
+                    RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(
+                        self.ring().clone(),
+                    );
+                let sq = roi_to_anf.zq_extension();
                 Box::new(
                     Integer::structure()
                         .ideals()
@@ -360,9 +376,12 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         ideal: &Self::Set,
     ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
         Some(
-            RingOfIntegersExtension::new_integer_extension(self.ring().clone())
-                .factor_ideal(ideal)?
-                .into_full_factorization(),
+            RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(
+                self.ring().clone(),
+            )
+            .zq_extension()
+            .factor_ideal(ideal)?
+            .into_full_factorization(),
         )
     }
 }
@@ -474,48 +493,6 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         };
         debug_assert!(self.ideal_equal(ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
         (a, b)
-    }
-
-    pub fn padic_roi_element_valuation(
-        &self,
-        prime_ideal: RingOfIntegersIdeal,
-        a: Vec<Integer>,
-    ) -> Valuation {
-        debug_assert!(self.ring().is_element(&a).is_ok());
-        debug_assert!(self.is_element(&prime_ideal).is_ok());
-        if self.ring().is_zero(&a) {
-            return Valuation::Infinity;
-        }
-        let mut k = 1usize;
-        let mut prime_to_the_k = prime_ideal.clone();
-        loop {
-            if !self.ideal_contains_element(&prime_to_the_k, &a) {
-                return Valuation::Finite((k - 1).into());
-            }
-            k += 1;
-            prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
-        }
-    }
-
-    pub fn padic_roi_ideal_valuation(
-        &self,
-        prime_ideal: RingOfIntegersIdeal,
-        a: RingOfIntegersIdeal,
-    ) -> Valuation {
-        debug_assert!(self.is_element(&a).is_ok());
-        debug_assert!(self.is_element(&prime_ideal).is_ok());
-        if self.ideal_is_zero(&a) {
-            return Valuation::Infinity;
-        }
-        let mut k = 1usize;
-        let mut prime_to_the_k = prime_ideal.clone();
-        loop {
-            if !self.ideal_contains(&prime_to_the_k, &a) {
-                return Valuation::Finite((k - 1).into());
-            }
-            k += 1;
-            prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
-        }
     }
 }
 

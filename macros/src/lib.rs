@@ -101,6 +101,13 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
                 #newtype_name::new()
             }
         }
+
+        impl #name {
+            pub fn structure_ref() -> &'static #newtype_name{
+                static CELL: std::sync::OnceLock<#newtype_name> = std::sync::OnceLock::new();
+                CELL.get_or_init(|| Self::structure())
+            }
+        }
     };
 
     TokenStream::from(expanded)

@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
  - Listing ring of algebraic integers ideals of a given norm.
  - Added trait for getting the characteristic of a ring.
  - Allow certain structures to borrow other structures.
+ - Basics of quaternion algebras
+ - Started graphs crate
+ - Added trait for ANFs and implemented it for rationals and ANFs via polynomial quotients
 
 ## [0.0.12] - 2025-04-12
 
