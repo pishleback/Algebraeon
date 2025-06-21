@@ -1,4 +1,4 @@
-use super::number_field::AlgebraicNumberFieldStructure;
+use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{matrix::Matrix, polynomial::*, structure::*};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
@@ -55,8 +55,8 @@ fn row_to_double_poly(
     Polynomial::from_coeffs(coeffs)
 }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
-    PolynomialStructure<AlgebraicNumberFieldStructure, B>
+impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
     /*
         input:  A polynomial f(x) over an algebraic number field K, return
@@ -505,7 +505,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                         qi_deg,
                         lai_basis
                             .iter()
-                            .map(|b| lai_reduced_ring.to_row_vector(b))
+                            .map(|b| lai_reduced_ring.to_row(b))
                             .collect::<Vec<_>>(),
                     );
                     // lai_basis_mat.pprint();
@@ -523,7 +523,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
                     // );
 
                     let x_wrapping_pow_vec = lai_reduced_ring
-                        .to_vector(&lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg)));
+                        .to_vec(&lai_reduced_ring.nat_pow(&x_in_la, &Natural::from(pi_deg)));
                     // x_wrapping_pow_vec.pprint();
                     //this is a vector containing the coefficients of (the coefficients of elements of K of) the polynomial pi_prime(x) in K[x] such that
                     //x^n = pi_prime(x)
@@ -649,8 +649,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>>
 //     }
 // }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>> FactorableSignature
-    for PolynomialStructure<AlgebraicNumberFieldStructure, B>
+impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactorableSignature
+    for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
     fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredRingElement<Self::Set>> {
         if self.is_zero(a) {

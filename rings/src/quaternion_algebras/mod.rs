@@ -217,7 +217,7 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
 impl<Field: FieldSignature> SemiRingUnitsSignature for QuaternionAlgebraStructure<Field> {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let n_inv = self.base.inv(&self.reduced_norm(a))?;
-        Ok(self.scalar_mul(&n_inv, &self.conjugate(a)))
+        Ok(self.scalar_mul(&self.conjugate(a), &n_inv))
     }
 
     fn is_unit(&self, a: &Self::Set) -> bool {
@@ -232,7 +232,7 @@ impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStru
         &self.base
     }
 
-    fn scalar_mul(&self, x: &<Field>::Set, a: &Self::Set) -> Self::Set {
+    fn scalar_mul(&self, a: &Self::Set, x: &Field::Set) -> Self::Set {
         let base = &self.base;
         QuaternionAlgebraElement {
             x: base.mul(x, &a.x),

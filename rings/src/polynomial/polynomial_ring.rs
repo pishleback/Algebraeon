@@ -236,6 +236,28 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
     }
 }
 
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiModuleSignature<RS>
+    for PolynomialStructure<RS, RSB>
+{
+    fn ring(&self) -> &RS {
+        self.coeff_ring()
+    }
+
+    fn scalar_mul(&self, p: &Self::Set, x: &RS::Set) -> Self::Set {
+        self.reduce_poly(Polynomial::from_coeffs(
+            p.coeffs
+                .iter()
+                .map(|c| self.coeff_ring().mul(c, x))
+                .collect(),
+        ))
+    }
+}
+
+impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AlgebraSignature<RS>
+    for PolynomialStructure<RS, RSB>
+{
+}
+
 impl<RS: RingSignature + CharacteristicSignature, RSB: BorrowedStructure<RS>>
     CharacteristicSignature for PolynomialStructure<RS, RSB>
 {
@@ -282,7 +304,9 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB>
 
     /// evaluate p(x^k)
     pub fn evaluate_at_var_pow(&self, p: Polynomial<RS::Set>, k: usize) -> Polynomial<RS::Set> {
-         self.coeff_ring().polynomial_semiring().evaluate_at_var_pow(p, k)
+        self.coeff_ring()
+            .polynomial_semiring()
+            .evaluate_at_var_pow(p, k)
     }
 
     //find p(q(x))
@@ -1049,7 +1073,7 @@ where
         Self::structure().evaluate(self, x)
     }
 
-    pub fn evaluate_at_var_pow(self, k : usize) -> Self {
+    pub fn evaluate_at_var_pow(self, k: usize) -> Self {
         Self::structure().evaluate_at_var_pow(self, k)
     }
 

@@ -1,8 +1,5 @@
+use crate::structure::{GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature};
 use algebraeon_sets::structure::{EqSignature, Pairs, SetSignature, UnorderedPair, UnorderedPairs};
-
-use crate::structure::{
-    GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature,
-};
 
 pub struct CompleteDirectedGraph<Vertices: SetSignature> {
     vertices: Vertices,
@@ -60,9 +57,7 @@ impl<Vertices: SetSignature + EqSignature> GraphWithEdgesSignature
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::{
-        EnumeratedFiniteSetStructure, EqSignature, Pairs, UnorderedPairs,
-    };
+    use algebraeon_sets::structure::{EnumeratedFiniteSetStructure, EqSignature, Pairs};
 
     use crate::{
         examples::CompleteDirectedGraph,
@@ -80,8 +75,11 @@ mod tests {
 
         let fin5_pairs = Pairs::new(fin5.clone());
 
-        let e1 = fin5_pairs.clone().new_pair(1.clone(), 2.clone()).unwrap();
-        let e2 = fin5_pairs.clone().new_pair(2.clone(), 1.clone()).unwrap();
-        assert!(k5.pairs_of_vertices.equal(&k5.endpoints(&e1), &k5.endpoints(&e2)));
+        let e1 = fin5_pairs.clone().new_pair(1, 2).unwrap();
+        let e2 = fin5_pairs.clone().new_pair(2, 1).unwrap();
+        assert!(
+            k5.pairs_of_vertices
+                .equal(&k5.endpoints(&e1), &k5.endpoints(&e2))
+        );
     }
 }

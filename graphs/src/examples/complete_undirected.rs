@@ -4,6 +4,7 @@ use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
 
+#[allow(dead_code)]
 pub struct CompleteUndirectedGraph<Vertices: SetSignature> {
     vertices: Vertices,
     pairs_of_vertices: UnorderedPairs<Vertices>,
@@ -82,10 +83,10 @@ mod tests {
         // Test that edges exist in both directions
         assert!(k5.has_directed_edge(&1, &2).is_ok());
         assert!(k5.has_directed_edge(&2, &1).is_ok());
-        
+
         // Test that loops are not allowed
         assert!(k5.has_directed_edge(&1, &1).is_err());
-        
+
         // Test invalid vertices
         assert!(k5.has_directed_edge(&5, &1).is_err());
         assert!(k5.has_directed_edge(&1, &6).is_err());
@@ -99,7 +100,7 @@ mod tests {
         // Create an edge between vertices 1 and 2
         let edge_12 = k5.pairs_of_vertices.new_pair(&1, &2).unwrap();
         let endpoints = k5.endpoints(&edge_12);
-        
+
         // Verify the endpoints are the same as the original edge
         // (since for undirected graphs, the edge is just the unordered pair itself)
         assert!(k5.pairs_of_vertices.equal(&edge_12, &endpoints));
@@ -117,7 +118,9 @@ mod tests {
                     assert_eq!(
                         k3.has_directed_edge(&i, &j).is_ok(),
                         k3.has_directed_edge(&j, &i).is_ok(),
-                        "Edge ({}, {}) symmetry failed", i, j
+                        "Edge ({}, {}) symmetry failed",
+                        i,
+                        j
                     );
                 }
             }

@@ -1,145 +1,72 @@
 use super::*;
 use crate::polynomial::*;
+use crate::valuation::Valuation;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
+use std::borrow::Cow;
 use std::fmt::Debug;
-use std::marker::PhantomData;
 
+/// Given a commuting square for an integral closure
+///
+/// Q → K
+/// ↑   ↑
+/// Z → R
+///
+/// Provide an implementation of K as the field of fractions of R
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct FieldOfFractionsInclusionForIntegralClosure<
-    Z: IntegralDomainSignature,
-    Q: FieldSignature,
-    R: IntegralDomainSignature,
-    K: FieldSignature,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
-    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
-> {
-    z: PhantomData<Z>,
-    q: PhantomData<Q>,
-    r: PhantomData<R>,
-    k: PhantomData<K>,
-    zq: PhantomData<ZQ>,
-    zr: PhantomData<ZR>,
-    qk: PhantomData<QK>,
-    rk: PhantomData<RK>,
+struct FieldOfFractionsInclusionForIntegralClosure<ICS: IntegralClosureExtension> {
     square: ICS,
 }
 
-impl<
-    Z: IntegralDomainSignature,
-    Q: FieldSignature,
-    R: IntegralDomainSignature,
-    K: FieldSignature,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
-    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
-> FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
-{
+impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusionForIntegralClosure<ICS> {
     fn new(square: ICS) -> Self {
-        Self {
-            z: PhantomData,
-            q: PhantomData,
-            r: PhantomData,
-            k: PhantomData,
-            zq: PhantomData,
-            zr: PhantomData,
-            qk: PhantomData,
-            rk: PhantomData,
-            square,
-        }
+        Self { square }
     }
 }
 
-impl<
-    Z: IntegralDomainSignature,
-    Q: FieldSignature,
-    R: IntegralDomainSignature,
-    K: FieldSignature,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
-    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
-> Morphism<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
+impl<ICS: IntegralClosureExtension> Morphism<ICS::R, ICS::K>
+    for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
-    fn domain(&self) -> &R {
+    fn domain(&self) -> &ICS::R {
         self.square.r_ring()
     }
 
-    fn range(&self) -> &K {
+    fn range(&self) -> &ICS::K {
         self.square.k_field()
     }
 }
 
-impl<
-    Z: IntegralDomainSignature,
-    Q: FieldSignature,
-    R: IntegralDomainSignature,
-    K: FieldSignature,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
-    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
-> Function<R, K> for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
+impl<ICS: IntegralClosureExtension> Function<ICS::R, ICS::K>
+    for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
-    fn image(&self, x: &R::Set) -> K::Set {
+    fn image(&self, x: &<ICS::R as SetSignature>::Set) -> <ICS::K as SetSignature>::Set {
         self.square.r_to_k().image(x)
     }
 }
 
-impl<
-    Z: IntegralDomainSignature,
-    Q: FieldSignature,
-    R: IntegralDomainSignature,
-    K: FieldSignature,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
-    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
-> InjectiveFunction<R, K>
-    for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
+impl<ICS: IntegralClosureExtension> InjectiveFunction<ICS::R, ICS::K>
+    for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
-    fn try_preimage(&self, x: &K::Set) -> Option<R::Set> {
+    fn try_preimage(
+        &self,
+        x: &<ICS::K as SetSignature>::Set,
+    ) -> Option<<ICS::R as SetSignature>::Set> {
         self.square.r_to_k().try_preimage(x)
     }
 }
 
-impl<
-    Z: IntegralDomainSignature,
-    Q: FieldSignature,
-    R: IntegralDomainSignature,
-    K: FieldSignature,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
-    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
-> RingHomomorphism<R, K>
-    for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
+impl<ICS: IntegralClosureExtension> RingHomomorphism<ICS::R, ICS::K>
+    for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
 }
 
-impl<
-    Z: IntegralDomainSignature,
-    Q: FieldSignature,
-    R: IntegralDomainSignature,
-    K: FieldSignature,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
-    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    ICS: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>,
-> FieldOfFractionsInclusion<R, K>
-    for FieldOfFractionsInclusionForIntegralClosure<Z, Q, R, K, ZQ, ZR, QK, RK, ICS>
+impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusion<ICS::R, ICS::K>
+    for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
-    fn numerator_and_denominator(&self, a: &K::Set) -> (R::Set, R::Set) {
+    fn numerator_and_denominator(
+        &self,
+        a: &<ICS::K as SetSignature>::Set,
+    ) -> (<ICS::R as SetSignature>::Set, <ICS::R as SetSignature>::Set) {
         // let d in Z such that d*a is in R
         let d = self.square.integralize_multiplier(a);
         // take d in R
@@ -167,68 +94,88 @@ impl<
 ///  - Q → K is a finite dimensional field extension
 ///
 /// This trait expresses that R is the integral closure of Z in K
-pub trait IntegralClosureExtension<
-    Z: IntegralDomainSignature,
-    Q: FieldSignature,
-    R: IntegralDomainSignature,
-    K: FieldSignature,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
-    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
->: Debug + Clone
-{
-    fn z_ring(&self) -> &Z;
-    fn q_field(&self) -> &Q;
-    fn r_ring(&self) -> &R;
-    fn k_field(&self) -> &K;
+pub trait IntegralClosureExtension: Debug + Clone {
+    type Z: IntegralDomainSignature;
+    type Q: FieldSignature;
+    type R: IntegralDomainSignature;
+    type K: FieldSignature;
+    type ZQ<BZ : BorrowedStructure<Self::Z>, BQ : BorrowedStructure<Self::Q>>: FieldOfFractionsInclusion<Self::Z, Self::Q>;
+    type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>>: RingHomomorphism<Self::Z, Self::R>
+        + InjectiveFunction<Self::Z, Self::R>;
+    type QK<BQ : BorrowedStructure<Self::Q>, BK : BorrowedStructure<Self::K>>: FiniteDimensionalFieldExtension<Self::Q, Self::K>;
+    type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>>: RingHomomorphism<Self::R, Self::K>
+        + InjectiveFunction<Self::R, Self::K>;
 
-    fn z_to_q(&self) -> &ZQ;
-    fn z_to_r(&self) -> &ZR;
-    fn q_to_k(&self) -> &QK;
-    fn r_to_k(&self) -> &RK;
+    fn z_ring(&self) -> &Self::Z;
+    fn q_field(&self) -> &Self::Q;
+    fn r_ring(&self) -> &Self::R;
+    fn k_field(&self) -> &Self::K;
+
+    fn z_to_q<'a>(&'a self) -> Cow<'a, Self::ZQ<&'a Self::Z, &'a Self::Q>>;
+    fn z_to_r<'a>(&'a self) -> Cow<'a, Self::ZR<&'a Self::Z, &'a Self::R>>;
+    fn q_to_k<'a>(&'a self) -> Cow<'a, Self::QK<&'a Self::Q, &'a Self::K>>;
+    fn r_to_k<'a>(&'a self) -> Cow<'a, Self::RK<&'a Self::R, &'a Self::K>>;
 
     /// The square should commute, so this should be both
     /// - `z_to_q` followed by `q_to_k`
     /// - `z_to_r` followed by `r_to_k`
-    fn z_to_k(&self) -> impl RingHomomorphism<Z, K> + InjectiveFunction<Z, K> {
-        CompositionMorphism::new(self.z_to_q().clone(), self.q_to_k().clone())
+    fn z_to_k(
+        &self,
+    ) -> impl RingHomomorphism<Self::Z, Self::K> + InjectiveFunction<Self::Z, Self::K> {
+        CompositionMorphism::new(self.z_to_q().into_owned(), self.q_to_k().into_owned())
     }
 
     /// The monic minimal polynomial of alpha in K over Q
-    fn min_poly_k_over_q(&self, alpha: &K::Set) -> Polynomial<Q::Set> {
+    fn min_poly_k_over_q(
+        &self,
+        alpha: &<Self::K as SetSignature>::Set,
+    ) -> Polynomial<<Self::Q as SetSignature>::Set> {
         let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
         #[cfg(debug_assertions)]
         {
-            let q_poly = self.q_field().polynomial_ring();
+            let q_field = self.q_field();
+            let q_poly = q_field.polynomial_ring();
             assert!(q_poly.is_monic(&alpha_min_poly_monic));
         }
         alpha_min_poly_monic
     }
 
     /// By definition of R as the integral closure of Z in K every element of R, when considered as an element of K, has minimal polynomial over Q which is monic with coefficients in Z
-    fn min_poly_r_over_z(&self, alpha: &R::Set) -> Polynomial<Z::Set> {
+    fn min_poly_r_over_z(
+        &self,
+        alpha: &<Self::R as SetSignature>::Set,
+    ) -> Polynomial<<Self::Z as SetSignature>::Set> {
         let alpha_min_poly_monic = self
             .min_poly_k_over_q(&self.r_to_k().image(alpha))
             .apply_map_into(|c| self.z_to_q().try_preimage(&c).unwrap());
         #[cfg(debug_assertions)]
         {
-            let z_poly = self.z_ring().polynomial_ring();
+            let z_ring = self.z_ring();
+            let z_poly = z_ring.polynomial_ring();
             assert!(z_poly.is_monic(&alpha_min_poly_monic));
         }
         alpha_min_poly_monic
     }
 
     /// For alpha in K return non-zero d in Z such that d*alpha is in R
-    fn integralize_multiplier(&self, alpha: &K::Set) -> Z::Set;
+    fn integralize_multiplier(
+        &self,
+        alpha: &<Self::K as SetSignature>::Set,
+    ) -> <Self::Z as SetSignature>::Set;
 
-    fn integral_scalar_multiple_r(&self, alpha: &K::Set) -> R::Set {
+    fn integral_scalar_multiple_r(
+        &self,
+        alpha: &<Self::K as SetSignature>::Set,
+    ) -> <Self::R as SetSignature>::Set {
         self.r_to_k()
             .try_preimage(&self.integral_scalar_multiple_k(alpha))
             .unwrap()
     }
 
-    fn integral_scalar_multiple_k(&self, alpha: &K::Set) -> K::Set {
+    fn integral_scalar_multiple_k(
+        &self,
+        alpha: &<Self::K as SetSignature>::Set,
+    ) -> <Self::K as SetSignature>::Set {
         let d = self.integralize_multiplier(alpha);
         // This is the LCM of the denominators of the coefficients of a,
         // and thus it may well be > 1 even when the element is an algebraic integer.
@@ -237,7 +184,7 @@ pub trait IntegralClosureExtension<
     }
 
     /// Every element of K is a fraction of elements of R
-    fn r_to_k_field_of_fractions(&self) -> impl FieldOfFractionsInclusion<R, K> {
+    fn r_to_k_field_of_fractions(&self) -> impl FieldOfFractionsInclusion<Self::R, Self::K> {
         FieldOfFractionsInclusionForIntegralClosure::new(self.clone())
     }
 }
@@ -254,35 +201,98 @@ pub trait IntegralClosureExtension<
 ///  - R is the integral closure of Z in K
 ///  - Z and R are Dedekind domains
 ///
-/// This trait allows, for each prime ideal p of Z, the ideal pR of R to be factored into prime ideals in R
-pub trait DedekindDomainExtension<
-    Z: DedekindDomainSignature,
-    Q: FieldSignature,
-    R: DedekindDomainSignature,
-    K: FieldSignature,
-    ZQ: FieldOfFractionsInclusion<Z, Q>,
-    ZR: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
-    QK: FiniteDimensionalFieldExtension<Q, K>,
-    RK: RingHomomorphism<R, K> + InjectiveFunction<R, K>,
-    IdealsZ: DedekindDomainIdealsSignature<Z, Z>,
-    IdealsR: DedekindDomainIdealsSignature<R, R>,
->: IntegralClosureExtension<Z, Q, R, K, ZQ, ZR, QK, RK>
+/// This trait allows the ideal pR of R to be factored into prime ideals in R for each prime ideal p of Z
+pub trait DedekindDomainExtension<ZB: BorrowedStructure<Self::Z>, RB: BorrowedStructure<Self::R>>:
+    IntegralClosureExtension
+where
+    Self::Z: DedekindDomainSignature,
+    Self::R: DedekindDomainSignature,
 {
-    fn z_ideals(&self) -> &IdealsZ;
+    type IdealsZ: DedekindDomainIdealsSignature<Self::Z, ZB>;
+    type IdealsR: DedekindDomainIdealsSignature<Self::R, RB>;
 
-    fn r_ideals(&self) -> &IdealsR;
+    fn z_ideals(&self) -> &Self::IdealsZ;
 
-    fn ideal_norm(&self, ideal: &IdealsR::Set) -> IdealsZ::Set;
+    fn r_ideals(&self) -> &Self::IdealsR;
+
+    fn ideal_norm(
+        &self,
+        ideal: &<Self::IdealsR as SetSignature>::Set,
+    ) -> <Self::IdealsZ as SetSignature>::Set;
 
     fn factor_prime_ideal(
         &self,
-        prime_ideal: DedekindDomainPrimeIdeal<IdealsZ::Set>,
-    ) -> DedekindExtensionIdealFactorsAbovePrime<IdealsZ::Set, IdealsR::Set>;
+        prime_ideal: DedekindDomainPrimeIdeal<<Self::IdealsZ as SetSignature>::Set>,
+    ) -> DedekindExtensionIdealFactorsAbovePrime<
+        <Self::IdealsZ as SetSignature>::Set,
+        <Self::IdealsR as SetSignature>::Set,
+    >;
 
     fn factor_ideal(
         &self,
-        ideal: &IdealsR::Set,
-    ) -> Option<DedekindExtensionIdealFactorization<IdealsZ::Set, IdealsR::Set>>;
+        ideal: &<Self::IdealsR as SetSignature>::Set,
+    ) -> Option<
+        DedekindExtensionIdealFactorization<
+            <Self::IdealsZ as SetSignature>::Set,
+            <Self::IdealsR as SetSignature>::Set,
+        >,
+    >;
+
+    fn padic_k_element_valuation(
+        &self,
+        prime: &DedekindDomainPrimeIdeal<<Self::IdealsR as SetSignature>::Set>,
+        a: &<Self::K as SetSignature>::Set,
+    ) -> Valuation {
+        let d = self.integralize_multiplier(a);
+        let m = self.k_field().mul(a, &self.z_to_k().image(&d));
+        self.r_ideals()
+            .padic_r_element_valuation(prime, &self.r_to_k().try_preimage(&m).unwrap())
+            - self
+                .r_ideals()
+                .padic_r_element_valuation(prime, &self.z_to_r().image(&d))
+    }
+
+    // An element is S-integral, if its valuations at all primes not in S are nonnegative.
+    // If S is the empty set, this coincides with the usual integrality.
+    #[allow(non_snake_case)]
+    fn is_S_integral(
+        &self,
+        S: Vec<&DedekindDomainPrimeIdeal<<Self::IdealsR as SetSignature>::Set>>,
+        a: &<Self::K as SetSignature>::Set,
+    ) -> bool {
+        let d = self.integralize_multiplier(a);
+        let m = self.k_field().mul(a, &self.z_to_k().image(&d));
+        // for each prime factor P of d not in S, check if valuation_P(m) ≥ valuation_P(d)
+
+        let d_as_roi = self.z_to_r().image(&d);
+        let principal_ideal_d = self.r_ideals().generated_ideal(vec![d_as_roi.clone()]);
+
+        let d_factorization = self.factor_ideal(&principal_ideal_d);
+        if d_factorization.is_none() {
+            return true;
+        }
+
+        for (prime, _) in d_factorization.unwrap().into_powers() {
+            // Skip primes in S
+            if S.iter().any(|s_ideal| {
+                self.r_ideals()
+                    .ideal_equal(&(*s_ideal).clone().into_ideal(), prime.ideal())
+            }) {
+                continue;
+            }
+
+            let m_val = self
+                .r_ideals()
+                .padic_r_element_valuation(&prime, &self.r_to_k().try_preimage(&m).unwrap());
+            let d_val = self.r_ideals().padic_r_element_valuation(&prime, &d_as_roi);
+
+            if m_val < d_val {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 #[derive(Debug, Clone)]
