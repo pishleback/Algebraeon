@@ -7,7 +7,6 @@ use crate::{
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
     structure::*,
-    valuation::Valuation,
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
 use algebraeon_sets::{
@@ -494,52 +493,6 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         };
         debug_assert!(self.ideal_equal(ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
         (a, b)
-    }
-
-    /// return the valuation of an element `a` with respect to an ideal `I`
-    /// this is the largest power `k` such that `I^k` contains `a`
-    pub fn padic_roi_element_valuation(
-        &self,
-        prime_ideal: RingOfIntegersIdeal,
-        a: Vec<Integer>,
-    ) -> Valuation {
-        debug_assert!(self.ring().is_element(&a).is_ok());
-        debug_assert!(self.is_element(&prime_ideal).is_ok());
-        if self.ring().is_zero(&a) {
-            return Valuation::Infinity;
-        }
-        let mut k = 1usize;
-        let mut prime_to_the_k = prime_ideal.clone();
-        loop {
-            if !self.ideal_contains_element(&prime_to_the_k, &a) {
-                return Valuation::Finite((k - 1).into());
-            }
-            k += 1;
-            prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
-        }
-    }
-
-    /// return the valuation of an ideal `a` with respect to an ideal `I`
-    /// this is the largest power `k` such that `I^k` contains `a`
-    pub fn padic_roi_ideal_valuation(
-        &self,
-        prime_ideal: RingOfIntegersIdeal,
-        a: RingOfIntegersIdeal,
-    ) -> Valuation {
-        debug_assert!(self.is_element(&a).is_ok());
-        debug_assert!(self.is_element(&prime_ideal).is_ok());
-        if self.ideal_is_zero(&a) {
-            return Valuation::Infinity;
-        }
-        let mut k = 1usize;
-        let mut prime_to_the_k = prime_ideal.clone();
-        loop {
-            if !self.ideal_contains(&prime_to_the_k, &a) {
-                return Valuation::Finite((k - 1).into());
-            }
-            k += 1;
-            prime_to_the_k = self.ideal_mul(&prime_to_the_k, &prime_ideal);
-        }
     }
 }
 

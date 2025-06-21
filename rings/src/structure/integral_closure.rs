@@ -1,5 +1,6 @@
 use super::*;
 use crate::polynomial::*;
+use crate::valuation::Valuation;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use std::borrow::Cow;
@@ -236,6 +237,62 @@ where
             <Self::IdealsR as SetSignature>::Set,
         >,
     >;
+
+    fn padic_k_element_valuation(
+        &self,
+        prime: &DedekindDomainPrimeIdeal<<Self::IdealsR as SetSignature>::Set>,
+        a: &<Self::K as SetSignature>::Set,
+    ) -> Valuation {
+        let d = self.integralize_multiplier(a);
+        let m = self.k_field().mul(a, &self.z_to_k().image(&d));
+        self.r_ideals()
+            .padic_r_element_valuation(prime, &self.r_to_k().try_preimage(&m).unwrap())
+            - self
+                .r_ideals()
+                .padic_r_element_valuation(prime, &self.z_to_r().image(&d))
+    }
+
+    // An element is S-integral, if its valuations at all primes not in S are nonnegative.
+    // If S is the empty set, this coincides with the usual integrality.
+    #[allow(non_snake_case)]
+    fn is_S_integral(
+        &self,
+        S: Vec<&DedekindDomainPrimeIdeal<<Self::IdealsR as SetSignature>::Set>>,
+        a: &<Self::K as SetSignature>::Set,
+    ) -> bool {
+        let d = self.integralize_multiplier(a);
+        let m = self.k_field().mul(a, &self.z_to_k().image(&d));
+        // for each prime factor P of d not in S, check if valuation_P(m) ≥ valuation_P(d)
+
+        let d_as_roi = self.z_to_r().image(&d);
+        let principal_ideal_d = self.r_ideals().generated_ideal(vec![d_as_roi.clone()]);
+
+        let d_factorization = self.factor_ideal(&principal_ideal_d);
+        if d_factorization.is_none() {
+            return true;
+        }
+
+        for (prime, _) in d_factorization.unwrap().into_powers() {
+            // Skip primes in S
+            if S.iter().any(|s_ideal| {
+                self.r_ideals()
+                    .ideal_equal(&(*s_ideal).clone().into_ideal(), prime.ideal())
+            }) {
+                continue;
+            }
+
+            let m_val = self
+                .r_ideals()
+                .padic_r_element_valuation(&prime, &self.r_to_k().try_preimage(&m).unwrap());
+            let d_val = self.r_ideals().padic_r_element_valuation(&prime, &d_as_roi);
+
+            if m_val < d_val {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 #[derive(Debug, Clone)]

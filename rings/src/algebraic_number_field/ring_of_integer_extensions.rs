@@ -4,10 +4,8 @@ use super::integer_lattice_ring_of_integers::*;
 use super::polynomial_quotient_number_field::*;
 use super::structure::AlgebraicNumberFieldSignature;
 use crate::integer::ideal::IntegerIdealsStructure;
-use crate::polynomial::Polynomial;
 use crate::polynomial::RingToPolynomialSignature;
 use crate::structure::*;
-use crate::valuation::Valuation;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
@@ -52,66 +50,6 @@ impl<
             ideals_z,
             ideals_r,
         }
-    }
-
-    pub fn padic_anf_valuation_element(
-        &self,
-        prime_ideal: RingOfIntegersIdeal,
-        a: &Polynomial<Rational>,
-    ) -> Valuation {
-        let d = self.integralize_multiplier(a);
-        let m = self.k_field().mul(a, &self.z_to_k().image(&d));
-        self.ideals_r
-            .padic_roi_element_valuation(prime_ideal.clone(), self.r.try_anf_to_roi(&m).unwrap())
-            - self
-                .ideals_r
-                .padic_roi_element_valuation(prime_ideal, self.r.from_int(d))
-    }
-
-    // An element is S-integral, if its valuations at all primes not in S are nonnegative.
-    // If S is the empty set, this coincides with the usual integrality.
-    #[allow(non_snake_case)]
-    pub fn is_S_integral(
-        &self,
-        S: Vec<&DedekindDomainPrimeIdeal<RingOfIntegersIdeal>>,
-        a: &Polynomial<Rational>,
-    ) -> bool {
-        let d = self.integralize_multiplier(a);
-        let m = self.k_field().mul(a, &self.z_to_k().image(&d));
-        // for each prime factor P of d not in S, check if valuation_P(m) ≥ valuation_P(d)
-
-        let d_as_roi = self.r.from_int(d.clone());
-        let principal_ideal_d = self.ideals_r.generated_ideal(vec![d_as_roi.clone()]);
-
-        let d_factorization = self.factor_ideal(&principal_ideal_d);
-        if d_factorization.is_none() {
-            return true;
-        }
-
-        for prime in d_factorization.unwrap().into_powers() {
-            let prime_ideal = prime.0.into_ideal();
-            // Skip primes in S
-            if S.iter().any(|s_ideal| {
-                self.ideals_r
-                    .ideal_equal(&(*s_ideal).clone().into_ideal(), &prime_ideal)
-            }) {
-                continue;
-            }
-
-            let m_val = self.ideals_r.padic_roi_element_valuation(
-                prime_ideal.clone(),
-                self.r.try_anf_to_roi(&m).unwrap(),
-            );
-            let d_val = self
-                .ideals_r
-                .padic_roi_element_valuation(prime_ideal, d_as_roi.clone());
-
-            if m_val < d_val {
-                return false;
-            }
-        }
-
-        true
     }
 }
 
@@ -402,7 +340,11 @@ mod tests {
         println!("poly = {:?}", poly);
         println!("d = {:?}", d);
         println!("m = {:?}", m);
-        assert!(sq.r_ring().try_anf_to_roi(&m).is_some(), "m not in ROI: {:?}", m);
+        assert!(
+            sq.r_ring().try_anf_to_roi(&m).is_some(),
+            "m not in ROI: {:?}",
+            m
+        );
 
         // Case 1: S = empty set → should NOT be S-integral, denominator 2 not inverted
         assert!(!sq.is_S_integral(vec![], &poly));
