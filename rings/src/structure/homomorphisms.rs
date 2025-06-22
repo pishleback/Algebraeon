@@ -2,6 +2,7 @@ use super::*;
 use crate::matrix::{Matrix, MatrixStructure};
 use crate::polynomial::Polynomial;
 use algebraeon_sets::structure::*;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -273,7 +274,14 @@ pub trait IntegralDomainExtensionAllPolynomialRoots<
 pub trait FiniteRankFreeRingExtension<Z: RingSignature, R: RingSignature>:
     RingHomomorphism<Z, R> + InjectiveFunction<Z, R>
 {
+    // things inherited from the finitely free domain-module structure on the range
     fn degree(&self) -> usize;
+    fn to_vec(&self, a: &R::Set) -> Vec<Z::Set>;
+    fn from_vec(&self, v: Vec<impl Borrow<Z::Set>>) -> R::Set;
+    fn to_col(&self, a: &R::Set) -> Matrix<Z::Set>;
+    fn from_col(&self, v: Matrix<Z::Set>) -> R::Set;
+    fn to_row(&self, a: &R::Set) -> Matrix<Z::Set>;
+    fn from_row(&self, v: Matrix<Z::Set>) -> R::Set;
 
     /// matrix representing column vector multiplication by `a` on the left
     fn col_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set>;
@@ -292,6 +300,24 @@ where
 {
     fn degree(&self) -> usize {
         self.range_module_structure().rank()
+    }
+    fn to_vec(&self, a: &R::Set) -> Vec<Z::Set> {
+        self.range_module_structure().to_vec(a)
+    }
+    fn from_vec(&self, v: Vec<impl Borrow<Z::Set>>) -> R::Set {
+        self.range_module_structure().from_vec(v)
+    }
+    fn to_col(&self, a: &R::Set) -> Matrix<Z::Set> {
+        self.range_module_structure().to_col(a)
+    }
+    fn from_col(&self, v: Matrix<Z::Set>) -> R::Set {
+        self.range_module_structure().from_col(v)
+    }
+    fn to_row(&self, a: &R::Set) -> Matrix<Z::Set> {
+        self.range_module_structure().to_row(a)
+    }
+    fn from_row(&self, v: Matrix<Z::Set>) -> R::Set {
+        self.range_module_structure().from_row(v)
     }
 
     fn col_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set> {

@@ -1,17 +1,15 @@
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
-use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
-use itertools::Itertools;
-
+use super::{QuaternionAlgebraElement, QuaternionAlgebraStructure};
 use crate::{
     algebraic_number_field::structure::AlgebraicNumberFieldSignature,
     module::finitely_free_module::RingToFinitelyFreeModuleSignature,
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature,
-        RingHomomorphism, RingSignature, SemiModuleSignature, SemiRingSignature,
+        AdditiveGroupSignature, AdditiveMonoidSignature, FiniteRankFreeRingExtension,
+        FinitelyFreeModuleSignature, SemiModuleSignature, SemiRingSignature,
     },
 };
-
-use super::{QuaternionAlgebraElement, QuaternionAlgebraStructure};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
+use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
+use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct QuaternionOrderZBasis<ANF: AlgebraicNumberFieldSignature> {
@@ -31,7 +29,7 @@ impl<ANF: AlgebraicNumberFieldSignature> Eq for QuaternionOrderZBasis<ANF> {}
 
 impl<ANF: AlgebraicNumberFieldSignature> EqSignature for QuaternionOrderZBasis<ANF> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.algebra.equal(&a, &b)
+        self.algebra.equal(a, b)
     }
 }
 
@@ -43,8 +41,8 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
         let algebra = &self.algebra;
         let submodules = Rational::structure()
-            .free_module(self.basis.len())
-            .submodules();
+            .into_free_module(self.basis.len())
+            .into_submodules();
 
         let basis_vecs: Vec<Vec<Rational>> = self
             .basis
@@ -53,24 +51,32 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
                 algebra
                     .to_vec(b)
                     .into_iter()
-                    .map(|p| p.into_coeffs())
-                    .flatten()
+                    .flat_map(|p| {
+                        algebra
+                            .base_field()
+                            .finite_dimensional_rational_extension()
+                            .to_vec(&p)
+                    })
                     .collect_vec()
             })
             .collect_vec();
 
         let basis_refs: Vec<&Vec<Rational>> = basis_vecs.iter().collect();
 
-        let V = submodules.span(basis_refs);
+        let v = submodules.span(basis_refs);
 
         let x_vec = algebra
             .to_vec(x)
             .into_iter()
-            .map(|p| p.into_coeffs())
-            .flatten()
+            .flat_map(|p| {
+                algebra
+                    .base_field()
+                    .finite_dimensional_rational_extension()
+                    .to_vec(&p)
+            })
             .collect_vec();
 
-        let (coset, element_reduced) = submodules.reduce_element(&V, &x_vec);
+        let (coset, element_reduced) = submodules.reduce_element(&v, &x_vec);
         debug_assert!(element_reduced.iter().all(|coeff| *coeff == Rational::ZERO));
 
         if coset.iter().all(|coeff| coeff.is_integer()) {
@@ -152,7 +158,7 @@ impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
         // 2. Check that the basis is closed under multiplication
         for (i, bi) in self.basis.iter().enumerate() {
             for (j, bj) in self.basis.iter().enumerate() {
-                let product = self.algebra.mul(&bi, &bj);
+                let product = self.algebra.mul(bi, bj);
                 if self.is_element(&product).is_err() {
                     println!(
                         "Basis not closed under multiplication: b[{}] * b[{}] = {:?} not in order",
