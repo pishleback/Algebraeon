@@ -11,6 +11,7 @@ use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
 use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
 use itertools::Itertools;
 
+// an integer sublattice and subring of a quaternion algebra over an algebraic number field
 #[derive(Debug, Clone)]
 pub struct QuaternionOrderZBasis<ANF: AlgebraicNumberFieldSignature> {
     integers: IntegerCanonicalStructure, // so we can return a reference to it in .ring()
@@ -107,25 +108,6 @@ impl<ANF: AlgebraicNumberFieldSignature> AdditiveGroupSignature for QuaternionOr
     }
 }
 
-// impl FreeModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
-//     type Basis;
-
-//     fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
-//         todo!()
-//     }
-
-//     fn to_component<'a>(
-//         &'a self,
-//         b: &<Self::Basis as SetSignature>::Set,
-//         v: &'a Self::Set,
-//     ) -> &'a Integer {
-//         todo!()
-//     }
-
-//     fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Integer) -> Self::Set {
-//         todo!()
-//     }
-// }
 
 impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStructure>
     for QuaternionOrderZBasis<ANF>
@@ -145,8 +127,6 @@ impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStr
         )
     }
 }
-
-// impl ModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {}
 
 impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
     fn check_basis(self) -> bool {
@@ -198,7 +178,7 @@ mod tests {
             basis: vec![one.clone(), i.clone(), j.clone(), k.clone()],
         };
 
-        for (idx, b) in order.basis.iter().enumerate() {
+        for b in order.basis.iter() {
             assert!(order.is_element(b).is_ok(),);
         }
 

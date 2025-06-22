@@ -5,6 +5,15 @@ use std::{borrow::Cow, fmt};
 
 pub mod quaternion_orders;
 
+// When char != 2
+//  has a basis of 1, i, j, ij
+//  and is such that i^2=a and j^2=b and ij = -ji
+//  for some non-zero a and b
+//
+// When char == 2
+//  has basis 1, i, j, k
+//  and is such that i^2+i=a and j^2=b and k=ij=j(i+1)
+//  for some a and some non-zero b
 #[derive(Debug, Clone)]
 pub struct QuaternionAlgebraStructure<Field: FieldSignature> {
     base: Field,
