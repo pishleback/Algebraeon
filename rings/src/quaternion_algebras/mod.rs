@@ -71,12 +71,12 @@ impl FiniteSetSignature for QuaternionAlgebraBasisCanonicalStructure {
 }
 
 #[derive(Debug, Clone)]
-pub struct QuaternionAlgebraElement<Field: FieldSignature> {
+pub struct QuaternionAlgebraElement<Set> {
     // represent x + yi + zj + wk
-    x: Field::Set,
-    y: Field::Set,
-    z: Field::Set,
-    w: Field::Set,
+    x: Set,
+    y: Set,
+    z: Set,
+    w: Set,
 }
 
 impl<Field: FieldSignature> PartialEq for QuaternionAlgebraStructure<Field> {
@@ -101,7 +101,7 @@ impl<Field: FieldSignature> EqSignature for QuaternionAlgebraStructure<Field> {
 impl<Field: FieldSignature> Signature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
-    type Set = QuaternionAlgebraElement<Field>;
+    type Set = QuaternionAlgebraElement<Field::Set>;
 
     fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
         Ok(())
@@ -308,7 +308,7 @@ impl<Field: CharZeroFieldSignature> CharZeroRingSignature for QuaternionAlgebraS
 }
 
 impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
-    pub fn i(&self) -> QuaternionAlgebraElement<Field> {
+    pub fn i(&self) -> QuaternionAlgebraElement<Field::Set> {
         QuaternionAlgebraElement {
             x: self.base.zero(),
             y: self.base.one(),
@@ -317,7 +317,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
-    pub fn j(&self) -> QuaternionAlgebraElement<Field> {
+    pub fn j(&self) -> QuaternionAlgebraElement<Field::Set> {
         QuaternionAlgebraElement {
             x: self.base.zero(),
             y: self.base.zero(),
@@ -326,7 +326,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
-    pub fn k(&self) -> QuaternionAlgebraElement<Field> {
+    pub fn k(&self) -> QuaternionAlgebraElement<Field::Set> {
         QuaternionAlgebraElement {
             x: self.base.zero(),
             y: self.base.zero(),
@@ -337,8 +337,8 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
 
     pub fn conjugate(
         &self,
-        a: &QuaternionAlgebraElement<Field>,
-    ) -> QuaternionAlgebraElement<Field> {
+        a: &QuaternionAlgebraElement<Field::Set>,
+    ) -> QuaternionAlgebraElement<Field::Set> {
         let base = &self.base;
         if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
@@ -358,7 +358,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
-    pub fn reduced_trace(&self, a: &QuaternionAlgebraElement<Field>) -> Field::Set {
+    pub fn reduced_trace(&self, a: &QuaternionAlgebraElement<Field::Set>) -> Field::Set {
         if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
             a.y.clone()
@@ -367,7 +367,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
-    pub fn reduced_norm(&self, a: &QuaternionAlgebraElement<Field>) -> Field::Set {
+    pub fn reduced_norm(&self, a: &QuaternionAlgebraElement<Field::Set>) -> Field::Set {
         let base = &self.base;
         let a_param = &self.a;
         let b_param = &self.b;

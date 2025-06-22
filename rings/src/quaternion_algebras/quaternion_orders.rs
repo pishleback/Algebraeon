@@ -3,54 +3,55 @@ use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, 
 use itertools::Itertools;
 
 use crate::{
-    algebraic_number_field::number_field::AlgebraicNumberFieldStructure,
+    algebraic_number_field::structure::AlgebraicNumberFieldSignature,
     module::finitely_free_module::RingToFinitelyFreeModuleSignature,
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, FinitelyFreeModuleSignature,
-        RingSignature, SemiModuleSignature, SemiRingSignature,
+        RingHomomorphism, RingSignature, SemiModuleSignature, SemiRingSignature,
     },
 };
 
 use super::{QuaternionAlgebraElement, QuaternionAlgebraStructure};
 
 #[derive(Debug, Clone)]
-pub struct QuaternionOrderZBasis {
+pub struct QuaternionOrderZBasis<ANF: AlgebraicNumberFieldSignature> {
     integers: IntegerCanonicalStructure, // so we can return a reference to it in .ring()
-    algebra: QuaternionAlgebraStructure<AlgebraicNumberFieldStructure>,
-    basis: Vec<QuaternionAlgebraElement<AlgebraicNumberFieldStructure>>, // 4n elements
+    algebra: QuaternionAlgebraStructure<ANF>,
+    basis: Vec<QuaternionAlgebraElement<ANF::Set>>, // 4n elements
 }
 
-impl PartialEq for QuaternionOrderZBasis {
+impl<ANF: AlgebraicNumberFieldSignature> PartialEq for QuaternionOrderZBasis<ANF> {
     #[allow(clippy::overly_complex_bool_expr)]
     fn eq(&self, other: &Self) -> bool {
         self.algebra == other.algebra && false
     }
 }
 
-impl Eq for QuaternionOrderZBasis {}
+impl<ANF: AlgebraicNumberFieldSignature> Eq for QuaternionOrderZBasis<ANF> {}
 
-impl EqSignature for QuaternionOrderZBasis {
+impl<ANF: AlgebraicNumberFieldSignature> EqSignature for QuaternionOrderZBasis<ANF> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.algebra.equal(&a, &b)
     }
 }
 
-impl Signature for QuaternionOrderZBasis {}
+impl<ANF: AlgebraicNumberFieldSignature> Signature for QuaternionOrderZBasis<ANF> {}
 
-impl SetSignature for QuaternionOrderZBasis {
-    type Set = QuaternionAlgebraElement<AlgebraicNumberFieldStructure>;
+impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<ANF> {
+    type Set = QuaternionAlgebraElement<ANF::Set>;
 
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
-        let A = &self.algebra;
-        let rat = Rational::structure();
-        let free_mod = rat.free_module(self.basis.len());
-        let submodules = free_mod.submodules();
+        let algebra = &self.algebra;
+        let submodules = Rational::structure()
+            .free_module(self.basis.len())
+            .submodules();
 
         let basis_vecs: Vec<Vec<Rational>> = self
             .basis
             .iter()
             .map(|b| {
-                A.to_vec(b)
+                algebra
+                    .to_vec(b)
                     .into_iter()
                     .map(|p| p.into_coeffs())
                     .flatten()
@@ -62,7 +63,7 @@ impl SetSignature for QuaternionOrderZBasis {
 
         let V = submodules.span(basis_refs);
 
-        let x_vec = A
+        let x_vec = algebra
             .to_vec(x)
             .into_iter()
             .map(|p| p.into_coeffs())
@@ -70,7 +71,7 @@ impl SetSignature for QuaternionOrderZBasis {
             .collect_vec();
 
         let (coset, element_reduced) = submodules.reduce_element(&V, &x_vec);
-        debug_assert!(element_reduced.iter().all(|coeff| rat.is_zero(coeff)));
+        debug_assert!(element_reduced.iter().all(|coeff| *coeff == Rational::ZERO));
 
         if coset.iter().all(|coeff| coeff.is_integer()) {
             Ok(())
@@ -80,7 +81,7 @@ impl SetSignature for QuaternionOrderZBasis {
     }
 }
 
-impl AdditiveMonoidSignature for QuaternionOrderZBasis {
+impl<ANF: AlgebraicNumberFieldSignature> AdditiveMonoidSignature for QuaternionOrderZBasis<ANF> {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.algebra.is_zero(a)
     }
@@ -94,7 +95,7 @@ impl AdditiveMonoidSignature for QuaternionOrderZBasis {
     }
 }
 
-impl AdditiveGroupSignature for QuaternionOrderZBasis {
+impl<ANF: AlgebraicNumberFieldSignature> AdditiveGroupSignature for QuaternionOrderZBasis<ANF> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         self.algebra.neg(a)
     }
@@ -120,26 +121,28 @@ impl AdditiveGroupSignature for QuaternionOrderZBasis {
 //     }
 // }
 
-impl SemiModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {
+impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStructure>
+    for QuaternionOrderZBasis<ANF>
+{
     fn ring(&self) -> &IntegerCanonicalStructure {
         &self.integers
     }
 
-    fn scalar_mul(&self, x: &Integer, a: &Self::Set) -> Self::Set {
+    fn scalar_mul(&self, a: &Self::Set, x: &Integer) -> Self::Set {
         self.algebra.scalar_mul(
+            a,
             &self
                 .algebra
                 .base_field()
                 .principal_subring_inclusion()
                 .image(x),
-            a,
         )
     }
 }
 
 // impl ModuleSignature<IntegerCanonicalStructure> for QuaternionOrderZBasis {}
 
-impl QuaternionOrderZBasis {
+impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
     fn check_basis(self) -> bool {
         // 1. check that 1 belongs to the order
         if self.is_element(&self.algebra.clone().one()).is_err() {
