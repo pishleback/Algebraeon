@@ -1,4 +1,4 @@
-use super::number_field::AlgebraicNumberFieldStructure;
+use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::isolated_algebraic::ComplexAlgebraicCanonicalStructure;
 use crate::structure::*;
 use crate::{
@@ -13,11 +13,11 @@ use std::rc::Rc;
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
     //anf.modulus() == gen.min_poly()
-    anf: Rc<AlgebraicNumberFieldStructure>,
+    anf: Rc<AlgebraicNumberFieldPolynomialQuotientStructure>,
     generator: ComplexAlgebraic,
 }
 
-impl AlgebraicNumberFieldStructure {
+impl AlgebraicNumberFieldPolynomialQuotientStructure {
     pub fn all_complex_embeddings(&self) -> Vec<EmbeddedAnf> {
         self.modulus()
             .primitive_part_fof()
@@ -42,7 +42,9 @@ impl AlgebraicNumberFieldStructure {
 }
 
 impl ComplexAlgebraic {
-    pub fn generated_algebraic_number_field(&self) -> AlgebraicNumberFieldStructure {
+    pub fn generated_algebraic_number_field(
+        &self,
+    ) -> AlgebraicNumberFieldPolynomialQuotientStructure {
         self.min_poly().algebraic_number_field_unchecked()
     }
 
@@ -230,7 +232,9 @@ pub fn anf_multi_primitive_element_theorem(
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::IntoErgonomic;
+    use crate::{
+        algebraic_number_field::structure::AlgebraicNumberFieldSignature, structure::IntoErgonomic,
+    };
 
     use super::*;
 
@@ -242,7 +246,7 @@ mod tests {
             println!(
                 "{:?}",
                 root.generated_algebraic_number_field()
-                    .compute_integral_basis_and_discriminant()
+                    .into_ring_of_integers_extension()
             );
         }
     }

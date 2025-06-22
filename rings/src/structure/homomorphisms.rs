@@ -1,7 +1,7 @@
 use super::*;
+use crate::matrix::{Matrix, MatrixStructure};
 use crate::polynomial::Polynomial;
 use algebraeon_sets::structure::*;
-use std::borrow::{Borrow, Cow};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -29,6 +29,14 @@ mod range_module {
                 _range: PhantomData,
                 hom,
             }
+        }
+
+        pub fn module(&self) -> &Range {
+            self.hom.range()
+        }
+
+        pub fn homomorphism(&self) -> &'h Hom {
+            self.hom
         }
     }
 
@@ -96,38 +104,8 @@ mod range_module {
             self.hom.domain()
         }
 
-        fn scalar_mul(&self, x: &Domain::Set, a: &Self::Set) -> Self::Set {
+        fn scalar_mul(&self, a: &Self::Set, x: &Domain::Set) -> Self::Set {
             self.hom.range().mul(&self.hom.image(x), a)
-        }
-    }
-
-    impl<
-        'h,
-        Domain: RingSignature,
-        Range: RingSignature,
-        Hom: FiniteRankFreeRingExtension<Domain, Range>,
-    > FreeModuleSignature<Domain> for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
-    {
-        type Basis = Hom::Basis;
-
-        fn basis_set(&self) -> impl Borrow<Self::Basis> {
-            self.hom.basis_set()
-        }
-
-        fn to_component<'a>(
-            &self,
-            b: &<Self::Basis as SetSignature>::Set,
-            v: &'a Self::Set,
-        ) -> Cow<'a, Domain::Set> {
-            self.hom.to_component(b, v)
-        }
-
-        fn from_component(
-            &self,
-            b: &<Self::Basis as SetSignature>::Set,
-            r: &Domain::Set,
-        ) -> Self::Set {
-            self.hom.from_component(b, r)
         }
     }
 
@@ -160,7 +138,6 @@ mod principal_subring_inclusion {
     /// The unique ring homomorphism Z -> R of the integers into any ring R
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct PrincipalSubringInclusion<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
-        integer_structure: IntegerCanonicalStructure,
         _ring: PhantomData<Ring>,
         ring: RingB,
     }
@@ -168,7 +145,6 @@ mod principal_subring_inclusion {
     impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> PrincipalSubringInclusion<Ring, RingB> {
         pub fn new(ring: RingB) -> Self {
             Self {
-                integer_structure: Integer::structure(),
                 _ring: PhantomData,
                 ring,
             }
@@ -179,7 +155,7 @@ mod principal_subring_inclusion {
         Morphism<IntegerCanonicalStructure, Ring> for PrincipalSubringInclusion<Ring, RingB>
     {
         fn domain(&self) -> &IntegerCanonicalStructure {
-            &self.integer_structure
+            Integer::structure_ref()
         }
 
         fn range(&self) -> &Ring {
@@ -216,7 +192,6 @@ mod principal_subring_inclusion {
         Field: CharZeroFieldSignature,
         FieldB: BorrowedStructure<Field>,
     > {
-        rational_structure: RationalCanonicalStructure,
         _field: PhantomData<Field>,
         field: FieldB,
     }
@@ -226,7 +201,6 @@ mod principal_subring_inclusion {
     {
         pub fn new(field: FieldB) -> Self {
             Self {
-                rational_structure: Rational::structure(),
                 _field: PhantomData,
                 field,
             }
@@ -238,7 +212,7 @@ mod principal_subring_inclusion {
         for PrincipalRationalSubfieldInclusion<Field, FieldB>
     {
         fn domain(&self) -> &RationalCanonicalStructure {
-            &self.rational_structure
+            Rational::structure_ref()
         }
 
         fn range(&self) -> &Field {
@@ -295,37 +269,99 @@ pub trait IntegralDomainExtensionAllPolynomialRoots<
     fn all_roots(&self, polynomial: &Polynomial<A::Set>) -> Vec<B::Set>;
 }
 
-/// An injective homomorphism of rings A -> B such that B is a finite rank free A module
-pub trait FiniteRankFreeRingExtension<A: RingSignature, B: RingSignature>:
-    RingHomomorphism<A, B> + InjectiveFunction<A, B>
+/// A ring extension Z -> R such that R is a finitely free Z-module
+pub trait FiniteRankFreeRingExtension<Z: RingSignature, R: RingSignature>:
+    RingHomomorphism<Z, R> + InjectiveFunction<Z, R>
 {
-    type Basis: FiniteSetSignature;
-    fn basis_set(&self) -> impl Borrow<Self::Basis>;
-    fn to_component<'a>(
-        &self,
-        b: &<Self::Basis as SetSignature>::Set,
-        v: &'a B::Set,
-    ) -> Cow<'a, A::Set>;
-    fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &A::Set) -> B::Set;
+    fn degree(&self) -> usize;
+
+    /// matrix representing column vector multiplication by `a` on the left
+    fn col_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set>;
+
+    /// matrix representing row vector multiplication by `a` on the right
+    fn row_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set>;
+}
+
+impl<Z: RingSignature, R: RingSignature, Hom: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>>
+    FiniteRankFreeRingExtension<Z, R> for Hom
+where
+    for<'h> RingHomomorphismRangeModuleStructure<'h, Z, R, Self>:
+        FinitelyFreeModuleSignature<Z, Set = R::Set>,
+    for<'h> <RingHomomorphismRangeModuleStructure<'h, Z, R, Self> as FreeModuleSignature<Z>>::Basis:
+        FiniteSetSignature,
+{
+    fn degree(&self) -> usize {
+        self.range_module_structure().rank()
+    }
+
+    fn col_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set> {
+        let basis = self.range_module_structure().basis_vecs();
+        Matrix::from_cols(
+            (0..self.degree())
+                .map(|i| {
+                    self.range_module_structure()
+                        .to_vec(&self.range().mul(a, &basis[i]))
+                })
+                .collect(),
+        )
+    }
+
+    fn row_multiplication_matrix(&self, a: &R::Set) -> Matrix<Z::Set> {
+        self.col_multiplication_matrix(a).transpose()
+    }
 }
 
 /// A finite dimensional field extension F -> K
 pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
-    FiniteRankFreeRingExtension<F, K>
+    RingHomomorphism<F, K> + InjectiveFunction<F, K> + FiniteRankFreeRingExtension<F, K>
 {
-    fn degree(&self) -> usize {
-        self.basis_set().borrow().size()
-    }
     fn norm(&self, a: &K::Set) -> F::Set;
+
     fn trace(&self, a: &K::Set) -> F::Set;
+
     /// The monic minimal polynomial of a
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set>;
+
+    fn trace_form_matrix(&self, elems: &Vec<K::Set>) -> Matrix<F::Set> {
+        let n = self.degree();
+        assert_eq!(n, elems.len());
+        Matrix::construct(n, n, |r, c| {
+            self.trace(&self.range().mul(&elems[r], &elems[c]))
+        })
+    }
+
+    fn discriminant(&self, elems: &Vec<K::Set>) -> F::Set {
+        MatrixStructure::new(self.domain().clone())
+            .det(self.trace_form_matrix(elems))
+            .unwrap()
+    }
 }
 
-/// A separable finite dimensional field extension F -> K
-pub trait SeparableFiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
-    FiniteDimensionalFieldExtension<F, K>
+impl<F: FieldSignature, K: FieldSignature, Hom: RingHomomorphism<F, K> + InjectiveFunction<F, K>>
+    FiniteDimensionalFieldExtension<F, K> for Hom
+where
+    for<'h> RingHomomorphismRangeModuleStructure<'h, F, K, Self>:
+        FinitelyFreeModuleSignature<F, Set = K::Set>,
+    for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignature<F>>::Basis:
+        FiniteSetSignature,
 {
+    fn norm(&self, a: &K::Set) -> F::Set {
+        MatrixStructure::new(self.domain().clone())
+            .det(self.col_multiplication_matrix(a))
+            .unwrap()
+    }
+
+    fn trace(&self, a: &K::Set) -> F::Set {
+        MatrixStructure::new(self.domain().clone())
+            .trace(&self.col_multiplication_matrix(a))
+            .unwrap()
+    }
+
+    fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set> {
+        MatrixStructure::new(self.domain().clone())
+            .minimal_polynomial(self.col_multiplication_matrix(a))
+            .unwrap()
+    }
 }
 
 /// Represent all ring homomorphisms from `domain` to `range`
