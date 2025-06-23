@@ -1,24 +1,22 @@
 use crate::structure::*;
+use algebraeon_sets::structure::FiniteSetSignature;
 
 /// Algebras over `Ring`
 pub trait AlgebraSignature<Ring: RingSignature>: ModuleSignature<Ring> + RingSignature {}
 
-pub trait FiniteDimensionalAlgebraSignature<K: FieldSignature>:
-    AlgebraSignature<K> + FinitelyFreeModuleSignature<K>
-where
-    <Self as modules::FreeModuleSignature<K>>::Basis:
-        algebraeon_sets::structure::FiniteSetSignature,
+pub trait FiniteDimensionalAlgebraSignature<Basis: FiniteSetSignature, Field: FieldSignature>:
+    AlgebraSignature<Field> + FinitelyFreeModuleSignature<Basis, Field>
 {
 }
 
 /// Order in a finite dimensional algebra as in https://en.wikipedia.org/wiki/Order_(ring_theory)
 pub trait OrderSignature<
+    Basis: FiniteSetSignature,
     Ring: IntegralDomainSignature,
     K: FieldSignature,
     KIsFOF: FieldOfFractionsInclusion<Ring, K>,
-    A: FiniteDimensionalAlgebraSignature<K>,
->: FullLatticeSignature<Ring, K, KIsFOF, A> + RingSignature where
-    <A as modules::FreeModuleSignature<K>>::Basis: algebraeon_sets::structure::FiniteSetSignature,
+    A: FiniteDimensionalAlgebraSignature<Basis, K>,
+>: FullLatticeSignature<Ring, K, KIsFOF, A> + RingSignature
 {
     fn is_maximal(&self) -> bool;
 }

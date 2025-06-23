@@ -32,26 +32,20 @@ impl<Ring: RingSignature, Module: SemiModuleSignature<Ring> + AdditiveGroupSigna
 
 pub trait FinitelyGeneratedModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {}
 
-pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
-    type Basis: SetSignature;
+pub trait FreeModuleSignature<Basis: SetSignature, Ring: RingSignature>:
+    ModuleSignature<Ring>
+{
+    fn basis_set(&self) -> impl Borrow<Basis>;
 
-    fn basis_set(&self) -> impl Borrow<Self::Basis>;
+    fn to_component<'a>(&self, b: &Basis::Set, v: &'a Self::Set) -> Cow<'a, Ring::Set>;
 
-    fn to_component<'a>(
-        &self,
-        b: &<Self::Basis as SetSignature>::Set,
-        v: &'a Self::Set,
-    ) -> Cow<'a, Ring::Set>;
-
-    fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Ring::Set) -> Self::Set;
+    fn from_component(&self, b: &Basis::Set, r: &Ring::Set) -> Self::Set;
 }
 
-pub trait FinitelyFreeModuleSignature<Ring: RingSignature>:
-    FreeModuleSignature<Ring> + FinitelyGeneratedModuleSignature<Ring>
-where
-    Self::Basis: FiniteSetSignature,
+pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSignature>:
+    FreeModuleSignature<Basis, Ring> + FinitelyGeneratedModuleSignature<Ring>
 {
-    fn basis(&self) -> Vec<<Self::Basis as SetSignature>::Set> {
+    fn basis(&self) -> Vec<Basis::Set> {
         self.basis_set().borrow().list_all_elements()
     }
 

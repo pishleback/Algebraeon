@@ -61,6 +61,7 @@ impl<
     IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, RB>,
 > IntegralClosureExtension for RingOfIntegersExtension<ANF, ROItoANF, IdealsZ, RB, IdealsR>
 {
+    type QKBasis = ANF::Basis;
     type Z = IntegerCanonicalStructure;
     type Q = RationalCanonicalStructure;
     type R = ANF::RingOfIntegers;

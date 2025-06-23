@@ -96,7 +96,7 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
 }
 
 impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FreeModuleSignature<RationalCanonicalStructure>
+    FreeModuleSignature<SingletonSetStructure, RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
@@ -104,9 +104,7 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
         PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
     >
 {
-    type Basis = SingletonSetStructure;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+    fn basis_set(&self) -> impl std::borrow::Borrow<SingletonSetStructure> {
         SingletonSetStructure::default()
     }
 
@@ -120,7 +118,7 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
 }
 
 impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FinitelyFreeModuleSignature<RationalCanonicalStructure>
+    FinitelyFreeModuleSignature<SingletonSetStructure, RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
@@ -182,6 +180,7 @@ impl AlgebraicIntegerRingInAlgebraicNumberField<RationalCanonicalStructure>
 }
 
 impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
+    type Basis = SingletonSetStructure;
     type RingOfIntegers = IntegerCanonicalStructure;
     type RingOfIntegersInclusion = PrincipalSubringInclusion<Self, Self>;
     type RationalInclusion<B: BorrowedStructure<Self>> =

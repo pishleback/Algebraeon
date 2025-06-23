@@ -69,7 +69,7 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure 
 }
 
 impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FreeModuleSignature<RationalCanonicalStructure>
+    FreeModuleSignature<EnumeratedFiniteSetStructure, RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
@@ -77,9 +77,7 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
     >
 {
-    type Basis = EnumeratedFiniteSetStructure;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+    fn basis_set(&self) -> impl std::borrow::Borrow<EnumeratedFiniteSetStructure> {
         self.module()
             .coefficient_ring_inclusion()
             .range_module_structure()
@@ -115,7 +113,7 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 }
 
 impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FinitelyFreeModuleSignature<RationalCanonicalStructure>
+    FinitelyFreeModuleSignature<EnumeratedFiniteSetStructure, RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
@@ -134,6 +132,7 @@ impl AlgebraicIntegerRingInAlgebraicNumberField<AlgebraicNumberFieldPolynomialQu
 }
 
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
+    type Basis = EnumeratedFiniteSetStructure;
     type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
     type RingOfIntegersInclusion = RingOfIntegersToAlgebraicNumberFieldInclusion;
     type RationalInclusion<B: BorrowedStructure<Self>> =
