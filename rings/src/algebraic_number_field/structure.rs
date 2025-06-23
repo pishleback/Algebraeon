@@ -3,21 +3,24 @@ use crate::{
     integer::ideal::IntegerIdealsStructure,
     structure::{
         CharZeroFieldSignature, CharZeroRingSignature, DedekindDomainIdealsSignature,
-        DedekindDomainSignature, FiniteDimensionalFieldExtension, MetaGreatestCommonDivisor,
-        RingHomomorphism, RingToIdealsSignature,
+        DedekindDomainSignature, FiniteDimensionalFieldExtension, FiniteRankFreeRingExtension,
+        MetaGreatestCommonDivisor, RingHomomorphism, RingToIdealsSignature,
     },
 };
 use algebraeon_nzq::{
     Integer, IntegerCanonicalStructure, Rational, RationalCanonicalStructure, traits::Fraction,
 };
-use algebraeon_sets::structure::{BorrowedStructure, InjectiveFunction, MetaType};
+use algebraeon_sets::structure::{
+    BorrowedStructure, FiniteSetSignature, InjectiveFunction, MetaType,
+};
 
 /// An algebraic number field is a field of characteristic zero such that
 /// the inclusion of its rational subfield is finite dimensional
 pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
+    type Basis: FiniteSetSignature;
     type RingOfIntegers: DedekindDomainSignature + CharZeroRingSignature;
     type RingOfIntegersInclusion: AlgebraicIntegerRingInAlgebraicNumberField<Self>;
-    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
+    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<Self::Basis, RationalCanonicalStructure, Self>;
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self>;
     fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
@@ -37,6 +40,10 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
                 .map(|c| Integer::from(c.denominator()))
                 .collect(),
         )
+    }
+
+    fn absolute_degree(&self) -> usize {
+        self.finite_dimensional_rational_extension().degree()
     }
 
     /// return a scalar multiple of $a$ which is an algebraic integer

@@ -230,7 +230,7 @@ impl<
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
     const IS_FIELD: bool,
-> FreeModuleSignature<Field>
+> FreeModuleSignature<EnumeratedFiniteSetStructure, Field>
     for RingHomomorphismRangeModuleStructure<
         'h,
         Field,
@@ -238,9 +238,7 @@ impl<
         PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>,
     >
 {
-    type Basis = EnumeratedFiniteSetStructure;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+    fn basis_set(&self) -> impl std::borrow::Borrow<EnumeratedFiniteSetStructure> {
         EnumeratedFiniteSetStructure::new(self.module().degree())
     }
 
@@ -266,7 +264,23 @@ impl<
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
     const IS_FIELD: bool,
-> FinitelyFreeModuleSignature<Field>
+> FinitelyGeneratedModuleSignature<Field>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        Field,
+        PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>,
+        PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>,
+    >
+{
+}
+
+impl<
+    'h,
+    Field: FieldSignature,
+    FieldB: BorrowedStructure<Field>,
+    FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
+    const IS_FIELD: bool,
+> FinitelyFreeModuleSignature<EnumeratedFiniteSetStructure, Field>
     for RingHomomorphismRangeModuleStructure<
         'h,
         Field,

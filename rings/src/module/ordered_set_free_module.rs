@@ -227,11 +227,9 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> FreeModuleSignature<Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+> FreeModuleSignature<Set, Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
-    type Basis = Set;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+    fn basis_set(&self) -> impl std::borrow::Borrow<Set> {
         self.set()
     }
 
@@ -257,7 +255,18 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> FinitelyFreeModuleSignature<Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+> FinitelyGeneratedModuleSignature<Ring>
+    for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
+}
+
+impl<
+    Set: OrdSignature + FiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: RingSignature,
+    RingB: BorrowedStructure<Ring>,
+> FinitelyFreeModuleSignature<Set, Ring>
+    for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
 }
 
