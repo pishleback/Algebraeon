@@ -218,12 +218,11 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ri
     }
 }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ring>
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+    FreeModuleSignature<EnumeratedFiniteSetStructure, Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    type Basis = EnumeratedFiniteSetStructure;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+    fn basis_set(&self) -> impl std::borrow::Borrow<EnumeratedFiniteSetStructure> {
         &self.basis_set
     }
 
@@ -240,7 +239,13 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ri
     }
 }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleSignature<Ring>
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyGeneratedModuleSignature<Ring>
+    for FinitelyFreeModuleStructure<Ring, RingB>
+{
+}
+
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
+    FinitelyFreeModuleSignature<EnumeratedFiniteSetStructure, Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
     fn basis(&self) -> Vec<usize> {

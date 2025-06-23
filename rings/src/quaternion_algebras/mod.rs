@@ -260,10 +260,10 @@ impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStru
 
 impl<Field: FieldSignature> AlgebraSignature<Field> for QuaternionAlgebraStructure<Field> {}
 
-impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
-    type Basis = QuaternionAlgebraBasisCanonicalStructure;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+impl<Field: FieldSignature> FreeModuleSignature<QuaternionAlgebraBasisCanonicalStructure, Field>
+    for QuaternionAlgebraStructure<Field>
+{
+    fn basis_set(&self) -> impl std::borrow::Borrow<QuaternionAlgebraBasisCanonicalStructure> {
         QuaternionAlgebraBasisCanonicalStructure {}
     }
 
@@ -292,7 +292,13 @@ impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStru
     }
 }
 
-impl<Field: FieldSignature> FinitelyFreeModuleSignature<Field>
+impl<Field: FieldSignature> FinitelyGeneratedModuleSignature<Field>
+    for QuaternionAlgebraStructure<Field>
+{
+}
+
+impl<Field: FieldSignature>
+    FinitelyFreeModuleSignature<QuaternionAlgebraBasisCanonicalStructure, Field>
     for QuaternionAlgebraStructure<Field>
 {
 }
