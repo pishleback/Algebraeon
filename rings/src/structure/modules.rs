@@ -70,10 +70,10 @@ where
             .collect()
     }
 
-    fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
+    fn to_vec(&self, a: &Self::Set) -> Vec<Ring::Set> {
         self.basis()
             .iter()
-            .map(|b| self.to_component(b, v).as_ref().clone())
+            .map(|b| self.to_component(b, a).as_ref().clone())
             .collect()
     }
 
