@@ -3,8 +3,8 @@ use crate::{
     integer::ideal::IntegerIdealsStructure,
     structure::{
         CharZeroFieldSignature, CharZeroRingSignature, DedekindDomainIdealsSignature,
-        DedekindDomainSignature, FiniteDimensionalFieldExtension, MetaGreatestCommonDivisor,
-        RingHomomorphism, RingToIdealsSignature,
+        DedekindDomainSignature, FiniteDimensionalFieldExtension, FiniteRankFreeRingExtension,
+        MetaGreatestCommonDivisor, RingHomomorphism, RingToIdealsSignature,
     },
 };
 use algebraeon_nzq::{
@@ -37,6 +37,10 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
                 .map(|c| Integer::from(c.denominator()))
                 .collect(),
         )
+    }
+
+    fn absolute_degree(&self) -> usize {
+        self.finite_dimensional_rational_extension().degree()
     }
 
     /// return a scalar multiple of $a$ which is an algebraic integer

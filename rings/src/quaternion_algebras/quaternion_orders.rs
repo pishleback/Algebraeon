@@ -108,7 +108,6 @@ impl<ANF: AlgebraicNumberFieldSignature> AdditiveGroupSignature for QuaternionOr
     }
 }
 
-
 impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStructure>
     for QuaternionOrderZBasis<ANF>
 {
@@ -130,12 +129,24 @@ impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStr
 
 impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
     fn check_basis(self) -> bool {
-        // 1. check that 1 belongs to the order
+        // 1. Check that the basis has 4n elements
+        let expected_len = 4 * self.algebra.base_field().absolute_degree();
+
+        if self.basis.len() != expected_len {
+            println!(
+                "Incorrect basis size: got {}, expected {}",
+                self.basis.len(),
+                expected_len
+            );
+            return false;
+        }
+
+        // 2. check that 1 belongs to the order
         if self.is_element(&self.algebra.clone().one()).is_err() {
             return false;
         }
 
-        // 2. Check that the basis is closed under multiplication
+        // 3. Check that the basis is closed under multiplication
         for (i, bi) in self.basis.iter().enumerate() {
             for (j, bj) in self.basis.iter().enumerate() {
                 let product = self.algebra.mul(bi, bj);
