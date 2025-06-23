@@ -8,7 +8,7 @@ In mathematics there are many instances of sets with some additional structure, 
  - For each natural number \\(n \in \mathbb{N}\\), the finite set of integers modulo \\(n\\) with its ring structure.
  - The set of all algebraic numbers in \\(\mathbb{C}\\) with its field structure.
  - The set of all ideals in a ring with the operations of ideal addition, ideal intersection, and ideal multiplication. Depending on the ring, ideals may be uniquely factorable as a product of prime ideals.
- - 
+
 The approach taken by Algebraeon to represent such sets with additional structure is well illustrated by the example of the ring of integers modulo \\(n \in \mathbb{N}\\). This would be done as follows:
  - Define a structure type `IntegersModuloN` whose objects shall represent the ring of integers modulo \\(n\\) for different values of \\(n\\).
  - Implement the desired structure by implementing signature traits on the structure type. In the case of `IntegersModuloN` the required signature traits are:
@@ -18,6 +18,7 @@ The approach taken by Algebraeon to represent such sets with additional structur
    - `FiniteSetSignature` so that a list of all integers modulo \\(n\\) can be produced.
    - `SemiRingSignature` so that `Integer`s can be added and multiplied modulo \\(n\\).
    - `RingSignature` so that `Integer`s can be subtracted modulo \\(n\\).
+  
 In practice, this could look like
 ```rust
 use algebraeon::nzq::{Integer, Natural};

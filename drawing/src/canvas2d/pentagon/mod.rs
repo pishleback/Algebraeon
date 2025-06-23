@@ -59,6 +59,7 @@ struct PentagonWgpu {
 
 pub struct Pentagon {}
 
+#[allow(clippy::new_without_default)]
 impl Pentagon {
     pub fn new() -> Self {
         Self {}
@@ -66,7 +67,7 @@ impl Pentagon {
 }
 
 impl Canvas2DItem for Pentagon {
-    fn new(
+    fn new_wgpu(
         &self,
         wgpu_state: &WgpuState,
         camera_bind_group_layout: &BindGroupLayout,
@@ -175,7 +176,7 @@ impl Canvas2DItemWgpu for PentagonWgpu {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: view,
+                view,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Load,
