@@ -30,6 +30,8 @@ impl<Ring: RingSignature, Module: SemiModuleSignature<Ring> + AdditiveGroupSigna
 {
 }
 
+pub trait FinitelyGeneratedModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {}
+
 pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
     type Basis: SetSignature;
 
@@ -115,6 +117,13 @@ where
     fn from_row(&self, v: Matrix<Ring::Set>) -> Self::Set {
         self.from_col(v.transpose())
     }
+}
+
+impl<Ring: RingSignature, Module: FinitelyFreeModuleSignature<Ring>>
+    FinitelyGeneratedModuleSignature<Ring> for Module
+where
+    <Module as FreeModuleSignature<Ring>>::Basis: FiniteSetSignature,
+{
 }
 
 pub trait LinearTransformation<
