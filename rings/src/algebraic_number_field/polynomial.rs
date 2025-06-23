@@ -224,6 +224,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             ));
         }
 
+        // println!("p_factors = {:?}", p_factors);
+
         self.factorizations().from_unit_and_factor_powers(
             self.one(),
             p_factors

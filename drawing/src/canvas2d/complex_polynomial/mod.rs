@@ -67,6 +67,7 @@ impl PolynomialPlot {
 
     pub fn make_shader(&self) -> String {
         let n = self.coeffs.len();
+        #[allow(clippy::useless_format)]
         String::from(include_str!("shader.wgsl")).replace(
             "// Generate eval_cfn HERE",
             format!(
@@ -112,7 +113,7 @@ return result;
 }
 
 impl Canvas2DItem for PolynomialPlot {
-    fn new(
+    fn new_wgpu(
         &self,
         wgpu_state: &WgpuState,
         camera_bind_group_layout: &BindGroupLayout,
@@ -218,7 +219,7 @@ impl Canvas2DItemWgpu for PolynomialWgpu {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: view,
+                view,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {

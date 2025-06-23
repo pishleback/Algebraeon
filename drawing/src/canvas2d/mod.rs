@@ -42,8 +42,8 @@ pub trait Camera {
         pixels: PhysicalPosition<f64>,
     ) -> (f64, f64) {
         (
-            2.0 * pixels.x as f64 / display_size.width as f64 - 1.0,
-            -2.0 * pixels.y as f64 / display_size.height as f64 + 1.0,
+            2.0 * pixels.x / display_size.width as f64 - 1.0,
+            -2.0 * pixels.y / display_size.height as f64 + 1.0,
         )
     }
 
@@ -108,6 +108,7 @@ pub struct MouseWheelZoomCamera {
     sqrt_area: f64,
 }
 
+#[allow(clippy::new_without_default)]
 impl MouseWheelZoomCamera {
     pub fn new() -> Self {
         Self {
@@ -141,6 +142,7 @@ impl Camera for MouseWheelZoomCamera {
         _id: WindowId,
         event: &WindowEvent,
     ) {
+        #[allow(clippy::single_match)]
         match event {
             WindowEvent::MouseWheel { delta, .. } => {
                 let dy = match delta {
@@ -185,8 +187,9 @@ pub trait Canvas2DItemWgpu {
     ) -> Result<(), wgpu::SurfaceError>;
 }
 
+#[allow(clippy::new_without_default)]
 pub trait Canvas2DItem {
-    fn new(
+    fn new_wgpu(
         &self,
         wgpu_state: &WgpuState,
         camera_bind_group_layout: &BindGroupLayout,
@@ -301,7 +304,7 @@ impl Canvas for Canvas2D {
         for item in &self.items {
             state
                 .items
-                .push(item.new(&state.wgpu_state, &state.camera_bind_group_layout));
+                .push(item.new_wgpu(&state.wgpu_state, &state.camera_bind_group_layout));
         }
         state
     }
@@ -321,6 +324,7 @@ impl Canvas for Canvas2D {
             &event,
         );
 
+        #[allow(clippy::single_match)]
         match event {
             WindowEvent::CloseRequested => {
                 event_loop.exit();

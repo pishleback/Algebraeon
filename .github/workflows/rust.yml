@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  fmt_check:
+  fmt:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -19,10 +19,11 @@ jobs:
     - name: Install Linux Dependencies
       run: sudo apt install libfontconfig1-dev
 
-    - name: Check Fmt
+
+    - name: Check Formatting
       run: cargo fmt --all -- --check
 
-  check_lints:
+  check:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -31,12 +32,12 @@ jobs:
     - name: Install Linux Dependencies
       run: sudo apt install libfontconfig1-dev
 
-    - name: Run Check
+    - name: Cargo Check
       run: cargo check --all-targets --all-features
       env:
         RUSTFLAGS: "-D warnings"
 
-  clippy_lints:
+  clippy:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -51,7 +52,7 @@ jobs:
     - name: Run Clippy
       run: cargo clippy -- -D warnings
 
-  build_and_test_debug:
+  test_debug:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -63,7 +64,7 @@ jobs:
     - name: Run tests in debug
       run: cargo test --verbose
 
-  build_and_test_release:
+  test_release:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
