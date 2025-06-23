@@ -236,15 +236,13 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
         // println!("p_factors = {:?}", p_factors);
 
-        let factored = self.factorizations().from_unit_and_factor_powers(
+        self.factorizations().from_unit_and_factor_powers(
             self.one(),
             p_factors
                 .into_iter()
                 .map(|p_factor| (p_factor, Natural::ONE))
                 .collect(),
-        );
-        // println!("factored = {}", factored);
-        factored
+        )
     }
 
     pub fn factor_primitive_sqfree_by_reduced_ring(
