@@ -240,6 +240,10 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ri
     }
 }
 
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyGeneratedModuleSignature<Ring>
+    for FinitelyFreeModuleStructure<Ring, RingB>
+{}
+
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleSignature<Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {

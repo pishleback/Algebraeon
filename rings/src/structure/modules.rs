@@ -46,7 +46,8 @@ pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
     fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Ring::Set) -> Self::Set;
 }
 
-pub trait FinitelyFreeModuleSignature<Ring: RingSignature>: FreeModuleSignature<Ring>
+pub trait FinitelyFreeModuleSignature<Ring: RingSignature>:
+    FreeModuleSignature<Ring> + FinitelyGeneratedModuleSignature<Ring>
 where
     Self::Basis: FiniteSetSignature,
 {
@@ -117,13 +118,6 @@ where
     fn from_row(&self, v: Matrix<Ring::Set>) -> Self::Set {
         self.from_col(v.transpose())
     }
-}
-
-impl<Ring: RingSignature, Module: FinitelyFreeModuleSignature<Ring>>
-    FinitelyGeneratedModuleSignature<Ring> for Module
-where
-    <Module as FreeModuleSignature<Ring>>::Basis: FiniteSetSignature,
-{
 }
 
 pub trait LinearTransformation<

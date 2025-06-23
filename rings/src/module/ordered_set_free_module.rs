@@ -257,6 +257,16 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
+> FinitelyGeneratedModuleSignature<Ring>
+    for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
+}
+
+impl<
+    Set: OrdSignature + FiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: RingSignature,
+    RingB: BorrowedStructure<Ring>,
 > FinitelyFreeModuleSignature<Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
 }

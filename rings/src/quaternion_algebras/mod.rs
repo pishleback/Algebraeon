@@ -292,6 +292,11 @@ impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStru
     }
 }
 
+impl<Field: FieldSignature> FinitelyGeneratedModuleSignature<Field>
+    for QuaternionAlgebraStructure<Field>
+{
+}
+
 impl<Field: FieldSignature> FinitelyFreeModuleSignature<Field>
     for QuaternionAlgebraStructure<Field>
 {

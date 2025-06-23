@@ -85,6 +85,17 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
 }
 
 impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
+    FinitelyGeneratedModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        RationalCanonicalStructure,
+        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
+    >
+{
+}
+
+impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
     FreeModuleSignature<RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,

@@ -104,6 +104,17 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 }
 
 impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
+    FinitelyGeneratedModuleSignature<RationalCanonicalStructure>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        RationalCanonicalStructure,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
+    >
+{
+}
+
+impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     FinitelyFreeModuleSignature<RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,

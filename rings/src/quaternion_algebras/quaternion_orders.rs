@@ -108,7 +108,6 @@ impl<ANF: AlgebraicNumberFieldSignature> AdditiveGroupSignature for QuaternionOr
     }
 }
 
-
 impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStructure>
     for QuaternionOrderZBasis<ANF>
 {

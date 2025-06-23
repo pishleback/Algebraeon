@@ -266,6 +266,22 @@ impl<
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
     const IS_FIELD: bool,
+> FinitelyGeneratedModuleSignature<Field>
+    for RingHomomorphismRangeModuleStructure<
+        'h,
+        Field,
+        PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>,
+        PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>,
+    >
+{
+}
+
+impl<
+    'h,
+    Field: FieldSignature,
+    FieldB: BorrowedStructure<Field>,
+    FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
+    const IS_FIELD: bool,
 > FinitelyFreeModuleSignature<Field>
     for RingHomomorphismRangeModuleStructure<
         'h,
