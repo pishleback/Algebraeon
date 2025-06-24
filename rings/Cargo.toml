@@ -32,6 +32,6 @@ rustdoc-args = ["--html-in-header", "katex-header.html"]
 criterion = "0.6"
 
 [[bench]]
-name = "polynomial_real_root_count"
+name = "polynomial_roots"
 harness = false
 
