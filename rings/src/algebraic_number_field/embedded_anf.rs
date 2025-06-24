@@ -46,7 +46,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
     pub fn signature(&self) -> (usize, usize) {
         let poly = self.modulus();
         let d = poly.degree().unwrap();
-        let r = poly.all_real_roots().len();
+        let r = poly.count_real_roots();
         let two_s = d - r;
         debug_assert_eq!(two_s % 2, 0);
         (r, two_s / 2)
