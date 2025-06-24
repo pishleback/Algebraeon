@@ -30,6 +30,18 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
             .collect()
     }
 
+    pub fn all_real_embeddings(&self) -> Vec<EmbeddedAnf> {
+        self.modulus()
+            .primitive_part_fof()
+            .all_real_roots()
+            .into_iter()
+            .map(|generator| EmbeddedAnf {
+                anf: self.clone().into(),
+                generator: ComplexAlgebraic::from(generator),
+            })
+            .collect()
+    }
+
     /// Return (r, s) where r is the number of real embeddings and s is the number of pairs of complex embeddings
     pub fn signature(&self) -> (usize, usize) {
         let poly = self.modulus();
