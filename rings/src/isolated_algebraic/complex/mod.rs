@@ -468,6 +468,23 @@ pub enum ComplexAlgebraic {
     Complex(ComplexAlgebraicRoot),
 }
 
+impl From<RealAlgebraic> for ComplexAlgebraic {
+    fn from(value: RealAlgebraic) -> Self {
+        Self::Real(value)
+    }
+}
+
+impl TryFrom<ComplexAlgebraic> for RealAlgebraic {
+    type Error = ();
+
+    fn try_from(value: ComplexAlgebraic) -> Result<Self, Self::Error> {
+        match value {
+            ComplexAlgebraic::Real(real_algebraic) => Ok(real_algebraic),
+            ComplexAlgebraic::Complex(_) => Err(()),
+        }
+    }
+}
+
 impl ComplexAlgebraic {
     pub fn i() -> Self {
         let i = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {

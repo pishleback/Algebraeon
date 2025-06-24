@@ -37,7 +37,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
             .into_iter()
             .map(|generator| EmbeddedAnf {
                 anf: self.clone().into(),
-                generator: ComplexAlgebraic::Real(generator),
+                generator: ComplexAlgebraic::from(generator),
             })
             .collect()
     }
