@@ -51,6 +51,19 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
         debug_assert_eq!(two_s % 2, 0);
         (r, two_s / 2)
     }
+
+    pub fn is_totally_real(&self) -> bool {
+        self.signature().1 == 0
+    }
+
+    pub fn is_totally_positive(&self, a: Polynomial<Rational>) -> bool {
+        self.all_real_embeddings()
+            .into_iter()
+            .all(|mut v| match v.generator.apply_poly(&a) {
+                ComplexAlgebraic::Real(v_image_real) => v_image_real > RealAlgebraic::zero(),
+                _ => false,
+            })
+    }
 }
 
 impl ComplexAlgebraic {
