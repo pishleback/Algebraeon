@@ -39,6 +39,7 @@ impl<ANF: AlgebraicNumberFieldSignature> Signature for QuaternionOrderZBasis<ANF
 impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<ANF> {
     type Set = QuaternionAlgebraElement<ANF::Set>;
 
+    #[allow(clippy::redundant_closure_for_method_calls)]
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
         let algebra = &self.algebra;
         let submodules = Rational::structure()
@@ -189,7 +190,7 @@ mod tests {
             basis: vec![one.clone(), i.clone(), j.clone(), k.clone()],
         };
 
-        for b in order.basis.iter() {
+        for b in &order.basis {
             assert!(order.is_element(b).is_ok(),);
         }
 

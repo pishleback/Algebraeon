@@ -15,6 +15,8 @@ impl<S: SetSignature> Pairs<S> {
     }
 
     /// Construct a new pair from two elements of a set
+    /// # Errors
+    /// If either `a` or `b` is not an element of `S`, then `(a,b)` is not one of `Pairs<S>`
     pub fn new_pair(&self, a: S::Set, b: S::Set) -> Result<(S::Set, S::Set), String> {
         self.set.is_element(&a)?;
         self.set.is_element(&b)?;
@@ -56,6 +58,8 @@ impl<Set: SetSignature> UnorderedPairs<Set> {
 pub struct UnorderedPair<T>(T, T);
 
 impl<S: SetSignature + EqSignature> UnorderedPairs<S> {
+    /// # Errors
+    /// `a` and `b` are expected to not be equal as elements of `S`
     pub fn new_pair(&self, a: &S::Set, b: &S::Set) -> Result<UnorderedPair<S::Set>, String> {
         if self.set.equal(a, b) {
             Err("UnorderedPair elements must be distinct".to_string())

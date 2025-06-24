@@ -659,7 +659,8 @@ mod tests {
     use super::*;
 
     #[allow(type_alias_bounds)]
-    type PLocalizeInts<IB: Borrow<IntegerCanonicalStructure>> = LocalizedRingAtPrime<IntegerCanonicalStructure,IB,IntegerIdealsStructure<IB>>;
+    type PLocalizeInts<IB: Borrow<IntegerCanonicalStructure>> =
+        LocalizedRingAtPrime<IntegerCanonicalStructure, IB, IntegerIdealsStructure<IB>>;
 
     #[test]
     fn two_localize() {
@@ -669,11 +670,16 @@ mod tests {
         let two_localize = PLocalizeInts::<&IntegerCanonicalStructure>::new_unchecked(
             &integers,
             integer_ideals,
-            two_ideal);
-        let z_includes = LocalizationInclusion::new(IntegerCanonicalStructure {}, two_localize.clone());
-        let z_to_q = PrincipalSubringInclusion::<RationalCanonicalStructure, RationalCanonicalStructure>::new(RationalCanonicalStructure {  });
+            two_ideal,
+        );
+        let z_includes =
+            LocalizationInclusion::new(IntegerCanonicalStructure {}, two_localize.clone());
+        let z_to_q = PrincipalSubringInclusion::<
+            RationalCanonicalStructure,
+            RationalCanonicalStructure,
+        >::new(RationalCanonicalStructure {});
         let includes_q = LocalizationInclusionFoF::new(two_localize.clone(), z_to_q);
-        
+
         for no_denominator in -30..30 {
             let in_localization = (1.into(), no_denominator.into());
             let in_localization_string = two_localize.to_string(&in_localization);
@@ -684,11 +690,17 @@ mod tests {
             let from_integer = no_denominator.into();
             let in_localization_via_map = z_includes.image(&from_integer);
             assert_eq!(in_localization_via_map, in_localization);
-            assert_eq!(z_includes.try_preimage(&in_localization), Some(from_integer));
+            assert_eq!(
+                z_includes.try_preimage(&in_localization),
+                Some(from_integer)
+            );
 
             let as_q = includes_q.image(&in_localization);
             assert_eq!(as_q, Rational::from_integers(no_denominator, 1));
-            assert_eq!(includes_q.try_preimage(&as_q), Some((1.into(),no_denominator.into())));
+            assert_eq!(
+                includes_q.try_preimage(&as_q),
+                Some((1.into(), no_denominator.into()))
+            );
         }
 
         for two_denominator in -30..30 {
@@ -702,30 +714,40 @@ mod tests {
         for three_denominator in -30..30 {
             let in_localization = (3.into(), three_denominator.into());
             let in_localization_string = two_localize.to_string(&in_localization);
-            assert_eq!(in_localization_string, format!("3^(-1) {three_denominator}"));
-            let in_localization_is_element: Result<(), String> = two_localize.is_element(&in_localization);
+            assert_eq!(
+                in_localization_string,
+                format!("3^(-1) {three_denominator}")
+            );
+            let in_localization_is_element: Result<(), String> =
+                two_localize.is_element(&in_localization);
             assert!(in_localization_is_element.is_ok());
 
             let as_q = includes_q.image(&in_localization);
             assert_eq!(as_q, Rational::from_integers(three_denominator, 3));
-            let non_reduced_form = (3.into(),three_denominator.into());
+            let non_reduced_form = (3.into(), three_denominator.into());
             let pre_image = includes_q.try_preimage(&as_q);
             if three_denominator % 3 != 0 {
                 assert_eq!(pre_image, Some(non_reduced_form.clone()));
-                assert!(two_localize.equal(&pre_image.expect("Already know that it is Some"), &non_reduced_form));
+                assert!(two_localize.equal(
+                    &pre_image.expect("Already know that it is Some"),
+                    &non_reduced_form
+                ));
             } else {
-                assert_eq!(pre_image, Some((1.into(),(three_denominator / 3).into())));
-                assert!(two_localize.equal(&pre_image.expect("Already know that it is Some"), &non_reduced_form));
+                assert_eq!(pre_image, Some((1.into(), (three_denominator / 3).into())));
+                assert!(two_localize.equal(
+                    &pre_image.expect("Already know that it is Some"),
+                    &non_reduced_form
+                ));
             }
         }
 
-        let one_half: (_, _) = (2.into(),1.into());
+        let one_half: (_, _) = (2.into(), 1.into());
         let one_half_string = two_localize.to_string(&one_half);
         assert_eq!(one_half_string, "2^(-1) 1");
         let one_half_is_element = two_localize.is_element(&one_half);
         assert!(one_half_is_element.is_err());
 
-        let one_third = (3.into(),1.into());
+        let one_third = (3.into(), 1.into());
         let one_third_string = two_localize.to_string(&one_third);
         assert_eq!(one_third_string, "3^(-1) 1");
         let one_third_is_element = two_localize.is_element(&one_third);
@@ -734,12 +756,11 @@ mod tests {
         let one_third_squared = two_localize.mul(&one_third, &one_third);
         assert_eq!(one_third_squared, (9.into(), 1.into()));
 
-        let mut one_third_squared_three_cubed = (1.into(),3.into());
-        two_localize.mul_mut(&mut one_third_squared_three_cubed, &(1.into(),3.into()));
-        two_localize.mul_mut(&mut one_third_squared_three_cubed, &(1.into(),3.into()));
+        let mut one_third_squared_three_cubed = (1.into(), 3.into());
+        two_localize.mul_mut(&mut one_third_squared_three_cubed, &(1.into(), 3.into()));
+        two_localize.mul_mut(&mut one_third_squared_three_cubed, &(1.into(), 3.into()));
         two_localize.mul_mut(&mut one_third_squared_three_cubed, &one_third_squared);
         // This is not in reduced form. So this is where potential problems can occur.
         assert_eq!(one_third_squared_three_cubed, (9.into(), 27.into()));
     }
-
 }
