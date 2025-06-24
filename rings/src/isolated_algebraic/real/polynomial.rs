@@ -904,12 +904,33 @@ impl Polynomial<Integer> {
     pub fn all_real_roots(&self) -> Vec<RealAlgebraic> {
         self.real_roots(None, None, false, false)
     }
+
+    /// return the number of real roots counted with multiplicity
+    pub fn count_real_roots(&self) -> usize {
+        match self.degree() {
+            None => panic!("Zero polynomial has infinitely many roots"),
+            Some(0) => 0,
+            Some(1) => 1,
+            Some(2) => {
+                let (a, b, c) = (self.coeff(0), self.coeff(1), self.coeff(2));
+                let disc = b.as_ref() * b.as_ref() - Integer::from(4) * a.as_ref() * c.as_ref();
+                if disc >= Integer::ZERO { 2 } else { 0 }
+            }
+            Some(_) => self.all_real_roots().len(),
+        }
+    }
 }
 
 impl Polynomial<Rational> {
     pub fn all_real_roots(&self) -> Vec<RealAlgebraic> {
         assert_ne!(self, &Self::zero());
         self.primitive_part_fof().all_real_roots()
+    }
+
+    /// return the number of real roots counted with multiplicity
+    pub fn count_real_roots(&self) -> usize {
+        assert_ne!(self, &Self::zero());
+        self.primitive_part_fof().count_real_roots()
     }
 }
 
@@ -1142,6 +1163,51 @@ mod tests {
             .real_roots_irreducible(None, None, false, false)
             .len(),
             3
+        );
+    }
+
+    #[test]
+    fn test_count_real_roots() {
+        assert_eq!(
+            Polynomial::<Integer>::from_str("7", "x")
+                .unwrap()
+                .count_real_roots(),
+            0
+        );
+
+        assert_eq!(
+            Polynomial::<Integer>::from_str("x - 7", "x")
+                .unwrap()
+                .count_real_roots(),
+            1
+        );
+
+        assert_eq!(
+            Polynomial::<Integer>::from_str("x + 7", "x")
+                .unwrap()
+                .count_real_roots(),
+            1
+        );
+
+        assert_eq!(
+            Polynomial::<Integer>::from_str("x^2 - 1", "x")
+                .unwrap()
+                .count_real_roots(),
+            2
+        );
+
+        assert_eq!(
+            Polynomial::<Integer>::from_str("x^2", "x")
+                .unwrap()
+                .count_real_roots(),
+            2
+        );
+
+        assert_eq!(
+            Polynomial::<Integer>::from_str("x^2 + 1", "x")
+                .unwrap()
+                .count_real_roots(),
+            0
         );
     }
 }
