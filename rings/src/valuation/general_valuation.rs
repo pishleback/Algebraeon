@@ -234,13 +234,28 @@ impl AdditiveValuation for PAdicValuation {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct LogRatio<T>
 where
     T: Ord + Mul<T, Output = T>,
 {
     numerator: T,
     denominator: T,
+}
+
+impl<T> PartialEq for LogRatio<T>
+where
+    T: Ord + Mul<T, Output = T> + Clone,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.numerator.clone() * other.denominator.clone() == self.denominator.clone() * other.numerator.clone()
+    }
+}
+
+impl<T> Eq for LogRatio<T>
+where
+    T: Ord + Mul<T, Output = T> + Clone,
+{
 }
 
 impl<T> PartialOrd for LogRatio<T>
@@ -302,5 +317,70 @@ impl PreAdditiveValuation for ArchimedeanPlace {
             numerator,
             denominator,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::structure::MetaSemiRing;
+
+    use super::*;
+
+    #[test]
+    fn archimedean() {
+        let zero = Rational::zero();
+        let archimedean = ArchimedeanPlace{};
+        assert_eq!(archimedean.nu(&zero), AdditiveValueGroup::Infinity);
+
+        for d in -10i8..10 {
+            if d==0 {
+                continue;                    
+            }
+            for n in -10i8..10 {
+                let cur_rational = Rational::from_integers(n, d);
+                if n != 0 {
+                    let from_val = archimedean.nu(&cur_rational);
+                    let expected = LogRatio { numerator: Natural::from_nat(n.abs() as u8), denominator: Natural::from_nat(d.abs() as u8) };
+                    match from_val {
+                        AdditiveValueGroup::Infinity => panic!("Valuation is infinite only on 0"),
+                        AdditiveValueGroup::Finite(finite_valuation) => {
+                            assert_eq!(finite_valuation, expected);
+                        }
+                    }
+                } else {
+                    assert_eq!(archimedean.nu(&cur_rational), AdditiveValueGroup::Infinity);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn three_adic() {
+        let zero = Rational::zero();
+        let three_adic = PAdicValuation(Natural::from_nat(3u8));
+        assert_eq!(three_adic.nu(&zero), AdditiveValueGroup::Infinity);
+
+        for d in -26i8..26 {
+            if d==0 {
+                continue;                    
+            }
+            for n in -26i8..26 {
+                let cur_rational = Rational::from_integers(n, d);
+                if n != 0 {
+                    let from_val = three_adic.nu(&cur_rational);
+                    let expected_n = Integer::from_nat(if n % 9 == 0 {2u8} else if n % 3 == 0 {1} else {0});
+                    let expected_d = Integer::from_nat(if d % 9 == 0 {2u8} else if d % 3 == 0 {1} else {0});
+                    let expected = expected_n - expected_d;
+                    match from_val {
+                        AdditiveValueGroup::Infinity => panic!("Valuation is infinite only on 0"),
+                        AdditiveValueGroup::Finite(finite_valuation) => {
+                            assert_eq!(finite_valuation, expected);
+                        }
+                    }
+                } else {
+                    assert_eq!(three_adic.nu(&cur_rational), AdditiveValueGroup::Infinity);
+                }
+            }
+        }
     }
 }
