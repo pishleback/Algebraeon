@@ -66,14 +66,14 @@ impl<
         }
     }
 
-    pub fn simplify(&self, elt: <Self as SetSignature>::Set) -> <Self as SetSignature>::Set {
+    pub fn simplify(&self, elt: &<Self as SetSignature>::Set) -> <Self as SetSignature>::Set {
         let fof_inclusion = LocalizationInclusionFoF::new(self.clone());
-        let in_field = fof_inclusion.image(&elt);
+        let in_field = fof_inclusion.image(elt);
         let back_in_here = fof_inclusion.try_preimage(&in_field);
         if let Some(simplified) = back_in_here {
             simplified
         } else {
-            elt
+            elt.clone()
         }
     }
 }
@@ -858,6 +858,9 @@ mod tests {
             let in_localization_is_element: Result<(), String> =
                 two_localize.is_element(&in_localization);
             assert!(in_localization_is_element.is_ok());
+            let as_simplified = two_localize.simplify(&in_localization);
+            assert!(two_localize.is_element(&as_simplified).is_ok());
+            assert!(two_localize.equal(&as_simplified, &in_localization));
 
             let as_q = includes_q.image(&in_localization);
             assert_eq!(as_q, Rational::from_integers(three_denominator, 3));
