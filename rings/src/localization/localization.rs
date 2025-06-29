@@ -10,9 +10,13 @@ pub struct LocalizedRingAtPrime<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 > {
     _ring: PhantomData<Ring>,
+    _fof: PhantomData<FoF>,
     ring: RingB,
+    fof_inclusion: FoFInclusion,
     ideals: Ideals,
     prime_ideal: Ideals::Set,
 }
@@ -21,7 +25,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
     pub fn ring(&self) -> &Ring {
         self.ring.borrow()
@@ -36,7 +42,12 @@ impl<
     /// in order to implement `RingSignature` for the localized ring.
     /// This does not check that `prime_ideal` was actually prime,
     /// but we do the sanity checks that it is a proper ideal.
-    pub fn new_unchecked(ring: RingB, ideals: Ideals, prime_ideal: Ideals::Set) -> Self {
+    pub fn new_unchecked(
+        ring: RingB,
+        ideals: Ideals,
+        prime_ideal: Ideals::Set,
+        fof_inclusion: FoFInclusion,
+    ) -> Self {
         assert!(
             !ideals.ideal_equal(&ideals.unit_ideal(), &prime_ideal),
             "The provided prime ideal was the full ring"
@@ -47,9 +58,22 @@ impl<
         );
         Self {
             _ring: PhantomData,
+            _fof: PhantomData,
             ring,
             ideals,
+            fof_inclusion,
             prime_ideal,
+        }
+    }
+
+    pub fn simplify(&self, elt: <Self as SetSignature>::Set) -> <Self as SetSignature>::Set {
+        let fof_inclusion = LocalizationInclusionFoF::new(self.clone());
+        let in_field = fof_inclusion.image(&elt);
+        let back_in_here = fof_inclusion.try_preimage(&in_field);
+        if let Some(simplified) = back_in_here {
+            simplified
+        } else {
+            elt
         }
     }
 }
@@ -58,7 +82,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> PartialEq for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> PartialEq for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
     fn eq(&self, other: &Self) -> bool {
         self.ring == other.ring
@@ -73,7 +99,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> Eq for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> Eq for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
 }
 
@@ -81,7 +109,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> Signature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> Signature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
 }
 
@@ -89,7 +119,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> SetSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> SetSignature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
     // (s, r) represents the fraction r/s
     type Set = (Ring::Set, Ring::Set);
@@ -112,7 +144,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> ToStringSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> ToStringSignature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: ToStringSignature,
 {
@@ -130,7 +164,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> EqSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> EqSignature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: EqSignature,
 {
@@ -148,7 +184,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> AdditiveMonoidSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> AdditiveMonoidSignature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
     fn zero(&self) -> Self::Set {
         (self.ring().one(), self.ring().zero())
@@ -170,7 +208,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> AdditiveGroupSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> AdditiveGroupSignature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         let (s, r) = a;
@@ -182,7 +222,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> SemiRingSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> SemiRingSignature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
     fn one(&self) -> Self::Set {
         (self.ring().one(), self.ring().one())
@@ -202,7 +244,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> RingSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> RingSignature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
 }
 
@@ -210,7 +254,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> SemiRingUnitsSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> SemiRingUnitsSignature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if self.is_zero(a) {
@@ -230,7 +276,9 @@ impl<
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-> IntegralDomainSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+> IntegralDomainSignature for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         let mut to_return = self.inv(b)?;
@@ -241,111 +289,249 @@ impl<
 
 /// R includes into S^-1 R
 #[derive(Clone, Debug)]
-pub struct LocalizationInclusion<Ring, RingB, Ideals>
+pub struct LocalizationInclusion<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 {
     source: Ring,
-    target: LocalizedRingAtPrime<Ring, RingB, Ideals>,
+    target: LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>,
 }
 
-impl<Ring, RingB, Ideals> LocalizationInclusion<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion>
+    LocalizationInclusion<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 {
-    pub fn new(source: Ring, target: LocalizedRingAtPrime<Ring, RingB, Ideals>) -> Self {
+    pub fn new(
+        source: Ring,
+        target: LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>,
+    ) -> Self {
         Self { source, target }
     }
 }
 
-impl<Ring, RingB, Ideals> Morphism<Ring, LocalizedRingAtPrime<Ring, RingB, Ideals>>
-    for LocalizationInclusion<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion>
+    Morphism<Ring, LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>>
+    for LocalizationInclusion<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 {
     fn domain(&self) -> &Ring {
         &self.source
     }
 
-    fn range(&self) -> &LocalizedRingAtPrime<Ring, RingB, Ideals> {
+    fn range(&self) -> &LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> {
         &self.target
     }
 }
 
-impl<Ring, RingB, Ideals> Function<Ring, LocalizedRingAtPrime<Ring, RingB, Ideals>>
-    for LocalizationInclusion<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion>
+    Function<Ring, LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>>
+    for LocalizationInclusion<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 {
     fn image(
         &self,
         x: &<Ring as SetSignature>::Set,
-    ) -> <LocalizedRingAtPrime<Ring, RingB, Ideals> as SetSignature>::Set {
+    ) -> <LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> as SetSignature>::Set {
         (self.source.one(), x.clone())
     }
 }
 
-impl<Ring, RingB, Ideals> InjectiveFunction<Ring, LocalizedRingAtPrime<Ring, RingB, Ideals>>
-    for LocalizationInclusion<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion>
+    InjectiveFunction<Ring, LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>>
+    for LocalizationInclusion<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 {
     fn try_preimage(
         &self,
-        y: &<LocalizedRingAtPrime<Ring, RingB, Ideals> as SetSignature>::Set,
+        y: &<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> as SetSignature>::Set,
     ) -> Option<<Ring as SetSignature>::Set> {
         let (s, r) = y;
         self.source.div(r, s).ok()
     }
 }
 
-impl<Ring, RingB, Ideals> RingHomomorphism<Ring, LocalizedRingAtPrime<Ring, RingB, Ideals>>
-    for LocalizationInclusion<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion>
+    RingHomomorphism<Ring, LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>>
+    for LocalizationInclusion<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 {
 }
 
 /// S^-1 R has an inclusion map to the field of fractions of R
 #[derive(Clone, Debug)]
-pub struct LocalizationInclusionFoF<Ring, RingB, Ideals, Fof, FofInclusion>
+pub struct LocalizationInclusionFoF<Ring, RingB, Ideals, FoF, FofInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofInclusion: FieldOfFractionsInclusion<Ring, Fof>,
+    FoF: FieldSignature,
+    FofInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 {
-    source: LocalizedRingAtPrime<Ring, RingB, Ideals>,
-    target: Fof,
-    // this is just R into its field of fractions
-    ring_to_fof: FofInclusion,
+    source: LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FofInclusion>,
+    target: FoF,
 }
 
-impl<Ring, RingB, Ideals, Fof, FofInclusion>
-    LocalizationInclusionFoF<Ring, RingB, Ideals, Fof, FofInclusion>
+impl<Ring, RingB, Ideals, FoF, FofInclusion>
+    LocalizationInclusionFoF<Ring, RingB, Ideals, FoF, FofInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofInclusion: FieldOfFractionsInclusion<Ring, Fof>,
+    FoF: FieldSignature,
+    FofInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+{
+    pub fn new(source: LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FofInclusion>) -> Self {
+        let target = source.fof_inclusion.range().clone();
+        Self { source, target }
+    }
+}
+
+impl<Ring, RingB, Ideals, FoF, FoFInclusion>
+    Morphism<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, FoF>
+    for LocalizationInclusionFoF<Ring, RingB, Ideals, FoF, FoFInclusion>
+where
+    Ring: IntegralDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+    Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+{
+    fn domain(&self) -> &LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> {
+        &self.source
+    }
+
+    fn range(&self) -> &FoF {
+        &self.target
+    }
+}
+
+impl<Ring, RingB, Ideals, FoF, FoFInclusion>
+    Function<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, FoF>
+    for LocalizationInclusionFoF<Ring, RingB, Ideals, FoF, FoFInclusion>
+where
+    Ring: IntegralDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+    Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+{
+    fn image(
+        &self,
+        x: &<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> as SetSignature>::Set,
+    ) -> <FoF as SetSignature>::Set {
+        let (s, r) = x;
+        let num = self.source.fof_inclusion.image(r);
+        let den = self.source.fof_inclusion.image(s);
+        self.target
+            .div(&num, &den)
+            .expect("s was nonzero in the target field")
+    }
+}
+
+impl<Ring, RingB, Ideals, FoF, FoFInclusion>
+    InjectiveFunction<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, FoF>
+    for LocalizationInclusionFoF<Ring, RingB, Ideals, FoF, FoFInclusion>
+where
+    Ring: IntegralDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+    Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+{
+    fn try_preimage(
+        &self,
+        y: &<FoF as SetSignature>::Set,
+    ) -> Option<<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> as SetSignature>::Set>
+    {
+        let mut try_this = self.source.fof_inclusion.numerator_and_denominator(y);
+        core::mem::swap(&mut try_this.0, &mut try_this.1);
+        if self.source.is_element(&try_this).is_ok() {
+            Some(try_this)
+        } else {
+            None
+        }
+    }
+}
+
+impl<Ring, RingB, Ideals, FoF, FoFInclusion>
+    RingHomomorphism<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, FoF>
+    for LocalizationInclusionFoF<Ring, RingB, Ideals, FoF, FoFInclusion>
+where
+    Ring: IntegralDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+    Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+{
+}
+
+/// (R - p)^-1 R has a quotient map to R/p
+#[derive(Clone, Debug)]
+pub struct LocalizationResidueField<
+    Ring,
+    RingB,
+    Ideals,
+    FoF,
+    FoFInclusion,
+    ResidueField,
+    ResidueFieldMap,
+> where
+    Ring: IntegralDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+    Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+    ResidueField: FieldSignature,
+    ResidueFieldMap: RingHomomorphism<Ring, ResidueField>,
+{
+    source: LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>,
+    target: ResidueField,
+    ring_to_fof: ResidueFieldMap,
+}
+
+impl<Ring, RingB, Ideals, FoF, FoFInclusion, ResidueField, ResidueFieldMap>
+    LocalizationResidueField<Ring, RingB, Ideals, FoF, FoFInclusion, ResidueField, ResidueFieldMap>
+where
+    Ring: IntegralDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+    Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+    ResidueField: FieldSignature,
+    ResidueFieldMap: RingHomomorphism<Ring, ResidueField>,
 {
     pub fn new(
-        source: LocalizedRingAtPrime<Ring, RingB, Ideals>,
-        ring_to_fof: FofInclusion,
+        source: LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>,
+        ring_to_fof: ResidueFieldMap,
     ) -> Self {
         let target = ring_to_fof.range().clone();
         Self {
@@ -356,189 +542,118 @@ where
     }
 }
 
-impl<Ring, RingB, Ideals, Fof, FofInclusion>
-    Morphism<LocalizedRingAtPrime<Ring, RingB, Ideals>, Fof>
-    for LocalizationInclusionFoF<Ring, RingB, Ideals, Fof, FofInclusion>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion, ResidueField, ResidueFieldMap>
+    Morphism<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, ResidueField>
+    for LocalizationResidueField<
+        Ring,
+        RingB,
+        Ideals,
+        FoF,
+        FoFInclusion,
+        ResidueField,
+        ResidueFieldMap,
+    >
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofInclusion: FieldOfFractionsInclusion<Ring, Fof>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+    ResidueField: FieldSignature,
+    ResidueFieldMap: RingHomomorphism<Ring, ResidueField>,
 {
-    fn domain(&self) -> &LocalizedRingAtPrime<Ring, RingB, Ideals> {
+    fn domain(&self) -> &LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> {
         &self.source
     }
 
-    fn range(&self) -> &Fof {
+    fn range(&self) -> &ResidueField {
         &self.target
     }
 }
 
-impl<Ring, RingB, Ideals, Fof, FofInclusion>
-    Function<LocalizedRingAtPrime<Ring, RingB, Ideals>, Fof>
-    for LocalizationInclusionFoF<Ring, RingB, Ideals, Fof, FofInclusion>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion, ResidueField, ResidueFieldMap>
+    Function<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, ResidueField>
+    for LocalizationResidueField<
+        Ring,
+        RingB,
+        Ideals,
+        FoF,
+        FoFInclusion,
+        ResidueField,
+        ResidueFieldMap,
+    >
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofInclusion: FieldOfFractionsInclusion<Ring, Fof>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+    ResidueField: FieldSignature,
+    ResidueFieldMap: RingHomomorphism<Ring, ResidueField>,
 {
     fn image(
         &self,
-        x: &<LocalizedRingAtPrime<Ring, RingB, Ideals> as SetSignature>::Set,
-    ) -> <Fof as SetSignature>::Set {
-        let (s, r) = x;
-        let num = self.ring_to_fof.image(r);
-        let den = self.ring_to_fof.image(s);
-        self.target
-            .div(&num, &den)
-            .expect("s was nonzero in the target field")
-    }
-}
-
-impl<Ring, RingB, Ideals, Fof, FofInclusion>
-    InjectiveFunction<LocalizedRingAtPrime<Ring, RingB, Ideals>, Fof>
-    for LocalizationInclusionFoF<Ring, RingB, Ideals, Fof, FofInclusion>
-where
-    Ring: IntegralDomainSignature,
-    RingB: BorrowedStructure<Ring>,
-    Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofInclusion: FieldOfFractionsInclusion<Ring, Fof>,
-{
-    fn try_preimage(
-        &self,
-        y: &<Fof as SetSignature>::Set,
-    ) -> Option<<LocalizedRingAtPrime<Ring, RingB, Ideals> as SetSignature>::Set> {
-        let mut try_this = self.ring_to_fof.numerator_and_denominator(y);
-        core::mem::swap(&mut try_this.0, &mut try_this.1);
-        if self.source.is_element(&try_this).is_ok() {
-            Some(try_this)
-        } else {
-            None
-        }
-    }
-}
-
-impl<Ring, RingB, Ideals, Fof, FofInclusion>
-    RingHomomorphism<LocalizedRingAtPrime<Ring, RingB, Ideals>, Fof>
-    for LocalizationInclusionFoF<Ring, RingB, Ideals, Fof, FofInclusion>
-where
-    Ring: IntegralDomainSignature,
-    RingB: BorrowedStructure<Ring>,
-    Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofInclusion: FieldOfFractionsInclusion<Ring, Fof>,
-{
-}
-
-/// (R - p)^-1 R has a quotient map to R/p
-#[derive(Clone, Debug)]
-pub struct LocalizationResidueField<Ring, RingB, Ideals, Fof, FofQ>
-where
-    Ring: IntegralDomainSignature,
-    RingB: BorrowedStructure<Ring>,
-    Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofQ: RingHomomorphism<Ring, Fof>,
-{
-    source: LocalizedRingAtPrime<Ring, RingB, Ideals>,
-    target: Fof,
-    ring_to_fof: FofQ,
-}
-
-impl<Ring, RingB, Ideals, Fof, FofQ> LocalizationResidueField<Ring, RingB, Ideals, Fof, FofQ>
-where
-    Ring: IntegralDomainSignature,
-    RingB: BorrowedStructure<Ring>,
-    Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofQ: RingHomomorphism<Ring, Fof>,
-{
-    pub fn new(source: LocalizedRingAtPrime<Ring, RingB, Ideals>, ring_to_fof: FofQ) -> Self {
-        let target = ring_to_fof.range().clone();
-        Self {
-            source,
-            target,
-            ring_to_fof,
-        }
-    }
-}
-
-impl<Ring, RingB, Ideals, Fof, FofQ> Morphism<LocalizedRingAtPrime<Ring, RingB, Ideals>, Fof>
-    for LocalizationResidueField<Ring, RingB, Ideals, Fof, FofQ>
-where
-    Ring: IntegralDomainSignature,
-    RingB: BorrowedStructure<Ring>,
-    Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofQ: RingHomomorphism<Ring, Fof>,
-{
-    fn domain(&self) -> &LocalizedRingAtPrime<Ring, RingB, Ideals> {
-        &self.source
-    }
-
-    fn range(&self) -> &Fof {
-        &self.target
-    }
-}
-
-impl<Ring, RingB, Ideals, Fof, FofQ> Function<LocalizedRingAtPrime<Ring, RingB, Ideals>, Fof>
-    for LocalizationResidueField<Ring, RingB, Ideals, Fof, FofQ>
-where
-    Ring: IntegralDomainSignature,
-    RingB: BorrowedStructure<Ring>,
-    Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofQ: RingHomomorphism<Ring, Fof>,
-{
-    fn image(
-        &self,
-        x: &<LocalizedRingAtPrime<Ring, RingB, Ideals> as SetSignature>::Set,
-    ) -> <Fof as SetSignature>::Set {
+        x: &<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> as SetSignature>::Set,
+    ) -> <ResidueField as SetSignature>::Set {
         let (_s, r) = x;
         self.ring_to_fof.image(r)
     }
 }
 
-impl<Ring, RingB, Ideals, Fof, FofQ>
-    RingHomomorphism<LocalizedRingAtPrime<Ring, RingB, Ideals>, Fof>
-    for LocalizationResidueField<Ring, RingB, Ideals, Fof, FofQ>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion, ResidueField, ResidueFieldMap>
+    RingHomomorphism<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, ResidueField>
+    for LocalizationResidueField<
+        Ring,
+        RingB,
+        Ideals,
+        FoF,
+        FoFInclusion,
+        ResidueField,
+        ResidueFieldMap,
+    >
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    Fof: FieldSignature,
-    FofQ: RingHomomorphism<Ring, Fof>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
+    ResidueField: FieldSignature,
+    ResidueFieldMap: RingHomomorphism<Ring, ResidueField>,
 {
 }
 
 /// This allows storage and manipulations of the ideals of (R-p)^-1 R
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals>
+pub struct IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 {
-    ambient_ring: LocalizedRingAtPrime<Ring, RingB, Ideals>,
+    ambient_ring: LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>,
 }
 
-impl<Ring, RingB, Ideals> Signature for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion> Signature
+    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF> + Eq,
 {
 }
 
-impl<Ring, RingB, Ideals> SetSignature for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion> SetSignature
+    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF> + Eq,
 {
     type Set = Ideals::Set;
 
@@ -553,31 +668,36 @@ where
     }
 }
 
-impl<Ring, RingB, Ideals, LRB> IdealsSignature<LocalizedRingAtPrime<Ring, RingB, Ideals>, LRB>
-    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion, LRB>
+    IdealsSignature<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, LRB>
+    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    LRB: BorrowedStructure<LocalizedRingAtPrime<Ring, RingB, Ideals>>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF> + Eq,
+    LRB: BorrowedStructure<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>>,
 {
-    fn ring(&self) -> &LocalizedRingAtPrime<Ring, RingB, Ideals> {
+    fn ring(&self) -> &LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> {
         &self.ambient_ring
     }
 }
 
-impl<Ring, RingB, Ideals, LRB>
-    IdealsArithmeticSignature<LocalizedRingAtPrime<Ring, RingB, Ideals>, LRB>
-    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion, LRB>
+    IdealsArithmeticSignature<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, LRB>
+    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
-    Ring: DedekindDomainSignature,
+    Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
-    Ideals: FactorableIdealsSignature<Ring, RingB>,
-    LRB: BorrowedStructure<LocalizedRingAtPrime<Ring, RingB, Ideals>>,
+    Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF> + Eq,
+    LRB: BorrowedStructure<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>>,
 {
     fn principal_ideal(
         &self,
-        a: &<LocalizedRingAtPrime<Ring, RingB, Ideals> as SetSignature>::Set,
+        a: &<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> as SetSignature>::Set,
     ) -> Self::Set {
         let (_s, r) = a;
         self.ambient_ring.ideals.principal_ideal(r)
@@ -607,35 +727,44 @@ where
     }
 }
 
-impl<Ring, RingB, Ideals> LocalRingSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion> LocalRingSignature
+    for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF>,
 {
 }
 
-impl<Ring, RingB, Ideals, LRB>
-    LocalRingIdealsSignature<LocalizedRingAtPrime<Ring, RingB, Ideals>, LRB>
-    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion, LRB>
+    LocalRingIdealsSignature<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, LRB>
+    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
-    LRB: BorrowedStructure<LocalizedRingAtPrime<Ring, RingB, Ideals>>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF> + Eq,
+    LRB: BorrowedStructure<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>>,
 {
     fn unique_maximal(&self) -> <Self as SetSignature>::Set {
         self.ambient_ring.prime_ideal.clone()
     }
 }
 
-impl<Ring, RingB, Ideals> RingToIdealsSignature for LocalizedRingAtPrime<Ring, RingB, Ideals>
+impl<Ring, RingB, Ideals, FoF, FoFInclusion> RingToIdealsSignature
+    for LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
 where
     Ring: IntegralDomainSignature,
     RingB: BorrowedStructure<Ring>,
     Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF> + Eq,
 {
-    type Ideals<SelfB: BorrowedStructure<Self>> = IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals>;
+    type Ideals<SelfB: BorrowedStructure<Self>> =
+        IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>;
 
     fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self> {
         IdealsOfLocalizedRingAtPrime {
@@ -658,27 +787,35 @@ mod tests {
 
     use super::*;
 
+    type ZToQ = PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>;
+
     #[allow(type_alias_bounds)]
-    type PLocalizeInts<IB: Borrow<IntegerCanonicalStructure>> =
-        LocalizedRingAtPrime<IntegerCanonicalStructure, IB, IntegerIdealsStructure<IB>>;
+    type PLocalizeInts<IB: Borrow<IntegerCanonicalStructure>> = LocalizedRingAtPrime<
+        IntegerCanonicalStructure,
+        IB,
+        IntegerIdealsStructure<IB>,
+        RationalCanonicalStructure,
+        ZToQ,
+    >;
 
     #[test]
     fn two_localize() {
         let integers = IntegerCanonicalStructure {};
         let integer_ideals = integers.ideals();
         let two_ideal = integer_ideals.principal_ideal(&2.into());
-        let two_localize = PLocalizeInts::<&IntegerCanonicalStructure>::new_unchecked(
-            &integers,
-            integer_ideals,
-            two_ideal,
-        );
-        let z_includes =
-            LocalizationInclusion::new(IntegerCanonicalStructure {}, two_localize.clone());
         let z_to_q = PrincipalSubringInclusion::<
             RationalCanonicalStructure,
             RationalCanonicalStructure,
         >::new(RationalCanonicalStructure {});
-        let includes_q = LocalizationInclusionFoF::new(two_localize.clone(), z_to_q);
+        let two_localize = PLocalizeInts::<&IntegerCanonicalStructure>::new_unchecked(
+            &integers,
+            integer_ideals,
+            two_ideal,
+            z_to_q,
+        );
+        let z_includes =
+            LocalizationInclusion::new(IntegerCanonicalStructure {}, two_localize.clone());
+        let includes_q = LocalizationInclusionFoF::new(two_localize.clone());
 
         for no_denominator in -30..30 {
             let in_localization = (1.into(), no_denominator.into());

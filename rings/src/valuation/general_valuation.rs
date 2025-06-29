@@ -3,8 +3,8 @@ use crate::{
     localization::{LocalizationInclusionFoF, LocalizationResidueField, LocalizedRingAtPrime},
     structure::{
         AdditiveGroupSignature, EuclideanDomainQuotientRing, FieldSignature,
-        IdealsArithmeticSignature, MetaRingEq, QuotientStructure, RingHomomorphism, RingSignature,
-        RingToIdealsSignature, RingToQuotientFieldSignature,
+        IdealsArithmeticSignature, MetaRingEq, PrincipalSubringInclusion, QuotientStructure,
+        RingHomomorphism, RingSignature, RingToIdealsSignature, RingToQuotientFieldSignature,
     },
     valuation::{Valuation, padic_rat_valuation},
 };
@@ -194,6 +194,8 @@ impl AdditiveValuation for PAdicValuation {
         IntegerCanonicalStructure,
         IntegerCanonicalStructure,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
+        RationalCanonicalStructure,
+        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
     >;
 
     type ResidueField =
@@ -211,23 +213,34 @@ impl AdditiveValuation for PAdicValuation {
         let z = Integer::structure();
         let all_is = z.into_ideals();
         let prime_ideal = all_is.principal_ideal(&self.0.clone().into());
-        let source =
-            LocalizedRingAtPrime::new_unchecked(IntegerCanonicalStructure {}, all_is, prime_ideal);
-        LocalizationInclusionFoF::new(source, z_to_q)
+        let source = LocalizedRingAtPrime::new_unchecked(
+            IntegerCanonicalStructure {},
+            all_is,
+            prime_ideal,
+            z_to_q,
+        );
+        LocalizationInclusionFoF::new(source)
     }
 
     fn valuation_quotient(&self) -> impl RingHomomorphism<Self::ValuationRing, Self::ResidueField> {
         let z = IntegerCanonicalStructure {};
         let all_is = z.into_ideals();
         let prime_ideal = all_is.principal_ideal(&self.0.clone().into());
-        let source =
-            LocalizedRingAtPrime::new_unchecked(IntegerCanonicalStructure {}, all_is, prime_ideal);
+        let z_to_q = Rational::structure().into_principal_subring_inclusion();
+        let source = LocalizedRingAtPrime::new_unchecked(
+            IntegerCanonicalStructure {},
+            all_is,
+            prime_ideal,
+            z_to_q,
+        );
         let target = self.residue_field();
         let map_restricted = EuclideanDomainQuotientRing::new(IntegerCanonicalStructure {}, target);
         LocalizationResidueField::<
             IntegerCanonicalStructure,
             IntegerCanonicalStructure,
             IntegerIdealsStructure<IntegerCanonicalStructure>,
+            RationalCanonicalStructure,
+            PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
             Self::ResidueField,
             EuclideanDomainQuotientRing<IntegerCanonicalStructure, true>,
         >::new(source, map_restricted)
