@@ -14,7 +14,7 @@ pub trait GraphSignature {
 /// A graph with no loops.
 pub trait LooplessGraphSignature: GraphSignature {}
 
-/// A graph such that has_directed_edge(u, v) == has_directed_edge(v, u)
+/// A graph such that `has_directed_edge(u, v) == has_directed_edge(v, u)`
 pub trait UndirectedGraphSignature: GraphSignature {}
 
 pub trait GraphWithEdgesSignature: GraphSignature {
