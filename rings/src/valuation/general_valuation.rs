@@ -336,6 +336,23 @@ mod tests {
 
     use super::*;
 
+    fn rational_iterator(num_bound: u8, den_bound: u8) -> impl Iterator<Item = Rational> {
+        let num_bound = num_bound as i8;
+        let den_bound = den_bound as i8;
+        (-num_bound..=num_bound)
+            .filter(|n| *n != 0)
+            .flat_map(move |n| {
+                (-den_bound..=den_bound).filter_map(move |d| {
+                    if d != 0 {
+                        Some(Rational::from_integers(n, d))
+                    } else {
+                        None
+                    }
+                })
+            })
+            .chain([Rational::zero()])
+    }
+
     #[test]
     fn archimedean() {
         let zero = Rational::zero();
@@ -357,12 +374,34 @@ mod tests {
                     match from_val {
                         AdditiveValueGroup::Infinity => panic!("Valuation is infinite only on 0"),
                         AdditiveValueGroup::Finite(finite_valuation) => {
-                            assert_eq!(finite_valuation, expected);
+                            assert_eq!(finite_valuation, expected, "Expected nu({})", cur_rational);
                         }
                     }
                 } else {
                     assert_eq!(archimedean.nu(&cur_rational), AdditiveValueGroup::Infinity);
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn archimedean_arith() {
+        let zero = Rational::zero();
+        let archimedean = ArchimedeanPlace {};
+        assert_eq!(archimedean.nu(&zero), AdditiveValueGroup::Infinity);
+
+        for cur_rational0 in rational_iterator(20, 20) {
+            let nu_cur0 = archimedean.nu(&cur_rational0);
+            for cur_rational1 in rational_iterator(20, 20) {
+                let nu_cur1 = archimedean.nu(&cur_rational1);
+                let nu_product = archimedean.nu(&(cur_rational0.clone() * cur_rational1.clone()));
+                assert_eq!(
+                    nu_cur0.clone() + nu_cur1,
+                    nu_product,
+                    "{} * {}",
+                    cur_rational0,
+                    cur_rational1
+                );
             }
         }
     }
@@ -405,6 +444,29 @@ mod tests {
                     }
                 } else {
                     assert_eq!(three_adic.nu(&cur_rational), AdditiveValueGroup::Infinity);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn three_adic_arith() {
+        let zero = Rational::zero();
+        let three_adic = PAdicValuation(Natural::from_nat(3u8));
+        assert_eq!(three_adic.nu(&zero), AdditiveValueGroup::Infinity);
+
+        for cur_rational0 in rational_iterator(10, 10) {
+            let nu_cur0 = three_adic.nu(&cur_rational0);
+            for cur_rational1 in rational_iterator(10, 10) {
+                let nu_cur1 = three_adic.nu(&cur_rational1);
+                let nu_product = three_adic.nu(&(cur_rational0.clone() * cur_rational1.clone()));
+                assert_eq!(nu_cur0.clone() + nu_cur1.clone(), nu_product);
+
+                let nu_sum = three_adic.nu(&(cur_rational0.clone() + cur_rational1));
+                if nu_cur0 == nu_cur1 {
+                    assert!(std::cmp::min(nu_cur0.clone(), nu_cur1) <= nu_sum);
+                } else {
+                    assert_eq!(std::cmp::min(nu_cur0.clone(), nu_cur1), nu_sum);
                 }
             }
         }
