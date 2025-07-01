@@ -658,6 +658,7 @@ where
     type Set = Ideals::Set;
 
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+        /*
         let localized_prime = &self.ambient_ring.prime_ideal;
         let _intersect = self.ambient_ring.ideals.ideal_intersect(x, localized_prime);
         todo!(
@@ -665,6 +666,10 @@ where
             not considering if two different I_1,2 of R give the same extension S^-1 I_1,2
             "
         )
+        */
+        // it does define an ideal, but it is now a very redundant parameterization of the ideals of R_p
+        // all the units are different elements of `Self::Set` but they are equal under `ideal_equal`
+        self.ambient_ring.ideals.is_element(x)
     }
 }
 
@@ -699,8 +704,9 @@ where
         &self,
         a: &<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion> as SetSignature>::Set,
     ) -> Self::Set {
+        let a = self.ambient_ring.simplify(a);
         let (_s, r) = a;
-        self.ambient_ring.ideals.principal_ideal(r)
+        self.ambient_ring.ideals.principal_ideal(&r)
     }
 
     fn ideal_contains(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -710,7 +716,18 @@ where
         } else if self.ambient_ring.ideals.ideal_is_zero(a) {
             false
         } else {
-            todo!()
+            let _a_intersect_p = self
+                .ambient_ring
+                .ideals
+                .ideal_intersect(a, &self.ambient_ring.prime_ideal);
+            let _b_intersect_p = self
+                .ambient_ring
+                .ideals
+                .ideal_intersect(b, &self.ambient_ring.prime_ideal);
+            todo!(
+                "For example you have (10) and (28) and localized at 2.
+            (10) = (2) because 5 is a unit in the localization "
+            );
         }
     }
 
@@ -751,6 +768,42 @@ where
 {
     fn unique_maximal(&self) -> <Self as SetSignature>::Set {
         self.ambient_ring.prime_ideal.clone()
+    }
+}
+
+impl<Ring, RingB, Ideals, FoF, FoFInclusion, LRB>
+    DedekindDomainIdealsSignature<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, LRB>
+    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
+where
+    Ring: IntegralDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+    Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF> + Eq,
+    Ring: DedekindDomainSignature,
+    LRB: BorrowedStructure<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>>,
+    LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>: DedekindDomainSignature,
+{
+}
+
+impl<Ring, RingB, Ideals, FoF, FoFInclusion, LRB>
+    FactorableIdealsSignature<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>, LRB>
+    for IdealsOfLocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>
+where
+    Ring: IntegralDomainSignature,
+    RingB: BorrowedStructure<Ring>,
+    Ideals: IdealsArithmeticSignature<Ring, RingB>,
+    FoF: FieldSignature,
+    FoFInclusion: FieldOfFractionsInclusion<Ring, FoF> + Eq,
+    Ring: DedekindDomainSignature,
+    LRB: BorrowedStructure<LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>>,
+    LocalizedRingAtPrime<Ring, RingB, Ideals, FoF, FoFInclusion>: DedekindDomainSignature,
+{
+    fn factor_ideal(
+        &self,
+        _ideal: &Self::Set,
+    ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
+        todo!()
     }
 }
 
