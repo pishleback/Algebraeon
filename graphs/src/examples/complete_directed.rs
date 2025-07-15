@@ -25,10 +25,10 @@ impl<Vertices: SetSignature + EqSignature> GraphSignature for CompleteDirectedGr
         target: &Vertices::Set,
     ) -> Result<(), String> {
         if let Err(e) = self.vertices.is_element(source) {
-            return Err(format!("Source is not an element of Vertices: {}", e));
+            return Err(format!("Source is not an element of Vertices: {e}"));
         }
         if let Err(e) = self.vertices.is_element(target) {
-            return Err(format!("Target is not an element of Vertices: {}", e));
+            return Err(format!("Target is not an element of Vertices: {e}"));
         }
         if self.vertices.equal(source, target) {
             return Err("Complete graphs do not contain loops.".to_string());

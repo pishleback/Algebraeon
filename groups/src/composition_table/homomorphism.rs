@@ -61,7 +61,7 @@ impl<
         }
 
         let mut inv = vec![None; n];
-        #[allow(clippy::match_on_vec_items)]
+        #[allow(clippy::indexing_slicing)]
         for x in 0..n {
             match inv[self.func[x]] {
                 Some(_y) => {

@@ -29,10 +29,10 @@ impl<Vertices: SetSignature + EqSignature> GraphSignature for CompleteUndirected
         target: &Vertices::Set,
     ) -> Result<(), String> {
         if let Err(e) = self.vertices.is_element(source) {
-            return Err(format!("Source is not an element of Vertices: {}", e));
+            return Err(format!("Source is not an element of Vertices: {e}"));
         }
         if let Err(e) = self.vertices.is_element(target) {
-            return Err(format!("Target is not an element of Vertices: {}", e));
+            return Err(format!("Target is not an element of Vertices: {e}"));
         }
         if self.vertices.equal(source, target) {
             return Err("Complete graphs do not contain loops.".to_string());
@@ -118,9 +118,7 @@ mod tests {
                     assert_eq!(
                         k3.has_directed_edge(&i, &j).is_ok(),
                         k3.has_directed_edge(&j, &i).is_ok(),
-                        "Edge ({}, {}) symmetry failed",
-                        i,
-                        j
+                        "Edge ({i}, {j}) symmetry failed"
                     );
                 }
             }
