@@ -540,6 +540,29 @@ impl ComplexAlgebraic {
     pub fn degree(&self) -> usize {
         self.min_poly().degree().unwrap()
     }
+
+    pub fn real_part(&self) -> RealAlgebraic {
+        ComplexAlgebraic::structure()
+            .mul(
+                &ComplexAlgebraic::structure().add(self, &self.conjugate()),
+                &Self::Real(RealAlgebraic::Rational(Rational::ONE_HALF)),
+            )
+            .try_into()
+            .unwrap()
+    }
+
+    pub fn imag_part(&self) -> RealAlgebraic {
+        ComplexAlgebraic::structure()
+            .mul(
+                &ComplexAlgebraic::structure().sub(self, &self.conjugate()),
+                &ComplexAlgebraic::structure().mul(
+                    &Self::i(),
+                    &Self::Real(RealAlgebraic::Rational(-Rational::ONE_HALF)),
+                ),
+            )
+            .try_into()
+            .unwrap()
+    }
 }
 
 impl PartialEq for ComplexAlgebraic {
