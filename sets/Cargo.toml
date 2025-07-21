@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-sets"
-version = "0.0.12"
+version = "0.0.13"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "Algorithms in combinatorics."
@@ -13,6 +13,6 @@ readme = "../README.md"
 name = "algebraeon_sets"
 
 [dependencies]
-algebraeon-macros = { version = "=0.0.12", path = "../macros", default-features = false }
+algebraeon-macros = { version = "=0.0.13", path = "../macros", default-features = false }
 indexmap = "2.8.0"
 itertools = "0.14.0"
