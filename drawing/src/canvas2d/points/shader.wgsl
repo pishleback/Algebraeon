@@ -1,7 +1,7 @@
 // Vertex shader
 
 struct VertexInput {
-    @location(0) position: vec2<f32>,
+    @location(0) offset: vec2<f32>,
 };
 
 struct InstanceInput {
@@ -29,7 +29,8 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
     out.color = vec3<f32>(0.0, 0.0, 0.0);
-    out.clip_position = vec4<f32>(camera.matrix * (0.1 * vertex.position + instance.pos) + camera.shift, 0.0, 1.0);
+    var scale = sqrt(abs(camera.matrix[0][0] * camera.matrix[1][1] - camera.matrix[0][1] * camera.matrix[1][0]));
+    out.clip_position = vec4<f32>(camera.matrix * (instance.radius * vertex.offset / scale + instance.pos) + camera.shift, 0.0, 1.0);
     return out;
 }
 

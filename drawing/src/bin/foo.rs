@@ -1,7 +1,7 @@
 use algebraeon_drawing::{canvas::Canvas, canvas2d::*};
 use algebraeon_nzq::Integer;
 use algebraeon_rings::{
-    polynomial::{Polynomial, PolynomialFromStr},
+    polynomial::{Polynomial, PolynomialFromStr}, structure::MetaComplexSubset,
 };
 
 fn main() {
@@ -22,7 +22,7 @@ fn main() {
     // canvas.plot_test_pentagon();
     let mut points = canvas.points();
     for root in p.all_complex_roots() {
-        let (x, y) = root.as_f64_real_and_imaginary_parts();
+        let (x, y) = root.as_f32_real_and_imaginary_parts();
         println!("{x} {y}");
         points = points.add(x, y);
     }

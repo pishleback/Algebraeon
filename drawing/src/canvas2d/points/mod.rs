@@ -127,7 +127,7 @@ impl Canvas2DItemWgpu for PointsCanvas2DWgpu {
 }
 
 struct PointsCanvas2DItem {
-    points: Vec<(f64, f64)>,
+    points: Vec<Instance>,
 }
 
 impl Canvas2DItem for PointsCanvas2DItem {
@@ -218,25 +218,16 @@ impl Canvas2DItem for PointsCanvas2DItem {
                     cache: None,
                 });
 
-        let instance_data = self
-            .points
-            .iter()
-            .map(|(x, y)| Instance {
-                pos: [*x as f32, *y as f32],
-                radius: 10.0,
-            })
-            .collect::<Vec<_>>();
-
         let instance_buffer =
             wgpu_state
                 .device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("Instance Buffer"),
-                    contents: bytemuck::cast_slice(&instance_data),
+                    contents: bytemuck::cast_slice(&self.points),
                     usage: wgpu::BufferUsages::VERTEX,
                 });
 
-        let num_instances = instance_data.len() as u32;
+        let num_instances = self.points.len() as u32;
 
         Box::new(PointsCanvas2DWgpu {
             vertex_buffer,
@@ -252,13 +243,16 @@ impl Canvas2DItem for PointsCanvas2DItem {
 
 pub struct Points<'c> {
     canvas: &'c mut Canvas2D,
-    points: Vec<(f64, f64)>,
+    points: Vec<Instance>,
 }
 
 impl<'c> Points<'c> {
     #[must_use = "You must call .plot() to finish plotting."]
-    pub fn add(mut self, x: f64, y: f64) -> Self {
-        self.points.push((x, y));
+    pub fn add(mut self, x: f32, y: f32) -> Self {
+        self.points.push(Instance {
+            pos: [x, y],
+            radius: 0.02,
+        });
         self
     }
 
