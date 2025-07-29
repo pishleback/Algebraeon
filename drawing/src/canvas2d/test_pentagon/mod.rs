@@ -1,8 +1,6 @@
-use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
-
-use crate::canvas::WgpuState;
-
 use super::{Canvas2DItem, Canvas2DItemWgpu};
+use crate::{canvas::WgpuState, canvas2d::Canvas2D};
+use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -57,14 +55,7 @@ struct PentagonWgpu {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-pub struct Pentagon {}
-
-#[allow(clippy::new_without_default)]
-impl Pentagon {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
+struct Pentagon {}
 
 impl Canvas2DItem for Pentagon {
     fn new_wgpu(
@@ -195,5 +186,11 @@ impl Canvas2DItemWgpu for PentagonWgpu {
 
         render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         Ok(())
+    }
+}
+
+impl Canvas2D {
+    pub fn plot_test_pentagon(&mut self) {
+        self.add_item(Pentagon {});
     }
 }

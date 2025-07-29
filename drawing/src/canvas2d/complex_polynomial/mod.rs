@@ -1,5 +1,5 @@
 use super::{Canvas2DItem, Canvas2DItemWgpu};
-use crate::canvas::WgpuState;
+use crate::{canvas::WgpuState, canvas2d::Canvas2D};
 use algebraeon_rings::{
     polynomial::Polynomial,
     structure::{ComplexSubsetSignature, MetaComplexSubset},
@@ -48,12 +48,12 @@ struct PolynomialWgpu {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-pub struct PolynomialPlot {
-    coeffs: Vec<(f64, f64)>,
+struct PolynomialPlot {
+    cpx_coeffs: Vec<(f64, f64)>,
 }
 
 impl PolynomialPlot {
-    pub fn new<MetaRing: MetaComplexSubset>(p: Polynomial<MetaRing>) -> Self
+    fn new<MetaRing: MetaComplexSubset>(p: Polynomial<MetaRing>) -> Self
     where
         MetaRing::Signature: ComplexSubsetSignature,
     {
@@ -62,14 +62,14 @@ impl PolynomialPlot {
             .into_iter()
             .map(|c| MetaRing::as_f64_real_and_imaginary_parts(&c))
             .collect();
-        Self { coeffs }
+        Self { cpx_coeffs: coeffs }
     }
 
-    pub fn make_shader(&self) -> String {
-        let n = self.coeffs.len();
+    fn make_shader(&self) -> String {
+        let n = self.cpx_coeffs.len();
         #[allow(clippy::useless_format)]
         String::from(include_str!("shader.wgsl")).replace(
-            "// Generate eval_cfn HERE",
+            "fn eval_cfn(z: vec2<f32>) -> vec2<f32> { <GENERATED> }",
             format!(
                 r#"fn eval_cfn(z: vec2<f32>) -> vec2<f32> {{{}}}"#,
                 match n {
@@ -79,14 +79,14 @@ impl PolynomialPlot {
                     1 => {
                         format!(
                             "return vec2<f32>({}, {});",
-                            self.coeffs[0].0, self.coeffs[0].1
+                            self.cpx_coeffs[0].0, self.cpx_coeffs[0].1
                         )
                     }
                     n => {
                         let n2 = n - 2;
                         let n1 = n - 1;
                         let wgsl_coeffs = self
-                            .coeffs
+                            .cpx_coeffs
                             .iter()
                             .map(|(a, b)| format!("vec2<f32>({a}, {b}), "))
                             .collect::<Vec<_>>()
@@ -167,11 +167,9 @@ impl Canvas2DItem for PolynomialPlot {
                         compilation_options: wgpu::PipelineCompilationOptions::default(),
                     },
                     fragment: Some(wgpu::FragmentState {
-                        // 3.
                         module: &shader,
                         entry_point: Some("fs_main"),
                         targets: &[Some(wgpu::ColorTargetState {
-                            // 4.
                             format: wgpu_state.config.format,
                             blend: Some(wgpu::BlendState::REPLACE),
                             write_mask: wgpu::ColorWrites::ALL,
@@ -243,5 +241,14 @@ impl Canvas2DItemWgpu for PolynomialWgpu {
 
         render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         Ok(())
+    }
+}
+
+impl Canvas2D {
+    pub fn plot_complex_polynomial<MetaRing: MetaComplexSubset>(&mut self, p: Polynomial<MetaRing>)
+    where
+        MetaRing::Signature: ComplexSubsetSignature,
+    {
+        self.add_item(PolynomialPlot::new(p));
     }
 }

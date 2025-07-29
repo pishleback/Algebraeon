@@ -9,7 +9,8 @@ use winit::{
 };
 
 pub mod complex_polynomial;
-pub mod pentagon;
+pub mod points;
+pub mod test_pentagon;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
