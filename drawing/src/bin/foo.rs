@@ -1,7 +1,8 @@
 use algebraeon_drawing::{canvas::Canvas, canvas2d::*};
 use algebraeon_nzq::Integer;
 use algebraeon_rings::{
-    polynomial::{Polynomial, PolynomialFromStr}, structure::MetaComplexSubset,
+    polynomial::{Polynomial, PolynomialFromStr},
+    structure::MetaComplexSubset,
 };
 
 fn main() {
