@@ -18,7 +18,7 @@ fn main() {
     .unwrap();
     log::set_max_level(log::LevelFilter::Warn);
 
-    let p = Polynomial::<Integer>::from_str("x^5 - x + 1", "x").unwrap();
+    let p = Polynomial::<Integer>::from_str("(x^5 - x + 1) * (x - 1)", "x").unwrap();
 
     let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
 
