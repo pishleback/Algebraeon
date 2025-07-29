@@ -20,59 +20,38 @@ impl Vertex {
     }
 }
 
+// [-1, 0] is a buffer zone
+// [0, 1] is the rect
+// [1, 2] is a buffer zone
 const VERTICES: &[Vertex] = &[
     Vertex {
-        position: [1.0, 0.0],
+        position: [-1.0, -1.0],
     },
     Vertex {
-        position: [0.866_025_4, 0.5],
+        position: [2.0, -1.0],
     },
     Vertex {
-        position: [0.5, 0.866_025_4],
+        position: [-1.0, 2.0],
     },
     Vertex {
-        position: [0.0, 1.0],
-    },
-    Vertex {
-        position: [-0.5, 0.866_025_4],
-    },
-    Vertex {
-        position: [-0.866_025_4, 0.5],
-    },
-    Vertex {
-        position: [-1.0, 0.0],
-    },
-    Vertex {
-        position: [-0.866_025_4, -0.5],
-    },
-    Vertex {
-        position: [-0.5, -0.866_025_4],
-    },
-    Vertex {
-        position: [0.0, -1.0],
-    },
-    Vertex {
-        position: [0.5, -0.866_025_4],
-    },
-    Vertex {
-        position: [0.866_025_4, -0.5],
+        position: [2.0, 2.0],
     },
 ];
 
-const INDICES: &[u16] = &[
-    0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5, 0, 5, 6, 0, 6, 7, 0, 7, 8, 0, 8, 9, 0, 9, 10, 0, 10, 11,
-];
+const INDICES: &[u16] = &[0, 1, 2, 1, 3, 2];
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct Instance {
-    pos: [f32; 2],
-    radius: f32,
+    a: f32,
+    b: f32,
+    c: f32,
+    d: f32,
+    thickness: f32,
 }
 
 impl Instance {
-    const ATTRIBS: [wgpu::VertexAttribute; 2] =
-        wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32];
+    const ATTRIBS: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![1 => Float32, 2 => Float32, 3 => Float32, 4 => Float32, 5 => Float32];
 
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
@@ -126,11 +105,11 @@ impl Canvas2DItemWgpu for PointsCanvas2DWgpu {
     }
 }
 
-struct PointsCanvas2DItem {
-    points: Vec<Instance>,
+struct RectanglesCanvas2DItem {
+    rectangles: Vec<Instance>,
 }
 
-impl Canvas2DItem for PointsCanvas2DItem {
+impl Canvas2DItem for RectanglesCanvas2DItem {
     fn new_wgpu(
         &self,
         wgpu_state: &WgpuState,
@@ -223,11 +202,11 @@ impl Canvas2DItem for PointsCanvas2DItem {
                 .device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("Instance Buffer"),
-                    contents: bytemuck::cast_slice(&self.points),
+                    contents: bytemuck::cast_slice(&self.rectangles),
                     usage: wgpu::BufferUsages::VERTEX,
                 });
 
-        let num_instances = self.points.len() as u32;
+        let num_instances = self.rectangles.len() as u32;
 
         Box::new(PointsCanvas2DWgpu {
             vertex_buffer,
@@ -241,17 +220,23 @@ impl Canvas2DItem for PointsCanvas2DItem {
     }
 }
 
-pub struct Point {
-    pub pos: [f32; 2],
+pub struct Rectangle {
+    pub a: f32,
+    pub b: f32,
+    pub c: f32,
+    pub d: f32,
 }
 
 impl Canvas2D {
-    pub fn plot_points(&mut self, points: impl Iterator<Item = Point>) {
-        self.add_item(PointsCanvas2DItem {
-            points: points
-                .map(|pt| Instance {
-                    pos: pt.pos,
-                    radius: 0.01,
+    pub fn plot_rectangles(&mut self, rectangles: impl Iterator<Item = Rectangle>) {
+        self.add_item(RectanglesCanvas2DItem {
+            rectangles: rectangles
+                .map(|r| Instance {
+                    a: r.a,
+                    b: r.b,
+                    c: r.c,
+                    d: r.d,
+                    thickness: 0.01,
                 })
                 .collect(),
         });
