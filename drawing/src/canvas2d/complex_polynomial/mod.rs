@@ -91,7 +91,6 @@ impl PolynomialPlot {
                             .map(|(a, b)| format!("vec2<f32>({a}, {b}), "))
                             .collect::<Vec<_>>()
                             .join("");
-                        println!("{:?}", wgsl_coeffs);
                         format!(
                             r#"
 var coeffs = array<vec2<f32>, {n}>(

@@ -362,6 +362,23 @@ impl RealAlgebraic {
     }
 }
 
+pub enum RealIsolatingRegion<'a> {
+    Rational(&'a Rational),
+    Interval(&'a Rational, &'a Rational),
+}
+
+impl RealAlgebraic {
+    pub fn isolate<'a>(&'a self) -> RealIsolatingRegion<'a> {
+        match self {
+            RealAlgebraic::Rational(rational) => RealIsolatingRegion::Rational(rational),
+            RealAlgebraic::Real(real_algebraic_root) => RealIsolatingRegion::Interval(
+                &real_algebraic_root.tight_a,
+                &real_algebraic_root.tight_b,
+            ),
+        }
+    }
+}
+
 impl PositiveRealNthRootSignature for RealAlgebraicCanonicalStructure {
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
         nth_root(x, n)

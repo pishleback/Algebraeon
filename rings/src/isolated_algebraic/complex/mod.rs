@@ -565,6 +565,30 @@ impl ComplexAlgebraic {
     }
 }
 
+pub enum ComplexIsolatingRegion<'a> {
+    Rational(&'a Rational),
+    RealInterval(&'a Rational, &'a Rational),
+    Box(&'a Rational, &'a Rational, &'a Rational, &'a Rational),
+}
+
+impl ComplexAlgebraic {
+    pub fn isolate<'a>(&'a self) -> ComplexIsolatingRegion<'a> {
+        match self {
+            ComplexAlgebraic::Real(x) => match x.isolate() {
+                crate::isolated_algebraic::RealIsolatingRegion::Rational(r) => {
+                    ComplexIsolatingRegion::Rational(r)
+                }
+                crate::isolated_algebraic::RealIsolatingRegion::Interval(a, b) => {
+                    ComplexIsolatingRegion::RealInterval(a, b)
+                }
+            },
+            ComplexAlgebraic::Complex(z) => {
+                ComplexIsolatingRegion::Box(&z.tight_a, &z.tight_b, &z.tight_c, &z.tight_d)
+            }
+        }
+    }
+}
+
 impl PartialEq for ComplexAlgebraic {
     fn eq(&self, other: &Self) -> bool {
         Self::eq_mut(&mut self.clone(), &mut other.clone())
