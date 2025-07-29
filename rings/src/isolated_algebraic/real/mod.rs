@@ -676,8 +676,12 @@ impl CharZeroFieldSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl ComplexSubsetSignature for RealAlgebraicCanonicalStructure {
+    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
+        (z.as_f32(), 0.0)
+    }
+
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
-        (self.as_f64(z), 0.0)
+        (z.as_f64(), 0.0)
     }
 }
 

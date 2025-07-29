@@ -563,25 +563,6 @@ impl ComplexAlgebraic {
             .try_into()
             .unwrap()
     }
-
-    pub fn as_f64_real_and_imaginary_parts(&self) -> (f64, f64) {
-        match self {
-            ComplexAlgebraic::Real(z) => {
-                RealAlgebraic::structure().as_f64_real_and_imaginary_parts(z)
-            }
-            ComplexAlgebraic::Complex(z) => {
-                let mut z = z.clone();
-                z.refine_to_accuracy(&Rational::from_integers(
-                    Integer::from(1),
-                    Integer::from(1000000000000000i64),
-                ));
-                (
-                    ((z.tight_a + z.tight_b) / Rational::from(2)).as_f64(),
-                    ((z.tight_c + z.tight_d) / Rational::from(2)).as_f64(),
-                )
-            }
-        }
-    }
 }
 
 impl PartialEq for ComplexAlgebraic {
@@ -976,8 +957,38 @@ impl CharZeroFieldSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
+    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
+        match z {
+            ComplexAlgebraic::Real(z) => z.as_f32_real_and_imaginary_parts(),
+            ComplexAlgebraic::Complex(z) => {
+                let mut z = z.clone();
+                z.refine_to_accuracy(&Rational::from_integers(
+                    Integer::from(1),
+                    Integer::from(100000000i64),
+                ));
+                (
+                    ((z.tight_a + z.tight_b) / Rational::from(2)).as_f32(),
+                    ((z.tight_c + z.tight_d) / Rational::from(2)).as_f32(),
+                )
+            }
+        }
+    }
+
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
-        z.as_f64_real_and_imaginary_parts()
+        match z {
+            ComplexAlgebraic::Real(z) => z.as_f64_real_and_imaginary_parts(),
+            ComplexAlgebraic::Complex(z) => {
+                let mut z = z.clone();
+                z.refine_to_accuracy(&Rational::from_integers(
+                    Integer::from(1),
+                    Integer::from(1000000000000000i64),
+                ));
+                (
+                    ((z.tight_a + z.tight_b) / Rational::from(2)).as_f64(),
+                    ((z.tight_c + z.tight_d) / Rational::from(2)).as_f64(),
+                )
+            }
+        }
     }
 }
 
