@@ -79,6 +79,10 @@ impl Canvas2DItemWgpu for PointsCanvas2DWgpu {
         view: &TextureView,
         camera_bind_group: &BindGroup,
     ) -> Result<(), wgpu::SurfaceError> {
+        if self.num_instances == 0 {
+            return Ok(());
+        }
+
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
