@@ -77,7 +77,7 @@ fn hsl_to_rgb(h: f32, s: f32, l: f32) -> vec3<f32> {
     return vec3<f32>(r + m, g + m, b + m);
 }
 
-// Generate eval_cfn HERE
+fn eval_cfn(z: vec2<f32>) -> vec2<f32> { <GENERATED> }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {

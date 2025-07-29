@@ -1,9 +1,5 @@
 use super::{Canvas2DItem, Canvas2DItemWgpu};
 use crate::{canvas::WgpuState, canvas2d::Canvas2D};
-use algebraeon_rings::{
-    polynomial::Polynomial,
-    structure::{ComplexSubsetSignature, MetaComplexSubset},
-};
 use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
 
 #[repr(C)]
@@ -17,7 +13,7 @@ impl Vertex {
 
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+            array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &Self::ATTRIBS,
         }
@@ -26,92 +22,119 @@ impl Vertex {
 
 const VERTICES: &[Vertex] = &[
     Vertex {
-        position: [-1.0, -1.0],
+        position: [1.0, 0.0],
     },
     Vertex {
-        position: [1.0, -1.0],
+        position: [0.866_025_4, 0.5],
     },
     Vertex {
-        position: [1.0, 1.0],
+        position: [0.5, 0.866_025_4],
     },
     Vertex {
-        position: [-1.0, 1.0],
+        position: [0.0, 1.0],
+    },
+    Vertex {
+        position: [-0.5, 0.866_025_4],
+    },
+    Vertex {
+        position: [-0.866_025_4, 0.5],
+    },
+    Vertex {
+        position: [-1.0, 0.0],
+    },
+    Vertex {
+        position: [-0.866_025_4, -0.5],
+    },
+    Vertex {
+        position: [-0.5, -0.866_025_4],
+    },
+    Vertex {
+        position: [0.0, -1.0],
+    },
+    Vertex {
+        position: [0.5, -0.866_025_4],
+    },
+    Vertex {
+        position: [0.866_025_4, -0.5],
     },
 ];
 
-const INDICES: &[u16] = &[0, 1, 2, 0, 2, 3];
+const INDICES: &[u16] = &[
+    0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5, 0, 5, 6, 0, 6, 7, 0, 7, 8, 0, 8, 9, 0, 9, 10, 0, 10, 11,
+];
 
-struct PolynomialWgpu {
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+struct Instance {
+    pos: [f32; 2],
+    radius: f32,
+}
+
+impl Instance {
+    const ATTRIBS: [wgpu::VertexAttribute; 2] =
+        wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32];
+
+    fn desc() -> wgpu::VertexBufferLayout<'static> {
+        wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Instance,
+            attributes: &Self::ATTRIBS,
+        }
+    }
+}
+
+struct PointsCanvas2DWgpu {
     vertex_buffer: wgpu::Buffer,
+    _num_vertices: u32,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
+    instance_buffer: wgpu::Buffer,
+    num_instances: u32,
     render_pipeline: wgpu::RenderPipeline,
 }
 
-struct PolynomialPlot {
-    cpx_coeffs: Vec<(f64, f64)>,
-}
+impl Canvas2DItemWgpu for PointsCanvas2DWgpu {
+    fn render(
+        &mut self,
+        encoder: &mut CommandEncoder,
+        view: &TextureView,
+        camera_bind_group: &BindGroup,
+    ) -> Result<(), wgpu::SurfaceError> {
+        if self.num_instances == 0 {
+            return Ok(());
+        }
 
-impl PolynomialPlot {
-    fn new<MetaRing: MetaComplexSubset>(p: Polynomial<MetaRing>) -> Self
-    where
-        MetaRing::Signature: ComplexSubsetSignature,
-    {
-        let coeffs = p
-            .into_coeffs()
-            .into_iter()
-            .map(|c| MetaRing::as_f64_real_and_imaginary_parts(&c))
-            .collect();
-        Self { cpx_coeffs: coeffs }
-    }
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("Render Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Load,
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            occlusion_query_set: None,
+            timestamp_writes: None,
+        });
 
-    fn make_shader(&self) -> String {
-        let n = self.cpx_coeffs.len();
-        #[allow(clippy::useless_format)]
-        String::from(include_str!("shader.wgsl")).replace(
-            "fn eval_cfn(z: vec2<f32>) -> vec2<f32> { <GENERATED> }",
-            format!(
-                r#"fn eval_cfn(z: vec2<f32>) -> vec2<f32> {{{}}}"#,
-                match n {
-                    0 => {
-                        format!("return vec2<f32>(0.0, 0.0);")
-                    }
-                    1 => {
-                        format!(
-                            "return vec2<f32>({}, {});",
-                            self.cpx_coeffs[0].0, self.cpx_coeffs[0].1
-                        )
-                    }
-                    n => {
-                        let n2 = n - 2;
-                        let n1 = n - 1;
-                        let wgsl_coeffs = self
-                            .cpx_coeffs
-                            .iter()
-                            .map(|(a, b)| format!("vec2<f32>({a}, {b}), "))
-                            .collect::<Vec<_>>()
-                            .join("");
-                        format!(
-                            r#"
-var coeffs = array<vec2<f32>, {n}>(
-    {wgsl_coeffs}
-);
-var result = coeffs[{n1}];
-for (var i = {n2}; i >= 0i; i = i - 1i) {{
-    result = c_add(c_mul(result, z), coeffs[i]);
-}}
-return result;
-                "#
-                        )
-                    }
-                }
-            )
-            .as_str(),
-        )
+        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(0, camera_bind_group, &[]);
+        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+        render_pass.draw_indexed(0..self.num_indices, 0, 0..self.num_instances);
+
+        Ok(())
     }
 }
 
-impl Canvas2DItem for PolynomialPlot {
+struct PointsCanvas2DItem {
+    points: Vec<Instance>,
+}
+
+impl Canvas2DItem for PointsCanvas2DItem {
     fn new_wgpu(
         &self,
         wgpu_state: &WgpuState,
@@ -125,6 +148,8 @@ impl Canvas2DItem for PolynomialPlot {
                     contents: bytemuck::cast_slice(VERTICES),
                     usage: wgpu::BufferUsages::VERTEX,
                 });
+
+        let num_vertices = VERTICES.len() as u32;
 
         let index_buffer =
             wgpu_state
@@ -141,7 +166,7 @@ impl Canvas2DItem for PolynomialPlot {
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Shader"),
-                source: wgpu::ShaderSource::Wgsl(self.make_shader().into()),
+                source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
             });
 
         let render_pipeline_layout =
@@ -162,7 +187,7 @@ impl Canvas2DItem for PolynomialPlot {
                     vertex: wgpu::VertexState {
                         module: &shader,
                         entry_point: Some("vs_main"),
-                        buffers: &[Vertex::desc()],
+                        buffers: &[Vertex::desc(), Instance::desc()],
                         compilation_options: wgpu::PipelineCompilationOptions::default(),
                     },
                     fragment: Some(wgpu::FragmentState {
@@ -179,7 +204,7 @@ impl Canvas2DItem for PolynomialPlot {
                         topology: wgpu::PrimitiveTopology::TriangleList,
                         strip_index_format: None,
                         front_face: wgpu::FrontFace::Ccw,
-                        cull_mode: None,
+                        cull_mode: Some(wgpu::Face::Back),
                         // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
                         polygon_mode: wgpu::PolygonMode::Fill,
                         // Requires Features::DEPTH_CLIP_CONTROL
@@ -197,57 +222,43 @@ impl Canvas2DItem for PolynomialPlot {
                     cache: None,
                 });
 
-        Box::new(PolynomialWgpu {
+        let instance_buffer =
+            wgpu_state
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Instance Buffer"),
+                    contents: bytemuck::cast_slice(&self.points),
+                    usage: wgpu::BufferUsages::VERTEX,
+                });
+
+        let num_instances = self.points.len() as u32;
+
+        Box::new(PointsCanvas2DWgpu {
             vertex_buffer,
+            _num_vertices: num_vertices,
             index_buffer,
             num_indices,
+            instance_buffer,
+            num_instances,
             render_pipeline,
         })
     }
 }
 
-impl Canvas2DItemWgpu for PolynomialWgpu {
-    fn render(
-        &mut self,
-        encoder: &mut CommandEncoder,
-        view: &TextureView,
-        camera_bind_group: &BindGroup,
-    ) -> Result<(), wgpu::SurfaceError> {
-        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.1,
-                        g: 0.2,
-                        b: 0.3,
-                        a: 1.0,
-                    }),
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: None,
-            occlusion_query_set: None,
-            timestamp_writes: None,
-        });
-
-        render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.set_bind_group(0, camera_bind_group, &[]);
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
-        Ok(())
-    }
+pub struct Point {
+    pub x: f32,
+    pub y: f32,
 }
 
 impl Canvas2D {
-    pub fn plot_complex_polynomial<MetaRing: MetaComplexSubset>(&mut self, p: Polynomial<MetaRing>)
-    where
-        MetaRing::Signature: ComplexSubsetSignature,
-    {
-        self.add_item(PolynomialPlot::new(p));
+    pub fn plot_points(&mut self, points: impl Iterator<Item = Point>) {
+        self.add_item(PointsCanvas2DItem {
+            points: points
+                .map(|pt| Instance {
+                    pos: [pt.x, pt.y],
+                    radius: 0.01,
+                })
+                .collect(),
+        });
     }
 }
