@@ -1,5 +1,11 @@
 #![allow(dead_code, warnings, unused)]
 
+use algebraeon_drawing::canvas::Canvas;
+use algebraeon_drawing::canvas2d::Canvas2D;
+use algebraeon_drawing::canvas2d::MouseWheelZoomCamera;
+use algebraeon_drawing::canvas2d::shapes::Shape;
+use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
+use algebraeon_drawing::colour::Colour;
 use algebraeon_geometry::simplexes::ConvexHull;
 use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
 use algebraeon_geometry::simplexes::OrientationSide;
@@ -81,14 +87,28 @@ fn main() {
     let sc6 = sc5.clone().simplify();
     println!("done simplify");
 
-    // TODO:
-
-    // algebraeon_drawing::canvas_old::canvas2d::Diagram2dCanvas::run(|canvas| {
-    //     canvas.draw(&sc1, (1.0, 0.0, 1.0));
-    //     canvas.draw(&sc2, (0.0, 1.0, 1.0));
-    //     // canvas.draw(&sc3, (1.0, 1.0, 0.0));
-
-    //     // canvas.draw(&sc5, (1.0, 0.0, 0.0));
-    //     canvas.draw(&sc6, (0.0, 1.0, 0.0));
-    // });
+    let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
+    canvas.plot_shapes(
+        [Shape::SetThickness(0.3)]
+            .into_iter()
+            .chain(simplicial_complex_shapes(
+                &Colour::magenta(),
+                &Colour::magenta().darken(),
+                0.6,
+                &sc1,
+            ))
+            .chain(simplicial_complex_shapes(
+                &Colour::cyan(),
+                &Colour::cyan().darken(),
+                0.6,
+                &sc2,
+            ))
+            .chain(simplicial_complex_shapes(
+                &Colour::green(),
+                &Colour::green().darken(),
+                0.3,
+                &sc6,
+            )),
+    );
+    canvas.run();
 }

@@ -8,12 +8,12 @@ struct InstanceInput {
     @location(1) pos1: vec2<f32>,
     @location(2) pos2: vec2<f32>,
     @location(3) pos3: vec2<f32>,
-    @location(4) colour : vec3<f32>,
+    @location(4) colour : vec4<f32>,
 };
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
-    @location(0) colour: vec3<f32>,
+    @location(0) colour: vec4<f32>,
 };
 
 struct CameraUniform {
@@ -46,7 +46,7 @@ fn vs_main(
 // Fragment shader
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(in.colour, 1.0);
+    return vec4<f32>(in.colour);
 }
 
  

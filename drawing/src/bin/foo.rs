@@ -38,7 +38,7 @@ fn main() {
     }
 
     canvas.plot_shapes(
-        [Shape::Colour(Colour::black())]
+        [Shape::SetColour(Colour::black())]
             .into_iter()
             .chain(roots.iter().flat_map(|root| match root.isolate() {
                 algebraeon_rings::isolated_algebraic::ComplexIsolatingRegion::Rational(r) => {
@@ -88,7 +88,7 @@ fn main() {
                 }
             }))
             .chain([
-                Shape::Colour(Colour::white()),
+                Shape::SetColour(Colour::white()),
                 Shape::Triangle {
                     x1: -1.0,
                     y1: -1.0,

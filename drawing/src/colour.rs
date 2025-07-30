@@ -79,4 +79,20 @@ impl Colour {
             rgb: [0.5, 0.5, 0.5],
         }
     }
+    pub fn lighten(self) -> Self {
+        let t = 0.5;
+        Self {
+            rgb: [
+                1.0 - t * (1.0 - self.rgb[0]),
+                1.0 - t * (1.0 - self.rgb[1]),
+                1.0 - t * (1.0 - self.rgb[2]),
+            ],
+        }
+    }
+    pub fn darken(self) -> Self {
+        let t = 0.5;
+        Self {
+            rgb: [t * self.rgb[0], t * self.rgb[1], t * self.rgb[2]],
+        }
+    }
 }

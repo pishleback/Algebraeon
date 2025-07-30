@@ -9,14 +9,17 @@ mod triangles;
 #[derive(Debug, Clone)]
 struct State {
     colour: Colour,
+    colour_alpha: f32,
     thickness: f32,
 }
 
 pub enum Shape {
     /// Set the colour
-    Colour(Colour),
+    SetColour(Colour),
+    /// Set the colour alpha
+    SetAlpha(f32),
     /// Set the thickness as a % of the screen
-    Thickness(f32),
+    SetThickness(f32),
     /// Push the draw parameters
     Push,
     /// Pop the draw parameters
@@ -59,16 +62,20 @@ impl Canvas2D {
 
         let mut state = State {
             colour: Colour::black(),
+            colour_alpha: 1.0,
             thickness: 0.01,
         };
         let mut state_stack = vec![];
 
         for shape in shapes {
             match shape {
-                Shape::Colour(colour) => {
+                Shape::SetColour(colour) => {
                     state.colour = colour;
                 }
-                Shape::Thickness(thickness) => {
+                Shape::SetAlpha(alpha) => {
+                    state.colour_alpha = alpha;
+                }
+                Shape::SetThickness(thickness) => {
                     state.thickness = 2.0 * thickness / 100.0;
                 }
                 Shape::Push => state_stack.push(state.clone()),
@@ -138,7 +145,12 @@ impl Canvas2D {
                         pos1: [x1, y1],
                         pos2: [x2, y2],
                         pos3: [x3, y3],
-                        colour: state.colour.rgb,
+                        colour: [
+                            state.colour.rgb[0],
+                            state.colour.rgb[1],
+                            state.colour.rgb[2],
+                            state.colour_alpha,
+                        ],
                     });
                 }
             }
@@ -159,4 +171,75 @@ impl Canvas2D {
             self.add_item(points::PointsCanvas2DItem { points });
         }
     }
+}
+
+pub fn simplicial_complex_shapes<
+    FS: algebraeon_rings::structure::OrderedRingSignature
+        + algebraeon_rings::structure::FieldSignature
+        + algebraeon_rings::structure::RealToFloatSignature,
+    SP: std::borrow::Borrow<algebraeon_geometry::AffineSpace<FS>> + Clone,
+    T: Eq + Clone,
+>(
+    line_colour: &Colour,
+    fill_colour: &Colour,
+    fill_alpha: f32,
+    sc: &algebraeon_geometry::simplexes::LabelledSimplicialComplex<FS, SP, T>,
+) -> impl IntoIterator<Item = Shape>
+where
+    FS::Set: std::hash::Hash,
+{
+    use algebraeon_geometry::simplexes::LabelledSimplexCollection;
+
+    let sp = sc.ambient_space();
+    let field = sp.borrow().ordered_field();
+
+    [Shape::Push, Shape::SetAlpha(1.0)]
+        .into_iter()
+        .chain(sc.simplexes().iter().flat_map(|s| {
+            let pts = s.points();
+            if pts.len() == 1 {
+                let p = &pts[0];
+                vec![
+                    Shape::SetColour(line_colour.clone()),
+                    Shape::Point {
+                        x: field.as_f32(p.coordinate(0)),
+                        y: field.as_f32(p.coordinate(1)),
+                    },
+                ]
+            } else if pts.len() == 2 {
+                let p1 = &pts[0];
+                let p2 = &pts[1];
+                vec![
+                    Shape::SetColour(line_colour.clone()),
+                    Shape::Line {
+                        x1: field.as_f32(p1.coordinate(0)),
+                        y1: field.as_f32(p1.coordinate(1)),
+                        x2: field.as_f32(p2.coordinate(0)),
+                        y2: field.as_f32(p2.coordinate(1)),
+                    },
+                ]
+            } else if pts.len() == 3 {
+                let p1 = &pts[0];
+                let p2 = &pts[1];
+                let p3 = &pts[2];
+                vec![
+                    Shape::SetColour(fill_colour.clone()),
+                    Shape::Push,
+                    Shape::SetAlpha(fill_alpha),
+                    Shape::Triangle {
+                        x1: field.as_f32(p1.coordinate(0)),
+                        y1: field.as_f32(p1.coordinate(1)),
+                        x2: field.as_f32(p2.coordinate(0)),
+                        y2: field.as_f32(p2.coordinate(1)),
+                        x3: field.as_f32(p3.coordinate(0)),
+                        y3: field.as_f32(p3.coordinate(1)),
+                    },
+                    Shape::Pop,
+                ]
+            } else {
+                vec![]
+            }
+        }))
+        .chain([Shape::Pop])
+        .collect::<Vec<_>>()
 }

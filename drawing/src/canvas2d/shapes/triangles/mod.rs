@@ -30,12 +30,12 @@ pub struct Instance {
     pub pos1: [f32; 2],
     pub pos2: [f32; 2],
     pub pos3: [f32; 2],
-    pub colour: [f32; 3],
+    pub colour: [f32; 4],
 }
 
 impl Instance {
     const ATTRIBS: [wgpu::VertexAttribute; 4] =
-        wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32x2, 3 => Float32x2, 4 => Float32x3];
+        wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32x2, 3 => Float32x2, 4 => Float32x4];
 
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
@@ -158,7 +158,7 @@ impl Canvas2DItem for TrianglesCanvas2DItem {
                         entry_point: Some("fs_main"),
                         targets: &[Some(wgpu::ColorTargetState {
                             format: wgpu_state.config.format,
-                            blend: Some(wgpu::BlendState::REPLACE),
+                            blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                             write_mask: wgpu::ColorWrites::ALL,
                         })],
                         compilation_options: wgpu::PipelineCompilationOptions::default(),
@@ -167,7 +167,7 @@ impl Canvas2DItem for TrianglesCanvas2DItem {
                         topology: wgpu::PrimitiveTopology::TriangleList,
                         strip_index_format: None,
                         front_face: wgpu::FrontFace::Ccw,
-                        cull_mode: Some(wgpu::Face::Back),
+                        cull_mode: None,
                         // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
                         polygon_mode: wgpu::PolygonMode::Fill,
                         // Requires Features::DEPTH_CLIP_CONTROL
