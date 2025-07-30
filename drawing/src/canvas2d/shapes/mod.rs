@@ -4,6 +4,7 @@ use crate::colour::Colour;
 mod lines;
 mod points;
 mod rectangles;
+mod triangles;
 
 #[derive(Debug, Clone)]
 struct State {
@@ -25,7 +26,7 @@ pub enum Shape {
     /// A line connecting (x1, y1) to (x2, y2)
     Line { x1: f32, y1: f32, x2: f32, y2: f32 },
     /// A box with edges x=a, x=b, y=c, y=d
-    Rectangle { a: f32, b: f32, c: f32, d: f32 },
+    Box { a: f32, b: f32, c: f32, d: f32 },
     /// A line connecting (x1 + x1s, y1 + y1s) to (x2 + x2s, y2 + y2s)
     /// where (x1, y1) and (x2, y2) are the endpoints and (x1s, y1s) and (x2s, y2s) are offsets for the endpoints in screen coordinates relative to the thickness
     LineRaw {
@@ -38,6 +39,15 @@ pub enum Shape {
         y2: f32,
         y2s: f32,
     },
+    /// A solid triangle
+    Triangle {
+        x1: f32,
+        y1: f32,
+        x2: f32,
+        y2: f32,
+        x3: f32,
+        y3: f32,
+    },
 }
 
 impl Canvas2D {
@@ -45,6 +55,7 @@ impl Canvas2D {
         let mut points = vec![];
         let mut lines = vec![];
         let mut rectangles = vec![];
+        let mut triangles = vec![];
 
         let mut state = State {
             colour: Colour::black(),
@@ -94,7 +105,7 @@ impl Canvas2D {
                     radius: state.thickness,
                     colour: state.colour.rgb,
                 }),
-                Shape::Rectangle {
+                Shape::Box {
                     mut a,
                     mut b,
                     mut c,
@@ -115,11 +126,29 @@ impl Canvas2D {
                         colour: state.colour.rgb,
                     });
                 }
+                Shape::Triangle {
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    x3,
+                    y3,
+                } => {
+                    triangles.push(triangles::Instance {
+                        pos1: [x1, y1],
+                        pos2: [x2, y2],
+                        pos3: [x3, y3],
+                        colour: state.colour.rgb,
+                    });
+                }
             }
         }
 
         assert!(state_stack.is_empty());
 
+        if !triangles.is_empty() {
+            self.add_item(triangles::TrianglesCanvas2DItem { triangles });
+        }
         if !rectangles.is_empty() {
             self.add_item(rectangles::RectanglesCanvas2DItem { rectangles });
         }

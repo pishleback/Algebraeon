@@ -79,14 +79,25 @@ fn main() {
                     },
                 ],
                 algebraeon_rings::isolated_algebraic::ComplexIsolatingRegion::Box(a, b, c, d) => {
-                    vec![Shape::Rectangle {
+                    vec![Shape::Box {
                         a: a.as_f32(),
                         b: b.as_f32(),
                         c: c.as_f32(),
                         d: d.as_f32(),
                     }]
                 }
-            })),
+            }))
+            .chain([
+                Shape::Colour(Colour::white()),
+                Shape::Triangle {
+                    x1: -1.0,
+                    y1: -1.0,
+                    x2: 1.0,
+                    y2: 0.0,
+                    x3: 0.0,
+                    y3: 1.0,
+                },
+            ]),
     );
 
     canvas.run();
