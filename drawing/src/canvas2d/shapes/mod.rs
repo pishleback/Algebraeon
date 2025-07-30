@@ -14,7 +14,7 @@ struct State {
 pub enum Shape {
     /// Set the colour
     Colour(Colour),
-    /// Set the thickness
+    /// Set the thickness as a % of the screen
     Thickness(f32),
     /// Push the draw parameters
     Push,
@@ -58,7 +58,7 @@ impl Canvas2D {
                     state.colour = colour;
                 }
                 Shape::Thickness(thickness) => {
-                    state.thickness = thickness;
+                    state.thickness = 2.0 * thickness / 100.0;
                 }
                 Shape::Push => state_stack.push(state.clone()),
                 Shape::Pop => {
