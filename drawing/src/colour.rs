@@ -44,4 +44,39 @@ impl Colour {
             rgb: [1.0, 1.0, 0.0],
         }
     }
+    pub fn orange() -> Self {
+        Self {
+            rgb: [1.0, 0.5, 0.0],
+        }
+    }
+    pub fn lime() -> Self {
+        Self {
+            rgb: [1.0, 0.5, 0.0],
+        }
+    }
+    pub fn pink() -> Self {
+        Self {
+            rgb: [1.0, 0.0, 0.5],
+        }
+    }
+    pub fn purple() -> Self {
+        Self {
+            rgb: [0.5, 0.0, 1.0],
+        }
+    }
+    pub fn aquamarine() -> Self {
+        Self {
+            rgb: [0.0, 1.0, 0.5],
+        }
+    }
+    pub fn azure() -> Self {
+        Self {
+            rgb: [0.0, 0.5, 1.0],
+        }
+    }
+    pub fn grey() -> Self {
+        Self {
+            rgb: [0.5, 0.5, 0.5],
+        }
+    }
 }
