@@ -183,13 +183,11 @@ pub fn simplicial_complex_shapes<
     line_colour: &Colour,
     fill_colour: &Colour,
     fill_alpha: f32,
-    sc: &algebraeon_geometry::simplexes::LabelledSimplicialComplex<FS, SP, T>,
+    sc: &impl algebraeon_geometry::simplexes::LabelledSimplexCollection<FS, SP, T>,
 ) -> impl IntoIterator<Item = Shape>
 where
     FS::Set: std::hash::Hash,
 {
-    use algebraeon_geometry::simplexes::LabelledSimplexCollection;
-
     let sp = sc.ambient_space();
     let field = sp.borrow().ordered_field();
 
