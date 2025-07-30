@@ -1,10 +1,25 @@
 use crate::canvas2d::Canvas2D;
+use crate::colour::Colour;
 
 mod lines;
 mod points;
 mod rectangles;
 
+#[derive(Debug, Clone)]
+struct State {
+    colour: Colour,
+    thickness: f32,
+}
+
 pub enum Shape {
+    /// Set the colour
+    Colour(Colour),
+    /// Set the thickness
+    Thickness(f32),
+    /// Push the draw parameters
+    Push,
+    /// Pop the draw parameters
+    Pop,
     /// A point at (x, y)
     Point { x: f32, y: f32 },
     /// A line connecting (x1, y1) to (x2, y2)
@@ -31,20 +46,36 @@ impl Canvas2D {
         let mut lines = vec![];
         let mut rectangles = vec![];
 
-        let thickness = 0.01;
+        let mut state = State {
+            colour: Colour::black(),
+            thickness: 0.01,
+        };
+        let mut state_stack = vec![];
 
         for shape in shapes {
             match shape {
+                Shape::Colour(colour) => {
+                    state.colour = colour;
+                }
+                Shape::Thickness(thickness) => {
+                    state.thickness = thickness;
+                }
+                Shape::Push => state_stack.push(state.clone()),
+                Shape::Pop => {
+                    state = state_stack.pop().unwrap();
+                }
                 Shape::Point { x, y } => points.push(points::Instance {
                     pos: [x, y],
-                    radius: thickness,
+                    radius: state.thickness,
+                    colour: state.colour.rgb,
                 }),
                 Shape::Line { x1, y1, x2, y2 } => lines.push(lines::Instance {
                     pos1: [x1, y1],
                     pos1_screen_offset: [0.0, 0.0],
                     pos2: [x2, y2],
                     pos2_screen_offset: [0.0, 0.0],
-                    radius: thickness,
+                    radius: state.thickness,
+                    colour: state.colour.rgb,
                 }),
                 Shape::LineRaw {
                     x1,
@@ -57,10 +88,11 @@ impl Canvas2D {
                     y2s,
                 } => lines.push(lines::Instance {
                     pos1: [x1, y1],
-                    pos1_screen_offset: [thickness * x1s, thickness * y1s],
+                    pos1_screen_offset: [state.thickness * x1s, state.thickness * y1s],
                     pos2: [x2, y2],
-                    pos2_screen_offset: [thickness * x2s, thickness * y2s],
-                    radius: thickness,
+                    pos2_screen_offset: [state.thickness * x2s, state.thickness * y2s],
+                    radius: state.thickness,
+                    colour: state.colour.rgb,
                 }),
                 Shape::Rectangle {
                     mut a,
@@ -79,11 +111,14 @@ impl Canvas2D {
                         b,
                         c,
                         d,
-                        thickness,
+                        thickness: state.thickness,
+                        colour: state.colour.rgb,
                     });
                 }
             }
         }
+
+        assert!(state_stack.is_empty());
 
         if !rectangles.is_empty() {
             self.add_item(rectangles::RectanglesCanvas2DItem { rectangles });

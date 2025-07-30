@@ -11,11 +11,12 @@ struct InstanceInput {
     @location(4) pos2: vec2<f32>,
     @location(5) pos2_screen_offset: vec2<f32>,
     @location(6) radius: f32,
+    @location(7) colour: vec3<f32>,
 };
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
-    @location(0) color: vec3<f32>,
+    @location(0) colour: vec3<f32>,
 };
 
 struct CameraUniform {
@@ -41,7 +42,7 @@ fn vs_main(
     instance: InstanceInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-    out.color = vec3<f32>(0.0, 0.0, 0.0);
+    out.colour = instance.colour;
     var scale = sqrt(abs(camera.matrix[0][0] * camera.matrix[1][1] - camera.matrix[0][1] * camera.matrix[1][0]));
 
     var total_pos1 = (instance.pos1_screen_offset) / scale + instance.pos1;
@@ -64,7 +65,7 @@ fn vs_main(
 // Fragment shader
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(in.color, 1.0);
+    return vec4<f32>(in.colour, 1.0);
 }
 
  

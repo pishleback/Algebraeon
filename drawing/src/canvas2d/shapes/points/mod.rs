@@ -68,11 +68,12 @@ const INDICES: &[u16] = &[
 pub struct Instance {
     pub pos: [f32; 2],
     pub radius: f32,
+    pub colour: [f32; 3],
 }
 
 impl Instance {
-    const ATTRIBS: [wgpu::VertexAttribute; 2] =
-        wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32];
+    const ATTRIBS: [wgpu::VertexAttribute; 3] =
+        wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32, 3 => Float32x3];
 
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {

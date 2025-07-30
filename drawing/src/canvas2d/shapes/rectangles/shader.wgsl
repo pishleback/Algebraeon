@@ -10,11 +10,12 @@ struct InstanceInput {
     @location(3) c: f32,
     @location(4) d: f32,
     @location(5) thickness: f32,
+    @location(6) colour: vec3<f32>,
 };
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
-    @location(0) color: vec3<f32>,
+    @location(0) colour: vec3<f32>,
     @location(1) pos: vec2<f32>,
     @location(2) a: f32,
     @location(3) b: f32,
@@ -37,7 +38,7 @@ fn vs_main(
     instance: InstanceInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-    out.color = vec3<f32>(0.0, 0.0, 0.0);
+    out.colour = instance.colour;
     var scale = sqrt(abs(camera.matrix[0][0] * camera.matrix[1][1] - camera.matrix[0][1] * camera.matrix[1][0]));
 
     var model_pos = vec2<f32>(
@@ -85,7 +86,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     if length(in.pos - vec2<f32>(in.b - in.thickness, in.d - in.thickness)) > 2 * in.thickness && in.pos.x > in.b - in.thickness && in.pos.y > in.d - in.thickness {
         discard;
     }
-    return vec4<f32>(in.color, 1.0);
+    return vec4<f32>(in.colour, 1.0);
 }
 
  
