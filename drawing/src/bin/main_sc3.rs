@@ -73,7 +73,9 @@ fn main() {
     .into_forget_labels();
     let x = LabelledSimplicialDisjointUnion::subtract_raw(&(&x).into(), &(&c).into());
 
-    let y = x.clone().refine_to_partial_simplicial_complex().simplify();
+    let x = x.clone();
+    let x = x.refine_to_partial_simplicial_complex();
+    let x = x.simplify();
 
     // let y = x.clone().refine_to_partial_simplicial_complex().simplify();
 
@@ -101,7 +103,7 @@ fn main() {
                 &Colour::green(),
                 &Colour::green().darken(),
                 0.5,
-                &y,
+                &x,
             )),
     );
     canvas.run();
