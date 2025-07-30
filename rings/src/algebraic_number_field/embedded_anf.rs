@@ -30,14 +30,39 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
             .collect()
     }
 
+    pub fn all_real_embeddings(&self) -> Vec<EmbeddedAnf> {
+        self.modulus()
+            .primitive_part_fof()
+            .all_real_roots()
+            .into_iter()
+            .map(|generator| EmbeddedAnf {
+                anf: self.clone().into(),
+                generator: ComplexAlgebraic::from(generator),
+            })
+            .collect()
+    }
+
     /// Return (r, s) where r is the number of real embeddings and s is the number of pairs of complex embeddings
     pub fn signature(&self) -> (usize, usize) {
         let poly = self.modulus();
         let d = poly.degree().unwrap();
-        let r = poly.all_real_roots().len();
+        let r = poly.count_real_roots();
         let two_s = d - r;
         debug_assert_eq!(two_s % 2, 0);
         (r, two_s / 2)
+    }
+
+    pub fn is_totally_real(&self) -> bool {
+        self.signature().1 == 0
+    }
+
+    pub fn is_totally_positive(&self, a: Polynomial<Rational>) -> bool {
+        self.all_real_embeddings()
+            .into_iter()
+            .all(|mut v| match v.generator.apply_poly(&a) {
+                ComplexAlgebraic::Real(v_image_real) => v_image_real > RealAlgebraic::zero(),
+                _ => false,
+            })
     }
 }
 

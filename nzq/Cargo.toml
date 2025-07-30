@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-nzq"
-version = "0.0.12"
+version = "0.0.13"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "natural numbers, integers and rationals for algebraeon"
@@ -13,7 +13,7 @@ readme = "../README.md"
 name = "algebraeon_nzq"
 
 [dependencies]
-algebraeon-sets = { version = "=0.0.12", path = "../sets", default-features = false }
+algebraeon-sets = { version = "=0.0.13", path = "../sets", default-features = false }
 malachite-base = "0.6.0"
 malachite-nz = { version = "0.6.0", features = ["random"] }
 malachite-q = "0.6.0"

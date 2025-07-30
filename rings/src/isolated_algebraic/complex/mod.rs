@@ -468,6 +468,23 @@ pub enum ComplexAlgebraic {
     Complex(ComplexAlgebraicRoot),
 }
 
+impl From<RealAlgebraic> for ComplexAlgebraic {
+    fn from(value: RealAlgebraic) -> Self {
+        Self::Real(value)
+    }
+}
+
+impl TryFrom<ComplexAlgebraic> for RealAlgebraic {
+    type Error = ();
+
+    fn try_from(value: ComplexAlgebraic) -> Result<Self, Self::Error> {
+        match value {
+            ComplexAlgebraic::Real(real_algebraic) => Ok(real_algebraic),
+            ComplexAlgebraic::Complex(_) => Err(()),
+        }
+    }
+}
+
 impl ComplexAlgebraic {
     pub fn i() -> Self {
         let i = ComplexAlgebraic::Complex(ComplexAlgebraicRoot {
@@ -522,6 +539,60 @@ impl ComplexAlgebraic {
 
     pub fn degree(&self) -> usize {
         self.min_poly().degree().unwrap()
+    }
+
+    pub fn real_part(&self) -> RealAlgebraic {
+        ComplexAlgebraic::structure()
+            .mul(
+                &ComplexAlgebraic::structure().add(self, &self.conjugate()),
+                &Self::Real(RealAlgebraic::Rational(Rational::ONE_HALF)),
+            )
+            .try_into()
+            .unwrap()
+    }
+
+    pub fn imag_part(&self) -> RealAlgebraic {
+        ComplexAlgebraic::structure()
+            .mul(
+                &ComplexAlgebraic::structure().sub(self, &self.conjugate()),
+                &ComplexAlgebraic::structure().mul(
+                    &Self::i(),
+                    &Self::Real(RealAlgebraic::Rational(-Rational::ONE_HALF)),
+                ),
+            )
+            .try_into()
+            .unwrap()
+    }
+}
+
+pub enum ComplexIsolatingRegion<'a> {
+    Rational(&'a Rational),
+    RealInterval(&'a Rational, &'a Rational),
+    Box(&'a Rational, &'a Rational, &'a Rational, &'a Rational),
+}
+
+impl ComplexAlgebraic {
+    pub fn refine(&mut self) {
+        match self {
+            ComplexAlgebraic::Real(x) => x.refine(),
+            ComplexAlgebraic::Complex(z) => z.refine(),
+        }
+    }
+
+    pub fn isolate<'a>(&'a self) -> ComplexIsolatingRegion<'a> {
+        match self {
+            ComplexAlgebraic::Real(x) => match x.isolate() {
+                crate::isolated_algebraic::RealIsolatingRegion::Rational(r) => {
+                    ComplexIsolatingRegion::Rational(r)
+                }
+                crate::isolated_algebraic::RealIsolatingRegion::Interval(a, b) => {
+                    ComplexIsolatingRegion::RealInterval(a, b)
+                }
+            },
+            ComplexAlgebraic::Complex(z) => {
+                ComplexIsolatingRegion::Box(&z.tight_a, &z.tight_b, &z.tight_c, &z.tight_d)
+            }
+        }
     }
 }
 
@@ -917,11 +988,26 @@ impl CharZeroFieldSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
+    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
+        match z {
+            ComplexAlgebraic::Real(z) => z.as_f32_real_and_imaginary_parts(),
+            ComplexAlgebraic::Complex(z) => {
+                let mut z = z.clone();
+                z.refine_to_accuracy(&Rational::from_integers(
+                    Integer::from(1),
+                    Integer::from(100000000i64),
+                ));
+                (
+                    ((z.tight_a + z.tight_b) / Rational::from(2)).as_f32(),
+                    ((z.tight_c + z.tight_d) / Rational::from(2)).as_f32(),
+                )
+            }
+        }
+    }
+
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
         match z {
-            ComplexAlgebraic::Real(z) => {
-                RealAlgebraic::structure().as_f64_real_and_imaginary_parts(z)
-            }
+            ComplexAlgebraic::Real(z) => z.as_f64_real_and_imaginary_parts(),
             ComplexAlgebraic::Complex(z) => {
                 let mut z = z.clone();
                 z.refine_to_accuracy(&Rational::from_integers(

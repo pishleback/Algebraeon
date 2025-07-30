@@ -1,8 +1,8 @@
 //! For generating pseudo-random numbers.
 
-use std::borrow::Borrow;
-
 use super::natural::Natural;
+use crate::Integer;
+use std::borrow::Borrow;
 
 /// For generating pseudo-random numbers.
 pub struct Rng {
@@ -20,11 +20,26 @@ impl Rng {
         }
     }
 
-    /// Return a natural number randomly and uniformly from the interval [0, self]
-    pub fn random_below(&mut self, n: impl Borrow<Natural>) -> Natural {
+    /// Return a natural number randomly and uniformly from the interval [0, n]
+    pub fn uniform_random_natural_less_than(&mut self, n: impl Borrow<Natural>) -> Natural {
         Natural::from_malachite(malachite_nz::natural::random::get_random_natural_less_than(
             &mut self.rng,
             (n.borrow() + Natural::ONE).to_malachite_ref(),
         ))
+    }
+
+    // Return an integer randomly and uniformly in the range [a, b]
+    pub fn uniform_random_integer_from_inclusive_range(
+        &mut self,
+        a: Integer,
+        b: Integer,
+    ) -> Integer {
+        Integer::from_malachite(
+            malachite_nz::integer::random::get_uniform_random_integer_from_inclusive_range(
+                &mut self.rng,
+                a.to_malachite(),
+                b.to_malachite(),
+            ),
+        )
     }
 }

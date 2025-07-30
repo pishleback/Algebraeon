@@ -74,7 +74,7 @@ impl SchreierGraph {
 
     fn follow(&mut self, mut c: usize, d: usize) -> usize {
         c = self.find_coset(c);
-        #[allow(clippy::match_on_vec_items)]
+        #[allow(clippy::indexing_slicing)]
         match self.neighbors[c][d] {
             Neighbor::None() => {
                 let nc = self.new_coset();
@@ -162,7 +162,7 @@ fn enumerate_cosets_impl(
     }
 
     let mut perms = vec![];
-    #[allow(clippy::match_on_vec_items)]
+    #[allow(clippy::indexing_slicing)]
     for g in 0..num_gens {
         perms.push(
             Permutation::new(

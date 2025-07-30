@@ -362,6 +362,32 @@ impl RealAlgebraic {
     }
 }
 
+pub enum RealIsolatingRegion<'a> {
+    Rational(&'a Rational),
+    Interval(&'a Rational, &'a Rational),
+}
+
+impl RealAlgebraic {
+    pub fn refine(&mut self) {
+        match self {
+            RealAlgebraic::Rational(..) => {}
+            RealAlgebraic::Real(x) => {
+                x.refine();
+            }
+        }
+    }
+
+    pub fn isolate<'a>(&'a self) -> RealIsolatingRegion<'a> {
+        match self {
+            RealAlgebraic::Rational(rational) => RealIsolatingRegion::Rational(rational),
+            RealAlgebraic::Real(real_algebraic_root) => RealIsolatingRegion::Interval(
+                &real_algebraic_root.tight_a,
+                &real_algebraic_root.tight_b,
+            ),
+        }
+    }
+}
+
 impl PositiveRealNthRootSignature for RealAlgebraicCanonicalStructure {
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
         nth_root(x, n)
@@ -676,8 +702,12 @@ impl CharZeroFieldSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl ComplexSubsetSignature for RealAlgebraicCanonicalStructure {
+    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
+        (z.as_f32(), 0.0)
+    }
+
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
-        (self.as_f64(z), 0.0)
+        (z.as_f64(), 0.0)
     }
 }
 

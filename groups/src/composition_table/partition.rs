@@ -26,7 +26,7 @@ impl<'a> PartialEq for GroupPartition<'a> {
         //equal iff lookups are equal up to permutation
         //build up a permutation f from indices of self.lookup to indices of other.lookup
         let mut f: Vec<Option<usize>> = vec![None; n];
-        #[allow(clippy::match_on_vec_items)]
+        #[allow(clippy::indexing_slicing)]
         for i in 0..grp.size() {
             match f[self.partition.project(i)] {
                 Some(expected_other_lookup_i) => {

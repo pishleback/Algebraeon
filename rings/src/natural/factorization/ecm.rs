@@ -358,7 +358,9 @@ pub fn ecm_one_factor_raw(
 
     // Search over the curves in parallel
     let result = (0..max_curve)
-        .map(|_| rng.random_below(n - Natural::from(7u32)) + Natural::from(6u32))
+        .map(|_| {
+            rng.uniform_random_natural_less_than(n - Natural::from(7u32)) + Natural::from(6u32)
+        })
         .collect::<Vec<_>>()
         .into_par_iter()
         .find_map_any(|sigma| {

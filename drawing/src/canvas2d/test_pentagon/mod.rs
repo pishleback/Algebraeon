@@ -1,19 +1,17 @@
 use super::{Canvas2DItem, Canvas2DItemWgpu};
 use crate::{canvas::WgpuState, canvas2d::Canvas2D};
-use algebraeon_rings::{
-    polynomial::Polynomial,
-    structure::{ComplexSubsetSignature, MetaComplexSubset},
-};
 use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct Vertex {
     position: [f32; 2],
+    color: [f32; 3],
 }
 
 impl Vertex {
-    const ATTRIBS: [wgpu::VertexAttribute; 1] = wgpu::vertex_attr_array![0 => Float32x2];
+    const ATTRIBS: [wgpu::VertexAttribute; 2] =
+        wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x3];
 
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
@@ -26,92 +24,40 @@ impl Vertex {
 
 const VERTICES: &[Vertex] = &[
     Vertex {
-        position: [-1.0, -1.0],
-    },
+        position: [-0.0868241, 0.49240386],
+        color: [0.5, 0.0, 0.5],
+    }, // A
     Vertex {
-        position: [1.0, -1.0],
-    },
+        position: [-0.49513406, 0.06958647],
+        color: [0.5, 0.5, 0.5],
+    }, // B
     Vertex {
-        position: [1.0, 1.0],
-    },
+        position: [-0.21918549, -0.44939706],
+        color: [0.5, 0.0, 0.5],
+    }, // C
     Vertex {
-        position: [-1.0, 1.0],
-    },
+        position: [0.35966998, -0.3473291],
+        color: [0.5, 0.0, 0.5],
+    }, // D
+    Vertex {
+        position: [0.44147372, 0.2347359],
+        color: [0.5, 0.0, 0.5],
+    }, // E
 ];
 
-const INDICES: &[u16] = &[0, 1, 2, 0, 2, 3];
+const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
-struct PolynomialWgpu {
+struct PentagonWgpu {
     vertex_buffer: wgpu::Buffer,
+    _num_vertices: u32,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
     render_pipeline: wgpu::RenderPipeline,
 }
 
-struct PolynomialPlot {
-    cpx_coeffs: Vec<(f64, f64)>,
-}
+struct Pentagon {}
 
-impl PolynomialPlot {
-    fn new<MetaRing: MetaComplexSubset>(p: Polynomial<MetaRing>) -> Self
-    where
-        MetaRing::Signature: ComplexSubsetSignature,
-    {
-        let coeffs = p
-            .into_coeffs()
-            .into_iter()
-            .map(|c| MetaRing::as_f64_real_and_imaginary_parts(&c))
-            .collect();
-        Self { cpx_coeffs: coeffs }
-    }
-
-    fn make_shader(&self) -> String {
-        let n = self.cpx_coeffs.len();
-        #[allow(clippy::useless_format)]
-        String::from(include_str!("shader.wgsl")).replace(
-            "fn eval_cfn(z: vec2<f32>) -> vec2<f32> { <GENERATED> }",
-            format!(
-                r#"fn eval_cfn(z: vec2<f32>) -> vec2<f32> {{{}}}"#,
-                match n {
-                    0 => {
-                        format!("return vec2<f32>(0.0, 0.0);")
-                    }
-                    1 => {
-                        format!(
-                            "return vec2<f32>({}, {});",
-                            self.cpx_coeffs[0].0, self.cpx_coeffs[0].1
-                        )
-                    }
-                    n => {
-                        let n2 = n - 2;
-                        let n1 = n - 1;
-                        let wgsl_coeffs = self
-                            .cpx_coeffs
-                            .iter()
-                            .map(|(a, b)| format!("vec2<f32>({a}, {b}), "))
-                            .collect::<Vec<_>>()
-                            .join("");
-                        format!(
-                            r#"
-var coeffs = array<vec2<f32>, {n}>(
-    {wgsl_coeffs}
-);
-var result = coeffs[{n1}];
-for (var i = {n2}; i >= 0i; i = i - 1i) {{
-    result = c_add(c_mul(result, z), coeffs[i]);
-}}
-return result;
-                "#
-                        )
-                    }
-                }
-            )
-            .as_str(),
-        )
-    }
-}
-
-impl Canvas2DItem for PolynomialPlot {
+impl Canvas2DItem for Pentagon {
     fn new_wgpu(
         &self,
         wgpu_state: &WgpuState,
@@ -125,6 +71,8 @@ impl Canvas2DItem for PolynomialPlot {
                     contents: bytemuck::cast_slice(VERTICES),
                     usage: wgpu::BufferUsages::VERTEX,
                 });
+
+        let num_vertices = VERTICES.len() as u32;
 
         let index_buffer =
             wgpu_state
@@ -141,7 +89,7 @@ impl Canvas2DItem for PolynomialPlot {
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Shader"),
-                source: wgpu::ShaderSource::Wgsl(self.make_shader().into()),
+                source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
             });
 
         let render_pipeline_layout =
@@ -166,9 +114,11 @@ impl Canvas2DItem for PolynomialPlot {
                         compilation_options: wgpu::PipelineCompilationOptions::default(),
                     },
                     fragment: Some(wgpu::FragmentState {
+                        // 3.
                         module: &shader,
                         entry_point: Some("fs_main"),
                         targets: &[Some(wgpu::ColorTargetState {
+                            // 4.
                             format: wgpu_state.config.format,
                             blend: Some(wgpu::BlendState::REPLACE),
                             write_mask: wgpu::ColorWrites::ALL,
@@ -179,7 +129,7 @@ impl Canvas2DItem for PolynomialPlot {
                         topology: wgpu::PrimitiveTopology::TriangleList,
                         strip_index_format: None,
                         front_face: wgpu::FrontFace::Ccw,
-                        cull_mode: None,
+                        cull_mode: Some(wgpu::Face::Back),
                         // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
                         polygon_mode: wgpu::PolygonMode::Fill,
                         // Requires Features::DEPTH_CLIP_CONTROL
@@ -197,8 +147,9 @@ impl Canvas2DItem for PolynomialPlot {
                     cache: None,
                 });
 
-        Box::new(PolynomialWgpu {
+        Box::new(PentagonWgpu {
             vertex_buffer,
+            _num_vertices: num_vertices,
             index_buffer,
             num_indices,
             render_pipeline,
@@ -206,7 +157,7 @@ impl Canvas2DItem for PolynomialPlot {
     }
 }
 
-impl Canvas2DItemWgpu for PolynomialWgpu {
+impl Canvas2DItemWgpu for PentagonWgpu {
     fn render(
         &mut self,
         encoder: &mut CommandEncoder,
@@ -219,12 +170,7 @@ impl Canvas2DItemWgpu for PolynomialWgpu {
                 view,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.1,
-                        g: 0.2,
-                        b: 0.3,
-                        a: 1.0,
-                    }),
+                    load: wgpu::LoadOp::Load,
                     store: wgpu::StoreOp::Store,
                 },
             })],
@@ -244,10 +190,7 @@ impl Canvas2DItemWgpu for PolynomialWgpu {
 }
 
 impl Canvas2D {
-    pub fn plot_complex_polynomial<MetaRing: MetaComplexSubset>(&mut self, p: Polynomial<MetaRing>)
-    where
-        MetaRing::Signature: ComplexSubsetSignature,
-    {
-        self.add_item(PolynomialPlot::new(p));
+    pub fn plot_test_pentagon(&mut self) {
+        self.add_item(Pentagon {});
     }
 }
