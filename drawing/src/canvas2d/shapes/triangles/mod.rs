@@ -1,15 +1,15 @@
-use super::{Canvas2DItem, Canvas2DItemWgpu};
-use crate::{canvas::WgpuState, canvas2d::Canvas2D};
+use super::super::{Canvas2DItem, Canvas2DItemWgpu};
+use crate::canvas::WgpuState;
 use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct Vertex {
-    position: [f32; 2],
+    n: u32,
 }
 
 impl Vertex {
-    const ATTRIBS: [wgpu::VertexAttribute; 1] = wgpu::vertex_attr_array![0 => Float32x2];
+    const ATTRIBS: [wgpu::VertexAttribute; 1] = wgpu::vertex_attr_array![0 => Uint32];
 
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
@@ -20,59 +20,22 @@ impl Vertex {
     }
 }
 
-const VERTICES: &[Vertex] = &[
-    Vertex {
-        position: [1.0, 0.0],
-    },
-    Vertex {
-        position: [0.866_025_4, 0.5],
-    },
-    Vertex {
-        position: [0.5, 0.866_025_4],
-    },
-    Vertex {
-        position: [0.0, 1.0],
-    },
-    Vertex {
-        position: [-0.5, 0.866_025_4],
-    },
-    Vertex {
-        position: [-0.866_025_4, 0.5],
-    },
-    Vertex {
-        position: [-1.0, 0.0],
-    },
-    Vertex {
-        position: [-0.866_025_4, -0.5],
-    },
-    Vertex {
-        position: [-0.5, -0.866_025_4],
-    },
-    Vertex {
-        position: [0.0, -1.0],
-    },
-    Vertex {
-        position: [0.5, -0.866_025_4],
-    },
-    Vertex {
-        position: [0.866_025_4, -0.5],
-    },
-];
+const VERTICES: &[Vertex] = &[Vertex { n: 0 }, Vertex { n: 1 }, Vertex { n: 2 }];
 
-const INDICES: &[u16] = &[
-    0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5, 0, 5, 6, 0, 6, 7, 0, 7, 8, 0, 8, 9, 0, 9, 10, 0, 10, 11,
-];
+const INDICES: &[u16] = &[0, 1, 2];
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct Instance {
-    pos: [f32; 2],
-    radius: f32,
+pub struct Instance {
+    pub pos1: [f32; 2],
+    pub pos2: [f32; 2],
+    pub pos3: [f32; 2],
+    pub colour: [f32; 4],
 }
 
 impl Instance {
-    const ATTRIBS: [wgpu::VertexAttribute; 2] =
-        wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32];
+    const ATTRIBS: [wgpu::VertexAttribute; 4] =
+        wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32x2, 3 => Float32x2, 4 => Float32x4];
 
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
@@ -81,6 +44,10 @@ impl Instance {
             attributes: &Self::ATTRIBS,
         }
     }
+}
+
+pub struct TrianglesCanvas2DItem {
+    pub triangles: Vec<Instance>,
 }
 
 struct PointsCanvas2DWgpu {
@@ -130,11 +97,7 @@ impl Canvas2DItemWgpu for PointsCanvas2DWgpu {
     }
 }
 
-struct PointsCanvas2DItem {
-    points: Vec<Instance>,
-}
-
-impl Canvas2DItem for PointsCanvas2DItem {
+impl Canvas2DItem for TrianglesCanvas2DItem {
     fn new_wgpu(
         &self,
         wgpu_state: &WgpuState,
@@ -195,7 +158,7 @@ impl Canvas2DItem for PointsCanvas2DItem {
                         entry_point: Some("fs_main"),
                         targets: &[Some(wgpu::ColorTargetState {
                             format: wgpu_state.config.format,
-                            blend: Some(wgpu::BlendState::REPLACE),
+                            blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                             write_mask: wgpu::ColorWrites::ALL,
                         })],
                         compilation_options: wgpu::PipelineCompilationOptions::default(),
@@ -204,7 +167,7 @@ impl Canvas2DItem for PointsCanvas2DItem {
                         topology: wgpu::PrimitiveTopology::TriangleList,
                         strip_index_format: None,
                         front_face: wgpu::FrontFace::Ccw,
-                        cull_mode: Some(wgpu::Face::Back),
+                        cull_mode: None,
                         // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
                         polygon_mode: wgpu::PolygonMode::Fill,
                         // Requires Features::DEPTH_CLIP_CONTROL
@@ -227,11 +190,11 @@ impl Canvas2DItem for PointsCanvas2DItem {
                 .device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("Instance Buffer"),
-                    contents: bytemuck::cast_slice(&self.points),
+                    contents: bytemuck::cast_slice(&self.triangles),
                     usage: wgpu::BufferUsages::VERTEX,
                 });
 
-        let num_instances = self.points.len() as u32;
+        let num_instances = self.triangles.len() as u32;
 
         Box::new(PointsCanvas2DWgpu {
             vertex_buffer,
@@ -242,23 +205,5 @@ impl Canvas2DItem for PointsCanvas2DItem {
             num_instances,
             render_pipeline,
         })
-    }
-}
-
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
-}
-
-impl Canvas2D {
-    pub fn plot_points(&mut self, points: impl Iterator<Item = Point>) {
-        self.add_item(PointsCanvas2DItem {
-            points: points
-                .map(|pt| Instance {
-                    pos: [pt.x, pt.y],
-                    radius: 0.01,
-                })
-                .collect(),
-        });
     }
 }

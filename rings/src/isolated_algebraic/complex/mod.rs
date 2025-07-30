@@ -572,6 +572,13 @@ pub enum ComplexIsolatingRegion<'a> {
 }
 
 impl ComplexAlgebraic {
+    pub fn refine(&mut self) {
+        match self {
+            ComplexAlgebraic::Real(x) => x.refine(),
+            ComplexAlgebraic::Complex(z) => z.refine(),
+        }
+    }
+
     pub fn isolate<'a>(&'a self) -> ComplexIsolatingRegion<'a> {
         match self {
             ComplexAlgebraic::Real(x) => match x.isolate() {
