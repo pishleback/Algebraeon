@@ -9,8 +9,7 @@ use winit::{
 };
 
 pub mod complex_polynomial;
-pub mod points;
-pub mod rectangles;
+pub mod shapes;
 pub mod test_pentagon;
 
 #[repr(C)]

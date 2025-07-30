@@ -1,5 +1,5 @@
-use super::{Canvas2DItem, Canvas2DItemWgpu};
-use crate::{canvas::WgpuState, canvas2d::Canvas2D};
+use super::super::{Canvas2DItem, Canvas2DItemWgpu};
+use crate::canvas::WgpuState;
 use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
 
 #[repr(C)]
@@ -42,12 +42,12 @@ const INDICES: &[u16] = &[0, 1, 2, 1, 3, 2];
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct Instance {
-    a: f32,
-    b: f32,
-    c: f32,
-    d: f32,
-    thickness: f32,
+pub struct Instance {
+    pub a: f32,
+    pub b: f32,
+    pub c: f32,
+    pub d: f32,
+    pub thickness: f32,
 }
 
 impl Instance {
@@ -60,6 +60,10 @@ impl Instance {
             attributes: &Self::ATTRIBS,
         }
     }
+}
+
+pub struct RectanglesCanvas2DItem {
+    pub rectangles: Vec<Instance>,
 }
 
 struct PointsCanvas2DWgpu {
@@ -107,10 +111,6 @@ impl Canvas2DItemWgpu for PointsCanvas2DWgpu {
 
         Ok(())
     }
-}
-
-struct RectanglesCanvas2DItem {
-    rectangles: Vec<Instance>,
 }
 
 impl Canvas2DItem for RectanglesCanvas2DItem {
@@ -221,28 +221,5 @@ impl Canvas2DItem for RectanglesCanvas2DItem {
             num_instances,
             render_pipeline,
         })
-    }
-}
-
-pub struct Rectangle {
-    pub a: f32,
-    pub b: f32,
-    pub c: f32,
-    pub d: f32,
-}
-
-impl Canvas2D {
-    pub fn plot_rectangles(&mut self, rectangles: impl Iterator<Item = Rectangle>) {
-        self.add_item(RectanglesCanvas2DItem {
-            rectangles: rectangles
-                .map(|r| Instance {
-                    a: r.a,
-                    b: r.b,
-                    c: r.c,
-                    d: r.d,
-                    thickness: 0.01,
-                })
-                .collect(),
-        });
     }
 }

@@ -1,5 +1,5 @@
-use super::{Canvas2DItem, Canvas2DItemWgpu};
-use crate::{canvas::WgpuState, canvas2d::Canvas2D};
+use super::super::{Canvas2DItem, Canvas2DItemWgpu};
+use crate::canvas::WgpuState;
 use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
 
 #[repr(C)]
@@ -65,9 +65,9 @@ const INDICES: &[u16] = &[
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct Instance {
-    pos: [f32; 2],
-    radius: f32,
+pub struct Instance {
+    pub pos: [f32; 2],
+    pub radius: f32,
 }
 
 impl Instance {
@@ -81,6 +81,10 @@ impl Instance {
             attributes: &Self::ATTRIBS,
         }
     }
+}
+
+pub struct PointsCanvas2DItem {
+    pub points: Vec<Instance>,
 }
 
 struct PointsCanvas2DWgpu {
@@ -128,10 +132,6 @@ impl Canvas2DItemWgpu for PointsCanvas2DWgpu {
 
         Ok(())
     }
-}
-
-struct PointsCanvas2DItem {
-    points: Vec<Instance>,
 }
 
 impl Canvas2DItem for PointsCanvas2DItem {
@@ -242,23 +242,5 @@ impl Canvas2DItem for PointsCanvas2DItem {
             num_instances,
             render_pipeline,
         })
-    }
-}
-
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
-}
-
-impl Canvas2D {
-    pub fn plot_points(&mut self, points: impl Iterator<Item = Point>) {
-        self.add_item(PointsCanvas2DItem {
-            points: points
-                .map(|pt| Instance {
-                    pos: [pt.x, pt.y],
-                    radius: 0.01,
-                })
-                .collect(),
-        });
     }
 }

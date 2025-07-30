@@ -73,6 +73,18 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     if abs(in.pos.x - in.a) > in.thickness && abs(in.pos.x - in.b) > in.thickness && abs(in.pos.y - in.c) > in.thickness && abs(in.pos.y - in.d) > in.thickness {
         discard;
     }
+    if length(in.pos - vec2<f32>(in.a + in.thickness, in.c + in.thickness)) > 2 * in.thickness && in.pos.x < in.a + in.thickness && in.pos.y < in.c + in.thickness {
+        discard;
+    }
+    if length(in.pos - vec2<f32>(in.b - in.thickness, in.c + in.thickness)) > 2 * in.thickness && in.pos.x > in.b - in.thickness && in.pos.y < in.c + in.thickness {
+        discard;
+    }
+    if length(in.pos - vec2<f32>(in.a + in.thickness, in.d - in.thickness)) > 2 * in.thickness && in.pos.x < in.a + in.thickness && in.pos.y > in.d - in.thickness {
+        discard;
+    }
+    if length(in.pos - vec2<f32>(in.b - in.thickness, in.d - in.thickness)) > 2 * in.thickness && in.pos.x > in.b - in.thickness && in.pos.y > in.d - in.thickness {
+        discard;
+    }
     return vec4<f32>(in.color, 1.0);
 }
 
