@@ -368,6 +368,15 @@ pub enum RealIsolatingRegion<'a> {
 }
 
 impl RealAlgebraic {
+    pub fn refine(&mut self) {
+        match self {
+            RealAlgebraic::Rational(..) => {}
+            RealAlgebraic::Real(x) => {
+                x.refine();
+            }
+        }
+    }
+
     pub fn isolate<'a>(&'a self) -> RealIsolatingRegion<'a> {
         match self {
             RealAlgebraic::Rational(rational) => RealIsolatingRegion::Rational(rational),
