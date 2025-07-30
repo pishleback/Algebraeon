@@ -27,14 +27,15 @@ const INDICES: &[u16] = &[0, 1, 2];
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Instance {
-    pub pos1: [f32;2],
-    pub pos2: [f32;2],
-    pub pos3: [f32;2],
+    pub pos1: [f32; 2],
+    pub pos2: [f32; 2],
+    pub pos3: [f32; 2],
     pub colour: [f32; 3],
 }
 
 impl Instance {
-    const ATTRIBS: [wgpu::VertexAttribute; 4] = wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32x2, 3 => Float32x2, 4 => Float32x3];
+    const ATTRIBS: [wgpu::VertexAttribute; 4] =
+        wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32x2, 3 => Float32x2, 4 => Float32x3];
 
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
