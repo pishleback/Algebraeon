@@ -3,10 +3,10 @@
 use std::rc::Rc;
 
 use algebraeon_drawing::canvas::Canvas;
-use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
-use algebraeon_drawing::canvas2d::shapes::Shape;
 use algebraeon_drawing::canvas2d::Canvas2D;
 use algebraeon_drawing::canvas2d::MouseWheelZoomCamera;
+use algebraeon_drawing::canvas2d::shapes::Shape;
+use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
 use algebraeon_drawing::colour::Colour;
 use algebraeon_geometry::simplexes::ConvexHull;
 use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
@@ -102,7 +102,7 @@ fn main() {
                 &Colour::green().darken(),
                 0.5,
                 &y,
-            ))
+            )),
     );
     canvas.run();
 }
