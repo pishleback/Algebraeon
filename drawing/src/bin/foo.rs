@@ -38,7 +38,7 @@ fn main() {
     }
 
     canvas.plot_shapes(
-        [Shape::Colour(Colour::white())]
+        [Shape::Colour(Colour::black())]
             .into_iter()
             .chain(roots.iter().flat_map(|root| match root.isolate() {
                 algebraeon_rings::isolated_algebraic::ComplexIsolatingRegion::Rational(r) => {
@@ -57,8 +57,6 @@ fn main() {
                         x2: b.as_f32(),
                         y2: 0.0,
                     },
-                    Shape::Push,
-                    Shape::Colour(Colour::red()),
                     Shape::LineRaw {
                         x1: a.as_f32(),
                         x1s: 0.0,
@@ -79,7 +77,6 @@ fn main() {
                         y2: 0.0,
                         y2s: 1.0,
                     },
-                    Shape::Pop,
                 ],
                 algebraeon_rings::isolated_algebraic::ComplexIsolatingRegion::Box(a, b, c, d) => {
                     vec![Shape::Rectangle {
