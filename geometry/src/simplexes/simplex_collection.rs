@@ -1,21 +1,20 @@
 use super::*;
-use algebraeon_sets::structure::BorrowedStructure;
 use std::collections::{HashMap, HashSet};
 
 pub trait LabelledSimplexCollection<
-    FS: OrderedRingSignature + FieldSignature,
-    FSB: BorrowedStructure<FS>,
-    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    'f,
+    FS: OrderedRingSignature + FieldSignature + 'f,
+    SP: Borrow<AffineSpace<'f, FS>> + Clone,
     T: Eq + Clone,
 >: Sized where
     FS::Set: Hash,
 {
-    type WithLabel<S: Eq + Clone>: LabelledSimplexCollection<FS, FSB, SP, S>;
-    type SubsetType: LabelledSimplexCollection<FS, FSB, SP, T>;
+    type WithLabel<S: Eq + Clone>: LabelledSimplexCollection<'f, FS, SP, S>;
+    type SubsetType: LabelledSimplexCollection<'f, FS, SP, T>;
 
     fn new(
         ambient_space: SP,
-        simplexes: HashSet<Simplex<FS, FSB, SP>>,
+        simplexes: HashSet<Simplex<'f, FS, SP>>,
     ) -> Result<Self::WithLabel<()>, &'static str> {
         Self::WithLabel::<()>::new_labelled(
             ambient_space,
@@ -24,7 +23,7 @@ pub trait LabelledSimplexCollection<
     }
     fn new_unchecked(
         ambient_space: SP,
-        simplexes: HashSet<Simplex<FS, FSB, SP>>,
+        simplexes: HashSet<Simplex<'f, FS, SP>>,
     ) -> Self::WithLabel<()> {
         Self::WithLabel::<()>::new_labelled_unchecked(
             ambient_space,
@@ -34,39 +33,39 @@ pub trait LabelledSimplexCollection<
 
     fn new_labelled(
         ambient_space: SP,
-        simplexes: HashMap<Simplex<FS, FSB, SP>, T>,
+        simplexes: HashMap<Simplex<'f, FS, SP>, T>,
     ) -> Result<Self, &'static str>;
     fn new_labelled_unchecked(
         ambient_space: SP,
-        simplexes: HashMap<Simplex<FS, FSB, SP>, T>,
+        simplexes: HashMap<Simplex<'f, FS, SP>, T>,
     ) -> Self;
 
     fn ambient_space(&self) -> SP;
 
-    fn simplexes<'a>(&'a self) -> HashSet<&'a Simplex<FS, FSB, SP>>
+    fn simplexes<'a>(&'a self) -> HashSet<&'a Simplex<'f, FS, SP>>
     where
         T: 'a,
     {
         self.labelled_simplexes().into_keys().collect()
     }
-    fn into_simplexes(self) -> HashSet<Simplex<FS, FSB, SP>> {
+    fn into_simplexes(self) -> HashSet<Simplex<'f, FS, SP>> {
         self.into_labelled_simplexes().into_keys().collect()
     }
 
-    fn labelled_simplexes(&self) -> HashMap<&Simplex<FS, FSB, SP>, &T>;
-    fn into_labelled_simplexes(self) -> HashMap<Simplex<FS, FSB, SP>, T>;
+    fn labelled_simplexes(&self) -> HashMap<&Simplex<'f, FS, SP>, &T>;
+    fn into_labelled_simplexes(self) -> HashMap<Simplex<'f, FS, SP>, T>;
 
     fn subset_by_label(
         &self,
         label: &T,
-    ) -> <Self::SubsetType as LabelledSimplexCollection<FS, FSB, SP, T>>::WithLabel<()> {
+    ) -> <Self::SubsetType as LabelledSimplexCollection<'f, FS, SP, T>>::WithLabel<()> {
         self.subset_by_filter(|spx_label| spx_label == label)
             .forget_labels()
     }
     fn into_subset_by_label(
         self,
         label: &T,
-    ) -> <Self::SubsetType as LabelledSimplexCollection<FS, FSB, SP, T>>::WithLabel<()> {
+    ) -> <Self::SubsetType as LabelledSimplexCollection<'f, FS, SP, T>>::WithLabel<()> {
         self.into_subset_by_filter(|spx_label| spx_label == label)
             .forget_labels()
     }
@@ -90,7 +89,7 @@ pub trait LabelledSimplexCollection<
         )
     }
 
-    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<FS, FSB, SP, T>;
+    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, SP, T>;
 
     fn apply_label_function<S: Eq + Clone>(&self, f: impl Fn(&T) -> S) -> Self::WithLabel<S> {
         LabelledSimplexCollection::new_labelled_unchecked(
@@ -119,11 +118,11 @@ pub trait LabelledSimplexCollection<
 
     fn common_label<'a>(
         &'a self,
-        simplexes: impl Iterator<Item = &'a Simplex<FS, FSB, SP>>,
+        simplexes: impl Iterator<Item = &'a Simplex<'f, FS, SP>>,
     ) -> Option<&'a T>
     where
         FS: 'a,
-        FSB: 'a,
+        'f: 'a,
         SP: 'a,
     {
         let mut label = None;

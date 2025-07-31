@@ -32,8 +32,9 @@ fn main() {
     // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
     // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
-    let field = RealAlgebraic::structure();
-    let space = AffineSpace::new_linear(field.clone(), 2);
+    let field = RealAlgebraic::structure_ref();
+
+    let space = AffineSpace::new_linear(field, 2);
 
     let sqrt2 = field
         .nth_root(&field.from_int(Integer::from(2)), 2)

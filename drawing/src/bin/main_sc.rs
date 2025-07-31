@@ -29,15 +29,15 @@ fn main() {
     // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
     // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
-    let space = Rc::new(AffineSpace::new_linear(Rational::structure(), 2));
+    let space = Rc::new(AffineSpace::new_linear(Rational::structure_ref(), 2));
 
     fn random_point(
-        space: Rc<AffineSpace<RationalCanonicalStructure, RationalCanonicalStructure>>,
+        space: Rc<AffineSpace<'static, RationalCanonicalStructure>>,
         rad: f64,
     ) -> Vector<
+        'static,
         RationalCanonicalStructure,
-        RationalCanonicalStructure,
-        Rc<AffineSpace<RationalCanonicalStructure, RationalCanonicalStructure>>,
+        Rc<AffineSpace<'static, RationalCanonicalStructure>>,
     > {
         let mut rng = rand::thread_rng();
         Vector::construct(space.clone(), |i| {

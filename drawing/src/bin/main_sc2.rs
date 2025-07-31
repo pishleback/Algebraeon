@@ -28,7 +28,7 @@ fn main() {
     // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
     // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
-    let space = AffineSpace::new_linear(Rational::structure(), 2);
+    let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
     let mut ch = ConvexHull::new(
         &space,
         vec![

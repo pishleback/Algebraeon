@@ -30,9 +30,7 @@ fn main() {
     // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
     // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
-    let field = Rational::structure();
-
-    let space = AffineSpace::new_linear(field, 2);
+    let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
 
     let a = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(

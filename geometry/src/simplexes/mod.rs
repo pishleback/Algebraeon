@@ -3,11 +3,8 @@ use super::*;
 // It is helpful for computational reasons to put an ordering on the vectors
 // so that the points of a simplex can be ordered
 #[allow(clippy::non_canonical_partial_ord_impl)]
-impl<
-    FS: OrderedRingSignature + FieldSignature,
-    FSB: BorrowedStructure<FS>,
-    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
-> PartialOrd for Vector<FS, FSB, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone>
+    PartialOrd for Vector<'f, FS, SP>
 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         let space = common_space(
@@ -31,11 +28,8 @@ impl<
         Some(std::cmp::Ordering::Equal)
     }
 }
-impl<
-    FS: OrderedRingSignature + FieldSignature,
-    FSB: BorrowedStructure<FS>,
-    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
-> Ord for Vector<FS, FSB, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone> Ord
+    for Vector<'f, FS, SP>
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         if let Some(ans) = self.partial_cmp(other) {
@@ -53,7 +47,6 @@ pub enum InteriorBoundaryLabel {
 }
 
 mod simplex;
-use algebraeon_sets::structure::BorrowedStructure;
 pub use simplex::*;
 
 mod convex_hull;

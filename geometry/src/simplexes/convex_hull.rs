@@ -3,9 +3,9 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 pub struct ConvexHull<
+    'f,
     FS: OrderedRingSignature + FieldSignature,
-    FSB: BorrowedStructure<FS>,
-    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    SP: Borrow<AffineSpace<'f, FS>> + Clone,
 > where
     FS::Set: Hash,
 {
@@ -13,14 +13,14 @@ pub struct ConvexHull<
     ambient_space: SP,
     // the affine subspace spanned by this convex hull
     // so that this convex hull is "full" in this embedded subspace
-    subspace: EmbeddedAffineSubspace<FS, FSB, SP, AffineSpace<FS, FSB>>,
+    subspace: EmbeddedAffineSubspace<'f, FS, SP, AffineSpace<'f, FS>>,
     // oriented facets belonging to the embedded subspace such that
     // the positive side of each facet is on the interior of the convex hull and
     // the negative side of each facet is on the outside of the convex hull.
     // These facets should form a simplicial complex
-    facets: Vec<OrientedSimplex<FS, FSB, AffineSpace<FS, FSB>>>,
+    facets: Vec<OrientedSimplex<'f, FS, AffineSpace<'f, FS>>>,
     // These interior simplicies are the full-dimensional simplicies in the embedded subspace forming the interior of the convex hull
-    interior: Vec<Simplex<FS, FSB, AffineSpace<FS, FSB>>>,
+    interior: Vec<Simplex<'f, FS, AffineSpace<'f, FS>>>,
     /*
     Consider the case of a convex hull given by a simplex in dimension d:
 
@@ -36,11 +36,8 @@ pub struct ConvexHull<
 }
 
 #[allow(clippy::missing_fields_in_debug)]
-impl<
-    FS: OrderedRingSignature + FieldSignature,
-    FSB: BorrowedStructure<FS>,
-    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
-> std::fmt::Debug for ConvexHull<FS, FSB, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone>
+    std::fmt::Debug for ConvexHull<'f, FS, SP>
 where
     FS::Set: std::hash::Hash + std::fmt::Debug,
 {
@@ -66,11 +63,8 @@ where
 //     pub interior: PartialSimplicialComplex<FS, SP>,
 // }
 
-impl<
-    FS: OrderedRingSignature + FieldSignature,
-    FSB: BorrowedStructure<FS>,
-    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
-> ConvexHull<FS, FSB, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone>
+    ConvexHull<'f, FS, SP>
 where
     FS::Set: Hash,
 {
@@ -196,7 +190,7 @@ where
         }
     }
 
-    pub fn new(ambient_space: SP, points: Vec<Vector<FS, FSB, SP>>) -> Self {
+    pub fn new(ambient_space: SP, points: Vec<Vector<'f, FS, SP>>) -> Self {
         let mut ch = Self::new_empty(ambient_space);
         for point in points {
             ch.extend_by_point(point);
@@ -208,7 +202,7 @@ where
         self.subspace.embedded_space().affine_dimension()
     }
 
-    pub fn from_simplex(spx: Simplex<FS, FSB, SP>) -> Self {
+    pub fn from_simplex(spx: Simplex<'f, FS, SP>) -> Self {
         let ambient_space = spx.ambient_space();
         let (subspace, embedded_pts) =
             EmbeddedAffineSubspace::new_affine_span(ambient_space.clone(), spx.into_points())
@@ -230,7 +224,7 @@ where
         self.subspace.borrow().embedded_space().affine_dimension() == 0
     }
 
-    pub fn defining_points(&self) -> HashSet<Vector<FS, FSB, SP>> {
+    pub fn defining_points(&self) -> HashSet<Vector<'f, FS, SP>> {
         match self.subspace.borrow().embedded_space().affine_dimension() {
             0 => HashSet::new(),
             1 => {
@@ -253,7 +247,7 @@ where
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    pub fn extend_by_point(&mut self, pt: Vector<FS, FSB, SP>) {
+    pub fn extend_by_point(&mut self, pt: Vector<'f, FS, SP>) {
         assert_eq!(pt.ambient_space().borrow(), self.ambient_space.borrow());
         #[cfg(debug_assertions)]
         self.check().unwrap();
@@ -440,7 +434,7 @@ where
         self.check().unwrap();
     }
 
-    fn embedded_interior_simplexes(&self) -> Vec<Simplex<FS, FSB, SP>> {
+    fn embedded_interior_simplexes(&self) -> Vec<Simplex<'f, FS, SP>> {
         self.interior
             .iter()
             .map(|spx| {
@@ -456,7 +450,7 @@ where
             .collect()
     }
 
-    fn embedded_facet_simplexes(&self) -> Vec<Simplex<FS, FSB, SP>> {
+    fn embedded_facet_simplexes(&self) -> Vec<Simplex<'f, FS, SP>> {
         self.facets
             .iter()
             .map(|ospx| {
@@ -475,7 +469,7 @@ where
 
     pub fn as_simplicial_complex(
         &self,
-    ) -> LabelledSimplicialComplex<FS, FSB, SP, InteriorBoundaryLabel> {
+    ) -> LabelledSimplicialComplex<'f, FS, SP, InteriorBoundaryLabel> {
         let boundary_simplexes = self
             .embedded_facet_simplexes()
             .into_iter()
@@ -507,51 +501,26 @@ where
                 .collect(),
         )
         .unwrap()
-
-        // let mut interior_simplexes = HashSet::new();
-        // for spx in &all_simplexes {
-        //     if !boundary_simplexes.contains(spx) {
-        //         interior_simplexes.insert(spx.clone());
-        //     }
-        // }
-
-        // let entire =
-        //     LabelledSimplicialComplex::new(self.ambient_space.clone(), all_simplexes).unwrap();
-        // ConvexHullAsSimplicialComplexResult {
-        //     entire: entire.clone(),
-        //     boundary: LabelledSimplicialComplex::new(
-        //         self.ambient_space.clone(),
-        //         boundary_simplexes.into_iter().collect(),
-        //     )
-        //     .unwrap(),
-        //     interior: PartialSimplicialComplex::new_unchecked(
-        //         self.ambient_space.clone(),
-        //         interior_simplexes,
-        //     ),
-        // }
     }
 }
 
 #[derive(Clone)]
 struct ConvexHullWireframe<
+    'f,
     FS: OrderedRingSignature + FieldSignature,
-    FSB: BorrowedStructure<FS>,
-    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    SP: Borrow<AffineSpace<'f, FS>> + Clone,
 > {
     ambient_space: SP,
-    points: Vec<Vector<FS, FSB, SP>>,
-    edges: Vec<(Vector<FS, FSB, SP>, Vector<FS, FSB, SP>)>,
+    points: Vec<Vector<'f, FS, SP>>,
+    edges: Vec<(Vector<'f, FS, SP>, Vector<'f, FS, SP>)>,
 }
 
-impl<
-    FS: OrderedRingSignature + FieldSignature,
-    FSB: BorrowedStructure<FS>,
-    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
-> ConvexHullWireframe<FS, FSB, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone>
+    ConvexHullWireframe<'f, FS, SP>
 where
     FS::Set: Hash,
 {
-    fn from_convex_hull(ch: &ConvexHull<FS, FSB, SP>) -> Self {
+    fn from_convex_hull(ch: &ConvexHull<'f, FS, SP>) -> Self {
         let mut outer_points = HashSet::new();
         let mut outer_edges = HashSet::new();
         for facet in &ch.facets {
@@ -605,13 +574,13 @@ where
         }
     }
 
-    fn into_convex_hull(self) -> ConvexHull<FS, FSB, SP> {
+    fn into_convex_hull(self) -> ConvexHull<'f, FS, SP> {
         ConvexHull::new(self.ambient_space, self.points)
     }
 
     pub fn intersect_with_oriented_hyperplane(
         &self,
-        hyperplane: &OrientedHyperplane<FS, FSB, SP>,
+        hyperplane: &OrientedHyperplane<'f, FS, SP>,
         region: OrientationSide, //TODO: make this const generic once rust has const generic enums
     ) -> Self {
         /*
@@ -684,8 +653,8 @@ where
             debug_assert!(!middle_points.is_empty());
         }
 
-        let mut points: HashSet<Vector<FS, FSB, SP>> = middle_points.into_iter().collect();
-        let mut edges: HashSet<(Vector<FS, FSB, SP>, Vector<FS, FSB, SP>)> =
+        let mut points: HashSet<Vector<'f, FS, SP>> = middle_points.into_iter().collect();
+        let mut edges: HashSet<(Vector<'f, FS, SP>, Vector<'f, FS, SP>)> =
             middle_edges.into_iter().collect();
 
         match region {
@@ -716,17 +685,14 @@ where
     }
 }
 
-impl<
-    FS: OrderedRingSignature + FieldSignature,
-    FSB: BorrowedStructure<FS>,
-    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
-> ConvexHull<FS, FSB, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone>
+    ConvexHull<'f, FS, SP>
 where
     FS::Set: Hash,
 {
     pub fn intersect_with_oriented_hyperplane(
         &self,
-        hyperplane: &OrientedHyperplane<FS, FSB, SP>,
+        hyperplane: &OrientedHyperplane<'f, FS, SP>,
         region: OrientationSide, //TODO: make this const generic once rust has const generic enums
     ) -> Self {
         ConvexHullWireframe::from_convex_hull(self)
@@ -798,11 +764,10 @@ where
 mod tests {
     use super::*;
     use algebraeon_nzq::Rational;
-    use algebraeon_sets::structure::*;
 
     #[test]
     fn construct_convex_hull() {
-        let space = AffineSpace::new_linear(Rational::structure(), 2);
+        let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
         let mut ch = ConvexHull::new_empty(&space);
         //add a point to get started
         ch.extend_by_point(Vector::new(
@@ -866,7 +831,7 @@ mod tests {
 
     #[test]
     fn convex_hull_intersect_hyperplane() {
-        let space = AffineSpace::new_linear(Rational::structure(), 2);
+        let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
         let ch = ConvexHull::new(
             &space,
             vec![
@@ -917,7 +882,7 @@ mod tests {
 
     #[test]
     fn convex_hull_intersections() {
-        let space = AffineSpace::new_linear(Rational::structure(), 2);
+        let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
         //2d intersect 2d
         {
             let ch1 = ConvexHull::new(
@@ -1042,7 +1007,7 @@ mod tests {
 
     #[test]
     fn convex_hull_from_simplex() {
-        let space = AffineSpace::new_linear(Rational::structure(), 3);
+        let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
         let p1 = Vector::new(
             &space,
             vec![Rational::from(4), Rational::from(2), Rational::from(2)],

@@ -1,5 +1,4 @@
 use algebraeon_rings::matrix::Matrix;
-use algebraeon_sets::structure::BorrowedStructure;
 use std::borrow::Borrow;
 use std::hash::Hash;
 use std::marker::PhantomData;
@@ -7,16 +6,15 @@ use std::marker::PhantomData;
 use super::*;
 
 #[derive(Clone)]
-pub struct Vector<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>>
-{
-    _field_borrowed: PhantomData<FSB>,
+pub struct Vector<'f, FS: FieldSignature + 'f, SP: Borrow<AffineSpace<'f, FS>>> {
+    _field: PhantomData<&'f FS>,
     ambient_space: SP,
     coordinates: Vec<FS::Set>, //length equal to ambient_space.dimension()
 }
 
 #[allow(clippy::missing_fields_in_debug)]
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>>
-    std::fmt::Debug for Vector<FS, FSB, SP>
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>>> std::fmt::Debug
+    for Vector<'f, FS, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Vector")
@@ -25,9 +23,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, 
     }
 }
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>> PartialEq
-    for Vector<FS, FSB, SP>
-{
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>>> PartialEq for Vector<'f, FS, SP> {
     fn eq(&self, other: &Self) -> bool {
         match common_space(self.ambient_space.borrow(), other.ambient_space.borrow()) {
             Some(space) => {
@@ -39,13 +35,9 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, 
     }
 }
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>> Eq
-    for Vector<FS, FSB, SP>
-{
-}
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>>> Eq for Vector<'f, FS, SP> {}
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>> Hash
-    for Vector<FS, FSB, SP>
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>>> Hash for Vector<'f, FS, SP>
 where
     FS::Set: Hash,
 {
@@ -55,16 +47,14 @@ where
     }
 }
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>>
-    Vector<FS, FSB, SP>
-{
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>>> Vector<'f, FS, SP> {
     pub fn new(ambient_space: SP, coordinates: Vec<FS::Set>) -> Self {
         assert_eq!(
             ambient_space.borrow().linear_dimension().unwrap(),
             coordinates.len()
         );
         Self {
-            _field_borrowed: PhantomData,
+            _field: PhantomData,
             ambient_space,
             coordinates,
         }
@@ -76,7 +66,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, 
             .map(|i| coordinate_func(i))
             .collect();
         Self {
-            _field_borrowed: PhantomData,
+            _field: PhantomData,
             ambient_space,
             coordinates,
         }
@@ -129,14 +119,14 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, 
 }
 
 // -&vector
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
-    std::ops::Neg for &Vector<FS, FSB, SP>
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone> std::ops::Neg
+    for &Vector<'f, FS, SP>
 {
-    type Output = Vector<FS, FSB, SP>;
+    type Output = Vector<'f, FS, SP>;
 
     fn neg(self) -> Self::Output {
         Vector {
-            _field_borrowed: PhantomData,
+            _field: PhantomData,
             ambient_space: self.ambient_space.clone(),
             coordinates: self
                 .coordinates
@@ -148,12 +138,12 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, 
 }
 
 // &vector + &vector
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
-    std::ops::Add<&Vector<FS, FSB, SP>> for &Vector<FS, FSB, SP>
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone>
+    std::ops::Add<&Vector<'f, FS, SP>> for &Vector<'f, FS, SP>
 {
-    type Output = Vector<FS, FSB, SP>;
+    type Output = Vector<'f, FS, SP>;
 
-    fn add(self, other: &Vector<FS, FSB, SP>) -> Self::Output {
+    fn add(self, other: &Vector<'f, FS, SP>) -> Self::Output {
         match common_space(self.ambient_space.clone(), other.ambient_space.clone()) {
             Some(space) => {
                 let n = space.borrow().linear_dimension().unwrap();
@@ -166,7 +156,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, 
                     })
                     .collect();
                 Vector {
-                    _field_borrowed: PhantomData,
+                    _field: PhantomData,
                     ambient_space: space,
                     coordinates,
                 }
@@ -177,10 +167,10 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, 
 }
 
 // mut vector += &vector
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
-    std::ops::AddAssign<&Vector<FS, FSB, SP>> for Vector<FS, FSB, SP>
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone>
+    std::ops::AddAssign<&Vector<'f, FS, SP>> for Vector<'f, FS, SP>
 {
-    fn add_assign(&mut self, other: &Vector<FS, FSB, SP>) {
+    fn add_assign(&mut self, other: &Vector<'f, FS, SP>) {
         match common_space(self.ambient_space.clone(), other.ambient_space.clone()) {
             Some(space) => {
                 let n = space.borrow().linear_dimension().unwrap();
@@ -197,23 +187,21 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, 
 }
 
 // &vector - &vector
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
-    std::ops::Sub<&Vector<FS, FSB, SP>> for &Vector<FS, FSB, SP>
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone>
+    std::ops::Sub<&Vector<'f, FS, SP>> for &Vector<'f, FS, SP>
 {
-    type Output = Vector<FS, FSB, SP>;
+    type Output = Vector<'f, FS, SP>;
 
-    fn sub(self, other: &Vector<FS, FSB, SP>) -> Self::Output {
+    fn sub(self, other: &Vector<'f, FS, SP>) -> Self::Output {
         self + &(-other)
     }
 }
 
 // &vector * &scalar
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
-    Vector<FS, FSB, SP>
-{
-    pub fn scalar_mul(&self, other: &FS::Set) -> Vector<FS, FSB, SP> {
+impl<'f, FS: FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone> Vector<'f, FS, SP> {
+    pub fn scalar_mul(&self, other: &FS::Set) -> Vector<'f, FS, SP> {
         Vector {
-            _field_borrowed: PhantomData,
+            _field: PhantomData,
             ambient_space: self.ambient_space.clone(),
             coordinates: self
                 .coordinates
@@ -227,13 +215,12 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, 
 #[cfg(test)]
 mod tests {
     use algebraeon_nzq::Rational;
-    use algebraeon_sets::structure::*;
 
     use super::*;
 
     #[test]
     fn vector_from_mat() {
-        let space = AffineSpace::new_linear(Rational::structure(), 2);
+        let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
         let mat = Matrix::<Rational>::from_rows(vec![
             vec![Rational::from(1), Rational::from(2)],
             vec![Rational::from(3), Rational::from(4)],
@@ -259,7 +246,7 @@ mod tests {
 
     #[test]
     fn det() {
-        let space = AffineSpace::new_linear(Rational::structure(), 2);
+        let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
         let v1 = Vector::new(&space, vec![Rational::from(3), Rational::from(2)]);
         let v2 = Vector::new(&space, vec![Rational::from(5), Rational::from(7)]);
         assert_eq!(space.determinant(vec![&v1, &v2]), Rational::from(11));
@@ -267,12 +254,12 @@ mod tests {
 
     #[test]
     fn test_abgroup() {
-        let space_ab = AffineSpace::new_linear(Rational::structure(), 2);
+        let space_ab = AffineSpace::new_linear(Rational::structure_ref(), 2);
         let a = Vector::new(&space_ab, vec![Rational::from(1), Rational::from(2)]);
         let b = Vector::new(&space_ab, vec![Rational::from(6), Rational::from(3)]);
         let c = Vector::new(&space_ab, vec![Rational::from(7), Rational::from(5)]);
 
-        let space_xy = AffineSpace::new_linear(Rational::structure(), 2);
+        let space_xy = AffineSpace::new_linear(Rational::structure_ref(), 2);
         let x = Vector::new(&space_xy, vec![Rational::from(1), Rational::from(2)]);
         let y = Vector::new(&space_xy, vec![Rational::from(6), Rational::from(3)]);
         let z = Vector::new(&space_xy, vec![Rational::from(7), Rational::from(5)]);
