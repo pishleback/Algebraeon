@@ -1,20 +1,30 @@
+use super::*;
+use crate::{
+    affine_subspace::EmbeddedAffineSubspace,
+    ambient_space::AffineSpace,
+    coordinates::Vector,
+    partial_simplicial_complex::{LabelledPartialSimplicialComplex, PartialSimplicialComplex},
+    simplex::{OrientationSide, OrientedSimplex, Simplex},
+    simplex_collection::LabelledSimplexCollection,
+    simplicial_disjoint_union::LabelledSimplicialDisjointUnion,
+};
 use std::collections::{HashMap, HashSet};
 
-use super::*;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InteriorBoundaryLabel {
+    Interior,
+    Boundary,
+}
 
 #[derive(Clone)]
-pub struct SCSpxInfo<
-    FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
-    T: Eq + Clone,
-> {
-    inv_bdry: HashSet<Simplex<FS, SP>>,
+pub struct SCSpxInfo<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> {
+    inv_bdry: HashSet<Simplex<'f, FS>>,
     label: T,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    std::fmt::Debug for SCSpxInfo<FS, SP, T>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> std::fmt::Debug
+    for SCSpxInfo<'f, FS, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SCSpxInfo")
@@ -24,20 +34,16 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 #[derive(Clone)]
-pub struct LabelledSimplicialComplex<
-    FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
-    T: Eq + Clone,
-> {
-    ambient_space: SP,
-    simplexes: HashMap<Simplex<FS, SP>, SCSpxInfo<FS, SP, T>>,
+pub struct LabelledSimplicialComplex<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> {
+    ambient_space: AffineSpace<'f, FS>,
+    simplexes: HashMap<Simplex<'f, FS>, SCSpxInfo<'f, FS, T>>,
 }
 
-pub type SimplicialComplex<FS, SP> = LabelledSimplicialComplex<FS, SP, ()>;
+pub type SimplicialComplex<'f, FS> = LabelledSimplicialComplex<'f, FS, ()>;
 
 #[allow(clippy::missing_fields_in_debug)]
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    std::fmt::Debug for LabelledSimplicialComplex<FS, SP, T>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> std::fmt::Debug
+    for LabelledSimplicialComplex<'f, FS, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SimplicialComplex")
@@ -46,20 +52,20 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    LabelledSimplexCollection<FS, SP, T> for LabelledSimplicialComplex<FS, SP, T>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+    LabelledSimplexCollection<'f, FS, T> for LabelledSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
-    type WithLabel<S: Eq + Clone> = LabelledSimplicialComplex<FS, SP, S>;
-    type SubsetType = LabelledPartialSimplicialComplex<FS, SP, T>;
+    type WithLabel<S: Eq + Clone> = LabelledSimplicialComplex<'f, FS, S>;
+    type SubsetType = LabelledPartialSimplicialComplex<'f, FS, T>;
 
     fn new_labelled(
-        ambient_space: SP,
-        simplexes: HashMap<Simplex<FS, SP>, T>,
+        ambient_space: AffineSpace<'f, FS>,
+        simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Result<Self, &'static str> {
         for simplex in simplexes.keys() {
-            assert_eq!(simplex.ambient_space().borrow(), ambient_space.borrow());
+            assert_eq!(simplex.ambient_space(), ambient_space.borrow());
             if simplex.points().is_empty() {
                 return Err("Simplicial complex musn't contain the null simplex");
             }
@@ -97,29 +103,32 @@ where
         })
     }
 
-    fn new_labelled_unchecked(ambient_space: SP, simplexes: HashMap<Simplex<FS, SP>, T>) -> Self {
+    fn new_labelled_unchecked(
+        ambient_space: AffineSpace<'f, FS>,
+        simplexes: HashMap<Simplex<'f, FS>, T>,
+    ) -> Self {
         Self::new_labelled(ambient_space, simplexes).unwrap()
     }
 
-    fn ambient_space(&self) -> SP {
-        self.ambient_space.clone()
+    fn ambient_space(&self) -> &AffineSpace<'f, FS> {
+        &self.ambient_space
     }
 
-    fn labelled_simplexes(&self) -> HashMap<&Simplex<FS, SP>, &T> {
+    fn labelled_simplexes(&self) -> HashMap<&Simplex<'f, FS>, &T> {
         self.simplexes
             .iter()
             .map(|(spx, info)| (spx, &info.label))
             .collect()
     }
 
-    fn into_labelled_simplexes(self) -> HashMap<Simplex<FS, SP>, T> {
+    fn into_labelled_simplexes(self) -> HashMap<Simplex<'f, FS>, T> {
         self.simplexes
             .into_iter()
             .map(|(spx, info)| (spx, info.label))
             .collect()
     }
 
-    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<FS, SP, T> {
+    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T> {
         LabelledPartialSimplicialComplex::new_labelled_unchecked(
             self.ambient_space,
             self.simplexes
@@ -130,8 +139,8 @@ where
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    LabelledSimplicialComplex<FS, SP, T>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+    LabelledSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
@@ -155,7 +164,7 @@ where
 
         //check that every pair of distinct simplexes intersect in the empty set
         LabelledSimplicialDisjointUnion::new_labelled_unchecked(
-            self.ambient_space(),
+            self.ambient_space().clone(),
             self.simplexes
                 .iter()
                 .map(|(spx, info)| (spx.clone(), info.label.clone()))
@@ -165,14 +174,13 @@ where
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    SimplicialComplex<FS, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature> SimplicialComplex<'f, FS>
 where
     FS::Set: Hash,
 {
     pub fn interior_and_boundary(
         &self,
-    ) -> LabelledSimplicialComplex<FS, SP, InteriorBoundaryLabel> {
+    ) -> LabelledSimplicialComplex<'f, FS, InteriorBoundaryLabel> {
         /*
         let n be the dimension of the space self is living in
          - every simplex of rank n is part of the interior
@@ -180,7 +188,7 @@ where
          - a simplex of rank less or equal to n-2 is part of the interior iff it is in the boundary of some strictly higher rank simplex AND every strictly higher rank simplex containing it as part of the boundary is part of the interior
         */
 
-        let n = self.ambient_space().borrow().affine_dimension();
+        let n = self.ambient_space().affine_dimension();
 
         let mut simplexes = HashMap::new();
 
@@ -227,15 +235,15 @@ where
             }
         }
 
-        LabelledSimplicialComplex::new_labelled(self.ambient_space(), simplexes).unwrap()
+        LabelledSimplicialComplex::new_labelled(self.ambient_space().clone(), simplexes).unwrap()
     }
 
-    pub fn interior(&self) -> PartialSimplicialComplex<FS, SP> {
+    pub fn interior(&self) -> PartialSimplicialComplex<'f, FS> {
         self.interior_and_boundary()
             .subset_by_label(&InteriorBoundaryLabel::Interior)
     }
 
-    pub fn boundary(&self) -> SimplicialComplex<FS, SP> {
+    pub fn boundary(&self) -> SimplicialComplex<'f, FS> {
         self.interior_and_boundary()
             .subset_by_label(&InteriorBoundaryLabel::Boundary)
             .try_as_simplicial_complex()
@@ -255,21 +263,18 @@ Output:
 
 */
 #[allow(clippy::needless_pass_by_value)]
-fn simplify_in_region<
-    FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
->(
-    space: SP,
-    boundary_facets: Vec<OrientedSimplex<FS, SP>>,
-) -> Option<Vec<Simplex<FS, SP>>>
+fn simplify_in_region<'f, FS: OrderedRingSignature + FieldSignature>(
+    space: AffineSpace<'f, FS>,
+    boundary_facets: Vec<OrientedSimplex<'f, FS>>,
+) -> Option<Vec<Simplex<'f, FS>>>
 where
     FS::Set: Hash,
 {
     for spx in &boundary_facets {
-        debug_assert_eq!(spx.ambient_space().borrow(), space.borrow());
+        debug_assert_eq!(spx.ambient_space(), space.borrow());
     }
 
-    let mut boundary_points: HashMap<Vector<FS, SP>, Vec<usize>> = HashMap::new();
+    let mut boundary_points: HashMap<Vector<'f, FS>, Vec<usize>> = HashMap::new();
     for (idx, spx) in boundary_facets.iter().enumerate() {
         for pt in spx.simplex().points() {
             if boundary_points.contains_key(pt) {
@@ -319,8 +324,8 @@ where
     None
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    LabelledSimplicialComplex<FS, SP, T>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+    LabelledSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
@@ -348,7 +353,7 @@ where
                 pt
             };
 
-            let pt_spx = Simplex::new(self.ambient_space(), vec![pt.clone()]).unwrap();
+            let pt_spx = Simplex::new(self.ambient_space().clone(), vec![pt.clone()]).unwrap();
             let (star, link) = {
                 let mut star = self.simplexes.get(&pt_spx).unwrap().inv_bdry.clone();
                 star.insert(pt_spx.clone());
@@ -374,7 +379,7 @@ where
             };
 
             let link_points = {
-                let mut link_points: Vec<Vector<FS, SP>> = vec![];
+                let mut link_points: Vec<Vector<'f, FS>> = vec![];
                 for spx in &link {
                     for p in spx.points() {
                         link_points.push(p.clone());
@@ -390,7 +395,7 @@ where
             };
 
             let nbd_affine_subspace = EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
-                self.ambient_space(),
+                self.ambient_space().clone(),
                 nbd_points.iter().collect(),
             );
 
@@ -399,8 +404,11 @@ where
                 .map(|pt| nbd_affine_subspace.unembed_point(pt).unwrap())
                 .collect::<Vec<_>>();
             let pt_img = nbd_affine_subspace.unembed_point(&pt).unwrap();
-            let pt_img_spx =
-                Simplex::new(nbd_affine_subspace.embedded_space(), vec![pt_img.clone()]).unwrap();
+            let pt_img_spx = Simplex::new(
+                nbd_affine_subspace.embedded_space().clone(),
+                vec![pt_img.clone()],
+            )
+            .unwrap();
             let star_img = star
                 .iter()
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
@@ -410,8 +418,8 @@ where
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
                 .collect::<HashSet<_>>();
 
-            let nbd = LabelledSimplicialComplex::<FS, AffineSpace<FS>, T>::new(
-                nbd_affine_subspace.embedded_space(),
+            let nbd = LabelledSimplicialComplex::<'f, FS, T>::new(
+                nbd_affine_subspace.embedded_space().clone(),
                 {
                     let mut simplexes = HashSet::new();
                     simplexes.extend(star_img.clone());
@@ -477,7 +485,7 @@ where
                     }
                     let nbd_boundary_affine_subspace =
                         EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
-                            nbd_affine_subspace.embedded_space(),
+                            nbd_affine_subspace.embedded_space().clone(),
                             boundary_img_points.into_iter().collect(),
                         );
                     debug_assert!(
@@ -503,7 +511,7 @@ where
                             ref_point_img.unwrap()
                         };
                         let oriented_hyperplane = OrientedSimplex::new_with_negative_point(
-                            nbd_boundary_affine_subspace.ambient_space(),
+                            nbd_boundary_affine_subspace.ambient_space().clone(),
                             nbd_boundary_affine_subspace.get_embedding_points().clone(),
                             &ref_point_img,
                         )
@@ -534,7 +542,7 @@ where
                             .iter()
                             .map(|spx| {
                                 OrientedSimplex::new_with_negative_point(
-                                    nbd_boundary_affine_subspace.embedded_space(),
+                                    nbd_boundary_affine_subspace.embedded_space().clone(),
                                     nbd_boundary_affine_subspace
                                         .unembed_simplex(spx)
                                         .unwrap()
@@ -547,7 +555,7 @@ where
                             .collect::<Vec<_>>();
 
                         if let Some(new_boundary_img_img) = simplify_in_region(
-                            nbd_boundary_affine_subspace.embedded_space(),
+                            nbd_boundary_affine_subspace.embedded_space().clone(),
                             rim_img_img,
                         ) {
                             let new_boundary_img = new_boundary_img_img
@@ -563,7 +571,7 @@ where
                                     {
                                         sphere_img.push(
                                             OrientedSimplex::new_with_negative_point(
-                                                nbd_affine_subspace.embedded_space(),
+                                                nbd_affine_subspace.embedded_space().clone(),
                                                 spx.points().clone(),
                                                 &ref_point_img,
                                             )
@@ -577,7 +585,7 @@ where
                                     {
                                         sphere_img.push(
                                             OrientedSimplex::new_with_negative_point(
-                                                nbd_affine_subspace.embedded_space(),
+                                                nbd_affine_subspace.embedded_space().clone(),
                                                 spx.points().clone(),
                                                 &pt_img,
                                             )
@@ -588,9 +596,10 @@ where
                                 sphere_img
                             };
 
-                            if let Some(new_star_img) =
-                                simplify_in_region(nbd_affine_subspace.embedded_space(), sphere_img)
-                            {
+                            if let Some(new_star_img) = simplify_in_region(
+                                nbd_affine_subspace.embedded_space().clone(),
+                                sphere_img,
+                            ) {
                                 self.remove_simplexes_unchecked(star.into_iter().collect());
                                 self.add_simplexes_unchecked(
                                     new_boundary_img
@@ -652,7 +661,7 @@ where
                         })
                         .map(|spx| {
                             OrientedSimplex::new_with_negative_point(
-                                nbd_affine_subspace.embedded_space(),
+                                nbd_affine_subspace.embedded_space().clone(),
                                 spx.points().clone(),
                                 &pt_img,
                             )
@@ -661,7 +670,7 @@ where
                         .collect();
 
                     if let Some(new_star_img) =
-                        simplify_in_region(nbd_affine_subspace.embedded_space(), boundary)
+                        simplify_in_region(nbd_affine_subspace.embedded_space().clone(), boundary)
                     {
                         self.remove_simplexes_unchecked(star.into_iter().collect());
                         self.add_simplexes_unchecked(
@@ -684,7 +693,7 @@ where
     }
 
     // #[deprecated]
-    // pub fn frick(self) -> LabelledSimplicialComplex<FS, SP, usize> {
+    // pub fn frick(self) -> LabelledSimplicialComplex<FS, AffineSpace<'f, FS>, usize> {
     //     let mut count = 0;
     //     LabelledSimplicialComplex::new_labelled(
     //         self.ambient_space().clone(),
@@ -702,7 +711,7 @@ where
     //remove simplexes and remove them from the inverse boundary of any others
     //self may not be in a valid state after this operation
     #[allow(clippy::needless_pass_by_value)]
-    fn remove_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, SP>>) {
+    fn remove_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<'f, FS>>) {
         for spx in &simplexes {
             for bdry_spx in spx.proper_sub_simplices_not_null() {
                 if let Some(info) = self.simplexes.get_mut(&bdry_spx) {
@@ -715,7 +724,7 @@ where
         }
     }
 
-    fn remove_simplexes(&mut self, simplexes: Vec<Simplex<FS, SP>>) {
+    fn remove_simplexes(&mut self, simplexes: Vec<Simplex<'f, FS>>) {
         self.remove_simplexes_unchecked(simplexes);
         #[cfg(debug_assertions)]
         self.check();
@@ -725,7 +734,7 @@ where
     //must be added together to cover the case where there are mutual boundary relations
     //self may not be in a valid state after this operation
     #[allow(clippy::needless_pass_by_value)]
-    fn add_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, SP>>, label: &T) {
+    fn add_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<'f, FS>>, label: &T) {
         for spx in &simplexes {
             self.simplexes.insert(
                 spx.clone(),
@@ -746,7 +755,7 @@ where
         }
     }
 
-    fn add_simplexes(&mut self, simplexes: Vec<Simplex<FS, SP>>, label: &T) {
+    fn add_simplexes(&mut self, simplexes: Vec<Simplex<'f, FS>>, label: &T) {
         self.add_simplexes_unchecked(simplexes, label);
         #[cfg(debug_assertions)]
         self.check();

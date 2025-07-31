@@ -6,17 +6,16 @@ use algebraeon_drawing::canvas2d::MouseWheelZoomCamera;
 use algebraeon_drawing::canvas2d::shapes::Shape;
 use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
 use algebraeon_drawing::colour::Colour;
-use algebraeon_geometry::simplexes::ConvexHull;
-use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
-use algebraeon_geometry::simplexes::OrientationSide;
-use algebraeon_geometry::simplexes::OrientedSimplex;
-use algebraeon_geometry::simplexes::Simplex;
+use algebraeon_geometry::ambient_space::AffineSpace;
+use algebraeon_geometry::convex_hull::ConvexHull;
+use algebraeon_geometry::coordinates::Vector;
+use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
+use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
 use algebraeon_geometry::*;
 use algebraeon_nzq::*;
 use algebraeon_rings::structure::*;
 use algebraeon_sets::structure::*;
 use rand::Rng;
-use simplexes::LabelledSimplexCollection;
 use std::rc::Rc;
 
 fn main() {
@@ -29,12 +28,12 @@ fn main() {
     // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
     // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
-    let space = Rc::new(AffineSpace::new_linear(Rational::structure(), 2));
+    let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
 
     fn random_point(
-        space: Rc<AffineSpace<RationalCanonicalStructure>>,
+        space: &AffineSpace<'static, RationalCanonicalStructure>,
         rad: f64,
-    ) -> Vector<RationalCanonicalStructure, Rc<AffineSpace<RationalCanonicalStructure>>> {
+    ) -> Vector<'static, RationalCanonicalStructure> {
         let mut rng = rand::thread_rng();
         Vector::construct(space.clone(), |i| {
             Rational::from_f64_approx(rng.gen_range(-rad..rad)).approximate(&Natural::from(3u64))
@@ -55,18 +54,21 @@ fn main() {
     //     right: c,
     // } = spx1.venn(&spx2);
 
+    let n = 12;
+
     let ch1 = ConvexHull::new(
         space.clone(),
-        (0..6)
-            .map(|i| random_point(space.clone(), (i + 1) as f64))
+        (0..n)
+            .map(|i| random_point(&space, (i + 1) as f64))
             .collect(),
     );
     let ch2 = ConvexHull::new(
         space.clone(),
-        (0..6)
-            .map(|i| random_point(space.clone(), (i + 1) as f64))
+        (0..n)
+            .map(|i| random_point(&space, (i + 1) as f64))
             .collect(),
     );
+
     // let ch3 = ch1.intersect(&ch2);
 
     let sc1 = ch1.as_simplicial_complex().into_forget_labels();
@@ -80,6 +82,7 @@ fn main() {
 
     // }
 
+    println!("start");
     let sc4 = LabelledSimplicialDisjointUnion::union_raw(&(&sc1).into(), &(&sc2).into());
     println!("done union");
     let sc5 = sc4.clone().refine_to_partial_simplicial_complex().closure();

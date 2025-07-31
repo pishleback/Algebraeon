@@ -1,21 +1,24 @@
-use std::collections::{HashMap, HashSet};
-
 use super::*;
+use crate::{
+    ambient_space::AffineSpace, simplex::Simplex, simplex_collection::LabelledSimplexCollection,
+    simplicial_complex::LabelledSimplicialComplex,
+};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 pub struct LabelledPartialSimplicialComplex<
+    'f,
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
     T: Eq + Clone,
 > {
-    ambient_space: SP,
-    simplexes: HashMap<Simplex<FS, SP>, T>,
+    ambient_space: AffineSpace<'f, FS>,
+    simplexes: HashMap<Simplex<'f, FS>, T>,
 }
 
-pub type PartialSimplicialComplex<FS, SP> = LabelledPartialSimplicialComplex<FS, SP, ()>;
+pub type PartialSimplicialComplex<'f, FS> = LabelledPartialSimplicialComplex<'f, FS, ()>;
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
-    for PartialSimplicialComplex<FS, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature> std::fmt::Debug
+    for PartialSimplicialComplex<'f, FS>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PartialSimplicialComplex")
@@ -24,17 +27,17 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    LabelledSimplexCollection<FS, SP, T> for LabelledPartialSimplicialComplex<FS, SP, T>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+    LabelledSimplexCollection<'f, FS, T> for LabelledPartialSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
-    type WithLabel<S: Eq + Clone> = LabelledPartialSimplicialComplex<FS, SP, S>;
-    type SubsetType = LabelledPartialSimplicialComplex<FS, SP, T>;
+    type WithLabel<S: Eq + Clone> = LabelledPartialSimplicialComplex<'f, FS, S>;
+    type SubsetType = LabelledPartialSimplicialComplex<'f, FS, T>;
 
     fn new_labelled(
-        ambient_space: SP,
-        simplexes: std::collections::HashMap<Simplex<FS, SP>, T>,
+        ambient_space: AffineSpace<'f, FS>,
+        simplexes: std::collections::HashMap<Simplex<'f, FS>, T>,
     ) -> Result<Self, &'static str> {
         Ok(Self {
             ambient_space,
@@ -43,41 +46,41 @@ where
     }
 
     fn new_labelled_unchecked(
-        ambient_space: SP,
-        simplexes: std::collections::HashMap<Simplex<FS, SP>, T>,
+        ambient_space: AffineSpace<'f, FS>,
+        simplexes: std::collections::HashMap<Simplex<'f, FS>, T>,
     ) -> Self {
         Self::new_labelled(ambient_space, simplexes).unwrap()
     }
 
-    fn ambient_space(&self) -> SP {
-        self.ambient_space.clone()
+    fn ambient_space(&self) -> &AffineSpace<'f, FS> {
+        &self.ambient_space
     }
 
-    fn labelled_simplexes(&self) -> std::collections::HashMap<&Simplex<FS, SP>, &T> {
+    fn labelled_simplexes(&self) -> std::collections::HashMap<&Simplex<'f, FS>, &T> {
         self.simplexes.iter().collect()
     }
 
-    fn into_labelled_simplexes(self) -> std::collections::HashMap<Simplex<FS, SP>, T> {
+    fn into_labelled_simplexes(self) -> std::collections::HashMap<Simplex<'f, FS>, T> {
         self.simplexes
     }
 
-    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<FS, SP, T> {
+    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T> {
         self
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    LabelledPartialSimplicialComplex<FS, SP, T>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+    LabelledPartialSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
     pub fn try_as_simplicial_complex(
         self,
-    ) -> Result<LabelledSimplicialComplex<FS, SP, T>, &'static str> {
+    ) -> Result<LabelledSimplicialComplex<'f, FS, T>, &'static str> {
         LabelledSimplicialComplex::new_labelled(self.ambient_space, self.simplexes)
     }
 
-    pub fn closure(&self) -> LabelledSimplicialComplex<FS, SP, Option<T>> {
+    pub fn closure(&self) -> LabelledSimplicialComplex<'f, FS, Option<T>> {
         let mut simplexes = HashSet::new();
         #[allow(clippy::for_kv_map)]
         for (spx, _label) in &self.simplexes {
@@ -86,7 +89,7 @@ where
             }
         }
         LabelledSimplicialComplex::new_labelled(
-            self.ambient_space(),
+            self.ambient_space().clone(),
             simplexes
                 .into_iter()
                 .map(|spx| {

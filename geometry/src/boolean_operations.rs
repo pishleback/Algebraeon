@@ -1,6 +1,14 @@
-use std::collections::{HashMap, HashSet};
-
 use super::*;
+use crate::{
+    ambient_space::common_space,
+    convex_hull::ConvexHull,
+    partial_simplicial_complex::LabelledPartialSimplicialComplex,
+    simplex::Simplex,
+    simplex_collection::LabelledSimplexCollection,
+    simplicial_complex::{InteriorBoundaryLabel, SimplicialComplex},
+    simplicial_disjoint_union::{LabelledSimplicialDisjointUnion, SimplicialDisjointUnion},
+};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum VennLabel {
@@ -9,11 +17,11 @@ pub enum VennLabel {
     Right,
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Simplex<FS, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature> Simplex<'f, FS>
 where
     FS::Set: Hash,
 {
-    pub fn venn(&self, other: &Self) -> LabelledPartialSimplicialComplex<FS, SP, VennLabel> {
+    pub fn venn(&self, other: &Self) -> LabelledPartialSimplicialComplex<'f, FS, VennLabel> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
 
         let overlap = ConvexHull::intersect(
@@ -40,7 +48,7 @@ where
             .into_simplexes();
 
         let all_parts = self_parts.union(&other_parts);
-        LabelledPartialSimplicialComplex::<FS, SP, VennLabel>::new_labelled_unchecked(
+        LabelledPartialSimplicialComplex::<'f, FS, VennLabel>::new_labelled_unchecked(
             ambient_space.clone(),
             all_parts
                 .into_iter()
@@ -60,15 +68,15 @@ where
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    LabelledSimplicialDisjointUnion<FS, SP, T>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+    LabelledSimplicialDisjointUnion<'f, FS, T>
 where
     FS::Set: Hash,
 {
     pub fn subtract_raw<S: Eq + Clone>(
         &self,
-        other: &LabelledSimplicialDisjointUnion<FS, SP, S>,
-    ) -> LabelledSimplicialDisjointUnion<FS, SP, T> {
+        other: &LabelledSimplicialDisjointUnion<'f, FS, S>,
+    ) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
 
         Self::new_labelled_unchecked(ambient_space.clone(), {
@@ -95,8 +103,8 @@ where
 
     pub fn intersection_raw<S: Eq + Clone>(
         &self,
-        other: &LabelledSimplicialDisjointUnion<FS, SP, S>,
-    ) -> LabelledSimplicialDisjointUnion<FS, SP, (T, S)> {
+        other: &LabelledSimplicialDisjointUnion<'f, FS, S>,
+    ) -> LabelledSimplicialDisjointUnion<'f, FS, (T, S)> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
         LabelledSimplicialDisjointUnion::new_labelled_unchecked(ambient_space.clone(), {
             let mut simplexes = HashMap::new();
@@ -115,12 +123,11 @@ where
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    SimplicialDisjointUnion<FS, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature> SimplicialDisjointUnion<'f, FS>
 where
     FS::Set: Hash,
 {
-    pub fn union_raw(&self, other: &Self) -> SimplicialDisjointUnion<FS, SP> {
+    pub fn union_raw(&self, other: &Self) -> SimplicialDisjointUnion<'f, FS> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
         let mut simplexes = HashSet::new();
         for spx in Self::subtract_raw(other, self).into_simplexes() {
@@ -129,38 +136,11 @@ where
         for spx in self.simplexes() {
             simplexes.insert(spx.clone());
         }
-        Self::new_unchecked(ambient_space, simplexes)
+        Self::new_unchecked(ambient_space.clone(), simplexes)
     }
 }
 
-// impl<FS: OrderedRingStructure + FieldStructure, SP: Borrow<AffineSpace<FS>> + Clone>
-//     PartialSimplicialComplex<FS, SP>
-// where
-//     FS::Set: Hash,
-// {
-//     pub fn union(&self, other: &Self) -> Self {
-//         self.union_raw(other).simplify()
-//     }
-
-//     pub fn union_raw(&self, other: &Self) -> Self {
-//         SimplicialComplex::union_raw(&self, other)
-//     }
-
-//     pub fn intersection_raw(&self, other: &Self) -> Self {
-//         SimplicialDisjointUnion::intersection_raw(&self.into(), &other.into())
-//             .refine_to_partial_simplicial_complex()
-//             .closure()
-//             .forget_labels()
-//             .into()
-//     }
-
-//     pub fn intersection(&self, other: &Self) -> Self {
-//         self.intersection_raw(other).simplify()
-//     }
-// }
-
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    SimplicialComplex<FS, SP>
+impl<'f, FS: OrderedRingSignature + FieldSignature> SimplicialComplex<'f, FS>
 where
     FS::Set: Hash,
 {
