@@ -1,6 +1,13 @@
-use std::collections::{HashMap, HashSet};
-
 use super::*;
+use crate::{
+    ambient_space::AffineSpace,
+    convex_hull::ConvexHull,
+    partial_simplicial_complex::LabelledPartialSimplicialComplex,
+    simplex::Simplex,
+    simplex_collection::LabelledSimplexCollection,
+    simplicial_complex::{InteriorBoundaryLabel, LabelledSimplicialComplex},
+};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 pub struct LabelledSimplicialDisjointUnion<

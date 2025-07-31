@@ -1,3 +1,5 @@
+use crate::ambient_space::{AffineSpace, common_space};
+
 use super::*;
 use algebraeon_rings::matrix::Matrix;
 use std::borrow::Borrow;
@@ -188,9 +190,44 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
     }
 }
 
+// It is helpful for computational reasons to put an ordering on the vectors
+// so that the points of a simplex can be ordered
+#[allow(clippy::non_canonical_partial_ord_impl)]
+impl<'f, FS: OrderedRingSignature + FieldSignature> PartialOrd for Vector<'f, FS> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        let space = common_space(self.ambient_space(), other.ambient_space())?;
+        for i in 0..space.linear_dimension().unwrap() {
+            match space
+                .field()
+                .ring_cmp(self.coordinate(i), other.coordinate(i))
+            {
+                std::cmp::Ordering::Less => {
+                    return Some(std::cmp::Ordering::Less);
+                }
+                std::cmp::Ordering::Equal => {}
+                std::cmp::Ordering::Greater => {
+                    return Some(std::cmp::Ordering::Greater);
+                }
+            }
+        }
+        Some(std::cmp::Ordering::Equal)
+    }
+}
+impl<'f, FS: OrderedRingSignature + FieldSignature> Ord for Vector<'f, FS> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        if let Some(ans) = self.partial_cmp(other) {
+            ans
+        } else {
+            panic!();
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use algebraeon_nzq::Rational;
+
+    use crate::ambient_space::vectors_from_rows;
 
     use super::*;
 

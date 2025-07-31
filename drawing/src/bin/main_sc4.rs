@@ -8,11 +8,11 @@ use algebraeon_drawing::canvas2d::MouseWheelZoomCamera;
 use algebraeon_drawing::canvas2d::shapes::Shape;
 use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
 use algebraeon_drawing::colour::Colour;
-use algebraeon_geometry::simplexes::ConvexHull;
-use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
-use algebraeon_geometry::simplexes::OrientationSide;
-use algebraeon_geometry::simplexes::OrientedSimplex;
-use algebraeon_geometry::simplexes::Simplex;
+use algebraeon_geometry::ambient_space::AffineSpace;
+use algebraeon_geometry::convex_hull::ConvexHull;
+use algebraeon_geometry::coordinates::Vector;
+use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
+use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
 use algebraeon_geometry::*;
 use algebraeon_nzq::*;
 use algebraeon_rings::isolated_algebraic::RealAlgebraic;
@@ -20,7 +20,6 @@ use algebraeon_rings::structure::PositiveRealNthRootSignature;
 use algebraeon_rings::structure::RingSignature;
 use algebraeon_sets::structure::*;
 use rand::Rng;
-use simplexes::LabelledSimplexCollection;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);

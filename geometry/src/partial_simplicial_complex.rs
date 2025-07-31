@@ -1,4 +1,8 @@
 use super::*;
+use crate::{
+    ambient_space::AffineSpace, simplex::Simplex, simplex_collection::LabelledSimplexCollection,
+    simplicial_complex::LabelledSimplicialComplex,
+};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]

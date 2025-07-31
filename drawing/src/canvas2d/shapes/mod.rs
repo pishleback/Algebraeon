@@ -184,7 +184,7 @@ pub fn simplicial_complex_shapes<
     line_colour: &Colour,
     fill_colour: &Colour,
     fill_alpha: f32,
-    sc: &impl algebraeon_geometry::simplexes::LabelledSimplexCollection<'f, FS, T>,
+    sc: &impl algebraeon_geometry::simplex_collection::LabelledSimplexCollection<'f, FS, T>,
 ) -> impl IntoIterator<Item = Shape>
 where
     FS::Set: std::hash::Hash,

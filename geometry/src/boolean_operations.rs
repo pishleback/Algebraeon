@@ -1,6 +1,14 @@
-use std::collections::{HashMap, HashSet};
-
 use super::*;
+use crate::{
+    ambient_space::common_space,
+    convex_hull::ConvexHull,
+    partial_simplicial_complex::LabelledPartialSimplicialComplex,
+    simplex::Simplex,
+    simplex_collection::LabelledSimplexCollection,
+    simplicial_complex::{InteriorBoundaryLabel, SimplicialComplex},
+    simplicial_disjoint_union::{LabelledSimplicialDisjointUnion, SimplicialDisjointUnion},
+};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum VennLabel {

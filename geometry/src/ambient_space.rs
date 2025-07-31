@@ -1,4 +1,5 @@
 use super::*;
+use crate::coordinates::Vector;
 use algebraeon_rings::matrix::{Matrix, MatrixStructure};
 use std::sync::atomic::AtomicUsize;
 

@@ -1,6 +1,10 @@
 use super::*;
+use crate::{
+    ambient_space::AffineSpace,
+    coordinates::Vector,
+    simplex::{OrientedHyperplane, OrientedSimplex, Simplex},
+};
 use algebraeon_rings::matrix::{Matrix, MatrixStructure};
-use simplexes::{OrientedHyperplane, OrientedSimplex, Simplex};
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAffineSubspace<'f, FS: OrderedRingSignature + FieldSignature> {

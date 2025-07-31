@@ -1,5 +1,20 @@
 use super::*;
+use crate::{
+    affine_subspace::EmbeddedAffineSubspace,
+    ambient_space::AffineSpace,
+    coordinates::Vector,
+    partial_simplicial_complex::{LabelledPartialSimplicialComplex, PartialSimplicialComplex},
+    simplex::{OrientationSide, OrientedSimplex, Simplex},
+    simplex_collection::LabelledSimplexCollection,
+    simplicial_disjoint_union::LabelledSimplicialDisjointUnion,
+};
 use std::collections::{HashMap, HashSet};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InteriorBoundaryLabel {
+    Interior,
+    Boundary,
+}
 
 #[derive(Clone)]
 pub struct SCSpxInfo<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> {

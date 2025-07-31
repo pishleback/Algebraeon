@@ -1,4 +1,8 @@
 use super::*;
+use crate::{
+    ambient_space::AffineSpace, partial_simplicial_complex::LabelledPartialSimplicialComplex,
+    simplex::Simplex,
+};
 use std::collections::{HashMap, HashSet};
 
 pub trait LabelledSimplexCollection<

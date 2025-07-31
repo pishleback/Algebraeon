@@ -20,13 +20,13 @@ use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature};
 use std::borrow::Borrow;
 use std::hash::Hash;
 
-mod coordinates;
-pub use coordinates::*;
-
-mod ambient_space;
-pub use ambient_space::*;
-
-mod affine_subspace;
-pub use affine_subspace::*;
-
-pub mod simplexes;
+pub mod affine_subspace;
+pub mod ambient_space;
+pub mod boolean_operations;
+pub mod convex_hull;
+pub mod coordinates;
+pub mod partial_simplicial_complex;
+pub mod simplex;
+pub mod simplex_collection;
+pub mod simplicial_complex;
+pub mod simplicial_disjoint_union;

@@ -1,3 +1,15 @@
+use crate::{
+    affine_subspace::EmbeddedAffineSubspace,
+    ambient_space::AffineSpace,
+    coordinates::Vector,
+    simplex::{
+        OrientationSide, OrientedHyperplane, OrientedHyperplaneIntersectLineSegmentResult,
+        OrientedSimplex, Simplex,
+    },
+    simplex_collection::LabelledSimplexCollection,
+    simplicial_complex::{InteriorBoundaryLabel, LabelledSimplicialComplex},
+};
+
 use super::*;
 use std::collections::{HashMap, HashSet};
 
