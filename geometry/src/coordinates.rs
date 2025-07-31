@@ -1,13 +1,10 @@
 use algebraeon_rings::matrix::Matrix;
 use std::borrow::Borrow;
 use std::hash::Hash;
-use std::marker::PhantomData;
-
 use super::*;
 
 #[derive(Clone)]
 pub struct Vector<'f, FS: FieldSignature + 'f> {
-    _field: PhantomData<&'f FS>,
     ambient_space: AffineSpace<'f, FS>,
     coordinates: Vec<FS::Set>, //length equal to ambient_space.dimension()
 }
@@ -48,7 +45,6 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
     pub fn new(ambient_space: AffineSpace<'f, FS>, coordinates: Vec<FS::Set>) -> Self {
         assert_eq!(ambient_space.linear_dimension().unwrap(), coordinates.len());
         Self {
-            _field: PhantomData,
             ambient_space,
             coordinates,
         }
@@ -63,7 +59,6 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
             .map(|i| coordinate_func(i))
             .collect();
         Self {
-            _field: PhantomData,
             ambient_space,
             coordinates,
         }
@@ -121,7 +116,6 @@ impl<'f, FS: FieldSignature> std::ops::Neg for &Vector<'f, FS> {
 
     fn neg(self) -> Self::Output {
         Vector {
-            _field: PhantomData,
             ambient_space: self.ambient_space.clone(),
             coordinates: self
                 .coordinates
@@ -144,7 +138,6 @@ impl<'f, FS: FieldSignature> std::ops::Add<&Vector<'f, FS>> for &Vector<'f, FS> 
                     .map(|i| space.field().add(self.coordinate(i), other.coordinate(i)))
                     .collect();
                 Vector {
-                    _field: PhantomData,
                     ambient_space: space.clone(),
                     coordinates,
                 }
@@ -185,7 +178,6 @@ impl<'f, FS: FieldSignature> std::ops::Sub<&Vector<'f, FS>> for &Vector<'f, FS> 
 impl<'f, FS: FieldSignature> Vector<'f, FS> {
     pub fn scalar_mul(&self, other: &FS::Set) -> Vector<'f, FS> {
         Vector {
-            _field: PhantomData,
             ambient_space: self.ambient_space.clone(),
             coordinates: self
                 .coordinates
