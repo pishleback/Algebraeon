@@ -1,3 +1,5 @@
+use algebraeon_sets::structure::BorrowedStructure;
+
 use crate::canvas2d::Canvas2D;
 use crate::colour::Colour;
 
@@ -177,19 +179,20 @@ pub fn simplicial_complex_shapes<
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
         + algebraeon_rings::structure::RealToFloatSignature,
-    SP: std::borrow::Borrow<algebraeon_geometry::AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SP: std::borrow::Borrow<algebraeon_geometry::AffineSpace<FS, FSB>> + Clone,
     T: Eq + Clone,
 >(
     line_colour: &Colour,
     fill_colour: &Colour,
     fill_alpha: f32,
-    sc: &impl algebraeon_geometry::simplexes::LabelledSimplexCollection<FS, SP, T>,
+    sc: &impl algebraeon_geometry::simplexes::LabelledSimplexCollection<FS, FSB, SP, T>,
 ) -> impl IntoIterator<Item = Shape>
 where
     FS::Set: std::hash::Hash,
 {
     let sp = sc.ambient_space();
-    let field = sp.borrow().ordered_field();
+    let field = sp.borrow().field();
 
     [Shape::Push, Shape::SetAlpha(1.0)]
         .into_iter()

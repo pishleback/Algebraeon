@@ -1,18 +1,26 @@
 use super::*;
+use algebraeon_sets::structure::BorrowedStructure;
 use itertools::Itertools;
 
 #[derive(Clone)]
-pub struct Simplex<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> {
+pub struct Simplex<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> {
     ambient_space: SP,
     // points must be ordered w.r.t the ordering on vectors
     // points must be non-degenerate
     // points must belong to the ambient_space
-    points: Vec<Vector<FS, SP>>,
+    points: Vec<Vector<FS, FSB, SP>>,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
-    for Simplex<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> std::fmt::Debug for Simplex<FS, FSB, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Simplex")
@@ -21,21 +29,30 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> PartialEq
-    for Simplex<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> PartialEq for Simplex<FS, FSB, SP>
 {
     fn eq(&self, other: &Self) -> bool {
         self.ambient_space.borrow() == other.ambient_space.borrow() && self.points == other.points
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Eq
-    for Simplex<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> Eq for Simplex<FS, FSB, SP>
 {
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Hash
-    for Simplex<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> Hash for Simplex<FS, FSB, SP>
 where
     FS::Set: Hash,
 {
@@ -44,11 +61,18 @@ where
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Simplex<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> Simplex<FS, FSB, SP>
 where
     SP: Clone,
 {
-    pub fn new(ambient_space: SP, mut points: Vec<Vector<FS, SP>>) -> Result<Self, &'static str> {
+    pub fn new(
+        ambient_space: SP,
+        mut points: Vec<Vector<FS, FSB, SP>>,
+    ) -> Result<Self, &'static str> {
         for point in &points {
             assert_eq!(ambient_space.borrow(), point.ambient_space().borrow());
         }
@@ -74,15 +98,15 @@ where
         self.points.len()
     }
 
-    pub fn points(&self) -> &Vec<Vector<FS, SP>> {
+    pub fn points(&self) -> &Vec<Vector<FS, FSB, SP>> {
         &self.points
     }
 
-    pub fn into_points(self) -> Vec<Vector<FS, SP>> {
+    pub fn into_points(self) -> Vec<Vector<FS, FSB, SP>> {
         self.points
     }
 
-    pub fn point(&self, i: usize) -> &Vector<FS, SP> {
+    pub fn point(&self, i: usize) -> &Vector<FS, FSB, SP> {
         &self.points[i]
     }
 
@@ -169,7 +193,7 @@ where
         .unwrap()
     }
 
-    pub fn oriented_facet(&self, k: usize) -> OrientedSimplex<FS, SP> {
+    pub fn oriented_facet(&self, k: usize) -> OrientedSimplex<FS, FSB, SP> {
         //return the oriented facet of self with negative side on the outside and positive side on the inside
         assert!(k <= self.points.len());
         let mut facet_points = self.points.clone();
@@ -182,7 +206,7 @@ where
         .unwrap()
     }
 
-    pub fn oriented_facets(&self) -> Vec<OrientedSimplex<FS, SP>> {
+    pub fn oriented_facets(&self) -> Vec<OrientedSimplex<FS, FSB, SP>> {
         assert_eq!(self.ambient_space.borrow().affine_dimension(), self.n());
         (0..self.n()).map(|k| self.oriented_facet(k)).collect()
     }
@@ -203,14 +227,18 @@ pub enum OrientationSide {
 #[derive(Clone)]
 struct OrientedSimplexOrientation<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
 > {
-    flip: bool,                     // flip the orientation if necessary
-    positive_point: Vector<FS, SP>, // a point on the positive side
+    flip: bool,                          // flip the orientation if necessary
+    positive_point: Vector<FS, FSB, SP>, // a point on the positive side
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
-    for OrientedSimplexOrientation<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> std::fmt::Debug for OrientedSimplexOrientation<FS, FSB, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("OrientedSimplexOrientation")
@@ -223,14 +251,18 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 #[derive(Clone)]
 pub struct OrientedSimplex<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
 > {
-    simplex: Simplex<FS, SP>,
-    orientation: Option<OrientedSimplexOrientation<FS, SP>>, //None iff simplex is null
+    simplex: Simplex<FS, FSB, SP>,
+    orientation: Option<OrientedSimplexOrientation<FS, FSB, SP>>, //None iff simplex is null
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
-    for OrientedSimplex<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> std::fmt::Debug for OrientedSimplex<FS, FSB, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("OrientedSimplex")
@@ -240,13 +272,16 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    OrientedSimplex<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> OrientedSimplex<FS, FSB, SP>
 {
     pub fn new_with_positive_point(
         ambient_space: SP,
-        points: Vec<Vector<FS, SP>>,
-        ref_point: &Vector<FS, SP>,
+        points: Vec<Vector<FS, FSB, SP>>,
+        ref_point: &Vector<FS, FSB, SP>,
     ) -> Result<Self, &'static str> {
         assert_eq!(ref_point.ambient_space().borrow(), ambient_space.borrow());
         if points.len() != ambient_space.borrow().linear_dimension().unwrap() {
@@ -281,22 +316,22 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 
     pub fn new_with_negative_point(
         ambient_space: SP,
-        points: Vec<Vector<FS, SP>>,
-        ref_point: &Vector<FS, SP>,
+        points: Vec<Vector<FS, FSB, SP>>,
+        ref_point: &Vector<FS, FSB, SP>,
     ) -> Result<Self, &'static str> {
         let mut ans = Self::new_with_positive_point(ambient_space, points, ref_point)?;
         ans.flip();
         Ok(ans)
     }
 
-    pub fn positive_point(&self) -> Option<Vector<FS, SP>> {
+    pub fn positive_point(&self) -> Option<Vector<FS, FSB, SP>> {
         Some(self.orientation.as_ref()?.positive_point.clone())
     }
 
-    pub fn negative_point(&self) -> Option<Vector<FS, SP>> {
+    pub fn negative_point(&self) -> Option<Vector<FS, FSB, SP>> {
         let positive_point = self.positive_point()?;
         Some({
-            let pt: &Vector<FS, SP> = &self.simplex.points()[0];
+            let pt: &Vector<FS, FSB, SP> = &self.simplex.points()[0];
             &(pt + pt) - &positive_point
         })
     }
@@ -305,7 +340,7 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
         self.simplex().ambient_space()
     }
 
-    pub fn simplex(&self) -> &Simplex<FS, SP> {
+    pub fn simplex(&self) -> &Simplex<FS, FSB, SP> {
         &self.simplex
     }
 
@@ -330,9 +365,9 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
         }
     }
 
-    fn classify_point_quantitatively(&self, point: &Vector<FS, SP>) -> FS::Set {
+    fn classify_point_quantitatively(&self, point: &Vector<FS, FSB, SP>) -> FS::Set {
         let space = self.ambient_space();
-        let field = space.borrow().ordered_field();
+        let field = space.borrow().field();
         match &self.orientation {
             Some(OrientedSimplexOrientation {
                 flip,
@@ -356,9 +391,9 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
         }
     }
 
-    pub fn classify_point(&self, point: &Vector<FS, SP>) -> OrientationSide {
+    pub fn classify_point(&self, point: &Vector<FS, FSB, SP>) -> OrientationSide {
         let space = self.ambient_space();
-        let field = space.borrow().ordered_field();
+        let field = space.borrow().field();
         let value = self.classify_point_quantitatively(point);
         match field.ring_cmp(&value, &field.zero()) {
             std::cmp::Ordering::Less => OrientationSide::Negative,
@@ -367,7 +402,7 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
         }
     }
 
-    pub fn into_oriented_hyperplane(self) -> OrientedHyperplane<FS, SP> {
+    pub fn into_oriented_hyperplane(self) -> OrientedHyperplane<FS, FSB, SP> {
         OrientedHyperplane {
             oriented_simplex: self,
         }
@@ -377,13 +412,17 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 #[derive(Clone)]
 pub struct OrientedHyperplane<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
 > {
-    oriented_simplex: OrientedSimplex<FS, SP>,
+    oriented_simplex: OrientedSimplex<FS, FSB, SP>,
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::fmt::Debug
-    for OrientedHyperplane<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> std::fmt::Debug for OrientedHyperplane<FS, FSB, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("OrientedHyperplane")
@@ -402,7 +441,8 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 
 pub enum OrientedHyperplaneIntersectLineSegmentResult<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
 > {
     PositivePositive,
     NegativeNegative,
@@ -411,28 +451,35 @@ pub enum OrientedHyperplaneIntersectLineSegmentResult<
     NeutralPositive,
     NeutralNegative,
     NeutralNeutral,
-    PositiveNegative { intersection_point: Vector<FS, SP> },
-    NegativePositive { intersection_point: Vector<FS, SP> },
+    PositiveNegative {
+        intersection_point: Vector<FS, FSB, SP>,
+    },
+    NegativePositive {
+        intersection_point: Vector<FS, FSB, SP>,
+    },
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    OrientedHyperplane<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> OrientedHyperplane<FS, FSB, SP>
 {
     pub fn ambient_space(&self) -> SP {
         self.oriented_simplex.ambient_space()
     }
 
-    pub fn classify_point(&self, point: &Vector<FS, SP>) -> OrientationSide {
+    pub fn classify_point(&self, point: &Vector<FS, FSB, SP>) -> OrientationSide {
         self.oriented_simplex.classify_point(point)
     }
 
     pub fn intersect_line(
         &self,
-        a: &Vector<FS, SP>,
-        b: &Vector<FS, SP>,
-    ) -> OrientedHyperplaneIntersectLineSegmentResult<FS, SP> {
+        a: &Vector<FS, FSB, SP>,
+        b: &Vector<FS, FSB, SP>,
+    ) -> OrientedHyperplaneIntersectLineSegmentResult<FS, FSB, SP> {
         let space = self.ambient_space();
-        let field = space.borrow().ordered_field();
+        let field = space.borrow().field();
 
         let a_val = self.oriented_simplex.classify_point_quantitatively(a);
         let b_val = self.oriented_simplex.classify_point_quantitatively(b);

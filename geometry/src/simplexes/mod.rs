@@ -3,8 +3,11 @@ use super::*;
 // It is helpful for computational reasons to put an ordering on the vectors
 // so that the points of a simplex can be ordered
 #[allow(clippy::non_canonical_partial_ord_impl)]
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> PartialOrd
-    for Vector<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> PartialOrd for Vector<FS, FSB, SP>
 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         let space = common_space(
@@ -13,7 +16,7 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
         )?;
         for i in 0..space.linear_dimension().unwrap() {
             match space
-                .ordered_field()
+                .field()
                 .ring_cmp(self.coordinate(i), other.coordinate(i))
             {
                 std::cmp::Ordering::Less => {
@@ -28,8 +31,11 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
         Some(std::cmp::Ordering::Equal)
     }
 }
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> Ord
-    for Vector<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> Ord for Vector<FS, FSB, SP>
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         if let Some(ans) = self.partial_cmp(other) {
@@ -47,6 +53,7 @@ pub enum InteriorBoundaryLabel {
 }
 
 mod simplex;
+use algebraeon_sets::structure::BorrowedStructure;
 pub use simplex::*;
 
 mod convex_hull;

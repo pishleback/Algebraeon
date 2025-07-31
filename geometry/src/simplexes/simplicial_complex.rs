@@ -1,20 +1,27 @@
 use std::collections::{HashMap, HashSet};
 
+use algebraeon_sets::structure::BorrowedStructure;
+
 use super::*;
 
 #[derive(Clone)]
 pub struct SCSpxInfo<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
     T: Eq + Clone,
 > {
-    inv_bdry: HashSet<Simplex<FS, SP>>,
+    inv_bdry: HashSet<Simplex<FS, FSB, SP>>,
     label: T,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    std::fmt::Debug for SCSpxInfo<FS, SP, T>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    T: Eq + Clone,
+> std::fmt::Debug for SCSpxInfo<FS, FSB, SP, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SCSpxInfo")
@@ -26,18 +33,23 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 #[derive(Clone)]
 pub struct LabelledSimplicialComplex<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
     T: Eq + Clone,
 > {
     ambient_space: SP,
-    simplexes: HashMap<Simplex<FS, SP>, SCSpxInfo<FS, SP, T>>,
+    simplexes: HashMap<Simplex<FS, FSB, SP>, SCSpxInfo<FS, FSB, SP, T>>,
 }
 
-pub type SimplicialComplex<FS, SP> = LabelledSimplicialComplex<FS, SP, ()>;
+pub type SimplicialComplex<FS, FSB, SP> = LabelledSimplicialComplex<FS, FSB, SP, ()>;
 
 #[allow(clippy::missing_fields_in_debug)]
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    std::fmt::Debug for LabelledSimplicialComplex<FS, SP, T>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    T: Eq + Clone,
+> std::fmt::Debug for LabelledSimplicialComplex<FS, FSB, SP, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SimplicialComplex")
@@ -46,17 +58,21 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    LabelledSimplexCollection<FS, SP, T> for LabelledSimplicialComplex<FS, SP, T>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    T: Eq + Clone,
+> LabelledSimplexCollection<FS, FSB, SP, T> for LabelledSimplicialComplex<FS, FSB, SP, T>
 where
     FS::Set: Hash,
 {
-    type WithLabel<S: Eq + Clone> = LabelledSimplicialComplex<FS, SP, S>;
-    type SubsetType = LabelledPartialSimplicialComplex<FS, SP, T>;
+    type WithLabel<S: Eq + Clone> = LabelledSimplicialComplex<FS, FSB, SP, S>;
+    type SubsetType = LabelledPartialSimplicialComplex<FS, FSB, SP, T>;
 
     fn new_labelled(
         ambient_space: SP,
-        simplexes: HashMap<Simplex<FS, SP>, T>,
+        simplexes: HashMap<Simplex<FS, FSB, SP>, T>,
     ) -> Result<Self, &'static str> {
         for simplex in simplexes.keys() {
             assert_eq!(simplex.ambient_space().borrow(), ambient_space.borrow());
@@ -97,7 +113,10 @@ where
         })
     }
 
-    fn new_labelled_unchecked(ambient_space: SP, simplexes: HashMap<Simplex<FS, SP>, T>) -> Self {
+    fn new_labelled_unchecked(
+        ambient_space: SP,
+        simplexes: HashMap<Simplex<FS, FSB, SP>, T>,
+    ) -> Self {
         Self::new_labelled(ambient_space, simplexes).unwrap()
     }
 
@@ -105,21 +124,21 @@ where
         self.ambient_space.clone()
     }
 
-    fn labelled_simplexes(&self) -> HashMap<&Simplex<FS, SP>, &T> {
+    fn labelled_simplexes(&self) -> HashMap<&Simplex<FS, FSB, SP>, &T> {
         self.simplexes
             .iter()
             .map(|(spx, info)| (spx, &info.label))
             .collect()
     }
 
-    fn into_labelled_simplexes(self) -> HashMap<Simplex<FS, SP>, T> {
+    fn into_labelled_simplexes(self) -> HashMap<Simplex<FS, FSB, SP>, T> {
         self.simplexes
             .into_iter()
             .map(|(spx, info)| (spx, info.label))
             .collect()
     }
 
-    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<FS, SP, T> {
+    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<FS, FSB, SP, T> {
         LabelledPartialSimplicialComplex::new_labelled_unchecked(
             self.ambient_space,
             self.simplexes
@@ -130,8 +149,12 @@ where
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    LabelledSimplicialComplex<FS, SP, T>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    T: Eq + Clone,
+> LabelledSimplicialComplex<FS, FSB, SP, T>
 where
     FS::Set: Hash,
 {
@@ -165,14 +188,17 @@ where
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    SimplicialComplex<FS, SP>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> SimplicialComplex<FS, FSB, SP>
 where
     FS::Set: Hash,
 {
     pub fn interior_and_boundary(
         &self,
-    ) -> LabelledSimplicialComplex<FS, SP, InteriorBoundaryLabel> {
+    ) -> LabelledSimplicialComplex<FS, FSB, SP, InteriorBoundaryLabel> {
         /*
         let n be the dimension of the space self is living in
          - every simplex of rank n is part of the interior
@@ -230,12 +256,12 @@ where
         LabelledSimplicialComplex::new_labelled(self.ambient_space(), simplexes).unwrap()
     }
 
-    pub fn interior(&self) -> PartialSimplicialComplex<FS, SP> {
+    pub fn interior(&self) -> PartialSimplicialComplex<FS, FSB, SP> {
         self.interior_and_boundary()
             .subset_by_label(&InteriorBoundaryLabel::Interior)
     }
 
-    pub fn boundary(&self) -> SimplicialComplex<FS, SP> {
+    pub fn boundary(&self) -> SimplicialComplex<FS, FSB, SP> {
         self.interior_and_boundary()
             .subset_by_label(&InteriorBoundaryLabel::Boundary)
             .try_as_simplicial_complex()
@@ -257,11 +283,12 @@ Output:
 #[allow(clippy::needless_pass_by_value)]
 fn simplify_in_region<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
 >(
     space: SP,
-    boundary_facets: Vec<OrientedSimplex<FS, SP>>,
-) -> Option<Vec<Simplex<FS, SP>>>
+    boundary_facets: Vec<OrientedSimplex<FS, FSB, SP>>,
+) -> Option<Vec<Simplex<FS, FSB, SP>>>
 where
     FS::Set: Hash,
 {
@@ -269,7 +296,7 @@ where
         debug_assert_eq!(spx.ambient_space().borrow(), space.borrow());
     }
 
-    let mut boundary_points: HashMap<Vector<FS, SP>, Vec<usize>> = HashMap::new();
+    let mut boundary_points: HashMap<Vector<FS, FSB, SP>, Vec<usize>> = HashMap::new();
     for (idx, spx) in boundary_facets.iter().enumerate() {
         for pt in spx.simplex().points() {
             if boundary_points.contains_key(pt) {
@@ -319,8 +346,12 @@ where
     None
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone, T: Eq + Clone>
-    LabelledSimplicialComplex<FS, SP, T>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    T: Eq + Clone,
+> LabelledSimplicialComplex<FS, FSB, SP, T>
 where
     FS::Set: Hash,
 {
@@ -374,7 +405,7 @@ where
             };
 
             let link_points = {
-                let mut link_points: Vec<Vector<FS, SP>> = vec![];
+                let mut link_points: Vec<Vector<FS, FSB, SP>> = vec![];
                 for spx in &link {
                     for p in spx.points() {
                         link_points.push(p.clone());
@@ -410,7 +441,7 @@ where
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
                 .collect::<HashSet<_>>();
 
-            let nbd = LabelledSimplicialComplex::<FS, AffineSpace<FS>, T>::new(
+            let nbd = LabelledSimplicialComplex::<FS, FSB, AffineSpace<FS, FSB>, T>::new(
                 nbd_affine_subspace.embedded_space(),
                 {
                     let mut simplexes = HashSet::new();
@@ -702,7 +733,7 @@ where
     //remove simplexes and remove them from the inverse boundary of any others
     //self may not be in a valid state after this operation
     #[allow(clippy::needless_pass_by_value)]
-    fn remove_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, SP>>) {
+    fn remove_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, FSB, SP>>) {
         for spx in &simplexes {
             for bdry_spx in spx.proper_sub_simplices_not_null() {
                 if let Some(info) = self.simplexes.get_mut(&bdry_spx) {
@@ -715,7 +746,7 @@ where
         }
     }
 
-    fn remove_simplexes(&mut self, simplexes: Vec<Simplex<FS, SP>>) {
+    fn remove_simplexes(&mut self, simplexes: Vec<Simplex<FS, FSB, SP>>) {
         self.remove_simplexes_unchecked(simplexes);
         #[cfg(debug_assertions)]
         self.check();
@@ -725,7 +756,7 @@ where
     //must be added together to cover the case where there are mutual boundary relations
     //self may not be in a valid state after this operation
     #[allow(clippy::needless_pass_by_value)]
-    fn add_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, SP>>, label: &T) {
+    fn add_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<FS, FSB, SP>>, label: &T) {
         for spx in &simplexes {
             self.simplexes.insert(
                 spx.clone(),
@@ -746,7 +777,7 @@ where
         }
     }
 
-    fn add_simplexes(&mut self, simplexes: Vec<Simplex<FS, SP>>, label: &T) {
+    fn add_simplexes(&mut self, simplexes: Vec<Simplex<FS, FSB, SP>>, label: &T) {
         self.add_simplexes_unchecked(simplexes, label);
         #[cfg(debug_assertions)]
         self.check();

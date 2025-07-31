@@ -1,12 +1,14 @@
 use super::*;
 use algebraeon_rings::matrix::{Matrix, MatrixStructure};
+use algebraeon_sets::structure::BorrowedStructure;
 use simplexes::{OrientedHyperplane, OrientedSimplex, Simplex};
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAffineSubspace<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
-    ESP: Borrow<AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    ESP: Borrow<AffineSpace<FS, FSB>> + Clone,
 > {
     // The ordered_field of ambient_space and subspace must match
     ambient_space: SP,
@@ -18,20 +20,21 @@ pub struct EmbeddedAffineSubspace<
         if there is one vector then it defines the location of the embedded point
         if there are vectors [v0, v1, v2, ..., vn] then the embedding sends (a1, a2, ..., an) in subspace to v0 + a1*v1, v0 + a2*v2, ..., v0 + an*vn in ambient space
     */
-    embedding_points: Vec<Vector<FS, SP>>,
+    embedding_points: Vec<Vector<FS, FSB, SP>>,
 }
 
 impl<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
-    ESP: Borrow<AffineSpace<FS>> + From<AffineSpace<FS>> + Clone,
-> EmbeddedAffineSubspace<FS, SP, ESP>
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    ESP: Borrow<AffineSpace<FS, FSB>> + From<AffineSpace<FS, FSB>> + Clone,
+> EmbeddedAffineSubspace<FS, FSB, SP, ESP>
 {
     #[allow(clippy::type_complexity)]
     pub fn new_affine_span(
         ambient_space: SP,
-        points: Vec<Vector<FS, SP>>,
-    ) -> Result<(Self, Vec<Vector<FS, ESP>>), &'static str> {
+        points: Vec<Vector<FS, FSB, SP>>,
+    ) -> Result<(Self, Vec<Vector<FS, FSB, ESP>>), &'static str> {
         for point in &points {
             debug_assert_eq!(point.ambient_space().borrow(), ambient_space.borrow());
         }
@@ -41,19 +44,18 @@ impl<
         {
             return Err("Affine embedding points must be affine independent");
         }
-        let ordered_field = ambient_space.borrow().ordered_field();
-        let embedded_space: ESP =
-            AffineSpace::new_affine(ordered_field.clone(), points.len()).into();
+        let field = ambient_space.borrow().field_borrowed();
+        let embedded_space: ESP = AffineSpace::new_affine(field.clone(), points.len()).into();
         let n = points.len();
         let embedded_pts = (0..n)
             .map(|i| {
                 Vector::construct(embedded_space.clone(), |j| {
                     if i == 0 {
-                        ordered_field.zero()
+                        field.borrow().zero()
                     } else if i == j + 1 {
-                        ordered_field.one()
+                        field.borrow().one()
                     } else {
-                        ordered_field.zero()
+                        field.borrow().zero()
                     }
                 })
             })
@@ -73,15 +75,18 @@ impl<
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    EmbeddedAffineSubspace<FS, SP, AffineSpace<FS>>
+impl<
+    FS: OrderedRingSignature + FieldSignature,
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> EmbeddedAffineSubspace<FS, FSB, SP, AffineSpace<FS, FSB>>
 {
     #[allow(clippy::needless_pass_by_value, clippy::type_complexity)]
     pub fn new(
         ambient_space: SP,
-        root: Vector<FS, SP>,
-        span: Vec<Vector<FS, SP>>,
-    ) -> Result<(Self, Vec<Vector<FS, AffineSpace<FS>>>), &'static str> {
+        root: Vector<FS, FSB, SP>,
+        span: Vec<Vector<FS, FSB, SP>>,
+    ) -> Result<(Self, Vec<Vector<FS, FSB, AffineSpace<FS, FSB>>>), &'static str> {
         let mut points = vec![root.clone()];
         points.extend(span.iter().map(|vec| &root + vec));
         Self::new_affine_span(ambient_space, points)
@@ -89,20 +94,19 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 
     pub fn new_affine_span_linearly_dependent(
         ambient_space: SP,
-        points: Vec<&Vector<FS, SP>>,
+        points: Vec<&Vector<FS, FSB, SP>>,
     ) -> Self {
         if points.is_empty() {
             Self::new_empty(ambient_space)
         } else {
             let dim = ambient_space.borrow().linear_dimension().unwrap();
-            let ordered_field = ambient_space.borrow().ordered_field();
+            let field = ambient_space.borrow().field();
             let mut points = points.into_iter();
             let root = points.next().unwrap();
             let span = points.map(|pt| pt - root).collect::<Vec<_>>();
             //matrix whose columns are pt - root for every other pt in points
             let mat = Matrix::construct(dim, span.len(), |r, c| span[c].coordinate(r).clone());
-            let (_, _, _, pivs) =
-                MatrixStructure::new(ordered_field.clone()).row_hermite_algorithm(mat);
+            let (_, _, _, pivs) = MatrixStructure::new(field.clone()).row_hermite_algorithm(mat);
             Self::new(
                 ambient_space,
                 root.clone(),
@@ -116,12 +120,17 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 
 impl<
     FS: OrderedRingSignature + FieldSignature,
-    SP: Borrow<AffineSpace<FS>> + Clone,
-    ESP: Borrow<AffineSpace<FS>> + Clone,
-> EmbeddedAffineSubspace<FS, SP, ESP>
+    FSB: BorrowedStructure<FS>,
+    SP: Borrow<AffineSpace<FS, FSB>> + Clone,
+    ESP: Borrow<AffineSpace<FS, FSB>> + Clone,
+> EmbeddedAffineSubspace<FS, FSB, SP, ESP>
 {
-    pub fn ordered_field(&self) -> &FS {
-        self.ambient_space.borrow().ordered_field()
+    pub fn field(&self) -> &FS {
+        self.ambient_space.borrow().field()
+    }
+
+    pub fn field_borrowed(&self) -> FSB {
+        self.ambient_space.borrow().field_borrowed()
     }
 
     pub fn ambient_space(&self) -> SP {
@@ -141,18 +150,18 @@ impl<
     #[allow(clippy::type_complexity)]
     pub fn extend_dimension_by_point_unsafe(
         &self,
-        pt: Vector<FS, SP>,
+        pt: Vector<FS, FSB, SP>,
     ) -> (
-        EmbeddedAffineSubspace<FS, AffineSpace<FS>, ESP>,
-        EmbeddedAffineSubspace<FS, SP, AffineSpace<FS>>,
-        Vector<FS, AffineSpace<FS>>,
+        EmbeddedAffineSubspace<FS, FSB, AffineSpace<FS, FSB>, ESP>,
+        EmbeddedAffineSubspace<FS, FSB, SP, AffineSpace<FS, FSB>>,
+        Vector<FS, FSB, AffineSpace<FS, FSB>>,
     ) {
         debug_assert_eq!(self.ambient_space.borrow(), pt.ambient_space().borrow());
         debug_assert!(self.unembed_point(&pt).is_none());
-        let ordered_field = self.ordered_field();
+        let field = self.field_borrowed();
 
         let n = self.embedded_space.borrow().affine_dimension();
-        let extended_embedded_space = AffineSpace::new_affine(ordered_field.clone(), n + 1);
+        let extended_embedded_space = AffineSpace::new_affine(field.clone(), n + 1);
 
         (
             EmbeddedAffineSubspace {
@@ -164,13 +173,13 @@ impl<
                         .map(|k| {
                             Vector::construct(extended_embedded_space.clone(), |i| {
                                 if k == 0 {
-                                    ordered_field.zero()
+                                    self.field().zero()
                                 } else {
                                     let j = k - 1;
                                     if i == j {
-                                        ordered_field.one()
+                                        self.field().one()
                                     } else {
-                                        ordered_field.zero()
+                                        self.field().zero()
                                     }
                                 }
                             })
@@ -189,27 +198,27 @@ impl<
             },
             Vector::construct(extended_embedded_space.clone(), |i| {
                 if i + 1 == n {
-                    ordered_field.one()
+                    self.field().one()
                 } else {
-                    ordered_field.zero()
+                    self.field().zero()
                 }
             }),
         )
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn get_root_and_span(&self) -> Option<(Vector<FS, SP>, Vec<Vector<FS, SP>>)> {
+    pub fn get_root_and_span(&self) -> Option<(Vector<FS, FSB, SP>, Vec<Vector<FS, FSB, SP>>)> {
         let mut points = self.embedding_points.iter();
         let root = points.next()?;
         let span = points.map(|pt| pt - root).collect::<Vec<_>>();
         Some((root.clone(), span))
     }
 
-    pub fn get_embedding_points(&self) -> &Vec<Vector<FS, SP>> {
+    pub fn get_embedding_points(&self) -> &Vec<Vector<FS, FSB, SP>> {
         &self.embedding_points
     }
 
-    pub fn embed_point(&self, pt: &Vector<FS, ESP>) -> Vector<FS, SP> {
+    pub fn embed_point(&self, pt: &Vector<FS, FSB, ESP>) -> Vector<FS, FSB, SP> {
         assert_eq!(pt.ambient_space().borrow(), self.embedded_space.borrow());
         let (root, span) = self.get_root_and_span().unwrap(); //pt exists in the embedded space, so the embedded space is non-empty, so has a root and span
         let mut total = root.clone();
@@ -219,7 +228,7 @@ impl<
         total
     }
 
-    pub fn embed_simplex(&self, spx: &Simplex<FS, ESP>) -> Simplex<FS, SP> {
+    pub fn embed_simplex(&self, spx: &Simplex<FS, FSB, ESP>) -> Simplex<FS, FSB, SP> {
         Simplex::new(
             self.ambient_space(),
             spx.points().iter().map(|p| self.embed_point(p)).collect(),
@@ -227,7 +236,7 @@ impl<
         .unwrap()
     }
 
-    pub fn unembed_point(&self, pt: &Vector<FS, SP>) -> Option<Vector<FS, ESP>> {
+    pub fn unembed_point(&self, pt: &Vector<FS, FSB, SP>) -> Option<Vector<FS, FSB, ESP>> {
         assert_eq!(pt.ambient_space().borrow(), self.ambient_space.borrow());
         match self.get_root_and_span() {
             Some((root, span)) => {
@@ -237,7 +246,7 @@ impl<
                     .ambient_space
                     .borrow()
                     .cols_from_vectors(span.iter().collect());
-                let x = MatrixStructure::new(self.ambient_space.borrow().ordered_field().clone())
+                let x = MatrixStructure::new(self.ambient_space.borrow().field().clone())
                     .col_solve(basis_matrix, &y);
                 Some(Vector::new(self.embedded_space(), x?))
             }
@@ -245,7 +254,7 @@ impl<
         }
     }
 
-    pub fn unembed_simplex(&self, spx: &Simplex<FS, SP>) -> Option<Simplex<FS, ESP>> {
+    pub fn unembed_simplex(&self, spx: &Simplex<FS, FSB, SP>) -> Option<Simplex<FS, FSB, ESP>> {
         let mut pts = vec![];
         for embedded_pt in spx.points() {
             match self.unembed_point(embedded_pt) {
@@ -260,9 +269,9 @@ impl<
         Some(Simplex::new(self.embedded_space(), pts).unwrap())
     }
 
-    pub fn as_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<FS, SP>>> {
+    pub fn as_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<FS, FSB, SP>>> {
         let ambient_space = self.ambient_space();
-        let ordered_field = ambient_space.borrow().ordered_field();
+        let field = ambient_space.borrow().field();
         match self.get_root_and_span() {
             Some((root, span)) => {
                 let dim_amb = ambient_space.borrow().linear_dimension().unwrap();
@@ -274,15 +283,11 @@ impl<
                         span[c].coordinate(r).clone()
                     } else {
                         let c = c - dim_ss;
-                        if r == c {
-                            ordered_field.one()
-                        } else {
-                            ordered_field.zero()
-                        }
+                        if r == c { field.one() } else { field.zero() }
                     }
                 });
                 let (_, _, _, pivs) =
-                    MatrixStructure::new(ordered_field.clone()).row_hermite_algorithm(mat);
+                    MatrixStructure::new(field.clone()).row_hermite_algorithm(mat);
                 debug_assert_eq!(pivs.len(), dim_amb);
                 #[allow(clippy::needless_range_loop)]
                 for i in 0..dim_ss {
@@ -299,13 +304,9 @@ impl<
                             //root + e_k
                             let k = extension_elementary_basis_vectors[i];
                             Vector::construct(ambient_space.clone(), |l| {
-                                ordered_field.add(
+                                field.add(
                                     root.coordinate(l),
-                                    &if l == k {
-                                        ordered_field.one()
-                                    } else {
-                                        ordered_field.zero()
-                                    },
+                                    &if l == k { field.one() } else { field.zero() },
                                 )
                             })
                         };
@@ -324,12 +325,8 @@ impl<
                                         points.push(Vector::construct(
                                             ambient_space.clone(),
                                             |l| {
-                                                ordered_field.add(root.coordinate(l), &{
-                                                    if l == k {
-                                                        ordered_field.one()
-                                                    } else {
-                                                        ordered_field.zero()
-                                                    }
+                                                field.add(root.coordinate(l), &{
+                                                    if l == k { field.one() } else { field.zero() }
                                                 })
                                             },
                                         ));
@@ -353,13 +350,14 @@ impl<
 
 pub fn compose_affine_embeddings<
     FS: OrderedRingSignature + FieldSignature,
-    SPA: Borrow<AffineSpace<FS>> + Clone,
-    SPB: Borrow<AffineSpace<FS>> + Clone,
-    SPC: Borrow<AffineSpace<FS>> + Clone,
+    FSB: BorrowedStructure<FS>,
+    SPA: Borrow<AffineSpace<FS, FSB>> + Clone,
+    SPB: Borrow<AffineSpace<FS, FSB>> + Clone,
+    SPC: Borrow<AffineSpace<FS, FSB>> + Clone,
 >(
-    _a_to_b: EmbeddedAffineSubspace<FS, SPB, SPA>,
-    _b_to_c: EmbeddedAffineSubspace<FS, SPC, SPB>,
-) -> EmbeddedAffineSubspace<FS, SPC, SPA> {
+    _a_to_b: EmbeddedAffineSubspace<FS, FSB, SPB, SPA>,
+    _b_to_c: EmbeddedAffineSubspace<FS, FSB, SPC, SPB>,
+) -> EmbeddedAffineSubspace<FS, FSB, SPC, SPA> {
     todo!() // call b_to_c.embed on the defining points of a_to_b
 }
 

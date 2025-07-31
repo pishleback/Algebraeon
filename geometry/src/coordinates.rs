@@ -1,18 +1,22 @@
 use algebraeon_rings::matrix::Matrix;
+use algebraeon_sets::structure::BorrowedStructure;
 use std::borrow::Borrow;
 use std::hash::Hash;
+use std::marker::PhantomData;
 
 use super::*;
 
 #[derive(Clone)]
-pub struct Vector<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> {
+pub struct Vector<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>>
+{
+    _field_borrowed: PhantomData<FSB>,
     ambient_space: SP,
     coordinates: Vec<FS::Set>, //length equal to ambient_space.dimension()
 }
 
 #[allow(clippy::missing_fields_in_debug)]
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> std::fmt::Debug
-    for Vector<FS, SP>
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>>
+    std::fmt::Debug for Vector<FS, FSB, SP>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Vector")
@@ -21,27 +25,27 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> std
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> PartialEq
-    for Vector<FS, SP>
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>> PartialEq
+    for Vector<FS, FSB, SP>
 {
     fn eq(&self, other: &Self) -> bool {
         match common_space(self.ambient_space.borrow(), other.ambient_space.borrow()) {
             Some(space) => {
                 let n = space.linear_dimension().unwrap();
-                (0..n).all(|i| {
-                    space
-                        .ordered_field()
-                        .equal(self.coordinate(i), other.coordinate(i))
-                })
+                (0..n).all(|i| space.field().equal(self.coordinate(i), other.coordinate(i)))
             }
             None => false,
         }
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Eq for Vector<FS, SP> {}
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>> Eq
+    for Vector<FS, FSB, SP>
+{
+}
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Hash for Vector<FS, SP>
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>> Hash
+    for Vector<FS, FSB, SP>
 where
     FS::Set: Hash,
 {
@@ -51,13 +55,16 @@ where
     }
 }
 
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Vector<FS, SP> {
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>>>
+    Vector<FS, FSB, SP>
+{
     pub fn new(ambient_space: SP, coordinates: Vec<FS::Set>) -> Self {
         assert_eq!(
             ambient_space.borrow().linear_dimension().unwrap(),
             coordinates.len()
         );
         Self {
+            _field_borrowed: PhantomData,
             ambient_space,
             coordinates,
         }
@@ -69,14 +76,15 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Vec
             .map(|i| coordinate_func(i))
             .collect();
         Self {
+            _field_borrowed: PhantomData,
             ambient_space,
             coordinates,
         }
     }
 
     pub fn zero(ambient_space: SP) -> Self {
-        let ordered_field = ambient_space.borrow().ordered_field().clone();
-        Self::construct(ambient_space, |_i| ordered_field.zero())
+        let field = ambient_space.borrow().field().clone();
+        Self::construct(ambient_space, |_i| field.zero())
     }
 
     pub fn ambient_space(&self) -> &SP {
@@ -121,30 +129,31 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>>> Vec
 }
 
 // -&vector
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone> std::ops::Neg
-    for &Vector<FS, SP>
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
+    std::ops::Neg for &Vector<FS, FSB, SP>
 {
-    type Output = Vector<FS, SP>;
+    type Output = Vector<FS, FSB, SP>;
 
     fn neg(self) -> Self::Output {
         Vector {
+            _field_borrowed: PhantomData,
             ambient_space: self.ambient_space.clone(),
             coordinates: self
                 .coordinates
                 .iter()
-                .map(|x| self.ambient_space().borrow().ordered_field().neg(x))
+                .map(|x| self.ambient_space().borrow().field().neg(x))
                 .collect(),
         }
     }
 }
 
 // &vector + &vector
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    std::ops::Add<&Vector<FS, SP>> for &Vector<FS, SP>
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
+    std::ops::Add<&Vector<FS, FSB, SP>> for &Vector<FS, FSB, SP>
 {
-    type Output = Vector<FS, SP>;
+    type Output = Vector<FS, FSB, SP>;
 
-    fn add(self, other: &Vector<FS, SP>) -> Self::Output {
+    fn add(self, other: &Vector<FS, FSB, SP>) -> Self::Output {
         match common_space(self.ambient_space.clone(), other.ambient_space.clone()) {
             Some(space) => {
                 let n = space.borrow().linear_dimension().unwrap();
@@ -152,11 +161,12 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
                     .map(|i| {
                         space
                             .borrow()
-                            .ordered_field()
+                            .field()
                             .add(self.coordinate(i), other.coordinate(i))
                     })
                     .collect();
                 Vector {
+                    _field_borrowed: PhantomData,
                     ambient_space: space,
                     coordinates,
                 }
@@ -167,17 +177,17 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 // mut vector += &vector
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    std::ops::AddAssign<&Vector<FS, SP>> for Vector<FS, SP>
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
+    std::ops::AddAssign<&Vector<FS, FSB, SP>> for Vector<FS, FSB, SP>
 {
-    fn add_assign(&mut self, other: &Vector<FS, SP>) {
+    fn add_assign(&mut self, other: &Vector<FS, FSB, SP>) {
         match common_space(self.ambient_space.clone(), other.ambient_space.clone()) {
             Some(space) => {
                 let n = space.borrow().linear_dimension().unwrap();
                 for i in 0..n {
                     space
                         .borrow()
-                        .ordered_field()
+                        .field()
                         .add_mut(self.coordinate_mut(i), other.coordinate(i));
                 }
             }
@@ -187,27 +197,28 @@ impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Cl
 }
 
 // &vector - &vector
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    std::ops::Sub<&Vector<FS, SP>> for &Vector<FS, SP>
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
+    std::ops::Sub<&Vector<FS, FSB, SP>> for &Vector<FS, FSB, SP>
 {
-    type Output = Vector<FS, SP>;
+    type Output = Vector<FS, FSB, SP>;
 
-    fn sub(self, other: &Vector<FS, SP>) -> Self::Output {
+    fn sub(self, other: &Vector<FS, FSB, SP>) -> Self::Output {
         self + &(-other)
     }
 }
 
 // &vector * &scalar
-impl<FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<FS>> + Clone>
-    Vector<FS, SP>
+impl<FS: FieldSignature, FSB: BorrowedStructure<FS>, SP: Borrow<AffineSpace<FS, FSB>> + Clone>
+    Vector<FS, FSB, SP>
 {
-    pub fn scalar_mul(&self, other: &FS::Set) -> Vector<FS, SP> {
+    pub fn scalar_mul(&self, other: &FS::Set) -> Vector<FS, FSB, SP> {
         Vector {
+            _field_borrowed: PhantomData,
             ambient_space: self.ambient_space.clone(),
             coordinates: self
                 .coordinates
                 .iter()
-                .map(|x| self.ambient_space().borrow().ordered_field().mul(x, other))
+                .map(|x| self.ambient_space().borrow().field().mul(x, other))
                 .collect(),
         }
     }

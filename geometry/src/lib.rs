@@ -12,7 +12,8 @@
     clippy::many_single_char_names,
     clippy::wrong_self_convention,
     clippy::from_over_into,
-    clippy::wildcard_imports
+    clippy::wildcard_imports,
+    clippy::type_complexity
 )]
 
 use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature};
