@@ -1,7 +1,7 @@
+use super::*;
 use algebraeon_rings::matrix::Matrix;
 use std::borrow::Borrow;
 use std::hash::Hash;
-use super::*;
 
 #[derive(Clone)]
 pub struct Vector<'f, FS: FieldSignature + 'f> {
