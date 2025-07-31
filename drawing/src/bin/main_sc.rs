@@ -29,16 +29,12 @@ fn main() {
     // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
     // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
-    let space = Rc::new(AffineSpace::new_linear(Rational::structure_ref(), 2));
+    let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
 
     fn random_point(
-        space: Rc<AffineSpace<'static, RationalCanonicalStructure>>,
+        space: &AffineSpace<'static, RationalCanonicalStructure>,
         rad: f64,
-    ) -> Vector<
-        'static,
-        RationalCanonicalStructure,
-        Rc<AffineSpace<'static, RationalCanonicalStructure>>,
-    > {
+    ) -> Vector<'static, RationalCanonicalStructure> {
         let mut rng = rand::thread_rng();
         Vector::construct(space.clone(), |i| {
             Rational::from_f64_approx(rng.gen_range(-rad..rad)).approximate(&Natural::from(3u64))
@@ -62,13 +58,13 @@ fn main() {
     let ch1 = ConvexHull::new(
         space.clone(),
         (0..6)
-            .map(|i| random_point(space.clone(), (i + 1) as f64))
+            .map(|i| random_point(&space, (i + 1) as f64))
             .collect(),
     );
     let ch2 = ConvexHull::new(
         space.clone(),
         (0..6)
-            .map(|i| random_point(space.clone(), (i + 1) as f64))
+            .map(|i| random_point(&space, (i + 1) as f64))
             .collect(),
     );
     // let ch3 = ch1.intersect(&ch2);

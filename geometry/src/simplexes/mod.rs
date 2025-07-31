@@ -3,14 +3,9 @@ use super::*;
 // It is helpful for computational reasons to put an ordering on the vectors
 // so that the points of a simplex can be ordered
 #[allow(clippy::non_canonical_partial_ord_impl)]
-impl<'f, FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone>
-    PartialOrd for Vector<'f, FS, SP>
-{
+impl<'f, FS: OrderedRingSignature + FieldSignature> PartialOrd for Vector<'f, FS> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        let space = common_space(
-            self.ambient_space().borrow(),
-            other.ambient_space().borrow(),
-        )?;
+        let space = common_space(self.ambient_space(), other.ambient_space())?;
         for i in 0..space.linear_dimension().unwrap() {
             match space
                 .field()
@@ -28,9 +23,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<'f, F
         Some(std::cmp::Ordering::Equal)
     }
 }
-impl<'f, FS: OrderedRingSignature + FieldSignature, SP: Borrow<AffineSpace<'f, FS>> + Clone> Ord
-    for Vector<'f, FS, SP>
-{
+impl<'f, FS: OrderedRingSignature + FieldSignature> Ord for Vector<'f, FS> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         if let Some(ans) = self.partial_cmp(other) {
             ans

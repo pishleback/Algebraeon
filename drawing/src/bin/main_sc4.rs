@@ -24,13 +24,13 @@ use simplexes::LabelledSimplexCollection;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
-    // let p1 = Vector::new(&space, vec![Rational::from(0), Rational::from(0)]);
-    // let p2 = Vector::new(&space, vec![Rational::from(1), Rational::from(0)]);
-    // let p3 = Vector::new(&space, vec![Rational::from(0), Rational::from(1)]);
+    // let p1 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(0)]);
+    // let p2 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
+    // let p3 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(1)]);
 
-    // let s1 = Simplex::new(&space, vec![p1.clone()]).unwrap();
-    // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
-    // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
+    // let s1 = Simplex::new(space.clone(), vec![p1.clone()]).unwrap();
+    // let s2 = Simplex::new(space.clone(), vec![p1.clone(), p2.clone()]).unwrap();
+    // let s3 = Simplex::new(space.clone(), vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
     let field = RealAlgebraic::structure_ref();
 
@@ -44,24 +44,24 @@ fn main() {
         .unwrap();
 
     let a = ConvexHull::new(
-        &space,
+        space.clone(),
         vec![
             Vector::new(
-                &space,
+                space.clone(),
                 vec![
                     field.from_int(Integer::from(0)),
                     field.from_int(Integer::from(0)),
                 ],
             ),
             Vector::new(
-                &space,
+                space.clone(),
                 vec![
                     field.from_int(Integer::from(0)),
                     field.from_int(Integer::from(1)),
                 ],
             ),
             Vector::new(
-                &space,
+                space.clone(),
                 vec![sqrt3.clone(), field.from_int(Integer::from(0))],
             ),
         ],
@@ -70,21 +70,21 @@ fn main() {
     .forget_labels();
 
     let b = ConvexHull::new(
-        &space,
+        space.clone(),
         vec![
             Vector::new(
-                &space,
+                space.clone(),
                 vec![
                     field.from_int(Integer::from(0)),
                     field.from_int(Integer::from(0)),
                 ],
             ),
             Vector::new(
-                &space,
+                space.clone(),
                 vec![sqrt2.clone(), field.from_int(Integer::from(1))],
             ),
             Vector::new(
-                &space,
+                space.clone(),
                 vec![sqrt2.clone(), field.from_int(Integer::from(0))],
             ),
         ],

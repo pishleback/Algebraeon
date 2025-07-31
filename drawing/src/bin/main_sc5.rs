@@ -22,24 +22,24 @@ use simplexes::LabelledSimplicialComplex;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
-    // let p1 = Vector::new(&space, vec![Rational::from(0), Rational::from(0)]);
-    // let p2 = Vector::new(&space, vec![Rational::from(1), Rational::from(0)]);
-    // let p3 = Vector::new(&space, vec![Rational::from(0), Rational::from(1)]);
+    // let p1 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(0)]);
+    // let p2 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
+    // let p3 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(1)]);
 
-    // let s1 = Simplex::new(&space, vec![p1.clone()]).unwrap();
-    // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
-    // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
+    // let s1 = Simplex::new(space.clone(), vec![p1.clone()]).unwrap();
+    // let s2 = Simplex::new(space.clone(), vec![p1.clone(), p2.clone()]).unwrap();
+    // let s3 = Simplex::new(space.clone(), vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
     let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
 
     let a = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(
-            &space,
+            space.clone(),
             vec![
-                Vector::new(&space, vec![Rational::from(0), Rational::from(3)]),
-                Vector::new(&space, vec![Rational::from(3), Rational::from(0)]),
-                Vector::new(&space, vec![Rational::from(0), Rational::from(-3)]),
-                Vector::new(&space, vec![Rational::from(-3), Rational::from(0)]),
+                Vector::new(space.clone(), vec![Rational::from(0), Rational::from(3)]),
+                Vector::new(space.clone(), vec![Rational::from(3), Rational::from(0)]),
+                Vector::new(space.clone(), vec![Rational::from(0), Rational::from(-3)]),
+                Vector::new(space.clone(), vec![Rational::from(-3), Rational::from(0)]),
             ],
         )
         .as_simplicial_complex()
@@ -48,12 +48,12 @@ fn main() {
 
     let b = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(
-            &space,
+            space.clone(),
             vec![
-                Vector::new(&space, vec![Rational::from(-2), Rational::from(-2)]),
-                Vector::new(&space, vec![Rational::from(2), Rational::from(-2)]),
-                Vector::new(&space, vec![Rational::from(-2), Rational::from(2)]),
-                Vector::new(&space, vec![Rational::from(2), Rational::from(2)]),
+                Vector::new(space.clone(), vec![Rational::from(-2), Rational::from(-2)]),
+                Vector::new(space.clone(), vec![Rational::from(2), Rational::from(-2)]),
+                Vector::new(space.clone(), vec![Rational::from(-2), Rational::from(2)]),
+                Vector::new(space.clone(), vec![Rational::from(2), Rational::from(2)]),
             ],
         )
         .as_simplicial_complex()
@@ -64,11 +64,11 @@ fn main() {
 
     let c = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(
-            &space,
+            space.clone(),
             vec![
-                Vector::new(&space, vec![Rational::from(-5), Rational::from(0)]),
-                Vector::new(&space, vec![Rational::from(5), Rational::from(1)]),
-                Vector::new(&space, vec![Rational::from(0), Rational::from(2)]),
+                Vector::new(space.clone(), vec![Rational::from(-5), Rational::from(0)]),
+                Vector::new(space.clone(), vec![Rational::from(5), Rational::from(1)]),
+                Vector::new(space.clone(), vec![Rational::from(0), Rational::from(2)]),
             ],
         )
         .as_simplicial_complex()

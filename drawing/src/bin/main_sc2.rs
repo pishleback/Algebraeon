@@ -20,51 +20,51 @@ use simplexes::LabelledSimplexCollection;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
-    // let p1 = Vector::new(&space, vec![Rational::from(0), Rational::from(0)]);
-    // let p2 = Vector::new(&space, vec![Rational::from(1), Rational::from(0)]);
-    // let p3 = Vector::new(&space, vec![Rational::from(0), Rational::from(1)]);
+    // let p1 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(0)]);
+    // let p2 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
+    // let p3 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(1)]);
 
-    // let s1 = Simplex::new(&space, vec![p1.clone()]).unwrap();
-    // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
-    // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
+    // let s1 = Simplex::new(space.clone(), vec![p1.clone()]).unwrap();
+    // let s2 = Simplex::new(space.clone(), vec![p1.clone(), p2.clone()]).unwrap();
+    // let s3 = Simplex::new(space.clone(), vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
     let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
     let mut ch = ConvexHull::new(
-        &space,
+        space.clone(),
         vec![
-            Vector::new(&space, vec![Rational::from(1), Rational::from(1)]),
-            Vector::new(&space, vec![Rational::from(1), Rational::from(1)]),
+            Vector::new(space.clone(), vec![Rational::from(1), Rational::from(1)]),
+            Vector::new(space.clone(), vec![Rational::from(1), Rational::from(1)]),
             Vector::new(
-                &space,
+                space.clone(),
                 vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
             ),
-            Vector::new(&space, vec![Rational::from(-1), Rational::from(0)]),
-            Vector::new(&space, vec![Rational::from(-1), Rational::from(0)]),
+            Vector::new(space.clone(), vec![Rational::from(-1), Rational::from(0)]),
+            Vector::new(space.clone(), vec![Rational::from(-1), Rational::from(0)]),
             Vector::new(
-                &space,
+                space.clone(),
                 vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
             ),
             Vector::new(
-                &space,
+                space.clone(),
                 vec![
                     Rational::from(1) / Rational::from(2),
                     Rational::from(3) / Rational::from(4),
                 ],
             ),
-            Vector::new(&space, vec![Rational::from(2), Rational::from(-1)]),
-            Vector::new(&space, vec![Rational::from(0), Rational::from(-2)]),
-            Vector::new(&space, vec![Rational::from(2), Rational::from(0)]),
-            Vector::new(&space, vec![Rational::from(2), Rational::from(2)]),
+            Vector::new(space.clone(), vec![Rational::from(2), Rational::from(-1)]),
+            Vector::new(space.clone(), vec![Rational::from(0), Rational::from(-2)]),
+            Vector::new(space.clone(), vec![Rational::from(2), Rational::from(0)]),
+            Vector::new(space.clone(), vec![Rational::from(2), Rational::from(2)]),
         ],
     );
 
     let ospx = OrientedSimplex::new_with_positive_point(
-        &space,
+        space.clone(),
         vec![
-            Vector::new(&space, vec![Rational::from(0), Rational::from(4)]),
-            Vector::new(&space, vec![Rational::from(1), Rational::from(-4)]),
+            Vector::new(space.clone(), vec![Rational::from(0), Rational::from(4)]),
+            Vector::new(space.clone(), vec![Rational::from(1), Rational::from(-4)]),
         ],
-        &Vector::new(&space, vec![Rational::from(10), Rational::from(0)]),
+        &Vector::new(space.clone(), vec![Rational::from(10), Rational::from(0)]),
     )
     .unwrap();
 
@@ -100,7 +100,10 @@ fn main() {
                 &Colour::red(),
                 &Colour::red().darken(),
                 0.5,
-                &SimplicialDisjointUnion::new_unchecked(&space, [ospx.simplex().clone()].into()),
+                &SimplicialDisjointUnion::new_unchecked(
+                    space.clone(),
+                    [ospx.simplex().clone()].into(),
+                ),
             )),
     );
     canvas.run();

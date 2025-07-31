@@ -179,19 +179,18 @@ pub fn simplicial_complex_shapes<
         + algebraeon_rings::structure::FieldSignature
         + algebraeon_rings::structure::RealToFloatSignature
         + 'f,
-    SP: std::borrow::Borrow<algebraeon_geometry::AffineSpace<'f, FS>> + Clone,
     T: Eq + Clone,
 >(
     line_colour: &Colour,
     fill_colour: &Colour,
     fill_alpha: f32,
-    sc: &impl algebraeon_geometry::simplexes::LabelledSimplexCollection<'f, FS, SP, T>,
+    sc: &impl algebraeon_geometry::simplexes::LabelledSimplexCollection<'f, FS, T>,
 ) -> impl IntoIterator<Item = Shape>
 where
     FS::Set: std::hash::Hash,
 {
     let sp = sc.ambient_space();
-    let field = sp.borrow().field();
+    let field = sp.field();
 
     [Shape::Push, Shape::SetAlpha(1.0)]
         .into_iter()
