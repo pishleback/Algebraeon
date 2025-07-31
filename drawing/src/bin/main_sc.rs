@@ -54,18 +54,21 @@ fn main() {
     //     right: c,
     // } = spx1.venn(&spx2);
 
+    let n = 12;
+
     let ch1 = ConvexHull::new(
         space.clone(),
-        (0..6)
+        (0..n)
             .map(|i| random_point(&space, (i + 1) as f64))
             .collect(),
     );
     let ch2 = ConvexHull::new(
         space.clone(),
-        (0..6)
+        (0..n)
             .map(|i| random_point(&space, (i + 1) as f64))
             .collect(),
     );
+
     // let ch3 = ch1.intersect(&ch2);
 
     let sc1 = ch1.as_simplicial_complex().into_forget_labels();
@@ -79,6 +82,7 @@ fn main() {
 
     // }
 
+    println!("start");
     let sc4 = LabelledSimplicialDisjointUnion::union_raw(&(&sc1).into(), &(&sc2).into());
     println!("done union");
     let sc5 = sc4.clone().refine_to_partial_simplicial_complex().closure();
