@@ -59,7 +59,7 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
     }
 
     pub fn origin(&self) -> Option<Vector<'f, FS>> {
-        Some(Vector::construct(self.clone(), |_i| self.field().zero()))
+        Some(Vector::construct(self.clone(), |_| self.field().zero()))
     }
 
     pub fn linear_dimension(&self) -> Option<usize> {
@@ -74,7 +74,6 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
         self.affine_dimension
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     pub fn rows_from_vectors(&self, vecs: Vec<&Vector<'f, FS>>) -> Matrix<FS::Set> {
         for vec in &vecs {
             assert_eq!(self, vec.ambient_space());
@@ -98,7 +97,6 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
         MatrixStructure::new(self.field().clone()).rank(self.rows_from_vectors(vecs))
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     pub fn are_points_affine_independent(&self, points: Vec<&Vector<'f, FS>>) -> bool {
         for point in &points {
             assert_eq!(self, point.ambient_space());
@@ -110,54 +108,9 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
                 .map(|i| points[i] - points[0])
                 .collect::<Vec<_>>();
             let mat = self.rows_from_vectors(vecs.iter().collect());
-            // println!("{:?}", mat);
-            // println!("{:?} {:?}", vecs.len(), MatrixStructure::new(self.field()).rank(mat.clone()));
             MatrixStructure::new(self.field().clone()).rank(mat) == vecs.len()
         }
     }
-}
-
-pub fn vectors_from_rows<'f, FS: FieldSignature + 'f>(
-    sp: &AffineSpace<'f, FS>,
-    mat: &Matrix<FS::Set>,
-) -> Vec<Vector<'f, FS>> {
-    assert_eq!(mat.cols(), sp.linear_dimension().unwrap());
-    (0..mat.rows())
-        .map(|r| {
-            Vector::new(
-                sp.clone(),
-                (0..mat.cols())
-                    .map(|c| mat.at(r, c).unwrap().clone())
-                    .collect(),
-            )
-        })
-        .collect()
-}
-
-pub fn vectors_from_cols<'f, FS: FieldSignature + 'f>(
-    sp: &AffineSpace<'f, FS>,
-    mat: &Matrix<FS::Set>,
-) -> Vec<Vector<'f, FS>> {
-    assert_eq!(mat.rows(), sp.linear_dimension().unwrap());
-    vectors_from_rows(sp, &mat.transpose_ref())
-}
-
-pub fn vector_from_row<'f, FS: FieldSignature + 'f>(
-    sp: &AffineSpace<'f, FS>,
-    mat: &Matrix<FS::Set>,
-) -> Vector<'f, FS> {
-    assert_eq!(mat.rows(), 1);
-    assert_eq!(mat.cols(), sp.linear_dimension().unwrap());
-    vectors_from_rows(sp, mat).pop().unwrap()
-}
-
-pub fn vector_from_col<'f, FS: FieldSignature + 'f>(
-    sp: &AffineSpace<'f, FS>,
-    mat: &Matrix<FS::Set>,
-) -> Vector<'f, FS> {
-    assert_eq!(mat.rows(), sp.linear_dimension().unwrap());
-    assert_eq!(mat.cols(), 1);
-    vector_from_row(sp, &mat.transpose_ref())
 }
 
 pub fn common_space<'s, 'f, FS: FieldSignature + 'f>(

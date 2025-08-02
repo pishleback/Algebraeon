@@ -35,7 +35,7 @@ where
     type WithLabel<S: Eq + Clone> = LabelledPartialSimplicialComplex<'f, FS, S>;
     type SubsetType = LabelledPartialSimplicialComplex<'f, FS, T>;
 
-    fn new_labelled(
+    fn try_new_labelled(
         ambient_space: AffineSpace<'f, FS>,
         simplexes: std::collections::HashMap<Simplex<'f, FS>, T>,
     ) -> Result<Self, &'static str> {
@@ -49,7 +49,7 @@ where
         ambient_space: AffineSpace<'f, FS>,
         simplexes: std::collections::HashMap<Simplex<'f, FS>, T>,
     ) -> Self {
-        Self::new_labelled(ambient_space, simplexes).unwrap()
+        Self::try_new_labelled(ambient_space, simplexes).unwrap()
     }
 
     fn ambient_space(&self) -> &AffineSpace<'f, FS> {
@@ -77,7 +77,7 @@ where
     pub fn try_as_simplicial_complex(
         self,
     ) -> Result<LabelledSimplicialComplex<'f, FS, T>, &'static str> {
-        LabelledSimplicialComplex::new_labelled(self.ambient_space, self.simplexes)
+        LabelledSimplicialComplex::try_new_labelled(self.ambient_space, self.simplexes)
     }
 
     pub fn closure(&self) -> LabelledSimplicialComplex<'f, FS, Option<T>> {
@@ -88,7 +88,7 @@ where
                 simplexes.insert(bdry);
             }
         }
-        LabelledSimplicialComplex::new_labelled(
+        LabelledSimplicialComplex::try_new_labelled(
             self.ambient_space().clone(),
             simplexes
                 .into_iter()

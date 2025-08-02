@@ -2,7 +2,8 @@ use super::*;
 use crate::{
     ambient_space::AffineSpace,
     coordinates::Vector,
-    simplex::{OrientedHyperplane, OrientedSimplex, Simplex},
+    oriented_simplex::{OrientedHyperplane, OrientedSimplex},
+    simplex::Simplex,
 };
 use algebraeon_rings::matrix::{Matrix, MatrixStructure};
 
@@ -22,7 +23,6 @@ pub struct EmbeddedAffineSubspace<'f, FS: OrderedRingSignature + FieldSignature>
 }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, FS> {
-    #[allow(clippy::type_complexity)]
     pub fn new_affine_span(
         ambient_space: AffineSpace<'f, FS>,
         points: Vec<Vector<'f, FS>>,
@@ -68,7 +68,6 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
 }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, FS> {
-    #[allow(clippy::needless_pass_by_value, clippy::type_complexity)]
     pub fn new(
         ambient_space: AffineSpace<'f, FS>,
         root: Vector<'f, FS>,
@@ -124,8 +123,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
     //  f : A -> B
     //  g : B -> S
     //  pt is pt in B
-    #[allow(clippy::type_complexity)]
-    pub fn extend_dimension_by_point_unsafe(
+    pub(crate) fn extend_dimension_by_point_unsafe(
         &self,
         pt: Vector<'f, FS>,
     ) -> (
@@ -179,7 +177,6 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
         )
     }
 
-    #[allow(clippy::type_complexity)]
     pub fn get_root_and_span(&self) -> Option<(Vector<'f, FS>, Vec<Vector<'f, FS>>)> {
         let mut points = self.embedding_points.iter();
         let root = points.next()?;
