@@ -874,11 +874,11 @@ mod tests {
         .into_oriented_hyperplane();
 
         let smaller_ch = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Neutral);
-        println!("{:?}", smaller_ch);
+        println!("{smaller_ch:?}");
         let smaller_ch = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Positive);
-        println!("{:?}", smaller_ch);
+        println!("{smaller_ch:?}");
         let smaller_ch = ch.intersect_with_oriented_hyperplane(&ohsp, OrientationSide::Negative);
-        println!("{:?}", smaller_ch);
+        println!("{smaller_ch:?}");
     }
 
     #[test]
@@ -924,7 +924,7 @@ mod tests {
                 ],
             );
             let ch3 = ch1.intersect(&ch2);
-            println!("{:?}", ch3);
+            println!("{ch3:?}");
         }
         //2d intersect 1d
         {
@@ -964,7 +964,7 @@ mod tests {
                 ],
             );
             let ch3 = ch1.intersect(&ch2);
-            println!("{:?}", ch3);
+            println!("{ch3:?}");
         }
         //line misses line
         {

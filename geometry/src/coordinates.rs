@@ -244,8 +244,8 @@ mod tests {
         let mut vecs = vectors_from_rows(&space, &mat);
         let v2 = vecs.pop().unwrap();
         let v1 = vecs.pop().unwrap();
-        println!("v1 = {:?}", v1);
-        println!("v2 = {:?}", v2);
+        println!("v1 = {v1:?}");
+        println!("v2 = {v2:?}");
 
         assert_eq!(
             v1,

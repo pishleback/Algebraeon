@@ -110,9 +110,8 @@ where
     FS::Set: Hash,
 {
     pub(super) fn check(&self) {
-        #[allow(clippy::for_kv_map)]
-        for (spx_a, _label_a) in &self.simplexes {
-            for (spx_b, _label_b) in &self.simplexes {
+        for spx_a in self.simplexes.keys() {
+            for spx_b in self.simplexes.keys() {
                 let bdry_a = spx_a
                     .sub_simplices_not_null()
                     .into_iter()
@@ -130,8 +129,8 @@ where
                     if !(overlap.affine_span_dimension() < spx_a.n()
                         && overlap.affine_span_dimension() < spx_b.n())
                     {
-                        println!("spx_a = {:?}", spx_a);
-                        println!("spx_b = {:?}", spx_b);
+                        println!("spx_a = {spx_a:?}");
+                        println!("spx_b = {spx_b:?}");
                         panic!("simplicial complex simplex overlap");
                     }
                 }
