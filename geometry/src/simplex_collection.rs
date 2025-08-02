@@ -5,6 +5,7 @@ use crate::{
 };
 use std::collections::{HashMap, HashSet};
 
+/// A collection of disjoint simplices labelled by T
 pub trait LabelledSimplexCollection<
     'f,
     FS: OrderedRingSignature + FieldSignature + 'f,
@@ -15,11 +16,11 @@ pub trait LabelledSimplexCollection<
     type WithLabel<S: Eq + Clone>: LabelledSimplexCollection<'f, FS, S>;
     type SubsetType: LabelledSimplexCollection<'f, FS, T>;
 
-    fn new(
+    fn try_new(
         ambient_space: AffineSpace<'f, FS>,
         simplexes: HashSet<Simplex<'f, FS>>,
     ) -> Result<Self::WithLabel<()>, &'static str> {
-        Self::WithLabel::<()>::new_labelled(
+        Self::WithLabel::<()>::try_new_labelled(
             ambient_space,
             simplexes.into_iter().map(|spx| (spx, ())).collect(),
         )
@@ -34,7 +35,7 @@ pub trait LabelledSimplexCollection<
         )
     }
 
-    fn new_labelled(
+    fn try_new_labelled(
         ambient_space: AffineSpace<'f, FS>,
         simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Result<Self, &'static str>;

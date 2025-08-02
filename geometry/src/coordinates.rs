@@ -11,7 +11,6 @@ pub struct Vector<'f, FS: FieldSignature + 'f> {
     coordinates: Vec<FS::Set>, //length equal to ambient_space.dimension()
 }
 
-#[allow(clippy::missing_fields_in_debug)]
 impl<'f, FS: FieldSignature> std::fmt::Debug for Vector<'f, FS> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Vector")
@@ -44,6 +43,10 @@ where
     }
 }
 impl<'f, FS: FieldSignature> Vector<'f, FS> {
+    pub fn ambient_space(&self) -> &AffineSpace<'f, FS> {
+        &self.ambient_space
+    }
+
     pub fn new(ambient_space: AffineSpace<'f, FS>, coordinates: Vec<FS::Set>) -> Self {
         assert_eq!(ambient_space.linear_dimension().unwrap(), coordinates.len());
         Self {
@@ -54,11 +57,10 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
 
     pub fn construct(
         ambient_space: AffineSpace<'f, FS>,
-        mut coordinate_func: impl FnMut(usize) -> FS::Set,
+        coordinate_func: impl FnMut(usize) -> FS::Set,
     ) -> Self {
-        #[allow(clippy::redundant_closure)]
         let coordinates = (0..ambient_space.borrow().linear_dimension().unwrap())
-            .map(|i| coordinate_func(i))
+            .map(coordinate_func)
             .collect();
         Self {
             ambient_space,
@@ -70,18 +72,6 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
         let field = ambient_space.borrow().field().clone();
         Self::construct(ambient_space, |_i| field.zero())
     }
-
-    pub fn ambient_space(&self) -> &AffineSpace<'f, FS> {
-        &self.ambient_space
-    }
-
-    // pub fn ordered_field(&self) -> Rc<FS> {
-    //     self.ambient_space.borrow().ordered_field()
-    // }
-
-    // pub fn dimension(&self) -> usize {
-    //     self.ambient_space.borrow().dimension()
-    // }
 
     pub fn coordinate(&self, i: usize) -> &FS::Set {
         self.coordinates.get(i).unwrap()
@@ -192,44 +182,79 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
 
 // It is helpful for computational reasons to put an ordering on the vectors
 // so that the points of a simplex can be ordered
-#[allow(clippy::non_canonical_partial_ord_impl)]
 impl<'f, FS: OrderedRingSignature + FieldSignature> PartialOrd for Vector<'f, FS> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        let space = common_space(self.ambient_space(), other.ambient_space())?;
+        Some(self.cmp(other))
+    }
+}
+impl<'f, FS: OrderedRingSignature + FieldSignature> Ord for Vector<'f, FS> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
         for i in 0..space.linear_dimension().unwrap() {
             match space
                 .field()
                 .ring_cmp(self.coordinate(i), other.coordinate(i))
             {
                 std::cmp::Ordering::Less => {
-                    return Some(std::cmp::Ordering::Less);
+                    return std::cmp::Ordering::Less;
                 }
                 std::cmp::Ordering::Equal => {}
                 std::cmp::Ordering::Greater => {
-                    return Some(std::cmp::Ordering::Greater);
+                    return std::cmp::Ordering::Greater;
                 }
             }
         }
-        Some(std::cmp::Ordering::Equal)
+        std::cmp::Ordering::Equal
     }
 }
-impl<'f, FS: OrderedRingSignature + FieldSignature> Ord for Vector<'f, FS> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        if let Some(ans) = self.partial_cmp(other) {
-            ans
-        } else {
-            panic!();
-        }
-    }
+
+pub fn vectors_from_rows<'f, FS: FieldSignature + 'f>(
+    sp: &AffineSpace<'f, FS>,
+    mat: &Matrix<FS::Set>,
+) -> Vec<Vector<'f, FS>> {
+    assert_eq!(mat.cols(), sp.linear_dimension().unwrap());
+    (0..mat.rows())
+        .map(|r| {
+            Vector::new(
+                sp.clone(),
+                (0..mat.cols())
+                    .map(|c| mat.at(r, c).unwrap().clone())
+                    .collect(),
+            )
+        })
+        .collect()
+}
+
+pub fn vectors_from_cols<'f, FS: FieldSignature + 'f>(
+    sp: &AffineSpace<'f, FS>,
+    mat: &Matrix<FS::Set>,
+) -> Vec<Vector<'f, FS>> {
+    assert_eq!(mat.rows(), sp.linear_dimension().unwrap());
+    vectors_from_rows(sp, &mat.transpose_ref())
+}
+
+pub fn vector_from_row<'f, FS: FieldSignature + 'f>(
+    sp: &AffineSpace<'f, FS>,
+    mat: &Matrix<FS::Set>,
+) -> Vector<'f, FS> {
+    assert_eq!(mat.rows(), 1);
+    assert_eq!(mat.cols(), sp.linear_dimension().unwrap());
+    vectors_from_rows(sp, mat).pop().unwrap()
+}
+
+pub fn vector_from_col<'f, FS: FieldSignature + 'f>(
+    sp: &AffineSpace<'f, FS>,
+    mat: &Matrix<FS::Set>,
+) -> Vector<'f, FS> {
+    assert_eq!(mat.rows(), sp.linear_dimension().unwrap());
+    assert_eq!(mat.cols(), 1);
+    vector_from_row(sp, &mat.transpose_ref())
 }
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::Rational;
-
-    use crate::ambient_space::vectors_from_rows;
-
     use super::*;
+    use algebraeon_nzq::Rational;
 
     #[test]
     fn vector_from_mat() {

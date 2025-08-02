@@ -3,8 +3,9 @@ use crate::{
     affine_subspace::EmbeddedAffineSubspace,
     ambient_space::AffineSpace,
     coordinates::Vector,
+    oriented_simplex::{OrientationSide, OrientedSimplex},
     partial_simplicial_complex::{LabelledPartialSimplicialComplex, PartialSimplicialComplex},
-    simplex::{OrientationSide, OrientedSimplex, Simplex},
+    simplex::Simplex,
     simplex_collection::LabelledSimplexCollection,
     simplicial_disjoint_union::LabelledSimplicialDisjointUnion,
 };
@@ -60,7 +61,7 @@ where
     type WithLabel<S: Eq + Clone> = LabelledSimplicialComplex<'f, FS, S>;
     type SubsetType = LabelledPartialSimplicialComplex<'f, FS, T>;
 
-    fn new_labelled(
+    fn try_new_labelled(
         ambient_space: AffineSpace<'f, FS>,
         simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Result<Self, &'static str> {
@@ -107,7 +108,7 @@ where
         ambient_space: AffineSpace<'f, FS>,
         simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Self {
-        Self::new_labelled(ambient_space, simplexes).unwrap()
+        Self::try_new_labelled(ambient_space, simplexes).unwrap()
     }
 
     fn ambient_space(&self) -> &AffineSpace<'f, FS> {
@@ -235,7 +236,7 @@ where
             }
         }
 
-        LabelledSimplicialComplex::new_labelled(self.ambient_space().clone(), simplexes).unwrap()
+        LabelledSimplicialComplex::try_new_labelled(self.ambient_space().clone(), simplexes).unwrap()
     }
 
     pub fn interior(&self) -> PartialSimplicialComplex<'f, FS> {
@@ -418,7 +419,7 @@ where
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
                 .collect::<HashSet<_>>();
 
-            let nbd = LabelledSimplicialComplex::<'f, FS, T>::new(
+            let nbd = LabelledSimplicialComplex::<'f, FS, T>::try_new(
                 nbd_affine_subspace.embedded_space().clone(),
                 {
                     let mut simplexes = HashSet::new();

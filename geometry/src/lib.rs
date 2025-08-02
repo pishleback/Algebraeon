@@ -9,6 +9,7 @@ pub mod ambient_space;
 pub mod boolean_operations;
 pub mod convex_hull;
 pub mod coordinates;
+pub mod oriented_simplex;
 pub mod partial_simplicial_complex;
 pub mod simplex;
 pub mod simplex_collection;

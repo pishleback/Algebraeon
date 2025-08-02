@@ -2,10 +2,11 @@ use crate::{
     affine_subspace::EmbeddedAffineSubspace,
     ambient_space::AffineSpace,
     coordinates::Vector,
-    simplex::{
+    oriented_simplex::{
         OrientationSide, OrientedHyperplane, OrientedHyperplaneIntersectLineSegmentResult,
-        OrientedSimplex, Simplex,
+        OrientedSimplex,
     },
+    simplex::Simplex,
     simplex_collection::LabelledSimplexCollection,
     simplicial_complex::{InteriorBoundaryLabel, LabelledSimplicialComplex},
 };
@@ -493,7 +494,7 @@ where
             )
             .collect::<HashSet<_>>();
 
-        LabelledSimplicialComplex::new_labelled(
+        LabelledSimplicialComplex::try_new_labelled(
             self.ambient_space().clone(),
             all_simplexes
                 .into_iter()
@@ -711,6 +712,7 @@ where
                     *self = self
                         .intersect_with_oriented_hyperplane(&hyperplane, OrientationSide::Neutral);
                 }
+                
                 // step2: embed self into other.affine_subspace
                 let embedded_self_in_other_subspace = &ConvexHull::new(
                     other.subspace.embedded_space().clone(),
@@ -728,6 +730,7 @@ where
                 );
                 let mut embedded_self_in_other_subspace =
                     ConvexHullWireframe::from_convex_hull(embedded_self_in_other_subspace);
+
                 // step3 : intersect self with each oriented facet of other
                 for facet in &other.facets {
                     embedded_self_in_other_subspace = embedded_self_in_other_subspace

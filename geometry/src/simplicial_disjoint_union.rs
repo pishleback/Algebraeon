@@ -9,6 +9,7 @@ use crate::{
 };
 use std::collections::{HashMap, HashSet};
 
+/// A collection of disjoint simplices labelled by T with no additional structure
 #[derive(Clone)]
 pub struct LabelledSimplicialDisjointUnion<
     'f,
@@ -66,7 +67,7 @@ where
     type WithLabel<S: Eq + Clone> = LabelledSimplicialDisjointUnion<'f, FS, S>;
     type SubsetType = LabelledSimplicialDisjointUnion<'f, FS, T>;
 
-    fn new_labelled(
+    fn try_new_labelled(
         ambient_space: AffineSpace<'f, FS>,
         simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Result<Self, &'static str> {
