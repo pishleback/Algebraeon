@@ -712,7 +712,7 @@ where
                     *self = self
                         .intersect_with_oriented_hyperplane(&hyperplane, OrientationSide::Neutral);
                 }
-                
+
                 // step2: embed self into other.affine_subspace
                 let embedded_self_in_other_subspace = &ConvexHull::new(
                     other.subspace.embedded_space().clone(),

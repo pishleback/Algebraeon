@@ -236,7 +236,8 @@ where
             }
         }
 
-        LabelledSimplicialComplex::try_new_labelled(self.ambient_space().clone(), simplexes).unwrap()
+        LabelledSimplicialComplex::try_new_labelled(self.ambient_space().clone(), simplexes)
+            .unwrap()
     }
 
     pub fn interior(&self) -> PartialSimplicialComplex<'f, FS> {
