@@ -18,15 +18,6 @@ use algebraeon_sets::structure::*;
 use rand::Rng;
 
 fn main() {
-    // let space = AffineSpace::new_linear(Rational::structure(), 2);
-    // let p1 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(0)]);
-    // let p2 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
-    // let p3 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(1)]);
-
-    // let s1 = Simplex::new(space.clone(), vec![p1.clone()]).unwrap();
-    // let s2 = Simplex::new(space.clone(), vec![p1.clone(), p2.clone()]).unwrap();
-    // let s3 = Simplex::new(space.clone(), vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
-
     let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
 
     let a = LabelledSimplicialDisjointUnion::from(
