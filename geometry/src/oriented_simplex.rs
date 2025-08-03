@@ -22,7 +22,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
         points: Vec<Vector<'f, FS>>,
         ref_point: &Vector<'f, FS>,
     ) -> Result<Self, &'static str> {
-        assert_eq!(ref_point.ambient_space(), &ambient_space);
+        assert_eq!(ref_point.ambient_space(), ambient_space);
         if points.len() != ambient_space.linear_dimension().unwrap() {
             return Err("Oriented simplex must have dimension one less than the ambient space");
         }
@@ -75,7 +75,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
         })
     }
 
-    pub fn ambient_space(&self) -> &AffineSpace<'f, FS> {
+    pub fn ambient_space(&self) -> AffineSpace<'f, FS> {
         self.simplex().ambient_space()
     }
 
@@ -212,7 +212,7 @@ pub enum OrientedHyperplaneIntersectLineSegmentResult<'f, FS: OrderedRingSignatu
 }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedHyperplane<'f, FS> {
-    pub fn ambient_space(&self) -> &AffineSpace<'f, FS> {
+    pub fn ambient_space(&self) -> AffineSpace<'f, FS> {
         self.oriented_simplex.ambient_space()
     }
 
@@ -309,17 +309,13 @@ mod tests {
     #[test]
     fn make_oriented_simplex() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let v1 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
-        let v2 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(1)]);
-        let v3 = Vector::new(space.clone(), vec![Rational::from(2), Rational::from(3)]);
-        let s_pos = OrientedSimplex::new_with_positive_point(
-            space.clone(),
-            vec![v1.clone(), v2.clone()],
-            &v3,
-        )
-        .unwrap();
-        let s_neg =
-            OrientedSimplex::new_with_negative_point(space.clone(), vec![v1, v2], &v3).unwrap();
+        let v1 = Vector::new(space, vec![Rational::from(1), Rational::from(0)]);
+        let v2 = Vector::new(space, vec![Rational::from(0), Rational::from(1)]);
+        let v3 = Vector::new(space, vec![Rational::from(2), Rational::from(3)]);
+        let s_pos =
+            OrientedSimplex::new_with_positive_point(space, vec![v1.clone(), v2.clone()], &v3)
+                .unwrap();
+        let s_neg = OrientedSimplex::new_with_negative_point(space, vec![v1, v2], &v3).unwrap();
 
         assert_ne!(
             s_pos.orientation.unwrap().flip,

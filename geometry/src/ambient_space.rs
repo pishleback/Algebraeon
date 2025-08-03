@@ -17,6 +17,8 @@ pub struct AffineSpace<'f, FS: FieldSignature> {
     ident: usize,
 }
 
+impl<'f, FS: FieldSignature> Copy for AffineSpace<'f, FS> {}
+
 impl<'f, FS: FieldSignature> PartialEq for AffineSpace<'f, FS> {
     fn eq(&self, other: &Self) -> bool {
         #[cfg(debug_assertions)]
@@ -59,7 +61,7 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
     }
 
     pub fn origin(&self) -> Option<Vector<'f, FS>> {
-        Some(Vector::construct(self.clone(), |_| self.field().zero()))
+        Some(Vector::construct(*self, |_| self.field().zero()))
     }
 
     pub fn linear_dimension(&self) -> Option<usize> {
@@ -76,7 +78,7 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
 
     pub fn rows_from_vectors(&self, vecs: Vec<&Vector<'f, FS>>) -> Matrix<FS::Set> {
         for vec in &vecs {
-            assert_eq!(self, vec.ambient_space());
+            assert_eq!(*self, vec.ambient_space());
         }
         Matrix::construct(vecs.len(), self.linear_dimension().unwrap(), |r, c| {
             vecs[r].coordinate(c).clone()
@@ -99,7 +101,7 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
 
     pub fn are_points_affine_independent(&self, points: Vec<&Vector<'f, FS>>) -> bool {
         for point in &points {
-            assert_eq!(self, point.ambient_space());
+            assert_eq!(*self, point.ambient_space());
         }
         if points.is_empty() {
             true
@@ -114,8 +116,8 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
 }
 
 pub fn common_space<'s, 'f, FS: FieldSignature + 'f>(
-    space1: &'s AffineSpace<'f, FS>,
-    space2: &'s AffineSpace<'f, FS>,
-) -> Option<&'s AffineSpace<'f, FS>> {
+    space1: AffineSpace<'f, FS>,
+    space2: AffineSpace<'f, FS>,
+) -> Option<AffineSpace<'f, FS>> {
     if space1 == space2 { Some(space1) } else { None }
 }

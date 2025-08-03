@@ -21,7 +21,7 @@ impl<'f, FS: FieldSignature> std::fmt::Debug for Vector<'f, FS> {
 
 impl<'f, FS: FieldSignature> PartialEq for Vector<'f, FS> {
     fn eq(&self, other: &Self) -> bool {
-        match common_space(&self.ambient_space, &other.ambient_space) {
+        match common_space(self.ambient_space, other.ambient_space) {
             Some(space) => {
                 let n = space.linear_dimension().unwrap();
                 (0..n).all(|i| space.field().equal(self.coordinate(i), other.coordinate(i)))
@@ -43,8 +43,8 @@ where
     }
 }
 impl<'f, FS: FieldSignature> Vector<'f, FS> {
-    pub fn ambient_space(&self) -> &AffineSpace<'f, FS> {
-        &self.ambient_space
+    pub fn ambient_space(&self) -> AffineSpace<'f, FS> {
+        self.ambient_space
     }
 
     pub fn new(ambient_space: AffineSpace<'f, FS>, coordinates: Vec<FS::Set>) -> Self {
@@ -108,7 +108,7 @@ impl<'f, FS: FieldSignature> std::ops::Neg for &Vector<'f, FS> {
 
     fn neg(self) -> Self::Output {
         Vector {
-            ambient_space: self.ambient_space.clone(),
+            ambient_space: self.ambient_space,
             coordinates: self
                 .coordinates
                 .iter()
@@ -123,14 +123,14 @@ impl<'f, FS: FieldSignature> std::ops::Add<&Vector<'f, FS>> for &Vector<'f, FS> 
     type Output = Vector<'f, FS>;
 
     fn add(self, other: &Vector<'f, FS>) -> Self::Output {
-        match common_space(&self.ambient_space, &other.ambient_space) {
+        match common_space(self.ambient_space, other.ambient_space) {
             Some(space) => {
                 let n = space.linear_dimension().unwrap();
                 let coordinates = (0..n)
                     .map(|i| space.field().add(self.coordinate(i), other.coordinate(i)))
                     .collect();
                 Vector {
-                    ambient_space: space.clone(),
+                    ambient_space: space,
                     coordinates,
                 }
             }
@@ -142,9 +142,8 @@ impl<'f, FS: FieldSignature> std::ops::Add<&Vector<'f, FS>> for &Vector<'f, FS> 
 // mut vector += &vector
 impl<'f, FS: FieldSignature> std::ops::AddAssign<&Vector<'f, FS>> for Vector<'f, FS> {
     fn add_assign(&mut self, other: &Vector<'f, FS>) {
-        match common_space(&self.ambient_space, &other.ambient_space) {
+        match common_space(self.ambient_space, other.ambient_space) {
             Some(space) => {
-                let space = space.clone();
                 let n = space.borrow().linear_dimension().unwrap();
                 for i in 0..n {
                     space
@@ -170,7 +169,7 @@ impl<'f, FS: FieldSignature> std::ops::Sub<&Vector<'f, FS>> for &Vector<'f, FS> 
 impl<'f, FS: FieldSignature> Vector<'f, FS> {
     pub fn scalar_mul(&self, other: &FS::Set) -> Vector<'f, FS> {
         Vector {
-            ambient_space: self.ambient_space.clone(),
+            ambient_space: self.ambient_space,
             coordinates: self
                 .coordinates
                 .iter()
@@ -209,14 +208,14 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Ord for Vector<'f, FS> {
 }
 
 pub fn vectors_from_rows<'f, FS: FieldSignature + 'f>(
-    sp: &AffineSpace<'f, FS>,
+    sp: AffineSpace<'f, FS>,
     mat: &Matrix<FS::Set>,
 ) -> Vec<Vector<'f, FS>> {
     assert_eq!(mat.cols(), sp.linear_dimension().unwrap());
     (0..mat.rows())
         .map(|r| {
             Vector::new(
-                sp.clone(),
+                sp,
                 (0..mat.cols())
                     .map(|c| mat.at(r, c).unwrap().clone())
                     .collect(),
@@ -226,7 +225,7 @@ pub fn vectors_from_rows<'f, FS: FieldSignature + 'f>(
 }
 
 pub fn vectors_from_cols<'f, FS: FieldSignature + 'f>(
-    sp: &AffineSpace<'f, FS>,
+    sp: AffineSpace<'f, FS>,
     mat: &Matrix<FS::Set>,
 ) -> Vec<Vector<'f, FS>> {
     assert_eq!(mat.rows(), sp.linear_dimension().unwrap());
@@ -234,7 +233,7 @@ pub fn vectors_from_cols<'f, FS: FieldSignature + 'f>(
 }
 
 pub fn vector_from_row<'f, FS: FieldSignature + 'f>(
-    sp: &AffineSpace<'f, FS>,
+    sp: AffineSpace<'f, FS>,
     mat: &Matrix<FS::Set>,
 ) -> Vector<'f, FS> {
     assert_eq!(mat.rows(), 1);
@@ -243,7 +242,7 @@ pub fn vector_from_row<'f, FS: FieldSignature + 'f>(
 }
 
 pub fn vector_from_col<'f, FS: FieldSignature + 'f>(
-    sp: &AffineSpace<'f, FS>,
+    sp: AffineSpace<'f, FS>,
     mat: &Matrix<FS::Set>,
 ) -> Vector<'f, FS> {
     assert_eq!(mat.rows(), sp.linear_dimension().unwrap());
@@ -266,7 +265,7 @@ mod tests {
 
         mat.pprint();
 
-        let mut vecs = vectors_from_rows(&space, &mat);
+        let mut vecs = vectors_from_rows(space, &mat);
         let v2 = vecs.pop().unwrap();
         let v1 = vecs.pop().unwrap();
         println!("v1 = {v1:?}");
@@ -274,37 +273,34 @@ mod tests {
 
         assert_eq!(
             v1,
-            Vector::new(space.clone(), vec![Rational::from(1), Rational::from(2)])
+            Vector::new(space, vec![Rational::from(1), Rational::from(2)])
         );
         assert_eq!(
             v2,
-            Vector::new(space.clone(), vec![Rational::from(3), Rational::from(4)])
+            Vector::new(space, vec![Rational::from(3), Rational::from(4)])
         );
     }
 
     #[test]
     fn det() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let v1 = Vector::new(space.clone(), vec![Rational::from(3), Rational::from(2)]);
-        let v2 = Vector::new(space.clone(), vec![Rational::from(5), Rational::from(7)]);
+        let v1 = Vector::new(space, vec![Rational::from(3), Rational::from(2)]);
+        let v2 = Vector::new(space, vec![Rational::from(5), Rational::from(7)]);
         assert_eq!(space.determinant(vec![&v1, &v2]), Rational::from(11));
     }
 
     #[test]
     fn test_abgroup() {
         let space_ab = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let a = Vector::new(space_ab.clone(), vec![Rational::from(1), Rational::from(2)]);
-        let b = Vector::new(space_ab.clone(), vec![Rational::from(6), Rational::from(3)]);
-        let c = Vector::new(space_ab.clone(), vec![Rational::from(7), Rational::from(5)]);
+        let a = Vector::new(space_ab, vec![Rational::from(1), Rational::from(2)]);
+        let b = Vector::new(space_ab, vec![Rational::from(6), Rational::from(3)]);
+        let c = Vector::new(space_ab, vec![Rational::from(7), Rational::from(5)]);
 
         let space_xy = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let x = Vector::new(space_xy.clone(), vec![Rational::from(1), Rational::from(2)]);
-        let y = Vector::new(space_xy.clone(), vec![Rational::from(6), Rational::from(3)]);
-        let z = Vector::new(space_xy.clone(), vec![Rational::from(7), Rational::from(5)]);
-        let w = Vector::new(
-            space_xy.clone(),
-            vec![Rational::from(-2), Rational::from(-4)],
-        );
+        let x = Vector::new(space_xy, vec![Rational::from(1), Rational::from(2)]);
+        let y = Vector::new(space_xy, vec![Rational::from(6), Rational::from(3)]);
+        let z = Vector::new(space_xy, vec![Rational::from(7), Rational::from(5)]);
+        let w = Vector::new(space_xy, vec![Rational::from(-2), Rational::from(-4)]);
 
         assert_eq!(c, &a + &b);
         assert_eq!(z, &x + &y);

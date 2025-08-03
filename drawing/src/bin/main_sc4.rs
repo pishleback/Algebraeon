@@ -1,7 +1,5 @@
 #![allow(dead_code, warnings, unused)]
 
-use std::rc::Rc;
-
 use algebraeon_drawing::canvas::Canvas;
 use algebraeon_drawing::canvas2d::Canvas2D;
 use algebraeon_drawing::canvas2d::MouseWheelZoomCamera;
@@ -43,49 +41,40 @@ fn main() {
         .unwrap();
 
     let a = ConvexHull::new(
-        space.clone(),
+        space,
         vec![
             Vector::new(
-                space.clone(),
+                space,
                 vec![
                     field.from_int(Integer::from(0)),
                     field.from_int(Integer::from(0)),
                 ],
             ),
             Vector::new(
-                space.clone(),
+                space,
                 vec![
                     field.from_int(Integer::from(0)),
                     field.from_int(Integer::from(1)),
                 ],
             ),
-            Vector::new(
-                space.clone(),
-                vec![sqrt3.clone(), field.from_int(Integer::from(0))],
-            ),
+            Vector::new(space, vec![sqrt3.clone(), field.from_int(Integer::from(0))]),
         ],
     )
     .as_simplicial_complex()
     .forget_labels();
 
     let b = ConvexHull::new(
-        space.clone(),
+        space,
         vec![
             Vector::new(
-                space.clone(),
+                space,
                 vec![
                     field.from_int(Integer::from(0)),
                     field.from_int(Integer::from(0)),
                 ],
             ),
-            Vector::new(
-                space.clone(),
-                vec![sqrt2.clone(), field.from_int(Integer::from(1))],
-            ),
-            Vector::new(
-                space.clone(),
-                vec![sqrt2.clone(), field.from_int(Integer::from(0))],
-            ),
+            Vector::new(space, vec![sqrt2.clone(), field.from_int(Integer::from(1))]),
+            Vector::new(space, vec![sqrt2.clone(), field.from_int(Integer::from(0))]),
         ],
     )
     .as_simplicial_complex()

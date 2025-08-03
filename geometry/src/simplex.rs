@@ -45,7 +45,7 @@ where
         mut points: Vec<Vector<'f, FS>>,
     ) -> Result<Self, &'static str> {
         for point in &points {
-            assert_eq!(ambient_space.borrow(), point.ambient_space());
+            assert_eq!(ambient_space, point.ambient_space());
         }
         points.sort_unstable();
         if ambient_space
@@ -61,8 +61,8 @@ where
         }
     }
 
-    pub fn ambient_space(&self) -> &AffineSpace<'f, FS> {
-        &self.ambient_space
+    pub fn ambient_space(&self) -> AffineSpace<'f, FS> {
+        self.ambient_space
     }
 
     pub fn n(&self) -> usize {
@@ -90,7 +90,7 @@ where
             let mut parts = vec![];
             for subset in (0..self.points.len()).combinations(skel_n) {
                 let part = Self::new(
-                    self.ambient_space.clone(),
+                    self.ambient_space,
                     subset.into_iter().map(|i| self.points[i].clone()).collect(),
                 )
                 .unwrap();
@@ -124,7 +124,7 @@ where
 
     pub fn facet(&self, k: usize) -> Self {
         assert!(k <= self.points.len());
-        Self::new(self.ambient_space.clone(), {
+        Self::new(self.ambient_space, {
             let mut facet_points = self.points.clone();
             facet_points.remove(k);
             facet_points
@@ -137,7 +137,7 @@ where
             .clone()
             .into_iter()
             .powerset()
-            .map(|sub_points| Self::new(self.ambient_space.clone(), sub_points).unwrap())
+            .map(|sub_points| Self::new(self.ambient_space, sub_points).unwrap())
             .collect()
     }
 
@@ -158,7 +158,7 @@ where
     #[allow(clippy::needless_pass_by_value)]
     pub fn sub_simplex(&self, pts: Vec<usize>) -> Self {
         Self::new(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             pts.iter().map(|idx| self.points[*idx].clone()).collect(),
         )
         .unwrap()
@@ -169,12 +169,8 @@ where
         assert!(k <= self.points.len());
         let mut facet_points = self.points.clone();
         let other_pt = facet_points.remove(k);
-        OrientedSimplex::new_with_positive_point(
-            self.ambient_space.clone(),
-            facet_points,
-            &other_pt,
-        )
-        .unwrap()
+        OrientedSimplex::new_with_positive_point(self.ambient_space, facet_points, &other_pt)
+            .unwrap()
     }
 
     pub fn oriented_facets(&self) -> Vec<OrientedSimplex<'f, FS>> {
@@ -191,27 +187,27 @@ mod tests {
     #[test]
     fn make_simplex() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let v1 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(1)]);
-        let v2 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
-        let v3 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(1)]);
-        let s = Simplex::new(space.clone(), vec![v1, v2, v3]);
+        let v1 = Vector::new(space, vec![Rational::from(1), Rational::from(1)]);
+        let v2 = Vector::new(space, vec![Rational::from(1), Rational::from(0)]);
+        let v3 = Vector::new(space, vec![Rational::from(0), Rational::from(1)]);
+        let s = Simplex::new(space, vec![v1, v2, v3]);
         assert!(s.is_ok());
 
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let v1 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(0)]);
-        let v2 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
-        let v3 = Vector::new(space.clone(), vec![Rational::from(2), Rational::from(0)]);
-        let s = Simplex::new(space.clone(), vec![v1, v2, v3]);
+        let v1 = Vector::new(space, vec![Rational::from(0), Rational::from(0)]);
+        let v2 = Vector::new(space, vec![Rational::from(1), Rational::from(0)]);
+        let v3 = Vector::new(space, vec![Rational::from(2), Rational::from(0)]);
+        let s = Simplex::new(space, vec![v1, v2, v3]);
         assert!(s.is_err());
     }
 
     #[test]
     fn simplex_skeleton() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let v1 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(1)]);
-        let v2 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
-        let v3 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(1)]);
-        let s = Simplex::new(space.clone(), vec![v1, v2, v3]).unwrap();
+        let v1 = Vector::new(space, vec![Rational::from(1), Rational::from(1)]);
+        let v2 = Vector::new(space, vec![Rational::from(1), Rational::from(0)]);
+        let v3 = Vector::new(space, vec![Rational::from(0), Rational::from(1)]);
+        let s = Simplex::new(space, vec![v1, v2, v3]).unwrap();
 
         assert_eq!(s.skeleton(-2).len(), 0);
         assert_eq!(s.skeleton(-1).len(), 0);

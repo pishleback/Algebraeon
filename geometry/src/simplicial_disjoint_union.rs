@@ -31,7 +31,7 @@ where
 {
     fn from(sc: &LabelledSimplicialComplex<'f, FS, T>) -> Self {
         Self {
-            ambient_space: sc.ambient_space().clone(),
+            ambient_space: sc.ambient_space(),
             simplexes: sc
                 .labelled_simplexes()
                 .into_iter()
@@ -49,7 +49,7 @@ where
 {
     fn from(sc: &LabelledPartialSimplicialComplex<'f, FS, T>) -> Self {
         Self {
-            ambient_space: sc.ambient_space().clone(),
+            ambient_space: sc.ambient_space(),
             simplexes: sc
                 .labelled_simplexes()
                 .into_iter()
@@ -88,8 +88,8 @@ where
         }
     }
 
-    fn ambient_space(&self) -> &AffineSpace<'f, FS> {
-        &self.ambient_space
+    fn ambient_space(&self) -> AffineSpace<'f, FS> {
+        self.ambient_space
     }
 
     fn labelled_simplexes(&self) -> HashMap<&Simplex<'f, FS>, &T> {
@@ -142,7 +142,7 @@ where
     pub fn refine_to_partial_simplicial_complex(
         mut self,
     ) -> LabelledPartialSimplicialComplex<'f, FS, T> {
-        let ambient_space = self.ambient_space().clone();
+        let ambient_space = self.ambient_space();
 
         //maintain a list of pairs of simplexes which may intersect on their boundary
         let mut pairs_todo: HashMap<Simplex<'f, FS>, HashSet<Simplex<'f, FS>>> = HashMap::new();
@@ -185,7 +185,7 @@ where
                     #[allow(clippy::collapsible_if)]
                     if !overlap.is_empty() {
                         if match Simplex::new(
-                            ambient_space.clone(),
+                            ambient_space,
                             overlap.defining_points().into_iter().collect(),
                         ) {
                             Ok(overlap_spx) => {
@@ -292,9 +292,6 @@ where
             }
         }
 
-        LabelledPartialSimplicialComplex::new_labelled_unchecked(
-            ambient_space.clone(),
-            self.simplexes,
-        )
+        LabelledPartialSimplicialComplex::new_labelled_unchecked(ambient_space, self.simplexes)
     }
 }

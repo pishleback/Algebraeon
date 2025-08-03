@@ -66,7 +66,7 @@ where
         simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Result<Self, &'static str> {
         for simplex in simplexes.keys() {
-            assert_eq!(simplex.ambient_space(), ambient_space.borrow());
+            assert_eq!(simplex.ambient_space(), ambient_space);
             if simplex.points().is_empty() {
                 return Err("Simplicial complex musn't contain the null simplex");
             }
@@ -111,8 +111,8 @@ where
         Self::try_new_labelled(ambient_space, simplexes).unwrap()
     }
 
-    fn ambient_space(&self) -> &AffineSpace<'f, FS> {
-        &self.ambient_space
+    fn ambient_space(&self) -> AffineSpace<'f, FS> {
+        self.ambient_space
     }
 
     fn labelled_simplexes(&self) -> HashMap<&Simplex<'f, FS>, &T> {
@@ -165,7 +165,7 @@ where
 
         //check that every pair of distinct simplexes intersect in the empty set
         LabelledSimplicialDisjointUnion::new_labelled_unchecked(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             self.simplexes
                 .iter()
                 .map(|(spx, info)| (spx.clone(), info.label.clone()))
@@ -236,8 +236,7 @@ where
             }
         }
 
-        LabelledSimplicialComplex::try_new_labelled(self.ambient_space().clone(), simplexes)
-            .unwrap()
+        LabelledSimplicialComplex::try_new_labelled(self.ambient_space(), simplexes).unwrap()
     }
 
     pub fn interior(&self) -> PartialSimplicialComplex<'f, FS> {
@@ -273,7 +272,7 @@ where
     FS::Set: Hash,
 {
     for spx in &boundary_facets {
-        debug_assert_eq!(spx.ambient_space(), space.borrow());
+        debug_assert_eq!(spx.ambient_space(), space);
     }
 
     let mut boundary_points: HashMap<Vector<'f, FS>, Vec<usize>> = HashMap::new();
@@ -316,7 +315,7 @@ where
                 .map(|spx| {
                     let mut points = spx.points().clone();
                     points.push(boundary_point.clone());
-                    Simplex::new(spx.ambient_space().clone(), points).unwrap()
+                    Simplex::new(spx.ambient_space(), points).unwrap()
                 })
                 .collect();
 
@@ -355,7 +354,7 @@ where
                 pt
             };
 
-            let pt_spx = Simplex::new(self.ambient_space().clone(), vec![pt.clone()]).unwrap();
+            let pt_spx = Simplex::new(self.ambient_space(), vec![pt.clone()]).unwrap();
             let (star, link) = {
                 let mut star = self.simplexes.get(&pt_spx).unwrap().inv_bdry.clone();
                 star.insert(pt_spx.clone());
@@ -397,7 +396,7 @@ where
             };
 
             let nbd_affine_subspace = EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
-                self.ambient_space().clone(),
+                self.ambient_space(),
                 nbd_points.iter().collect(),
             );
 
@@ -406,11 +405,8 @@ where
                 .map(|pt| nbd_affine_subspace.unembed_point(pt).unwrap())
                 .collect::<Vec<_>>();
             let pt_img = nbd_affine_subspace.unembed_point(&pt).unwrap();
-            let pt_img_spx = Simplex::new(
-                nbd_affine_subspace.embedded_space().clone(),
-                vec![pt_img.clone()],
-            )
-            .unwrap();
+            let pt_img_spx =
+                Simplex::new(nbd_affine_subspace.embedded_space(), vec![pt_img.clone()]).unwrap();
             let star_img = star
                 .iter()
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
@@ -421,7 +417,7 @@ where
                 .collect::<HashSet<_>>();
 
             let nbd = LabelledSimplicialComplex::<'f, FS, T>::try_new(
-                nbd_affine_subspace.embedded_space().clone(),
+                nbd_affine_subspace.embedded_space(),
                 {
                     let mut simplexes = HashSet::new();
                     simplexes.extend(star_img.clone());
@@ -487,7 +483,7 @@ where
                     }
                     let nbd_boundary_affine_subspace =
                         EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
-                            nbd_affine_subspace.embedded_space().clone(),
+                            nbd_affine_subspace.embedded_space(),
                             boundary_img_points.into_iter().collect(),
                         );
                     debug_assert!(
@@ -513,7 +509,7 @@ where
                             ref_point_img.unwrap()
                         };
                         let oriented_hyperplane = OrientedSimplex::new_with_negative_point(
-                            nbd_boundary_affine_subspace.ambient_space().clone(),
+                            nbd_boundary_affine_subspace.ambient_space(),
                             nbd_boundary_affine_subspace.get_embedding_points().clone(),
                             &ref_point_img,
                         )
@@ -544,7 +540,7 @@ where
                             .iter()
                             .map(|spx| {
                                 OrientedSimplex::new_with_negative_point(
-                                    nbd_boundary_affine_subspace.embedded_space().clone(),
+                                    nbd_boundary_affine_subspace.embedded_space(),
                                     nbd_boundary_affine_subspace
                                         .unembed_simplex(spx)
                                         .unwrap()
@@ -557,7 +553,7 @@ where
                             .collect::<Vec<_>>();
 
                         if let Some(new_boundary_img_img) = simplify_in_region(
-                            nbd_boundary_affine_subspace.embedded_space().clone(),
+                            nbd_boundary_affine_subspace.embedded_space(),
                             rim_img_img,
                         ) {
                             let new_boundary_img = new_boundary_img_img
@@ -573,7 +569,7 @@ where
                                     {
                                         sphere_img.push(
                                             OrientedSimplex::new_with_negative_point(
-                                                nbd_affine_subspace.embedded_space().clone(),
+                                                nbd_affine_subspace.embedded_space(),
                                                 spx.points().clone(),
                                                 &ref_point_img,
                                             )
@@ -587,7 +583,7 @@ where
                                     {
                                         sphere_img.push(
                                             OrientedSimplex::new_with_negative_point(
-                                                nbd_affine_subspace.embedded_space().clone(),
+                                                nbd_affine_subspace.embedded_space(),
                                                 spx.points().clone(),
                                                 &pt_img,
                                             )
@@ -598,10 +594,9 @@ where
                                 sphere_img
                             };
 
-                            if let Some(new_star_img) = simplify_in_region(
-                                nbd_affine_subspace.embedded_space().clone(),
-                                sphere_img,
-                            ) {
+                            if let Some(new_star_img) =
+                                simplify_in_region(nbd_affine_subspace.embedded_space(), sphere_img)
+                            {
                                 self.remove_simplexes_unchecked(star.into_iter().collect());
                                 self.add_simplexes_unchecked(
                                     new_boundary_img
@@ -663,7 +658,7 @@ where
                         })
                         .map(|spx| {
                             OrientedSimplex::new_with_negative_point(
-                                nbd_affine_subspace.embedded_space().clone(),
+                                nbd_affine_subspace.embedded_space(),
                                 spx.points().clone(),
                                 &pt_img,
                             )
@@ -672,7 +667,7 @@ where
                         .collect();
 
                     if let Some(new_star_img) =
-                        simplify_in_region(nbd_affine_subspace.embedded_space().clone(), boundary)
+                        simplify_in_region(nbd_affine_subspace.embedded_space(), boundary)
                     {
                         self.remove_simplexes_unchecked(star.into_iter().collect());
                         self.add_simplexes_unchecked(
@@ -698,7 +693,7 @@ where
     // pub fn frick(self) -> LabelledSimplicialComplex<FS, AffineSpace<'f, FS>, usize> {
     //     let mut count = 0;
     //     LabelledSimplicialComplex::new_labelled(
-    //         self.ambient_space().clone(),
+    //         self.ambient_space(),
     //         self.simplexes
     //             .iter()
     //             .map(|(spx, _)| {

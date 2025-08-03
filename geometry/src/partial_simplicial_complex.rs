@@ -52,8 +52,8 @@ where
         Self::try_new_labelled(ambient_space, simplexes).unwrap()
     }
 
-    fn ambient_space(&self) -> &AffineSpace<'f, FS> {
-        &self.ambient_space
+    fn ambient_space(&self) -> AffineSpace<'f, FS> {
+        self.ambient_space
     }
 
     fn labelled_simplexes(&self) -> std::collections::HashMap<&Simplex<'f, FS>, &T> {
@@ -89,7 +89,7 @@ where
             }
         }
         LabelledSimplicialComplex::try_new_labelled(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             simplexes
                 .into_iter()
                 .map(|spx| {

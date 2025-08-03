@@ -31,22 +31,22 @@ fn main() {
     let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
 
     fn random_point(
-        space: &AffineSpace<'static, RationalCanonicalStructure>,
+        space: AffineSpace<'static, RationalCanonicalStructure>,
         rad: f64,
     ) -> Vector<'static, RationalCanonicalStructure> {
         let mut rng = rand::thread_rng();
-        Vector::construct(space.clone(), |i| {
+        Vector::construct(space, |i| {
             Rational::from_f64_approx(rng.gen_range(-rad..rad)).approximate(&Natural::from(3u64))
         })
     }
 
-    // let pt1 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(0)]);
-    // let pt2 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(-1)]);
-    // let pt3 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(1)]);
-    // let pt4 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
+    // let pt1 = Vector::new( space, vec![Rational::from(0), Rational::from(0)]);
+    // let pt2 = Vector::new( space, vec![Rational::from(0), Rational::from(-1)]);
+    // let pt3 = Vector::new( space, vec![Rational::from(0), Rational::from(1)]);
+    // let pt4 = Vector::new( space, vec![Rational::from(1), Rational::from(0)]);
 
-    // let spx1 = Simplex::new(space.clone(), vec![pt1]).unwrap();
-    // let spx2 = Simplex::new(space.clone(), vec![pt2, pt3, pt4]).unwrap();
+    // let spx1 = Simplex::new( space, vec![pt1]).unwrap();
+    // let spx2 = Simplex::new( space, vec![pt2, pt3, pt4]).unwrap();
 
     // let VennResult {
     //     left: a,
@@ -57,15 +57,15 @@ fn main() {
     let n = 12;
 
     let ch1 = ConvexHull::new(
-        space.clone(),
+        space,
         (0..n)
-            .map(|i| random_point(&space, (i + 1) as f64))
+            .map(|i| random_point(space, (i + 1) as f64))
             .collect(),
     );
     let ch2 = ConvexHull::new(
-        space.clone(),
+        space,
         (0..n)
-            .map(|i| random_point(&space, (i + 1) as f64))
+            .map(|i| random_point(space, (i + 1) as f64))
             .collect(),
     );
 

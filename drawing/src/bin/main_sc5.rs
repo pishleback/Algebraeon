@@ -31,12 +31,12 @@ fn main() {
 
     let a = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(
-            space.clone(),
+            space,
             vec![
-                Vector::new(space.clone(), vec![Rational::from(0), Rational::from(3)]),
-                Vector::new(space.clone(), vec![Rational::from(3), Rational::from(0)]),
-                Vector::new(space.clone(), vec![Rational::from(0), Rational::from(-3)]),
-                Vector::new(space.clone(), vec![Rational::from(-3), Rational::from(0)]),
+                Vector::new(space, vec![Rational::from(0), Rational::from(3)]),
+                Vector::new(space, vec![Rational::from(3), Rational::from(0)]),
+                Vector::new(space, vec![Rational::from(0), Rational::from(-3)]),
+                Vector::new(space, vec![Rational::from(-3), Rational::from(0)]),
             ],
         )
         .as_simplicial_complex()
@@ -45,12 +45,12 @@ fn main() {
 
     let b = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(
-            space.clone(),
+            space,
             vec![
-                Vector::new(space.clone(), vec![Rational::from(-2), Rational::from(-2)]),
-                Vector::new(space.clone(), vec![Rational::from(2), Rational::from(-2)]),
-                Vector::new(space.clone(), vec![Rational::from(-2), Rational::from(2)]),
-                Vector::new(space.clone(), vec![Rational::from(2), Rational::from(2)]),
+                Vector::new(space, vec![Rational::from(-2), Rational::from(-2)]),
+                Vector::new(space, vec![Rational::from(2), Rational::from(-2)]),
+                Vector::new(space, vec![Rational::from(-2), Rational::from(2)]),
+                Vector::new(space, vec![Rational::from(2), Rational::from(2)]),
             ],
         )
         .as_simplicial_complex()
@@ -61,11 +61,11 @@ fn main() {
 
     let c = LabelledSimplicialDisjointUnion::from(
         &ConvexHull::new(
-            space.clone(),
+            space,
             vec![
-                Vector::new(space.clone(), vec![Rational::from(-5), Rational::from(0)]),
-                Vector::new(space.clone(), vec![Rational::from(5), Rational::from(1)]),
-                Vector::new(space.clone(), vec![Rational::from(0), Rational::from(2)]),
+                Vector::new(space, vec![Rational::from(-5), Rational::from(0)]),
+                Vector::new(space, vec![Rational::from(5), Rational::from(1)]),
+                Vector::new(space, vec![Rational::from(0), Rational::from(2)]),
             ],
         )
         .as_simplicial_complex()

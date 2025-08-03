@@ -44,7 +44,7 @@ pub trait LabelledSimplexCollection<
         simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Self;
 
-    fn ambient_space(&self) -> &AffineSpace<'f, FS>;
+    fn ambient_space(&self) -> AffineSpace<'f, FS>;
 
     fn simplexes<'a>(&'a self) -> HashSet<&'a Simplex<'f, FS>>
     where
@@ -75,7 +75,7 @@ pub trait LabelledSimplexCollection<
     }
     fn subset_by_filter(&self, f: impl Fn(&T) -> bool) -> Self::SubsetType {
         Self::SubsetType::new_labelled_unchecked(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             self.labelled_simplexes()
                 .into_iter()
                 .filter(|(_spx, label)| f(label))
@@ -85,7 +85,7 @@ pub trait LabelledSimplexCollection<
     }
     fn into_subset_by_filter(self, f: impl Fn(&T) -> bool) -> Self::SubsetType {
         Self::SubsetType::new_labelled_unchecked(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             self.into_labelled_simplexes()
                 .into_iter()
                 .filter(|(_spx, label)| f(label))
@@ -97,7 +97,7 @@ pub trait LabelledSimplexCollection<
 
     fn apply_label_function<S: Eq + Clone>(&self, f: impl Fn(&T) -> S) -> Self::WithLabel<S> {
         LabelledSimplexCollection::new_labelled_unchecked(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             self.labelled_simplexes()
                 .into_iter()
                 .map(|(spx, label)| (spx.clone(), f(label)))
@@ -106,7 +106,7 @@ pub trait LabelledSimplexCollection<
     }
     fn into_apply_label_function<S: Eq + Clone>(self, f: impl Fn(T) -> S) -> Self::WithLabel<S> {
         LabelledSimplexCollection::new_labelled_unchecked(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             self.into_labelled_simplexes()
                 .into_iter()
                 .map(|(spx, label)| (spx, f(label)))

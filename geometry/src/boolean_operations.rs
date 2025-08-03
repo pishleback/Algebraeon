@@ -49,7 +49,7 @@ where
 
         let all_parts = self_parts.union(&other_parts);
         LabelledPartialSimplicialComplex::<'f, FS, VennLabel>::new_labelled_unchecked(
-            ambient_space.clone(),
+            ambient_space,
             all_parts
                 .into_iter()
                 .map(|spx| {
@@ -79,7 +79,7 @@ where
     ) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
 
-        Self::new_labelled_unchecked(ambient_space.clone(), {
+        Self::new_labelled_unchecked(ambient_space, {
             let mut simplexes = HashMap::new();
             for (self_spx, self_spx_label) in self.labelled_simplexes() {
                 let mut self_leftover = HashSet::from([self_spx.clone()]);
@@ -106,7 +106,7 @@ where
         other: &LabelledSimplicialDisjointUnion<'f, FS, S>,
     ) -> LabelledSimplicialDisjointUnion<'f, FS, (T, S)> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
-        LabelledSimplicialDisjointUnion::new_labelled_unchecked(ambient_space.clone(), {
+        LabelledSimplicialDisjointUnion::new_labelled_unchecked(ambient_space, {
             let mut simplexes = HashMap::new();
             for (self_spx, self_spx_label) in self.labelled_simplexes() {
                 for (other_spx, other_spx_label) in other.labelled_simplexes() {
@@ -136,7 +136,7 @@ where
         for spx in self.simplexes() {
             simplexes.insert(spx.clone());
         }
-        Self::new_unchecked(ambient_space.clone(), simplexes)
+        Self::new_unchecked(ambient_space, simplexes)
     }
 }
 
