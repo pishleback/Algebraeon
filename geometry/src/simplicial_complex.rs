@@ -2,12 +2,12 @@ use super::*;
 use crate::{
     affine_subspace::EmbeddedAffineSubspace,
     ambient_space::AffineSpace,
-    coordinates::Vector,
     oriented_simplex::{OrientationSide, OrientedSimplex},
     partial_simplicial_complex::{LabelledPartialSimplicialComplex, PartialSimplicialComplex},
     simplex::Simplex,
     simplex_collection::LabelledSimplexCollection,
     simplicial_disjoint_union::LabelledSimplicialDisjointUnion,
+    vector::Vector,
 };
 use std::collections::{HashMap, HashSet};
 

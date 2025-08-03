@@ -1,7 +1,6 @@
 use crate::{
     affine_subspace::EmbeddedAffineSubspace,
     ambient_space::AffineSpace,
-    coordinates::Vector,
     oriented_simplex::{
         OrientationSide, OrientedHyperplane, OrientedHyperplaneIntersectLineSegmentResult,
         OrientedSimplex,
@@ -9,6 +8,7 @@ use crate::{
     simplex::Simplex,
     simplex_collection::LabelledSimplexCollection,
     simplicial_complex::{InteriorOrBoundary, LabelledSimplicialComplex},
+    vector::Vector,
 };
 
 use super::*;

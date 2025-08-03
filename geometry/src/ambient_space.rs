@@ -1,5 +1,5 @@
 use super::*;
-use crate::coordinates::Vector;
+use crate::vector::Vector;
 use algebraeon_rings::matrix::{Matrix, MatrixStructure};
 use std::sync::atomic::AtomicUsize;
 
@@ -62,13 +62,6 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
 
     pub fn origin(&self) -> Option<Vector<'f, FS>> {
         Some(Vector::construct(*self, |_| self.field().zero()))
-    }
-
-    pub fn vector(
-        self,
-        coordinates: impl IntoIterator<Item = impl Into<FS::Set>>,
-    ) -> Vector<'f, FS> {
-        Vector::new(self, coordinates)
     }
 
     pub fn linear_dimension(&self) -> Option<usize> {

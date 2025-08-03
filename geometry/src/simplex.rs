@@ -1,5 +1,5 @@
 use super::*;
-use crate::{ambient_space::AffineSpace, coordinates::Vector, oriented_simplex::OrientedSimplex};
+use crate::{ambient_space::AffineSpace, oriented_simplex::OrientedSimplex, vector::Vector};
 use itertools::Itertools;
 
 #[derive(Clone)]

@@ -109,6 +109,15 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
     }
 }
 
+impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
+    pub fn vector(
+        self,
+        coordinates: impl IntoIterator<Item = impl Into<FS::Set>>,
+    ) -> Vector<'f, FS> {
+        Vector::new(self, coordinates)
+    }
+}
+
 // -&vector
 impl<'f, FS: FieldSignature> std::ops::Neg for &Vector<'f, FS> {
     type Output = Vector<'f, FS>;

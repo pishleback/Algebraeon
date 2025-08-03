@@ -1,4 +1,4 @@
-use crate::{ambient_space::AffineSpace, coordinates::Vector, simplex::Simplex};
+use crate::{ambient_space::AffineSpace, simplex::Simplex, vector::Vector};
 use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature};
 
 #[derive(Clone)]

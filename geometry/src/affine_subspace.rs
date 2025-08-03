@@ -1,9 +1,9 @@
 use super::*;
 use crate::{
     ambient_space::AffineSpace,
-    coordinates::Vector,
     oriented_simplex::{OrientedHyperplane, OrientedSimplex},
     simplex::Simplex,
+    vector::Vector,
 };
 use algebraeon_rings::matrix::{Matrix, MatrixStructure};
 
