@@ -45,7 +45,6 @@ where
     */
 }
 
-#[allow(clippy::missing_fields_in_debug)]
 impl<'f, FS: OrderedRingSignature + FieldSignature> std::fmt::Debug for ConvexHull<'f, FS>
 where
     FS::Set: std::hash::Hash + std::fmt::Debug,
@@ -132,11 +131,15 @@ where
         }
 
         //facets should be non-empty whenenver self.subspace has dimension >= 1
-        #[allow(clippy::redundant_pattern_matching)]
-        if let Some(_) = self.subspace.borrow().embedded_space().linear_dimension() {
-            if self.facets.is_empty() {
-                return Err("Facets should be non-empty whenenver the subspace is non-empty");
-            }
+        if self
+            .subspace
+            .borrow()
+            .embedded_space()
+            .linear_dimension()
+            .is_some()
+            && self.facets.is_empty()
+        {
+            return Err("Facets should be non-empty whenenver the subspace is non-empty");
         }
 
         //check that facets each share exactly one ridge
@@ -250,7 +253,6 @@ where
         }
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     pub fn extend_by_point(&mut self, pt: Vector<'f, FS>) {
         assert_eq!(pt.ambient_space(), self.ambient_space);
         #[cfg(debug_assertions)]
@@ -285,11 +287,13 @@ where
                     let facet_simplex = facet.simplex();
                     for i in 0..facet_simplex.n() {
                         let (ridge, pt) = (facet_simplex.facet(i), &facet_simplex.points()[i]);
-                        #[allow(clippy::map_entry)]
-                        if horizon.contains_key(&ridge) {
-                            horizon.remove(&ridge);
-                        } else {
-                            horizon.insert(ridge, (facet, pt));
+                        match horizon.entry(ridge) {
+                            std::collections::hash_map::Entry::Occupied(entry) => {
+                                entry.remove();
+                            }
+                            std::collections::hash_map::Entry::Vacant(entry) => {
+                                entry.insert((facet, pt));
+                            }
                         }
                     }
                 }

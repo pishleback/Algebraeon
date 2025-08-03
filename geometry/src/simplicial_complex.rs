@@ -23,7 +23,6 @@ pub struct SCSpxInfo<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clon
     label: T,
 }
 
-#[allow(clippy::missing_fields_in_debug)]
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> std::fmt::Debug
     for SCSpxInfo<'f, FS, T>
 {
@@ -42,7 +41,6 @@ pub struct LabelledSimplicialComplex<'f, FS: OrderedRingSignature + FieldSignatu
 
 pub type SimplicialComplex<'f, FS> = LabelledSimplicialComplex<'f, FS, ()>;
 
-#[allow(clippy::missing_fields_in_debug)]
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> std::fmt::Debug
     for LabelledSimplicialComplex<'f, FS, T>
 {
@@ -151,8 +149,7 @@ where
             inv_bdry_map.insert(spx.clone(), HashSet::new());
         }
 
-        #[allow(clippy::for_kv_map)]
-        for (spx, _info) in &self.simplexes {
+        for spx in self.simplexes.keys() {
             for bdry_spx in spx.proper_sub_simplices_not_null() {
                 assert!(self.simplexes.contains_key(&bdry_spx));
                 inv_bdry_map.get_mut(&bdry_spx).unwrap().insert(spx.clone());
@@ -217,18 +214,15 @@ where
                 } else {
                     //rank < n-1 simplex is part of the interior iff it is part of the boundary of at least one simplex and every such simplex is part of the interior
                     debug_assert!(r < n - 1);
-                    #[allow(clippy::collapsible_else_if)]
                     if inv_bdry.is_empty() {
                         simplexes.insert(simplex, InteriorOrBoundary::Boundary);
+                    } else if inv_bdry
+                        .iter()
+                        .all(|b| simplexes.get(b).unwrap() == &InteriorOrBoundary::Interior)
+                    {
+                        simplexes.insert(simplex, InteriorOrBoundary::Interior);
                     } else {
-                        if inv_bdry
-                            .iter()
-                            .all(|b| simplexes.get(b).unwrap() == &InteriorOrBoundary::Interior)
-                        {
-                            simplexes.insert(simplex, InteriorOrBoundary::Interior);
-                        } else {
-                            simplexes.insert(simplex, InteriorOrBoundary::Boundary);
-                        }
+                        simplexes.insert(simplex, InteriorOrBoundary::Boundary);
                     }
                 }
             }
@@ -261,7 +255,6 @@ Output:
     If it can: return the simplicies to use to fill in the interior region
 
 */
-#[allow(clippy::needless_pass_by_value)]
 fn simplify_in_region<'f, FS: OrderedRingSignature + FieldSignature>(
     space: AffineSpace<'f, FS>,
     boundary_facets: Vec<OrientedSimplex<'f, FS>>,
@@ -426,7 +419,6 @@ where
             .unwrap();
             let nbd_interior = nbd.interior().into_simplexes();
 
-            #[allow(clippy::if_not_else)]
             if !nbd_interior.contains(&pt_img_spx) {
                 /*
                 pt is on the boundary of nbd and nbd looks something like this

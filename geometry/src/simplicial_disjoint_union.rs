@@ -152,16 +152,14 @@ where
                 if i != j {
                     let spx_i = simplexes[i];
                     let spx_j = simplexes[j];
-                    #[allow(clippy::unwrap_or_default)]
                     pairs_todo
                         .entry(spx_i.clone())
-                        .or_insert(HashSet::new())
+                        .or_default()
                         .insert(spx_j.clone());
                 }
             }
         }
 
-        #[allow(clippy::unwrap_or_default)]
         while !pairs_todo.is_empty() {
             let spx1 = pairs_todo.keys().next().unwrap().clone();
             match pairs_todo.get(&spx1).unwrap().iter().next().cloned() {
@@ -182,9 +180,8 @@ where
                         &ConvexHull::from_simplex(spx2.clone()),
                     );
 
-                    #[allow(clippy::collapsible_if)]
-                    if !overlap.is_empty() {
-                        if match Simplex::new(
+                    if !overlap.is_empty()
+                        && match Simplex::new(
                             ambient_space,
                             overlap.defining_points().into_iter().collect(),
                         ) {
@@ -197,95 +194,95 @@ where
                                     .all(|pt| spx1_points.contains(pt) && spx2_points.contains(pt))
                             }
                             Err(_) => true,
-                        } {
-                            //there is a bad overlap between spx1 and spx2
-                            let mut spx1_replacement = overlap.clone();
-                            for pt in spx1.points() {
-                                spx1_replacement.extend_by_point(pt.clone());
-                            }
-                            let mut spx2_replacement = overlap.clone();
-                            for pt in spx2.points() {
-                                spx2_replacement.extend_by_point(pt.clone());
-                            }
+                        }
+                    {
+                        //there is a bad overlap between spx1 and spx2
+                        let mut spx1_replacement = overlap.clone();
+                        for pt in spx1.points() {
+                            spx1_replacement.extend_by_point(pt.clone());
+                        }
+                        let mut spx2_replacement = overlap.clone();
+                        for pt in spx2.points() {
+                            spx2_replacement.extend_by_point(pt.clone());
+                        }
 
-                            //remove any pairs containing spx1 or spx2
-                            let mut spx1_paired = vec![];
-                            for spx in pairs_todo.get(&spx1).unwrap_or(&HashSet::new()).clone() {
-                                debug_assert_ne!(spx, spx1);
-                                debug_assert_ne!(spx, spx2);
-                                debug_assert!(self.simplexes.contains_key(&spx));
+                        //remove any pairs containing spx1 or spx2
+                        let mut spx1_paired = vec![];
+                        for spx in pairs_todo.get(&spx1).unwrap_or(&HashSet::new()).clone() {
+                            debug_assert_ne!(spx, spx1);
+                            debug_assert_ne!(spx, spx2);
+                            debug_assert!(self.simplexes.contains_key(&spx));
+                            pairs_todo
+                                .get_mut(&spx)
+                                .unwrap_or(&mut HashSet::new())
+                                .remove(&spx1);
+                            spx1_paired.push(spx);
+                        }
+                        pairs_todo.remove(&spx1);
+
+                        let mut spx2_paired = vec![];
+                        for spx in pairs_todo.get(&spx2).unwrap_or(&HashSet::new()).clone() {
+                            debug_assert_ne!(spx, spx1);
+                            debug_assert_ne!(spx, spx2);
+                            debug_assert!(self.simplexes.contains_key(&spx));
+                            pairs_todo
+                                .get_mut(&spx)
+                                .unwrap_or(&mut HashSet::new())
+                                .remove(&spx2);
+                            spx2_paired.push(spx);
+                        }
+                        pairs_todo.remove(&spx2);
+
+                        // //pairs should now be in a valid state again
+                        // for (a, bs) in &pairs_todo {
+                        //     debug_assert!(self.simplexes.contains(a));
+                        //     for b in bs {
+                        //         debug_assert!(self.simplexes.contains(b));
+                        //     }
+                        // }
+
+                        let spx1_label = self.simplexes.get(&spx1).unwrap().clone();
+                        let spx2_label = self.simplexes.get(&spx2).unwrap().clone();
+
+                        //remove spx1 and spx2
+                        self.simplexes.remove(&spx1);
+                        self.simplexes.remove(&spx2);
+
+                        //add the refinements of spx1 and spx2 and update the pairs todo
+                        for spx1_repl in spx1_replacement
+                            .as_simplicial_complex()
+                            .subset_by_label(&InteriorOrBoundary::Interior)
+                            .into_simplexes()
+                        {
+                            for spx in &spx1_paired {
                                 pairs_todo
-                                    .get_mut(&spx)
-                                    .unwrap_or(&mut HashSet::new())
-                                    .remove(&spx1);
-                                spx1_paired.push(spx);
-                            }
-                            pairs_todo.remove(&spx1);
-
-                            let mut spx2_paired = vec![];
-                            for spx in pairs_todo.get(&spx2).unwrap_or(&HashSet::new()).clone() {
-                                debug_assert_ne!(spx, spx1);
-                                debug_assert_ne!(spx, spx2);
-                                debug_assert!(self.simplexes.contains_key(&spx));
+                                    .entry(spx1_repl.clone())
+                                    .or_default()
+                                    .insert(spx.clone());
                                 pairs_todo
-                                    .get_mut(&spx)
-                                    .unwrap_or(&mut HashSet::new())
-                                    .remove(&spx2);
-                                spx2_paired.push(spx);
+                                    .entry(spx.clone())
+                                    .or_default()
+                                    .insert(spx1_repl.clone());
                             }
-                            pairs_todo.remove(&spx2);
+                            self.simplexes.insert(spx1_repl, spx1_label.clone());
+                        }
 
-                            // //pairs should now be in a valid state again
-                            // for (a, bs) in &pairs_todo {
-                            //     debug_assert!(self.simplexes.contains(a));
-                            //     for b in bs {
-                            //         debug_assert!(self.simplexes.contains(b));
-                            //     }
-                            // }
-
-                            let spx1_label = self.simplexes.get(&spx1).unwrap().clone();
-                            let spx2_label = self.simplexes.get(&spx2).unwrap().clone();
-
-                            //remove spx1 and spx2
-                            self.simplexes.remove(&spx1);
-                            self.simplexes.remove(&spx2);
-
-                            //add the refinements of spx1 and spx2 and update the pairs todo
-                            for spx1_repl in spx1_replacement
-                                .as_simplicial_complex()
-                                .subset_by_label(&InteriorOrBoundary::Interior)
-                                .into_simplexes()
-                            {
-                                for spx in &spx1_paired {
-                                    pairs_todo
-                                        .entry(spx1_repl.clone())
-                                        .or_insert(HashSet::new())
-                                        .insert(spx.clone());
-                                    pairs_todo
-                                        .entry(spx.clone())
-                                        .or_insert(HashSet::new())
-                                        .insert(spx1_repl.clone());
-                                }
-                                self.simplexes.insert(spx1_repl, spx1_label.clone());
+                        for spx2_repl in spx2_replacement
+                            .as_simplicial_complex()
+                            .subset_by_label(&InteriorOrBoundary::Interior)
+                            .into_simplexes()
+                        {
+                            for spx in &spx2_paired {
+                                pairs_todo
+                                    .entry(spx2_repl.clone())
+                                    .or_default()
+                                    .insert(spx.clone());
+                                pairs_todo
+                                    .entry(spx.clone())
+                                    .or_default()
+                                    .insert(spx2_repl.clone());
                             }
-
-                            for spx2_repl in spx2_replacement
-                                .as_simplicial_complex()
-                                .subset_by_label(&InteriorOrBoundary::Interior)
-                                .into_simplexes()
-                            {
-                                for spx in &spx2_paired {
-                                    pairs_todo
-                                        .entry(spx2_repl.clone())
-                                        .or_insert(HashSet::new())
-                                        .insert(spx.clone());
-                                    pairs_todo
-                                        .entry(spx.clone())
-                                        .or_insert(HashSet::new())
-                                        .insert(spx2_repl.clone());
-                                }
-                                self.simplexes.insert(spx2_repl, spx2_label.clone());
-                            }
+                            self.simplexes.insert(spx2_repl, spx2_label.clone());
                         }
                     }
                 }

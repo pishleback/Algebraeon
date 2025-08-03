@@ -287,10 +287,9 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                                 for s in &span {
                                     points.push(&root + s);
                                 }
-                                #[allow(clippy::needless_range_loop)]
-                                for j in 0..extension_elementary_basis_vectors.len() {
+                                for (j, &k) in extension_elementary_basis_vectors.iter().enumerate()
+                                {
                                     if i != j {
-                                        let k = extension_elementary_basis_vectors[j];
                                         //push root + e_k
                                         points.push(Vector::construct(ambient_space, |l| {
                                             field.add(root.coordinate(l), &{

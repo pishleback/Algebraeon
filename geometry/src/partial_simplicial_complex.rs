@@ -82,8 +82,7 @@ where
 
     pub fn closure(&self) -> LabelledSimplicialComplex<'f, FS, Option<T>> {
         let mut simplexes = HashSet::new();
-        #[allow(clippy::for_kv_map)]
-        for (spx, _label) in &self.simplexes {
+        for spx in self.simplexes.keys() {
             for bdry in spx.sub_simplices_not_null() {
                 simplexes.insert(bdry);
             }
@@ -102,7 +101,6 @@ where
     }
 
     pub fn simplify(&self) -> Self {
-        #[allow(clippy::redundant_closure_for_method_calls)]
         self.closure()
             .simplify()
             .subset_by_filter(|label| label.is_some())

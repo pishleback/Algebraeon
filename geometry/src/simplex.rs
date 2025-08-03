@@ -85,7 +85,6 @@ where
         if skel_n < 0 {
             vec![]
         } else {
-            #[allow(clippy::cast_sign_loss)]
             let skel_n = skel_n as usize;
             let mut parts = vec![];
             for subset in (0..self.points.len()).combinations(skel_n) {
@@ -113,12 +112,10 @@ where
     }
 
     pub fn ridges(&self) -> Vec<Self> {
-        #[allow(clippy::cast_possible_wrap)]
         self.skeleton(self.points.len() as isize - 2)
     }
 
     pub fn facets(&self) -> Vec<Self> {
-        #[allow(clippy::cast_possible_wrap)]
         self.skeleton(self.points.len() as isize - 1)
     }
 
@@ -155,7 +152,6 @@ where
             .collect()
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     pub fn sub_simplex(&self, pts: Vec<usize>) -> Self {
         Self::new(
             self.ambient_space(),
