@@ -6,8 +6,8 @@ use crate::{
         OrientedSimplex,
     },
     simplex::Simplex,
-    simplex_collection::LabelledSimplexCollection,
-    simplicial_complex::{InteriorOrBoundary, LabelledSimplicialComplex},
+    simplex_collection::{InteriorOrBoundary, LabelledSimplexCollection},
+    simplicial_complex::LabelledSimplicialComplex,
     vector::Vector,
 };
 
@@ -60,16 +60,6 @@ where
             .finish()
     }
 }
-
-// #[derive(Debug, Clone)]
-// pub struct ConvexHullAsSimplicialComplexResult<
-//     FS: OrderedRingStructure + FieldStructure,
-//     AffineSpace<'f, FS>: Borrow<AffineSpace<FS>> + Clone,
-// > {
-//     pub entire: SimplicialComplex<FS>,
-//     pub boundary: SimplicialComplex<FS>,
-//     pub interior: PartialSimplicialComplex<FS>,
-// }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHull<'f, FS>
 where

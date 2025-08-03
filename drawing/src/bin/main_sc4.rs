@@ -72,7 +72,7 @@ fn main() {
     .into_forget_labels();
 
     let x = LabelledSimplicialDisjointUnion::union_raw(&(&a).into(), &(&b).into())
-        .refine_to_partial_simplicial_complex()
+        .refine_into_partial_simplicial_complex()
         .closure();
 
     for spx in x.simplexes() {

@@ -4,8 +4,8 @@ use crate::{
     convex_hull::ConvexHull,
     partial_simplicial_complex::LabelledPartialSimplicialComplex,
     simplex::Simplex,
-    simplex_collection::LabelledSimplexCollection,
-    simplicial_complex::{InteriorOrBoundary, SimplicialComplex},
+    simplex_collection::{InteriorOrBoundary, LabelledSimplexCollection},
+    simplicial_complex::SimplicialComplex,
     simplicial_disjoint_union::{LabelledSimplicialDisjointUnion, SimplicialDisjointUnion},
 };
 use std::collections::{HashMap, HashSet};
@@ -121,12 +121,7 @@ where
             simplexes
         })
     }
-}
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> SimplicialDisjointUnion<'f, FS>
-where
-    FS::Set: Hash,
-{
     pub fn union_raw(&self, other: &Self) -> SimplicialDisjointUnion<'f, FS> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
         let mut simplexes = HashSet::new();
@@ -146,7 +141,7 @@ where
 {
     pub fn union_raw(&self, other: &Self) -> Self {
         LabelledSimplicialDisjointUnion::union_raw(&self.into(), &other.into())
-            .refine_to_partial_simplicial_complex()
+            .refine_into_partial_simplicial_complex()
             .try_as_simplicial_complex()
             .unwrap()
     }
@@ -157,7 +152,7 @@ where
 
     pub fn intersection_raw(&self, other: &Self) -> Self {
         LabelledSimplicialDisjointUnion::intersection_raw(&self.into(), &other.into())
-            .refine_to_partial_simplicial_complex()
+            .refine_into_partial_simplicial_complex()
             .apply_label_function(|_| ())
             .try_as_simplicial_complex()
             .unwrap()

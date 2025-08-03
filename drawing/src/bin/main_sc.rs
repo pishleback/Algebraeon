@@ -85,7 +85,10 @@ fn main() {
     println!("start");
     let sc4 = LabelledSimplicialDisjointUnion::union_raw(&(&sc1).into(), &(&sc2).into());
     println!("done union");
-    let sc5 = sc4.clone().refine_to_partial_simplicial_complex().closure();
+    let sc5 = sc4
+        .clone()
+        .refine_into_partial_simplicial_complex()
+        .closure();
     println!("done to sc");
     let sc6 = sc5.clone().simplify();
     println!("done simplify");

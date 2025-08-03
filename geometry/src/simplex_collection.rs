@@ -146,3 +146,39 @@ pub trait LabelledSimplexCollection<
         label
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InteriorOrBoundary {
+    Interior,
+    Boundary,
+}
+
+pub trait InteriorOrBoundarySimplexCollection<'f, FS: OrderedRingSignature + FieldSignature + 'f>:
+    LabelledSimplexCollection<'f, FS, InteriorOrBoundary>
+where
+    FS::Set: Hash,
+{
+    fn interior(
+        &self,
+    ) -> <Self::SubsetType as LabelledSimplexCollection<'f, FS, InteriorOrBoundary>>::WithLabel<()>
+    {
+        self.subset_by_label(&InteriorOrBoundary::Interior)
+    }
+
+    fn boundary(
+        &self,
+    ) -> <Self::SubsetType as LabelledSimplexCollection<'f, FS, InteriorOrBoundary>>::WithLabel<()>
+    {
+        self.subset_by_label(&InteriorOrBoundary::Interior)
+    }
+}
+
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature + 'f,
+    S: LabelledSimplexCollection<'f, FS, InteriorOrBoundary>,
+> InteriorOrBoundarySimplexCollection<'f, FS> for S
+where
+    FS::Set: Hash,
+{
+}

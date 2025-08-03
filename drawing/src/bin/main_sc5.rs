@@ -8,8 +8,8 @@ use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
 use algebraeon_drawing::colour::Colour;
 use algebraeon_geometry::ambient_space::AffineSpace;
 use algebraeon_geometry::convex_hull::ConvexHull;
+use algebraeon_geometry::simplex_collection::InteriorOrBoundarySimplexCollection;
 use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
-use algebraeon_geometry::simplicial_complex::InteriorOrBoundary;
 use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
 use algebraeon_geometry::vector::Vector;
 use algebraeon_geometry::*;
@@ -31,7 +31,7 @@ fn main() {
             ],
         )
         .as_simplicial_complex()
-        .subset_by_label(&InteriorOrBoundary::Interior),
+        .interior(),
     );
 
     let b = LabelledSimplicialDisjointUnion::from(
@@ -63,7 +63,7 @@ fn main() {
         .into_forget_labels(),
     );
 
-    let x = x.union_raw(&c).refine_to_partial_simplicial_complex();
+    let x = x.union_raw(&c).refine_into_partial_simplicial_complex();
     let y = x.clone().simplify();
 
     let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));

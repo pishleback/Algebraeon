@@ -5,17 +5,11 @@ use crate::{
     oriented_simplex::{OrientationSide, OrientedSimplex},
     partial_simplicial_complex::{LabelledPartialSimplicialComplex, PartialSimplicialComplex},
     simplex::Simplex,
-    simplex_collection::LabelledSimplexCollection,
+    simplex_collection::{InteriorOrBoundary, LabelledSimplexCollection},
     simplicial_disjoint_union::LabelledSimplicialDisjointUnion,
     vector::Vector,
 };
 use std::collections::{HashMap, HashSet};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum InteriorOrBoundary {
-    Interior,
-    Boundary,
-}
 
 #[derive(Clone)]
 pub struct SCSpxInfo<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> {

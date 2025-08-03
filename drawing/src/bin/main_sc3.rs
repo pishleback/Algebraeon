@@ -54,7 +54,7 @@ fn main() {
     .as_simplicial_complex()
     .into_forget_labels();
     let x = LabelledSimplicialDisjointUnion::union_raw(&(&x).into(), &(&b).into())
-        .refine_to_partial_simplicial_complex();
+        .refine_into_partial_simplicial_complex();
 
     let c = ConvexHull::new(
         space,
@@ -70,7 +70,7 @@ fn main() {
     let x = LabelledSimplicialDisjointUnion::subtract_raw(&(&x).into(), &(&c).into());
 
     let x = x.clone();
-    let x = x.refine_to_partial_simplicial_complex();
+    let x = x.refine_into_partial_simplicial_complex();
     let x = x.simplify();
 
     // let y = x.clone().refine_to_partial_simplicial_complex().simplify();

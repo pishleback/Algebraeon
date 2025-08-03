@@ -4,8 +4,8 @@ use crate::{
     convex_hull::ConvexHull,
     partial_simplicial_complex::LabelledPartialSimplicialComplex,
     simplex::Simplex,
-    simplex_collection::LabelledSimplexCollection,
-    simplicial_complex::{InteriorOrBoundary, LabelledSimplicialComplex},
+    simplex_collection::{InteriorOrBoundary, LabelledSimplexCollection},
+    simplicial_complex::LabelledSimplicialComplex,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -101,7 +101,7 @@ where
     }
 
     fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T> {
-        self.refine_to_partial_simplicial_complex()
+        self.refine_into_partial_simplicial_complex()
     }
 }
 
@@ -140,7 +140,11 @@ where
         }
     }
 
-    pub fn refine_to_partial_simplicial_complex(
+    pub fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T> {
+        self.refine_into_partial_simplicial_complex().simplify()
+    }
+
+    pub fn refine_into_partial_simplicial_complex(
         mut self,
     ) -> LabelledPartialSimplicialComplex<'f, FS, T> {
         let ambient_space = self.ambient_space();
