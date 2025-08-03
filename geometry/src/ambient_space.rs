@@ -1,6 +1,5 @@
 use super::*;
 use crate::vector::Vector;
-use algebraeon_rings::matrix::{Matrix, MatrixStructure};
 use std::sync::atomic::AtomicUsize;
 
 /// An affine space over a field.
@@ -74,44 +73,6 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
 
     pub fn affine_dimension(&self) -> usize {
         self.affine_dimension
-    }
-
-    pub fn rows_from_vectors(&self, vecs: Vec<&Vector<'f, FS>>) -> Matrix<FS::Set> {
-        for vec in &vecs {
-            assert_eq!(*self, vec.ambient_space());
-        }
-        Matrix::construct(vecs.len(), self.linear_dimension().unwrap(), |r, c| {
-            vecs[r].coordinate(c).clone()
-        })
-    }
-
-    pub fn cols_from_vectors(&self, vecs: Vec<&Vector<'f, FS>>) -> Matrix<FS::Set> {
-        self.rows_from_vectors(vecs).transpose()
-    }
-
-    pub fn determinant(&self, vecs: Vec<&Vector<'f, FS>>) -> FS::Set {
-        MatrixStructure::new(self.field().clone())
-            .det(self.rows_from_vectors(vecs))
-            .unwrap()
-    }
-
-    pub fn rank(&self, vecs: Vec<&Vector<'f, FS>>) -> usize {
-        MatrixStructure::new(self.field().clone()).rank(self.rows_from_vectors(vecs))
-    }
-
-    pub fn are_points_affine_independent(&self, points: Vec<&Vector<'f, FS>>) -> bool {
-        for point in &points {
-            assert_eq!(*self, point.ambient_space());
-        }
-        if points.is_empty() {
-            true
-        } else {
-            let vecs = (1..points.len())
-                .map(|i| points[i] - points[0])
-                .collect::<Vec<_>>();
-            let mat = self.rows_from_vectors(vecs.iter().collect());
-            MatrixStructure::new(self.field().clone()).rank(mat) == vecs.len()
-        }
     }
 }
 
