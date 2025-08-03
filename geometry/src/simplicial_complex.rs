@@ -687,25 +687,8 @@ where
         self
     }
 
-    // #[deprecated]
-    // pub fn frick(self) -> LabelledSimplicialComplex<FS, AffineSpace<'f, FS>, usize> {
-    //     let mut count = 0;
-    //     LabelledSimplicialComplex::new_labelled(
-    //         self.ambient_space(),
-    //         self.simplexes
-    //             .iter()
-    //             .map(|(spx, _)| {
-    //                 count += 1;
-    //                 (spx.clone(), count)
-    //             })
-    //             .collect(),
-    //     )
-    //     .unwrap()
-    // }
-
     //remove simplexes and remove them from the inverse boundary of any others
     //self may not be in a valid state after this operation
-    #[allow(clippy::needless_pass_by_value)]
     fn remove_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<'f, FS>>) {
         for spx in &simplexes {
             for bdry_spx in spx.proper_sub_simplices_not_null() {
@@ -719,7 +702,7 @@ where
         }
     }
 
-    fn remove_simplexes(&mut self, simplexes: Vec<Simplex<'f, FS>>) {
+    pub fn remove_simplexes(&mut self, simplexes: Vec<Simplex<'f, FS>>) {
         self.remove_simplexes_unchecked(simplexes);
         #[cfg(debug_assertions)]
         self.check();
@@ -728,7 +711,6 @@ where
     //add the given simplexes and add them to the inverse boundary map on anything on their boundaries
     //must be added together to cover the case where there are mutual boundary relations
     //self may not be in a valid state after this operation
-    #[allow(clippy::needless_pass_by_value)]
     fn add_simplexes_unchecked(&mut self, simplexes: Vec<Simplex<'f, FS>>, label: &T) {
         for spx in &simplexes {
             self.simplexes.insert(
@@ -750,7 +732,7 @@ where
         }
     }
 
-    fn add_simplexes(&mut self, simplexes: Vec<Simplex<'f, FS>>, label: &T) {
+    pub fn add_simplexes(&mut self, simplexes: Vec<Simplex<'f, FS>>, label: &T) {
         self.add_simplexes_unchecked(simplexes, label);
         #[cfg(debug_assertions)]
         self.check();

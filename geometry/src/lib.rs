@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+// #![allow(dead_code)]
 
 use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature};
 use std::borrow::Borrow;
