@@ -199,11 +199,9 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
     }
 
     pub fn embed_simplex(&self, spx: &Simplex<'f, FS>) -> Simplex<'f, FS> {
-        Simplex::new(
-            self.ambient_space(),
-            spx.points().iter().map(|p| self.embed_point(p)).collect(),
-        )
-        .unwrap()
+        self.ambient_space()
+            .simplex(spx.points().iter().map(|p| self.embed_point(p)).collect())
+            .unwrap()
     }
 
     pub fn unembed_point(&self, pt: &Vector<'f, FS>) -> Option<Vector<'f, FS>> {
@@ -218,7 +216,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                     .cols_from_vectors(span.iter().collect());
                 let x = MatrixStructure::new(self.ambient_space.borrow().field().clone())
                     .col_solve(basis_matrix, &y);
-                Some(Vector::new(self.embedded_space(), x?))
+                Some(self.embedded_space().vector(x?))
             }
             None => None,
         }
@@ -236,7 +234,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                 }
             }
         }
-        Some(Simplex::new(self.embedded_space(), pts).unwrap())
+        Some(self.embedded_space().simplex(pts).unwrap())
     }
 
     pub fn as_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<'f, FS>>> {
@@ -330,34 +328,16 @@ mod tests {
     #[test]
     fn make_affine_subspace() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
-        let v1 = Vector::new(
-            space,
-            vec![Rational::from(1), Rational::from(1), Rational::from(1)],
-        );
-        let v2 = Vector::new(
-            space,
-            vec![Rational::from(1), Rational::from(0), Rational::from(0)],
-        );
-        let v3 = Vector::new(
-            space,
-            vec![Rational::from(0), Rational::from(1), Rational::from(0)],
-        );
+        let v1 = space.vector([1, 1, 1]);
+        let v2 = space.vector([1, 0, 0]);
+        let v3 = space.vector([0, 1, 0]);
         let s = EmbeddedAffineSubspace::new(space, v1, vec![v2, v3]);
         s.unwrap();
 
         let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
-        let v1 = Vector::new(
-            space,
-            vec![Rational::from(1), Rational::from(1), Rational::from(1)],
-        );
-        let v2 = Vector::new(
-            space,
-            vec![Rational::from(1), Rational::from(2), Rational::from(0)],
-        );
-        let v3 = Vector::new(
-            space,
-            vec![Rational::from(-2), Rational::from(-4), Rational::from(0)],
-        );
+        let v1 = space.vector([1, 1, 1]);
+        let v2 = space.vector([1, 2, 0]);
+        let v3 = space.vector([-2, -4, 0]);
         let s = EmbeddedAffineSubspace::new(space, v1, vec![v2, v3]);
         assert!(s.is_err());
     }
@@ -370,37 +350,22 @@ mod tests {
             //the line x + y = 2
             let (line, _) = EmbeddedAffineSubspace::new(
                 plane,
-                Vector::new(plane, vec![Rational::from(1), Rational::from(1)]),
-                vec![Vector::new(
-                    plane,
-                    vec![Rational::from(1), Rational::from(-1)],
-                )],
+                plane.vector([1, 1]),
+                vec![plane.vector([1, -1])],
             )
             .unwrap();
 
             assert_eq!(
-                line.embed_point(&Vector::new(
-                    line.embedded_space(),
-                    vec![Rational::from(-3)],
-                )),
-                Vector::new(plane, vec![Rational::from(-2), Rational::from(4)])
+                line.embed_point(&line.embedded_space().vector([-3])),
+                plane.vector([-2, 4])
             );
 
             assert_eq!(
-                line.unembed_point(&Vector::new(
-                    plane,
-                    vec![Rational::from(-1), Rational::from(3)],
-                )),
-                Some(Vector::new(line.embedded_space(), vec![Rational::from(-2)],))
+                line.unembed_point(&plane.vector([-1, 3])),
+                Some(line.embedded_space().vector([-2]))
             );
 
-            assert_eq!(
-                line.unembed_point(&Vector::new(
-                    plane,
-                    vec![Rational::from(1), Rational::from(2)],
-                )),
-                None
-            );
+            assert_eq!(line.unembed_point(&plane.vector([1, 2])), None);
         }
 
         //2d embedded in 3d
@@ -408,102 +373,39 @@ mod tests {
             let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
             let (plane, _) = EmbeddedAffineSubspace::new(
                 space,
-                Vector::new(
-                    space,
-                    vec![Rational::from(3), Rational::from(1), Rational::from(2)],
-                ),
-                vec![
-                    Vector::new(
-                        space,
-                        vec![Rational::from(4), Rational::from(2), Rational::from(1)],
-                    ),
-                    Vector::new(
-                        space,
-                        vec![Rational::from(1), Rational::from(-1), Rational::from(2)],
-                    ),
-                ],
+                space.vector([3, 1, 2]),
+                vec![space.vector([4, 2, 1]), space.vector([1, -1, 2])],
             )
             .unwrap();
 
             assert_eq!(
-                plane.embed_point(&Vector::new(
-                    plane.embedded_space(),
-                    vec![Rational::from(-3), Rational::from(2)],
-                )),
-                Vector::new(
-                    space,
-                    vec![Rational::from(-7), Rational::from(-7), Rational::from(3)]
-                )
+                plane.embed_point(&plane.embedded_space().vector([-3, 2])),
+                space.vector([-7, -7, 3])
             );
 
             assert_eq!(
-                plane.unembed_point(&Vector::new(
-                    space,
-                    vec![Rational::from(0), Rational::from(-2), Rational::from(3)],
-                )),
-                Some(Vector::new(
-                    plane.embedded_space(),
-                    vec![Rational::from(-1), Rational::from(1)],
-                ))
+                plane.unembed_point(&space.vector([0, -2, 3],)),
+                Some(plane.embedded_space().vector([-1, 1]))
             );
 
-            assert_eq!(
-                plane.unembed_point(&Vector::new(
-                    space,
-                    vec![Rational::from(1), Rational::from(2), Rational::from(2)],
-                )),
-                None
-            );
+            assert_eq!(plane.unembed_point(&space.vector([1, 2, 1],)), None);
         }
     }
 
     #[test]
     fn extend_by_point_embedding_composition() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 4);
-        let v1 = Vector::new(
-            space,
-            vec![
-                Rational::from(1),
-                Rational::from(2),
-                Rational::from(1),
-                Rational::from(1),
-            ],
-        );
-        let v2 = Vector::new(
-            space,
-            vec![
-                Rational::from(1),
-                Rational::from(-2),
-                Rational::from(2),
-                Rational::from(0),
-            ],
-        );
-        let v3 = Vector::new(
-            space,
-            vec![
-                Rational::from(2),
-                Rational::from(1),
-                Rational::from(0),
-                Rational::from(2),
-            ],
-        );
+        let v1 = space.vector([1, 2, 1, 1]);
+        let v2 = space.vector([1, -2, 2, 0]);
+        let v3 = space.vector([2, 1, 0, 2]);
         let (h, _) = EmbeddedAffineSubspace::new(space, v1, vec![v2, v3]).unwrap();
-        let v4 = Vector::new(
-            space,
-            vec![
-                Rational::from(0),
-                Rational::from(3),
-                Rational::from(-2),
-                Rational::from(1),
-            ],
-        );
+        let v4 = space.vector([0, 3, -2, 1]);
         let (f, g, v4_inv) = h.extend_dimension_by_point_unsafe(v4.clone());
         assert_eq!(g.embed_point(&v4_inv), v4);
 
-        let x = Vector::new(
-            h.embedded_space(),
-            vec![Rational::from(5), Rational::from(7)],
-        );
+        let x = h
+            .embedded_space()
+            .vector([Rational::from(5), Rational::from(7)]);
         //check that g(f(x)) = h(x)
         assert_eq!(g.embed_point(&f.embed_point(&x)), h.embed_point(&x));
     }

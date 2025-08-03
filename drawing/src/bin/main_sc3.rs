@@ -29,44 +29,38 @@ fn main() {
 
     let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
 
-    let a = ConvexHull::new(
-        space,
-        vec![
+    let a = space
+        .convex_hull(vec![
             space.vector([0, 3]),
             space.vector([3, 0]),
             space.vector([0, -3]),
             space.vector([-3, 0]),
-        ],
-    )
-    .as_simplicial_complex()
-    .into_forget_labels();
+        ])
+        .as_simplicial_complex()
+        .into_forget_labels();
     let x = a;
 
-    let b = ConvexHull::new(
-        space,
-        vec![
+    let b = space
+        .convex_hull(vec![
             space.vector([-2, -2]),
             space.vector([2, -2]),
             space.vector([-2, 2]),
             space.vector([2, 2]),
-        ],
-    )
-    .as_simplicial_complex()
-    .into_forget_labels();
+        ])
+        .as_simplicial_complex()
+        .into_forget_labels();
     let x = LabelledSimplicialDisjointUnion::union_raw(&(&x).into(), &(&b).into())
         .refine_into_partial_simplicial_complex();
 
-    let c = ConvexHull::new(
-        space,
-        vec![
+    let c = space
+        .convex_hull(vec![
             space.vector([-1, -1]),
             space.vector([1, -1]),
             space.vector([-1, 1]),
             space.vector([1, 1]),
-        ],
-    )
-    .as_simplicial_complex()
-    .into_forget_labels();
+        ])
+        .as_simplicial_complex()
+        .into_forget_labels();
     let x = LabelledSimplicialDisjointUnion::subtract_raw(&(&x).into(), &(&c).into());
 
     let x = x.clone();

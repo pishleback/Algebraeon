@@ -47,7 +47,7 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
         self.ambient_space
     }
 
-    pub(crate) fn new(
+    fn new(
         ambient_space: AffineSpace<'f, FS>,
         coordinates: impl IntoIterator<Item = impl Into<FS::Set>>,
     ) -> Self {

@@ -91,9 +91,7 @@ where
                 if !self.facets.is_empty() {
                     return Err("Empty convex hull should have no facets");
                 }
-                if self.interior
-                    != vec![Simplex::<'f, FS>::new(self.subspace.embedded_space(), vec![]).unwrap()]
-                {
+                if self.interior != vec![self.subspace.embedded_space().simplex(vec![]).unwrap()] {
                     return Err(
                         "Empty convex hull should have a single null simplex for its interior",
                     );
@@ -105,14 +103,13 @@ where
                 }
                 if self.interior
                     != vec![
-                        Simplex::new(
-                            self.subspace.embedded_space(),
-                            vec![Vector::construct(
+                        self.subspace
+                            .embedded_space()
+                            .simplex(vec![Vector::construct(
                                 self.subspace.embedded_space(),
                                 |_| unreachable!(),
-                            )],
-                        )
-                        .unwrap(),
+                            )])
+                            .unwrap(),
                     ]
                 {
                     return Err("0D convex hull should have one point for its interior");
@@ -179,17 +176,17 @@ where
         Ok(())
     }
 
-    pub fn new_empty(ambient_space: AffineSpace<'f, FS>) -> Self {
+    pub(crate) fn new_empty(ambient_space: AffineSpace<'f, FS>) -> Self {
         let subspace = EmbeddedAffineSubspace::new_empty(ambient_space);
         Self {
             ambient_space,
             subspace: subspace.clone(),
             facets: vec![],
-            interior: vec![Simplex::new(subspace.clone().embedded_space(), vec![]).unwrap()],
+            interior: vec![subspace.clone().embedded_space().simplex(vec![]).unwrap()],
         }
     }
 
-    pub fn new(ambient_space: AffineSpace<'f, FS>, points: Vec<Vector<'f, FS>>) -> Self {
+    pub(crate) fn new(ambient_space: AffineSpace<'f, FS>, points: Vec<Vector<'f, FS>>) -> Self {
         let mut ch = Self::new_empty(ambient_space);
         for point in points {
             ch.extend_by_point(point);
@@ -197,21 +194,35 @@ where
         ch
     }
 
-    pub fn affine_span_dimension(&self) -> usize {
-        self.subspace.embedded_space().affine_dimension()
-    }
-
-    pub fn from_simplex(spx: Simplex<'f, FS>) -> Self {
+    pub(crate) fn from_simplex(spx: Simplex<'f, FS>) -> Self {
         let ambient_space = spx.ambient_space();
         let (subspace, embedded_pts) =
             EmbeddedAffineSubspace::new_affine_span(ambient_space, spx.into_points()).unwrap();
-        let embedded_spx = Simplex::new(subspace.embedded_space(), embedded_pts).unwrap();
+        let embedded_spx = subspace.embedded_space().simplex(embedded_pts).unwrap();
         Self {
             ambient_space,
             subspace,
             facets: embedded_spx.oriented_facets(),
             interior: vec![embedded_spx],
         }
+    }
+}
+
+impl<'f, FS: OrderedRingSignature + FieldSignature> AffineSpace<'f, FS>
+where
+    FS::Set: Hash,
+{
+    pub fn convex_hull(&self, points: Vec<Vector<'f, FS>>) -> ConvexHull<'f, FS> {
+        ConvexHull::new(*self, points)
+    }
+}
+
+impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHull<'f, FS>
+where
+    FS::Set: Hash,
+{
+    pub fn affine_span_dimension(&self) -> usize {
+        self.subspace.embedded_space().affine_dimension()
     }
 
     pub fn ambient_space(&self) -> AffineSpace<'f, FS> {
@@ -330,12 +341,14 @@ where
                     visible
                         .into_iter()
                         .map(|facet| {
-                            Simplex::new(self.subspace.embedded_space(), {
-                                let mut points = facet.simplex().points().clone();
-                                points.push(subsp_pt.clone());
-                                points
-                            })
-                            .unwrap()
+                            self.subspace
+                                .embedded_space()
+                                .simplex({
+                                    let mut points = facet.simplex().points().clone();
+                                    points.push(subsp_pt.clone());
+                                    points
+                                })
+                                .unwrap()
                         })
                         .chain(self.interior.iter().cloned())
                         .collect::<Vec<_>>(),
@@ -410,16 +423,17 @@ where
                                 .unwrap(),
                             );
                             new_interior.push(
-                                Simplex::new(new_subspace, {
-                                    let mut points = old_interior
-                                        .points()
-                                        .iter()
-                                        .map(|pt| iota.embed_point(pt))
-                                        .collect::<Vec<_>>();
-                                    points.push(pt_in_new_subspace.clone());
-                                    points
-                                })
-                                .unwrap(),
+                                new_subspace
+                                    .simplex({
+                                        let mut points = old_interior
+                                            .points()
+                                            .iter()
+                                            .map(|pt| iota.embed_point(pt))
+                                            .collect::<Vec<_>>();
+                                        points.push(pt_in_new_subspace.clone());
+                                        points
+                                    })
+                                    .unwrap(),
                             );
                         }
 
@@ -437,14 +451,14 @@ where
         self.interior
             .iter()
             .map(|spx| {
-                Simplex::new(
-                    self.ambient_space,
-                    spx.points()
-                        .iter()
-                        .map(|pt| self.subspace.embed_point(pt))
-                        .collect(),
-                )
-                .unwrap()
+                self.ambient_space
+                    .simplex(
+                        spx.points()
+                            .iter()
+                            .map(|pt| self.subspace.embed_point(pt))
+                            .collect(),
+                    )
+                    .unwrap()
             })
             .collect()
     }
@@ -453,15 +467,15 @@ where
         self.facets
             .iter()
             .map(|ospx| {
-                Simplex::new(
-                    self.ambient_space,
-                    ospx.simplex()
-                        .points()
-                        .iter()
-                        .map(|pt| self.subspace.embed_point(pt))
-                        .collect(),
-                )
-                .unwrap()
+                self.ambient_space
+                    .simplex(
+                        ospx.simplex()
+                            .points()
+                            .iter()
+                            .map(|pt| self.subspace.embed_point(pt))
+                            .collect(),
+                    )
+                    .unwrap()
             })
             .collect()
     }
@@ -539,10 +553,7 @@ where
             let (_root, span) = ch.subspace.get_root_and_span().unwrap();
             debug_assert_eq!(span.len(), 0);
             debug_assert_eq!(outer_points.len(), 0);
-            outer_points.push(Vector::new(
-                ch.subspace.embedded_space(),
-                Vec::<FS::Set>::new(),
-            ));
+            outer_points.push(ch.subspace.embedded_space().vector(Vec::<FS::Set>::new()));
         }
 
         // Note that in linear dimension 1 this doesnt quite work for outer edges since the boundary is not connected. Instead, outer edges should just be the edge between the two points.
@@ -766,63 +777,34 @@ mod tests {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
         let mut ch = ConvexHull::new_empty(space);
         //add a point to get started
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(1), Rational::from(1)],
-        ));
+        ch.extend_by_point(space.vector([1, 1]));
         //add the same point again
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(1), Rational::from(1)],
-        ));
+        ch.extend_by_point(space.vector([1, 1]));
         //add a point to form a line
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-        ));
+        ch.extend_by_point(
+            space.vector([Rational::from(0), Rational::from(1) / Rational::from(2)]),
+        );
         //add a point such that the line is extended to a longer line
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(-1), Rational::from(0)],
-        ));
+        ch.extend_by_point(space.vector([-1, 0]));
         //add that point again
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(-1), Rational::from(0)],
-        ));
+        ch.extend_by_point(space.vector([-1, 0]));
         //add the middle point of the line again
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-        ));
+        ch.extend_by_point(
+            space.vector([Rational::from(0), Rational::from(1) / Rational::from(2)]),
+        );
         //add a middle point in the middle of one of the two line segments
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![
-                Rational::from(1) / Rational::from(2),
-                Rational::from(3) / Rational::from(4),
-            ],
-        ));
+        ch.extend_by_point(space.vector([
+            Rational::from(1) / Rational::from(2),
+            Rational::from(3) / Rational::from(4),
+        ]));
         //add a point to form a double triangle
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(2), Rational::from(-1)],
-        ));
+        ch.extend_by_point(space.vector([2, -1]));
         //add a point to extend by one triangle
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(0), Rational::from(-2)],
-        ));
+        ch.extend_by_point(space.vector([0, -2]));
         //extend by a triangle such that the boundary ends up with two points on the same straight edge
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(2), Rational::from(0)],
-        ));
+        ch.extend_by_point(space.vector([2, 0]));
         //add a point to extend by three triangles
-        ch.extend_by_point(Vector::new(
-            space,
-            vec![Rational::from(2), Rational::from(2)],
-        ));
+        ch.extend_by_point(space.vector([2, 2]));
     }
 
     #[test]
@@ -831,39 +813,30 @@ mod tests {
         let ch = ConvexHull::new(
             space,
             vec![
-                Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-                Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-                Vector::new(
-                    space,
-                    vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-                ),
-                Vector::new(space, vec![Rational::from(-1), Rational::from(0)]),
-                Vector::new(space, vec![Rational::from(-1), Rational::from(0)]),
-                Vector::new(
-                    space,
-                    vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-                ),
-                Vector::new(
-                    space,
-                    vec![
-                        Rational::from(1) / Rational::from(2),
-                        Rational::from(3) / Rational::from(4),
-                    ],
-                ),
-                Vector::new(space, vec![Rational::from(2), Rational::from(-1)]),
-                Vector::new(space, vec![Rational::from(0), Rational::from(-2)]),
-                Vector::new(space, vec![Rational::from(2), Rational::from(0)]),
-                Vector::new(space, vec![Rational::from(2), Rational::from(2)]),
+                space.vector([1, 1]),
+                space.vector([1, 1]),
+                space.vector([Rational::from(0), Rational::from(1) / Rational::from(2)]),
+                space.vector([-1, 0]),
+                space.vector([-1, 0]),
+                space.vector([Rational::from(0), Rational::from(1) / Rational::from(2)]),
+                space.vector([
+                    Rational::from(1) / Rational::from(2),
+                    Rational::from(3) / Rational::from(4),
+                ]),
+                space.vector([2, -1]),
+                space.vector([0, -2]),
+                space.vector([2, 0]),
+                space.vector([2, 2]),
             ],
         );
 
         let ohsp = OrientedSimplex::new_with_positive_point(
             space,
             vec![
-                Vector::new(space, vec![Rational::from(1), Rational::from(4)]),
-                Vector::new(space, vec![Rational::from(1), Rational::from(-4)]),
+                space.vector([Rational::from(1), Rational::from(4)]),
+                space.vector([Rational::from(1), Rational::from(-4)]),
             ],
-            &Vector::new(space, vec![Rational::from(10), Rational::from(0)]),
+            &space.vector(vec![Rational::from(10), Rational::from(0)]),
         )
         .unwrap()
         .into_oriented_hyperplane();
@@ -884,38 +857,29 @@ mod tests {
             let ch1 = ConvexHull::new(
                 space,
                 vec![
-                    Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-                    Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-                    Vector::new(
-                        space,
-                        vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-                    ),
-                    Vector::new(space, vec![Rational::from(-1), Rational::from(0)]),
-                    Vector::new(space, vec![Rational::from(-1), Rational::from(0)]),
-                    Vector::new(
-                        space,
-                        vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-                    ),
-                    Vector::new(
-                        space,
-                        vec![
-                            Rational::from(1) / Rational::from(2),
-                            Rational::from(3) / Rational::from(4),
-                        ],
-                    ),
-                    Vector::new(space, vec![Rational::from(2), Rational::from(-1)]),
-                    Vector::new(space, vec![Rational::from(0), Rational::from(-2)]),
-                    Vector::new(space, vec![Rational::from(2), Rational::from(0)]),
-                    Vector::new(space, vec![Rational::from(2), Rational::from(2)]),
+                    space.vector([1, 1]),
+                    space.vector([1, 1]),
+                    space.vector([Rational::from(0), Rational::from(1) / Rational::from(2)]),
+                    space.vector([-1, 0]),
+                    space.vector([-1, 0]),
+                    space.vector([Rational::from(0), Rational::from(1) / Rational::from(2)]),
+                    space.vector([
+                        Rational::from(1) / Rational::from(2),
+                        Rational::from(3) / Rational::from(4),
+                    ]),
+                    space.vector([2, 1]),
+                    space.vector([0, -2]),
+                    space.vector([2, 0]),
+                    space.vector([2, 2]),
                 ],
             );
             let ch2 = ConvexHull::new(
                 space,
                 vec![
-                    Vector::new(space, vec![Rational::from(-2), Rational::from(0)]),
-                    Vector::new(space, vec![Rational::from(3), Rational::from(0)]),
-                    Vector::new(space, vec![Rational::from(3), Rational::from(2)]),
-                    Vector::new(space, vec![Rational::from(0), Rational::from(-1)]),
+                    space.vector([-2, 0]),
+                    space.vector([3, 0]),
+                    space.vector([3, 2]),
+                    space.vector([0, -1]),
                 ],
             );
             let ch3 = ch1.intersect(&ch2);
@@ -926,76 +890,37 @@ mod tests {
             let ch1 = ConvexHull::new(
                 space,
                 vec![
-                    Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-                    Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-                    Vector::new(
-                        space,
-                        vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-                    ),
-                    Vector::new(space, vec![Rational::from(-1), Rational::from(0)]),
-                    Vector::new(space, vec![Rational::from(-1), Rational::from(0)]),
-                    Vector::new(
-                        space,
-                        vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-                    ),
-                    Vector::new(
-                        space,
-                        vec![
-                            Rational::from(1) / Rational::from(2),
-                            Rational::from(3) / Rational::from(4),
-                        ],
-                    ),
-                    Vector::new(space, vec![Rational::from(2), Rational::from(-1)]),
-                    Vector::new(space, vec![Rational::from(0), Rational::from(-2)]),
-                    Vector::new(space, vec![Rational::from(2), Rational::from(0)]),
-                    Vector::new(space, vec![Rational::from(2), Rational::from(2)]),
+                    space.vector([1, 1]),
+                    space.vector([1, 1]),
+                    space.vector([Rational::from(0), Rational::from(1) / Rational::from(2)]),
+                    space.vector([-1, 0]),
+                    space.vector([-1, 0]),
+                    space.vector([Rational::from(0), Rational::from(1) / Rational::from(2)]),
+                    space.vector([
+                        Rational::from(1) / Rational::from(2),
+                        Rational::from(3) / Rational::from(4),
+                    ]),
+                    space.vector([2, 1]),
+                    space.vector([0, -2]),
+                    space.vector([2, 0]),
+                    space.vector([2, 2]),
                 ],
             );
-            let ch2 = ConvexHull::new(
-                space,
-                vec![
-                    Vector::new(space, vec![Rational::from(3), Rational::from(2)]),
-                    Vector::new(space, vec![Rational::from(0), Rational::from(-1)]),
-                ],
-            );
+            let ch2 = ConvexHull::new(space, vec![space.vector([3, 2]), space.vector([0, -1])]);
             let ch3 = ch1.intersect(&ch2);
             println!("{ch3:?}");
         }
         //line misses line
         {
-            let ch1 = ConvexHull::new(
-                space,
-                vec![
-                    Vector::new(space, vec![Rational::from(-2), Rational::from(-1)]),
-                    Vector::new(space, vec![Rational::from(-1), Rational::from(1)]),
-                ],
-            );
-            let ch2 = ConvexHull::new(
-                space,
-                vec![
-                    Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-                    Vector::new(space, vec![Rational::from(-1), Rational::from(0)]),
-                ],
-            );
+            let ch1 = ConvexHull::new(space, vec![space.vector([-2, -1]), space.vector([-1, 1])]);
+            let ch2 = ConvexHull::new(space, vec![space.vector([1, 1]), space.vector([-1, 0])]);
             let ch3 = ch1.intersect(&ch2);
             debug_assert_eq!(ch3.subspace.embedded_space().affine_dimension(), 0);
         }
         //line hits line
         {
-            let ch1 = ConvexHull::new(
-                space,
-                vec![
-                    Vector::new(space, vec![Rational::from(2), Rational::from(0)]),
-                    Vector::new(space, vec![Rational::from(-2), Rational::from(-1)]),
-                ],
-            );
-            let ch2 = ConvexHull::new(
-                space,
-                vec![
-                    Vector::new(space, vec![Rational::from(0), Rational::from(-1)]),
-                    Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-                ],
-            );
+            let ch1 = ConvexHull::new(space, vec![space.vector([2, 0]), space.vector([-2, -1])]);
+            let ch2 = ConvexHull::new(space, vec![space.vector([0, -1]), space.vector([1, 1])]);
             let ch3 = ch1.intersect(&ch2);
             debug_assert_eq!(ch3.subspace.embedded_space().affine_dimension(), 1);
         }
@@ -1004,39 +929,31 @@ mod tests {
     #[test]
     fn convex_hull_from_simplex() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
-        let p1 = Vector::new(
-            space,
-            vec![Rational::from(4), Rational::from(2), Rational::from(2)],
-        );
-        let p2 = Vector::new(
-            space,
-            vec![Rational::from(5), Rational::from(-3), Rational::from(3)],
-        );
-        let p3 = Vector::new(
-            space,
-            vec![Rational::from(-5), Rational::from(6), Rational::from(2)],
-        );
-        let p4 = Vector::new(
-            space,
-            vec![Rational::from(8), Rational::from(2), Rational::from(-9)],
-        );
+        let p1 = space.vector([4, 2, 2]);
+        let p2 = space.vector([5, -3, 3]);
+        let p3 = space.vector([-5, 6, 2]);
+        let p4 = space.vector([8, 2, -9]);
 
-        ConvexHull::from_simplex(Simplex::new(space, vec![]).unwrap())
+        ConvexHull::from_simplex(space.simplex(vec![]).unwrap())
             .check()
             .unwrap();
-        ConvexHull::from_simplex(Simplex::new(space, vec![p1.clone()]).unwrap())
+        ConvexHull::from_simplex(space.simplex(vec![p1.clone()]).unwrap())
             .check()
             .unwrap();
-        ConvexHull::from_simplex(Simplex::new(space, vec![p1.clone(), p2.clone()]).unwrap())
+        ConvexHull::from_simplex(space.simplex(vec![p1.clone(), p2.clone()]).unwrap())
             .check()
             .unwrap();
         ConvexHull::from_simplex(
-            Simplex::new(space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap(),
+            space
+                .simplex(vec![p1.clone(), p2.clone(), p3.clone()])
+                .unwrap(),
         )
         .check()
         .unwrap();
         ConvexHull::from_simplex(
-            Simplex::new(space, vec![p1.clone(), p2.clone(), p3.clone(), p4.clone()]).unwrap(),
+            space
+                .simplex(vec![p1.clone(), p2.clone(), p3.clone(), p4.clone()])
+                .unwrap(),
         )
         .check()
         .unwrap();

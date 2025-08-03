@@ -30,25 +30,22 @@ fn main() {
     // let s3 = Simplex::new( space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
     let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-    let mut ch = ConvexHull::new(
-        space,
-        vec![
-            space.vector([1, 1]),
-            space.vector([1, 1]),
-            space.vector([Rational::ZERO, Rational::from_str("1/2").unwrap()]),
-            space.vector([-1, 0]),
-            space.vector([-1, 0]),
-            space.vector([Rational::ZERO, Rational::from_str("1/2").unwrap()]),
-            space.vector([
-                Rational::from_str("1/2").unwrap(),
-                Rational::from_str("3/4").unwrap(),
-            ]),
-            space.vector([2, -1]),
-            space.vector([0, -2]),
-            space.vector([2, 0]),
-            space.vector([2, 2]),
-        ],
-    );
+    let mut ch = space.convex_hull(vec![
+        space.vector([1, 1]),
+        space.vector([1, 1]),
+        space.vector([Rational::ZERO, Rational::from_str("1/2").unwrap()]),
+        space.vector([-1, 0]),
+        space.vector([-1, 0]),
+        space.vector([Rational::ZERO, Rational::from_str("1/2").unwrap()]),
+        space.vector([
+            Rational::from_str("1/2").unwrap(),
+            Rational::from_str("3/4").unwrap(),
+        ]),
+        space.vector([2, -1]),
+        space.vector([0, -2]),
+        space.vector([2, 0]),
+        space.vector([2, 2]),
+    ]);
 
     let ospx = OrientedSimplex::new_with_positive_point(
         space,

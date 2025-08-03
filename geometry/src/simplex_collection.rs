@@ -169,7 +169,7 @@ where
         &self,
     ) -> <Self::SubsetType as LabelledSimplexCollection<'f, FS, InteriorOrBoundary>>::WithLabel<()>
     {
-        self.subset_by_label(&InteriorOrBoundary::Interior)
+        self.subset_by_label(&InteriorOrBoundary::Boundary)
     }
 }
 

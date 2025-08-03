@@ -40,9 +40,8 @@ fn main() {
         .nth_root(&field.from_int(Integer::from(3)), 2)
         .unwrap();
 
-    let a = ConvexHull::new(
-        space,
-        vec![
+    let a = space
+        .convex_hull(vec![
             space.vector([
                 field.from_int(Integer::from(0)),
                 field.from_int(Integer::from(0)),
@@ -52,24 +51,21 @@ fn main() {
                 field.from_int(Integer::from(1)),
             ]),
             space.vector([sqrt3.clone(), field.from_int(Integer::from(0))]),
-        ],
-    )
-    .as_simplicial_complex()
-    .forget_labels();
+        ])
+        .as_simplicial_complex()
+        .forget_labels();
 
-    let b = ConvexHull::new(
-        space,
-        vec![
+    let b = space
+        .convex_hull(vec![
             space.vector([
                 field.from_int(Integer::from(0)),
                 field.from_int(Integer::from(0)),
             ]),
             space.vector([sqrt2.clone(), field.from_int(Integer::from(1))]),
             space.vector([sqrt2.clone(), field.from_int(Integer::from(0))]),
-        ],
-    )
-    .as_simplicial_complex()
-    .into_forget_labels();
+        ])
+        .as_simplicial_complex()
+        .into_forget_labels();
 
     let x = LabelledSimplicialDisjointUnion::union_raw(&(&a).into(), &(&b).into())
         .refine_into_partial_simplicial_complex()

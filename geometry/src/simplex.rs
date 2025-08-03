@@ -40,7 +40,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Simplex<'f, FS>
 where
     AffineSpace<'f, FS>: Clone,
 {
-    pub fn new(
+    fn new(
         ambient_space: AffineSpace<'f, FS>,
         mut points: Vec<Vector<'f, FS>>,
     ) -> Result<Self, &'static str> {
@@ -60,7 +60,21 @@ where
             Err("Can't make a simplex using degenerate points")
         }
     }
+}
 
+impl<'f, FS: OrderedRingSignature + FieldSignature> AffineSpace<'f, FS>
+where
+    AffineSpace<'f, FS>: Clone,
+{
+    pub fn simplex(&self, points: Vec<Vector<'f, FS>>) -> Result<Simplex<'f, FS>, &'static str> {
+        Simplex::new(*self, points)
+    }
+}
+
+impl<'f, FS: OrderedRingSignature + FieldSignature> Simplex<'f, FS>
+where
+    AffineSpace<'f, FS>: Clone,
+{
     pub fn ambient_space(&self) -> AffineSpace<'f, FS> {
         self.ambient_space
     }
@@ -183,16 +197,16 @@ mod tests {
     #[test]
     fn make_simplex() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let v1 = Vector::new(space, vec![Rational::from(1), Rational::from(1)]);
-        let v2 = Vector::new(space, vec![Rational::from(1), Rational::from(0)]);
-        let v3 = Vector::new(space, vec![Rational::from(0), Rational::from(1)]);
+        let v1 = space.vector([1, 1]);
+        let v2 = space.vector([1, 0]);
+        let v3 = space.vector([0, 1]);
         let s = Simplex::new(space, vec![v1, v2, v3]);
         assert!(s.is_ok());
 
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let v1 = Vector::new(space, vec![Rational::from(0), Rational::from(0)]);
-        let v2 = Vector::new(space, vec![Rational::from(1), Rational::from(0)]);
-        let v3 = Vector::new(space, vec![Rational::from(2), Rational::from(0)]);
+        let v1 = space.vector([0, 0]);
+        let v2 = space.vector([1, 0]);
+        let v3 = space.vector([2, 0]);
         let s = Simplex::new(space, vec![v1, v2, v3]);
         assert!(s.is_err());
     }
@@ -200,9 +214,9 @@ mod tests {
     #[test]
     fn simplex_skeleton() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let v1 = Vector::new(space, vec![Rational::from(1), Rational::from(1)]);
-        let v2 = Vector::new(space, vec![Rational::from(1), Rational::from(0)]);
-        let v3 = Vector::new(space, vec![Rational::from(0), Rational::from(1)]);
+        let v1 = space.vector([1, 1]);
+        let v2 = space.vector([1, 0]);
+        let v3 = space.vector([0, 1]);
         let s = Simplex::new(space, vec![v1, v2, v3]).unwrap();
 
         assert_eq!(s.skeleton(-2).len(), 0);

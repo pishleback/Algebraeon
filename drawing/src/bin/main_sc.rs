@@ -56,14 +56,12 @@ fn main() {
 
     let n = 12;
 
-    let ch1 = ConvexHull::new(
-        space,
+    let ch1 = space.convex_hull(
         (0..n)
             .map(|i| random_point(space, (i + 1) as f64))
             .collect(),
     );
-    let ch2 = ConvexHull::new(
-        space,
+    let ch2 = space.convex_hull(
         (0..n)
             .map(|i| random_point(space, (i + 1) as f64))
             .collect(),

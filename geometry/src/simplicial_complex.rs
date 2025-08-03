@@ -301,7 +301,7 @@ where
                 .map(|spx| {
                     let mut points = spx.points().clone();
                     points.push(boundary_point.clone());
-                    Simplex::new(spx.ambient_space(), points).unwrap()
+                    spx.ambient_space().simplex(points).unwrap()
                 })
                 .collect();
 
@@ -340,7 +340,7 @@ where
                 pt
             };
 
-            let pt_spx = Simplex::new(self.ambient_space(), vec![pt.clone()]).unwrap();
+            let pt_spx = self.ambient_space().simplex(vec![pt.clone()]).unwrap();
             let (star, link) = {
                 let mut star = self.simplexes.get(&pt_spx).unwrap().inv_bdry.clone();
                 star.insert(pt_spx.clone());
@@ -391,8 +391,10 @@ where
                 .map(|pt| nbd_affine_subspace.unembed_point(pt).unwrap())
                 .collect::<Vec<_>>();
             let pt_img = nbd_affine_subspace.unembed_point(&pt).unwrap();
-            let pt_img_spx =
-                Simplex::new(nbd_affine_subspace.embedded_space(), vec![pt_img.clone()]).unwrap();
+            let pt_img_spx = nbd_affine_subspace
+                .embedded_space()
+                .simplex(vec![pt_img.clone()])
+                .unwrap();
             let star_img = star
                 .iter()
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())

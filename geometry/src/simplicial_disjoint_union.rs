@@ -186,10 +186,9 @@ where
                     );
 
                     if !overlap.is_empty()
-                        && match Simplex::new(
-                            ambient_space,
-                            overlap.defining_points().into_iter().collect(),
-                        ) {
+                        && match ambient_space
+                            .simplex(overlap.defining_points().into_iter().collect())
+                        {
                             Ok(overlap_spx) => {
                                 let spx1_points = spx1.points().iter().collect::<HashSet<_>>();
                                 let spx2_points = spx2.points().iter().collect::<HashSet<_>>();

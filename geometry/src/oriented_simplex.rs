@@ -27,7 +27,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
             return Err("Oriented simplex must have dimension one less than the ambient space");
         }
         let n = points.len();
-        let simplex = Simplex::new(ambient_space, points)?;
+        let simplex = ambient_space.simplex(points)?;
         if n == 0 {
             Ok(Self {
                 simplex,
@@ -309,9 +309,9 @@ mod tests {
     #[test]
     fn make_oriented_simplex() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let v1 = Vector::new(space, vec![Rational::from(1), Rational::from(0)]);
-        let v2 = Vector::new(space, vec![Rational::from(0), Rational::from(1)]);
-        let v3 = Vector::new(space, vec![Rational::from(2), Rational::from(3)]);
+        let v1 = space.vector([1, 0]);
+        let v2 = space.vector([0, 1]);
+        let v3 = space.vector([2, 3]);
         let s_pos =
             OrientedSimplex::new_with_positive_point(space, vec![v1.clone(), v2.clone()], &v3)
                 .unwrap();
