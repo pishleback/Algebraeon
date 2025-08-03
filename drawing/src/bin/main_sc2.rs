@@ -17,6 +17,7 @@ use algebraeon_geometry::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use std::collections::HashSet;
+use std::str::FromStr;
 
 fn main() {
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
@@ -32,39 +33,27 @@ fn main() {
     let mut ch = ConvexHull::new(
         space,
         vec![
-            Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-            Vector::new(space, vec![Rational::from(1), Rational::from(1)]),
-            Vector::new(
-                space,
-                vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-            ),
-            Vector::new(space, vec![Rational::from(-1), Rational::from(0)]),
-            Vector::new(space, vec![Rational::from(-1), Rational::from(0)]),
-            Vector::new(
-                space,
-                vec![Rational::from(0), Rational::from(1) / Rational::from(2)],
-            ),
-            Vector::new(
-                space,
-                vec![
-                    Rational::from(1) / Rational::from(2),
-                    Rational::from(3) / Rational::from(4),
-                ],
-            ),
-            Vector::new(space, vec![Rational::from(2), Rational::from(-1)]),
-            Vector::new(space, vec![Rational::from(0), Rational::from(-2)]),
-            Vector::new(space, vec![Rational::from(2), Rational::from(0)]),
-            Vector::new(space, vec![Rational::from(2), Rational::from(2)]),
+            space.vector([1, 1]),
+            space.vector([1, 1]),
+            space.vector([Rational::ZERO, Rational::from_str("1/2").unwrap()]),
+            space.vector([-1, 0]),
+            space.vector([-1, 0]),
+            space.vector([Rational::ZERO, Rational::from_str("1/2").unwrap()]),
+            space.vector([
+                Rational::from_str("1/2").unwrap(),
+                Rational::from_str("3/4").unwrap(),
+            ]),
+            space.vector([2, -1]),
+            space.vector([0, -2]),
+            space.vector([2, 0]),
+            space.vector([2, 2]),
         ],
     );
 
     let ospx = OrientedSimplex::new_with_positive_point(
         space,
-        vec![
-            Vector::new(space, vec![Rational::from(0), Rational::from(4)]),
-            Vector::new(space, vec![Rational::from(1), Rational::from(-4)]),
-        ],
-        &Vector::new(space, vec![Rational::from(10), Rational::from(0)]),
+        vec![space.vector([0, 4]), space.vector([1, -4])],
+        &space.vector([Rational::from(10), Rational::from(0)]),
     )
     .unwrap();
 

@@ -33,10 +33,10 @@ fn main() {
         &ConvexHull::new(
             space,
             vec![
-                Vector::new(space, vec![Rational::from(0), Rational::from(3)]),
-                Vector::new(space, vec![Rational::from(3), Rational::from(0)]),
-                Vector::new(space, vec![Rational::from(0), Rational::from(-3)]),
-                Vector::new(space, vec![Rational::from(-3), Rational::from(0)]),
+                space.vector([0, 3]),
+                space.vector([3, 0]),
+                space.vector([0, -3]),
+                space.vector([-3, 0]),
             ],
         )
         .as_simplicial_complex()
@@ -47,10 +47,10 @@ fn main() {
         &ConvexHull::new(
             space,
             vec![
-                Vector::new(space, vec![Rational::from(-2), Rational::from(-2)]),
-                Vector::new(space, vec![Rational::from(2), Rational::from(-2)]),
-                Vector::new(space, vec![Rational::from(-2), Rational::from(2)]),
-                Vector::new(space, vec![Rational::from(2), Rational::from(2)]),
+                space.vector([-2, -2]),
+                space.vector([2, -2]),
+                space.vector([-2, 2]),
+                space.vector([2, 2]),
             ],
         )
         .as_simplicial_complex()
@@ -63,9 +63,9 @@ fn main() {
         &ConvexHull::new(
             space,
             vec![
-                Vector::new(space, vec![Rational::from(-5), Rational::from(0)]),
-                Vector::new(space, vec![Rational::from(5), Rational::from(1)]),
-                Vector::new(space, vec![Rational::from(0), Rational::from(2)]),
+                space.vector([-5, 0]),
+                space.vector([5, 1]),
+                space.vector([0, 2]),
             ],
         )
         .as_simplicial_complex()

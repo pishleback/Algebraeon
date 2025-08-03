@@ -548,7 +548,10 @@ where
             let (_root, span) = ch.subspace.get_root_and_span().unwrap();
             debug_assert_eq!(span.len(), 0);
             debug_assert_eq!(outer_points.len(), 0);
-            outer_points.push(Vector::new(ch.subspace.embedded_space(), vec![]));
+            outer_points.push(Vector::new(
+                ch.subspace.embedded_space(),
+                Vec::<FS::Set>::new(),
+            ));
         }
 
         // Note that in linear dimension 1 this doesnt quite work for outer edges since the boundary is not connected. Instead, outer edges should just be the edge between the two points.

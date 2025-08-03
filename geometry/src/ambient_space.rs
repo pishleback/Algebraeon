@@ -64,6 +64,13 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
         Some(Vector::construct(*self, |_| self.field().zero()))
     }
 
+    pub fn vector(
+        self,
+        coordinates: impl IntoIterator<Item = impl Into<FS::Set>>,
+    ) -> Vector<'f, FS> {
+        Vector::new(self, coordinates)
+    }
+
     pub fn linear_dimension(&self) -> Option<usize> {
         if self.affine_dimension == 0 {
             None

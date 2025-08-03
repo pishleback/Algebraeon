@@ -47,7 +47,14 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
         self.ambient_space
     }
 
-    pub fn new(ambient_space: AffineSpace<'f, FS>, coordinates: Vec<FS::Set>) -> Self {
+    pub(crate) fn new(
+        ambient_space: AffineSpace<'f, FS>,
+        coordinates: impl IntoIterator<Item = impl Into<FS::Set>>,
+    ) -> Self {
+        let coordinates = coordinates
+            .into_iter()
+            .map(|c| c.into())
+            .collect::<Vec<_>>();
         assert_eq!(ambient_space.linear_dimension().unwrap(), coordinates.len());
         Self {
             ambient_space,
@@ -213,14 +220,7 @@ pub fn vectors_from_rows<'f, FS: FieldSignature + 'f>(
 ) -> Vec<Vector<'f, FS>> {
     assert_eq!(mat.cols(), sp.linear_dimension().unwrap());
     (0..mat.rows())
-        .map(|r| {
-            Vector::new(
-                sp,
-                (0..mat.cols())
-                    .map(|c| mat.at(r, c).unwrap().clone())
-                    .collect(),
-            )
-        })
+        .map(|r| Vector::new(sp, (0..mat.cols()).map(|c| mat.at(r, c).unwrap().clone())))
         .collect()
 }
 

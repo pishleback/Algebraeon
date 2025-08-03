@@ -43,21 +43,15 @@ fn main() {
     let a = ConvexHull::new(
         space,
         vec![
-            Vector::new(
-                space,
-                vec![
-                    field.from_int(Integer::from(0)),
-                    field.from_int(Integer::from(0)),
-                ],
-            ),
-            Vector::new(
-                space,
-                vec![
-                    field.from_int(Integer::from(0)),
-                    field.from_int(Integer::from(1)),
-                ],
-            ),
-            Vector::new(space, vec![sqrt3.clone(), field.from_int(Integer::from(0))]),
+            space.vector([
+                field.from_int(Integer::from(0)),
+                field.from_int(Integer::from(0)),
+            ]),
+            space.vector([
+                field.from_int(Integer::from(0)),
+                field.from_int(Integer::from(1)),
+            ]),
+            space.vector([sqrt3.clone(), field.from_int(Integer::from(0))]),
         ],
     )
     .as_simplicial_complex()
@@ -66,15 +60,12 @@ fn main() {
     let b = ConvexHull::new(
         space,
         vec![
-            Vector::new(
-                space,
-                vec![
-                    field.from_int(Integer::from(0)),
-                    field.from_int(Integer::from(0)),
-                ],
-            ),
-            Vector::new(space, vec![sqrt2.clone(), field.from_int(Integer::from(1))]),
-            Vector::new(space, vec![sqrt2.clone(), field.from_int(Integer::from(0))]),
+            space.vector([
+                field.from_int(Integer::from(0)),
+                field.from_int(Integer::from(0)),
+            ]),
+            space.vector([sqrt2.clone(), field.from_int(Integer::from(1))]),
+            space.vector([sqrt2.clone(), field.from_int(Integer::from(0))]),
         ],
     )
     .as_simplicial_complex()
