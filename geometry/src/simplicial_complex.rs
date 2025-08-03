@@ -143,7 +143,8 @@ impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
 where
     FS::Set: Hash,
 {
-    fn check(&self) {
+    #[allow(unused)]
+    pub(crate) fn check(&self) {
         let mut inv_bdry_map = HashMap::new();
         for spx in self.simplexes.keys() {
             inv_bdry_map.insert(spx.clone(), HashSet::new());

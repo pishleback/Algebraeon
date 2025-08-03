@@ -75,6 +75,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHull<'f, FS>
 where
     FS::Set: Hash,
 {
+    #[allow(unused)]
     fn check(&self) -> Result<(), &'static str> {
         assert_eq!(self.subspace.ambient_space(), self.ambient_space);
 
