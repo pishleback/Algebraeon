@@ -12,7 +12,7 @@ use crate::{
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum InteriorBoundaryLabel {
+pub enum InteriorOrBoundary {
     Interior,
     Boundary,
 }
@@ -179,9 +179,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> SimplicialComplex<'f, FS>
 where
     FS::Set: Hash,
 {
-    pub fn interior_and_boundary(
-        &self,
-    ) -> LabelledSimplicialComplex<'f, FS, InteriorBoundaryLabel> {
+    pub fn interior_and_boundary(&self) -> LabelledSimplicialComplex<'f, FS, InteriorOrBoundary> {
         /*
         let n be the dimension of the space self is living in
          - every simplex of rank n is part of the interior
@@ -199,7 +197,7 @@ where
             let r = simplex.n();
             if r == n {
                 //rank n simplex is always part of the interior
-                simplexes.insert(simplex, InteriorBoundaryLabel::Interior);
+                simplexes.insert(simplex, InteriorOrBoundary::Interior);
             } else {
                 let inv_bdry = &self.simplexes.get(&simplex).unwrap().inv_bdry;
                 if r == n - 1 {
@@ -207,10 +205,10 @@ where
                     //it is part of the boundary of the simplicial complex iff it is the boundary of exactly 2
                     match inv_bdry.len() {
                         0 | 1 => {
-                            simplexes.insert(simplex, InteriorBoundaryLabel::Boundary);
+                            simplexes.insert(simplex, InteriorOrBoundary::Boundary);
                         }
                         2 => {
-                            simplexes.insert(simplex, InteriorBoundaryLabel::Interior);
+                            simplexes.insert(simplex, InteriorOrBoundary::Interior);
                         }
                         _ => panic!(
                             "rank n-1 simplex should be in the boundary of at most 2 rank n simplices"
@@ -221,15 +219,15 @@ where
                     debug_assert!(r < n - 1);
                     #[allow(clippy::collapsible_else_if)]
                     if inv_bdry.is_empty() {
-                        simplexes.insert(simplex, InteriorBoundaryLabel::Boundary);
+                        simplexes.insert(simplex, InteriorOrBoundary::Boundary);
                     } else {
                         if inv_bdry
                             .iter()
-                            .all(|b| simplexes.get(b).unwrap() == &InteriorBoundaryLabel::Interior)
+                            .all(|b| simplexes.get(b).unwrap() == &InteriorOrBoundary::Interior)
                         {
-                            simplexes.insert(simplex, InteriorBoundaryLabel::Interior);
+                            simplexes.insert(simplex, InteriorOrBoundary::Interior);
                         } else {
-                            simplexes.insert(simplex, InteriorBoundaryLabel::Boundary);
+                            simplexes.insert(simplex, InteriorOrBoundary::Boundary);
                         }
                     }
                 }
@@ -241,12 +239,12 @@ where
 
     pub fn interior(&self) -> PartialSimplicialComplex<'f, FS> {
         self.interior_and_boundary()
-            .subset_by_label(&InteriorBoundaryLabel::Interior)
+            .subset_by_label(&InteriorOrBoundary::Interior)
     }
 
     pub fn boundary(&self) -> SimplicialComplex<'f, FS> {
         self.interior_and_boundary()
-            .subset_by_label(&InteriorBoundaryLabel::Boundary)
+            .subset_by_label(&InteriorOrBoundary::Boundary)
             .try_as_simplicial_complex()
             .unwrap()
     }

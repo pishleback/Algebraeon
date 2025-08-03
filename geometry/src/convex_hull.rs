@@ -8,7 +8,7 @@ use crate::{
     },
     simplex::Simplex,
     simplex_collection::LabelledSimplexCollection,
-    simplicial_complex::{InteriorBoundaryLabel, LabelledSimplicialComplex},
+    simplicial_complex::{InteriorOrBoundary, LabelledSimplicialComplex},
 };
 
 use super::*;
@@ -471,9 +471,7 @@ where
             .collect()
     }
 
-    pub fn as_simplicial_complex(
-        &self,
-    ) -> LabelledSimplicialComplex<'f, FS, InteriorBoundaryLabel> {
+    pub fn as_simplicial_complex(&self) -> LabelledSimplicialComplex<'f, FS, InteriorOrBoundary> {
         let boundary_simplexes = self
             .embedded_facet_simplexes()
             .into_iter()
@@ -496,9 +494,9 @@ where
                 .into_iter()
                 .map(|spx| {
                     let label = if boundary_simplexes.contains(&spx) {
-                        InteriorBoundaryLabel::Boundary
+                        InteriorOrBoundary::Boundary
                     } else {
-                        InteriorBoundaryLabel::Interior
+                        InteriorOrBoundary::Interior
                     };
                     (spx, label)
                 })

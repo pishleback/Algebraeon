@@ -5,7 +5,7 @@ use crate::{
     partial_simplicial_complex::LabelledPartialSimplicialComplex,
     simplex::Simplex,
     simplex_collection::LabelledSimplexCollection,
-    simplicial_complex::{InteriorBoundaryLabel, LabelledSimplicialComplex},
+    simplicial_complex::{InteriorOrBoundary, LabelledSimplicialComplex},
 };
 use std::collections::{HashMap, HashSet};
 
@@ -253,7 +253,7 @@ where
                             //add the refinements of spx1 and spx2 and update the pairs todo
                             for spx1_repl in spx1_replacement
                                 .as_simplicial_complex()
-                                .subset_by_label(&InteriorBoundaryLabel::Interior)
+                                .subset_by_label(&InteriorOrBoundary::Interior)
                                 .into_simplexes()
                             {
                                 for spx in &spx1_paired {
@@ -271,7 +271,7 @@ where
 
                             for spx2_repl in spx2_replacement
                                 .as_simplicial_complex()
-                                .subset_by_label(&InteriorBoundaryLabel::Interior)
+                                .subset_by_label(&InteriorOrBoundary::Interior)
                                 .into_simplexes()
                             {
                                 for spx in &spx2_paired {

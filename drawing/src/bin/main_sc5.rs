@@ -10,7 +10,7 @@ use algebraeon_geometry::ambient_space::AffineSpace;
 use algebraeon_geometry::convex_hull::ConvexHull;
 use algebraeon_geometry::coordinates::Vector;
 use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
-use algebraeon_geometry::simplicial_complex::InteriorBoundaryLabel;
+use algebraeon_geometry::simplicial_complex::InteriorOrBoundary;
 use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
 use algebraeon_geometry::*;
 use algebraeon_nzq::*;
@@ -40,7 +40,7 @@ fn main() {
             ],
         )
         .as_simplicial_complex()
-        .subset_by_label(&InteriorBoundaryLabel::Interior),
+        .subset_by_label(&InteriorOrBoundary::Interior),
     );
 
     let b = LabelledSimplicialDisjointUnion::from(

@@ -5,7 +5,7 @@ use crate::{
     partial_simplicial_complex::LabelledPartialSimplicialComplex,
     simplex::Simplex,
     simplex_collection::LabelledSimplexCollection,
-    simplicial_complex::{InteriorBoundaryLabel, SimplicialComplex},
+    simplicial_complex::{InteriorOrBoundary, SimplicialComplex},
     simplicial_disjoint_union::{LabelledSimplicialDisjointUnion, SimplicialDisjointUnion},
 };
 use std::collections::{HashMap, HashSet};
@@ -35,7 +35,7 @@ where
         }
         let self_parts = self_ext
             .as_simplicial_complex()
-            .subset_by_label(&InteriorBoundaryLabel::Interior)
+            .subset_by_label(&InteriorOrBoundary::Interior)
             .into_simplexes();
 
         let mut other_ext = overlap.clone();
@@ -44,7 +44,7 @@ where
         }
         let other_parts = other_ext
             .as_simplicial_complex()
-            .subset_by_label(&InteriorBoundaryLabel::Interior)
+            .subset_by_label(&InteriorOrBoundary::Interior)
             .into_simplexes();
 
         let all_parts = self_parts.union(&other_parts);
