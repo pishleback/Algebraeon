@@ -110,6 +110,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
 where
     FS::Set: Hash,
 {
+    #[cfg(debug_assertions)]
     pub(super) fn check(&self) {
         for spx_a in self.simplexes.keys() {
             for spx_b in self.simplexes.keys() {
