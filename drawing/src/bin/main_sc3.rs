@@ -62,12 +62,7 @@ fn main() {
         ])
         .to_simplicial_complex()
         .into_forget_labels();
-    let x = x
-        .difference(&c)
-        .simplify()
-        .into_labelled_simplicial_complex()
-        .simplify()
-        .forget_labels();
+    let x = x.difference(&c);
 
     // let y = x.clone().refine_to_partial_simplicial_complex().simplify();
 
@@ -87,7 +82,7 @@ fn main() {
     // let y = y.as_simplicial_complex().entire;
     // let y = y.simplify();
 
-    // let y = x.closure().difference(&x);
+    let y = x.closure().difference(&x);
 
     let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
     canvas.plot_shapes(
@@ -100,15 +95,15 @@ fn main() {
                 &x,
             )),
     );
-    // canvas.plot_shapes(
-    //     [Shape::SetThickness(0.3)]
-    //         .into_iter()
-    //         .chain(simplicial_complex_shapes(
-    //             &Colour::black(),
-    //             &Colour::black(),
-    //             0.5,
-    //             &y,
-    //         )),
-    // );
+    canvas.plot_shapes(
+        [Shape::SetThickness(0.3)]
+            .into_iter()
+            .chain(simplicial_complex_shapes(
+                &Colour::red(),
+                &Colour::red(),
+                0.5,
+                &y,
+            )),
+    );
     canvas.run();
 }

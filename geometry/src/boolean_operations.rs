@@ -72,7 +72,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
 where
     FS::Set: Hash,
 {
-    fn subtract_raw<S: Eq + Clone>(
+    pub(crate) fn subtract_raw<S: Eq + Clone>(
         &self,
         other: &LabelledSimplicialDisjointUnion<'f, FS, S>,
     ) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
@@ -100,7 +100,7 @@ where
         })
     }
 
-    fn intersect_raw<S: Eq + Clone>(
+    pub(crate) fn intersect_raw<S: Eq + Clone>(
         &self,
         other: &LabelledSimplicialDisjointUnion<'f, FS, S>,
     ) -> LabelledSimplicialDisjointUnion<'f, FS, (T, S)> {
@@ -121,7 +121,7 @@ where
         })
     }
 
-    fn union_raw(&self, other: &Self) -> SimplicialDisjointUnion<'f, FS> {
+    pub(crate) fn union_raw(&self, other: &Self) -> SimplicialDisjointUnion<'f, FS> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
         let mut simplexes = HashSet::new();
         for spx in Self::subtract_raw(other, self).into_simplexes() {
