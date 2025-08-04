@@ -480,7 +480,7 @@ where
             .collect()
     }
 
-    pub fn as_simplicial_complex(&self) -> LabelledSimplicialComplex<'f, FS, InteriorOrBoundary> {
+    pub fn to_simplicial_complex(&self) -> LabelledSimplicialComplex<'f, FS, InteriorOrBoundary> {
         let boundary_simplexes = self
             .embedded_facet_simplexes()
             .into_iter()

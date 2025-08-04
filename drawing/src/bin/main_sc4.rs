@@ -7,6 +7,7 @@ use algebraeon_drawing::canvas2d::shapes::Shape;
 use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
 use algebraeon_drawing::colour::Colour;
 use algebraeon_geometry::ambient_space::AffineSpace;
+use algebraeon_geometry::boolean_operations::Union;
 use algebraeon_geometry::convex_hull::ConvexHull;
 use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
 use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
@@ -52,7 +53,7 @@ fn main() {
             ]),
             space.vector([sqrt3.clone(), field.from_int(Integer::from(0))]),
         ])
-        .as_simplicial_complex()
+        .to_simplicial_complex()
         .forget_labels();
 
     let b = space
@@ -64,12 +65,10 @@ fn main() {
             space.vector([sqrt2.clone(), field.from_int(Integer::from(1))]),
             space.vector([sqrt2.clone(), field.from_int(Integer::from(0))]),
         ])
-        .as_simplicial_complex()
+        .to_simplicial_complex()
         .into_forget_labels();
 
-    let x = LabelledSimplicialDisjointUnion::union_raw(&(&a).into(), &(&b).into())
-        .refine_into_partial_simplicial_complex()
-        .closure();
+    let x = a.union(&b);
 
     for spx in x.simplexes() {
         for pt in spx.points() {

@@ -4,8 +4,7 @@ use crate::{
     convex_hull::ConvexHull,
     partial_simplicial_complex::LabelledPartialSimplicialComplex,
     simplex::Simplex,
-    simplex_collection::{InteriorOrBoundary, LabelledSimplexCollection},
-    simplicial_complex::LabelledSimplicialComplex,
+    simplex_collection::{InteriorOrBoundarySimplexCollection, LabelledSimplexCollection},
 };
 use std::collections::{HashMap, HashSet};
 
@@ -23,41 +22,6 @@ pub struct LabelledSimplicialDisjointUnion<
 }
 
 pub type SimplicialDisjointUnion<'f, FS> = LabelledSimplicialDisjointUnion<'f, FS, ()>;
-
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
-    From<&LabelledSimplicialComplex<'f, FS, T>> for LabelledSimplicialDisjointUnion<'f, FS, T>
-where
-    FS::Set: Hash,
-{
-    fn from(sc: &LabelledSimplicialComplex<'f, FS, T>) -> Self {
-        Self {
-            ambient_space: sc.ambient_space(),
-            simplexes: sc
-                .labelled_simplexes()
-                .into_iter()
-                .map(|(spx, label)| (spx.clone(), label.clone()))
-                .collect(),
-        }
-    }
-}
-
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
-    From<&LabelledPartialSimplicialComplex<'f, FS, T>>
-    for LabelledSimplicialDisjointUnion<'f, FS, T>
-where
-    FS::Set: Hash,
-{
-    fn from(sc: &LabelledPartialSimplicialComplex<'f, FS, T>) -> Self {
-        Self {
-            ambient_space: sc.ambient_space(),
-            simplexes: sc
-                .labelled_simplexes()
-                .into_iter()
-                .map(|(s, label)| (s.clone(), label.clone()))
-                .collect(),
-        }
-    }
-}
 
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
     LabelledSimplexCollection<'f, FS, T> for LabelledSimplicialDisjointUnion<'f, FS, T>
@@ -102,6 +66,10 @@ where
 
     fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T> {
         self.refine_into_partial_simplicial_complex()
+    }
+
+    fn into_simplicial_disjoint_union(self) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
+        self
     }
 }
 
@@ -254,8 +222,8 @@ where
 
                         //add the refinements of spx1 and spx2 and update the pairs todo
                         for spx1_repl in spx1_replacement
-                            .as_simplicial_complex()
-                            .subset_by_label(&InteriorOrBoundary::Interior)
+                            .to_simplicial_complex()
+                            .interior()
                             .into_simplexes()
                         {
                             for spx in &spx1_paired {
@@ -272,8 +240,8 @@ where
                         }
 
                         for spx2_repl in spx2_replacement
-                            .as_simplicial_complex()
-                            .subset_by_label(&InteriorOrBoundary::Interior)
+                            .to_simplicial_complex()
+                            .interior()
                             .into_simplexes()
                         {
                             for spx in &spx2_paired {

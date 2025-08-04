@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     ambient_space::AffineSpace, partial_simplicial_complex::LabelledPartialSimplicialComplex,
-    simplex::Simplex,
+    simplex::Simplex, simplicial_disjoint_union::LabelledSimplicialDisjointUnion,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -94,6 +94,8 @@ pub trait LabelledSimplexCollection<
     }
 
     fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T>;
+
+    fn into_simplicial_disjoint_union(self) -> LabelledSimplicialDisjointUnion<'f, FS, T>;
 
     fn apply_label_function<S: Eq + Clone>(&self, f: impl Fn(&T) -> S) -> Self::WithLabel<S> {
         LabelledSimplexCollection::new_labelled_unchecked(

@@ -5,7 +5,9 @@ use crate::{
     oriented_simplex::{OrientationSide, OrientedSimplex},
     partial_simplicial_complex::{LabelledPartialSimplicialComplex, PartialSimplicialComplex},
     simplex::Simplex,
-    simplex_collection::{InteriorOrBoundary, LabelledSimplexCollection},
+    simplex_collection::{
+        InteriorOrBoundary, InteriorOrBoundarySimplexCollection, LabelledSimplexCollection,
+    },
     simplicial_disjoint_union::LabelledSimplicialDisjointUnion,
     vector::Vector,
 };
@@ -130,6 +132,16 @@ where
                 .collect(),
         )
     }
+
+    fn into_simplicial_disjoint_union(self) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
+        LabelledSimplicialDisjointUnion::new_labelled_unchecked(
+            self.ambient_space,
+            self.simplexes
+                .into_iter()
+                .map(|(spx, info)| (spx, info.label))
+                .collect(),
+        )
+    }
 }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
@@ -227,14 +239,13 @@ where
     }
 
     pub fn interior(&self) -> PartialSimplicialComplex<'f, FS> {
-        self.interior_and_boundary()
-            .subset_by_label(&InteriorOrBoundary::Interior)
+        self.interior_and_boundary().interior()
     }
 
     pub fn boundary(&self) -> SimplicialComplex<'f, FS> {
         self.interior_and_boundary()
-            .subset_by_label(&InteriorOrBoundary::Boundary)
-            .try_as_simplicial_complex()
+            .boundary()
+            .try_into_simplicial_complex()
             .unwrap()
     }
 }
@@ -629,6 +640,7 @@ where
                 */
 
                 if let Some(star_label) = self.common_label(star.iter()).cloned() {
+                    //If all star labels are the same, we can try to fill it in from any point on the link
                     let boundary = link_img
                         .iter()
                         .filter(|spx| {
@@ -666,6 +678,35 @@ where
                         );
                         pts_todo.extend(link_points);
                     }
+                } else {
+                    //If not all star labels are the same, we can still try to fill it in if there is a subset of star forming a hyperplane such that each of the 3 resulting parts of star have the same label
+
+                    /*
+                     pt is in the interior and nbd looks something like
+
+                              l
+                         +---------+
+                        / \       / \
+                    l  /   \  s+ /   \ l
+                      /  s+ \   /  s+ \
+                     /       \ /       \
+                    +----h----p----h----+
+                     \       / \       /
+                      \  s- /   \  s- /
+                    l  \   /  s- \   / l
+                        \ /       \ /
+                         +---------+
+                              l
+
+                     where
+                         p = point
+                         h = subset of star cutting it by a hyperplane
+                         s+ = star on the + side of h
+                         s- = star on the - side of h
+                         l = link
+                     */
+
+                    // todo!()
                 }
             }
         }

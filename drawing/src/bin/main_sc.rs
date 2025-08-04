@@ -7,6 +7,7 @@ use algebraeon_drawing::canvas2d::shapes::Shape;
 use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
 use algebraeon_drawing::colour::Colour;
 use algebraeon_geometry::ambient_space::AffineSpace;
+use algebraeon_geometry::boolean_operations::Union;
 use algebraeon_geometry::convex_hull::ConvexHull;
 use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
 use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
@@ -69,8 +70,8 @@ fn main() {
 
     // let ch3 = ch1.intersect(&ch2);
 
-    let sc1 = ch1.as_simplicial_complex().into_forget_labels();
-    let sc2 = ch2.as_simplicial_complex().into_forget_labels();
+    let sc1 = ch1.to_simplicial_complex().into_forget_labels();
+    let sc2 = ch2.to_simplicial_complex().into_forget_labels();
     // let sc3 = ch3.as_simplicial_complex().entire;
 
     // let VennResult {
@@ -80,16 +81,7 @@ fn main() {
 
     // }
 
-    println!("start");
-    let sc4 = LabelledSimplicialDisjointUnion::union_raw(&(&sc1).into(), &(&sc2).into());
-    println!("done union");
-    let sc5 = sc4
-        .clone()
-        .refine_into_partial_simplicial_complex()
-        .closure();
-    println!("done to sc");
-    let sc6 = sc5.clone().simplify();
-    println!("done simplify");
+    let sc4 = sc1.union(&sc2);
 
     let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
     canvas.plot_shapes(
@@ -111,7 +103,7 @@ fn main() {
                 &Colour::green(),
                 &Colour::green().darken(),
                 0.3,
-                &sc6,
+                &sc4,
             )),
     );
     canvas.run();

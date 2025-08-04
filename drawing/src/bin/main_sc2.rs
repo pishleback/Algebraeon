@@ -68,19 +68,19 @@ fn main() {
                 &Colour::green(),
                 &Colour::green().darken(),
                 0.5,
-                &smaller_ch_neutral.as_simplicial_complex(),
+                &smaller_ch_neutral.to_simplicial_complex(),
             ))
             .chain(simplicial_complex_shapes(
                 &Colour::cyan(),
                 &Colour::cyan().darken(),
                 0.5,
-                &smaller_ch_pos.as_simplicial_complex(),
+                &smaller_ch_pos.to_simplicial_complex(),
             ))
             .chain(simplicial_complex_shapes(
                 &Colour::blue(),
                 &Colour::blue().darken(),
                 0.5,
-                &smaller_ch_neg.as_simplicial_complex(),
+                &smaller_ch_neg.to_simplicial_complex(),
             ))
             .chain(simplicial_complex_shapes(
                 &Colour::red(),

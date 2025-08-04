@@ -83,6 +83,16 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
         &self.simplex
     }
 
+    pub fn into_simplex(self) -> Simplex<'f, FS> {
+        self.simplex
+    }
+
+    pub fn into_oriented_hyperplane(self) -> OrientedHyperplane<'f, FS> {
+        OrientedHyperplane {
+            oriented_simplex: self,
+        }
+    }
+
     pub fn flip(&mut self) {
         let negative_point = self.negative_point();
         if let Some(OrientedSimplexOrientation {
@@ -138,12 +148,6 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
             std::cmp::Ordering::Less => OrientationSide::Negative,
             std::cmp::Ordering::Equal => OrientationSide::Neutral,
             std::cmp::Ordering::Greater => OrientationSide::Positive,
-        }
-    }
-
-    pub fn into_oriented_hyperplane(self) -> OrientedHyperplane<'f, FS> {
-        OrientedHyperplane {
-            oriented_simplex: self,
         }
     }
 }
