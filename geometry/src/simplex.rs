@@ -1,5 +1,8 @@
 use super::*;
-use crate::{ambient_space::AffineSpace, oriented_simplex::OrientedSimplex, vector::Vector};
+use crate::{
+    affine_subspace::EmbeddedAffineSubspace, ambient_space::AffineSpace,
+    oriented_simplex::OrientedSimplex, vector::Vector,
+};
 use itertools::Itertools;
 
 #[derive(Clone)]
@@ -186,6 +189,10 @@ where
     pub fn oriented_facets(&self) -> Vec<OrientedSimplex<'f, FS>> {
         assert_eq!(self.ambient_space.borrow().affine_dimension(), self.n());
         (0..self.n()).map(|k| self.oriented_facet(k)).collect()
+    }
+
+    pub fn into_affine_span(self) -> (EmbeddedAffineSubspace<'f, FS>, Vec<Vector<'f, FS>>) {
+        EmbeddedAffineSubspace::new_affine_span(self.ambient_space, self.into_points()).unwrap()
     }
 }
 

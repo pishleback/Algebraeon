@@ -237,7 +237,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
         Some(self.embedded_space().simplex(pts).unwrap())
     }
 
-    pub fn as_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<'f, FS>>> {
+    pub fn to_oriented_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<'f, FS>>> {
         let ambient_space = self.ambient_space();
         let field = ambient_space.field();
         match self.get_root_and_span() {
@@ -308,6 +308,15 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                 Some(hyperplanes)
             }
             None => None,
+        }
+    }
+
+    pub fn to_oriented_hyperplane(&self) -> Option<OrientedHyperplane<'f, FS>> {
+        let mut oriented_hyperplanes = self.to_oriented_hyperplane_intersection()?;
+        if oriented_hyperplanes.len() == 1 {
+            Some(oriented_hyperplanes.pop().unwrap())
+        } else {
+            None
         }
     }
 }

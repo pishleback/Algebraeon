@@ -196,8 +196,7 @@ where
 
     pub(crate) fn from_simplex(spx: Simplex<'f, FS>) -> Self {
         let ambient_space = spx.ambient_space();
-        let (subspace, embedded_pts) =
-            EmbeddedAffineSubspace::new_affine_span(ambient_space, spx.into_points()).unwrap();
+        let (subspace, embedded_pts) = spx.into_affine_span();
         let embedded_spx = subspace.embedded_space().simplex(embedded_pts).unwrap();
         Self {
             ambient_space,
@@ -708,7 +707,7 @@ where
     pub fn intersect_mut(&mut self, other: &Self) {
         let ambient_space = self.ambient_space();
         assert_eq!(ambient_space, other.ambient_space());
-        match other.subspace.as_hyperplane_intersection() {
+        match other.subspace.to_oriented_hyperplane_intersection() {
             Some(hyperplanes) => {
                 // step 1: intersect with the affine space spanned by other
                 for hyperplane in hyperplanes {
