@@ -10,6 +10,7 @@ use algebraeon_geometry::ambient_space::AffineSpace;
 use algebraeon_geometry::boolean_operations::Difference;
 use algebraeon_geometry::boolean_operations::Union;
 use algebraeon_geometry::convex_hull::ConvexHull;
+use algebraeon_geometry::simplex_collection::InteriorOrBoundarySimplexCollection;
 use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
 use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
 use algebraeon_geometry::vector::Vector;
@@ -20,6 +21,10 @@ use rand::Rng;
 use std::rc::Rc;
 
 fn main() {
+    unsafe {
+        std::env::set_var("RUST_BACKTRACE", "1");
+    }
+
     // let space = AffineSpace::new_linear(Rational::structure(), 2);
     // let p1 = Vector::new( space, vec![Rational::from(0), Rational::from(0)]);
     // let p2 = Vector::new( space, vec![Rational::from(1), Rational::from(0)]);
@@ -39,7 +44,7 @@ fn main() {
             space.vector([-3, 0]),
         ])
         .to_simplicial_complex()
-        .into_forget_labels();
+        .interior();
     let x = a;
 
     let b = space
@@ -57,8 +62,8 @@ fn main() {
         .convex_hull(vec![
             space.vector([-1, -1]),
             space.vector([1, -1]),
-            // space.vector([-1, 1]),
-            // space.vector([1, 1]),
+            space.vector([-1, 1]),
+            space.vector([1, 1]),
         ])
         .to_simplicial_complex()
         .into_forget_labels();
