@@ -306,14 +306,12 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjoint
 where
     FS::Set: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex<'f, FS>;
 
     fn intersect(&self, other: &SimplicialDisjointUnion<'f, FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .intersect(other)
-            .try_into_simplicial_complex()
-            .unwrap()
     }
 }
 
@@ -322,14 +320,12 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialC
 where
     FS::Set: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex<'f, FS>;
 
     fn intersect(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .intersect(&other.clone().into_simplicial_disjoint_union())
-            .try_into_simplicial_complex()
-            .unwrap()
     }
 }
 
@@ -338,12 +334,10 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex<
 where
     FS::Set: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex<'f, FS>;
 
     fn intersect(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
         self.intersect(&other.clone().into_simplicial_disjoint_union())
-            .try_into_simplicial_complex()
-            .unwrap()
     }
 }
 
@@ -352,14 +346,12 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex<
 where
     FS::Set: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex<'f, FS>;
 
     fn intersect(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .intersect(&other.clone().into_simplicial_disjoint_union())
-            .try_into_simplicial_complex()
-            .unwrap()
     }
 }
 
@@ -422,14 +414,10 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnio
 where
     FS::Set: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex<'f, FS>;
 
     fn union(&self, other: &SimplicialDisjointUnion<'f, FS>) -> Self::Output {
-        self.clone()
-            .into_simplicial_disjoint_union()
-            .union(other)
-            .try_into_simplicial_complex()
-            .unwrap()
+        self.clone().into_simplicial_disjoint_union().union(other)
     }
 }
 
@@ -438,14 +426,12 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialCompl
 where
     FS::Set: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex<'f, FS>;
 
     fn union(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .union(&other.clone().into_simplicial_disjoint_union())
-            .try_into_simplicial_complex()
-            .unwrap()
     }
 }
 
@@ -454,12 +440,10 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex<'f, 
 where
     FS::Set: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex<'f, FS>;
 
     fn union(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
         self.union(&other.clone().into_simplicial_disjoint_union())
-            .try_into_simplicial_complex()
-            .unwrap()
     }
 }
 
@@ -468,14 +452,12 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex<'f, 
 where
     FS::Set: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex<'f, FS>;
 
     fn union(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .union(&other.clone().into_simplicial_disjoint_union())
-            .try_into_simplicial_complex()
-            .unwrap()
     }
 }
 
