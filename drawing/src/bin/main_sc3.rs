@@ -62,7 +62,12 @@ fn main() {
         ])
         .to_simplicial_complex()
         .into_forget_labels();
-    let x = x.difference(&c).simplify().into_labelled_simplicial_complex().simplify().forget_labels();
+    let x = x
+        .difference(&c)
+        .simplify()
+        .into_labelled_simplicial_complex()
+        .simplify()
+        .forget_labels();
 
     // let y = x.clone().refine_to_partial_simplicial_complex().simplify();
 
@@ -81,7 +86,6 @@ fn main() {
     // ));
     // let y = y.as_simplicial_complex().entire;
     // let y = y.simplify();
-
 
     // let y = x.closure().difference(&x);
 
