@@ -255,12 +255,15 @@ Input:
     A list of oriented simplicies which join to form a closed region of space
     with negative side inside and positive side outside which join
 
+    A list of simplicies filling the interior of the region, each labelled
+
 Output:
-    Figure out whether the region can be filled in by fanning out from some point
+    Figure out whether the region can be filled in by fanning out from some point such that the labelling of space is preserved
     If it can't: return None
     If it can: return the simplicies to use to fill in the interior region
 
 */
+
 fn simplify_in_region<'f, FS: OrderedRingSignature + FieldSignature>(
     space: AffineSpace<'f, FS>,
     boundary_facets: Vec<OrientedSimplex<'f, FS>>,
@@ -401,15 +404,18 @@ where
                 .iter()
                 .map(|pt| nbd_affine_subspace.unembed_point(pt).unwrap())
                 .collect::<Vec<_>>();
+
             let pt_img = nbd_affine_subspace.unembed_point(&pt).unwrap();
             let pt_img_spx = nbd_affine_subspace
                 .embedded_space()
                 .simplex(vec![pt_img.clone()])
                 .unwrap();
+
             let star_img = star
                 .iter()
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
                 .collect::<HashSet<_>>();
+
             let link_img = link
                 .iter()
                 .map(|s| nbd_affine_subspace.unembed_simplex(s).unwrap())
@@ -456,7 +462,6 @@ where
                     .iter()
                     .filter(|spx| !nbd_interior.contains(spx))
                     .collect::<HashSet<_>>();
-
                 let boundary = boundary_img
                     .iter()
                     .map(|spx| nbd_affine_subspace.embed_simplex(spx))
@@ -639,34 +644,35 @@ where
                     l = link
                 */
 
+                let boundary_img = link_img
+                    .iter()
+                    .filter(|spx| {
+                        let n = spx.n();
+                        let a = nbd_affine_subspace.embedded_space().affine_dimension();
+                        if n >= a {
+                            unreachable!()
+                        } else if n + 1 == a {
+                            true
+                        } else {
+                            debug_assert!(n + 1 < a);
+                            false
+                        }
+                    })
+                    .map(|spx| {
+                        OrientedSimplex::new_with_negative_point(
+                            nbd_affine_subspace.embedded_space(),
+                            spx.points().clone(),
+                            &pt_img,
+                        )
+                        .unwrap()
+                    })
+                    .collect();
+
                 if let Some(star_label) = self.common_label(star.iter()).cloned() {
-                    //If all star labels are the same, we can try to fill it in from any point on the link
-                    let boundary = link_img
-                        .iter()
-                        .filter(|spx| {
-                            let n = spx.n();
-                            let a = nbd_affine_subspace.embedded_space().affine_dimension();
-                            if n >= a {
-                                unreachable!()
-                            } else if n + 1 == a {
-                                true
-                            } else {
-                                debug_assert!(n + 1 < a);
-                                false
-                            }
-                        })
-                        .map(|spx| {
-                            OrientedSimplex::new_with_negative_point(
-                                nbd_affine_subspace.embedded_space(),
-                                spx.points().clone(),
-                                &pt_img,
-                            )
-                            .unwrap()
-                        })
-                        .collect();
+                    //All star labels are the same so we can try to fill it in from any point on the link
 
                     if let Some(new_star_img) =
-                        simplify_in_region(nbd_affine_subspace.embedded_space(), boundary)
+                        simplify_in_region(nbd_affine_subspace.embedded_space(), boundary_img)
                     {
                         self.remove_simplexes_unchecked(star.into_iter().collect());
                         self.add_simplexes_unchecked(
@@ -678,35 +684,6 @@ where
                         );
                         pts_todo.extend(link_points);
                     }
-                } else {
-                    //If not all star labels are the same, we can still try to fill it in if there is a subset of star forming a hyperplane such that each of the 3 resulting parts of star have the same label
-
-                    /*
-                     pt is in the interior and nbd looks something like
-
-                              l
-                         +---------+
-                        / \       / \
-                    l  /   \  s+ /   \ l
-                      /  s+ \   /  s+ \
-                     /       \ /       \
-                    +----h----p----h----+
-                     \       / \       /
-                      \  s- /   \  s- /
-                    l  \   /  s- \   / l
-                        \ /       \ /
-                         +---------+
-                              l
-
-                     where
-                         p = point
-                         h = subset of star cutting it by a hyperplane
-                         s+ = star on the + side of h
-                         s- = star on the - side of h
-                         l = link
-                     */
-
-                    // todo!()
                 }
             }
         }
