@@ -17,3 +17,7 @@ itertools = "0.11.0"
 algebraeon-sets = { version = "=0.0.13", path = "../sets", default-features = false }
 algebraeon-rings = { version = "=0.0.13", path = "../rings", default-features = false }
 algebraeon-nzq = { version = "=0.0.13", path = "../nzq", default-features = false }
+lalrpop-util = { version = "0.22.1", features = ["lexer"] }
+
+[build-dependencies]
+lalrpop = "0.22.1"

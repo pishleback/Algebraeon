@@ -193,6 +193,21 @@ where
 }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
+    Difference<LabelledPartialSimplicialComplex<'f, FS, S>>
+    for LabelledPartialSimplicialComplex<'f, FS, T>
+where
+    FS::Set: Hash,
+{
+    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+
+    fn difference(&self, other: &LabelledPartialSimplicialComplex<'f, FS, S>) -> Self::Output {
+        self.clone()
+            .into_simplicial_disjoint_union()
+            .difference(&other.clone().into_simplicial_disjoint_union())
+    }
+}
+
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
     Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledSimplicialDisjointUnion<'f, FS, T>
 where
     FS::Set: Hash,
@@ -301,6 +316,20 @@ where
     }
 }
 
+impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex<'f, FS>>
+    for PartialSimplicialComplex<'f, FS>
+where
+    FS::Set: Hash,
+{
+    type Output = PartialSimplicialComplex<'f, FS>;
+
+    fn intersect(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+        self.clone()
+            .into_simplicial_disjoint_union()
+            .intersect(&other.clone().into_simplicial_disjoint_union())
+    }
+}
+
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion<'f, FS>>
     for SimplicialComplex<'f, FS>
 where
@@ -406,6 +435,20 @@ where
 
     fn union(&self, other: &SimplicialDisjointUnion<'f, FS>) -> Self::Output {
         self.clone().into_simplicial_disjoint_union().union(other)
+    }
+}
+
+impl<'f, FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex<'f, FS>>
+    for PartialSimplicialComplex<'f, FS>
+where
+    FS::Set: Hash,
+{
+    type Output = PartialSimplicialComplex<'f, FS>;
+
+    fn union(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+        self.clone()
+            .into_simplicial_disjoint_union()
+            .union(&other.clone().into_simplicial_disjoint_union())
     }
 }
 

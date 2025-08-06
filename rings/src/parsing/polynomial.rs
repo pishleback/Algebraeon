@@ -5,7 +5,7 @@ use algebraeon_nzq::*;
 use lalrpop_util::lalrpop_mod;
 use std::collections::HashMap;
 
-lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs"); // synthesized by LALRPOP
+lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs");
 
 impl Expr {
     pub fn from_string(input: String) -> Result<Self, String> {

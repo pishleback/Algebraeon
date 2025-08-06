@@ -111,6 +111,8 @@ dependencies = [
  "algebraeon-rings",
  "algebraeon-sets",
  "itertools 0.11.0",
+ "lalrpop",
+ "lalrpop-util",
 ]
 
 [[package]]
