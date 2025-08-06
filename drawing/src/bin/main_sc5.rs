@@ -21,7 +21,19 @@ use algebraeon_sets::structure::*;
 use rand::Rng;
 
 fn main() {
-    let x = parse_shape("ConvexHull((-1, -1), (1, 1)) \\ ConvexHull((1, -1), (-1, 1))");
+    let x = parse_shape(
+        "ConvexHull((0, 0), (1, 0), (0, 1), (1, 1)) \\ ((1/2, 1/2) | (1/3, 1/3) | (1/4, 1/4) | (1/5, 1/5) | (1/6, 1/6) | (1/3, 4/5))",
+    );
+
+    let x = parse_shape(
+        "ConvexHull((0, 0), (3, 0), (0, 3), (3, 3)) \\ ConvexHull((1, 1), (2, 1), (1, 2), (2, 2))",
+    );
+
+    let x = parse_shape("Polygon((0, 0), (0, 3), (1/2, -1), (3, 3), (3, 0), (5/2, 4))");
+
+    let x = parse_shape(
+        "Polygon((0, 0), (4, 0), (4, 1), (3, 1), (3, -1), (2, -1), (2, 2), (1, 2)) | Polygon((5/2, 0/2), (4/2, 1/2), (3/2, 0/2), (4/2, -1/2))",
+    );
 
     let y = x.closure().difference(&x);
 

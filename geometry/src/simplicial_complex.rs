@@ -238,15 +238,23 @@ where
         LabelledSimplicialComplex::try_new_labelled(self.ambient_space(), simplexes).unwrap()
     }
 
-    pub fn interior(&self) -> PartialSimplicialComplex<'f, FS> {
+    pub(crate) fn interior_raw(&self) -> PartialSimplicialComplex<'f, FS> {
         self.interior_and_boundary().interior()
     }
 
-    pub fn boundary(&self) -> SimplicialComplex<'f, FS> {
+    pub fn interior(&self) -> PartialSimplicialComplex<'f, FS> {
+        self.interior_raw().simplify()
+    }
+
+    pub(crate) fn boundary_raw(&self) -> SimplicialComplex<'f, FS> {
         self.interior_and_boundary()
             .boundary()
             .try_into_simplicial_complex()
             .unwrap()
+    }
+
+    pub fn boundary(&self) -> SimplicialComplex<'f, FS> {
+        self.boundary_raw().simplify()
     }
 }
 
@@ -506,7 +514,7 @@ where
                 },
             )
             .unwrap();
-            let nbd_interior = nbd.interior().into_simplexes();
+            let nbd_interior = nbd.interior_raw().into_simplexes();
 
             if !nbd_interior.contains(&pt_img_spx) {
                 /*

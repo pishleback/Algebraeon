@@ -3,7 +3,7 @@ use crate::parse::ast::*;
 use std::string::String;
 
 pub Value: String = {
-    r"[a-zA-Z0-9]*" => String::from(<>)
+    r"[a-zA-Z0-9/]*" => String::from(<>)
 }
 
 pub SignedValue: SignedValue = {
@@ -18,12 +18,14 @@ pub Point: Point = {
 
 pub AtomicShape: ShapeExpression = {
     "(" <s: Shape> ")" => s,
+    Point => ShapeExpression::Point(<>),
     "ConvexHull" "(" <pts:Comma<Point>> ")" => ShapeExpression::ConvexHull(pts),
     "ConvexHullInterior" "(" <pts:Comma<Point>> ")" => ShapeExpression::ConvexHullInterior(pts),
     "ConvexHullBoundary" "(" <pts:Comma<Point>> ")" => ShapeExpression::ConvexHullBoundary(pts),
     "Lines" "(" <pts:Comma<Point>> ")" => ShapeExpression::Lines(pts),
     "Loop" "(" <pts:Comma<Point>> ")" => ShapeExpression::Loop(pts),
     "Polygon" "(" <pts:Comma<Point>> ")" => ShapeExpression::Polygon(pts),
+    "PolygonInterior" "(" <pts:Comma<Point>> ")" => ShapeExpression::PolygonInterior(pts),
 }
 
 pub ShapeUnion: ShapeExpression = {
