@@ -20,6 +20,45 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use rand::Rng;
 
+fn plot_shape(shape: impl LabelledSimplexCollection<'static, RationalCanonicalStructure, ()>) {
+    let x = shape.into_partial_simplicial_complex();
+    let y = x.closure().difference(&x);
+    let z = y.closure().difference(&y);
+
+    let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
+    canvas.plot_shapes(
+        [Shape::SetThickness(0.3)]
+            .into_iter()
+            .chain(simplicial_complex_shapes(
+                &Colour::green(),
+                &Colour::green().darken(),
+                1.0,
+                &x,
+            )),
+    );
+    canvas.plot_shapes(
+        [Shape::SetThickness(0.3)]
+            .into_iter()
+            .chain(simplicial_complex_shapes(
+                &Colour::black(),
+                &Colour::black(),
+                1.0,
+                &y,
+            )),
+    );
+    canvas.plot_shapes(
+        [Shape::SetThickness(0.3)]
+            .into_iter()
+            .chain(simplicial_complex_shapes(
+                &Colour::green(),
+                &Colour::green().darken(),
+                1.0,
+                &z,
+            )),
+    );
+    canvas.run();
+}
+
 fn main() {
     let x = parse_shape(
         "ConvexHull((0, 0), (1, 0), (0, 1), (1, 1)) \\ ((1/2, 1/2) | (1/3, 1/3) | (1/4, 1/4) | (1/5, 1/5) | (1/6, 1/6) | (1/3, 4/5))",
@@ -32,31 +71,8 @@ fn main() {
     let x = parse_shape("Polygon((0, 0), (0, 3), (1/2, -1), (3, 3), (3, 0), (5/2, 4))");
 
     let x = parse_shape(
-        "Polygon((0, 0), (4, 0), (4, 1), (3, 1), (3, -1), (2, -1), (2, 2), (1, 2)) | Polygon((5/2, 0/2), (4/2, 1/2), (3/2, 0/2), (4/2, -1/2))",
+        "(Polygon((0, 0), (4, 0), (4, 1), (3, 1), (3, -1), (2, -1), (2, 2), (1, 2)) | Polygon((5/2, 0/2), (4/2, 1/2), (3/2, 0/2), (4/2, -1/2))) \\ (Loop((0, 0), (1, 1), (11/4, -1/4)) \\ (1/3, 1/3))",
     );
 
-    let y = x.closure().difference(&x);
-
-    let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
-    canvas.plot_shapes(
-        [Shape::SetThickness(0.3)]
-            .into_iter()
-            .chain(simplicial_complex_shapes(
-                &Colour::green(),
-                &Colour::green(),
-                0.5,
-                &x,
-            )),
-    );
-    canvas.plot_shapes(
-        [Shape::SetThickness(0.3)]
-            .into_iter()
-            .chain(simplicial_complex_shapes(
-                &Colour::red(),
-                &Colour::red(),
-                0.5,
-                &y,
-            )),
-    );
-    canvas.run();
+    plot_shape(x);
 }
