@@ -1,0 +1,62 @@
+grammar;
+use crate::parse::ast::*;
+use std::string::String;
+
+pub Value: String = {
+    r"[a-zA-Z0-9/]*" => String::from(<>)
+}
+
+pub SignedValue: SignedValue = {
+    Value => SignedValue {sign : Sign::Positive, value : <>},
+    "+" <v:Value> => SignedValue {sign : Sign::Positive, value : v},
+    "-" <v:Value> => SignedValue {sign : Sign::Negative, value : v},
+}
+
+pub Point: Point = {
+    "(" <coordinates: Comma<SignedValue>> ")" => Point { coordinates }
+};
+
+pub AtomicShape: ShapeExpression = {
+    "(" <s: Shape> ")" => s,
+    Point => ShapeExpression::Point(<>),
+    "ConvexHull" "(" <pts:Comma<Point>> ")" => ShapeExpression::ConvexHull(pts),
+    "ConvexHullInterior" "(" <pts:Comma<Point>> ")" => ShapeExpression::ConvexHullInterior(pts),
+    "ConvexHullBoundary" "(" <pts:Comma<Point>> ")" => ShapeExpression::ConvexHullBoundary(pts),
+    "Lines" "(" <pts:Comma<Point>> ")" => ShapeExpression::Lines(pts),
+    "Loop" "(" <pts:Comma<Point>> ")" => ShapeExpression::Loop(pts),
+    "Polygon" "(" <pts:Comma<Point>> ")" => ShapeExpression::Polygon(pts),
+    "PolygonInterior" "(" <pts:Comma<Point>> ")" => ShapeExpression::PolygonInterior(pts),
+}
+
+pub ShapeUnion: ShapeExpression = {
+    <s1: AtomicShape> "|" <s2: AtomicShape> => ShapeExpression::Union(Box::new(s1), Box::new(s2)),
+    <s1: ShapeUnion> "|" <s2: AtomicShape> => ShapeExpression::Union(Box::new(s1), Box::new(s2)),
+}
+
+pub ShapeIntersect: ShapeExpression = {
+    <s1: AtomicShape> "&" <s2: AtomicShape> => ShapeExpression::Intersect(Box::new(s1), Box::new(s2)),
+    <s1: ShapeIntersect> "&" <s2: AtomicShape> => ShapeExpression::Intersect(Box::new(s1), Box::new(s2)),
+}
+
+pub ShapeMinkowskiSum: ShapeExpression = {
+    <s1: AtomicShape> "+" <s2: AtomicShape> => ShapeExpression::MinkowskiSum(Box::new(s1), Box::new(s2)),
+    <s1: ShapeMinkowskiSum> "+" <s2: AtomicShape> => ShapeExpression::MinkowskiSum(Box::new(s1), Box::new(s2)),
+}
+
+pub Shape: ShapeExpression = {
+    <s:AtomicShape> => <>,
+    <s: ShapeUnion> => s,
+    <s: ShapeIntersect> => s,
+    <s: ShapeMinkowskiSum> => s,
+    <s1: AtomicShape> "\\" <s2: AtomicShape> => ShapeExpression::Difference(Box::new(s1), Box::new(s2)),
+}
+
+Comma<T>: Vec<T> = {
+    <mut v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+};

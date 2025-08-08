@@ -1,7 +1,5 @@
 #![allow(dead_code, warnings, unused)]
 
-use std::rc::Rc;
-
 use algebraeon_drawing::canvas::Canvas;
 use algebraeon_drawing::canvas2d::Canvas2D;
 use algebraeon_drawing::canvas2d::MouseWheelZoomCamera;
@@ -9,10 +7,11 @@ use algebraeon_drawing::canvas2d::shapes::Shape;
 use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
 use algebraeon_drawing::colour::Colour;
 use algebraeon_geometry::ambient_space::AffineSpace;
+use algebraeon_geometry::boolean_operations::Union;
 use algebraeon_geometry::convex_hull::ConvexHull;
-use algebraeon_geometry::coordinates::Vector;
 use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
 use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
+use algebraeon_geometry::vector::Vector;
 use algebraeon_geometry::*;
 use algebraeon_nzq::*;
 use algebraeon_rings::isolated_algebraic::RealAlgebraic;
@@ -42,58 +41,34 @@ fn main() {
         .nth_root(&field.from_int(Integer::from(3)), 2)
         .unwrap();
 
-    let a = ConvexHull::new(
-        space.clone(),
-        vec![
-            Vector::new(
-                space.clone(),
-                vec![
-                    field.from_int(Integer::from(0)),
-                    field.from_int(Integer::from(0)),
-                ],
-            ),
-            Vector::new(
-                space.clone(),
-                vec![
-                    field.from_int(Integer::from(0)),
-                    field.from_int(Integer::from(1)),
-                ],
-            ),
-            Vector::new(
-                space.clone(),
-                vec![sqrt3.clone(), field.from_int(Integer::from(0))],
-            ),
-        ],
-    )
-    .as_simplicial_complex()
-    .forget_labels();
+    let a = space
+        .convex_hull(vec![
+            space.vector([
+                field.from_int(Integer::from(0)),
+                field.from_int(Integer::from(0)),
+            ]),
+            space.vector([
+                field.from_int(Integer::from(0)),
+                field.from_int(Integer::from(1)),
+            ]),
+            space.vector([sqrt3.clone(), field.from_int(Integer::from(0))]),
+        ])
+        .to_simplicial_complex()
+        .forget_labels();
 
-    let b = ConvexHull::new(
-        space.clone(),
-        vec![
-            Vector::new(
-                space.clone(),
-                vec![
-                    field.from_int(Integer::from(0)),
-                    field.from_int(Integer::from(0)),
-                ],
-            ),
-            Vector::new(
-                space.clone(),
-                vec![sqrt2.clone(), field.from_int(Integer::from(1))],
-            ),
-            Vector::new(
-                space.clone(),
-                vec![sqrt2.clone(), field.from_int(Integer::from(0))],
-            ),
-        ],
-    )
-    .as_simplicial_complex()
-    .into_forget_labels();
+    let b = space
+        .convex_hull(vec![
+            space.vector([
+                field.from_int(Integer::from(0)),
+                field.from_int(Integer::from(0)),
+            ]),
+            space.vector([sqrt2.clone(), field.from_int(Integer::from(1))]),
+            space.vector([sqrt2.clone(), field.from_int(Integer::from(0))]),
+        ])
+        .to_simplicial_complex()
+        .into_forget_labels();
 
-    let x = LabelledSimplicialDisjointUnion::union_raw(&(&a).into(), &(&b).into())
-        .refine_to_partial_simplicial_complex()
-        .closure();
+    let x = a.union(&b);
 
     for spx in x.simplexes() {
         for pt in spx.points() {

@@ -1,10 +1,11 @@
 use super::*;
 use crate::{
     ambient_space::AffineSpace, partial_simplicial_complex::LabelledPartialSimplicialComplex,
-    simplex::Simplex,
+    simplex::Simplex, simplicial_disjoint_union::LabelledSimplicialDisjointUnion,
 };
 use std::collections::{HashMap, HashSet};
 
+/// A collection of disjoint simplices labelled by T
 pub trait LabelledSimplexCollection<
     'f,
     FS: OrderedRingSignature + FieldSignature + 'f,
@@ -15,11 +16,11 @@ pub trait LabelledSimplexCollection<
     type WithLabel<S: Eq + Clone>: LabelledSimplexCollection<'f, FS, S>;
     type SubsetType: LabelledSimplexCollection<'f, FS, T>;
 
-    fn new(
+    fn try_new(
         ambient_space: AffineSpace<'f, FS>,
         simplexes: HashSet<Simplex<'f, FS>>,
     ) -> Result<Self::WithLabel<()>, &'static str> {
-        Self::WithLabel::<()>::new_labelled(
+        Self::WithLabel::<()>::try_new_labelled(
             ambient_space,
             simplexes.into_iter().map(|spx| (spx, ())).collect(),
         )
@@ -34,7 +35,7 @@ pub trait LabelledSimplexCollection<
         )
     }
 
-    fn new_labelled(
+    fn try_new_labelled(
         ambient_space: AffineSpace<'f, FS>,
         simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Result<Self, &'static str>;
@@ -43,7 +44,7 @@ pub trait LabelledSimplexCollection<
         simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Self;
 
-    fn ambient_space(&self) -> &AffineSpace<'f, FS>;
+    fn ambient_space(&self) -> AffineSpace<'f, FS>;
 
     fn simplexes<'a>(&'a self) -> HashSet<&'a Simplex<'f, FS>>
     where
@@ -74,7 +75,7 @@ pub trait LabelledSimplexCollection<
     }
     fn subset_by_filter(&self, f: impl Fn(&T) -> bool) -> Self::SubsetType {
         Self::SubsetType::new_labelled_unchecked(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             self.labelled_simplexes()
                 .into_iter()
                 .filter(|(_spx, label)| f(label))
@@ -84,7 +85,7 @@ pub trait LabelledSimplexCollection<
     }
     fn into_subset_by_filter(self, f: impl Fn(&T) -> bool) -> Self::SubsetType {
         Self::SubsetType::new_labelled_unchecked(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             self.into_labelled_simplexes()
                 .into_iter()
                 .filter(|(_spx, label)| f(label))
@@ -94,9 +95,11 @@ pub trait LabelledSimplexCollection<
 
     fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T>;
 
+    fn into_simplicial_disjoint_union(self) -> LabelledSimplicialDisjointUnion<'f, FS, T>;
+
     fn apply_label_function<S: Eq + Clone>(&self, f: impl Fn(&T) -> S) -> Self::WithLabel<S> {
         LabelledSimplexCollection::new_labelled_unchecked(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             self.labelled_simplexes()
                 .into_iter()
                 .map(|(spx, label)| (spx.clone(), f(label)))
@@ -105,7 +108,7 @@ pub trait LabelledSimplexCollection<
     }
     fn into_apply_label_function<S: Eq + Clone>(self, f: impl Fn(T) -> S) -> Self::WithLabel<S> {
         LabelledSimplexCollection::new_labelled_unchecked(
-            self.ambient_space().clone(),
+            self.ambient_space(),
             self.into_labelled_simplexes()
                 .into_iter()
                 .map(|(spx, label)| (spx, f(label)))
@@ -144,4 +147,40 @@ pub trait LabelledSimplexCollection<
         }
         label
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InteriorOrBoundary {
+    Interior,
+    Boundary,
+}
+
+pub trait InteriorOrBoundarySimplexCollection<'f, FS: OrderedRingSignature + FieldSignature + 'f>:
+    LabelledSimplexCollection<'f, FS, InteriorOrBoundary>
+where
+    FS::Set: Hash,
+{
+    fn interior(
+        &self,
+    ) -> <Self::SubsetType as LabelledSimplexCollection<'f, FS, InteriorOrBoundary>>::WithLabel<()>
+    {
+        self.subset_by_label(&InteriorOrBoundary::Interior)
+    }
+
+    fn boundary(
+        &self,
+    ) -> <Self::SubsetType as LabelledSimplexCollection<'f, FS, InteriorOrBoundary>>::WithLabel<()>
+    {
+        self.subset_by_label(&InteriorOrBoundary::Boundary)
+    }
+}
+
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature + 'f,
+    S: LabelledSimplexCollection<'f, FS, InteriorOrBoundary>,
+> InteriorOrBoundarySimplexCollection<'f, FS> for S
+where
+    FS::Set: Hash,
+{
 }

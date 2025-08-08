@@ -7,10 +7,11 @@ use algebraeon_drawing::canvas2d::shapes::Shape;
 use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
 use algebraeon_drawing::colour::Colour;
 use algebraeon_geometry::ambient_space::AffineSpace;
+use algebraeon_geometry::boolean_operations::Union;
 use algebraeon_geometry::convex_hull::ConvexHull;
-use algebraeon_geometry::coordinates::Vector;
 use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
 use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
+use algebraeon_geometry::vector::Vector;
 use algebraeon_geometry::*;
 use algebraeon_nzq::*;
 use algebraeon_rings::structure::*;
@@ -31,22 +32,22 @@ fn main() {
     let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
 
     fn random_point(
-        space: &AffineSpace<'static, RationalCanonicalStructure>,
+        space: AffineSpace<'static, RationalCanonicalStructure>,
         rad: f64,
     ) -> Vector<'static, RationalCanonicalStructure> {
         let mut rng = rand::thread_rng();
-        Vector::construct(space.clone(), |i| {
+        Vector::construct(space, |i| {
             Rational::from_f64_approx(rng.gen_range(-rad..rad)).approximate(&Natural::from(3u64))
         })
     }
 
-    // let pt1 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(0)]);
-    // let pt2 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(-1)]);
-    // let pt3 = Vector::new(space.clone(), vec![Rational::from(0), Rational::from(1)]);
-    // let pt4 = Vector::new(space.clone(), vec![Rational::from(1), Rational::from(0)]);
+    // let pt1 = Vector::new( space, vec![Rational::from(0), Rational::from(0)]);
+    // let pt2 = Vector::new( space, vec![Rational::from(0), Rational::from(-1)]);
+    // let pt3 = Vector::new( space, vec![Rational::from(0), Rational::from(1)]);
+    // let pt4 = Vector::new( space, vec![Rational::from(1), Rational::from(0)]);
 
-    // let spx1 = Simplex::new(space.clone(), vec![pt1]).unwrap();
-    // let spx2 = Simplex::new(space.clone(), vec![pt2, pt3, pt4]).unwrap();
+    // let spx1 = Simplex::new( space, vec![pt1]).unwrap();
+    // let spx2 = Simplex::new( space, vec![pt2, pt3, pt4]).unwrap();
 
     // let VennResult {
     //     left: a,
@@ -56,23 +57,21 @@ fn main() {
 
     let n = 12;
 
-    let ch1 = ConvexHull::new(
-        space.clone(),
+    let ch1 = space.convex_hull(
         (0..n)
-            .map(|i| random_point(&space, (i + 1) as f64))
+            .map(|i| random_point(space, (i + 1) as f64))
             .collect(),
     );
-    let ch2 = ConvexHull::new(
-        space.clone(),
+    let ch2 = space.convex_hull(
         (0..n)
-            .map(|i| random_point(&space, (i + 1) as f64))
+            .map(|i| random_point(space, (i + 1) as f64))
             .collect(),
     );
 
     // let ch3 = ch1.intersect(&ch2);
 
-    let sc1 = ch1.as_simplicial_complex().into_forget_labels();
-    let sc2 = ch2.as_simplicial_complex().into_forget_labels();
+    let sc1 = ch1.to_simplicial_complex().into_forget_labels();
+    let sc2 = ch2.to_simplicial_complex().into_forget_labels();
     // let sc3 = ch3.as_simplicial_complex().entire;
 
     // let VennResult {
@@ -82,13 +81,7 @@ fn main() {
 
     // }
 
-    println!("start");
-    let sc4 = LabelledSimplicialDisjointUnion::union_raw(&(&sc1).into(), &(&sc2).into());
-    println!("done union");
-    let sc5 = sc4.clone().refine_to_partial_simplicial_complex().closure();
-    println!("done to sc");
-    let sc6 = sc5.clone().simplify();
-    println!("done simplify");
+    let sc4 = sc1.union(&sc2);
 
     let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
     canvas.plot_shapes(
@@ -110,7 +103,7 @@ fn main() {
                 &Colour::green(),
                 &Colour::green().darken(),
                 0.3,
-                &sc6,
+                &sc4,
             )),
     );
     canvas.run();

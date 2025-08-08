@@ -1,4 +1,4 @@
-use crate::parsing::polynomial::{parse_integer_polynomial, parse_rational_polynomial};
+use crate::parsing::{parse_integer_polynomial, parse_rational_polynomial};
 use algebraeon_nzq::{Integer, Natural, Rational};
 
 #[derive(Debug, Clone)]

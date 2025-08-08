@@ -31,8 +31,13 @@ jobs:
     - name: Install Linux Dependencies
       run: sudo apt install libfontconfig1-dev
 
-    - name: Run Code Checks
+    - name: Run Code Debug Checks
       run: cargo check --all-targets --all-features
+      env:
+        RUSTFLAGS: "-D warnings"
+
+    - name: Run Code Release Checks
+      run: cargo check --all-targets --all-features --release
       env:
         RUSTFLAGS: "-D warnings"
 
@@ -48,7 +53,10 @@ jobs:
     - name: Install Clippy
       run: rustup component add clippy
 
-    - name: Run Clippy Checks
+    - name: Run Clippy Debug Checks
+      run: cargo clippy -- -D warnings
+
+    - name: Run Clippy Release Checks
       run: cargo clippy -- -D warnings
 
   test_debug:

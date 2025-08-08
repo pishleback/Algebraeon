@@ -1,8 +1,9 @@
 use super::*;
 use crate::{
     ambient_space::AffineSpace,
-    coordinates::Vector,
-    simplex::{OrientedHyperplane, OrientedSimplex, Simplex},
+    oriented_simplex::{OrientedHyperplane, OrientedSimplex},
+    simplex::Simplex,
+    vector::Vector,
 };
 use algebraeon_rings::matrix::{Matrix, MatrixStructure};
 
@@ -22,13 +23,12 @@ pub struct EmbeddedAffineSubspace<'f, FS: OrderedRingSignature + FieldSignature>
 }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, FS> {
-    #[allow(clippy::type_complexity)]
     pub fn new_affine_span(
         ambient_space: AffineSpace<'f, FS>,
         points: Vec<Vector<'f, FS>>,
     ) -> Result<(Self, Vec<Vector<'f, FS>>), &'static str> {
         for point in &points {
-            debug_assert_eq!(point.ambient_space(), ambient_space.borrow());
+            debug_assert_eq!(point.ambient_space(), ambient_space);
         }
         if !ambient_space
             .borrow()
@@ -41,7 +41,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
         let n = points.len();
         let embedded_pts = (0..n)
             .map(|i| {
-                Vector::construct(embedded_space.clone(), |j| {
+                Vector::construct(embedded_space, |j| {
                     if i == 0 {
                         field.borrow().zero()
                     } else if i == j + 1 {
@@ -68,7 +68,6 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
 }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, FS> {
-    #[allow(clippy::needless_pass_by_value, clippy::type_complexity)]
     pub fn new(
         ambient_space: AffineSpace<'f, FS>,
         root: Vector<'f, FS>,
@@ -110,12 +109,12 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
         self.ambient_space.borrow().field()
     }
 
-    pub fn ambient_space(&self) -> &AffineSpace<'f, FS> {
-        &self.ambient_space
+    pub fn ambient_space(&self) -> AffineSpace<'f, FS> {
+        self.ambient_space
     }
 
-    pub fn embedded_space(&self) -> &AffineSpace<'f, FS> {
-        &self.embedded_space
+    pub fn embedded_space(&self) -> AffineSpace<'f, FS> {
+        self.embedded_space
     }
 
     //Let A be the affine subspace and let S be its ambient space
@@ -124,8 +123,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
     //  f : A -> B
     //  g : B -> S
     //  pt is pt in B
-    #[allow(clippy::type_complexity)]
-    pub fn extend_dimension_by_point_unsafe(
+    pub(crate) fn extend_dimension_by_point_unsafe(
         &self,
         pt: Vector<'f, FS>,
     ) -> (
@@ -133,7 +131,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
         EmbeddedAffineSubspace<'f, FS>,
         Vector<'f, FS>,
     ) {
-        debug_assert_eq!(self.ambient_space.borrow(), pt.ambient_space());
+        debug_assert_eq!(self.ambient_space, pt.ambient_space());
         debug_assert!(self.unembed_point(&pt).is_none());
         let field = self.field();
 
@@ -142,13 +140,13 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
 
         (
             EmbeddedAffineSubspace {
-                ambient_space: extended_embedded_space.clone(),
-                embedded_space: self.embedded_space.clone(),
+                ambient_space: extended_embedded_space,
+                embedded_space: self.embedded_space,
                 // 0, e_1, e_2, ..., e_(n-1)
                 embedding_points: {
                     (0..n)
                         .map(|k| {
-                            Vector::construct(extended_embedded_space.clone(), |i| {
+                            Vector::construct(extended_embedded_space, |i| {
                                 if k == 0 {
                                     field.zero()
                                 } else {
@@ -161,15 +159,15 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                 },
             },
             EmbeddedAffineSubspace {
-                ambient_space: self.ambient_space.clone(),
-                embedded_space: extended_embedded_space.clone(),
+                ambient_space: self.ambient_space,
+                embedded_space: extended_embedded_space,
                 embedding_points: {
                     let mut pts = self.embedding_points.clone();
                     pts.push(pt);
                     pts
                 },
             },
-            Vector::construct(extended_embedded_space.clone(), |i| {
+            Vector::construct(extended_embedded_space, |i| {
                 if i + 1 == n {
                     self.field().one()
                 } else {
@@ -179,7 +177,6 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
         )
     }
 
-    #[allow(clippy::type_complexity)]
     pub fn get_root_and_span(&self) -> Option<(Vector<'f, FS>, Vec<Vector<'f, FS>>)> {
         let mut points = self.embedding_points.iter();
         let root = points.next()?;
@@ -192,7 +189,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
     }
 
     pub fn embed_point(&self, pt: &Vector<'f, FS>) -> Vector<'f, FS> {
-        assert_eq!(pt.ambient_space(), self.embedded_space.borrow());
+        assert_eq!(pt.ambient_space(), self.embedded_space);
         let (root, span) = self.get_root_and_span().unwrap(); //pt exists in the embedded space, so the embedded space is non-empty, so has a root and span
         let mut total = root.clone();
         for (i, vec) in span.iter().enumerate() {
@@ -202,15 +199,13 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
     }
 
     pub fn embed_simplex(&self, spx: &Simplex<'f, FS>) -> Simplex<'f, FS> {
-        Simplex::new(
-            self.ambient_space().clone(),
-            spx.points().iter().map(|p| self.embed_point(p)).collect(),
-        )
-        .unwrap()
+        self.ambient_space()
+            .simplex(spx.points().iter().map(|p| self.embed_point(p)).collect())
+            .unwrap()
     }
 
     pub fn unembed_point(&self, pt: &Vector<'f, FS>) -> Option<Vector<'f, FS>> {
-        assert_eq!(pt.ambient_space(), self.ambient_space.borrow());
+        assert_eq!(pt.ambient_space(), self.ambient_space);
         match self.get_root_and_span() {
             Some((root, span)) => {
                 //solve root + x * basis = v for x
@@ -221,7 +216,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                     .cols_from_vectors(span.iter().collect());
                 let x = MatrixStructure::new(self.ambient_space.borrow().field().clone())
                     .col_solve(basis_matrix, &y);
-                Some(Vector::new(self.embedded_space().clone(), x?))
+                Some(self.embedded_space().vector(x?))
             }
             None => None,
         }
@@ -239,10 +234,10 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                 }
             }
         }
-        Some(Simplex::new(self.embedded_space().clone(), pts).unwrap())
+        Some(self.embedded_space().simplex(pts).unwrap())
     }
 
-    pub fn as_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<'f, FS>>> {
+    pub fn to_oriented_hyperplane_intersection(&self) -> Option<Vec<OrientedHyperplane<'f, FS>>> {
         let ambient_space = self.ambient_space();
         let field = ambient_space.field();
         match self.get_root_and_span() {
@@ -276,7 +271,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                         let ref_point = {
                             //root + e_k
                             let k = extension_elementary_basis_vectors[i];
-                            Vector::construct(ambient_space.clone(), |l| {
+                            Vector::construct(ambient_space, |l| {
                                 field.add(
                                     root.coordinate(l),
                                     &if l == k { field.one() } else { field.zero() },
@@ -284,25 +279,21 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                             })
                         };
                         OrientedSimplex::new_with_positive_point(
-                            ambient_space.clone(),
+                            ambient_space,
                             {
                                 let mut points = vec![root.clone()];
                                 for s in &span {
                                     points.push(&root + s);
                                 }
-                                #[allow(clippy::needless_range_loop)]
-                                for j in 0..extension_elementary_basis_vectors.len() {
+                                for (j, &k) in extension_elementary_basis_vectors.iter().enumerate()
+                                {
                                     if i != j {
-                                        let k = extension_elementary_basis_vectors[j];
                                         //push root + e_k
-                                        points.push(Vector::construct(
-                                            ambient_space.clone(),
-                                            |l| {
-                                                field.add(root.coordinate(l), &{
-                                                    if l == k { field.one() } else { field.zero() }
-                                                })
-                                            },
-                                        ));
+                                        points.push(Vector::construct(ambient_space, |l| {
+                                            field.add(root.coordinate(l), &{
+                                                if l == k { field.one() } else { field.zero() }
+                                            })
+                                        }));
                                     }
                                 }
                                 points
@@ -317,6 +308,15 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
                 Some(hyperplanes)
             }
             None => None,
+        }
+    }
+
+    pub fn to_oriented_hyperplane(&self) -> Option<OrientedHyperplane<'f, FS>> {
+        let mut oriented_hyperplanes = self.to_oriented_hyperplane_intersection()?;
+        if oriented_hyperplanes.len() == 1 {
+            Some(oriented_hyperplanes.pop().unwrap())
+        } else {
+            None
         }
     }
 }
@@ -337,35 +337,17 @@ mod tests {
     #[test]
     fn make_affine_subspace() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
-        let v1 = Vector::new(
-            space.clone(),
-            vec![Rational::from(1), Rational::from(1), Rational::from(1)],
-        );
-        let v2 = Vector::new(
-            space.clone(),
-            vec![Rational::from(1), Rational::from(0), Rational::from(0)],
-        );
-        let v3 = Vector::new(
-            space.clone(),
-            vec![Rational::from(0), Rational::from(1), Rational::from(0)],
-        );
-        let s = EmbeddedAffineSubspace::new(space.clone(), v1, vec![v2, v3]);
+        let v1 = space.vector([1, 1, 1]);
+        let v2 = space.vector([1, 0, 0]);
+        let v3 = space.vector([0, 1, 0]);
+        let s = EmbeddedAffineSubspace::new(space, v1, vec![v2, v3]);
         s.unwrap();
 
         let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
-        let v1 = Vector::new(
-            space.clone(),
-            vec![Rational::from(1), Rational::from(1), Rational::from(1)],
-        );
-        let v2 = Vector::new(
-            space.clone(),
-            vec![Rational::from(1), Rational::from(2), Rational::from(0)],
-        );
-        let v3 = Vector::new(
-            space.clone(),
-            vec![Rational::from(-2), Rational::from(-4), Rational::from(0)],
-        );
-        let s = EmbeddedAffineSubspace::new(space.clone(), v1, vec![v2, v3]);
+        let v1 = space.vector([1, 1, 1]);
+        let v2 = space.vector([1, 2, 0]);
+        let v3 = space.vector([-2, -4, 0]);
+        let s = EmbeddedAffineSubspace::new(space, v1, vec![v2, v3]);
         assert!(s.is_err());
     }
 
@@ -376,144 +358,63 @@ mod tests {
             let plane = AffineSpace::new_linear(Rational::structure_ref(), 2);
             //the line x + y = 2
             let (line, _) = EmbeddedAffineSubspace::new(
-                plane.clone(),
-                Vector::new(plane.clone(), vec![Rational::from(1), Rational::from(1)]),
-                vec![Vector::new(
-                    plane.clone(),
-                    vec![Rational::from(1), Rational::from(-1)],
-                )],
+                plane,
+                plane.vector([1, 1]),
+                vec![plane.vector([1, -1])],
             )
             .unwrap();
 
             assert_eq!(
-                line.embed_point(&Vector::new(
-                    line.embedded_space().clone(),
-                    vec![Rational::from(-3)],
-                )),
-                Vector::new(plane.clone(), vec![Rational::from(-2), Rational::from(4)])
+                line.embed_point(&line.embedded_space().vector([-3])),
+                plane.vector([-2, 4])
             );
 
             assert_eq!(
-                line.unembed_point(&Vector::new(
-                    plane.clone(),
-                    vec![Rational::from(-1), Rational::from(3)],
-                )),
-                Some(Vector::new(
-                    line.embedded_space().clone(),
-                    vec![Rational::from(-2)],
-                ))
+                line.unembed_point(&plane.vector([-1, 3])),
+                Some(line.embedded_space().vector([-2]))
             );
 
-            assert_eq!(
-                line.unembed_point(&Vector::new(
-                    plane.clone(),
-                    vec![Rational::from(1), Rational::from(2)],
-                )),
-                None
-            );
+            assert_eq!(line.unembed_point(&plane.vector([1, 2])), None);
         }
 
         //2d embedded in 3d
         {
             let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
             let (plane, _) = EmbeddedAffineSubspace::new(
-                space.clone(),
-                Vector::new(
-                    space.clone(),
-                    vec![Rational::from(3), Rational::from(1), Rational::from(2)],
-                ),
-                vec![
-                    Vector::new(
-                        space.clone(),
-                        vec![Rational::from(4), Rational::from(2), Rational::from(1)],
-                    ),
-                    Vector::new(
-                        space.clone(),
-                        vec![Rational::from(1), Rational::from(-1), Rational::from(2)],
-                    ),
-                ],
+                space,
+                space.vector([3, 1, 2]),
+                vec![space.vector([4, 2, 1]), space.vector([1, -1, 2])],
             )
             .unwrap();
 
             assert_eq!(
-                plane.embed_point(&Vector::new(
-                    plane.embedded_space().clone(),
-                    vec![Rational::from(-3), Rational::from(2)],
-                )),
-                Vector::new(
-                    space.clone(),
-                    vec![Rational::from(-7), Rational::from(-7), Rational::from(3)]
-                )
+                plane.embed_point(&plane.embedded_space().vector([-3, 2])),
+                space.vector([-7, -7, 3])
             );
 
             assert_eq!(
-                plane.unembed_point(&Vector::new(
-                    space.clone(),
-                    vec![Rational::from(0), Rational::from(-2), Rational::from(3)],
-                )),
-                Some(Vector::new(
-                    plane.embedded_space().clone(),
-                    vec![Rational::from(-1), Rational::from(1)],
-                ))
+                plane.unembed_point(&space.vector([0, -2, 3],)),
+                Some(plane.embedded_space().vector([-1, 1]))
             );
 
-            assert_eq!(
-                plane.unembed_point(&Vector::new(
-                    space.clone(),
-                    vec![Rational::from(1), Rational::from(2), Rational::from(2)],
-                )),
-                None
-            );
+            assert_eq!(plane.unembed_point(&space.vector([1, 2, 1],)), None);
         }
     }
 
     #[test]
     fn extend_by_point_embedding_composition() {
         let space = AffineSpace::new_linear(Rational::structure_ref(), 4);
-        let v1 = Vector::new(
-            space.clone(),
-            vec![
-                Rational::from(1),
-                Rational::from(2),
-                Rational::from(1),
-                Rational::from(1),
-            ],
-        );
-        let v2 = Vector::new(
-            space.clone(),
-            vec![
-                Rational::from(1),
-                Rational::from(-2),
-                Rational::from(2),
-                Rational::from(0),
-            ],
-        );
-        let v3 = Vector::new(
-            space.clone(),
-            vec![
-                Rational::from(2),
-                Rational::from(1),
-                Rational::from(0),
-                Rational::from(2),
-            ],
-        );
-        let (h, _) = EmbeddedAffineSubspace::new(space.clone(), v1, vec![v2, v3]).unwrap();
-        let v4 = Vector::new(
-            space.clone(),
-            vec![
-                Rational::from(0),
-                Rational::from(3),
-                Rational::from(-2),
-                Rational::from(1),
-            ],
-        );
+        let v1 = space.vector([1, 2, 1, 1]);
+        let v2 = space.vector([1, -2, 2, 0]);
+        let v3 = space.vector([2, 1, 0, 2]);
+        let (h, _) = EmbeddedAffineSubspace::new(space, v1, vec![v2, v3]).unwrap();
+        let v4 = space.vector([0, 3, -2, 1]);
         let (f, g, v4_inv) = h.extend_dimension_by_point_unsafe(v4.clone());
         assert_eq!(g.embed_point(&v4_inv), v4);
 
-        let x = Vector::new(
-            h.embedded_space().clone(),
-            vec![Rational::from(5), Rational::from(7)],
-        );
+        let x = h
+            .embedded_space()
+            .vector([Rational::from(5), Rational::from(7)]);
         //check that g(f(x)) = h(x)
         assert_eq!(g.embed_point(&f.embed_point(&x)), h.embed_point(&x));
     }
