@@ -285,6 +285,31 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Ord for Vector<'f, FS> {
     }
 }
 
+pub trait DotProduct<Other> {
+    type Output;
+
+    fn dot(self, other: Other) -> Self::Output;
+}
+
+// &vector . &vector
+impl<'f, FS: FieldSignature> DotProduct<&Vector<'f, FS>> for &Vector<'f, FS> {
+    type Output = FS::Set;
+
+    fn dot(self, other: &Vector<'f, FS>) -> Self::Output {
+        match common_space(self.ambient_space, other.ambient_space) {
+            Some(space) => {
+                let n = space.linear_dimension().unwrap();
+                space.field().sum(
+                    (0..n)
+                        .map(|i| space.field().mul(self.coordinate(i), other.coordinate(i)))
+                        .collect(),
+                )
+            }
+            None => panic!("Can't add vectors belonging to different spaces"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,4 +1,8 @@
-use crate::{ambient_space::AffineSpace, simplex::Simplex, vector::Vector};
+use crate::{
+    ambient_space::AffineSpace,
+    simplex::Simplex,
+    vector::{DotProduct, Vector},
+};
 use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature};
 
 #[derive(Clone)]
@@ -27,18 +31,48 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
             return Err("Oriented simplex must have dimension one less than the ambient space");
         }
         let n = points.len();
-        let simplex = ambient_space.simplex(points)?;
         if n == 0 {
             Ok(Self {
-                simplex,
+                simplex: ambient_space.simplex(points)?,
                 orientation: None,
             })
         } else {
+            let root = &points[0];
+            let ref_vec = ref_point - root;
+            let ref_normal = {
+                let mut ref_normal = ref_vec;
+                #[allow(clippy::needless_range_loop)]
+                for i in 1..n {
+                    let vec = &points[i] - root;
+                    ref_normal = &ref_normal
+                        - &vec.scalar_mul(
+                            &ambient_space
+                                .field()
+                                .div(&vec.dot(&ref_normal), &vec.dot(&vec))
+                                .unwrap(),
+                        );
+                }
+                ref_normal
+            };
+
+            debug_assert!(!(0..n).all(|i| ambient_space.field().is_zero(ref_normal.coordinate(i))));
+            #[allow(clippy::needless_range_loop)]
+            for i in 1..n {
+                debug_assert!(
+                    ambient_space
+                        .field()
+                        .is_zero(&(&points[i] - root).dot(&ref_normal))
+                );
+            }
+
+            let plane_point = root.clone();
+
             let mut guess = Self {
-                simplex,
+                simplex: ambient_space.simplex(points)?,
                 orientation: Some(OrientedSimplexOrientation {
                     flip: false,
-                    positive_point: ref_point.clone(),
+                    plane_point,
+                    positive_normal: ref_normal,
                 }),
             };
             match guess.classify_point(ref_point) {
@@ -64,7 +98,14 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
     }
 
     pub fn positive_point(&self) -> Option<Vector<'f, FS>> {
-        Some(self.orientation.as_ref()?.positive_point.clone())
+        if let Some(orientation) = self.orientation.as_ref() {
+            match orientation.flip {
+                false => Some(&orientation.plane_point + &orientation.positive_normal),
+                true => Some(&orientation.plane_point - &orientation.positive_normal),
+            }
+        } else {
+            None
+        }
     }
 
     pub fn negative_point(&self) -> Option<Vector<'f, FS>> {
@@ -94,49 +135,39 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
     }
 
     pub fn flip(&mut self) {
-        let negative_point = self.negative_point();
-        if let Some(OrientedSimplexOrientation {
-            flip,
-            positive_point,
-        }) = &mut self.orientation
-        {
-            (*flip, *positive_point) = (!*flip, negative_point.unwrap());
+        if let Some(OrientedSimplexOrientation { flip, .. }) = &mut self.orientation {
+            *flip = !*flip;
         }
         if let Some(OrientedSimplexOrientation {
-            flip: _flip,
-            positive_point,
+            flip,
+            plane_point,
+            positive_normal,
         }) = &self.orientation
         {
             debug_assert_eq!(
-                self.classify_point(positive_point),
-                OrientationSide::Positive
+                self.classify_point(&(plane_point + positive_normal)),
+                match flip {
+                    false => OrientationSide::Positive,
+                    true => OrientationSide::Negative,
+                }
             );
         }
     }
 
     fn classify_point_quantitatively(&self, point: &Vector<'f, FS>) -> FS::Set {
-        let space = self.ambient_space();
-        let field = space.field();
         match &self.orientation {
             Some(OrientedSimplexOrientation {
                 flip,
-                positive_point: _,
-            }) => match space.linear_dimension().unwrap() {
-                0 => unreachable!(),
-                d => {
-                    let root = &self.simplex.points()[0];
-                    let mut vecs = (1..d)
-                        .map(|i| self.simplex.point(i) - root)
-                        .collect::<Vec<_>>();
-                    vecs.push(point - root);
-                    let det = space.determinant(vecs.iter().collect());
-                    match flip {
-                        true => field.neg(&det),
-                        false => det,
-                    }
+                plane_point,
+                positive_normal,
+            }) => {
+                let mut value = positive_normal.dot(&(point - plane_point));
+                if *flip {
+                    value = self.ambient_space().field().neg(&value);
                 }
-            },
-            None => field.zero(),
+                value
+            }
+            None => self.ambient_space().field().zero(),
         }
     }
 
@@ -164,21 +195,11 @@ pub enum OrientationSide {
 /// in 2d space it is a line
 /// in 1d space it is a point
 /// in 0d space it is a null simplex. The orientation looses meaning but it is nice to still count this case.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct OrientedSimplexOrientation<'f, FS: OrderedRingSignature + FieldSignature> {
-    flip: bool,                     // flip the orientation if necessary
-    positive_point: Vector<'f, FS>, // a point on the positive side
-}
-
-impl<'f, FS: OrderedRingSignature + FieldSignature> std::fmt::Debug
-    for OrientedSimplexOrientation<'f, FS>
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("OrientedSimplexOrientation")
-            .field("flip", &self.flip)
-            .field("positive_point", &self.positive_point)
-            .finish()
-    }
+    flip: bool,                      // flip the orientation if necessary
+    plane_point: Vector<'f, FS>,     // A point on the hyperplane
+    positive_normal: Vector<'f, FS>, // normal vector pointing out of the positive side
 }
 
 #[derive(Clone)]
