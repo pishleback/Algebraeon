@@ -3,7 +3,10 @@ use crate::{
     simplex::Simplex,
     vector::{DotProduct, Vector},
 };
-use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature};
+use algebraeon_rings::{
+    matrix::{Matrix, MatrixStructure},
+    structure::{FieldSignature, OrderedRingSignature},
+};
 
 #[derive(Clone)]
 pub struct OrientedSimplex<'f, FS: OrderedRingSignature + FieldSignature> {
@@ -38,52 +41,40 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
             })
         } else {
             let root = &points[0];
-            let ref_vec = ref_point - root;
-            let ref_normal = {
-                let mut ref_normal = ref_vec;
-                #[allow(clippy::needless_range_loop)]
-                for i in 1..n {
-                    let vec = &points[i] - root;
-                    ref_normal = &ref_normal
-                        - &vec.scalar_mul(
-                            &ambient_space
-                                .field()
-                                .div(&vec.dot(&ref_normal), &vec.dot(&vec))
-                                .unwrap(),
-                        );
-                }
-                ref_normal
-            };
-
-            debug_assert!(!(0..n).all(|i| ambient_space.field().is_zero(ref_normal.coordinate(i))));
-            #[allow(clippy::needless_range_loop)]
-            for i in 1..n {
-                debug_assert!(
+            let positive_normal = {
+                let mat = Matrix::construct(n - 1, n, |r, c| {
                     ambient_space
                         .field()
-                        .is_zero(&(&points[i] - root).dot(&ref_normal))
-                );
-            }
-
+                        .sub(points[r + 1].coordinate(c), points[0].coordinate(c))
+                });
+                let kernel = MatrixStructure::<FS, &FS>::new(ambient_space.field())
+                    .col_kernel(mat)
+                    .basis();
+                if kernel.len() != 1 {
+                    return Err("points are not affine independent");
+                }
+                ambient_space.vector(kernel.into_iter().next().unwrap())
+            };
+            let flip = match ambient_space.field().ring_cmp(
+                &(ref_point - root).dot(&positive_normal),
+                &ambient_space.field().zero(),
+            ) {
+                std::cmp::Ordering::Less => true,
+                std::cmp::Ordering::Equal => {
+                    return Err("ref_point lines inside the hyperplane");
+                }
+                std::cmp::Ordering::Greater => false,
+            };
             let plane_point = root.clone();
 
-            let mut guess = Self {
+            Ok(Self {
                 simplex: ambient_space.simplex(points)?,
                 orientation: Some(OrientedSimplexOrientation {
-                    flip: false,
+                    flip,
                     plane_point,
-                    positive_normal: ref_normal,
+                    positive_normal,
                 }),
-            };
-            match guess.classify_point(ref_point) {
-                OrientationSide::Positive => Ok(guess),
-                OrientationSide::Neutral => Err("The reference point lies on the hyperplane"),
-                OrientationSide::Negative => {
-                    let orientation = guess.orientation.as_mut().unwrap();
-                    orientation.flip = !orientation.flip;
-                    Ok(guess)
-                }
-            }
+            })
         }
     }
 

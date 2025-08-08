@@ -40,8 +40,8 @@ fn plot_shape(shape: impl LabelledSimplexCollection<'static, RationalCanonicalSt
         [Shape::SetThickness(0.3)]
             .into_iter()
             .chain(simplicial_complex_shapes(
-                &Colour::black(),
-                &Colour::black(),
+                &Colour::red(),
+                &Colour::red().darken(),
                 1.0,
                 &y,
             )),
