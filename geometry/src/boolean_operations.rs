@@ -32,6 +32,17 @@ where
         &ConvexHull::from_simplex(right_simplex.clone()),
     );
 
+    // optimization
+    if overlap.is_empty() {
+        return LabelledPartialSimplicialComplex::<'f, FS, VennLabel>::new_labelled_unchecked(
+            ambient_space,
+            HashMap::from([
+                (left_simplex.clone(), VennLabel::Left),
+                (right_simplex.clone(), VennLabel::Right),
+            ]),
+        );
+    }
+
     let mut self_ext = overlap.clone();
     for pt in left_simplex.points() {
         self_ext.extend_by_point(pt.clone());

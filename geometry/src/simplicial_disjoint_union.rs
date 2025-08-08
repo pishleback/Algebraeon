@@ -46,10 +46,13 @@ where
         ambient_space: AffineSpace<'f, FS>,
         simplexes: HashMap<Simplex<'f, FS>, T>,
     ) -> Self {
-        Self {
+        let s = Self {
             ambient_space,
             simplexes,
-        }
+        };
+        #[cfg(debug_assertions)]
+        s.check();
+        s
     }
 
     fn ambient_space(&self) -> AffineSpace<'f, FS> {
@@ -117,6 +120,8 @@ where
     ) -> LabelledPartialSimplicialComplex<'f, FS, T> {
         let ambient_space = self.ambient_space();
 
+        println!("refine start {:?}", self.simplexes().len());
+
         //maintain a list of pairs of simplexes which may intersect on their boundary
         let mut pairs_todo: HashMap<Simplex<'f, FS>, HashSet<Simplex<'f, FS>>> = HashMap::new();
         let simplexes = self.simplexes().into_iter().collect::<Vec<_>>();
@@ -168,6 +173,8 @@ where
                             Err(_) => true,
                         }
                     {
+                        print!("X");
+
                         //there is a bad overlap between spx1 and spx2
                         let mut spx1_replacement = overlap.clone();
                         for pt in spx1.points() {
@@ -260,6 +267,10 @@ where
                 }
             }
         }
+
+        println!();
+
+        println!("refine end");
 
         LabelledPartialSimplicialComplex::new_labelled_unchecked(ambient_space, self.simplexes)
     }

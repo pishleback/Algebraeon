@@ -1,5 +1,8 @@
 use super::*;
-use crate::vector::Vector;
+use crate::{
+    simplex_collection::LabelledSimplexCollection,
+    simplicial_disjoint_union::SimplicialDisjointUnion, vector::Vector,
+};
 use std::sync::atomic::AtomicUsize;
 
 /// An affine space over a field.
@@ -61,6 +64,14 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
 
     pub fn origin(&self) -> Option<Vector<'f, FS>> {
         Some(Vector::construct(*self, |_| self.field().zero()))
+    }
+
+    pub fn empty_subset(&self) -> impl LabelledSimplexCollection<'f, FS, ()>
+    where
+        FS: OrderedRingSignature,
+        FS::Set: Hash,
+    {
+        SimplicialDisjointUnion::new_unchecked(*self, std::collections::HashSet::new())
     }
 
     pub fn linear_dimension(&self) -> Option<usize> {

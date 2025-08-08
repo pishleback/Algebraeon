@@ -38,10 +38,16 @@ pub ShapeIntersect: ShapeExpression = {
     <s1: ShapeIntersect> "&" <s2: AtomicShape> => ShapeExpression::Intersect(Box::new(s1), Box::new(s2)),
 }
 
+pub ShapeMinkowskiSum: ShapeExpression = {
+    <s1: AtomicShape> "+" <s2: AtomicShape> => ShapeExpression::MinkowskiSum(Box::new(s1), Box::new(s2)),
+    <s1: ShapeMinkowskiSum> "+" <s2: AtomicShape> => ShapeExpression::MinkowskiSum(Box::new(s1), Box::new(s2)),
+}
+
 pub Shape: ShapeExpression = {
     <s:AtomicShape> => <>,
     <s: ShapeUnion> => s,
     <s: ShapeIntersect> => s,
+    <s: ShapeMinkowskiSum> => s,
     <s1: AtomicShape> "\\" <s2: AtomicShape> => ShapeExpression::Difference(Box::new(s1), Box::new(s2)),
 }
 

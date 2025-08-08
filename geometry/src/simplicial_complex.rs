@@ -417,6 +417,8 @@ where
         //check whether any point of the link is in the interior with respect to every boundary of the link
         //if such a point exists, it can be used to fill in the star in a simpler way by fanning out
 
+        println!("simplify start {:?}", self.simplexes().len());
+
         let mut pts_todo = HashSet::new();
         for simplex in self.simplexes.keys() {
             for pt in simplex.points() {
@@ -720,6 +722,7 @@ where
                                     })
                                     .collect(),
                             );
+                            print!("B");
                             pts_todo.extend(link_points);
                         }
                     }
@@ -789,6 +792,7 @@ where
                             })
                             .collect(),
                     );
+                    print!("C");
                     pts_todo.extend(link_points);
                 }
             }
@@ -796,6 +800,9 @@ where
 
         #[cfg(debug_assertions)]
         self.check();
+
+        println!();
+        println!("simplify end");
 
         self
     }

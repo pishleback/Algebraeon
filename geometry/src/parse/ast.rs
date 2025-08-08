@@ -1,6 +1,7 @@
 use crate::{
     ambient_space::AffineSpace,
     boolean_operations::{Difference, Intersect, Union},
+    minkowski_sum::MinkowskiSum,
     partial_simplicial_complex::PartialSimplicialComplex,
     simplex_collection::{InteriorOrBoundarySimplexCollection, LabelledSimplexCollection},
     vector::Vector,
@@ -49,6 +50,7 @@ impl Point {
 pub enum ShapeExpression {
     Union(Box<ShapeExpression>, Box<ShapeExpression>),
     Intersect(Box<ShapeExpression>, Box<ShapeExpression>),
+    MinkowskiSum(Box<ShapeExpression>, Box<ShapeExpression>),
     Difference(Box<ShapeExpression>, Box<ShapeExpression>),
     Point(Point),
     ConvexHull(Vec<Point>),
@@ -68,6 +70,9 @@ impl ShapeExpression {
                 vec![left.dimension(), right.dimension()]
             }
             ShapeExpression::Intersect(left, right) => {
+                vec![left.dimension(), right.dimension()]
+            }
+            ShapeExpression::MinkowskiSum(left, right) => {
                 vec![left.dimension(), right.dimension()]
             }
             ShapeExpression::Difference(left, right) => {
@@ -124,6 +129,9 @@ impl ShapeExpression {
             ShapeExpression::Intersect(left, right) => left
                 .to_partial_simplicial_complex(space)
                 .intersect(&right.to_partial_simplicial_complex(space)),
+            ShapeExpression::MinkowskiSum(left, right) => left
+                .to_partial_simplicial_complex(space)
+                .minkowski_sum(&right.to_partial_simplicial_complex(space)),
             ShapeExpression::Difference(left, right) => left
                 .to_partial_simplicial_complex(space)
                 .difference(&right.to_partial_simplicial_complex(space)),
@@ -148,11 +156,7 @@ impl ShapeExpression {
                 .boundary()
                 .into_partial_simplicial_complex(),
             ShapeExpression::Lines(points) => {
-                let mut shape = space
-                    .convex_hull(vec![])
-                    .to_simplicial_complex()
-                    .into_forget_labels()
-                    .into_partial_simplicial_complex();
+                let mut shape = space.empty_subset().into_partial_simplicial_complex();
                 for i in 0..points.len() - 1 {
                     let p0 = points[i].to_vector(space);
                     let p1 = points[i + 1].to_vector(space);
@@ -166,11 +170,7 @@ impl ShapeExpression {
                 shape
             }
             ShapeExpression::Loop(points) => {
-                let mut shape = space
-                    .convex_hull(vec![])
-                    .to_simplicial_complex()
-                    .into_forget_labels()
-                    .into_partial_simplicial_complex();
+                let mut shape = space.empty_subset().into_partial_simplicial_complex();
                 let n = points.len();
                 for i in 0..n {
                     let p0 = points[i].to_vector(space);
@@ -190,11 +190,7 @@ impl ShapeExpression {
             ShapeExpression::PolygonInterior(points) => {
                 assert_eq!(space.linear_dimension(), Some(2));
 
-                let mut shape = space
-                    .convex_hull(vec![])
-                    .to_simplicial_complex()
-                    .into_forget_labels()
-                    .into_partial_simplicial_complex();
+                let mut shape = space.empty_subset().into_partial_simplicial_complex();
 
                 if points.is_empty() {
                     shape

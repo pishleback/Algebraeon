@@ -8,6 +8,7 @@ pub mod affine_subspace;
 pub mod ambient_space;
 pub mod boolean_operations;
 pub mod convex_hull;
+pub mod minkowski_sum;
 pub mod oriented_simplex;
 pub mod parse;
 pub mod partial_simplicial_complex;
