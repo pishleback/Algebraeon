@@ -120,8 +120,6 @@ where
     ) -> LabelledPartialSimplicialComplex<'f, FS, T> {
         let ambient_space = self.ambient_space();
 
-        println!("refine start {:?}", self.simplexes().len());
-
         //maintain a list of pairs of simplexes which may intersect on their boundary
         let mut pairs_todo: HashMap<Simplex<'f, FS>, HashSet<Simplex<'f, FS>>> = HashMap::new();
         let simplexes = self.simplexes().into_iter().collect::<Vec<_>>();
@@ -173,8 +171,6 @@ where
                             Err(_) => true,
                         }
                     {
-                        print!("X");
-
                         //there is a bad overlap between spx1 and spx2
                         let mut spx1_replacement = overlap.clone();
                         for pt in spx1.points() {
@@ -211,14 +207,6 @@ where
                             spx2_paired.push(spx);
                         }
                         pairs_todo.remove(&spx2);
-
-                        // //pairs should now be in a valid state again
-                        // for (a, bs) in &pairs_todo {
-                        //     debug_assert!(self.simplexes.contains(a));
-                        //     for b in bs {
-                        //         debug_assert!(self.simplexes.contains(b));
-                        //     }
-                        // }
 
                         let spx1_label = self.simplexes.get(&spx1).unwrap().clone();
                         let spx2_label = self.simplexes.get(&spx2).unwrap().clone();
@@ -267,10 +255,6 @@ where
                 }
             }
         }
-
-        println!();
-
-        println!("refine end");
 
         LabelledPartialSimplicialComplex::new_labelled_unchecked(ambient_space, self.simplexes)
     }
