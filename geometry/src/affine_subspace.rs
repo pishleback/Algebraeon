@@ -23,7 +23,7 @@ pub struct EmbeddedAffineSubspace<'f, FS: OrderedRingSignature + FieldSignature>
 }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, FS> {
-    pub fn new_affine_span(
+    pub(crate) fn new_affine_independent_span(
         ambient_space: AffineSpace<'f, FS>,
         points: Vec<Vector<'f, FS>>,
     ) -> Result<(Self, Vec<Vector<'f, FS>>), &'static str> {
@@ -62,23 +62,35 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
         ))
     }
 
-    pub fn new_empty(ambient_space: AffineSpace<'f, FS>) -> Self {
-        Self::new_affine_span(ambient_space, vec![]).unwrap().0
+    pub(crate) fn new_empty(ambient_space: AffineSpace<'f, FS>) -> Self {
+        Self::new_affine_independent_span(ambient_space, vec![])
+            .unwrap()
+            .0
     }
 }
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, FS> {
-    pub fn new(
+    pub(crate) fn new_root_and_linear_independent_span(
         ambient_space: AffineSpace<'f, FS>,
-        root: Vector<'f, FS>,
-        span: Vec<Vector<'f, FS>>,
+        root: &Vector<'f, FS>,
+        span: Vec<&Vector<'f, FS>>,
     ) -> Result<(Self, Vec<Vector<'f, FS>>), &'static str> {
         let mut points = vec![root.clone()];
-        points.extend(span.iter().map(|vec| &root + vec));
-        Self::new_affine_span(ambient_space, points)
+        points.extend(span.into_iter().map(|vec| root + vec));
+        Self::new_affine_independent_span(ambient_space, points)
     }
 
-    pub fn new_affine_span_linearly_dependent(
+    pub(crate) fn new_root_and_linear_span(
+        ambient_space: AffineSpace<'f, FS>,
+        root: &Vector<'f, FS>,
+        span: Vec<&Vector<'f, FS>>,
+    ) -> Self {
+        let mut points = vec![root.clone()];
+        points.extend(span.into_iter().map(|vec| root + vec));
+        Self::new_affine_span(ambient_space, points.iter().collect())
+    }
+
+    pub(crate) fn new_affine_span(
         ambient_space: AffineSpace<'f, FS>,
         points: Vec<&Vector<'f, FS>>,
     ) -> Self {
@@ -93,14 +105,50 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<'f, F
             //matrix whose columns are pt - root for every other pt in points
             let mat = Matrix::construct(dim, span.len(), |r, c| span[c].coordinate(r).clone());
             let (_, _, _, pivs) = MatrixStructure::new(field.clone()).row_hermite_algorithm(mat);
-            Self::new(
+            Self::new_root_and_linear_independent_span(
                 ambient_space,
-                root.clone(),
-                pivs.into_iter().map(|i| span[i].clone()).collect(),
+                root,
+                pivs.into_iter().map(|i| &span[i]).collect(),
             )
             .unwrap()
             .0
         }
+    }
+}
+
+impl<'f, FS: OrderedRingSignature + FieldSignature> AffineSpace<'f, FS> {
+    pub fn affine_subspace_from_affine_span(
+        &self,
+        points: Vec<&Vector<'f, FS>>,
+    ) -> EmbeddedAffineSubspace<'f, FS> {
+        EmbeddedAffineSubspace::new_affine_span(*self, points)
+    }
+
+    pub fn affine_subspace_from_root_and_linear_span(
+        &self,
+        root: &Vector<'f, FS>,
+        span: Vec<&Vector<'f, FS>>,
+    ) -> EmbeddedAffineSubspace<'f, FS> {
+        EmbeddedAffineSubspace::new_root_and_linear_span(*self, root, span)
+    }
+
+    pub fn affine_subspace_from_affine_independent_span(
+        &self,
+        points: Vec<Vector<'f, FS>>,
+    ) -> Result<(EmbeddedAffineSubspace<'f, FS>, Vec<Vector<'f, FS>>), &'static str> {
+        EmbeddedAffineSubspace::new_affine_independent_span(*self, points)
+    }
+
+    pub fn affine_subspace_from_root_and_linear_independent_span(
+        &self,
+        root: &Vector<'f, FS>,
+        span: Vec<&Vector<'f, FS>>,
+    ) -> Result<(EmbeddedAffineSubspace<'f, FS>, Vec<Vector<'f, FS>>), &'static str> {
+        EmbeddedAffineSubspace::new_root_and_linear_independent_span(*self, root, span)
+    }
+
+    pub fn empty_affine_subspace(&self) -> EmbeddedAffineSubspace<'f, FS> {
+        EmbeddedAffineSubspace::new_empty(*self)
     }
 }
 
@@ -340,14 +388,22 @@ mod tests {
         let v1 = space.vector([1, 1, 1]);
         let v2 = space.vector([1, 0, 0]);
         let v3 = space.vector([0, 1, 0]);
-        let s = EmbeddedAffineSubspace::new(space, v1, vec![v2, v3]);
+        let s = EmbeddedAffineSubspace::new_root_and_linear_independent_span(
+            space,
+            &v1,
+            vec![&v2, &v3],
+        );
         s.unwrap();
 
         let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
         let v1 = space.vector([1, 1, 1]);
         let v2 = space.vector([1, 2, 0]);
         let v3 = space.vector([-2, -4, 0]);
-        let s = EmbeddedAffineSubspace::new(space, v1, vec![v2, v3]);
+        let s = EmbeddedAffineSubspace::new_root_and_linear_independent_span(
+            space,
+            &v1,
+            vec![&v2, &v3],
+        );
         assert!(s.is_err());
     }
 
@@ -357,10 +413,10 @@ mod tests {
         {
             let plane = AffineSpace::new_linear(Rational::structure_ref(), 2);
             //the line x + y = 2
-            let (line, _) = EmbeddedAffineSubspace::new(
+            let (line, _) = EmbeddedAffineSubspace::new_root_and_linear_independent_span(
                 plane,
-                plane.vector([1, 1]),
-                vec![plane.vector([1, -1])],
+                &plane.vector([1, 1]),
+                vec![&plane.vector([1, -1])],
             )
             .unwrap();
 
@@ -380,10 +436,10 @@ mod tests {
         //2d embedded in 3d
         {
             let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
-            let (plane, _) = EmbeddedAffineSubspace::new(
+            let (plane, _) = EmbeddedAffineSubspace::new_root_and_linear_independent_span(
                 space,
-                space.vector([3, 1, 2]),
-                vec![space.vector([4, 2, 1]), space.vector([1, -1, 2])],
+                &space.vector([3, 1, 2]),
+                vec![&space.vector([4, 2, 1]), &space.vector([1, -1, 2])],
             )
             .unwrap();
 
@@ -407,7 +463,12 @@ mod tests {
         let v1 = space.vector([1, 2, 1, 1]);
         let v2 = space.vector([1, -2, 2, 0]);
         let v3 = space.vector([2, 1, 0, 2]);
-        let (h, _) = EmbeddedAffineSubspace::new(space, v1, vec![v2, v3]).unwrap();
+        let (h, _) = EmbeddedAffineSubspace::new_root_and_linear_independent_span(
+            space,
+            &v1,
+            vec![&v2, &v3],
+        )
+        .unwrap();
         let v4 = space.vector([0, 3, -2, 1]);
         let (f, g, v4_inv) = h.extend_dimension_by_point_unsafe(v4.clone());
         assert_eq!(g.embed_point(&v4_inv), v4);

@@ -473,7 +473,7 @@ where
                 nbd_points
             };
 
-            let nbd_affine_subspace = EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
+            let nbd_affine_subspace = EmbeddedAffineSubspace::new_affine_span(
                 self.ambient_space(),
                 nbd_points.iter().collect(),
             );
@@ -567,11 +567,10 @@ where
                         boundary_img_points.insert(p);
                     }
                 }
-                let nbd_boundary_affine_subspace =
-                    EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
-                        nbd_affine_subspace.embedded_space(),
-                        boundary_img_points.into_iter().collect(),
-                    );
+                let nbd_boundary_affine_subspace = EmbeddedAffineSubspace::new_affine_span(
+                    nbd_affine_subspace.embedded_space(),
+                    boundary_img_points.into_iter().collect(),
+                );
                 debug_assert!(
                     nbd_boundary_affine_subspace
                         .embedded_space()
