@@ -37,6 +37,10 @@ impl<Set: Clone + Debug> FinitelyFreeSubmodule<Set> {
     pub fn rank(&self) -> usize {
         self.row_basis.rows()
     }
+
+    pub fn module_rank(&self) -> usize {
+        self.row_basis.cols()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -262,6 +266,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     ) -> FinitelyFreeSubmodule<Ring::Set> {
         debug_assert!(self.is_element(x).is_ok());
         debug_assert!(self.is_element(y).is_ok());
+
         let cols = self.module().rank();
         let x_rows = x.clone().into_row_basis_matrix();
         let y_rows = y.clone().into_row_basis_matrix();
