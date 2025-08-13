@@ -13,6 +13,8 @@ use algebraeon_rings::{
     structure::{FieldSignature, OrderedRingSignature},
 };
 use itertools::{Combinations, Itertools};
+use std::collections::HashSet;
+use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SimplexOverlapResult {
@@ -35,14 +37,17 @@ In the algorithm, we work with the normal vectors to hyperplanes rather than the
 pub fn simplex_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
     a: &Simplex<'f, FS>,
     b: &Simplex<'f, FS>,
-) -> SimplexOverlapResult {
+) -> SimplexOverlapResult
+where
+    FS::Set: Hash,
+{
     let space = common_space(a.ambient_space(), b.ambient_space()).unwrap();
 
     if a.n() == 0 || b.n() == 0 {
         return SimplexOverlapResult::Disjoint;
     }
     debug_assert!(space.linear_dimension().is_some()); // non-empty space
-    let m = space.linear_dimension().unwrap();
+    let space_dim = space.linear_dimension().unwrap();
 
     let field = space.field();
 
@@ -51,17 +56,19 @@ pub fn simplex_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
 
     let a_vecs = (1..a.n()).map(|i| a.point(i) - a_root).collect::<Vec<_>>();
     let b_vecs = (1..b.n()).map(|i| b.point(i) - b_root).collect::<Vec<_>>();
+    let ab_vec = a_root - b_root;
 
     println!("a_vecs = {:?}", a_vecs);
     println!("b_vecs = {:?}", b_vecs);
+    println!("ab_vec = {:?}", ab_vec);
 
-    let linear_vecs_span = space.affine_subspace_from_root_and_linear_span(
+    let vecs_span = space.affine_subspace_from_root_and_linear_span(
         &space.origin().unwrap(),
         a_vecs.iter().chain(b_vecs.iter()).collect(),
     );
 
-    let linear_vecs_span_submodule = MatrixStructure::new(space.field().clone()).row_span(
-        Matrix::construct(a_vecs.len() + b_vecs.len(), m, |r, c| {
+    let vecs_span_submodule = MatrixStructure::new(space.field().clone()).row_span(
+        Matrix::construct(a_vecs.len() + b_vecs.len(), space_dim, |r, c| {
             if r < a_vecs.len() {
                 a_vecs[r].coordinate(c).clone()
             } else {
@@ -69,16 +76,65 @@ pub fn simplex_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
             }
         }),
     );
-    debug_assert_eq!(linear_vecs_span_submodule.module_rank(), m);
+    debug_assert_eq!(vecs_span_submodule.module_rank(), space_dim);
+
+    let vecs_span_submodule2 = MatrixStructure::new(space.field().clone()).row_span(
+        Matrix::construct(a_vecs.len() + b_vecs.len() + 1, space_dim, |r, c| {
+            if r < a_vecs.len() {
+                a_vecs[r].coordinate(c).clone()
+            } else if r < a_vecs.len() + b_vecs.len() {
+                b_vecs[r - a_vecs.len()].coordinate(c).clone()
+            } else {
+                ab_vec.coordinate(c).clone()
+            }
+        }),
+    );
+    debug_assert_eq!(vecs_span_submodule2.module_rank(), space_dim);
+    debug_assert!(
+        (vecs_span_submodule2.rank() == vecs_span_submodule.rank())
+            || (vecs_span_submodule2.rank() == vecs_span_submodule.rank() + 1)
+    );
 
     // the dimension of the minkowski sum of A and B
-    let n = linear_vecs_span
-        .embedded_space()
-        .linear_dimension()
-        .unwrap();
+    let n = vecs_span.embedded_space().linear_dimension().unwrap();
     println!("n = {:?}", n);
 
-    let mut just_touching = false;
+    let mut normals = HashSet::new();
+
+    if vecs_span_submodule2.rank() != vecs_span_submodule.rank() {
+        let normal_space = FinitelyFreeSubmoduleStructure::new(FinitelyFreeModuleStructure::<
+            FS,
+            &'f FS,
+        >::new(field, space_dim))
+        .intersect(
+            &MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
+                a_vecs.len() + b_vecs.len(),
+                space_dim,
+                |r, c| {
+                    if r < a_vecs.len() {
+                        a_vecs[r].coordinate(c).clone()
+                    } else {
+                        b_vecs[r - a_vecs.len()].coordinate(c).clone()
+                    }
+                },
+            )),
+            &vecs_span_submodule2,
+        );
+
+        debug_assert!(normal_space.rank() == 1);
+
+        let normal = space.vector(normal_space.basis().first().unwrap().iter().cloned());
+        println!("normal = {:?}", normal);
+
+        for vec in &a_vecs {
+            debug_assert!(field.is_zero(&normal.dot(vec)));
+        }
+        for vec in &b_vecs {
+            debug_assert!(field.is_zero(&normal.dot(vec)));
+        }
+
+        normals.insert(normal);
+    }
 
     for i in 0..n {
         let j = n - i - 1;
@@ -105,12 +161,12 @@ pub fn simplex_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
                 println!("b_sub_vecs = {:?}", b_sub_vecs);
 
                 let normal_space = FinitelyFreeSubmoduleStructure::new(
-                    FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, m),
+                    FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, space_dim),
                 )
                 .intersect(
                     &MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
                         i + j,
-                        m,
+                        space_dim,
                         |r, c| {
                             if r < i {
                                 a_sub_vecs[r].coordinate(c).clone()
@@ -119,7 +175,7 @@ pub fn simplex_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
                             }
                         },
                     )),
-                    &linear_vecs_span_submodule,
+                    &vecs_span_submodule,
                 );
 
                 println!("{:?}", normal_space.rank());
@@ -137,53 +193,59 @@ pub fn simplex_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
                         debug_assert!(field.is_zero(&normal.dot(vec)));
                     }
 
-                    let mut a_points = a.points().into_iter();
-                    let a_proj = normal.dot(a_points.next().unwrap());
-                    let mut min_a_proj = a_proj.clone();
-                    let mut max_a_proj = a_proj;
-                    for a_pt in a_points {
-                        let proj = normal.dot(a_pt);
-                        if field.ring_cmp(&proj, &min_a_proj) == std::cmp::Ordering::Less {
-                            min_a_proj = proj.clone();
-                        }
-                        if field.ring_cmp(&proj, &max_a_proj) == std::cmp::Ordering::Greater {
-                            max_a_proj = proj.clone();
-                        }
-                    }
-
-                    let mut b_points = b.points().into_iter();
-                    let b_proj = normal.dot(b_points.next().unwrap());
-                    let mut min_b_proj = b_proj.clone();
-                    let mut max_b_proj = b_proj;
-                    for b_pt in b_points {
-                        let proj = normal.dot(b_pt);
-                        if field.ring_cmp(&proj, &min_b_proj) == std::cmp::Ordering::Less {
-                            min_b_proj = proj.clone();
-                        }
-                        if field.ring_cmp(&proj, &max_b_proj) == std::cmp::Ordering::Greater {
-                            max_b_proj = proj.clone();
-                        }
-                    }
-
-                    println!(
-                        "({:?}, {:?}) ({:?}, {:?})",
-                        min_a_proj, max_a_proj, min_b_proj, max_b_proj
-                    );
-
-                    match (
-                        field.ring_cmp(&max_a_proj, &min_b_proj),
-                        field.ring_cmp(&max_b_proj, &min_a_proj),
-                    ) {
-                        (std::cmp::Ordering::Less, _) | (_, std::cmp::Ordering::Less) => {
-                            return SimplexOverlapResult::Disjoint;
-                        }
-                        (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater) => {}
-                        (std::cmp::Ordering::Equal, _) | (_, std::cmp::Ordering::Equal) => {
-                            println!("TOUCH");
-                            just_touching = true;
-                        }
-                    }
+                    normals.insert(normal);
                 }
+            }
+        }
+    }
+
+    let mut just_touching = false;
+
+    for normal in normals {
+        let mut a_points = a.points().into_iter();
+        let a_proj = normal.dot(a_points.next().unwrap());
+        let mut min_a_proj = a_proj.clone();
+        let mut max_a_proj = a_proj;
+        for a_pt in a_points {
+            let proj = normal.dot(a_pt);
+            if field.ring_cmp(&proj, &min_a_proj) == std::cmp::Ordering::Less {
+                min_a_proj = proj.clone();
+            }
+            if field.ring_cmp(&proj, &max_a_proj) == std::cmp::Ordering::Greater {
+                max_a_proj = proj.clone();
+            }
+        }
+
+        let mut b_points = b.points().into_iter();
+        let b_proj = normal.dot(b_points.next().unwrap());
+        let mut min_b_proj = b_proj.clone();
+        let mut max_b_proj = b_proj;
+        for b_pt in b_points {
+            let proj = normal.dot(b_pt);
+            if field.ring_cmp(&proj, &min_b_proj) == std::cmp::Ordering::Less {
+                min_b_proj = proj.clone();
+            }
+            if field.ring_cmp(&proj, &max_b_proj) == std::cmp::Ordering::Greater {
+                max_b_proj = proj.clone();
+            }
+        }
+
+        println!(
+            "({:?}, {:?}) ({:?}, {:?})",
+            min_a_proj, max_a_proj, min_b_proj, max_b_proj
+        );
+
+        match (
+            field.ring_cmp(&max_a_proj, &min_b_proj),
+            field.ring_cmp(&max_b_proj, &min_a_proj),
+        ) {
+            (std::cmp::Ordering::Less, _) | (_, std::cmp::Ordering::Less) => {
+                return SimplexOverlapResult::Disjoint;
+            }
+            (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater) => {}
+            (std::cmp::Ordering::Equal, _) | (_, std::cmp::Ordering::Equal) => {
+                println!("TOUCH");
+                just_touching = true;
             }
         }
     }
