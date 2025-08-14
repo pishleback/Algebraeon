@@ -1,4 +1,5 @@
 use super::*;
+use crate::simplex_overlap::{SimplexOverlapResult, simplex_overlap};
 use crate::{
     ambient_space::common_space,
     convex_hull::ConvexHull,
@@ -27,13 +28,29 @@ where
     let ambient_space =
         common_space(left_simplex.ambient_space(), right_simplex.ambient_space()).unwrap();
 
+    // optimization
+    if simplex_overlap(left_simplex, right_simplex) != SimplexOverlapResult::Overlap {
+        return LabelledPartialSimplicialComplex::<'f, FS, VennLabel>::new_labelled_unchecked(
+            ambient_space,
+            HashMap::from([
+                (left_simplex.clone(), VennLabel::Left),
+                (right_simplex.clone(), VennLabel::Right),
+            ]),
+        );
+    }
+
     let overlap = ConvexHull::intersect(
         &ConvexHull::from_simplex(left_simplex.clone()),
         &ConvexHull::from_simplex(right_simplex.clone()),
     );
 
     // optimization
-    if overlap.is_empty() {
+    if overlap
+        .to_simplicial_complex()
+        .interior()
+        .simplexes()
+        .is_empty()
+    {
         return LabelledPartialSimplicialComplex::<'f, FS, VennLabel>::new_labelled_unchecked(
             ambient_space,
             HashMap::from([

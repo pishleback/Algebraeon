@@ -94,7 +94,7 @@ impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusion<ICS::R, ICS::K>
 ///  - Q → K is a finite dimensional field extension
 ///
 /// This trait expresses that R is the integral closure of Z in K
-pub trait IntegralClosureExtension: Debug + Clone {
+pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     type QKBasis: FiniteSetSignature;
     type Z: IntegralDomainSignature;
     type Q: FieldSignature;

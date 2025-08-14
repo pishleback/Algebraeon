@@ -931,7 +931,7 @@ where
 /// The free ring of rank 1 is the polynomial ring over the integers
 /// The free ring of rank n is the multipolynomial ring over the integers
 pub trait FreeRingSignature: RingSignature {
-    type Generator: Clone + Debug + PartialEq + Eq + std::hash::Hash;
+    type Generator: Clone + Debug + PartialEq + Eq + std::hash::Hash + Send + Sync;
 
     fn free_generators(&self) -> std::collections::HashSet<Self::Generator>;
     fn free_rank(&self) -> usize {
