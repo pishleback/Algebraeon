@@ -6,6 +6,7 @@ use crate::{
     simplex::Simplex,
     simplex_collection::{InteriorOrBoundarySimplexCollection, LabelledSimplexCollection},
 };
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::{HashMap, HashSet};
 
 /// A collection of disjoint simplices labelled by T with no additional structure
@@ -13,7 +14,7 @@ use std::collections::{HashMap, HashSet};
 pub struct LabelledSimplicialDisjointUnion<
     'f,
     FS: OrderedRingSignature + FieldSignature,
-    T: Eq + Clone,
+    T: Eq + Clone + Send + Sync,
 > where
     FS::Set: Hash,
 {
@@ -23,12 +24,12 @@ pub struct LabelledSimplicialDisjointUnion<
 
 pub type SimplicialDisjointUnion<'f, FS> = LabelledSimplicialDisjointUnion<'f, FS, ()>;
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplexCollection<'f, FS, T> for LabelledSimplicialDisjointUnion<'f, FS, T>
 where
     FS::Set: Hash,
 {
-    type WithLabel<S: Eq + Clone> = LabelledSimplicialDisjointUnion<'f, FS, S>;
+    type WithLabel<S: Eq + Clone + Send + Sync> = LabelledSimplicialDisjointUnion<'f, FS, S>;
     type SubsetType = LabelledSimplicialDisjointUnion<'f, FS, T>;
 
     fn try_new_labelled(
@@ -76,7 +77,7 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplicialDisjointUnion<'f, FS, T>
 where
     FS::Set: Hash,
@@ -118,29 +119,62 @@ where
     pub fn refine_into_partial_simplicial_complex(
         mut self,
     ) -> LabelledPartialSimplicialComplex<'f, FS, T> {
+        println!("REFINE");
         let ambient_space = self.ambient_space();
 
         //maintain a list of pairs of simplexes which may intersect on their boundary
         let mut pairs_todo: HashMap<Simplex<'f, FS>, HashSet<Simplex<'f, FS>>> = HashMap::new();
         let simplexes = self.simplexes().into_iter().collect::<Vec<_>>();
-        for i in 0..simplexes.len() {
-            for j in (i + 1)..simplexes.len() {
+
+        // for i in 0..simplexes.len() {
+        //     for j in (i + 1)..simplexes.len() {
+        //         let spx_i = simplexes[i];
+        //         let spx_j = simplexes[j];
+        //         if simplex_overlap::simplex_overlap(spx_i, spx_j)
+        //             != simplex_overlap::SimplexOverlapResult::Disjoint
+        //         {
+        //             pairs_todo
+        //                 .entry(spx_i.clone())
+        //                 .or_default()
+        //                 .insert(spx_j.clone());
+        //             pairs_todo
+        //                 .entry(spx_j.clone())
+        //                 .or_default()
+        //                 .insert(spx_i.clone());
+        //         }
+        //     }
+        // }
+
+        for (spx_i, spx_j) in (0..simplexes.len())
+            .flat_map(|i| ((i + 1)..simplexes.len()).map(move |j| (i, j)))
+            .collect::<Vec<_>>()
+            .into_par_iter()
+            .filter_map(|(i, j)| {
                 let spx_i = simplexes[i];
                 let spx_j = simplexes[j];
-                if simplex_overlap::simplex_overlap(spx_i, spx_j)
-                    != simplex_overlap::SimplexOverlapResult::Disjoint
-                {
-                    pairs_todo
-                        .entry(spx_i.clone())
-                        .or_default()
-                        .insert(spx_j.clone());
-                    pairs_todo
-                        .entry(spx_j.clone())
-                        .or_default()
-                        .insert(spx_i.clone());
+                if simplex_overlap::simplex_closure_overlap(spx_i, spx_j) {
+                    Some((spx_i, spx_j))
+                } else {
+                    None
                 }
-            }
+            })
+            .collect::<Vec<_>>()
+        {
+            pairs_todo
+                .entry(spx_i.clone())
+                .or_default()
+                .insert(spx_j.clone());
+            pairs_todo
+                .entry(spx_j.clone())
+                .or_default()
+                .insert(spx_i.clone());
         }
+
+        println!(
+            "{:?} / {:?}",
+            pairs_todo.len(),
+            simplexes.len() * simplexes.len() / 2
+        );
 
         while !pairs_todo.is_empty() {
             let spx1 = pairs_todo.keys().next().unwrap().clone();

@@ -29,13 +29,10 @@ where
     fn minkowski_sum_raw(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
         let space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
 
-        let pairs = self
-            .simplexes()
+        self.simplexes()
             .into_iter()
             .cartesian_product(other.simplexes().into_iter().collect::<Vec<_>>())
-            .collect::<Vec<_>>();
-
-        pairs
+            .collect::<Vec<_>>()
             .into_par_iter()
             .map(|(self_spx, other_spx)| {
                 let mut points = vec![];
@@ -52,7 +49,16 @@ where
             })
             .reduce(
                 || space.empty_subset().into_simplicial_disjoint_union(),
-                |left, right| left.union_raw(&right),
+                |left, right| {
+                    println!(
+                        "{:?} + {:?}",
+                        left.simplexes().len(),
+                        right.simplexes().len()
+                    );
+                    let shape = left.union_raw(&right);
+                    println!(" = {:?}", shape.simplexes().len());
+                    shape
+                },
             )
     }
 }

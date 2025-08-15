@@ -1,5 +1,5 @@
 use super::*;
-use crate::simplex_overlap::{SimplexOverlapResult, simplex_overlap};
+use crate::simplex_overlap::simplex_interior_overlap;
 use crate::{
     ambient_space::common_space,
     convex_hull::ConvexHull,
@@ -9,6 +9,7 @@ use crate::{
     simplicial_complex::{LabelledSimplicialComplex, SimplicialComplex},
     simplicial_disjoint_union::{LabelledSimplicialDisjointUnion, SimplicialDisjointUnion},
 };
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -29,7 +30,7 @@ where
         common_space(left_simplex.ambient_space(), right_simplex.ambient_space()).unwrap();
 
     // optimization
-    if simplex_overlap(left_simplex, right_simplex) != SimplexOverlapResult::Overlap {
+    if !simplex_interior_overlap(left_simplex, right_simplex) {
         return LabelledPartialSimplicialComplex::<'f, FS, VennLabel>::new_labelled_unchecked(
             ambient_space,
             HashMap::from([
@@ -95,40 +96,46 @@ where
     )
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplicialDisjointUnion<'f, FS, T>
 where
     FS::Set: Hash,
 {
-    pub(crate) fn subtract_raw<S: Eq + Clone>(
+    pub(crate) fn subtract_raw<S: Eq + Clone + Send + Sync>(
         &self,
         other: &LabelledSimplicialDisjointUnion<'f, FS, S>,
     ) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
 
-        Self::new_labelled_unchecked(ambient_space, {
-            let mut simplexes = HashMap::new();
-            for (self_spx, self_spx_label) in self.labelled_simplexes() {
-                let mut self_leftover = HashSet::from([self_spx.clone()]);
-                for other_spx in other.simplexes() {
-                    self_leftover = self_leftover
+        Self::new_labelled_unchecked(
+            ambient_space,
+            self.labelled_simplexes()
+                .into_iter()
+                .collect::<Vec<_>>()
+                .into_par_iter()
+                .map(|(self_spx, self_spx_label)| {
+                    let mut self_leftover = HashSet::from([self_spx.clone()]);
+                    for other_spx in other.simplexes() {
+                        self_leftover = self_leftover
+                            .into_iter()
+                            .flat_map(|self_leftover_spx| {
+                                simplex_venn(&self_leftover_spx, other_spx)
+                                    .subset_by_label(&VennLabel::Left)
+                                    .into_simplexes()
+                            })
+                            .collect();
+                    }
+                    self_leftover
                         .into_iter()
-                        .flat_map(|self_leftover_spx| {
-                            simplex_venn(&self_leftover_spx, other_spx)
-                                .subset_by_label(&VennLabel::Left)
-                                .into_simplexes()
-                        })
-                        .collect();
-                }
-                for spx in self_leftover {
-                    simplexes.insert(spx, self_spx_label.clone());
-                }
-            }
-            simplexes
-        })
+                        .map(|spx| (spx, self_spx_label.clone()))
+                        .collect::<Vec<_>>()
+                })
+                .flatten()
+                .collect(),
+        )
     }
 
-    pub(crate) fn intersect_raw<S: Eq + Clone>(
+    pub(crate) fn intersect_raw<S: Eq + Clone + Send + Sync>(
         &self,
         other: &LabelledSimplicialDisjointUnion<'f, FS, S>,
     ) -> LabelledSimplicialDisjointUnion<'f, FS, (T, S)> {
@@ -177,8 +184,12 @@ pub trait Union<Other> {
     fn union(&self, other: &Other) -> Self::Output;
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
-    Difference<LabelledSimplicialDisjointUnion<'f, FS, S>>
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+    S: Eq + Clone + Send + Sync,
+> Difference<LabelledSimplicialDisjointUnion<'f, FS, S>>
     for LabelledSimplicialDisjointUnion<'f, FS, T>
 where
     FS::Set: Hash,
@@ -192,8 +203,12 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
-    Difference<LabelledPartialSimplicialComplex<'f, FS, S>>
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+    S: Eq + Clone + Send + Sync,
+> Difference<LabelledPartialSimplicialComplex<'f, FS, S>>
     for LabelledSimplicialDisjointUnion<'f, FS, T>
 where
     FS::Set: Hash,
@@ -205,8 +220,12 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
-    Difference<LabelledSimplicialDisjointUnion<'f, FS, S>>
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+    S: Eq + Clone + Send + Sync,
+> Difference<LabelledSimplicialDisjointUnion<'f, FS, S>>
     for LabelledPartialSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
@@ -220,8 +239,12 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
-    Difference<LabelledPartialSimplicialComplex<'f, FS, S>>
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+    S: Eq + Clone + Send + Sync,
+> Difference<LabelledPartialSimplicialComplex<'f, FS, S>>
     for LabelledPartialSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
@@ -235,8 +258,12 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
-    Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledSimplicialDisjointUnion<'f, FS, T>
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+    S: Eq + Clone + Send + Sync,
+> Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledSimplicialDisjointUnion<'f, FS, T>
 where
     FS::Set: Hash,
 {
@@ -247,8 +274,12 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
-    Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledPartialSimplicialComplex<'f, FS, T>
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+    S: Eq + Clone + Send + Sync,
+> Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledPartialSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
@@ -261,8 +292,12 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
-    Difference<LabelledSimplicialDisjointUnion<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+    S: Eq + Clone + Send + Sync,
+> Difference<LabelledSimplicialDisjointUnion<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
@@ -275,8 +310,12 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
-    Difference<LabelledPartialSimplicialComplex<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+    S: Eq + Clone + Send + Sync,
+> Difference<LabelledPartialSimplicialComplex<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
@@ -289,8 +328,12 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone, S: Eq + Clone>
-    Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
+impl<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+    S: Eq + Clone + Send + Sync,
+> Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {

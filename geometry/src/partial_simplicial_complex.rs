@@ -12,7 +12,7 @@ use std::collections::{HashMap, HashSet};
 pub struct LabelledPartialSimplicialComplex<
     'f,
     FS: OrderedRingSignature + FieldSignature,
-    T: Eq + Clone,
+    T: Eq + Clone + Send + Sync,
 > {
     ambient_space: AffineSpace<'f, FS>,
     simplexes: HashMap<Simplex<'f, FS>, T>,
@@ -30,12 +30,12 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> std::fmt::Debug
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplexCollection<'f, FS, T> for LabelledPartialSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
-    type WithLabel<S: Eq + Clone> = LabelledPartialSimplicialComplex<'f, FS, S>;
+    type WithLabel<S: Eq + Clone + Send + Sync> = LabelledPartialSimplicialComplex<'f, FS, S>;
     type SubsetType = LabelledPartialSimplicialComplex<'f, FS, T>;
 
     fn try_new_labelled(
@@ -76,7 +76,7 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledPartialSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,

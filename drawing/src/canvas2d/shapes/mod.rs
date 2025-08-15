@@ -179,7 +179,7 @@ pub fn simplicial_complex_shapes<
         + algebraeon_rings::structure::FieldSignature
         + algebraeon_rings::structure::RealToFloatSignature
         + 'f,
-    T: Eq + Clone,
+    T: Eq + Clone + Send + Sync,
 >(
     line_colour: &Colour,
     fill_colour: &Colour,
