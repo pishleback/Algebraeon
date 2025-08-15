@@ -186,7 +186,7 @@ pub struct OrderedSextet<'g> {
     parts: [Vector24; 6],
 }
 impl<'g> OrderedSextet<'g> {
-    pub fn foursome(&self, i: usize) -> Foursome<Vector24> {
+    pub fn foursome(&'_ self, i: usize) -> Foursome<'_, Vector24> {
         assert!(i < 6);
         Foursome {
             ebgc: self.ebgc,
@@ -302,7 +302,7 @@ impl ExtendedBinaryGolayCode {
 }
 
 impl ExtendedBinaryGolayCode {
-    pub fn complete_octad(&self, five_pts: Vector24) -> Octad<&Vector24> {
+    pub fn complete_octad(&'_ self, five_pts: Vector24) -> Octad<'_, &'_ Vector24> {
         assert_eq!(five_pts.weight(), 5);
         let oct = self.blocks.get(&five_pts).unwrap();
         debug_assert_eq!(oct.weight(), 8);
@@ -312,7 +312,7 @@ impl ExtendedBinaryGolayCode {
         }
     }
 
-    pub fn complete_sextet(&self, four_pts: Vector24) -> UnorderedSextet {
+    pub fn complete_sextet(&'_ self, four_pts: Vector24) -> UnorderedSextet<'_> {
         let mut other_pts = (0..24).collect::<HashSet<_>>();
         for pt in four_pts.points() {
             other_pts.remove(&pt);

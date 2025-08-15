@@ -38,7 +38,7 @@ impl<'a> NormalSubgroup<'a> {
         self.subgroup
     }
 
-    pub fn cosets(&self) -> Congruence {
+    pub fn cosets(&'_ self) -> Congruence<'_> {
         Congruence {
             partition: self.subgroup.left_cosets(),
         } //should be the same as right cosets

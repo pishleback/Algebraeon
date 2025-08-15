@@ -39,7 +39,7 @@ impl<P: Fn(usize) -> bool + Clone> Iterator for NumPartitionIterator<P> {
             }
         } else if self.n == 0 || self.x == 0 {
             //if n=0 or x=0 but not both, then there are no partitions
-            return None;
+            None
         } else if self.x == 1 {
             //the only partition of n into 1 piece is [n]
             if self.first <= self.n {

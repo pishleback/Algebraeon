@@ -217,17 +217,17 @@ where
                     .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
             ) {
                 // println!("{:?}", possible_g_points);
-                if let Some(g) = self.interpolate_by_lagrange_basis(&possible_g_points) {
-                    if self.degree(&g).unwrap() >= 1 {
-                        //g is a possible proper divisor of f
-                        match self.div(f, &g) {
-                            Ok(h) => {
-                                //g really is a proper divisor of f
-                                return FindFactorResult::Composite(g, h);
-                            }
-                            Err(RingDivisionError::NotDivisible) => {}
-                            Err(RingDivisionError::DivideByZero) => panic!(),
+                if let Some(g) = self.interpolate_by_lagrange_basis(&possible_g_points)
+                    && self.degree(&g).unwrap() >= 1
+                {
+                    //g is a possible proper divisor of f
+                    match self.div(f, &g) {
+                        Ok(h) => {
+                            //g really is a proper divisor of f
+                            return FindFactorResult::Composite(g, h);
                         }
+                        Err(RingDivisionError::NotDivisible) => {}
+                        Err(RingDivisionError::DivideByZero) => panic!(),
                     }
                 }
             }

@@ -74,17 +74,17 @@ impl FiniteGroupMultiplicationTable {
         }
 
         //cached is_abelian if present
-        if let Some(claimed_is_abelian) = self.is_abelian {
-            if claimed_is_abelian != self.compute_is_abelian() {
-                return Err("incorrect is_abelian flag");
-            }
+        if let Some(claimed_is_abelian) = self.is_abelian
+            && claimed_is_abelian != self.compute_is_abelian()
+        {
+            return Err("incorrect is_abelian flag");
         }
 
         //check is_simple
-        if let Some(claimed_is_simple) = self.is_simple {
-            if (self.normal_subgroups().len() == 2) != claimed_is_simple {
-                return Err("is_simple flag is incorrect");
-            }
+        if let Some(claimed_is_simple) = self.is_simple
+            && (self.normal_subgroups().len() == 2) != claimed_is_simple
+        {
+            return Err("is_simple flag is incorrect");
         }
 
         Ok(())
@@ -269,7 +269,7 @@ impl FiniteGroupMultiplicationTable {
         self.conjugacy_classes = Some(self.compute_conjugacy_classes());
     }
 
-    pub fn conjugacy_class(&mut self, x: usize) -> Result<Subset, ()> {
+    pub fn conjugacy_class(&'_ mut self, x: usize) -> Result<Subset<'_>, ()> {
         if x >= self.n {
             return Err(());
         }
@@ -284,7 +284,7 @@ impl FiniteGroupMultiplicationTable {
         }
     }
 
-    pub fn conjugacy_classes(&self) -> GroupPartition {
+    pub fn conjugacy_classes(&'_ self) -> GroupPartition<'_> {
         GroupPartition {
             group: self,
             partition: match &self.conjugacy_classes {
@@ -295,7 +295,7 @@ impl FiniteGroupMultiplicationTable {
     }
 
     //returns a hashmap of subgroups and a minimal generating set
-    fn subgroups_impl(&self, only_normal: bool) -> Vec<(Subgroup, Subset)> {
+    fn subgroups_impl(&'_ self, only_normal: bool) -> Vec<(Subgroup<'_>, Subset<'_>)> {
         //choose one generator of each cyclic subgroup
         //The partition of elements where x~y iff <x>=<y> is such that an equivelence class is either a subset of a subgroup or doesnot intersect the subgroup
         let mut distinguished_gens = vec![];
@@ -356,11 +356,11 @@ impl FiniteGroupMultiplicationTable {
             .collect();
     }
 
-    pub fn subgroups(&self) -> Vec<(Subgroup, Subset)> {
+    pub fn subgroups(&'_ self) -> Vec<(Subgroup<'_>, Subset<'_>)> {
         self.subgroups_impl(false)
     }
 
-    pub fn normal_subgroups(&self) -> Vec<(NormalSubgroup, Subset)> {
+    pub fn normal_subgroups(&'_ self) -> Vec<(NormalSubgroup<'_>, Subset<'_>)> {
         self.subgroups_impl(true)
             .into_iter()
             .map(|(subgroup, gens)| (NormalSubgroup::new_unchecked(subgroup), gens))

@@ -45,7 +45,7 @@ impl<'a> Subset<'a> {
         Ok(())
     }
 
-    pub fn left_mul(&self, g: usize) -> Result<Subset, ()> {
+    pub fn left_mul(&'_ self, g: usize) -> Result<Subset<'_>, ()> {
         if g >= self.group.size() {
             return Err(());
         }
@@ -55,7 +55,7 @@ impl<'a> Subset<'a> {
         })
     }
 
-    pub fn right_mul(&self, g: usize) -> Result<Subset, ()> {
+    pub fn right_mul(&'_ self, g: usize) -> Result<Subset<'_>, ()> {
         if g >= self.group.size() {
             return Err(());
         }
@@ -76,7 +76,7 @@ impl<'a> Subset<'a> {
         true
     }
 
-    pub fn to_subgroup(&self) -> Option<Subgroup> {
+    pub fn to_subgroup(&'_ self) -> Option<Subgroup<'_>> {
         if self.is_subgroup() {
             Some(Subgroup {
                 subset: self.clone(),

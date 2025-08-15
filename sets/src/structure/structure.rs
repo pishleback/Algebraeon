@@ -80,6 +80,7 @@ mod tests {
 
     #[test]
     fn to_string_structure_impl() {
+        #[allow(dead_code)]
         #[derive(Debug, Clone, PartialEq, Eq)]
         struct A {
             t: usize,
