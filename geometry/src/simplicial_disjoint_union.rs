@@ -119,31 +119,11 @@ where
     pub fn refine_into_partial_simplicial_complex(
         mut self,
     ) -> LabelledPartialSimplicialComplex<'f, FS, T> {
-        println!("REFINE");
         let ambient_space = self.ambient_space();
 
         //maintain a list of pairs of simplexes which may intersect on their boundary
         let mut pairs_todo: HashMap<Simplex<'f, FS>, HashSet<Simplex<'f, FS>>> = HashMap::new();
         let simplexes = self.simplexes().into_iter().collect::<Vec<_>>();
-
-        // for i in 0..simplexes.len() {
-        //     for j in (i + 1)..simplexes.len() {
-        //         let spx_i = simplexes[i];
-        //         let spx_j = simplexes[j];
-        //         if simplex_overlap::simplex_overlap(spx_i, spx_j)
-        //             != simplex_overlap::SimplexOverlapResult::Disjoint
-        //         {
-        //             pairs_todo
-        //                 .entry(spx_i.clone())
-        //                 .or_default()
-        //                 .insert(spx_j.clone());
-        //             pairs_todo
-        //                 .entry(spx_j.clone())
-        //                 .or_default()
-        //                 .insert(spx_i.clone());
-        //         }
-        //     }
-        // }
 
         for (spx_i, spx_j) in (0..simplexes.len())
             .flat_map(|i| ((i + 1)..simplexes.len()).map(move |j| (i, j)))
@@ -169,12 +149,6 @@ where
                 .or_default()
                 .insert(spx_i.clone());
         }
-
-        println!(
-            "{:?} / {:?}",
-            pairs_todo.len(),
-            simplexes.len() * simplexes.len() / 2
-        );
 
         while !pairs_todo.is_empty() {
             let spx1 = pairs_todo.keys().next().unwrap().clone();

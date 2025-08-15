@@ -49,16 +49,7 @@ where
             })
             .reduce(
                 || space.empty_subset().into_simplicial_disjoint_union(),
-                |left, right| {
-                    println!(
-                        "{:?} + {:?}",
-                        left.simplexes().len(),
-                        right.simplexes().len()
-                    );
-                    let shape = left.union_raw(&right);
-                    println!(" = {:?}", shape.simplexes().len());
-                    shape
-                },
+                |left, right| left.union_raw(&right),
             )
     }
 }
