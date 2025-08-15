@@ -653,7 +653,7 @@ impl Polynomial<Integer> {
 
                     let mut roots = bisect(poly, n1, &a1, &b1, &c1, &d1);
                     roots.append(&mut bisect(poly, n2, &a2, &b2, &c2, &d2));
-                    return roots;
+                    roots
                 }
             }
 

@@ -95,10 +95,10 @@ impl IsomorphismClass {
             k += 1;
             k_fact *= k;
         }
-        if n == k_fact {
-            if let Some(_f) = find_isomorphism(group, &examples::symmetric_group_structure(k)) {
-                return Self::Symmetric(k);
-            }
+        if n == k_fact
+            && let Some(_f) = find_isomorphism(group, &examples::symmetric_group_structure(k))
+        {
+            return Self::Symmetric(k);
         }
 
         //alternating
@@ -108,17 +108,17 @@ impl IsomorphismClass {
             k += 1;
             half_k_fact *= k;
         }
-        if n == half_k_fact {
-            if let Some(_f) = find_isomorphism(group, &examples::alternating_group_structure(k)) {
-                return Self::Alternating(k);
-            }
+        if n == half_k_fact
+            && let Some(_f) = find_isomorphism(group, &examples::alternating_group_structure(k))
+        {
+            return Self::Alternating(k);
         }
 
         //dihedral
-        if n % 2 == 0 {
-            if let Some(_f) = find_isomorphism(group, &examples::dihedral_group_structure(n / 2)) {
-                return Self::Dihedral(n / 2);
-            }
+        if n % 2 == 0
+            && let Some(_f) = find_isomorphism(group, &examples::dihedral_group_structure(n / 2))
+        {
+            return Self::Dihedral(n / 2);
         }
 
         IsomorphismClass::Unknown(n)

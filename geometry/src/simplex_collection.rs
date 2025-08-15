@@ -9,11 +9,11 @@ use std::collections::{HashMap, HashSet};
 pub trait LabelledSimplexCollection<
     'f,
     FS: OrderedRingSignature + FieldSignature + 'f,
-    T: Eq + Clone,
+    T: Eq + Clone + Send + Sync,
 >: Sized where
     FS::Set: Hash,
 {
-    type WithLabel<S: Eq + Clone>: LabelledSimplexCollection<'f, FS, S>;
+    type WithLabel<S: Eq + Clone + Send + Sync>: LabelledSimplexCollection<'f, FS, S>;
     type SubsetType: LabelledSimplexCollection<'f, FS, T>;
 
     fn try_new(
@@ -97,7 +97,10 @@ pub trait LabelledSimplexCollection<
 
     fn into_simplicial_disjoint_union(self) -> LabelledSimplicialDisjointUnion<'f, FS, T>;
 
-    fn apply_label_function<S: Eq + Clone>(&self, f: impl Fn(&T) -> S) -> Self::WithLabel<S> {
+    fn apply_label_function<S: Eq + Clone + Send + Sync>(
+        &self,
+        f: impl Fn(&T) -> S,
+    ) -> Self::WithLabel<S> {
         LabelledSimplexCollection::new_labelled_unchecked(
             self.ambient_space(),
             self.labelled_simplexes()
@@ -106,7 +109,10 @@ pub trait LabelledSimplexCollection<
                 .collect(),
         )
     }
-    fn into_apply_label_function<S: Eq + Clone>(self, f: impl Fn(T) -> S) -> Self::WithLabel<S> {
+    fn into_apply_label_function<S: Eq + Clone + Send + Sync>(
+        self,
+        f: impl Fn(T) -> S,
+    ) -> Self::WithLabel<S> {
         LabelledSimplexCollection::new_labelled_unchecked(
             self.ambient_space(),
             self.into_labelled_simplexes()

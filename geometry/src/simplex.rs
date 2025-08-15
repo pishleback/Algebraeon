@@ -192,7 +192,8 @@ where
     }
 
     pub fn into_affine_span(self) -> (EmbeddedAffineSubspace<'f, FS>, Vec<Vector<'f, FS>>) {
-        EmbeddedAffineSubspace::new_affine_span(self.ambient_space, self.into_points()).unwrap()
+        EmbeddedAffineSubspace::new_affine_independent_span(self.ambient_space, self.into_points())
+            .unwrap()
     }
 }
 

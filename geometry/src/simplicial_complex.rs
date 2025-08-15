@@ -14,12 +14,12 @@ use crate::{
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
-pub struct SCSpxInfo<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> {
+pub struct SCSpxInfo<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync> {
     inv_bdry: HashSet<Simplex<'f, FS>>,
     label: T,
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> std::fmt::Debug
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync> std::fmt::Debug
     for SCSpxInfo<'f, FS, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -30,14 +30,18 @@ impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> std::fmt::Deb
 }
 
 #[derive(Clone)]
-pub struct LabelledSimplicialComplex<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> {
+pub struct LabelledSimplicialComplex<
+    'f,
+    FS: OrderedRingSignature + FieldSignature,
+    T: Eq + Clone + Send + Sync,
+> {
     ambient_space: AffineSpace<'f, FS>,
     simplexes: HashMap<Simplex<'f, FS>, SCSpxInfo<'f, FS, T>>,
 }
 
 pub type SimplicialComplex<'f, FS> = LabelledSimplicialComplex<'f, FS, ()>;
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> std::fmt::Debug
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync> std::fmt::Debug
     for LabelledSimplicialComplex<'f, FS, T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -47,12 +51,12 @@ impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone> std::fmt::Deb
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplexCollection<'f, FS, T> for LabelledSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
 {
-    type WithLabel<S: Eq + Clone> = LabelledSimplicialComplex<'f, FS, S>;
+    type WithLabel<S: Eq + Clone + Send + Sync> = LabelledSimplicialComplex<'f, FS, S>;
     type SubsetType = LabelledPartialSimplicialComplex<'f, FS, T>;
 
     fn try_new_labelled(
@@ -144,7 +148,7 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
@@ -272,7 +276,7 @@ Output:
 
 */
 
-fn simplify_in_region<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>(
+fn simplify_in_region<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>(
     space: AffineSpace<'f, FS>,
     boundary_facets: Vec<OrientedSimplex<'f, FS>>,
     labelled_interior: HashMap<Simplex<'f, FS>, T>,
@@ -403,7 +407,7 @@ where
     None
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone>
+impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplicialComplex<'f, FS, T>
 where
     FS::Set: Hash,
@@ -473,7 +477,7 @@ where
                 nbd_points
             };
 
-            let nbd_affine_subspace = EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
+            let nbd_affine_subspace = EmbeddedAffineSubspace::new_affine_span(
                 self.ambient_space(),
                 nbd_points.iter().collect(),
             );
@@ -567,11 +571,10 @@ where
                         boundary_img_points.insert(p);
                     }
                 }
-                let nbd_boundary_affine_subspace =
-                    EmbeddedAffineSubspace::new_affine_span_linearly_dependent(
-                        nbd_affine_subspace.embedded_space(),
-                        boundary_img_points.into_iter().collect(),
-                    );
+                let nbd_boundary_affine_subspace = EmbeddedAffineSubspace::new_affine_span(
+                    nbd_affine_subspace.embedded_space(),
+                    boundary_img_points.into_iter().collect(),
+                );
                 debug_assert!(
                     nbd_boundary_affine_subspace
                         .embedded_space()

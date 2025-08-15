@@ -293,10 +293,9 @@ pub fn find_isomorphism<'a, 'b>(
                     range,
                 )
                 .unwrap()
+                && let Some(f_iso) = f.to_isomorphism()
             {
-                if let Some(f_iso) = f.to_isomorphism() {
-                    return Some(f_iso);
-                }
+                return Some(f_iso);
             }
             already_checked += 1;
 

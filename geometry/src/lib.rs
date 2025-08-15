@@ -14,6 +14,7 @@ pub mod parse;
 pub mod partial_simplicial_complex;
 pub mod simplex;
 pub mod simplex_collection;
+pub mod simplex_overlap;
 pub mod simplicial_complex;
 pub mod simplicial_disjoint_union;
 pub mod vector;
