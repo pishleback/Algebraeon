@@ -25,7 +25,7 @@ It produces the following plot, in an interactive 2D viewer:
 
 ![Shape](./shape.png)
 
-Green areas indicate points that are part of the shape. Red area indicate points that are not part of the shape.
+Green areas indicate points that are part of the shape. Red areas indicate points that are not part of the shape.
 
 ## Loading a Shape From a String
 
