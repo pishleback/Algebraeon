@@ -1,6 +1,6 @@
 use crate::canvas::*;
 use std::sync::Arc;
-use wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Color, CommandEncoder, TextureView};
+use wgpu::{BindGroup, BindGroupLayout, Color, CommandEncoder, TextureView, util::DeviceExt};
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
     event::WindowEvent,
