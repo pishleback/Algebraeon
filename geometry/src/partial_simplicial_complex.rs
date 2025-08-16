@@ -71,8 +71,16 @@ where
         self
     }
 
+    fn to_partial_simplicial_complex(&self) -> LabelledPartialSimplicialComplex<'f, FS, T> {
+        self.clone()
+    }
+
     fn into_simplicial_disjoint_union(self) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
         LabelledSimplicialDisjointUnion::new_labelled_unchecked(self.ambient_space, self.simplexes)
+    }
+
+    fn to_simplicial_disjoint_union(&self) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
+        self.clone().into_simplicial_disjoint_union()
     }
 }
 
