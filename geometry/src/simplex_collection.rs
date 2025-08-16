@@ -94,8 +94,10 @@ pub trait LabelledSimplexCollection<
     }
 
     fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T>;
+    fn to_partial_simplicial_complex(&self) -> LabelledPartialSimplicialComplex<'f, FS, T>;
 
     fn into_simplicial_disjoint_union(self) -> LabelledSimplicialDisjointUnion<'f, FS, T>;
+    fn to_simplicial_disjoint_union(&self) -> LabelledSimplicialDisjointUnion<'f, FS, T>;
 
     fn apply_label_function<S: Eq + Clone + Send + Sync>(
         &self,

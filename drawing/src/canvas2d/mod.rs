@@ -1,6 +1,6 @@
 use crate::canvas::*;
 use std::sync::Arc;
-use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
+use wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Color, CommandEncoder, TextureView};
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
     event::WindowEvent,
@@ -9,6 +9,7 @@ use winit::{
 };
 
 pub mod complex_polynomial;
+pub mod plottable;
 pub mod shapes;
 pub mod test_pentagon;
 
@@ -282,6 +283,21 @@ impl Canvas2DWindowState {
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("Render Encoder"),
                 });
+
+        encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("clear-pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(Color::WHITE),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+        });
 
         for item in &mut self.items {
             item.render(&mut encoder, &view, &self.camera_bind_group)?;

@@ -59,6 +59,7 @@ dependencies = [
 name = "algebraeon"
 version = "0.0.13"
 dependencies = [
+ "algebraeon-drawing",
  "algebraeon-geometry",
  "algebraeon-groups",
  "algebraeon-nzq",
@@ -81,7 +82,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-drawing"
-version = "0.0.0"
+version = "0.0.13"
 dependencies = [
  "algebraeon-geometry",
  "algebraeon-nzq",
