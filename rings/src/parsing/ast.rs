@@ -172,12 +172,12 @@ pub struct Product {
 
 impl Product {
     pub fn validate(&self) -> Result<(), String> {
-        if let Expr::Power(p) = self.right.as_ref() {
-            if let Expr::Num(n) = p.exponent.as_ref() {
-                if n.denominator == Integer::from(1) && n.numerator == Integer::from(-1) {
-                    return Err("Division not allowed in polynomials".to_string());
-                }
-            }
+        if let Expr::Power(p) = self.right.as_ref()
+            && let Expr::Num(n) = p.exponent.as_ref()
+            && n.denominator == Integer::from(1)
+            && n.numerator == Integer::from(-1)
+        {
+            return Err("Division not allowed in polynomials".to_string());
         }
         self.left.validate()?;
         self.right.validate()

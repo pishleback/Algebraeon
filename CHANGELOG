@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+ - Added Minkowski sum of shapes
+ - Added multithreading to speed up shape algorithms
+
 ## [0.0.13]
 
  - Added database of Conway polynomials.

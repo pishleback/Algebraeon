@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-drawing"
-# version = "0.0.0"
+version = "0.0.13"
 edition = "2024"
 
 [lib]

@@ -1,12 +1,12 @@
 use std::{borrow::Borrow, fmt::Debug};
 
-pub trait Signature: Clone + Debug + Eq {}
+pub trait Signature: Clone + Debug + Eq + Send + Sync {}
 
 /// Instances of a type implementing this trait represent
 /// a set of elements of type `Self::Set` with some
 /// structure, for example, the structure of a ring.
 pub trait SetSignature: Signature {
-    type Set: Clone + Debug;
+    type Set: Clone + Debug + Send + Sync;
 
     /// Some instances of `Self::Set` may not be valid to represent elements of this set.
     /// Return `Ok(())` if `x` is a valid element and `Err` if not.
@@ -45,8 +45,8 @@ pub trait FiniteSetSignature: CountableSetSignature {
     }
 }
 
-pub trait BorrowedStructure<S: Signature>: Borrow<S> + Clone + Debug + Eq {}
-impl<S: Signature, BS: Borrow<S> + Clone + Debug + Eq> BorrowedStructure<S> for BS {}
+pub trait BorrowedStructure<S: Signature>: Borrow<S> + Clone + Debug + Eq + Send + Sync {}
+impl<S: Signature, BS: Borrow<S> + Clone + Debug + Eq + Send + Sync> BorrowedStructure<S> for BS {}
 
 #[cfg(test)]
 mod tests {
@@ -82,6 +82,7 @@ mod tests {
 
     #[test]
     fn to_string_structure_impl() {
+        #[allow(dead_code)]
         #[derive(Debug, Clone, PartialEq, Eq)]
         struct A {
             t: usize,

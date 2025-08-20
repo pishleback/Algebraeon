@@ -1,3 +1,4 @@
+pub use algebraeon_drawing as drawing;
 pub use algebraeon_geometry as geometry;
 pub use algebraeon_groups as groups;
 pub use algebraeon_nzq as nzq;

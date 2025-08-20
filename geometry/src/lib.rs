@@ -1,31 +1,20 @@
-#![allow(dead_code)]
-#![allow(
-    clippy::uninlined_format_args,
-    clippy::to_string_in_format_args,
-    clippy::must_use_candidate,
-    clippy::return_self_not_must_use,
-    clippy::missing_panics_doc,
-    clippy::missing_errors_doc,
-    clippy::doc_markdown,
-    clippy::too_many_lines,
-    clippy::similar_names,
-    clippy::many_single_char_names,
-    clippy::wrong_self_convention,
-    clippy::from_over_into,
-    clippy::wildcard_imports
-)]
+// #![allow(dead_code)]
 
 use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature};
 use std::borrow::Borrow;
 use std::hash::Hash;
 
-mod coordinates;
-pub use coordinates::*;
-
-mod ambient_space;
-pub use ambient_space::*;
-
-mod affine_subspace;
-pub use affine_subspace::*;
-
-pub mod simplexes;
+pub mod affine_subspace;
+pub mod ambient_space;
+pub mod boolean_operations;
+pub mod convex_hull;
+pub mod minkowski_sum;
+pub mod oriented_simplex;
+pub mod parse;
+pub mod partial_simplicial_complex;
+pub mod simplex;
+pub mod simplex_collection;
+pub mod simplex_overlap;
+pub mod simplicial_complex;
+pub mod simplicial_disjoint_union;
+pub mod vector;

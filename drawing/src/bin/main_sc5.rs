@@ -1,95 +1,30 @@
-#![allow(dead_code, warnings, unused)]
-
-use std::rc::Rc;
-
 use algebraeon_drawing::canvas::Canvas;
 use algebraeon_drawing::canvas2d::Canvas2D;
 use algebraeon_drawing::canvas2d::MouseWheelZoomCamera;
-use algebraeon_drawing::canvas2d::shapes::Shape;
-use algebraeon_drawing::canvas2d::shapes::simplicial_complex_shapes;
-use algebraeon_drawing::colour::Colour;
-use algebraeon_geometry::simplexes::ConvexHull;
-use algebraeon_geometry::simplexes::LabelledSimplicialDisjointUnion;
-use algebraeon_geometry::simplexes::OrientationSide;
-use algebraeon_geometry::simplexes::OrientedSimplex;
-use algebraeon_geometry::simplexes::Simplex;
-use algebraeon_geometry::*;
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
-use rand::Rng;
-use simplexes::LabelledSimplexCollection;
-use simplexes::LabelledSimplicialComplex;
+use algebraeon_geometry::parse::parse_shape;
 
 fn main() {
-    // let space = AffineSpace::new_linear(Rational::structure(), 2);
-    // let p1 = Vector::new(&space, vec![Rational::from(0), Rational::from(0)]);
-    // let p2 = Vector::new(&space, vec![Rational::from(1), Rational::from(0)]);
-    // let p3 = Vector::new(&space, vec![Rational::from(0), Rational::from(1)]);
+    // let shape = parse_shape(
+    //     "ConvexHull((0, 0), (1, 0), (0, 1), (1, 1)) \\ ((1/2, 1/2) | (1/3, 1/3) | (1/4, 1/4) | (1/5, 1/5) | (1/6, 1/6) | (1/3, 4/5))",
+    // );
 
-    // let s1 = Simplex::new(&space, vec![p1.clone()]).unwrap();
-    // let s2 = Simplex::new(&space, vec![p1.clone(), p2.clone()]).unwrap();
-    // let s3 = Simplex::new(&space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
+    // let shape = parse_shape(
+    //     "ConvexHull((0, 0), (3, 0), (0, 3), (3, 3)) \\ ConvexHull((1, 1), (2, 1), (1, 2), (2, 2))",
+    // );
 
-    let field = Rational::structure();
+    // let shape = parse_shape("Polygon((0, 0), (0, 3), (1/2, -1), (3, 3), (3, 0), (5/2, 4))");
 
-    let space = AffineSpace::new_linear(field, 2);
+    // let shape = parse_shape("ConvexHull((0, 0), (1, 1/10)) + Loop((0, 0), (10, 0), (10, 10), (0, 10))");
 
-    let a = LabelledSimplicialDisjointUnion::from(
-        &ConvexHull::new(
-            &space,
-            vec![
-                Vector::new(&space, vec![Rational::from(0), Rational::from(3)]),
-                Vector::new(&space, vec![Rational::from(3), Rational::from(0)]),
-                Vector::new(&space, vec![Rational::from(0), Rational::from(-3)]),
-                Vector::new(&space, vec![Rational::from(-3), Rational::from(0)]),
-            ],
-        )
-        .as_simplicial_complex()
-        .subset_by_label(&simplexes::InteriorBoundaryLabel::Interior),
+    // let shape = parse_shape(
+    //     "((Polygon((0, 0), (4, 0), (4, 1), (3, 1), (3, -1), (2, -1), (2, 2), (1, 2)) | Polygon((5/2, 0/2), (4/2, 1/2), (3/2, 0/2), (4/2, -1/2))) \\ (Loop((0, 0), (1, 1), (11/4, -1/4)) \\ (1/3, 1/3))) + Lines((0, 0), (1/10, 1/10)) + Lines((0, 0), (1/10, -1/10))",
+    // );
+
+    let shape = parse_shape(
+        "Polygon((0, 0), (6, 0), (6, 6), (2, 3), (0, 4)) \\ Polygon((1, 1), (2, 1), (2, 2), (1, 3))",
     );
-
-    let b = LabelledSimplicialDisjointUnion::from(
-        &ConvexHull::new(
-            &space,
-            vec![
-                Vector::new(&space, vec![Rational::from(-2), Rational::from(-2)]),
-                Vector::new(&space, vec![Rational::from(2), Rational::from(-2)]),
-                Vector::new(&space, vec![Rational::from(-2), Rational::from(2)]),
-                Vector::new(&space, vec![Rational::from(2), Rational::from(2)]),
-            ],
-        )
-        .as_simplicial_complex()
-        .into_forget_labels(),
-    );
-
-    let x = a.union_raw(&b);
-
-    let c = LabelledSimplicialDisjointUnion::from(
-        &ConvexHull::new(
-            &space,
-            vec![
-                Vector::new(&space, vec![Rational::from(-5), Rational::from(0)]),
-                Vector::new(&space, vec![Rational::from(5), Rational::from(1)]),
-                Vector::new(&space, vec![Rational::from(0), Rational::from(2)]),
-            ],
-        )
-        .as_simplicial_complex()
-        .into_forget_labels(),
-    );
-
-    let x = x.union_raw(&c).refine_to_partial_simplicial_complex();
-    let y = x.clone().simplify();
 
     let mut canvas = Canvas2D::new(Box::new(MouseWheelZoomCamera::new()));
-    canvas.plot_shapes(
-        [Shape::SetThickness(0.3)]
-            .into_iter()
-            .chain(simplicial_complex_shapes(
-                &Colour::green(),
-                &Colour::green().darken(),
-                0.5,
-                &y,
-            )),
-    );
+    canvas.plot(shape);
     canvas.run();
 }

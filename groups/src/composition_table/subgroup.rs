@@ -81,7 +81,7 @@ impl<'a> Subgroup<'a> {
         )
     }
 
-    pub fn left_cosets(&self) -> GroupPartition {
+    pub fn left_cosets(&'_ self) -> GroupPartition<'_> {
         let mut cosets: Vec<HashSet<usize>> = vec![];
         let mut coset_lookup = vec![0; self.subset.group().size()];
         let mut missing: HashSet<usize> = self.subset.group().elems().collect();
@@ -100,7 +100,7 @@ impl<'a> Subgroup<'a> {
         }
     }
 
-    pub fn right_cosets(&self) -> GroupPartition {
+    pub fn right_cosets(&'_ self) -> GroupPartition<'_> {
         let mut cosets: Vec<HashSet<usize>> = vec![];
         let mut coset_lookup = vec![0; self.subset.group().size()];
         let mut missing: HashSet<usize> = self.subset.group().elems().collect();
@@ -137,7 +137,7 @@ impl<'a> Subgroup<'a> {
         true
     }
 
-    pub fn to_normal_subgroup(&self) -> Option<NormalSubgroup> {
+    pub fn to_normal_subgroup(&'_ self) -> Option<NormalSubgroup<'_>> {
         if self.is_normal_subgroup() {
             Some(NormalSubgroup::new_unchecked(self.clone()))
         } else {

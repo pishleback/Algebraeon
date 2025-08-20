@@ -26,7 +26,7 @@ pub fn is_power_test(n: &Natural) -> IsPowerTestResult {
                 return IsPowerTestResult::Power(a, k);
             }
         }
-        return IsPowerTestResult::No;
+        IsPowerTestResult::No
     }
 }
 

@@ -346,8 +346,7 @@ mod dminusone_test {
             */
             let b1 = self
                 .factor_dminusone_coeff_bound_divby_gdeg
-                .checked_mul(d)
-                .unwrap_or(usize::MAX);
+                .saturating_mul(d);
             if b1 == 0 {
                 0 < range_bot && range_bot <= range_top
             } else {

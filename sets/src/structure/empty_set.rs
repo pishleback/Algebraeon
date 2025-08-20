@@ -32,9 +32,9 @@ impl<Set> Default for EmptySetStructure<Set> {
     }
 }
 
-impl<Set> Signature for EmptySetStructure<Set> {}
+impl<Set: Send + Sync> Signature for EmptySetStructure<Set> {}
 
-impl<Set: Debug + Clone> SetSignature for EmptySetStructure<Set> {
+impl<Set: Debug + Clone + Send + Sync> SetSignature for EmptySetStructure<Set> {
     type Set = Set;
 
     fn is_element(&self, _: &Self::Set) -> Result<(), String> {
@@ -42,13 +42,13 @@ impl<Set: Debug + Clone> SetSignature for EmptySetStructure<Set> {
     }
 }
 
-impl<Set: Debug + Clone> EqSignature for EmptySetStructure<Set> {
+impl<Set: Debug + Clone + Send + Sync> EqSignature for EmptySetStructure<Set> {
     fn equal(&self, _: &Self::Set, _: &Self::Set) -> bool {
         panic!("Empty set had no elements to compare for equality")
     }
 }
 
-impl<Set: Debug + Clone> OrdSignature for EmptySetStructure<Set> {
+impl<Set: Debug + Clone + Send + Sync> OrdSignature for EmptySetStructure<Set> {
     fn cmp(&self, _: &Self::Set, _: &Self::Set) -> std::cmp::Ordering {
         panic!("Empty set had no elements to compare for ordering")
     }

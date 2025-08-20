@@ -90,7 +90,7 @@ impl<'a> GeneratingSet<'a> {
 }
 
 impl FiniteGroupMultiplicationTable {
-    fn try_find_generating_set(&self, max_size: Option<usize>) -> Result<GeneratingSet, ()> {
+    fn try_find_generating_set(&'_ self, max_size: Option<usize>) -> Result<GeneratingSet<'_>, ()> {
         let mut missing = HashSet::new();
         for x in self.elems() {
             missing.insert(x);
@@ -105,10 +105,10 @@ impl FiniteGroupMultiplicationTable {
         #[allow(clippy::assigning_clones)]
         while sg.len() < self.size() {
             //if we are going to need more gens than max_size allows, then give up
-            if let Some(max_size_val) = max_size {
-                if gens.len() == max_size_val {
-                    return Err(());
-                }
+            if let Some(max_size_val) = max_size
+                && gens.len() == max_size_val
+            {
+                return Err(());
             }
 
             //add a new generator
@@ -154,11 +154,11 @@ impl FiniteGroupMultiplicationTable {
         })
     }
 
-    pub fn generating_set(&self) -> GeneratingSet {
+    pub fn generating_set(&'_ self) -> GeneratingSet<'_> {
         self.try_find_generating_set(None).unwrap()
     }
 
-    pub fn small_generating_set(&self, attempts: Option<usize>) -> GeneratingSet {
+    pub fn small_generating_set(&'_ self, attempts: Option<usize>) -> GeneratingSet<'_> {
         let a = attempts.unwrap_or(12);
         assert!(a > 0);
 

@@ -4,7 +4,7 @@ use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-pub trait Morphism<Domain: Signature, Range: Signature>: Debug + Clone {
+pub trait Morphism<Domain: Signature, Range: Signature>: Debug + Clone + Send + Sync {
     fn domain(&self) -> &Domain;
     fn range(&self) -> &Range;
 }
@@ -264,10 +264,14 @@ impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEnd
 impl<X: FiniteSetSignature + EqSignature> FiniteSetSignature for FiniteSetEndofunctions<X> {}
 
 pub trait BorrowedMorphism<Domain: Signature, Range: Signature, M: Morphism<Domain, Range>>:
-    Borrow<M> + Clone + Debug
+    Borrow<M> + Clone + Debug + Send + Sync
 {
 }
-impl<Domain: Signature, Range: Signature, M: Morphism<Domain, Range>, BM: Borrow<M> + Clone + Debug>
-    BorrowedMorphism<Domain, Range, M> for BM
+impl<
+    Domain: Signature,
+    Range: Signature,
+    M: Morphism<Domain, Range>,
+    BM: Borrow<M> + Clone + Debug + Send + Sync,
+> BorrowedMorphism<Domain, Range, M> for BM
 {
 }

@@ -536,14 +536,15 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
 
     fn mul_by_unchecked(&self, a: &mut FactoredRingElement<RS::Set>, p: RS::Set, k: Natural) {
         for (q, t) in &mut a.powers {
-            if let (Ok(u), Ok(v)) = (self.ring().div(&p, q), self.ring().div(q, &p)) {
-                if self.ring().is_unit(&u) && self.ring().is_unit(&v) {
-                    //q = v*p so q^k = v^kp^k and this is what we are multiplying by
-                    self.ring()
-                        .mul_mut(&mut a.unit, &self.ring().nat_pow(&v, &k));
-                    *t += k;
-                    return;
-                }
+            if let (Ok(u), Ok(v)) = (self.ring().div(&p, q), self.ring().div(q, &p))
+                && self.ring().is_unit(&u)
+                && self.ring().is_unit(&v)
+            {
+                //q = v*p so q^k = v^kp^k and this is what we are multiplying by
+                self.ring()
+                    .mul_mut(&mut a.unit, &self.ring().nat_pow(&v, &k));
+                *t += k;
+                return;
             }
         }
         a.powers.push((p, k));

@@ -5,7 +5,7 @@ use algebraeon_nzq::*;
 use lalrpop_util::lalrpop_mod;
 use std::collections::HashMap;
 
-lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs"); // synthesized by LALRPOP
+lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs");
 
 impl Expr {
     pub fn from_string(input: String) -> Result<Self, String> {
@@ -342,38 +342,32 @@ impl Expr {
                     }
                     // Handle var * var^n pattern
                     (Expr::Var(v), Expr::Power(pow)) if v.name == var => {
-                        if let Expr::Var(base_var) = pow.base.as_ref() {
-                            if base_var.name == var {
-                                if let Expr::Num(exp) = pow.exponent.as_ref() {
-                                    if exp.denominator == Integer::from(1) {
-                                        // Convert the Integer to usize safely
-                                        let exp_usize: usize = (&exp.numerator)
-                                            .try_into()
-                                            .expect("Exponent out of range for usize conversion");
-                                        let degree = 1 + exp_usize;
-                                        *terms.entry(degree).or_insert(Integer::from(0)) +=
-                                            coefficient;
-                                    }
-                                }
-                            }
+                        if let Expr::Var(base_var) = pow.base.as_ref()
+                            && base_var.name == var
+                            && let Expr::Num(exp) = pow.exponent.as_ref()
+                            && exp.denominator == Integer::from(1)
+                        {
+                            // Convert the Integer to usize safely
+                            let exp_usize: usize = (&exp.numerator)
+                                .try_into()
+                                .expect("Exponent out of range for usize conversion");
+                            let degree = 1 + exp_usize;
+                            *terms.entry(degree).or_insert(Integer::from(0)) += coefficient;
                         }
                     }
                     // Handle var^n * var pattern
                     (Expr::Power(pow), Expr::Var(v)) if v.name == var => {
-                        if let Expr::Var(base_var) = pow.base.as_ref() {
-                            if base_var.name == var {
-                                if let Expr::Num(exp) = pow.exponent.as_ref() {
-                                    if exp.denominator == Integer::from(1) {
-                                        // Convert the Integer to usize safely
-                                        let exp_usize: usize = (&exp.numerator)
-                                            .try_into()
-                                            .expect("Exponent out of range for usize conversion");
-                                        let degree = 1 + exp_usize;
-                                        *terms.entry(degree).or_insert(Integer::from(0)) +=
-                                            coefficient;
-                                    }
-                                }
-                            }
+                        if let Expr::Var(base_var) = pow.base.as_ref()
+                            && base_var.name == var
+                            && let Expr::Num(exp) = pow.exponent.as_ref()
+                            && exp.denominator == Integer::from(1)
+                        {
+                            // Convert the Integer to usize safely
+                            let exp_usize: usize = (&exp.numerator)
+                                .try_into()
+                                .expect("Exponent out of range for usize conversion");
+                            let degree = 1 + exp_usize;
+                            *terms.entry(degree).or_insert(Integer::from(0)) += coefficient;
                         }
                     }
                     // Handle general case using distributive property
@@ -535,38 +529,32 @@ impl Expr {
                     }
                     // Handle var * var^n pattern
                     (Expr::Var(v), Expr::Power(pow)) if v.name == var => {
-                        if let Expr::Var(base_var) = pow.base.as_ref() {
-                            if base_var.name == var {
-                                if let Expr::Num(exp) = pow.exponent.as_ref() {
-                                    if exp.denominator == Integer::from(1) {
-                                        // Convert the Integer to usize safely
-                                        let exp_usize: usize = (&exp.numerator)
-                                            .try_into()
-                                            .expect("Exponent out of range for usize conversion");
-                                        let degree = 1 + exp_usize;
-                                        *terms.entry(degree).or_insert(Rational::from(0)) +=
-                                            coefficient;
-                                    }
-                                }
-                            }
+                        if let Expr::Var(base_var) = pow.base.as_ref()
+                            && base_var.name == var
+                            && let Expr::Num(exp) = pow.exponent.as_ref()
+                            && exp.denominator == Integer::from(1)
+                        {
+                            // Convert the Integer to usize safely
+                            let exp_usize: usize = (&exp.numerator)
+                                .try_into()
+                                .expect("Exponent out of range for usize conversion");
+                            let degree = 1 + exp_usize;
+                            *terms.entry(degree).or_insert(Rational::from(0)) += coefficient;
                         }
                     }
                     // Handle var^n * var pattern
                     (Expr::Power(pow), Expr::Var(v)) if v.name == var => {
-                        if let Expr::Var(base_var) = pow.base.as_ref() {
-                            if base_var.name == var {
-                                if let Expr::Num(exp) = pow.exponent.as_ref() {
-                                    if exp.denominator == Integer::from(1) {
-                                        // Convert the Integer to usize safely
-                                        let exp_usize: usize = (&exp.numerator)
-                                            .try_into()
-                                            .expect("Exponent out of range for usize conversion");
-                                        let degree = 1 + exp_usize;
-                                        *terms.entry(degree).or_insert(Rational::from(0)) +=
-                                            coefficient;
-                                    }
-                                }
-                            }
+                        if let Expr::Var(base_var) = pow.base.as_ref()
+                            && base_var.name == var
+                            && let Expr::Num(exp) = pow.exponent.as_ref()
+                            && exp.denominator == Integer::from(1)
+                        {
+                            // Convert the Integer to usize safely
+                            let exp_usize: usize = (&exp.numerator)
+                                .try_into()
+                                .expect("Exponent out of range for usize conversion");
+                            let degree = 1 + exp_usize;
+                            *terms.entry(degree).or_insert(Rational::from(0)) += coefficient;
                         }
                     }
                     // Handle general case using distributive property
