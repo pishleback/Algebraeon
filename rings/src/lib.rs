@@ -45,6 +45,7 @@ pub mod isolated_algebraic;
 pub mod matrix;
 pub mod module;
 pub mod natural;
+pub mod num_theory;
 pub mod parsing;
 pub mod polynomial;
 pub mod quaternion_algebras;
