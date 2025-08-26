@@ -1,8 +1,6 @@
 use crate::{
-    natural::factorization::{
-            factor, primes::is_prime, NaturalCanonicalFactorizationStructure
-        },
-    structure::{FactoredSignature, MetaFactorableSignature, QuotientStructure, SemiRingSignature},
+    natural::factorization::primes::is_prime,
+    structure::{MetaFactorableSignature, QuotientStructure, SemiRingSignature},
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
 use algebraeon_sets::structure::MetaType;
@@ -104,20 +102,62 @@ pub enum JacobiSymbolError {
     BottomEven,
 }
 
+// Jacobi symbol computation without factorization
+// Based on the algorithm from: https://en.wikipedia.org/wiki/Jacobi_symbol#Implementation_in_C++
 pub fn jacobi_symbol(a: &Integer, n: &Natural) -> Result<QuadraticSymbolValue, JacobiSymbolError> {
     if n % Natural::TWO == Natural::ZERO {
-        Err(JacobiSymbolError::BottomEven)
-    } else {
-        let mod_n = QuotientStructure::new_ring(Integer::structure(), Integer::from(n));
-        let a = mod_n.reduce(a);
-        let mut val = QuadraticSymbolValue::Pos;
-        for (p, k) in Natural::structure()
-            .factorizations()
-            .to_powers(&factor(n.clone()).unwrap())
-        {
-            val = val * legendre_symbol(&a, p).unwrap().nat_pow(k);
+        return Err(JacobiSymbolError::BottomEven);
+    }
+
+    if n == &Natural::ONE {
+        return Ok(QuadraticSymbolValue::Pos);
+    }
+
+    let mut a = a.clone();
+    let mut n = n.clone();
+    let mut result = QuadraticSymbolValue::Pos;
+
+    // Handle negative numbers: (-1/n) = (-1)^((n-1)/2)
+    if a < Integer::ZERO {
+        a = -a;
+        if &n % Natural::from(4u32) == Natural::from(3u32) {
+            result = result * QuadraticSymbolValue::Neg;
         }
-        Ok(val)
+    }
+
+    loop {
+        a = a % Integer::from(&n);
+
+        if a == Integer::ZERO {
+            return Ok(QuadraticSymbolValue::Zero);
+        }
+
+        // Extract powers of 2 from a
+        while &a % Integer::TWO == Integer::ZERO {
+            a = &a / Integer::TWO;
+
+            let n_mod_8 = &n % Natural::from(8u32);
+            if n_mod_8 == Natural::from(3u32) || n_mod_8 == Natural::from(5u32) {
+                result = result * QuadraticSymbolValue::Neg;
+            }
+        }
+
+        if a == Integer::ONE {
+            return Ok(result);
+        }
+
+        let a_nat = Natural::try_from(&a).unwrap();
+
+        if &a_nat % Natural::from(4u32) == Natural::from(3u32)
+            && &n % Natural::from(4u32) == Natural::from(3u32)
+        {
+            result = result * QuadraticSymbolValue::Neg;
+        }
+
+        // Swap a and n for next iteration
+        let temp = a_nat;
+        a = Integer::from(&n);
+        n = temp;
     }
 }
 
