@@ -1,6 +1,9 @@
 use crate::{
-    natural::factorization::primes::is_prime,
-    structure::{MetaFactorableSignature, QuotientStructure, SemiRingSignature},
+    natural::factorization::{NaturalCanonicalFactorizationStructure, factor, primes::is_prime},
+    structure::{
+        FactoredSignature, MetaFactorableSignature, RingToQuotientFieldSignature,
+        RingToQuotientRingSignature, SemiRingSignature,
+    },
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
 use algebraeon_sets::structure::MetaType;
@@ -84,7 +87,7 @@ pub fn legendre_symbol(
     if p % Natural::TWO == Natural::ZERO || !is_prime(p) {
         Err(LegendreSymbolError::BottomNotOddPrime)
     } else {
-        let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), Integer::from(p));
+        let mod_p = Integer::structure_ref().quotient_field_unchecked(Integer::from(p));
         let v = mod_p.reduce(mod_p.nat_pow(a, &((p - Natural::ONE) / Natural::TWO)));
         if v == Integer::ZERO {
             Ok(QuadraticSymbolValue::Zero)
@@ -100,6 +103,26 @@ pub fn legendre_symbol(
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum JacobiSymbolError {
     BottomEven,
+}
+
+fn jacobi_symbol_by_factorization(
+    a: &Integer,
+    n: &Natural,
+) -> Result<QuadraticSymbolValue, JacobiSymbolError> {
+    if n % Natural::TWO == Natural::ZERO {
+        Err(JacobiSymbolError::BottomEven)
+    } else {
+        let mod_n = Integer::structure_ref().quotient_ring(Integer::from(n));
+        let a = mod_n.reduce(a);
+        let mut val = QuadraticSymbolValue::Pos;
+        for (p, k) in Natural::structure()
+            .factorizations()
+            .to_powers(&factor(n.clone()).unwrap())
+        {
+            val = val * legendre_symbol(&a, p).unwrap().nat_pow(k);
+        }
+        Ok(val)
+    }
 }
 
 // Jacobi symbol computation without factorization
@@ -333,12 +356,23 @@ mod tests {
             jacobi_symbol(&3.into(), &9u32.into()),
             Ok(QuadraticSymbolValue::Zero)
         );
+
         for p in [3u32, 5, 7] {
             for a in 0..10 {
                 let (a, p) = (Integer::from(a), Natural::from(p));
                 let ls = legendre_symbol(&a, &p);
                 let js = jacobi_symbol(&a, &p);
                 assert_eq!(ls.unwrap(), js.unwrap());
+            }
+        }
+
+        for a in -30i32..=30 {
+            for n in 0u32..=30 {
+                let (a, n) = (Integer::from(a), Natural::from(n));
+                assert_eq!(
+                    jacobi_symbol(&a, &n),
+                    jacobi_symbol_by_factorization(&a, &n)
+                );
             }
         }
     }
