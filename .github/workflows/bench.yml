@@ -28,10 +28,10 @@ jobs:
         run: cargo bench --bench library_benchmark
 
       - name: Checkout PR branch
-        uses: actions/checkout@v4
+        run: git checkout ${{ github.head_ref }}
 
       - name: Run benchmark on PR
-        run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%' > bench_report.txt
+        run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%' | tee bench_report.txt
 
       - name: Publish benchmark results
         uses: actions/upload-artifact@v4
