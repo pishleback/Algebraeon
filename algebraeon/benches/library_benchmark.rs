@@ -21,19 +21,19 @@ library_benchmark_group!(
 );
 
 #[library_benchmark]
-#[bench::poly1(parse_rational_polynomial("x", "x^5 - x + 1").unwrap())]
+#[bench::poly1(parse_rational_polynomial("x^5 - x + 1", "x").unwrap())]
 fn bench_count_real_polynomial_roots(polynomial: Polynomial<Rational>) {
     black_box(polynomial.count_real_roots());
 }
 
 #[library_benchmark]
-#[bench::poly1(parse_rational_polynomial("x", "x^5 - x + 1").unwrap())]
+#[bench::poly1(parse_rational_polynomial("x^5 - x + 1", "x").unwrap())]
 fn bench_isolate_real_polynomial_roots(polynomial: Polynomial<Rational>) {
     black_box(polynomial.all_real_roots());
 }
 
 #[library_benchmark]
-#[bench::poly1(parse_rational_polynomial("x", "x^5 - x + 1").unwrap())]
+#[bench::poly1(parse_rational_polynomial("x^5 - x + 1", "x").unwrap())]
 fn bench_isolate_complex_polynomial_roots(polynomial: Polynomial<Rational>) {
     black_box(polynomial.all_complex_roots());
 }
