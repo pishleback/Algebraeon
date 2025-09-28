@@ -34,10 +34,10 @@ jobs:
         run: cargo bench -- --save-baseline pr
 
       - name: Compare benchmark results
-        run: cargo bench -- --baseline main --baseline pr > bench_report.txt
+        run: cargo bench -- --baseline main --baseline pr
 
       # Upload report as PR comment
       - name: Post benchmark report
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          path: bench_report.txt
+          message: "test message"
