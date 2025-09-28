@@ -16,11 +16,14 @@ name = "algebraeon_examples"
 algebraeon = { version = "=0.0.13", path = "../algebraeon" }
 
 [dev-dependencies]
-iai-callgrind = "0.16.1"
+gungraun = "0.17.0"
 
 [[bench]]
-name = "my_benchmark"
+name = "library_benchmark"
 harness = false
+
+[profile.bench]
+debug = true
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
