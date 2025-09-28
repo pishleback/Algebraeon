@@ -13,6 +13,9 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install Valgrind (required for iai-callgrind)
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+
       - name: Install gungraun-runner
         run: cargo install gungraun-runner
 
@@ -22,10 +25,10 @@ jobs:
           ref: main
 
       - name: Run benchmark on main
-        run: cargo bench --bench library_benchmark
+        run: cargo bench --bench library_benchmark -- --tolerance=0.99
 
       - name: Checkout PR branch
-        uses: actions/checkout@v4
+        run: git fetch && git checkout ${{ github.head_ref }}
 
       - name: Run benchmark on PR
-        run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%' > bench_report.txt
+        run: cargo bench --bench library_benchmark -- --tolerance=0.99 --callgrind-limits='EstimatedCycles=5%,Ir=5%'
