@@ -22,8 +22,5 @@ gungraun = "0.17.0"
 name = "library_benchmark"
 harness = false
 
-[profile.bench]
-debug = true
-
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
