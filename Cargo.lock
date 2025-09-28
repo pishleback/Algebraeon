@@ -65,6 +65,7 @@ dependencies = [
  "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
+ "gungraun",
 ]
 
 [[package]]
@@ -102,7 +103,6 @@ name = "algebraeon-examples"
 version = "0.0.0"
 dependencies = [
  "algebraeon",
- "gungraun",
 ]
 
 [[package]]

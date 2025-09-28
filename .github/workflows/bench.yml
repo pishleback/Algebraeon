@@ -21,17 +21,11 @@ jobs:
         with:
           ref: main
 
-      # - name: Run benchmark on main
-      #   run: cargo bench --bench library_benchmark
+      - name: Run benchmark on main
+        run: cargo bench --bench library_benchmark
 
-      # - name: Checkout PR branch
-      #   uses: actions/checkout@v4
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
 
       - name: Run benchmark on PR
         run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%' > bench_report.txt
-    
-      # Upload report as PR comment
-      - name: Post benchmark report
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          path: bench_report.txt
