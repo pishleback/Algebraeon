@@ -5,6 +5,9 @@ fn fibonacci(n: u64) -> u64 {
     match n {
         0 => 1,
         1 => 1,
+        2 => 2,
+        // 3 => 3,
+        // 4 => 5,
         n => fibonacci(n - 1) + fibonacci(n - 2),
     }
 }
