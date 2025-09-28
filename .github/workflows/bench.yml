@@ -13,9 +13,6 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Valgrind
-        run: sudo apt-get update && sudo apt-get install -y valgrind
-
       - name: Install gungraun-runner
         run: cargo install gungraun-runner
 
