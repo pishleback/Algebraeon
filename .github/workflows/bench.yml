@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # needed so we can access main
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -34,6 +32,11 @@ jobs:
       # Run benchmarks on PR
       - name: Run benchmarks on PR branch
         run: cargo bench --bench my_benchmark -- --save-baseline pr > bench_report.txt
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
 
       # # Compare PR vs main
       # - name: Compare benchmark results
