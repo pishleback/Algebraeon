@@ -24,20 +24,17 @@ jobs:
       #   with:
       #     ref: main
 
-      # - name: Run benchmarks on main branch
-      #   run: cargo bench --bench my_benchmark -- --save-baseline main
-
       - name: Checkout PR branch
         uses: actions/checkout@v4
 
-      - name: Run benchmarks on PR branch
-        run: cargo bench --bench my_benchmark -- --save-baseline pr
+      - name: Build benchmark on PR
+        run: cargo build --release --bin my_benchmark
 
-      # - name: Compare benchmark results
-      #   run: cargo bench --bench my_benchmark -- --baseline main --baseline pr > bench_report.txt
-
-      # Upload report as PR comment
-      - name: Post benchmark report
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          path: bench_report.txt
+      - name: Run benchmark on PR
+        run: iai-callgrind-runner target/release/my_benchmark --save-baseline pr
+    
+      # # Upload report as PR comment
+      # - name: Post benchmark report
+      #   uses: marocchino/sticky-pull-request-comment@v2
+      #   with:
+      #     path: bench_report.txt
