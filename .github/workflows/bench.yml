@@ -31,7 +31,7 @@ jobs:
         run: git fetch && git checkout ${{ github.head_ref }}
 
       - name: Run benchmark on PR
-        run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%' | tee bench_report.txt
+        run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%' | tee bench_report.txt; exit ${PIPESTATUS[0]}
 
       - name: Publish benchmark results
         uses: actions/upload-artifact@v4
