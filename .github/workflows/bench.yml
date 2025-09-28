@@ -29,3 +29,9 @@ jobs:
 
       - name: Run benchmark on PR
         run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%' > bench_report.txt
+
+      - name: Publish benchmark results
+        uses: actions/upload-artifact@v1
+        with:
+          name: Benchmark Results
+          path: bench_report.txt
