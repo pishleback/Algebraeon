@@ -1,4 +1,4 @@
-use iai_callgrind::{main, library_benchmark, library_benchmark_group};
+use iai_callgrind::{library_benchmark, library_benchmark_group, main};
 use std::hint::black_box;
 
 // Your function to benchmark
