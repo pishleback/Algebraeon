@@ -15,6 +15,7 @@ jobs:
 
       - name: Install gungraun-runner
         run: |
+          cd examples
           version=$(cargo metadata --format-version=1 |\
             jq '.packages[] | select(.name == "gungraun").version' |\
             tr -d '"'
