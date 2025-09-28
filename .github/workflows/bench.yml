@@ -25,16 +25,16 @@ jobs:
       #     ref: main
 
       # - name: Run benchmarks on main branch
-      #   run: cargo bench -- --save-baseline main
+      #   run: cargo bench --bench my_benchmark -- --save-baseline main
 
       - name: Checkout PR branch
         uses: actions/checkout@v4
 
       - name: Run benchmarks on PR branch
-        run: cargo bench -- --save-baseline pr
+        run: cargo bench --bench my_benchmark -- --save-baseline pr
 
-      - name: Compare benchmark results
-        run: cargo bench -- --baseline main --baseline pr
+      # - name: Compare benchmark results
+      #   run: cargo bench --bench my_benchmark -- --baseline main --baseline pr > bench_report.txt
 
       # Upload report as PR comment
       - name: Post benchmark report
