@@ -27,11 +27,8 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v4
 
-      - name: Build benchmark on PR
-        run: cargo build --release --bin my_benchmark
-
       - name: Run benchmark on PR
-        run: iai-callgrind-runner target/release/my_benchmark --save-baseline pr
+        run: iai-callgrind-runner -- my_benchmark
     
       # # Upload report as PR comment
       # - name: Post benchmark report
