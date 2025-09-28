@@ -14,6 +14,9 @@ members = [
     "macros",
 ]
 
+[profile.bench]
+debug = true
+
 # https://github.com/pksunkara/cargo-workspaces
 # To publish
 # Update CHANGELOG

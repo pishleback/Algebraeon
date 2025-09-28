@@ -1,0 +1,31 @@
+name: Benchmarks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install gungraun-runner
+        run: cargo install gungraun-runner
+
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Run benchmark on main
+        run: cargo bench --bench library_benchmark
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Run benchmark on PR
+        run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%' > bench_report.txt
