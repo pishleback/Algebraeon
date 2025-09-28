@@ -33,9 +33,7 @@ jobs:
 
       # Run benchmarks on PR
       - name: Run benchmarks on PR branch
-        run: |
-          git checkout -
-          cargo bench --bench my_benchmark -- --save-baseline pr > bench_report.txt
+        run: cargo bench --bench my_benchmark -- --save-baseline pr > bench_report.txt
 
       # # Compare PR vs main
       # - name: Compare benchmark results
