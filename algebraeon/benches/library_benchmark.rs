@@ -1,5 +1,8 @@
+use algebraeon_nzq::Natural;
+use algebraeon_rings::natural::factorization::factor;
 use gungraun::{library_benchmark, library_benchmark_group, main};
 use std::hint::black_box;
+use std::str::FromStr;
 
 fn fibonacci(n: u64) -> u64 {
     match n {
@@ -24,4 +27,24 @@ library_benchmark_group!(
     benchmarks = bench_fibonacci
 );
 
-main!(library_benchmark_groups = bench_fibonacci_group);
+fn bench_factor_natural_setup(value: &'static str) -> Natural {
+    Natural::from_str(value).unwrap()
+}
+
+#[library_benchmark]
+#[bench::zero(Natural::from(0u8))]
+#[bench::one(Natural::from(1u8))]
+#[benches::small(iter = (2u8..100).map(Natural::from))]
+fn bench_factor_natural(value: Natural) {
+    black_box(factor(value));
+}
+
+library_benchmark_group!(
+    name = bench_factor_natural_group;
+    benchmarks = bench_factor_natural
+);
+
+main!(
+    library_benchmark_groups = bench_fibonacci_group,
+    bench_factor_natural_group
+);
