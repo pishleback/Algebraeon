@@ -1,8 +1,9 @@
 use crate::{
-    natural::factorization::{
-            factor, primes::is_prime, NaturalCanonicalFactorizationStructure
-        },
-    structure::{FactoredSignature, MetaFactorableSignature, QuotientStructure, SemiRingSignature},
+    natural::factorization::{NaturalCanonicalFactorizationStructure, factor, primes::is_prime},
+    structure::{
+        FactoredSignature, MetaFactorableSignature, RingToQuotientFieldSignature,
+        RingToQuotientRingSignature, SemiRingSignature,
+    },
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
 use algebraeon_sets::structure::MetaType;
@@ -86,7 +87,7 @@ pub fn legendre_symbol(
     if p % Natural::TWO == Natural::ZERO || !is_prime(p) {
         Err(LegendreSymbolError::BottomNotOddPrime)
     } else {
-        let mod_p = QuotientStructure::new_field_unchecked(Integer::structure(), Integer::from(p));
+        let mod_p = Integer::structure_ref().quotient_field_unchecked(Integer::from(p));
         let v = mod_p.reduce(mod_p.nat_pow(a, &((p - Natural::ONE) / Natural::TWO)));
         if v == Integer::ZERO {
             Ok(QuadraticSymbolValue::Zero)
@@ -104,11 +105,14 @@ pub enum JacobiSymbolError {
     BottomEven,
 }
 
-pub fn jacobi_symbol(a: &Integer, n: &Natural) -> Result<QuadraticSymbolValue, JacobiSymbolError> {
+fn jacobi_symbol_by_factorization(
+    a: &Integer,
+    n: &Natural,
+) -> Result<QuadraticSymbolValue, JacobiSymbolError> {
     if n % Natural::TWO == Natural::ZERO {
         Err(JacobiSymbolError::BottomEven)
     } else {
-        let mod_n = QuotientStructure::new_ring(Integer::structure(), Integer::from(n));
+        let mod_n = Integer::structure_ref().quotient_ring(Integer::from(n));
         let a = mod_n.reduce(a);
         let mut val = QuadraticSymbolValue::Pos;
         for (p, k) in Natural::structure()
@@ -118,6 +122,65 @@ pub fn jacobi_symbol(a: &Integer, n: &Natural) -> Result<QuadraticSymbolValue, J
             val = val * legendre_symbol(&a, p).unwrap().nat_pow(k);
         }
         Ok(val)
+    }
+}
+
+// Jacobi symbol computation without factorization
+// Based on the algorithm from: https://en.wikipedia.org/wiki/Jacobi_symbol#Implementation_in_C++
+pub fn jacobi_symbol(a: &Integer, n: &Natural) -> Result<QuadraticSymbolValue, JacobiSymbolError> {
+    if n % Natural::TWO == Natural::ZERO {
+        return Err(JacobiSymbolError::BottomEven);
+    }
+
+    if n == &Natural::ONE {
+        return Ok(QuadraticSymbolValue::Pos);
+    }
+
+    let mut a = a.clone();
+    let mut n = n.clone();
+    let mut result = QuadraticSymbolValue::Pos;
+
+    // Handle negative numbers: (-1/n) = (-1)^((n-1)/2)
+    if a < Integer::ZERO {
+        a = -a;
+        if &n % Natural::from(4u32) == Natural::from(3u32) {
+            result = result * QuadraticSymbolValue::Neg;
+        }
+    }
+
+    loop {
+        a = a % Integer::from(&n);
+
+        if a == Integer::ZERO {
+            return Ok(QuadraticSymbolValue::Zero);
+        }
+
+        // Extract powers of 2 from a
+        while &a % Integer::TWO == Integer::ZERO {
+            a = &a / Integer::TWO;
+
+            let n_mod_8 = &n % Natural::from(8u32);
+            if n_mod_8 == Natural::from(3u32) || n_mod_8 == Natural::from(5u32) {
+                result = result * QuadraticSymbolValue::Neg;
+            }
+        }
+
+        if a == Integer::ONE {
+            return Ok(result);
+        }
+
+        let a_nat = Natural::try_from(&a).unwrap();
+
+        if &a_nat % Natural::from(4u32) == Natural::from(3u32)
+            && &n % Natural::from(4u32) == Natural::from(3u32)
+        {
+            result = result * QuadraticSymbolValue::Neg;
+        }
+
+        // Swap a and n for next iteration
+        let temp = a_nat;
+        a = Integer::from(&n);
+        n = temp;
     }
 }
 
@@ -293,12 +356,23 @@ mod tests {
             jacobi_symbol(&3.into(), &9u32.into()),
             Ok(QuadraticSymbolValue::Zero)
         );
+
         for p in [3u32, 5, 7] {
             for a in 0..10 {
                 let (a, p) = (Integer::from(a), Natural::from(p));
                 let ls = legendre_symbol(&a, &p);
                 let js = jacobi_symbol(&a, &p);
                 assert_eq!(ls.unwrap(), js.unwrap());
+            }
+        }
+
+        for a in -30i32..=30 {
+            for n in 0u32..=30 {
+                let (a, n) = (Integer::from(a), Natural::from(n));
+                assert_eq!(
+                    jacobi_symbol(&a, &n),
+                    jacobi_symbol_by_factorization(&a, &n)
+                );
             }
         }
     }
