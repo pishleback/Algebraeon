@@ -25,10 +25,10 @@ jobs:
           ref: main
 
       - name: Run benchmark on main
-        run: cargo bench --bench library_benchmark
+        run: cargo bench --bench library_benchmark -- --tolerance=0.99
 
       - name: Checkout PR branch
         run: git fetch && git checkout ${{ github.head_ref }}
 
       - name: Run benchmark on PR
-        run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%'
+        run: cargo bench --bench library_benchmark -- --tolerance=0.99 --callgrind-limits='EstimatedCycles=5%,Ir=5%'
