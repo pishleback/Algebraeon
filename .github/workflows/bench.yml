@@ -33,10 +33,10 @@ jobs:
       - name: Run benchmarks on PR branch
         run: cargo bench --bench my_benchmark -- --save-baseline pr > bench_report.txt
 
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-        with:
-          ref: main
+      # - name: Checkout Main branch
+      #   uses: actions/checkout@v4
+      #   with:
+      #     ref: main
 
       # # Compare PR vs main
       # - name: Compare benchmark results
