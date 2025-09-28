@@ -1,17 +1,15 @@
-use std::{
-    borrow::Borrow,
-    collections::{HashMap, HashSet},
-};
-
-use derivative::Derivative;
-use itertools::Itertools;
-use malachite_base::num::logic::traits::BitIterable;
-
 use algebraeon_groups::examples::symmetric::*;
 use algebraeon_rings::{
     finite_fields::{modulo::Modulo, quaternary_field::QuaternaryField},
     matrix::Matrix,
     structure::*,
+};
+use derivative::Derivative;
+use itertools::Itertools;
+use malachite_base::num::logic::traits::BitIterable;
+use std::{
+    borrow::Borrow,
+    collections::{HashMap, HashSet},
 };
 
 pub type BinaryField = Modulo<2>;

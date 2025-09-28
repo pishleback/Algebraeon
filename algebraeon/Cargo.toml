@@ -19,3 +19,11 @@ algebraeon-groups = { version = "=0.0.13", path = "../groups", default-features 
 algebraeon-rings = { version = "=0.0.13", path = "../rings", default-features = false }
 algebraeon-geometry = { version = "=0.0.13", path = "../geometry", default-features = false }
 algebraeon-drawing = { version = "=0.0.13", path = "../drawing", default-features = false }
+
+# Benchmarking stuff
+[dev-dependencies]
+gungraun = "0.17.0"
+
+[[bench]]
+name = "library_benchmark"
+harness = false

@@ -27,11 +27,3 @@ lalrpop = "0.22.1"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
-
-[dev-dependencies]
-criterion = "0.7"
-
-[[bench]]
-name = "polynomial_roots"
-harness = false
-
