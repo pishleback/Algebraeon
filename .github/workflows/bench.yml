@@ -14,13 +14,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install gungraun-runner
-        run: |
-          cd examples
-          version=$(cargo metadata --format-version=1 |\
-            jq '.packages[] | select(.name == "gungraun").version' |\
-            tr -d '"'
-          )
-          cargo install gungraun-runner --version $version
+        run: cargo install gungraun-runner
 
       # - name: Checkout main branch
       #   uses: actions/checkout@v4
