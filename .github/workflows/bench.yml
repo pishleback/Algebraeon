@@ -28,7 +28,7 @@ jobs:
         run: cargo bench --bench library_benchmark
 
       - name: Checkout PR branch
-        run: git checkout ${{ github.head_ref }}
+        run: git fetch && git checkout ${{ github.head_ref }}
 
       - name: Run benchmark on PR
         run: cargo bench --bench library_benchmark -- --callgrind-limits='EstimatedCycles=5%,Ir=5%' | tee bench_report.txt
