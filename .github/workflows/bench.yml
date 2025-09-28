@@ -13,6 +13,9 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install Valgrind (required for iai-callgrind)
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+
       - name: Install gungraun-runner
         run: cargo install gungraun-runner
 
