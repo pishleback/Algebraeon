@@ -1,0 +1,49 @@
+name: Benchmarks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed so we can access main
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Valgrind (required for iai-callgrind)
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+
+      - name: Install iai-callgrind-runner
+        run: cargo install iai-callgrind-runner
+
+      # # Save baseline from main
+      # - name: Run benchmarks on main
+      #   run: |
+      #     git fetch origin main
+      #     git checkout origin/main
+      #     cargo bench --bench my_benchmark -- --save-baseline main
+
+      # Run benchmarks on PR
+      - name: Run benchmarks on PR branch
+        run: |
+          git checkout -
+          cargo bench --bench my_benchmark -- --save-baseline pr > bench_report.txt
+
+      # # Compare PR vs main
+      # - name: Compare benchmark results
+      #   run: |
+      #     cargo bench --bench my_benchmark -- --baseline main --baseline pr > bench_report.txt
+
+      # Upload report as PR comment
+      - name: Post benchmark report
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: bench_report.txt
