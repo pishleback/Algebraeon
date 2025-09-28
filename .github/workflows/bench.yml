@@ -10,9 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -22,26 +19,22 @@ jobs:
       - name: Install iai-callgrind-runner
         run: cargo install iai-callgrind-runner
 
-      # # Save baseline from main
-      # - name: Run benchmarks on main
-      #   run: |
-      #     git fetch origin main
-      #     git checkout origin/main
-      #     cargo bench --bench my_benchmark -- --save-baseline main
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
 
-      # Run benchmarks on PR
+      - name: Run benchmarks on main branch
+        run: cargo bench --bench my_benchmark -- --save-baseline main
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
       - name: Run benchmarks on PR branch
-        run: cargo bench --bench my_benchmark -- --save-baseline pr > bench_report.txt
+        run: cargo bench --bench my_benchmark -- --save-baseline pr
 
-      # - name: Checkout Main branch
-      #   uses: actions/checkout@v4
-      #   with:
-      #     ref: main
-
-      # # Compare PR vs main
-      # - name: Compare benchmark results
-      #   run: |
-      #     cargo bench --bench my_benchmark -- --baseline main --baseline pr > bench_report.txt
+      - name: Compare benchmark results
+        run: cargo bench --bench my_benchmark -- --baseline main --baseline pr > bench_report.txt
 
       # Upload report as PR comment
       - name: Post benchmark report
