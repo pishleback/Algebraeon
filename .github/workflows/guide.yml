@@ -6,6 +6,7 @@ on:
 
 jobs:
   deploy:
+    if: github.repository == 'pishleback/Algebraeon'
     runs-on: ubuntu-latest
     permissions:
       contents: write  # To push a branch 
