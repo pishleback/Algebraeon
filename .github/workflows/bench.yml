@@ -19,13 +19,13 @@ jobs:
       - name: Install iai-callgrind-runner
         run: cargo install iai-callgrind-runner
 
-      - name: Checkout main branch
-        uses: actions/checkout@v4
-        with:
-          ref: main
+      # - name: Checkout main branch
+      #   uses: actions/checkout@v4
+      #   with:
+      #     ref: main
 
-      - name: Run benchmarks on main branch
-        run: cargo bench -- --save-baseline main
+      # - name: Run benchmarks on main branch
+      #   run: cargo bench -- --save-baseline main
 
       - name: Checkout PR branch
         uses: actions/checkout@v4
@@ -40,4 +40,4 @@ jobs:
       - name: Post benchmark report
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          message: "test message"
+          path: bench_report.txt
