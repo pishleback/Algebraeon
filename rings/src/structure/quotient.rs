@@ -198,8 +198,8 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
     }
 }
 
-impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    RingSignature for QuotientStructure<RS, RSB, IS_FIELD>
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> RingSignature
+    for QuotientStructure<RS, RSB, IS_FIELD>
 {
     fn is_reduced(&self) -> Result<bool, String> {
         if IS_FIELD {
