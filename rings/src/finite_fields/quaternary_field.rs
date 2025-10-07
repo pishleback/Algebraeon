@@ -73,7 +73,11 @@ impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl RingSignature for QuaternaryFieldCanonicalStructure {}
+impl RingSignature for QuaternaryFieldCanonicalStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for QuaternaryFieldCanonicalStructure {
     fn characteristic(&self) -> Natural {

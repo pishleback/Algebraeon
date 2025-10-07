@@ -44,7 +44,11 @@ impl SemiRingSignature for IntegerCanonicalStructure {
     }
 }
 
-impl RingSignature for IntegerCanonicalStructure {}
+impl RingSignature for IntegerCanonicalStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for IntegerCanonicalStructure {
     fn characteristic(&self) -> Natural {

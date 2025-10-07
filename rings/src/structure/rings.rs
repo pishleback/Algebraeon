@@ -149,6 +149,14 @@ pub trait AdditiveGroupSignature: AdditiveMonoidSignature {
 }
 
 pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
+    /// Determine whether the ring is reduced.
+    ///
+    /// Returns `Ok(true)` if the ring is reduced, `Ok(false)` if it is not,
+    /// and `Err` when the implementation cannot decide.
+    fn is_reduced(&self) -> Result<bool, String> {
+        Err("unable to decide whether the ring is reduced".to_string())
+    }
+
     fn bracket(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.sub(&self.mul(a, b), &self.mul(b, a))
     }
@@ -175,6 +183,10 @@ pub trait MetaRing: MetaType
 where
     Self::Signature: RingSignature,
 {
+    fn ring_is_reduced() -> Result<bool, String> {
+        Self::structure().is_reduced()
+    }
+
     fn neg(&self) -> Self {
         Self::structure().neg(self)
     }

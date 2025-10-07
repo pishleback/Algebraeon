@@ -38,7 +38,11 @@ impl SemiRingSignature for RationalCanonicalStructure {
     }
 }
 
-impl RingSignature for RationalCanonicalStructure {}
+impl RingSignature for RationalCanonicalStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for RationalCanonicalStructure {
     fn characteristic(&self) -> Natural {

@@ -106,7 +106,11 @@ impl SemiRingSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl RingSignature for ConwayFiniteFieldStructure {}
+impl RingSignature for ConwayFiniteFieldStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for ConwayFiniteFieldStructure {
     fn characteristic(&self) -> Natural {
