@@ -592,7 +592,11 @@ impl SemiRingSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl RingSignature for RealAlgebraicCanonicalStructure {}
+impl RingSignature for RealAlgebraicCanonicalStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for RealAlgebraicCanonicalStructure {
     fn characteristic(&self) -> Natural {

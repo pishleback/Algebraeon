@@ -816,7 +816,11 @@ impl SemiRingSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl RingSignature for PAdicAlgebraicStructure {}
+impl RingSignature for PAdicAlgebraicStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for PAdicAlgebraicStructure {
     fn characteristic(&self) -> Natural {
