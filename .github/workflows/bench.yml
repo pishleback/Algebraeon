@@ -28,7 +28,9 @@ jobs:
         run: cargo bench --bench library_benchmark -- --tolerance=0.99
 
       - name: Checkout PR branch
-        run: git fetch && git checkout ${{ github.head_ref }}
+        run: |
+          git remote add origin "${{ github.event.pull_request.head.repo.clone_url }}" || true
+          git fetch && git checkout ${{ github.head_ref }}
 
       - name: Run benchmark on PR
         run: cargo bench --bench library_benchmark -- --tolerance=0.99 --callgrind-limits='EstimatedCycles=5%,Ir=5%'
