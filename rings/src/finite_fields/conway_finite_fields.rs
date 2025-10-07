@@ -165,7 +165,7 @@ pub struct ConwayFiniteFieldInclusion {
 
 impl ConwayFiniteFieldInclusion {
     pub fn new(p: usize, m: usize, n: usize) -> Result<Self, &'static str> {
-        if n % m == 0 {
+        if n.is_multiple_of(m) {
             let degree = n / m;
 
             let domain = ConwayFiniteFieldStructure::new(p, m).unwrap();

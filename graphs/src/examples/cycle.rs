@@ -23,7 +23,7 @@ impl<Vertices: SetSignature> UndirectedCycleGraph<Vertices> {
     }
 
     pub fn is_bipartite(&self) -> bool {
-        self.n % 2 == 0
+        self.n.is_multiple_of(2)
     }
 
     pub fn girth(&self) -> usize {
@@ -35,7 +35,7 @@ impl<Vertices: SetSignature> UndirectedCycleGraph<Vertices> {
     }
 
     pub fn chromatic_number(&self) -> usize {
-        if self.n % 2 == 0 { 2 } else { 3 }
+        if self.n.is_multiple_of(2) { 2 } else { 3 }
     }
 }
 
