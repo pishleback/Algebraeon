@@ -29,8 +29,17 @@ jobs:
 
       - name: Checkout PR branch
         run: |
-          git remote add origin "${{ github.event.pull_request.head.repo.clone_url }}" || true
-          git fetch && git checkout ${{ github.head_ref }}
+          # Detect if this is a PR from a fork
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+            # PR from a fork: add fork as a temporary remote
+            git remote add prfork "${{ github.event.pull_request.head.repo.clone_url }}" || true
+            git fetch prfork "${{ github.head_ref }}"
+            git checkout -B "${{ github.head_ref }}" "prfork/${{ github.head_ref }}"
+          else
+            # PR from the same repo
+            git fetch origin "${{ github.head_ref }}"
+            git checkout -B "${{ github.head_ref }}" "origin/${{ github.head_ref }}"
+          fi
 
       - name: Run benchmark on PR
         run: cargo bench --bench library_benchmark -- --tolerance=0.99 --callgrind-limits='EstimatedCycles=5%,Ir=5%'
