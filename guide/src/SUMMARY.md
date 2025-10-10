@@ -27,6 +27,8 @@
     - [Embedded Number Fields]()
     - [Ideals](./anf_ideals.md)
     - [Class Group]()
+- [Quaternion Algebras](./quaternion_algebras.md)
+  - [Quaternion Orders]()
 - [Shapes](./shapes.md)
 - [Groups]()
 - [The Structure System](./the_structure_system.md)
@@ -35,3 +37,4 @@
   - [Morphisms]()
   - [Sets]()
   - [Rings]()
+
