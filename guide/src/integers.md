@@ -37,7 +37,10 @@ For exponentiation, use the methods `.nat_pow(&exp)` or `.int_pow(&exp)`.
 
 ## Available functions
 
-- `abs`
+- [`abs`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Integer.html#impl-Abs-for-Integer)
+- [`sqrt_if_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Integer.html#method.sqrt_if_square)
+- [`is_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Integer.html#method.is_square)
+
 
 ```rust
 use algebraeon::nzq::{Integer, Natural};
