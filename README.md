@@ -169,6 +169,10 @@ A suggested workflow for getting started:
 
 To submit changes for inclusion in the main branch: Fork this repository, make changes, and submit a pull request.
 
+## Use of AI
+
+Use of AI is fine in contributions, but please outline in a PR comment the extent to which AI has been used and ensure every AI generated line has been understood by a human.
+
 ## CLA
 
 If you wish to contribute code we ask that you sign a CLA. The CLA allows us to relicense future versions of Algebraeon, including your contribution, under any licences the Free Software Foundation classifies as a Free Software Licence and which are approved by the Open Source Initiative as Open Source licences. It does not allow us to relicense of your contribution under any other more restrictive licences. The CLA can be signed on GitHub once you submit a pull request.
