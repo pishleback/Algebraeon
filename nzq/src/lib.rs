@@ -10,6 +10,7 @@
 )]
 #![allow(dead_code)]
 
+pub mod combinatorics;
 mod integer;
 mod natural;
 mod random;
