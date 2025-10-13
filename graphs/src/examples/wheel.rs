@@ -6,22 +6,29 @@ use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
 
-/// A wheel graph `W_n` with a single universal center vertex
-/// (index `0`) joined to all vertices of an outer cycle on `n - 1` vertices.
+/// A wheel graph `W_n` with vertices `{0, …, n-1}` where vertex `0` is the center
+/// joined to every rim vertex `1..n-1`, which themselves form a cycle.
 /// Requires `n >= 4`, where `W_4` is the complete graph `K_4`.
 #[derive(Debug, Clone)]
-pub struct WheelGraph<Vertices: SetSignature> {
-    vertices: Vertices,
+pub struct WheelGraph {
+    vertices: EnumeratedFiniteSetStructure,
     n: usize,
 }
 
-impl<Vertices: SetSignature> WheelGraph<Vertices> {
-    pub fn new(vertices: Vertices, n: usize) -> Result<Self, String> {
+impl WheelGraph {
+    pub fn new(n: usize) -> Result<Self, String> {
         if n < 4 {
             return Err("Wheel graphs require at least 4 vertices".to_string());
         }
 
-        Ok(Self { vertices, n })
+        Ok(Self {
+            vertices: EnumeratedFiniteSetStructure::new(n),
+            n,
+        })
+    }
+
+    pub fn vertices(&self) -> &EnumeratedFiniteSetStructure {
+        &self.vertices
     }
 
     pub fn vertex_count(&self) -> usize {
@@ -49,7 +56,7 @@ impl<Vertices: SetSignature> WheelGraph<Vertices> {
     }
 }
 
-impl GraphSignature for WheelGraph<EnumeratedFiniteSetStructure> {
+impl GraphSignature for WheelGraph {
     type Vertices = EnumeratedFiniteSetStructure;
 
     fn has_directed_edge(
@@ -97,11 +104,11 @@ impl GraphSignature for WheelGraph<EnumeratedFiniteSetStructure> {
     }
 }
 
-impl LooplessGraphSignature for WheelGraph<EnumeratedFiniteSetStructure> {}
+impl LooplessGraphSignature for WheelGraph {}
 
-impl UndirectedGraphSignature for WheelGraph<EnumeratedFiniteSetStructure> {}
+impl UndirectedGraphSignature for WheelGraph {}
 
-impl GraphWithEdgesSignature for WheelGraph<EnumeratedFiniteSetStructure> {
+impl GraphWithEdgesSignature for WheelGraph {
     type Edges = UnorderedPairs<EnumeratedFiniteSetStructure>;
 
     fn endpoints(
@@ -114,14 +121,11 @@ impl GraphWithEdgesSignature for WheelGraph<EnumeratedFiniteSetStructure> {
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::EnumeratedFiniteSetStructure;
-
     use crate::{examples::WheelGraph, structure::GraphSignature};
 
     #[test]
     fn test_wheel_creation() {
-        let vertices = EnumeratedFiniteSetStructure::new(6);
-        let wheel = WheelGraph::new(vertices, 6).unwrap();
+        let wheel = WheelGraph::new(6).unwrap();
 
         assert_eq!(wheel.vertex_count(), 6);
         assert_eq!(wheel.edge_count(), 10); // 2 * (6 - 1)
@@ -133,8 +137,7 @@ mod tests {
 
     #[test]
     fn test_wheel_w4_properties() {
-        let vertices = EnumeratedFiniteSetStructure::new(4);
-        let wheel = WheelGraph::new(vertices, 4).unwrap();
+        let wheel = WheelGraph::new(4).unwrap();
 
         assert_eq!(wheel.diameter(), 1); // W4 is K4
         assert_eq!(wheel.chromatic_number(), 4);
@@ -143,8 +146,7 @@ mod tests {
 
     #[test]
     fn test_wheel_adjacency() {
-        let vertices = EnumeratedFiniteSetStructure::new(7);
-        let wheel = WheelGraph::new(vertices, 7).unwrap();
+        let wheel = WheelGraph::new(7).unwrap();
 
         for v in 1..7 {
             assert!(
@@ -177,13 +179,12 @@ mod tests {
 
     #[test]
     fn test_wheel_invalid_cases() {
-        let vertices = EnumeratedFiniteSetStructure::new(5);
-        let wheel = WheelGraph::new(vertices.clone(), 5).unwrap();
+        let wheel = WheelGraph::new(5).unwrap();
 
         assert!(wheel.has_directed_edge(&2, &2).is_err());
         assert!(wheel.has_directed_edge(&5, &1).is_err());
         assert!(wheel.has_directed_edge(&1, &7).is_err());
 
-        assert!(WheelGraph::new(vertices, 3).is_err());
+        assert!(WheelGraph::new(3).is_err());
     }
 }
