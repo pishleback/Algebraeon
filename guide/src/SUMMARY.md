@@ -9,7 +9,7 @@
   - [Rationals](./rationals.md)
   - [Modular Arithmetic]()
 - [Linear Algebra]()
-  - [Matrices]()
+  - [Matrices](./matrices.md)
   - [Hermite Normal Form]()
   - [Smith Normal Form]()
   - [Jordan Normal Form]()
@@ -37,4 +37,3 @@
   - [Morphisms]()
   - [Sets]()
   - [Rings]()
-
