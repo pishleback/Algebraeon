@@ -17,7 +17,7 @@ pub struct PolynomialStructure<RS: RingSignature, RSB: BorrowedStructure<RS>> {
 }
 
 impl<RS: RingSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
-    fn new(coeff_ring: RSB) -> Self {
+    pub fn new(coeff_ring: RSB) -> Self {
         Self {
             _coeff_ring: PhantomData,
             coeff_ring,
