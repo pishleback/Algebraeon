@@ -8,6 +8,7 @@ use algebraeon_sets::structure::{
 };
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
+use std::iter::{Product, Sum};
 use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign},
     str::FromStr,
@@ -441,6 +442,20 @@ impl Abs for &Rational {
     fn abs(self) -> Self::Output {
         use malachite_base::num::arithmetic::traits::Abs;
         Rational((&self.0).abs())
+    }
+}
+
+impl Sum for Rational {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_q::Rational::sum(iter.map(|x| x.to_malachite())))
+    }
+}
+
+impl Product for Rational {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_q::Rational::product(
+            iter.map(|x| x.to_malachite()),
+        ))
     }
 }
 

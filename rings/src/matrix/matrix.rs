@@ -45,14 +45,14 @@ impl<Set: Clone> Matrix<Set> {
     }
 
     /// Construct a matrix from a closure.
-    /// 
+    ///
     /// ```rust
     /// use algebraeon_nzq::Integer;
     /// use algebraeon_rings::matrix::Matrix;
     /// let a = Matrix::<Integer>::construct(2, 3, |r, c| if (r + c) % 2 == 0 { Integer::ZERO } else { Integer::ONE });
     /// let b = Matrix::<Integer>::from_rows(
     ///     vec![
-    ///         vec![Integer::ZERO, Integer::ONE, Integer::ZERO], 
+    ///         vec![Integer::ZERO, Integer::ONE, Integer::ZERO],
     ///         vec![Integer::ONE, Integer::ZERO, Integer::ONE]
     ///     ]
     /// );
@@ -114,7 +114,7 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
-     /// Get a mutable reference to the entry at row `r` and column `c`.
+    /// Get a mutable reference to the entry at row `r` and column `c`.
     pub fn at_mut(&mut self, r: usize, c: usize) -> Result<&mut Set, MatOppErr> {
         if r >= self.rows() || c >= self.cols() {
             Err(MatOppErr::InvalidIndex)
@@ -225,11 +225,11 @@ impl<Set: Clone> Matrix<Set> {
     }
 
     /// Concatenate the rows of the matrices in `mats` into a single matrix.
-    /// 
+    ///
     /// `cols` must match the number of columns of every matrix in `mats`. The purpose of this input is to produce an empty matrix of the correct dimension when `mats` is empty.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// This function panics if `cols` does not match the number of columns of every matrix in `mats`.
     pub fn join_rows<MatT: Borrow<Matrix<Set>>>(cols: usize, mats: Vec<MatT>) -> Matrix<Set> {
         let mut rows = 0;
@@ -255,11 +255,11 @@ impl<Set: Clone> Matrix<Set> {
     }
 
     /// Concatenate the columns of the matrices in `mats` into a single matrix.
-    /// 
+    ///
     /// `rows` must match the number of rows of every matrix in `mats`. The purpose of this input is to produce an empty matrix of the correct dimension when `mats` is empty.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// This function panics if `rows` does not match the number of rows of every matrix in `mats`.
     pub fn join_cols<MatT: Borrow<Matrix<Set>>>(rows: usize, mats: Vec<MatT>) -> Matrix<Set> {
         let mut t_mats = vec![];
@@ -271,7 +271,7 @@ impl<Set: Clone> Matrix<Set> {
     }
 
     /// Return a vector containing the entries of this matrix.
-    /// 
+    ///
     /// Most useful when this matrix is a row vector or a column vector.
     pub fn entries_list(&self) -> Vec<&Set> {
         let mut entries = vec![];

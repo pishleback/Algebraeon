@@ -8,6 +8,7 @@ use algebraeon_sets::structure::{
     Signature, ToStringSignature,
 };
 use malachite_base::num::basic::traits::{One, Two, Zero};
+use std::iter::{Product, Sum};
 use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
     str::FromStr,
@@ -627,6 +628,22 @@ impl AbsDiff<&Integer> for &Integer {
     fn abs_diff(self, rhs: &Integer) -> Self::Output {
         use malachite_base::num::arithmetic::traits::AbsDiff;
         Natural::from_malachite((&self.0).abs_diff(&rhs.0))
+    }
+}
+
+impl Sum for Integer {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_nz::integer::Integer::sum(
+            iter.map(|x| x.to_malachite()),
+        ))
+    }
+}
+
+impl Product for Integer {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_nz::integer::Integer::product(
+            iter.map(|x| x.to_malachite()),
+        ))
     }
 }
 

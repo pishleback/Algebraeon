@@ -11,6 +11,7 @@ use malachite_base::num::{
     arithmetic::traits::PowerOf2,
     basic::traits::{One, Two, Zero},
 };
+use std::iter::{Product, Sum};
 use std::{
     borrow::Borrow,
     ops::{
@@ -611,6 +612,22 @@ impl<Modulus: Borrow<Natural>> ModInv<Modulus> for &Natural {
         use malachite_base::num::arithmetic::traits::ModInverse;
         Some(Natural(
             (&self.0 % &m.borrow().0).mod_inverse(&m.borrow().0)?,
+        ))
+    }
+}
+
+impl Sum for Natural {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_nz::natural::Natural::sum(
+            iter.map(|x| x.to_malachite()),
+        ))
+    }
+}
+
+impl Product for Natural {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_nz::natural::Natural::product(
+            iter.map(|x| x.to_malachite()),
         ))
     }
 }
