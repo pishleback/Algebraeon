@@ -103,7 +103,7 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     type ZQ<BZ : BorrowedStructure<Self::Z>, BQ : BorrowedStructure<Self::Q>>: FieldOfFractionsInclusion<Self::Z, Self::Q>;
     type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>>: RingHomomorphism<Self::Z, Self::R>
         + InjectiveFunction<Self::Z, Self::R>;
-    type QK<BQ : BorrowedStructure<Self::Q>, BK : BorrowedStructure<Self::K>>: FiniteDimensionalFieldExtension<Self::QKBasis, Self::Q, Self::K>;
+    type QK<BQ : BorrowedStructure<Self::Q>, BK : BorrowedStructure<Self::K>>: FiniteDimensionalFieldExtension<Self::Q, Self::K>;
     type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>>: RingHomomorphism<Self::R, Self::K>
         + InjectiveFunction<Self::R, Self::K>;
 

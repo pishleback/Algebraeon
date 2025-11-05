@@ -1,12 +1,11 @@
-use std::borrow::{Borrow, Cow};
-
 use super::{Polynomial, polynomial_ring::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::*;
+use std::borrow::{Borrow, Cow};
 
 pub type PolynomialQuotientRingStructure<FS, FSB, FSPB, const IS_FIELD: bool> =
-    QuotientStructure<PolynomialStructure<FS, FSB>, FSPB, IS_FIELD>;
+    EuclideanRemainderQuotientStructure<PolynomialStructure<FS, FSB>, FSPB, IS_FIELD>;
 
 impl<
     FS: FieldSignature + CharacteristicSignature,
@@ -50,6 +49,12 @@ where
         &'a self,
     ) -> PolynomialQuotientRingExtension<FS, FSB, FSPB, IS_FIELD> {
         PolynomialQuotientRingExtension::new(self.clone())
+    }
+
+    pub fn into_coefficient_ring_inclusion(
+        self,
+    ) -> PolynomialQuotientRingExtension<FS, FSB, FSPB, IS_FIELD> {
+        PolynomialQuotientRingExtension::new(self)
     }
 }
 
@@ -136,6 +141,35 @@ where
     pub fn trace(&self, a: &Polynomial<FS::Set>) -> FS::Set {
         self.coefficient_ring_inclusion().trace(a)
     }
+}
+
+impl<
+    const IS_FIELD: bool,
+    FS: FieldSignature + FiniteSetSignature,
+    FSB: BorrowedStructure<FS>,
+    FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
+> CountableSetSignature for PolynomialQuotientRingStructure<FS, FSB, FSPB, IS_FIELD>
+where
+    PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>,
+{
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+        self.coefficient_ring_inclusion()
+            .range_module_structure()
+            .generate_all_elements()
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+}
+
+impl<
+    const IS_FIELD: bool,
+    FS: FieldSignature + FiniteSetSignature,
+    FSB: BorrowedStructure<FS>,
+    FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
+> FiniteSetSignature for PolynomialQuotientRingStructure<FS, FSB, FSPB, IS_FIELD>
+where
+    PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>,
+{
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -230,7 +264,7 @@ impl<
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
     const IS_FIELD: bool,
-> FreeModuleSignature<EnumeratedFiniteSetStructure, Field>
+> FreeModuleSignature<Field>
     for RingHomomorphismRangeModuleStructure<
         'h,
         Field,
@@ -238,8 +272,10 @@ impl<
         PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>,
     >
 {
-    fn basis_set(&self) -> impl std::borrow::Borrow<EnumeratedFiniteSetStructure> {
-        EnumeratedFiniteSetStructure::new(self.module().degree())
+    type Basis = EnumeratedFiniteSetStructure;
+
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+        Self::Basis::new(self.module().degree())
     }
 
     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Field::Set>) -> Cow<'a, Field::Set> {
@@ -256,38 +292,6 @@ impl<
             .polynomial_ring()
             .constant_var_pow(r.clone(), *b)
     }
-}
-
-impl<
-    'h,
-    Field: FieldSignature,
-    FieldB: BorrowedStructure<Field>,
-    FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
-    const IS_FIELD: bool,
-> FinitelyGeneratedModuleSignature<Field>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        Field,
-        PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>,
-        PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>,
-    >
-{
-}
-
-impl<
-    'h,
-    Field: FieldSignature,
-    FieldB: BorrowedStructure<Field>,
-    FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
-    const IS_FIELD: bool,
-> FinitelyFreeModuleSignature<EnumeratedFiniteSetStructure, Field>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        Field,
-        PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>,
-        PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>,
-    >
-{
 }
 
 #[cfg(test)]

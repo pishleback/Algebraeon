@@ -648,7 +648,7 @@ impl Product for Integer {
 }
 
 impl CountableSetSignature for IntegerCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         use malachite_nz::integer::exhaustive::exhaustive_integers;
         exhaustive_integers().map(Integer::from_malachite)
     }

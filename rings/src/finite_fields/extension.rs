@@ -87,7 +87,7 @@ mod tests {
         assert_eq!(t, 2u32.into());
 
         let mut c = 0;
-        for x in f9.all_elements() {
+        for x in f9.list_all_elements() {
             println!("{:?}", x);
             c += 1;
         }

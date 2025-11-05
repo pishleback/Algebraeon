@@ -89,7 +89,7 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
 }
 
 impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FinitelyGeneratedModuleSignature<RationalCanonicalStructure>
+    FreeModuleSignature<RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
@@ -97,19 +97,10 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
         PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
     >
 {
-}
+    type Basis = SingletonSetStructure;
 
-impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FreeModuleSignature<SingletonSetStructure, RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        RationalCanonicalStructure,
-        RationalCanonicalStructure,
-        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
-    >
-{
-    fn basis_set(&self) -> impl std::borrow::Borrow<SingletonSetStructure> {
-        SingletonSetStructure::default()
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+        Self::Basis::default()
     }
 
     fn to_component<'a>(&self, _: &(), v: &'a Rational) -> Cow<'a, Rational> {
@@ -119,17 +110,6 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
     fn from_component(&self, _: &(), r: &Rational) -> Rational {
         r.clone()
     }
-}
-
-impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FinitelyFreeModuleSignature<SingletonSetStructure, RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        RationalCanonicalStructure,
-        RationalCanonicalStructure,
-        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
-    >
-{
 }
 
 impl ComplexSubsetSignature for RationalCanonicalStructure {

@@ -20,7 +20,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type Basis: FiniteSetSignature;
     type RingOfIntegers: DedekindDomainSignature + CharZeroRingSignature;
     type RingOfIntegersInclusion: AlgebraicIntegerRingInAlgebraicNumberField<Self>;
-    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<Self::Basis, RationalCanonicalStructure, Self>;
+    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self>;
     fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;

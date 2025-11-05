@@ -601,7 +601,7 @@ impl Rational {
 }
 
 impl CountableSetSignature for RationalCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         use malachite_q::exhaustive::exhaustive_rationals;
         exhaustive_rationals().map(Rational::from_malachite)
     }

@@ -303,7 +303,7 @@ where
         debug_assert!(self.is_squarefree(&f));
 
         let f_deg = self.degree(&f).unwrap();
-        let all_elems = self.coeff_ring().all_elements();
+        let all_elems = self.coeff_ring().list_all_elements();
         let q = all_elems.len();
 
         let row_polys = (0..f_deg)
