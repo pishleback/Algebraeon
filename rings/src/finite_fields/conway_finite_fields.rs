@@ -12,11 +12,27 @@ pub struct ConwayFiniteFieldStructure {
     p: usize,
     n: usize,
     structure: PolynomialQuotientRingStructure<
-        QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
-        QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
+        EuclideanRemainderQuotientStructure<
+            IntegerCanonicalStructure,
+            IntegerCanonicalStructure,
+            true,
+        >,
+        EuclideanRemainderQuotientStructure<
+            IntegerCanonicalStructure,
+            IntegerCanonicalStructure,
+            true,
+        >,
         PolynomialStructure<
-            QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
-            QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
+            EuclideanRemainderQuotientStructure<
+                IntegerCanonicalStructure,
+                IntegerCanonicalStructure,
+                true,
+            >,
+            EuclideanRemainderQuotientStructure<
+                IntegerCanonicalStructure,
+                IntegerCanonicalStructure,
+                true,
+            >,
         >,
         true,
     >,
@@ -112,6 +128,14 @@ impl RingSignature for ConwayFiniteFieldStructure {
     }
 }
 
+impl CountableSetSignature for ConwayFiniteFieldStructure {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+        self.all_units_and_zero().into_iter()
+    }
+}
+
+impl FiniteSetSignature for ConwayFiniteFieldStructure {}
+
 impl CharacteristicSignature for ConwayFiniteFieldStructure {
     fn characteristic(&self) -> Natural {
         self.characteristic_and_power().0
@@ -162,8 +186,16 @@ pub struct ConwayFiniteFieldInclusion {
     inclusion: Matrix<Integer>,
     // matrices modulo p
     mat_mod_p: MatrixStructure<
-        QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
-        QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>,
+        EuclideanRemainderQuotientStructure<
+            IntegerCanonicalStructure,
+            IntegerCanonicalStructure,
+            true,
+        >,
+        EuclideanRemainderQuotientStructure<
+            IntegerCanonicalStructure,
+            IntegerCanonicalStructure,
+            true,
+        >,
     >,
 }
 
@@ -326,7 +358,7 @@ mod tests {
         let z = ConwayFiniteFieldInclusion::new(3, 4, 12).unwrap();
         let w = ConwayFiniteFieldInclusion::new(3, 6, 12).unwrap();
 
-        for a in f_3_2.all_elements() {
+        for a in f_3_2.list_all_elements() {
             assert!(f_3_12.equal(&z.image(&x.image(&a)), &w.image(&y.image(&a))));
         }
     }

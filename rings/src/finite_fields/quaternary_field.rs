@@ -126,6 +126,14 @@ impl FiniteUnitsSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
+impl CountableSetSignature for QuaternaryFieldCanonicalStructure {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+        self.all_units_and_zero().into_iter()
+    }
+}
+
+impl FiniteSetSignature for QuaternaryFieldCanonicalStructure {}
+
 impl FiniteFieldSignature for QuaternaryFieldCanonicalStructure {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (Natural::from(2u8), Natural::from(2u8))

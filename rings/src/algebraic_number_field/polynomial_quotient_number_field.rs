@@ -69,7 +69,7 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure 
 }
 
 impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FreeModuleSignature<EnumeratedFiniteSetStructure, RationalCanonicalStructure>
+    FreeModuleSignature<RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
@@ -77,7 +77,9 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
     >
 {
-    fn basis_set(&self) -> impl std::borrow::Borrow<EnumeratedFiniteSetStructure> {
+    type Basis = EnumeratedFiniteSetStructure;
+
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
         self.module()
             .coefficient_ring_inclusion()
             .range_module_structure()
@@ -99,28 +101,6 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             .range_module_structure()
             .from_component(b, r)
     }
-}
-
-impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FinitelyGeneratedModuleSignature<RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        RationalCanonicalStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
-    >
-{
-}
-
-impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FinitelyFreeModuleSignature<EnumeratedFiniteSetStructure, RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        RationalCanonicalStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
-    >
-{
 }
 
 impl AlgebraicIntegerRingInAlgebraicNumberField<AlgebraicNumberFieldPolynomialQuotientStructure>

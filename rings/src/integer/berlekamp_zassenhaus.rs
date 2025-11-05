@@ -359,8 +359,16 @@ mod dminusone_test {
 
 // Polynomial division test. This test is never wrong.
 type ModularFactorMultSemigrp = PolynomialStructure<
-    QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, false>,
-    QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, false>,
+    EuclideanRemainderQuotientStructure<
+        IntegerCanonicalStructure,
+        IntegerCanonicalStructure,
+        false,
+    >,
+    EuclideanRemainderQuotientStructure<
+        IntegerCanonicalStructure,
+        IntegerCanonicalStructure,
+        false,
+    >,
 >;
 impl SemigroupSignature for ModularFactorMultSemigrp {
     fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {

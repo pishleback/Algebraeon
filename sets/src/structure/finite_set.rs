@@ -39,7 +39,7 @@ impl OrdSignature for EnumeratedFiniteSetStructure {
 }
 
 impl CountableSetSignature for EnumeratedFiniteSetStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         0..self.n
     }
 }

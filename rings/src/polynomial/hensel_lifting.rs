@@ -545,11 +545,17 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
 impl<
     RS: FactorableSignature + EuclideanDomainSignature + GreatestCommonDivisorSignature,
     RSB: BorrowedStructure<RS>,
-    RSQB: BorrowedStructure<QuotientStructure<RS, RSB, true>>,
-    RSQPB: BorrowedStructure<PolynomialStructure<QuotientStructure<RS, RSB, true>, RSQB>>,
-> FactoredRingElementStructure<PolynomialStructure<QuotientStructure<RS, RSB, true>, RSQB>, RSQPB>
+    RSQB: BorrowedStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>>,
+    RSQPB: BorrowedStructure<
+        PolynomialStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>, RSQB>,
+    >,
+>
+    FactoredRingElementStructure<
+        PolynomialStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>, RSQB>,
+        RSQPB,
+    >
 where
-    PolynomialStructure<QuotientStructure<RS, RSB, true>, RSQB>:
+    PolynomialStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>, RSQB>:
         SetSignature<Set = Polynomial<RS::Set>> + FactorableSignature,
 {
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None

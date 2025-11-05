@@ -1,4 +1,21 @@
+use paste::paste;
+use rand::{Rng, SeedableRng, rngs::StdRng};
 use std::{borrow::Borrow, fmt::Debug};
+
+macro_rules! make_maybe_trait {
+    ($name:ident) => {
+        paste! {
+            pub trait [<Maybe $name Signature>]: SetSignature {
+                type [<$name Structure>]: [<$name Signature>] <Set = Self::Set>;
+
+                #[allow(clippy::result_unit_err)]
+                fn [<$name:snake _structure>](
+                    &self
+                ) -> Result<Self::[<$name Structure>], ()>;
+            }
+        }
+    };
+}
 
 pub trait Signature: Clone + Debug + Eq + Send + Sync {}
 
@@ -29,7 +46,7 @@ pub trait EqSignature: SetSignature {
 pub trait CountableSetSignature: SetSignature {
     /// Yield distinct elements of the set such that every element eventually appears.
     /// Always yields elements in the same order.
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set>;
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone;
 }
 
 pub trait FiniteSetSignature: CountableSetSignature {
@@ -40,6 +57,33 @@ pub trait FiniteSetSignature: CountableSetSignature {
     }
     fn size(&self) -> usize {
         self.list_all_elements().len()
+    }
+    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Set> + Clone {
+        let rng = StdRng::seed_from_u64(seed);
+        FiniteSetRandomElementGenerator::<Self, StdRng> {
+            all_elements: self.list_all_elements(),
+            rng,
+        }
+    }
+}
+make_maybe_trait!(FiniteSet);
+
+#[derive(Debug, Clone)]
+pub struct FiniteSetRandomElementGenerator<S: FiniteSetSignature, R: Rng> {
+    all_elements: Vec<S::Set>,
+    rng: R,
+}
+
+impl<S: FiniteSetSignature, R: Rng> Iterator for FiniteSetRandomElementGenerator<S, R> {
+    type Item = S::Set;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.all_elements.is_empty() {
+            None
+        } else {
+            let idx = self.rng.random_range(0..self.all_elements.len());
+            Some(self.all_elements[idx].clone())
+        }
     }
 }
 

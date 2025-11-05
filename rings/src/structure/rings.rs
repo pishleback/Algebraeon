@@ -336,6 +336,12 @@ impl<R: MetaType> MetaOrderedRing for R where Self::Signature: OrderedRingSignat
 
 pub trait FiniteUnitsSignature: RingSignature {
     fn all_units(&self) -> Vec<Self::Set>;
+
+    fn all_units_and_zero(&self) -> Vec<Self::Set> {
+        let mut elems = vec![self.zero()];
+        elems.append(&mut self.all_units());
+        elems
+    }
 }
 
 pub trait MetaFiniteUnits: MetaRing
@@ -721,44 +727,9 @@ where
 }
 impl<R: MetaType> MetaCharZeroField for R where Self::Signature: CharZeroFieldSignature<Set = R> {}
 
-use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
-
-struct FiniteFieldRandomElementGenerator<FS: FiniteFieldSignature, R: Rng> {
-    all_elements: Vec<FS::Set>,
-    rng: R,
-}
-
-impl<FS: FiniteFieldSignature, R: Rng> Iterator for FiniteFieldRandomElementGenerator<FS, R> {
-    type Item = FS::Set;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.all_elements.is_empty() {
-            None
-        } else {
-            let idx = self.rng.random_range(0..self.all_elements.len());
-            Some(self.all_elements[idx].clone())
-        }
-    }
-}
-
-pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature {
+pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSetSignature {
     // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(&self) -> (Natural, Natural);
-
-    fn all_elements(&self) -> Vec<Self::Set> {
-        let mut elems = vec![self.zero()];
-        elems.append(&mut self.all_units());
-        elems
-    }
-
-    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Set> {
-        let rng = StdRng::seed_from_u64(seed);
-        FiniteFieldRandomElementGenerator::<Self, StdRng> {
-            all_elements: self.all_elements(),
-            rng,
-        }
-    }
 }
 
 //is a subset of the complex numbers

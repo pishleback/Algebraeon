@@ -23,6 +23,6 @@ pub use orderings::OrdSignature;
 pub use pairs::{Pairs, UnorderedPair, UnorderedPairs};
 pub use singleton_set::SingletonSetStructure;
 pub use structure::{
-    BorrowedStructure, CountableSetSignature, EqSignature, FiniteSetSignature, MetaType,
-    SetSignature, Signature, ToStringSignature,
+    BorrowedStructure, CountableSetSignature, EqSignature, FiniteSetSignature,
+    MaybeFiniteSetSignature, MetaType, SetSignature, Signature, ToStringSignature,
 };

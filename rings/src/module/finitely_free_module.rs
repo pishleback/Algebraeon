@@ -8,10 +8,7 @@ use crate::{
     structure::*,
 };
 use algebraeon_sets::structure::*;
-use std::{
-    borrow::{Borrow, Cow},
-    marker::PhantomData,
-};
+use std::{borrow::Cow, marker::PhantomData};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeModuleStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
@@ -218,11 +215,12 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ri
     }
 }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-    FreeModuleSignature<EnumeratedFiniteSetStructure, Ring>
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ring>
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn basis_set(&self) -> impl std::borrow::Borrow<EnumeratedFiniteSetStructure> {
+    type Basis = EnumeratedFiniteSetStructure;
+
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
         &self.basis_set
     }
 
@@ -236,32 +234,6 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
         let mut element = self.zero();
         element[*b] = r.clone();
         element
-    }
-}
-
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyGeneratedModuleSignature<Ring>
-    for FinitelyFreeModuleStructure<Ring, RingB>
-{
-}
-
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-    FinitelyFreeModuleSignature<EnumeratedFiniteSetStructure, Ring>
-    for FinitelyFreeModuleStructure<Ring, RingB>
-{
-    fn basis(&self) -> Vec<usize> {
-        (0..self.rank()).collect()
-    }
-
-    fn rank(&self) -> usize {
-        self.basis_set.size()
-    }
-
-    fn to_vec(&self, v: &Self::Set) -> Vec<Ring::Set> {
-        v.clone()
-    }
-
-    fn from_vec(&self, v: Vec<impl Borrow<Ring::Set>>) -> Self::Set {
-        v.into_iter().map(|x| x.borrow().clone()).collect()
     }
 }
 
