@@ -8,6 +8,7 @@ macro_rules! make_maybe_trait {
             pub trait [<Maybe $name Signature>]: SetSignature {
                 type [<$name Structure>]: [<$name Signature>] <Set = Self::Set>;
 
+                #[allow(clippy::result_unit_err)]
                 fn [<$name:snake _structure>](
                     &self
                 ) -> Result<Self::[<$name Structure>], ()>;
