@@ -365,7 +365,7 @@ impl Canvas for Canvas2D {
 
                     // This happens when the a frame takes too long to present
                     Err(wgpu::SurfaceError::Timeout) => {
-                        log::warn!("Surface timeout")
+                        log::warn!("Surface timeout");
                     }
                 }
                 window_state.wgpu_state.window.request_redraw();

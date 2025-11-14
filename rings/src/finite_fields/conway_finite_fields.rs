@@ -229,7 +229,7 @@ impl ConwayFiniteFieldInclusion {
                 mat_mod_p: MatrixStructure::new(
                     Integer::structure()
                         .into_quotient_field(p.into())
-                        .map_err(|_| "p not prime")
+                        .map_err(|()| "p not prime")
                         .unwrap(),
                 ),
             })
