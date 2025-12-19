@@ -168,6 +168,21 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         }
     }
 
+    /// Return true if a non-zero ideal factors as a product of distinct prime ideals.
+    pub fn is_squarefree(&self, ideal: &RingOfIntegersIdeal) -> bool {
+        match ideal {
+            RingOfIntegersIdeal::Zero => false,
+            RingOfIntegersIdeal::NonZero { .. } => {
+                self.factorizations()
+                    .to_powers(&self.factor_ideal(ideal).expect(
+                        "failed to factor non-zero ideal when checking if it is squarefree",
+                    ))
+                    .into_iter()
+                    .all(|(_, exponent)| exponent <= &Natural::ONE)
+            }
+        }
+    }
+
     /// Return an ideal whose square equals the input, if it exists.
     pub fn sqrt_if_square(&self, ideal: &RingOfIntegersIdeal) -> Option<RingOfIntegersIdeal> {
         match ideal {
@@ -677,23 +692,28 @@ mod tests {
         let zero_sqrt = roi_ideals.sqrt_if_square(&roi_ideals.zero_ideal()).unwrap();
         assert!(roi_ideals.ideal_equal(&zero_sqrt, &roi_ideals.zero_ideal()));
         assert!(roi_ideals.is_square(&roi_ideals.zero_ideal()));
+        assert!(!roi_ideals.is_squarefree(&roi_ideals.zero_ideal()));
 
         // (2) = (1 + i)^2 in Z[i]
         let two_ideal = roi_ideals.principal_ideal(&roi.from_int(2));
         assert!(roi_ideals.is_square(&two_ideal));
         let sqrt_two = roi_ideals.sqrt_if_square(&two_ideal).unwrap();
         assert!(roi_ideals.ideal_equal(&sqrt_two, &gaussian_prime));
+        assert!(!roi_ideals.is_squarefree(&two_ideal));
 
         // (3) stays prime in Z[i] so it cannot be a square.
         let three_ideal = roi_ideals.principal_ideal(&roi.from_int(3));
         assert!(!roi_ideals.is_square(&three_ideal));
         assert!(roi_ideals.sqrt_if_square(&three_ideal).is_none());
+        assert!(roi_ideals.is_squarefree(&three_ideal));
 
         // Squares built from a non-trivial prime ideal should be detected as well.
         assert!(!roi_ideals.is_square(&gaussian_prime));
+        assert!(roi_ideals.is_squarefree(&gaussian_prime));
         let gaussian_prime_square = roi_ideals.ideal_mul(&gaussian_prime, &gaussian_prime);
         assert!(roi_ideals.is_square(&gaussian_prime_square));
         let sqrt_gaussian_square = roi_ideals.sqrt_if_square(&gaussian_prime_square).unwrap();
         assert!(roi_ideals.ideal_equal(&sqrt_gaussian_square, &gaussian_prime));
+        assert!(!roi_ideals.is_squarefree(&gaussian_prime_square));
     }
 }
