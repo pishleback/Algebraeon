@@ -172,9 +172,9 @@ To submit changes for inclusion in the main branch: Fork this repository, make c
 ## Use of AI
 
 Use of AI is fine in contributions subjet to the following requests:
- - Please outline the PR comment the extent to which AI has been used.
+ - Please outline in a PR comment the extent to which AI has been used.
  - Ensure every AI generated line has been understood by a human.
- - Be extra careful and/or avoid AI entirely when writing test cases.
+ - Don't use AI to write code _and_ tests for that code.
 
 ## CLA
 
