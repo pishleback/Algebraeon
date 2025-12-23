@@ -181,6 +181,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "algebraeon-topology"
+version = "0.0.13"
+dependencies = [
+ "algebraeon-macros",
+ "algebraeon-nzq",
+ "algebraeon-sets",
+]
+
+[[package]]
 name = "android-activity"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

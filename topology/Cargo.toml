@@ -1,0 +1,18 @@
+[package]
+name = "algebraeon-topology"
+version = "0.0.13"
+edition = "2024"
+license = "GPL-3.0-only"
+description = "Approximating points in topological spaces with isolating regions."
+repository = "https://github.com/pishleback/Algebraeon"
+keywords = ["maths"]
+categories = ["mathematics"]
+readme = "../README.md"
+
+[lib]
+name = "algebraeon_topology"
+
+[dependencies]
+algebraeon-macros = { version = "=0.0.13", path = "../macros", default-features = false }
+algebraeon-sets = { version = "=0.0.13", path = "../sets", default-features = false }
+algebraeon-nzq = { version = "=0.0.13", path = "../nzq", default-features = false }
