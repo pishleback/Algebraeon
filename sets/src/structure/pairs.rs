@@ -5,11 +5,11 @@ use std::fmt::Debug;
 
 /// The set of Pairs
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Pairs<T> {
-    set: T,
+pub struct PairsStructure<S> {
+    set: S,
 }
 
-impl<S: SetSignature> Pairs<S> {
+impl<S: SetSignature> PairsStructure<S> {
     pub fn new(set: S) -> Self {
         Self { set }
     }
@@ -22,9 +22,9 @@ impl<S: SetSignature> Pairs<S> {
     }
 }
 
-impl<S: SetSignature> Signature for Pairs<S> {}
+impl<S: SetSignature> Signature for PairsStructure<S> {}
 
-impl<S: SetSignature> SetSignature for Pairs<S> {
+impl<S: SetSignature> SetSignature for PairsStructure<S> {
     type Set = (S::Set, S::Set);
 
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
@@ -34,7 +34,7 @@ impl<S: SetSignature> SetSignature for Pairs<S> {
     }
 }
 
-impl<S: SetSignature + EqSignature> EqSignature for Pairs<S> {
+impl<S: SetSignature + EqSignature> EqSignature for PairsStructure<S> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.set.equal(&a.0, &b.0) && self.set.equal(&a.1, &b.1)
     }

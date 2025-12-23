@@ -20,7 +20,7 @@ pub use morphism::{
     Permutation,
 };
 pub use orderings::OrdSignature;
-pub use pairs::{Pairs, UnorderedPair, UnorderedPairs};
+pub use pairs::{PairsStructure, UnorderedPair, UnorderedPairs};
 pub use singleton_set::SingletonSetStructure;
 pub use structure::{
     BorrowedStructure, CountableSetSignature, EqSignature, FiniteSetSignature,
