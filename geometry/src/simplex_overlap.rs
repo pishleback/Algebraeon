@@ -5,7 +5,7 @@ use algebraeon_rings::{
         finitely_free_module::FinitelyFreeModuleStructure,
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
     },
-    structure::{FieldSignature, OrderedRingSignature},
+    structure::{AdditiveMonoidEqSignature, FieldSignature, OrderedRingSignature},
 };
 use itertools::Itertools;
 use std::collections::HashSet;
