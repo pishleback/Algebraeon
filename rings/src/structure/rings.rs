@@ -10,11 +10,7 @@ pub enum RingDivisionError {
     NotDivisible,
 }
 
-pub trait AdditiveMonoidSignature: EqSignature {
-    fn is_zero(&self, a: &Self::Set) -> bool {
-        self.equal(a, &self.zero())
-    }
-
+pub trait AdditiveMonoidSignature: SetSignature {
     fn zero(&self) -> Self::Set;
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
@@ -31,6 +27,23 @@ pub trait AdditiveMonoidSignature: EqSignature {
         sum
     }
 }
+
+pub trait AdditiveMonoidEqSignature: AdditiveMonoidSignature + EqSignature {
+    fn is_zero(&self, a: &Self::Set) -> bool {
+        self.equal(a, &self.zero())
+    }
+}
+impl<R: AdditiveMonoidSignature + EqSignature> AdditiveMonoidEqSignature for R {}
+
+pub trait MetaAdditiveMonoidEq: MetaType
+where
+    Self::Signature: RingSignature + EqSignature,
+{
+    fn is_zero(&self) -> bool {
+        Self::structure().is_zero(self)
+    }
+}
+impl<R: MetaType> MetaAdditiveMonoidEq for R where Self::Signature: RingSignature + EqSignature {}
 
 pub trait SemiRingSignature: AdditiveMonoidSignature {
     fn one(&self) -> Self::Set;
@@ -127,6 +140,9 @@ where
 }
 impl<R: MetaType> MetaSemiRing for R where Self::Signature: SemiRingSignature {}
 
+pub trait SemiRingEqSignature: SemiRingSignature + EqSignature {}
+impl<R: SemiRingSignature + EqSignature> SemiRingEqSignature for R {}
+
 pub trait CharacteristicSignature: SemiRingSignature {
     fn characteristic(&self) -> Natural;
 }
@@ -197,15 +213,8 @@ where
 }
 impl<R: MetaType> MetaRing for R where Self::Signature: RingSignature {}
 
-pub trait MetaRingEq: MetaType
-where
-    Self::Signature: RingSignature + EqSignature,
-{
-    fn is_zero(&self) -> bool {
-        Self::structure().is_zero(self)
-    }
-}
-impl<R: MetaType> MetaRingEq for R where Self::Signature: RingSignature + EqSignature {}
+pub trait RingEqSignature: RingSignature + EqSignature {}
+impl<R: RingSignature + EqSignature> RingEqSignature for R {}
 
 pub trait SemiRingUnitsSignature: SemiRingSignature {
     /// b such that a*b=1 and b*a=1
@@ -236,8 +245,8 @@ impl<R: MetaType> MetaSemiRingUnitsSignature for R where
 {
 }
 
-pub trait RingUnitsSignature: RingSignature + SemiRingUnitsSignature {}
-impl<Ring: RingSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {}
+pub trait RingUnitsSignature: RingEqSignature + SemiRingUnitsSignature {}
+impl<Ring: RingEqSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {}
 
 pub trait IntegralDomainSignature: RingUnitsSignature {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
@@ -489,7 +498,7 @@ where
 }
 impl<R: MetaRing> MetaBezoutDomain for R where Self::Signature: BezoutDomainSignature<Set = R> {}
 
-pub trait EuclideanDivisionSignature: SemiRingSignature {
+pub trait EuclideanDivisionSignature: SemiRingEqSignature {
     /// None for 0 and Some(norm) for everything else
     fn norm(&self, elem: &Self::Set) -> Option<Natural>;
 

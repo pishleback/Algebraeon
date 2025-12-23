@@ -89,10 +89,6 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
 }
 
 impl<ANF: AlgebraicNumberFieldSignature> AdditiveMonoidSignature for QuaternionOrderZBasis<ANF> {
-    fn is_zero(&self, a: &Self::Set) -> bool {
-        self.algebra.is_zero(a)
-    }
-
     fn zero(&self) -> Self::Set {
         self.algebra.zero()
     }

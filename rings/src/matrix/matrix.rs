@@ -666,14 +666,14 @@ where
 
 impl<R: MetaType> PartialEq for Matrix<R>
 where
-    R::Signature: RingSignature,
+    R::Signature: RingSignature + EqSignature,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
     }
 }
 
-impl<R: MetaType> Eq for Matrix<R> where R::Signature: RingSignature {}
+impl<R: MetaType> Eq for Matrix<R> where R::Signature: RingSignature + EqSignature {}
 
 impl<R: MetaType> Matrix<R>
 where

@@ -159,7 +159,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
     }
 }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
+impl<Ring: RingSignature + EqSignature, RingB: BorrowedStructure<Ring>> EqSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
     fn equal(&self, v: &Self::Set, w: &Self::Set) -> bool {

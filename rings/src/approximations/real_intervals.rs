@@ -107,5 +107,7 @@ mod tests {
     #[test]
     fn test() {
         let reals = points();
+
+        println!("{:?}", reals);
     }
 }
