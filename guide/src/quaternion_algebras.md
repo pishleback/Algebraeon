@@ -6,7 +6,7 @@ The main constructor for the quaternion algebra over F, such that \\(i^2 = a\\) 
 
 ```rust
 use algebraeon::nzq::Rational;
-use algebraeon::rings::quaternion_algebras::QuaternionAlgebraStructure;
+use algebraeon::rings::quaternion_algebra::QuaternionAlgebraStructure;
 use algebraeon::rings::structure::*;
 use algebraeon::sets::structure::{EqSignature, MetaType};
 
