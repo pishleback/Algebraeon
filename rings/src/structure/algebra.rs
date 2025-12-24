@@ -11,7 +11,7 @@ where
 {
 }
 
-/// Order in a finite dimensional algebra as in https://en.wikipedia.org/wiki/Order_(ring_theory)
+/// Order in a finite dimensional algebra as in <https://en.wikipedia.org/wiki/Order_(ring_theory)>
 pub trait OrderSignature<
     Ring: IntegralDomainSignature,
     K: FieldSignature,

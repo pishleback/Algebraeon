@@ -124,13 +124,11 @@ impl ComplexSubsetSignature for RationalCanonicalStructure {
 
 impl RealSubsetSignature for RationalCanonicalStructure {
     fn as_f64(&self, x: &Rational) -> f64 {
-        let fof = PrincipalSubringInclusion::new(self.clone());
-        RealSubsetSignature::as_f64(&Integer::structure(), &fof.numerator(x))
-            / RealSubsetSignature::as_f64(&Integer::structure(), &fof.denominator(x))
+        x.into()
     }
 
     fn as_f32(&self, x: &Self::Set) -> f32 {
-        self.as_f64(x) as f32
+        x.into()
     }
 }
 

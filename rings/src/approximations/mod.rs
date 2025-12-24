@@ -1,2 +1,2 @@
-pub mod open_interval;
+pub mod rational_interval;
 pub mod real_intervals;

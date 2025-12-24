@@ -1,6 +1,6 @@
 use crate::structure::*;
 
-/// A Lattice as in https://en.wikipedia.org/wiki/Lattice_(module)
+/// A Lattice as in <https://en.wikipedia.org/wiki/Lattice_(module)>
 pub trait LatticeSignature<
     Ring: IntegralDomainSignature,
     K: FieldSignature,

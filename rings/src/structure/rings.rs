@@ -245,10 +245,10 @@ impl<R: MetaType> MetaSemiRingUnitsSignature for R where
 {
 }
 
-pub trait RingUnitsSignature: RingEqSignature + SemiRingUnitsSignature {}
-impl<Ring: RingEqSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {}
+pub trait RingUnitsSignature: RingSignature + SemiRingUnitsSignature {}
+impl<Ring: RingSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {}
 
-pub trait IntegralDomainSignature: RingUnitsSignature {
+pub trait IntegralDomainSignature: RingUnitsSignature + EqSignature {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
