@@ -10,14 +10,12 @@ use algebraeon::rings::approximation::real_intervals::{Point, e, pi};
 use algebraeon::rings::structure::MetaSemiRing;
 use std::str::FromStr;
 
-fn main() {
-    let p = Point::add(&pi(), &e());
+let p = Point::add(&pi(), &e());
 
-    p.lock()
-        .refine_to_length(&Rational::from_str("1/100").unwrap());
+p.lock()
+    .refine_to_length(&Rational::from_str("1/100").unwrap());
 
-    println!("{:?}", p.lock().rational_interval_neighbourhood());
-}
+println!("{:?}", p.lock().rational_interval_neighbourhood());
 
 /*
 Output:
