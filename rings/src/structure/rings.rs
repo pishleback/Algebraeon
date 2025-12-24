@@ -742,7 +742,7 @@ pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSe
 }
 
 //is a subset of the complex numbers
-pub trait ComplexSubsetSignature: IntegralDomainSignature {
+pub trait ComplexSubsetSignature: SetSignature {
     fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32);
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64);
 }
@@ -760,7 +760,31 @@ where
 impl<R: MetaType> MetaComplexSubset for R where Self::Signature: ComplexSubsetSignature<Set = R> {}
 
 //is a subset of the real numbers
-pub trait RealSubsetSignature: ComplexSubsetSignature {}
+pub trait RealSubsetSignature: ComplexSubsetSignature {
+    fn as_f64(&self, x: &Self::Set) -> f64 {
+        let (r, i) = self.as_f64_real_and_imaginary_parts(x);
+        debug_assert_eq!(i, 0.0);
+        r
+    }
+    fn as_f32(&self, x: &Self::Set) -> f32 {
+        let (r, i) = self.as_f32_real_and_imaginary_parts(x);
+        debug_assert_eq!(i, 0.0);
+        r
+    }
+}
+pub trait MetaRealSubset: MetaType
+where
+    Self::Signature: RealSubsetSignature,
+{
+    fn as_f64(&self) -> f64 {
+        Self::structure().as_f64(self)
+    }
+
+    fn as_f32(&self) -> f32 {
+        Self::structure().as_f32(self)
+    }
+}
+impl<R: MetaType> MetaRealSubset for R where Self::Signature: RealSubsetSignature {}
 
 pub trait RealRoundingSignature: RealSubsetSignature {
     fn floor(&self, x: &Self::Set) -> Integer; //round down
@@ -785,27 +809,6 @@ where
     }
 }
 impl<R: MetaType> MetaRealRounding for R where Self::Signature: RealRoundingSignature<Set = R> {}
-
-pub trait RealToFloatSignature: RealSubsetSignature {
-    fn as_f64(&self, x: &Self::Set) -> f64;
-    fn as_f32(&self, x: &Self::Set) -> f32 {
-        RealToFloatSignature::as_f64(self, x) as f32
-    }
-}
-
-pub trait MetaRealToFloat: MetaType
-where
-    Self::Signature: RealToFloatSignature,
-{
-    fn as_f64(&self) -> f64 {
-        Self::structure().as_f64(self)
-    }
-
-    fn as_f32(&self) -> f32 {
-        Self::structure().as_f32(self)
-    }
-}
-impl<R: MetaType> MetaRealToFloat for R where Self::Signature: RealToFloatSignature {}
 
 #[allow(clippy::wrong_self_convention)]
 pub trait RealFromFloatSignature: RealSubsetSignature {

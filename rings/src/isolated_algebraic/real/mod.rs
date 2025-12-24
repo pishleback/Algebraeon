@@ -715,15 +715,7 @@ impl ComplexSubsetSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl RealSubsetSignature for RealAlgebraicCanonicalStructure {}
-
-impl OrderedRingSignature for RealAlgebraicCanonicalStructure {
-    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-        a.cmp(b)
-    }
-}
-
-impl RealToFloatSignature for RealAlgebraicCanonicalStructure {
+impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         match x {
             RealAlgebraic::Rational(x) => x.as_f64(),
@@ -736,6 +728,16 @@ impl RealToFloatSignature for RealAlgebraicCanonicalStructure {
                 ((x.tight_a + x.tight_b) / Rational::from(2)).as_f64()
             }
         }
+    }
+
+    fn as_f32(&self, x: &Self::Set) -> f32 {
+        self.as_f64(x) as f32
+    }
+}
+
+impl OrderedRingSignature for RealAlgebraicCanonicalStructure {
+    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+        a.cmp(b)
     }
 }
 

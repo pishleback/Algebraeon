@@ -15,10 +15,12 @@ pub trait ApproximatePointsSignature: SetSignature {
     ) -> <Self::OpenSubsetsStructure as SetSignature>::Set;
     /// A value which decreases with refinements of the subset containing the point.
     fn precision(&self, approx_point: &Self::Set) -> <Self::Precision as SetSignature>::Set;
+    /// Refine approx_point so that the value of precision() decreases
+    fn refine(&self, approx_point: &mut Self::Set);
     /// Refine approx_point until its precision is at most the given value.
     fn refine_to(
         &self,
-        approx_point: Self::Set,
+        approx_point: &mut Self::Set,
         precision: &<Self::Precision as SetSignature>::Set,
-    ) -> Self::Set;
+    );
 }

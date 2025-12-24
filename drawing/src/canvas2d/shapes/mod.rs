@@ -177,7 +177,7 @@ pub fn simplicial_complex_shapes<
     'f,
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
-        + algebraeon_rings::structure::RealToFloatSignature
+        + algebraeon_rings::structure::RealSubsetSignature
         + 'f,
     T: Eq + Clone + Send + Sync,
 >(

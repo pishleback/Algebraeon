@@ -40,6 +40,7 @@
 
 pub mod algebraic_number_field;
 pub mod approximations;
+pub mod coontinued_fractions;
 pub mod finite_fields;
 pub mod integer;
 pub mod isolated_algebraic;

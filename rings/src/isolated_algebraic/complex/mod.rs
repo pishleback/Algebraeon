@@ -1016,7 +1016,7 @@ impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
                 let mut z = z.clone();
                 z.refine_to_accuracy(&Rational::from_integers(
                     Integer::from(1),
-                    Integer::from(1000000000000000i64),
+                    Integer::from(10000000000000000i64),
                 ));
                 (
                     ((z.tight_a + z.tight_b) / Rational::from(2)).as_f64(),
