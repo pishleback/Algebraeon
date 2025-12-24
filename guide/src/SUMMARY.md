@@ -29,6 +29,7 @@
     - [Class Group]()
 - [Rational Approximations]()
   - [Continued Fractions](./continued_fractions.md)
+  - [Rational Bounds on Real Values](./real_number_rational_bounds.md)
 - [Quaternion Algebras](./quaternion_algebras.md)
   - [Quaternion Orders]()
 - [Shapes](./shapes.md)

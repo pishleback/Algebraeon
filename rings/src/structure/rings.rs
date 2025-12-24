@@ -858,6 +858,12 @@ pub trait PositiveRealNthRootSignature: ComplexSubsetSignature {
     //if x is a non-negative real number, return the nth root of x
     //may also return Ok for other well-defined values such as for 1st root of any x and 0th root of any non-zero x, but is not required to
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()>;
+    fn square_root(&self, x: &Self::Set) -> Result<Self::Set, ()> {
+        self.nth_root(x, 2)
+    }
+    fn cube_root(&self, x: &Self::Set) -> Result<Self::Set, ()> {
+        self.nth_root(x, 3)
+    }
 }
 
 pub trait MetaPositiveRealNthRoot: MetaType
@@ -866,6 +872,12 @@ where
 {
     fn nth_root(&self, n: usize) -> Result<Self, ()> {
         Self::structure().nth_root(self, n)
+    }
+    fn square_root(&self) -> Result<Self, ()> {
+        Self::structure().square_root(self)
+    }
+    fn cube_root(&self) -> Result<Self, ()> {
+        Self::structure().cube_root(self)
     }
 }
 impl<R: MetaType> MetaPositiveRealNthRoot for R where

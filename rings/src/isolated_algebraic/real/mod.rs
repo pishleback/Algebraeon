@@ -742,14 +742,62 @@ impl OrderedRingSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
-    fn floor(&self, _x: &Self::Set) -> Integer {
-        todo!()
+    fn floor(&self, x: &Self::Set) -> Integer {
+        let mut x = x.clone();
+        loop {
+            match x.isolate() {
+                RealIsolatingRegion::Rational(v) => {
+                    return v.floor();
+                }
+                RealIsolatingRegion::Interval(a, b) => {
+                    let a_floor = a.floor();
+                    let b_floor = b.floor();
+                    if a_floor == b_floor {
+                        return a_floor;
+                    } else {
+                        x.refine();
+                    }
+                }
+            }
+        }
     }
-    fn ceil(&self, _x: &Self::Set) -> Integer {
-        todo!()
+    fn ceil(&self, x: &Self::Set) -> Integer {
+        let mut x = x.clone();
+        loop {
+            match x.isolate() {
+                RealIsolatingRegion::Rational(v) => {
+                    return v.ceil();
+                }
+                RealIsolatingRegion::Interval(a, b) => {
+                    let a_floor = a.ceil();
+                    let b_floor = b.ceil();
+                    if a_floor == b_floor {
+                        return a_floor;
+                    } else {
+                        x.refine();
+                    }
+                }
+            }
+        }
     }
-    fn round(&self, _x: &Self::Set) -> Integer {
-        todo!()
+    fn round(&self, x: &Self::Set) -> Integer {
+        let mut x = x.clone();
+        loop {
+            match x.isolate() {
+                RealIsolatingRegion::Rational(v) => {
+                    return v.round();
+                }
+                RealIsolatingRegion::Interval(a, b) => {
+                    let a_floor = a.round();
+                    let b_floor = b.round();
+                    if a_floor == b_floor {
+                        return a_floor;
+                    } else {
+                        x.refine();
+                    }
+                }
+            }
+        }
     }
 }
 

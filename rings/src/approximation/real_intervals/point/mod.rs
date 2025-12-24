@@ -3,6 +3,7 @@ use crate::{
         rational_interval::RationalInterval,
         real_intervals::{RationalPoint, Subset, SubsetsStructure},
     },
+    continued_fraction::SimpleContinuedFraction,
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, ComplexSubsetSignature, MetaRealRounding,
         MetaRealSubset, MetaSemiRingUnitsSignature, RealRoundingSignature, RealSubsetSignature,
@@ -42,6 +43,14 @@ impl Point {
         Self {
             repr: Arc::new(Mutex::new(repr)),
         }
+    }
+
+    pub fn from_rat(rat: Rational) -> Self {
+        Self::new(rational::RationalPoint { x: rat })
+    }
+
+    pub fn from_continued_fraction(cf: impl SimpleContinuedFraction + 'static) -> Self {
+        Self::new(continued_fraction::SimpleContinuedFractionPoint::from(cf))
     }
 
     pub fn lock(&self) -> MutexGuard<'_, dyn PointInterface + 'static> {
