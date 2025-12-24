@@ -1,4 +1,4 @@
-use crate::approximations::rational_interval::RationalInterval;
+use crate::approximation::rational_interval::RationalInterval;
 use algebraeon_nzq::Rational;
 use algebraeon_sets::{
     approximations::SubsetsSignature,

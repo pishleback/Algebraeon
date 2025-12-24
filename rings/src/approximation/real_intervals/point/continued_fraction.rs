@@ -1,9 +1,9 @@
 use crate::{
-    approximations::{
+    approximation::{
         rational_interval::RationalInterval,
         real_intervals::{Point, Subset},
     },
-    coontinued_fractions::SimpleContinuedFraction,
+    continued_fraction::SimpleContinuedFraction,
 };
 use algebraeon_nzq::{Integer, Rational};
 use std::fmt::Debug;

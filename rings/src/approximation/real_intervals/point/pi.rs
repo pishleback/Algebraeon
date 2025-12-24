@@ -12,7 +12,7 @@ The series converges quickly to \pi from below and the tail of the series is bou
 use algebraeon_nzq::{Integer, Natural, Rational};
 
 use crate::{
-    approximations::{
+    approximation::{
         rational_interval::RationalInterval,
         real_intervals::{Point, Subset},
     },

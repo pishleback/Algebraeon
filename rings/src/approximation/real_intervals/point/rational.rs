@@ -1,4 +1,4 @@
-use crate::approximations::real_intervals::{Point, Subset};
+use crate::approximation::real_intervals::{Point, Subset};
 use algebraeon_nzq::Rational;
 use std::fmt::Debug;
 

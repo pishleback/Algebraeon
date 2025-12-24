@@ -15,9 +15,9 @@ pub use point::rational::RationalPoint;
 
 #[cfg(test)]
 mod tests {
-    use crate::approximations::real_intervals::point::pi::pi;
+    use crate::approximation::real_intervals::point::pi::pi;
     use crate::structure::*;
-    use crate::{coontinued_fractions::eulers_constant, structure::RealSubsetSignature};
+    use crate::{continued_fraction::eulers_constant, structure::RealSubsetSignature};
     use algebraeon_nzq::{Integer, Natural, Rational};
     use std::str::FromStr;
 

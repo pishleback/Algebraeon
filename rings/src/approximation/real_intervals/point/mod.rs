@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::{
-    approximations::{
+    approximation::{
         rational_interval::RationalInterval,
         real_intervals::{RationalPoint, Subset, SubsetsStructure},
     },
