@@ -14,7 +14,7 @@ use algebraeon_nzq::{Integer, Natural, Rational};
 use crate::{
     approximation::{
         rational_interval::RationalInterval,
-        real_intervals::{Point, Subset},
+        real_intervals::{PointInterface, Subset},
     },
     structure::MetaSemiRing,
 };
@@ -33,14 +33,14 @@ pub struct Pi {
     t: Rational, // sum_{k=0}^n r(k)/16^k
 }
 
-pub fn pi() -> Pi {
-    Pi {
-        n: 0,
-        t: r(Natural::ZERO),
-    }
-}
-
 impl Pi {
+    pub fn new() -> Self {
+        Self {
+            n: 0,
+            t: r(Natural::ZERO),
+        }
+    }
+
     fn tail_bound(&self) -> Rational {
         if self.n == 0 {
             Rational::from_integers(Integer::from(1), Integer::from(100))
@@ -53,7 +53,7 @@ impl Pi {
     }
 }
 
-impl Point for Pi {
+impl PointInterface for Pi {
     fn rational_interval_neighbourhood(&self) -> Subset {
         Subset::Interval(RationalInterval::new_unchecked(
             self.t.clone(),

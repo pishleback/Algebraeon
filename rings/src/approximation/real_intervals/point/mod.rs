@@ -1,13 +1,3 @@
-use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};
-use algebraeon_sets::{
-    approximations::ApproximatePointsSignature,
-    structure::{SetSignature, Signature},
-};
-use std::{
-    fmt::Debug,
-    sync::{Arc, Mutex},
-};
-
 use crate::{
     approximation::{
         rational_interval::RationalInterval,
@@ -19,8 +9,17 @@ use crate::{
         RingSignature, SemiRingSignature, SemiRingUnitsSignature,
     },
 };
+use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};
+use algebraeon_sets::{
+    approximations::ApproximatePointsSignature,
+    structure::{CanonicalStructure, MetaType, SetSignature, Signature},
+};
+use std::{
+    fmt::Debug,
+    sync::{Arc, Mutex, MutexGuard},
+};
 
-pub trait Point: Debug + Send + Sync {
+pub trait PointInterface: Debug + Send + Sync {
     fn rational_interval_neighbourhood(&self) -> Subset;
     fn length(&self) -> Rational {
         self.rational_interval_neighbourhood().length()
@@ -33,64 +32,53 @@ pub trait Point: Debug + Send + Sync {
     }
 }
 
-pub fn point<P: Point + 'static>(p: P) -> <PointsStructure as SetSignature>::Set {
-    Arc::new(Mutex::new(p))
+#[derive(Debug, Clone, CanonicalStructure)]
+pub struct Point {
+    repr: Arc<Mutex<dyn PointInterface>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PointsStructure {}
+impl Point {
+    pub fn new<R: PointInterface + 'static>(repr: R) -> Self {
+        Self {
+            repr: Arc::new(Mutex::new(repr)),
+        }
+    }
 
-pub fn points() -> PointsStructure {
-    PointsStructure {}
-}
-
-impl Signature for PointsStructure {}
-
-impl SetSignature for PointsStructure {
-    type Set = Arc<Mutex<dyn Point>>;
-
-    fn is_element(&self, _: &Self::Set) -> Result<(), String> {
-        Ok(())
+    pub fn lock(&self) -> MutexGuard<'_, dyn PointInterface + 'static> {
+        self.repr.lock().unwrap()
     }
 }
 
-impl ApproximatePointsSignature for PointsStructure {
+impl ApproximatePointsSignature for PointCanonicalStructure {
     type Precision = RationalCanonicalStructure;
     type OpenSubsetsStructure = SubsetsStructure;
 
     fn open_neighbourhood(&self, approx_point: &Self::Set) -> Subset {
-        approx_point
-            .lock()
-            .unwrap()
-            .rational_interval_neighbourhood()
+        approx_point.lock().rational_interval_neighbourhood()
     }
 
     fn precision(&self, approx_point: &Self::Set) -> Rational {
-        approx_point.lock().unwrap().length()
+        approx_point.lock().length()
     }
 
     fn refine(&self, approx_point: &mut Self::Set) {
-        approx_point.lock().unwrap().refine();
+        approx_point.lock().refine();
     }
 
     fn refine_to(&self, approx_point: &mut Self::Set, length: &Rational) {
-        approx_point.lock().unwrap().refine_to_length(length);
+        approx_point.lock().refine_to_length(length);
     }
 }
 
 #[derive(Debug)]
 pub struct AddPoints {
-    first: Arc<Mutex<dyn Point>>,
-    second: Arc<Mutex<dyn Point>>,
+    first: Point,
+    second: Point,
 }
-impl Point for AddPoints {
+impl PointInterface for AddPoints {
     fn rational_interval_neighbourhood(&self) -> Subset {
-        let first_nbd = self.first.lock().unwrap().rational_interval_neighbourhood();
-        let second_nbd = self
-            .second
-            .lock()
-            .unwrap()
-            .rational_interval_neighbourhood();
+        let first_nbd = self.first.lock().rational_interval_neighbourhood();
+        let second_nbd = self.second.lock().rational_interval_neighbourhood();
         match (first_nbd, second_nbd) {
             (Subset::Singleton(first), Subset::Singleton(second)) => {
                 Subset::Singleton(first + second)
@@ -106,33 +94,33 @@ impl Point for AddPoints {
     }
 
     fn length(&self) -> Rational {
-        self.first.lock().unwrap().length() + self.second.lock().unwrap().length()
+        self.first.lock().length() + self.second.lock().length()
     }
 
     fn refine(&mut self) {
-        let first_length = self.first.lock().unwrap().length();
-        let second_length = self.second.lock().unwrap().length();
+        let first_length = self.first.lock().length();
+        let second_length = self.second.lock().length();
         if first_length >= second_length {
-            self.first.lock().unwrap().refine();
+            self.first.lock().refine();
         } else {
-            self.second.lock().unwrap().refine();
+            self.second.lock().refine();
         }
     }
 
     fn refine_to_length(&mut self, length: &Rational) {
         let half_length = length * Rational::ONE_HALF;
-        self.first.lock().unwrap().refine_to_length(&half_length);
-        self.second.lock().unwrap().refine_to_length(&half_length);
+        self.first.lock().refine_to_length(&half_length);
+        self.second.lock().refine_to_length(&half_length);
     }
 }
 
 #[derive(Debug)]
 pub struct NegPoint {
-    pt: Arc<Mutex<dyn Point>>,
+    pt: Point,
 }
-impl Point for NegPoint {
+impl PointInterface for NegPoint {
     fn rational_interval_neighbourhood(&self) -> Subset {
-        match self.pt.lock().unwrap().rational_interval_neighbourhood() {
+        match self.pt.lock().rational_interval_neighbourhood() {
             Subset::Singleton(rational) => Subset::Singleton(-rational),
             Subset::Interval(interval) => Subset::Interval(RationalInterval::new_unchecked(
                 -interval.b(),
@@ -142,31 +130,27 @@ impl Point for NegPoint {
     }
 
     fn length(&self) -> Rational {
-        self.pt.lock().unwrap().length()
+        self.pt.lock().length()
     }
 
     fn refine(&mut self) {
-        self.pt.lock().unwrap().refine();
+        self.pt.lock().refine();
     }
 
     fn refine_to_length(&mut self, length: &Rational) {
-        self.pt.lock().unwrap().refine_to_length(length)
+        self.pt.lock().refine_to_length(length)
     }
 }
 
 #[derive(Debug)]
 pub struct MulPoints {
-    first: Arc<Mutex<dyn Point>>,
-    second: Arc<Mutex<dyn Point>>,
+    first: Point,
+    second: Point,
 }
-impl Point for MulPoints {
+impl PointInterface for MulPoints {
     fn rational_interval_neighbourhood(&self) -> Subset {
-        let first_nbd = self.first.lock().unwrap().rational_interval_neighbourhood();
-        let second_nbd = self
-            .second
-            .lock()
-            .unwrap()
-            .rational_interval_neighbourhood();
+        let first_nbd = self.first.lock().rational_interval_neighbourhood();
+        let second_nbd = self.second.lock().rational_interval_neighbourhood();
         match (first_nbd, second_nbd) {
             (Subset::Singleton(first), Subset::Singleton(second)) => {
                 Subset::Singleton(first * second)
@@ -201,58 +185,58 @@ impl Point for MulPoints {
     }
 
     fn refine(&mut self) {
-        let first_length = self.first.lock().unwrap().length();
-        let second_length = self.second.lock().unwrap().length();
+        let first_length = self.first.lock().length();
+        let second_length = self.second.lock().length();
         if first_length >= second_length {
-            self.first.lock().unwrap().refine();
+            self.first.lock().refine();
         } else {
-            self.second.lock().unwrap().refine();
+            self.second.lock().refine();
         }
     }
 }
 
-impl AdditiveMonoidSignature for PointsStructure {
+impl AdditiveMonoidSignature for PointCanonicalStructure {
     fn zero(&self) -> Self::Set {
-        point(rational::RationalPoint { x: Rational::ZERO })
+        Point::new(rational::RationalPoint { x: Rational::ZERO })
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        point(AddPoints {
+        Point::new(AddPoints {
             first: a.clone(),
             second: b.clone(),
         })
     }
 }
 
-impl AdditiveGroupSignature for PointsStructure {
+impl AdditiveGroupSignature for PointCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        point(NegPoint { pt: a.clone() })
+        Point::new(NegPoint { pt: a.clone() })
     }
 }
 
-impl SemiRingSignature for PointsStructure {
+impl SemiRingSignature for PointCanonicalStructure {
     fn one(&self) -> Self::Set {
-        point(rational::RationalPoint { x: Rational::ONE })
+        Point::new(rational::RationalPoint { x: Rational::ONE })
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        point(MulPoints {
+        Point::new(MulPoints {
             first: a.clone(),
             second: b.clone(),
         })
     }
 }
 
-impl RingSignature for PointsStructure {}
+impl RingSignature for PointCanonicalStructure {}
 
 #[derive(Debug)]
 pub struct InvPoint {
-    pt: Arc<Mutex<dyn Point>>,
+    pt: Point,
 }
-impl Point for InvPoint {
+impl PointInterface for InvPoint {
     fn rational_interval_neighbourhood(&self) -> Subset {
         loop {
-            let nbd = self.pt.lock().unwrap().rational_interval_neighbourhood();
+            let nbd = self.pt.lock().rational_interval_neighbourhood();
             match nbd {
                 Subset::Singleton(rational) => {
                     return Subset::Singleton(rational.inv().expect(
@@ -272,7 +256,7 @@ Inverse called on an approximate value which later turned out to be exactly 0.",
                             ));
                         }
                         _ => {
-                            self.pt.lock().unwrap().refine();
+                            self.pt.lock().refine();
                         }
                     }
                 }
@@ -281,26 +265,26 @@ Inverse called on an approximate value which later turned out to be exactly 0.",
     }
 
     fn refine(&mut self) {
-        self.pt.lock().unwrap().refine();
+        self.pt.lock().refine();
     }
 }
 
-impl SemiRingUnitsSignature for PointsStructure {
+impl SemiRingUnitsSignature for PointCanonicalStructure {
     /// # Warning
     /// Mail fail to halt if the input is zero.
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
-        let nbd = a.lock().unwrap().rational_interval_neighbourhood();
+        let nbd = a.lock().rational_interval_neighbourhood();
         match nbd {
-            Subset::Singleton(rational) => Ok(point(RationalPoint { x: rational.inv()? })),
-            Subset::Interval(_) => Ok(point(InvPoint { pt: a.clone() })),
+            Subset::Singleton(rational) => Ok(Point::new(RationalPoint { x: rational.inv()? })),
+            Subset::Interval(_) => Ok(Point::new(InvPoint { pt: a.clone() })),
         }
     }
 }
 
-impl ComplexSubsetSignature for PointsStructure {
+impl ComplexSubsetSignature for PointCanonicalStructure {
     fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
         loop {
-            let nbd = z.lock().unwrap().rational_interval_neighbourhood();
+            let nbd = z.lock().rational_interval_neighbourhood();
             match nbd {
                 Subset::Singleton(rational) => {
                     return (rational.as_f32(), 0.0);
@@ -311,7 +295,7 @@ impl ComplexSubsetSignature for PointsStructure {
                     if a == b {
                         return (a, 0.0);
                     }
-                    z.lock().unwrap().refine();
+                    z.lock().refine();
                 }
             }
         }
@@ -319,7 +303,7 @@ impl ComplexSubsetSignature for PointsStructure {
 
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
         loop {
-            let nbd = z.lock().unwrap().rational_interval_neighbourhood();
+            let nbd = z.lock().rational_interval_neighbourhood();
             match nbd {
                 Subset::Singleton(rational) => {
                     return (rational.as_f64(), 0.0);
@@ -330,21 +314,21 @@ impl ComplexSubsetSignature for PointsStructure {
                     if a == b {
                         return (a, 0.0);
                     }
-                    z.lock().unwrap().refine();
+                    z.lock().refine();
                 }
             }
         }
     }
 }
 
-impl RealSubsetSignature for PointsStructure {}
+impl RealSubsetSignature for PointCanonicalStructure {}
 
-impl RealRoundingSignature for PointsStructure {
+impl RealRoundingSignature for PointCanonicalStructure {
     /// # Warning
     /// May fail to halt on integer inputs.
     fn floor(&self, x: &Self::Set) -> Integer {
         loop {
-            let nbd = x.lock().unwrap().rational_interval_neighbourhood();
+            let nbd = x.lock().rational_interval_neighbourhood();
             match nbd {
                 Subset::Singleton(rational) => {
                     return rational.floor();
@@ -366,7 +350,7 @@ impl RealRoundingSignature for PointsStructure {
     /// May fail to halt on integer inputs.
     fn ceil(&self, x: &Self::Set) -> Integer {
         loop {
-            let nbd = x.lock().unwrap().rational_interval_neighbourhood();
+            let nbd = x.lock().rational_interval_neighbourhood();
             match nbd {
                 Subset::Singleton(rational) => {
                     return rational.ceil();
@@ -387,7 +371,7 @@ impl RealRoundingSignature for PointsStructure {
     fn round(&self, x: &Self::Set) -> Integer {
         self.floor(&self.add(
             x,
-            &point(RationalPoint {
+            &Point::new(RationalPoint {
                 x: Rational::ONE_HALF,
             }),
         ))

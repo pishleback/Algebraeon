@@ -1,4 +1,4 @@
-use crate::approximation::real_intervals::{Point, Subset};
+use crate::approximation::real_intervals::{PointInterface, Subset};
 use algebraeon_nzq::Rational;
 use std::fmt::Debug;
 
@@ -7,7 +7,7 @@ pub struct RationalPoint {
     pub x: Rational,
 }
 
-impl Point for RationalPoint {
+impl PointInterface for RationalPoint {
     fn rational_interval_neighbourhood(&self) -> Subset {
         Subset::Singleton(self.x.clone())
     }

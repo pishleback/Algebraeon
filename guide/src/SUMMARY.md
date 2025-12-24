@@ -27,6 +27,8 @@
     - [Embedded Number Fields]()
     - [Ideals](./anf_ideals.md)
     - [Class Group]()
+- [Rational Approximations]()
+  - [Continued Fractions](./continued_fractions.md)
 - [Quaternion Algebras](./quaternion_algebras.md)
   - [Quaternion Orders]()
 - [Shapes](./shapes.md)

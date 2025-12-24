@@ -1,4 +1,5 @@
 use algebraeon_nzq::Integer;
+use algebraeon_sets::structure::MetaType;
 use std::fmt::Debug;
 
 use crate::structure::{RealRoundingSignature, RingUnitsSignature};
@@ -55,3 +56,21 @@ pub trait ToSimpleContinuedFractionSignature: RealRoundingSignature + RingUnitsS
     }
 }
 impl<R: RealRoundingSignature + RingUnitsSignature> ToSimpleContinuedFractionSignature for R {}
+
+pub trait MetaToSimpleContinuedFraction: MetaType
+where
+    Self::Signature: ToSimpleContinuedFractionSignature,
+{
+    /// # Warning
+    /// `value` should be irrational.
+    /// If `value` is not irrational then calls to `.next()` on the resulting `SimpleContinuedFraction` may panic.
+    fn simple_continued_fraction(
+        self,
+    ) -> SimpleContinuedFractionFromRealStructure<Self::Signature> {
+        Self::structure().simple_continued_fraction(self)
+    }
+}
+impl<R: MetaType> MetaToSimpleContinuedFraction for R where
+    Self::Signature: ToSimpleContinuedFractionSignature
+{
+}
