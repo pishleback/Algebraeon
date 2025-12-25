@@ -1,3 +1,4 @@
+use crate::structure::{RealRoundingSignature, RingDivisionError, RingUnitsSignature};
 use algebraeon_nzq::{Integer, Rational};
 use algebraeon_sets::structure::MetaType;
 use std::{
@@ -5,8 +6,6 @@ use std::{
     fmt::Debug,
     sync::{Arc, Mutex},
 };
-
-use crate::structure::{RealRoundingSignature, RingDivisionError, RingUnitsSignature};
 
 pub trait SimpleContinuedFraction: Debug + Clone + Send + Sync {
     /// Return the nth continued fraction coefficient
@@ -81,6 +80,31 @@ impl SimpleContinuedFraction for RationalSimpleContinuedFraction {
 pub struct PeriodicSimpleContinuedFraction {
     initial: Vec<Integer>,
     repeats: Vec<Integer>,
+}
+
+impl PeriodicSimpleContinuedFraction {
+    pub fn new(initial: Vec<Integer>, repeats: Vec<Integer>) -> Result<Self, ()> {
+        for i in 1..initial.len() {
+            if initial[i] <= Integer::ZERO {
+                return Err(());
+            }
+        }
+        if repeats.is_empty() {
+            return Err(());
+        }
+        for i in 0..repeats.len() {
+            if repeats[i] <= Integer::ZERO {
+                return Err(());
+            }
+        }
+        Ok(Self { initial, repeats })
+    }
+
+    pub fn new_unchecked(initial: Vec<Integer>, repeats: Vec<Integer>) -> Self {
+        #[cfg(debug_assertions)]
+        Self::new(initial.clone(), repeats.clone()).unwrap();
+        Self { initial, repeats }
+    }
 }
 
 impl SimpleContinuedFraction for PeriodicSimpleContinuedFraction {
@@ -232,4 +256,106 @@ where
 impl<R: MetaType> MetaToSimpleContinuedFraction for R where
     Self::Signature: ToSimpleContinuedFractionSignature
 {
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::*;
+
+    fn rat_cf(rat: &'static str) -> Vec<Integer> {
+        Rational::from_str(rat)
+            .unwrap()
+            .simple_continued_fraction()
+            .iter()
+            .map(|x| x.as_ref().clone())
+            .collect::<Vec<_>>()
+    }
+
+    #[test]
+    fn test_rational() {
+        assert_eq!(rat_cf("-2"), vec![Integer::from(-2)]);
+        assert_eq!(rat_cf("-1"), vec![Integer::from(-1)]);
+        assert_eq!(rat_cf("0"), vec![Integer::from(0)]);
+        assert_eq!(rat_cf("1"), vec![Integer::from(1)]);
+        assert_eq!(rat_cf("2"), vec![Integer::from(2)]);
+
+        assert_eq!(
+            rat_cf("9/10"),
+            vec![Integer::from(0), Integer::from(1), Integer::from(9)]
+        );
+
+        assert_eq!(rat_cf("-9/10"), vec![Integer::from(-1), Integer::from(10)]);
+
+        assert_eq!(
+            rat_cf("-5678/1234"),
+            vec![
+                Integer::from(-5),
+                Integer::from(2),
+                Integer::from(1),
+                Integer::from(1),
+                Integer::from(30),
+                Integer::from(4)
+            ]
+        );
+    }
+
+    #[test]
+    fn test_periodic() {
+        assert_eq!(
+            PeriodicSimpleContinuedFraction::new(
+                vec![Integer::from(1), Integer::from(2)],
+                vec![Integer::from(3), Integer::from(4), Integer::from(5)],
+            )
+            .unwrap()
+            .iter()
+            .take(10)
+            .map(|x| x.as_ref().clone())
+            .collect::<Vec<_>>(),
+            vec![
+                Integer::from(1),
+                Integer::from(2),
+                Integer::from(3),
+                Integer::from(4),
+                Integer::from(5),
+                Integer::from(3),
+                Integer::from(4),
+                Integer::from(5),
+                Integer::from(3),
+                Integer::from(4)
+            ]
+        );
+
+        assert_eq!(
+            PeriodicSimpleContinuedFraction::new(
+                vec![],
+                vec![Integer::from(3), Integer::from(4), Integer::from(5)]
+            )
+            .unwrap()
+            .iter()
+            .take(7)
+            .map(|x| x.as_ref().clone())
+            .collect::<Vec<_>>(),
+            vec![
+                Integer::from(3),
+                Integer::from(4),
+                Integer::from(5),
+                Integer::from(3),
+                Integer::from(4),
+                Integer::from(5),
+                Integer::from(3)
+            ]
+        );
+
+        assert!(PeriodicSimpleContinuedFraction::new(vec![], vec![]).is_err());
+        assert!(PeriodicSimpleContinuedFraction::new(vec![], vec![Integer::from(-1)]).is_err());
+        assert!(
+            PeriodicSimpleContinuedFraction::new(
+                vec![Integer::from(1), Integer::from(-1)],
+                vec![Integer::from(1)]
+            )
+            .is_err()
+        );
+    }
 }
