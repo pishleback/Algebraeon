@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
  - Added Minkowski sum of shapes
  - Added multithreading to speed up shape algorithms
+ - `RingSignature` no longer requires `EqSignature`
+ - Added traits for representing points as a limit of decreasing subsets
+ - Implemented above traits for intervals on the real line and boxes in the complex plane
 
 ## [0.0.13]
 

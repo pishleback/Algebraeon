@@ -6,7 +6,7 @@ use algebraeon_drawing::{
 use algebraeon_nzq::Integer;
 use algebraeon_rings::{
     polynomial::{Polynomial, PolynomialFromStr},
-    structure::MetaRealToFloat,
+    structure::MetaRealSubset,
 };
 
 fn main() {

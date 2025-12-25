@@ -73,7 +73,7 @@ mod range_module {
         }
     }
 
-    impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+    impl<'h, Domain: RingSignature, Range: RingEqSignature, Hom: RingHomomorphism<Domain, Range>>
         EqSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
         fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {

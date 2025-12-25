@@ -199,10 +199,12 @@ impl ComplexSubsetSignature for IntegerCanonicalStructure {
     }
 }
 
-impl RealSubsetSignature for IntegerCanonicalStructure {}
-
-impl RealToFloatSignature for IntegerCanonicalStructure {
+impl RealSubsetSignature for IntegerCanonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
+        x.into()
+    }
+
+    fn as_f32(&self, x: &Self::Set) -> f32 {
         x.into()
     }
 }
