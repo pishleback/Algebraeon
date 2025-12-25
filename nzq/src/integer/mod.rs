@@ -259,6 +259,19 @@ impl Into<f64> for &Integer {
         self.clone().into()
     }
 }
+#[allow(clippy::from_over_into)]
+impl Into<f32> for Integer {
+    fn into(self) -> f32 {
+        let x: f64 = self.into();
+        x as f32
+    }
+}
+#[allow(clippy::from_over_into)]
+impl Into<f32> for &Integer {
+    fn into(self) -> f32 {
+        self.clone().into()
+    }
+}
 
 impl FromStr for Integer {
     type Err = ();

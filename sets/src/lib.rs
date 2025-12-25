@@ -5,5 +5,6 @@
     clippy::must_use_candidate
 )]
 
+pub mod approximations;
 pub mod combinatorics;
 pub mod structure;

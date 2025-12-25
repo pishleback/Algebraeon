@@ -715,15 +715,7 @@ impl ComplexSubsetSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl RealSubsetSignature for RealAlgebraicCanonicalStructure {}
-
-impl OrderedRingSignature for RealAlgebraicCanonicalStructure {
-    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-        a.cmp(b)
-    }
-}
-
-impl RealToFloatSignature for RealAlgebraicCanonicalStructure {
+impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         match x {
             RealAlgebraic::Rational(x) => x.as_f64(),
@@ -737,17 +729,75 @@ impl RealToFloatSignature for RealAlgebraicCanonicalStructure {
             }
         }
     }
+
+    fn as_f32(&self, x: &Self::Set) -> f32 {
+        self.as_f64(x) as f32
+    }
+}
+
+impl OrderedRingSignature for RealAlgebraicCanonicalStructure {
+    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+        a.cmp(b)
+    }
 }
 
 impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
-    fn floor(&self, _x: &Self::Set) -> Integer {
-        todo!()
+    fn floor(&self, x: &Self::Set) -> Integer {
+        let mut x = x.clone();
+        loop {
+            match x.isolate() {
+                RealIsolatingRegion::Rational(v) => {
+                    return v.floor();
+                }
+                RealIsolatingRegion::Interval(a, b) => {
+                    let a_floor = a.floor();
+                    let b_floor = b.floor();
+                    if a_floor == b_floor {
+                        return a_floor;
+                    } else {
+                        x.refine();
+                    }
+                }
+            }
+        }
     }
-    fn ceil(&self, _x: &Self::Set) -> Integer {
-        todo!()
+    fn ceil(&self, x: &Self::Set) -> Integer {
+        let mut x = x.clone();
+        loop {
+            match x.isolate() {
+                RealIsolatingRegion::Rational(v) => {
+                    return v.ceil();
+                }
+                RealIsolatingRegion::Interval(a, b) => {
+                    let a_floor = a.ceil();
+                    let b_floor = b.ceil();
+                    if a_floor == b_floor {
+                        return a_floor;
+                    } else {
+                        x.refine();
+                    }
+                }
+            }
+        }
     }
-    fn round(&self, _x: &Self::Set) -> Integer {
-        todo!()
+    fn round(&self, x: &Self::Set) -> Integer {
+        let mut x = x.clone();
+        loop {
+            match x.isolate() {
+                RealIsolatingRegion::Rational(v) => {
+                    return v.round();
+                }
+                RealIsolatingRegion::Interval(a, b) => {
+                    let a_floor = a.round();
+                    let b_floor = b.round();
+                    if a_floor == b_floor {
+                        return a_floor;
+                    } else {
+                        x.refine();
+                    }
+                }
+            }
+        }
     }
 }
 

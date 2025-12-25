@@ -10,11 +10,7 @@ pub enum RingDivisionError {
     NotDivisible,
 }
 
-pub trait AdditiveMonoidSignature: EqSignature {
-    fn is_zero(&self, a: &Self::Set) -> bool {
-        self.equal(a, &self.zero())
-    }
-
+pub trait AdditiveMonoidSignature: SetSignature {
     fn zero(&self) -> Self::Set;
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
@@ -31,6 +27,23 @@ pub trait AdditiveMonoidSignature: EqSignature {
         sum
     }
 }
+
+pub trait AdditiveMonoidEqSignature: AdditiveMonoidSignature + EqSignature {
+    fn is_zero(&self, a: &Self::Set) -> bool {
+        self.equal(a, &self.zero())
+    }
+}
+impl<R: AdditiveMonoidSignature + EqSignature> AdditiveMonoidEqSignature for R {}
+
+pub trait MetaAdditiveMonoidEq: MetaType
+where
+    Self::Signature: RingSignature + EqSignature,
+{
+    fn is_zero(&self) -> bool {
+        Self::structure().is_zero(self)
+    }
+}
+impl<R: MetaType> MetaAdditiveMonoidEq for R where Self::Signature: RingSignature + EqSignature {}
 
 pub trait SemiRingSignature: AdditiveMonoidSignature {
     fn one(&self) -> Self::Set;
@@ -127,6 +140,9 @@ where
 }
 impl<R: MetaType> MetaSemiRing for R where Self::Signature: SemiRingSignature {}
 
+pub trait SemiRingEqSignature: SemiRingSignature + EqSignature {}
+impl<R: SemiRingSignature + EqSignature> SemiRingEqSignature for R {}
+
 pub trait CharacteristicSignature: SemiRingSignature {
     fn characteristic(&self) -> Natural;
 }
@@ -197,15 +213,8 @@ where
 }
 impl<R: MetaType> MetaRing for R where Self::Signature: RingSignature {}
 
-pub trait MetaRingEq: MetaType
-where
-    Self::Signature: RingSignature + EqSignature,
-{
-    fn is_zero(&self) -> bool {
-        Self::structure().is_zero(self)
-    }
-}
-impl<R: MetaType> MetaRingEq for R where Self::Signature: RingSignature + EqSignature {}
+pub trait RingEqSignature: RingSignature + EqSignature {}
+impl<R: RingSignature + EqSignature> RingEqSignature for R {}
 
 pub trait SemiRingUnitsSignature: SemiRingSignature {
     /// b such that a*b=1 and b*a=1
@@ -239,7 +248,7 @@ impl<R: MetaType> MetaSemiRingUnitsSignature for R where
 pub trait RingUnitsSignature: RingSignature + SemiRingUnitsSignature {}
 impl<Ring: RingSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {}
 
-pub trait IntegralDomainSignature: RingUnitsSignature {
+pub trait IntegralDomainSignature: RingUnitsSignature + EqSignature {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
     fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
@@ -489,7 +498,7 @@ where
 }
 impl<R: MetaRing> MetaBezoutDomain for R where Self::Signature: BezoutDomainSignature<Set = R> {}
 
-pub trait EuclideanDivisionSignature: SemiRingSignature {
+pub trait EuclideanDivisionSignature: SemiRingEqSignature {
     /// None for 0 and Some(norm) for everything else
     fn norm(&self, elem: &Self::Set) -> Option<Natural>;
 
@@ -733,7 +742,7 @@ pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSe
 }
 
 //is a subset of the complex numbers
-pub trait ComplexSubsetSignature: IntegralDomainSignature {
+pub trait ComplexSubsetSignature: SetSignature {
     fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32);
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64);
 }
@@ -751,7 +760,31 @@ where
 impl<R: MetaType> MetaComplexSubset for R where Self::Signature: ComplexSubsetSignature<Set = R> {}
 
 //is a subset of the real numbers
-pub trait RealSubsetSignature: ComplexSubsetSignature {}
+pub trait RealSubsetSignature: ComplexSubsetSignature {
+    fn as_f64(&self, x: &Self::Set) -> f64 {
+        let (r, i) = self.as_f64_real_and_imaginary_parts(x);
+        debug_assert_eq!(i, 0.0);
+        r
+    }
+    fn as_f32(&self, x: &Self::Set) -> f32 {
+        let (r, i) = self.as_f32_real_and_imaginary_parts(x);
+        debug_assert_eq!(i, 0.0);
+        r
+    }
+}
+pub trait MetaRealSubset: MetaType
+where
+    Self::Signature: RealSubsetSignature,
+{
+    fn as_f64(&self) -> f64 {
+        Self::structure().as_f64(self)
+    }
+
+    fn as_f32(&self) -> f32 {
+        Self::structure().as_f32(self)
+    }
+}
+impl<R: MetaType> MetaRealSubset for R where Self::Signature: RealSubsetSignature {}
 
 pub trait RealRoundingSignature: RealSubsetSignature {
     fn floor(&self, x: &Self::Set) -> Integer; //round down
@@ -776,27 +809,6 @@ where
     }
 }
 impl<R: MetaType> MetaRealRounding for R where Self::Signature: RealRoundingSignature<Set = R> {}
-
-pub trait RealToFloatSignature: RealSubsetSignature {
-    fn as_f64(&self, x: &Self::Set) -> f64;
-    fn as_f32(&self, x: &Self::Set) -> f32 {
-        RealToFloatSignature::as_f64(self, x) as f32
-    }
-}
-
-pub trait MetaRealToFloat: MetaType
-where
-    Self::Signature: RealToFloatSignature,
-{
-    fn as_f64(&self) -> f64 {
-        Self::structure().as_f64(self)
-    }
-
-    fn as_f32(&self) -> f32 {
-        Self::structure().as_f32(self)
-    }
-}
-impl<R: MetaType> MetaRealToFloat for R where Self::Signature: RealToFloatSignature {}
 
 #[allow(clippy::wrong_self_convention)]
 pub trait RealFromFloatSignature: RealSubsetSignature {
@@ -846,6 +858,12 @@ pub trait PositiveRealNthRootSignature: ComplexSubsetSignature {
     //if x is a non-negative real number, return the nth root of x
     //may also return Ok for other well-defined values such as for 1st root of any x and 0th root of any non-zero x, but is not required to
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()>;
+    fn square_root(&self, x: &Self::Set) -> Result<Self::Set, ()> {
+        self.nth_root(x, 2)
+    }
+    fn cube_root(&self, x: &Self::Set) -> Result<Self::Set, ()> {
+        self.nth_root(x, 3)
+    }
 }
 
 pub trait MetaPositiveRealNthRoot: MetaType
@@ -854,6 +872,12 @@ where
 {
     fn nth_root(&self, n: usize) -> Result<Self, ()> {
         Self::structure().nth_root(self, n)
+    }
+    fn square_root(&self) -> Result<Self, ()> {
+        Self::structure().square_root(self)
+    }
+    fn cube_root(&self) -> Result<Self, ()> {
+        Self::structure().cube_root(self)
     }
 }
 impl<R: MetaType> MetaPositiveRealNthRoot for R where

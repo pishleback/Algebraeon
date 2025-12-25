@@ -1,3 +1,5 @@
+use crate::structure::AdditiveMonoidEqSignature;
+
 use super::{FactoredSignature, FavoriteAssociateSignature, FieldSignature};
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;

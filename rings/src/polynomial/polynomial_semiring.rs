@@ -4,12 +4,12 @@ use algebraeon_sets::structure::*;
 use std::borrow::Borrow;
 
 #[derive(Debug, Clone)]
-pub struct PolynomialSemiRingStructure<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> {
+pub struct PolynomialSemiRingStructure<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> {
     coeff_ring_zero: RS::Set, //so that we can return a reference to zero when getting polynomial coefficients out of range
     coeff_ring: RSB,
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStructure<RS, RSB> {
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStructure<RS, RSB> {
     fn new(coeff_ring: RSB) -> Self {
         Self {
             coeff_ring_zero: coeff_ring.borrow().zero(),
@@ -22,7 +22,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
     }
 }
 
-pub trait SemiRingToPolynomialSemiRingSignature: SemiRingSignature {
+pub trait SemiRingToPolynomialSemiRingSignature: SemiRingEqSignature {
     fn polynomial_semiring<'a>(&'a self) -> PolynomialSemiRingStructure<Self, &'a Self> {
         PolynomialSemiRingStructure::new(self)
     }
@@ -32,14 +32,14 @@ pub trait SemiRingToPolynomialSemiRingSignature: SemiRingSignature {
     }
 }
 
-impl<RS: SemiRingSignature> SemiRingToPolynomialSemiRingSignature for RS {}
+impl<RS: SemiRingEqSignature> SemiRingToPolynomialSemiRingSignature for RS {}
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> Signature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> Signature
     for PolynomialSemiRingStructure<RS, RSB>
 {
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SetSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SetSignature
     for PolynomialSemiRingStructure<RS, RSB>
 {
     type Set = Polynomial<RS::Set>;
@@ -49,7 +49,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SetSignature
     }
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PartialEq
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PartialEq
     for PolynomialSemiRingStructure<RS, RSB>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -57,12 +57,12 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PartialEq
     }
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> Eq
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> Eq
     for PolynomialSemiRingStructure<RS, RSB>
 {
 }
 
-impl<RS: SemiRingSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToStringSignature
+impl<RS: SemiRingEqSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToStringSignature
     for PolynomialSemiRingStructure<RS, RSB>
 {
     fn to_string(&self, elem: &Self::Set) -> String {
@@ -103,7 +103,7 @@ impl<RS: SemiRingSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToSt
     }
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> EqSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> EqSignature
     for PolynomialSemiRingStructure<RS, RSB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -116,7 +116,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> EqSignature
     }
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStructure<RS, RSB> {
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStructure<RS, RSB> {
     pub fn add_impl<'a, C: Borrow<RS::Set>>(
         &self,
         mut a: &'a Polynomial<C>,
@@ -168,7 +168,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStruct
     }
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
     for PolynomialSemiRingStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
@@ -180,7 +180,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
     }
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
     for PolynomialSemiRingStructure<RS, RSB>
 {
     fn one(&self) -> Self::Set {
@@ -192,7 +192,7 @@ impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
     }
 }
 
-impl<RS: CharacteristicSignature, RSB: BorrowedStructure<RS>> CharacteristicSignature
+impl<RS: CharacteristicSignature + EqSignature, RSB: BorrowedStructure<RS>> CharacteristicSignature
     for PolynomialSemiRingStructure<RS, RSB>
 {
     fn characteristic(&self) -> Natural {
@@ -200,7 +200,7 @@ impl<RS: CharacteristicSignature, RSB: BorrowedStructure<RS>> CharacteristicSign
     }
 }
 
-impl<RS: SemiRingSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStructure<RS, RSB> {
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialSemiRingStructure<RS, RSB> {
     pub fn reduce_poly(&self, mut a: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         loop {
             if a.coeffs.is_empty() {

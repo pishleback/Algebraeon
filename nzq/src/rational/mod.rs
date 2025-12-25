@@ -6,8 +6,10 @@ use algebraeon_sets::structure::{
     CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
     Signature, ToStringSignature,
 };
+use malachite_base::num::arithmetic::traits::Pow;
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
+use std::f64;
 use std::iter::{Product, Sum};
 use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign},
@@ -157,6 +159,54 @@ macro_rules! impl_try_into_via_integer {
 impl_try_into_via_integer!(
     u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
 );
+
+impl TryFrom<f64> for Rational {
+    type Error = ();
+
+    fn try_from(value: f64) -> Result<Self, Self::Error> {
+        Ok(Self::from_malachite(
+            malachite_q::Rational::try_from(value).map_err(|_| ())?,
+        ))
+    }
+}
+
+impl TryFrom<f32> for Rational {
+    type Error = ();
+
+    fn try_from(value: f32) -> Result<Self, Self::Error> {
+        Ok(Self::from_malachite(
+            malachite_q::Rational::try_from(value).map_err(|_| ())?,
+        ))
+    }
+}
+
+impl From<&Rational> for f64 {
+    fn from(val: &Rational) -> Self {
+        let sign = val < &Rational::ZERO;
+        let (m, e, _) = val
+            .to_malachite_ref()
+            .sci_mantissa_and_exponent_round_ref::<f64>(
+                malachite_base::rounding_modes::RoundingMode::Nearest,
+            )
+            .unwrap();
+        let f: f64 = m * 2.0.pow(e);
+        if sign { -f } else { f }
+    }
+}
+
+impl From<&Rational> for f32 {
+    fn from(val: &Rational) -> Self {
+        let sign = val < &Rational::ZERO;
+        let (m, e, _) = val
+            .to_malachite_ref()
+            .sci_mantissa_and_exponent_round_ref::<f32>(
+                malachite_base::rounding_modes::RoundingMode::Nearest,
+            )
+            .unwrap();
+        let f: f32 = m * 2.0f32.pow(e);
+        if sign { -f } else { f }
+    }
+}
 
 impl FromStr for Rational {
     type Err = ();

@@ -391,12 +391,12 @@ impl<R: Clone> MultiPolynomial<R> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MultiPolynomialStructure<RS: RingSignature, RSB: BorrowedStructure<RS>> {
+pub struct MultiPolynomialStructure<RS: RingEqSignature, RSB: BorrowedStructure<RS>> {
     _coeff_ring: PhantomData<RS>,
     coeff_ring: RSB,
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS, RSB> {
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS, RSB> {
     fn new(coeff_ring: RSB) -> Self {
         Self {
             _coeff_ring: PhantomData,
@@ -409,7 +409,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
     }
 }
 
-pub trait RingToMultiPolynomialRingSignature: RingSignature {
+pub trait RingToMultiPolynomialRingSignature: RingEqSignature {
     fn multivariable_polynomial_ring<'a>(&'a self) -> MultiPolynomialStructure<Self, &'a Self> {
         MultiPolynomialStructure::new(self)
     }
@@ -418,14 +418,14 @@ pub trait RingToMultiPolynomialRingSignature: RingSignature {
         MultiPolynomialStructure::new(self)
     }
 }
-impl<RS: RingSignature> RingToMultiPolynomialRingSignature for RS {}
+impl<RS: RingEqSignature> RingToMultiPolynomialRingSignature for RS {}
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> Signature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> Signature
     for MultiPolynomialStructure<RS, RSB>
 {
 }
 
-impl<RS: RingSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToStringSignature
+impl<RS: RingEqSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToStringSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn to_string(&self, p: &Self::Set) -> String {
@@ -452,7 +452,7 @@ impl<RS: RingSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToString
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SetSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SetSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     type Set = MultiPolynomial<RS::Set>;
@@ -462,7 +462,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SetSignature
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> EqSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> EqSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -482,7 +482,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> EqSignature
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
@@ -519,7 +519,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn neg(&self, a: &Self::Set) -> Self::Set {
@@ -541,7 +541,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn one(&self) -> Self::Set {
@@ -580,12 +580,12 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> RingSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RingSignature
     for MultiPolynomialStructure<RS, RSB>
 {
 }
 
-impl<RS: CharacteristicSignature + RingSignature, RSB: BorrowedStructure<RS>>
+impl<RS: CharacteristicSignature + RingEqSignature, RSB: BorrowedStructure<RS>>
     CharacteristicSignature for MultiPolynomialStructure<RS, RSB>
 {
     fn characteristic(&self) -> Natural {
@@ -658,7 +658,7 @@ impl<RS: FavoriteAssociateSignature, RSB: BorrowedStructure<RS>> FavoriteAssocia
     }
 }
 
-impl<RS: CharZeroRingSignature, RSB: BorrowedStructure<RS>> CharZeroRingSignature
+impl<RS: CharZeroRingSignature + EqSignature, RSB: BorrowedStructure<RS>> CharZeroRingSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
@@ -666,7 +666,7 @@ impl<RS: CharZeroRingSignature, RSB: BorrowedStructure<RS>> CharZeroRingSignatur
     }
 }
 
-impl<RS: FiniteUnitsSignature, RSB: BorrowedStructure<RS>> FiniteUnitsSignature
+impl<RS: FiniteUnitsSignature + EqSignature, RSB: BorrowedStructure<RS>> FiniteUnitsSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn all_units(&self) -> Vec<Self::Set> {
@@ -963,7 +963,7 @@ where
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS, RSB> {
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS, RSB> {
     pub fn reduce(&self, p: MultiPolynomial<RS::Set>) -> MultiPolynomial<RS::Set> {
         MultiPolynomial::new(
             p.terms
@@ -1117,7 +1117,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS,
 
 impl<R: MetaType> MetaType for MultiPolynomial<R>
 where
-    R::Signature: RingSignature,
+    R::Signature: RingEqSignature,
 {
     type Signature = MultiPolynomialStructure<R::Signature, R::Signature>;
 
@@ -1128,7 +1128,7 @@ where
 
 impl<R: MetaType> Display for MultiPolynomial<R>
 where
-    R::Signature: RingSignature + ToStringSignature,
+    R::Signature: RingEqSignature + ToStringSignature,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Self::structure().to_string(self))
@@ -1137,18 +1137,18 @@ where
 
 impl<R: MetaType> PartialEq for MultiPolynomial<R>
 where
-    R::Signature: RingSignature,
+    R::Signature: RingEqSignature,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
     }
 }
 
-impl<R: MetaType> Eq for MultiPolynomial<R> where R::Signature: RingSignature {}
+impl<R: MetaType> Eq for MultiPolynomial<R> where R::Signature: RingEqSignature {}
 
 impl<R: MetaType> MultiPolynomial<R>
 where
-    R::Signature: RingSignature,
+    R::Signature: RingEqSignature,
 {
     pub fn reduce(self) -> Self {
         Self::structure().reduce(self)
