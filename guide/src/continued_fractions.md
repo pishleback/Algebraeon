@@ -16,7 +16,7 @@ use algebraeon::rings::structure::{MetaPositiveRealNthRoot, MetaRing};
 println!(
     "e: {:?}",
     e().simple_continued_fraction()
-        .into_iter()
+        .iter()
         .take(10)
         .collect::<Vec<_>>()
 );
@@ -24,7 +24,7 @@ println!(
 println!(
     "pi: {:?}",
     pi().simple_continued_fraction()
-        .into_iter()
+        .iter()
         .take(10)
         .collect::<Vec<_>>()
 );
@@ -35,7 +35,7 @@ println!(
         .cube_root()
         .unwrap()
         .simple_continued_fraction()
-        .into_iter()
+        .iter()
         .take(10)
         .collect::<Vec<_>>()
 );
