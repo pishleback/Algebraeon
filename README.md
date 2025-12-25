@@ -120,15 +120,14 @@ Find all complex roots of the polynomial
 $$f(x) = x^5 + x^2 - x + 1$$
 
 ```rust
-use algebraeon::rings::{polynomial::*, structure::*};
-use algebraeon::nzq::Integer;
+use algebraeon::rings::parsing::parse_integer_polynomial;
 
-let x = &Polynomial::<Integer>::var().into_ergonomic();
-let f = (x.pow(5) + x.pow(2) - x + 1).into_verbose();
+let f = parse_integer_polynomial("x^5 + x^2 - x + 1", "x").unwrap();
 // Find the complex roots of f(x)
 for root in f.all_complex_roots() {
     println!("root {} of degree {}", root, root.degree());
 }
+
 /*
 Output:
     root ≈-1.328 of degree 3
@@ -137,6 +136,7 @@ Output:
     root -i of degree 2
     root i of degree 2
 */
+
 ```
 
 Despite the output, the roots found are _not_ numerical approximations. Rather, they are stored internally as exact algebraic numbers by using isolating boxes in the complex plane and isolating intervals on the real line.
