@@ -194,6 +194,12 @@ impl From<&Rational> for f64 {
     }
 }
 
+impl From<Rational> for f64 {
+    fn from(val: Rational) -> Self {
+        Self::from(&val)
+    }
+}
+
 impl From<&Rational> for f32 {
     fn from(val: &Rational) -> Self {
         let sign = val < &Rational::ZERO;
@@ -205,6 +211,12 @@ impl From<&Rational> for f32 {
             .unwrap();
         let f: f32 = m * 2.0f32.pow(e);
         if sign { -f } else { f }
+    }
+}
+
+impl From<Rational> for f32 {
+    fn from(val: Rational) -> Self {
+        Self::from(&val)
     }
 }
 
