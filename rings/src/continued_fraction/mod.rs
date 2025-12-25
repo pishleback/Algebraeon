@@ -103,6 +103,12 @@ pub trait IrrationalSimpleContinuedFractionGenerator: Debug + Send + Sync {
     // {
     //     (0usize..).map(move |_| self.next())
     // }
+    fn into_continued_fraction(self) -> IrrationalSimpleContinuedFraction
+    where
+        Self: Sized + 'static,
+    {
+        self.into()
+    }
 }
 
 #[derive(Debug)]
@@ -116,8 +122,10 @@ pub struct IrrationalSimpleContinuedFraction {
     cache: Arc<Mutex<IrrationalSimpleContinuedFractionCache>>,
 }
 
-impl IrrationalSimpleContinuedFraction {
-    pub fn new<G: IrrationalSimpleContinuedFractionGenerator + 'static>(g: G) -> Self {
+impl<G: IrrationalSimpleContinuedFractionGenerator + 'static> From<G>
+    for IrrationalSimpleContinuedFraction
+{
+    fn from(g: G) -> Self {
         Self {
             cache: Arc::new(Mutex::new(IrrationalSimpleContinuedFractionCache {
                 coeffs: vec![],
@@ -141,9 +149,7 @@ impl SimpleContinuedFraction for IrrationalSimpleContinuedFraction {
 mod eulers_constant;
 
 pub fn eulers_constant() -> IrrationalSimpleContinuedFraction {
-    IrrationalSimpleContinuedFraction::new(
-        eulers_constant::EulersConstantSimpleContinuedFractionGenerator::new(),
-    )
+    eulers_constant::EulersConstantSimpleContinuedFractionGenerator::new().into()
 }
 
 #[derive(Debug)]

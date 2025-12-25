@@ -55,23 +55,25 @@ Defining the Golden Ratio in terms of its continued fraction.
 ```rust
 use algebraeon::nzq::Integer;
 use algebraeon::rings::approximation::real_intervals::Point;
-use algebraeon::rings::continued_fraction::SimpleContinuedFraction;
+use algebraeon::rings::continued_fraction::IrrationalSimpleContinuedFractionGenerator;
 use algebraeon::rings::structure::MetaRealSubset;
 
 #[derive(Debug, Clone)]
 struct MyContinuedFraction {}
 
-impl SimpleContinuedFraction for MyContinuedFraction {
+impl IrrationalSimpleContinuedFractionGenerator for MyContinuedFraction {
     fn next(&mut self) -> Integer {
         Integer::ONE
     }
 }
 
-let phi = Point::from_continued_fraction(MyContinuedFraction {});
+let phi = Point::from_continued_fraction(MyContinuedFraction {}.into_continued_fraction());
 
 println!("phi = {}", phi.as_f64());
+
 /*
 Output:
     phi = 1.618033988749895
 */
+
 ```
