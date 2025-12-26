@@ -182,6 +182,9 @@ impl TryFrom<f32> for Rational {
 
 impl From<&Rational> for f64 {
     fn from(val: &Rational) -> Self {
+        if val == &Rational::ZERO {
+            return 0.0;
+        }
         let sign = val < &Rational::ZERO;
         let (m, e, _) = val
             .to_malachite_ref()
@@ -202,6 +205,9 @@ impl From<Rational> for f64 {
 
 impl From<&Rational> for f32 {
     fn from(val: &Rational) -> Self {
+        if val == &Rational::ZERO {
+            return 0.0;
+        }
         let sign = val < &Rational::ZERO;
         let (m, e, _) = val
             .to_malachite_ref()
