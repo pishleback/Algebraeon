@@ -66,11 +66,22 @@ impl QuadraticNumberFieldElement {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QuadraticNumberFieldStructure<D: BorrowedStructure<Integer>> {
-    /// A squarefree integer
+    // A squarefree integer
     d: D,
 }
 
 impl QuadraticNumberFieldStructure<Integer> {
+    /// Given a squarefree integer `d`, return the quadratic number field `QQ[sqrt(d)]`.
+    ///
+    /// Returns an `Err` if `d` is not squarefree.
+    pub fn new(d: Integer) -> Result<Self, ()> {
+        if d.is_squarefree() {
+            Ok(Self { d })
+        } else {
+            Err(())
+        }
+    }
+
     pub fn new_unchecked(d: Integer) -> Self {
         debug_assert!(d.is_squarefree());
         Self { d }
