@@ -1,6 +1,5 @@
 use super::natural::factorization::NaturalCanonicalFactorizationStructure;
-use super::natural::factorization::factor;
-use super::natural::factorization::primes::is_prime;
+use crate::natural::NaturalFns;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
@@ -119,7 +118,7 @@ impl UniqueFactorizationDomainSignature for IntegerCanonicalStructure {
     // }
 
     fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(is_prime(&a.abs()))
+        Some(a.abs().is_prime())
     }
 }
 
@@ -133,7 +132,7 @@ impl FactorableSignature for IntegerCanonicalStructure {
             } else {
                 Integer::from(1)
             };
-            let f = factor(a.abs()).unwrap();
+            let f = a.abs().factor().unwrap();
             Some(
                 Integer::structure()
                     .factorizations()

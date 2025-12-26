@@ -1,5 +1,5 @@
 use algebraeon_nzq::{Integer, Natural, Rational};
-use algebraeon_rings::natural::factorization::factor;
+use algebraeon_rings::natural::NaturalFns;
 use algebraeon_rings::parsing::{parse_integer_polynomial, parse_rational_polynomial};
 use algebraeon_rings::polynomial::Polynomial;
 use algebraeon_rings::structure::MetaFactorableSignature;
@@ -11,7 +11,7 @@ use std::str::FromStr;
 #[benches::small(iter = (0u8..=20).map(Natural::from))]
 #[bench::large1(Natural::from_str("706000565581575429997696139445280900").unwrap())]
 fn bench_factor_natural(value: Natural) {
-    black_box(factor(value));
+    black_box(value.factor());
 }
 
 library_benchmark_group!(

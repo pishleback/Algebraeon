@@ -1,5 +1,5 @@
 use crate::{
-    natural::factorization::{NaturalCanonicalFactorizationStructure, factor, primes::is_prime},
+    natural::{NaturalFns, factorization::NaturalCanonicalFactorizationStructure},
     structure::{
         FactoredSignature, MetaFactorableSignature, RingToQuotientFieldSignature,
         RingToQuotientRingSignature, SemiRingSignature,
@@ -84,7 +84,7 @@ pub fn legendre_symbol(
     a: &Integer,
     p: &Natural,
 ) -> Result<QuadraticSymbolValue, LegendreSymbolError> {
-    if p % Natural::TWO == Natural::ZERO || !is_prime(p) {
+    if p % Natural::TWO == Natural::ZERO || !p.is_prime() {
         Err(LegendreSymbolError::BottomNotOddPrime)
     } else {
         let mod_p = Integer::structure_ref().quotient_field_unchecked(Integer::from(p));
@@ -117,7 +117,7 @@ fn jacobi_symbol_by_factorization(
         let mut val = QuadraticSymbolValue::Pos;
         for (p, k) in Natural::structure()
             .factorizations()
-            .to_powers(&factor(n.clone()).unwrap())
+            .to_powers(&n.clone().factor().unwrap())
         {
             val = val * legendre_symbol(&a, p).unwrap().nat_pow(k);
         }
