@@ -80,7 +80,7 @@ pub trait IdealsArithmeticSignature<Ring: RingSignature, RingB: BorrowedStructur
         self.ideal_contains(a, &self.principal_ideal(x))
     }
 
-    /// Intersection of ideals
+    /// Intersection of two ideals
     fn ideal_intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 
     /// Sum of two ideals
@@ -98,7 +98,7 @@ pub trait IdealsArithmeticSignature<Ring: RingSignature, RingB: BorrowedStructur
     /// Product of two ideals
     fn ideal_mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 
-    /// Sum of many ideals
+    /// Product of many ideals
     fn ideal_product(&self, ideals: Vec<impl Into<Self::Set>>) -> Self::Set {
         let mut total = self.unit_ideal();
         for i in ideals {

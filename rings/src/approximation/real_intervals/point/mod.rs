@@ -280,7 +280,7 @@ Inverse called on an approximate value which later turned out to be exactly 0.",
 
 impl SemiRingUnitsSignature for PointCanonicalStructure {
     /// # Warning
-    /// Mail fail to halt if the input is zero.
+    /// May fail to halt if the input is zero.
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
         let nbd = a.lock().rational_interval_neighbourhood();
         match nbd {

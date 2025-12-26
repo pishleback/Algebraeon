@@ -16,7 +16,7 @@ use algebraeon::rings::structure::{MetaPositiveRealNthRoot, MetaRing};
 println!(
     "e: {:?}",
     e().simple_continued_fraction()
-        .into_iter()
+        .iter()
         .take(10)
         .collect::<Vec<_>>()
 );
@@ -24,7 +24,7 @@ println!(
 println!(
     "pi: {:?}",
     pi().simple_continued_fraction()
-        .into_iter()
+        .iter()
         .take(10)
         .collect::<Vec<_>>()
 );
@@ -35,7 +35,7 @@ println!(
         .cube_root()
         .unwrap()
         .simple_continued_fraction()
-        .into_iter()
+        .iter()
         .take(10)
         .collect::<Vec<_>>()
 );
@@ -48,30 +48,113 @@ Output:
 */
 ```
 
+We can also compute continued fractions for rational numbers, for example
+
+\\[-\frac{-5678}{1234} = -5 + \cfrac{1}{2 + \cfrac{1}{1 + \cfrac{1}{1 + \cfrac{1}{30 + \cfrac{1}{4}}}}}\\]
+
+```rust
+use algebraeon::{
+    nzq::{Integer, Rational},
+    rings::continued_fraction::{MetaToSimpleContinuedFraction, SimpleContinuedFraction},
+};
+use std::str::FromStr;
+
+assert_eq!(
+    Rational::from_str("-5678/1234")
+        .unwrap()
+        .simple_continued_fraction()
+        .iter()
+        .map(|x| x.as_ref().clone())
+        .collect::<Vec<_>>(),
+    vec![
+        Integer::from(-5),
+        Integer::from(2),
+        Integer::from(1),
+        Integer::from(1),
+        Integer::from(30),
+        Integer::from(4)
+    ]
+);
+```
+
+
 ## Defining a Real Number by Its Continued Fraction Coefficients
 
-Defining the Golden Ratio in terms of its continued fraction. 
+Defining the real number
+
+\\[1 + \cfrac{1}{2 + \cfrac{1}{3 + \cfrac{1}{4 + \ddots}}} = 1.433127...\\]
 
 ```rust
 use algebraeon::nzq::Integer;
 use algebraeon::rings::approximation::real_intervals::Point;
-use algebraeon::rings::continued_fraction::SimpleContinuedFraction;
+use algebraeon::rings::continued_fraction::IrrationalSimpleContinuedFractionGenerator;
 use algebraeon::rings::structure::MetaRealSubset;
 
 #[derive(Debug, Clone)]
-struct MyContinuedFraction {}
+struct MyContinuedFraction {
+    n: usize,
+}
 
-impl SimpleContinuedFraction for MyContinuedFraction {
+impl IrrationalSimpleContinuedFractionGenerator for MyContinuedFraction {
     fn next(&mut self) -> Integer {
-        Integer::ONE
+        self.n += 1;
+        Integer::from(self.n)
     }
 }
 
-let phi = Point::from_continued_fraction(MyContinuedFraction {});
+let value =
+    Point::from_continued_fraction(MyContinuedFraction { n: 0 }.into_continued_fraction());
+
+println!("value = {}", value.as_f64());
+
+/*
+Output:
+    value = 1.4331274267223117
+*/
+```
+
+Defining the Golden Ratio
+
+\\[\varphi = 1 + \cfrac{1}{1 + \cfrac{1}{1 + \cfrac{1}{1 + \ddots}}}\\]
+
+```rust
+use algebraeon::nzq::Integer;
+use algebraeon::rings::approximation::real_intervals::Point;
+use algebraeon::rings::continued_fraction::PeriodicSimpleContinuedFraction;
+use algebraeon::rings::structure::MetaRealSubset;
+
+let phi = Point::from_continued_fraction(
+    PeriodicSimpleContinuedFraction::new(vec![], vec![Integer::from(1)]).unwrap(),
+);
 
 println!("phi = {}", phi.as_f64());
+
 /*
 Output:
     phi = 1.618033988749895
+*/
+
+```
+
+Defining \\(\sqrt{2}\\)
+
+\\[\sqrt{2} = 1 + \cfrac{1}{2 + \cfrac{1}{2 + \cfrac{1}{2 + \ddots}}}\\]
+
+```rust
+use algebraeon::nzq::Integer;
+use algebraeon::rings::approximation::real_intervals::Point;
+use algebraeon::rings::continued_fraction::PeriodicSimpleContinuedFraction;
+use algebraeon::rings::structure::MetaRealSubset;
+
+let sqrt2 = Point::from_continued_fraction(
+    PeriodicSimpleContinuedFraction::new(vec![Integer::from(1)], vec![Integer::from(2)])
+        .unwrap(),
+);
+
+println!("sqrt2 = {}", sqrt2.as_f64());
+
+/*
+Output:
+    sqrt2 = 1.4142135623730951
 */
 ```
