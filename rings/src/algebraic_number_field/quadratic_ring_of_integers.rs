@@ -1,90 +1,137 @@
 use crate::{
-    algebraic_number_field::quadratic_number_field::QuadraticNumberFieldElement,
+    algebraic_number_field::{
+        quadratic_number_field::{QuadraticNumberFieldElement, QuadraticNumberFieldStructure},
+        structure::AlgebraicNumberFieldSignature,
+    },
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroRingSignature,
-        CharacteristicSignature, DedekindDomainSignature, IntegralDomainSignature, RingSignature,
-        SemiRingSignature, SemiRingUnitsSignature,
+        CharacteristicSignature, DedekindDomainSignature, IntegralDomainSignature,
+        MetaFactorableSignature, RingDivisionError, RingSignature, SemiRingSignature,
+        SemiRingUnitsSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
-use algebraeon_sets::structure::{EqSignature, SetSignature, Signature};
+use algebraeon_sets::structure::{BorrowedStructure, EqSignature, SetSignature, Signature};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct QuadraticRingOfIntegersStructure {
+pub struct QuadraticRingOfIntegersStructure<D: BorrowedStructure<Integer>> {
     /// A squarefree integer
-    d: Integer,
+    d: D,
 }
 
-impl Signature for QuadraticRingOfIntegersStructure {}
+impl QuadraticRingOfIntegersStructure<Integer> {
+    pub fn new_unchecked(d: Integer) -> Self {
+        debug_assert!(d.is_squarefree());
+        Self { d }
+    }
+}
 
-impl SetSignature for QuadraticRingOfIntegersStructure {
+impl<'a> QuadraticRingOfIntegersStructure<&'a Integer> {
+    pub fn new_unchecked_ref(d: &'a Integer) -> Self {
+        debug_assert!(d.is_squarefree());
+        Self { d }
+    }
+}
+
+impl<D: BorrowedStructure<Integer>> QuadraticRingOfIntegersStructure<D> {
+    pub fn d(&self) -> &Integer {
+        self.d.borrow()
+    }
+
+    pub fn anf<'d>(&'d self) -> QuadraticNumberFieldStructure<&'d Integer> {
+        QuadraticNumberFieldStructure::new_unchecked_ref(self.d())
+    }
+}
+
+impl<D: BorrowedStructure<Integer>> Signature for QuadraticRingOfIntegersStructure<D> {}
+
+impl<D: BorrowedStructure<Integer>> SetSignature for QuadraticRingOfIntegersStructure<D> {
     type Set = QuadraticNumberFieldElement;
 
-    fn is_element(&self, _: &Self::Set) -> Result<(), String> {
-        Ok(())
+    fn is_element(&self, a: &Self::Set) -> Result<(), String> {
+        if self.anf().is_algebraic_integer(a) {
+            Ok(())
+        } else {
+            Err("It is not an algebraic integer".to_string())
+        }
     }
 }
 
-impl EqSignature for QuadraticRingOfIntegersStructure {
+impl<D: BorrowedStructure<Integer>> EqSignature for QuadraticRingOfIntegersStructure<D> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        todo!()
+        self.anf().equal(a, b)
     }
 }
 
-impl AdditiveMonoidSignature for QuadraticRingOfIntegersStructure {
+impl<D: BorrowedStructure<Integer>> AdditiveMonoidSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
     fn zero(&self) -> Self::Set {
-        todo!()
+        self.anf().zero()
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        todo!()
+        self.anf().add(a, b)
     }
 }
 
-impl AdditiveGroupSignature for QuadraticRingOfIntegersStructure {
+impl<D: BorrowedStructure<Integer>> AdditiveGroupSignature for QuadraticRingOfIntegersStructure<D> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        todo!()
+        self.anf().neg(a)
     }
 }
 
-impl SemiRingSignature for QuadraticRingOfIntegersStructure {
+impl<D: BorrowedStructure<Integer>> SemiRingSignature for QuadraticRingOfIntegersStructure<D> {
     fn one(&self) -> Self::Set {
-        todo!()
+        self.anf().one()
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        todo!()
+        self.anf().mul(a, b)
     }
 }
 
-impl RingSignature for QuadraticRingOfIntegersStructure {}
+impl<D: BorrowedStructure<Integer>> RingSignature for QuadraticRingOfIntegersStructure<D> {}
 
-impl SemiRingUnitsSignature for QuadraticRingOfIntegersStructure {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
-        todo!()
+impl<D: BorrowedStructure<Integer>> SemiRingUnitsSignature for QuadraticRingOfIntegersStructure<D> {
+    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        let b = self.anf().inv(a)?;
+        if self.anf().is_algebraic_integer(&b) {
+            Ok(b)
+        } else {
+            Err(RingDivisionError::NotDivisible)
+        }
     }
 }
 
-impl IntegralDomainSignature for QuadraticRingOfIntegersStructure {
-    fn div(
-        &self,
-        a: &Self::Set,
-        b: &Self::Set,
-    ) -> Result<Self::Set, crate::structure::RingDivisionError> {
-        todo!()
+impl<D: BorrowedStructure<Integer>> IntegralDomainSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
+    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+        let d = self.anf().div(a, b)?;
+        if self.anf().is_algebraic_integer(&d) {
+            Ok(d)
+        } else {
+            Err(RingDivisionError::NotDivisible)
+        }
     }
 }
 
-impl CharacteristicSignature for QuadraticRingOfIntegersStructure {
+impl<D: BorrowedStructure<Integer>> CharacteristicSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
     fn characteristic(&self) -> Natural {
         Natural::ZERO
     }
 }
 
-impl CharZeroRingSignature for QuadraticRingOfIntegersStructure {
+impl<D: BorrowedStructure<Integer>> CharZeroRingSignature for QuadraticRingOfIntegersStructure<D> {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
-        todo!()
+        self.anf().try_to_int(x)
     }
 }
 
-impl DedekindDomainSignature for QuadraticRingOfIntegersStructure {}
+impl<D: BorrowedStructure<Integer>> DedekindDomainSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
+}

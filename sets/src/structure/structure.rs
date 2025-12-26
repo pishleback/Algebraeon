@@ -87,8 +87,8 @@ impl<S: FiniteSetSignature, R: Rng> Iterator for FiniteSetRandomElementGenerator
     }
 }
 
-pub trait BorrowedStructure<S: Signature>: Borrow<S> + Clone + Debug + Eq + Send + Sync {}
-impl<S: Signature, BS: Borrow<S> + Clone + Debug + Eq + Send + Sync> BorrowedStructure<S> for BS {}
+pub trait BorrowedStructure<S>: Borrow<S> + Clone + Debug + Eq + Send + Sync {}
+impl<S, BS: Borrow<S> + Clone + Debug + Eq + Send + Sync> BorrowedStructure<S> for BS {}
 
 #[cfg(test)]
 mod tests {
