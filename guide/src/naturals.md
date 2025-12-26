@@ -92,7 +92,7 @@ assert_eq!(gcd(a.clone(), b.clone()), Natural::from(1u32));
 assert_eq!(lcm(a.clone(), b.clone()), Natural::from(60u32));
 
 // is_prime
-assert!(a.is_prime()); // 12 is not prime
+assert!(!a.is_prime()); // 12 is not prime
 assert!(b.is_prime()); // 5 is prime
 
 // Euler's totient function
