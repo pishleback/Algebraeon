@@ -134,75 +134,19 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         }
     }
 
-    // Order of the multiplicative group of the quotient modulo the ideal.
-    pub fn euler_phi(&self, ideal: &RingOfIntegersIdeal) -> Option<Natural> {
-        match ideal {
-            RingOfIntegersIdeal::Zero => None,
-            RingOfIntegersIdeal::NonZero { .. } => Some(
-                self.factorizations()
-                    .into_powers(self.factor_ideal(ideal).unwrap())
-                    .iter()
-                    .map(|(prime_ideal, exponent)| {
-                        let norm = self.ideal_norm(prime_ideal.ideal());
-                        let e_minus_1 = exponent - Natural::ONE;
-                        (&norm - Natural::ONE) * norm.pow(&e_minus_1)
-                    })
-                    .fold(Natural::ONE, |acc, x| acc * x),
-            ),
-        }
-    }
-
-    /// Determine whether an ideal is a square, i.e. every prime ideal in its factorization has even valuation.
-    pub fn is_square(&self, ideal: &RingOfIntegersIdeal) -> bool {
-        match ideal {
-            RingOfIntegersIdeal::Zero => true,
-            RingOfIntegersIdeal::NonZero { .. } => self
-                .factorizations()
-                .to_powers(
-                    &self
-                        .factor_ideal(ideal)
-                        .expect("failed to factor non-zero ideal when checking if it is a square"),
-                )
-                .into_iter()
-                .all(|(_, exponent)| exponent % Natural::TWO == Natural::ZERO),
-        }
-    }
-
-    /// Return true if a non-zero ideal factors as a product of distinct prime ideals.
-    pub fn is_squarefree(&self, ideal: &RingOfIntegersIdeal) -> bool {
-        match ideal {
-            RingOfIntegersIdeal::Zero => false,
-            RingOfIntegersIdeal::NonZero { .. } => {
-                self.factorizations()
-                    .to_powers(&self.factor_ideal(ideal).expect(
-                        "failed to factor non-zero ideal when checking if it is squarefree",
-                    ))
-                    .into_iter()
-                    .all(|(_, exponent)| exponent <= &Natural::ONE)
-            }
-        }
-    }
-
-    /// Return an ideal whose square equals the input, if it exists.
-    pub fn sqrt_if_square(&self, ideal: &RingOfIntegersIdeal) -> Option<RingOfIntegersIdeal> {
-        match ideal {
-            RingOfIntegersIdeal::Zero => Some(self.zero_ideal()),
-            RingOfIntegersIdeal::NonZero { .. } => {
-                let factorization = self.factor_ideal(ideal)?;
-                let mut sqrt_factor_powers = vec![];
-                for (prime, exponent) in self.factorizations().into_powers(factorization) {
-                    if exponent.clone() % Natural::TWO != Natural::ZERO {
-                        return None;
-                    }
-                    let half = exponent / Natural::TWO;
-                    if half != Natural::ZERO {
-                        sqrt_factor_powers.push((prime, half));
-                    }
-                }
-                let sqrt_factorization = self.factorizations().new_powers(sqrt_factor_powers);
-                Some(self.factorizations().expanded(&sqrt_factorization))
-            }
-        }
+    /// The order of the multiplicative group of the quotient modulo the ideal.
+    fn euler_phi(&self, ideal: &RingOfIntegersIdeal) -> Option<Natural> {
+        Some(
+            self.factorizations()
+                .into_powers(self.factor_ideal(ideal)?)
+                .iter()
+                .map(|(prime_ideal, exponent)| {
+                    let norm = self.ideal_norm(prime_ideal.ideal());
+                    let e_minus_1 = exponent - Natural::ONE;
+                    (&norm - Natural::ONE) * norm.pow(&e_minus_1)
+                })
+                .fold(Natural::ONE, |acc, x| acc * x),
+        )
     }
 
     /// generate all ideals of norm equal to n
