@@ -30,16 +30,11 @@ impl QuadraticRingOfIntegersStructure<Integer> {
             Err(())
         }
     }
-
-    pub fn new_unchecked(d: Integer) -> Self {
-        debug_assert!(d.is_squarefree());
-        Self { d }
-    }
 }
 
-impl<'a> QuadraticRingOfIntegersStructure<&'a Integer> {
-    pub fn new_unchecked_ref(d: &'a Integer) -> Self {
-        debug_assert!(d.is_squarefree());
+impl<D: BorrowedStructure<Integer>> QuadraticRingOfIntegersStructure<D> {
+    pub fn new_unchecked(d: D) -> Self {
+        debug_assert!(d.borrow().is_squarefree());
         Self { d }
     }
 }
@@ -50,7 +45,7 @@ impl<D: BorrowedStructure<Integer>> QuadraticRingOfIntegersStructure<D> {
     }
 
     pub fn anf<'d>(&'d self) -> QuadraticNumberFieldStructure<&'d Integer> {
-        QuadraticNumberFieldStructure::new_unchecked_ref(self.d())
+        QuadraticNumberFieldStructure::new_unchecked(self.d())
     }
 }
 
