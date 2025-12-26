@@ -3,5 +3,7 @@ pub mod ideal;
 pub mod integer_lattice_ring_of_integers;
 pub mod polynomial;
 pub mod polynomial_quotient_number_field;
+pub mod quadratic_number_field;
+pub mod quadratic_ring_of_integers;
 pub mod ring_of_integer_extensions;
 pub mod structure;
