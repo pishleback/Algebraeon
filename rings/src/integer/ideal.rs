@@ -1,5 +1,5 @@
 use crate::{
-    natural::factorization::{NaturalCanonicalFactorizationStructure, factor, primes::is_prime},
+    natural::{NaturalFns, factorization::NaturalCanonicalFactorizationStructure},
     structure::*,
 };
 use algebraeon_nzq::{traits::Abs, *};
@@ -88,7 +88,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
         &self,
         ideal: &Self::Set,
     ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
-        let f = factor(ideal.clone())?;
+        let f = ideal.clone().factor()?;
         Some(
             self.factorizations().new_powers(
                 Natural::structure()
@@ -104,7 +104,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
 
 impl DedekindDomainPrimeIdeal<Natural> {
     pub fn try_from_nat(n: Natural) -> Result<Self, ()> {
-        if is_prime(&n) {
+        if n.is_prime() {
             Ok(DedekindDomainPrimeIdeal::from_ideal_unchecked(n))
         } else {
             Err(())

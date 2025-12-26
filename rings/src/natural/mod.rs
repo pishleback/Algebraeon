@@ -58,3 +58,17 @@ impl EuclideanDivisionSignature for NaturalCanonicalStructure {
         }
     }
 }
+
+pub trait NaturalFns {
+    fn is_prime(&self) -> bool;
+    fn factor(self) -> Option<Vec<(Natural, Natural)>>;
+}
+
+impl NaturalFns for Natural {
+    fn is_prime(&self) -> bool {
+        factorization::primes::is_prime(self)
+    }
+    fn factor(self) -> Option<Vec<(Natural, Natural)>> {
+        factorization::factor(self)
+    }
+}

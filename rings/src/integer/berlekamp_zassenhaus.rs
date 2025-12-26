@@ -58,7 +58,7 @@ some improvements
 
 */
 
-use crate::natural::factorization::primes::is_prime;
+use crate::natural::NaturalFns;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::primes;
@@ -119,7 +119,7 @@ struct BerlekampZassenhausAlgorithmStateAtPrime {
 
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn new_at_prime(state: &BerlekampAassenhausAlgorithmState, p: Natural) -> Option<Self> {
-        debug_assert!(is_prime(&p));
+        debug_assert!(p.is_prime());
         let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p));
         let poly_mod_p = mod_p.polynomial_ring();
         if poly_mod_p.degree(&state.poly) == Some(state.degree) {

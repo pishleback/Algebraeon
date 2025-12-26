@@ -204,7 +204,7 @@ fn exclude_prime_inputs(n: ToFactor, algorithm: impl Fn(Natural) -> Vec<Factor>)
     algorithm(n.n)
 }
 
-pub fn factor(n: Natural) -> Option<Vec<(Natural, Natural)>> {
+pub(super) fn factor(n: Natural) -> Option<Vec<(Natural, Natural)>> {
     if n == Natural::ZERO {
         None
     } else if n == Natural::ONE {

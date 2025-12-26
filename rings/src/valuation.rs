@@ -4,8 +4,7 @@ use algebraeon_nzq::{
 };
 use std::ops::{Add, Mul, Sub};
 
-use crate::natural::factorization::primes::is_prime;
-
+use crate::natural::NaturalFns;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Valuation {
     Infinity,
@@ -212,7 +211,7 @@ impl Mul<&Valuation> for &Valuation {
 }
 
 pub fn padic_nat_valuation(p: &Natural, mut n: Natural) -> Valuation {
-    debug_assert!(is_prime(p));
+    debug_assert!(p.is_prime());
     if n == Natural::ZERO {
         Valuation::Infinity
     } else {
