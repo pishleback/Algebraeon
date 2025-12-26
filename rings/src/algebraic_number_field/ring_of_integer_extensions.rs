@@ -12,7 +12,6 @@ use algebraeon_sets::structure::*;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 
-///
 /// Q -> K
 /// ↑    ↑
 /// Z -> R
