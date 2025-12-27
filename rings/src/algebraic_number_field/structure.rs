@@ -14,11 +14,15 @@ use algebraeon_sets::structure::{
     BorrowedStructure, FiniteSetSignature, InjectiveFunction, MetaType,
 };
 
+pub trait AlgebraicIntegerRingSignature: DedekindDomainSignature + CharZeroRingSignature {
+    type AlgebraicNumberField: AlgebraicNumberFieldSignature<RingOfIntegers = Self>;
+}
+
 /// An algebraic number field is a field of characteristic zero such that
 /// the inclusion of its rational subfield is finite dimensional
 pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type Basis: FiniteSetSignature;
-    type RingOfIntegers: DedekindDomainSignature + CharZeroRingSignature;
+    type RingOfIntegers: AlgebraicIntegerRingSignature<AlgebraicNumberField = Self>;
     type RingOfIntegersInclusion: AlgebraicIntegerRingInAlgebraicNumberField<Self>;
     type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
 

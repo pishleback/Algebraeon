@@ -1,6 +1,8 @@
 use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{
-    algebraic_number_field::structure::AlgebraicNumberFieldSignature,
+    algebraic_number_field::structure::{
+        AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature,
+    },
     matrix::Matrix,
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
@@ -107,7 +109,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         &self.integral_basis
     }
 
-    pub fn basis_element(&self, i: usize) -> &Polynomial<Rational> {
+    pub fn integral_basis_element(&self, i: usize) -> &Polynomial<Rational> {
         assert!(i < self.degree());
         &self.integral_basis[i]
     }
@@ -115,9 +117,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
     pub fn anf(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
         &self.algebraic_number_field
     }
-}
 
-impl RingOfIntegersWithIntegralBasisStructure {
     pub fn roi_to_anf(&self, elem: &Vec<Integer>) -> Polynomial<Rational> {
         debug_assert!(self.is_element(elem).is_ok());
         let n = self.degree();
@@ -295,6 +295,10 @@ impl CharZeroRingSignature for RingOfIntegersWithIntegralBasisStructure {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
         self.anf().try_to_int(&self.roi_to_anf(x))
     }
+}
+
+impl AlgebraicIntegerRingSignature for RingOfIntegersWithIntegralBasisStructure {
+    type AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure;
 }
 
 #[derive(Debug, Clone)]

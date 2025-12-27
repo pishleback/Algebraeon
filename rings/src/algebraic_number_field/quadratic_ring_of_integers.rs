@@ -1,7 +1,7 @@
 use crate::{
     algebraic_number_field::{
         quadratic_number_field::{QuadraticNumberFieldElement, QuadraticNumberFieldStructure},
-        structure::AlgebraicNumberFieldSignature,
+        structure::{AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature},
     },
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroRingSignature,
@@ -140,4 +140,10 @@ impl<D: BorrowedStructure<Integer>> CharZeroRingSignature for QuadraticRingOfInt
 impl<D: BorrowedStructure<Integer>> DedekindDomainSignature
     for QuadraticRingOfIntegersStructure<D>
 {
+}
+
+impl<D: BorrowedStructure<Integer>> AlgebraicIntegerRingSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
+    type AlgebraicNumberField = QuadraticNumberFieldStructure<D>;
 }

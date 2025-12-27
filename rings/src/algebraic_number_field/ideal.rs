@@ -239,12 +239,10 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                 (0..n)
                     .map(|i| {
                         self.ring()
-                            .try_anf_to_roi(
-                                &self
-                                    .ring()
-                                    .anf()
-                                    .mul(self.ring().basis_element(i), &self.ring().roi_to_anf(a)),
-                            )
+                            .try_anf_to_roi(&self.ring().anf().mul(
+                                self.ring().integral_basis_element(i),
+                                &self.ring().roi_to_anf(a),
+                            ))
                             .unwrap()
                     })
                     .collect(),
