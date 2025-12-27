@@ -1,5 +1,5 @@
 use crate::{
-    algebraic_number_field::ring_of_integer_extensions::RingOfIntegersExtension,
+    algebraic_number_field::ring_of_integer_extension::RingOfIntegersExtension,
     integer::ideal::IntegerIdealsStructure,
     structure::{
         CharZeroFieldSignature, CharZeroRingSignature, DedekindDomainIdealsSignature,

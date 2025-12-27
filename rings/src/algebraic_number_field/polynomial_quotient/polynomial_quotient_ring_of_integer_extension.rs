@@ -1,132 +1,28 @@
-use super::structure::AlgebraicNumberFieldSignature;
-use crate::algebraic_number_field::ideal::RingOfIntegersIdeal;
-use crate::algebraic_number_field::ideal::RingOfIntegersIdealsStructure;
-use crate::algebraic_number_field::integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure;
-use crate::algebraic_number_field::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
-use crate::algebraic_number_field::structure::AlgebraicIntegerRingInAlgebraicNumberFieldSignature;
-use crate::algebraic_number_field::structure::AlgebraicIntegerRingSignature;
-use crate::algebraic_number_field::structure::RingOfIntegersToAlgebraicNumberFieldInclusion;
-use crate::integer::ideal::IntegerIdealsStructure;
-use crate::polynomial::RingToPolynomialSignature;
-use crate::structure::*;
-use algebraeon_nzq::traits::Abs;
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
-use std::borrow::Cow;
-use std::marker::PhantomData;
-
-/// Q -> K
-/// ↑    ↑
-/// Z -> R
-///
-/// Where Q is the rationals, Z is the integers, K is an algebraic number field, R is its ring of integers
-///
-#[derive(Debug, Clone)]
-pub struct RingOfIntegersExtension<
-    R: AlgebraicIntegerRingSignature<AlgebraicNumberField = K>,
-    RB: BorrowedStructure<R>,
-    K: AlgebraicNumberFieldSignature<RingOfIntegers = R>,
-    KB: BorrowedStructure<K>,
-    RtoK: BorrowedMorphism<R, K, RingOfIntegersToAlgebraicNumberFieldInclusion<R, RB, K, KB>>,
-    IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
-    IdealsR: DedekindDomainIdealsSignature<R, RB>,
-> {
-    _r: PhantomData<R>,
-    _rb: PhantomData<RB>,
-    _k: PhantomData<K>,
-    _kb: PhantomData<KB>,
-    r_to_k: RtoK,
-    ideals_z: IdealsZ,
-    ideals_r: IdealsR,
-}
-
-impl<
-    R: AlgebraicIntegerRingSignature<AlgebraicNumberField = K>,
-    RB: BorrowedStructure<R>,
-    K: AlgebraicNumberFieldSignature<RingOfIntegers = R>,
-    KB: BorrowedStructure<K>,
-    RtoK: BorrowedMorphism<R, K, RingOfIntegersToAlgebraicNumberFieldInclusion<R, RB, K, KB>>,
-    IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
-    IdealsR: DedekindDomainIdealsSignature<R, RB>,
-> RingOfIntegersExtension<R, RB, K, KB, RtoK, IdealsZ, IdealsR>
-{
-    pub fn new_integer_extension(r_to_k: RtoK, ideals_z: IdealsZ, ideals_r: IdealsR) -> Self {
-        Self {
-            _r: PhantomData,
-            _rb: PhantomData,
-            _k: PhantomData,
-            _kb: PhantomData,
-            r_to_k,
-            ideals_z,
-            ideals_r,
-        }
-    }
-}
-
-impl<
-    R: AlgebraicIntegerRingSignature<AlgebraicNumberField = K>,
-    RB: BorrowedStructure<R>,
-    K: AlgebraicNumberFieldSignature<RingOfIntegers = R>,
-    KB: BorrowedStructure<K>,
-    RtoK: BorrowedMorphism<R, K, RingOfIntegersToAlgebraicNumberFieldInclusion<R, RB, K, KB>>,
-    IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
-    IdealsR: DedekindDomainIdealsSignature<R, RB>,
-> IntegralClosureExtension for RingOfIntegersExtension<R, RB, K, KB, RtoK, IdealsZ, IdealsR>
-where
-    RingOfIntegersToAlgebraicNumberFieldInclusion<R, RB, K, KB>:
-        AlgebraicIntegerRingInAlgebraicNumberFieldSignature<
-                AlgebraicNumberField = K,
-                RingOfIntegers = R,
-            >,
-{
-    type QKBasis = K::Basis;
-    type Z = IntegerCanonicalStructure;
-    type Q = RationalCanonicalStructure;
-    type R = R;
-    type K = K;
-    type ZQ<BZ: BorrowedStructure<Self::Z>, BQ: BorrowedStructure<Self::Q>> =
-        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>;
-    type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>> =
-        PrincipalSubringInclusion<R, BR>;
-    type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>> =
-        K::RationalInclusion<BK>;
-    type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>> =
-        RingOfIntegersToAlgebraicNumberFieldInclusion<R, RB, K, KB>;
-
-    fn z_ring(&self) -> &Self::Z {
-        Integer::structure_ref()
-    }
-    fn r_ring(&self) -> &Self::R {
-        self.r_to_k.borrow().domain()
-    }
-    fn q_field(&self) -> &Self::Q {
-        Rational::structure_ref()
-    }
-    fn k_field(&self) -> &Self::K {
-        self.r_to_k.borrow().range()
-    }
-
-    fn z_to_q<'a>(&'a self) -> Cow<'a, Self::ZQ<&'a Self::Z, &'a Self::Q>> {
-        Cow::Owned(Rational::structure().into_principal_subring_inclusion())
-    }
-    fn z_to_r<'a>(&'a self) -> Cow<'a, Self::ZR<&'a Self::Z, &'a Self::R>> {
-        Cow::Owned(self.r_ring().principal_subring_inclusion())
-    }
-    fn q_to_k<'a>(&'a self) -> Cow<'a, Self::QK<&'a Self::Q, &'a Self::K>> {
-        Cow::Owned(self.k_field().finite_dimensional_rational_extension())
-    }
-    fn r_to_k<'a>(&'a self) -> Cow<'a, Self::RK<&'a Self::R, &'a Self::K>> {
-        Cow::Borrowed(self.r_to_k.borrow())
-    }
-
-    fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Set) -> Integer {
-        if self.k_field().is_algebraic_integer(alpha) {
-            Integer::ONE
-        } else {
-            self.k_field().min_poly_denominator_lcm(alpha)
-        }
-    }
-}
+use crate::{
+    algebraic_number_field::{
+        ideal::{RingOfIntegersIdeal, RingOfIntegersIdealsStructure},
+        integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
+        polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure,
+        ring_of_integer_extension::RingOfIntegersExtension,
+        structure::{
+            AlgebraicIntegerRingInAlgebraicNumberFieldSignature,
+            RingOfIntegersToAlgebraicNumberFieldInclusion,
+        },
+    },
+    integer::ideal::IntegerIdealsStructure,
+    polynomial::RingToPolynomialSignature,
+    structure::{
+        DedekindDomainExtension, DedekindDomainIdealsSignature, DedekindDomainPrimeIdeal,
+        DedekindExtensionIdealFactorization, DedekindExtensionIdealFactorsAbovePrime,
+        DedekindExtensionIdealFactorsAbovePrimeFactor, FactorableIdealsSignature,
+        FactorableSignature, FactoredSignature, IdealsArithmeticSignature,
+        IntegralClosureExtension, MetaCanonicalIdealsSignature, MetaSemiRing,
+        PrincipalIdealsSignature, RingToIdealsSignature, RingToQuotientFieldSignature,
+        UniqueFactorizationDomainSignature,
+    },
+};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, traits::Abs};
+use algebraeon_sets::structure::{BorrowedMorphism, BorrowedStructure, Function, MetaType};
 
 impl<
     RB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>,
@@ -171,11 +67,11 @@ where
     type IdealsR = RingOfIntegersIdealsStructure<RB>;
 
     fn z_ideals(&self) -> &Self::IdealsZ {
-        &self.ideals_z
+        self.z_ideals()
     }
 
     fn r_ideals(&self) -> &Self::IdealsR {
-        &self.ideals_r
+        self.r_ideals()
     }
 
     fn ideal_norm(&self, ideal: &RingOfIntegersIdeal) -> Natural {
@@ -276,8 +172,18 @@ where
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_nzq::Rational;
+    use algebraeon_sets::structure::EqSignature;
+
     use super::*;
-    use crate::polynomial::Polynomial;
+    use crate::{
+        algebraic_number_field::structure::AlgebraicNumberFieldSignature,
+        polynomial::Polynomial,
+        structure::{
+            FieldOfFractionsInclusion, IntegralDomainSignature, IntoErgonomic, RingSignature,
+            SemiRingSignature,
+        },
+    };
 
     #[test]
     fn integral_multiplier() {
