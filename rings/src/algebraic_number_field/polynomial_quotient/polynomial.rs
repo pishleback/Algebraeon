@@ -598,55 +598,6 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     }
 }
 
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// struct IrreducibleAlgebraicNumberFieldPolynomialsStructure {
-//     anf: AlgebraicNumberFieldStructure,
-// }
-
-// impl Signature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {}
-
-// impl SetSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
-//     type Set = Polynomial<<AlgebraicNumberFieldStructure as SetSignature>::Set>;
-
-//     fn is_element(&self, x: &Self::Set) -> bool {
-//         todo!()
-//     }
-// }
-
-// impl EqSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
-//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-//         self.anf.polynomial_ring().equal(a, b)
-//     }
-// }
-
-// impl OrdSignature for IrreducibleAlgebraicNumberFieldPolynomialsStructure {
-//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-//         todo!()
-//     }
-// }
-
-// impl<B: BorrowedStructure<AlgebraicNumberFieldStructure>> UniqueFactorizationSignature
-//     for PolynomialStructure<AlgebraicNumberFieldStructure, B>
-// {
-//     type Irreducibles = IrreducibleAlgebraicNumberFieldPolynomialsStructure;
-
-//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
-
-//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
-//         FactoredRingElementStructure::new(self)
-//     }
-
-//     fn into_factorizations(self) -> Self::Factorizations<Self> {
-//         FactoredRingElementStructure::new(self)
-//     }
-
-//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
-//         IrreducibleAlgebraicNumberFieldPolynomialsStructure {
-//             anf: self.coeff_ring().clone(),
-//         }
-//     }
-// }
-
 impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactorableSignature
     for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {

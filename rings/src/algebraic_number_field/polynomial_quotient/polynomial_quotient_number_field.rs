@@ -1,9 +1,12 @@
-use super::{
-    embedded_anf::anf_multi_primitive_element_theorem,
-    integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
-    structure::AlgebraicNumberFieldSignature,
+use super::integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure;
+use crate::{
+    algebraic_number_field::{
+        embedded::anf_multi_primitive_element_theorem, structure::AlgebraicNumberFieldSignature,
+    },
+    matrix::*,
+    polynomial::*,
+    structure::*,
 };
-use crate::{matrix::*, polynomial::*, structure::*};
 use algebraeon_nzq::{
     Integer, Natural, Rational, RationalCanonicalStructure,
     traits::{Abs, Fraction},

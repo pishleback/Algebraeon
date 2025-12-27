@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use crate::{
     algebraic_number_field::ring_of_integer_extensions::RingOfIntegersExtension,
     integer::ideal::IntegerIdealsStructure,
@@ -16,6 +14,7 @@ use algebraeon_sets::structure::{
     BorrowedStructure, FiniteSetSignature, Function, InjectiveFunction, MetaType, Morphism,
     SetSignature,
 };
+use std::marker::PhantomData;
 
 pub trait AlgebraicIntegerRingSignature: DedekindDomainSignature + CharZeroRingSignature {
     type AlgebraicNumberField: AlgebraicNumberFieldSignature<RingOfIntegers = Self>;

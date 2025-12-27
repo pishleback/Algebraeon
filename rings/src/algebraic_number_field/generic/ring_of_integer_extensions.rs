@@ -1,8 +1,8 @@
-use super::ideal::RingOfIntegersIdeal;
-use super::ideal::RingOfIntegersIdealsStructure;
-use super::integer_lattice_ring_of_integers::*;
-use super::polynomial_quotient_number_field::*;
 use super::structure::AlgebraicNumberFieldSignature;
+use crate::algebraic_number_field::ideal::RingOfIntegersIdeal;
+use crate::algebraic_number_field::ideal::RingOfIntegersIdealsStructure;
+use crate::algebraic_number_field::integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure;
+use crate::algebraic_number_field::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::algebraic_number_field::structure::AlgebraicIntegerRingInAlgebraicNumberFieldSignature;
 use crate::algebraic_number_field::structure::AlgebraicIntegerRingSignature;
 use crate::algebraic_number_field::structure::RingOfIntegersToAlgebraicNumberFieldInclusion;
