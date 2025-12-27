@@ -1,6 +1,9 @@
 use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{
-    algebraic_number_field::structure::AlgebraicNumberFieldSignature,
+    algebraic_number_field::structure::{
+        AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
+        AlgebraicNumberFieldSignature, RingOfIntegersToAlgebraicNumberFieldInclusion,
+    },
     matrix::Matrix,
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
@@ -107,48 +110,17 @@ impl RingOfIntegersWithIntegralBasisStructure {
         &self.integral_basis
     }
 
-    pub fn basis_element(&self, i: usize) -> &Polynomial<Rational> {
+    pub fn integral_basis_element(&self, i: usize) -> &Polynomial<Rational> {
         assert!(i < self.degree());
         &self.integral_basis[i]
     }
 
-    pub fn anf(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
-        &self.algebraic_number_field
-    }
-}
-
-impl RingOfIntegersWithIntegralBasisStructure {
     pub fn roi_to_anf(&self, elem: &Vec<Integer>) -> Polynomial<Rational> {
-        debug_assert!(self.is_element(elem).is_ok());
-        let n = self.degree();
-        self.algebraic_number_field.sum(
-            (0..n)
-                .map(|i| self.integral_basis[i].mul_scalar(&Rational::from(&elem[i])))
-                .collect(),
-        )
+        self.anf_inclusion().roi_to_anf(elem)
     }
 
     pub fn try_anf_to_roi(&self, elem: &Polynomial<Rational>) -> Option<Vec<Integer>> {
-        let n = self.degree();
-        let y = self.algebraic_number_field.to_vec(elem);
-        let m = Matrix::join_cols(
-            n,
-            (0..n)
-                .map(|i| self.algebraic_number_field.to_col(&self.integral_basis[i]))
-                .collect(),
-        );
-        if let Some(s) = m.col_solve(&y) {
-            debug_assert_eq!(s.len(), n);
-            #[allow(clippy::manual_ok_err)]
-            if let Ok(coefficients) = (0..n).map(|i| Integer::try_from(s[i].clone())).collect() {
-                Some(coefficients)
-            } else {
-                None
-            }
-        } else {
-            // the integral basis is a basis of the anf as a rational vector space
-            unreachable!()
-        }
+        self.anf_inclusion().try_anf_to_roi(elem)
     }
 }
 
@@ -297,79 +269,70 @@ impl CharZeroRingSignature for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct RingOfIntegersToAlgebraicNumberFieldInclusion {
-    roi: RingOfIntegersWithIntegralBasisStructure,
-    anf: AlgebraicNumberFieldPolynomialQuotientStructure,
+impl AlgebraicIntegerRingSignature for RingOfIntegersWithIntegralBasisStructure {
+    type AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure;
+
+    fn anf(&self) -> Self::AlgebraicNumberField {
+        self.algebraic_number_field.clone()
+    }
 }
 
-impl RingOfIntegersToAlgebraicNumberFieldInclusion {
-    pub fn from_algebraic_number_field(
-        anf: AlgebraicNumberFieldPolynomialQuotientStructure,
-    ) -> Self {
-        Self {
-            roi: anf.compute_ring_of_integers(),
-            anf,
+impl<
+    RB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>,
+    KB: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
+> AlgebraicIntegerRingInAlgebraicNumberFieldSignature
+    for RingOfIntegersToAlgebraicNumberFieldInclusion<
+        RingOfIntegersWithIntegralBasisStructure,
+        RB,
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        KB,
+    >
+{
+    type AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure;
+    type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
+
+    fn discriminant(&self) -> Integer {
+        todo!()
+    }
+
+    fn roi_to_anf(
+        &self,
+        elem: &<Self::RingOfIntegers as SetSignature>::Set,
+    ) -> <Self::AlgebraicNumberField as SetSignature>::Set {
+        debug_assert!(self.roi().is_element(elem).is_ok());
+        let n = self.anf().degree();
+        self.anf().sum(
+            (0..n)
+                .map(|i| self.roi().integral_basis[i].mul_scalar(&Rational::from(&elem[i])))
+                .collect(),
+        )
+    }
+
+    fn try_anf_to_roi(
+        &self,
+        elem: &<Self::AlgebraicNumberField as SetSignature>::Set,
+    ) -> Option<<Self::RingOfIntegers as SetSignature>::Set> {
+        let n = self.anf().degree();
+        let y = self.anf().to_vec(elem);
+        let m = Matrix::join_cols(
+            n,
+            (0..n)
+                .map(|i| self.anf().to_col(&self.roi().integral_basis[i]))
+                .collect(),
+        );
+        if let Some(s) = m.col_solve(&y) {
+            debug_assert_eq!(s.len(), n);
+            #[allow(clippy::manual_ok_err)]
+            if let Ok(coefficients) = (0..n).map(|i| Integer::try_from(s[i].clone())).collect() {
+                Some(coefficients)
+            } else {
+                None
+            }
+        } else {
+            // the integral basis is a basis of the anf as a rational vector space
+            unreachable!()
         }
     }
-
-    pub fn from_ring_of_integers(roi: RingOfIntegersWithIntegralBasisStructure) -> Self {
-        Self {
-            anf: roi.anf().clone(),
-            roi,
-        }
-    }
-}
-
-impl
-    Morphism<
-        RingOfIntegersWithIntegralBasisStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-    > for RingOfIntegersToAlgebraicNumberFieldInclusion
-{
-    fn domain(&self) -> &RingOfIntegersWithIntegralBasisStructure {
-        &self.roi
-    }
-
-    fn range(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
-        &self.anf
-    }
-}
-
-impl
-    Function<
-        RingOfIntegersWithIntegralBasisStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-    > for RingOfIntegersToAlgebraicNumberFieldInclusion
-{
-    fn image(
-        &self,
-        x: &<RingOfIntegersWithIntegralBasisStructure as SetSignature>::Set,
-    ) -> <AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set {
-        self.roi.roi_to_anf(x)
-    }
-}
-
-impl
-    InjectiveFunction<
-        RingOfIntegersWithIntegralBasisStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-    > for RingOfIntegersToAlgebraicNumberFieldInclusion
-{
-    fn try_preimage(
-        &self,
-        x: &<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set,
-    ) -> Option<<RingOfIntegersWithIntegralBasisStructure as SetSignature>::Set> {
-        self.roi.try_anf_to_roi(x)
-    }
-}
-
-impl
-    RingHomomorphism<
-        RingOfIntegersWithIntegralBasisStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-    > for RingOfIntegersToAlgebraicNumberFieldInclusion
-{
 }
 
 #[cfg(test)]

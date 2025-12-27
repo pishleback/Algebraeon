@@ -1,6 +1,4 @@
-use crate::algebraic_number_field::structure::{
-    AlgebraicIntegerRingInAlgebraicNumberField, AlgebraicNumberFieldSignature,
-};
+use crate::algebraic_number_field::structure::AlgebraicNumberFieldSignature;
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
@@ -159,30 +157,21 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
     }
 }
 
-impl AlgebraicIntegerRingInAlgebraicNumberField<RationalCanonicalStructure>
-    for PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
-{
-    fn discriminant(&self) -> Integer {
-        Integer::ONE
-    }
-}
-
 impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     type Basis = SingletonSetStructure;
     type RingOfIntegers = IntegerCanonicalStructure;
-    type RingOfIntegersInclusion = PrincipalSubringInclusion<Self, Self>;
     type RationalInclusion<B: BorrowedStructure<Self>> =
         PrincipalRationalSubfieldInclusion<Self, B>;
+
+    fn roi(&self) -> Self::RingOfIntegers {
+        Integer::structure()
+    }
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
         self.rational_extension()
     }
     fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
         self.into_rational_extension()
-    }
-
-    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion {
-        self.into_principal_subring_inclusion()
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {

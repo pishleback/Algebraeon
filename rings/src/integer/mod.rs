@@ -1,4 +1,5 @@
 use super::natural::factorization::NaturalCanonicalFactorizationStructure;
+use crate::algebraic_number_field::structure::AlgebraicIntegerRingSignature;
 use crate::natural::NaturalFns;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
@@ -185,6 +186,14 @@ impl DedekindDomainSignature for IntegerCanonicalStructure {}
 impl CharZeroRingSignature for IntegerCanonicalStructure {
     fn try_to_int(&self, x: &Integer) -> Option<Integer> {
         Some(x.clone())
+    }
+}
+
+impl AlgebraicIntegerRingSignature for IntegerCanonicalStructure {
+    type AlgebraicNumberField = RationalCanonicalStructure;
+
+    fn anf(&self) -> Self::AlgebraicNumberField {
+        Rational::structure()
     }
 }
 
