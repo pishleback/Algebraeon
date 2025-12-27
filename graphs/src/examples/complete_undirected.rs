@@ -114,6 +114,7 @@ mod tests {
         // For an undirected graph, has_directed_edge should be symmetric
         for i in 0..3 {
             for j in 0..3 {
+                #[allow(clippy::uninlined_format_args)]
                 if i != j {
                     assert_eq!(
                         k3.has_directed_edge(&i, &j).is_ok(),

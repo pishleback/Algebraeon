@@ -26,7 +26,9 @@ pub trait SetSignature: Signature {
     type Set: Clone + Debug + Send + Sync;
 
     /// Some instances of `Self::Set` may not be valid to represent elements of this set.
-    /// Return `true` if `x` is a valid element and `false` if not.
+    /// Return `Ok(())` if `x` is a valid element and `Err` if not.
+    /// # Errors
+    /// If `x` is not valid to represent an element of this set, provide an explanation.
     fn is_element(&self, x: &Self::Set) -> Result<(), String>;
 }
 
