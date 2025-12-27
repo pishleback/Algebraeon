@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
  - `RingSignature` no longer requires `EqSignature`
  - Added traits for representing points as a limit of decreasing subsets
  - Implemented above traits for intervals on the real line and boxes in the complex plane
+ - Added types for continued fractions and for computing best rational approximations
+ - Added quadratic algebraic number fields
 
 ## [0.0.13]
 
