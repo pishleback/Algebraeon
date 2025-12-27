@@ -261,7 +261,7 @@ mod principal_subring_inclusion {
         for PrincipalRationalSubfieldInclusion<Field, FieldB>
     {
         fn image(&self, x: &Rational) -> <Field as SetSignature>::Set {
-            self.range().from_rat(x).unwrap()
+            self.range().try_from_rat(x).unwrap()
         }
     }
 
