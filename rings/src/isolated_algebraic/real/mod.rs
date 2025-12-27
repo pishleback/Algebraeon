@@ -871,7 +871,7 @@ mod tests {
             for root in roots {
                 let root2 = RealAlgebraic::add(
                     &root,
-                    &RealAlgebraic::from_rat(&Rational::from_integers(1, 2)).unwrap(),
+                    &RealAlgebraic::try_from_rat(&Rational::from_integers(1, 2)).unwrap(),
                 );
                 root2.check_invariants().unwrap();
             }
@@ -905,7 +905,7 @@ mod tests {
         let a = RealAlgebraic::product(roots.iter().collect());
         assert_eq!(
             a,
-            RealAlgebraic::from_rat(&Rational::from_integers(-100, 7)).unwrap()
+            RealAlgebraic::try_from_rat(&Rational::from_integers(-100, 7)).unwrap()
         );
     }
 

@@ -49,8 +49,8 @@ impl FiniteSetSignature for QuadraticNumberFieldBasisCanonicalStructure {
 #[derive(Debug, Clone)]
 pub struct QuadraticNumberFieldElement {
     /// Represents `rational_part + algebraic_part * sqrt(d)`
-    rational_part: Rational,
-    algebraic_part: Rational,
+    pub rational_part: Rational,
+    pub algebraic_part: Rational,
 }
 
 impl QuadraticNumberFieldElement {
@@ -62,14 +62,6 @@ impl QuadraticNumberFieldElement {
         rational_part: Rational::ONE,
         algebraic_part: Rational::ZERO,
     };
-
-    /// a + b * sqrt(d)
-    pub fn new(a: Rational, b: Rational) -> Self {
-        Self {
-            rational_part: a,
-            algebraic_part: b,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -404,22 +396,37 @@ mod tests {
     fn qanf_neg_1() {
         let anf = QuadraticNumberFieldStructure::new(Integer::from(-1)).unwrap();
 
-        let a = QuadraticNumberFieldElement::new(Rational::from(1), Rational::from(4));
-        let b = QuadraticNumberFieldElement::new(Rational::from(2), Rational::from(3));
+        let a = QuadraticNumberFieldElement {
+            rational_part: Rational::from(1),
+            algebraic_part: Rational::from(4),
+        };
+        let b = QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3),
+        };
 
         assert!(anf.equal(
             &anf.add(&a, &b),
-            &QuadraticNumberFieldElement::new(Rational::from(3), Rational::from(7))
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(3),
+                algebraic_part: Rational::from(7)
+            }
         ));
 
         assert!(anf.equal(
             &anf.neg(&a),
-            &QuadraticNumberFieldElement::new(Rational::from(-1), Rational::from(-4))
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(-1),
+                algebraic_part: Rational::from(-4)
+            }
         ));
 
         assert!(anf.equal(
             &anf.mul(&a, &b),
-            &QuadraticNumberFieldElement::new(Rational::from(-10), Rational::from(11))
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(-10),
+                algebraic_part: Rational::from(11)
+            }
         ));
 
         assert_eq!(
@@ -427,35 +434,35 @@ mod tests {
             Integer::from(-4)
         );
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(0),
-            Rational::from(0)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(0),
+            algebraic_part: Rational::from(0)
+        }));
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(2),
-            Rational::from(3)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3)
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1/2").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1/2").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-3/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-3/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-6").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-6").unwrap(),
+        }));
     }
 
     // ZZ[sqrt(2)]
@@ -463,22 +470,37 @@ mod tests {
     fn qanf_pos_2() {
         let anf = QuadraticNumberFieldStructure::new(Integer::from(2)).unwrap();
 
-        let a = QuadraticNumberFieldElement::new(Rational::from(1), Rational::from(4));
-        let b = QuadraticNumberFieldElement::new(Rational::from(2), Rational::from(3));
+        let a = QuadraticNumberFieldElement {
+            rational_part: Rational::from(1),
+            algebraic_part: Rational::from(4),
+        };
+        let b = QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3),
+        };
 
         assert!(anf.equal(
             &anf.add(&a, &b),
-            &QuadraticNumberFieldElement::new(Rational::from(3), Rational::from(7))
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(3),
+                algebraic_part: Rational::from(7)
+            }
         ));
 
         assert!(anf.equal(
             &anf.neg(&a),
-            &QuadraticNumberFieldElement::new(Rational::from(-1), Rational::from(-4))
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(-1),
+                algebraic_part: Rational::from(-4)
+            }
         ));
 
         assert!(anf.equal(
             &anf.mul(&a, &b),
-            &QuadraticNumberFieldElement::new(Rational::from(26), Rational::from(11))
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(26),
+                algebraic_part: Rational::from(11)
+            }
         ));
 
         assert_eq!(
@@ -486,35 +508,35 @@ mod tests {
             Integer::from(8)
         );
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(0),
-            Rational::from(0)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(0),
+            algebraic_part: Rational::from(0)
+        }));
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(2),
-            Rational::from(3)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3)
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1/2").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1/2").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-3/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-3/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-6").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-6").unwrap(),
+        }));
     }
 
     // ZZ[sqrt(3)]
@@ -522,12 +544,21 @@ mod tests {
     fn qanf_pos_3() {
         let anf = QuadraticNumberFieldStructure::new(Integer::from(3)).unwrap();
 
-        let a = QuadraticNumberFieldElement::new(Rational::from(1), Rational::from(4));
-        let b = QuadraticNumberFieldElement::new(Rational::from(2), Rational::from(3));
+        let a = QuadraticNumberFieldElement {
+            rational_part: Rational::from(1),
+            algebraic_part: Rational::from(4),
+        };
+        let b = QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3),
+        };
 
         assert!(anf.equal(
             &anf.mul(&a, &b),
-            &QuadraticNumberFieldElement::new(Rational::from(38), Rational::from(11))
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(38),
+                algebraic_part: Rational::from(11)
+            }
         ));
 
         assert_eq!(
@@ -535,35 +566,35 @@ mod tests {
             Integer::from(12)
         );
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(0),
-            Rational::from(0)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(0),
+            algebraic_part: Rational::from(0)
+        }));
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(2),
-            Rational::from(3)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3)
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1/2").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1/2").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-3/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-3/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-6").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-6").unwrap(),
+        }));
     }
 
     // ZZ[1/2 + 1/2 sqrt(5)]
@@ -571,12 +602,21 @@ mod tests {
     fn qanf_pos_5() {
         let anf = QuadraticNumberFieldStructure::new(Integer::from(5)).unwrap();
 
-        let a = QuadraticNumberFieldElement::new(Rational::from(1), Rational::from(4));
-        let b = QuadraticNumberFieldElement::new(Rational::from(2), Rational::from(3));
+        let a = QuadraticNumberFieldElement {
+            rational_part: Rational::from(1),
+            algebraic_part: Rational::from(4),
+        };
+        let b = QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3),
+        };
 
         assert!(anf.equal(
             &anf.mul(&a, &b),
-            &QuadraticNumberFieldElement::new(Rational::from(62), Rational::from(11))
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(62),
+                algebraic_part: Rational::from(11)
+            }
         ));
 
         assert_eq!(
@@ -584,35 +624,35 @@ mod tests {
             Integer::from(5)
         );
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(0),
-            Rational::from(0)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(0),
+            algebraic_part: Rational::from(0)
+        }));
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(2),
-            Rational::from(3)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3)
+        }));
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1/2").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1/2").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-3/2").unwrap(),
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-3/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-6").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-6").unwrap(),
+        }));
     }
 
     // ZZ[1/2 + 1/2 sqrt(-3)]
@@ -620,12 +660,21 @@ mod tests {
     fn qanf_neg_3() {
         let anf = QuadraticNumberFieldStructure::new(Integer::from(-3)).unwrap();
 
-        let a = QuadraticNumberFieldElement::new(Rational::from(1), Rational::from(4));
-        let b = QuadraticNumberFieldElement::new(Rational::from(2), Rational::from(3));
+        let a = QuadraticNumberFieldElement {
+            rational_part: Rational::from(1),
+            algebraic_part: Rational::from(4),
+        };
+        let b = QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3),
+        };
 
         assert!(anf.equal(
             &anf.mul(&a, &b),
-            &QuadraticNumberFieldElement::new(Rational::from(-34), Rational::from(11))
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(-34),
+                algebraic_part: Rational::from(11)
+            }
         ));
 
         assert_eq!(
@@ -633,34 +682,34 @@ mod tests {
             Integer::from(-3)
         );
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(0),
-            Rational::from(0)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(0),
+            algebraic_part: Rational::from(0)
+        }));
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from(2),
-            Rational::from(3)
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from(2),
+            algebraic_part: Rational::from(3)
+        }));
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1/2").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1/2").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-3/2").unwrap(),
-        )));
+        assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-3/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("1").unwrap(),
-            Rational::from_str("1/2").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("1").unwrap(),
+            algebraic_part: Rational::from_str("1/2").unwrap(),
+        }));
 
-        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement::new(
-            Rational::from_str("7/2").unwrap(),
-            Rational::from_str("-6").unwrap(),
-        )));
+        assert!(!anf.is_algebraic_integer(&QuadraticNumberFieldElement {
+            rational_part: Rational::from_str("7/2").unwrap(),
+            algebraic_part: Rational::from_str("-6").unwrap(),
+        }));
     }
 }

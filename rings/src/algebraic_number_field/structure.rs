@@ -50,7 +50,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     /// need not return $a$ itself when $a$ is already an algebraic integer
     fn integral_multiple(&self, a: &Self::Set) -> Self::Set {
         let m = self.min_poly_denominator_lcm(a);
-        let b = self.mul(&self.from_rat(&Rational::from(m)).unwrap(), a);
+        let b = self.mul(&self.try_from_rat(&Rational::from(m)).unwrap(), a);
         debug_assert!(self.is_algebraic_integer(&b));
         b
     }

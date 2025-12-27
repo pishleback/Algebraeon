@@ -251,7 +251,7 @@ impl<Ring: RingSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {
 pub trait IntegralDomainSignature: RingUnitsSignature + EqSignature {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
-    fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
+    fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
         match self.div(
             &self.from_int(Fraction::numerator(x)),
             &self.from_nat(Fraction::denominator(x)),
@@ -301,8 +301,8 @@ where
         Self::structure().div(a, b)
     }
 
-    fn from_rat(x: &Rational) -> Option<Self> {
-        Self::structure().from_rat(x)
+    fn try_from_rat(x: &Rational) -> Option<Self> {
+        Self::structure().try_from_rat(x)
     }
 
     fn int_pow(&self, n: &Integer) -> Option<Self> {
@@ -628,11 +628,24 @@ where
     T::Signature: InfiniteSignature,
 {
     fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>> {
-        todo!()
+        Self::structure().generate_distinct_elements()
     }
 }
 
-pub trait FieldSignature: IntegralDomainSignature {}
+pub trait FieldSignature: IntegralDomainSignature {
+    fn from_rat(&self, x: &Rational) -> Self::Set {
+        self.try_from_rat(x).unwrap()
+    }
+}
+pub trait MetaField: MetaType
+where
+    Self::Signature: FieldSignature<Set = Self>,
+{
+    fn from_rat(x: &Rational) -> Self {
+        Self::structure().from_rat(x)
+    }
+}
+impl<T: MetaType> MetaField for T where T::Signature: FieldSignature<Set = Self> {}
 
 impl<FS: FieldSignature> FavoriteAssociateSignature for FS {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {

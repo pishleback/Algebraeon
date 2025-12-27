@@ -855,7 +855,7 @@ impl IntegralDomainSignature for PAdicAlgebraicStructure {
         Ok(self.mul(a, &self.inv(b)?))
     }
 
-    fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
+    fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
         Some(PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: x.clone(),

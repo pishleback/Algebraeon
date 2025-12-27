@@ -3,10 +3,16 @@ use crate::{
         polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure,
         quadratic_number_field::{QuadraticNumberFieldElement, QuadraticNumberFieldStructure},
     },
-    structure::{MetaFactorableSignature, MetaSemiRing},
+    polynomial::Polynomial,
+    structure::{
+        AdditiveMonoidSignature, CharZeroFieldSignature, FieldSignature, MetaFactorableSignature,
+        MetaSemiRing, RingHomomorphism, SemiModuleSignature,
+    },
 };
 use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
-use algebraeon_sets::structure::{BorrowedStructure, Morphism};
+use algebraeon_sets::structure::{
+    BijectiveFunction, BorrowedStructure, Function, InjectiveFunction, Morphism,
+};
 
 #[derive(Debug, Clone)]
 pub struct QuadraticNumberFieldIsomorphism<
@@ -57,10 +63,10 @@ impl<
             Ok(Self {
                 anf_polyquo,
                 anf_quadratic: QuadraticNumberFieldStructure::new_unchecked(d),
-                generator_image: QuadraticNumberFieldElement::new(
-                    Rational::from_integers(neg_b, two_a.clone()),
-                    Rational::from_integers(s, two_a),
-                ),
+                generator_image: QuadraticNumberFieldElement {
+                    rational_part: Rational::from_integers(neg_b, two_a.clone()),
+                    algebraic_part: Rational::from_integers(s, two_a),
+                },
             })
         } else {
             Err(())
@@ -80,6 +86,63 @@ impl<
     fn range(&self) -> &QuadraticNumberFieldStructure<Integer> {
         &self.anf_quadratic
     }
+}
+
+impl<
+    AlgebraicNumberFieldPolynomialQuotientStructureBorrowed: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
+> Function<AlgebraicNumberFieldPolynomialQuotientStructure, QuadraticNumberFieldStructure<Integer>>
+    for QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>
+{
+    fn image(&self, x: &Polynomial<Rational>) -> QuadraticNumberFieldElement {
+        let x = self.anf_polyquo.borrow().reduce(x);
+        debug_assert!(x.coeffs().len() <= 2);
+        self.anf_quadratic.add(
+            &self.anf_quadratic.from_rat(x.coeff(0).as_ref()),
+            &self
+                .anf_quadratic
+                .rational_extension()
+                .range_module_structure()
+                .scalar_mul(&self.generator_image, x.coeff(1).as_ref()),
+        )
+    }
+}
+
+impl<
+    AlgebraicNumberFieldPolynomialQuotientStructureBorrowed: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
+>
+    InjectiveFunction<
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        QuadraticNumberFieldStructure<Integer>,
+    > for QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>
+{
+    fn try_preimage(&self, y: &QuadraticNumberFieldElement) -> Option<Polynomial<Rational>> {
+        Some(self.preimage(y))
+    }
+}
+
+impl<
+    AlgebraicNumberFieldPolynomialQuotientStructureBorrowed: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
+>
+    BijectiveFunction<
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        QuadraticNumberFieldStructure<Integer>,
+    > for QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>
+{
+    fn preimage(&self, y: &QuadraticNumberFieldElement) -> Polynomial<Rational> {
+        let gen_coeff = &y.algebraic_part / &self.generator_image.algebraic_part;
+        let rat_coeff = &y.rational_part - &gen_coeff * &self.generator_image.rational_part;
+        Polynomial::from_coeffs(vec![rat_coeff, gen_coeff])
+    }
+}
+
+impl<
+    AlgebraicNumberFieldPolynomialQuotientStructureBorrowed: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
+>
+    RingHomomorphism<
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        QuadraticNumberFieldStructure<Integer>,
+    > for QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>
+{
 }
 
 impl AlgebraicNumberFieldPolynomialQuotientStructure {
@@ -102,6 +165,8 @@ impl<D: BorrowedStructure<Integer>> QuadraticNumberFieldStructure<D> {}
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_sets::structure::EqSignature;
+
     use crate::parsing::parse_rational_polynomial;
 
     use super::*;
@@ -110,12 +175,46 @@ mod tests {
     #[test]
     fn qanf_neg_1() {
         let poly = parse_rational_polynomial("x^2-6*x+13", "x").unwrap();
-        println!("{}", poly);
-        println!("{:?}", poly.clone().discriminant());
         let anf_poly = poly.algebraic_number_field().unwrap();
-
         let iso = anf_poly.quadratic_anf_isomorphism().unwrap();
+        let anf_quad = iso.range();
 
-        println!("{:#?}", iso);
+        assert!(anf_quad.equal(
+            &iso.image(&parse_rational_polynomial("1", "x").unwrap()),
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(1),
+                algebraic_part: Rational::from(0)
+            }
+        ));
+        assert!(anf_quad.equal(
+            &iso.image(&parse_rational_polynomial("x", "x").unwrap()),
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(3),
+                algebraic_part: Rational::from(2)
+            }
+        ));
+        assert!(anf_quad.equal(
+            &iso.image(&parse_rational_polynomial("x^2", "x").unwrap()),
+            &QuadraticNumberFieldElement {
+                rational_part: Rational::from(5),
+                algebraic_part: Rational::from(12)
+            }
+        ));
+
+        assert!(anf_poly.equal(
+            &iso.preimage(&QuadraticNumberFieldElement {
+                rational_part: Rational::from(1),
+                algebraic_part: Rational::from(0)
+            }),
+            &parse_rational_polynomial("1", "x").unwrap()
+        ));
+
+        assert!(anf_poly.equal(
+            &iso.preimage(&QuadraticNumberFieldElement {
+                rational_part: Rational::from(0),
+                algebraic_part: Rational::from(2)
+            }),
+            &parse_rational_polynomial("x-3", "x").unwrap()
+        ));
     }
 }
