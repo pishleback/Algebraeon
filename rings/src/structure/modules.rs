@@ -32,20 +32,26 @@ impl<Ring: RingSignature, Module: SemiModuleSignature<Ring> + AdditiveGroupSigna
 
 pub trait FinitelyGeneratedModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {}
 
-pub trait FreeModuleSignature<Basis: SetSignature, Ring: RingSignature>:
-    ModuleSignature<Ring>
-{
-    fn basis_set(&self) -> impl Borrow<Basis>;
+pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
+    type Basis: SetSignature;
 
-    fn to_component<'a>(&self, b: &Basis::Set, v: &'a Self::Set) -> Cow<'a, Ring::Set>;
+    fn basis_set(&self) -> impl Borrow<Self::Basis>;
 
-    fn from_component(&self, b: &Basis::Set, r: &Ring::Set) -> Self::Set;
+    fn to_component<'a>(
+        &self,
+        b: &<Self::Basis as SetSignature>::Set,
+        v: &'a Self::Set,
+    ) -> Cow<'a, Ring::Set>;
+
+    fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Ring::Set) -> Self::Set;
 }
 
-pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSignature>:
-    FreeModuleSignature<Basis, Ring> + FinitelyGeneratedModuleSignature<Ring>
+pub trait FinitelyFreeModuleSignature<Ring: RingSignature>:
+    FreeModuleSignature<Ring> + FinitelyGeneratedModuleSignature<Ring>
+where
+    Self::Basis: FiniteSetSignature,
 {
-    fn basis(&self) -> Vec<Basis::Set> {
+    fn basis(&self) -> Vec<<Self::Basis as SetSignature>::Set> {
         self.basis_set().borrow().list_all_elements()
     }
 
@@ -112,6 +118,20 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
     fn from_row(&self, v: Matrix<Ring::Set>) -> Self::Set {
         self.from_col(v.transpose())
     }
+}
+
+impl<Ring: RingSignature, Module: FreeModuleSignature<Ring>> FinitelyGeneratedModuleSignature<Ring>
+    for Module
+where
+    Module::Basis: FiniteSetSignature,
+{
+}
+
+impl<Ring: RingSignature, Module: FreeModuleSignature<Ring>> FinitelyFreeModuleSignature<Ring>
+    for Module
+where
+    Module::Basis: FiniteSetSignature,
+{
 }
 
 pub trait LinearTransformation<

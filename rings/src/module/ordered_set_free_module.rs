@@ -39,7 +39,7 @@ impl<
 impl<
     Set: OrdSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature,
+    Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
 > FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
@@ -128,7 +128,7 @@ impl<
 impl<
     Set: OrdSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature,
+    Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
 > SetSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
@@ -152,7 +152,7 @@ impl<
 impl<
     Set: OrdSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature,
+    Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
 > EqSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
@@ -176,7 +176,7 @@ impl<
 impl<
     Set: OrdSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature,
+    Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
 > AdditiveMonoidSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
@@ -192,7 +192,7 @@ impl<
 impl<
     Set: OrdSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: RingSignature,
+    Ring: RingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
 > AdditiveGroupSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
@@ -206,7 +206,7 @@ impl<
 impl<
     Set: OrdSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature,
+    Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
 > SemiModuleSignature<Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
@@ -225,10 +225,12 @@ impl<
 impl<
     Set: OrdSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: RingSignature,
+    Ring: RingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
-> FreeModuleSignature<Set, Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+> FreeModuleSignature<Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
+    type Basis = Set;
+
     fn basis_set(&self) -> impl std::borrow::Borrow<Set> {
         self.set()
     }
@@ -248,26 +250,6 @@ impl<
             vec![(x.clone(), a.clone())]
         }
     }
-}
-
-impl<
-    Set: OrdSignature + FiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: RingSignature,
-    RingB: BorrowedStructure<Ring>,
-> FinitelyGeneratedModuleSignature<Ring>
-    for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
-{
-}
-
-impl<
-    Set: OrdSignature + FiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: RingSignature,
-    RingB: BorrowedStructure<Ring>,
-> FinitelyFreeModuleSignature<Set, Ring>
-    for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
-{
 }
 
 #[cfg(test)]

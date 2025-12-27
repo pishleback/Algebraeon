@@ -2,8 +2,9 @@ use crate::structure::*;
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, marker::PhantomData};
 
+/// A quotient of a Euclidean domain by a non-zero element.
 #[derive(Debug, Clone)]
-pub struct QuotientStructure<
+pub struct EuclideanRemainderQuotientStructure<
     RS: EuclideanDomainSignature,
     RSB: BorrowedStructure<RS>,
     const IS_FIELD: bool,
@@ -14,7 +15,7 @@ pub struct QuotientStructure<
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    QuotientStructure<RS, RSB, IS_FIELD>
+    EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     pub fn new_unchecked(ring: RSB, modulus: RS::Set) -> Self {
         assert!(!ring.borrow().is_zero(&modulus));
@@ -38,14 +39,16 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
     }
 }
 
-impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>> QuotientStructure<RS, RSB, false> {
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>>
+    EuclideanRemainderQuotientStructure<RS, RSB, false>
+{
     fn new_ring(ring: RSB, modulus: RS::Set) -> Self {
         Self::new_unchecked(ring, modulus)
     }
 }
 
 impl<RS: EuclideanDomainSignature + FactorableSignature, RSB: BorrowedStructure<RS>>
-    QuotientStructure<RS, RSB, true>
+    EuclideanRemainderQuotientStructure<RS, RSB, true>
 {
     fn new_field_unchecked(ring: RSB, modulus: RS::Set) -> Self {
         debug_assert!(ring.borrow().is_irreducible(&modulus));
@@ -62,12 +65,18 @@ impl<RS: EuclideanDomainSignature + FactorableSignature, RSB: BorrowedStructure<
 }
 
 pub trait RingToQuotientRingSignature: EuclideanDomainSignature {
-    fn quotient_ring<'a>(&'a self, modulus: Self::Set) -> QuotientStructure<Self, &'a Self, false> {
-        QuotientStructure::new_ring(self, modulus)
+    fn quotient_ring<'a>(
+        &'a self,
+        modulus: Self::Set,
+    ) -> EuclideanRemainderQuotientStructure<Self, &'a Self, false> {
+        EuclideanRemainderQuotientStructure::new_ring(self, modulus)
     }
 
-    fn into_quotient_ring(self, modulus: Self::Set) -> QuotientStructure<Self, Self, false> {
-        QuotientStructure::new_ring(self, modulus)
+    fn into_quotient_ring(
+        self,
+        modulus: Self::Set,
+    ) -> EuclideanRemainderQuotientStructure<Self, Self, false> {
+        EuclideanRemainderQuotientStructure::new_ring(self, modulus)
     }
 }
 impl<Ring: EuclideanDomainSignature> RingToQuotientRingSignature for Ring {}
@@ -76,35 +85,35 @@ pub trait RingToQuotientFieldSignature: EuclideanDomainSignature + FactorableSig
     fn quotient_field<'a>(
         &'a self,
         modulus: Self::Set,
-    ) -> Result<QuotientStructure<Self, &'a Self, true>, ()> {
-        QuotientStructure::new_field(self, modulus)
+    ) -> Result<EuclideanRemainderQuotientStructure<Self, &'a Self, true>, ()> {
+        EuclideanRemainderQuotientStructure::new_field(self, modulus)
     }
 
     fn into_quotient_field(
         self,
         modulus: Self::Set,
-    ) -> Result<QuotientStructure<Self, Self, true>, ()> {
-        QuotientStructure::new_field(self, modulus)
+    ) -> Result<EuclideanRemainderQuotientStructure<Self, Self, true>, ()> {
+        EuclideanRemainderQuotientStructure::new_field(self, modulus)
     }
 
     fn quotient_field_unchecked<'a>(
         &'a self,
         modulus: Self::Set,
-    ) -> QuotientStructure<Self, &'a Self, true> {
-        QuotientStructure::new_field_unchecked(self, modulus)
+    ) -> EuclideanRemainderQuotientStructure<Self, &'a Self, true> {
+        EuclideanRemainderQuotientStructure::new_field_unchecked(self, modulus)
     }
 
     fn into_quotient_field_unchecked(
         self,
         modulus: Self::Set,
-    ) -> QuotientStructure<Self, Self, true> {
-        QuotientStructure::new_field_unchecked(self, modulus)
+    ) -> EuclideanRemainderQuotientStructure<Self, Self, true> {
+        EuclideanRemainderQuotientStructure::new_field_unchecked(self, modulus)
     }
 }
 impl<Ring: EuclideanDomainSignature + FactorableSignature> RingToQuotientFieldSignature for Ring {}
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> PartialEq
-    for QuotientStructure<RS, RSB, IS_FIELD>
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn eq(&self, other: &Self) -> bool {
         if self.ring == other.ring {
@@ -120,17 +129,17 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> Eq
-    for QuotientStructure<RS, RSB, IS_FIELD>
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> Signature
-    for QuotientStructure<RS, RSB, IS_FIELD>
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> SetSignature
-    for QuotientStructure<RS, RSB, IS_FIELD>
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     type Set = RS::Set;
 
@@ -143,7 +152,7 @@ impl<
     RS: EuclideanDomainSignature + ToStringSignature,
     RSB: BorrowedStructure<RS>,
     const IS_FIELD: bool,
-> ToStringSignature for QuotientStructure<RS, RSB, IS_FIELD>
+> ToStringSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn to_string(&self, elem: &Self::Set) -> String {
         self.ring().to_string(elem)
@@ -151,7 +160,7 @@ impl<
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> EqSignature
-    for QuotientStructure<RS, RSB, IS_FIELD>
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.ring().is_zero(
@@ -163,7 +172,7 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    AdditiveMonoidSignature for QuotientStructure<RS, RSB, IS_FIELD>
+    AdditiveMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn zero(&self) -> Self::Set {
         self.ring().zero()
@@ -175,7 +184,7 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    AdditiveGroupSignature for QuotientStructure<RS, RSB, IS_FIELD>
+    AdditiveGroupSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn neg(&self, a: &Self::Set) -> Self::Set {
         self.ring().neg(a)
@@ -187,7 +196,7 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    SemiRingSignature for QuotientStructure<RS, RSB, IS_FIELD>
+    SemiRingSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn one(&self) -> Self::Set {
         self.ring().one()
@@ -199,15 +208,21 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> RingSignature
-    for QuotientStructure<RS, RSB, IS_FIELD>
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
+    fn is_reduced(&self) -> Result<bool, String> {
+        if IS_FIELD {
+            return Ok(true);
+        }
+        Err("not implemented yet: is_reduced for quotient rings that are not fields".to_string())
+    }
 }
 
 impl<
     RS: EuclideanDomainSignature + FavoriteAssociateSignature,
     RSB: BorrowedStructure<RS>,
     const IS_FIELD: bool,
-> SemiRingUnitsSignature for QuotientStructure<RS, RSB, IS_FIELD>
+> SemiRingUnitsSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn inv(&self, x: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         if self.is_zero(x) {
@@ -232,7 +247,7 @@ impl<
 }
 
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
-    IntegralDomainSignature for QuotientStructure<RS, RSB, true>
+    IntegralDomainSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
 {
     fn div(&self, top: &Self::Set, bot: &Self::Set) -> Result<Self::Set, RingDivisionError> {
         match self.inv(bot) {
@@ -243,7 +258,7 @@ impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStr
 }
 
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
-    FieldSignature for QuotientStructure<RS, RSB, true>
+    FieldSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
 {
 }
 
@@ -254,7 +269,9 @@ mod tests {
 
     #[test]
     fn test() {
-        let mod5 = QuotientStructure::new_field(Integer::structure(), Integer::from(5)).unwrap();
+        let mod5 =
+            EuclideanRemainderQuotientStructure::new_field(Integer::structure(), Integer::from(5))
+                .unwrap();
 
         assert!(mod5.equal(
             &mod5.div(&Integer::from(3), &Integer::from(2)).unwrap(),

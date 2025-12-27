@@ -213,7 +213,7 @@ impl<Domain: FiniteSetSignature, Range: EqSignature> SetSignature for Functions<
 impl<Domain: FiniteSetSignature, Range: EqSignature + FiniteSetSignature> CountableSetSignature
     for Functions<Domain, Range>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         (0..self.domain.size())
             .map(|_| self.range.list_all_elements())
             .multi_cartesian_product()
@@ -254,7 +254,7 @@ impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunction
 }
 
 impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEndofunctions<X> {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         (0..self.set.size())
             .map(|_| self.set.list_all_elements())
             .multi_cartesian_product()

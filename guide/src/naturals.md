@@ -33,20 +33,21 @@ For exponentiation, use the method `.pow(&exp)` instead of `^` (which is xor).
 ## Available functions
 
 - [`choose`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.choose.html)
-- `euler_totient`
+- [`euler_totient`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/natural/factorization/factored/struct.NaturalFactorizationStructure.html#method.euler_totient)
 - [`factorial`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.factorial)
 - [`gcd`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.gcd.html)
-- `is_prime`
-- `is_square`
+- [`is_prime`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/natural/factorization/primes/fn.is_prime.html)
+- [`is_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.is_square)
 - [`lcm`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.lcm.html)
 - [`nth_root_floor`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.nth_root_floor)
 - [`nth_root_ceil`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.nth_root_ceil)
 - [`sqrt_ceil`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.sqrt_ceil)
 - [`sqrt_floor`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.sqrt_floor)
-- `sqrt_if_square`
+- [`sqrt_if_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.sqrt_if_square)
 
 ```rust
 use algebraeon::nzq::*;
+use algebraeon::rings::natural::NaturalFns;
 use algebraeon::rings::natural::factorization::NaturalCanonicalFactorizationStructure;
 use algebraeon::sets::structure::*;
 
@@ -91,22 +92,20 @@ assert_eq!(gcd(a.clone(), b.clone()), Natural::from(1u32));
 assert_eq!(lcm(a.clone(), b.clone()), Natural::from(60u32));
 
 // is_prime
-use algebraeon::rings::natural::factorization::primes::is_prime;
-assert!(!is_prime(&a)); // 12 is not prime
-assert!(is_prime(&b)); // 5 is prime
+assert!(!a.is_prime()); // 12 is not prime
+assert!(b.is_prime()); // 5 is prime
 
 // Euler's totient function
-use algebraeon::rings::natural::factorization::factor;
 assert_eq!(
     Natural::structure()
         .factorizations()
-        .euler_totient(&factor(a).unwrap()),
+        .euler_totient(&a.factor().unwrap()),
     Natural::from(4u32)
 ); // φ(12) = 4
 assert_eq!(
     Natural::structure()
         .factorizations()
-        .euler_totient(&factor(b).unwrap()),
+        .euler_totient(&b.factor().unwrap()),
     Natural::from(4u32)
 ); // φ(5) = 4
 ```
@@ -116,21 +115,22 @@ assert_eq!(
 Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization) for quickly finding prime factors up to around 20 digits.
 
 ```rust
-# use algebraeon::sets::structure::ToStringSignature;
-# use algebraeon::{nzq::Natural, rings::natural::factorization::factor};
-# use algebraeon::{
+use algebraeon::nzq::Natural;
+use algebraeon::rings::natural::NaturalFns;
+use algebraeon::sets::structure::ToStringSignature;
+use algebraeon::{
     rings::natural::factorization::NaturalCanonicalFactorizationStructure,
     sets::structure::MetaType,
 };
-# use std::str::FromStr;
-# 
+use std::str::FromStr;
+
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
-let f = factor(n.clone()).unwrap();
+let f = n.clone().factor().unwrap();
 println!(
     "{} = {}",
     n,
     Natural::structure().factorizations().to_string(&f)
-);;
+);
 /*
 Output:
     706000565581575429997696139445280900 = 2^2 × 5^2 × 6988699669998001 × 1010203040506070809

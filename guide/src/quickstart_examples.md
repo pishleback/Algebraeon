@@ -5,16 +5,17 @@
 To factor large integers using Algebraeon
 
 ```rust
-# use algebraeon::sets::structure::ToStringSignature;
-# use algebraeon::{nzq::Natural, rings::natural::factorization::factor};
-# use algebraeon::{
+use algebraeon::sets::structure::ToStringSignature;
+use algebraeon::nzq::Natural;
+use algebraeon::rings::natural::NaturalFns;
+use algebraeon::{
     rings::natural::factorization::NaturalCanonicalFactorizationStructure,
     sets::structure::MetaType,
 };
-# use std::str::FromStr;
-# 
+use std::str::FromStr;
+
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
-let f = factor(n.clone()).unwrap();
+let f = n.clone().factor().unwrap();
 println!(
     "{} = {}",
     n,
@@ -99,15 +100,14 @@ Find all complex roots of the polynomial
 \\[f(x) = x^5 + x^2 - x + 1\\]
 
 ```rust
-use algebraeon::rings::{polynomial::*, structure::*};
-use algebraeon::nzq::Integer;
+use algebraeon::rings::parsing::parse_integer_polynomial;
 
-let x = &Polynomial::<Integer>::var().into_ergonomic();
-let f = (x.pow(5) + x.pow(2) - x + 1).into_verbose();
+let f = parse_integer_polynomial("x^5 + x^2 - x + 1", "x").unwrap();
 // Find the complex roots of f(x)
 for root in f.all_complex_roots() {
     println!("root {} of degree {}", root, root.degree());
 }
+
 /*
 Output:
     root ≈-1.328 of degree 3
@@ -116,6 +116,7 @@ Output:
     root -i of degree 2
     root i of degree 2
 */
+
 ```
 
 Despite the output, the roots found are _not_ numerical approximations. Rather, they are stored internally as exact algebraic numbers by using isolating boxes in the complex plane.

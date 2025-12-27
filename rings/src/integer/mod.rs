@@ -1,6 +1,5 @@
 use super::natural::factorization::NaturalCanonicalFactorizationStructure;
-use super::natural::factorization::factor;
-use super::natural::factorization::primes::is_prime;
+use crate::natural::NaturalFns;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
@@ -44,7 +43,11 @@ impl SemiRingSignature for IntegerCanonicalStructure {
     }
 }
 
-impl RingSignature for IntegerCanonicalStructure {}
+impl RingSignature for IntegerCanonicalStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for IntegerCanonicalStructure {
     fn characteristic(&self) -> Natural {
@@ -115,7 +118,7 @@ impl UniqueFactorizationDomainSignature for IntegerCanonicalStructure {
     // }
 
     fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(is_prime(&a.abs()))
+        Some(a.abs().is_prime())
     }
 }
 
@@ -129,7 +132,7 @@ impl FactorableSignature for IntegerCanonicalStructure {
             } else {
                 Integer::from(1)
             };
-            let f = factor(a.abs()).unwrap();
+            let f = a.abs().factor().unwrap();
             Some(
                 Integer::structure()
                     .factorizations()
@@ -195,10 +198,12 @@ impl ComplexSubsetSignature for IntegerCanonicalStructure {
     }
 }
 
-impl RealSubsetSignature for IntegerCanonicalStructure {}
-
-impl RealToFloatSignature for IntegerCanonicalStructure {
+impl RealSubsetSignature for IntegerCanonicalStructure {
     fn as_f64(&self, x: &Self::Set) -> f64 {
+        x.into()
+    }
+
+    fn as_f32(&self, x: &Self::Set) -> f32 {
         x.into()
     }
 }

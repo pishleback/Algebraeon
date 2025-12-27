@@ -407,7 +407,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
             //Let la be L represented by rational polynomials in α modulo q(x) and set up isomorphisms between l and la
             #[cfg(any())]
-            let la_reduced_ring = QuotientStructure::new_ring(
+            let la_reduced_ring = EuclideanRemainderQuotientStructure::new_ring(
                 PolynomialStructure::new(Rational::structure()).into(),
                 q.clone(),
             );

@@ -134,22 +134,19 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         }
     }
 
-    // Order of the multiplicative group of the quotient modulo the ideal.
-    pub fn euler_phi(&self, ideal: &RingOfIntegersIdeal) -> Option<Natural> {
-        match ideal {
-            RingOfIntegersIdeal::Zero => None,
-            RingOfIntegersIdeal::NonZero { .. } => Some(
-                self.factorizations()
-                    .into_powers(self.factor_ideal(ideal).unwrap())
-                    .iter()
-                    .map(|(prime_ideal, exponent)| {
-                        let norm = self.ideal_norm(prime_ideal.ideal());
-                        let e_minus_1 = exponent - Natural::ONE;
-                        (&norm - Natural::ONE) * norm.pow(&e_minus_1)
-                    })
-                    .fold(Natural::ONE, |acc, x| acc * x),
-            ),
-        }
+    /// The order of the multiplicative group of the quotient modulo the ideal.
+    fn euler_phi(&self, ideal: &RingOfIntegersIdeal) -> Option<Natural> {
+        Some(
+            self.factorizations()
+                .into_powers(self.factor_ideal(ideal)?)
+                .iter()
+                .map(|(prime_ideal, exponent)| {
+                    let norm = self.ideal_norm(prime_ideal.ideal());
+                    let e_minus_1 = exponent - Natural::ONE;
+                    (&norm - Natural::ONE) * norm.pow(&e_minus_1)
+                })
+                .fold(Natural::ONE, |acc, x| acc * x),
+        )
     }
 
     /// generate all ideals of norm equal to n
@@ -620,5 +617,47 @@ mod tests {
 
         let phi = roi_ideals.euler_phi(&ideal).unwrap();
         assert_eq!(phi, Natural::from(16u32));
+    }
+
+    #[test]
+    fn test_is_square_ideal() {
+        let x = Polynomial::<Rational>::var().into_ergonomic();
+
+        // Work in the ring of integers Z[i]
+        let anf = (x.pow(2) + 1)
+            .into_verbose()
+            .algebraic_number_field()
+            .unwrap();
+        let roi = anf.compute_ring_of_integers();
+        let roi_ideals = roi.ideals();
+        let one_plus_i = roi.try_anf_to_roi(&(&x + 1).into_verbose()).unwrap();
+        let gaussian_prime = roi_ideals.principal_ideal(&one_plus_i);
+
+        let zero_sqrt = roi_ideals.sqrt_if_square(&roi_ideals.zero_ideal()).unwrap();
+        assert!(roi_ideals.ideal_equal(&zero_sqrt, &roi_ideals.zero_ideal()));
+        assert!(roi_ideals.is_square(&roi_ideals.zero_ideal()));
+        assert!(!roi_ideals.is_squarefree(&roi_ideals.zero_ideal()));
+
+        // (2) = (1 + i)^2 in Z[i]
+        let two_ideal = roi_ideals.principal_ideal(&roi.from_int(2));
+        assert!(roi_ideals.is_square(&two_ideal));
+        let sqrt_two = roi_ideals.sqrt_if_square(&two_ideal).unwrap();
+        assert!(roi_ideals.ideal_equal(&sqrt_two, &gaussian_prime));
+        assert!(!roi_ideals.is_squarefree(&two_ideal));
+
+        // (3) stays prime in Z[i] so it cannot be a square.
+        let three_ideal = roi_ideals.principal_ideal(&roi.from_int(3));
+        assert!(!roi_ideals.is_square(&three_ideal));
+        assert!(roi_ideals.sqrt_if_square(&three_ideal).is_none());
+        assert!(roi_ideals.is_squarefree(&three_ideal));
+
+        // Squares built from a non-trivial prime ideal should be detected as well.
+        assert!(!roi_ideals.is_square(&gaussian_prime));
+        assert!(roi_ideals.is_squarefree(&gaussian_prime));
+        let gaussian_prime_square = roi_ideals.ideal_mul(&gaussian_prime, &gaussian_prime);
+        assert!(roi_ideals.is_square(&gaussian_prime_square));
+        let sqrt_gaussian_square = roi_ideals.sqrt_if_square(&gaussian_prime_square).unwrap();
+        assert!(roi_ideals.ideal_equal(&sqrt_gaussian_square, &gaussian_prime));
+        assert!(!roi_ideals.is_squarefree(&gaussian_prime_square));
     }
 }

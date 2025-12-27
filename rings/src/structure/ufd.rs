@@ -1,3 +1,5 @@
+use crate::structure::AdditiveMonoidEqSignature;
+
 use super::{FactoredSignature, FavoriteAssociateSignature, FieldSignature};
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
@@ -117,6 +119,53 @@ pub trait FactorableSignature: UniqueFactorizationDomainSignature {
             (None, None) => self.zero(),
         }
     }
+
+    /// Determine whether the is a square
+    fn is_square(&self, ideal: &Self::Set) -> bool {
+        if let Some(ideal_factors) = self.factor(ideal) {
+            self.factorizations()
+                .to_powers(&ideal_factors)
+                .into_iter()
+                .all(|(_, exponent)| exponent % Natural::TWO == Natural::ZERO)
+        } else {
+            // ideal is zero
+            true
+        }
+    }
+
+    /// Return true if non-zero and factors as a product of distinct primes
+    fn is_squarefree(&self, ideal: &Self::Set) -> bool {
+        if let Some(ideal_factors) = self.factor(ideal) {
+            self.factorizations()
+                .to_powers(&ideal_factors)
+                .into_iter()
+                .all(|(_, exponent)| exponent <= &Natural::ONE)
+        } else {
+            // ideal is zero
+            false
+        }
+    }
+
+    /// Return an ideal whose square equals the input, if it exists.
+    fn sqrt_if_square(&self, ideal: &Self::Set) -> Option<Self::Set> {
+        if let Some(ideal_factors) = self.factor(ideal) {
+            let mut sqrt_factor_powers = vec![];
+            for (prime, exponent) in self.factorizations().into_powers(ideal_factors) {
+                if exponent.clone() % Natural::TWO != Natural::ZERO {
+                    return None;
+                }
+                let half = exponent / Natural::TWO;
+                if half != Natural::ZERO {
+                    sqrt_factor_powers.push((prime, half));
+                }
+            }
+            let sqrt_factorization = self.factorizations().new_powers(sqrt_factor_powers);
+            Some(self.factorizations().expanded(&sqrt_factorization))
+        } else {
+            // ideal is zero
+            Some(self.zero())
+        }
+    }
 }
 
 pub trait MetaFactorableSignature: MetaType
@@ -133,6 +182,21 @@ where
 
     fn gcd_by_factor(a: &Self, b: &Self) -> Self {
         Self::structure().gcd_by_factor(a, b)
+    }
+
+    /// Determine whether the is a square
+    fn is_square(&self) -> bool {
+        Self::structure().is_square(self)
+    }
+
+    /// Return true if non-zero and factors as a product of distinct primes
+    fn is_squarefree(&self) -> bool {
+        Self::structure().is_squarefree(self)
+    }
+
+    /// Return an ideal whose square equals the input, if it exists.
+    fn sqrt_if_square(&self) -> Option<Self> {
+        Self::structure().sqrt_if_square(self)
     }
 }
 impl<T: MetaType> MetaFactorableSignature for T where T::Signature: FactorableSignature {}

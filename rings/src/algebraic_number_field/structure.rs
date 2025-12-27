@@ -20,7 +20,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type Basis: FiniteSetSignature;
     type RingOfIntegers: DedekindDomainSignature + CharZeroRingSignature;
     type RingOfIntegersInclusion: AlgebraicIntegerRingInAlgebraicNumberField<Self>;
-    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<Self::Basis, RationalCanonicalStructure, Self>;
+    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self>;
     fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
@@ -50,7 +50,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     /// need not return $a$ itself when $a$ is already an algebraic integer
     fn integral_multiple(&self, a: &Self::Set) -> Self::Set {
         let m = self.min_poly_denominator_lcm(a);
-        let b = self.mul(&self.from_rat(&Rational::from(m)).unwrap(), a);
+        let b = self.mul(&self.try_from_rat(&Rational::from(m)).unwrap(), a);
         debug_assert!(self.is_algebraic_integer(&b));
         b
     }

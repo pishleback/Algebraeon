@@ -1,6 +1,6 @@
 use crate::{
     isolated_algebraic::poly_tools::{root_product_poly, root_rat_mul_poly, root_sum_poly},
-    natural::factorization::primes::*,
+    natural::NaturalFns,
     polynomial::*,
     structure::*,
     valuation::*,
@@ -20,7 +20,7 @@ impl IsolatingBall {
     pub fn overlap(x: &Self, y: &Self) -> bool {
         let p = &x.p;
         debug_assert_eq!(p, &y.p);
-        debug_assert!(is_prime(p));
+        debug_assert!(p.is_prime());
         let vdiff = padic_rat_valuation(p, &x.c - &y.c);
         vdiff >= x.v && vdiff >= y.v
     }
@@ -38,7 +38,7 @@ pub struct PAdicAlgebraicRoot {
 
 impl PAdicAlgebraicRoot {
     fn new(p: Natural, poly: Polynomial<Integer>, approx: isolate::PAdicRationalBall) -> Self {
-        debug_assert!(is_prime(&p));
+        debug_assert!(p.is_prime());
         debug_assert!(poly.is_irreducible());
         Self { p, poly, approx }
     }
@@ -84,7 +84,7 @@ pub struct PAdicRational {
 
 impl PAdicRational {
     pub fn from_rational(p: Natural, rat: Rational) -> Self {
-        debug_assert!(is_prime(&p));
+        debug_assert!(p.is_prime());
         Self { p, rat }
     }
 
@@ -432,7 +432,7 @@ impl Polynomial<Integer> {
     }
 
     pub fn all_padic_roots(&self, p: &Natural) -> Vec<PAdicAlgebraic> {
-        debug_assert!(is_prime(p));
+        debug_assert!(p.is_prime());
         assert_ne!(self, &Self::zero());
         let factors = self.factor().unwrap();
         let mut roots = vec![];
@@ -715,7 +715,7 @@ pub struct PAdicAlgebraicStructure {
 
 impl PAdicAlgebraicStructure {
     pub fn new(p: Natural) -> Self {
-        assert!(is_prime(&p), "{} is not prime", p);
+        assert!(p.is_prime(), "{} is not prime", p);
         Self { p }
     }
 
@@ -816,7 +816,11 @@ impl SemiRingSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl RingSignature for PAdicAlgebraicStructure {}
+impl RingSignature for PAdicAlgebraicStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for PAdicAlgebraicStructure {
     fn characteristic(&self) -> Natural {
@@ -851,7 +855,7 @@ impl IntegralDomainSignature for PAdicAlgebraicStructure {
         Ok(self.mul(a, &self.inv(b)?))
     }
 
-    fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
+    fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
         Some(PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: x.clone(),

@@ -38,7 +38,11 @@ impl SemiRingSignature for RationalCanonicalStructure {
     }
 }
 
-impl RingSignature for RationalCanonicalStructure {}
+impl RingSignature for RationalCanonicalStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for RationalCanonicalStructure {
     fn characteristic(&self) -> Natural {
@@ -85,7 +89,7 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
 }
 
 impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FinitelyGeneratedModuleSignature<RationalCanonicalStructure>
+    FreeModuleSignature<RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
@@ -93,19 +97,10 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
         PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
     >
 {
-}
+    type Basis = SingletonSetStructure;
 
-impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FreeModuleSignature<SingletonSetStructure, RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        RationalCanonicalStructure,
-        RationalCanonicalStructure,
-        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
-    >
-{
-    fn basis_set(&self) -> impl std::borrow::Borrow<SingletonSetStructure> {
-        SingletonSetStructure::default()
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+        Self::Basis::default()
     }
 
     fn to_component<'a>(&self, (): &(), v: &'a Rational) -> Cow<'a, Rational> {
@@ -115,17 +110,6 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
     fn from_component(&self, (): &(), r: &Rational) -> Rational {
         r.clone()
     }
-}
-
-impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FinitelyFreeModuleSignature<SingletonSetStructure, RationalCanonicalStructure>
-    for RingHomomorphismRangeModuleStructure<
-        'h,
-        RationalCanonicalStructure,
-        RationalCanonicalStructure,
-        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
-    >
-{
 }
 
 impl ComplexSubsetSignature for RationalCanonicalStructure {
@@ -138,13 +122,13 @@ impl ComplexSubsetSignature for RationalCanonicalStructure {
     }
 }
 
-impl RealSubsetSignature for RationalCanonicalStructure {}
-
-impl RealToFloatSignature for RationalCanonicalStructure {
+impl RealSubsetSignature for RationalCanonicalStructure {
     fn as_f64(&self, x: &Rational) -> f64 {
-        let fof = PrincipalSubringInclusion::new(self.clone());
-        RealToFloatSignature::as_f64(&Integer::structure(), &fof.numerator(x))
-            / RealToFloatSignature::as_f64(&Integer::structure(), &fof.denominator(x))
+        x.into()
+    }
+
+    fn as_f32(&self, x: &Self::Set) -> f32 {
+        x.into()
     }
 }
 

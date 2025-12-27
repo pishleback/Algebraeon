@@ -25,16 +25,20 @@ Rational supports the following operators:
 
 The following methods are available on `Rational`:
 
-- `abs()` – returns the absolute value
-- `floor()` – returns the greatest integer less than or equal to the rational
-- `ceil()` – returns the smallest integer greater than or equal to the rational
-- `approximate(max_denominator)` – approximates the rational with another having a bounded denominator
-- `simplest_rational_in_closed_interval(a, b)` – finds the simplest rational between two bounds
-- `simplest_rational_in_open_interval(a, b)` – finds the simplest rational strictly between two bounds
-- `decimal_string_approx()` – returns a decimal string approximation of the rational
-- `exhaustive_rationals()` – returns an infinite iterator over all reduced rational numbers
-- `into_abs_numerator_and_denominator()` – returns the absolute numerator and denominator as `Natural`s
-- `try_from_float_simplest(x: f64)` – converts a float into the simplest rational representation
+- [`abs()`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#impl-Abs-for-Rational) – returns the absolute value
+- [`floor()`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#impl-Floor-for-Rational) – returns the greatest integer less than or equal to the rational
+- [`ceil()`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#impl-Ceil-for-Rational) – returns the smallest integer greater than or equal to the rational
+- [`approximate(max_denominator)`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.approximate) – approximates the rational with another having a bounded denominator
+- [`simplest_rational_in_closed_interval(a, b)`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.simplest_rational_in_closed_interval) – finds the simplest rational between two bounds
+- [`simplest_rational_in_open_interval(a, b)`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.simplest_rational_in_open_interval) – finds the simplest rational strictly between two bounds
+- [`decimal_string_approx()`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.decimal_string_approx) – returns a decimal string approximation of the rational
+- [`exhaustive_rationals()`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.exhaustive_rationals) – returns an infinite iterator over all reduced rational numbers
+- [`into_abs_numerator_and_denominator()`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.into_abs_numerator_and_denominator) – returns the absolute numerator and denominator as `Natural`s
+- [`try_from_float_simplest(x: f64)`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.try_from_float_simplest) – converts a float into the simplest rational representation
+- [`is_integer`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.is_integer)
+- [`sqrt_if_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.sqrt_if_square)
+- [`is_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.is_square)
+- [`height`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Rational.html#method.height)
 
 ```rust
 use std::str::FromStr;

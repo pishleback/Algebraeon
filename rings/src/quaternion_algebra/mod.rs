@@ -62,7 +62,7 @@ pub enum QuaternionAlgebraBasis {
 }
 
 impl CountableSetSignature for QuaternionAlgebraBasisCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         vec![
             QuaternionAlgebraBasis::R,
             QuaternionAlgebraBasis::I,
@@ -260,11 +260,11 @@ impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStru
 
 impl<Field: FieldSignature> AlgebraSignature<Field> for QuaternionAlgebraStructure<Field> {}
 
-impl<Field: FieldSignature> FreeModuleSignature<QuaternionAlgebraBasisCanonicalStructure, Field>
-    for QuaternionAlgebraStructure<Field>
-{
-    fn basis_set(&self) -> impl std::borrow::Borrow<QuaternionAlgebraBasisCanonicalStructure> {
-        QuaternionAlgebraBasisCanonicalStructure {}
+impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
+    type Basis = QuaternionAlgebraBasisCanonicalStructure;
+
+    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+        Self::Basis {}
     }
 
     fn to_component<'a>(
@@ -290,17 +290,6 @@ impl<Field: FieldSignature> FreeModuleSignature<QuaternionAlgebraBasisCanonicalS
         }
         v
     }
-}
-
-impl<Field: FieldSignature> FinitelyGeneratedModuleSignature<Field>
-    for QuaternionAlgebraStructure<Field>
-{
-}
-
-impl<Field: FieldSignature>
-    FinitelyFreeModuleSignature<QuaternionAlgebraBasisCanonicalStructure, Field>
-    for QuaternionAlgebraStructure<Field>
-{
 }
 
 impl<Field: FieldSignature + CharacteristicSignature> CharacteristicSignature

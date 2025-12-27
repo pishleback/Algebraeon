@@ -8,6 +8,7 @@ use algebraeon_sets::structure::{
     Signature, ToStringSignature,
 };
 use malachite_base::num::basic::traits::{One, Two, Zero};
+use std::iter::{Product, Sum};
 use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
     str::FromStr,
@@ -255,6 +256,19 @@ impl Into<f64> for Integer {
 #[allow(clippy::from_over_into)]
 impl Into<f64> for &Integer {
     fn into(self) -> f64 {
+        self.clone().into()
+    }
+}
+#[allow(clippy::from_over_into)]
+impl Into<f32> for Integer {
+    fn into(self) -> f32 {
+        let x: f64 = self.into();
+        x as f32
+    }
+}
+#[allow(clippy::from_over_into)]
+impl Into<f32> for &Integer {
+    fn into(self) -> f32 {
         self.clone().into()
     }
 }
@@ -630,8 +644,24 @@ impl AbsDiff<&Integer> for &Integer {
     }
 }
 
+impl Sum for Integer {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_nz::integer::Integer::sum(
+            iter.map(|x| x.to_malachite()),
+        ))
+    }
+}
+
+impl Product for Integer {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_nz::integer::Integer::product(
+            iter.map(|x| x.to_malachite()),
+        ))
+    }
+}
+
 impl CountableSetSignature for IntegerCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         use malachite_nz::integer::exhaustive::exhaustive_integers;
         exhaustive_integers().map(Integer::from_malachite)
     }

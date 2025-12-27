@@ -16,3 +16,5 @@ name = "algebraeon_sets"
 algebraeon-macros = { version = "=0.0.13", path = "../macros", default-features = false }
 indexmap = "2.8.0"
 itertools = "0.14.0"
+paste = "1.0.15"
+rand = "0.9.2"

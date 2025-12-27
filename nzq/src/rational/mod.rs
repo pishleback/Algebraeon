@@ -6,8 +6,11 @@ use algebraeon_sets::structure::{
     CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
     Signature, ToStringSignature,
 };
+use malachite_base::num::arithmetic::traits::Pow;
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
+use std::f64;
+use std::iter::{Product, Sum};
 use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign},
     str::FromStr,
@@ -156,6 +159,72 @@ macro_rules! impl_try_into_via_integer {
 impl_try_into_via_integer!(
     u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
 );
+
+impl TryFrom<f64> for Rational {
+    type Error = ();
+
+    fn try_from(value: f64) -> Result<Self, Self::Error> {
+        Ok(Self::from_malachite(
+            malachite_q::Rational::try_from(value).map_err(|_| ())?,
+        ))
+    }
+}
+
+impl TryFrom<f32> for Rational {
+    type Error = ();
+
+    fn try_from(value: f32) -> Result<Self, Self::Error> {
+        Ok(Self::from_malachite(
+            malachite_q::Rational::try_from(value).map_err(|_| ())?,
+        ))
+    }
+}
+
+impl From<&Rational> for f64 {
+    fn from(val: &Rational) -> Self {
+        if val == &Rational::ZERO {
+            return 0.0;
+        }
+        let sign = val < &Rational::ZERO;
+        let (m, e, _) = val
+            .to_malachite_ref()
+            .sci_mantissa_and_exponent_round_ref::<f64>(
+                malachite_base::rounding_modes::RoundingMode::Nearest,
+            )
+            .unwrap();
+        let f: f64 = m * 2.0.pow(e);
+        if sign { -f } else { f }
+    }
+}
+
+impl From<Rational> for f64 {
+    fn from(val: Rational) -> Self {
+        Self::from(&val)
+    }
+}
+
+impl From<&Rational> for f32 {
+    fn from(val: &Rational) -> Self {
+        if val == &Rational::ZERO {
+            return 0.0;
+        }
+        let sign = val < &Rational::ZERO;
+        let (m, e, _) = val
+            .to_malachite_ref()
+            .sci_mantissa_and_exponent_round_ref::<f32>(
+                malachite_base::rounding_modes::RoundingMode::Nearest,
+            )
+            .unwrap();
+        let f: f32 = m * 2.0f32.pow(e);
+        if sign { -f } else { f }
+    }
+}
+
+impl From<Rational> for f32 {
+    fn from(val: Rational) -> Self {
+        Self::from(&val)
+    }
+}
 
 impl FromStr for Rational {
     type Err = ();
@@ -444,6 +513,20 @@ impl Abs for &Rational {
     }
 }
 
+impl Sum for Rational {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_q::Rational::sum(iter.map(|x| x.to_malachite())))
+    }
+}
+
+impl Product for Rational {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_q::Rational::product(
+            iter.map(|x| x.to_malachite()),
+        ))
+    }
+}
+
 impl Fraction for Rational {
     type NumeratorOutput = Integer;
     type DenominatorOutput = Natural;
@@ -586,7 +669,7 @@ impl Rational {
 }
 
 impl CountableSetSignature for RationalCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         use malachite_q::exhaustive::exhaustive_rationals;
         exhaustive_rationals().map(Rational::from_malachite)
     }

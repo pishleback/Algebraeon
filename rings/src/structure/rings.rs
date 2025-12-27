@@ -10,11 +10,7 @@ pub enum RingDivisionError {
     NotDivisible,
 }
 
-pub trait AdditiveMonoidSignature: EqSignature {
-    fn is_zero(&self, a: &Self::Set) -> bool {
-        self.equal(a, &self.zero())
-    }
-
+pub trait AdditiveMonoidSignature: SetSignature {
     fn zero(&self) -> Self::Set;
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
@@ -31,6 +27,23 @@ pub trait AdditiveMonoidSignature: EqSignature {
         sum
     }
 }
+
+pub trait AdditiveMonoidEqSignature: AdditiveMonoidSignature + EqSignature {
+    fn is_zero(&self, a: &Self::Set) -> bool {
+        self.equal(a, &self.zero())
+    }
+}
+impl<R: AdditiveMonoidSignature + EqSignature> AdditiveMonoidEqSignature for R {}
+
+pub trait MetaAdditiveMonoidEq: MetaType
+where
+    Self::Signature: RingSignature + EqSignature,
+{
+    fn is_zero(&self) -> bool {
+        Self::structure().is_zero(self)
+    }
+}
+impl<R: MetaType> MetaAdditiveMonoidEq for R where Self::Signature: RingSignature + EqSignature {}
 
 pub trait SemiRingSignature: AdditiveMonoidSignature {
     fn one(&self) -> Self::Set;
@@ -127,6 +140,9 @@ where
 }
 impl<R: MetaType> MetaSemiRing for R where Self::Signature: SemiRingSignature {}
 
+pub trait SemiRingEqSignature: SemiRingSignature + EqSignature {}
+impl<R: SemiRingSignature + EqSignature> SemiRingEqSignature for R {}
+
 pub trait CharacteristicSignature: SemiRingSignature {
     fn characteristic(&self) -> Natural;
 }
@@ -149,6 +165,14 @@ pub trait AdditiveGroupSignature: AdditiveMonoidSignature {
 }
 
 pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
+    /// Determine whether the ring is reduced.
+    ///
+    /// Returns `Ok(true)` if the ring is reduced, `Ok(false)` if it is not,
+    /// and `Err` when the implementation cannot decide.
+    fn is_reduced(&self) -> Result<bool, String> {
+        Err("unable to decide whether the ring is reduced".to_string())
+    }
+
     fn bracket(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.sub(&self.mul(a, b), &self.mul(b, a))
     }
@@ -175,6 +199,10 @@ pub trait MetaRing: MetaType
 where
     Self::Signature: RingSignature,
 {
+    fn ring_is_reduced() -> Result<bool, String> {
+        Self::structure().is_reduced()
+    }
+
     fn neg(&self) -> Self {
         Self::structure().neg(self)
     }
@@ -185,15 +213,8 @@ where
 }
 impl<R: MetaType> MetaRing for R where Self::Signature: RingSignature {}
 
-pub trait MetaRingEq: MetaType
-where
-    Self::Signature: RingSignature + EqSignature,
-{
-    fn is_zero(&self) -> bool {
-        Self::structure().is_zero(self)
-    }
-}
-impl<R: MetaType> MetaRingEq for R where Self::Signature: RingSignature + EqSignature {}
+pub trait RingEqSignature: RingSignature + EqSignature {}
+impl<R: RingSignature + EqSignature> RingEqSignature for R {}
 
 pub trait SemiRingUnitsSignature: SemiRingSignature {
     /// b such that a*b=1 and b*a=1
@@ -227,10 +248,10 @@ impl<R: MetaType> MetaSemiRingUnitsSignature for R where
 pub trait RingUnitsSignature: RingSignature + SemiRingUnitsSignature {}
 impl<Ring: RingSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {}
 
-pub trait IntegralDomainSignature: RingUnitsSignature {
+pub trait IntegralDomainSignature: RingUnitsSignature + EqSignature {
     fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
 
-    fn from_rat(&self, x: &Rational) -> Option<Self::Set> {
+    fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
         match self.div(
             &self.from_int(Fraction::numerator(x)),
             &self.from_nat(Fraction::denominator(x)),
@@ -280,8 +301,8 @@ where
         Self::structure().div(a, b)
     }
 
-    fn from_rat(x: &Rational) -> Option<Self> {
-        Self::structure().from_rat(x)
+    fn try_from_rat(x: &Rational) -> Option<Self> {
+        Self::structure().try_from_rat(x)
     }
 
     fn int_pow(&self, n: &Integer) -> Option<Self> {
@@ -324,6 +345,12 @@ impl<R: MetaType> MetaOrderedRing for R where Self::Signature: OrderedRingSignat
 
 pub trait FiniteUnitsSignature: RingSignature {
     fn all_units(&self) -> Vec<Self::Set>;
+
+    fn all_units_and_zero(&self) -> Vec<Self::Set> {
+        let mut elems = vec![self.zero()];
+        elems.append(&mut self.all_units());
+        elems
+    }
 }
 
 pub trait MetaFiniteUnits: MetaRing
@@ -471,7 +498,7 @@ where
 }
 impl<R: MetaRing> MetaBezoutDomain for R where Self::Signature: BezoutDomainSignature<Set = R> {}
 
-pub trait EuclideanDivisionSignature: SemiRingSignature {
+pub trait EuclideanDivisionSignature: SemiRingEqSignature {
     /// None for 0 and Some(norm) for everything else
     fn norm(&self, elem: &Self::Set) -> Option<Natural>;
 
@@ -601,11 +628,24 @@ where
     T::Signature: InfiniteSignature,
 {
     fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>> {
-        todo!()
+        Self::structure().generate_distinct_elements()
     }
 }
 
-pub trait FieldSignature: IntegralDomainSignature {}
+pub trait FieldSignature: IntegralDomainSignature {
+    fn from_rat(&self, x: &Rational) -> Self::Set {
+        self.try_from_rat(x).unwrap()
+    }
+}
+pub trait MetaField: MetaType
+where
+    Self::Signature: FieldSignature<Set = Self>,
+{
+    fn from_rat(x: &Rational) -> Self {
+        Self::structure().from_rat(x)
+    }
+}
+impl<T: MetaType> MetaField for T where T::Signature: FieldSignature<Set = Self> {}
 
 impl<FS: FieldSignature> FavoriteAssociateSignature for FS {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
@@ -709,48 +749,13 @@ where
 }
 impl<R: MetaType> MetaCharZeroField for R where Self::Signature: CharZeroFieldSignature<Set = R> {}
 
-use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
-
-struct FiniteFieldRandomElementGenerator<FS: FiniteFieldSignature, R: Rng> {
-    all_elements: Vec<FS::Set>,
-    rng: R,
-}
-
-impl<FS: FiniteFieldSignature, R: Rng> Iterator for FiniteFieldRandomElementGenerator<FS, R> {
-    type Item = FS::Set;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.all_elements.is_empty() {
-            None
-        } else {
-            let idx = self.rng.random_range(0..self.all_elements.len());
-            Some(self.all_elements[idx].clone())
-        }
-    }
-}
-
-pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature {
+pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSetSignature {
     // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(&self) -> (Natural, Natural);
-
-    fn all_elements(&self) -> Vec<Self::Set> {
-        let mut elems = vec![self.zero()];
-        elems.append(&mut self.all_units());
-        elems
-    }
-
-    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Set> {
-        let rng = StdRng::seed_from_u64(seed);
-        FiniteFieldRandomElementGenerator::<Self, StdRng> {
-            all_elements: self.all_elements(),
-            rng,
-        }
-    }
 }
 
 //is a subset of the complex numbers
-pub trait ComplexSubsetSignature: IntegralDomainSignature {
+pub trait ComplexSubsetSignature: SetSignature {
     fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32);
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64);
 }
@@ -768,7 +773,31 @@ where
 impl<R: MetaType> MetaComplexSubset for R where Self::Signature: ComplexSubsetSignature<Set = R> {}
 
 //is a subset of the real numbers
-pub trait RealSubsetSignature: ComplexSubsetSignature {}
+pub trait RealSubsetSignature: ComplexSubsetSignature {
+    fn as_f64(&self, x: &Self::Set) -> f64 {
+        let (r, i) = self.as_f64_real_and_imaginary_parts(x);
+        debug_assert_eq!(i, 0.0);
+        r
+    }
+    fn as_f32(&self, x: &Self::Set) -> f32 {
+        let (r, i) = self.as_f32_real_and_imaginary_parts(x);
+        debug_assert_eq!(i, 0.0);
+        r
+    }
+}
+pub trait MetaRealSubset: MetaType
+where
+    Self::Signature: RealSubsetSignature,
+{
+    fn as_f64(&self) -> f64 {
+        Self::structure().as_f64(self)
+    }
+
+    fn as_f32(&self) -> f32 {
+        Self::structure().as_f32(self)
+    }
+}
+impl<R: MetaType> MetaRealSubset for R where Self::Signature: RealSubsetSignature {}
 
 pub trait RealRoundingSignature: RealSubsetSignature {
     fn floor(&self, x: &Self::Set) -> Integer; //round down
@@ -793,27 +822,6 @@ where
     }
 }
 impl<R: MetaType> MetaRealRounding for R where Self::Signature: RealRoundingSignature<Set = R> {}
-
-pub trait RealToFloatSignature: RealSubsetSignature {
-    fn as_f64(&self, x: &Self::Set) -> f64;
-    fn as_f32(&self, x: &Self::Set) -> f32 {
-        RealToFloatSignature::as_f64(self, x) as f32
-    }
-}
-
-pub trait MetaRealToFloat: MetaType
-where
-    Self::Signature: RealToFloatSignature,
-{
-    fn as_f64(&self) -> f64 {
-        Self::structure().as_f64(self)
-    }
-
-    fn as_f32(&self) -> f32 {
-        Self::structure().as_f32(self)
-    }
-}
-impl<R: MetaType> MetaRealToFloat for R where Self::Signature: RealToFloatSignature {}
 
 #[allow(clippy::wrong_self_convention)]
 pub trait RealFromFloatSignature: RealSubsetSignature {
@@ -863,6 +871,12 @@ pub trait PositiveRealNthRootSignature: ComplexSubsetSignature {
     //if x is a non-negative real number, return the nth root of x
     //may also return Ok for other well-defined values such as for 1st root of any x and 0th root of any non-zero x, but is not required to
     fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()>;
+    fn square_root(&self, x: &Self::Set) -> Result<Self::Set, ()> {
+        self.nth_root(x, 2)
+    }
+    fn cube_root(&self, x: &Self::Set) -> Result<Self::Set, ()> {
+        self.nth_root(x, 3)
+    }
 }
 
 pub trait MetaPositiveRealNthRoot: MetaType
@@ -871,6 +885,12 @@ where
 {
     fn nth_root(&self, n: usize) -> Result<Self, ()> {
         Self::structure().nth_root(self, n)
+    }
+    fn square_root(&self) -> Result<Self, ()> {
+        Self::structure().square_root(self)
+    }
+    fn cube_root(&self) -> Result<Self, ()> {
+        Self::structure().cube_root(self)
     }
 }
 impl<R: MetaType> MetaPositiveRealNthRoot for R where

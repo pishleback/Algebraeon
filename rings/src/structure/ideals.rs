@@ -81,7 +81,7 @@ pub trait IdealsArithmeticSignature<Ring: RingSignature, RingB: BorrowedStructur
         self.ideal_contains(a, &self.principal_ideal(x))
     }
 
-    /// Intersection of ideals
+    /// Intersection of two ideals
     fn ideal_intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 
     /// Sum of two ideals
@@ -99,7 +99,7 @@ pub trait IdealsArithmeticSignature<Ring: RingSignature, RingB: BorrowedStructur
     /// Product of two ideals
     fn ideal_mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 
-    /// Sum of many ideals
+    /// Product of many ideals
     fn ideal_product(&self, ideals: Vec<impl Into<Self::Set>>) -> Self::Set {
         let mut total = self.unit_ideal();
         for i in ideals {
@@ -235,6 +235,53 @@ pub trait FactorableIdealsSignature<Ring: DedekindDomainSignature, RingB: Borrow
             self.factorizations().is_prime(&f)
         } else {
             false
+        }
+    }
+
+    /// Determine whether an ideal is a square, i.e. every prime ideal in its factorization has even valuation.
+    fn is_square(&self, ideal: &Self::Set) -> bool {
+        if let Some(ideal_factors) = self.factor_ideal(ideal) {
+            self.factorizations()
+                .to_powers(&ideal_factors)
+                .into_iter()
+                .all(|(_, exponent)| exponent % Natural::TWO == Natural::ZERO)
+        } else {
+            // ideal is zero
+            true
+        }
+    }
+
+    /// Return true if a non-zero ideal factors as a product of distinct prime ideals.
+    fn is_squarefree(&self, ideal: &Self::Set) -> bool {
+        if let Some(ideal_factors) = self.factor_ideal(ideal) {
+            self.factorizations()
+                .to_powers(&ideal_factors)
+                .into_iter()
+                .all(|(_, exponent)| exponent <= &Natural::ONE)
+        } else {
+            // ideal is zero
+            false
+        }
+    }
+
+    /// Return an ideal whose square equals the input, if it exists.
+    fn sqrt_if_square(&self, ideal: &Self::Set) -> Option<Self::Set> {
+        if let Some(ideal_factors) = self.factor_ideal(ideal) {
+            let mut sqrt_factor_powers = vec![];
+            for (prime, exponent) in self.factorizations().into_powers(ideal_factors) {
+                if exponent.clone() % Natural::TWO != Natural::ZERO {
+                    return None;
+                }
+                let half = exponent / Natural::TWO;
+                if half != Natural::ZERO {
+                    sqrt_factor_powers.push((prime, half));
+                }
+            }
+            let sqrt_factorization = self.factorizations().new_powers(sqrt_factor_powers);
+            Some(self.factorizations().expanded(&sqrt_factorization))
+        } else {
+            // ideal is zero
+            Some(self.zero_ideal())
         }
     }
 }

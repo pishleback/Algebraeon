@@ -11,6 +11,7 @@ use malachite_base::num::{
     arithmetic::traits::PowerOf2,
     basic::traits::{One, Two, Zero},
 };
+use std::iter::{Product, Sum};
 use std::{
     borrow::Borrow,
     ops::{
@@ -615,6 +616,22 @@ impl<Modulus: Borrow<Natural>> ModInv<Modulus> for &Natural {
     }
 }
 
+impl Sum for Natural {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_nz::natural::Natural::sum(
+            iter.map(|x| x.to_malachite()),
+        ))
+    }
+}
+
+impl Product for Natural {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::from_malachite(malachite_nz::natural::Natural::product(
+            iter.map(|x| x.to_malachite()),
+        ))
+    }
+}
+
 impl Natural {
     /// 2 raised to the power of `pow`.
     /// ```
@@ -747,7 +764,7 @@ impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
 impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
 
 impl CountableSetSignature for NaturalCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         use malachite_nz::natural::exhaustive::exhaustive_naturals;
         exhaustive_naturals().map(Natural::from_malachite)
     }

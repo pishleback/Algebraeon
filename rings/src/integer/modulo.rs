@@ -1,7 +1,7 @@
 use super::*;
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteUnitsSignature
-    for QuotientStructure<IntegerCanonicalStructure, B, true>
+    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>
 {
     fn all_units(&self) -> Vec<Self::Set> {
         let mut units = vec![];
@@ -15,7 +15,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteUnitsSignature
 }
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteFieldSignature
-    for QuotientStructure<IntegerCanonicalStructure, B, true>
+    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>
 {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (self.modulus().abs(), Natural::ONE)
@@ -23,9 +23,9 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteFieldSignature
 }
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> CountableSetSignature
-    for QuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
+    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
         (0usize..)
             .map(Integer::from)
             .take_while(|n| n < self.modulus())
@@ -33,7 +33,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> Coun
 }
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> FiniteSetSignature
-    for QuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
+    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
 {
     fn size(&self) -> usize {
         self.modulus().abs().try_into().unwrap()

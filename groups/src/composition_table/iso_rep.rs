@@ -115,7 +115,7 @@ impl IsomorphismClass {
         }
 
         //dihedral
-        if n % 2 == 0
+        if n.is_multiple_of(2)
             && let Some(_f) = find_isomorphism(group, &examples::dihedral_group_structure(n / 2))
         {
             return Self::Dihedral(n / 2);

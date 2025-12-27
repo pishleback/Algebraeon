@@ -244,7 +244,11 @@ impl SemiRingSignature for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl RingSignature for RingOfIntegersWithIntegralBasisStructure {}
+impl RingSignature for RingOfIntegersWithIntegralBasisStructure {
+    fn is_reduced(&self) -> Result<bool, String> {
+        Ok(true)
+    }
+}
 
 impl CharacteristicSignature for RingOfIntegersWithIntegralBasisStructure {
     fn characteristic(&self) -> Natural {

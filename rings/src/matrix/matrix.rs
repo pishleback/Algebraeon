@@ -44,6 +44,20 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
+    /// Construct a matrix from a closure.
+    ///
+    /// ```rust
+    /// use algebraeon_nzq::Integer;
+    /// use algebraeon_rings::matrix::Matrix;
+    /// let a = Matrix::<Integer>::construct(2, 3, |r, c| if (r + c) % 2 == 0 { Integer::ZERO } else { Integer::ONE });
+    /// let b = Matrix::<Integer>::from_rows(
+    ///     vec![
+    ///         vec![Integer::ZERO, Integer::ONE, Integer::ZERO],
+    ///         vec![Integer::ONE, Integer::ZERO, Integer::ONE]
+    ///     ]
+    /// );
+    /// assert_eq!(a, b);
+    /// ```
     pub fn construct(rows: usize, cols: usize, make_entry: impl Fn(usize, usize) -> Set) -> Self {
         let mut elems = Vec::with_capacity(rows * cols);
         for idx in 0..rows * cols {
@@ -60,6 +74,7 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
+    /// Construct a matrix from a list of rows.
     pub fn from_rows(rows_elems: Vec<Vec<impl Into<Set> + Clone>>) -> Self {
         let rows = rows_elems.len();
         assert!(rows >= 1);
@@ -70,6 +85,7 @@ impl<Set: Clone> Matrix<Set> {
         Self::construct(rows, cols, |r, c| rows_elems[r][c].clone().into())
     }
 
+    /// Construct a matrix from a list of columns.
     pub fn from_cols(cols_elems: Vec<Vec<impl Into<Set> + Clone>>) -> Self {
         Self::from_rows(cols_elems).transpose()
     }
@@ -78,11 +94,9 @@ impl<Set: Clone> Matrix<Set> {
         if self.flip_rows {
             r = self.rows() - r - 1;
         }
-
         if self.flip_cols {
             c = self.cols() - c - 1;
         }
-
         if self.transpose {
             r + c * self.dim2
         } else {
@@ -90,6 +104,7 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
+    /// Get a reference to the entry at row `r` and column `c`.
     pub fn at(&self, r: usize, c: usize) -> Result<&Set, MatOppErr> {
         if r >= self.rows() || c >= self.cols() {
             Err(MatOppErr::InvalidIndex)
@@ -99,6 +114,7 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
+    /// Get a mutable reference to the entry at row `r` and column `c`.
     pub fn at_mut(&mut self, r: usize, c: usize) -> Result<&mut Set, MatOppErr> {
         if r >= self.rows() || c >= self.cols() {
             Err(MatOppErr::InvalidIndex)
@@ -116,6 +132,7 @@ impl<Set: Clone> Matrix<Set> {
         if self.transpose { self.dim1 } else { self.dim2 }
     }
 
+    /// Return the submatrix given by the intersection of the rows defined by `rows` and the columns defined by `cols`.
     pub fn submatrix(&self, rows: Vec<usize>, cols: Vec<usize>) -> Self {
         let mut elems = vec![];
         for r in &rows {
@@ -161,6 +178,7 @@ impl<Set: Clone> Matrix<Set> {
         self.get_col_refs(col).into_iter().cloned().collect()
     }
 
+    /// Apply a function `f` to the entries of this matrix, producing a new matrix.
     pub fn apply_map<NewSet: Clone>(&self, f: impl Fn(&Set) -> NewSet) -> Matrix<NewSet> {
         Matrix {
             dim1: self.dim1,
@@ -206,6 +224,13 @@ impl<Set: Clone> Matrix<Set> {
         self.flip_cols = !self.flip_cols;
     }
 
+    /// Concatenate the rows of the matrices in `mats` into a single matrix.
+    ///
+    /// `cols` must match the number of columns of every matrix in `mats`. The purpose of this input is to produce an empty matrix of the correct dimension when `mats` is empty.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if `cols` does not match the number of columns of every matrix in `mats`.
     pub fn join_rows<MatT: Borrow<Matrix<Set>>>(cols: usize, mats: Vec<MatT>) -> Matrix<Set> {
         let mut rows = 0;
         for mat in &mats {
@@ -229,6 +254,13 @@ impl<Set: Clone> Matrix<Set> {
         })
     }
 
+    /// Concatenate the columns of the matrices in `mats` into a single matrix.
+    ///
+    /// `rows` must match the number of rows of every matrix in `mats`. The purpose of this input is to produce an empty matrix of the correct dimension when `mats` is empty.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if `rows` does not match the number of rows of every matrix in `mats`.
     pub fn join_cols<MatT: Borrow<Matrix<Set>>>(rows: usize, mats: Vec<MatT>) -> Matrix<Set> {
         let mut t_mats = vec![];
         for mat in mats {
@@ -238,6 +270,9 @@ impl<Set: Clone> Matrix<Set> {
         joined.transpose()
     }
 
+    /// Return a vector containing the entries of this matrix.
+    ///
+    /// Most useful when this matrix is a row vector or a column vector.
     pub fn entries_list(&self) -> Vec<&Set> {
         let mut entries = vec![];
         for r in 0..self.rows() {
@@ -277,6 +312,18 @@ impl<RS: SetSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         self.ring.borrow()
     }
 }
+
+pub trait RingMatricesSignature: SetSignature {
+    fn matrices<'a>(&'a self) -> MatrixStructure<Self, &'a Self> {
+        MatrixStructure::new(self)
+    }
+
+    fn into_matrices(self) -> MatrixStructure<Self, Self> {
+        MatrixStructure::new(self)
+    }
+}
+
+impl<RS: SetSignature> RingMatricesSignature for RS {}
 
 impl<RS: EqSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     pub fn equal(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> bool {
@@ -619,14 +666,14 @@ where
 
 impl<R: MetaType> PartialEq for Matrix<R>
 where
-    R::Signature: RingSignature,
+    R::Signature: RingSignature + EqSignature,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
     }
 }
 
-impl<R: MetaType> Eq for Matrix<R> where R::Signature: RingSignature {}
+impl<R: MetaType> Eq for Matrix<R> where R::Signature: RingSignature + EqSignature {}
 
 impl<R: MetaType> Matrix<R>
 where

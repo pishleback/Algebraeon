@@ -25,7 +25,7 @@ fn plot_simplex_collection<
     'f,
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
-        + algebraeon_rings::structure::RealToFloatSignature
+        + algebraeon_rings::structure::RealSubsetSignature
         + 'f,
 >(
     canvas: &mut Canvas2D,
@@ -73,7 +73,7 @@ impl<
     'f,
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
-        + algebraeon_rings::structure::RealToFloatSignature
+        + algebraeon_rings::structure::RealSubsetSignature
         + 'f,
 > Plottable for SimplicialDisjointUnion<'f, FS>
 where
@@ -88,7 +88,7 @@ impl<
     'f,
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
-        + algebraeon_rings::structure::RealToFloatSignature
+        + algebraeon_rings::structure::RealSubsetSignature
         + 'f,
 > Plottable for PartialSimplicialComplex<'f, FS>
 where
@@ -103,7 +103,7 @@ impl<
     'f,
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
-        + algebraeon_rings::structure::RealToFloatSignature
+        + algebraeon_rings::structure::RealSubsetSignature
         + 'f,
 > Plottable for SimplicialComplex<'f, FS>
 where

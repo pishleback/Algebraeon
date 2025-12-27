@@ -63,14 +63,14 @@ where
     }
 }
 
-impl<RS: RingSignature> PartialEq for StructuredElement<RS> {
+impl<RS: RingEqSignature> PartialEq for StructuredElement<RS> {
     fn eq(&self, other: &Self) -> bool {
         let structure = common_structure::<RS>(self.structure(), other.structure());
         structure.equal(self.ref_set(), other.ref_set())
     }
 }
 
-impl<RS: RingSignature> Eq for StructuredElement<RS> {}
+impl<RS: RingEqSignature> Eq for StructuredElement<RS> {}
 
 impl<RS: RingSignature> Neg for &StructuredElement<RS> {
     type Output = StructuredElement<RS>;
