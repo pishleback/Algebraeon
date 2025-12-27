@@ -5,7 +5,7 @@ use crate::{
     },
     structure::{MetaFactorableSignature, MetaSemiRing},
 };
-use algebraeon_nzq::{Integer, Natural, traits::DivMod};
+use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
 use algebraeon_sets::structure::{BorrowedStructure, Morphism};
 
 #[derive(Debug, Clone)]
@@ -31,6 +31,9 @@ impl<
             // g is a root of an integer polynomial
             // ax^2 + bx + c
             let poly = anf_polyquo_borrowed.modulus().primitive_part_fof();
+            debug_assert_eq!(poly.coeffs().len(), 3);
+            let two_a = Integer::TWO * poly.coeff(2).as_ref();
+            let neg_b = -poly.coeff(1).as_ref();
 
             // find s, d such that s^2d = b^2-4ac and d is squarefree
             let (s, d) = {
@@ -51,10 +54,14 @@ impl<
             //       = (-b/2a) + (±s/2a) sqrt(d)
             // by the quadratic formula
             // this determines the desired isomorphism
-
-            println!("{:?}, {:?}", s, d);
-
-            compile_error!("todo");
+            Ok(Self {
+                anf_polyquo,
+                anf_quadratic: QuadraticNumberFieldStructure::new_unchecked(d),
+                generator_image: QuadraticNumberFieldElement::new(
+                    Rational::from_integers(neg_b, two_a.clone()),
+                    Rational::from_integers(s, two_a),
+                ),
+            })
         } else {
             Err(())
         }
@@ -108,5 +115,7 @@ mod tests {
         let anf_poly = poly.algebraic_number_field().unwrap();
 
         let iso = anf_poly.quadratic_anf_isomorphism().unwrap();
+
+        println!("{:#?}", iso);
     }
 }
