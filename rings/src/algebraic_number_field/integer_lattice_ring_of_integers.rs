@@ -114,10 +114,6 @@ impl RingOfIntegersWithIntegralBasisStructure {
         &self.integral_basis[i]
     }
 
-    pub fn anf(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
-        &self.algebraic_number_field
-    }
-
     pub fn roi_to_anf(&self, elem: &Vec<Integer>) -> Polynomial<Rational> {
         debug_assert!(self.is_element(elem).is_ok());
         let n = self.degree();
@@ -299,6 +295,10 @@ impl CharZeroRingSignature for RingOfIntegersWithIntegralBasisStructure {
 
 impl AlgebraicIntegerRingSignature for RingOfIntegersWithIntegralBasisStructure {
     type AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure;
+
+    fn anf(&self) -> Self::AlgebraicNumberField {
+        self.algebraic_number_field.clone()
+    }
 }
 
 #[derive(Debug, Clone)]

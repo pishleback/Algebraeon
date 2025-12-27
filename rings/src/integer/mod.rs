@@ -191,6 +191,10 @@ impl CharZeroRingSignature for IntegerCanonicalStructure {
 
 impl AlgebraicIntegerRingSignature for IntegerCanonicalStructure {
     type AlgebraicNumberField = RationalCanonicalStructure;
+
+    fn anf(&self) -> Self::AlgebraicNumberField {
+        Rational::structure()
+    }
 }
 
 impl ComplexSubsetSignature for IntegerCanonicalStructure {

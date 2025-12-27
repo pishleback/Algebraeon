@@ -16,6 +16,8 @@ use algebraeon_sets::structure::{
 
 pub trait AlgebraicIntegerRingSignature: DedekindDomainSignature + CharZeroRingSignature {
     type AlgebraicNumberField: AlgebraicNumberFieldSignature<RingOfIntegers = Self>;
+
+    fn anf(&self) -> Self::AlgebraicNumberField;
 }
 
 /// An algebraic number field is a field of characteristic zero such that
@@ -23,13 +25,16 @@ pub trait AlgebraicIntegerRingSignature: DedekindDomainSignature + CharZeroRingS
 pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type Basis: FiniteSetSignature;
     type RingOfIntegers: AlgebraicIntegerRingSignature<AlgebraicNumberField = Self>;
-    type RingOfIntegersInclusion: AlgebraicIntegerRingInAlgebraicNumberField<Self>;
+    type RingOfIntegersInclusion<B: BorrowedStructure<Self>>: AlgebraicIntegerRingInAlgebraicNumberField<AlgebraicNumberField = Self, RingOfIntegers = Self::RingOfIntegers>;
     type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
+
+    fn roi(&self) -> Self::RingOfIntegers;
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self>;
     fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
 
-    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion;
+    fn ring_of_integers_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self>;
+    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion<Self>;
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool;
 
@@ -60,26 +65,30 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     }
 }
 
-pub trait AlgebraicIntegerRingInAlgebraicNumberField<
-    ANF: AlgebraicNumberFieldSignature<RingOfIntegersInclusion = Self>,
->:
-    RingHomomorphism<ANF::RingOfIntegers, ANF> + InjectiveFunction<ANF::RingOfIntegers, ANF>
+pub trait AlgebraicIntegerRingInAlgebraicNumberField:
+    RingHomomorphism<Self::RingOfIntegers, Self::AlgebraicNumberField>
+    + InjectiveFunction<Self::RingOfIntegers, Self::AlgebraicNumberField>
 {
+    type AlgebraicNumberField: AlgebraicNumberFieldSignature<RingOfIntegers = Self::RingOfIntegers>;
+    type RingOfIntegers: AlgebraicIntegerRingSignature<
+        AlgebraicNumberField = Self::AlgebraicNumberField,
+    >;
+
     fn discriminant(&self) -> Integer;
 
     fn zq_extension<'a>(
         &'a self,
     ) -> RingOfIntegersExtension<
-        ANF,
+        Self,
         &'a Self,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
-        &'a ANF::RingOfIntegers,
-        <ANF::RingOfIntegers as RingToIdealsSignature>::Ideals<&'a ANF::RingOfIntegers>,
+        &'a Self::RingOfIntegers,
+        <Self::RingOfIntegers as RingToIdealsSignature>::Ideals<&'a Self::RingOfIntegers>,
     >
     where
-        ANF::RingOfIntegers: RingToIdealsSignature,
-        <ANF::RingOfIntegers as RingToIdealsSignature>::Ideals<&'a ANF::RingOfIntegers>:
-            DedekindDomainIdealsSignature<ANF::RingOfIntegers, &'a ANF::RingOfIntegers>,
+        Self::RingOfIntegers: RingToIdealsSignature,
+        <Self::RingOfIntegers as RingToIdealsSignature>::Ideals<&'a Self::RingOfIntegers>:
+            DedekindDomainIdealsSignature<Self::RingOfIntegers, &'a Self::RingOfIntegers>,
     {
         let ideals_z = Integer::structure().into_ideals();
         let ideals_r = self.domain().ideals();

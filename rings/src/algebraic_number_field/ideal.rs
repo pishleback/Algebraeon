@@ -1,6 +1,8 @@
 use super::integer_lattice_ring_of_integers::*;
 use crate::{
-    algebraic_number_field::structure::AlgebraicIntegerRingInAlgebraicNumberField,
+    algebraic_number_field::structure::{
+        AlgebraicIntegerRingInAlgebraicNumberField, AlgebraicIntegerRingSignature,
+    },
     matrix::Matrix,
     module::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,

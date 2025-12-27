@@ -159,9 +159,12 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
     }
 }
 
-impl AlgebraicIntegerRingInAlgebraicNumberField<RationalCanonicalStructure>
-    for PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>
+impl<B: BorrowedStructure<RationalCanonicalStructure>> AlgebraicIntegerRingInAlgebraicNumberField
+    for PrincipalSubringInclusion<RationalCanonicalStructure, B>
 {
+    type AlgebraicNumberField = RationalCanonicalStructure;
+    type RingOfIntegers = IntegerCanonicalStructure;
+
     fn discriminant(&self) -> Integer {
         Integer::ONE
     }
@@ -170,9 +173,13 @@ impl AlgebraicIntegerRingInAlgebraicNumberField<RationalCanonicalStructure>
 impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     type Basis = SingletonSetStructure;
     type RingOfIntegers = IntegerCanonicalStructure;
-    type RingOfIntegersInclusion = PrincipalSubringInclusion<Self, Self>;
+    type RingOfIntegersInclusion<B: BorrowedStructure<Self>> = PrincipalSubringInclusion<Self, B>;
     type RationalInclusion<B: BorrowedStructure<Self>> =
         PrincipalRationalSubfieldInclusion<Self, B>;
+
+    fn roi(&self) -> Self::RingOfIntegers {
+        Integer::structure()
+    }
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
         self.rational_extension()
@@ -181,7 +188,10 @@ impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
         self.into_rational_extension()
     }
 
-    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion {
+    fn ring_of_integers_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self> {
+        self.principal_subring_inclusion()
+    }
+    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion<Self> {
         self.into_principal_subring_inclusion()
     }
 

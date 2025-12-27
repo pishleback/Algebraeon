@@ -146,4 +146,8 @@ impl<D: BorrowedStructure<Integer>> AlgebraicIntegerRingSignature
     for QuadraticRingOfIntegersStructure<D>
 {
     type AlgebraicNumberField = QuadraticNumberFieldStructure<D>;
+
+    fn anf(&self) -> Self::AlgebraicNumberField {
+        QuadraticNumberFieldStructure::new_unchecked(self.d.clone())
+    }
 }

@@ -342,10 +342,12 @@ impl<D: BorrowedStructure<Integer>>
 {
 }
 
-impl<D: BorrowedStructure<Integer>>
-    AlgebraicIntegerRingInAlgebraicNumberField<QuadraticNumberFieldStructure<D>>
+impl<D: BorrowedStructure<Integer>> AlgebraicIntegerRingInAlgebraicNumberField
     for QuadraticNumberFieldRingOfIntegersInclusionStructure<D>
 {
+    type AlgebraicNumberField = QuadraticNumberFieldStructure<D>;
+    type RingOfIntegers = QuadraticRingOfIntegersStructure<D>;
+
     fn discriminant(&self) -> Integer {
         let d_mod_4 = self.d() % Integer::from(4);
         if d_mod_4 == Integer::from(1) {
@@ -363,9 +365,14 @@ impl<D: BorrowedStructure<Integer>> AlgebraicNumberFieldSignature
 {
     type Basis = QuadraticNumberFieldBasisCanonicalStructure;
     type RingOfIntegers = QuadraticRingOfIntegersStructure<D>;
-    type RingOfIntegersInclusion = QuadraticNumberFieldRingOfIntegersInclusionStructure<D>;
+    type RingOfIntegersInclusion<B: BorrowedStructure<Self>> =
+        QuadraticNumberFieldRingOfIntegersInclusionStructure<D>;
     type RationalInclusion<B: BorrowedStructure<Self>> =
         PrincipalRationalSubfieldInclusion<Self, B>;
+
+    fn roi(&self) -> Self::RingOfIntegers {
+        QuadraticRingOfIntegersStructure::new_unchecked(self.d.clone())
+    }
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
         PrincipalRationalSubfieldInclusion::new(self)
@@ -375,7 +382,11 @@ impl<D: BorrowedStructure<Integer>> AlgebraicNumberFieldSignature
         PrincipalRationalSubfieldInclusion::new(self)
     }
 
-    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion {
+    fn ring_of_integers_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self> {
+        QuadraticNumberFieldRingOfIntegersInclusionStructure::new_unchecked(self.d.clone())
+    }
+
+    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion<Self> {
         QuadraticNumberFieldRingOfIntegersInclusionStructure::new_unchecked(self.d)
     }
 

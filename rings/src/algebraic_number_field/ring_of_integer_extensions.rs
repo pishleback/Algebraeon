@@ -3,6 +3,7 @@ use super::ideal::RingOfIntegersIdealsStructure;
 use super::integer_lattice_ring_of_integers::*;
 use super::polynomial_quotient_number_field::*;
 use super::structure::AlgebraicNumberFieldSignature;
+use crate::algebraic_number_field::structure::AlgebraicIntegerRingInAlgebraicNumberField;
 use crate::integer::ideal::IntegerIdealsStructure;
 use crate::polynomial::RingToPolynomialSignature;
 use crate::structure::*;
@@ -20,30 +21,30 @@ use std::marker::PhantomData;
 ///
 #[derive(Debug, Clone)]
 pub struct RingOfIntegersExtension<
-    ANF: AlgebraicNumberFieldSignature,
-    ROItoANF: BorrowedMorphism<ANF::RingOfIntegers, ANF, ANF::RingOfIntegersInclusion>,
+    ROItoANF: AlgebraicIntegerRingInAlgebraicNumberField,
+    ROItoANFB: BorrowedMorphism<ROItoANF::RingOfIntegers, ROItoANF::AlgebraicNumberField, ROItoANF>,
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
-    RB: BorrowedStructure<ANF::RingOfIntegers>,
-    IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, RB>,
+    RB: BorrowedStructure<ROItoANF::RingOfIntegers>,
+    IdealsR: DedekindDomainIdealsSignature<ROItoANF::RingOfIntegers, RB>,
 > {
-    _anf: PhantomData<ANF>,
+    _r_to_k: PhantomData<ROItoANF>,
     _roi: PhantomData<RB>,
-    r_to_k: ROItoANF,
+    r_to_k: ROItoANFB,
     ideals_z: IdealsZ,
     ideals_r: IdealsR,
 }
 
 impl<
-    ANF: AlgebraicNumberFieldSignature,
-    ROItoANF: BorrowedMorphism<ANF::RingOfIntegers, ANF, ANF::RingOfIntegersInclusion>,
+    ROItoANF: AlgebraicIntegerRingInAlgebraicNumberField,
+    ROItoANFB: BorrowedMorphism<ROItoANF::RingOfIntegers, ROItoANF::AlgebraicNumberField, ROItoANF>,
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
-    RB: BorrowedStructure<ANF::RingOfIntegers>,
-    IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, RB>,
-> RingOfIntegersExtension<ANF, ROItoANF, IdealsZ, RB, IdealsR>
+    RB: BorrowedStructure<ROItoANF::RingOfIntegers>,
+    IdealsR: DedekindDomainIdealsSignature<ROItoANF::RingOfIntegers, RB>,
+> RingOfIntegersExtension<ROItoANF, ROItoANFB, IdealsZ, RB, IdealsR>
 {
-    pub fn new_integer_extension(r_to_k: ROItoANF, ideals_z: IdealsZ, ideals_r: IdealsR) -> Self {
+    pub fn new_integer_extension(r_to_k: ROItoANFB, ideals_z: IdealsZ, ideals_r: IdealsR) -> Self {
         Self {
-            _anf: PhantomData,
+            _r_to_k: PhantomData,
             _roi: PhantomData,
             r_to_k,
             ideals_z,
@@ -53,26 +54,25 @@ impl<
 }
 
 impl<
-    ANF: AlgebraicNumberFieldSignature,
-    ROItoANF: BorrowedMorphism<ANF::RingOfIntegers, ANF, ANF::RingOfIntegersInclusion>,
+    ROItoANF: AlgebraicIntegerRingInAlgebraicNumberField,
+    ROItoANFB: BorrowedMorphism<ROItoANF::RingOfIntegers, ROItoANF::AlgebraicNumberField, ROItoANF>,
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
-    RB: BorrowedStructure<ANF::RingOfIntegers>,
-    IdealsR: DedekindDomainIdealsSignature<ANF::RingOfIntegers, RB>,
-> IntegralClosureExtension for RingOfIntegersExtension<ANF, ROItoANF, IdealsZ, RB, IdealsR>
+    RB: BorrowedStructure<ROItoANF::RingOfIntegers>,
+    IdealsR: DedekindDomainIdealsSignature<ROItoANF::RingOfIntegers, RB>,
+> IntegralClosureExtension for RingOfIntegersExtension<ROItoANF, ROItoANFB, IdealsZ, RB, IdealsR>
 {
-    type QKBasis = ANF::Basis;
+    type QKBasis = <ROItoANF::AlgebraicNumberField as AlgebraicNumberFieldSignature>::Basis;
     type Z = IntegerCanonicalStructure;
     type Q = RationalCanonicalStructure;
-    type R = ANF::RingOfIntegers;
-    type K = ANF;
+    type R = ROItoANF::RingOfIntegers;
+    type K = ROItoANF::AlgebraicNumberField;
     type ZQ<BZ: BorrowedStructure<Self::Z>, BQ: BorrowedStructure<Self::Q>> =
         PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>;
     type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>> =
-        PrincipalSubringInclusion<ANF::RingOfIntegers, BR>;
+        PrincipalSubringInclusion<ROItoANF::RingOfIntegers, BR>;
     type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>> =
-        ANF::RationalInclusion<BK>;
-    type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>> =
-        ANF::RingOfIntegersInclusion;
+        <ROItoANF::AlgebraicNumberField as AlgebraicNumberFieldSignature>::RationalInclusion<BK>;
+    type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>> = ROItoANF;
 
     fn z_ring(&self) -> &Self::Z {
         Integer::structure_ref()
@@ -100,7 +100,7 @@ impl<
         Cow::Borrowed(self.r_to_k.borrow())
     }
 
-    fn integralize_multiplier(&self, alpha: &ANF::Set) -> Integer {
+    fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Set) -> Integer {
         if self.k_field().is_algebraic_integer(alpha) {
             Integer::ONE
         } else {
@@ -110,20 +110,26 @@ impl<
 }
 
 impl<
-    ROItoANF: BorrowedMorphism<
-            RingOfIntegersWithIntegralBasisStructure,
-            AlgebraicNumberFieldPolynomialQuotientStructure,
-            RingOfIntegersToAlgebraicNumberFieldInclusion,
+    ROItoANF: AlgebraicIntegerRingInAlgebraicNumberField<
+            AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure,
+            RingOfIntegers = RingOfIntegersWithIntegralBasisStructure,
         >,
+    ROItoANFB: BorrowedMorphism<ROItoANF::RingOfIntegers, ROItoANF::AlgebraicNumberField, ROItoANF>,
     RB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>,
 > DedekindDomainExtension<IntegerCanonicalStructure, RB>
     for RingOfIntegersExtension<
-        AlgebraicNumberFieldPolynomialQuotientStructure,
         ROItoANF,
+        ROItoANFB,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
         RB,
         RingOfIntegersIdealsStructure<RB>,
     >
+where
+    RingOfIntegersIdealsStructure<RB>: DedekindDomainIdealsSignature<
+            RingOfIntegersWithIntegralBasisStructure,
+            RB,
+            Set = RingOfIntegersIdeal,
+        >,
 {
     type IdealsZ = IntegerIdealsStructure<IntegerCanonicalStructure>;
     type IdealsR = RingOfIntegersIdealsStructure<RB>;

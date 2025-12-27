@@ -103,9 +103,10 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     }
 }
 
-impl AlgebraicIntegerRingInAlgebraicNumberField<AlgebraicNumberFieldPolynomialQuotientStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
-{
+impl AlgebraicIntegerRingInAlgebraicNumberField for RingOfIntegersToAlgebraicNumberFieldInclusion {
+    type AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure;
+    type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
+
     fn discriminant(&self) -> Integer {
         self.domain().discriminant().clone()
     }
@@ -114,9 +115,14 @@ impl AlgebraicIntegerRingInAlgebraicNumberField<AlgebraicNumberFieldPolynomialQu
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
     type Basis = EnumeratedFiniteSetStructure;
     type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
-    type RingOfIntegersInclusion = RingOfIntegersToAlgebraicNumberFieldInclusion;
+    type RingOfIntegersInclusion<B: BorrowedStructure<Self>> =
+        RingOfIntegersToAlgebraicNumberFieldInclusion;
     type RationalInclusion<B: BorrowedStructure<Self>> =
         PrincipalRationalSubfieldInclusion<Self, B>;
+
+    fn roi(&self) -> Self::RingOfIntegers {
+        self.compute_ring_of_integers()
+    }
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
         self.rational_extension()
@@ -125,7 +131,10 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         self.into_rational_extension()
     }
 
-    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion {
+    fn ring_of_integers_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self> {
+        RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self.clone())
+    }
+    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion<Self> {
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self)
     }
 
