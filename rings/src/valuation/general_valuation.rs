@@ -2,8 +2,8 @@ use crate::{
     integer::ideal::IntegerIdealsStructure,
     localization::{LocalizationInclusionFoF, LocalizationResidueField, LocalizedRingAtPrime},
     structure::{
-        AdditiveGroupSignature, EuclideanDomainQuotientRing, FieldSignature,
-        IdealsArithmeticSignature, MetaRingEq, PrincipalSubringInclusion, QuotientStructure,
+        AdditiveGroupSignature, EuclideanDomainQuotientRing, EuclideanRemainderQuotientStructure,
+        FieldSignature, IdealsArithmeticSignature, MetaAdditiveMonoidEq, PrincipalSubringInclusion,
         RingHomomorphism, RingSignature, RingToIdealsSignature, RingToQuotientFieldSignature,
     },
     valuation::{Valuation, padic_rat_valuation},
@@ -198,8 +198,11 @@ impl AdditiveValuation for PAdicValuation {
         PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>,
     >;
 
-    type ResidueField =
-        QuotientStructure<IntegerCanonicalStructure, IntegerCanonicalStructure, true>;
+    type ResidueField = EuclideanRemainderQuotientStructure<
+        IntegerCanonicalStructure,
+        IntegerCanonicalStructure,
+        true,
+    >;
 
     fn residue_field(&self) -> Self::ResidueField {
         Integer::structure().into_quotient_field_unchecked(self.0.clone().into())
