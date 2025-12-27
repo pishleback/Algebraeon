@@ -3,15 +3,7 @@ use super::{
     integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
     structure::AlgebraicNumberFieldSignature,
 };
-use crate::{
-    algebraic_number_field::{
-        integer_lattice_ring_of_integers::RingOfIntegersToAlgebraicNumberFieldInclusion,
-        structure::AlgebraicIntegerRingInAlgebraicNumberField,
-    },
-    matrix::*,
-    polynomial::*,
-    structure::*,
-};
+use crate::{matrix::*, polynomial::*, structure::*};
 use algebraeon_nzq::{
     Integer, Natural, Rational, RationalCanonicalStructure,
     traits::{Abs, Fraction},
@@ -103,20 +95,9 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     }
 }
 
-impl AlgebraicIntegerRingInAlgebraicNumberField for RingOfIntegersToAlgebraicNumberFieldInclusion {
-    type AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure;
-    type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
-
-    fn discriminant(&self) -> Integer {
-        self.domain().discriminant().clone()
-    }
-}
-
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
     type Basis = EnumeratedFiniteSetStructure;
     type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
-    type RingOfIntegersInclusion<B: BorrowedStructure<Self>> =
-        RingOfIntegersToAlgebraicNumberFieldInclusion;
     type RationalInclusion<B: BorrowedStructure<Self>> =
         PrincipalRationalSubfieldInclusion<Self, B>;
 
@@ -129,13 +110,6 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
     }
     fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
         self.into_rational_extension()
-    }
-
-    fn ring_of_integers_extension<'a>(&'a self) -> Self::RingOfIntegersInclusion<&'a Self> {
-        RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self.clone())
-    }
-    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion<Self> {
-        RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self)
     }
 
     fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
