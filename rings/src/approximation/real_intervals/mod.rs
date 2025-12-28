@@ -86,7 +86,10 @@ mod tests {
     fn test_ring_opps() {
         let e = e();
         // compute e+(-e)^3
-        let v = RealApproximatePoint::add(&e, &RealApproximatePoint::nat_pow(&RealApproximatePoint::neg(&e), &Natural::from(3u32)));
+        let v = RealApproximatePoint::add(
+            &e,
+            &RealApproximatePoint::nat_pow(&RealApproximatePoint::neg(&e), &Natural::from(3u32)),
+        );
         let f = v.as_f64();
         debug_assert_eq!(f, -17.367_255_094_728_623);
     }

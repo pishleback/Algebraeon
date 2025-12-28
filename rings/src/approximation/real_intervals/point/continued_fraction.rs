@@ -45,7 +45,9 @@ impl<SCF: SimpleContinuedFraction> SimpleContinuedFractionPoint<SCF> {
     }
 }
 
-impl<SCF: SimpleContinuedFraction> RealApproximatePointInterface for SimpleContinuedFractionPoint<SCF> {
+impl<SCF: SimpleContinuedFraction> RealApproximatePointInterface
+    for SimpleContinuedFractionPoint<SCF>
+{
     fn rational_interval_neighbourhood(&self) -> Subset {
         Subset::Interval(RationalInterval::new_unchecked(self.a(), self.b()))
     }
