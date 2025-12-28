@@ -1,12 +1,7 @@
-use super::{
-    embedded_anf::anf_multi_primitive_element_theorem,
-    integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure,
-    structure::AlgebraicNumberFieldSignature,
-};
+use super::integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure;
 use crate::{
     algebraic_number_field::{
-        integer_lattice_ring_of_integers::RingOfIntegersToAlgebraicNumberFieldInclusion,
-        structure::AlgebraicIntegerRingInAlgebraicNumberField,
+        anf_multi_primitive_element_theorem, structure::AlgebraicNumberFieldSignature,
     },
     matrix::*,
     polynomial::*,
@@ -103,30 +98,21 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     }
 }
 
-impl AlgebraicIntegerRingInAlgebraicNumberField<AlgebraicNumberFieldPolynomialQuotientStructure>
-    for RingOfIntegersToAlgebraicNumberFieldInclusion
-{
-    fn discriminant(&self) -> Integer {
-        self.domain().discriminant().clone()
-    }
-}
-
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
     type Basis = EnumeratedFiniteSetStructure;
     type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
-    type RingOfIntegersInclusion = RingOfIntegersToAlgebraicNumberFieldInclusion;
     type RationalInclusion<B: BorrowedStructure<Self>> =
         PrincipalRationalSubfieldInclusion<Self, B>;
+
+    fn roi(&self) -> Self::RingOfIntegers {
+        self.compute_ring_of_integers()
+    }
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
         self.rational_extension()
     }
     fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
         self.into_rational_extension()
-    }
-
-    fn into_ring_of_integers_extension(self) -> Self::RingOfIntegersInclusion {
-        RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self)
     }
 
     fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {

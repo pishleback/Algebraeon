@@ -1,22 +1,22 @@
 mod point;
 mod subset;
 
-pub use point::Point;
-pub use point::PointInterface;
+pub use point::RealApproximatePoint;
+pub use point::RealApproximatePointInterface;
 pub use point::continued_fraction::SimpleContinuedFractionPoint;
 pub use point::rational::RationalPoint;
 pub use subset::Subset;
 pub use subset::SubsetsStructure;
 pub use subset::subsets;
 
-pub fn e() -> Point {
-    Point::new(SimpleContinuedFractionPoint::from(
+pub fn e() -> RealApproximatePoint {
+    RealApproximatePoint::new(SimpleContinuedFractionPoint::from(
         crate::continued_fraction::eulers_constant(),
     ))
 }
 
-pub fn pi() -> Point {
-    Point::new(point::pi::Pi::new())
+pub fn pi() -> RealApproximatePoint {
+    RealApproximatePoint::new(point::pi::Pi::new())
 }
 
 #[cfg(test)]
@@ -86,7 +86,10 @@ mod tests {
     fn test_ring_opps() {
         let e = e();
         // compute e+(-e)^3
-        let v = Point::add(&e, &Point::nat_pow(&Point::neg(&e), &Natural::from(3u32)));
+        let v = RealApproximatePoint::add(
+            &e,
+            &RealApproximatePoint::nat_pow(&RealApproximatePoint::neg(&e), &Natural::from(3u32)),
+        );
         let f = v.as_f64();
         debug_assert_eq!(f, -17.367_255_094_728_623);
     }

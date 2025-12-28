@@ -14,7 +14,7 @@ use algebraeon_nzq::{Integer, Natural, Rational};
 use crate::{
     approximation::{
         rational_interval::RationalInterval,
-        real_intervals::{PointInterface, Subset},
+        real_intervals::{RealApproximatePointInterface, Subset},
     },
     structure::MetaSemiRing,
 };
@@ -53,7 +53,7 @@ impl Pi {
     }
 }
 
-impl PointInterface for Pi {
+impl RealApproximatePointInterface for Pi {
     fn rational_interval_neighbourhood(&self) -> Subset {
         Subset::Interval(RationalInterval::new_unchecked(
             self.t.clone(),

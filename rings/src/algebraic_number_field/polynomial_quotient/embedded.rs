@@ -270,8 +270,7 @@ mod tests {
         for root in f.all_complex_roots() {
             println!(
                 "{:?}",
-                root.generated_algebraic_number_field()
-                    .into_ring_of_integers_extension()
+                root.generated_algebraic_number_field().into_roi_inclusion()
             );
         }
     }

@@ -1,6 +1,8 @@
 use super::integer_lattice_ring_of_integers::*;
 use crate::{
-    algebraic_number_field::structure::AlgebraicIntegerRingInAlgebraicNumberField,
+    algebraic_number_field::structure::{
+        AlgebraicIntegerRingSignature, RingOfIntegersToAlgebraicNumberFieldInclusion,
+    },
     matrix::Matrix,
     module::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
@@ -239,12 +241,10 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
                 (0..n)
                     .map(|i| {
                         self.ring()
-                            .try_anf_to_roi(
-                                &self
-                                    .ring()
-                                    .anf()
-                                    .mul(self.ring().basis_element(i), &self.ring().roi_to_anf(a)),
-                            )
+                            .try_anf_to_roi(&self.ring().anf().mul(
+                                self.ring().integral_basis_element(i),
+                                &self.ring().roi_to_anf(a),
+                            ))
                             .unwrap()
                     })
                     .collect(),

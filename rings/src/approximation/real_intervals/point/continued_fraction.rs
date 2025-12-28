@@ -1,7 +1,7 @@
 use crate::{
     approximation::{
         rational_interval::RationalInterval,
-        real_intervals::{PointInterface, Subset},
+        real_intervals::{RealApproximatePointInterface, Subset},
     },
     continued_fraction::{RationalApproximations, SimpleContinuedFraction},
 };
@@ -45,7 +45,9 @@ impl<SCF: SimpleContinuedFraction> SimpleContinuedFractionPoint<SCF> {
     }
 }
 
-impl<SCF: SimpleContinuedFraction> PointInterface for SimpleContinuedFractionPoint<SCF> {
+impl<SCF: SimpleContinuedFraction> RealApproximatePointInterface
+    for SimpleContinuedFractionPoint<SCF>
+{
     fn rational_interval_neighbourhood(&self) -> Subset {
         Subset::Interval(RationalInterval::new_unchecked(self.a(), self.b()))
     }
