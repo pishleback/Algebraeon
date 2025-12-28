@@ -362,9 +362,7 @@ impl<D: BorrowedStructure<Integer>> AlgebraicNumberFieldSignature
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
-        self.roi_inclusion()
-            .try_anf_to_roi(a)
-            .is_some()
+        self.roi_inclusion().try_anf_to_roi(a).is_some()
     }
 }
 
