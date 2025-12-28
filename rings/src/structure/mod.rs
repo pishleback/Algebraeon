@@ -8,6 +8,7 @@ mod integral_closure;
 mod lattice;
 mod modules;
 mod quotient;
+mod quotient_morphism;
 mod rings;
 mod ufd;
 
@@ -21,5 +22,6 @@ pub use integral_closure::*;
 pub use lattice::*;
 pub use modules::*;
 pub use quotient::*;
+pub use quotient_morphism::*;
 pub use rings::*;
 pub use ufd::*;

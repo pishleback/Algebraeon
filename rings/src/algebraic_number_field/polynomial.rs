@@ -183,13 +183,9 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         let anf = self.coeff_ring();
         let theta = anf.generator();
 
-        // println!("sqfree factor");
-        // println!("p = {}", p);
-
         let mut k: usize = 0;
         let mut t;
         loop {
-            // println!("k = {}", k);
             //q(x) = p(x - kθ)
             let q = rat_poly_poly_poly.evaluate(
                 &p.apply_map(|c| Polynomial::constant(c.clone())),
@@ -198,9 +194,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                     anf.one(),
                 ]),
             );
-            // println!("q = {}", q);
             t = self.polynomial_norm(&q);
-            // println!("t = {}", t);
 
             if !Polynomial::resultant(&t, &t.clone().derivative()).is_zero() {
                 break;
@@ -208,9 +202,6 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
             k += 1;
         }
-        // println!("t = {} k = {}", t, k);
-        // println!("t = {}", t.factor().unwrap());
-        // println!("{:?}", Polynomial::euclidean_gcd(t.clone(), t.clone().derivative()));
 
         //found k such that t(x) = N(q(x)) = N(p(x - kθ)) is now squarefree
         //the factors of p are gcd(p(x), t_i(x + kθ)) for each squarefree factor t_i of t
@@ -220,7 +211,6 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             .factorizations()
             .to_powers(&t.factor().unwrap())
         {
-            // println!("ti = {}", ti);
             debug_assert_eq!(ti_pow, &Natural::ONE);
             p_factors.push(self.euclidean_gcd(
                 p.clone(),

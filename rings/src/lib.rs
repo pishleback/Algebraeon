@@ -44,6 +44,7 @@ pub mod continued_fraction;
 pub mod finite_fields;
 pub mod integer;
 pub mod isolated_algebraic;
+pub mod localization;
 pub mod matrix;
 pub mod module;
 pub mod natural;

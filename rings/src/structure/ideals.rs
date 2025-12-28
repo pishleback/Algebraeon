@@ -26,6 +26,7 @@ pub trait IdealsSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
 {
     fn ring(&self) -> &Ring;
 }
+
 // pub trait MetaIdealSignature<Ring: RingSignature>: MetaType
 // where
 //     Self::Signature: IdealSignature<Ring>,

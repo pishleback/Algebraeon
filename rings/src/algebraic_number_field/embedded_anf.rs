@@ -105,6 +105,41 @@ impl AlgebraicClosureSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
+impl EmbeddedAnf {
+    pub fn is_real(&self) -> bool {
+        matches!(self.generator, ComplexAlgebraic::Real(_))
+    }
+    pub fn is_rational(&self) -> bool {
+        self.is_real()
+            && match &self.generator {
+                ComplexAlgebraic::Real(real_algebraic) => match real_algebraic {
+                    RealAlgebraic::Rational(_) => true,
+                    RealAlgebraic::Real(_) => false,
+                },
+                ComplexAlgebraic::Complex(_) => false,
+            }
+    }
+
+    pub fn embed(
+        &self,
+        element: &<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set,
+    ) -> ComplexAlgebraic {
+        let complex_alg_canonical = ComplexAlgebraicCanonicalStructure {};
+        let mut answer: ComplexAlgebraic =
+            ComplexAlgebraic::Real(RealAlgebraic::Rational(element.coeff(0).into_owned()));
+        let mut x_to_idx = self.generator.clone();
+        for coeff in element.coeffs().into_iter().skip(1) {
+            let cur_contribution: ComplexAlgebraic = complex_alg_canonical.mul(
+                &x_to_idx,
+                &ComplexAlgebraic::Real(RealAlgebraic::Rational(coeff.clone())),
+            );
+            complex_alg_canonical.add_mut(&mut answer, &cur_contribution);
+            complex_alg_canonical.mul_mut(&mut x_to_idx, &self.generator);
+        }
+        answer
+    }
+}
+
 #[cfg(any())]
 impl EmbeddedAnf {
     pub fn intersect_pair(field1: &Self, field2: &Self) -> Self {
