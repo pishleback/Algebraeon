@@ -55,7 +55,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self>;
     fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
 
-    fn ring_of_integers_extension<'a>(
+    fn roi_inclusion<'a>(
         &'a self,
     ) -> RingOfIntegersToAlgebraicNumberFieldInclusion<
         Self::RingOfIntegers,
@@ -65,7 +65,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     > {
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_algebraic_number_field(self)
     }
-    fn into_ring_of_integers_extension(
+    fn into_roi_inclusion(
         self,
     ) -> RingOfIntegersToAlgebraicNumberFieldInclusion<
         Self::RingOfIntegers,

@@ -362,7 +362,7 @@ impl<D: BorrowedStructure<Integer>> AlgebraicNumberFieldSignature
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
-        self.ring_of_integers_extension()
+        self.roi_inclusion()
             .try_anf_to_roi(a)
             .is_some()
     }
@@ -412,7 +412,7 @@ mod tests {
         ));
 
         assert_eq!(
-            anf.clone().into_ring_of_integers_extension().discriminant(),
+            anf.clone().into_roi_inclusion().discriminant(),
             Integer::from(-4)
         );
 
@@ -486,7 +486,7 @@ mod tests {
         ));
 
         assert_eq!(
-            anf.clone().into_ring_of_integers_extension().discriminant(),
+            anf.clone().into_roi_inclusion().discriminant(),
             Integer::from(8)
         );
 
@@ -544,7 +544,7 @@ mod tests {
         ));
 
         assert_eq!(
-            anf.clone().into_ring_of_integers_extension().discriminant(),
+            anf.clone().into_roi_inclusion().discriminant(),
             Integer::from(12)
         );
 
@@ -602,7 +602,7 @@ mod tests {
         ));
 
         assert_eq!(
-            anf.clone().into_ring_of_integers_extension().discriminant(),
+            anf.clone().into_roi_inclusion().discriminant(),
             Integer::from(5)
         );
 
@@ -660,7 +660,7 @@ mod tests {
         ));
 
         assert_eq!(
-            anf.clone().into_ring_of_integers_extension().discriminant(),
+            anf.clone().into_roi_inclusion().discriminant(),
             Integer::from(-3)
         );
 

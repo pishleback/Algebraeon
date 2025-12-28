@@ -271,7 +271,7 @@ mod tests {
             println!(
                 "{:?}",
                 root.generated_algebraic_number_field()
-                    .into_ring_of_integers_extension()
+                    .into_roi_inclusion()
             );
         }
     }

@@ -191,7 +191,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi_to_anf = anf.clone().into_ring_of_integers_extension();
+        let roi_to_anf = anf.clone().into_roi_inclusion();
         let sq = roi_to_anf.zq_extension();
 
         let r_to_k_fof = sq.r_to_k_field_of_fractions();
@@ -229,7 +229,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi_to_anf = anf.clone().into_ring_of_integers_extension();
+        let roi_to_anf = anf.clone().into_roi_inclusion();
         let sq = roi_to_anf.zq_extension();
 
         let f2 =
@@ -268,7 +268,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi_to_anf = anf.clone().into_ring_of_integers_extension();
+        let roi_to_anf = anf.clone().into_roi_inclusion();
         let sq = roi_to_anf.zq_extension();
 
         // Element: (1/2) + sqrt(-5)
