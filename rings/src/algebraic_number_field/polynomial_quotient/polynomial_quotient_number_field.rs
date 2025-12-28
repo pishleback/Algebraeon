@@ -1,7 +1,7 @@
 use super::integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure;
 use crate::{
     algebraic_number_field::{
-        embedded::anf_multi_primitive_element_theorem, structure::AlgebraicNumberFieldSignature,
+        anf_multi_primitive_element_theorem, structure::AlgebraicNumberFieldSignature,
     },
     matrix::*,
     polynomial::*,

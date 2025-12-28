@@ -1,7 +1,7 @@
 use crate::{
     algebraic_number_field::{
-        polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure,
-        quadratic_number_field::{QuadraticNumberFieldElement, QuadraticNumberFieldStructure},
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        {QuadraticNumberFieldElement, QuadraticNumberFieldStructure},
     },
     polynomial::Polynomial,
     structure::{

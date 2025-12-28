@@ -1,7 +1,7 @@
 use crate::{
     algebraic_number_field::{
-        quadratic_number_field::{QuadraticNumberFieldElement, QuadraticNumberFieldStructure},
         structure::{AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature},
+        {QuadraticNumberFieldElement, QuadraticNumberFieldStructure},
     },
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroRingSignature,

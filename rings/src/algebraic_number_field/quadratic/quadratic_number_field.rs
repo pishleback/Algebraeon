@@ -1,4 +1,4 @@
-use crate::algebraic_number_field::quadratic_ring_of_integers::QuadraticRingOfIntegersStructure;
+use crate::algebraic_number_field::QuadraticRingOfIntegersStructure;
 use crate::algebraic_number_field::structure::{
     AlgebraicIntegerRingInAlgebraicNumberFieldSignature,
     RingOfIntegersToAlgebraicNumberFieldInclusion,
