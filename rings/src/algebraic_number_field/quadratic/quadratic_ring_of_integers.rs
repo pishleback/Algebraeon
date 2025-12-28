@@ -20,11 +20,11 @@ pub struct QuadraticRingOfIntegersStructure<D: BorrowedStructure<Integer>> {
 }
 
 impl QuadraticRingOfIntegersStructure<Integer> {
-    /// Given a squarefree integer `d`, return the quadratic ring of integers for the number field `QQ[sqrt(d)]`.
+    /// Given a squarefree integer `d` other than 1, return the quadratic ring of integers for the number field `QQ[sqrt(d)]`.
     ///
     /// Returns an `Err` if `d` is not squarefree.
     pub fn new(d: Integer) -> Result<Self, ()> {
-        if d.is_squarefree() {
+        if d != Integer::ONE && d.is_squarefree() {
             Ok(Self { d })
         } else {
             Err(())
@@ -34,7 +34,7 @@ impl QuadraticRingOfIntegersStructure<Integer> {
 
 impl<D: BorrowedStructure<Integer>> QuadraticRingOfIntegersStructure<D> {
     pub fn new_unchecked(d: D) -> Self {
-        debug_assert!(d.borrow().is_squarefree());
+        debug_assert!(d.borrow() != &Integer::ONE && d.borrow().is_squarefree());
         Self { d }
     }
 }

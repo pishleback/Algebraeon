@@ -72,11 +72,11 @@ pub struct QuadraticNumberFieldStructure<D: BorrowedStructure<Integer>> {
 }
 
 impl QuadraticNumberFieldStructure<Integer> {
-    /// Given a squarefree integer `d`, return the quadratic number field `QQ[sqrt(d)]`.
+    /// Given a squarefree integer `d` other than 1, return the quadratic number field `QQ[sqrt(d)]`.
     ///
     /// Returns an `Err` if `d` is not squarefree.
     pub fn new(d: Integer) -> Result<Self, ()> {
-        if d.is_squarefree() {
+        if d != Integer::ONE && d.is_squarefree() {
             Ok(Self { d })
         } else {
             Err(())
@@ -86,7 +86,7 @@ impl QuadraticNumberFieldStructure<Integer> {
 
 impl<D: BorrowedStructure<Integer>> QuadraticNumberFieldStructure<D> {
     pub fn new_unchecked(d: D) -> Self {
-        debug_assert!(d.borrow().is_squarefree());
+        debug_assert!(d.borrow() != &Integer::ONE && d.borrow().is_squarefree());
         Self { d }
     }
 }
@@ -370,6 +370,13 @@ impl<D: BorrowedStructure<Integer>> AlgebraicNumberFieldSignature
 mod tests {
     use super::*;
     use std::str::FromStr;
+
+    // ZZ[1]
+    #[test]
+    fn qanf_pos_1() {
+        let anf = QuadraticNumberFieldStructure::new(Integer::from(1));
+        debug_assert!(anf.is_err());
+    }
 
     // ZZ[i]
     #[test]
