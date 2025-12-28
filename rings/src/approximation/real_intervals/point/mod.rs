@@ -20,7 +20,7 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
 };
 
-pub trait PointInterface: Debug + Send + Sync {
+pub trait RealApproximatePointInterface: Debug + Send + Sync {
     fn rational_interval_neighbourhood(&self) -> Subset;
     fn length(&self) -> Rational {
         self.rational_interval_neighbourhood().length()
@@ -34,12 +34,12 @@ pub trait PointInterface: Debug + Send + Sync {
 }
 
 #[derive(Debug, Clone, CanonicalStructure)]
-pub struct Point {
-    repr: Arc<Mutex<dyn PointInterface>>,
+pub struct RealApproximatePoint {
+    repr: Arc<Mutex<dyn RealApproximatePointInterface>>,
 }
 
-impl Point {
-    pub fn new<R: PointInterface + 'static>(repr: R) -> Self {
+impl RealApproximatePoint {
+    pub fn new<R: RealApproximatePointInterface + 'static>(repr: R) -> Self {
         Self {
             repr: Arc::new(Mutex::new(repr)),
         }
@@ -53,12 +53,12 @@ impl Point {
         Self::new(continued_fraction::SimpleContinuedFractionPoint::from(cf))
     }
 
-    pub fn lock(&self) -> MutexGuard<'_, dyn PointInterface + 'static> {
+    pub fn lock(&self) -> MutexGuard<'_, dyn RealApproximatePointInterface + 'static> {
         self.repr.lock().unwrap()
     }
 }
 
-impl ApproximatePointsSignature for PointCanonicalStructure {
+impl ApproximatePointsSignature for RealApproximatePointCanonicalStructure {
     type Precision = RationalCanonicalStructure;
     type OpenSubsetsStructure = SubsetsStructure;
 
@@ -80,11 +80,11 @@ impl ApproximatePointsSignature for PointCanonicalStructure {
 }
 
 #[derive(Debug)]
-pub struct AddPoints {
-    first: Point,
-    second: Point,
+struct AddPoints {
+    first: RealApproximatePoint,
+    second: RealApproximatePoint,
 }
-impl PointInterface for AddPoints {
+impl RealApproximatePointInterface for AddPoints {
     fn rational_interval_neighbourhood(&self) -> Subset {
         let first_nbd = self.first.lock().rational_interval_neighbourhood();
         let second_nbd = self.second.lock().rational_interval_neighbourhood();
@@ -124,10 +124,10 @@ impl PointInterface for AddPoints {
 }
 
 #[derive(Debug)]
-pub struct NegPoint {
-    pt: Point,
+struct NegPoint {
+    pt: RealApproximatePoint,
 }
-impl PointInterface for NegPoint {
+impl RealApproximatePointInterface for NegPoint {
     fn rational_interval_neighbourhood(&self) -> Subset {
         match self.pt.lock().rational_interval_neighbourhood() {
             Subset::Singleton(rational) => Subset::Singleton(-rational),
@@ -152,11 +152,11 @@ impl PointInterface for NegPoint {
 }
 
 #[derive(Debug)]
-pub struct MulPoints {
-    first: Point,
-    second: Point,
+struct MulPoints {
+    first: RealApproximatePoint,
+    second: RealApproximatePoint,
 }
-impl PointInterface for MulPoints {
+impl RealApproximatePointInterface for MulPoints {
     fn rational_interval_neighbourhood(&self) -> Subset {
         let first_nbd = self.first.lock().rational_interval_neighbourhood();
         let second_nbd = self.second.lock().rational_interval_neighbourhood();
@@ -204,45 +204,45 @@ impl PointInterface for MulPoints {
     }
 }
 
-impl AdditiveMonoidSignature for PointCanonicalStructure {
+impl AdditiveMonoidSignature for RealApproximatePointCanonicalStructure {
     fn zero(&self) -> Self::Set {
-        Point::new(rational::RationalPoint { x: Rational::ZERO })
+        RealApproximatePoint::new(rational::RationalPoint { x: Rational::ZERO })
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        Point::new(AddPoints {
+        RealApproximatePoint::new(AddPoints {
             first: a.clone(),
             second: b.clone(),
         })
     }
 }
 
-impl AdditiveGroupSignature for PointCanonicalStructure {
+impl AdditiveGroupSignature for RealApproximatePointCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        Point::new(NegPoint { pt: a.clone() })
+        RealApproximatePoint::new(NegPoint { pt: a.clone() })
     }
 }
 
-impl SemiRingSignature for PointCanonicalStructure {
+impl SemiRingSignature for RealApproximatePointCanonicalStructure {
     fn one(&self) -> Self::Set {
-        Point::new(rational::RationalPoint { x: Rational::ONE })
+        RealApproximatePoint::new(rational::RationalPoint { x: Rational::ONE })
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        Point::new(MulPoints {
+        RealApproximatePoint::new(MulPoints {
             first: a.clone(),
             second: b.clone(),
         })
     }
 }
 
-impl RingSignature for PointCanonicalStructure {}
+impl RingSignature for RealApproximatePointCanonicalStructure {}
 
 #[derive(Debug)]
-pub struct InvPoint {
-    pt: Point,
+struct InvPoint {
+    pt: RealApproximatePoint,
 }
-impl PointInterface for InvPoint {
+impl RealApproximatePointInterface for InvPoint {
     fn rational_interval_neighbourhood(&self) -> Subset {
         loop {
             let nbd = self.pt.lock().rational_interval_neighbourhood();
@@ -278,19 +278,21 @@ Inverse called on an approximate value which later turned out to be exactly 0.",
     }
 }
 
-impl SemiRingUnitsSignature for PointCanonicalStructure {
+impl SemiRingUnitsSignature for RealApproximatePointCanonicalStructure {
     /// # Warning
     /// May fail to halt if the input is zero.
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
         let nbd = a.lock().rational_interval_neighbourhood();
         match nbd {
-            Subset::Singleton(rational) => Ok(Point::new(RationalPoint { x: rational.inv()? })),
-            Subset::Interval(_) => Ok(Point::new(InvPoint { pt: a.clone() })),
+            Subset::Singleton(rational) => Ok(RealApproximatePoint::new(RationalPoint {
+                x: rational.inv()?,
+            })),
+            Subset::Interval(_) => Ok(RealApproximatePoint::new(InvPoint { pt: a.clone() })),
         }
     }
 }
 
-impl ComplexSubsetSignature for PointCanonicalStructure {
+impl ComplexSubsetSignature for RealApproximatePointCanonicalStructure {
     fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
         loop {
             let nbd = z.lock().rational_interval_neighbourhood();
@@ -330,9 +332,9 @@ impl ComplexSubsetSignature for PointCanonicalStructure {
     }
 }
 
-impl RealSubsetSignature for PointCanonicalStructure {}
+impl RealSubsetSignature for RealApproximatePointCanonicalStructure {}
 
-impl RealRoundingSignature for PointCanonicalStructure {
+impl RealRoundingSignature for RealApproximatePointCanonicalStructure {
     /// # Warning
     /// May fail to halt on integer inputs.
     fn floor(&self, x: &Self::Set) -> Integer {
@@ -380,7 +382,7 @@ impl RealRoundingSignature for PointCanonicalStructure {
     fn round(&self, x: &Self::Set) -> Integer {
         self.floor(&self.add(
             x,
-            &Point::new(RationalPoint {
+            &RealApproximatePoint::new(RationalPoint {
                 x: Rational::ONE_HALF,
             }),
         ))

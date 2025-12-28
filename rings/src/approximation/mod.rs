@@ -1,2 +1,5 @@
-pub mod rational_interval;
-pub mod real_intervals;
+mod rational_interval;
+mod real_intervals;
+
+pub use rational_interval::*;
+pub use real_intervals::*;

@@ -6,11 +6,11 @@ Compute the following rational bounds on \\(\pi + e\\), where the difference bet
 
 ```rust
 use algebraeon::nzq::Rational;
-use algebraeon::rings::approximation::real_intervals::{Point, e, pi};
+use algebraeon::rings::approximation::{RealApproximatePoint, e, pi};
 use algebraeon::rings::structure::MetaSemiRing;
 use std::str::FromStr;
 
-let p = Point::add(&pi(), &e());
+let p = RealApproximatePoint::add(&pi(), &e());
 
 p.lock()
     .refine_to_length(&Rational::from_str("1/100").unwrap());

@@ -6,7 +6,7 @@ This example computes the first \\(10\\) continued fraction coefficients of \\(\
 
 ```rust
 use algebraeon::nzq::Integer;
-use algebraeon::rings::approximation::real_intervals::{e, pi};
+use algebraeon::rings::approximation::{e, pi};
 use algebraeon::rings::continued_fraction::{
     MetaToSimpleContinuedFraction, SimpleContinuedFraction,
 };
@@ -86,7 +86,7 @@ Defining the real number
 
 ```rust
 use algebraeon::nzq::Integer;
-use algebraeon::rings::approximation::real_intervals::Point;
+use algebraeon::rings::approximation::RealApproximatePoint;
 use algebraeon::rings::continued_fraction::IrrationalSimpleContinuedFractionGenerator;
 use algebraeon::rings::structure::MetaRealSubset;
 
@@ -103,7 +103,7 @@ impl IrrationalSimpleContinuedFractionGenerator for MyContinuedFraction {
 }
 
 let value =
-    Point::from_continued_fraction(MyContinuedFraction { n: 0 }.into_continued_fraction());
+    RealApproximatePoint::from_continued_fraction(MyContinuedFraction { n: 0 }.into_continued_fraction());
 
 println!("value = {}", value.as_f64());
 
@@ -119,11 +119,11 @@ Defining the Golden Ratio
 
 ```rust
 use algebraeon::nzq::Integer;
-use algebraeon::rings::approximation::real_intervals::Point;
+use algebraeon::rings::approximation::RealApproximatePoint;
 use algebraeon::rings::continued_fraction::PeriodicSimpleContinuedFraction;
 use algebraeon::rings::structure::MetaRealSubset;
 
-let phi = Point::from_continued_fraction(
+let phi = RealApproximatePoint::from_continued_fraction(
     PeriodicSimpleContinuedFraction::new(vec![], vec![Integer::from(1)]).unwrap(),
 );
 
@@ -142,11 +142,11 @@ Defining \\(\sqrt{2}\\)
 
 ```rust
 use algebraeon::nzq::Integer;
-use algebraeon::rings::approximation::real_intervals::Point;
+use algebraeon::rings::approximation::RealApproximatePoint;
 use algebraeon::rings::continued_fraction::PeriodicSimpleContinuedFraction;
 use algebraeon::rings::structure::MetaRealSubset;
 
-let sqrt2 = Point::from_continued_fraction(
+let sqrt2 = RealApproximatePoint::from_continued_fraction(
     PeriodicSimpleContinuedFraction::new(vec![Integer::from(1)], vec![Integer::from(2)])
         .unwrap(),
 );
