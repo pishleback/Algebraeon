@@ -1,7 +1,9 @@
-use crate::algebraic_number_field::QuadraticRingOfIntegersStructure;
 use crate::algebraic_number_field::structure::{
     AlgebraicIntegerRingInAlgebraicNumberFieldSignature,
     RingOfIntegersToAlgebraicNumberFieldInclusion,
+};
+use crate::algebraic_number_field::{
+    AlgebraicNumberFieldWithRingOfIntegersSignature, QuadraticRingOfIntegersStructure,
 };
 use crate::structure::{
     AdditiveMonoidEqSignature, FreeModuleSignature, MetaAdditiveMonoidEq, MetaCharZeroRing,
@@ -345,13 +347,8 @@ impl<D: BorrowedStructure<Integer>> AlgebraicNumberFieldSignature
     for QuadraticNumberFieldStructure<D>
 {
     type Basis = QuadraticNumberFieldBasisCanonicalStructure;
-    type RingOfIntegers = QuadraticRingOfIntegersStructure<D>;
     type RationalInclusion<B: BorrowedStructure<Self>> =
         PrincipalRationalSubfieldInclusion<Self, B>;
-
-    fn roi(&self) -> Self::RingOfIntegers {
-        QuadraticRingOfIntegersStructure::new_unchecked(self.d.clone())
-    }
 
     fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
         PrincipalRationalSubfieldInclusion::new(self)
@@ -363,6 +360,16 @@ impl<D: BorrowedStructure<Integer>> AlgebraicNumberFieldSignature
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
         self.roi_inclusion().try_anf_to_roi(a).is_some()
+    }
+}
+
+impl<D: BorrowedStructure<Integer>> AlgebraicNumberFieldWithRingOfIntegersSignature
+    for QuadraticNumberFieldStructure<D>
+{
+    type RingOfIntegers = QuadraticRingOfIntegersStructure<D>;
+
+    fn roi(&self) -> Self::RingOfIntegers {
+        QuadraticRingOfIntegersStructure::new_unchecked(self.d.clone())
     }
 }
 

@@ -1,4 +1,4 @@
-use super::structure::AlgebraicNumberFieldSignature;
+use crate::algebraic_number_field::AlgebraicNumberFieldSignature;
 use crate::algebraic_number_field::structure::AlgebraicIntegerRingInAlgebraicNumberFieldSignature;
 use crate::algebraic_number_field::structure::AlgebraicIntegerRingSignature;
 use crate::algebraic_number_field::structure::RingOfIntegersToAlgebraicNumberFieldInclusion;
@@ -18,7 +18,7 @@ use std::marker::PhantomData;
 pub struct RingOfIntegersExtension<
     R: AlgebraicIntegerRingSignature<AlgebraicNumberField = K>,
     RB: BorrowedStructure<R>,
-    K: AlgebraicNumberFieldSignature<RingOfIntegers = R>,
+    K: AlgebraicNumberFieldSignature,
     KB: BorrowedStructure<K>,
     RtoK: BorrowedMorphism<R, K, RingOfIntegersToAlgebraicNumberFieldInclusion<R, RB, K, KB>>,
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
@@ -36,7 +36,7 @@ pub struct RingOfIntegersExtension<
 impl<
     R: AlgebraicIntegerRingSignature<AlgebraicNumberField = K>,
     RB: BorrowedStructure<R>,
-    K: AlgebraicNumberFieldSignature<RingOfIntegers = R>,
+    K: AlgebraicNumberFieldSignature,
     KB: BorrowedStructure<K>,
     RtoK: BorrowedMorphism<R, K, RingOfIntegersToAlgebraicNumberFieldInclusion<R, RB, K, KB>>,
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
@@ -67,7 +67,7 @@ impl<
 impl<
     R: AlgebraicIntegerRingSignature<AlgebraicNumberField = K>,
     RB: BorrowedStructure<R>,
-    K: AlgebraicNumberFieldSignature<RingOfIntegers = R>,
+    K: AlgebraicNumberFieldSignature,
     KB: BorrowedStructure<K>,
     RtoK: BorrowedMorphism<R, K, RingOfIntegersToAlgebraicNumberFieldInclusion<R, RB, K, KB>>,
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,

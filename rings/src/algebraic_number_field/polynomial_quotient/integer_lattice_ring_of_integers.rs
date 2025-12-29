@@ -1,8 +1,11 @@
 use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{
-    algebraic_number_field::structure::{
-        AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
-        AlgebraicNumberFieldSignature, RingOfIntegersToAlgebraicNumberFieldInclusion,
+    algebraic_number_field::{
+        AlgebraicNumberFieldSignature,
+        structure::{
+            AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
+            RingOfIntegersToAlgebraicNumberFieldInclusion,
+        },
     },
     matrix::Matrix,
     module::finitely_free_module::{

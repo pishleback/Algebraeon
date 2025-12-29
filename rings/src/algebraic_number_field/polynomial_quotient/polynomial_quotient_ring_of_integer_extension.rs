@@ -176,7 +176,9 @@ mod tests {
 
     use super::*;
     use crate::{
-        algebraic_number_field::structure::AlgebraicNumberFieldSignature,
+        algebraic_number_field::{
+            AlgebraicNumberFieldSignature, AlgebraicNumberFieldWithRingOfIntegersSignature,
+        },
         polynomial::Polynomial,
         structure::{
             FieldOfFractionsInclusion, IntegralDomainSignature, IntoErgonomic, RingSignature,
