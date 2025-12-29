@@ -1,21 +1,25 @@
-use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{
     algebraic_number_field::{
-        AlgebraicNumberFieldSignature,
-        structure::{
-            AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
-            RingOfIntegersToAlgebraicNumberFieldInclusion,
-        },
+        AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
+        AlgebraicNumberFieldPolynomialQuotientStructure, AlgebraicNumberFieldSignature,
+        RingOfIntegersToAlgebraicNumberFieldInclusion,
     },
     matrix::Matrix,
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
     },
     polynomial::Polynomial,
-    structure::*,
+    structure::{
+        AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
+        CharZeroFieldSignature, CharZeroRingSignature, CharacteristicSignature,
+        DedekindDomainSignature, FiniteDimensionalFieldExtension, IntegralDomainSignature,
+        RingDivisionError, RingSignature, SemiRingSignature, SemiRingUnitsSignature,
+    },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, Rational};
-use algebraeon_sets::structure::*;
+use algebraeon_sets::structure::{
+    BorrowedStructure, EqSignature, MetaType, SetSignature, Signature, ToStringSignature,
+};
 
 #[derive(Debug, Clone)]
 pub struct RingOfIntegersWithIntegralBasisStructure {
@@ -341,7 +345,10 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::IntoErgonomic;
+    use crate::structure::{
+        FactorableIdealsSignature, FactoredSignature, IdealsArithmeticSignature, IntoErgonomic,
+        RingToIdealsSignature,
+    };
 
     #[test]
     fn ring_of_integer_arithmetic() {

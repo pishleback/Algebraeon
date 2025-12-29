@@ -1,5 +1,6 @@
-use crate::algebraic_number_field::AlgebraicNumberFieldWithRingOfIntegersSignature;
-use crate::algebraic_number_field::structure::AlgebraicNumberFieldSignature;
+use crate::algebraic_number_field::{
+    AlgebraicNumberFieldSignature, AlgebraicNumberFieldWithRingOfIntegersSignature,
+};
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;

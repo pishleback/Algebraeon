@@ -1,5 +1,5 @@
 use super::natural::factorization::NaturalCanonicalFactorizationStructure;
-use crate::algebraic_number_field::structure::AlgebraicIntegerRingSignature;
+use crate::algebraic_number_field::AlgebraicIntegerRingSignature;
 use crate::natural::NaturalFns;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;

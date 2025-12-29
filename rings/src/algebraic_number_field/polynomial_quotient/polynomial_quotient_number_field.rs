@@ -1,18 +1,27 @@
-use super::integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure;
 use crate::{
     algebraic_number_field::{
-        AlgebraicNumberFieldWithRingOfIntegersSignature, anf_multi_primitive_element_theorem,
-        structure::AlgebraicNumberFieldSignature,
+        AlgebraicNumberFieldSignature, AlgebraicNumberFieldWithRingOfIntegersSignature,
+        RingOfIntegersWithIntegralBasisStructure, anf_multi_primitive_element_theorem,
     },
-    matrix::*,
-    polynomial::*,
-    structure::*,
+    matrix::Matrix,
+    polynomial::{
+        Polynomial, PolynomialQuotientRingStructure, PolynomialStructure, RingToPolynomialSignature,
+    },
+    structure::{
+        AdditiveGroupSignature, AdditiveMonoidEqSignature, CharZeroFieldSignature,
+        FactorableSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
+        IntegralDomainExtensionAllPolynomialRoots, IntegralDomainSignature,
+        MetaFactorableSignature, MetaSemiRing, PrincipalRationalSubfieldInclusion,
+        RingHomomorphism, RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
+    },
 };
 use algebraeon_nzq::{
     Integer, Natural, Rational, RationalCanonicalStructure,
     traits::{Abs, Fraction},
 };
-use algebraeon_sets::structure::*;
+use algebraeon_sets::structure::{
+    BorrowedStructure, EnumeratedFiniteSetStructure, Function, MetaType, Morphism, SetSignature,
+};
 use itertools::Itertools;
 use std::borrow::{Borrow, Cow};
 
@@ -286,8 +295,10 @@ impl
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_sets::structure::EqSignature;
+
     use super::*;
-    use crate::structure::IntoErgonomic;
+    use crate::{polynomial::PolynomialFromStr, structure::IntoErgonomic};
 
     #[test]
     fn test_anf_integral_multiple() {

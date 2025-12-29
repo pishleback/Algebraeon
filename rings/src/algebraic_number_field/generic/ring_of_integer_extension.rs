@@ -1,7 +1,7 @@
-use crate::algebraic_number_field::AlgebraicNumberFieldSignature;
-use crate::algebraic_number_field::structure::AlgebraicIntegerRingInAlgebraicNumberFieldSignature;
-use crate::algebraic_number_field::structure::AlgebraicIntegerRingSignature;
-use crate::algebraic_number_field::structure::RingOfIntegersToAlgebraicNumberFieldInclusion;
+use crate::algebraic_number_field::{
+    AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
+    AlgebraicNumberFieldSignature, RingOfIntegersToAlgebraicNumberFieldInclusion,
+};
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;

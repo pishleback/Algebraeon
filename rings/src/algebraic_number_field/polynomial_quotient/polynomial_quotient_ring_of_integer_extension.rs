@@ -1,12 +1,9 @@
 use crate::{
     algebraic_number_field::{
-        AlgebraicNumberFieldPolynomialQuotientStructure, RingOfIntegersWithIntegralBasisStructure,
-        ring_of_integer_extension::RingOfIntegersExtension,
-        structure::{
-            AlgebraicIntegerRingInAlgebraicNumberFieldSignature,
-            RingOfIntegersToAlgebraicNumberFieldInclusion,
-        },
-        {RingOfIntegersIdeal, RingOfIntegersIdealsStructure},
+        AlgebraicIntegerRingInAlgebraicNumberFieldSignature,
+        AlgebraicNumberFieldPolynomialQuotientStructure, RingOfIntegersExtension,
+        RingOfIntegersIdeal, RingOfIntegersIdealsStructure,
+        RingOfIntegersToAlgebraicNumberFieldInclusion, RingOfIntegersWithIntegralBasisStructure,
     },
     integer::ideal::IntegerIdealsStructure,
     polynomial::RingToPolynomialSignature,

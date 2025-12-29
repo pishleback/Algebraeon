@@ -1,6 +1,6 @@
 use super::{QuaternionAlgebraElement, QuaternionAlgebraStructure};
 use crate::{
-    algebraic_number_field::structure::AlgebraicNumberFieldSignature,
+    algebraic_number_field::AlgebraicNumberFieldSignature,
     module::finitely_free_module::RingToFinitelyFreeModuleSignature,
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, FiniteRankFreeRingExtension,
@@ -126,7 +126,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStr
 impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
     fn check_basis(self) -> bool {
         // 1. Check that the basis has 4n elements
-        let expected_len = 4 * self.algebra.base_field().absolute_degree();
+        let expected_len = 4 * self.algebra.base_field().n();
 
         if self.basis.len() != expected_len {
             println!(
