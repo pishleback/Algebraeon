@@ -29,13 +29,13 @@ pub struct AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
     AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
 {
-    pub fn new(anf: KB, basis: Vec<K::Set>) -> Result<Self, String> {
-        let n = anf.borrow().n();
-        if n != basis.len() {
+    fn check(&self) -> Result<(), String> {
+        let n = self.anf.borrow().n();
+        if n != self.basis.len() {
             return Err("Basis has wrong length".to_string());
         }
-        for v in &basis {
-            if let Err(e) = anf.borrow().is_element(v) {
+        for v in &self.basis {
+            if let Err(e) = self.anf.borrow().is_element(v) {
                 return Err(format!(
                     "Vector is not a valid element of the number field: {}",
                     e
@@ -46,43 +46,38 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
             n,
             (0..n)
                 .map(|i| {
-                    anf.borrow()
+                    self.anf
+                        .borrow()
                         .finite_dimensional_rational_extension()
-                        .to_col(&basis[i])
+                        .to_col(&self.basis[i])
                 })
                 .collect(),
         );
         if mat.rank() != n {
             return Err("Vectors do not form a basis".to_string());
         }
-        Ok(Self { anf, basis })
+        Ok(())
+    }
+
+    pub fn new(anf: KB, basis: Vec<K::Set>) -> Result<Self, String> {
+        let s = Self::new_unchecked(anf, basis);
+        s.check()?;
+        Ok(s)
     }
 
     pub fn new_unchecked(anf: KB, basis: Vec<K::Set>) -> Self {
-        let n = anf.borrow().n();
+        let s = Self { anf, basis };
         #[cfg(debug_assertions)]
-        {
-            assert_eq!(n, basis.len());
-            for v in &basis {
-                assert!(anf.borrow().is_element(v).is_ok());
-            }
-            let mat = Matrix::join_cols(
-                n,
-                (0..n)
-                    .map(|i| {
-                        anf.borrow()
-                            .finite_dimensional_rational_extension()
-                            .to_col(&basis[i])
-                    })
-                    .collect(),
-            );
-            assert_eq!(mat.rank(), n);
-        }
-        Self { anf, basis }
+        s.check().unwrap();
+        s
     }
 
     pub fn anf(&self) -> &K {
         self.anf.borrow()
+    }
+
+    pub fn basis(&self) -> &Vec<K::Set> {
+        &self.basis
     }
 
     pub fn n(&self) -> usize {
