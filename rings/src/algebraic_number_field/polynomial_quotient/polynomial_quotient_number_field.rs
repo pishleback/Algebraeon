@@ -1,6 +1,6 @@
 use crate::{
     algebraic_number_field::{
-        AlgebraicNumberFieldOrderWithBasis, AlgebraicNumberFieldSignature,
+        OrderWithBasis, AlgebraicNumberFieldSignature,
         RingOfIntegersWithIntegralBasisStructure, anf_multi_primitive_element_theorem,
     },
     matrix::Matrix,
@@ -126,14 +126,14 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         self.compute_integral_basis_and_discriminant().1
     }
 
-    fn maximal_order<'a>(&'a self) -> AlgebraicNumberFieldOrderWithBasis<Self, &'a Self, true> {
+    fn maximal_order<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true> {
         let basis = self.compute_integral_basis_and_discriminant().0;
-        AlgebraicNumberFieldOrderWithBasis::new_maximal_unchecked(self, basis)
+        OrderWithBasis::new_maximal_unchecked(self, basis)
     }
 
-    fn into_maximal_order(self) -> AlgebraicNumberFieldOrderWithBasis<Self, Self, true> {
+    fn into_maximal_order(self) -> OrderWithBasis<Self, Self, true> {
         let basis = self.compute_integral_basis_and_discriminant().0;
-        AlgebraicNumberFieldOrderWithBasis::new_maximal_unchecked(self, basis)
+        OrderWithBasis::new_maximal_unchecked(self, basis)
     }
 
     fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {

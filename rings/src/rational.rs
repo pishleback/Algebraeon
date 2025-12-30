@@ -1,5 +1,5 @@
 use crate::algebraic_number_field::{
-    AlgebraicIntegerRingSignature, AlgebraicNumberFieldOrderWithBasis,
+    AlgebraicIntegerRingSignature, OrderWithBasis,
     AlgebraicNumberFieldSignature,
 };
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
@@ -178,12 +178,12 @@ impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
         Integer::ONE
     }
 
-    fn maximal_order<'a>(&'a self) -> AlgebraicNumberFieldOrderWithBasis<Self, &'a Self, true> {
-        AlgebraicNumberFieldOrderWithBasis::new_maximal_unchecked(self, vec![Rational::ONE])
+    fn maximal_order<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true> {
+        OrderWithBasis::new_maximal_unchecked(self, vec![Rational::ONE])
     }
 
-    fn into_maximal_order(self) -> AlgebraicNumberFieldOrderWithBasis<Self, Self, true> {
-        AlgebraicNumberFieldOrderWithBasis::new_maximal_unchecked(self, vec![Rational::ONE])
+    fn into_maximal_order(self) -> OrderWithBasis<Self, Self, true> {
+        OrderWithBasis::new_maximal_unchecked(self, vec![Rational::ONE])
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {

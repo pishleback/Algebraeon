@@ -1,6 +1,6 @@
 use crate::algebraic_number_field::{
     AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
-    AlgebraicNumberFieldOrderWithBasis, AlgebraicNumberFieldSignature,
+    OrderWithBasis, AlgebraicNumberFieldSignature,
     QuadraticRingOfIntegersStructure, RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
 use crate::structure::{
@@ -367,17 +367,17 @@ impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberF
         }
     }
 
-    fn maximal_order<'a>(&'a self) -> AlgebraicNumberFieldOrderWithBasis<Self, &'a Self, true> {
+    fn maximal_order<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true> {
         todo!()
     }
 
-    fn into_maximal_order(self) -> AlgebraicNumberFieldOrderWithBasis<Self, Self, true> {
+    fn into_maximal_order(self) -> OrderWithBasis<Self, Self, true> {
         todo!()
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
         self.ring_of_integers()
-            .outbound_anf_inclusion()
+            .outbound_roi_to_anf_inclusion()
             .try_preimage(a)
             .is_some()
     }

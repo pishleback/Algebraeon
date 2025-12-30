@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::{
-    algebraic_number_field::{AlgebraicNumberFieldOrderWithBasis, RingOfIntegersExtension},
+    algebraic_number_field::{OrderWithBasis, RingOfIntegersExtension},
     integer::ideal::IntegerIdealsStructure,
     structure::{
         CharZeroFieldSignature, CharZeroRingSignature, DedekindDomainIdealsSignature,
@@ -48,8 +48,8 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
 
     fn discriminant(&self) -> Integer;
 
-    fn maximal_order<'a>(&'a self) -> AlgebraicNumberFieldOrderWithBasis<Self, &'a Self, true>;
-    fn into_maximal_order(self) -> AlgebraicNumberFieldOrderWithBasis<Self, Self, true>;
+    fn maximal_order<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true>;
+    fn into_maximal_order(self) -> OrderWithBasis<Self, Self, true>;
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool;
 
@@ -68,15 +68,15 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
 {
     fn anf(&self) -> &K;
 
-    fn outbound_anf_inclusion<'a>(
-        &'a self,
-    ) -> RingOfIntegersToAlgebraicNumberFieldInclusion<K, Self, &'a Self> {
+    fn into_outbound_roi_to_anf_inclusion(
+        self,
+    ) -> RingOfIntegersToAlgebraicNumberFieldInclusion<K, Self, Self> {
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(self)
     }
 
-    fn into_outbound_anf_inclusion(
-        self,
-    ) -> RingOfIntegersToAlgebraicNumberFieldInclusion<K, Self, Self> {
+    fn outbound_roi_to_anf_inclusion<'a>(
+        &'a self,
+    ) -> RingOfIntegersToAlgebraicNumberFieldInclusion<K, Self, &'a Self> {
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(self)
     }
 }
