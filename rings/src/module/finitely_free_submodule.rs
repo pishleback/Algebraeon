@@ -362,9 +362,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_kernel() {
-        let submodules = Integer::structure()
-            .into_free_module(3)
-            .into_submodules();
+        let submodules = Integer::structure().into_free_module(3).into_submodules();
 
         let a = submodules.span(vec![&vec![1.into(), 1.into(), (-1).into()]]);
 
