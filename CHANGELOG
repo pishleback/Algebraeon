@@ -11,8 +11,10 @@ All notable changes to this project will be documented in this file.
  - Implemented above traits for intervals on the real line and boxes in the complex plane
  - Added types for continued fractions and for computing best rational approximations
  - Added quadratic algebraic number fields
+ - Added `SymmetricMatrix`
+ <!-- - Added orders for algebraic number fields and their ideals, with the ring of integers as a special case -->
 
-## [0.0.13]
+## [0.0.13] - 2025-07-21
 
  - Added database of Conway polynomials.
  - Added structure for finite fields using Conway polynomials and inclusion maps between finite fields.
