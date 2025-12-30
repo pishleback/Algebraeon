@@ -28,6 +28,20 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     ) -> Self::RationalInclusion<&'a Self>;
     fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
 
+    fn n(&self) -> usize {
+        self.inbound_finite_dimensional_rational_extension()
+            .degree()
+    }
+
+    fn generator(&self) -> Self::Set;
+
+    fn is_algebraic_integer(&self, a: &Self::Set) -> bool;
+
+    fn maximal_order<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true>;
+    fn into_maximal_order(self) -> OrderWithBasis<Self, Self, true>;
+
+    fn discriminant(&self) -> Integer;
+
     // This is the LCM of the denominators of the coefficients of the minimal polynomial of a,
     // and thus it may well be >1 even when the element a is an algebraic integer.
     fn min_poly_denominator_lcm(&self, a: &Self::Set) -> Integer {
@@ -40,18 +54,6 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
                 .collect(),
         )
     }
-
-    fn n(&self) -> usize {
-        self.inbound_finite_dimensional_rational_extension()
-            .degree()
-    }
-
-    fn discriminant(&self) -> Integer;
-
-    fn maximal_order<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true>;
-    fn into_maximal_order(self) -> OrderWithBasis<Self, Self, true>;
-
-    fn is_algebraic_integer(&self, a: &Self::Set) -> bool;
 
     /// return a scalar multiple of $a$ which is an algebraic integer
     /// need not return $a$ itself when $a$ is already an algebraic integer
@@ -225,6 +227,6 @@ pub trait AlgebraicIntegerRingInAlgebraicNumberFieldSignature:
 
     fn try_anf_to_roi(
         &self,
-        x: &<Self::AlgebraicNumberField as SetSignature>::Set,
+        y: &<Self::AlgebraicNumberField as SetSignature>::Set,
     ) -> Option<<Self::RingOfIntegers as SetSignature>::Set>;
 }

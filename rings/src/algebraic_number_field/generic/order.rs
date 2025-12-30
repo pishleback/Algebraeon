@@ -157,13 +157,13 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
             .unwrap()
     }
 
-    pub fn into_outbound_anf_inclusion(
+    pub fn into_outbound_order_to_anf_inclusion(
         self,
     ) -> anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, Self> {
         anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion::new(self)
     }
 
-    pub fn outbound_anf_inclusion<'a>(
+    pub fn outbound_order_to_anf_inclusion<'a>(
         &'a self,
     ) -> anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, &'a Self> {
         anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion::new(self)
@@ -266,10 +266,10 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
         debug_assert!(
             self.equal(
                 &self
-                    .outbound_anf_inclusion()
+                    .outbound_order_to_anf_inclusion()
                     .try_preimage(&self.anf().mul(
-                        &self.outbound_anf_inclusion().image(a),
-                        &self.outbound_anf_inclusion().image(b)
+                        &self.outbound_order_to_anf_inclusion().image(a),
+                        &self.outbound_order_to_anf_inclusion().image(b)
                     ))
                     .unwrap(),
                 &t
@@ -301,10 +301,10 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
     fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
         if self.is_zero(a) {
             Err(RingDivisionError::DivideByZero)
-        } else if let Some(a_inv) = self.outbound_anf_inclusion().try_preimage(
+        } else if let Some(a_inv) = self.outbound_order_to_anf_inclusion().try_preimage(
             &self
                 .anf()
-                .inv(&self.outbound_anf_inclusion().image(a))
+                .inv(&self.outbound_order_to_anf_inclusion().image(a))
                 .unwrap(),
         ) {
             Ok(a_inv)
@@ -334,7 +334,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
         self.anf()
-            .try_to_int(&self.outbound_anf_inclusion().image(x))
+            .try_to_int(&self.outbound_order_to_anf_inclusion().image(x))
     }
 }
 
@@ -353,6 +353,13 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AlgebraicIntege
 
 mod anf_inclusion {
     use super::*;
+    use crate::{
+        algebraic_number_field::{
+            AlgebraicIntegerRingInAlgebraicNumberFieldSignature,
+            RingOfIntegersToAlgebraicNumberFieldInclusion,
+        },
+        structure::RingHomomorphism,
+    };
 
     #[derive(Debug, Clone)]
     pub struct AlgebraicNumberFieldOrderWithBasisInclusion<
@@ -432,6 +439,47 @@ mod anf_inclusion {
                 .try_preimage(y)
         }
     }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+    > RingHomomorphism<OrderWithBasis<K, KB, MAXIMAL>, K>
+        for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
+    {
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KB: BorrowedStructure<K>,
+        OB: BorrowedStructure<OrderWithBasis<K, KB, true>>,
+    > AlgebraicIntegerRingInAlgebraicNumberFieldSignature
+        for RingOfIntegersToAlgebraicNumberFieldInclusion<K, OrderWithBasis<K, KB, true>, OB>
+    {
+        type AlgebraicNumberField = K;
+        type RingOfIntegers = OrderWithBasis<K, KB, true>;
+
+        fn discriminant(&self) -> Integer {
+            todo!()
+        }
+
+        fn roi_to_anf(
+            &self,
+            x: &<Self::RingOfIntegers as SetSignature>::Set,
+        ) -> <Self::AlgebraicNumberField as SetSignature>::Set {
+            self.domain().outbound_order_to_anf_inclusion().image(x)
+        }
+
+        fn try_anf_to_roi(
+            &self,
+            y: &<Self::AlgebraicNumberField as SetSignature>::Set,
+        ) -> Option<<Self::RingOfIntegers as SetSignature>::Set> {
+            self.domain()
+                .outbound_order_to_anf_inclusion()
+                .try_preimage(y)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -457,7 +505,7 @@ mod tests {
 
         {
             assert_eq!(
-                roi.outbound_anf_inclusion()
+                roi.outbound_order_to_anf_inclusion()
                     .image(&vec![Integer::from(1), Integer::from(4)]),
                 (2 + 3 * &x).into_verbose()
             );
@@ -465,7 +513,7 @@ mod tests {
 
         {
             assert!(
-                roi.outbound_anf_inclusion()
+                roi.outbound_order_to_anf_inclusion()
                     .try_preimage(&Polynomial::<Rational>::from_coeffs(vec![
                         Rational::ONE_HALF,
                         Rational::ONE,
@@ -474,7 +522,7 @@ mod tests {
             );
 
             let c = roi
-                .outbound_anf_inclusion()
+                .outbound_order_to_anf_inclusion()
                 .try_preimage(&Polynomial::<Rational>::from_coeffs(vec![
                     Rational::from(2),
                     Rational::from(3),
@@ -503,17 +551,17 @@ mod tests {
 
         {
             let alpha = roi
-                .outbound_anf_inclusion()
+                .outbound_order_to_anf_inclusion()
                 .try_preimage(&(2 + 3 * &x).into_verbose())
                 .unwrap();
             let beta = roi
-                .outbound_anf_inclusion()
+                .outbound_order_to_anf_inclusion()
                 .try_preimage(&(-1 + 2 * &x).into_verbose())
                 .unwrap();
 
             {
                 let gamma = roi
-                    .outbound_anf_inclusion()
+                    .outbound_order_to_anf_inclusion()
                     .try_preimage(&(1 + 5 * &x).into_verbose())
                     .unwrap();
                 // (2 + 3x) + (-1 + 2x) = 1 + 5x
@@ -522,7 +570,7 @@ mod tests {
 
             {
                 let gamma = roi
-                    .outbound_anf_inclusion()
+                    .outbound_order_to_anf_inclusion()
                     .try_preimage(&(-44 + &x).into_verbose())
                     .unwrap();
                 // x^2 = -7 so
@@ -532,7 +580,7 @@ mod tests {
 
             {
                 let gamma = roi
-                    .outbound_anf_inclusion()
+                    .outbound_order_to_anf_inclusion()
                     .try_preimage(&(-2 - 3 * &x).into_verbose())
                     .unwrap();
                 // -(2 + 3x) = -2 - 3x

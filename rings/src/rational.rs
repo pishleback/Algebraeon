@@ -1,6 +1,5 @@
 use crate::algebraic_number_field::{
-    AlgebraicIntegerRingSignature, OrderWithBasis,
-    AlgebraicNumberFieldSignature,
+    AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, OrderWithBasis,
 };
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
@@ -172,6 +171,10 @@ impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     }
     fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
         self.into_inbound_principal_rational_map()
+    }
+
+    fn generator(&self) -> Rational {
+        Rational::ONE
     }
 
     fn discriminant(&self) -> Integer {

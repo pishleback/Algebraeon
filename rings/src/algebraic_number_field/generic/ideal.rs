@@ -2,22 +2,25 @@ use std::marker::PhantomData;
 
 use crate::{
     algebraic_number_field::{
-        AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, OrderWithBasis,
+        AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
+        AlgebraicNumberFieldSignature, OrderWithBasis, RingOfIntegersExtension,
         RingOfIntegersToAlgebraicNumberFieldInclusion,
     },
+    integer::ideal::IntegerIdealsStructure,
     matrix::Matrix,
     module::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
+    polynomial::RingToPolynomialSignature,
     structure::*,
 };
-use algebraeon_nzq::{Integer, Natural, traits::Abs};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, traits::Abs};
 use algebraeon_sets::{
     combinatorics::num_partitions_part_pool,
     structure::{
-        BorrowedStructure, EqSignature, Function, InjectiveFunction, MetaType, SetSignature,
-        Signature,
+        BorrowedMorphism, BorrowedStructure, EqSignature, Function, InjectiveFunction, MetaType,
+        SetSignature, Signature,
     },
 };
 use itertools::Itertools;
@@ -204,10 +207,10 @@ impl<
                 (0..n)
                     .map(|i| {
                         self.ring()
-                            .outbound_anf_inclusion()
+                            .outbound_order_to_anf_inclusion()
                             .try_preimage(&self.ring().anf().mul(
-                                &self.ring().basis_vector(i),
-                                &self.ring().outbound_anf_inclusion().image(a),
+                                self.ring().basis_vector(i),
+                                &self.ring().outbound_order_to_anf_inclusion().image(a),
                             ))
                             .unwrap()
                     })
@@ -332,6 +335,25 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, true>>,
 > FactorableIdealsSignature<OrderWithBasis<K, KB, true>, OB>
     for OrderIdealsStructure<K, KB, true, OB>
+where
+    for<'a> RingOfIntegersExtension<
+        K,
+        OrderWithBasis<K, KB, true>,
+        &'a OrderWithBasis<K, KB, true>,
+        RingOfIntegersToAlgebraicNumberFieldInclusion<
+            K,
+            OrderWithBasis<K, KB, true>,
+            &'a OrderWithBasis<K, KB, true>,
+        >,
+        IntegerIdealsStructure<IntegerCanonicalStructure>,
+        OrderIdealsStructure<K, KB, true, &'a OrderWithBasis<K, KB, true>>,
+    >: IntegralClosureExtension<Z = IntegerCanonicalStructure, R = OrderWithBasis<K, KB, true>>
+        + DedekindDomainExtension<
+            IntegerCanonicalStructure,
+            &'a OrderWithBasis<K, KB, true>,
+            IdealsZ = IntegerIdealsStructure<IntegerCanonicalStructure>,
+            IdealsR = OrderIdealsStructure<K, KB, true, &'a OrderWithBasis<K, KB, true>>,
+        >,
 {
     fn factor_ideal(
         &self,
@@ -339,8 +361,7 @@ impl<
     ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
         Some(
             self.ring()
-                .clone()
-                .into_outbound_roi_to_anf_inclusion()
+                .outbound_roi_to_anf_inclusion()
                 .zq_extension()
                 .factor_ideal(ideal)?
                 .into_full_factorization(),
@@ -353,6 +374,25 @@ impl<
     KB: BorrowedStructure<K>,
     OB: BorrowedStructure<OrderWithBasis<K, KB, true>>,
 > OrderIdealsStructure<K, KB, true, OB>
+where
+    for<'a> RingOfIntegersExtension<
+        K,
+        OrderWithBasis<K, KB, true>,
+        &'a OrderWithBasis<K, KB, true>,
+        RingOfIntegersToAlgebraicNumberFieldInclusion<
+            K,
+            OrderWithBasis<K, KB, true>,
+            &'a OrderWithBasis<K, KB, true>,
+        >,
+        IntegerIdealsStructure<IntegerCanonicalStructure>,
+        OrderIdealsStructure<K, KB, true, &'a OrderWithBasis<K, KB, true>>,
+    >: IntegralClosureExtension<Z = IntegerCanonicalStructure, R = OrderWithBasis<K, KB, true>>
+        + DedekindDomainExtension<
+            IntegerCanonicalStructure,
+            &'a OrderWithBasis<K, KB, true>,
+            IdealsZ = IntegerIdealsStructure<IntegerCanonicalStructure>,
+            IdealsR = OrderIdealsStructure<K, KB, true, &'a OrderWithBasis<K, KB, true>>,
+        >,
 {
     /// The order of the multiplicative group of the quotient modulo the ideal.
     fn euler_phi(&self, ideal: &OrderIdeal) -> Option<Natural> {
@@ -373,7 +413,7 @@ impl<
     pub fn all_ideals_norm_eq<'a>(
         &'a self,
         n: &Natural,
-    ) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
+    ) -> Box<dyn 'a + Iterator<Item = OrderIdeal>> {
         match Integer::ideals().factor_ideal(n) {
             Some(n) => {
                 let roi_to_anf =
@@ -404,7 +444,7 @@ impl<
                                         .collect(),
                                 )
                             })
-                            .collect::<Vec<RingOfIntegersIdeal>>()
+                            .collect::<Vec<OrderIdeal>>()
                         })
                         .multi_cartesian_product()
                         .map(|ideals| self.ideal_product(ideals)),
@@ -418,7 +458,7 @@ impl<
     pub fn all_nonzero_ideals_norm_le<'a>(
         &'a self,
         n: &'a Natural,
-    ) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
+    ) -> Box<dyn 'a + Iterator<Item = OrderIdeal>> {
         Box::new(
             (1usize..)
                 .map(Natural::from)
@@ -428,7 +468,7 @@ impl<
     }
 
     /// generate all ideals
-    pub fn all_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
+    pub fn all_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = OrderIdeal>> {
         Box::new(
             (0usize..)
                 .map(Natural::from)
@@ -437,24 +477,16 @@ impl<
     }
 
     /// generate all non-zero ideals
-    pub fn all_nonzero_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = RingOfIntegersIdeal>> {
+    pub fn all_nonzero_ideals<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = OrderIdeal>> {
         Box::new(
             (1usize..)
                 .map(Natural::from)
                 .flat_map(|m| self.all_ideals_norm_eq(&m)),
         )
     }
-}
 
-impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
-    RingOfIntegersIdealsStructure<RingB>
-{
     /// given an ideal I and element a find an element b such that I = (a, b)
-    pub fn ideal_other_generator(
-        &self,
-        g: &Vec<Integer>,
-        ideal: &RingOfIntegersIdeal,
-    ) -> Vec<Integer> {
+    pub fn ideal_other_generator(&self, g: &Vec<Integer>, ideal: &OrderIdeal) -> Vec<Integer> {
         debug_assert!(self.ideal_contains_element(ideal, g));
         debug_assert!(!self.ring().is_zero(g));
         // prod_i p^{e_i}
@@ -464,74 +496,91 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         // want b not in any q and in all p^{e_i} and not in any p^{e_i+1}
 
         // this is all b not in any q and in all p^{e_i}
-        let b_set = self.ring().z_module().affine_subsets().intersect_list(
-            self.factorizations()
-                .to_powers(&ideal_factored)
-                .into_iter()
-                .map(|(p, k)| match self.ideal_nat_pow(p.ideal(), k) {
-                    RingOfIntegersIdeal::Zero => unreachable!(),
-                    RingOfIntegersIdeal::NonZero(pk_lattice) => {
-                        FinitelyFreeSubmoduleAffineSubset::NonEmpty(
-                            self.ring().z_module().cosets().from_submodule(pk_lattice),
-                        )
-                    }
-                })
-                .chain(
-                    self.factorizations()
-                        .into_prime_support(g_factored)
-                        .into_iter()
-                        .filter(|prime_ideal| {
-                            !self
-                                .factorizations()
-                                .to_prime_support(&ideal_factored)
-                                .into_iter()
-                                .any(|p| self.ideal_equal(p.ideal(), prime_ideal.ideal()))
-                        })
-                        .map(|q| match q.into_ideal() {
-                            RingOfIntegersIdeal::Zero => unreachable!(),
-                            RingOfIntegersIdeal::NonZero(q_lattice) => {
-                                FinitelyFreeSubmoduleAffineSubset::NonEmpty(
-                                    self.ring()
-                                        .z_module()
-                                        .cosets()
-                                        .from_offset_and_submodule(&self.ring().one(), q_lattice),
-                                )
-                            }
-                        }),
-                )
-                .collect(),
-        );
-
-        //need to filter out the b in some p^{e_i+1}
-        let rm_b_set = self.ring().z_module().affine_subsets().intersect_list(
-            self.factorizations()
-                .to_powers(&ideal_factored)
-                .into_iter()
-                .map(
-                    |(p, k)| match self.ideal_nat_pow(p.ideal(), &(k + Natural::ONE)) {
-                        RingOfIntegersIdeal::Zero => unreachable!(),
-                        RingOfIntegersIdeal::NonZero(pk_lattice) => {
+        let b_set = self
+            .ring()
+            .free_z_module_restructure()
+            .affine_subsets()
+            .intersect_list(
+                self.factorizations()
+                    .to_powers(&ideal_factored)
+                    .into_iter()
+                    .map(|(p, k)| match self.ideal_nat_pow(p.ideal(), k) {
+                        OrderIdeal::Zero => unreachable!(),
+                        OrderIdeal::NonZero(pk_lattice) => {
                             FinitelyFreeSubmoduleAffineSubset::NonEmpty(
-                                self.ring().z_module().cosets().from_submodule(pk_lattice),
+                                self.ring()
+                                    .free_z_module_restructure()
+                                    .cosets()
+                                    .from_submodule(pk_lattice),
                             )
                         }
-                    },
-                )
-                .collect(),
-        );
+                    })
+                    .chain(
+                        self.factorizations()
+                            .into_prime_support(g_factored)
+                            .into_iter()
+                            .filter(|prime_ideal| {
+                                !self
+                                    .factorizations()
+                                    .to_prime_support(&ideal_factored)
+                                    .into_iter()
+                                    .any(|p| self.ideal_equal(p.ideal(), prime_ideal.ideal()))
+                            })
+                            .map(|q| match q.into_ideal() {
+                                OrderIdeal::Zero => unreachable!(),
+                                OrderIdeal::NonZero(q_lattice) => {
+                                    FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                                        self.ring()
+                                            .free_z_module_restructure()
+                                            .cosets()
+                                            .from_offset_and_submodule(
+                                                &self.ring().one(),
+                                                q_lattice,
+                                            ),
+                                    )
+                                }
+                            }),
+                    )
+                    .collect(),
+            );
+
+        //need to filter out the b in some p^{e_i+1}
+        let rm_b_set = self
+            .ring()
+            .free_z_module_restructure()
+            .affine_subsets()
+            .intersect_list(
+                self.factorizations()
+                    .to_powers(&ideal_factored)
+                    .into_iter()
+                    .map(
+                        |(p, k)| match self.ideal_nat_pow(p.ideal(), &(k + Natural::ONE)) {
+                            OrderIdeal::Zero => unreachable!(),
+                            OrderIdeal::NonZero(pk_lattice) => {
+                                FinitelyFreeSubmoduleAffineSubset::NonEmpty(
+                                    self.ring()
+                                        .free_z_module_restructure()
+                                        .cosets()
+                                        .from_submodule(pk_lattice),
+                                )
+                            }
+                        },
+                    )
+                    .collect(),
+            );
 
         //if all basis elements of b_set were contain in rm_b_set then we'd have b_set contained in rm_b_set
         //but this is not the case, so some basis of b_set is not in rm_b_set
 
         self.ring()
-            .z_module()
+            .free_z_module_restructure()
             .affine_subsets()
             .affine_basis(&b_set)
             .into_iter()
             .find(|b| {
                 !self
                     .ring()
-                    .z_module()
+                    .free_z_module_restructure()
                     .affine_subsets()
                     .contains_element(&rm_b_set, b)
             })
@@ -539,13 +588,10 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
     }
 
     /// return two elements which generate the ideal
-    pub fn ideal_two_generators(
-        &self,
-        ideal: &RingOfIntegersIdeal,
-    ) -> (Vec<Integer>, Vec<Integer>) {
+    pub fn ideal_two_generators(&self, ideal: &OrderIdeal) -> (Vec<Integer>, Vec<Integer>) {
         let (a, b) = match ideal {
-            RingOfIntegersIdeal::Zero => (self.ring().zero(), self.ring().zero()),
-            RingOfIntegersIdeal::NonZero(lattice) => {
+            OrderIdeal::Zero => (self.ring().zero(), self.ring().zero()),
+            OrderIdeal::NonZero(lattice) => {
                 let a = lattice.basis().into_iter().next().unwrap();
                 let b = self.ideal_other_generator(&a, ideal);
                 (a, b)
@@ -553,6 +599,139 @@ impl<RingB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
         };
         debug_assert!(self.ideal_equal(ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
         (a, b)
+    }
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, true>>,
+    OtoK: BorrowedMorphism<
+            OrderWithBasis<K, KB, true>,
+            K,
+            RingOfIntegersToAlgebraicNumberFieldInclusion<K, OrderWithBasis<K, KB, true>, OB>,
+        >,
+> DedekindDomainExtension<IntegerCanonicalStructure, OB>
+    for RingOfIntegersExtension<
+        K,
+        OrderWithBasis<K, KB, true>,
+        OB,
+        OtoK,
+        IntegerIdealsStructure<IntegerCanonicalStructure>,
+        OrderIdealsStructure<K, KB, true, OB>,
+    >
+where
+    RingOfIntegersToAlgebraicNumberFieldInclusion<K, OrderWithBasis<K, KB, true>, OB>:
+        AlgebraicIntegerRingInAlgebraicNumberFieldSignature<
+                AlgebraicNumberField = K,
+                RingOfIntegers = OrderWithBasis<K, KB, true>,
+            >,
+{
+    type IdealsZ = IntegerIdealsStructure<IntegerCanonicalStructure>;
+    type IdealsR = OrderIdealsStructure<K, KB, true, OB>;
+
+    fn z_ideals(&self) -> &Self::IdealsZ {
+        self.z_ideals()
+    }
+
+    fn r_ideals(&self) -> &Self::IdealsR {
+        self.r_ideals()
+    }
+
+    fn ideal_norm(&self, ideal: &<Self::IdealsR as SetSignature>::Set) -> Natural {
+        self.r_ideals().ideal_norm(ideal)
+    }
+
+    fn factor_prime_ideal(
+        &self,
+        prime_ideal: DedekindDomainPrimeIdeal<Natural>,
+    ) -> DedekindExtensionIdealFactorsAbovePrime<Natural, <Self::IdealsR as SetSignature>::Set>
+    {
+        // https://en.wikipedia.org/wiki/Dedekind%E2%80%93Kummer_theorem
+        let p = Integer::ideals().ideal_generator(prime_ideal.ideal());
+        let anf = self.k_field();
+        let roi = self.r_ring();
+        let roi_ideals = self.r_ideals();
+        let mod_p = Integer::structure().into_quotient_field_unchecked(p.clone());
+        let poly_mod_p = mod_p.polynomial_ring();
+        let poly_roi = roi.polynomial_ring();
+
+        // alpha generates the algebraic number field but it is not necessarily an algebraic integer
+        let alpha = anf.generator();
+        // beta generates the algebraic number field and belongs to the ring of integers
+        let beta = self.integral_scalar_multiple_r(&alpha);
+        // factor the minimal polynomial of beta over the integers modulo p
+        let beta_min_poly = self.min_poly_r_over_z(&beta);
+        let beta_min_poly_factored = poly_mod_p.factor(&beta_min_poly).unwrap();
+        // there is one prime ideal factor for each irreducible factor of beta's minimal polynomial modulo p
+        // the prime ideal corresponding to an irreducible factor g(x) is generated by (p, g(beta))
+        DedekindExtensionIdealFactorsAbovePrime::from_powers_unchecked(
+            prime_ideal,
+            poly_mod_p
+                .factorizations()
+                .into_powers(beta_min_poly_factored)
+                .into_iter()
+                .map(|(g, power)| {
+                    debug_assert!(g.is_monic());
+                    let prime_ideal = roi_ideals.generated_ideal(vec![
+                        self.z_to_r().image(&p),
+                        poly_roi.evaluate(&g.apply_map(|c| self.z_to_r().image(c)), &beta),
+                    ]);
+                    // norm(I) = p^deg(g)
+                    debug_assert_eq!(
+                        roi_ideals.ideal_norm(&prime_ideal),
+                        p.clone().abs().nat_pow(&g.degree().unwrap().into())
+                    );
+                    DedekindExtensionIdealFactorsAbovePrimeFactor {
+                        prime_ideal: DedekindDomainPrimeIdeal::from_ideal_unchecked(prime_ideal),
+                        residue_class_degree: g.degree().unwrap(),
+                        power,
+                    }
+                })
+                .collect(),
+        )
+    }
+
+    fn factor_ideal(
+        &self,
+        ideal: &OrderIdeal,
+    ) -> Option<DedekindExtensionIdealFactorization<Natural, OrderIdeal>> {
+        let norm = self.ideal_norm(ideal);
+        let norm_prime_factors = Integer::ideals().factor_ideal(&norm)?;
+        Some(
+            DedekindExtensionIdealFactorization::from_ideal_factors_above_primes(
+                Integer::ideals()
+                    .factorizations()
+                    .into_prime_support(norm_prime_factors)
+                    .into_iter()
+                    .map(|prime| {
+                        DedekindExtensionIdealFactorsAbovePrime::from_powers_unchecked(
+                            prime.clone(),
+                            self.factor_prime_ideal(prime.clone())
+                                .into_factors()
+                                .into_iter()
+                                .filter_map(|factor_above_prime| {
+                                    let k = self.r_ideals().largest_prime_ideal_factor_power(
+                                        &factor_above_prime.prime_ideal,
+                                        ideal,
+                                    );
+                                    if k == Natural::ZERO {
+                                        None
+                                    } else {
+                                        Some(DedekindExtensionIdealFactorsAbovePrimeFactor {
+                                            prime_ideal: factor_above_prime.prime_ideal,
+                                            residue_class_degree: factor_above_prime
+                                                .residue_class_degree,
+                                            power: k,
+                                        })
+                                    }
+                                })
+                                .collect(),
+                        )
+                    })
+                    .collect(),
+            ),
+        )
     }
 }
 
@@ -574,32 +753,41 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = RingOfIntegersWithIntegralBasisStructure::new(
-            anf.clone(),
-            vec![a.clone(), b.clone()],
-            Integer::from(8),
-        );
+        let roi = OrderWithBasis::new_maximal(anf.clone(), vec![a.clone(), b.clone()]).unwrap();
         let roi_ideals = roi.ideals();
 
         {
             // 1 + sqrt(2)
-            let alpha = roi.try_anf_to_roi(&(&x + 1).into_verbose()).unwrap();
+            let alpha = roi
+                .outbound_order_to_anf_inclusion()
+                .try_preimage(&(&x + 1).into_verbose())
+                .unwrap();
 
             // (a + b sqrt(2)) * (1 + sqrt(2)) = a(1 + sqrt(2)) + b(2 + sqrt(2))
             assert!(roi_ideals.ideal_equal(
                 &roi_ideals.principal_ideal(&alpha),
                 &roi_ideals.ideal_from_integer_span(vec![
-                    roi.try_anf_to_roi(&(1 + &x).into_verbose()).unwrap(),
-                    roi.try_anf_to_roi(&(2 + &x).into_verbose()).unwrap()
-                ])
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(1 + &x).into_verbose())
+                            .unwrap(),
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(2 + &x).into_verbose())
+                            .unwrap()
+                    ])
             ));
         }
 
         {
             // 6
-            let alpha = roi.try_anf_to_roi(&(6 * x.pow(0)).into_verbose()).unwrap();
+            let alpha = roi
+                .outbound_order_to_anf_inclusion()
+                .try_preimage(&(6 * x.pow(0)).into_verbose())
+                .unwrap();
             // 15
-            let beta = roi.try_anf_to_roi(&(15 * x.pow(0)).into_verbose()).unwrap();
+            let beta = roi
+                .outbound_order_to_anf_inclusion()
+                .try_preimage(&(15 * x.pow(0)).into_verbose())
+                .unwrap();
 
             let alpha_ideal = roi_ideals.principal_ideal(&alpha);
             let beta_ideal = roi_ideals.principal_ideal(&beta);
@@ -612,27 +800,39 @@ mod tests {
             assert!(roi_ideals.ideal_equal(
                 &alpha_beta_add,
                 &roi_ideals.ideal_from_integer_span(vec![
-                    roi.try_anf_to_roi(&(3 * x.pow(0)).into_verbose()).unwrap(),
-                    roi.try_anf_to_roi(&(3 * x.pow(1)).into_verbose()).unwrap()
-                ])
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(3 * x.pow(0)).into_verbose())
+                            .unwrap(),
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(3 * x.pow(1)).into_verbose())
+                            .unwrap()
+                    ])
             ));
 
             // intersection is 30
             assert!(roi_ideals.ideal_equal(
                 &alpha_beta_intersect,
                 &roi_ideals.ideal_from_integer_span(vec![
-                    roi.try_anf_to_roi(&(30 * x.pow(0)).into_verbose()).unwrap(),
-                    roi.try_anf_to_roi(&(30 * x.pow(1)).into_verbose()).unwrap()
-                ])
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(30 * x.pow(0)).into_verbose())
+                            .unwrap(),
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(30 * x.pow(1)).into_verbose())
+                            .unwrap()
+                    ])
             ));
 
             // product is 90
             assert!(roi_ideals.ideal_equal(
                 &alpha_beta_mul,
                 &roi_ideals.ideal_from_integer_span(vec![
-                    roi.try_anf_to_roi(&(90 * x.pow(0)).into_verbose()).unwrap(),
-                    roi.try_anf_to_roi(&(90 * x.pow(1)).into_verbose()).unwrap()
-                ])
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(90 * x.pow(0)).into_verbose())
+                            .unwrap(),
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(90 * x.pow(1)).into_verbose())
+                            .unwrap()
+                    ])
             ));
         }
     }
@@ -644,7 +844,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = anf.compute_ring_of_integers();
+        let roi = anf.into_maximal_order();
         let roi_ideals = roi.ideals();
 
         assert_eq!(
@@ -672,7 +872,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = anf.compute_ring_of_integers();
+        let roi = anf.maximal_order();
         let roi_ideals = roi.ideals();
 
         // Consider the ideal (5)
@@ -691,9 +891,12 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = anf.compute_ring_of_integers();
+        let roi = anf.maximal_order();
         let roi_ideals = roi.ideals();
-        let one_plus_i = roi.try_anf_to_roi(&(&x + 1).into_verbose()).unwrap();
+        let one_plus_i = roi
+            .outbound_order_to_anf_inclusion()
+            .try_preimage(&(&x + 1).into_verbose())
+            .unwrap();
         let gaussian_prime = roi_ideals.principal_ideal(&one_plus_i);
 
         let zero_sqrt = roi_ideals.sqrt_if_square(&roi_ideals.zero_ideal()).unwrap();

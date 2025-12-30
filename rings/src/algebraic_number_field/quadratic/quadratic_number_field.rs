@@ -1,7 +1,7 @@
 use crate::algebraic_number_field::{
     AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
-    OrderWithBasis, AlgebraicNumberFieldSignature,
-    QuadraticRingOfIntegersStructure, RingOfIntegersToAlgebraicNumberFieldInclusion,
+    AlgebraicNumberFieldSignature, OrderWithBasis, QuadraticRingOfIntegersStructure,
+    RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
 use crate::structure::{
     AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroFieldSignature, CharZeroRingSignature,
@@ -354,6 +354,10 @@ impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberF
 
     fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
         PrincipalRationalMap::new(self)
+    }
+
+    fn generator(&self) -> Self::Set {
+        todo!()
     }
 
     fn discriminant(&self) -> Integer {

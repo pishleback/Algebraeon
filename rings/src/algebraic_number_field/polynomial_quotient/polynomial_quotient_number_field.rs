@@ -1,7 +1,6 @@
 use crate::{
     algebraic_number_field::{
-        OrderWithBasis, AlgebraicNumberFieldSignature,
-        RingOfIntegersWithIntegralBasisStructure, anf_multi_primitive_element_theorem,
+        AlgebraicNumberFieldSignature, OrderWithBasis, anf_multi_primitive_element_theorem,
     },
     matrix::Matrix,
     polynomial::{
@@ -120,6 +119,10 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
 
     fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
         self.into_inbound_principal_rational_map()
+    }
+
+    fn generator(&self) -> Self::Set {
+        self.generator()
     }
 
     fn discriminant(&self) -> Integer {
@@ -246,11 +249,6 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
             }
             return (guess, disc);
         }
-    }
-
-    pub fn compute_ring_of_integers(&self) -> RingOfIntegersWithIntegralBasisStructure {
-        let (integral_basis, discriminant) = self.compute_integral_basis_and_discriminant();
-        RingOfIntegersWithIntegralBasisStructure::new(self.clone(), integral_basis, discriminant)
     }
 }
 

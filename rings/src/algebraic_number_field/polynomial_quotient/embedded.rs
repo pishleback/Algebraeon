@@ -270,7 +270,7 @@ mod tests {
                 "{:?}",
                 root.generated_algebraic_number_field()
                     .maximal_order()
-                    .into_outbound_anf_inclusion()
+                    .into_outbound_order_to_anf_inclusion()
             );
         }
     }
