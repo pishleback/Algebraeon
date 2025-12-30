@@ -17,7 +17,7 @@ use algebraeon_sets::structure::{
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<
+pub struct AlgebraicNumberFieldFullRankZSubmoduleWithBasis<
     K: AlgebraicNumberFieldSignature,
     KB: BorrowedStructure<K>,
 > {
@@ -27,7 +27,7 @@ pub struct AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
-    AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
+    AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>
 {
     fn check(&self) -> Result<(), String> {
         let n = self.anf.borrow().n();
@@ -89,7 +89,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
         self.basis.len()
     }
 
-    pub fn abelian_group_restructure(
+    pub fn free_z_module_restructure(
         &self,
     ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
         Integer::structure().into_free_module(self.n())
@@ -117,7 +117,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> PartialEq
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
+    for AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>
 {
     fn eq(&self, other: &Self) -> bool {
         let n = self.anf().n();
@@ -137,17 +137,17 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> PartialEq
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> Eq
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
+    for AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>
 {
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> Signature
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
+    for AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>
 {
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetSignature
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
+    for AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>
 {
     type Set = Vec<Integer>;
 
@@ -160,34 +160,34 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetSignature
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> EqSignature
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
+    for AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.abelian_group_restructure().equal(a, b)
+        self.free_z_module_restructure().equal(a, b)
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveMonoidSignature
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
+    for AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>
 {
     fn zero(&self) -> Self::Set {
-        self.abelian_group_restructure().zero()
+        self.free_z_module_restructure().zero()
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.abelian_group_restructure().add(a, b)
+        self.free_z_module_restructure().add(a, b)
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveGroupSignature
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
+    for AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>
 {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        self.abelian_group_restructure().neg(a)
+        self.free_z_module_restructure().neg(a)
     }
 
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.abelian_group_restructure().sub(a, b)
+        self.free_z_module_restructure().sub(a, b)
     }
 }
 
@@ -198,7 +198,7 @@ mod anf_inclusion {
     pub struct AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<
         K: AlgebraicNumberFieldSignature,
         KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>>,
     > {
         _k: PhantomData<K>,
         _kb: PhantomData<KB>,
@@ -208,7 +208,7 @@ mod anf_inclusion {
     impl<
         K: AlgebraicNumberFieldSignature,
         KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>>,
     > AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
     {
         pub fn new(abelian_subgroup: AB) -> Self {
@@ -223,11 +223,11 @@ mod anf_inclusion {
     impl<
         K: AlgebraicNumberFieldSignature,
         KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
-    > Morphism<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>, K>
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>>,
+    > Morphism<AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>, K>
         for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
     {
-        fn domain(&self) -> &AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB> {
+        fn domain(&self) -> &AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB> {
             self.abelian_subgroup.borrow()
         }
 
@@ -239,8 +239,8 @@ mod anf_inclusion {
     impl<
         K: AlgebraicNumberFieldSignature,
         KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
-    > Function<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>, K>
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>>,
+    > Function<AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>, K>
         for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
     {
         fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
@@ -259,8 +259,8 @@ mod anf_inclusion {
     impl<
         K: AlgebraicNumberFieldSignature,
         KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
-    > InjectiveFunction<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>, K>
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>>,
+    > InjectiveFunction<AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>, K>
         for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
     {
         fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
@@ -300,7 +300,7 @@ mod tests {
             .algebraic_number_field()
             .unwrap();
 
-        let abgrp = AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis::new(
+        let abgrp = AlgebraicNumberFieldFullRankZSubmoduleWithBasis::new(
             anf.clone(),
             vec![
                 parse_rational_polynomial("2 + 3*x", "x").unwrap(),

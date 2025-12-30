@@ -123,11 +123,11 @@ impl RingOfIntegersWithIntegralBasisStructure {
     }
 
     pub fn roi_to_anf(&self, elem: &Vec<Integer>) -> Polynomial<Rational> {
-        self.anf_inclusion().roi_to_anf(elem)
+        self.outbound_anf_inclusion().roi_to_anf(elem)
     }
 
     pub fn try_anf_to_roi(&self, elem: &Polynomial<Rational>) -> Option<Vec<Integer>> {
-        self.anf_inclusion().try_anf_to_roi(elem)
+        self.outbound_anf_inclusion().try_anf_to_roi(elem)
     }
 }
 
@@ -276,23 +276,20 @@ impl CharZeroRingSignature for RingOfIntegersWithIntegralBasisStructure {
     }
 }
 
-impl AlgebraicIntegerRingSignature for RingOfIntegersWithIntegralBasisStructure {
-    type AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure;
-
-    fn anf(&self) -> Self::AlgebraicNumberField {
-        self.algebraic_number_field.clone()
+impl AlgebraicIntegerRingSignature<AlgebraicNumberFieldPolynomialQuotientStructure>
+    for RingOfIntegersWithIntegralBasisStructure
+{
+    fn anf(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
+        &self.algebraic_number_field
     }
 }
 
-impl<
-    RB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>,
-    KB: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
-> AlgebraicIntegerRingInAlgebraicNumberFieldSignature
+impl<RB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
+    AlgebraicIntegerRingInAlgebraicNumberFieldSignature
     for RingOfIntegersToAlgebraicNumberFieldInclusion<
+        AlgebraicNumberFieldPolynomialQuotientStructure,
         RingOfIntegersWithIntegralBasisStructure,
         RB,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        KB,
     >
 {
     type AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure;

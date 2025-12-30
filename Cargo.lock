@@ -161,12 +161,14 @@ dependencies = [
  "algebraeon-groups",
  "algebraeon-nzq",
  "algebraeon-sets",
+ "impls",
  "itertools 0.14.0",
  "lalrpop",
  "lalrpop-util",
  "rand 0.9.2",
  "rayon",
  "reqwest",
+ "static_assertions",
 ]
 
 [[package]]
@@ -1299,6 +1301,12 @@ dependencies = [
  "icu_normalizer",
  "icu_properties",
 ]
+
+[[package]]
+name = "impls"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a46645bbd70538861a90d0f26c31537cdf1e44aae99a794fb75a664b70951bc"
 
 [[package]]
 name = "indexmap"

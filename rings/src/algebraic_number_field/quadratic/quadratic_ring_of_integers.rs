@@ -6,8 +6,7 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroRingSignature,
         CharacteristicSignature, DedekindDomainSignature, IntegralDomainSignature,
-        MetaFactorableSignature, RingDivisionError, RingSignature, SemiRingSignature,
-        SemiRingUnitsSignature,
+        RingDivisionError, RingSignature, SemiRingSignature, SemiRingUnitsSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
@@ -16,12 +15,12 @@ use algebraeon_sets::structure::{BorrowedSet, EqSignature, SetSignature, Signatu
 #[derive(Debug, Clone)]
 pub struct QuadraticRingOfIntegersStructure<D: BorrowedSet<Integer>> {
     // A squarefree integer
-    d: D,
+    qanf: QuadraticNumberFieldStructure<D>,
 }
 
 impl<D: BorrowedSet<Integer>> PartialEq for QuadraticRingOfIntegersStructure<D> {
     fn eq(&self, other: &Self) -> bool {
-        self.d.borrow() == other.d.borrow()
+        self.qanf == other.qanf
     }
 }
 
@@ -32,24 +31,23 @@ impl QuadraticRingOfIntegersStructure<Integer> {
     ///
     /// Returns an `Err` if `d` is not squarefree.
     pub fn new(d: Integer) -> Result<Self, ()> {
-        if d != Integer::ONE && d.is_squarefree() {
-            Ok(Self { d })
-        } else {
-            Err(())
-        }
+        Ok(Self {
+            qanf: QuadraticNumberFieldStructure::new(d)?,
+        })
     }
 }
 
 impl<D: BorrowedSet<Integer>> QuadraticRingOfIntegersStructure<D> {
     pub fn new_unchecked(d: D) -> Self {
-        debug_assert!(d.borrow() != &Integer::ONE && d.borrow().is_squarefree());
-        Self { d }
+        Self {
+            qanf: QuadraticNumberFieldStructure::new_unchecked(d),
+        }
     }
 }
 
 impl<D: BorrowedSet<Integer>> QuadraticRingOfIntegersStructure<D> {
     pub fn d(&self) -> &Integer {
-        self.d.borrow()
+        self.qanf.d()
     }
 
     pub fn anf<'d>(&'d self) -> QuadraticNumberFieldStructure<&'d Integer> {
@@ -141,12 +139,10 @@ impl<D: BorrowedSet<Integer>> CharZeroRingSignature for QuadraticRingOfIntegersS
 
 impl<D: BorrowedSet<Integer>> DedekindDomainSignature for QuadraticRingOfIntegersStructure<D> {}
 
-impl<D: BorrowedSet<Integer>> AlgebraicIntegerRingSignature
+impl<D: BorrowedSet<Integer>> AlgebraicIntegerRingSignature<QuadraticNumberFieldStructure<D>>
     for QuadraticRingOfIntegersStructure<D>
 {
-    type AlgebraicNumberField = QuadraticNumberFieldStructure<D>;
-
-    fn anf(&self) -> Self::AlgebraicNumberField {
-        QuadraticNumberFieldStructure::new_unchecked(self.d.clone())
+    fn anf(&self) -> &QuadraticNumberFieldStructure<D> {
+        &self.qanf
     }
 }

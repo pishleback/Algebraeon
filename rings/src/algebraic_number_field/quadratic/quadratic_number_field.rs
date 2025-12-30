@@ -1,7 +1,7 @@
 use crate::algebraic_number_field::{
-    AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicNumberFieldSignature,
-    AlgebraicNumberFieldWithRingOfIntegersSignature, QuadraticRingOfIntegersStructure,
-    RingOfIntegersToAlgebraicNumberFieldInclusion,
+    AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
+    AlgebraicNumberFieldOrderWithBasis, AlgebraicNumberFieldSignature,
+    QuadraticRingOfIntegersStructure, RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
 use crate::structure::{
     AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroFieldSignature, CharZeroRingSignature,
@@ -14,7 +14,9 @@ use crate::structure::{
     RingHomomorphismRangeModuleStructure, SemiModuleSignature,
 };
 use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};
-use algebraeon_sets::structure::{BorrowedSet, BorrowedStructure, MetaType, Morphism};
+use algebraeon_sets::structure::{
+    BorrowedSet, BorrowedStructure, InjectiveFunction, MetaType, Morphism,
+};
 use algebraeon_sets::structure::{
     CanonicalStructure, CountableSetSignature, EqSignature, FiniteSetSignature, SetSignature,
     Signature,
@@ -268,16 +270,11 @@ impl<'h, D: BorrowedSet<Integer>, B: BorrowedStructure<QuadraticNumberFieldStruc
     }
 }
 
-impl<
-    D: BorrowedSet<Integer>,
-    RB: BorrowedStructure<QuadraticRingOfIntegersStructure<D>>,
-    KB: BorrowedStructure<QuadraticNumberFieldStructure<D>>,
->
+impl<D: BorrowedSet<Integer>, RB: BorrowedStructure<QuadraticRingOfIntegersStructure<D>>>
     RingOfIntegersToAlgebraicNumberFieldInclusion<
+        QuadraticNumberFieldStructure<D>,
         QuadraticRingOfIntegersStructure<D>,
         RB,
-        QuadraticNumberFieldStructure<D>,
-        KB,
     >
 {
     pub fn d(&self) -> &Integer {
@@ -287,30 +284,19 @@ impl<
     }
 }
 
-impl<
-    D: BorrowedSet<Integer>,
-    RB: BorrowedStructure<QuadraticRingOfIntegersStructure<D>>,
-    KB: BorrowedStructure<QuadraticNumberFieldStructure<D>>,
-> AlgebraicIntegerRingInAlgebraicNumberFieldSignature
+impl<D: BorrowedSet<Integer>, RB: BorrowedStructure<QuadraticRingOfIntegersStructure<D>>>
+    AlgebraicIntegerRingInAlgebraicNumberFieldSignature
     for RingOfIntegersToAlgebraicNumberFieldInclusion<
+        QuadraticNumberFieldStructure<D>,
         QuadraticRingOfIntegersStructure<D>,
         RB,
-        QuadraticNumberFieldStructure<D>,
-        KB,
     >
 {
     type AlgebraicNumberField = QuadraticNumberFieldStructure<D>;
     type RingOfIntegers = QuadraticRingOfIntegersStructure<D>;
 
     fn discriminant(&self) -> Integer {
-        let d_mod_4 = self.d() % Integer::from(4);
-        if d_mod_4 == Integer::from(1) {
-            self.d().clone()
-        } else if d_mod_4 == Integer::from(2) || d_mod_4 == Integer::from(3) {
-            Integer::from(4) * self.d()
-        } else {
-            unreachable!()
-        }
+        self.anf().discriminant()
     }
 
     fn try_anf_to_roi(
@@ -346,6 +332,16 @@ impl<
     }
 }
 
+impl<D: BorrowedSet<Integer>> QuadraticNumberFieldStructure<D> {
+    pub fn into_ring_of_integers(self) -> QuadraticRingOfIntegersStructure<D> {
+        QuadraticRingOfIntegersStructure::new_unchecked(self.d)
+    }
+
+    pub fn ring_of_integers<'a>(&'a self) -> QuadraticRingOfIntegersStructure<&'a Integer> {
+        QuadraticRingOfIntegersStructure::new_unchecked(self.d.borrow())
+    }
+}
+
 impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberFieldStructure<D> {
     type Basis = QuadraticNumberFieldBasisCanonicalStructure;
     type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
@@ -360,18 +356,30 @@ impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberF
         PrincipalRationalMap::new(self)
     }
 
-    fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
-        self.roi_inclusion().try_anf_to_roi(a).is_some()
+    fn discriminant(&self) -> Integer {
+        let d_mod_4 = self.d() % Integer::from(4);
+        if d_mod_4 == Integer::from(1) {
+            self.d().clone()
+        } else if d_mod_4 == Integer::from(2) || d_mod_4 == Integer::from(3) {
+            Integer::from(4) * self.d()
+        } else {
+            unreachable!()
+        }
     }
-}
 
-impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldWithRingOfIntegersSignature
-    for QuadraticNumberFieldStructure<D>
-{
-    type RingOfIntegers = QuadraticRingOfIntegersStructure<D>;
+    fn maximal_order<'a>(&'a self) -> AlgebraicNumberFieldOrderWithBasis<Self, &'a Self, true> {
+        todo!()
+    }
 
-    fn roi(&self) -> Self::RingOfIntegers {
-        QuadraticRingOfIntegersStructure::new_unchecked(self.d.clone())
+    fn into_maximal_order(self) -> AlgebraicNumberFieldOrderWithBasis<Self, Self, true> {
+        todo!()
+    }
+
+    fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
+        self.ring_of_integers()
+            .outbound_anf_inclusion()
+            .try_preimage(a)
+            .is_some()
     }
 }
 
@@ -425,10 +433,7 @@ mod tests {
             }
         ));
 
-        assert_eq!(
-            anf.clone().into_roi_inclusion().discriminant(),
-            Integer::from(-4)
-        );
+        assert_eq!(anf.discriminant(), Integer::from(-4));
 
         assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
             rational_part: Rational::from(0),
@@ -499,10 +504,7 @@ mod tests {
             }
         ));
 
-        assert_eq!(
-            anf.clone().into_roi_inclusion().discriminant(),
-            Integer::from(8)
-        );
+        assert_eq!(anf.discriminant(), Integer::from(8));
 
         assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
             rational_part: Rational::from(0),
@@ -557,10 +559,7 @@ mod tests {
             }
         ));
 
-        assert_eq!(
-            anf.clone().into_roi_inclusion().discriminant(),
-            Integer::from(12)
-        );
+        assert_eq!(anf.discriminant(), Integer::from(12));
 
         assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
             rational_part: Rational::from(0),
@@ -615,10 +614,7 @@ mod tests {
             }
         ));
 
-        assert_eq!(
-            anf.clone().into_roi_inclusion().discriminant(),
-            Integer::from(5)
-        );
+        assert_eq!(anf.discriminant(), Integer::from(5));
 
         assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
             rational_part: Rational::from(0),
@@ -673,10 +669,7 @@ mod tests {
             }
         ));
 
-        assert_eq!(
-            anf.clone().into_roi_inclusion().discriminant(),
-            Integer::from(-3)
-        );
+        assert_eq!(anf.discriminant(), Integer::from(-3));
 
         assert!(anf.is_algebraic_integer(&QuadraticNumberFieldElement {
             rational_part: Rational::from(0),

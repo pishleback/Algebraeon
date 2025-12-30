@@ -1,6 +1,6 @@
 use crate::{
     algebraic_number_field::{
-        AlgebraicNumberFieldSignature, AlgebraicNumberFieldWithRingOfIntegersSignature,
+        AlgebraicNumberFieldOrderWithBasis, AlgebraicNumberFieldSignature,
         RingOfIntegersWithIntegralBasisStructure, anf_multi_primitive_element_theorem,
     },
     matrix::Matrix,
@@ -122,6 +122,20 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         self.into_inbound_principal_rational_map()
     }
 
+    fn discriminant(&self) -> Integer {
+        self.compute_integral_basis_and_discriminant().1
+    }
+
+    fn maximal_order<'a>(&'a self) -> AlgebraicNumberFieldOrderWithBasis<Self, &'a Self, true> {
+        let basis = self.compute_integral_basis_and_discriminant().0;
+        AlgebraicNumberFieldOrderWithBasis::new_maximal_unchecked(self, basis)
+    }
+
+    fn into_maximal_order(self) -> AlgebraicNumberFieldOrderWithBasis<Self, Self, true> {
+        let basis = self.compute_integral_basis_and_discriminant().0;
+        AlgebraicNumberFieldOrderWithBasis::new_maximal_unchecked(self, basis)
+    }
+
     fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
         if self.trace(a).denominator() != Natural::ONE {
             return false;
@@ -133,16 +147,6 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
             .coeffs()
             .into_iter()
             .all(|c| c.denominator() == Natural::ONE)
-    }
-}
-
-impl AlgebraicNumberFieldWithRingOfIntegersSignature
-    for AlgebraicNumberFieldPolynomialQuotientStructure
-{
-    type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
-
-    fn roi(&self) -> Self::RingOfIntegers {
-        self.compute_ring_of_integers()
     }
 }
 

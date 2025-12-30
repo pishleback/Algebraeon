@@ -1,11 +1,13 @@
 use crate::algebraic_number_field::{
-    AlgebraicNumberFieldSignature, AlgebraicNumberFieldWithRingOfIntegersSignature,
+    AlgebraicIntegerRingSignature, AlgebraicNumberFieldOrderWithBasis,
+    AlgebraicNumberFieldSignature,
 };
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use static_assertions::const_assert;
 use std::borrow::Cow;
 
 impl AdditiveMonoidSignature for RationalCanonicalStructure {
@@ -172,18 +174,26 @@ impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
         self.into_inbound_principal_rational_map()
     }
 
+    fn discriminant(&self) -> Integer {
+        Integer::ONE
+    }
+
+    fn maximal_order<'a>(&'a self) -> AlgebraicNumberFieldOrderWithBasis<Self, &'a Self, true> {
+        AlgebraicNumberFieldOrderWithBasis::new_maximal_unchecked(self, vec![Rational::ONE])
+    }
+
+    fn into_maximal_order(self) -> AlgebraicNumberFieldOrderWithBasis<Self, Self, true> {
+        AlgebraicNumberFieldOrderWithBasis::new_maximal_unchecked(self, vec![Rational::ONE])
+    }
+
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
         self.try_to_int(a).is_some()
     }
 }
 
-impl AlgebraicNumberFieldWithRingOfIntegersSignature for RationalCanonicalStructure {
-    type RingOfIntegers = IntegerCanonicalStructure;
-
-    fn roi(&self) -> Self::RingOfIntegers {
-        Integer::structure()
-    }
-}
+const_assert!(
+    impls::impls!(IntegerCanonicalStructure : AlgebraicIntegerRingSignature<RationalCanonicalStructure>)
+);
 
 impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
     for PolynomialStructure<RationalCanonicalStructure, B>

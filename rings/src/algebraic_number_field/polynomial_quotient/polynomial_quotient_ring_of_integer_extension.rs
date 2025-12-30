@@ -22,33 +22,29 @@ use algebraeon_sets::structure::{BorrowedMorphism, BorrowedStructure, Function, 
 
 impl<
     RB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>,
-    KB: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
     RtoK: BorrowedMorphism<
             RingOfIntegersWithIntegralBasisStructure,
             AlgebraicNumberFieldPolynomialQuotientStructure,
             RingOfIntegersToAlgebraicNumberFieldInclusion<
+                AlgebraicNumberFieldPolynomialQuotientStructure,
                 RingOfIntegersWithIntegralBasisStructure,
                 RB,
-                AlgebraicNumberFieldPolynomialQuotientStructure,
-                KB,
             >,
         >,
 > DedekindDomainExtension<IntegerCanonicalStructure, RB>
     for RingOfIntegersExtension<
+        AlgebraicNumberFieldPolynomialQuotientStructure,
         RingOfIntegersWithIntegralBasisStructure,
         RB,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        KB,
         RtoK,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
         RingOfIntegersIdealsStructure<RB>,
     >
 where
     RingOfIntegersToAlgebraicNumberFieldInclusion<
+        AlgebraicNumberFieldPolynomialQuotientStructure,
         RingOfIntegersWithIntegralBasisStructure,
         RB,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        KB,
     >: AlgebraicIntegerRingInAlgebraicNumberFieldSignature<
             AlgebraicNumberField = AlgebraicNumberFieldPolynomialQuotientStructure,
             RingOfIntegers = RingOfIntegersWithIntegralBasisStructure,
@@ -168,20 +164,17 @@ where
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::Rational;
-    use algebraeon_sets::structure::EqSignature;
-
     use super::*;
     use crate::{
-        algebraic_number_field::{
-            AlgebraicNumberFieldSignature, AlgebraicNumberFieldWithRingOfIntegersSignature,
-        },
+        algebraic_number_field::{AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature},
         polynomial::Polynomial,
         structure::{
             FieldOfFractionsInclusion, IntegralDomainSignature, IntoErgonomic, RingSignature,
             SemiRingSignature,
         },
     };
+    use algebraeon_nzq::Rational;
+    use algebraeon_sets::structure::EqSignature;
 
     #[test]
     fn integral_multiplier() {
@@ -190,7 +183,10 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi_to_anf = anf.clone().into_roi_inclusion();
+        let roi_to_anf = anf
+            .clone()
+            .compute_ring_of_integers()
+            .into_outbound_anf_inclusion();
         let sq = roi_to_anf.zq_extension();
 
         let r_to_k_fof = sq.r_to_k_field_of_fractions();
@@ -228,7 +224,10 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi_to_anf = anf.clone().into_roi_inclusion();
+        let roi_to_anf = anf
+            .clone()
+            .compute_ring_of_integers()
+            .into_outbound_anf_inclusion();
         let sq = roi_to_anf.zq_extension();
 
         let f2 =
@@ -267,7 +266,10 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi_to_anf = anf.clone().into_roi_inclusion();
+        let roi_to_anf = anf
+            .clone()
+            .compute_ring_of_integers()
+            .into_outbound_anf_inclusion();
         let sq = roi_to_anf.zq_extension();
 
         // Element: (1/2) + sqrt(-5)

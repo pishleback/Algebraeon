@@ -257,10 +257,7 @@ pub fn anf_multi_primitive_element_theorem(
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        algebraic_number_field::AlgebraicNumberFieldWithRingOfIntegersSignature,
-        structure::IntoErgonomic,
-    };
+    use crate::{algebraic_number_field::AlgebraicIntegerRingSignature, structure::IntoErgonomic};
 
     use super::*;
 
@@ -271,7 +268,9 @@ mod tests {
         for root in f.all_complex_roots() {
             println!(
                 "{:?}",
-                root.generated_algebraic_number_field().into_roi_inclusion()
+                root.generated_algebraic_number_field()
+                    .compute_ring_of_integers()
+                    .into_outbound_anf_inclusion()
             );
         }
     }
