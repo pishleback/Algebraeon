@@ -215,7 +215,11 @@ mod anf_inclusion {
         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
     {
         fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
-            todo!()
+            self.order
+                .borrow()
+                .full_rank_abelian_group_restructure()
+                .outbound_anf_inclusion()
+                .image(x)
         }
     }
 
@@ -228,7 +232,11 @@ mod anf_inclusion {
         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
     {
         fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
-            todo!()
+            self.order
+                .borrow()
+                .full_rank_abelian_group_restructure()
+                .outbound_anf_inclusion()
+                .try_preimage(y)
         }
     }
 }
