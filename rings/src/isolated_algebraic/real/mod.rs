@@ -805,7 +805,7 @@ impl<B: BorrowedStructure<RealAlgebraicCanonicalStructure>>
     IntegralDomainExtensionAllPolynomialRoots<
         IntegerCanonicalStructure,
         RealAlgebraicCanonicalStructure,
-    > for PrincipalSubringInclusion<RealAlgebraicCanonicalStructure, B>
+    > for PrincipalIntegerMap<RealAlgebraicCanonicalStructure, B>
 {
     fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<RealAlgebraic> {
         polynomial.all_real_roots()
@@ -816,7 +816,7 @@ impl<B: BorrowedStructure<RealAlgebraicCanonicalStructure>>
     IntegralDomainExtensionAllPolynomialRoots<
         RationalCanonicalStructure,
         RealAlgebraicCanonicalStructure,
-    > for PrincipalRationalSubfieldInclusion<RealAlgebraicCanonicalStructure, B>
+    > for PrincipalRationalMap<RealAlgebraicCanonicalStructure, B>
 {
     fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<RealAlgebraic> {
         polynomial.all_real_roots()

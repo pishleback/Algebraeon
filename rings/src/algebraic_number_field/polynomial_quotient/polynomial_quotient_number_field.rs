@@ -11,8 +11,8 @@ use crate::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, CharZeroFieldSignature,
         FactorableSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
         IntegralDomainExtensionAllPolynomialRoots, IntegralDomainSignature,
-        MetaFactorableSignature, MetaSemiRing, PrincipalRationalSubfieldInclusion,
-        RingHomomorphism, RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
+        MetaFactorableSignature, MetaSemiRing, PrincipalRationalMap, RingHomomorphism,
+        RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
     },
 };
 use algebraeon_nzq::{
@@ -79,7 +79,7 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         'h,
         RationalCanonicalStructure,
         AlgebraicNumberFieldPolynomialQuotientStructure,
-        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
+        PrincipalRationalMap<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
     >
 {
     type Basis = EnumeratedFiniteSetStructure;
@@ -110,15 +110,14 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
     type Basis = EnumeratedFiniteSetStructure;
-    type RationalInclusion<B: BorrowedStructure<Self>> =
-        PrincipalRationalSubfieldInclusion<Self, B>;
+    type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
-        self.rational_extension()
+    fn inbound_finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
+        self.inbound_principal_rational_map()
     }
 
-    fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
-        self.into_rational_extension()
+    fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
+        self.into_inbound_principal_rational_map()
     }
 
     fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
@@ -159,7 +158,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
                 debug_assert!(algint.num_coeffs() <= n); //lets keep our basis alg ints reduced
             }
 
-            let disc = self.rational_extension().discriminant(&guess);
+            let disc = self.inbound_principal_rational_map().discriminant(&guess);
             debug_assert_eq!(disc.clone().denominator(), Natural::ONE); //discriminant of algebraic integers is an integer
             let disc = disc.numerator();
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
@@ -254,7 +253,7 @@ impl
         RationalCanonicalStructure,
         AlgebraicNumberFieldPolynomialQuotientStructure,
     >
-    for PrincipalRationalSubfieldInclusion<
+    for PrincipalRationalMap<
         AlgebraicNumberFieldPolynomialQuotientStructure,
         AlgebraicNumberFieldPolynomialQuotientStructure,
     >

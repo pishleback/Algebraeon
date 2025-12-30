@@ -42,7 +42,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
         let algebra = &self.algebra;
         let submodules = Rational::structure()
-            .into_free_module(self.basis.len())
+            .into_free_module_structure(self.basis.len())
             .into_submodules();
 
         let basis_vecs: Vec<Vec<Rational>> = self
@@ -55,7 +55,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
                     .flat_map(|p| {
                         algebra
                             .base_field()
-                            .finite_dimensional_rational_extension()
+                            .inbound_finite_dimensional_rational_extension()
                             .to_vec(&p)
                     })
                     .collect_vec()
@@ -72,7 +72,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
             .flat_map(|p| {
                 algebra
                     .base_field()
-                    .finite_dimensional_rational_extension()
+                    .inbound_finite_dimensional_rational_extension()
                     .to_vec(&p)
             })
             .collect_vec();
@@ -117,7 +117,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStr
             &self
                 .algebra
                 .base_field()
-                .principal_subring_inclusion()
+                .inbound_principal_integer_map()
                 .image(x),
         )
     }

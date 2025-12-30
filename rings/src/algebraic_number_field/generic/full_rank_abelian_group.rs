@@ -48,7 +48,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
                 .map(|i| {
                     self.anf
                         .borrow()
-                        .finite_dimensional_rational_extension()
+                        .inbound_finite_dimensional_rational_extension()
                         .to_col(&self.basis[i])
                 })
                 .collect(),
@@ -59,14 +59,18 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
         Ok(())
     }
 
+    fn new_impl(anf: KB, basis: Vec<K::Set>) -> Self {
+        Self { anf, basis }
+    }
+
     pub fn new(anf: KB, basis: Vec<K::Set>) -> Result<Self, String> {
-        let s = Self::new_unchecked(anf, basis);
+        let s = Self::new_impl(anf, basis);
         s.check()?;
         Ok(s)
     }
 
     pub fn new_unchecked(anf: KB, basis: Vec<K::Set>) -> Self {
-        let s = Self { anf, basis };
+        let s = Self::new_impl(anf, basis);
         #[cfg(debug_assertions)]
         s.check().unwrap();
         s
@@ -85,36 +89,30 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
         self.basis.len()
     }
 
-    pub fn z_module(
+  pub  fn abelian_group_restructure(
         &self,
     ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
-        Integer::structure().into_free_module(self.n())
+        Integer::structure().into_free_module_structure(self.n())
     }
 
     pub fn discriminant(&self) -> Rational {
         self.anf()
-            .finite_dimensional_rational_extension()
+            .inbound_finite_dimensional_rational_extension()
             .discriminant(&self.basis)
     }
 
-    pub fn into_anf_extension(
+    pub fn into_outbound_anf_inclusion(
         self,
-    ) -> AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, Self> {
-        AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion {
-            _k: PhantomData,
-            _kb: PhantomData,
-            abelian_subgroup: self,
-        }
+    ) -> anf_inclusion::AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, Self>
+    {
+        anf_inclusion::AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion::new(self)
     }
 
-    pub fn anf_extension<'a>(
+    pub fn outbound_anf_inclusion<'a>(
         &'a self,
-    ) -> AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, &'a Self> {
-        AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion {
-            _k: PhantomData,
-            _kb: PhantomData,
-            abelian_subgroup: self,
-        }
+    ) -> anf_inclusion::AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, &'a Self>
+    {
+        anf_inclusion::AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion::new(self)
     }
 }
 
@@ -165,7 +163,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> EqSignature
     for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.z_module().equal(a, b)
+        self.abelian_group_restructure().equal(a, b)
     }
 }
 
@@ -173,11 +171,11 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveMonoidS
     for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
 {
     fn zero(&self) -> Self::Set {
-        self.z_module().zero()
+        self.abelian_group_restructure().zero()
     }
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.z_module().add(a, b)
+        self.abelian_group_restructure().add(a, b)
     }
 }
 
@@ -185,88 +183,107 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveGroupSi
     for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>
 {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        self.z_module().neg(a)
+        self.abelian_group_restructure().neg(a)
     }
 
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.z_module().sub(a, b)
+        self.abelian_group_restructure().sub(a, b)
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<
-    K: AlgebraicNumberFieldSignature,
-    KB: BorrowedStructure<K>,
-    AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
-> {
-    _k: PhantomData<K>,
-    _kb: PhantomData<KB>,
-    abelian_subgroup: AB,
-}
+mod anf_inclusion {
+    use super::*;
 
-impl<
-    K: AlgebraicNumberFieldSignature,
-    KB: BorrowedStructure<K>,
-    AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
-> Morphism<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>, K>
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
-{
-    fn domain(&self) -> &AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB> {
-        self.abelian_subgroup.borrow()
+    #[derive(Debug, Clone)]
+    pub struct AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<
+        K: AlgebraicNumberFieldSignature,
+        KB: BorrowedStructure<K>,
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
+    > {
+        _k: PhantomData<K>,
+        _kb: PhantomData<KB>,
+        abelian_subgroup: AB,
     }
 
-    fn range(&self) -> &K {
-        self.abelian_subgroup.borrow().anf()
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    KB: BorrowedStructure<K>,
-    AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
-> Function<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>, K>
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
-{
-    fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
-        debug_assert!(self.abelian_subgroup.borrow().is_element(x).is_ok());
-        let k = self.abelian_subgroup.borrow().anf();
-        let n = k.n();
-        debug_assert_eq!(n, x.len());
-        k.sum(
-            (0..n)
-                .map(|i| k.mul(&k.from_int(&x[i]), &self.abelian_subgroup.borrow().basis[i]))
-                .collect(),
-        )
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    KB: BorrowedStructure<K>,
-    AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
-> InjectiveFunction<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>, K>
-    for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
-{
-    fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
-        let k = self.abelian_subgroup.borrow().anf();
-        let n = k.n();
-        debug_assert!(k.is_element(y).is_ok());
-        let mat = Matrix::join_cols(
-            n,
-            (0..n)
-                .map(|i| {
-                    k.finite_dimensional_rational_extension()
-                        .to_col(&self.abelian_subgroup.borrow().basis[i])
-                })
-                .collect(),
-        );
-        let y = k.finite_dimensional_rational_extension().to_vec(y);
-        let x_rat = mat.col_solve(&y)?;
-        let mut x_int = Vec::with_capacity(n);
-        for c_rat in x_rat {
-            x_int.push(c_rat.try_to_int()?);
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KB: BorrowedStructure<K>,
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
+    > AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
+    {
+        pub fn new(abelian_subgroup: AB) -> Self {
+            Self {
+                _k: PhantomData,
+                _kb: PhantomData,
+                abelian_subgroup,
+            }
         }
-        Some(x_int)
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KB: BorrowedStructure<K>,
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
+    > Morphism<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>, K>
+        for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
+    {
+        fn domain(&self) -> &AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB> {
+            self.abelian_subgroup.borrow()
+        }
+
+        fn range(&self) -> &K {
+            self.abelian_subgroup.borrow().anf()
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KB: BorrowedStructure<K>,
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
+    > Function<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>, K>
+        for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
+    {
+        fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
+            debug_assert!(self.abelian_subgroup.borrow().is_element(x).is_ok());
+            let k = self.abelian_subgroup.borrow().anf();
+            let n = k.n();
+            debug_assert_eq!(n, x.len());
+            k.sum(
+                (0..n)
+                    .map(|i| k.mul(&k.from_int(&x[i]), &self.abelian_subgroup.borrow().basis[i]))
+                    .collect(),
+            )
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KB: BorrowedStructure<K>,
+        AB: BorrowedStructure<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>>,
+    > InjectiveFunction<AlgebraicNumberFieldFullRankAbelianSubgroupWithBasis<K, KB>, K>
+        for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
+    {
+        fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
+            let k = self.abelian_subgroup.borrow().anf();
+            let n = k.n();
+            debug_assert!(k.is_element(y).is_ok());
+            let mat = Matrix::join_cols(
+                n,
+                (0..n)
+                    .map(|i| {
+                        k.inbound_finite_dimensional_rational_extension()
+                            .to_col(&self.abelian_subgroup.borrow().basis[i])
+                    })
+                    .collect(),
+            );
+            let y = k.inbound_finite_dimensional_rational_extension().to_vec(y);
+            let x_rat = mat.col_solve(&y)?;
+            let mut x_int = Vec::with_capacity(n);
+            for c_rat in x_rat {
+                x_int.push(c_rat.try_to_int()?);
+            }
+            Some(x_int)
+        }
     }
 }
 
@@ -295,7 +312,7 @@ mod tests {
         assert!(
             anf.equal(
                 &abgrp
-                    .anf_extension()
+                    .outbound_anf_inclusion()
                     .image(&vec![Integer::from(1), Integer::from(2)]),
                 &parse_rational_polynomial("4 + x", "x").unwrap()
             )
@@ -303,14 +320,14 @@ mod tests {
 
         assert_eq!(
             abgrp
-                .anf_extension()
+                .outbound_anf_inclusion()
                 .try_preimage(&parse_rational_polynomial("4 + x", "x").unwrap()),
             Some(vec![Integer::from(1), Integer::from(2)])
         );
 
         assert!(
             abgrp
-                .anf_extension()
+                .outbound_anf_inclusion()
                 .try_preimage(&parse_rational_polynomial("x", "x").unwrap())
                 .is_none()
         );

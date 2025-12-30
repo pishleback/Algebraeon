@@ -55,7 +55,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
         debug_assert_eq!(integral_basis.len(), algebraic_number_field.degree());
         debug_assert_eq!(
             algebraic_number_field
-                .rational_extension()
+                .inbound_principal_rational_map()
                 .discriminant(&integral_basis),
             discriminant
         );
@@ -110,7 +110,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
     pub fn z_module(
         &self,
     ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
-        Integer::structure().into_free_module(self.degree())
+        Integer::structure().into_free_module_structure(self.degree())
     }
 
     pub fn integral_basis(&self) -> &Vec<Polynomial<Rational>> {

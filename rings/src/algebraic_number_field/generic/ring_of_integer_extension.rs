@@ -86,9 +86,9 @@ where
     type R = R;
     type K = K;
     type ZQ<BZ: BorrowedStructure<Self::Z>, BQ: BorrowedStructure<Self::Q>> =
-        PrincipalSubringInclusion<RationalCanonicalStructure, RationalCanonicalStructure>;
+        PrincipalIntegerMap<RationalCanonicalStructure, RationalCanonicalStructure>;
     type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>> =
-        PrincipalSubringInclusion<R, BR>;
+        PrincipalIntegerMap<R, BR>;
     type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>> =
         K::RationalInclusion<BK>;
     type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>> =
@@ -108,13 +108,13 @@ where
     }
 
     fn z_to_q<'a>(&'a self) -> Cow<'a, Self::ZQ<&'a Self::Z, &'a Self::Q>> {
-        Cow::Owned(Rational::structure().into_principal_subring_inclusion())
+        Cow::Owned(Rational::structure().into_inbound_principal_integer_map())
     }
     fn z_to_r<'a>(&'a self) -> Cow<'a, Self::ZR<&'a Self::Z, &'a Self::R>> {
-        Cow::Owned(self.r_ring().principal_subring_inclusion())
+        Cow::Owned(self.r_ring().inbound_principal_integer_map())
     }
     fn q_to_k<'a>(&'a self) -> Cow<'a, Self::QK<&'a Self::Q, &'a Self::K>> {
-        Cow::Owned(self.k_field().finite_dimensional_rational_extension())
+        Cow::Owned(self.k_field().inbound_finite_dimensional_rational_extension())
     }
     fn r_to_k<'a>(&'a self) -> Cow<'a, Self::RK<&'a Self::R, &'a Self::K>> {
         Cow::Borrowed(self.r_to_k.borrow())

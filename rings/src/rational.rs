@@ -94,7 +94,7 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
         'h,
         RationalCanonicalStructure,
         RationalCanonicalStructure,
-        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
+        PrincipalRationalMap<RationalCanonicalStructure, B>,
     >
 {
     type Basis = SingletonSetStructure;
@@ -134,7 +134,7 @@ impl RealSubsetSignature for RationalCanonicalStructure {
 
 impl<B: BorrowedStructure<RationalCanonicalStructure>>
     FieldOfFractionsInclusion<IntegerCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalSubringInclusion<RationalCanonicalStructure, B>
+    for PrincipalIntegerMap<RationalCanonicalStructure, B>
 {
     fn numerator_and_denominator(&self, a: &Rational) -> (Integer, Integer) {
         (a.numerator(), a.denominator().into())
@@ -161,14 +161,13 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
 
 impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     type Basis = SingletonSetStructure;
-    type RationalInclusion<B: BorrowedStructure<Self>> =
-        PrincipalRationalSubfieldInclusion<Self, B>;
+    type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
-        self.rational_extension()
+    fn inbound_finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
+        self.inbound_principal_rational_map()
     }
-    fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
-        self.into_rational_extension()
+    fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
+        self.into_inbound_principal_rational_map()
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
@@ -189,7 +188,7 @@ impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
 {
     fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Polynomial<Rational>>> {
         factorize_by_factorize_primitive_part(
-            &PrincipalSubringInclusion::new(self.coeff_ring().clone()),
+            &PrincipalIntegerMap::new(self.coeff_ring().clone()),
             self,
             p,
         )

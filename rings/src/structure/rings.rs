@@ -186,12 +186,12 @@ pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
         }
     }
 
-    fn principal_subring_inclusion<'a>(&'a self) -> PrincipalSubringInclusion<Self, &'a Self> {
-        PrincipalSubringInclusion::new(self)
+    fn inbound_principal_integer_map<'a>(&'a self) -> PrincipalIntegerMap<Self, &'a Self> {
+        PrincipalIntegerMap::new(self)
     }
 
-    fn into_principal_subring_inclusion(self) -> PrincipalSubringInclusion<Self, Self> {
-        PrincipalSubringInclusion::new(self)
+    fn into_inbound_principal_integer_map(self) -> PrincipalIntegerMap<Self, Self> {
+        PrincipalIntegerMap::new(self)
     }
 }
 
@@ -732,11 +732,11 @@ impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
 pub trait CharZeroFieldSignature: FieldSignature + CharZeroRingSignature {
     fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
 
-    fn rational_extension<'a>(&'a self) -> PrincipalRationalSubfieldInclusion<Self, &'a Self> {
-        PrincipalRationalSubfieldInclusion::new(self)
+    fn inbound_principal_rational_map<'a>(&'a self) -> PrincipalRationalMap<Self, &'a Self> {
+        PrincipalRationalMap::new(self)
     }
-    fn into_rational_extension(self) -> PrincipalRationalSubfieldInclusion<Self, Self> {
-        PrincipalRationalSubfieldInclusion::new(self)
+    fn into_inbound_principal_rational_map(self) -> PrincipalRationalMap<Self, Self> {
+        PrincipalRationalMap::new(self)
     }
 }
 pub trait MetaCharZeroField: MetaRing

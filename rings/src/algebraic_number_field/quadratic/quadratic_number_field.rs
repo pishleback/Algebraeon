@@ -10,7 +10,7 @@ use crate::structure::{
 };
 use crate::structure::{
     AdditiveMonoidEqSignature, FreeModuleSignature, MetaAdditiveMonoidEq, MetaCharZeroRing,
-    MetaFactorableSignature, PrincipalRationalSubfieldInclusion, RingDivisionError,
+    MetaFactorableSignature, PrincipalRationalMap, RingDivisionError,
     RingHomomorphismRangeModuleStructure, SemiModuleSignature,
 };
 use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};
@@ -234,7 +234,7 @@ impl<'h, D: BorrowedSet<Integer>, B: BorrowedStructure<QuadraticNumberFieldStruc
         'h,
         RationalCanonicalStructure,
         QuadraticNumberFieldStructure<D>,
-        PrincipalRationalSubfieldInclusion<QuadraticNumberFieldStructure<D>, B>,
+        PrincipalRationalMap<QuadraticNumberFieldStructure<D>, B>,
     >
 {
     type Basis = QuadraticNumberFieldBasisCanonicalStructure;
@@ -348,15 +348,14 @@ impl<
 
 impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberFieldStructure<D> {
     type Basis = QuadraticNumberFieldBasisCanonicalStructure;
-    type RationalInclusion<B: BorrowedStructure<Self>> =
-        PrincipalRationalSubfieldInclusion<Self, B>;
+    type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
-        PrincipalRationalSubfieldInclusion::new(self)
+    fn inbound_finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
+        PrincipalRationalMap::new(self)
     }
 
-    fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
-        PrincipalRationalSubfieldInclusion::new(self)
+    fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
+        PrincipalRationalMap::new(self)
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {

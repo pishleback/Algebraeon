@@ -73,10 +73,10 @@ where
 impl<Field: MetaType> Matrix<Field>
 where
     Field::Signature: FieldSignature,
-    PrincipalSubringInclusion<Field::Signature, Field::Signature>:
+    PrincipalIntegerMap<Field::Signature, Field::Signature>:
         FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Signature>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Matrix<Integer>) {
-        factor_primitive_fof(&PrincipalSubringInclusion::new(Field::structure()), self)
+        factor_primitive_fof(&PrincipalIntegerMap::new(Field::structure()), self)
     }
 }

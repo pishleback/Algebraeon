@@ -100,7 +100,7 @@ impl<
             &self.anf_quadratic.from_rat(x.coeff(0).as_ref()),
             &self
                 .anf_quadratic
-                .rational_extension()
+                .inbound_principal_rational_map()
                 .range_module_structure()
                 .scalar_mul(&self.generator_image, x.coeff(1).as_ref()),
         )

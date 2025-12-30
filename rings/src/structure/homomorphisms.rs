@@ -173,12 +173,12 @@ mod principal_subring_inclusion {
 
     /// The unique ring homomorphism Z -> R of the integers into any ring R
     #[derive(Debug, Clone, PartialEq, Eq)]
-    pub struct PrincipalSubringInclusion<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
+    pub struct PrincipalIntegerMap<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
         _ring: PhantomData<Ring>,
         ring: RingB,
     }
 
-    impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> PrincipalSubringInclusion<Ring, RingB> {
+    impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> PrincipalIntegerMap<Ring, RingB> {
         pub fn new(ring: RingB) -> Self {
             Self {
                 _ring: PhantomData,
@@ -188,7 +188,7 @@ mod principal_subring_inclusion {
     }
 
     impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-        Morphism<IntegerCanonicalStructure, Ring> for PrincipalSubringInclusion<Ring, RingB>
+        Morphism<IntegerCanonicalStructure, Ring> for PrincipalIntegerMap<Ring, RingB>
     {
         fn domain(&self) -> &IntegerCanonicalStructure {
             Integer::structure_ref()
@@ -200,7 +200,7 @@ mod principal_subring_inclusion {
     }
 
     impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-        Function<IntegerCanonicalStructure, Ring> for PrincipalSubringInclusion<Ring, RingB>
+        Function<IntegerCanonicalStructure, Ring> for PrincipalIntegerMap<Ring, RingB>
     {
         fn image(&self, x: &Integer) -> <Ring as SetSignature>::Set {
             self.range().from_int(x)
@@ -208,8 +208,7 @@ mod principal_subring_inclusion {
     }
 
     impl<Ring: CharZeroRingSignature, RingB: BorrowedStructure<Ring>>
-        InjectiveFunction<IntegerCanonicalStructure, Ring>
-        for PrincipalSubringInclusion<Ring, RingB>
+        InjectiveFunction<IntegerCanonicalStructure, Ring> for PrincipalIntegerMap<Ring, RingB>
     {
         fn try_preimage(&self, x: &<Ring as SetSignature>::Set) -> Option<Integer> {
             self.range().try_to_int(x)
@@ -217,23 +216,19 @@ mod principal_subring_inclusion {
     }
 
     impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-        RingHomomorphism<IntegerCanonicalStructure, Ring>
-        for PrincipalSubringInclusion<Ring, RingB>
+        RingHomomorphism<IntegerCanonicalStructure, Ring> for PrincipalIntegerMap<Ring, RingB>
     {
     }
 
     /// The unique field embedding Q -> K of the rationals into any field of characteristic zero
     #[derive(Debug, Clone, PartialEq, Eq)]
-    pub struct PrincipalRationalSubfieldInclusion<
-        Field: CharZeroFieldSignature,
-        FieldB: BorrowedStructure<Field>,
-    > {
+    pub struct PrincipalRationalMap<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>> {
         _field: PhantomData<Field>,
         field: FieldB,
     }
 
     impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
-        PrincipalRationalSubfieldInclusion<Field, FieldB>
+        PrincipalRationalMap<Field, FieldB>
     {
         pub fn new(field: FieldB) -> Self {
             Self {
@@ -244,8 +239,7 @@ mod principal_subring_inclusion {
     }
 
     impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
-        Morphism<RationalCanonicalStructure, Field>
-        for PrincipalRationalSubfieldInclusion<Field, FieldB>
+        Morphism<RationalCanonicalStructure, Field> for PrincipalRationalMap<Field, FieldB>
     {
         fn domain(&self) -> &RationalCanonicalStructure {
             Rational::structure_ref()
@@ -257,8 +251,7 @@ mod principal_subring_inclusion {
     }
 
     impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
-        Function<RationalCanonicalStructure, Field>
-        for PrincipalRationalSubfieldInclusion<Field, FieldB>
+        Function<RationalCanonicalStructure, Field> for PrincipalRationalMap<Field, FieldB>
     {
         fn image(&self, x: &Rational) -> <Field as SetSignature>::Set {
             self.range().try_from_rat(x).unwrap()
@@ -267,7 +260,7 @@ mod principal_subring_inclusion {
 
     impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
         InjectiveFunction<RationalCanonicalStructure, Field>
-        for PrincipalRationalSubfieldInclusion<Field, FieldB>
+        for PrincipalRationalMap<Field, FieldB>
     {
         fn try_preimage(&self, x: &<Field as SetSignature>::Set) -> Option<Rational> {
             self.range().try_to_rat(x)
@@ -276,7 +269,7 @@ mod principal_subring_inclusion {
 
     impl<Field: CharZeroFieldSignature, FieldB: BorrowedStructure<Field>>
         RingHomomorphism<RationalCanonicalStructure, Field>
-        for PrincipalRationalSubfieldInclusion<Field, FieldB>
+        for PrincipalRationalMap<Field, FieldB>
     {
     }
 }

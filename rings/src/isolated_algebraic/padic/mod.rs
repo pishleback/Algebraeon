@@ -887,7 +887,7 @@ impl CharZeroFieldSignature for PAdicAlgebraicStructure {
 
 impl<B: BorrowedStructure<PAdicAlgebraicStructure>>
     IntegralDomainExtensionAllPolynomialRoots<IntegerCanonicalStructure, PAdicAlgebraicStructure>
-    for PrincipalSubringInclusion<PAdicAlgebraicStructure, B>
+    for PrincipalIntegerMap<PAdicAlgebraicStructure, B>
 {
     fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<PAdicAlgebraic> {
         polynomial.all_padic_roots(&self.range().p)
@@ -896,7 +896,7 @@ impl<B: BorrowedStructure<PAdicAlgebraicStructure>>
 
 impl<B: BorrowedStructure<PAdicAlgebraicStructure>>
     IntegralDomainExtensionAllPolynomialRoots<RationalCanonicalStructure, PAdicAlgebraicStructure>
-    for PrincipalRationalSubfieldInclusion<PAdicAlgebraicStructure, B>
+    for PrincipalRationalMap<PAdicAlgebraicStructure, B>
 {
     fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<PAdicAlgebraic> {
         polynomial.all_padic_roots(&self.range().p)

@@ -27,10 +27,11 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
     }
 }
 pub trait RingToFinitelyFreeModuleSignature: RingSignature {
-    fn free_module<'a>(&'a self, n: usize) -> FinitelyFreeModuleStructure<Self, &'a Self> {
+    fn free_module_structure<'a>(&'a self, n: usize) -> FinitelyFreeModuleStructure<Self, &'a Self> {
         FinitelyFreeModuleStructure::new(self, n)
     }
-    fn into_free_module(self, n: usize) -> FinitelyFreeModuleStructure<Self, Self> {
+    
+    fn into_free_module_structure(self, n: usize) -> FinitelyFreeModuleStructure<Self, Self> {
         FinitelyFreeModuleStructure::new(self, n)
     }
 }

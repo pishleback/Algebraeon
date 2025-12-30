@@ -995,12 +995,12 @@ where
     Field::Signature: FieldSignature,
     Polynomial<Field>:
         MetaType<Signature = PolynomialStructure<Field::Signature, Field::Signature>>,
-    PrincipalSubringInclusion<Field::Signature, Field::Signature>:
+    PrincipalIntegerMap<Field::Signature, Field::Signature>:
         FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Signature>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {
         factor_primitive_fof(
-            &PrincipalSubringInclusion::new(Self::structure().coeff_ring().clone()),
+            &PrincipalIntegerMap::new(Self::structure().coeff_ring().clone()),
             self,
         )
     }

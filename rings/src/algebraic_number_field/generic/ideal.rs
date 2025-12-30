@@ -9,7 +9,8 @@ use std::marker::PhantomData;
 pub struct AlgebraicNumberFieldIdeal<
     K: AlgebraicNumberFieldSignature,
     KB: BorrowedStructure<K>,
-    OB: BorrowedStructure<AlgebraicNumberFieldOrderWithBasis<K, KB>>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<AlgebraicNumberFieldOrderWithBasis<K, KB, MAXIMAL>>,
 > {
     _k: PhantomData<K>,
     _kb: PhantomData<KB>,
@@ -21,7 +22,8 @@ pub struct AlgebraicNumberFieldIdeal<
 pub struct AlgebraicNumberFieldFractionalIdeal<
     K: AlgebraicNumberFieldSignature,
     KB: BorrowedStructure<K>,
-    OB: BorrowedStructure<AlgebraicNumberFieldOrderWithBasis<K, KB>>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<AlgebraicNumberFieldOrderWithBasis<K, KB, MAXIMAL>>,
 > {
     _k: PhantomData<K>,
     _kb: PhantomData<KB>,
