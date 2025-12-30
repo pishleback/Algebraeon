@@ -103,7 +103,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
         &self.full_rank_abelian_group
     }
 
-  pub  fn abelian_group_restructure(
+    pub fn abelian_group_restructure(
         &self,
     ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
         self.full_rank_abelian_group.abelian_group_restructure()

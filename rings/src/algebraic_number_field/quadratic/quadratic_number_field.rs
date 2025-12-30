@@ -350,7 +350,9 @@ impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberF
     type Basis = QuadraticNumberFieldBasisCanonicalStructure;
     type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn inbound_finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
+    fn inbound_finite_dimensional_rational_extension<'a>(
+        &'a self,
+    ) -> Self::RationalInclusion<&'a Self> {
         PrincipalRationalMap::new(self)
     }
 

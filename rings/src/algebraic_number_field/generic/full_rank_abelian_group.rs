@@ -89,7 +89,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
         self.basis.len()
     }
 
-  pub  fn abelian_group_restructure(
+    pub fn abelian_group_restructure(
         &self,
     ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
         Integer::structure().into_free_module_structure(self.n())

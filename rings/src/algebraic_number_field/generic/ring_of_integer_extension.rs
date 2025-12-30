@@ -114,7 +114,10 @@ where
         Cow::Owned(self.r_ring().inbound_principal_integer_map())
     }
     fn q_to_k<'a>(&'a self) -> Cow<'a, Self::QK<&'a Self::Q, &'a Self::K>> {
-        Cow::Owned(self.k_field().inbound_finite_dimensional_rational_extension())
+        Cow::Owned(
+            self.k_field()
+                .inbound_finite_dimensional_rational_extension(),
+        )
     }
     fn r_to_k<'a>(&'a self) -> Cow<'a, Self::RK<&'a Self::R, &'a Self::K>> {
         Cow::Borrowed(self.r_to_k.borrow())

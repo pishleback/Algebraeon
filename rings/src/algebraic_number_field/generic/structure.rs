@@ -11,7 +11,9 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type Basis: FiniteSetSignature;
     type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
 
-    fn inbound_finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self>;
+    fn inbound_finite_dimensional_rational_extension<'a>(
+        &'a self,
+    ) -> Self::RationalInclusion<&'a Self>;
     fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
 
     // This is the LCM of the denominators of the coefficients of the minimal polynomial of a,
@@ -28,7 +30,8 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     }
 
     fn n(&self) -> usize {
-        self.inbound_finite_dimensional_rational_extension().degree()
+        self.inbound_finite_dimensional_rational_extension()
+            .degree()
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool;
