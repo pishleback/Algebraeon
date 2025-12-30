@@ -13,7 +13,7 @@ use algebraeon::rings::{polynomial::*, structure::*};
 
 let two_adic = PAdicAlgebraic::structure(Natural::from(2u32));
 for x in two_adic
-    .rational_extension()
+    .inbound_principal_rational_map()
     .all_roots(&Polynomial::<Rational>::from_str("(x - 3) * (x^2 - 17)", "x").unwrap())
 {
     println!("{} is_square={}", x, two_adic.is_square(&x));

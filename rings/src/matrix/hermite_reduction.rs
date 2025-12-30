@@ -739,7 +739,7 @@ mod tests {
     #[test]
     fn affine_span() {
         {
-            let module = Integer::structure().into_free_module_structure(2);
+            let module = Integer::structure().into_free_module(2);
 
             //row affine span
             let lat1 = Matrix::<Integer>::from_rows(vec![
@@ -764,7 +764,7 @@ mod tests {
         }
 
         {
-            let module = Integer::structure().into_free_module_structure(2);
+            let module = Integer::structure().into_free_module(2);
 
             //column affine span
             let lat1 = Matrix::<Integer>::from_rows(vec![
@@ -790,7 +790,7 @@ mod tests {
 
     #[test]
     fn span_and_kernel_points() {
-        let module = Integer::structure().into_free_module_structure(4);
+        let module = Integer::structure().into_free_module(4);
 
         let mat = Matrix::<Integer>::from_rows(vec![
             vec![
@@ -831,7 +831,7 @@ mod tests {
 
     #[test]
     fn test_row_solve() {
-        let module = Integer::structure().into_free_module_structure(3);
+        let module = Integer::structure().into_free_module(3);
 
         let matrix =
             Matrix::<Integer>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 1], vec![1, 1, 1]]);

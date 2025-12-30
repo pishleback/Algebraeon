@@ -273,7 +273,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         let matrix = Matrix::join_rows(cols, vec![&x_rows, &y_rows]);
         let matrix_ker = self
             .ring()
-            .free_module_structure(matrix.rows())
+            .free_module(matrix.rows())
             .submodules()
             .matrix_row_kernel(matrix)
             .into_row_basis_matrix();
@@ -363,7 +363,7 @@ mod tests {
     #[test]
     fn test_finitely_free_submodule_kernel() {
         let submodules = Integer::structure()
-            .into_free_module_structure(3)
+            .into_free_module(3)
             .into_submodules();
 
         let a = submodules.span(vec![&vec![1.into(), 1.into(), (-1).into()]]);
@@ -382,7 +382,7 @@ mod tests {
         let a = Matrix::from_rows(vec![vec![1, 2, 4, 5], vec![1, 2, 3, 4]]);
         a.pprint();
         let a_reduced = Integer::structure()
-            .free_module_structure(4)
+            .free_module(4)
             .submodules()
             .matrix_row_span(a)
             .into_row_basis_matrix();
@@ -394,7 +394,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_unreduced_equal() {
-        let modules = Integer::structure().into_free_module_structure(4);
+        let modules = Integer::structure().into_free_module(4);
         assert!(
             modules.submodules().equal(
                 &modules
@@ -409,7 +409,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_intersect() {
-        let modules = Integer::structure().into_free_module_structure(4);
+        let modules = Integer::structure().into_free_module(4);
 
         let a = modules.submodules().matrix_row_span(Matrix::from_rows(vec![
             vec![2, 0, 0, 0],
@@ -436,7 +436,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_element_reduction() {
-        let modules = Integer::structure().into_free_module_structure(4);
+        let modules = Integer::structure().into_free_module(4);
 
         let a = modules.submodules().matrix_row_span(Matrix::from_rows(vec![
             vec![3, 2, 0, 3],
@@ -466,7 +466,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_extension_basis() {
-        let modules = Rational::structure().into_free_module_structure(3);
+        let modules = Rational::structure().into_free_module(3);
 
         let a = Matrix::<Rational>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 0], vec![-1, 0, 0]]);
 

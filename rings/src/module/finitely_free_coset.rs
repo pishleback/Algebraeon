@@ -178,7 +178,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             self.ring().add(v, &y_offset[c])
         });
 
-        let larger_module = self.ring().free_module_structure(self.module().rank() + 1);
+        let larger_module = self.ring().free_module(self.module().rank() + 1);
 
         let linearlized_intersection_row_basis = larger_module
             .submodules()
@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_cosets() {
-        let module = Integer::structure().into_free_module_structure(2);
+        let module = Integer::structure().into_free_module(2);
 
         let coset1 = module.submodules().coset(
             &Matrix::<Integer>::from_rows(vec![vec![15, 0], vec![0, 10]]).row_span(),
@@ -324,7 +324,7 @@ mod tests {
 
     #[test]
     fn test_cosets_intersect() {
-        let module = Integer::structure().into_free_module_structure(2);
+        let module = Integer::structure().into_free_module(2);
 
         let coset1 = module.submodules().coset(
             &Matrix::<Integer>::from_rows(vec![vec![6, 4], vec![0, 3]]).row_span(),

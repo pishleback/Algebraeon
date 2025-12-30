@@ -110,7 +110,7 @@ impl RingOfIntegersWithIntegralBasisStructure {
     pub fn z_module(
         &self,
     ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
-        Integer::structure().into_free_module_structure(self.degree())
+        Integer::structure().into_free_module(self.degree())
     }
 
     pub fn integral_basis(&self) -> &Vec<Polynomial<Rational>> {

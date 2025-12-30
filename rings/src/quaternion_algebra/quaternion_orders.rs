@@ -42,7 +42,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
         let algebra = &self.algebra;
         let submodules = Rational::structure()
-            .into_free_module_structure(self.basis.len())
+            .into_free_module(self.basis.len())
             .into_submodules();
 
         let basis_vecs: Vec<Vec<Rational>> = self

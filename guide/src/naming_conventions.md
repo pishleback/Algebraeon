@@ -18,15 +18,15 @@ A nice pattern for implementing `new` and `new_unchecked` is to provide private 
 
 ## Obtaining a New Structure Type in General
 
-`<>_structure` should be used for methods on a structure type `A` which produce a new structure type `B` whenever `A` and `B` are structures on different things.
+`<>_structure` may be used for methods on a structure type `A` which produce a new structure type `B` whenever `A` and `B` are structures on different things. It is also acceptable for methods of this type to not have the `_structure` suffix.
 
-For example, `.free_module_structure(n)` exists for any ring `R` and returns the free module of finite rank `n`.
+For example, `.free_module(n)` exists for any ring `R` and returns the free module of finite rank `n`.
 
 ## Obtaining a New Structure Type with the Same Set
 
 `<>_restructure` should be used for methods on a structure type `A` which produce a new structure type `B` whenever `A` and `B` both implement `SetSignature` with the same `Set`, meaning both use the same type for `Set` and `is_element` is `Ok` for `A` if and only if it is `Ok` for `B` on every instance of `Set`.
 
-For example, `.abelian_group_restructure()` exists for any order in an algebraic number field (a ring whose elements are represented by `Vec<Integer>`s of a fixed length `n`) and returns the underlying rank `n` free abelian group structure type whose elements are also represented by `Vec<Integer>`s of a fixed length `n`. The resulting structure type is the same as that returned by `.free_module_structure(n)` on the ring of integers.
+For example, `.abelian_group_restructure()` exists for any order in an algebraic number field (a ring whose elements are represented by `Vec<Integer>`s of a fixed length `n`) and returns the underlying rank `n` free abelian group structure type whose elements are also represented by `Vec<Integer>`s of a fixed length `n`. The resulting structure type is the same as that returned by `.free_module(n)` on the ring of integers.
 
 ## Constructing Inbound Morphisms
 

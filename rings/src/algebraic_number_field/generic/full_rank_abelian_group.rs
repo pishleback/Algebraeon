@@ -92,7 +92,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
     pub fn abelian_group_restructure(
         &self,
     ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
-        Integer::structure().into_free_module_structure(self.n())
+        Integer::structure().into_free_module(self.n())
     }
 
     pub fn discriminant(&self) -> Rational {

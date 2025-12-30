@@ -22,18 +22,18 @@ println!("f = {}", f);
 println!();
 
 let two_adic = PAdicAlgebraic::structure(Natural::from(2u32))
-    .into_rational_extension();
+    .into_inbound_principal_rational_map();
 let three_adic = PAdicAlgebraic::structure(Natural::from(3u32))
-    .into_rational_extension();
+    .into_inbound_principal_rational_map();
 let complex = ComplexAlgebraic::structure()
-    .into_rational_extension();
+    .into_inbound_principal_rational_map();
 let real = RealAlgebraic::structure()
-    .into_rational_extension();
+    .into_inbound_principal_rational_map();
 let anf = Polynomial::from_str("x^2 + 1", "x")
     .unwrap()
     .algebraic_number_field()
     .unwrap()
-    .into_rational_extension();
+    .into_inbound_principal_rational_map();
 
 println!("Real roots of f");
 for x in real.all_roots(&f) {
