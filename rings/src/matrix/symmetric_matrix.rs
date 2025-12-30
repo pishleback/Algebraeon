@@ -85,6 +85,30 @@ impl<Set: Clone> SymmetricMatrix<Set> {
         *self.get_mut(r, c)? = s;
         Ok(())
     }
+
+    pub fn map<T: Clone>(self, f: impl Fn(Set) -> T) -> SymmetricMatrix<T> {
+        SymmetricMatrix {
+            n: self.n,
+            elems: self
+                .elems
+                .into_iter()
+                .map(|row| row.into_iter().map(&f).collect())
+                .collect(),
+        }
+    }
+}
+
+impl<Set: Clone> SymmetricMatrix<Option<Set>> {
+    pub fn unwrap_entries(self) -> Option<SymmetricMatrix<Set>> {
+        Some(SymmetricMatrix {
+            n: self.n,
+            elems: self
+                .elems
+                .into_iter()
+                .map(|row| row.into_iter().collect::<Option<Vec<Set>>>())
+                .collect::<Option<Vec<Vec<Set>>>>()?,
+        })
+    }
 }
 
 #[cfg(test)]

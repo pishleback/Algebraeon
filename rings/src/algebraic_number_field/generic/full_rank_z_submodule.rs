@@ -12,7 +12,7 @@ use crate::{
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
 use algebraeon_sets::structure::{
     BorrowedStructure, EqSignature, Function, InjectiveFunction, MetaType, Morphism, SetSignature,
-    Signature,
+    Signature, ToStringSignature,
 };
 use std::marker::PhantomData;
 
@@ -156,6 +156,15 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetSignature
             return Err("wrong length".to_string());
         }
         Ok(())
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature + ToStringSignature, KB: BorrowedStructure<K>>
+    ToStringSignature for AlgebraicNumberFieldFullRankZSubmoduleWithBasis<K, KB>
+{
+    fn to_string(&self, elem: &Self::Set) -> String {
+        self.anf()
+            .to_string(&self.outbound_anf_inclusion().image(elem))
     }
 }
 

@@ -7,16 +7,19 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
-        FiniteDimensionalFieldExtension, FiniteRankFreeRingExtension, IntegralDomainSignature,
-        MetaCharZeroRing, RingDivisionError, RingSignature, SemiModuleSignature, SemiRingSignature,
+        FiniteDimensionalFieldExtension, IntegralDomainSignature, MetaCharZeroRing,
+        RingDivisionError, RingSignature, SemiModuleSignature, SemiRingSignature,
         SemiRingUnitsSignature,
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
 use algebraeon_sets::structure::{
     BorrowedStructure, EqSignature, Function, InjectiveFunction, Morphism, SetSignature, Signature,
+    ToStringSignature,
 };
 use std::marker::PhantomData;
+
+pub type RingOfIntegersWithIntegralBasis<K, KB> = AlgebraicNumberFieldOrderWithBasis<K, KB, true>;
 
 #[derive(Debug, Clone)]
 pub struct AlgebraicNumberFieldOrderWithBasis<
@@ -42,45 +45,33 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
     }
 
     fn new_impl(anf: KB, basis: Vec<K::Set>) -> Result<Self, String> {
-        fn make_products<K: AlgebraicNumberFieldSignature>(
-            anf: &K,
-            basis: &Vec<K::Set>,
-        ) -> Result<SymmetricMatrix<Vec<Integer>>, String> {
-            let n = anf.n();
-            let mut s = SymmetricMatrix::filled(n, vec![]);
-            for r in 0..n {
-                for c in r..n {
-                    let mut x = vec![];
-                    for y in anf
-                        .inbound_finite_dimensional_rational_extension()
-                        .to_vec(&anf.mul(&basis[r], &basis[c]))
-                    {
-                        if let Some(y) = y.try_to_int() {
-                            x.push(y)
-                        } else {
-                            return Err(format!("{} is not an integer", y));
-                        }
-                    }
-                    s.set(r, c, x).unwrap();
-                }
-            }
-            Ok(s)
-        }
-        let products = make_products(anf.borrow(), &basis)
-            .map_err(|err| format!("Not an order: Not closed under multiplication: {}", err))
-            .unwrap();
-        let anf_one = anf.borrow().one();
-        let abelian_group =
+        let n = anf.borrow().n();
+        let products = SymmetricMatrix::construct_bottom_left(n, |r, c| {
+            anf.borrow().mul(&basis[r], &basis[c])
+        });
+        let full_rank_z_submodule =
             AlgebraicNumberFieldFullRankZSubmoduleWithBasis::new_unchecked(anf, basis);
-        let one = abelian_group
+
+        let products = products.map(|p| {
+            full_rank_z_submodule
+                .outbound_anf_inclusion()
+                .try_preimage(&p)
+        });
+        let products = products.unwrap_entries();
+        if products.is_none() {
+            return Err("An order must be closed under multiplication".to_string());
+        }
+        let products = products.unwrap();
+
+        let one = full_rank_z_submodule
             .outbound_anf_inclusion()
-            .try_preimage(&anf_one);
+            .try_preimage(&full_rank_z_submodule.anf().one());
         if one.is_none() {
             return Err("An order must contain 1".to_string());
         }
         let one = one.unwrap();
         let s = Self {
-            full_rank_z_submodule: abelian_group,
+            full_rank_z_submodule,
             products,
             one,
         };
@@ -207,6 +198,17 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 
     fn is_element(&self, x: &Self::Set) -> Result<(), String> {
         self.full_rank_z_submodule.is_element(x)
+    }
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature + ToStringSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+> ToStringSignature for AlgebraicNumberFieldOrderWithBasis<K, KB, MAXIMAL>
+{
+    fn to_string(&self, elem: &Self::Set) -> String {
+        self.full_rank_z_submodule_restructure().to_string(elem)
     }
 }
 

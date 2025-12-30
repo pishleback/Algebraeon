@@ -342,10 +342,14 @@ impl<RB: BorrowedStructure<RingOfIntegersWithIntegralBasisStructure>>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::{
-        FactorableIdealsSignature, FactoredSignature, IdealsArithmeticSignature, IntoErgonomic,
-        RingToIdealsSignature,
+    use crate::{
+        algebraic_number_field::RingOfIntegersWithIntegralBasis,
+        structure::{
+            FactorableIdealsSignature, FactoredSignature, IdealsArithmeticSignature, IntoErgonomic,
+            RingToIdealsSignature,
+        },
     };
+    use algebraeon_sets::structure::{Function, InjectiveFunction};
 
     #[test]
     fn ring_of_integer_arithmetic() {
@@ -359,30 +363,30 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = RingOfIntegersWithIntegralBasisStructure::new(
-            anf.clone(),
-            vec![a.clone(), b.clone()],
-            Integer::from(-7),
-        );
+        let roi =
+            RingOfIntegersWithIntegralBasis::new_maximal(anf, vec![a.clone(), b.clone()]).unwrap();
 
         {
             assert_eq!(
-                roi.roi_to_anf(&vec![Integer::from(1), Integer::from(4)]),
+                roi.outbound_anf_inclusion()
+                    .image(&vec![Integer::from(1), Integer::from(4)]),
                 (2 + 3 * &x).into_verbose()
             );
         }
 
         {
             assert!(
-                roi.try_anf_to_roi(&Polynomial::<Rational>::from_coeffs(vec![
-                    Rational::ONE_HALF,
-                    Rational::ONE,
-                ]))
-                .is_none()
+                roi.outbound_anf_inclusion()
+                    .try_preimage(&Polynomial::<Rational>::from_coeffs(vec![
+                        Rational::ONE_HALF,
+                        Rational::ONE,
+                    ]))
+                    .is_none()
             );
 
             let c = roi
-                .try_anf_to_roi(&Polynomial::<Rational>::from_coeffs(vec![
+                .outbound_anf_inclusion()
+                .try_preimage(&Polynomial::<Rational>::from_coeffs(vec![
                     Rational::from(2),
                     Rational::from(3),
                 ]))
@@ -409,24 +413,39 @@ mod tests {
         }
 
         {
-            let alpha = roi.try_anf_to_roi(&(2 + 3 * &x).into_verbose()).unwrap();
-            let beta = roi.try_anf_to_roi(&(-1 + 2 * &x).into_verbose()).unwrap();
+            let alpha = roi
+                .outbound_anf_inclusion()
+                .try_preimage(&(2 + 3 * &x).into_verbose())
+                .unwrap();
+            let beta = roi
+                .outbound_anf_inclusion()
+                .try_preimage(&(-1 + 2 * &x).into_verbose())
+                .unwrap();
 
             {
-                let gamma = roi.try_anf_to_roi(&(1 + 5 * &x).into_verbose()).unwrap();
+                let gamma = roi
+                    .outbound_anf_inclusion()
+                    .try_preimage(&(1 + 5 * &x).into_verbose())
+                    .unwrap();
                 // (2 + 3x) + (-1 + 2x) = 1 + 5x
                 assert_eq!(roi.add(&alpha, &beta), gamma);
             }
 
             {
-                let gamma = roi.try_anf_to_roi(&(-44 + &x).into_verbose()).unwrap();
+                let gamma = roi
+                    .outbound_anf_inclusion()
+                    .try_preimage(&(-44 + &x).into_verbose())
+                    .unwrap();
                 // x^2 = -7 so
                 // (2 + 3x) * (-1 + 2x) = -44 + x
                 assert_eq!(roi.mul(&alpha, &beta), gamma);
             }
 
             {
-                let gamma = roi.try_anf_to_roi(&(-2 - 3 * &x).into_verbose()).unwrap();
+                let gamma = roi
+                    .outbound_anf_inclusion()
+                    .try_preimage(&(-2 - 3 * &x).into_verbose())
+                    .unwrap();
                 // -(2 + 3x) = -2 - 3x
                 assert_eq!(roi.neg(&alpha), gamma);
             }
