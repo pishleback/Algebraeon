@@ -2,8 +2,11 @@ use crate::{
     algebraic_number_field::{
         AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, FullRankZSubmoduleWithBasis,
     },
-    matrix::SymmetricMatrix,
-    module::finitely_free_module::FinitelyFreeModuleStructure,
+    matrix::{Matrix, SymmetricMatrix},
+    module::{
+        finitely_free_module::FinitelyFreeModuleStructure,
+        finitely_free_submodule::FinitelyFreeSubmodule,
+    },
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
@@ -168,6 +171,46 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
         &'a self,
     ) -> anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, &'a Self> {
         anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion::new(self)
+    }
+
+    pub fn quotient_submodule(
+        &self,
+        a: &FinitelyFreeSubmodule<Integer>,
+        b: &FinitelyFreeSubmodule<Integer>,
+    ) -> FinitelyFreeSubmodule<Integer> {
+        #[cfg(debug_assertions)]
+        {
+            self.free_z_module_restructure()
+                .submodules()
+                .is_element(a)
+                .unwrap();
+            self.free_z_module_restructure()
+                .submodules()
+                .is_element(b)
+                .unwrap();
+        }
+
+        let n = self.n();
+        let module = self.free_z_module_restructure();
+        let submodules = module.submodules();
+
+        submodules.intersect_list(
+            b.basis()
+                .into_iter()
+                .map(|bv| {
+                    // column matrix for multiplication by jb wrt the integer basis for the ring
+                    let bv_mulmat = Matrix::join_cols(
+                        n,
+                        (0..n)
+                            .map(|c| {
+                                Matrix::<Integer>::from_col(self.mul(&bv, &module.basis_element(c)))
+                            })
+                            .collect(),
+                    );
+                    bv_mulmat.col_preimage(a)
+                })
+                .collect(),
+        )
     }
 }
 

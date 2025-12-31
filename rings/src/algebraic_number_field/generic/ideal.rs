@@ -152,7 +152,7 @@ impl<
 > OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
     /// Construct an ideal from a Z-linear span
-    pub fn ideal_from_integer_span(&self, span: Vec<Vec<Integer>>) -> OrderIdeal {
+    pub fn from_integer_span(&self, span: Vec<Vec<Integer>>) -> OrderIdeal {
         for elem in &span {
             debug_assert!(self.ring().is_element(elem).is_ok());
         }
@@ -172,7 +172,7 @@ impl<
     }
 
     /// The cardinality of the quotient ring, or 0 if the ideal is 0
-    pub fn ideal_norm(&self, ideal: &OrderIdeal) -> Natural {
+    pub fn norm(&self, ideal: &OrderIdeal) -> Natural {
         debug_assert!(self.is_element(ideal).is_ok());
         match ideal {
             OrderIdeal::Zero => Natural::ZERO,
@@ -190,10 +190,7 @@ impl<
     }
 
     /// The sub z-module of points defining this ideal
-    pub fn ideal_submodule<'a>(
-        &self,
-        i: &'a OrderIdeal,
-    ) -> Cow<'a, FinitelyFreeSubmodule<Integer>> {
+    pub fn to_submodule<'a>(&self, i: &'a OrderIdeal) -> Cow<'a, FinitelyFreeSubmodule<Integer>> {
         match i {
             OrderIdeal::Zero => Cow::Owned(
                 self.ring()
@@ -219,7 +216,7 @@ impl<
             Self::Set::Zero
         } else {
             let n = self.ring().n();
-            let ideal = self.ideal_from_integer_span(
+            let ideal = self.from_integer_span(
                 (0..n)
                     .map(|i| {
                         self.ring()
@@ -328,7 +325,7 @@ impl<
                         span.push(self.ring().mul(&a_basis[i], &b_basis[j]));
                     }
                 }
-                self.ideal_from_integer_span(span)
+                self.from_integer_span(span)
             }
             _ => Self::Set::Zero,
         }
@@ -341,41 +338,18 @@ impl<
         For each j in a basis for J we find the space of points x such that xj belongs to I and take their intersection.
          */
 
-        let n = self.ring().n();
-
-        let i = self.ideal_submodule(i);
-        let j = self.ideal_submodule(j);
+        let i = self.to_submodule(i);
+        let j = self.to_submodule(j);
 
         let i = i.as_ref();
         let j = j.as_ref();
 
-        let module = self.ring().free_z_module_restructure();
-        let submodules = module.submodules();
+        let quotient_submodule = self.ring().quotient_submodule(i, j);
 
-        let quotient_ideal_submodule = submodules.intersect_list(
-            j.basis()
-                .into_iter()
-                .map(|jb| {
-                    // column matrix for multiplication by jb wrt the integer basis for the ring
-                    let jb_mulmat = Matrix::join_cols(
-                        n,
-                        (0..n)
-                            .map(|c| {
-                                Matrix::<Integer>::from_col(
-                                    self.ring().mul(&jb, &module.basis_element(c)),
-                                )
-                            })
-                            .collect(),
-                    );
-                    jb_mulmat.col_preimage(i)
-                })
-                .collect(),
-        );
-
-        let quotient_ideal = if quotient_ideal_submodule.rank() == 0 {
+        let quotient_ideal = if quotient_submodule.rank() == 0 {
             OrderIdeal::Zero
         } else {
-            OrderIdeal::NonZero(quotient_ideal_submodule)
+            OrderIdeal::NonZero(quotient_submodule)
         };
         #[cfg(debug_assertions)]
         self.is_element(&quotient_ideal).unwrap();
@@ -465,7 +439,7 @@ where
                 .into_powers(self.factor_ideal(ideal)?)
                 .iter()
                 .map(|(prime_ideal, exponent)| {
-                    let norm = self.ideal_norm(prime_ideal.ideal());
+                    let norm = self.norm(prime_ideal.ideal());
                     let e_minus_1 = exponent - Natural::ONE;
                     (&norm - Natural::ONE) * norm.pow(&e_minus_1)
                 })
@@ -703,7 +677,7 @@ where
     }
 
     fn ideal_norm(&self, ideal: &<Self::IdealsR as SetSignature>::Set) -> Natural {
-        self.r_ideals().ideal_norm(ideal)
+        self.r_ideals().norm(ideal)
     }
 
     fn factor_prime_ideal(
@@ -743,7 +717,7 @@ where
                     ]);
                     // norm(I) = p^deg(g)
                     debug_assert_eq!(
-                        roi_ideals.ideal_norm(&prime_ideal),
+                        roi_ideals.norm(&prime_ideal),
                         p.clone().abs().nat_pow(&g.degree().unwrap().into())
                     );
                     DedekindExtensionIdealFactorsAbovePrimeFactor {
@@ -830,7 +804,7 @@ mod tests {
             // (a + b sqrt(2)) * (1 + sqrt(2)) = a(1 + sqrt(2)) + b(2 + sqrt(2))
             assert!(roi_ideals.equal(
                 &roi_ideals.principal_ideal(&alpha),
-                &roi_ideals.ideal_from_integer_span(vec![
+                &roi_ideals.from_integer_span(vec![
                     roi.outbound_order_to_anf_inclusion()
                         .try_preimage(&(1 + &x).into_verbose())
                         .unwrap(),
@@ -863,7 +837,7 @@ mod tests {
             // sum is 3
             assert!(roi_ideals.equal(
                 &alpha_beta_add,
-                &roi_ideals.ideal_from_integer_span(vec![
+                &roi_ideals.from_integer_span(vec![
                     roi.outbound_order_to_anf_inclusion()
                         .try_preimage(&(3 * x.pow(0)).into_verbose())
                         .unwrap(),
@@ -876,7 +850,7 @@ mod tests {
             // intersection is 30
             assert!(roi_ideals.equal(
                 &alpha_beta_intersect,
-                &roi_ideals.ideal_from_integer_span(vec![
+                &roi_ideals.from_integer_span(vec![
                     roi.outbound_order_to_anf_inclusion()
                         .try_preimage(&(30 * x.pow(0)).into_verbose())
                         .unwrap(),
@@ -889,7 +863,7 @@ mod tests {
             // product is 90
             assert!(roi_ideals.equal(
                 &alpha_beta_mul,
-                &roi_ideals.ideal_from_integer_span(vec![
+                &roi_ideals.from_integer_span(vec![
                     roi.outbound_order_to_anf_inclusion()
                         .try_preimage(&(90 * x.pow(0)).into_verbose())
                         .unwrap(),
