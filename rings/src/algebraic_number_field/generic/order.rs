@@ -190,6 +190,12 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
                 .unwrap();
         }
 
+        /*
+        We want the ideal of all points x in the ring R such that xj belongs to I for all j in J.
+        It's sufficient to check on a basis of points j in J.
+        For each j in a basis for J we find the space of points x such that xj belongs to I and take their intersection.
+         */
+
         let n = self.n();
         let module = self.free_z_module_restructure();
         let submodules = module.submodules();

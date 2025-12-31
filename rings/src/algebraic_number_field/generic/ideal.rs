@@ -332,19 +332,28 @@ impl<
     }
 
     fn quotient(&self, i: &Self::Set, j: &Self::Set) -> Self::Set {
-        /*
-        We want the ideal of all points x in the ring R such that xj belongs to I for all j in J.
-        It's sufficient to check on a basis of points j in J.
-        For each j in a basis for J we find the space of points x such that xj belongs to I and take their intersection.
-         */
-
-        let i = self.to_submodule(i);
         let j = self.to_submodule(j);
-
-        let i = i.as_ref();
         let j = j.as_ref();
+        self.quotient_ideal_by_submodule(i, j)
+    }
+}
 
-        let quotient_submodule = self.ring().quotient_submodule(i, j);
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
+    fn quotient_ideal_by_submodule(
+        &self,
+        i: &<Self as SetSignature>::Set,
+        s: &FinitelyFreeSubmodule<Integer>,
+    ) -> <Self as SetSignature>::Set {
+        let i = self.to_submodule(i);
+        let i = i.as_ref();
+
+        let quotient_submodule = self.ring().quotient_submodule(i, s);
 
         let quotient_ideal = if quotient_submodule.rank() == 0 {
             OrderIdeal::Zero
