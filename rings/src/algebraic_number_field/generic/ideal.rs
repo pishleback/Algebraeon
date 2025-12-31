@@ -356,7 +356,6 @@ impl<
             j.basis()
                 .into_iter()
                 .map(|jb| {
-                    println!("jb = {:?}", jb);
                     // column matrix for multiplication by jb wrt the integer basis for the ring
                     let jb_mulmat = Matrix::join_cols(
                         n,
@@ -368,13 +367,7 @@ impl<
                             })
                             .collect(),
                     );
-                    jb_mulmat.pprint();
-
-                    i.clone().into_col_basis_matrix().pprint();
-
-                    jb_mulmat.col_preimage(&i).into_col_basis_matrix().pprint();
-
-                    jb_mulmat.col_preimage(&i)
+                    jb_mulmat.col_preimage(i)
                 })
                 .collect(),
         );
