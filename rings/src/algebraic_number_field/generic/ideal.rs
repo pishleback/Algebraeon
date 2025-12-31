@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{borrow::Cow, marker::PhantomData};
 
 use crate::{
     algebraic_number_field::{
@@ -188,6 +188,22 @@ impl<
             }
         }
     }
+
+    /// The sub z-module of points defining this ideal
+    pub fn ideal_submodule<'a>(
+        &self,
+        i: &'a OrderIdeal,
+    ) -> Cow<'a, FinitelyFreeSubmodule<Integer>> {
+        match i {
+            OrderIdeal::Zero => Cow::Owned(
+                self.ring()
+                    .free_z_module_restructure()
+                    .submodules()
+                    .zero_submodule(),
+            ),
+            OrderIdeal::NonZero(i) => Cow::Borrowed(i),
+        }
+    }
 }
 
 impl<
@@ -221,7 +237,7 @@ impl<
         }
     }
 
-    fn ideal_equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
@@ -235,7 +251,7 @@ impl<
         }
     }
 
-    fn ideal_contains(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn contains_ideal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
@@ -252,7 +268,7 @@ impl<
         }
     }
 
-    fn ideal_contains_element(&self, a: &Self::Set, x: &Vec<Integer>) -> bool {
+    fn contains_element(&self, a: &Self::Set, x: &Vec<Integer>) -> bool {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.ring().is_element(x).is_ok());
         match a {
@@ -265,7 +281,7 @@ impl<
         }
     }
 
-    fn ideal_intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
@@ -273,13 +289,13 @@ impl<
                 self.ring()
                     .free_z_module_restructure()
                     .submodules()
-                    .intersect(a_lattice, b_lattice),
+                    .intersect(a_lattice.clone(), b_lattice.clone()),
             ),
             _ => Self::Set::Zero,
         }
     }
 
-    fn ideal_add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
@@ -290,12 +306,12 @@ impl<
                 self.ring()
                     .free_z_module_restructure()
                     .submodules()
-                    .sum(a_lattice, b_lattice),
+                    .add(a_lattice.clone(), b_lattice.clone()),
             ),
         }
     }
 
-    fn ideal_mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
@@ -316,6 +332,59 @@ impl<
             }
             _ => Self::Set::Zero,
         }
+    }
+
+    fn quotient(&self, i: &Self::Set, j: &Self::Set) -> Self::Set {
+        /*
+        We want the ideal of all points x in the ring R such that xj belongs to I for all j in J.
+        It's sufficient to check on a basis of points j in J.
+        For each j in a basis for J we find the space of points x such that xj belongs to I and take their intersection.
+        The space of points x such that xj belongs to I is the span of the kernel of j and a solution to xj=i for each i forming a basis of I.
+         */
+
+        let n = self.ring().n();
+
+        let i = self.ideal_submodule(i);
+        let j = self.ideal_submodule(j);
+
+        let i = i.as_ref();
+        let j = j.as_ref();
+
+        let module = self.ring().free_z_module_restructure();
+        let submodules = module.submodules();
+
+        let quotient_ideal_submodule = submodules.intersect_list(
+            j.basis()
+                .into_iter()
+                .map(|jb| {
+                    println!("jb = {:?}", jb);
+                    // column matrix for multiplication by jb wrt the integer basis for the ring
+                    let jb_mulmat = Matrix::join_cols(
+                        n,
+                        (0..n)
+                            .map(|c| {
+                                Matrix::<Integer>::from_rows(vec![{
+                                    self.ring().mul(&jb, &module.basis_element(c))
+                                }])
+                                .transpose()
+                            })
+                            .collect(),
+                    );
+                    jb_mulmat.pprint();
+                    todo!();
+                    todo!()
+                })
+                .collect(),
+        );
+
+        let quotient_ideal = if quotient_ideal_submodule.rank() == 0 {
+            OrderIdeal::Zero
+        } else {
+            OrderIdeal::NonZero(quotient_ideal_submodule)
+        };
+        #[cfg(debug_assertions)]
+        self.is_element(&quotient_ideal).unwrap();
+        quotient_ideal
     }
 }
 
@@ -438,7 +507,7 @@ where
                                     .collect(),
                             )
                             .map(|idxs| {
-                                self.ideal_product(
+                                self.product(
                                     idxs.into_iter()
                                         .map(|i| primes_over_p[i].prime_ideal.ideal().clone())
                                         .collect(),
@@ -447,7 +516,7 @@ where
                             .collect::<Vec<OrderIdeal>>()
                         })
                         .multi_cartesian_product()
-                        .map(|ideals| self.ideal_product(ideals)),
+                        .map(|ideals| self.product(ideals)),
                 )
             }
             None => Box::new(vec![self.zero_ideal()].into_iter()),
@@ -487,7 +556,7 @@ where
 
     /// given an ideal I and element a find an element b such that I = (a, b)
     pub fn ideal_other_generator(&self, g: &Vec<Integer>, ideal: &OrderIdeal) -> Vec<Integer> {
-        debug_assert!(self.ideal_contains_element(ideal, g));
+        debug_assert!(self.contains_element(ideal, g));
         debug_assert!(!self.ring().is_zero(g));
         // prod_i p^{e_i}
         let ideal_factored = self.factor_ideal(ideal).unwrap();
@@ -504,7 +573,7 @@ where
                 self.factorizations()
                     .to_powers(&ideal_factored)
                     .into_iter()
-                    .map(|(p, k)| match self.ideal_nat_pow(p.ideal(), k) {
+                    .map(|(p, k)| match self.nat_pow(p.ideal(), k) {
                         OrderIdeal::Zero => unreachable!(),
                         OrderIdeal::NonZero(pk_lattice) => {
                             FinitelyFreeSubmoduleAffineSubset::NonEmpty(
@@ -524,7 +593,7 @@ where
                                     .factorizations()
                                     .to_prime_support(&ideal_factored)
                                     .into_iter()
-                                    .any(|p| self.ideal_equal(p.ideal(), prime_ideal.ideal()))
+                                    .any(|p| self.equal(p.ideal(), prime_ideal.ideal()))
                             })
                             .map(|q| match q.into_ideal() {
                                 OrderIdeal::Zero => unreachable!(),
@@ -554,7 +623,7 @@ where
                     .to_powers(&ideal_factored)
                     .into_iter()
                     .map(
-                        |(p, k)| match self.ideal_nat_pow(p.ideal(), &(k + Natural::ONE)) {
+                        |(p, k)| match self.nat_pow(p.ideal(), &(k + Natural::ONE)) {
                             OrderIdeal::Zero => unreachable!(),
                             OrderIdeal::NonZero(pk_lattice) => {
                                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(
@@ -597,7 +666,7 @@ where
                 (a, b)
             }
         };
-        debug_assert!(self.ideal_equal(ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
+        debug_assert!(self.equal(ideal, &self.generated_ideal(vec![a.clone(), b.clone()])));
         (a, b)
     }
 }
@@ -764,7 +833,7 @@ mod tests {
                 .unwrap();
 
             // (a + b sqrt(2)) * (1 + sqrt(2)) = a(1 + sqrt(2)) + b(2 + sqrt(2))
-            assert!(roi_ideals.ideal_equal(
+            assert!(roi_ideals.equal(
                 &roi_ideals.principal_ideal(&alpha),
                 &roi_ideals.ideal_from_integer_span(vec![
                         roi.outbound_order_to_anf_inclusion()
@@ -792,12 +861,12 @@ mod tests {
             let alpha_ideal = roi_ideals.principal_ideal(&alpha);
             let beta_ideal = roi_ideals.principal_ideal(&beta);
 
-            let alpha_beta_add = roi_ideals.ideal_add(&alpha_ideal, &beta_ideal);
-            let alpha_beta_intersect = roi_ideals.ideal_intersect(&alpha_ideal, &beta_ideal);
-            let alpha_beta_mul = roi_ideals.ideal_mul(&alpha_ideal, &beta_ideal);
+            let alpha_beta_add = roi_ideals.add(&alpha_ideal, &beta_ideal);
+            let alpha_beta_intersect = roi_ideals.intersect(&alpha_ideal, &beta_ideal);
+            let alpha_beta_mul = roi_ideals.mul(&alpha_ideal, &beta_ideal);
 
             // sum is 3
-            assert!(roi_ideals.ideal_equal(
+            assert!(roi_ideals.equal(
                 &alpha_beta_add,
                 &roi_ideals.ideal_from_integer_span(vec![
                         roi.outbound_order_to_anf_inclusion()
@@ -810,7 +879,7 @@ mod tests {
             ));
 
             // intersection is 30
-            assert!(roi_ideals.ideal_equal(
+            assert!(roi_ideals.equal(
                 &alpha_beta_intersect,
                 &roi_ideals.ideal_from_integer_span(vec![
                         roi.outbound_order_to_anf_inclusion()
@@ -823,7 +892,7 @@ mod tests {
             ));
 
             // product is 90
-            assert!(roi_ideals.ideal_equal(
+            assert!(roi_ideals.equal(
                 &alpha_beta_mul,
                 &roi_ideals.ideal_from_integer_span(vec![
                         roi.outbound_order_to_anf_inclusion()
@@ -900,7 +969,7 @@ mod tests {
         let gaussian_prime = roi_ideals.principal_ideal(&one_plus_i);
 
         let zero_sqrt = roi_ideals.sqrt_if_square(&roi_ideals.zero_ideal()).unwrap();
-        assert!(roi_ideals.ideal_equal(&zero_sqrt, &roi_ideals.zero_ideal()));
+        assert!(roi_ideals.equal(&zero_sqrt, &roi_ideals.zero_ideal()));
         assert!(roi_ideals.is_square(&roi_ideals.zero_ideal()));
         assert!(!roi_ideals.is_squarefree(&roi_ideals.zero_ideal()));
 
@@ -908,7 +977,7 @@ mod tests {
         let two_ideal = roi_ideals.principal_ideal(&roi.from_int(2));
         assert!(roi_ideals.is_square(&two_ideal));
         let sqrt_two = roi_ideals.sqrt_if_square(&two_ideal).unwrap();
-        assert!(roi_ideals.ideal_equal(&sqrt_two, &gaussian_prime));
+        assert!(roi_ideals.equal(&sqrt_two, &gaussian_prime));
         assert!(!roi_ideals.is_squarefree(&two_ideal));
 
         // (3) stays prime in Z[i] so it cannot be a square.
@@ -920,10 +989,10 @@ mod tests {
         // Squares built from a non-trivial prime ideal should be detected as well.
         assert!(!roi_ideals.is_square(&gaussian_prime));
         assert!(roi_ideals.is_squarefree(&gaussian_prime));
-        let gaussian_prime_square = roi_ideals.ideal_mul(&gaussian_prime, &gaussian_prime);
+        let gaussian_prime_square = roi_ideals.mul(&gaussian_prime, &gaussian_prime);
         assert!(roi_ideals.is_square(&gaussian_prime_square));
         let sqrt_gaussian_square = roi_ideals.sqrt_if_square(&gaussian_prime_square).unwrap();
-        assert!(roi_ideals.ideal_equal(&sqrt_gaussian_square, &gaussian_prime));
+        assert!(roi_ideals.equal(&sqrt_gaussian_square, &gaussian_prime));
         assert!(!roi_ideals.is_squarefree(&gaussian_prime_square));
     }
 }

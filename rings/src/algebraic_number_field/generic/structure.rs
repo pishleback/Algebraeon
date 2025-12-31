@@ -56,6 +56,19 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
         OrderWithBasis::new_maximal_unchecked(self, basis)
     }
 
+    fn order<'a>(
+        &'a self,
+        basis: Vec<Self::Set>,
+    ) -> Result<OrderWithBasis<Self, &'a Self, false>, String> {
+        OrderWithBasis::new(self, basis)
+    }
+    fn into_order(
+        self,
+        basis: Vec<Self::Set>,
+    ) -> Result<OrderWithBasis<Self, Self, false>, String> {
+        OrderWithBasis::new(self, basis)
+    }
+
     /// The LCM of the denominators of the coefficients of the minimal polynomial of a.
     ///
     /// It may well be >1 even when the element a is an algebraic integer.

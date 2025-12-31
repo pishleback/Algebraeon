@@ -47,24 +47,32 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
         a.abs()
     }
 
-    fn ideal_equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a == b
     }
 
-    fn ideal_contains(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn contains_ideal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         b % a == Natural::ZERO
     }
 
-    fn ideal_intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         lcm(a.clone(), b.clone())
     }
 
-    fn ideal_add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         gcd(a.clone(), b.clone())
     }
 
-    fn ideal_mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
+    }
+
+    fn quotient(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        if b == &Natural::ZERO {
+            Natural::ONE
+        } else {
+            a / gcd(a.clone(), b.clone())
+        }
     }
 }
 
@@ -118,28 +126,28 @@ mod tests {
 
     #[test]
     fn integer_ideals() {
-        assert!(Integer::ideals().ideal_equal(&Natural::from(3u32), &Natural::from(3u32)));
+        assert!(Integer::ideals().equal(&Natural::from(3u32), &Natural::from(3u32)));
 
-        assert!(!Integer::ideals().ideal_equal(&Natural::from(2u32), &Natural::from(3u32)));
+        assert!(!Integer::ideals().equal(&Natural::from(2u32), &Natural::from(3u32)));
 
-        assert!(Integer::ideals().ideal_contains(&Natural::from(2u32), &Natural::from(6u32)));
+        assert!(Integer::ideals().contains_ideal(&Natural::from(2u32), &Natural::from(6u32)));
 
-        assert!(!Integer::ideals().ideal_contains(&Natural::from(6u32), &Natural::from(2u32)));
+        assert!(!Integer::ideals().contains_ideal(&Natural::from(6u32), &Natural::from(2u32)));
 
-        assert!(!Integer::ideals().ideal_contains(&Natural::from(5u32), &Natural::from(7u32)));
+        assert!(!Integer::ideals().contains_ideal(&Natural::from(5u32), &Natural::from(7u32)));
 
-        assert!(Integer::ideals().ideal_equal(
-            &Integer::ideals().ideal_add(&Natural::from(6u32), &Natural::from(15u32)),
+        assert!(Integer::ideals().equal(
+            &Integer::ideals().add(&Natural::from(6u32), &Natural::from(15u32)),
             &Natural::from(3u32)
         ));
 
-        assert!(Integer::ideals().ideal_equal(
-            &Integer::ideals().ideal_intersect(&Natural::from(6u32), &Natural::from(15u32)),
+        assert!(Integer::ideals().equal(
+            &Integer::ideals().intersect(&Natural::from(6u32), &Natural::from(15u32)),
             &Natural::from(30u32)
         ));
 
-        assert!(Integer::ideals().ideal_equal(
-            &Integer::ideals().ideal_mul(&Natural::from(6u32), &Natural::from(15u32)),
+        assert!(Integer::ideals().equal(
+            &Integer::ideals().mul(&Natural::from(6u32), &Natural::from(15u32)),
             &Natural::from(90u32)
         ));
 

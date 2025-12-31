@@ -115,7 +115,7 @@ impl<
     type Object = Ideals::Set;
 
     fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
-        self.ideals().ideal_contains(a, b)
+        self.ideals().contains_ideal(a, b)
     }
 
     fn try_object_is_prime(&self, _object: &Self::PrimeObject) -> Option<bool> {
@@ -128,7 +128,7 @@ impl<
 
     fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
         self.ideals()
-            .ideal_product(objects.into_iter().cloned().collect())
+            .product(objects.into_iter().cloned().collect())
     }
 
     fn new_powers_unchecked(&self, factor_powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set {
@@ -149,7 +149,7 @@ impl<
     }
 
     fn expanded(&self, a: &Self::Set) -> Self::Object {
-        self.ideals().ideal_product(
+        self.ideals().product(
             self.to_primes(a)
                 .into_iter()
                 .map(|p| p.ideal().clone())

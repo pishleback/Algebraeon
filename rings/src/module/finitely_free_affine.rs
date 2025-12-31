@@ -138,13 +138,13 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         }
     }
 
-    pub fn sum(
+    pub fn add(
         &self,
-        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
-        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+        x: FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+        y: FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        debug_assert!(self.is_element(&x).is_ok());
+        debug_assert!(self.is_element(&y).is_ok());
         match (x, y) {
             (FinitelyFreeSubmoduleAffineSubset::Empty, _)
             | (_, FinitelyFreeSubmoduleAffineSubset::Empty) => {
@@ -154,7 +154,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(x_coset),
                 FinitelyFreeSubmoduleAffineSubset::NonEmpty(y_coset),
             ) => FinitelyFreeSubmoduleAffineSubset::NonEmpty(
-                self.module().cosets().sum(x_coset, y_coset),
+                self.module().cosets().add(x_coset, y_coset),
             ),
         }
     }

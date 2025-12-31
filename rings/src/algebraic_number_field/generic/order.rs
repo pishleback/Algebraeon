@@ -145,7 +145,8 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 
     pub fn free_z_module_restructure(
         &self,
-    ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
+    ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, &'static IntegerCanonicalStructure>
+    {
         self.full_rank_z_submodule.free_z_module_restructure()
     }
 
@@ -485,7 +486,11 @@ mod anf_inclusion {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{polynomial::Polynomial, structure::IntoErgonomic};
+    use crate::{
+        parsing::parse_rational_polynomial,
+        polynomial::Polynomial,
+        structure::{IdealsArithmeticSignature, IntoErgonomic, RingToIdealsSignature},
+    };
     use algebraeon_nzq::Rational;
 
     #[test]
@@ -596,5 +601,52 @@ mod tests {
         }
 
         println!("{:?}", roi);
+    }
+
+    #[test]
+    fn order_ideals() {
+        // Q[sqrt(-3)]
+        let anf = parse_rational_polynomial("x^2+3", "x")
+            .unwrap()
+            .algebraic_number_field()
+            .unwrap();
+
+        // Z[sqrt(-3)]
+        let order = anf
+            .order(vec![
+                parse_rational_polynomial("1", "x").unwrap(),
+                parse_rational_polynomial("x", "x").unwrap(),
+            ])
+            .unwrap();
+
+        let ideal6 = order
+            .ideals()
+            .principal_ideal(&order.from_int(Integer::from(6)));
+
+        let ideal15 = order
+            .ideals()
+            .principal_ideal(&order.from_int(Integer::from(15)));
+
+        assert!(
+            order.ideals().equal(
+                &order.ideals().add(&ideal6, &ideal15),
+                &order
+                    .ideals()
+                    .principal_ideal(&order.from_int(Integer::from(3)))
+            )
+        );
+
+        assert!(
+            order.ideals().equal(
+                &order.ideals().intersect(&ideal6, &ideal15),
+                &order
+                    .ideals()
+                    .principal_ideal(&order.from_int(Integer::from(30)))
+            )
+        );
+
+        let ideal = order.ideals().quotient(&ideal15, &ideal6);
+
+        println!("{:?}", ideal);
     }
 }

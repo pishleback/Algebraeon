@@ -11,8 +11,8 @@ use crate::{
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
 use algebraeon_sets::structure::{
-    BorrowedStructure, EqSignature, Function, InjectiveFunction, MetaType, Morphism, SetSignature,
-    Signature, ToStringSignature,
+    BorrowedStructure, EqSignature, Function, InjectiveFunction, Morphism, SetSignature, Signature,
+    ToStringSignature,
 };
 use std::marker::PhantomData;
 
@@ -93,8 +93,9 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
 
     pub fn free_z_module_restructure(
         &self,
-    ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, IntegerCanonicalStructure> {
-        Integer::structure().into_free_module(self.n())
+    ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, &'static IntegerCanonicalStructure>
+    {
+        Integer::structure_ref().free_module(self.n())
     }
 
     pub fn discriminant(&self) -> Rational {

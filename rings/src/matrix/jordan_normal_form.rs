@@ -260,7 +260,9 @@ where
                         );
 
                         let unaccounted_ker_ext_basis = module.submodules().extension_basis(
-                            &module.submodules().intersect(&accounted, &ker_ext),
+                            &module
+                                .submodules()
+                                .intersect(accounted.clone(), ker_ext.clone()),
                             &ker_ext,
                         );
 
@@ -283,9 +285,9 @@ where
                                 jb_basis.push(ukeb_img.get_col(0));
                             }
 
-                            accounted = module.submodules().sum(
-                                &accounted,
-                                &module.submodules().span(jb_basis.iter().collect()),
+                            accounted = module.submodules().add(
+                                accounted,
+                                module.submodules().span(jb_basis.iter().collect()),
                             );
                             jordan_block_bases.push(jb_basis.into_iter().rev().collect_vec());
                         }

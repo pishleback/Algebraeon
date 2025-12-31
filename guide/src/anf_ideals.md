@@ -17,22 +17,22 @@
 - basis
 - [`euler_phi`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/algebraic_number_field/ideal/struct.RingOfIntegersIdealsStructure.html#method.euler_phi) 
 - [`factor_ideal`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.FactorableIdealsSignature.html#tymethod.factor_ideal)
-- [`ideal_add`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#tymethod.ideal_add) Sum of two ideals
-- [`ideal_intersect`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#tymethod.ideal_intersect) Intersection of two ideals
-- [`ideal_mul`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#tymethod.ideal_mul) Product of two ideals
-- [`ideal_nat_pow`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.ideal_nat_pow)
+- [`add`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#tymethod.add) Sum of two ideals
+- [`intersect`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#tymethod.intersect) Intersection of two ideals
+- [`mul`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#tymethod.mul) Product of two ideals
+- [`nat_pow`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.nat_pow)
 - [`ideal_norm`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/algebraic_number_field/ideal/struct.RingOfIntegersIdealsStructure.html#method.ideal_norm)
 - [`ideal_other_generator`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/algebraic_number_field/ideal/struct.RingOfIntegersIdealsStructure.html#method.ideal_other_generator) given an ideal I and element a find an element b such that I = (a, b)
-- [`ideal_product`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.ideal_product) Product of many ideals
-- [`ideal_sum`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.ideal_sum)
+- [`product`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.product) Product of many ideals
+- [`sum`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.sum)
 - [`ideal_two_generators`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/algebraic_number_field/ideal/struct.RingOfIntegersIdealsStructure.html#method.ideal_two_generators) return two elements which generate the ideal
 - sqrt_if_square
 
 ## Available predicates
-- [`ideal_contains`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#tymethod.ideal_contains) Does a contain b i.e. does a divide b
-- [`ideal_contains_element`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.ideal_contains_element)
-- [`ideal_equal`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.ideal_equal)
-- [`ideal_is_zero`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.ideal_is_zero)
+- [`contains_ideal`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#tymethod.contains_ideal) Does a contain b i.e. does a divide b
+- [`contains_element`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.contains_element)
+- [`equal`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.equal)
+- [`is_zero`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.is_zero)
 - [`is_prime_ideal`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.FactorableIdealsSignature.html#method.is_prime_ideal)
 - is_squarefree
 - is_square
