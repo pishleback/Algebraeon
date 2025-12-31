@@ -1,6 +1,6 @@
 use crate::algebraic_number_field::{
     AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
-    AlgebraicNumberFieldSignature, OrderWithBasis, QuadraticRingOfIntegersStructure,
+    AlgebraicNumberFieldSignature, QuadraticRingOfIntegersStructure,
     RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
 use crate::structure::{
@@ -357,7 +357,10 @@ impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberF
     }
 
     fn generator(&self) -> Self::Set {
-        todo!()
+        QuadraticNumberFieldElement {
+            rational_part: Rational::ZERO,
+            algebraic_part: Rational::ONE,
+        }
     }
 
     fn discriminant(&self) -> Integer {
@@ -371,11 +374,7 @@ impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberF
         }
     }
 
-    fn maximal_order<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true> {
-        todo!()
-    }
-
-    fn into_maximal_order(self) -> OrderWithBasis<Self, Self, true> {
+    fn integral_basis(&self) -> Vec<Self::Set> {
         todo!()
     }
 

@@ -269,7 +269,7 @@ mod tests {
             println!(
                 "{:?}",
                 root.generated_algebraic_number_field()
-                    .maximal_order()
+                    .ring_of_integers()
                     .into_outbound_order_to_anf_inclusion()
             );
         }

@@ -28,22 +28,37 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     ) -> Self::RationalInclusion<&'a Self>;
     fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
 
+    /// The dimension of this algebraic number field as a vector space over the rational numbers
     fn n(&self) -> usize {
         self.inbound_finite_dimensional_rational_extension()
             .degree()
     }
 
+    /// An element which generates this algebraic number field when adjoined to the rational numbers
+    /// Such an element always exists by the primitive element theorem
     fn generator(&self) -> Self::Set;
 
+    /// Determine whether an element is integral over the integers i.e. is it a root of a monic integer polynomial
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool;
 
-    fn maximal_order<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true>;
-    fn into_maximal_order(self) -> OrderWithBasis<Self, Self, true>;
-
+    /// The discriminant of this algebraic number field i.e. the discriminant of its ring of integers
+    /// Implementations should not compute this by constructing the ring of integers, as the constructor for a maximal OrderWithBasis calls this function to validate its input
     fn discriminant(&self) -> Integer;
 
-    // This is the LCM of the denominators of the coefficients of the minimal polynomial of a,
-    // and thus it may well be >1 even when the element a is an algebraic integer.
+    /// A list of self.n() elements which generate the ring of integers as a Z-module
+    fn integral_basis(&self) -> Vec<Self::Set>;
+
+    fn ring_of_integers<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true> {
+        OrderWithBasis::new_maximal_unchecked(self, self.integral_basis())
+    }
+    fn into_ring_of_integers(self) -> OrderWithBasis<Self, Self, true> {
+        let basis = self.integral_basis();
+        OrderWithBasis::new_maximal_unchecked(self, basis)
+    }
+
+    /// The LCM of the denominators of the coefficients of the minimal polynomial of a.
+    ///
+    /// It may well be >1 even when the element a is an algebraic integer.
     fn min_poly_denominator_lcm(&self, a: &Self::Set) -> Integer {
         Integer::lcm_list(
             self.inbound_finite_dimensional_rational_extension()
@@ -55,8 +70,9 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
         )
     }
 
-    /// return a scalar multiple of $a$ which is an algebraic integer
-    /// need not return $a$ itself when $a$ is already an algebraic integer
+    /// A scalar multiple of $a$ which is an algebraic integer.
+    ///
+    /// It need not return $a$ itself when $a$ is already an algebraic integer.
     fn integral_multiple(&self, a: &Self::Set) -> Self::Set {
         let m = self.min_poly_denominator_lcm(a);
         let b = self.mul(&self.try_from_rat(&Rational::from(m)).unwrap(), a);

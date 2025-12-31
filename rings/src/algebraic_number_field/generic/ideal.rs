@@ -844,7 +844,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = anf.into_maximal_order();
+        let roi = anf.into_ring_of_integers();
         let roi_ideals = roi.ideals();
 
         assert_eq!(
@@ -872,7 +872,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = anf.maximal_order();
+        let roi = anf.ring_of_integers();
         let roi_ideals = roi.ideals();
 
         // Consider the ideal (5)
@@ -891,7 +891,7 @@ mod tests {
             .into_verbose()
             .algebraic_number_field()
             .unwrap();
-        let roi = anf.maximal_order();
+        let roi = anf.ring_of_integers();
         let roi_ideals = roi.ideals();
         let one_plus_i = roi
             .outbound_order_to_anf_inclusion()

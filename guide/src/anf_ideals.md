@@ -54,7 +54,7 @@ let anf = Polynomial::<Rational>::from_str("x^2+1", "x")
     .unwrap()
     .algebraic_number_field()
     .unwrap();
-let roi = anf.maximal_order();
+let roi = anf.ring_of_integers();
 
 // The ideal (27i - 9) in Z[i]
 let ideal = roi.ideals().principal_ideal(

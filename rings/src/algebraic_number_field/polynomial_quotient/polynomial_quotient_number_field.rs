@@ -1,7 +1,5 @@
 use crate::{
-    algebraic_number_field::{
-        AlgebraicNumberFieldSignature, OrderWithBasis, anf_multi_primitive_element_theorem,
-    },
+    algebraic_number_field::{AlgebraicNumberFieldSignature, anf_multi_primitive_element_theorem},
     matrix::Matrix,
     polynomial::{
         Polynomial, PolynomialQuotientRingStructure, PolynomialStructure, RingToPolynomialSignature,
@@ -129,14 +127,8 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         self.compute_integral_basis_and_discriminant().1
     }
 
-    fn maximal_order<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true> {
-        let basis = self.compute_integral_basis_and_discriminant().0;
-        OrderWithBasis::new_maximal_unchecked(self, basis)
-    }
-
-    fn into_maximal_order(self) -> OrderWithBasis<Self, Self, true> {
-        let basis = self.compute_integral_basis_and_discriminant().0;
-        OrderWithBasis::new_maximal_unchecked(self, basis)
+    fn integral_basis(&self) -> Vec<Self::Set> {
+        self.compute_integral_basis_and_discriminant().0
     }
 
     fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
