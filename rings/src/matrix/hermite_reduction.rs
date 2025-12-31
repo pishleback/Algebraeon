@@ -260,6 +260,26 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             .matrix_col_kernel(matrix)
     }
 
+    pub fn row_preimage(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        space: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
+            .into_submodules()
+            .matrix_row_preimage(matrix, space)
+    }
+
+    pub fn col_preimage(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        space: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
+            .into_submodules()
+            .matrix_col_preimage(matrix, space)
+    }
+
     pub fn row_affine_span(
         &self,
         matrix: Matrix<Ring::Set>,
@@ -395,6 +415,14 @@ where
 
     pub fn col_kernel(self) -> FinitelyFreeSubmodule<R> {
         Self::structure().col_kernel(self)
+    }
+
+    pub fn row_preimage(&self, space: &FinitelyFreeSubmodule<R>) -> FinitelyFreeSubmodule<R> {
+        Self::structure().row_preimage(self, space)
+    }
+
+    pub fn col_preimage(&self, space: &FinitelyFreeSubmodule<R>) -> FinitelyFreeSubmodule<R> {
+        Self::structure().col_preimage(self, space)
     }
 
     pub fn row_affine_span(self) -> FinitelyFreeSubmoduleAffineSubset<R> {

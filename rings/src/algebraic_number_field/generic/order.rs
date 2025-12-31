@@ -645,8 +645,13 @@ mod tests {
             )
         );
 
-        let ideal = order.ideals().quotient(&ideal15, &ideal6);
-
-        println!("{:?}", ideal);
+        assert!(
+            order.ideals().equal(
+                &order.ideals().quotient(&ideal15, &ideal6),
+                &order
+                    .ideals()
+                    .principal_ideal(&order.from_int(Integer::from(5)))
+            )
+        );
     }
 }

@@ -145,6 +145,41 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         }
     }
 
+    pub fn matrix_row_preimage(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        space: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        debug_assert_eq!(matrix.rows(), self.module().rank());
+        debug_assert_eq!(matrix.cols(), space.module_rank());
+        /*
+        Let M be the matrix and S a row basis matrix for the space.
+        Need to solve xM=yS for all possible x
+        So concat the rows of M over the rows of S to get a matrix A
+        Solve for the kernel of A and take only the first bits corresponding to x
+        */
+        let a = Matrix::join_rows(matrix.cols(), vec![&matrix, space.row_basis_matrix()]);
+        // Find a row U such that uA is in HNF
+        // The kernel of UA is standard basis vectors pivs.len()..a.rows()
+        // So the kernel of A is the rows pivs.len()..a.rows() of U
+        // And we are after the span of the first matrix.rows() of them
+        let (h, u, _u_det, pivs) =
+            MatrixStructure::<Ring, _>::new(self.ring()).row_hermite_algorithm(a);
+
+        self.matrix_row_span(u.submatrix(
+            (pivs.len()..h.rows()).collect(),
+            (0..matrix.rows()).collect(),
+        ))
+    }
+
+    pub fn matrix_col_preimage(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        space: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        self.matrix_row_preimage(&matrix.transpose_ref(), space)
+    }
+
     pub fn matrix_row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
         debug_assert_eq!(matrix.rows(), self.module().rank());
         let rows = matrix.rows();

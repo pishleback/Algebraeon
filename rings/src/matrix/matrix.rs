@@ -90,6 +90,16 @@ impl<Set: Clone> Matrix<Set> {
         Self::from_rows(cols_elems).transpose()
     }
 
+    /// Construct a matrix from a row.
+    pub fn from_row(elems: Vec<impl Into<Set> + Clone>) -> Self {
+        Self::from_rows(vec![elems])
+    }
+
+    /// Construct a matrix from a column.
+    pub fn from_col(elems: Vec<impl Into<Set> + Clone>) -> Self {
+        Self::from_rows(vec![elems]).transpose()
+    }
+
     fn rc_to_idx(&self, mut r: usize, mut c: usize) -> usize {
         if self.flip_rows {
             r = self.rows() - r - 1;

@@ -339,7 +339,6 @@ impl<
         We want the ideal of all points x in the ring R such that xj belongs to I for all j in J.
         It's sufficient to check on a basis of points j in J.
         For each j in a basis for J we find the space of points x such that xj belongs to I and take their intersection.
-        The space of points x such that xj belongs to I is the span of the kernel of j and a solution to xj=i for each i forming a basis of I.
          */
 
         let n = self.ring().n();
@@ -363,16 +362,19 @@ impl<
                         n,
                         (0..n)
                             .map(|c| {
-                                Matrix::<Integer>::from_rows(vec![{
-                                    self.ring().mul(&jb, &module.basis_element(c))
-                                }])
-                                .transpose()
+                                Matrix::<Integer>::from_col(
+                                    self.ring().mul(&jb, &module.basis_element(c)),
+                                )
                             })
                             .collect(),
                     );
                     jb_mulmat.pprint();
-                    todo!();
-                    todo!()
+
+                    i.clone().into_col_basis_matrix().pprint();
+
+                    jb_mulmat.col_preimage(&i).into_col_basis_matrix().pprint();
+
+                    jb_mulmat.col_preimage(&i)
                 })
                 .collect(),
         );
@@ -836,13 +838,13 @@ mod tests {
             assert!(roi_ideals.equal(
                 &roi_ideals.principal_ideal(&alpha),
                 &roi_ideals.ideal_from_integer_span(vec![
-                        roi.outbound_order_to_anf_inclusion()
-                            .try_preimage(&(1 + &x).into_verbose())
-                            .unwrap(),
-                        roi.outbound_order_to_anf_inclusion()
-                            .try_preimage(&(2 + &x).into_verbose())
-                            .unwrap()
-                    ])
+                    roi.outbound_order_to_anf_inclusion()
+                        .try_preimage(&(1 + &x).into_verbose())
+                        .unwrap(),
+                    roi.outbound_order_to_anf_inclusion()
+                        .try_preimage(&(2 + &x).into_verbose())
+                        .unwrap()
+                ])
             ));
         }
 
@@ -869,39 +871,39 @@ mod tests {
             assert!(roi_ideals.equal(
                 &alpha_beta_add,
                 &roi_ideals.ideal_from_integer_span(vec![
-                        roi.outbound_order_to_anf_inclusion()
-                            .try_preimage(&(3 * x.pow(0)).into_verbose())
-                            .unwrap(),
-                        roi.outbound_order_to_anf_inclusion()
-                            .try_preimage(&(3 * x.pow(1)).into_verbose())
-                            .unwrap()
-                    ])
+                    roi.outbound_order_to_anf_inclusion()
+                        .try_preimage(&(3 * x.pow(0)).into_verbose())
+                        .unwrap(),
+                    roi.outbound_order_to_anf_inclusion()
+                        .try_preimage(&(3 * x.pow(1)).into_verbose())
+                        .unwrap()
+                ])
             ));
 
             // intersection is 30
             assert!(roi_ideals.equal(
                 &alpha_beta_intersect,
                 &roi_ideals.ideal_from_integer_span(vec![
-                        roi.outbound_order_to_anf_inclusion()
-                            .try_preimage(&(30 * x.pow(0)).into_verbose())
-                            .unwrap(),
-                        roi.outbound_order_to_anf_inclusion()
-                            .try_preimage(&(30 * x.pow(1)).into_verbose())
-                            .unwrap()
-                    ])
+                    roi.outbound_order_to_anf_inclusion()
+                        .try_preimage(&(30 * x.pow(0)).into_verbose())
+                        .unwrap(),
+                    roi.outbound_order_to_anf_inclusion()
+                        .try_preimage(&(30 * x.pow(1)).into_verbose())
+                        .unwrap()
+                ])
             ));
 
             // product is 90
             assert!(roi_ideals.equal(
                 &alpha_beta_mul,
                 &roi_ideals.ideal_from_integer_span(vec![
-                        roi.outbound_order_to_anf_inclusion()
-                            .try_preimage(&(90 * x.pow(0)).into_verbose())
-                            .unwrap(),
-                        roi.outbound_order_to_anf_inclusion()
-                            .try_preimage(&(90 * x.pow(1)).into_verbose())
-                            .unwrap()
-                    ])
+                    roi.outbound_order_to_anf_inclusion()
+                        .try_preimage(&(90 * x.pow(0)).into_verbose())
+                        .unwrap(),
+                    roi.outbound_order_to_anf_inclusion()
+                        .try_preimage(&(90 * x.pow(1)).into_verbose())
+                        .unwrap()
+                ])
             ));
         }
     }
