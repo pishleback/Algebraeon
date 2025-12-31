@@ -231,10 +231,10 @@ let a = submodules.span(vec![&vec![4.into(), 4.into(), 4.into()]]);
 let b = submodules.span(vec![&vec![6.into(), 6.into(), 6.into()]]);
 
 let sum_ab = submodules.span(vec![&vec![2.into(), 2.into(), 2.into()]]);
-assert!(submodules.equal(&submodules.sum(&a, &b), &sum_ab));
+assert!(submodules.equal(&submodules.add(&a, &b), &sum_ab));
 
 let intersect_ab = submodules.span(vec![&vec![12.into(), 12.into(), 12.into()]]);
-assert!(submodules.equal(&submodules.intersect(&a, &b), &intersect_ab));
+assert!(submodules.equal(&submodules.intersect(a, b), &intersect_ab));
 ```
 
 <!-- ### Other Operations
