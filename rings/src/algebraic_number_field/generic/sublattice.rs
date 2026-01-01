@@ -164,11 +164,9 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::InjectiveFunction;
-
-    use crate::parsing::parse_rational_polynomial;
-
     use super::*;
+    use crate::parsing::parse_rational_polynomial;
+    use algebraeon_sets::structure::InjectiveFunction;
 
     #[test]
     fn full_rank_abelian_group_to_algebraic_number_field_image_and_preimage() {

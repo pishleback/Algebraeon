@@ -1,21 +1,24 @@
 use crate::{
     algebraic_number_field::{
         AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, FullRankSublatticeWithBasis,
-        FullRankSublatticeWithBasisSignature,
+        FullRankSublatticeWithBasisSignature, OrderIdeal,
     },
     matrix::{Matrix, SymmetricMatrix},
-    module::finitely_free_submodule::FinitelyFreeSubmodule,
+    module::{
+        finitely_free_module::RingToFinitelyFreeModuleSignature,
+        finitely_free_submodule::FinitelyFreeSubmodule,
+    },
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
         FinitelyFreeModuleSignature, IntegralDomainSignature, RingDivisionError, RingSignature,
-        SemiModuleSignature, SemiRingSignature, SemiRingUnitsSignature,
+        RingToIdealsSignature, SemiModuleSignature, SemiRingSignature, SemiRingUnitsSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::{
-    BorrowedStructure, EqSignature, Function, InjectiveFunction, Morphism, SetSignature, Signature,
-    ToStringSignature,
+    BorrowedStructure, EqSignature, Function, InjectiveFunction, MetaType, Morphism, SetSignature,
+    Signature, ToStringSignature,
 };
 use std::marker::PhantomData;
 
@@ -75,6 +78,13 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
             one,
         };
         Ok(s)
+    }
+
+    /// The conductor of an order is the ideal of the order consisting of all elements such that multiplying by any element of the ring of integers produces an element of the order.
+    pub fn conductor(&self) -> OrderIdeal {
+        self.anf()
+            .ring_of_integers()
+            .suborder_conductor_as_ideal_of_order(self)
     }
 }
 
@@ -375,6 +385,85 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AlgebraicIntege
     }
 }
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> OrderWithBasis<K, KB, true> {
+    pub fn suborder_conductor_as_ideal_of_order<KOB: BorrowedStructure<K>, const MAXIMAL: bool>(
+        &self,
+        order: &OrderWithBasis<K, KOB, MAXIMAL>,
+    ) -> OrderIdeal {
+        let anf = order.anf();
+        debug_assert_eq!(FullRankSublatticeWithBasisSignature::anf(self), anf);
+        debug_assert_eq!(AlgebraicIntegerRingSignature::anf(self), anf);
+
+        let order_to_maximal_order = self
+            .inbound_sublattice_inclusion_unchecked::<OrderWithBasis<K, KOB, MAXIMAL>, _>(order);
+
+        let ideal = order
+            .ideals()
+            .outbound_sublattices_inclusion()
+            .try_preimage(
+                &order_to_maximal_order
+                    .sublattices_inclusion()
+                    .try_preimage(
+                        &self.quotient_sublattice(
+                            &order_to_maximal_order.sublattices_inclusion().image(
+                                &Integer::structure()
+                                    .free_module(anf.n())
+                                    .submodules()
+                                    .full_submodule(),
+                            ),
+                            &Integer::structure()
+                                .free_module(anf.n())
+                                .submodules()
+                                .full_submodule(),
+                        ),
+                    )
+                    .unwrap(),
+            )
+            .unwrap();
+
+        #[cfg(debug_assertions)]
+        order.ideals().is_element(&ideal).unwrap();
+
+        ideal
+    }
+
+    pub fn suborder_conductor_as_ideal_of_self<KOB: BorrowedStructure<K>, const MAXIMAL: bool>(
+        &self,
+        order: &OrderWithBasis<K, KOB, MAXIMAL>,
+    ) -> OrderIdeal {
+        let anf = order.anf();
+        debug_assert_eq!(FullRankSublatticeWithBasisSignature::anf(self), anf);
+        debug_assert_eq!(AlgebraicIntegerRingSignature::anf(self), anf);
+
+        let order_to_maximal_order = self
+            .inbound_sublattice_inclusion_unchecked::<OrderWithBasis<K, KOB, MAXIMAL>, _>(order);
+
+        let ideal = self
+            .ideals()
+            .outbound_sublattices_inclusion()
+            .try_preimage(
+                &self.quotient_sublattice(
+                    &order_to_maximal_order.sublattices_inclusion().image(
+                        &Integer::structure()
+                            .free_module(anf.n())
+                            .submodules()
+                            .full_submodule(),
+                    ),
+                    &Integer::structure()
+                        .free_module(anf.n())
+                        .submodules()
+                        .full_submodule(),
+                ),
+            )
+            .unwrap();
+
+        #[cfg(debug_assertions)]
+        self.ideals().is_element(&ideal).unwrap();
+
+        ideal
+    }
+}
+
 mod anf_inclusion {
     use super::*;
     use crate::structure::RingHomomorphism;
@@ -639,6 +728,42 @@ mod tests {
                 &order
                     .ideals()
                     .principal_ideal(&order.from_int(Integer::from(5)))
+            )
+        );
+    }
+
+    #[test]
+    fn order_conductor() {
+        // Q[sqrt(-3)]
+        let anf = parse_rational_polynomial("x^2+3", "x")
+            .unwrap()
+            .algebraic_number_field()
+            .unwrap();
+
+        // Z[1/2 + 1/2 sqrt(-3)]
+        let roi = anf.ring_of_integers();
+
+        // Z[sqrt(-3)]
+        let order = anf
+            .order(vec![
+                parse_rational_polynomial("1", "x").unwrap(),
+                parse_rational_polynomial("x", "x").unwrap(),
+            ])
+            .unwrap();
+
+        assert!(order.ideals().equal(
+            &order.conductor(),
+            &order.ideals().generated_ideal(vec![
+                vec![Integer::from(1), Integer::from(1)],
+                vec![Integer::from(0), Integer::from(2)]
+            ])
+        ));
+
+        assert!(
+            roi.ideals().equal(
+                &roi.suborder_conductor_as_ideal_of_self(&order),
+                &roi.ideals()
+                    .principal_ideal(&roi.from_int(Integer::from(2)))
             )
         );
     }

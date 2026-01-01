@@ -1,7 +1,5 @@
-use std::marker::PhantomData;
-
 use crate::{
-    algebraic_number_field::{OrderIdeal, OrderWithBasis, RingOfIntegersExtension},
+    algebraic_number_field::{OrderWithBasis, RingOfIntegersExtension},
     integer::ideal::IntegerIdealsStructure,
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
@@ -20,6 +18,7 @@ use algebraeon_sets::structure::{
     BorrowedStructure, FiniteSetSignature, Function, InjectiveFunction, MetaType, Morphism,
     SetSignature,
 };
+use std::marker::PhantomData;
 
 /// An algebraic number field is a field of characteristic zero such that
 /// the inclusion of its rational subfield is finite dimensional
@@ -136,23 +135,41 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(self)
     }
 
-    /// The conductor of an order is an ideal of the order.
-    ///
-    /// It consists of all elements of the order such that multiplying by any element of the ring of integers produces an element of the order.
-    ///
-    /// Equivalently, it consists of all elements of the ring of integers such that multiplying by any element of the ring of integers produces an element of the order.
-    ///
-    /// The returned value represents an element of `order.ideals()` _not_ of `self.ideals()`.
-    fn conductor<KB: BorrowedStructure<K>, const MAXIMAL: bool>(
-        &self,
-        order: &OrderWithBasis<K, KB, MAXIMAL>,
-    ) -> OrderIdeal {
-        todo!()
-        // order
-        //     .ideals()
-        //     .outbound_sublattices_inclusion()
-        //     .try_preimage(&order.quotient_sublattice(a, b))
-        //     .unwrap()
+    fn inbound_order_inclusion<
+        'a,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    >(
+        &'a self,
+        order: OB,
+    ) -> order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion<
+        K,
+        Self,
+        &'a Self,
+        KOB,
+        MAXIMAL,
+        OB,
+    > {
+        order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion::new(self, order)
+    }
+
+    fn inbound_order_isomorphism<
+        'a,
+        KOB: BorrowedStructure<K>,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, true>>,
+    >(
+        &'a self,
+        order: OB,
+    ) -> order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion<
+        K,
+        Self,
+        &'a Self,
+        KOB,
+        true,
+        OB,
+    > {
+        order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion::new(self, order)
     }
 }
 
@@ -269,38 +286,162 @@ impl<
     }
 }
 
-// pub trait AlgebraicIntegerRingInAlgebraicNumberFieldSignature:
-//     RingHomomorphism<Self::RingOfIntegers, Self::AlgebraicNumberField>
-//     + InjectiveFunction<Self::RingOfIntegers, Self::AlgebraicNumberField>
-// {
-//     type AlgebraicNumberField: AlgebraicNumberFieldSignature;
-//     type RingOfIntegers: AlgebraicIntegerRingSignature<Self::AlgebraicNumberField>;
-
-//     fn roi(&self) -> &Self::RingOfIntegers {
-//         self.domain()
-//     }
-
-//     fn anf(&self) -> &Self::AlgebraicNumberField {
-//         self.range()
-//     }
-
-//     fn discriminant(&self) -> Integer;
-
-//     fn roi_to_anf(
-//         &self,
-//         x: &<Self::RingOfIntegers as SetSignature>::Set,
-//     ) -> <Self::AlgebraicNumberField as SetSignature>::Set;
-
-//     fn try_anf_to_roi(
-//         &self,
-//         y: &<Self::AlgebraicNumberField as SetSignature>::Set,
-//     ) -> Option<<Self::RingOfIntegers as SetSignature>::Set>;
-// }
-
-mod anf_inclusion {
-    use crate::{matrix::Matrix, structure::MetaCharZeroRing};
+mod order_to_ring_of_integers_inclusion {
+    use algebraeon_sets::structure::BijectiveFunction;
 
     use super::*;
+
+    #[derive(Debug, Clone)]
+    pub struct OrderToRingOfIntegersInclusion<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > {
+        _k: PhantomData<K>,
+        _r: PhantomData<R>,
+        roi: RB,
+        _kob: PhantomData<KOB>,
+        order: OB,
+        order_basis_in_roi: Vec<R::Set>,
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > OrderToRingOfIntegersInclusion<K, R, RB, KOB, MAXIMAL, OB>
+    {
+        pub fn new(roi: RB, order: OB) -> Self {
+            let order_basis_in_roi = order
+                .borrow()
+                .basis()
+                .into_iter()
+                .map(|bv| {
+                    roi.borrow()
+                        .outbound_roi_to_anf_inclusion()
+                        .try_preimage(bv)
+                        .unwrap()
+                })
+                .collect();
+            Self {
+                _k: PhantomData,
+                _r: PhantomData,
+                roi,
+                _kob: PhantomData,
+                order,
+                order_basis_in_roi,
+            }
+        }
+
+        pub fn n(&self) -> usize {
+            self.anf().n()
+        }
+
+        pub fn anf(&self) -> &K {
+            debug_assert_eq!(self.roi().anf(), self.order().anf());
+            self.order().anf()
+        }
+
+        pub fn roi(&self) -> &R {
+            self.roi.borrow()
+        }
+
+        pub fn order(&self) -> &OrderWithBasis<K, KOB, MAXIMAL> {
+            self.order.borrow()
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > Morphism<OrderWithBasis<K, KOB, MAXIMAL>, R>
+        for OrderToRingOfIntegersInclusion<K, R, RB, KOB, MAXIMAL, OB>
+    {
+        fn domain(&self) -> &OrderWithBasis<K, KOB, MAXIMAL> {
+            self.order()
+        }
+
+        fn range(&self) -> &R {
+            self.roi()
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > Function<OrderWithBasis<K, KOB, MAXIMAL>, R>
+        for OrderToRingOfIntegersInclusion<K, R, RB, KOB, MAXIMAL, OB>
+    {
+        fn image(&self, x: &Vec<Integer>) -> <R as SetSignature>::Set {
+            self.roi().sum(
+                (0..self.n())
+                    .map(|i| {
+                        self.roi()
+                            .mul(&self.roi().from_int(&x[i]), &self.order_basis_in_roi[i])
+                    })
+                    .collect(),
+            )
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > RingHomomorphism<OrderWithBasis<K, KOB, MAXIMAL>, R>
+        for OrderToRingOfIntegersInclusion<K, R, RB, KOB, MAXIMAL, OB>
+    {
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > InjectiveFunction<OrderWithBasis<K, KOB, MAXIMAL>, R>
+        for OrderToRingOfIntegersInclusion<K, R, RB, KOB, MAXIMAL, OB>
+    {
+        fn try_preimage(&self, y: &<R as SetSignature>::Set) -> Option<Vec<Integer>> {
+            self.order()
+                .outbound_order_to_anf_inclusion()
+                .try_preimage(&self.roi().outbound_roi_to_anf_inclusion().image(y))
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+        KOB: BorrowedStructure<K>,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, true>>,
+    > BijectiveFunction<OrderWithBasis<K, KOB, true>, R>
+        for OrderToRingOfIntegersInclusion<K, R, RB, KOB, true, OB>
+    {
+    }
+}
+
+mod anf_inclusion {
+    use super::*;
+    use crate::{matrix::Matrix, structure::MetaCharZeroRing};
 
     #[derive(Debug, Clone)]
     pub struct AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
@@ -399,9 +540,14 @@ mod anf_inclusion {
 
 mod sublattice_inclusion {
     use super::*;
-    use algebraeon_sets::structure::BorrowedStructure;
+    use crate::{
+        module::finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
+        structure::RingSignature,
+    };
+    use algebraeon_sets::structure::{BorrowedMorphism, BorrowedStructure};
     use std::marker::PhantomData;
 
+    #[derive(Debug, Clone)]
     pub struct SublatticeInclusion<
         K: AlgebraicNumberFieldSignature,
         Lat: FullRankSublatticeWithBasisSignature<K>,
@@ -460,6 +606,252 @@ mod sublattice_inclusion {
             #[cfg(debug_assertions)]
             s.check().unwrap();
             s
+        }
+
+        pub fn sublattices_inclusion<'a>(
+            &'a self,
+        ) -> SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, &'a Self> {
+            SublatticeSublatticeInclusion::new(self)
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        Lat: FullRankSublatticeWithBasisSignature<K>,
+        LatB: BorrowedStructure<Lat>,
+        Sublat: FullRankSublatticeWithBasisSignature<K>,
+        SublatB: BorrowedStructure<Sublat>,
+    > Morphism<Sublat, Lat> for SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>
+    {
+        fn domain(&self) -> &Sublat {
+            self.sublattice()
+        }
+
+        fn range(&self) -> &Lat {
+            self.lattice()
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        Lat: FullRankSublatticeWithBasisSignature<K> + RingSignature,
+        LatB: BorrowedStructure<Lat>,
+        Sublat: FullRankSublatticeWithBasisSignature<K> + RingSignature,
+        SublatB: BorrowedStructure<Sublat>,
+    > RingHomomorphism<Sublat, Lat> for SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>
+    {
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        Lat: FullRankSublatticeWithBasisSignature<K>,
+        LatB: BorrowedStructure<Lat>,
+        Sublat: FullRankSublatticeWithBasisSignature<K>,
+        SublatB: BorrowedStructure<Sublat>,
+    > Function<Sublat, Lat> for SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>
+    {
+        fn image(&self, x: &<Sublat as SetSignature>::Set) -> <Lat as SetSignature>::Set {
+            self.lattice()
+                .outbound_order_to_anf_inclusion()
+                .try_preimage(&self.sublattice().outbound_order_to_anf_inclusion().image(x))
+                .unwrap()
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        Lat: FullRankSublatticeWithBasisSignature<K>,
+        LatB: BorrowedStructure<Lat>,
+        Sublat: FullRankSublatticeWithBasisSignature<K>,
+        SublatB: BorrowedStructure<Sublat>,
+    > InjectiveFunction<Sublat, Lat> for SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>
+    {
+        fn try_preimage(
+            &self,
+            y: &<Lat as SetSignature>::Set,
+        ) -> Option<<Sublat as SetSignature>::Set> {
+            self.sublattice()
+                .outbound_order_to_anf_inclusion()
+                .try_preimage(&self.lattice().outbound_order_to_anf_inclusion().image(y))
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct SublatticeSublatticeInclusion<
+        K: AlgebraicNumberFieldSignature,
+        Lat: FullRankSublatticeWithBasisSignature<K>,
+        LatB: BorrowedStructure<Lat>,
+        Sublat: FullRankSublatticeWithBasisSignature<K>,
+        SublatB: BorrowedStructure<Sublat>,
+        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
+    > {
+        _k: PhantomData<K>,
+        _lat: PhantomData<Lat>,
+        _latb: PhantomData<LatB>,
+        _sublat: PhantomData<Sublat>,
+        _sublatb: PhantomData<SublatB>,
+        sublattice_to_lattice: SublatticeInclusionB,
+        lattice_sublattices: FinitelyFreeSubmoduleStructure<
+            IntegerCanonicalStructure,
+            &'static IntegerCanonicalStructure,
+        >,
+        sublattice_sublattices: FinitelyFreeSubmoduleStructure<
+            IntegerCanonicalStructure,
+            &'static IntegerCanonicalStructure,
+        >,
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        Lat: FullRankSublatticeWithBasisSignature<K>,
+        LatB: BorrowedStructure<Lat>,
+        Sublat: FullRankSublatticeWithBasisSignature<K>,
+        SublatB: BorrowedStructure<Sublat>,
+        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
+    > SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, SublatticeInclusionB>
+    {
+        pub fn new(sublattice_to_lattice: SublatticeInclusionB) -> Self {
+            Self {
+                _k: PhantomData,
+                _lat: PhantomData,
+                _latb: PhantomData,
+                _sublat: PhantomData,
+                _sublatb: PhantomData,
+                lattice_sublattices: sublattice_to_lattice
+                    .borrow()
+                    .lattice()
+                    .free_lattice_restructure()
+                    .into_submodules(),
+                sublattice_sublattices: sublattice_to_lattice
+                    .borrow()
+                    .sublattice()
+                    .free_lattice_restructure()
+                    .into_submodules(),
+                sublattice_to_lattice,
+            }
+        }
+
+        pub fn sublattice_to_lattice(&self) -> &SublatticeInclusion<K, Lat, LatB, Sublat, SublatB> {
+            self.sublattice_to_lattice.borrow()
+        }
+
+        pub fn lattice_sublattices(
+            &self,
+        ) -> &FinitelyFreeSubmoduleStructure<
+            IntegerCanonicalStructure,
+            &'static IntegerCanonicalStructure,
+        > {
+            &self.lattice_sublattices
+        }
+
+        pub fn sublattice_sublattices(
+            &self,
+        ) -> &FinitelyFreeSubmoduleStructure<
+            IntegerCanonicalStructure,
+            &'static IntegerCanonicalStructure,
+        > {
+            &self.sublattice_sublattices
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        Lat: FullRankSublatticeWithBasisSignature<K>,
+        LatB: BorrowedStructure<Lat>,
+        Sublat: FullRankSublatticeWithBasisSignature<K>,
+        SublatB: BorrowedStructure<Sublat>,
+        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
+    >
+        Morphism<
+            FinitelyFreeSubmoduleStructure<
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeSubmoduleStructure<
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+        > for SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, SublatticeInclusionB>
+    {
+        fn domain(
+            &self,
+        ) -> &FinitelyFreeSubmoduleStructure<
+            IntegerCanonicalStructure,
+            &'static IntegerCanonicalStructure,
+        > {
+            &self.sublattice_sublattices
+        }
+
+        fn range(
+            &self,
+        ) -> &FinitelyFreeSubmoduleStructure<
+            IntegerCanonicalStructure,
+            &'static IntegerCanonicalStructure,
+        > {
+            &self.lattice_sublattices
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        Lat: FullRankSublatticeWithBasisSignature<K>,
+        LatB: BorrowedStructure<Lat>,
+        Sublat: FullRankSublatticeWithBasisSignature<K>,
+        SublatB: BorrowedStructure<Sublat>,
+        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
+    >
+        Function<
+            FinitelyFreeSubmoduleStructure<
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeSubmoduleStructure<
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+        > for SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, SublatticeInclusionB>
+    {
+        fn image(&self, x: &FinitelyFreeSubmodule<Integer>) -> FinitelyFreeSubmodule<Integer> {
+            self.lattice_sublattices().span(
+                x.basis()
+                    .into_iter()
+                    .map(|bv| self.sublattice_to_lattice().image(&bv))
+                    .collect(),
+            )
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        Lat: FullRankSublatticeWithBasisSignature<K>,
+        LatB: BorrowedStructure<Lat>,
+        Sublat: FullRankSublatticeWithBasisSignature<K>,
+        SublatB: BorrowedStructure<Sublat>,
+        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
+    >
+        InjectiveFunction<
+            FinitelyFreeSubmoduleStructure<
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeSubmoduleStructure<
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+        > for SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, SublatticeInclusionB>
+    {
+        fn try_preimage(
+            &self,
+            y: &FinitelyFreeSubmodule<Integer>,
+        ) -> Option<FinitelyFreeSubmodule<Integer>> {
+            Some(
+                self.sublattice_sublattices().span(
+                    y.basis()
+                        .into_iter()
+                        .map(|bv| self.sublattice_to_lattice().try_preimage(&bv))
+                        .collect::<Option<Vec<_>>>()?,
+                ),
+            )
         }
     }
 }

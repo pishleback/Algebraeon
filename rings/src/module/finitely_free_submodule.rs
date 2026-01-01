@@ -1,7 +1,7 @@
 use super::{finitely_free_coset::*, finitely_free_module::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_sets::structure::*;
-use std::fmt::Debug;
+use std::{borrow::Borrow, fmt::Debug};
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmodule<Set: Clone + Debug> {
@@ -120,28 +120,33 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         self.matrix_col_span_and_basis(matrix).0
     }
 
-    pub fn span(&self, span: Vec<&Vec<Ring::Set>>) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn span(&self, span: Vec<impl Borrow<Vec<Ring::Set>>>) -> FinitelyFreeSubmodule<Ring::Set> {
         for v in &span {
-            debug_assert_eq!(v.len(), self.module().rank());
+            debug_assert_eq!(v.borrow().len(), self.module().rank());
         }
         self.matrix_row_span(Matrix::construct(
             span.len(),
             self.module().rank(),
-            |r, c| span[r][c].clone(),
+            |r, c| span[r].borrow()[c].clone(),
         ))
     }
 
-    pub fn kernel(&self, items: Vec<&Vec<Ring::Set>>) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn kernel(
+        &self,
+        items: Vec<impl Borrow<Vec<Ring::Set>>>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
         let n = self.module().rank();
         debug_assert_eq!(items.len(), n);
         if n == 0 {
             self.zero_submodule()
         } else {
-            let cols = items.first().unwrap().len();
+            let cols = items.first().unwrap().borrow().len();
             for v in &items[1..] {
-                assert_eq!(v.len(), cols);
+                assert_eq!(v.borrow().len(), cols);
             }
-            self.matrix_row_kernel(Matrix::construct(n, cols, |r, c| items[r][c].clone()))
+            self.matrix_row_kernel(Matrix::construct(n, cols, |r, c| {
+                items[r].borrow()[c].clone()
+            }))
         }
     }
 
