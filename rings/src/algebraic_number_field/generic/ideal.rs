@@ -1,3 +1,5 @@
+#[cfg(debug_assertions)]
+use crate::algebraic_number_field::FullRankSublatticeWithBasisSignature;
 use crate::{
     algebraic_number_field::{
         AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,

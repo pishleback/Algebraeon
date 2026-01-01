@@ -1,20 +1,12 @@
 use crate::{
-    algebraic_number_field::AlgebraicNumberFieldSignature,
+    algebraic_number_field::{AlgebraicNumberFieldSignature, FullRankSublatticeWithBasisSignature},
     matrix::Matrix,
-    module::finitely_free_module::{
-        FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
-    },
-    structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, FiniteDimensionalFieldExtension,
-        FiniteRankFreeRingExtension, MetaCharZeroRing,
-    },
+    structure::{AdditiveGroupSignature, AdditiveMonoidSignature, FiniteRankFreeRingExtension},
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
+use algebraeon_nzq::Integer;
 use algebraeon_sets::structure::{
-    BorrowedStructure, EqSignature, Function, InjectiveFunction, Morphism, SetSignature, Signature,
-    ToStringSignature,
+    BorrowedStructure, EqSignature, Function, SetSignature, Signature, ToStringSignature,
 };
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 pub struct FullRankSublatticeWithBasis<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> {
@@ -71,51 +63,6 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
         #[cfg(debug_assertions)]
         s.check().unwrap();
         s
-    }
-
-    pub fn anf(&self) -> &K {
-        self.anf.borrow()
-    }
-
-    pub fn basis(&self) -> &Vec<K::Set> {
-        &self.basis
-    }
-
-    pub fn basis_vector(&self, i: usize) -> &K::Set {
-        debug_assert!(i < self.n());
-        &self.basis[i]
-    }
-
-    pub fn n(&self) -> usize {
-        debug_assert_eq!(self.anf().n(), self.basis.len());
-        self.basis.len()
-    }
-
-    pub fn free_lattice_restructure(
-        &self,
-    ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, &'static IntegerCanonicalStructure>
-    {
-        Integer::structure_ref().free_module(self.n())
-    }
-
-    pub fn discriminant(&self) -> Rational {
-        self.anf()
-            .inbound_finite_dimensional_rational_extension()
-            .discriminant(&self.basis)
-    }
-
-    pub fn into_outbound_order_to_anf_inclusion(
-        self,
-    ) -> anf_inclusion::AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, Self>
-    {
-        anf_inclusion::AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion::new(self)
-    }
-
-    pub fn outbound_order_to_anf_inclusion<'a>(
-        &'a self,
-    ) -> anf_inclusion::AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, &'a Self>
-    {
-        anf_inclusion::AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion::new(self)
     }
 }
 
@@ -203,104 +150,22 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveGroupSi
     }
 }
 
-mod anf_inclusion {
-    use super::*;
-
-    #[derive(Debug, Clone)]
-    pub struct AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<FullRankSublatticeWithBasis<K, KB>>,
-    > {
-        _k: PhantomData<K>,
-        _kb: PhantomData<KB>,
-        abelian_subgroup: AB,
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
+    FullRankSublatticeWithBasisSignature<K> for FullRankSublatticeWithBasis<K, KB>
+{
+    fn anf(&self) -> &K {
+        self.anf.borrow()
     }
 
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<FullRankSublatticeWithBasis<K, KB>>,
-    > AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
-    {
-        pub fn new(abelian_subgroup: AB) -> Self {
-            Self {
-                _k: PhantomData,
-                _kb: PhantomData,
-                abelian_subgroup,
-            }
-        }
-    }
-
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<FullRankSublatticeWithBasis<K, KB>>,
-    > Morphism<FullRankSublatticeWithBasis<K, KB>, K>
-        for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
-    {
-        fn domain(&self) -> &FullRankSublatticeWithBasis<K, KB> {
-            self.abelian_subgroup.borrow()
-        }
-
-        fn range(&self) -> &K {
-            self.abelian_subgroup.borrow().anf()
-        }
-    }
-
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<FullRankSublatticeWithBasis<K, KB>>,
-    > Function<FullRankSublatticeWithBasis<K, KB>, K>
-        for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
-    {
-        fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
-            debug_assert!(self.abelian_subgroup.borrow().is_element(x).is_ok());
-            let k = self.abelian_subgroup.borrow().anf();
-            let n = k.n();
-            debug_assert_eq!(n, x.len());
-            k.sum(
-                (0..n)
-                    .map(|i| k.mul(&k.from_int(&x[i]), &self.abelian_subgroup.borrow().basis[i]))
-                    .collect(),
-            )
-        }
-    }
-
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        AB: BorrowedStructure<FullRankSublatticeWithBasis<K, KB>>,
-    > InjectiveFunction<FullRankSublatticeWithBasis<K, KB>, K>
-        for AlgebraicNumberFieldFullRankAbelianSubgroupWithBasisInclusion<K, KB, AB>
-    {
-        fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
-            let k = self.abelian_subgroup.borrow().anf();
-            let n = k.n();
-            debug_assert!(k.is_element(y).is_ok());
-            let mat = Matrix::join_cols(
-                n,
-                (0..n)
-                    .map(|i| {
-                        k.inbound_finite_dimensional_rational_extension()
-                            .to_col(&self.abelian_subgroup.borrow().basis[i])
-                    })
-                    .collect(),
-            );
-            let y = k.inbound_finite_dimensional_rational_extension().to_vec(y);
-            let x_rat = mat.col_solve(&y)?;
-            let mut x_int = Vec::with_capacity(n);
-            for c_rat in x_rat {
-                x_int.push(c_rat.try_to_int()?);
-            }
-            Some(x_int)
-        }
+    fn basis(&self) -> &Vec<<K>::Set> {
+        &self.basis
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_sets::structure::InjectiveFunction;
+
     use crate::parsing::parse_rational_polynomial;
 
     use super::*;

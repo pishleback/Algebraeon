@@ -1,21 +1,18 @@
 use crate::{
     algebraic_number_field::{
         AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, FullRankSublatticeWithBasis,
+        FullRankSublatticeWithBasisSignature,
     },
     matrix::{Matrix, SymmetricMatrix},
-    module::{
-        finitely_free_module::FinitelyFreeModuleStructure,
-        finitely_free_submodule::FinitelyFreeSubmodule,
-    },
+    module::finitely_free_submodule::FinitelyFreeSubmodule,
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
-        FiniteDimensionalFieldExtension, IntegralDomainSignature, MetaCharZeroRing,
-        RingDivisionError, RingSignature, SemiModuleSignature, SemiRingSignature,
-        SemiRingUnitsSignature,
+        IntegralDomainSignature, RingDivisionError, RingSignature, SemiModuleSignature,
+        SemiRingSignature, SemiRingUnitsSignature,
     },
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
+use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::{
     BorrowedStructure, EqSignature, Function, InjectiveFunction, Morphism, SetSignature, Signature,
     ToStringSignature,
@@ -99,7 +96,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> OrderWithBasis<
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> OrderWithBasis<K, KB, true> {
     fn check_is_maximal(&self) -> Result<(), String> {
         let self_disc = self.discriminant();
-        let anf_disc = self.anf().discriminant();
+        let anf_disc = FullRankSublatticeWithBasisSignature::<K>::anf(self).discriminant();
         if self_disc != anf_disc {
             debug_assert!(self_disc > anf_disc);
             return Err("Not maximal".to_string());
@@ -123,56 +120,130 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> OrderWithBasis<
     }
 }
 
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    OrderWithBasis<K, KB, MAXIMAL>
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> PartialEq
+    for OrderWithBasis<K, KB, MAXIMAL>
 {
-    pub fn anf(&self) -> &K {
+    fn eq(&self, other: &Self) -> bool {
+        self.full_rank_z_sublattice == other.full_rank_z_sublattice
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> Eq
+    for OrderWithBasis<K, KB, MAXIMAL>
+{
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> Signature
+    for OrderWithBasis<K, KB, MAXIMAL>
+{
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> SetSignature
+    for OrderWithBasis<K, KB, MAXIMAL>
+{
+    type Set = Vec<Integer>;
+
+    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+        self.full_rank_z_sublattice.is_element(x)
+    }
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature + ToStringSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+> ToStringSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn to_string(&self, elem: &Self::Set) -> String {
+        self.full_rank_z_sublattice.to_string(elem)
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> EqSignature
+    for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        self.full_rank_z_sublattice.equal(a, b)
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    AdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn zero(&self) -> Self::Set {
+        self.full_rank_z_sublattice.zero()
+    }
+
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.full_rank_z_sublattice.add(a, b)
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    AdditiveGroupSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn neg(&self, a: &Self::Set) -> Self::Set {
+        self.full_rank_z_sublattice.neg(a)
+    }
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.full_rank_z_sublattice.sub(a, b)
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    FullRankSublatticeWithBasisSignature<K> for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn anf(&self) -> &K {
         self.full_rank_z_sublattice.anf()
     }
 
-    pub fn basis(&self) -> &Vec<K::Set> {
+    fn basis(&self) -> &Vec<<K>::Set> {
         self.full_rank_z_sublattice.basis()
     }
+}
 
-    pub fn basis_vector(&self, i: usize) -> &K::Set {
-        self.full_rank_z_sublattice.basis_vector(i)
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    SemiRingSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn one(&self) -> Self::Set {
+        self.one.clone()
     }
 
-    pub fn n(&self) -> usize {
-        self.full_rank_z_sublattice.n()
+    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        let n = self.n();
+        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.is_element(b).is_ok());
+        let mut t = self.zero();
+        for i in 0..n {
+            for j in 0..n {
+                self.add_mut(
+                    &mut t,
+                    &self
+                        .free_lattice_restructure()
+                        .scalar_mul(self.products.get(i, j).unwrap(), &(&a[i] * &b[j])),
+                );
+            }
+        }
+        debug_assert!(
+            self.equal(
+                &self
+                    .outbound_order_to_anf_inclusion()
+                    .try_preimage(&self.anf().mul(
+                        &self.outbound_order_to_anf_inclusion().image(a),
+                        &self.outbound_order_to_anf_inclusion().image(b)
+                    ))
+                    .unwrap(),
+                &t
+            )
+        );
+        t
     }
+}
 
-    pub fn full_rank_sublattice_restructure(&self) -> &FullRankSublatticeWithBasis<K, KB> {
-        &self.full_rank_z_sublattice
-    }
-
-    pub fn free_lattice_restructure(
-        &self,
-    ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, &'static IntegerCanonicalStructure>
-    {
-        self.full_rank_z_sublattice.free_lattice_restructure()
-    }
-
-    pub fn discriminant(&self) -> Integer {
-        self.anf()
-            .inbound_finite_dimensional_rational_extension()
-            .discriminant(self.full_rank_z_sublattice.basis())
-            .try_to_int()
-            .unwrap()
-    }
-
-    pub fn into_outbound_order_to_anf_inclusion(
-        self,
-    ) -> anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, Self> {
-        anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion::new(self)
-    }
-
-    pub fn outbound_order_to_anf_inclusion<'a>(
-        &'a self,
-    ) -> anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, &'a Self> {
-        anf_inclusion::AlgebraicNumberFieldOrderWithBasisInclusion::new(self)
-    }
-
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    OrderWithBasis<K, KB, MAXIMAL>
+{
     pub fn quotient_sublattice(
         &self,
         a: &FinitelyFreeSubmodule<Integer>,
@@ -217,115 +288,6 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
                 })
                 .collect(),
         )
-    }
-}
-
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> PartialEq
-    for OrderWithBasis<K, KB, MAXIMAL>
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.full_rank_z_sublattice == other.full_rank_z_sublattice
-    }
-}
-
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> Eq
-    for OrderWithBasis<K, KB, MAXIMAL>
-{
-}
-
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> Signature
-    for OrderWithBasis<K, KB, MAXIMAL>
-{
-}
-
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> SetSignature
-    for OrderWithBasis<K, KB, MAXIMAL>
-{
-    type Set = Vec<Integer>;
-
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
-        self.full_rank_z_sublattice.is_element(x)
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature + ToStringSignature,
-    KB: BorrowedStructure<K>,
-    const MAXIMAL: bool,
-> ToStringSignature for OrderWithBasis<K, KB, MAXIMAL>
-{
-    fn to_string(&self, elem: &Self::Set) -> String {
-        self.full_rank_sublattice_restructure().to_string(elem)
-    }
-}
-
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> EqSignature
-    for OrderWithBasis<K, KB, MAXIMAL>
-{
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.full_rank_sublattice_restructure().equal(a, b)
-    }
-}
-
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    AdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
-{
-    fn zero(&self) -> Self::Set {
-        self.full_rank_sublattice_restructure().zero()
-    }
-
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.full_rank_sublattice_restructure().add(a, b)
-    }
-}
-
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    AdditiveGroupSignature for OrderWithBasis<K, KB, MAXIMAL>
-{
-    fn neg(&self, a: &Self::Set) -> Self::Set {
-        self.full_rank_sublattice_restructure().neg(a)
-    }
-
-    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.full_rank_sublattice_restructure().sub(a, b)
-    }
-}
-
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    SemiRingSignature for OrderWithBasis<K, KB, MAXIMAL>
-{
-    fn one(&self) -> Self::Set {
-        self.one.clone()
-    }
-
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        let n = self.n();
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
-        let mut t = self.zero();
-        for i in 0..n {
-            for j in 0..n {
-                self.add_mut(
-                    &mut t,
-                    &self
-                        .free_lattice_restructure()
-                        .scalar_mul(self.products.get(i, j).unwrap(), &(&a[i] * &b[j])),
-                );
-            }
-        }
-        debug_assert!(
-            self.equal(
-                &self
-                    .outbound_order_to_anf_inclusion()
-                    .try_preimage(&self.anf().mul(
-                        &self.outbound_order_to_anf_inclusion().image(a),
-                        &self.outbound_order_to_anf_inclusion().image(b)
-                    ))
-                    .unwrap(),
-                &t
-            )
-        );
-        t
     }
 }
 
@@ -397,7 +359,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AlgebraicIntege
     for OrderWithBasis<K, KB, true>
 {
     fn anf(&self) -> &K {
-        self.anf()
+        self.full_rank_z_sublattice.anf()
     }
 }
 
@@ -437,6 +399,10 @@ mod anf_inclusion {
                 order,
             }
         }
+
+        pub fn order(&self) -> &OrderWithBasis<K, KB, MAXIMAL> {
+            self.order.borrow()
+        }
     }
 
     impl<
@@ -448,11 +414,11 @@ mod anf_inclusion {
         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
     {
         fn domain(&self) -> &OrderWithBasis<K, KB, MAXIMAL> {
-            self.order.borrow()
+            self.order()
         }
 
         fn range(&self) -> &K {
-            self.order.borrow().anf()
+            self.order().anf()
         }
     }
 
@@ -465,9 +431,8 @@ mod anf_inclusion {
         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
     {
         fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
-            self.order
-                .borrow()
-                .full_rank_sublattice_restructure()
+            self.order()
+                .full_rank_z_sublattice
                 .outbound_order_to_anf_inclusion()
                 .image(x)
         }
@@ -482,9 +447,8 @@ mod anf_inclusion {
         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
     {
         fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
-            self.order
-                .borrow()
-                .full_rank_sublattice_restructure()
+            self.order()
+                .full_rank_z_sublattice
                 .outbound_order_to_anf_inclusion()
                 .try_preimage(y)
         }

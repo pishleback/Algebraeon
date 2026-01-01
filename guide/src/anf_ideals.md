@@ -42,6 +42,7 @@
 
 ```rust
 use algebraeon::rings::algebraic_number_field::AlgebraicNumberFieldSignature;
+use algebraeon::rings::algebraic_number_field::FullRankSublatticeWithBasisSignature;
 use algebraeon::rings::polynomial::PolynomialFromStr;
 use algebraeon::sets::structure::InjectiveFunction;
 use algebraeon::{
