@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-groups"
-version = "0.0.13"
+version = "0.0.14"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "Algorithms in group theory."
@@ -13,7 +13,7 @@ readme = "../README.md"
 name = "algebraeon_groups"
 
 [dependencies]
-algebraeon-nzq = { version = "=0.0.13", path = "../nzq", default-features = false }
-algebraeon-sets = { version = "=0.0.13", path = "../sets", default-features = false }
+algebraeon-nzq = { version = "=0.0.14", path = "../nzq", default-features = false }
+algebraeon-sets = { version = "=0.0.14", path = "../sets", default-features = false }
 itertools = "0.14.0"
 rayon = "1.7.0"

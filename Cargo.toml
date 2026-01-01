@@ -21,7 +21,7 @@ debug = true
 # To publish
 # Update CHANGELOG
 # Bump versions
-#   cargo ws version --no-individual-tags --exact --force *
+#   cargo ws version --no-individual-tags --exact --force '{sets,nzq,groups,rings,geometry,graphs,drawing,combinatorics,examples,algebraeon,macros}'
 # Check all ok:
 #   cargo ws publish --no-individual-tags --from-git --dry-run
 # Publish

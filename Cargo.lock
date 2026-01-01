@@ -42,7 +42,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "algebraeon-drawing",
  "algebraeon-geometry",
@@ -68,7 +68,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-drawing"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "algebraeon-geometry",
  "algebraeon-nzq",
@@ -92,7 +92,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-geometry"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "algebraeon-nzq",
  "algebraeon-rings",
@@ -112,7 +112,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-groups"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "algebraeon-nzq",
  "algebraeon-sets",
@@ -131,7 +131,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-nzq"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "algebraeon-sets",
  "malachite-base 0.8.0",
@@ -141,7 +141,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-rings"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-nzq",
@@ -158,7 +158,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-sets"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "algebraeon-macros",
  "indexmap",

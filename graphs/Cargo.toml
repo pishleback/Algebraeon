@@ -13,4 +13,4 @@ readme = "../README.md"
 name = "algebraeon_graphs"
 
 [dependencies]
-algebraeon-sets = { version = "=0.0.13", path = "../sets", default-features = false }
+algebraeon-sets = { version = "=0.0.14", path = "../sets", default-features = false }

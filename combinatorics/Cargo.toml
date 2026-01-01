@@ -11,6 +11,6 @@ derivative = "2.2.0"
 itertools = "0.11.0"
 malachite-base = "0.4.16"
 static_assertions = "1.1.0"
-algebraeon-sets = { version = "=0.0.13", path = "../sets", default-features = false }
-algebraeon-groups = { version = "=0.0.13", path = "../groups", default-features = false }
-algebraeon-rings = { version = "=0.0.13", path = "../rings", default-features = false }
+algebraeon-sets = { version = "=0.0.14", path = "../sets", default-features = false }
+algebraeon-groups = { version = "=0.0.14", path = "../groups", default-features = false }
+algebraeon-rings = { version = "=0.0.14", path = "../rings", default-features = false }

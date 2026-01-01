@@ -1,16 +1,16 @@
 [package]
 name = "algebraeon-drawing"
-version = "0.0.13"
+version = "0.0.14"
 edition = "2024"
 
 [lib]
 name = "algebraeon_drawing"
 
 [dependencies]
-algebraeon-sets = { version = "=0.0.13", path = "../sets", default-features = false }
-algebraeon-rings = { version = "=0.0.13", path = "../rings", default-features = false }
-algebraeon-nzq = { version = "=0.0.13", path = "../nzq", default-features = false }
-algebraeon-geometry = { version = "=0.0.13", path = "../geometry", default-features = false }
+algebraeon-sets = { version = "=0.0.14", path = "../sets", default-features = false }
+algebraeon-rings = { version = "=0.0.14", path = "../rings", default-features = false }
+algebraeon-nzq = { version = "=0.0.14", path = "../nzq", default-features = false }
+algebraeon-geometry = { version = "=0.0.14", path = "../geometry", default-features = false }
 bytemuck = "1.22.0"
 log = "0.4.27"
 pollster = "0.4.0"
