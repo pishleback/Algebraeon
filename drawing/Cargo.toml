@@ -2,6 +2,8 @@
 name = "algebraeon-drawing"
 version = "0.0.14"
 edition = "2024"
+license = "GPL-3.0-only"
+description = "For drawing algebraeon things."
 
 [lib]
 name = "algebraeon_drawing"
