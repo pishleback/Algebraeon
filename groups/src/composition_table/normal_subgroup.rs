@@ -58,7 +58,7 @@ mod normal_subgroup_tests {
     #[test]
     fn normal_subgroup_state() {
         //are the states of subgroups, normal subgroups, and generating sets correct when produced by grp.subgroups() and grp.normal_subgroups()?
-        for mut grp in vec![
+        for mut grp in [
             examples::symmetric_group_structure(4),
             examples::dihedral_group_structure(12),
             examples::cyclic_group_structure(8),

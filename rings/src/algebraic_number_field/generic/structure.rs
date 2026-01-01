@@ -321,7 +321,7 @@ mod order_to_ring_of_integers_inclusion {
             let order_basis_in_roi = order
                 .borrow()
                 .basis()
-                .into_iter()
+                .iter()
                 .map(|bv| {
                     roi.borrow()
                         .outbound_roi_to_anf_inclusion()
