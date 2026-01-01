@@ -12,9 +12,11 @@ mod polynomial;
 mod primitive;
 mod row_operations;
 mod smith_normal_form;
+mod symmetric_matrix;
 
 pub use hermite_reduction::*;
 pub use matrix::*;
+pub use symmetric_matrix::*;
 // pub use polynomial::*;
 use row_operations::*;
 // pub use smith_normal_form::*;

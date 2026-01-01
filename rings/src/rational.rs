@@ -1,9 +1,10 @@
-use crate::algebraic_number_field::structure::AlgebraicNumberFieldSignature;
+use crate::algebraic_number_field::{AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature};
 use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use static_assertions::const_assert;
 use std::borrow::Cow;
 
 impl AdditiveMonoidSignature for RationalCanonicalStructure {
@@ -92,7 +93,7 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
         'h,
         RationalCanonicalStructure,
         RationalCanonicalStructure,
-        PrincipalRationalSubfieldInclusion<RationalCanonicalStructure, B>,
+        PrincipalRationalMap<RationalCanonicalStructure, B>,
     >
 {
     type Basis = SingletonSetStructure;
@@ -132,7 +133,7 @@ impl RealSubsetSignature for RationalCanonicalStructure {
 
 impl<B: BorrowedStructure<RationalCanonicalStructure>>
     FieldOfFractionsInclusion<IntegerCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalSubringInclusion<RationalCanonicalStructure, B>
+    for PrincipalIntegerMap<RationalCanonicalStructure, B>
 {
     fn numerator_and_denominator(&self, a: &Rational) -> (Integer, Integer) {
         (a.numerator(), a.denominator().into())
@@ -159,19 +160,27 @@ impl RealFromFloatSignature for RationalCanonicalStructure {
 
 impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     type Basis = SingletonSetStructure;
-    type RingOfIntegers = IntegerCanonicalStructure;
-    type RationalInclusion<B: BorrowedStructure<Self>> =
-        PrincipalRationalSubfieldInclusion<Self, B>;
+    type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn roi(&self) -> Self::RingOfIntegers {
-        Integer::structure()
+    fn inbound_finite_dimensional_rational_extension<'a>(
+        &'a self,
+    ) -> Self::RationalInclusion<&'a Self> {
+        self.inbound_principal_rational_map()
+    }
+    fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
+        self.into_inbound_principal_rational_map()
     }
 
-    fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
-        self.rational_extension()
+    fn generator(&self) -> Rational {
+        Rational::ONE
     }
-    fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
-        self.into_rational_extension()
+
+    fn discriminant(&self) -> Integer {
+        Integer::ONE
+    }
+
+    fn integral_basis(&self) -> Vec<Self::Set> {
+        vec![Rational::ONE]
     }
 
     fn is_algebraic_integer(&self, a: &Self::Set) -> bool {
@@ -179,12 +188,16 @@ impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     }
 }
 
+const_assert!(
+    impls::impls!(IntegerCanonicalStructure : AlgebraicIntegerRingSignature<RationalCanonicalStructure>)
+);
+
 impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
     for PolynomialStructure<RationalCanonicalStructure, B>
 {
     fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Polynomial<Rational>>> {
         factorize_by_factorize_primitive_part(
-            &PrincipalSubringInclusion::new(self.coeff_ring().clone()),
+            &PrincipalIntegerMap::new(self.coeff_ring().clone()),
             self,
             p,
         )

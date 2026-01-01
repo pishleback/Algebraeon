@@ -258,7 +258,10 @@ pub fn anf_multi_primitive_element_theorem(
 #[cfg(test)]
 mod tests {
     use crate::{
-        algebraic_number_field::structure::AlgebraicNumberFieldSignature, structure::IntoErgonomic,
+        algebraic_number_field::{
+            AlgebraicNumberFieldSignature, FullRankSublatticeWithBasisSignature,
+        },
+        structure::IntoErgonomic,
     };
 
     use super::*;
@@ -270,7 +273,9 @@ mod tests {
         for root in f.all_complex_roots() {
             println!(
                 "{:?}",
-                root.generated_algebraic_number_field().into_roi_inclusion()
+                root.generated_algebraic_number_field()
+                    .ring_of_integers()
+                    .into_outbound_order_to_anf_inclusion()
             );
         }
     }

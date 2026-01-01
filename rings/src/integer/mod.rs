@@ -1,5 +1,5 @@
 use super::natural::factorization::NaturalCanonicalFactorizationStructure;
-use crate::algebraic_number_field::structure::AlgebraicIntegerRingSignature;
+use crate::algebraic_number_field::AlgebraicIntegerRingSignature;
 use crate::natural::NaturalFns;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
@@ -189,11 +189,21 @@ impl CharZeroRingSignature for IntegerCanonicalStructure {
     }
 }
 
-impl AlgebraicIntegerRingSignature for IntegerCanonicalStructure {
-    type AlgebraicNumberField = RationalCanonicalStructure;
+impl AlgebraicIntegerRingSignature<RationalCanonicalStructure> for IntegerCanonicalStructure {
+    fn anf(&self) -> &RationalCanonicalStructure {
+        Rational::structure_ref()
+    }
 
-    fn anf(&self) -> Self::AlgebraicNumberField {
-        Rational::structure()
+    fn to_anf(&self, x: &Integer) -> Rational {
+        Rational::from(x)
+    }
+
+    fn try_from_anf(&self, y: &Rational) -> Option<Integer> {
+        Integer::try_from_rat(y)
+    }
+
+    fn integral_basis(&self) -> Vec<Integer> {
+        vec![Integer::ONE]
     }
 }
 

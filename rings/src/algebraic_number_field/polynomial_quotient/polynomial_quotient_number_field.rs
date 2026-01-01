@@ -1,17 +1,24 @@
-use super::integer_lattice_ring_of_integers::RingOfIntegersWithIntegralBasisStructure;
 use crate::{
-    algebraic_number_field::{
-        anf_multi_primitive_element_theorem, structure::AlgebraicNumberFieldSignature,
+    algebraic_number_field::{AlgebraicNumberFieldSignature, anf_multi_primitive_element_theorem},
+    matrix::Matrix,
+    polynomial::{
+        Polynomial, PolynomialQuotientRingStructure, PolynomialStructure, RingToPolynomialSignature,
     },
-    matrix::*,
-    polynomial::*,
-    structure::*,
+    structure::{
+        AdditiveGroupSignature, AdditiveMonoidEqSignature, CharZeroFieldSignature,
+        FactorableSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
+        IntegralDomainExtensionAllPolynomialRoots, IntegralDomainSignature,
+        MetaFactorableSignature, MetaSemiRing, PrincipalRationalMap, RingHomomorphism,
+        RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
+    },
 };
 use algebraeon_nzq::{
     Integer, Natural, Rational, RationalCanonicalStructure,
     traits::{Abs, Fraction},
 };
-use algebraeon_sets::structure::*;
+use algebraeon_sets::structure::{
+    BorrowedStructure, EnumeratedFiniteSetStructure, Function, MetaType, Morphism, SetSignature,
+};
 use itertools::Itertools;
 use std::borrow::{Borrow, Cow};
 
@@ -69,7 +76,7 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         'h,
         RationalCanonicalStructure,
         AlgebraicNumberFieldPolynomialQuotientStructure,
-        PrincipalRationalSubfieldInclusion<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
+        PrincipalRationalMap<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
     >
 {
     type Basis = EnumeratedFiniteSetStructure;
@@ -100,19 +107,28 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
     type Basis = EnumeratedFiniteSetStructure;
-    type RingOfIntegers = RingOfIntegersWithIntegralBasisStructure;
-    type RationalInclusion<B: BorrowedStructure<Self>> =
-        PrincipalRationalSubfieldInclusion<Self, B>;
+    type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn roi(&self) -> Self::RingOfIntegers {
-        self.compute_ring_of_integers()
+    fn inbound_finite_dimensional_rational_extension<'a>(
+        &'a self,
+    ) -> Self::RationalInclusion<&'a Self> {
+        self.inbound_principal_rational_map()
     }
 
-    fn finite_dimensional_rational_extension<'a>(&'a self) -> Self::RationalInclusion<&'a Self> {
-        self.rational_extension()
+    fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
+        self.into_inbound_principal_rational_map()
     }
-    fn into_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
-        self.into_rational_extension()
+
+    fn generator(&self) -> Self::Set {
+        self.generator()
+    }
+
+    fn discriminant(&self) -> Integer {
+        self.compute_integral_basis_and_discriminant().1
+    }
+
+    fn integral_basis(&self) -> Vec<Self::Set> {
+        self.compute_integral_basis_and_discriminant().0
     }
 
     fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
@@ -143,7 +159,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
                 debug_assert!(algint.num_coeffs() <= n); //lets keep our basis alg ints reduced
             }
 
-            let disc = self.rational_extension().discriminant(&guess);
+            let disc = self.inbound_principal_rational_map().discriminant(&guess);
             debug_assert_eq!(disc.clone().denominator(), Natural::ONE); //discriminant of algebraic integers is an integer
             let disc = disc.numerator();
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
@@ -226,11 +242,6 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
             return (guess, disc);
         }
     }
-
-    pub fn compute_ring_of_integers(&self) -> RingOfIntegersWithIntegralBasisStructure {
-        let (integral_basis, discriminant) = self.compute_integral_basis_and_discriminant();
-        RingOfIntegersWithIntegralBasisStructure::new(self.clone(), integral_basis, discriminant)
-    }
 }
 
 impl
@@ -238,7 +249,7 @@ impl
         RationalCanonicalStructure,
         AlgebraicNumberFieldPolynomialQuotientStructure,
     >
-    for PrincipalRationalSubfieldInclusion<
+    for PrincipalRationalMap<
         AlgebraicNumberFieldPolynomialQuotientStructure,
         AlgebraicNumberFieldPolynomialQuotientStructure,
     >
@@ -279,8 +290,10 @@ impl
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_sets::structure::EqSignature;
+
     use super::*;
-    use crate::structure::IntoErgonomic;
+    use crate::{polynomial::PolynomialFromStr, structure::IntoErgonomic};
 
     #[test]
     fn test_anf_integral_multiple() {

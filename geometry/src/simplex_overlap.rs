@@ -120,7 +120,7 @@ where
                     FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, space_dim),
                 )
                 .intersect(
-                    &MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
+                    MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
                         a_vecs.len() + b_vecs.len(),
                         space_dim,
                         |r, c| {
@@ -131,7 +131,7 @@ where
                             }
                         },
                     )),
-                    &linear_span_bar,
+                    linear_span_bar.clone(),
                 );
             debug_assert!(normal_space.rank() == 1);
             let normal = space.vector(normal_space.basis().first().unwrap().iter().cloned());
@@ -173,7 +173,7 @@ where
                     FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, space_dim),
                 )
                 .intersect(
-                    &MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
+                    MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
                         i + j,
                         space_dim,
                         |r, c| {
@@ -184,7 +184,7 @@ where
                             }
                         },
                     )),
-                    &linear_span_foo_submodule,
+                    linear_span_foo_submodule.clone(),
                 );
 
                 debug_assert!(normal_space.rank() >= 1);

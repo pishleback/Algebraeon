@@ -172,7 +172,7 @@ mod subgroup_tests {
     #[test]
     fn subgroup_state() {
         //are the states of subgroups, normal subgroups, and generating sets correct when produced by grp.subgroups() and grp.normal_subgroups()?
-        for grp in vec![
+        for grp in [
             examples::symmetric_group_structure(4),
             examples::dihedral_group_structure(12),
             examples::cyclic_group_structure(8),

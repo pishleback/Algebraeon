@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn test_root_sum_poly() {
-        for (f, g, exp) in vec![
+        for (f, g, exp) in [
             (
                 Polynomial::from_coeffs(vec![Integer::from(0)]),
                 Polynomial::from_coeffs(vec![Integer::from(0)]),
@@ -174,7 +174,7 @@ mod tests {
 
     #[test]
     fn test_root_prod_poly() {
-        for (f, g, exp) in vec![
+        for (f, g, exp) in [
             (
                 Polynomial::from_coeffs(vec![Integer::from(0)]),
                 Polynomial::from_coeffs(vec![Integer::from(0)]),

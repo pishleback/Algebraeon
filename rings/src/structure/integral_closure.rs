@@ -277,7 +277,7 @@ where
             // Skip primes in S
             if S.iter().any(|s_ideal| {
                 self.r_ideals()
-                    .ideal_equal(&(*s_ideal).clone().into_ideal(), prime.ideal())
+                    .equal(&(*s_ideal).clone().into_ideal(), prime.ideal())
             }) {
                 continue;
             }

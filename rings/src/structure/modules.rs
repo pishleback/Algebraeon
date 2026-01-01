@@ -59,6 +59,7 @@ where
         self.basis_set().borrow().size()
     }
 
+    /// The elementary basis vectors
     fn basis_vecs(&self) -> Vec<Self::Set> {
         let zero = self.ring().zero();
         let one = self.ring().one();

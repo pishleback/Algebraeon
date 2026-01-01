@@ -121,16 +121,16 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             .contains_element(&x.submodule, &self.module().sub(&x.offset, &y.offset))
     }
 
-    pub fn sum(
+    pub fn add(
         &self,
-        x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
-        y: &FinitelyFreeSubmoduleCoset<Ring::Set>,
+        x: FinitelyFreeSubmoduleCoset<Ring::Set>,
+        y: FinitelyFreeSubmoduleCoset<Ring::Set>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        debug_assert!(self.is_element(&x).is_ok());
+        debug_assert!(self.is_element(&y).is_ok());
         self.from_offset_and_submodule(
             &self.module().add(&x.offset, &y.offset),
-            self.module().submodules().sum(&x.submodule, &y.submodule),
+            self.module().submodules().add(x.submodule, y.submodule),
         )
     }
 
@@ -183,7 +183,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         let linearlized_intersection_row_basis = larger_module
             .submodules()
             .intersect(
-                &larger_module
+                larger_module
                     .submodules()
                     .matrix_row_span(Matrix::join_cols(
                         x_affine_row_basis.rows(),
@@ -194,7 +194,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                             &x_affine_row_basis,
                         ],
                     )),
-                &larger_module
+                larger_module
                     .submodules()
                     .matrix_row_span(Matrix::join_cols(
                         y_affine_row_basis.rows(),
@@ -241,7 +241,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                     &offset,
                     self.module()
                         .submodules()
-                        .intersect(x.submodule(), y.submodule()),
+                        .intersect(x.submodule().clone(), y.submodule().clone()),
                 ),
             )
         } else {
@@ -301,7 +301,7 @@ mod tests {
 
         println!();
 
-        let coset1_add_coset2 = module.cosets().sum(&coset1, &coset2);
+        let coset1_add_coset2 = module.cosets().add(coset1.clone(), coset2.clone());
         println!("coset1 + coset2");
         println!("{:?}", coset1_add_coset2.offset());
         coset1_add_coset2

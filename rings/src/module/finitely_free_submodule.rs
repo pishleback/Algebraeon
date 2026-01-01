@@ -1,7 +1,7 @@
 use super::{finitely_free_coset::*, finitely_free_module::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_sets::structure::*;
-use std::fmt::Debug;
+use std::{borrow::Borrow, fmt::Debug};
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmodule<Set: Clone + Debug> {
@@ -120,29 +120,69 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         self.matrix_col_span_and_basis(matrix).0
     }
 
-    pub fn span(&self, span: Vec<&Vec<Ring::Set>>) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn span(&self, span: Vec<impl Borrow<Vec<Ring::Set>>>) -> FinitelyFreeSubmodule<Ring::Set> {
         for v in &span {
-            debug_assert_eq!(v.len(), self.module().rank());
+            debug_assert_eq!(v.borrow().len(), self.module().rank());
         }
         self.matrix_row_span(Matrix::construct(
             span.len(),
             self.module().rank(),
-            |r, c| span[r][c].clone(),
+            |r, c| span[r].borrow()[c].clone(),
         ))
     }
 
-    pub fn kernel(&self, items: Vec<&Vec<Ring::Set>>) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn kernel(
+        &self,
+        items: Vec<impl Borrow<Vec<Ring::Set>>>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
         let n = self.module().rank();
         debug_assert_eq!(items.len(), n);
         if n == 0 {
             self.zero_submodule()
         } else {
-            let cols = items.first().unwrap().len();
+            let cols = items.first().unwrap().borrow().len();
             for v in &items[1..] {
-                assert_eq!(v.len(), cols);
+                assert_eq!(v.borrow().len(), cols);
             }
-            self.matrix_row_kernel(Matrix::construct(n, cols, |r, c| items[r][c].clone()))
+            self.matrix_row_kernel(Matrix::construct(n, cols, |r, c| {
+                items[r].borrow()[c].clone()
+            }))
         }
+    }
+
+    pub fn matrix_row_preimage(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        space: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        debug_assert_eq!(matrix.rows(), self.module().rank());
+        debug_assert_eq!(matrix.cols(), space.module_rank());
+        /*
+        Let M be the matrix and S a row basis matrix for the space.
+        Need to solve xM=yS for all possible x
+        So concat the rows of M over the rows of S to get a matrix A
+        Solve for the kernel of A and take only the first bits corresponding to x
+        */
+        let a = Matrix::join_rows(matrix.cols(), vec![&matrix, space.row_basis_matrix()]);
+        // Find a row U such that uA is in HNF
+        // The kernel of UA is standard basis vectors pivs.len()..a.rows()
+        // So the kernel of A is the rows pivs.len()..a.rows() of U
+        // And we are after the span of the first matrix.rows() of them
+        let (h, u, _u_det, pivs) =
+            MatrixStructure::<Ring, _>::new(self.ring()).row_hermite_algorithm(a);
+
+        self.matrix_row_span(u.submatrix(
+            (pivs.len()..h.rows()).collect(),
+            (0..matrix.rows()).collect(),
+        ))
+    }
+
+    pub fn matrix_col_preimage(
+        &self,
+        matrix: &Matrix<Ring::Set>,
+        space: &FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        self.matrix_row_preimage(&matrix.transpose_ref(), space)
     }
 
     pub fn matrix_row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
@@ -242,34 +282,39 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         true
     }
 
+    pub fn add(
+        &self,
+        x: FinitelyFreeSubmodule<Ring::Set>,
+        y: FinitelyFreeSubmodule<Ring::Set>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        self.sum(vec![x, y])
+    }
+
     pub fn sum(
         &self,
-        x: &FinitelyFreeSubmodule<Ring::Set>,
-        y: &FinitelyFreeSubmodule<Ring::Set>,
+        xs: Vec<FinitelyFreeSubmodule<Ring::Set>>,
     ) -> FinitelyFreeSubmodule<Ring::Set> {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        for x in &xs {
+            debug_assert!(self.is_element(x).is_ok());
+        }
         let cols = self.module().rank();
         self.matrix_row_span(Matrix::join_rows(
             cols,
-            vec![
-                x.clone().into_row_basis_matrix(),
-                y.clone().into_row_basis_matrix(),
-            ],
+            xs.into_iter().map(|x| x.into_row_basis_matrix()).collect(),
         ))
     }
 
     pub fn intersect(
         &self,
-        x: &FinitelyFreeSubmodule<Ring::Set>,
-        y: &FinitelyFreeSubmodule<Ring::Set>,
+        x: FinitelyFreeSubmodule<Ring::Set>,
+        y: FinitelyFreeSubmodule<Ring::Set>,
     ) -> FinitelyFreeSubmodule<Ring::Set> {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        debug_assert!(self.is_element(&x).is_ok());
+        debug_assert!(self.is_element(&y).is_ok());
 
         let cols = self.module().rank();
-        let x_rows = x.clone().into_row_basis_matrix();
-        let y_rows = y.clone().into_row_basis_matrix();
+        let x_rows = x.into_row_basis_matrix();
+        let y_rows = y.into_row_basis_matrix();
         let matrix = Matrix::join_rows(cols, vec![&x_rows, &y_rows]);
         let matrix_ker = self
             .ring()
@@ -286,6 +331,25 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                 .mul(&matrix_ker_first_part, &x_rows)
                 .unwrap(),
         )
+    }
+
+    pub fn intersect_list(
+        &self,
+        mut xs: Vec<FinitelyFreeSubmodule<Ring::Set>>,
+    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        if let Some(a) = xs.pop() {
+            if let Some(b) = xs.pop() {
+                let mut i = self.intersect(a, b);
+                for c in xs {
+                    i = self.intersect(i, c);
+                }
+                i
+            } else {
+                a
+            }
+        } else {
+            self.full_submodule()
+        }
     }
 
     //given x contained in y, find rank(y) - rank(x) basis vectors needed to extend x to y
@@ -425,7 +489,7 @@ mod tests {
             .submodules()
             .matrix_row_span(Matrix::from_rows(vec![vec![6, 6, 0, 0], vec![0, 0, 6, 6]]));
 
-        let s = modules.submodules().intersect(&a, &b);
+        let s = modules.submodules().intersect(a, b);
 
         s.clone().into_row_basis_matrix().pprint();
 

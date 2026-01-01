@@ -11,7 +11,7 @@ use crate::{
 };
 use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
 use algebraeon_sets::structure::{
-    BijectiveFunction, BorrowedStructure, Function, InjectiveFunction, Morphism,
+    BijectiveFunction, BorrowedSet, BorrowedStructure, Function, InjectiveFunction, Morphism,
 };
 
 #[derive(Debug, Clone)]
@@ -100,7 +100,7 @@ impl<
             &self.anf_quadratic.from_rat(x.coeff(0).as_ref()),
             &self
                 .anf_quadratic
-                .rational_extension()
+                .inbound_principal_rational_map()
                 .range_module_structure()
                 .scalar_mul(&self.generator_image, x.coeff(1).as_ref()),
         )
@@ -161,7 +161,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
     }
 }
 
-impl<D: BorrowedStructure<Integer>> QuadraticNumberFieldStructure<D> {}
+impl<D: BorrowedSet<Integer>> QuadraticNumberFieldStructure<D> {}
 
 #[cfg(test)]
 mod tests {

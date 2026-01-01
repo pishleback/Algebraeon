@@ -30,6 +30,7 @@ pub trait RingToFinitelyFreeModuleSignature: RingSignature {
     fn free_module<'a>(&'a self, n: usize) -> FinitelyFreeModuleStructure<Self, &'a Self> {
         FinitelyFreeModuleStructure::new(self, n)
     }
+
     fn into_free_module(self, n: usize) -> FinitelyFreeModuleStructure<Self, Self> {
         FinitelyFreeModuleStructure::new(self, n)
     }
