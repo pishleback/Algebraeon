@@ -302,7 +302,7 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn outbound_sublattices_inclusion<'a>(
+    pub fn outbound_sublattices_inclusion<'a>(
         &'a self,
     ) -> sublattices_to_ideals::SubmoduleToIdeals<
         K,
@@ -322,7 +322,7 @@ impl<
         )
     }
 
-    fn into_outbound_sublattices_inclusion(
+    pub fn into_outbound_sublattices_inclusion(
         self,
     ) -> sublattices_to_ideals::SubmoduleToIdeals<
         K,
