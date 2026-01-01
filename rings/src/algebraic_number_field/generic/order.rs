@@ -8,8 +8,8 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
-        IntegralDomainSignature, RingDivisionError, RingSignature, SemiModuleSignature,
-        SemiRingSignature, SemiRingUnitsSignature,
+        FinitelyFreeModuleSignature, IntegralDomainSignature, RingDivisionError, RingSignature,
+        SemiModuleSignature, SemiRingSignature, SemiRingUnitsSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
@@ -361,17 +361,23 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AlgebraicIntege
     fn anf(&self) -> &K {
         self.full_rank_z_sublattice.anf()
     }
+
+    fn to_anf(&self, x: &Self::Set) -> K::Set {
+        self.outbound_order_to_anf_inclusion().image(x)
+    }
+
+    fn try_from_anf(&self, y: &K::Set) -> Option<Self::Set> {
+        self.outbound_order_to_anf_inclusion().try_preimage(y)
+    }
+
+    fn integral_basis(&self) -> Vec<Self::Set> {
+        self.free_lattice_restructure().basis_vecs()
+    }
 }
 
 mod anf_inclusion {
     use super::*;
-    use crate::{
-        algebraic_number_field::{
-            AlgebraicIntegerRingInAlgebraicNumberFieldSignature,
-            RingOfIntegersToAlgebraicNumberFieldInclusion,
-        },
-        structure::RingHomomorphism,
-    };
+    use crate::structure::RingHomomorphism;
 
     #[derive(Debug, Clone)]
     pub struct AlgebraicNumberFieldOrderWithBasisInclusion<
@@ -462,37 +468,6 @@ mod anf_inclusion {
     > RingHomomorphism<OrderWithBasis<K, KB, MAXIMAL>, K>
         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
     {
-    }
-
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        OB: BorrowedStructure<OrderWithBasis<K, KB, true>>,
-    > AlgebraicIntegerRingInAlgebraicNumberFieldSignature
-        for RingOfIntegersToAlgebraicNumberFieldInclusion<K, OrderWithBasis<K, KB, true>, OB>
-    {
-        type AlgebraicNumberField = K;
-        type RingOfIntegers = OrderWithBasis<K, KB, true>;
-
-        fn discriminant(&self) -> Integer {
-            todo!()
-        }
-
-        fn roi_to_anf(
-            &self,
-            x: &<Self::RingOfIntegers as SetSignature>::Set,
-        ) -> <Self::AlgebraicNumberField as SetSignature>::Set {
-            self.domain().outbound_order_to_anf_inclusion().image(x)
-        }
-
-        fn try_anf_to_roi(
-            &self,
-            y: &<Self::AlgebraicNumberField as SetSignature>::Set,
-        ) -> Option<<Self::RingOfIntegers as SetSignature>::Set> {
-            self.domain()
-                .outbound_order_to_anf_inclusion()
-                .try_preimage(y)
-        }
     }
 }
 

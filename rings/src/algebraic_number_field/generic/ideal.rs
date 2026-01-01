@@ -2,9 +2,8 @@
 use crate::algebraic_number_field::FullRankSublatticeWithBasisSignature;
 use crate::{
     algebraic_number_field::{
-        AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
-        AlgebraicNumberFieldSignature, OrderWithBasis, RingOfIntegersExtension,
-        RingOfIntegersToAlgebraicNumberFieldInclusion,
+        AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, OrderWithBasis,
+        RingOfIntegersExtension, RingOfIntegersToAlgebraicNumberFieldInclusion,
     },
     integer::ideal::IntegerIdealsStructure,
     matrix::Matrix,
@@ -882,12 +881,6 @@ impl<
         IntegerIdealsStructure<IntegerCanonicalStructure>,
         OrderIdealsStructure<K, KB, true, OB>,
     >
-where
-    RingOfIntegersToAlgebraicNumberFieldInclusion<K, OrderWithBasis<K, KB, true>, OB>:
-        AlgebraicIntegerRingInAlgebraicNumberFieldSignature<
-                AlgebraicNumberField = K,
-                RingOfIntegers = OrderWithBasis<K, KB, true>,
-            >,
 {
     type IdealsZ = IntegerIdealsStructure<IntegerCanonicalStructure>;
     type IdealsR = OrderIdealsStructure<K, KB, true, OB>;

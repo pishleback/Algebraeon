@@ -1,6 +1,6 @@
 use crate::algebraic_number_field::{
-    AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
-    AlgebraicNumberFieldSignature, RingOfIntegersToAlgebraicNumberFieldInclusion,
+    AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature,
+    RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
 use crate::structure::*;
 use algebraeon_nzq::*;
@@ -68,12 +68,6 @@ impl<
     IdealsZ: DedekindDomainIdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
     IdealsR: DedekindDomainIdealsSignature<R, RB>,
 > IntegralClosureExtension for RingOfIntegersExtension<K, R, RB, RtoK, IdealsZ, IdealsR>
-where
-    RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>:
-        AlgebraicIntegerRingInAlgebraicNumberFieldSignature<
-                AlgebraicNumberField = K,
-                RingOfIntegers = R,
-            >,
 {
     type QKBasis = K::Basis;
     type Z = IntegerCanonicalStructure;

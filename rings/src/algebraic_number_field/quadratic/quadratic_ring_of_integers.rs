@@ -6,10 +6,11 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroRingSignature,
         CharacteristicSignature, DedekindDomainSignature, IntegralDomainSignature,
-        RingDivisionError, RingSignature, SemiRingSignature, SemiRingUnitsSignature,
+        MetaCharZeroRing, RingDivisionError, RingSignature, SemiModuleSignature, SemiRingSignature,
+        SemiRingUnitsSignature,
     },
 };
-use algebraeon_nzq::{Integer, Natural};
+use algebraeon_nzq::{Integer, Natural, Rational};
 use algebraeon_sets::structure::{BorrowedSet, EqSignature, SetSignature, Signature};
 
 #[derive(Debug, Clone)]
@@ -144,5 +145,37 @@ impl<D: BorrowedSet<Integer>> AlgebraicIntegerRingSignature<QuadraticNumberField
 {
     fn anf(&self) -> &QuadraticNumberFieldStructure<D> {
         &self.qanf
+    }
+
+    fn try_from_anf(&self, y: &QuadraticNumberFieldElement) -> Option<QuadraticNumberFieldElement> {
+        let d_mod_4 = self.d() % Integer::from(4);
+        if d_mod_4 == Integer::from(1) {
+            // if d = 1 mod 4 then the ring of integers is {a + b * (1/2 + 1/2 sqrt(d)) : a, b in ZZ}
+            let y2 = self.anf().scalar_mul(y, &Rational::TWO);
+            if let Some(y2_rational_part_int) = y2.rational_part.try_to_int()
+                && let Some(y2_algebraic_part_int) = y2.algebraic_part.try_to_int()
+                && (y2_rational_part_int + y2_algebraic_part_int) % Integer::TWO == Integer::ZERO
+            {
+                Some(y.clone())
+            } else {
+                None
+            }
+        } else if d_mod_4 == Integer::from(2) || d_mod_4 == Integer::from(3) {
+            // if d = 2 or 3 mod 4 then the ring of integers is {a + b * sqrt(d) : a, b in ZZ}
+            if y.rational_part.is_integer() && y.algebraic_part.is_integer() {
+                Some(y.clone())
+            } else {
+                None
+            }
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn to_anf(&self, x: &QuadraticNumberFieldElement) -> QuadraticNumberFieldElement {
+        x.clone()
+    }
+    fn integral_basis(&self) -> Vec<Self::Set> {
+        todo!()
     }
 }

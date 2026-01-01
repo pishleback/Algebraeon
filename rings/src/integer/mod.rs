@@ -193,6 +193,18 @@ impl AlgebraicIntegerRingSignature<RationalCanonicalStructure> for IntegerCanoni
     fn anf(&self) -> &RationalCanonicalStructure {
         Rational::structure_ref()
     }
+
+    fn to_anf(&self, x: &Integer) -> Rational {
+        Rational::from(x)
+    }
+
+    fn try_from_anf(&self, y: &Rational) -> Option<Integer> {
+        Integer::try_from_rat(y)
+    }
+
+    fn integral_basis(&self) -> Vec<Integer> {
+        vec![Integer::ONE]
+    }
 }
 
 impl ComplexSubsetSignature for IntegerCanonicalStructure {

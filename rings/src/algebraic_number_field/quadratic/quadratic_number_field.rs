@@ -1,6 +1,5 @@
 use crate::algebraic_number_field::{
-    AlgebraicIntegerRingInAlgebraicNumberFieldSignature, AlgebraicIntegerRingSignature,
-    AlgebraicNumberFieldSignature, QuadraticRingOfIntegersStructure,
+    AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, QuadraticRingOfIntegersStructure,
     RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
 use crate::structure::{
@@ -14,9 +13,7 @@ use crate::structure::{
     RingHomomorphismRangeModuleStructure, SemiModuleSignature,
 };
 use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};
-use algebraeon_sets::structure::{
-    BorrowedSet, BorrowedStructure, InjectiveFunction, MetaType, Morphism,
-};
+use algebraeon_sets::structure::{BorrowedSet, BorrowedStructure, InjectiveFunction, MetaType};
 use algebraeon_sets::structure::{
     CanonicalStructure, CountableSetSignature, EqSignature, FiniteSetSignature, SetSignature,
     Signature,
@@ -281,54 +278,6 @@ impl<D: BorrowedSet<Integer>, RB: BorrowedStructure<QuadraticRingOfIntegersStruc
         let d = self.anf().d();
         debug_assert_eq!(d, self.roi().d());
         d
-    }
-}
-
-impl<D: BorrowedSet<Integer>, RB: BorrowedStructure<QuadraticRingOfIntegersStructure<D>>>
-    AlgebraicIntegerRingInAlgebraicNumberFieldSignature
-    for RingOfIntegersToAlgebraicNumberFieldInclusion<
-        QuadraticNumberFieldStructure<D>,
-        QuadraticRingOfIntegersStructure<D>,
-        RB,
-    >
-{
-    type AlgebraicNumberField = QuadraticNumberFieldStructure<D>;
-    type RingOfIntegers = QuadraticRingOfIntegersStructure<D>;
-
-    fn discriminant(&self) -> Integer {
-        self.anf().discriminant()
-    }
-
-    fn try_anf_to_roi(
-        &self,
-        y: &QuadraticNumberFieldElement,
-    ) -> Option<QuadraticNumberFieldElement> {
-        let d_mod_4 = self.d() % Integer::from(4);
-        if d_mod_4 == Integer::from(1) {
-            // if d = 1 mod 4 then the ring of integers is {a + b * (1/2 + 1/2 sqrt(d)) : a, b in ZZ}
-            let y2 = self.range().scalar_mul(y, &Rational::TWO);
-            if let Some(y2_rational_part_int) = y2.rational_part.try_to_int()
-                && let Some(y2_algebraic_part_int) = y2.algebraic_part.try_to_int()
-                && (y2_rational_part_int + y2_algebraic_part_int) % Integer::TWO == Integer::ZERO
-            {
-                Some(y.clone())
-            } else {
-                None
-            }
-        } else if d_mod_4 == Integer::from(2) || d_mod_4 == Integer::from(3) {
-            // if d = 2 or 3 mod 4 then the ring of integers is {a + b * sqrt(d) : a, b in ZZ}
-            if y.rational_part.is_integer() && y.algebraic_part.is_integer() {
-                Some(y.clone())
-            } else {
-                None
-            }
-        } else {
-            unreachable!()
-        }
-    }
-
-    fn roi_to_anf(&self, x: &QuadraticNumberFieldElement) -> QuadraticNumberFieldElement {
-        x.clone()
     }
 }
 

@@ -101,7 +101,28 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
 pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
     DedekindDomainSignature + CharZeroRingSignature
 {
+    fn n(&self) -> usize {
+        self.anf().n()
+    }
+
     fn anf(&self) -> &K;
+
+    /// A list of self.n() elements which generate this ring as a Z-module
+    fn integral_basis(&self) -> Vec<Self::Set>;
+
+    fn to_anf(&self, x: &Self::Set) -> K::Set;
+
+    fn try_from_anf(&self, y: &K::Set) -> Option<Self::Set>;
+
+    fn order<'a>(&'a self) -> OrderWithBasis<K, &'a K, true> {
+        OrderWithBasis::new_maximal_unchecked(
+            self.anf(),
+            self.integral_basis()
+                .into_iter()
+                .map(|v| self.outbound_roi_to_anf_inclusion().image(&v))
+                .collect(),
+        )
+    }
 
     fn into_outbound_roi_to_anf_inclusion(
         self,
@@ -159,6 +180,14 @@ impl<
             roi,
         }
     }
+
+    pub fn roi(&self) -> &R {
+        self.roi.borrow()
+    }
+
+    pub fn anf(&self) -> &K {
+        self.roi().anf()
+    }
 }
 
 impl<
@@ -168,11 +197,11 @@ impl<
 > Morphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
 {
     fn domain(&self) -> &R {
-        self.roi.borrow()
+        self.roi()
     }
 
     fn range(&self) -> &K {
-        self.roi.borrow().anf()
+        self.anf()
     }
 }
 
@@ -181,14 +210,9 @@ impl<
     R: AlgebraicIntegerRingSignature<K>,
     RB: BorrowedStructure<R>,
 > Function<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-where
-    Self: AlgebraicIntegerRingInAlgebraicNumberFieldSignature<
-            AlgebraicNumberField = K,
-            RingOfIntegers = R,
-        >,
 {
     fn image(&self, x: &<R as SetSignature>::Set) -> <K as SetSignature>::Set {
-        self.roi_to_anf(x)
+        self.roi().to_anf(x)
     }
 }
 
@@ -197,14 +221,9 @@ impl<
     R: AlgebraicIntegerRingSignature<K>,
     RB: BorrowedStructure<R>,
 > InjectiveFunction<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-where
-    Self: AlgebraicIntegerRingInAlgebraicNumberFieldSignature<
-            AlgebraicNumberField = K,
-            RingOfIntegers = R,
-        >,
 {
-    fn try_preimage(&self, x: &<K as SetSignature>::Set) -> Option<<R as SetSignature>::Set> {
-        self.try_anf_to_roi(x)
+    fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<<R as SetSignature>::Set> {
+        self.roi().try_from_anf(y)
     }
 }
 
@@ -213,11 +232,6 @@ impl<
     R: AlgebraicIntegerRingSignature<K>,
     RB: BorrowedStructure<R>,
 > RingHomomorphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-where
-    Self: AlgebraicIntegerRingInAlgebraicNumberFieldSignature<
-            AlgebraicNumberField = K,
-            RingOfIntegers = R,
-        >,
 {
 }
 
@@ -255,33 +269,33 @@ impl<
     }
 }
 
-pub trait AlgebraicIntegerRingInAlgebraicNumberFieldSignature:
-    RingHomomorphism<Self::RingOfIntegers, Self::AlgebraicNumberField>
-    + InjectiveFunction<Self::RingOfIntegers, Self::AlgebraicNumberField>
-{
-    type AlgebraicNumberField: AlgebraicNumberFieldSignature;
-    type RingOfIntegers: AlgebraicIntegerRingSignature<Self::AlgebraicNumberField>;
+// pub trait AlgebraicIntegerRingInAlgebraicNumberFieldSignature:
+//     RingHomomorphism<Self::RingOfIntegers, Self::AlgebraicNumberField>
+//     + InjectiveFunction<Self::RingOfIntegers, Self::AlgebraicNumberField>
+// {
+//     type AlgebraicNumberField: AlgebraicNumberFieldSignature;
+//     type RingOfIntegers: AlgebraicIntegerRingSignature<Self::AlgebraicNumberField>;
 
-    fn roi(&self) -> &Self::RingOfIntegers {
-        self.domain()
-    }
+//     fn roi(&self) -> &Self::RingOfIntegers {
+//         self.domain()
+//     }
 
-    fn anf(&self) -> &Self::AlgebraicNumberField {
-        self.range()
-    }
+//     fn anf(&self) -> &Self::AlgebraicNumberField {
+//         self.range()
+//     }
 
-    fn discriminant(&self) -> Integer;
+//     fn discriminant(&self) -> Integer;
 
-    fn roi_to_anf(
-        &self,
-        x: &<Self::RingOfIntegers as SetSignature>::Set,
-    ) -> <Self::AlgebraicNumberField as SetSignature>::Set;
+//     fn roi_to_anf(
+//         &self,
+//         x: &<Self::RingOfIntegers as SetSignature>::Set,
+//     ) -> <Self::AlgebraicNumberField as SetSignature>::Set;
 
-    fn try_anf_to_roi(
-        &self,
-        y: &<Self::AlgebraicNumberField as SetSignature>::Set,
-    ) -> Option<<Self::RingOfIntegers as SetSignature>::Set>;
-}
+//     fn try_anf_to_roi(
+//         &self,
+//         y: &<Self::AlgebraicNumberField as SetSignature>::Set,
+//     ) -> Option<<Self::RingOfIntegers as SetSignature>::Set>;
+// }
 
 mod anf_inclusion {
     use crate::{matrix::Matrix, structure::MetaCharZeroRing};
