@@ -12,7 +12,9 @@ All notable changes to this project will be documented in this file.
  - Added types for continued fractions and for computing best rational approximations
  - Added quadratic algebraic number fields
  - Added `SymmetricMatrix`
- <!-- - Added orders for algebraic number fields and their ideals, with the ring of integers as a special case -->
+ - Added orders for algebraic number fields and their ideals, with the ring of integers as a special case
+ - Added quotient submodules and quotient ideals
+ - Added conductor of an order in an algebraic number field
 
 ## [0.0.13] - 2025-07-21
 
