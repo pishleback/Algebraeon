@@ -1,8 +1,10 @@
-use crate::algebraic_number_field::FullRankSublatticeWithBasisSignature;
+use crate::algebraic_number_field::{
+    FullRankSublatticeWithBasisSignature, RingOfIntegersToAlgebraicNumberFieldInclusion,
+};
 use crate::{
     algebraic_number_field::{
         AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, OrderWithBasis,
-        RingOfIntegersExtension, RingOfIntegersToAlgebraicNumberFieldInclusion,
+        RingOfIntegersExtension,
     },
     integer::ideal::IntegerIdealsStructure,
     matrix::Matrix,
@@ -655,7 +657,7 @@ where
         >,
 {
     /// The order of the multiplicative group of the quotient modulo the ideal.
-    fn euler_phi(&self, ideal: &OrderIdeal) -> Option<Natural> {
+    pub fn euler_phi(&self, ideal: &OrderIdeal) -> Option<Natural> {
         Some(
             self.factorizations()
                 .into_powers(self.factor_ideal(ideal)?)
