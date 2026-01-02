@@ -6,9 +6,9 @@ use crate::{
     },
     structure::{
         AdditiveGroupSignature, CharZeroFieldSignature, CharZeroRingSignature,
-        DedekindDomainIdealsSignature, DedekindDomainSignature, FiniteDimensionalFieldExtension,
-        FiniteRankFreeRingExtension, MetaGreatestCommonDivisor, RingHomomorphism,
-        RingToIdealsSignature,
+        DedekindDomainIdealsSignature, DedekindDomainSignature, FieldOfFractionsInclusion,
+        FiniteDimensionalFieldExtension, FiniteRankFreeRingExtension, MetaGreatestCommonDivisor,
+        RingHomomorphism, RingToIdealsSignature,
     },
 };
 use algebraeon_nzq::{
@@ -173,118 +173,135 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct RingOfIntegersToAlgebraicNumberFieldInclusion<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> {
-    _roi: PhantomData<R>,
-    roi: RB,
-    _anf: PhantomData<K>,
-}
+mod ring_of_integers_to_algebraic_number_field_inclusion {
+    use super::*;
 
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    pub fn from_ring_of_integers(roi: RB) -> Self {
-        Self {
-            _roi: PhantomData,
-            _anf: PhantomData,
-            roi,
+    #[derive(Debug, Clone)]
+    pub struct RingOfIntegersToAlgebraicNumberFieldInclusion<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > {
+        _roi: PhantomData<R>,
+        roi: RB,
+        _anf: PhantomData<K>,
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        pub fn from_ring_of_integers(roi: RB) -> Self {
+            Self {
+                _roi: PhantomData,
+                _anf: PhantomData,
+                roi,
+            }
+        }
+
+        pub fn roi(&self) -> &R {
+            self.roi.borrow()
+        }
+
+        pub fn anf(&self) -> &K {
+            self.roi().anf()
         }
     }
 
-    pub fn roi(&self) -> &R {
-        self.roi.borrow()
-    }
-
-    pub fn anf(&self) -> &K {
-        self.roi().anf()
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> Morphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    fn domain(&self) -> &R {
-        self.roi()
-    }
-
-    fn range(&self) -> &K {
-        self.anf()
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> Function<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    fn image(&self, x: &<R as SetSignature>::Set) -> <K as SetSignature>::Set {
-        self.roi().to_anf(x)
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> InjectiveFunction<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<<R as SetSignature>::Set> {
-        self.roi().try_from_anf(y)
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> RingHomomorphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    pub fn zq_extension<'a>(
-        &'a self,
-    ) -> RingOfIntegersExtension<
-        K,
-        R,
-        &'a R,
-        RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, &'a R>,
-        IntegerIdealsStructure<IntegerCanonicalStructure>,
-        <R as RingToIdealsSignature>::Ideals<&'a R>,
-    >
-    where
-        R: RingToIdealsSignature,
-        <R as RingToIdealsSignature>::Ideals<&'a R>: DedekindDomainIdealsSignature<R, &'a R>,
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > Morphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
     {
-        let ideals_z = Integer::structure().into_ideals();
-        let ideals_r = self.domain().ideals();
-        RingOfIntegersExtension::new_integer_extension(
-            RingOfIntegersToAlgebraicNumberFieldInclusion {
-                _roi: PhantomData,
-                _anf: PhantomData,
-                roi: self.domain(),
-            },
-            ideals_z,
-            ideals_r,
-        )
+        fn domain(&self) -> &R {
+            self.roi()
+        }
+
+        fn range(&self) -> &K {
+            self.anf()
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > Function<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        fn image(&self, x: &<R as SetSignature>::Set) -> <K as SetSignature>::Set {
+            self.roi().to_anf(x)
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > InjectiveFunction<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<<R as SetSignature>::Set> {
+            self.roi().try_from_anf(y)
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > RingHomomorphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > FieldOfFractionsInclusion<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        fn numerator_and_denominator(&self, a: &<K>::Set) -> (<R>::Set, <R>::Set) {
+            let z = self.zq_extension();
+            todo!()
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        pub fn zq_extension<'a>(
+            &'a self,
+        ) -> RingOfIntegersExtension<
+            K,
+            R,
+            &'a R,
+            RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, &'a R>,
+            IntegerIdealsStructure<IntegerCanonicalStructure>,
+            <R as RingToIdealsSignature>::Ideals<&'a R>,
+        >
+        where
+            R: RingToIdealsSignature,
+            <R as RingToIdealsSignature>::Ideals<&'a R>: DedekindDomainIdealsSignature<R, &'a R>,
+        {
+            let ideals_z = Integer::structure().into_ideals();
+            let ideals_r = self.domain().ideals();
+            RingOfIntegersExtension::new_integer_extension(
+                RingOfIntegersToAlgebraicNumberFieldInclusion {
+                    _roi: PhantomData,
+                    _anf: PhantomData,
+                    roi: self.domain(),
+                },
+                ideals_z,
+                ideals_r,
+            )
+        }
     }
 }
+pub(crate) use ring_of_integers_to_algebraic_number_field_inclusion::RingOfIntegersToAlgebraicNumberFieldInclusion;
 
 mod order_to_ring_of_integers_inclusion {
     use algebraeon_sets::structure::BijectiveFunction;
@@ -441,7 +458,10 @@ mod order_to_ring_of_integers_inclusion {
 
 mod anf_inclusion {
     use super::*;
-    use crate::{matrix::Matrix, structure::MetaCharZeroRing};
+    use crate::{
+        matrix::Matrix,
+        structure::{FieldOfFractionsInclusion, MetaCharZeroRing},
+    };
 
     #[derive(Debug, Clone)]
     pub struct AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
@@ -534,6 +554,60 @@ mod anf_inclusion {
                 x_int.push(c_rat.try_to_int()?);
             }
             Some(x_int)
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > RingHomomorphism<OrderWithBasis<K, KOB, MAXIMAL>, K>
+        for AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+            K,
+            OrderWithBasis<K, KOB, MAXIMAL>,
+            OB,
+        >
+    {
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > FieldOfFractionsInclusion<OrderWithBasis<K, KOB, MAXIMAL>, K>
+        for AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+            K,
+            OrderWithBasis<K, KOB, MAXIMAL>,
+            OB,
+        >
+    {
+        fn numerator_and_denominator(
+            &self,
+            a: &<K>::Set,
+        ) -> (
+            <OrderWithBasis<K, KOB, MAXIMAL> as SetSignature>::Set,
+            <OrderWithBasis<K, KOB, MAXIMAL> as SetSignature>::Set,
+        ) {
+            let z = self.zq_extension();
+            todo!()
+        }
+    }
+
+     impl<
+        K: AlgebraicNumberFieldSignature,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    >  AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+            K,
+            OrderWithBasis<K, KOB, MAXIMAL>,
+            OB,
+        >
+    {
+        pub fn zq_extension(&self) -> ! {
+            todo!()
         }
     }
 }
