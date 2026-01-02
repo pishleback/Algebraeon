@@ -26,7 +26,7 @@
 - [`product`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.product) Product of many ideals
 - [`sum`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.sum)
 - [`ideal_two_generators`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/algebraic_number_field/struct.OrderIdealsStructure.html#method.ideal_two_generators) return two elements which generate the ideal
-- sqrt_if_square
+- [`sqrt_if_square`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.FactorableIdealsSignature.html#method.sqrt_if_square)
 
 ## Available predicates
 - [`contains_ideal`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#tymethod.contains_ideal) Does a contain b i.e. does a divide b
@@ -34,8 +34,8 @@
 - [`equal`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.equal)
 - [`is_zero`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.IdealsArithmeticSignature.html#method.is_zero)
 - [`is_prime_ideal`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.FactorableIdealsSignature.html#method.is_prime_ideal)
-- is_squarefree
-- is_square
+- [`is_squarefree`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.FactorableIdealsSignature.html#method.is_squarefree)
+- [`is_square`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.FactorableIdealsSignature.html#method.is_square)
 
 
 ## Factoring example
