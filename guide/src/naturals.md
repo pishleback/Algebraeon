@@ -34,9 +34,10 @@ For exponentiation, use the method `.pow(&exp)` instead of `^` (which is xor).
 
 - [`choose`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.choose.html)
 - [`euler_totient`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/natural/factorization/factored/struct.NaturalFactorizationStructure.html#method.euler_totient)
+- [`factor`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/natural/trait.NaturalFns.html#tymethod.factor)
 - [`factorial`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.factorial)
 - [`gcd`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.gcd.html)
-- [`is_prime`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/natural/factorization/primes/fn.is_prime.html)
+- [`is_prime`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/natural/trait.NaturalFns.html#tymethod.is_prime)
 - [`is_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.is_square)
 - [`lcm`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.lcm.html)
 - [`nth_root_floor`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.nth_root_floor)
