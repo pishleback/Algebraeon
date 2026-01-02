@@ -1,6 +1,5 @@
 use crate::algebraic_number_field::{
     AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, QuadraticRingOfIntegersStructure,
-    RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
 use crate::structure::{
     AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroFieldSignature, CharZeroRingSignature,
@@ -267,19 +266,19 @@ impl<'h, D: BorrowedSet<Integer>, B: BorrowedStructure<QuadraticNumberFieldStruc
     }
 }
 
-impl<D: BorrowedSet<Integer>, RB: BorrowedStructure<QuadraticRingOfIntegersStructure<D>>>
-    RingOfIntegersToAlgebraicNumberFieldInclusion<
-        QuadraticNumberFieldStructure<D>,
-        QuadraticRingOfIntegersStructure<D>,
-        RB,
-    >
-{
-    pub fn d(&self) -> &Integer {
-        let d = self.anf().d();
-        debug_assert_eq!(d, self.roi().d());
-        d
-    }
-}
+// impl<D: BorrowedSet<Integer>, RB: BorrowedStructure<QuadraticRingOfIntegersStructure<D>>>
+//     RingOfIntegersToAlgebraicNumberFieldInclusion<
+//         QuadraticNumberFieldStructure<D>,
+//         QuadraticRingOfIntegersStructure<D>,
+//         RB,
+//     >
+// {
+//     pub fn d(&self) -> &Integer {
+//         let d = self.anf().d();
+//         debug_assert_eq!(d, self.roi().d());
+//         d
+//     }
+// }
 
 impl<D: BorrowedSet<Integer>> QuadraticNumberFieldStructure<D> {
     pub fn into_ring_of_integers(self) -> QuadraticRingOfIntegersStructure<D> {

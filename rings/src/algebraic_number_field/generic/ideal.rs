@@ -1,10 +1,10 @@
 use crate::algebraic_number_field::{
-    FullRankSublatticeWithBasisSignature, RingOfIntegersToAlgebraicNumberFieldInclusion,
+    FullRankSublatticeWithBasisSignature, RingOfIntegersIntegralExtensionWithIdeals,
+    RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
 use crate::{
     algebraic_number_field::{
         AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, OrderWithBasis,
-        RingOfIntegersExtension,
     },
     integer::ideal::IntegerIdealsStructure,
     matrix::Matrix,
@@ -598,7 +598,7 @@ impl<
 > FactorableIdealsSignature<OrderWithBasis<K, KB, true>, OB>
     for OrderIdealsStructure<K, KB, true, OB>
 where
-    for<'a> RingOfIntegersExtension<
+    for<'a> RingOfIntegersIntegralExtensionWithIdeals<
         K,
         OrderWithBasis<K, KB, true>,
         &'a OrderWithBasis<K, KB, true>,
@@ -608,6 +608,7 @@ where
             &'a OrderWithBasis<K, KB, true>,
         >,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
+        &'a OrderWithBasis<K, KB, true>,
         OrderIdealsStructure<K, KB, true, &'a OrderWithBasis<K, KB, true>>,
     >: IntegralClosureExtension<Z = IntegerCanonicalStructure, R = OrderWithBasis<K, KB, true>>
         + DedekindDomainExtension<
@@ -625,6 +626,7 @@ where
             self.order()
                 .outbound_roi_to_anf_inclusion()
                 .zq_extension()
+                .into_with_ideals()
                 .factor_ideal(ideal)?
                 .into_full_factorization(),
         )
@@ -637,7 +639,7 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, true>>,
 > OrderIdealsStructure<K, KB, true, OB>
 where
-    for<'a> RingOfIntegersExtension<
+    for<'a> RingOfIntegersIntegralExtensionWithIdeals<
         K,
         OrderWithBasis<K, KB, true>,
         &'a OrderWithBasis<K, KB, true>,
@@ -647,6 +649,7 @@ where
             &'a OrderWithBasis<K, KB, true>,
         >,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
+        &'a OrderWithBasis<K, KB, true>,
         OrderIdealsStructure<K, KB, true, &'a OrderWithBasis<K, KB, true>>,
     >: IntegralClosureExtension<Z = IntegerCanonicalStructure, R = OrderWithBasis<K, KB, true>>
         + DedekindDomainExtension<
@@ -682,7 +685,7 @@ where
                     RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(
                         self.order().clone(),
                     );
-                let sq = roi_to_anf.zq_extension();
+                let sq = roi_to_anf.zq_extension().into_with_ideals();
                 Box::new(
                     Integer::structure()
                         .ideals()
@@ -873,18 +876,20 @@ impl<
             K,
             RingOfIntegersToAlgebraicNumberFieldInclusion<K, OrderWithBasis<K, KB, true>, OB>,
         >,
-> DedekindDomainExtension<IntegerCanonicalStructure, OB>
-    for RingOfIntegersExtension<
+    OIB: BorrowedStructure<OrderWithBasis<K, KB, true>>,
+> DedekindDomainExtension<IntegerCanonicalStructure, OIB>
+    for RingOfIntegersIntegralExtensionWithIdeals<
         K,
         OrderWithBasis<K, KB, true>,
         OB,
         OtoK,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
-        OrderIdealsStructure<K, KB, true, OB>,
+        OIB,
+        OrderIdealsStructure<K, KB, true, OIB>,
     >
 {
     type IdealsZ = IntegerIdealsStructure<IntegerCanonicalStructure>;
-    type IdealsR = OrderIdealsStructure<K, KB, true, OB>;
+    type IdealsR = OrderIdealsStructure<K, KB, true, OIB>;
 
     fn z_ideals(&self) -> &Self::IdealsZ {
         self.z_ideals()

@@ -1,22 +1,19 @@
 use crate::{
-    algebraic_number_field::{OrderWithBasis, RingOfIntegersExtension},
-    integer::ideal::IntegerIdealsStructure,
+    algebraic_number_field::{OrderWithBasis, RingOfIntegersIntegralExtension},
     module::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
     },
     structure::{
         AdditiveGroupSignature, CharZeroFieldSignature, CharZeroRingSignature,
-        DedekindDomainIdealsSignature, DedekindDomainSignature, FiniteDimensionalFieldExtension,
+        DedekindDomainSignature, FieldOfFractionsInclusion, FiniteDimensionalFieldExtension,
         FiniteRankFreeRingExtension, MetaGreatestCommonDivisor, RingHomomorphism,
-        RingToIdealsSignature,
     },
 };
 use algebraeon_nzq::{
     Integer, IntegerCanonicalStructure, Rational, RationalCanonicalStructure, traits::Fraction,
 };
 use algebraeon_sets::structure::{
-    BorrowedStructure, FiniteSetSignature, Function, InjectiveFunction, MetaType, Morphism,
-    SetSignature,
+    BorrowedStructure, FiniteSetSignature, Function, InjectiveFunction, Morphism, SetSignature,
 };
 use std::marker::PhantomData;
 
@@ -173,118 +170,128 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct RingOfIntegersToAlgebraicNumberFieldInclusion<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> {
-    _roi: PhantomData<R>,
-    roi: RB,
-    _anf: PhantomData<K>,
-}
+mod ring_of_integers_to_algebraic_number_field_inclusion {
+    use crate::structure::IntegralClosureExtension;
 
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    pub fn from_ring_of_integers(roi: RB) -> Self {
-        Self {
-            _roi: PhantomData,
-            _anf: PhantomData,
-            roi,
+    use super::*;
+
+    #[derive(Debug, Clone)]
+    pub struct RingOfIntegersToAlgebraicNumberFieldInclusion<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > {
+        _roi: PhantomData<R>,
+        roi: RB,
+        _anf: PhantomData<K>,
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        pub fn from_ring_of_integers(roi: RB) -> Self {
+            Self {
+                _roi: PhantomData,
+                _anf: PhantomData,
+                roi,
+            }
+        }
+
+        pub fn roi(&self) -> &R {
+            self.roi.borrow()
+        }
+
+        pub fn anf(&self) -> &K {
+            self.roi().anf()
         }
     }
 
-    pub fn roi(&self) -> &R {
-        self.roi.borrow()
-    }
-
-    pub fn anf(&self) -> &K {
-        self.roi().anf()
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> Morphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    fn domain(&self) -> &R {
-        self.roi()
-    }
-
-    fn range(&self) -> &K {
-        self.anf()
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> Function<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    fn image(&self, x: &<R as SetSignature>::Set) -> <K as SetSignature>::Set {
-        self.roi().to_anf(x)
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> InjectiveFunction<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<<R as SetSignature>::Set> {
-        self.roi().try_from_anf(y)
-    }
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> RingHomomorphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-}
-
-impl<
-    K: AlgebraicNumberFieldSignature,
-    R: AlgebraicIntegerRingSignature<K>,
-    RB: BorrowedStructure<R>,
-> RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
-{
-    pub fn zq_extension<'a>(
-        &'a self,
-    ) -> RingOfIntegersExtension<
-        K,
-        R,
-        &'a R,
-        RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, &'a R>,
-        IntegerIdealsStructure<IntegerCanonicalStructure>,
-        <R as RingToIdealsSignature>::Ideals<&'a R>,
-    >
-    where
-        R: RingToIdealsSignature,
-        <R as RingToIdealsSignature>::Ideals<&'a R>: DedekindDomainIdealsSignature<R, &'a R>,
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > Morphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
     {
-        let ideals_z = Integer::structure().into_ideals();
-        let ideals_r = self.domain().ideals();
-        RingOfIntegersExtension::new_integer_extension(
-            RingOfIntegersToAlgebraicNumberFieldInclusion {
-                _roi: PhantomData,
-                _anf: PhantomData,
-                roi: self.domain(),
-            },
-            ideals_z,
-            ideals_r,
-        )
+        fn domain(&self) -> &R {
+            self.roi()
+        }
+
+        fn range(&self) -> &K {
+            self.anf()
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > Function<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        fn image(&self, x: &<R as SetSignature>::Set) -> <K as SetSignature>::Set {
+            self.roi().to_anf(x)
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > InjectiveFunction<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<<R as SetSignature>::Set> {
+            self.roi().try_from_anf(y)
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > RingHomomorphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > FieldOfFractionsInclusion<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        fn numerator_and_denominator(&self, a: &<K>::Set) -> (<R>::Set, <R>::Set) {
+            self.zq_extension()
+                .r_to_k_field_of_fractions()
+                .numerator_and_denominator(a)
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        R: AlgebraicIntegerRingSignature<K>,
+        RB: BorrowedStructure<R>,
+    > RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    {
+        pub fn zq_extension<'a>(
+            &'a self,
+        ) -> RingOfIntegersIntegralExtension<
+            K,
+            R,
+            &'a R,
+            RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, &'a R>,
+        > {
+            RingOfIntegersIntegralExtension::new_integer_extension(
+                RingOfIntegersToAlgebraicNumberFieldInclusion {
+                    _roi: PhantomData,
+                    _anf: PhantomData,
+                    roi: self.domain(),
+                },
+            )
+        }
     }
 }
+pub(crate) use ring_of_integers_to_algebraic_number_field_inclusion::RingOfIntegersToAlgebraicNumberFieldInclusion;
 
 mod order_to_ring_of_integers_inclusion {
     use algebraeon_sets::structure::BijectiveFunction;
@@ -441,7 +448,10 @@ mod order_to_ring_of_integers_inclusion {
 
 mod anf_inclusion {
     use super::*;
-    use crate::{matrix::Matrix, structure::MetaCharZeroRing};
+    use crate::{
+        matrix::Matrix,
+        structure::{FieldOfFractionsInclusion, IntegralClosureExtension, MetaCharZeroRing},
+    };
 
     #[derive(Debug, Clone)]
     pub struct AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
@@ -534,6 +544,410 @@ mod anf_inclusion {
                 x_int.push(c_rat.try_to_int()?);
             }
             Some(x_int)
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > RingHomomorphism<OrderWithBasis<K, KOB, MAXIMAL>, K>
+        for AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+            K,
+            OrderWithBasis<K, KOB, MAXIMAL>,
+            OB,
+        >
+    {
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    > FieldOfFractionsInclusion<OrderWithBasis<K, KOB, MAXIMAL>, K>
+        for AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+            K,
+            OrderWithBasis<K, KOB, MAXIMAL>,
+            OB,
+        >
+    {
+        fn numerator_and_denominator(
+            &self,
+            a: &<K>::Set,
+        ) -> (
+            <OrderWithBasis<K, KOB, MAXIMAL> as SetSignature>::Set,
+            <OrderWithBasis<K, KOB, MAXIMAL> as SetSignature>::Set,
+        ) {
+            self.zq_extension()
+                .r_to_k_field_of_fractions()
+                .numerator_and_denominator(a)
+        }
+    }
+
+    impl<
+        K: AlgebraicNumberFieldSignature,
+        KOB: BorrowedStructure<K>,
+        const MAXIMAL: bool,
+        OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+    >
+        AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+            K,
+            OrderWithBasis<K, KOB, MAXIMAL>,
+            OB,
+        >
+    {
+        pub fn zq_extension<'a>(
+            &'a self,
+        ) -> order_integral_extension::OrderIntegralExtension<
+            K,
+            KOB,
+            MAXIMAL,
+            OB,
+            &'a AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                K,
+                OrderWithBasis<K, KOB, MAXIMAL>,
+                OB,
+            >,
+        > {
+            order_integral_extension::OrderIntegralExtension::new_integer_extension(self)
+        }
+    }
+
+    mod order_integral_extension {
+        use std::borrow::Cow;
+
+        use crate::{
+            algebraic_number_field::OrderIdealsStructure,
+            integer::ideal::IntegerIdealsStructure,
+            structure::{
+                IdealsSignature, IntegralClosureExtension, PrincipalIntegerMap, RingSignature,
+                RingToIdealsSignature,
+            },
+        };
+
+        use super::*;
+        use algebraeon_sets::structure::{BorrowedMorphism, MetaType};
+
+        /// Q -> K
+        /// ↑    ↑
+        /// Z -> R
+        ///
+        /// Where Q is the rationals, Z is the integers, K is an algebraic number field, R is its ring of integers
+        ///
+        #[derive(Debug, Clone)]
+        pub struct OrderIntegralExtension<
+            K: AlgebraicNumberFieldSignature,
+            KOB: BorrowedStructure<K>,
+            const MAXIMAL: bool,
+            RB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+            RtoK: BorrowedMorphism<
+                    OrderWithBasis<K, KOB, MAXIMAL>,
+                    K,
+                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                        K,
+                        OrderWithBasis<K, KOB, MAXIMAL>,
+                        RB,
+                    >,
+                >,
+        > {
+            _k: PhantomData<K>,
+            _kob: PhantomData<KOB>,
+            _rb: PhantomData<RB>,
+            r_to_k: RtoK,
+        }
+
+        impl<
+            K: AlgebraicNumberFieldSignature,
+            KOB: BorrowedStructure<K>,
+            const MAXIMAL: bool,
+            RB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+            RtoK: BorrowedMorphism<
+                    OrderWithBasis<K, KOB, MAXIMAL>,
+                    K,
+                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                        K,
+                        OrderWithBasis<K, KOB, MAXIMAL>,
+                        RB,
+                    >,
+                >,
+        > OrderIntegralExtension<K, KOB, MAXIMAL, RB, RtoK>
+        {
+            pub fn new_integer_extension(r_to_k: RtoK) -> Self {
+                Self {
+                    _k: PhantomData,
+                    _kob: PhantomData,
+                    _rb: PhantomData,
+                    r_to_k,
+                }
+            }
+
+            pub fn with_ideals<'a>(
+                &'a self,
+            ) -> OrderIntegralExtensionWithIdeals<
+                K,
+                KOB,
+                MAXIMAL,
+                RB,
+                &'a AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                    K,
+                    OrderWithBasis<K, KOB, MAXIMAL>,
+                    RB,
+                >,
+                IntegerIdealsStructure<IntegerCanonicalStructure>,
+                &'a OrderWithBasis<K, KOB, MAXIMAL>,
+                OrderIdealsStructure<K, KOB, MAXIMAL, &'a OrderWithBasis<K, KOB, MAXIMAL>>,
+            > {
+                let ideals_z = Integer::structure().into_ideals();
+                let ideals_r = self.r_to_k.borrow().domain().ideals();
+                OrderIntegralExtensionWithIdeals::new_integer_extension(
+                    self.r_to_k.borrow(),
+                    ideals_z,
+                    ideals_r,
+                )
+            }
+
+            pub fn into_with_ideals(
+                self,
+            ) -> OrderIntegralExtensionWithIdeals<
+                K,
+                KOB,
+                MAXIMAL,
+                RB,
+                RtoK,
+                IntegerIdealsStructure<IntegerCanonicalStructure>,
+                OrderWithBasis<K, KOB, MAXIMAL>,
+                OrderIdealsStructure<K, KOB, MAXIMAL, OrderWithBasis<K, KOB, MAXIMAL>>,
+            > {
+                let ideals_z = Integer::structure().into_ideals();
+                let ideals_r = self.r_to_k().domain().clone().into_ideals();
+                OrderIntegralExtensionWithIdeals::new_integer_extension(
+                    self.r_to_k,
+                    ideals_z,
+                    ideals_r,
+                )
+            }
+        }
+
+        impl<
+            K: AlgebraicNumberFieldSignature,
+            KOB: BorrowedStructure<K>,
+            const MAXIMAL: bool,
+            RB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+            RtoK: BorrowedMorphism<
+                    OrderWithBasis<K, KOB, MAXIMAL>,
+                    K,
+                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                        K,
+                        OrderWithBasis<K, KOB, MAXIMAL>,
+                        RB,
+                    >,
+                >,
+        > IntegralClosureExtension for OrderIntegralExtension<K, KOB, MAXIMAL, RB, RtoK>
+        {
+            type QKBasis = K::Basis;
+            type Z = IntegerCanonicalStructure;
+            type Q = RationalCanonicalStructure;
+            type R = OrderWithBasis<K, KOB, MAXIMAL>;
+            type K = K;
+            type ZQ<BZ: BorrowedStructure<Self::Z>, BQ: BorrowedStructure<Self::Q>> =
+                PrincipalIntegerMap<RationalCanonicalStructure, RationalCanonicalStructure>;
+            type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>> =
+                PrincipalIntegerMap<OrderWithBasis<K, KOB, MAXIMAL>, BR>;
+            type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>> =
+                K::RationalInclusion<BK>;
+            type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>> =
+                AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                    K,
+                    OrderWithBasis<K, KOB, MAXIMAL>,
+                    RB,
+                >;
+
+            fn z_ring(&self) -> &Self::Z {
+                Integer::structure_ref()
+            }
+            fn r_ring(&self) -> &Self::R {
+                self.r_to_k.borrow().domain()
+            }
+            fn q_field(&self) -> &Self::Q {
+                Rational::structure_ref()
+            }
+            fn k_field(&self) -> &Self::K {
+                self.r_to_k.borrow().range()
+            }
+
+            fn z_to_q<'a>(&'a self) -> Cow<'a, Self::ZQ<&'a Self::Z, &'a Self::Q>> {
+                Cow::Owned(Rational::structure().into_inbound_principal_integer_map())
+            }
+            fn z_to_r<'a>(&'a self) -> Cow<'a, Self::ZR<&'a Self::Z, &'a Self::R>> {
+                Cow::Owned(self.r_ring().inbound_principal_integer_map())
+            }
+            fn q_to_k<'a>(&'a self) -> Cow<'a, Self::QK<&'a Self::Q, &'a Self::K>> {
+                Cow::Owned(
+                    self.k_field()
+                        .inbound_finite_dimensional_rational_extension(),
+                )
+            }
+            fn r_to_k<'a>(&'a self) -> Cow<'a, Self::RK<&'a Self::R, &'a Self::K>> {
+                Cow::Borrowed(self.r_to_k.borrow())
+            }
+
+            fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Set) -> Integer {
+                if self.k_field().is_algebraic_integer(alpha) {
+                    Integer::ONE
+                } else {
+                    self.k_field().min_poly_denominator_lcm(alpha)
+                }
+            }
+        }
+
+        #[derive(Debug, Clone)]
+        pub struct OrderIntegralExtensionWithIdeals<
+            K: AlgebraicNumberFieldSignature,
+            KOB: BorrowedStructure<K>,
+            const MAXIMAL: bool,
+            RB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+            RtoK: BorrowedMorphism<
+                    OrderWithBasis<K, KOB, MAXIMAL>,
+                    K,
+                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                        K,
+                        OrderWithBasis<K, KOB, MAXIMAL>,
+                        RB,
+                    >,
+                >,
+            IdealsZ: IdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
+            RIB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+            IdealsR: IdealsSignature<OrderWithBasis<K, KOB, MAXIMAL>, RIB>,
+        > {
+            _k: PhantomData<K>,
+            _kob: PhantomData<KOB>,
+            _rb: PhantomData<RB>,
+            r_to_k: RtoK,
+            ideals_z: IdealsZ,
+            _rib: PhantomData<RIB>,
+            ideals_r: IdealsR,
+        }
+
+        impl<
+            K: AlgebraicNumberFieldSignature,
+            KOB: BorrowedStructure<K>,
+            const MAXIMAL: bool,
+            RB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+            RtoK: BorrowedMorphism<
+                    OrderWithBasis<K, KOB, MAXIMAL>,
+                    K,
+                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                        K,
+                        OrderWithBasis<K, KOB, MAXIMAL>,
+                        RB,
+                    >,
+                >,
+            IdealsZ: IdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
+            RIB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+            IdealsR: IdealsSignature<OrderWithBasis<K, KOB, MAXIMAL>, RIB>,
+        > OrderIntegralExtensionWithIdeals<K, KOB, MAXIMAL, RB, RtoK, IdealsZ, RIB, IdealsR>
+        {
+            pub fn new_integer_extension(
+                r_to_k: RtoK,
+                ideals_z: IdealsZ,
+                ideals_r: IdealsR,
+            ) -> Self {
+                Self {
+                    _k: PhantomData,
+                    _kob: PhantomData,
+                    _rb: PhantomData,
+                    r_to_k,
+                    ideals_z,
+                    _rib: PhantomData,
+                    ideals_r,
+                }
+            }
+
+            pub fn z_ideals(&self) -> &IdealsZ {
+                &self.ideals_z
+            }
+
+            pub fn r_ideals(&self) -> &IdealsR {
+                &self.ideals_r
+            }
+        }
+
+        impl<
+            K: AlgebraicNumberFieldSignature,
+            KOB: BorrowedStructure<K>,
+            const MAXIMAL: bool,
+            RB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+            RtoK: BorrowedMorphism<
+                    OrderWithBasis<K, KOB, MAXIMAL>,
+                    K,
+                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                        K,
+                        OrderWithBasis<K, KOB, MAXIMAL>,
+                        RB,
+                    >,
+                >,
+            IdealsZ: IdealsSignature<IntegerCanonicalStructure, IntegerCanonicalStructure>,
+            RIB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
+            IdealsR: IdealsSignature<OrderWithBasis<K, KOB, MAXIMAL>, RIB>,
+        > IntegralClosureExtension
+            for OrderIntegralExtensionWithIdeals<K, KOB, MAXIMAL, RB, RtoK, IdealsZ, RIB, IdealsR>
+        {
+            type QKBasis = K::Basis;
+            type Z = IntegerCanonicalStructure;
+            type Q = RationalCanonicalStructure;
+            type R = OrderWithBasis<K, KOB, MAXIMAL>;
+            type K = K;
+            type ZQ<BZ: BorrowedStructure<Self::Z>, BQ: BorrowedStructure<Self::Q>> =
+                PrincipalIntegerMap<RationalCanonicalStructure, RationalCanonicalStructure>;
+            type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>> =
+                PrincipalIntegerMap<OrderWithBasis<K, KOB, MAXIMAL>, BR>;
+            type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>> =
+                K::RationalInclusion<BK>;
+            type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>> =
+                AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                    K,
+                    OrderWithBasis<K, KOB, MAXIMAL>,
+                    RB,
+                >;
+
+            fn z_ring(&self) -> &Self::Z {
+                Integer::structure_ref()
+            }
+            fn r_ring(&self) -> &Self::R {
+                self.r_to_k.borrow().domain()
+            }
+            fn q_field(&self) -> &Self::Q {
+                Rational::structure_ref()
+            }
+            fn k_field(&self) -> &Self::K {
+                self.r_to_k.borrow().range()
+            }
+
+            fn z_to_q<'a>(&'a self) -> Cow<'a, Self::ZQ<&'a Self::Z, &'a Self::Q>> {
+                Cow::Owned(Rational::structure().into_inbound_principal_integer_map())
+            }
+            fn z_to_r<'a>(&'a self) -> Cow<'a, Self::ZR<&'a Self::Z, &'a Self::R>> {
+                Cow::Owned(self.r_ring().inbound_principal_integer_map())
+            }
+            fn q_to_k<'a>(&'a self) -> Cow<'a, Self::QK<&'a Self::Q, &'a Self::K>> {
+                Cow::Owned(
+                    self.k_field()
+                        .inbound_finite_dimensional_rational_extension(),
+                )
+            }
+            fn r_to_k<'a>(&'a self) -> Cow<'a, Self::RK<&'a Self::R, &'a Self::K>> {
+                Cow::Borrowed(self.r_to_k.borrow())
+            }
+
+            fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Set) -> Integer {
+                if self.k_field().is_algebraic_integer(alpha) {
+                    Integer::ONE
+                } else {
+                    self.k_field().min_poly_denominator_lcm(alpha)
+                }
+            }
         }
     }
 }
