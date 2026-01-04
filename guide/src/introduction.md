@@ -1,7 +1,7 @@
 # Introduction
 ## What is Algebraeon?
 
-Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. 
+Algebraeon is a computer algebra system written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. A subset of the features are also available as a [Python module](https://pishleback.github.io/Algebraeon-Python/).
 
 ## Source Code and Contributing
 
@@ -10,6 +10,14 @@ The project is open source and is hosted [on GitHub here](https://github.com/pis
 ## Stability
 
 The API is subject to large breaking changes at this time. I hope to stabilize things more in the not too distant future.
+
+## Links
+
+[GitHub](https://github.com/pishleback/Algebraeon)
+
+[Crates.io](https://crates.io/crates/algebraeon)
+
+[Algebraeon as a Python module](https://pishleback.github.io/Algebraeon-Python/).
 
 ## Crates
 
