@@ -13,11 +13,9 @@ The API is subject to large breaking changes at this time. I hope to stabilize t
 
 ## Links
 
-[GitHub](https://github.com/pishleback/Algebraeon)
-
-[Crates.io](https://crates.io/crates/algebraeon)
-
-[Algebraeon as a Python module](https://pishleback.github.io/Algebraeon-Python/).
+ - [GitHub](https://github.com/pishleback/Algebraeon)
+ - [Crates.io](https://crates.io/crates/algebraeon)
+ - [Algebraeon as a Python module](https://pishleback.github.io/Algebraeon-Python/)
 
 ## Crates
 
