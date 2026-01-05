@@ -56,9 +56,6 @@ jobs:
     - name: Run Clippy Debug Checks
       run: cargo clippy -- -D warnings
 
-    - name: Run Clippy Release Checks
-      run: cargo clippy -- -D warnings
-
   test_debug:
     runs-on: ubuntu-latest
     steps:
