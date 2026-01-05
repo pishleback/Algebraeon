@@ -16,7 +16,7 @@ name = "algebraeon_nzq"
 algebraeon-sets = { version = "=0.0.14", path = "../sets", default-features = false }
 malachite-base = "0.8.0"
 malachite-nz = { version = "0.8.0", features = ["random"] }
-malachite-q = "0.8.0"
+malachite-q = "0.9.0"
 
 
 [package.metadata.docs.rs]
