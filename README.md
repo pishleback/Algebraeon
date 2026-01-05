@@ -6,7 +6,7 @@ See the [user guide](https://pishleback.github.io/Algebraeon/) (a work in progre
 
 Contributions are welcome and I am happy to do some hand-holding to help out new contributors. See below for the best ways to contribute.
 
-There is [![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?logo=discord&logoColor=white)](https://discord.gg/DBqbPqPMKR) for informal discussions on the project.
+There is [![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?logo=discord&logoColor=white)](https://discord.gg/DBqbPqPMKR) for informal discussions about Algebraeon.
 
 The latest published version of Algebraeon is hosted on crates.io [here](https://crates.io/crates/algebraeon) and the formal documentation for the most recent release is [here](https://docs.rs/algebraeon/latest/algebraeon/).
 
