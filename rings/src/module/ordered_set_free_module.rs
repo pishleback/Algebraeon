@@ -190,8 +190,8 @@ impl<
 
     fn try_neg(&self, v: &Self::Set) -> Option<Self::Set> {
         v.iter()
-                .map(|(x, a)| Some((x.clone(), self.ring().try_neg(a)?)))
-                .collect::<Option<_>>()
+            .map(|(x, a)| Some((x.clone(), self.ring().try_neg(a)?)))
+            .collect::<Option<_>>()
     }
 
     fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
