@@ -1244,18 +1244,18 @@ where
 
 impl<R: MetaType> PartialEq for Polynomial<R>
 where
-    R::Signature: RingEqSignature,
+    R::Signature: SemiRingEqSignature,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
     }
 }
 
-impl<R: MetaType> Eq for Polynomial<R> where R::Signature: RingEqSignature {}
+impl<R: MetaType> Eq for Polynomial<R> where R::Signature: SemiRingEqSignature {}
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Signature: RingEqSignature<Set = R>,
+    R::Signature: SemiRingEqSignature<Set = R>,
 {
     pub fn var() -> Self {
         Self::structure().var()
@@ -1746,6 +1746,12 @@ mod tests {
         let g = (3 - 2 * x + 21 * x.pow(2)).into_verbose();
         assert!(f.is_monic());
         assert!(!g.is_monic());
+    }
+
+    #[test]
+    fn test_nat_var() {
+        let x = Polynomial::<Natural>::var();
+        println!("{}", x);
     }
 
     #[test]
