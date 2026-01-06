@@ -93,6 +93,17 @@ impl PolynomialFromStr for Polynomial<Rational> {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nat_poly_display() {
+        let p = Polynomial::<Natural>::from_coeffs(vec![Natural::ONE, Natural::ONE, Natural::ONE]);
+        println!("{}", p);
+    }
+}
+
 // impl MetaType for Polynomial<Natural> {
 //     type Signature =
 //         PolynomialSemiRingStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>;

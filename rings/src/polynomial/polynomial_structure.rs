@@ -1216,10 +1216,7 @@ where
     }
 }
 
-impl<R: MetaType> MetaType for Polynomial<R>
-where
-    R::Signature: RingEqSignature,
-{
+impl<R: MetaType> MetaType for Polynomial<R> {
     type Signature = PolynomialStructure<R::Signature, R::Signature>;
 
     fn structure() -> Self::Signature {
@@ -1238,7 +1235,7 @@ where
 
 impl<R: MetaType> Display for Polynomial<R>
 where
-    R::Signature: RingEqSignature + ToStringSignature,
+    R::Signature: SemiRingSignature + EqSignature + ToStringSignature,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Self::structure().to_string(self))
