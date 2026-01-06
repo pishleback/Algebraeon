@@ -59,6 +59,10 @@ impl AdditiveMonoidSignature for IntegersModuloN {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         ((a + b) % &self.n).into()
     }
+
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
 }
 
 impl AdditiveGroupSignature for IntegersModuloN {
