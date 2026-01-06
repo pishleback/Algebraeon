@@ -135,7 +135,7 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
         #[cfg(debug_assertions)]
         {
             let q_field = self.q_field();
-            let q_poly = q_field.polynomial_ring();
+            let q_poly = q_field.polynomials();
             assert!(q_poly.is_monic(&alpha_min_poly_monic));
         }
         alpha_min_poly_monic
@@ -152,7 +152,7 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
         #[cfg(debug_assertions)]
         {
             let z_ring = self.z_ring();
-            let z_poly = z_ring.polynomial_ring();
+            let z_poly = z_ring.polynomials();
             assert!(z_poly.is_monic(&alpha_min_poly_monic));
         }
         alpha_min_poly_monic

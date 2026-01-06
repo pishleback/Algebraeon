@@ -13,6 +13,15 @@ impl AdditiveMonoidSignature for NaturalCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
+
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        let z = self.zero();
+        if a == &z { Some(self.zero()) } else { None }
+    }
+
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        a.try_sub(b)
+    }
 }
 
 impl SemiRingSignature for NaturalCanonicalStructure {

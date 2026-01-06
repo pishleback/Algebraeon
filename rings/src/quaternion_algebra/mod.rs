@@ -135,6 +135,14 @@ impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructu
             w: self.base.add(&a.w, &b.w),
         }
     }
+
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.neg(a))
+    }
+
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
 }
 
 impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructure<Field> {

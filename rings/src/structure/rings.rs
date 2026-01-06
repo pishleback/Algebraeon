@@ -19,6 +19,12 @@ pub trait AdditiveMonoidSignature: SetSignature {
         *a = self.add(a, b);
     }
 
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_sub(&self.zero(), a)
+    }
+
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+
     fn sum(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut sum = self.zero();
         for val in vals {
@@ -921,7 +927,7 @@ where
         &self,
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<Self::Set>> {
-        let base_field_poly = self.base_field().into_polynomial_ring();
+        let base_field_poly = self.base_field().into_polynomials();
         self.all_roots_list(
             &base_field_poly
                 .factorizations()
@@ -934,7 +940,7 @@ where
         poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
-        let base_field_poly = self.base_field().into_polynomial_ring();
+        let base_field_poly = self.base_field().into_polynomials();
         for (factor, k) in base_field_poly
             .factorizations()
             .into_powers(base_field_poly.factor(poly)?)

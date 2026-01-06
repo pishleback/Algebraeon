@@ -873,7 +873,7 @@ mod tests {
             );
 
         let f = QuaternaryField::structure()
-            .polynomial_ring()
+            .polynomials()
             .factorize_by_trying_all_factors(p.clone())
             .unwrap();
         println!("{} = {}", p, f);

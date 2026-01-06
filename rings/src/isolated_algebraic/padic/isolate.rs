@@ -386,7 +386,7 @@ fn isorefine(
         p,
         Integer::structure()
             .into_quotient_ring(Integer::from(&p_tothe_beta))
-            .into_polynomial_ring()
+            .into_polynomials()
             .evaluate(df, &Integer::from(i)),
     );
     if vdfi < Valuation::Finite(Integer::from(beta)) {

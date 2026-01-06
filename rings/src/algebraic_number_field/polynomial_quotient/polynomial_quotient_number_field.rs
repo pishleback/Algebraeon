@@ -2,7 +2,7 @@ use crate::{
     algebraic_number_field::{AlgebraicNumberFieldSignature, anf_multi_primitive_element_theorem},
     matrix::Matrix,
     polynomial::{
-        Polynomial, PolynomialQuotientRingStructure, PolynomialStructure, RingToPolynomialSignature,
+        Polynomial, PolynomialQuotientRingStructure, PolynomialStructure, ToPolynomialSignature,
     },
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, CharZeroFieldSignature,
@@ -34,7 +34,7 @@ impl Polynomial<Rational> {
         self,
     ) -> Result<AlgebraicNumberFieldPolynomialQuotientStructure, ()> {
         Rational::structure()
-            .into_polynomial_ring()
+            .into_polynomials()
             .into_quotient_field(self)
     }
 
@@ -42,7 +42,7 @@ impl Polynomial<Rational> {
         self,
     ) -> AlgebraicNumberFieldPolynomialQuotientStructure {
         Rational::structure()
-            .into_polynomial_ring()
+            .into_polynomials()
             .into_quotient_field_unchecked(self)
     }
 
@@ -259,19 +259,19 @@ impl
         polynomial: &Polynomial<Rational>,
     ) -> Vec<<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set> {
         let anf = self.range();
-        anf.polynomial_ring()
+        anf.polynomials()
             .factor(&polynomial.apply_map(|x| self.image(x)))
             .unwrap()
             .into_powers()
             .into_iter()
             .filter_map(|(factor, power)| {
-                match anf.polynomial_ring().degree(&factor) {
+                match anf.polynomials().degree(&factor) {
                     None | Some(0) => unreachable!(),
                     Some(1) => {
                         // factor = a + bx
                         // so root = -a/b
-                        let a = anf.polynomial_ring().coeff(&factor, 0);
-                        let b = anf.polynomial_ring().coeff(&factor, 1);
+                        let a = anf.polynomials().coeff(&factor, 0);
+                        let b = anf.polynomials().coeff(&factor, 1);
                         Some(vec![
                             anf.neg(&anf.div(a.as_ref(), b.as_ref()).unwrap());
                             power.try_into().unwrap()

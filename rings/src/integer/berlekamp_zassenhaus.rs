@@ -121,7 +121,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn new_at_prime(state: &BerlekampAassenhausAlgorithmState, p: Natural) -> Option<Self> {
         debug_assert!(p.is_prime());
         let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p));
-        let poly_mod_p = mod_p.polynomial_ring();
+        let poly_mod_p = mod_p.polynomials();
         if poly_mod_p.degree(&state.poly) == Some(state.degree) {
             let facotred_f_mod_p = poly_mod_p.factor(&state.poly).unwrap();
             match poly_mod_p
@@ -385,7 +385,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         let mut modular_factor_product_memory_stack = MemoryStack::new(
             Integer::structure()
                 .into_quotient_ring(self.modulus.clone())
-                .into_polynomial_ring(),
+                .into_polynomials(),
             self.modular_factors.clone(),
         );
 
@@ -496,7 +496,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
                     &|f| {
                         if f.degree().unwrap() == 0 {
                             Integer::structure()
-                                .into_polynomial_ring()
+                                .into_polynomials()
                                 .factorizations()
                                 .from_unit(f)
                         } else {
@@ -524,7 +524,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
         let prime_gen = primes();
         for p in prime_gen {
             let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(p));
-            let poly_mod_p = mod_p.polynomial_ring();
+            let poly_mod_p = mod_p.polynomials();
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap();
                 if let Some(hensel_factorization_f_over_p) = poly_mod_p

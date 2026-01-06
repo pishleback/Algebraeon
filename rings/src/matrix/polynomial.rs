@@ -7,7 +7,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
     ) -> Result<Matrix<Polynomial<FS::Set>>, MatOppErr> {
         let n = m.rows();
         if n == m.cols() {
-            let poly_ring = self.ring().polynomial_ring();
+            let poly_ring = self.ring().polynomials();
             let poly_mat_struct = MatrixStructure::new(poly_ring.clone());
             Ok(poly_mat_struct
                 .add(
@@ -24,7 +24,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
     pub fn minimal_polynomial(&self, m: Matrix<FS::Set>) -> Result<Polynomial<FS::Set>, MatOppErr> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
-                let poly_ring = self.ring().polynomial_ring();
+                let poly_ring = self.ring().polynomials();
                 let poly_mat_struct = MatrixStructure::new(poly_ring.clone());
                 let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
                 debug_assert!(k > 0); //cant be all zero because we are taking SNF of a non-zero matrix
@@ -41,7 +41,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
     ) -> Result<Polynomial<FS::Set>, MatOppErr> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
-                let poly_ring = self.ring().polynomial_ring();
+                let poly_ring = self.ring().polynomials();
                 let poly_mat_struct = MatrixStructure::new(poly_ring.clone());
                 let (_u, s, _v, k) = poly_mat_struct.smith_algorithm(pres_mat);
                 debug_assert!(k > 0); //cant be all zero because we are taking SNF of a non-zero matrix

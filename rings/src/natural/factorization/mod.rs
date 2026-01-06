@@ -1,6 +1,6 @@
 use super::functions::*;
 use super::*;
-use crate::polynomial::{Polynomial, SemiRingToPolynomialSemiRingSignature};
+use crate::polynomial::{Polynomial, ToPolynomialSignature};
 use algebraeon_nzq::traits::AbsDiff;
 pub use factored::*;
 use primes::is_prime;
@@ -55,7 +55,7 @@ pub fn trial_division(mut n: Natural, max_d: usize) -> Vec<Factor> {
 pub fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> {
     debug_assert!(!is_prime(&n));
 
-    let nat_polys = Natural::structure().into_polynomial_semiring();
+    let nat_polys = Natural::structure().into_polynomials();
 
     // g(x) = x^2 + 1
     let g1 = Polynomial::<Natural>::from_coeffs(vec![Natural::ONE, Natural::ZERO, Natural::ONE]);

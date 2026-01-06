@@ -46,7 +46,7 @@ impl ConwayFiniteFieldStructure {
             n,
             structure: Integer::structure()
                 .into_quotient_field_unchecked(Integer::from(p))
-                .into_polynomial_ring()
+                .into_polynomials()
                 .into_quotient_field_unchecked(f.clone()),
         })
     }
@@ -103,6 +103,14 @@ impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {
 
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.structure.add(a, b)
+    }
+
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.neg(a))
+    }
+
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
     }
 }
 

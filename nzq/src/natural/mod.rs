@@ -7,6 +7,7 @@ use algebraeon_sets::structure::{
     CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
     Signature, ToStringSignature,
 };
+use malachite_base::num::arithmetic::traits::CheckedSub;
 use malachite_base::num::{
     arithmetic::traits::PowerOf2,
     basic::traits::{One, Two, Zero},
@@ -664,6 +665,14 @@ impl Natural {
     pub fn bitcount(&self) -> usize {
         self.bits().len()
     }
+
+    /// Return `self-other` if the result is a natural number
+    pub fn try_sub(&self, other: &Self) -> Option<Self> {
+        Some(Self::from_malachite(
+            self.to_malachite_ref()
+                .checked_sub(other.to_malachite_ref())?,
+        ))
+    }
 }
 
 macro_rules! impl_try_into_unsigned {
@@ -930,5 +939,14 @@ mod tests {
                 .collect::<Vec<_>>(),
             (0..10u32).map(|x| x.into()).collect::<Vec<Natural>>()
         );
+    }
+
+    #[test]
+    fn natural_checked_sub() {
+        assert_eq!(
+            Natural::from(3u16).try_sub(&Natural::from(2u16)).unwrap(),
+            Natural::from(1u16)
+        );
+        assert!(Natural::from(2u16).try_sub(&Natural::from(3u16)).is_none());
     }
 }

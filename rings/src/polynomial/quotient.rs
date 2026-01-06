@@ -1,4 +1,4 @@
-use super::{Polynomial, polynomial_ring::*};
+use super::{Polynomial, polynomial_structure::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::*;
@@ -253,7 +253,7 @@ impl<
 {
     fn try_preimage(&self, x: &Polynomial<Field::Set>) -> Option<Field::Set> {
         self.domain()
-            .polynomial_ring()
+            .polynomials()
             .as_constant(&self.range().reduce(x))
     }
 }
@@ -281,16 +281,14 @@ impl<
     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Field::Set>) -> Cow<'a, Field::Set> {
         Cow::Owned(
             self.ring()
-                .polynomial_ring()
+                .polynomials()
                 .coeff(&self.module().reduce(v), *b)
                 .into_owned(),
         )
     }
 
     fn from_component(&self, b: &usize, r: &Field::Set) -> Polynomial<Field::Set> {
-        self.ring()
-            .polynomial_ring()
-            .constant_var_pow(r.clone(), *b)
+        self.ring().polynomials().constant_var_pow(r.clone(), *b)
     }
 }
 
@@ -303,7 +301,7 @@ mod tests {
     #[test]
     fn finite_dimensional_field_extension_structure() {
         let x = Rational::structure()
-            .into_polynomial_ring()
+            .into_polynomials()
             .var()
             .into_ergonomic();
         {

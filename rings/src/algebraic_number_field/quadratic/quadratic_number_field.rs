@@ -131,6 +131,14 @@ impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticNumberFieldSt
             algebraic_part: &a.algebraic_part + &b.algebraic_part,
         }
     }
+
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.neg(a))
+    }
+
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
 }
 
 impl<D: BorrowedSet<Integer>> AdditiveGroupSignature for QuadraticNumberFieldStructure<D> {

@@ -91,6 +91,14 @@ mod range_module {
         fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
             self.hom.range().add(a, b)
         }
+
+        fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+            Some(self.neg(a))
+        }
+
+        fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+            Some(self.sub(a, b))
+        }
     }
 
     impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>

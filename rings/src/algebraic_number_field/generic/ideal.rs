@@ -12,7 +12,7 @@ use crate::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
         finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
     },
-    polynomial::RingToPolynomialSignature,
+    polynomial::ToPolynomialSignature,
     structure::*,
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, traits::Abs};
@@ -914,8 +914,8 @@ impl<
         let roi = self.r_ring();
         let roi_ideals = self.r_ideals();
         let mod_p = Integer::structure().into_quotient_field_unchecked(p.clone());
-        let poly_mod_p = mod_p.polynomial_ring();
-        let poly_roi = roi.polynomial_ring();
+        let poly_mod_p = mod_p.polynomials();
+        let poly_roi = roi.polynomials();
 
         // alpha generates the algebraic number field but it is not necessarily an algebraic integer
         let alpha = anf.generator();

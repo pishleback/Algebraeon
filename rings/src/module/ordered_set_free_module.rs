@@ -187,6 +187,18 @@ impl<
     fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
         self.collapse_terms(v.iter().chain(w.iter()).cloned().collect())
     }
+
+    fn try_neg(&self, v: &Self::Set) -> Option<Self::Set> {
+        Some(
+            v.iter()
+                .map(|(x, a)| Some((x.clone(), self.ring().try_neg(a)?)))
+                .collect::<Option<_>>()?,
+        )
+    }
+
+    fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
+        todo!()
+    }
 }
 
 impl<

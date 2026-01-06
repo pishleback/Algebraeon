@@ -1,11 +1,11 @@
-use std::{borrow::Borrow, collections::HashSet};
-
-use itertools::Itertools;
-
-use crate::structure::*;
+use super::multipoly_structure::*;
+use crate::{
+    polynomial::{MultiPolynomial, Variable},
+    structure::*,
+};
 use algebraeon_sets::structure::*;
-
-use super::multipoly_ring::*;
+use itertools::Itertools;
+use std::{borrow::Borrow, collections::HashSet};
 
 pub fn ss_num(n: usize) -> String {
     let mut ss = String::new();

@@ -10,7 +10,7 @@ pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polyno
     let q = q.apply_map(|c| MultiPolynomial::constant(c.clone()));
     let r = Integer::structure()
         .multivariable_polynomial_ring()
-        .polynomial_ring()
+        .polynomials()
         .evaluate(
             &q,
             &MultiPolynomial::add(
@@ -22,7 +22,7 @@ pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polyno
 
     let root_sum_poly = Integer::structure()
         .multivariable_polynomial_ring()
-        .polynomial_ring()
+        .polynomials()
         .resultant(p.clone(), r.clone())
         .expand(&z)
         .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
@@ -36,7 +36,7 @@ pub fn root_product_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Po
     let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
     let q = Integer::structure()
         .multivariable_polynomial_ring()
-        .polynomial_ring()
+        .polynomials()
         .evaluate(
             &q.apply_map(|c| MultiPolynomial::constant(c.clone())),
             &MultiPolynomial::var(x.clone()),
@@ -46,7 +46,7 @@ pub fn root_product_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Po
 
     let root_prod_poly = Integer::structure()
         .multivariable_polynomial_ring()
-        .polynomial_ring()
+        .polynomials()
         .resultant(p.clone(), r.clone())
         .expand(&x)
         .apply_map(|c| MultiPolynomial::as_constant(c).unwrap());
@@ -158,14 +158,14 @@ mod tests {
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
                 Integer::structure()
-                    .polynomial_ring()
+                    .polynomials()
                     .factorize_by_kroneckers_method(exp.clone(), Integer::factor)
             );
             println!(
                 "rsp = {}    rsp_factored = {:?}",
                 Polynomial::to_string(&rsp),
                 Integer::structure()
-                    .polynomial_ring()
+                    .polynomials()
                     .factorize_by_kroneckers_method(rsp.clone(), Integer::factor)
             );
             assert!(Polynomial::are_associate(&exp, &rsp));
@@ -250,14 +250,14 @@ mod tests {
                 "exp = {}    exp_factored = {:?}",
                 Polynomial::to_string(&exp),
                 Integer::structure()
-                    .polynomial_ring()
+                    .polynomials()
                     .factorize_by_kroneckers_method(exp.clone(), Integer::factor)
             );
             println!(
                 "rpp = {}    rpp_factored = {:?}",
                 Polynomial::to_string(&rpp),
                 Integer::structure()
-                    .polynomial_ring()
+                    .polynomials()
                     .factorize_by_kroneckers_method(rpp.clone(), Integer::factor)
             );
             assert!(Polynomial::are_associate(&exp, &rpp));

@@ -1,4 +1,4 @@
-use super::{Polynomial, polynomial_ring::*};
+use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
@@ -65,12 +65,11 @@ impl<
                 f_factorization.check(ring, i, n)?;
                 g_factorization.check(ring, i, n)?;
 
-                let poly_ring = ring.polynomial_ring();
+                let poly_ring = ring.polynomials();
                 let ring_mod_i = ring.quotient_ring(i.clone());
-                let poly_ring_mod_i = ring_mod_i.polynomial_ring();
-                let poly_ring_mod_i_tothe_n = ring
-                    .quotient_ring(ring.nat_pow(i, n))
-                    .into_polynomial_ring();
+                let poly_ring_mod_i = ring_mod_i.polynomials();
+                let poly_ring_mod_i_tothe_n =
+                    ring.quotient_ring(ring.nat_pow(i, n)).into_polynomials();
 
                 //af + bg = 1 mod i
                 if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(vec![
@@ -124,10 +123,8 @@ impl<
         first_fs: Vec<&Polynomial<RS::Set>>,
         second_fs: Vec<&Polynomial<RS::Set>>,
     ) -> Self {
-        let poly_ring = ring.polynomial_ring();
-        let poly_ring_mod_p = ring
-            .quotient_field_unchecked(p.clone())
-            .into_polynomial_ring();
+        let poly_ring = ring.polynomials();
+        let poly_ring_mod_p = ring.quotient_field_unchecked(p.clone()).into_polynomials();
 
         //first_h and second_h are defined modulo p^n
         let first_h = poly_ring
@@ -210,7 +207,7 @@ fn compute_lift_factors<
     Polynomial<RS::Set>,
     Polynomial<RS::Set>,
 ) {
-    let poly_ring = ring.polynomial_ring();
+    let poly_ring = ring.polynomials();
 
     let alpha = poly_ring.leading_coeff(h).unwrap();
     let (gcd, beta, gamma) = ring.euclidean_xgcd(alpha.clone(), i.clone());
@@ -232,7 +229,7 @@ fn compute_lift_factors<
     //delta_h = h - alpha*f*g mod i^n+1
     let poly_ring_mod_i_tothe_nplusone = ring
         .quotient_ring(ring.nat_pow(i, &(n + Natural::ONE)))
-        .into_polynomial_ring();
+        .into_polynomials();
     debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
         &delta_h,
         &poly_ring_mod_i_tothe_nplusone.add(
@@ -244,7 +241,7 @@ fn compute_lift_factors<
             ]))
         ),
     ));
-    let poly_ring = ring.polynomial_ring();
+    let poly_ring = ring.polynomials();
 
     debug_assert!(poly_ring.degree(&delta_h).unwrap_or(0) < poly_ring.degree(h).unwrap());
 
@@ -317,7 +314,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactorableS
             } => {
                 let pring_mod_i2n = ring
                     .quotient_ring(ring.nat_pow(i, &(n * Natural::TWO)))
-                    .into_polynomial_ring();
+                    .into_polynomials();
 
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
@@ -404,7 +401,7 @@ impl<
                 debug_assert_eq!(first_fs.len() + second_fs.len(), fs_len);
 
                 //find an inverse beta to alpha modulo p
-                let alpha = ring.polynomial_ring().leading_coeff(&h).unwrap();
+                let alpha = ring.polynomials().leading_coeff(&h).unwrap();
                 let (g, _beta, _gamma) = ring.euclidean_xgcd(alpha.clone(), p.clone());
                 debug_assert!(ring.equal(&g, &ring.one()));
 
@@ -464,7 +461,7 @@ impl<
         h: Polynomial<RS::Set>,
         fs: Vec<Polynomial<RS::Set>>,
     ) -> Self {
-        let poly_ring = ring.polynomial_ring();
+        let poly_ring = ring.polynomials();
 
         debug_assert!(ring.is_irreducible(&p));
 
@@ -475,9 +472,7 @@ impl<
             debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n
-        let poly_ring_mod_p_tothe_n = ring
-            .quotient_ring(ring.nat_pow(&p, &n))
-            .into_polynomial_ring();
+        let poly_ring_mod_p_tothe_n = ring.quotient_ring(ring.nat_pow(&p, &n)).into_polynomials();
         let alpha = poly_ring.leading_coeff(&h).unwrap();
         debug_assert!(poly_ring_mod_p_tothe_n.equal(
             &h,

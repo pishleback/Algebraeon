@@ -4,32 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
- - Added Minkowski sum of shapes
- - Added multithreading to speed up shape algorithms
- - `RingSignature` no longer requires `EqSignature`
- - Added traits for representing points as a limit of decreasing subsets
- - Implemented above traits for intervals on the real line and boxes in the complex plane
- - Added types for continued fractions and for computing best rational approximations
- - Added quadratic algebraic number fields
- - Added `SymmetricMatrix`
- - Added orders for algebraic number fields and their ideals, with the ring of integers as a special case
- - Added quotient submodules and quotient ideals
- - Added conductor of an order in an algebraic number field
+ - Merged polynomial ring and polynomial semiring structures into a single polynomial structure.
+
+## [0.0.14] - 2026-01-01
+
+ - Added Minkowski sum of shapes.
+ - Added multithreading to speed up shape algorithms.
+ - `RingSignature` no longer requires `EqSignature`.
+ - Added traits for representing points as a limit of decreasing subsets.
+ - Implemented above traits for intervals on the real line and boxes in the complex plane.
+ - Added types for continued fractions and for computing best rational approximations.
+ - Added quadratic algebraic number fields.
+ - Added `SymmetricMatrix`.
+ - Added orders for algebraic number fields and their ideals, with the ring of integers as a special case.
+ - Added quotient submodules and quotient ideals.
+ - Added conductor of an order in an algebraic number field.
 
 ## [0.0.13] - 2025-07-21
 
  - Added database of Conway polynomials.
  - Added structure for finite fields using Conway polynomials and inclusion maps between finite fields.
- - Fixed a bug in ring of integers multiplication in dimensions >= 3
- - Rename structure traits from SomethingStructure to SomethingSignature
- - Moved a bunch of stuff around in algebraeon-rings
+ - Fixed a bug in ring of integers multiplication in dimensions >= 3.
+ - Rename structure traits from SomethingStructure to SomethingSignature.
+ - Moved a bunch of stuff around in algebraeon-rings.
  - Added Legendre Jacobi and Kronecker symbols.
  - Listing ring of algebraic integers ideals of a given norm.
  - Added trait for getting the characteristic of a ring.
  - Allow certain structures to borrow other structures.
- - Basics of quaternion algebras
- - Started graphs crate
- - Added trait for ANFs and implemented it for rationals and ANFs via polynomial quotients
+ - Basics of quaternion algebras.
+ - Started graphs crate.
+ - Added trait for ANFs and implemented it for rationals and ANFs via polynomial quotients.
 
 ## [0.0.12] - 2025-04-12
 

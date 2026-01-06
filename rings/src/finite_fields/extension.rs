@@ -56,7 +56,7 @@ where
     PolynomialStructure<FS, FS>: FactorableSignature<Set = Polynomial<FS::Set>>,
 {
     finite_field
-        .into_polynomial_ring()
+        .into_polynomials()
         .into_quotient_field_unchecked(poly)
 }
 
