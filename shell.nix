@@ -11,7 +11,6 @@ in
       # Replace llvmPackages with llvmPackages_X, where X is the latest LLVM version
       llvmPackages_21.bintools
       rustup
-      openssl
       pkg-config
       gcc
     ];
