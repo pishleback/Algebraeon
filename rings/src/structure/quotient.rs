@@ -264,11 +264,16 @@ impl<
 }
 
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
-    IntegralDomainSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
+    MultiplicativeIntegralMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
 {
     fn try_div(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
         Some(self.mul(top, &self.try_inv(bot)?))
     }
+}
+
+impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
+    IntegralDomainSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
+{
 }
 
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>

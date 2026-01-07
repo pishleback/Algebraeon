@@ -74,7 +74,7 @@ impl MultiplicativeMonoidUnitsSignature for IntegerCanonicalStructure {
     }
 }
 
-impl IntegralDomainSignature for IntegerCanonicalStructure {
+impl MultiplicativeIntegralMonoidSignature for IntegerCanonicalStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         match self.quorem(a, b) {
             Some((q, r)) => {
@@ -88,6 +88,8 @@ impl IntegralDomainSignature for IntegerCanonicalStructure {
         }
     }
 }
+
+impl IntegralDomainSignature for IntegerCanonicalStructure {}
 
 impl OrderedRingSignature for IntegerCanonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {

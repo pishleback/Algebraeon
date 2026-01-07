@@ -1,6 +1,8 @@
 use crate::structure::{
-    AdditiveMonoidSignature, FavoriteAssociateSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidWithZeroSignature, SetWithZeroSignature,
+    AdditiveMonoidSignature, FavoriteAssociateSignature, MultiplicativeGroupSignature,
+    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
+    MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature,
+    SetWithZeroSignature,
 };
 use algebraeon_sets::structure::{
     BorrowedStructure, EqSignature, OrdSignature, SetSignature, Signature,
@@ -22,7 +24,7 @@ pub enum Factored<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FactoringStructure<
-    Object: MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature,
+    Object: UniqueFactorizationMonoidSignature,
     ObjectB: BorrowedStructure<Object>,
     Exponent: AdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -34,12 +36,21 @@ pub struct FactoringStructure<
 }
 
 impl<
-    Object: MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature,
+    Object: UniqueFactorizationMonoidSignature,
     ObjectB: BorrowedStructure<Object>,
     Exponent: AdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
+    pub fn new(objects: ObjectB, exponents: ExponentB) -> Self {
+        Self {
+            _objects: PhantomData,
+            objects,
+            _exponents: PhantomData,
+            exponents,
+        }
+    }
+
     pub fn objects(&self) -> &Object {
         self.objects.borrow()
     }
@@ -50,7 +61,7 @@ impl<
 }
 
 impl<
-    Object: MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature,
+    Object: UniqueFactorizationMonoidSignature,
     ObjectB: BorrowedStructure<Object>,
     Exponent: AdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -59,7 +70,7 @@ impl<
 }
 
 impl<
-    Object: MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature,
+    Object: UniqueFactorizationMonoidSignature,
     ObjectB: BorrowedStructure<Object>,
     Exponent: AdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -97,19 +108,24 @@ impl<
 }
 
 impl<
-    Object: MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature,
+    Object: UniqueFactorizationMonoidSignature,
     ObjectB: BorrowedStructure<Object>,
     Exponent: AdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > EqSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        #[cfg(debug_assertions)]
+        {
+            self.is_element(a).unwrap();
+            self.is_element(b).unwrap();
+        }
         todo!()
     }
 }
 
 impl<
-    Object: MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature,
+    Object: UniqueFactorizationMonoidSignature,
     ObjectB: BorrowedStructure<Object>,
     Exponent: AdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -121,7 +137,7 @@ impl<
 }
 
 impl<
-    Object: MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature,
+    Object: UniqueFactorizationMonoidSignature,
     ObjectB: BorrowedStructure<Object>,
     Exponent: AdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -165,7 +181,7 @@ impl<
 }
 
 impl<
-    Object: MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature,
+    Object: UniqueFactorizationMonoidSignature,
     ObjectB: BorrowedStructure<Object>,
     Exponent: AdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -179,12 +195,86 @@ impl<
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        match (a, b) {
-            (Factored::NonZero(a), Factored::NonZero(b)) => {
-                todo!();
-                todo!()
-            }
-            _ => Factored::Zero,
+        #[cfg(debug_assertions)]
+        {
+            self.is_element(a).unwrap();
+            self.is_element(b).unwrap();
         }
+        let mut s = a.clone();
+        self.mul_mut(&mut s, b);
+        s
+    }
+}
+
+impl<
+    Object: UniqueFactorizationMonoidSignature,
+    ObjectB: BorrowedStructure<Object>,
+    Exponent: AdditiveMonoidSignature + OrdSignature,
+    ExponentB: BorrowedStructure<Exponent>,
+> MultiplicativeMonoidUnitsSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+{
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+        #[cfg(debug_assertions)]
+        self.is_element(a).unwrap();
+        match a {
+            Factored::Zero => None,
+            Factored::NonZero(a) => Some(Factored::NonZero(NonZeroFactored {
+                unit: self.objects().units().inv(&a.unit),
+                powers: a
+                    .powers
+                    .iter()
+                    .map(|(p, k)| self.exponents().try_neg(k).map(|neg_k| (p.clone(), neg_k)))
+                    .collect::<Option<Vec<_>>>()?,
+            })),
+        }
+    }
+}
+
+impl<
+    Object: UniqueFactorizationMonoidSignature,
+    ObjectB: BorrowedStructure<Object>,
+    Exponent: AdditiveMonoidSignature + OrdSignature,
+    ExponentB: BorrowedStructure<Exponent>,
+> MultiplicativeIntegralMonoidSignature
+    for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+{
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        todo!()
+    }
+}
+
+pub trait UniqueFactorizationMonoidSignature:
+    MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature
+{
+    type FactoredExponent: AdditiveMonoidSignature + OrdSignature;
+
+    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent;
+    fn into_factorization_exponents(self) -> Self::FactoredExponent;
+
+    fn factorizations<'a>(
+        &'a self,
+    ) -> FactoringStructure<Self, &'a Self, Self::FactoredExponent, &'a Self::FactoredExponent>
+    {
+        FactoringStructure::new(self, self.factorization_exponents())
+    }
+    fn into_factorizations(
+        self,
+    ) -> FactoringStructure<Self, Self, Self::FactoredExponent, Self::FactoredExponent> {
+        FactoringStructure::new(self.clone(), self.into_factorization_exponents())
+    }
+
+    fn is_irreducible(&self, a: &Self::Set) -> bool;
+    fn factor_unchecked(
+        &self,
+        a: &Self::Set,
+    ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set>;
+    fn factor(
+        &self,
+        a: &Self::Set,
+    ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set> {
+        let f = self.factor_unchecked(a);
+        #[cfg(debug_assertions)]
+        self.factorizations().is_element(&f).unwrap();
+        f
     }
 }

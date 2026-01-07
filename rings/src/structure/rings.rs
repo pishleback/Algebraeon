@@ -152,6 +152,16 @@ pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
         self.try_inv(a).is_some()
     }
 
+    fn try_int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
+        if *n == Integer::ZERO {
+            Some(self.one())
+        } else if *n > Integer::ZERO {
+            Some(self.nat_pow(a, &n.abs()))
+        } else {
+            Some(self.nat_pow(&self.try_inv(a)?, &n.abs()))
+        }
+    }
+
     fn units<'a>(&'a self) -> MultiplicativeMonoidUnitsStructure<Self, &'a Self> {
         MultiplicativeMonoidUnitsStructure::new(self)
     }
@@ -170,9 +180,48 @@ where
     fn is_unit(&self) -> bool {
         Self::structure().is_unit(self)
     }
+    fn try_int_pow(&self, n: &Integer) -> Option<Self> {
+        Self::structure().try_int_pow(self, n)
+    }
 }
 impl<R: MetaType> MetaMultiplicativeMonoidUnits for R where
     Self::Signature: MultiplicativeMonoidUnitsSignature<Set = R>
+{
+}
+
+pub trait MultiplicativeIntegralMonoidSignature:
+    MultiplicativeMonoidUnitsSignature + SetWithZeroSignature + EqSignature
+{
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+
+    /// return true iff a is divisible by b
+    fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        self.try_div(a, b).is_some()
+    }
+    fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        if self.equal(a, &self.zero()) && self.equal(b, &self.zero()) {
+            true
+        } else {
+            self.try_div(a, b).is_some() && self.try_div(b, a).is_some()
+        }
+    }
+}
+pub trait MetaMultiplicativeIntegralMonoid: MetaType
+where
+    Self::Signature: MultiplicativeIntegralMonoidSignature,
+{
+    fn try_div(a: &Self, b: &Self) -> Option<Self> {
+        Self::structure().try_div(a, b)
+    }
+    fn divisible(a: &Self, b: &Self) -> bool {
+        Self::structure().divisible(a, b)
+    }
+    fn are_associate(a: &Self, b: &Self) -> bool {
+        Self::structure().are_associate(a, b)
+    }
+}
+impl<R: MetaType> MetaMultiplicativeIntegralMonoid for R where
+    Self::Signature: MultiplicativeIntegralMonoidSignature<Set = R>
 {
 }
 
@@ -351,61 +400,22 @@ impl<R: MetaType> MetaRing for R where Self::Signature: RingSignature {}
 pub trait RingEqSignature: RingSignature + EqSignature {}
 impl<R: RingSignature + EqSignature> RingEqSignature for R {}
 
-pub trait IntegralDomainSignature: RingUnitsSignature + EqSignature {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
-
+pub trait IntegralDomainSignature:
+    RingUnitsSignature + MultiplicativeIntegralMonoidSignature + EqSignature
+{
     fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
         let n = Fraction::numerator(x);
         let d = Fraction::denominator(x);
         debug_assert!(!d.is_zero());
         self.try_div(&self.from_int(n), &self.from_nat(d))
     }
-
-    fn try_int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
-        if *n == Integer::ZERO {
-            Some(self.one())
-        } else if self.is_zero(a) {
-            Some(self.zero())
-        } else if *n > Integer::ZERO {
-            Some(self.nat_pow(a, &n.abs()))
-        } else {
-            Some(self.nat_pow(&self.try_inv(a)?, &n.abs()))
-        }
-    }
-
-    /// return true iff a is divisible by b
-    fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.try_div(a, b).is_some()
-    }
-    fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        if self.equal(a, &self.zero()) && self.equal(b, &self.zero()) {
-            true
-        } else {
-            self.try_div(a, b).is_some() && self.try_div(b, a).is_some()
-        }
-    }
 }
 pub trait MetaIntegralDomain: MetaRing
 where
     Self::Signature: IntegralDomainSignature,
 {
-    fn try_div(a: &Self, b: &Self) -> Option<Self> {
-        Self::structure().try_div(a, b)
-    }
-
     fn try_from_rat(x: &Rational) -> Option<Self> {
         Self::structure().try_from_rat(x)
-    }
-
-    fn try_int_pow(&self, n: &Integer) -> Option<Self> {
-        Self::structure().try_int_pow(self, n)
-    }
-
-    fn divisible(a: &Self, b: &Self) -> bool {
-        Self::structure().divisible(a, b)
-    }
-    fn are_associate(a: &Self, b: &Self) -> bool {
-        Self::structure().are_associate(a, b)
     }
 }
 impl<R: MetaRing> MetaIntegralDomain for R where Self::Signature: IntegralDomainSignature<Set = R> {}

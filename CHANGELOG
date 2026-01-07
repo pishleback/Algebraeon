@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
  - Removed `RingDivisionError` in favour of `Option`.
  - Added `SetWithZeroSignature`.
  - Added `MultiplicativeMonoidWithZeroSignature`.
+ - Added `MultiplicativeIntegralMonoidSignature`.
 
 ## [0.0.15] - 2026-01-06
 

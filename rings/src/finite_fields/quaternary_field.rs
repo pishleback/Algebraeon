@@ -109,7 +109,7 @@ impl MultiplicativeMonoidUnitsSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {
+impl MultiplicativeIntegralMonoidSignature for QuaternaryFieldCanonicalStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         #[allow(clippy::match_same_arms)]
         match (&a, &b) {
@@ -125,6 +125,8 @@ impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {
         }
     }
 }
+
+impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {}
 
 impl FieldSignature for QuaternaryFieldCanonicalStructure {}
 

@@ -7,9 +7,9 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, CharZeroFieldSignature,
         FactorableSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
-        IntegralDomainExtensionAllPolynomialRoots, IntegralDomainSignature, MetaAdditiveMonoid,
-        MetaFactorableSignature, MetaMultiplicativeMonoid, PrincipalRationalMap, RingHomomorphism,
-        RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
+        IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoid, MetaFactorableSignature,
+        MetaMultiplicativeMonoid, MultiplicativeIntegralMonoidSignature, PrincipalRationalMap,
+        RingHomomorphism, RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
     },
 };
 use algebraeon_nzq::{

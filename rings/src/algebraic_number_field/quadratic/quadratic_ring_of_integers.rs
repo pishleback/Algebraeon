@@ -6,8 +6,9 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroRingSignature,
         CharacteristicSignature, DedekindDomainSignature, IntegralDomainSignature,
-        MetaCharZeroRing, MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
-        RingSignature, SemiModuleSignature, SemiRingSignature, SetWithZeroSignature,
+        MetaCharZeroRing, MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
+        MultiplicativeMonoidUnitsSignature, RingSignature, SemiModuleSignature, SemiRingSignature,
+        SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
@@ -131,7 +132,9 @@ impl<D: BorrowedSet<Integer>> MultiplicativeMonoidUnitsSignature
     }
 }
 
-impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticRingOfIntegersStructure<D> {
+impl<D: BorrowedSet<Integer>> MultiplicativeIntegralMonoidSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         let d = self.anf().try_div(a, b)?;
         if self.anf().is_algebraic_integer(&d) {
@@ -141,6 +144,8 @@ impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticRingOfInteger
         }
     }
 }
+
+impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticRingOfIntegersStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> CharacteristicSignature for QuadraticRingOfIntegersStructure<D> {
     fn characteristic(&self) -> Natural {

@@ -67,7 +67,7 @@ impl MultiplicativeMonoidUnitsSignature for RationalCanonicalStructure {
     }
 }
 
-impl IntegralDomainSignature for RationalCanonicalStructure {
+impl MultiplicativeIntegralMonoidSignature for RationalCanonicalStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         if b == &Rational::ZERO {
             None
@@ -76,6 +76,8 @@ impl IntegralDomainSignature for RationalCanonicalStructure {
         }
     }
 }
+
+impl IntegralDomainSignature for RationalCanonicalStructure {}
 
 impl OrderedRingSignature for RationalCanonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {

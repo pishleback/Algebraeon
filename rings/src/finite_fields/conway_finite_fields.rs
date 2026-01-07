@@ -160,11 +160,13 @@ impl MultiplicativeMonoidUnitsSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl IntegralDomainSignature for ConwayFiniteFieldStructure {
+impl MultiplicativeIntegralMonoidSignature for ConwayFiniteFieldStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         self.structure.try_div(a, b)
     }
 }
+
+impl IntegralDomainSignature for ConwayFiniteFieldStructure {}
 
 impl FieldSignature for ConwayFiniteFieldStructure {}
 

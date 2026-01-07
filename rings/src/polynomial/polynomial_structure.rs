@@ -807,12 +807,17 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeMono
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeIntegralMonoidSignature
     for PolynomialStructure<RS, RSB>
 {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         self.div_impl(a, b)
     }
+}
+
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
+    for PolynomialStructure<RS, RSB>
+{
 }
 
 // #[derive(Debug, Clone, PartialEq, Eq)]

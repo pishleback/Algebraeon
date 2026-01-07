@@ -11,7 +11,8 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
-        FinitelyFreeModuleSignature, IntegralDomainSignature, MultiplicativeMonoidSignature,
+        FinitelyFreeModuleSignature, IntegralDomainSignature,
+        MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
         MultiplicativeMonoidUnitsSignature, RingSignature, RingToIdealsSignature,
         SemiModuleSignature, SemiRingSignature, SetWithZeroSignature,
     },
@@ -353,11 +354,16 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    IntegralDomainSignature for OrderWithBasis<K, KB, MAXIMAL>
+    MultiplicativeIntegralMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.mul(a, &self.try_inv(b)?))
     }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    IntegralDomainSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>

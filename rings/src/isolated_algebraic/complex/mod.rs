@@ -975,11 +975,13 @@ impl MultiplicativeMonoidUnitsSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl IntegralDomainSignature for ComplexAlgebraicCanonicalStructure {
+impl MultiplicativeIntegralMonoidSignature for ComplexAlgebraicCanonicalStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.mul(a, &self.try_inv(b)?))
     }
 }
+
+impl IntegralDomainSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl FieldSignature for ComplexAlgebraicCanonicalStructure {}
 

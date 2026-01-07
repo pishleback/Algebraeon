@@ -850,7 +850,7 @@ impl MultiplicativeMonoidUnitsSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl IntegralDomainSignature for PAdicAlgebraicStructure {
+impl MultiplicativeIntegralMonoidSignature for PAdicAlgebraicStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
@@ -866,7 +866,9 @@ impl IntegralDomainSignature for PAdicAlgebraicStructure {
         }
         Some(self.mul(a, &self.try_inv(b)?))
     }
+}
 
+impl IntegralDomainSignature for PAdicAlgebraicStructure {
     fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
         Some(PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),

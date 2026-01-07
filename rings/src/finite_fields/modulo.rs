@@ -236,11 +236,13 @@ impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
 
 macro_rules! impl_field {
     ($N: literal) => {
-        impl IntegralDomainSignature for ModuloCanonicalStructure<$N> {
+        impl MultiplicativeIntegralMonoidSignature for ModuloCanonicalStructure<$N> {
             fn try_div(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
                 Some(self.mul(top, &self.try_inv(bot)?))
             }
         }
+
+        impl IntegralDomainSignature for ModuloCanonicalStructure<$N> {}
 
         impl FieldSignature for ModuloCanonicalStructure<$N> {}
 

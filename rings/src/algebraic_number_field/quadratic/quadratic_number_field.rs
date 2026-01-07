@@ -4,8 +4,8 @@ use crate::algebraic_number_field::{
 use crate::structure::{
     AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroFieldSignature, CharZeroRingSignature,
     CharacteristicSignature, FieldSignature, IntegralDomainSignature,
-    MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RingSignature,
-    SemiRingSignature, SetWithZeroSignature,
+    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
+    MultiplicativeMonoidUnitsSignature, RingSignature, SemiRingSignature, SetWithZeroSignature,
 };
 use crate::structure::{
     AdditiveMonoidEqSignature, FreeModuleSignature, MetaAdditiveMonoidEq, MetaCharZeroRing,
@@ -192,11 +192,15 @@ impl<D: BorrowedSet<Integer>> MultiplicativeMonoidUnitsSignature
     }
 }
 
-impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticNumberFieldStructure<D> {
+impl<D: BorrowedSet<Integer>> MultiplicativeIntegralMonoidSignature
+    for QuadraticNumberFieldStructure<D>
+{
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.mul(a, &self.try_inv(b)?))
     }
 }
+
+impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticNumberFieldStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> CharacteristicSignature for QuadraticNumberFieldStructure<D> {
     fn characteristic(&self) -> Natural {

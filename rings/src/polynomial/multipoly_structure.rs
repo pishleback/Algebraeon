@@ -244,7 +244,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeMono
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeIntegralMonoidSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
@@ -279,6 +279,11 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
             ))
         }
     }
+}
+
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStructure<RS>>
