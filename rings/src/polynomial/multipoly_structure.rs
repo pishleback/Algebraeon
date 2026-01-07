@@ -281,8 +281,8 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
     }
 }
 
-impl<RS: FavoriteAssociateSignature, RSB: BorrowedStructure<RS>> FavoriteAssociateSignature
-    for MultiPolynomialStructure<RS, RSB>
+impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStructure<RS>>
+    FavoriteAssociateSignature for MultiPolynomialStructure<RS, RSB>
 {
     fn factor_fav_assoc(&self, mpoly: &Self::Set) -> (Self::Set, Self::Set) {
         match mpoly.terms.first() {

@@ -203,6 +203,41 @@ where
 }
 impl<R: MetaType> MetaMultiplicativeGroup for R where Self::Signature: MultiplicativeGroupSignature {}
 
+pub trait FavoriteAssociateSignature: MultiplicativeMonoidUnitsSignature + EqSignature {
+    //For associate class of elements, choose a unique representative
+    //write self=unit*assoc and return (unit, assoc)
+    //0 is required to return (1, 0)
+    //every unit u is required to return (u, 1) i.e. 1 is the favorite associate of every unit
+    //it seems to happen that the product of favorite associates is another favorite associate. Should this be a requirement?
+
+    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set);
+    fn fav_assoc(&self, a: &Self::Set) -> Self::Set {
+        self.factor_fav_assoc(a).1
+    }
+    fn is_fav_assoc(&self, a: &Self::Set) -> bool {
+        let (_u, b) = self.factor_fav_assoc(a);
+        self.equal(a, &b)
+    }
+}
+pub trait MetaFavoriteAssociate: MetaMultiplicativeMonoidUnits
+where
+    Self::Signature: FavoriteAssociateSignature,
+{
+    fn factor_fav_assoc(&self) -> (Self, Self) {
+        Self::structure().factor_fav_assoc(self)
+    }
+    fn fav_assoc(&self) -> Self {
+        Self::structure().fav_assoc(self)
+    }
+    fn is_fav_assoc(&self) -> bool {
+        Self::structure().is_fav_assoc(self)
+    }
+}
+impl<R: MetaType> MetaFavoriteAssociate for R where
+    Self::Signature: FavoriteAssociateSignature<Set = R>
+{
+}
+
 pub trait SemiRingSignature:
     AdditiveMonoidSignature + MultiplicativeMonoidWithZeroSignature
 {
@@ -429,43 +464,9 @@ where
 }
 impl<R: MetaRing> MetaFiniteUnits for R where Self::Signature: FiniteUnitsSignature<Set = R> {}
 
-pub trait FavoriteAssociateSignature: IntegralDomainSignature {
-    //For associate class of elements, choose a unique representative
-    //write self=unit*assoc and return (unit, assoc)
-    //0 is required to return (1, 0)
-    //every unit u is required to return (u, 1) i.e. 1 is the favorite associate of every unit
-
-    //it seems to happen that the product of favorite associates is another favorite associate. Should this be a requirement?
-
-    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set);
-    fn fav_assoc(&self, a: &Self::Set) -> Self::Set {
-        self.factor_fav_assoc(a).1
-    }
-    fn is_fav_assoc(&self, a: &Self::Set) -> bool {
-        let (_u, b) = self.factor_fav_assoc(a);
-        self.equal(a, &b)
-    }
-}
-pub trait MetaFavoriteAssociate: MetaIntegralDomain
-where
-    Self::Signature: FavoriteAssociateSignature,
+pub trait GreatestCommonDivisorSignature:
+    FavoriteAssociateSignature + IntegralDomainSignature
 {
-    fn factor_fav_assoc(&self) -> (Self, Self) {
-        Self::structure().factor_fav_assoc(self)
-    }
-    fn fav_assoc(&self) -> Self {
-        Self::structure().fav_assoc(self)
-    }
-    fn is_fav_assoc(&self) -> bool {
-        Self::structure().is_fav_assoc(self)
-    }
-}
-impl<R: MetaRing> MetaFavoriteAssociate for R where
-    Self::Signature: FavoriteAssociateSignature<Set = R>
-{
-}
-
-pub trait GreatestCommonDivisorSignature: FavoriteAssociateSignature {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
     fn gcd<'a>(&'a self, x: &Self::Set, y: &Self::Set) -> Self::Set;
@@ -601,7 +602,7 @@ pub trait EuclideanDivisionSignature: SemiRingEqSignature {
         mut y: Self::Set,
     ) -> (Self::Set, Self::Set, Self::Set)
     where
-        Self: FavoriteAssociateSignature,
+        Self: FavoriteAssociateSignature + IntegralDomainSignature,
     {
         let orig_x = x.clone();
         let orig_y = y.clone();

@@ -1,4 +1,4 @@
-use crate::structure::AdditiveMonoidEqSignature;
+use crate::structure::{AdditiveMonoidEqSignature, IntegralDomainSignature};
 
 use super::{FactoredSignature, FavoriteAssociateSignature, FieldSignature};
 use algebraeon_nzq::Natural;
@@ -72,7 +72,9 @@ pub trait RingFactorizationsSignature<
     fn mul_by_unchecked(&self, a: &mut FactoredRingElement<Ring::Set>, p: Ring::Set, k: Natural);
 }
 
-pub trait UniqueFactorizationDomainSignature: FavoriteAssociateSignature {
+pub trait UniqueFactorizationDomainSignature:
+    FavoriteAssociateSignature + IntegralDomainSignature
+{
     // type FactorOrdering: OrdSignature<Set = Self::Set>;
     type Factorizations<SelfB: BorrowedStructure<Self>>: RingFactorizationsSignature<Self, SelfB>;
 
