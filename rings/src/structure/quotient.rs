@@ -172,12 +172,16 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    AdditiveMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+    SetWithZeroSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn zero(&self) -> Self::Set {
         self.ring().zero()
     }
+}
 
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    AdditiveMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.ring().rem(&self.ring().add(a, b), &self.modulus)
     }
@@ -204,7 +208,7 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    SemiRingSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+    MultiplicativeMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn one(&self) -> Self::Set {
         self.ring().one()
@@ -213,6 +217,11 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.ring().rem(&self.ring().mul(a, b), &self.modulus)
     }
+}
+
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    SemiRingSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> RingSignature
@@ -230,11 +239,11 @@ impl<
     RS: EuclideanDomainSignature + FavoriteAssociateSignature,
     RSB: BorrowedStructure<RS>,
     const IS_FIELD: bool,
-> SemiRingUnitsSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+> MultiplicativeMonoidUnitsSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
-    fn inv(&self, x: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+    fn try_inv(&self, x: &Self::Set) -> Option<Self::Set> {
         if self.is_zero(x) {
-            Err(RingDivisionError::DivideByZero)
+            None
         } else {
             let (g, a, b) = self.ring().euclidean_xgcd(x.clone(), self.modulus.clone());
             debug_assert!(
@@ -246,9 +255,9 @@ impl<
                 )
             );
             if self.equal(&g, &self.one()) {
-                Ok(self.reduce(a))
+                Some(self.reduce(a))
             } else {
-                Err(RingDivisionError::NotDivisible)
+                None
             }
         }
     }
@@ -257,11 +266,8 @@ impl<
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
     IntegralDomainSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
 {
-    fn div(&self, top: &Self::Set, bot: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        match self.inv(bot) {
-            Ok(bot_inv) => Ok(self.mul(top, &bot_inv)),
-            Err(err) => Err(err),
-        }
+    fn try_div(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
+        Some(self.mul(top, &self.try_inv(bot)?))
     }
 }
 
@@ -282,7 +288,7 @@ mod tests {
                 .unwrap();
 
         assert!(mod5.equal(
-            &mod5.div(&Integer::from(3), &Integer::from(2)).unwrap(),
+            &mod5.try_div(&Integer::from(3), &Integer::from(2)).unwrap(),
             &Integer::from(9)
         ));
     }

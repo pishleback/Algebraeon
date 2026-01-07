@@ -5,11 +5,13 @@ use algebraeon_sets::structure::*;
 pub mod factorization;
 pub mod functions;
 
-impl AdditiveMonoidSignature for NaturalCanonicalStructure {
+impl SetWithZeroSignature for NaturalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Natural::ZERO
     }
+}
 
+impl AdditiveMonoidSignature for NaturalCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
@@ -24,7 +26,7 @@ impl AdditiveMonoidSignature for NaturalCanonicalStructure {
     }
 }
 
-impl SemiRingSignature for NaturalCanonicalStructure {
+impl MultiplicativeMonoidSignature for NaturalCanonicalStructure {
     fn one(&self) -> Self::Set {
         Natural::ONE
     }
@@ -34,18 +36,20 @@ impl SemiRingSignature for NaturalCanonicalStructure {
     }
 }
 
+impl SemiRingSignature for NaturalCanonicalStructure {}
+
 impl CharacteristicSignature for NaturalCanonicalStructure {
     fn characteristic(&self) -> Natural {
         Natural::ZERO
     }
 }
 
-impl SemiRingUnitsSignature for NaturalCanonicalStructure {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+impl MultiplicativeMonoidUnitsSignature for NaturalCanonicalStructure {
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
         match *a {
-            Natural::ZERO => Err(RingDivisionError::DivideByZero),
-            Natural::ONE => Ok(Natural::ONE),
-            _ => Err(RingDivisionError::NotDivisible),
+            Natural::ZERO => None,
+            Natural::ONE => Some(Natural::ONE),
+            _ => None,
         }
     }
 }

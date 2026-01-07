@@ -431,11 +431,13 @@ impl ToStringSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
+impl SetWithZeroSignature for RealAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(0))
     }
+}
 
+impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
     fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
         // println!("add {:?} {:?}", alg1, alg2);
 
@@ -517,7 +519,7 @@ impl AdditiveGroupSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl SemiRingSignature for RealAlgebraicCanonicalStructure {
+impl MultiplicativeMonoidSignature for RealAlgebraicCanonicalStructure {
     fn one(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(1))
     }
@@ -600,6 +602,8 @@ impl SemiRingSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
+impl SemiRingSignature for RealAlgebraicCanonicalStructure {}
+
 impl RingSignature for RealAlgebraicCanonicalStructure {
     fn is_reduced(&self) -> Result<bool, String> {
         Ok(true)
@@ -612,18 +616,15 @@ impl CharacteristicSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl SemiRingUnitsSignature for RealAlgebraicCanonicalStructure {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+impl MultiplicativeMonoidUnitsSignature for RealAlgebraicCanonicalStructure {
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
         let mut a = a.clone();
         match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {
-            std::cmp::Ordering::Less => match self.inv(&self.neg(&a)) {
-                Ok(neg_elem_inv) => Ok(self.neg(&neg_elem_inv)),
-                Err(err) => Err(err),
-            },
-            std::cmp::Ordering::Equal => Err(RingDivisionError::DivideByZero),
+            std::cmp::Ordering::Less => Some(self.neg(&self.try_inv(&self.neg(&a))?)),
+            std::cmp::Ordering::Equal => None,
             std::cmp::Ordering::Greater => match a {
                 RealAlgebraic::Rational(x) => {
-                    Ok(RealAlgebraic::Rational(Rational::inv(&x).unwrap()))
+                    Some(RealAlgebraic::Rational(Rational::try_inv(&x).unwrap()))
                 }
                 RealAlgebraic::Real(mut root) => {
                     debug_assert!(root.tight_a >= Rational::from(0));
@@ -632,20 +633,25 @@ impl SemiRingUnitsSignature for RealAlgebraicCanonicalStructure {
                     }
                     debug_assert!(Rational::from(0) < root.tight_a);
                     (root.tight_a, root.tight_b) = (
-                        Rational::inv(&root.tight_b).unwrap(),
-                        Rational::inv(&root.tight_a).unwrap(),
+                        Rational::try_inv(&root.tight_b).unwrap(),
+                        Rational::try_inv(&root.tight_a).unwrap(),
                     );
                     (root.wide_a, root.wide_b) = (
                         {
                             match root.wide_b {
                                 UpperBound::Inf => LowerBound::Finite(Rational::from(0)),
-                                UpperBound::Finite(x) => match Rational::inv(&x) {
-                                    Ok(x_inv) => LowerBound::Finite(x_inv),
-                                    Err(RingDivisionError::DivideByZero) => panic!(
-                                        "wide upper bound of strictly positive root should be strictly positive i.e. non-zero"
-                                    ),
-                                    Err(_) => panic!(),
-                                },
+                                UpperBound::Finite(x) => {
+                                    #[cfg(debug_assertions)]
+                                    if x.is_zero() {
+                                        panic!(
+                                            "wide upper bound of strictly positive root should be strictly positive i.e. non-zero"
+                                        );
+                                    }
+                                    match Rational::try_inv(&x) {
+                                        Some(x_inv) => LowerBound::Finite(x_inv),
+                                        None => panic!(),
+                                    }
+                                }
                             }
                         },
                         {
@@ -656,7 +662,7 @@ impl SemiRingUnitsSignature for RealAlgebraicCanonicalStructure {
                                         UpperBound::Inf
                                     }
                                     std::cmp::Ordering::Greater => {
-                                        UpperBound::Finite(Rational::inv(&x).unwrap())
+                                        UpperBound::Finite(Rational::try_inv(&x).unwrap())
                                     }
                                 },
                             }
@@ -677,7 +683,7 @@ impl SemiRingUnitsSignature for RealAlgebraicCanonicalStructure {
                     let ans = RealAlgebraic::Real(root);
                     #[cfg(debug_assertions)]
                     ans.check_invariants().unwrap();
-                    Ok(ans)
+                    Some(ans)
                 }
             },
         }
@@ -685,11 +691,8 @@ impl SemiRingUnitsSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl IntegralDomainSignature for RealAlgebraicCanonicalStructure {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        match self.inv(b) {
-            Ok(b_inv) => Ok(self.mul(a, &b_inv)),
-            Err(err) => Err(err),
-        }
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.mul(a, &self.try_inv(b)?))
     }
 }
 

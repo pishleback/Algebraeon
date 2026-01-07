@@ -82,12 +82,16 @@ mod range_module {
     }
 
     impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
-        AdditiveMonoidSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+        SetWithZeroSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
         fn zero(&self) -> Self::Set {
             self.hom.range().zero()
         }
+    }
 
+    impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+        AdditiveMonoidSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+    {
         fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
             self.hom.range().add(a, b)
         }

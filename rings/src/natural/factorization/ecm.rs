@@ -31,7 +31,8 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 
-use crate::{natural::factorization::primes::is_prime, structure::MetaSemiRing};
+use crate::natural::factorization::primes::is_prime;
+use crate::structure::MetaMultiplicativeMonoid;
 use algebraeon_nzq::primes;
 use algebraeon_nzq::{Natural, Rng, gcd, traits::ModInv};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};

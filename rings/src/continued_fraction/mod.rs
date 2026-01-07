@@ -1,4 +1,4 @@
-use crate::structure::{RealRoundingSignature, RingDivisionError, RingUnitsSignature};
+use crate::structure::{FieldSignature, RealRoundingSignature, RingUnitsSignature};
 use algebraeon_nzq::{Integer, Rational};
 use algebraeon_sets::structure::MetaType;
 use std::{
@@ -209,17 +209,13 @@ impl<R: ToSimpleContinuedFractionSignature> SimpleContinuedFraction
             && let Some(cache_value) = cache.value.as_ref()
         {
             let c = self.ring.floor(cache_value);
-            match self
+            if let Some(value) = self
                 .ring
-                .inv(&self.ring.sub(cache_value, &self.ring.from_int(&c)))
+                .try_inv(&self.ring.sub(cache_value, &self.ring.from_int(&c)))
             {
-                Ok(value) => {
-                    cache.value = Some(value);
-                }
-                Err(RingDivisionError::DivideByZero) => {
-                    cache.value = None;
-                }
-                Err(RingDivisionError::NotDivisible) => unreachable!(),
+                cache.value = Some(value);
+            } else {
+                cache.value = None;
             }
             cache.coeffs.push(c);
         }
@@ -227,6 +223,7 @@ impl<R: ToSimpleContinuedFractionSignature> SimpleContinuedFraction
     }
 }
 
+/// Implementing this trait is only valid if self.try_inv only returns None when given 0
 pub trait ToSimpleContinuedFractionSignature: RealRoundingSignature + RingUnitsSignature {
     /// # Warning
     /// `value` should be irrational.
@@ -238,7 +235,10 @@ pub trait ToSimpleContinuedFractionSignature: RealRoundingSignature + RingUnitsS
         SimpleContinuedFractionFromRealStructure::new(self.clone(), value)
     }
 }
-impl<R: RealRoundingSignature + RingUnitsSignature> ToSimpleContinuedFractionSignature for R {}
+impl<R: RealRoundingSignature + FieldSignature + RingUnitsSignature>
+    ToSimpleContinuedFractionSignature for R
+{
+}
 
 pub trait MetaToSimpleContinuedFraction: MetaType
 where

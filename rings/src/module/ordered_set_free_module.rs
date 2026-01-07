@@ -178,12 +178,20 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
-> AdditiveMonoidSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+> SetWithZeroSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
     fn zero(&self) -> Self::Set {
         vec![]
     }
+}
 
+impl<
+    Set: OrdSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: SemiRingSignature + EqSignature,
+    RingB: BorrowedStructure<Ring>,
+> AdditiveMonoidSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
     fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
         self.collapse_terms(v.iter().chain(w.iter()).cloned().collect())
     }

@@ -75,10 +75,15 @@ impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusion<ICS::R, ICS::K>
         let n = self
             .try_preimage(&self.range().mul(&self.image(&d), a))
             .unwrap();
-        debug_assert!(self.range().equal(
-            a,
-            &self.range().div(&self.image(&n), &self.image(&d)).unwrap()
-        ));
+        debug_assert!(
+            self.range().equal(
+                a,
+                &self
+                    .range()
+                    .try_div(&self.image(&n), &self.image(&d))
+                    .unwrap()
+            )
+        );
         (n, d)
     }
 }

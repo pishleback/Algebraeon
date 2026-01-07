@@ -6,8 +6,8 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroRingSignature,
         CharacteristicSignature, DedekindDomainSignature, IntegralDomainSignature,
-        MetaCharZeroRing, RingDivisionError, RingSignature, SemiModuleSignature, SemiRingSignature,
-        SemiRingUnitsSignature,
+        MetaCharZeroRing, MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
+        RingSignature, SemiModuleSignature, SemiRingSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
@@ -76,11 +76,13 @@ impl<D: BorrowedSet<Integer>> EqSignature for QuadraticRingOfIntegersStructure<D
     }
 }
 
-impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticRingOfIntegersStructure<D> {
+impl<D: BorrowedSet<Integer>> SetWithZeroSignature for QuadraticRingOfIntegersStructure<D> {
     fn zero(&self) -> Self::Set {
         self.anf().zero()
     }
+}
 
+impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticRingOfIntegersStructure<D> {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.anf().add(a, b)
     }
@@ -100,7 +102,9 @@ impl<D: BorrowedSet<Integer>> AdditiveGroupSignature for QuadraticRingOfIntegers
     }
 }
 
-impl<D: BorrowedSet<Integer>> SemiRingSignature for QuadraticRingOfIntegersStructure<D> {
+impl<D: BorrowedSet<Integer>> MultiplicativeMonoidSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
     fn one(&self) -> Self::Set {
         self.anf().one()
     }
@@ -110,26 +114,30 @@ impl<D: BorrowedSet<Integer>> SemiRingSignature for QuadraticRingOfIntegersStruc
     }
 }
 
+impl<D: BorrowedSet<Integer>> SemiRingSignature for QuadraticRingOfIntegersStructure<D> {}
+
 impl<D: BorrowedSet<Integer>> RingSignature for QuadraticRingOfIntegersStructure<D> {}
 
-impl<D: BorrowedSet<Integer>> SemiRingUnitsSignature for QuadraticRingOfIntegersStructure<D> {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        let b = self.anf().inv(a)?;
+impl<D: BorrowedSet<Integer>> MultiplicativeMonoidUnitsSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+        let b = self.anf().try_inv(a)?;
         if self.anf().is_algebraic_integer(&b) {
-            Ok(b)
+            Some(b)
         } else {
-            Err(RingDivisionError::NotDivisible)
+            None
         }
     }
 }
 
 impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticRingOfIntegersStructure<D> {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        let d = self.anf().div(a, b)?;
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        let d = self.anf().try_div(a, b)?;
         if self.anf().is_algebraic_integer(&d) {
-            Ok(d)
+            Some(d)
         } else {
-            Err(RingDivisionError::NotDivisible)
+            None
         }
     }
 }

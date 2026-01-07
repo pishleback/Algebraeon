@@ -1,12 +1,32 @@
 use super::*;
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteUnitsSignature
-    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>
+impl<
+    B: BorrowedStructure<IntegerCanonicalStructure>,
+    BE: BorrowedStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>>,
+> CountableSetSignature
+    for MultiplicativeMonoidUnitsStructure<
+        EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>,
+        BE,
+    >
 {
-    fn all_units(&self) -> Vec<Self::Set> {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+        self.list_all_elements().into_iter()
+    }
+}
+
+impl<
+    B: BorrowedStructure<IntegerCanonicalStructure>,
+    BE: BorrowedStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>>,
+> FiniteSetSignature
+    for MultiplicativeMonoidUnitsStructure<
+        EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>,
+        BE,
+    >
+{
+    fn list_all_elements(&self) -> Vec<Self::Set> {
         let mut units = vec![];
         let mut u = Integer::from(1);
-        while u < self.modulus().abs() {
+        while u < self.monoid().modulus().abs() {
             units.push(u.clone());
             u += Integer::ONE;
         }

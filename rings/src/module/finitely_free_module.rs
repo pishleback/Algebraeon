@@ -170,13 +170,17 @@ impl<Ring: RingSignature + EqSignature, RingB: BorrowedStructure<Ring>> EqSignat
     }
 }
 
-impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveMonoidSignature
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetWithZeroSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
     fn zero(&self) -> Self::Set {
         (0..self.rank()).map(|_| self.ring().zero()).collect()
     }
+}
 
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveMonoidSignature
+    for FinitelyFreeModuleStructure<Ring, RingB>
+{
     fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(v).is_ok());
         debug_assert!(self.is_element(w).is_ok());

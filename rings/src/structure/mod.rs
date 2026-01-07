@@ -1,6 +1,7 @@
 mod algebra;
 mod ergonomic;
 mod factorization;
+mod factorization_old;
 mod homomorphisms;
 mod ideal_factorizations;
 mod ideals;
@@ -10,10 +11,12 @@ mod modules;
 mod quotient;
 mod rings;
 mod ufd;
+mod units;
 
 pub use algebra::*;
 pub use ergonomic::*;
 pub use factorization::*;
+pub use factorization_old::*;
 pub use homomorphisms::*;
 pub use ideal_factorizations::*;
 pub use ideals::*;
@@ -23,3 +26,4 @@ pub use modules::*;
 pub use quotient::*;
 pub use rings::*;
 pub use ufd::*;
+pub use units::*;

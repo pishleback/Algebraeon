@@ -1,12 +1,12 @@
 use crate::{
     algebraic_number_field::{
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        {QuadraticNumberFieldElement, QuadraticNumberFieldStructure},
+        AlgebraicNumberFieldPolynomialQuotientStructure, QuadraticNumberFieldElement,
+        QuadraticNumberFieldStructure,
     },
     polynomial::Polynomial,
     structure::{
         AdditiveMonoidSignature, CharZeroFieldSignature, FieldSignature, MetaFactorableSignature,
-        MetaSemiRing, RingHomomorphism, SemiModuleSignature,
+        MetaMultiplicativeMonoid, RingHomomorphism, SemiModuleSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};

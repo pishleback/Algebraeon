@@ -64,7 +64,7 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                 self.ring().clone(),
                 ElementaryOppType::UnitMul {
                     row: n,
-                    unit: self.ring().inv(&unit).unwrap(),
+                    unit: self.ring().try_inv(&unit).unwrap(),
                 },
             );
             row_opp.apply(&mut m);
@@ -78,57 +78,59 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                 for c in n + 1..m.cols() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(n, c).unwrap();
-                    match self.ring().div(b, a) {
-                        Ok(q) => {
-                            //b is a multiple of a
-                            //replace (a, b) with (a, 0) by subtracting a multiple of a from b
-                            let col_opp = ElementaryOpp::new_col_opp(
-                                self.ring().clone(),
-                                ElementaryOppType::AddRowMul {
-                                    i: c,
-                                    j: n,
-                                    x: self.ring().neg(&q),
-                                },
-                            );
-                            col_opp.apply(&mut m);
-                            col_opp.apply(&mut v);
-                        }
-                        Err(RingDivisionError::NotDivisible) => {
-                            all_divisible = false;
-                            //b is not a multiple of a
-                            //replace (a, b) with (gcd, 0)
-                            let (d, x, y) = self.ring().xgcd(a, b);
-                            debug_assert!(
-                                self.ring().equal(
-                                    &self
-                                        .ring()
-                                        .add(&self.ring().mul(&x, a), &self.ring().mul(&y, b)),
-                                    &d
-                                )
-                            );
-                            let col_opp = ElementaryOpp::new_col_opp(
-                                self.ring().clone(),
-                                ElementaryOppType::TwoInv {
-                                    i: n,
-                                    j: c,
-                                    a: x,
-                                    b: y,
-                                    c: self.ring().neg(&self.ring().div(b, &d).unwrap()),
-                                    d: self.ring().div(a, &d).unwrap(),
-                                },
-                            );
-                            col_opp.apply(&mut m);
-                            col_opp.apply(&mut v);
-                        }
-                        Err(RingDivisionError::DivideByZero) => {
-                            //swap a and b
-                            //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
-                            let col_opp = ElementaryOpp::new_col_opp(
-                                self.ring().clone(),
-                                ElementaryOppType::Swap(n, c),
-                            );
-                            col_opp.apply(&mut m);
-                            col_opp.apply(&mut v);
+
+                    if self.ring().is_zero(a) {
+                        //swap a and b
+                        //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
+                        let col_opp = ElementaryOpp::new_col_opp(
+                            self.ring().clone(),
+                            ElementaryOppType::Swap(n, c),
+                        );
+                        col_opp.apply(&mut m);
+                        col_opp.apply(&mut v);
+                    } else {
+                        match self.ring().try_div(b, a) {
+                            Some(q) => {
+                                //b is a multiple of a
+                                //replace (a, b) with (a, 0) by subtracting a multiple of a from b
+                                let col_opp = ElementaryOpp::new_col_opp(
+                                    self.ring().clone(),
+                                    ElementaryOppType::AddRowMul {
+                                        i: c,
+                                        j: n,
+                                        x: self.ring().neg(&q),
+                                    },
+                                );
+                                col_opp.apply(&mut m);
+                                col_opp.apply(&mut v);
+                            }
+                            None => {
+                                all_divisible = false;
+                                //b is not a multiple of a
+                                //replace (a, b) with (gcd, 0)
+                                let (d, x, y) = self.ring().xgcd(a, b);
+                                debug_assert!(
+                                    self.ring().equal(
+                                        &self
+                                            .ring()
+                                            .add(&self.ring().mul(&x, a), &self.ring().mul(&y, b)),
+                                        &d
+                                    )
+                                );
+                                let col_opp = ElementaryOpp::new_col_opp(
+                                    self.ring().clone(),
+                                    ElementaryOppType::TwoInv {
+                                        i: n,
+                                        j: c,
+                                        a: x,
+                                        b: y,
+                                        c: self.ring().neg(&self.ring().try_div(b, &d).unwrap()),
+                                        d: self.ring().try_div(a, &d).unwrap(),
+                                    },
+                                );
+                                col_opp.apply(&mut m);
+                                col_opp.apply(&mut v);
+                            }
                         }
                     }
                 }
@@ -142,57 +144,58 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                 for r in n + 1..m.rows() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(r, n).unwrap();
-                    match self.ring().div(b, a) {
-                        Ok(q) => {
-                            //b is a multiple of a
-                            //replace (a, b) with (a, 0) by subtracting a multiple of a from b
-                            let col_opp = ElementaryOpp::new_row_opp(
-                                self.ring().clone(),
-                                ElementaryOppType::AddRowMul {
-                                    i: r,
-                                    j: n,
-                                    x: self.ring().neg(&q),
-                                },
-                            );
-                            col_opp.apply(&mut m);
-                            col_opp.apply(&mut u);
-                        }
-                        Err(RingDivisionError::NotDivisible) => {
-                            all_divisible = false;
-                            //b is not a multiple of a
-                            //replace (a, b) with (gcd, 0)
-                            let (d, x, y) = self.ring().xgcd(a, b);
-                            debug_assert!(
-                                self.ring().equal(
-                                    &self
-                                        .ring()
-                                        .add(&self.ring().mul(&x, a), &self.ring().mul(&y, b)),
-                                    &d
-                                )
-                            );
-                            let row_opp = ElementaryOpp::new_row_opp(
-                                self.ring().clone(),
-                                ElementaryOppType::TwoInv {
-                                    i: n,
-                                    j: r,
-                                    a: x,
-                                    b: y,
-                                    c: self.ring().neg(&self.ring().div(b, &d).unwrap()),
-                                    d: self.ring().div(a, &d).unwrap(),
-                                },
-                            );
-                            row_opp.apply(&mut m);
-                            row_opp.apply(&mut u);
-                        }
-                        Err(RingDivisionError::DivideByZero) => {
-                            //swap a and b
-                            //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
-                            let col_opp = ElementaryOpp::new_row_opp(
-                                self.ring().clone(),
-                                ElementaryOppType::Swap(n, r),
-                            );
-                            col_opp.apply(&mut m);
-                            col_opp.apply(&mut u);
+                    if self.ring().is_zero(a) {
+                        //swap a and b
+                        //a=0 so this does have the effect of (a, b) -> (gcd(a, b), 0)
+                        let col_opp = ElementaryOpp::new_row_opp(
+                            self.ring().clone(),
+                            ElementaryOppType::Swap(n, r),
+                        );
+                        col_opp.apply(&mut m);
+                        col_opp.apply(&mut u);
+                    } else {
+                        match self.ring().try_div(b, a) {
+                            Some(q) => {
+                                //b is a multiple of a
+                                //replace (a, b) with (a, 0) by subtracting a multiple of a from b
+                                let col_opp = ElementaryOpp::new_row_opp(
+                                    self.ring().clone(),
+                                    ElementaryOppType::AddRowMul {
+                                        i: r,
+                                        j: n,
+                                        x: self.ring().neg(&q),
+                                    },
+                                );
+                                col_opp.apply(&mut m);
+                                col_opp.apply(&mut u);
+                            }
+                            None => {
+                                all_divisible = false;
+                                //b is not a multiple of a
+                                //replace (a, b) with (gcd, 0)
+                                let (d, x, y) = self.ring().xgcd(a, b);
+                                debug_assert!(
+                                    self.ring().equal(
+                                        &self
+                                            .ring()
+                                            .add(&self.ring().mul(&x, a), &self.ring().mul(&y, b)),
+                                        &d
+                                    )
+                                );
+                                let row_opp = ElementaryOpp::new_row_opp(
+                                    self.ring().clone(),
+                                    ElementaryOppType::TwoInv {
+                                        i: n,
+                                        j: r,
+                                        a: x,
+                                        b: y,
+                                        c: self.ring().neg(&self.ring().try_div(b, &d).unwrap()),
+                                        d: self.ring().try_div(a, &d).unwrap(),
+                                    },
+                                );
+                                row_opp.apply(&mut m);
+                                row_opp.apply(&mut u);
+                            }
                         }
                     }
                 }
@@ -241,8 +244,8 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                                 j: c,
                                 a: x,
                                 b: y,
-                                c: self.ring().neg(&self.ring().div(b, &g).unwrap()),
-                                d: self.ring().div(a, &g).unwrap(),
+                                c: self.ring().neg(&self.ring().try_div(b, &g).unwrap()),
+                                d: self.ring().try_div(a, &g).unwrap(),
                             },
                         );
                         col_opp.apply(&mut m);
@@ -255,7 +258,7 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
             for fix_r in n + 1..m.rows() {
                 let a = m.at(n, n).unwrap();
                 let b = m.at(fix_r, n).unwrap();
-                let q = self.ring().div(b, a).unwrap();
+                let q = self.ring().try_div(b, a).unwrap();
                 let col_opp = ElementaryOpp::new_row_opp(
                     self.ring().clone(),
                     ElementaryOppType::AddRowMul {

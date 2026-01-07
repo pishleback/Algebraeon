@@ -9,15 +9,30 @@ impl<
     FS: FiniteFieldSignature,
     FSB: BorrowedStructure<FS>,
     FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
-> FiniteUnitsSignature for PolynomialQuotientRingStructure<FS, FSB, FSPB, true>
+    B: BorrowedStructure<PolynomialQuotientRingStructure<FS, FSB, FSPB, true>>,
+> CountableSetSignature
+    for MultiplicativeMonoidUnitsStructure<PolynomialQuotientRingStructure<FS, FSB, FSPB, true>, B>
 {
-    fn all_units(&self) -> Vec<Self::Set> {
-        let mut all_base_elements = vec![self.ring().coeff_ring().zero()];
-        for unit in self.ring().coeff_ring().all_units() {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+        self.list_all_elements().into_iter()
+    }
+}
+
+impl<
+    FS: FiniteFieldSignature,
+    FSB: BorrowedStructure<FS>,
+    FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
+    B: BorrowedStructure<PolynomialQuotientRingStructure<FS, FSB, FSPB, true>>,
+> FiniteSetSignature
+    for MultiplicativeMonoidUnitsStructure<PolynomialQuotientRingStructure<FS, FSB, FSPB, true>, B>
+{
+    fn list_all_elements(&self) -> Vec<Self::Set> {
+        let mut all_base_elements = vec![self.monoid().ring().coeff_ring().zero()];
+        for unit in self.monoid().ring().coeff_ring().all_units() {
             all_base_elements.push(unit);
         }
 
-        let mut all_base_elements_product = (0..self.degree())
+        let mut all_base_elements_product = (0..self.monoid().degree())
             .map(|_| &all_base_elements)
             .multi_cartesian_product();
 
@@ -27,7 +42,7 @@ impl<
         // What remains is the coefficients for all non-zero elements in self
         all_base_elements_product
             .map(|coeffs| {
-                self.ring().reduce_poly(Polynomial::from_coeffs(
+                self.monoid().ring().reduce_poly(Polynomial::from_coeffs(
                     coeffs.into_iter().cloned().collect(),
                 ))
             })

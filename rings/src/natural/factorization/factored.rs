@@ -2,7 +2,7 @@ use super::factor;
 use crate::{
     module::ordered_set_free_module::FreeModuleOverOrderedSetStructure,
     natural::factorization::primes::is_prime,
-    structure::{AdditiveMonoidSignature, FactoredSignature, SemiRingSignature},
+    structure::{AdditiveMonoidSignature, FactoredSignature, MultiplicativeMonoidSignature},
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure, gcd, traits::ModPow};
 use algebraeon_sets::structure::*;
@@ -48,22 +48,22 @@ impl SetSignature for NaturalFactorizationStructure {
 }
 
 impl FactoredSignature for NaturalFactorizationStructure {
-    type PrimeObject = Natural;
-    type Object = Natural;
+    type Prime = Natural;
+    type Unfactored = Natural;
 
-    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
+    fn object_divides(&self, a: &Self::Unfactored, b: &Self::Unfactored) -> bool {
         b % a == Natural::ZERO
     }
 
-    fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
+    fn try_object_is_prime(&self, object: &Self::Prime) -> Option<bool> {
         Some(is_prime(object))
     }
 
-    fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
+    fn prime_into_object(&self, prime: Self::Prime) -> Self::Unfactored {
         prime
     }
 
-    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
+    fn object_product(&self, objects: Vec<&Self::Unfactored>) -> Self::Unfactored {
         Natural::structure().product(objects)
     }
 

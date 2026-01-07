@@ -153,7 +153,7 @@ where
                 &en_sym,
                 &self.as_elementary_symmetric_polynomials_impl(
                     vars,
-                    &self.div(&q, &en).unwrap(),
+                    &self.try_div(&q, &en).unwrap(),
                     e,
                 ),
             ),

@@ -619,11 +619,13 @@ impl ToStringSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
+impl SetWithZeroSignature for ComplexAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
     }
+}
 
+impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
     fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
         // println!("add {:?} {:?}", alg1, alg2);
         // alg1.check_invariants().unwrap();
@@ -713,7 +715,7 @@ impl AdditiveGroupSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {
+impl MultiplicativeMonoidSignature for ComplexAlgebraicCanonicalStructure {
     fn one(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::one()))
     }
@@ -849,6 +851,8 @@ impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
+impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {}
+
 impl RingSignature for ComplexAlgebraicCanonicalStructure {
     fn is_reduced(&self) -> Result<bool, String> {
         Ok(true)
@@ -861,13 +865,13 @@ impl CharacteristicSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl SemiRingUnitsSignature for ComplexAlgebraicCanonicalStructure {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+impl MultiplicativeMonoidUnitsSignature for ComplexAlgebraicCanonicalStructure {
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
         // println!("inv {:?}", a);
         // a.check_invariants().unwrap();
 
         match a {
-            ComplexAlgebraic::Real(a) => Ok(ComplexAlgebraic::Real(a.inv()?)),
+            ComplexAlgebraic::Real(a) => Some(ComplexAlgebraic::Real(a.try_inv()?)),
             ComplexAlgebraic::Complex(a) => {
                 let mut root = a.clone();
 
@@ -960,7 +964,7 @@ impl SemiRingUnitsSignature for ComplexAlgebraicCanonicalStructure {
                             });
                             #[cfg(debug_assertions)]
                             ans.check_invariants().unwrap();
-                            return Ok(ans);
+                            return Some(ans);
                         }
                     }
 
@@ -972,8 +976,8 @@ impl SemiRingUnitsSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl IntegralDomainSignature for ComplexAlgebraicCanonicalStructure {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        Ok(self.mul(a, &self.inv(b)?))
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.mul(a, &self.try_inv(b)?))
     }
 }
 
@@ -1203,7 +1207,7 @@ mod tests {
 
         for root in f.all_complex_roots() {
             assert_eq!(
-                ComplexAlgebraic::mul(&root.inv().unwrap(), &root),
+                ComplexAlgebraic::mul(&root.try_inv().unwrap(), &root),
                 ComplexAlgebraic::one()
             );
         }

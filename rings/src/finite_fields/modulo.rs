@@ -152,11 +152,13 @@ impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> AdditiveMonoidSignature for ModuloCanonicalStructure<N> {
+impl<const N: usize> SetWithZeroSignature for ModuloCanonicalStructure<N> {
     fn zero(&self) -> Self::Set {
         Modulo { x: 0 }
     }
+}
 
+impl<const N: usize> AdditiveMonoidSignature for ModuloCanonicalStructure<N> {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         Modulo { x: (a.x + b.x) % N }
     }
@@ -180,7 +182,7 @@ impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {
+impl<const N: usize> MultiplicativeMonoidSignature for ModuloCanonicalStructure<N> {
     fn one(&self) -> Self::Set {
         if N == 1 {
             Modulo { x: 0 }
@@ -194,6 +196,8 @@ impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {
     }
 }
 
+impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {}
+
 impl<const N: usize> RingSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> CharacteristicSignature for ModuloCanonicalStructure<N> {
@@ -202,17 +206,17 @@ impl<const N: usize> CharacteristicSignature for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> SemiRingUnitsSignature for ModuloCanonicalStructure<N> {
-    fn inv(&self, x: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+impl<const N: usize> MultiplicativeMonoidUnitsSignature for ModuloCanonicalStructure<N> {
+    fn try_inv(&self, x: &Self::Set) -> Option<Self::Set> {
         if x == &self.zero() {
-            Err(RingDivisionError::DivideByZero)
+            None
         } else {
             let (g, a, b) = xgcd(x.x, N);
             debug_assert_eq!(g as isize, a * x.x as isize + b * N as isize);
             if g == 1 {
-                Ok(Modulo { x: modulo(a, N) })
+                Some(Modulo { x: modulo(a, N) })
             } else {
-                Err(RingDivisionError::NotDivisible)
+                None
             }
         }
     }
@@ -233,27 +237,28 @@ impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
 macro_rules! impl_field {
     ($N: literal) => {
         impl IntegralDomainSignature for ModuloCanonicalStructure<$N> {
-            fn div(
-                &self,
-                top: &Self::Set,
-                bot: &Self::Set,
-            ) -> Result<Self::Set, RingDivisionError> {
-                match self.inv(bot) {
-                    Ok(bot_inv) => Ok(self.mul(top, &bot_inv)),
-                    Err(err) => Err(err),
-                }
+            fn try_div(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
+                Some(self.mul(top, &self.try_inv(bot)?))
             }
         }
+
         impl FieldSignature for ModuloCanonicalStructure<$N> {}
-        impl FiniteUnitsSignature for ModuloCanonicalStructure<$N> {
-            fn all_units(&self) -> Vec<Modulo<$N>> {
-                let mut units = vec![];
-                for x in 1..$N {
-                    units.push(Modulo { x });
-                }
-                units
+
+        impl<B: BorrowedStructure<ModuloCanonicalStructure<$N>>> CountableSetSignature
+            for MultiplicativeMonoidUnitsStructure<ModuloCanonicalStructure<$N>, B>
+        {
+            fn generate_all_elements(
+                &self,
+            ) -> impl std::iter::Iterator<Item = Modulo<$N>> + std::clone::Clone {
+                (1..$N).map(|i| Modulo { x: i })
             }
         }
+
+        impl<B: BorrowedStructure<ModuloCanonicalStructure<$N>>> FiniteSetSignature
+            for MultiplicativeMonoidUnitsStructure<ModuloCanonicalStructure<$N>, B>
+        {
+        }
+
         impl FiniteFieldSignature for ModuloCanonicalStructure<$N> {
             fn characteristic_and_power(&self) -> (Natural, Natural) {
                 (Natural::from($N as usize), Natural::from(1u8))

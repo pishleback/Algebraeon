@@ -117,7 +117,7 @@ impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
     }
 }
 
-impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructure<Field> {
+impl<Field: FieldSignature> SetWithZeroSignature for QuaternionAlgebraStructure<Field> {
     fn zero(&self) -> Self::Set {
         QuaternionAlgebraElement {
             x: self.base.zero(),
@@ -126,7 +126,9 @@ impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructu
             w: self.base.zero(),
         }
     }
+}
 
+impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructure<Field> {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         QuaternionAlgebraElement {
             x: self.base.add(&a.x, &b.x),
@@ -165,7 +167,7 @@ impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructur
     }
 }
 
-impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {
+impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraStructure<Field> {
     fn one(&self) -> Self::Set {
         QuaternionAlgebraElement {
             x: self.base.one(),
@@ -237,10 +239,14 @@ impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Fie
     }
 }
 
-impl<Field: FieldSignature> SemiRingUnitsSignature for QuaternionAlgebraStructure<Field> {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        let n_inv = self.base.inv(&self.reduced_norm(a))?;
-        Ok(self.scalar_mul(&self.conjugate(a), &n_inv))
+impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {}
+
+impl<Field: FieldSignature> MultiplicativeMonoidUnitsSignature
+    for QuaternionAlgebraStructure<Field>
+{
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+        let n_inv = self.base.try_inv(&self.reduced_norm(a))?;
+        Some(self.scalar_mul(&self.conjugate(a), &n_inv))
     }
 
     fn is_unit(&self, a: &Self::Set) -> bool {

@@ -250,7 +250,7 @@ where
         let mut c = self
             .poly_ring
             .gcd(&self.monic, &self.poly_ring.derivative(self.monic.clone()));
-        let mut w = self.poly_ring.div(&self.monic, &c).unwrap();
+        let mut w = self.poly_ring.try_div(&self.monic, &c).unwrap();
 
         //find all the factors in w
         let mut i = Natural::ONE;
@@ -259,11 +259,11 @@ where
             factors.mul(
                 &SquarefreeFactored::new_squarefree_poly_unchecked(
                     self.poly_ring.clone(),
-                    self.poly_ring.div(&w, &y).unwrap(),
+                    self.poly_ring.try_div(&w, &y).unwrap(),
                 )
                 .pow(&i),
             );
-            let c_over_y = self.poly_ring.div(&c, &y).unwrap();
+            let c_over_y = self.poly_ring.try_div(&c, &y).unwrap();
             (w, c) = (y, c_over_y);
             i += Natural::ONE;
         }
@@ -348,13 +348,8 @@ where
             // println!("g = {}", g);
             let g_deg = self.degree(&g).unwrap();
             if g_deg != 0 && g_deg != f_deg {
-                #[allow(clippy::single_match_else)]
-                match self.div(&f, &g) {
-                    Ok(g_prime) => {
-                        return FindFactorResult::Composite(g, g_prime);
-                    }
-                    Err(_) => panic!(),
-                }
+                let f_over_g = self.try_div(&f, &g).unwrap();
+                return FindFactorResult::Composite(g, f_over_g);
             }
         }
         FindFactorResult::Irreducible
@@ -473,7 +468,7 @@ where
                 }
 
                 if !self.poly_ring.equal(&g, &self.poly_ring.one()) {
-                    f = self.poly_ring.div(&f, &g).unwrap();
+                    f = self.poly_ring.try_div(&f, &g).unwrap();
                     distinct_degree_factors.push((
                         DistinctDegreeFactor {
                             irreducible_factor_degree: i,
@@ -601,7 +596,7 @@ where
                         if gcd_deg == 0 || gcd_deg == self.poly_ring.degree(&u).unwrap() {
                             vec![u]
                         } else {
-                            vec![self.poly_ring.div(&u, &gcd).unwrap(), gcd]
+                            vec![self.poly_ring.try_div(&u, &gcd).unwrap(), gcd]
                         }
                     })
                     .collect();

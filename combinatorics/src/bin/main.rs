@@ -53,7 +53,7 @@ fn main() {
             23.into()
         } else {
             let x: Modulo<23> = x.into();
-            let x: usize = x.inv().unwrap().neg().into();
+            let x: usize = x.try_inv().unwrap().neg().into();
             x.into()
         }
     })

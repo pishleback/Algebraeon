@@ -7,8 +7,8 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, CharZeroFieldSignature,
         FactorableSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
-        IntegralDomainExtensionAllPolynomialRoots, IntegralDomainSignature,
-        MetaFactorableSignature, MetaSemiRing, PrincipalRationalMap, RingHomomorphism,
+        IntegralDomainExtensionAllPolynomialRoots, IntegralDomainSignature, MetaAdditiveMonoid,
+        MetaFactorableSignature, MetaMultiplicativeMonoid, PrincipalRationalMap, RingHomomorphism,
         RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
     },
 };
@@ -273,7 +273,7 @@ impl
                         let a = anf.polynomials().coeff(&factor, 0);
                         let b = anf.polynomials().coeff(&factor, 1);
                         Some(vec![
-                            anf.neg(&anf.div(a.as_ref(), b.as_ref()).unwrap());
+                            anf.neg(&anf.try_div(a.as_ref(), b.as_ref()).unwrap());
                             power.try_into().unwrap()
                         ])
                     }

@@ -1,8 +1,8 @@
 use crate::{
     natural::{NaturalFns, factorization::NaturalCanonicalFactorizationStructure},
     structure::{
-        FactoredSignature, MetaFactorableSignature, RingToQuotientFieldSignature,
-        RingToQuotientRingSignature, SemiRingSignature,
+        FactoredSignature, MetaFactorableSignature, MultiplicativeMonoidSignature,
+        RingToQuotientFieldSignature, RingToQuotientRingSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};

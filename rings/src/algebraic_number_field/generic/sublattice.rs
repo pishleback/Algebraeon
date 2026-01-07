@@ -1,7 +1,10 @@
 use crate::{
     algebraic_number_field::{AlgebraicNumberFieldSignature, FullRankSublatticeWithBasisSignature},
     matrix::Matrix,
-    structure::{AdditiveGroupSignature, AdditiveMonoidSignature, FiniteRankFreeRingExtension},
+    structure::{
+        AdditiveGroupSignature, AdditiveMonoidSignature, FiniteRankFreeRingExtension,
+        SetWithZeroSignature,
+    },
 };
 use algebraeon_nzq::Integer;
 use algebraeon_sets::structure::{
@@ -126,13 +129,17 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> EqSignature
     }
 }
 
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveMonoidSignature
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetWithZeroSignature
     for FullRankSublatticeWithBasis<K, KB>
 {
     fn zero(&self) -> Self::Set {
         self.free_lattice_restructure().zero()
     }
+}
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveMonoidSignature
+    for FullRankSublatticeWithBasis<K, KB>
+{
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.free_lattice_restructure().add(a, b)
     }

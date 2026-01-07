@@ -4,15 +4,20 @@ use algebraeon_nzq::{Integer, Natural, Rational, traits::*};
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, fmt::Debug};
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum RingDivisionError {
-    DivideByZero,
-    NotDivisible,
-}
-
-pub trait AdditiveMonoidSignature: SetSignature {
+pub trait SetWithZeroSignature: SetSignature {
     fn zero(&self) -> Self::Set;
+}
+pub trait MetaSetWithZero: MetaType
+where
+    Self::Signature: SetWithZeroSignature,
+{
+    fn zero() -> Self {
+        Self::structure().zero()
+    }
+}
+impl<R: MetaType> MetaSetWithZero for R where Self::Signature: SetWithZeroSignature {}
 
+pub trait AdditiveMonoidSignature: SetWithZeroSignature {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 
     fn add_mut(&self, a: &mut Self::Set, b: &Self::Set) {
@@ -33,6 +38,18 @@ pub trait AdditiveMonoidSignature: SetSignature {
         sum
     }
 }
+pub trait MetaAdditiveMonoid: MetaType
+where
+    Self::Signature: AdditiveMonoidSignature,
+{
+    fn add(a: &Self, b: &Self) -> Self {
+        Self::structure().add(a, b)
+    }
+    fn sum(vals: Vec<impl Borrow<Self>>) -> Self {
+        Self::structure().sum(vals)
+    }
+}
+impl<R: MetaType> MetaAdditiveMonoid for R where Self::Signature: AdditiveMonoidSignature {}
 
 pub trait AdditiveMonoidEqSignature: AdditiveMonoidSignature + EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
@@ -40,23 +57,25 @@ pub trait AdditiveMonoidEqSignature: AdditiveMonoidSignature + EqSignature {
     }
 }
 impl<R: AdditiveMonoidSignature + EqSignature> AdditiveMonoidEqSignature for R {}
-
 pub trait MetaAdditiveMonoidEq: MetaType
 where
-    Self::Signature: RingSignature + EqSignature,
+    Self::Signature: AdditiveMonoidEqSignature,
 {
     fn is_zero(&self) -> bool {
         Self::structure().is_zero(self)
     }
 }
-impl<R: MetaType> MetaAdditiveMonoidEq for R where Self::Signature: RingSignature + EqSignature {}
+impl<R: MetaType> MetaAdditiveMonoidEq for R where Self::Signature: AdditiveMonoidEqSignature {}
 
-pub trait SemiRingSignature: AdditiveMonoidSignature {
+pub trait MultiplicativeMonoidSignature: SetSignature {
     fn one(&self) -> Self::Set;
+
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+
     fn mul_mut(&self, a: &mut Self::Set, b: &Self::Set) {
         *a = self.mul(a, b);
     }
+
     fn product(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut prod = self.one();
         for val in vals {
@@ -88,7 +107,105 @@ pub trait SemiRingSignature: AdditiveMonoidSignature {
             ans
         }
     }
+}
+pub trait MetaMultiplicativeMonoid: MetaType
+where
+    Self::Signature: MultiplicativeMonoidSignature,
+{
+    fn one() -> Self {
+        Self::structure().one()
+    }
 
+    fn mul(a: &Self, b: &Self) -> Self {
+        Self::structure().mul(a, b)
+    }
+
+    fn product(vals: Vec<impl Borrow<Self>>) -> Self {
+        Self::structure().product(vals)
+    }
+
+    fn nat_pow(&self, n: &Natural) -> Self {
+        Self::structure().nat_pow(self, n)
+    }
+}
+impl<R: MetaType> MetaMultiplicativeMonoid for R where Self::Signature: MultiplicativeMonoidSignature
+{}
+
+/// 0 is such that 0*a=0 for all a in the monoid.
+/// such an element is unqiue if it exists.
+pub trait MultiplicativeMonoidWithZeroSignature:
+    MultiplicativeMonoidSignature + SetWithZeroSignature
+{
+}
+impl<R: MultiplicativeMonoidSignature + SetWithZeroSignature> MultiplicativeMonoidWithZeroSignature
+    for R
+{
+}
+
+pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
+    /// b such that a*b=1 and b*a=1
+    /// Err(DivideByZero) if b is zero
+    /// Err(NotDivisible) if no such b exists
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set>;
+
+    fn is_unit(&self, a: &Self::Set) -> bool {
+        self.try_inv(a).is_some()
+    }
+
+    fn units<'a>(&'a self) -> MultiplicativeMonoidUnitsStructure<Self, &'a Self> {
+        MultiplicativeMonoidUnitsStructure::new(self)
+    }
+
+    fn into_units(self) -> MultiplicativeMonoidUnitsStructure<Self, Self> {
+        MultiplicativeMonoidUnitsStructure::new(self)
+    }
+}
+pub trait MetaMultiplicativeMonoidUnits: MetaType
+where
+    Self::Signature: MultiplicativeMonoidUnitsSignature,
+{
+    fn try_inv(&self) -> Option<Self> {
+        Self::structure().try_inv(self)
+    }
+    fn is_unit(&self) -> bool {
+        Self::structure().is_unit(self)
+    }
+}
+impl<R: MetaType> MetaMultiplicativeMonoidUnits for R where
+    Self::Signature: MultiplicativeMonoidUnitsSignature<Set = R>
+{
+}
+
+pub trait MultiplicativeGroupSignature: MultiplicativeMonoidSignature {
+    fn inv(&self, a: &Self::Set) -> Self::Set;
+
+    fn int_pow(&self, a: &Self::Set, n: &Integer) -> Self::Set {
+        if *n == Integer::ZERO {
+            self.one()
+        } else if *n > Integer::ZERO {
+            self.nat_pow(a, &n.abs())
+        } else {
+            self.nat_pow(&self.inv(a), &n.abs())
+        }
+    }
+}
+pub trait MetaMultiplicativeGroup: MetaType
+where
+    Self::Signature: MultiplicativeGroupSignature,
+{
+    fn inv(a: &Self) -> Self {
+        Self::structure().inv(a)
+    }
+
+    fn int_pow(&self, n: &Integer) -> Self {
+        Self::structure().int_pow(self, n)
+    }
+}
+impl<R: MetaType> MetaMultiplicativeGroup for R where Self::Signature: MultiplicativeGroupSignature {}
+
+pub trait SemiRingSignature:
+    AdditiveMonoidSignature + MultiplicativeMonoidWithZeroSignature
+{
     fn from_nat(&self, x: impl Into<Natural>) -> Self::Set {
         let x = x.into();
         if x == Natural::ZERO {
@@ -111,35 +228,10 @@ pub trait SemiRingSignature: AdditiveMonoidSignature {
         }
     }
 }
-
 pub trait MetaSemiRing: MetaType
 where
     Self::Signature: SemiRingSignature,
 {
-    fn zero() -> Self {
-        Self::structure().zero()
-    }
-    fn one() -> Self {
-        Self::structure().one()
-    }
-
-    fn add(a: &Self, b: &Self) -> Self {
-        Self::structure().add(a, b)
-    }
-    fn sum(vals: Vec<impl Borrow<Self>>) -> Self {
-        Self::structure().sum(vals)
-    }
-    fn mul(a: &Self, b: &Self) -> Self {
-        Self::structure().mul(a, b)
-    }
-    fn product(vals: Vec<impl Borrow<Self>>) -> Self {
-        Self::structure().product(vals)
-    }
-
-    fn nat_pow(&self, n: &Natural) -> Self {
-        Self::structure().nat_pow(self, n)
-    }
-
     fn from_nat(x: impl Into<Natural>) -> Self {
         Self::structure().from_nat(x)
     }
@@ -161,6 +253,9 @@ where
     }
 }
 impl<R: MetaType> MetaCharacteristic for R where Self::Signature: CharacteristicSignature {}
+
+pub trait RingUnitsSignature: RingSignature + MultiplicativeMonoidUnitsSignature {}
+impl<Ring: RingSignature + MultiplicativeMonoidUnitsSignature> RingUnitsSignature for Ring {}
 
 pub trait AdditiveGroupSignature: AdditiveMonoidSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
@@ -200,7 +295,6 @@ pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
         PrincipalIntegerMap::new(self)
     }
 }
-
 pub trait MetaRing: MetaType
 where
     Self::Signature: RingSignature,
@@ -222,53 +316,17 @@ impl<R: MetaType> MetaRing for R where Self::Signature: RingSignature {}
 pub trait RingEqSignature: RingSignature + EqSignature {}
 impl<R: RingSignature + EqSignature> RingEqSignature for R {}
 
-pub trait SemiRingUnitsSignature: SemiRingSignature {
-    /// b such that a*b=1 and b*a=1
-    /// Err(DivideByZero) if b is zero
-    /// Err(NotDivisible) if no such b exists
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError>;
-
-    fn is_unit(&self, a: &Self::Set) -> bool {
-        match self.inv(a) {
-            Ok(_inv) => true,
-            Err(RingDivisionError::DivideByZero | RingDivisionError::NotDivisible) => false,
-        }
-    }
-}
-pub trait MetaSemiRingUnitsSignature: MetaType
-where
-    Self::Signature: SemiRingUnitsSignature,
-{
-    fn inv(&self) -> Result<Self, RingDivisionError> {
-        Self::structure().inv(self)
-    }
-    fn is_unit(&self) -> bool {
-        Self::structure().is_unit(self)
-    }
-}
-impl<R: MetaType> MetaSemiRingUnitsSignature for R where
-    Self::Signature: SemiRingUnitsSignature<Set = R>
-{
-}
-
-pub trait RingUnitsSignature: RingSignature + SemiRingUnitsSignature {}
-impl<Ring: RingSignature + SemiRingUnitsSignature> RingUnitsSignature for Ring {}
-
 pub trait IntegralDomainSignature: RingUnitsSignature + EqSignature {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError>;
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
 
     fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
-        match self.div(
-            &self.from_int(Fraction::numerator(x)),
-            &self.from_nat(Fraction::denominator(x)),
-        ) {
-            Ok(d) => Some(d),
-            Err(RingDivisionError::NotDivisible) => None,
-            Err(RingDivisionError::DivideByZero) => panic!(),
-        }
+        let n = Fraction::numerator(x);
+        let d = Fraction::denominator(x);
+        debug_assert!(!d.is_zero());
+        self.try_div(&self.from_int(n), &self.from_nat(d))
     }
 
-    fn int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
+    fn try_int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
         if *n == Integer::ZERO {
             Some(self.one())
         } else if self.is_zero(a) {
@@ -276,26 +334,19 @@ pub trait IntegralDomainSignature: RingUnitsSignature + EqSignature {
         } else if *n > Integer::ZERO {
             Some(self.nat_pow(a, &n.abs()))
         } else {
-            match self.inv(a) {
-                Ok(self_inv) => Some(self.nat_pow(&self_inv, &n.abs())),
-                Err(RingDivisionError::NotDivisible) => None,
-                Err(RingDivisionError::DivideByZero) => panic!(),
-            }
+            Some(self.nat_pow(&self.try_inv(a)?, &n.abs()))
         }
     }
 
     /// return true iff a is divisible by b
     fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        match self.div(a, b) {
-            Ok(_q) => true,
-            Err(RingDivisionError::NotDivisible | RingDivisionError::DivideByZero) => false,
-        }
+        self.try_div(a, b).is_some()
     }
     fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
         if self.equal(a, &self.zero()) && self.equal(b, &self.zero()) {
             true
         } else {
-            self.div(a, b).is_ok() && self.div(b, a).is_ok()
+            self.try_div(a, b).is_some() && self.try_div(b, a).is_some()
         }
     }
 }
@@ -303,16 +354,16 @@ pub trait MetaIntegralDomain: MetaRing
 where
     Self::Signature: IntegralDomainSignature,
 {
-    fn div(a: &Self, b: &Self) -> Result<Self, RingDivisionError> {
-        Self::structure().div(a, b)
+    fn try_div(a: &Self, b: &Self) -> Option<Self> {
+        Self::structure().try_div(a, b)
     }
 
     fn try_from_rat(x: &Rational) -> Option<Self> {
         Self::structure().try_from_rat(x)
     }
 
-    fn int_pow(&self, n: &Integer) -> Option<Self> {
-        Self::structure().int_pow(self, n)
+    fn try_int_pow(&self, n: &Integer) -> Option<Self> {
+        Self::structure().try_int_pow(self, n)
     }
 
     fn divisible(a: &Self, b: &Self) -> bool {
@@ -356,6 +407,15 @@ pub trait FiniteUnitsSignature: RingSignature {
         let mut elems = vec![self.zero()];
         elems.append(&mut self.all_units());
         elems
+    }
+}
+
+impl<R: RingSignature + MultiplicativeMonoidUnitsSignature> FiniteUnitsSignature for R
+where
+    for<'a> MultiplicativeMonoidUnitsStructure<R, &'a R>: FiniteSetSignature<Set = R::Set>,
+{
+    fn all_units(&self) -> Vec<Self::Set> {
+        self.units().list_all_elements()
     }
 }
 
@@ -420,7 +480,7 @@ pub trait GreatestCommonDivisorSignature: FavoriteAssociateSignature {
         if self.is_zero(x) && self.is_zero(y) {
             self.zero()
         } else {
-            self.div(&self.mul(x, y), &self.gcd(x, y)).unwrap()
+            self.try_div(&self.mul(x, y), &self.gcd(x, y)).unwrap()
         }
     }
     fn lcm_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
@@ -431,7 +491,6 @@ pub trait GreatestCommonDivisorSignature: FavoriteAssociateSignature {
         lcm
     }
 }
-
 pub trait MetaGreatestCommonDivisor: MetaFavoriteAssociate
 where
     Self::Signature: GreatestCommonDivisorSignature,
@@ -466,7 +525,7 @@ pub trait BezoutDomainSignature: GreatestCommonDivisorSignature {
             0 => (self.zero(), vec![]),
             1 => {
                 let (unit, assoc) = self.factor_fav_assoc(elems[0]);
-                (assoc, vec![self.inv(&unit).unwrap()])
+                (assoc, vec![self.try_inv(&unit).unwrap()])
             }
             2 => {
                 let (g, x, y) = self.xgcd(elems[0], elems[1]);
@@ -489,7 +548,6 @@ pub trait BezoutDomainSignature: GreatestCommonDivisorSignature {
         }
     }
 }
-
 pub trait MetaBezoutDomain: MetaGreatestCommonDivisor
 where
     Self::Signature: BezoutDomainSignature,
@@ -568,8 +626,8 @@ pub trait EuclideanDivisionSignature: SemiRingEqSignature {
         debug_assert!(self.is_unit(&unit));
         let (g, a, b) = (
             ass_x,
-            self.div(&pa, &unit).unwrap(),
-            self.div(&pb, &unit).unwrap(),
+            self.try_div(&pa, &unit).unwrap(),
+            self.try_div(&pb, &unit).unwrap(),
         );
         // println!("{:?} = {:?} * {:?} + {:?} * {:?}", g, a, orig_x, b, orig_y);
         debug_assert!(self.equal(
@@ -580,7 +638,6 @@ pub trait EuclideanDivisionSignature: SemiRingEqSignature {
         (g, a, b)
     }
 }
-
 pub trait MetaEuclideanDivision: MetaType
 where
     Self::Signature: EuclideanDivisionSignature,
@@ -676,7 +733,7 @@ impl<FS: FieldSignature> EuclideanDivisionSignature for FS {
         if self.is_zero(b) {
             None
         } else {
-            Some((self.div(a, b).unwrap(), self.zero()))
+            Some((self.try_div(a, b).unwrap(), self.zero()))
         }
     }
 }

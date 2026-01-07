@@ -89,8 +89,8 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
                                 a: x,
                                 b: y,
                                 //TODO: compute b/d and a/d at the same time d is computed?
-                                c: self.ring().neg(&self.ring().div(b, &d).unwrap()),
-                                d: self.ring().div(a, &d).unwrap(),
+                                c: self.ring().neg(&self.ring().try_div(b, &d).unwrap()),
+                                d: self.ring().try_div(a, &d).unwrap(),
                             },
                         );
                         //this will implicitly put the pivot into fav assoc form because that is what gcd does
@@ -106,7 +106,7 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
                     self.ring().clone(),
                     ElementaryOppType::UnitMul {
                         row: pr,
-                        unit: self.ring().inv(&unit).unwrap(),
+                        unit: self.ring().try_inv(&unit).unwrap(),
                     },
                 );
                 //this will implicitly put the pivot into fav assoc form because that is what the gcd returns
@@ -146,7 +146,7 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
         for i in 0..n {
             self.ring().mul_mut(&mut h_det, h.at(i, i).unwrap());
         }
-        self.ring().div(&h_det, &u_det).unwrap()
+        self.ring().try_div(&h_det, &u_det).unwrap()
     }
 
     pub fn det(&self, a: Matrix<Ring::Set>) -> Result<Ring::Set, MatOppErr> {

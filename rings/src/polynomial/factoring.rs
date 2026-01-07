@@ -43,8 +43,8 @@ where
         let f_prime = self.derivative(f.clone());
         let mut i: usize = 1;
         let mut a = self.gcd_by_primitive_subresultant(f.clone(), f_prime.clone());
-        let mut b = self.div(&f, &a).unwrap();
-        let mut c = self.div(&f_prime, &a).unwrap();
+        let mut b = self.try_div(&f, &a).unwrap();
+        let mut c = self.try_div(&f_prime, &a).unwrap();
         let mut d = self.add(&self.neg(&self.derivative(b.clone())), &c);
 
         while self.degree(&f).unwrap() != 0 {
@@ -56,9 +56,11 @@ where
                 self.factorizations()
                     .pow(primitive_sqfree_factorize(a.clone()), &Natural::from(i)),
             );
-            f = self.div(&f, &self.nat_pow(&a, &Natural::from(i))).unwrap();
+            f = self
+                .try_div(&f, &self.nat_pow(&a, &Natural::from(i)))
+                .unwrap();
 
-            (b, c) = (self.div(&b, &a).unwrap(), self.div(&d, &a).unwrap());
+            (b, c) = (self.try_div(&b, &a).unwrap(), self.try_div(&d, &a).unwrap());
             i += 1;
             d = self.add(&self.neg(&self.derivative(b.clone())), &c);
         }
@@ -98,7 +100,7 @@ where
             #[allow(clippy::redundant_else)]
             if self.coeff_ring().is_zero(c0.as_ref()) {
                 //linear factor of x
-                f = self.div(&f, &self.var()).unwrap();
+                f = self.try_div(&f, &self.var()).unwrap();
                 linear_factors = self
                     .factorizations()
                     .mul(linear_factors, self.factorizations().new_prime(self.var()));
@@ -121,16 +123,13 @@ where
                             //b ranges over all divisors factors of cn up to associates
                             //try the linear factor (a+bx)
                             let lin = Polynomial::from_coeffs(vec![a.clone(), b]);
-                            match self.div(&f, &lin) {
-                                Ok(new_f) => {
-                                    f = new_f;
-                                    linear_factors = self
-                                        .factorizations()
-                                        .mul(linear_factors, self.factorizations().new_prime(lin));
-                                    continue 'seek_linear_factor;
-                                }
-                                Err(RingDivisionError::NotDivisible) => {}
-                                Err(RingDivisionError::DivideByZero) => panic!(),
+                            debug_assert!(!self.is_zero(&lin));
+                            if let Some(new_f) = self.try_div(&f, &lin) {
+                                f = new_f;
+                                linear_factors = self
+                                    .factorizations()
+                                    .mul(linear_factors, self.factorizations().new_prime(lin));
+                                continue 'seek_linear_factor;
                             }
                         }
                     }
@@ -221,13 +220,10 @@ where
                     && self.degree(&g).unwrap() >= 1
                 {
                     //g is a possible proper divisor of f
-                    match self.div(f, &g) {
-                        Ok(h) => {
-                            //g really is a proper divisor of f
-                            return FindFactorResult::Composite(g, h);
-                        }
-                        Err(RingDivisionError::NotDivisible) => {}
-                        Err(RingDivisionError::DivideByZero) => panic!(),
+                    debug_assert!(!self.is_zero(&g));
+                    if let Some(h) = self.try_div(f, &g) {
+                        //g really is a proper divisor of f
+                        return FindFactorResult::Composite(g, h);
                     }
                 }
             }
@@ -393,12 +389,9 @@ where
             })) {
                 coeffs.push(self.coeff_ring().one());
                 let g = Polynomial::from_coeffs(coeffs);
-                match self.div(&f, &g) {
-                    Ok(h) => {
-                        return FindFactorResult::Composite(g, h);
-                    }
-                    Err(RingDivisionError::NotDivisible) => {}
-                    Err(RingDivisionError::DivideByZero) => panic!(),
+                debug_assert!(!self.is_zero(&g));
+                if let Some(h) = self.try_div(&f, &g) {
+                    return FindFactorResult::Composite(g, h);
                 }
             }
         }

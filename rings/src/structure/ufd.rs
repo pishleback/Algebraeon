@@ -49,7 +49,7 @@ pub trait RingFactorizationsSignature<
     RingB: BorrowedStructure<Ring>,
 >:
     SetSignature<Set = FactoredRingElement<Ring::Set>>
-    + FactoredSignature<Object = Ring::Set, PrimeObject = Ring::Set>
+    + FactoredSignature<Unfactored = Ring::Set, Prime = Ring::Set>
 {
     fn ring(&self) -> &Ring;
 
@@ -266,37 +266,34 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> SetSignature
 impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> FactoredSignature
     for FieldElementFactorizationsStructure<FS, FSB>
 {
-    type Object = FS::Set;
-    type PrimeObject = FS::Set;
+    type Unfactored = FS::Set;
+    type Prime = FS::Set;
 
-    fn new_powers_unchecked(&self, powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set {
+    fn new_powers_unchecked(&self, powers: Vec<(Self::Prime, Natural)>) -> Self::Set {
         FactoredRingElement::from_unit_and_powers(self.field().one(), powers)
     }
 
-    fn to_powers_unchecked<'a>(
-        &self,
-        a: &'a Self::Set,
-    ) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
+    fn to_powers_unchecked<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Self::Prime, &'a Natural)> {
         a.powers().iter().map(|(p, k)| (p, k)).collect()
     }
 
-    fn into_powers_unchecked(&self, powers: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
+    fn into_powers_unchecked(&self, powers: Self::Set) -> Vec<(Self::Prime, Natural)> {
         powers.into_unit_and_powers().1
     }
 
-    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
+    fn object_product(&self, objects: Vec<&Self::Unfactored>) -> Self::Unfactored {
         self.field().product(objects)
     }
 
-    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
+    fn object_divides(&self, a: &Self::Unfactored, b: &Self::Unfactored) -> bool {
         self.field().is_zero(a) || self.field().is_unit(b)
     }
 
-    fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
+    fn try_object_is_prime(&self, object: &Self::Prime) -> Option<bool> {
         self.field().debug_try_is_irreducible(object)
     }
 
-    fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
+    fn prime_into_object(&self, prime: Self::Prime) -> Self::Unfactored {
         prime
     }
 
@@ -306,7 +303,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> FactoredSignature
         FactoredRingElement::new_unit(self.field().mul(a.unit(), b.unit()))
     }
 
-    fn expanded(&self, a: &Self::Set) -> Self::Object {
+    fn expanded(&self, a: &Self::Set) -> Self::Unfactored {
         debug_assert!(self.is_element(a).is_ok());
         a.unit().clone()
     }
@@ -493,41 +490,38 @@ where
 impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> FactoredSignature
     for FactoredRingElementStructure<RS, RSB>
 {
-    type PrimeObject = RS::Set;
-    type Object = RS::Set;
+    type Prime = RS::Set;
+    type Unfactored = RS::Set;
 
-    fn object_divides(&self, a: &Self::Object, b: &Self::Object) -> bool {
+    fn object_divides(&self, a: &Self::Unfactored, b: &Self::Unfactored) -> bool {
         self.ring().divisible(a, b)
     }
 
-    fn try_object_is_prime(&self, object: &Self::PrimeObject) -> Option<bool> {
+    fn try_object_is_prime(&self, object: &Self::Prime) -> Option<bool> {
         self.ring().debug_try_is_irreducible(object)
     }
 
-    fn prime_into_object(&self, prime: Self::PrimeObject) -> Self::Object {
+    fn prime_into_object(&self, prime: Self::Prime) -> Self::Unfactored {
         prime
     }
 
-    fn object_product(&self, objects: Vec<&Self::Object>) -> Self::Object {
+    fn object_product(&self, objects: Vec<&Self::Unfactored>) -> Self::Unfactored {
         self.ring().product(objects)
     }
 
-    fn new_powers_unchecked(&self, factor_powers: Vec<(Self::PrimeObject, Natural)>) -> Self::Set {
+    fn new_powers_unchecked(&self, factor_powers: Vec<(Self::Prime, Natural)>) -> Self::Set {
         self.from_unit_and_factor_powers(self.ring().one(), factor_powers)
     }
 
-    fn to_powers_unchecked<'a>(
-        &self,
-        a: &'a Self::Set,
-    ) -> Vec<(&'a Self::PrimeObject, &'a Natural)> {
+    fn to_powers_unchecked<'a>(&self, a: &'a Self::Set) -> Vec<(&'a Self::Prime, &'a Natural)> {
         a.powers.iter().map(|(p, k)| (p, k)).collect()
     }
 
-    fn into_powers_unchecked(&self, a: Self::Set) -> Vec<(Self::PrimeObject, Natural)> {
+    fn into_powers_unchecked(&self, a: Self::Set) -> Vec<(Self::Prime, Natural)> {
         a.powers
     }
 
-    fn expanded(&self, a: &Self::Set) -> Self::Object {
+    fn expanded(&self, a: &Self::Set) -> Self::Unfactored {
         debug_assert!(self.is_element(a).is_ok());
         let mut ans = a.unit.clone();
         for (p, k) in &a.powers {
@@ -600,7 +594,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
 
     fn mul_by_unchecked(&self, a: &mut FactoredRingElement<RS::Set>, p: RS::Set, k: Natural) {
         for (q, t) in &mut a.powers {
-            if let (Ok(u), Ok(v)) = (self.ring().div(&p, q), self.ring().div(q, &p))
+            if let (Some(u), Some(v)) = (self.ring().try_div(&p, q), self.ring().try_div(q, &p))
                 && self.ring().is_unit(&u)
                 && self.ring().is_unit(&v)
             {

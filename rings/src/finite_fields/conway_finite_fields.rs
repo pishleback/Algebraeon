@@ -96,11 +96,13 @@ impl EqSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {
+impl SetWithZeroSignature for ConwayFiniteFieldStructure {
     fn zero(&self) -> Self::Set {
         self.structure.zero()
     }
+}
 
+impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.structure.add(a, b)
     }
@@ -120,7 +122,7 @@ impl AdditiveGroupSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl SemiRingSignature for ConwayFiniteFieldStructure {
+impl MultiplicativeMonoidSignature for ConwayFiniteFieldStructure {
     fn one(&self) -> Self::Set {
         self.structure.one()
     }
@@ -129,6 +131,8 @@ impl SemiRingSignature for ConwayFiniteFieldStructure {
         self.structure.mul(a, b)
     }
 }
+
+impl SemiRingSignature for ConwayFiniteFieldStructure {}
 
 impl RingSignature for ConwayFiniteFieldStructure {
     fn is_reduced(&self) -> Result<bool, String> {
@@ -150,27 +154,33 @@ impl CharacteristicSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl SemiRingUnitsSignature for ConwayFiniteFieldStructure {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
-        self.structure.inv(a)
+impl MultiplicativeMonoidUnitsSignature for ConwayFiniteFieldStructure {
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.structure.try_inv(a)
     }
 }
 
 impl IntegralDomainSignature for ConwayFiniteFieldStructure {
-    fn div(
-        &self,
-        a: &Self::Set,
-        b: &Self::Set,
-    ) -> Result<Self::Set, crate::structure::RingDivisionError> {
-        self.structure.div(a, b)
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.structure.try_div(a, b)
     }
 }
 
 impl FieldSignature for ConwayFiniteFieldStructure {}
 
-impl FiniteUnitsSignature for ConwayFiniteFieldStructure {
-    fn all_units(&self) -> Vec<Self::Set> {
-        self.structure.all_units()
+impl<B: BorrowedStructure<ConwayFiniteFieldStructure>> CountableSetSignature
+    for MultiplicativeMonoidUnitsStructure<ConwayFiniteFieldStructure, B>
+{
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+        self.list_all_elements().into_iter()
+    }
+}
+
+impl<B: BorrowedStructure<ConwayFiniteFieldStructure>> FiniteSetSignature
+    for MultiplicativeMonoidUnitsStructure<ConwayFiniteFieldStructure, B>
+{
+    fn list_all_elements(&self) -> Vec<Self::Set> {
+        self.monoid().structure.all_units()
     }
 }
 

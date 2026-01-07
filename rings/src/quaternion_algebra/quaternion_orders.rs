@@ -4,7 +4,8 @@ use crate::{
     module::finitely_free_module::RingToFinitelyFreeModuleSignature,
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, FiniteRankFreeRingExtension,
-        FinitelyFreeModuleSignature, SemiModuleSignature, SemiRingSignature,
+        FinitelyFreeModuleSignature, MultiplicativeMonoidSignature, SemiModuleSignature,
+        SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
@@ -88,11 +89,13 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
     }
 }
 
-impl<ANF: AlgebraicNumberFieldSignature> AdditiveMonoidSignature for QuaternionOrderZBasis<ANF> {
+impl<ANF: AlgebraicNumberFieldSignature> SetWithZeroSignature for QuaternionOrderZBasis<ANF> {
     fn zero(&self) -> Self::Set {
         self.algebra.zero()
     }
+}
 
+impl<ANF: AlgebraicNumberFieldSignature> AdditiveMonoidSignature for QuaternionOrderZBasis<ANF> {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.algebra.add(a, b)
     }

@@ -10,7 +10,7 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> MatrixStruc
             for r in 0..mat.rows() {
                 for c in 0..mat.cols() {
                     *mat.at_mut(r, c).unwrap() =
-                        self.ring().div(mat.at(r, c).unwrap(), &g).unwrap();
+                        self.ring().try_div(mat.at(r, c).unwrap(), &g).unwrap();
                 }
             }
             Some((g, mat))
@@ -51,7 +51,7 @@ pub fn factor_primitive_fof<
 
     (
         field
-            .div(&fof_inclusion.image(&mul), &fof_inclusion.image(&div))
+            .try_div(&fof_inclusion.image(&mul), &fof_inclusion.image(&div))
             .unwrap(),
         prim,
     )

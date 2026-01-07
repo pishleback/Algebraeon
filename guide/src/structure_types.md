@@ -51,11 +51,13 @@ impl EqSignature for IntegersModuloN {
 
 use algebraeon::rings::structure::{RingSignature, SemiRingSignature};
 
-impl AdditiveMonoidSignature for IntegersModuloN {
+impl SetWithZeroSignature for IntegersModuloN {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
+}
 
+impl AdditiveMonoidSignature for IntegersModuloN {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         ((a + b) % &self.n).into()
     }
@@ -71,7 +73,7 @@ impl AdditiveGroupSignature for IntegersModuloN {
     }
 }
 
-impl SemiRingSignature for IntegersModuloN {
+impl MultiplicativeMonoidSignature for IntegersModuloN {
     fn one(&self) -> Self::Set {
         (Integer::ONE % &self.n).into()
     }
@@ -80,6 +82,8 @@ impl SemiRingSignature for IntegersModuloN {
         ((a * b) % &self.n).into()
     }
 }
+
+impl SemiRingSignature for IntegersModuloN {}
 
 impl RingSignature for IntegersModuloN {}
 

@@ -14,11 +14,13 @@ pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
 
-impl AdditiveMonoidSignature for IntegerCanonicalStructure {
+impl SetWithZeroSignature for IntegerCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
+}
 
+impl AdditiveMonoidSignature for IntegerCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
@@ -42,7 +44,7 @@ impl AdditiveGroupSignature for IntegerCanonicalStructure {
     }
 }
 
-impl SemiRingSignature for IntegerCanonicalStructure {
+impl MultiplicativeMonoidSignature for IntegerCanonicalStructure {
     fn one(&self) -> Self::Set {
         Integer::ONE
     }
@@ -51,6 +53,8 @@ impl SemiRingSignature for IntegerCanonicalStructure {
         a * b
     }
 }
+
+impl SemiRingSignature for IntegerCanonicalStructure {}
 
 impl RingSignature for IntegerCanonicalStructure {
     fn is_reduced(&self) -> Result<bool, String> {
@@ -64,23 +68,23 @@ impl CharacteristicSignature for IntegerCanonicalStructure {
     }
 }
 
-impl SemiRingUnitsSignature for IntegerCanonicalStructure {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        self.div(&self.one(), a)
+impl MultiplicativeMonoidUnitsSignature for IntegerCanonicalStructure {
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_div(&self.one(), a)
     }
 }
 
 impl IntegralDomainSignature for IntegerCanonicalStructure {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         match self.quorem(a, b) {
             Some((q, r)) => {
                 if r == self.zero() {
-                    Ok(q)
+                    Some(q)
                 } else {
-                    Err(RingDivisionError::NotDivisible)
+                    None
                 }
             }
-            None => Err(RingDivisionError::DivideByZero),
+            None => None,
         }
     }
 }
@@ -91,8 +95,18 @@ impl OrderedRingSignature for IntegerCanonicalStructure {
     }
 }
 
-impl FiniteUnitsSignature for IntegerCanonicalStructure {
-    fn all_units(&self) -> Vec<Self::Set> {
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> CountableSetSignature
+    for MultiplicativeMonoidUnitsStructure<IntegerCanonicalStructure, B>
+{
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+        self.list_all_elements().into_iter()
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteSetSignature
+    for MultiplicativeMonoidUnitsStructure<IntegerCanonicalStructure, B>
+{
+    fn list_all_elements(&self) -> Vec<Self::Set> {
         vec![Integer::ONE, -Integer::ONE]
     }
 }

@@ -30,11 +30,13 @@ impl Display for QuaternaryField {
     }
 }
 
-impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
+impl SetWithZeroSignature for QuaternaryFieldCanonicalStructure {
     fn zero(&self) -> Self::Set {
         QuaternaryField::Zero
     }
+}
 
+impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         #[allow(clippy::match_same_arms)]
         match (a, b) {
@@ -61,7 +63,7 @@ impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
+impl MultiplicativeMonoidSignature for QuaternaryFieldCanonicalStructure {
     fn one(&self) -> Self::Set {
         QuaternaryField::One
     }
@@ -81,6 +83,8 @@ impl SemiRingSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
+impl SemiRingSignature for QuaternaryFieldCanonicalStructure {}
+
 impl RingSignature for QuaternaryFieldCanonicalStructure {
     fn is_reduced(&self) -> Result<bool, String> {
         Ok(true)
@@ -99,33 +103,43 @@ impl AdditiveGroupSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl SemiRingUnitsSignature for QuaternaryFieldCanonicalStructure {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        self.div(&self.one(), a)
+impl MultiplicativeMonoidUnitsSignature for QuaternaryFieldCanonicalStructure {
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_div(&self.one(), a)
     }
 }
 
 impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         #[allow(clippy::match_same_arms)]
         match (&a, &b) {
-            (_, QuaternaryField::Zero) => Err(RingDivisionError::DivideByZero),
-            (_, QuaternaryField::One) => Ok(*a),
-            (QuaternaryField::Zero, _) => Ok(QuaternaryField::Zero),
-            (QuaternaryField::One, QuaternaryField::Alpha) => Ok(QuaternaryField::Beta),
-            (QuaternaryField::One, QuaternaryField::Beta) => Ok(QuaternaryField::Alpha),
-            (QuaternaryField::Alpha, QuaternaryField::Alpha) => Ok(QuaternaryField::One),
-            (QuaternaryField::Alpha, QuaternaryField::Beta) => Ok(QuaternaryField::Beta),
-            (QuaternaryField::Beta, QuaternaryField::Alpha) => Ok(QuaternaryField::Alpha),
-            (QuaternaryField::Beta, QuaternaryField::Beta) => Ok(QuaternaryField::One),
+            (_, QuaternaryField::Zero) => None,
+            (_, QuaternaryField::One) => Some(*a),
+            (QuaternaryField::Zero, _) => Some(QuaternaryField::Zero),
+            (QuaternaryField::One, QuaternaryField::Alpha) => Some(QuaternaryField::Beta),
+            (QuaternaryField::One, QuaternaryField::Beta) => Some(QuaternaryField::Alpha),
+            (QuaternaryField::Alpha, QuaternaryField::Alpha) => Some(QuaternaryField::One),
+            (QuaternaryField::Alpha, QuaternaryField::Beta) => Some(QuaternaryField::Beta),
+            (QuaternaryField::Beta, QuaternaryField::Alpha) => Some(QuaternaryField::Alpha),
+            (QuaternaryField::Beta, QuaternaryField::Beta) => Some(QuaternaryField::One),
         }
     }
 }
 
 impl FieldSignature for QuaternaryFieldCanonicalStructure {}
 
-impl FiniteUnitsSignature for QuaternaryFieldCanonicalStructure {
-    fn all_units(&self) -> Vec<Self::Set> {
+impl<B: BorrowedStructure<QuaternaryFieldCanonicalStructure>> CountableSetSignature
+    for MultiplicativeMonoidUnitsStructure<QuaternaryFieldCanonicalStructure, B>
+{
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+        self.list_all_elements().into_iter()
+    }
+}
+
+impl<B: BorrowedStructure<QuaternaryFieldCanonicalStructure>> FiniteSetSignature
+    for MultiplicativeMonoidUnitsStructure<QuaternaryFieldCanonicalStructure, B>
+{
+    fn list_all_elements(&self) -> Vec<Self::Set> {
         vec![
             QuaternaryField::One,
             QuaternaryField::Alpha,
@@ -299,68 +313,68 @@ mod tests {
     #[test]
     fn test_div() {
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Zero, &QuaternaryField::Zero),
-            Err(RingDivisionError::DivideByZero)
+            QuaternaryField::try_div(&QuaternaryField::Zero, &QuaternaryField::Zero),
+            None
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Zero, &QuaternaryField::One),
-            Ok(QuaternaryField::Zero)
+            QuaternaryField::try_div(&QuaternaryField::Zero, &QuaternaryField::One),
+            Some(QuaternaryField::Zero)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Zero, &QuaternaryField::Alpha),
-            Ok(QuaternaryField::Zero)
+            QuaternaryField::try_div(&QuaternaryField::Zero, &QuaternaryField::Alpha),
+            Some(QuaternaryField::Zero)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Zero, &QuaternaryField::Beta),
-            Ok(QuaternaryField::Zero)
+            QuaternaryField::try_div(&QuaternaryField::Zero, &QuaternaryField::Beta),
+            Some(QuaternaryField::Zero)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::One, &QuaternaryField::Zero),
-            Err(RingDivisionError::DivideByZero)
+            QuaternaryField::try_div(&QuaternaryField::One, &QuaternaryField::Zero),
+            None
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::One, &QuaternaryField::One),
-            Ok(QuaternaryField::One)
+            QuaternaryField::try_div(&QuaternaryField::One, &QuaternaryField::One),
+            Some(QuaternaryField::One)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::One, &QuaternaryField::Alpha),
-            Ok(QuaternaryField::Beta)
+            QuaternaryField::try_div(&QuaternaryField::One, &QuaternaryField::Alpha),
+            Some(QuaternaryField::Beta)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::One, &QuaternaryField::Beta),
-            Ok(QuaternaryField::Alpha)
+            QuaternaryField::try_div(&QuaternaryField::One, &QuaternaryField::Beta),
+            Some(QuaternaryField::Alpha)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Alpha, &QuaternaryField::Zero),
-            Err(RingDivisionError::DivideByZero)
+            QuaternaryField::try_div(&QuaternaryField::Alpha, &QuaternaryField::Zero),
+            None
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Alpha, &QuaternaryField::One),
-            Ok(QuaternaryField::Alpha)
+            QuaternaryField::try_div(&QuaternaryField::Alpha, &QuaternaryField::One),
+            Some(QuaternaryField::Alpha)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Alpha, &QuaternaryField::Alpha),
-            Ok(QuaternaryField::One)
+            QuaternaryField::try_div(&QuaternaryField::Alpha, &QuaternaryField::Alpha),
+            Some(QuaternaryField::One)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Alpha, &QuaternaryField::Beta),
-            Ok(QuaternaryField::Beta)
+            QuaternaryField::try_div(&QuaternaryField::Alpha, &QuaternaryField::Beta),
+            Some(QuaternaryField::Beta)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Beta, &QuaternaryField::Zero),
-            Err(RingDivisionError::DivideByZero)
+            QuaternaryField::try_div(&QuaternaryField::Beta, &QuaternaryField::Zero),
+            None
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Beta, &QuaternaryField::One),
-            Ok(QuaternaryField::Beta)
+            QuaternaryField::try_div(&QuaternaryField::Beta, &QuaternaryField::One),
+            Some(QuaternaryField::Beta)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Beta, &QuaternaryField::Alpha),
-            Ok(QuaternaryField::Alpha)
+            QuaternaryField::try_div(&QuaternaryField::Beta, &QuaternaryField::Alpha),
+            Some(QuaternaryField::Alpha)
         );
         assert_eq!(
-            QuaternaryField::div(&QuaternaryField::Beta, &QuaternaryField::Beta),
-            Ok(QuaternaryField::One)
+            QuaternaryField::try_div(&QuaternaryField::Beta, &QuaternaryField::Beta),
+            Some(QuaternaryField::One)
         );
     }
 }

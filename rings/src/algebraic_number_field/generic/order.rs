@@ -11,8 +11,9 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
-        FinitelyFreeModuleSignature, IntegralDomainSignature, RingDivisionError, RingSignature,
-        RingToIdealsSignature, SemiModuleSignature, SemiRingSignature, SemiRingUnitsSignature,
+        FinitelyFreeModuleSignature, IntegralDomainSignature, MultiplicativeMonoidSignature,
+        MultiplicativeMonoidUnitsSignature, RingSignature, RingToIdealsSignature,
+        SemiModuleSignature, SemiRingSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
@@ -178,12 +179,16 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    AdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+    SetWithZeroSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn zero(&self) -> Self::Set {
         self.full_rank_z_sublattice.zero()
     }
+}
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    AdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.full_rank_z_sublattice.add(a, b)
     }
@@ -222,7 +227,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    SemiRingSignature for OrderWithBasis<K, KB, MAXIMAL>
+    MultiplicativeMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn one(&self) -> Self::Set {
         self.one.clone()
@@ -257,6 +262,11 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
         );
         t
     }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    SemiRingSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
@@ -326,20 +336,18 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    SemiRingUnitsSignature for OrderWithBasis<K, KB, MAXIMAL>
+    MultiplicativeMonoidUnitsSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, crate::structure::RingDivisionError> {
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
         if self.is_zero(a) {
-            Err(RingDivisionError::DivideByZero)
-        } else if let Some(a_inv) = self.outbound_order_to_anf_inclusion().try_preimage(
-            &self
-                .anf()
-                .inv(&self.outbound_order_to_anf_inclusion().image(a))
-                .unwrap(),
-        ) {
-            Ok(a_inv)
+            None
         } else {
-            Err(RingDivisionError::NotDivisible)
+            self.outbound_order_to_anf_inclusion().try_preimage(
+                &self
+                    .anf()
+                    .try_inv(&self.outbound_order_to_anf_inclusion().image(a))
+                    .unwrap(),
+            )
         }
     }
 }
@@ -347,15 +355,8 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
     IntegralDomainSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
-    fn div(
-        &self,
-        a: &Self::Set,
-        b: &Self::Set,
-    ) -> Result<Self::Set, crate::structure::RingDivisionError> {
-        match self.inv(b) {
-            Ok(b_inv) => Ok(self.mul(a, &b_inv)),
-            Err(err) => Err(err),
-        }
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.mul(a, &self.try_inv(b)?))
     }
 }
 
@@ -678,10 +679,13 @@ mod tests {
             }
 
             {
-                assert_eq!(roi.inv(&roi.neg(&roi.one())).unwrap(), roi.neg(&roi.one()));
-                assert_eq!(roi.inv(&roi.one()).unwrap(), roi.one());
-                assert!(roi.inv(&alpha).is_err());
-                assert!(roi.inv(&beta).is_err());
+                assert_eq!(
+                    roi.try_inv(&roi.neg(&roi.one())).unwrap(),
+                    roi.neg(&roi.one())
+                );
+                assert_eq!(roi.try_inv(&roi.one()).unwrap(), roi.one());
+                assert!(roi.try_inv(&alpha).is_none());
+                assert!(roi.try_inv(&beta).is_none());
             }
         }
 

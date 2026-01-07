@@ -26,6 +26,10 @@ impl<RS: Signature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
     pub fn coeff_ring(&self) -> &RS {
         self.coeff_ring.borrow()
     }
+
+    pub fn into_coeff_ring(self) -> RSB {
+        self.coeff_ring
+    }
 }
 
 pub trait ToPolynomialSignature: Signature {
@@ -264,13 +268,17 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
     for PolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
         Polynomial { coeffs: vec![] }
     }
+}
 
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+    for PolynomialStructure<RS, RSB>
+{
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.reduce_poly(self.add_impl(a, b))
     }
@@ -322,7 +330,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
     for PolynomialStructure<RS, RSB>
 {
     fn one(&self) -> Self::Set {
@@ -336,6 +344,11 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
             self.mul_naive(a, b)
         })
     }
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+    for PolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiModuleSignature<RS>
@@ -574,7 +587,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
         &self,
         a: &Polynomial<RS::Set>,
         b: &Polynomial<RS::Set>,
-    ) -> Result<(Polynomial<RS::Set>, Polynomial<RS::Set>), RingDivisionError> {
+    ) -> Option<(Polynomial<RS::Set>, Polynomial<RS::Set>)> {
         //try to find q such that q*b == a
         // a0 + a1*x + a2*x^2 + ... + am*x^m = (q0 + q1*x + q2*x^2 + ... + qk*x^k) * (b0 + b1*x + b2*x^2 + ... + bn*x^n)
         // 1 + x + x^2 + x^3 + x^4 + x^5 = (?1 + ?x + ?x^2) * (1 + x + x^2 + x^3)      m=6 k=3 n=4
@@ -584,19 +597,20 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
         let m = self.num_coeffs(&a);
         let n = self.num_coeffs(b);
         if n == 0 {
-            Err(RingDivisionError::DivideByZero)
+            None
         } else if m < n {
-            Ok((self.zero(), a))
+            Some((self.zero(), a))
         } else {
             let k = m - n + 1;
             let mut q_coeffs = (0..k).map(|_i| self.coeff_ring().zero()).collect_vec();
             for i in (0..k).rev() {
                 //a[i+n-1] = q[i] * b[n-1]
-                match self.coeff_ring().div(
+                debug_assert!(!self.coeff_ring().is_zero(self.coeff(b, n - 1).as_ref()));
+                match self.coeff_ring().try_div(
                     self.coeff(&a, i + n - 1).as_ref(),
                     self.coeff(b, n - 1).as_ref(),
                 ) {
-                    Ok(qc) => {
+                    Some(qc) => {
                         //a -= qc*x^i*b
                         self.add_mut(
                             &mut a,
@@ -604,13 +618,12 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                         );
                         q_coeffs[i] = qc;
                     }
-                    Err(RingDivisionError::NotDivisible) => {
-                        return Err(RingDivisionError::NotDivisible);
+                    None => {
+                        return None;
                     }
-                    Err(RingDivisionError::DivideByZero) => panic!(),
                 }
             }
-            Ok((Polynomial::from_coeffs(q_coeffs), a))
+            Some((Polynomial::from_coeffs(q_coeffs), a))
         }
     }
 
@@ -618,18 +631,13 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
         &self,
         a: &Polynomial<RS::Set>,
         b: &Polynomial<RS::Set>,
-    ) -> Result<Polynomial<RS::Set>, RingDivisionError> {
+    ) -> Option<Polynomial<RS::Set>> {
         match self.try_quorem(a, b) {
-            Ok((q, r)) => {
+            Some((q, r)) => {
                 debug_assert!(self.equal(&self.add(&self.mul(&q, b), &r), a));
-                if self.is_zero(&r) {
-                    Ok(q)
-                } else {
-                    Err(RingDivisionError::NotDivisible)
-                }
+                if self.is_zero(&r) { Some(q) } else { None }
             }
-            Err(RingDivisionError::NotDivisible) => Err(RingDivisionError::NotDivisible),
-            Err(RingDivisionError::DivideByZero) => Err(RingDivisionError::DivideByZero),
+            None => None,
         }
     }
 
@@ -656,7 +664,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 ),
             );
 
-            if let Ok((_q, r)) = self.try_quorem(&a, b) {
+            if let Some((_q, r)) = self.try_quorem(&a, b) {
                 Some(Ok(r))
             } else {
                 panic!();
@@ -703,7 +711,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                                 &self.coeff_ring().nat_pow(&gamma, &Natural::from(diff_deg)),
                             );
                             r = self
-                                .div(
+                                .try_div(
                                     &self.pseudorem(a, &b).unwrap().unwrap(),
                                     &Polynomial::constant(beta),
                                 )
@@ -711,7 +719,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                             lc_b = self.leading_coeff(&b).unwrap().clone();
                             gamma = if diff_deg > 1 {
                                 self.coeff_ring()
-                                    .div(
+                                    .try_div(
                                         &self.coeff_ring().nat_pow(
                                             &self.coeff_ring().neg(&lc_b),
                                             &Natural::from(diff_deg),
@@ -774,7 +782,10 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                 } else {
                     let an = self.coeff(&p, n).as_ref().clone(); // leading coeff
                     let dp = self.derivative(p.clone());
-                    let disc = self.coeff_ring().div(&self.resultant(p, dp), &an).unwrap();
+                    let disc = self
+                        .coeff_ring()
+                        .try_div(&self.resultant(p, dp), &an)
+                        .unwrap();
                     // multiply by (-1)^{n(n+1)/2}
                     match n % 4 {
                         0 | 1 => Ok(disc),
@@ -788,18 +799,18 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> SemiRingUnitsSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidUnitsSignature
     for PolynomialStructure<RS, RSB>
 {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        self.div(&self.one(), a)
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_div(&self.one(), a)
     }
 }
 
 impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
     for PolynomialStructure<RS, RSB>
 {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         self.div_impl(a, b)
     }
 }
@@ -892,7 +903,7 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> PolynomialS
         } else {
             let g = self.coeff_ring().gcd_list(p.coeffs.iter().collect());
             for i in 0..p.coeffs.len() {
-                p.coeffs[i] = self.coeff_ring().div(&p.coeffs[i], &g).unwrap();
+                p.coeffs[i] = self.coeff_ring().try_div(&p.coeffs[i], &g).unwrap();
             }
             Some((g, p))
         }
@@ -958,7 +969,7 @@ impl<RS: GreatestCommonDivisorSignature + CharZeroRingSignature, RSB: BorrowedSt
             let g = self.subresultant_gcd(f.clone(), self.derivative(f.clone()));
             let (_c, g_prim) = self.factor_primitive(g).unwrap();
             let (_c, f_prim) = self.factor_primitive(f).unwrap();
-            let f_prim_sqfree = self.div(&f_prim, &g_prim).unwrap();
+            let f_prim_sqfree = self.try_div(&f_prim, &g_prim).unwrap();
             f_prim_sqfree
         }
     }
@@ -979,7 +990,7 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStru
                 .coeff_ring()
                 .factor_fav_assoc(&a.coeffs[self.num_coeffs(&a) - 1]);
             for i in 0..a.coeffs.len() {
-                a.coeffs[i] = self.coeff_ring().div(&a.coeffs[i], &u).unwrap();
+                a.coeffs[i] = self.coeff_ring().try_div(&a.coeffs[i], &u).unwrap();
             }
             (Polynomial::constant(u), a.clone())
         }
@@ -994,12 +1005,32 @@ impl<RS: CharZeroRingSignature + EqSignature, RSB: BorrowedStructure<RS>> CharZe
     }
 }
 
-impl<RS: IntegralDomainSignature + FiniteUnitsSignature, RSB: BorrowedStructure<RS>>
-    FiniteUnitsSignature for PolynomialStructure<RS, RSB>
+impl<
+    RS: IntegralDomainSignature + MultiplicativeMonoidUnitsSignature,
+    RSB: BorrowedStructure<RS>,
+    B: BorrowedStructure<PolynomialStructure<RS, RSB>>,
+> CountableSetSignature for MultiplicativeMonoidUnitsStructure<PolynomialStructure<RS, RSB>, B>
+where
+    for<'a> MultiplicativeMonoidUnitsStructure<RS, &'a RS>: FiniteSetSignature<Set = RS::Set>,
 {
-    fn all_units(&self) -> Vec<Self::Set> {
-        self.coeff_ring()
-            .all_units()
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+        self.list_all_elements().into_iter()
+    }
+}
+
+impl<
+    RS: IntegralDomainSignature + MultiplicativeMonoidUnitsSignature,
+    RSB: BorrowedStructure<RS>,
+    B: BorrowedStructure<PolynomialStructure<RS, RSB>>,
+> FiniteSetSignature for MultiplicativeMonoidUnitsStructure<PolynomialStructure<RS, RSB>, B>
+where
+    for<'a> MultiplicativeMonoidUnitsStructure<RS, &'a RS>: FiniteSetSignature<Set = RS::Set>,
+{
+    fn list_all_elements(&self) -> Vec<Self::Set> {
+        self.monoid()
+            .coeff_ring()
+            .units()
+            .list_all_elements()
             .into_iter()
             .map(Polynomial::constant)
             .collect()
@@ -1018,10 +1049,10 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> EuclideanDivisionSignature
     }
 
     fn quorem(&self, a: &Self::Set, b: &Self::Set) -> Option<(Self::Set, Self::Set)> {
-        match self.try_quorem(a, b) {
-            Ok((q, r)) => Some((q, r)),
-            Err(RingDivisionError::NotDivisible) => panic!(),
-            Err(RingDivisionError::DivideByZero) => None,
+        if self.is_zero(b) {
+            None
+        } else {
+            Some(self.try_quorem(a, b).unwrap())
         }
     }
 }
@@ -1105,16 +1136,11 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
             }
         }
 
-        match self.div(&numerator, &denominator) {
-            Ok(interp_poly) => Some(interp_poly),
-            Err(RingDivisionError::NotDivisible) => {
-                //no such polynomial exists
-                None
-            }
-            Err(RingDivisionError::DivideByZero) => {
-                panic!("are the input points distinct?");
-            }
+        if self.is_zero(&denominator) {
+            panic!("are the input points distinct?");
         }
+
+        self.try_div(&numerator, &denominator)
     }
 }
 
@@ -1190,7 +1216,7 @@ pub fn factor_primitive_fof<
 
     (
         field
-            .div(&fof_inclusion.image(&mul), &fof_inclusion.image(&div))
+            .try_div(&fof_inclusion.image(&mul), &fof_inclusion.image(&div))
             .unwrap(),
         prim,
     )
@@ -1329,7 +1355,7 @@ impl<R: MetaType> Polynomial<R>
 where
     R::Signature: IntegralDomainSignature,
 {
-    pub fn try_quorem(a: &Self, b: &Self) -> Result<(Self, Self), RingDivisionError> {
+    pub fn try_quorem(a: &Self, b: &Self) -> Option<(Self, Self)> {
         Self::structure().try_quorem(a, b)
     }
 
@@ -1459,56 +1485,51 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
-        match Polynomial::div(a.ref_set(), b.ref_set()) {
-            Ok(c) => {
+        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+            Some(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
                 assert_eq!(a, b * c.into_ergonomic());
             }
-            Err(_) => panic!(),
+            None => panic!(),
         }
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) + 1;
-        match Polynomial::div(a.ref_set(), b.ref_set()) {
-            Ok(_c) => panic!(),
-            Err(RingDivisionError::NotDivisible) => {}
-            Err(_) => panic!(),
+        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+            Some(_) => panic!(),
+            None => {}
         }
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
-        match Polynomial::div(a.ref_set(), b.ref_set()) {
-            Ok(_c) => panic!(),
-            Err(RingDivisionError::NotDivisible) => {}
-            Err(_) => panic!(),
+        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+            Some(_) => panic!(),
+            None => {}
         }
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = 0 * x;
-        match Polynomial::div(a.ref_set(), b.ref_set()) {
-            Ok(_c) => panic!(),
-            Err(RingDivisionError::DivideByZero) => {}
-            Err(_) => panic!(),
+        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+            Some(_) => panic!(),
+            None => {}
         }
 
         let a = 0 * x;
         let b = (x - x) + 5;
-        match Polynomial::div(a.ref_set(), b.ref_set()) {
-            Ok(c) => {
+        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+            Some(c) => {
                 assert_eq!(c, Polynomial::zero());
             }
-            Err(RingDivisionError::DivideByZero) => panic!(),
-            Err(_) => panic!(),
+            None => panic!(),
         }
 
         let a = 3087 * x - 8805 * x.pow(2) + 607 * x.pow(3) + x.pow(4);
         let b = (x - x) + 1;
-        match Polynomial::div(a.ref_set(), b.ref_set()) {
-            Ok(c) => {
+        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+            Some(c) => {
                 assert_eq!(c.into_ergonomic(), a);
             }
-            Err(RingDivisionError::DivideByZero) => panic!(),
-            Err(_) => panic!(),
+            None => panic!(),
         }
     }
 
@@ -1518,12 +1539,12 @@ mod tests {
 
         let a = 1 + x + x.pow(2);
         let b = Polynomial::constant(QuaternaryField::Alpha).into_ergonomic() + x;
-        match Polynomial::div(a.ref_set(), b.ref_set()) {
-            Ok(c) => {
+        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+            Some(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
                 assert_eq!(a, b * c.into_ergonomic());
             }
-            Err(e) => panic!("{:?}", e),
+            None => panic!(),
         }
     }
 
@@ -1554,8 +1575,8 @@ mod tests {
         let g = Polynomial::gcd(x.ref_set(), y.ref_set());
 
         println!("gcd({:?} , {:?}) = {:?}", x, y, g);
-        Polynomial::div(&g, b.ref_set()).unwrap();
-        Polynomial::div(b.ref_set(), &g).unwrap();
+        Polynomial::try_div(&g, b.ref_set()).unwrap();
+        Polynomial::try_div(b.ref_set(), &g).unwrap();
     }
 
     #[test]

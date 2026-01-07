@@ -7,11 +7,13 @@ use algebraeon_sets::structure::*;
 use static_assertions::const_assert;
 use std::borrow::Cow;
 
-impl AdditiveMonoidSignature for RationalCanonicalStructure {
+impl SetWithZeroSignature for RationalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Rational::ZERO
     }
+}
 
+impl AdditiveMonoidSignature for RationalCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
@@ -35,7 +37,7 @@ impl AdditiveGroupSignature for RationalCanonicalStructure {
     }
 }
 
-impl SemiRingSignature for RationalCanonicalStructure {
+impl MultiplicativeMonoidSignature for RationalCanonicalStructure {
     fn one(&self) -> Self::Set {
         Rational::ONE
     }
@@ -44,6 +46,8 @@ impl SemiRingSignature for RationalCanonicalStructure {
         a * b
     }
 }
+
+impl SemiRingSignature for RationalCanonicalStructure {}
 
 impl RingSignature for RationalCanonicalStructure {
     fn is_reduced(&self) -> Result<bool, String> {
@@ -57,18 +61,18 @@ impl CharacteristicSignature for RationalCanonicalStructure {
     }
 }
 
-impl SemiRingUnitsSignature for RationalCanonicalStructure {
-    fn inv(&self, a: &Self::Set) -> Result<Self::Set, RingDivisionError> {
-        self.div(&self.one(), a)
+impl MultiplicativeMonoidUnitsSignature for RationalCanonicalStructure {
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_div(&self.one(), a)
     }
 }
 
 impl IntegralDomainSignature for RationalCanonicalStructure {
-    fn div(&self, a: &Self::Set, b: &Self::Set) -> Result<Self::Set, RingDivisionError> {
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         if b == &Rational::ZERO {
-            Err(RingDivisionError::DivideByZero)
+            None
         } else {
-            Ok(a / b)
+            Some(a / b)
         }
     }
 }

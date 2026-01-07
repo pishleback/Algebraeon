@@ -79,7 +79,7 @@ mod balancable_pairs {
                             self.f.coeff(k).as_ref() * Integer::from(self.p.nat_pow(&p_pow))
                         } else {
                             let neg_p_pow = (-p_pow).abs();
-                            Integer::div(
+                            Integer::try_div(
                                 &self.f.coeff(k),
                                 &Integer::from(self.p.nat_pow(&neg_p_pow)),
                             )
@@ -105,8 +105,8 @@ mod balancable_pairs {
                     #[allow(clippy::single_match_else)]
                     match (&coeff_valuations[i], &coeff_valuations[j]) {
                         (Valuation::Finite(vfi), Valuation::Finite(vfj)) => {
-                            match Integer::div(&(vfi - vfj), &Integer::from(j - i)) {
-                                Ok(bv) => bps.push(BalancablePair {
+                            match Integer::try_div(&(vfi - vfj), &Integer::from(j - i)) {
+                                Some(bv) => bps.push(BalancablePair {
                                     p: p.clone(),
                                     f: self,
                                     n,
@@ -116,7 +116,7 @@ mod balancable_pairs {
                                     vfj: vfj.clone(),
                                     bv,
                                 }),
-                                Err(_) => {
+                                None => {
                                     //\frac{v_p(f_j)-v_p(f_i)}{j-i} is not an inteer
                                 }
                             }
@@ -521,7 +521,7 @@ fn refine0_impl(
             p,
             f,
             PAdicRationalBall {
-                a: c + Rational::from(&k) * Rational::from(p).int_pow(beta).unwrap(),
+                a: c + Rational::from(&k) * Rational::from(p).try_int_pow(beta).unwrap(),
                 v: beta_plus_one.clone(),
             },
             target_beta,
@@ -560,7 +560,7 @@ pub fn isolate(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
             isolate0(p, &critical_balanced_pair.normalization())
         {
             roots.push(PAdicRationalBall {
-                a: Rational::from(p).int_pow(kappa).unwrap() * c,
+                a: Rational::from(p).try_int_pow(kappa).unwrap() * c,
                 v: beta + kappa,
             });
         }
@@ -586,12 +586,12 @@ pub fn refine(
         unreachable!()
     })();
     let g = bp.normalization();
-    let c = d * Rational::from(p).int_pow(&(-&vd)).unwrap();
+    let c = d * Rational::from(p).try_int_pow(&(-&vd)).unwrap();
     let beta = gamma - &vd;
     let target_beta = &target_gamma - &vd;
     let PAdicRationalBall { a: refined_c, v: _ } =
         refine0(p, &g, PAdicRationalBall { a: c, v: beta }, &target_beta);
-    let refined_d = refined_c * Rational::from(p).int_pow(&vd).unwrap();
+    let refined_d = refined_c * Rational::from(p).try_int_pow(&vd).unwrap();
     PAdicRationalBall {
         a: refined_d,
         v: target_gamma,

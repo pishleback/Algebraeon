@@ -58,7 +58,7 @@ impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
                 //col_i = col_i - (projection of col_j onto col_i)
                 let lambda = self
                     .ring()
-                    .div(
+                    .try_div(
                         &self.inner_product(&mat.get_row_submatrix(i), &mat.get_row_submatrix(j)),
                         &self.inner_product(&mat.get_row_submatrix(j), &mat.get_row_submatrix(j)),
                     )
@@ -130,7 +130,7 @@ impl<
                     row: r,
                     unit: self
                         .ring()
-                        .inv(&self.ring().nth_root(&lensq, 2).unwrap())
+                        .try_inv(&self.ring().nth_root(&lensq, 2).unwrap())
                         .unwrap(),
                 },
             );

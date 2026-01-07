@@ -433,29 +433,24 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                         .primitive_part() //factoring f(x) = 49x^2-10000 had possible_factor = 49x-700, which is only a factor over the rationals and not over the integers unless we take the primitive part which is 7x-100, soo this seems to make sense though I cant properly justify it right now.
                         .unwrap();
                         debug_assert_ne!(g.degree().unwrap(), 0);
-
-                        match Polynomial::div(&f, &g) {
-                            Ok(h) => {
-                                //f = gh
-                                // Update variables for next loop:
-                                // Divide f by the found factor g
-                                f = h;
-                                // Add g to this list of found factors
-                                Polynomial::<Integer>::structure().factorizations().mul_mut(
-                                    &mut factored,
-                                    Polynomial::<Integer>::structure()
-                                        .factorizations()
-                                        .new_prime(g),
-                                );
-                                // Remove the modular factors for g from future consideration
-                                m -= k;
-                                for i in subset {
-                                    excluded_modular_factors.push(i);
-                                    k_combinations.exclude(i);
-                                }
+                        if let Some(h) = Polynomial::try_div(&f, &g) {
+                            //f = gh
+                            // Update variables for next loop:
+                            // Divide f by the found factor g
+                            f = h;
+                            // Add g to this list of found factors
+                            Polynomial::<Integer>::structure().factorizations().mul_mut(
+                                &mut factored,
+                                Polynomial::<Integer>::structure()
+                                    .factorizations()
+                                    .new_prime(g),
+                            );
+                            // Remove the modular factors for g from future consideration
+                            m -= k;
+                            for i in subset {
+                                excluded_modular_factors.push(i);
+                                k_combinations.exclude(i);
                             }
-                            Err(RingDivisionError::NotDivisible) => {}
-                            Err(RingDivisionError::DivideByZero) => unreachable!(),
                         }
                     }
                     None => {
@@ -568,15 +563,9 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                         if possible_factor.degree().unwrap() != 0
                             && possible_factor.degree().unwrap() != f_deg
                         {
-                            match Polynomial::div(&f, &possible_factor) {
-                                Ok(other_factor) => {
-                                    return FindFactorResult::Composite(
-                                        possible_factor,
-                                        other_factor,
-                                    );
-                                }
-                                Err(RingDivisionError::NotDivisible) => {}
-                                Err(RingDivisionError::DivideByZero) => unreachable!(),
+                            debug_assert!(!possible_factor.is_zero());
+                            if let Some(other_factor) = Polynomial::try_div(&f, &possible_factor) {
+                                return FindFactorResult::Composite(possible_factor, other_factor);
                             }
                         }
                     }
