@@ -115,8 +115,7 @@ Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedi
 
 ```rust
 use algebraeon::nzq::Natural;
-use algebraeon::rings::structure::MetaUniqueFactorizationMonoid;
-use algebraeon::rings::structure::UniqueFactorizationMonoidSignature;
+use algebraeon::rings::structure::{MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
 use algebraeon::sets::structure::ToStringSignature;
 use std::str::FromStr;
 

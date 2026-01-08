@@ -23,8 +23,7 @@ To factor large integers using Algebraeon
 
 ```rust
 use algebraeon::nzq::Natural;
-use algebraeon::rings::structure::MetaUniqueFactorizationMonoid;
-use algebraeon::rings::structure::UniqueFactorizationMonoidSignature;
+use algebraeon::rings::structure::{MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
 use algebraeon::sets::structure::ToStringSignature;
 use std::str::FromStr;
 
@@ -53,14 +52,14 @@ use algebraeon::nzq::Integer;
 
 let x = &Polynomial::<Integer>::var().into_ergonomic();
 let f = (x.pow(2) - 5*x + 6).into_verbose();
-println!("f(λ) = {}", f.factor().unwrap());
+println!("f(λ) = {}", f.factor());
 /*
 Output:
     f(λ) = 1 * ((-2)+λ) * ((-3)+λ)
 */
 
 let f = (x.pow(15) - 1).into_verbose();
-println!("f(λ) = {}", f.factor().unwrap());
+println!("f(λ) = {}", f.factor());
 /*
 Output:
     f(λ) = 1 * ((-1)+λ) * (1+λ+λ^2) * (1+λ+λ^2+λ^3+λ^4) * (1+(-1)λ+λ^3+(-1)λ^4+λ^5+(-1)λ^7+λ^8)
