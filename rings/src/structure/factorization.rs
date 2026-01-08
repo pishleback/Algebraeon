@@ -1,10 +1,11 @@
 use crate::structure::{
     AdditiveMonoidEqSignature, FavoriteAssociateSignature, FieldSignature,
     MetaMultiplicativeMonoid, MultiplicativeGroupSignature, MultiplicativeIntegralMonoidSignature,
-    MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
-    MultiplicativeMonoidWithZeroSignature, SemiRingSignature, SetWithZeroSignature,
+    MultiplicativeMonoidSignature, MultiplicativeMonoidSquareOpsSignature,
+    MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature, SemiRingSignature,
+    SetWithZeroSignature,
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, NaturalCanonicalStructure};
+use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::{
     BorrowedStructure, EqSignature, MetaType, OrdSignature, SetSignature, Signature,
 };
@@ -232,11 +233,11 @@ impl<
         b: &Factored<Object::Set, Exponent::Set>,
     ) {
         match b {
-            Factored::Zero => {
-                *a = Factored::Zero;
-            }
+            Factored::Zero => {}
             Factored::NonZero(b) => match a {
-                Factored::Zero => {}
+                Factored::Zero => {
+                    *a = Factored::NonZero(b.clone());
+                }
                 Factored::NonZero(a) => {
                     a.unit = self.objects().units().mul(&a.unit, &b.unit);
                     for (b_p, b_k) in &b.powers {
@@ -260,34 +261,24 @@ impl<
 
     pub(crate) fn mul_lcm_impl(
         &self,
-        a: &mut Factored<Object::Set, Exponent::Set>,
-        b: &Factored<Object::Set, Exponent::Set>,
+        a: &mut NonZeroFactored<Object::Set, Exponent::Set>,
+        b: &NonZeroFactored<Object::Set, Exponent::Set>,
     ) {
-        match b {
-            Factored::Zero => {
-                *a = Factored::Zero;
-            }
-            Factored::NonZero(b) => match a {
-                Factored::Zero => {}
-                Factored::NonZero(a) => {
-                    a.unit = self.objects().units().mul(&a.unit, &b.unit);
-                    for (b_p, b_k) in &b.powers {
-                        debug_assert!(self.objects().is_fav_assoc(b_p));
-                        'A_LOOP: {
-                            for (a_p, a_k) in &mut a.powers {
-                                debug_assert!(self.objects().is_fav_assoc(a_p));
-                                if self.objects().equal(a_p, b_p) {
-                                    *a_k = self.exponents().max(a_k, b_k);
-                                    break 'A_LOOP;
-                                }
-                            }
-                            a.powers.push((b_p.clone(), b_k.clone()));
-                        }
+        a.unit = self.objects().units().mul(&a.unit, &b.unit);
+        for (b_p, b_k) in &b.powers {
+            debug_assert!(self.objects().is_fav_assoc(b_p));
+            'A_LOOP: {
+                for (a_p, a_k) in &mut a.powers {
+                    debug_assert!(self.objects().is_fav_assoc(a_p));
+                    if self.objects().equal(a_p, b_p) {
+                        *a_k = self.exponents().max(a_k, b_k);
+                        break 'A_LOOP;
                     }
-                    a.powers.retain(|(_, k)| !self.exponents().is_zero(k));
                 }
-            },
+                a.powers.push((b_p.clone(), b_k.clone()));
+            }
         }
+        a.powers.retain(|(_, k)| !self.exponents().is_zero(k));
     }
 
     pub(crate) fn try_div_mut_impl(
@@ -418,7 +409,7 @@ impl<
             self.is_element(a).unwrap();
             self.is_element(b).unwrap();
         }
-        todo!()
+        self.try_div(a, b).is_some() && self.try_div(b, a).is_some()
     }
 }
 
@@ -455,7 +446,7 @@ impl<
             self.is_element(b).unwrap();
         }
         let mut s = a.clone();
-        self.mul_mut(&mut s, b);
+        self.mul_mut_impl(&mut s, b);
         s
     }
 }
@@ -536,15 +527,22 @@ impl<
         &self,
         a: &Factored<Object::Set, Exponent::Set>,
         b: &Factored<Object::Set, Exponent::Set>,
-    ) -> Factored<Object::Set, Exponent::Set> {
+    ) -> Option<Factored<Object::Set, Exponent::Set>> {
         #[cfg(debug_assertions)]
         {
             self.is_element(a).unwrap();
             self.is_element(b).unwrap();
         }
-        let mut s = a.clone();
-        self.mul_lcm_impl(&mut s, b);
-        s
+        match (a, b) {
+            (Factored::Zero, Factored::Zero)
+            | (Factored::Zero, Factored::NonZero(_))
+            | (Factored::NonZero(_), Factored::Zero) => None,
+            (Factored::NonZero(a), Factored::NonZero(b)) => {
+                let mut s = a.clone();
+                self.mul_lcm_impl(&mut s, b);
+                Some(Factored::NonZero(s))
+            }
+        }
     }
 
     pub fn expand_squarefree(&self, a: &Factored<Object::Set, Exponent::Set>) -> Object::Set {
@@ -688,28 +686,36 @@ impl<
 
 // TODO: generalize this to rings where we can take square-roots in the group of units
 impl<
-    ObjectB: BorrowedStructure<IntegerCanonicalStructure>,
+    Object: UniqueFactorizationMonoidSignature + MultiplicativeMonoidSquareOpsSignature,
+    ObjectB: BorrowedStructure<Object>,
     ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
-> FactoringStructure<IntegerCanonicalStructure, ObjectB, NaturalCanonicalStructure, ExponentB>
+> FactoringStructure<Object, ObjectB, NaturalCanonicalStructure, ExponentB>
 {
     /// Return the element whose square equals the input, if it exists.
-    fn sqrt_if_square(&self, a: &Factored<Integer, Natural>) -> Option<Factored<Integer, Natural>> {
+    fn sqrt_if_square(
+        &self,
+        a: &Factored<Object::Set, Natural>,
+    ) -> Option<Factored<Object::Set, Natural>> {
         #[cfg(debug_assertions)]
         self.is_element(a).unwrap();
         match a {
             Factored::Zero => Some(self.zero()),
             Factored::NonZero(a) => {
-                let mut sqrt_factor_powers = vec![];
-                for (prime, exponent) in a.powers() {
-                    if exponent.clone() % Natural::TWO != Natural::ZERO {
-                        return None;
+                if let Some(unit_sqrt) = self.objects().sqrt_if_square(&a.unit) {
+                    let mut sqrt_factor_powers = vec![];
+                    for (prime, exponent) in a.powers() {
+                        if exponent.clone() % Natural::TWO != Natural::ZERO {
+                            return None;
+                        }
+                        let half = exponent / Natural::TWO;
+                        if half != Natural::ZERO {
+                            sqrt_factor_powers.push((prime.clone(), half.clone()));
+                        }
                     }
-                    let half = exponent / Natural::TWO;
-                    if half != Natural::ZERO {
-                        sqrt_factor_powers.push((prime.clone(), half.clone()));
-                    }
+                    Some(self.new_unit_and_powers_impl(unit_sqrt, sqrt_factor_powers))
+                } else {
+                    None
                 }
-                Some(self.new_unit_and_powers_impl(Integer::one(), sqrt_factor_powers))
             }
         }
     }
@@ -796,7 +802,7 @@ where
 }
 impl<R: MetaType> MetaFactoringMonoid for R where Self::Signature: FactoringMonoidSignature {}
 
-pub trait GCDAndLCMByFactoringSignature:
+pub trait FactoringMonoidNaturalExponentSignature:
     FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
 {
     fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -804,29 +810,44 @@ pub trait GCDAndLCMByFactoringSignature:
             .expand(&self.factorizations().gcd(&self.factor(a), &self.factor(b)))
     }
 
-    fn lcm_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.factorizations()
-            .expand(&self.factorizations().lcm(&self.factor(a), &self.factor(b)))
+    fn lcm_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(
+            self.factorizations().expand(
+                &self
+                    .factorizations()
+                    .lcm(&self.factor(a), &self.factor(b))?,
+            ),
+        )
+    }
+
+    fn is_squarefree(&self, a: &Self::Set) -> bool {
+        self.factorizations().is_squarefree(&self.factor(a))
     }
 }
 impl<S: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>>
-    GCDAndLCMByFactoringSignature for S
+    FactoringMonoidNaturalExponentSignature for S
 {
 }
-pub trait MetaGCDAndLCMByFactoring: MetaType
+pub trait MetaFactoringMonoidNaturalExponent: MetaType
 where
-    Self::Signature: GCDAndLCMByFactoringSignature,
+    Self::Signature: FactoringMonoidNaturalExponentSignature,
 {
     fn gcd_by_factor(a: &Self, b: &Self) -> Self {
         Self::structure().gcd_by_factor(a, b)
     }
 
-    fn lcm_by_factor(a: &Self, b: &Self) -> Self {
+    fn lcm_by_factor(a: &Self, b: &Self) -> Option<Self> {
         Self::structure().lcm_by_factor(a, b)
     }
+
+    fn is_squarefree(&self) -> bool {
+        Self::structure().is_squarefree(self)
+    }
 }
-impl<R: MetaType> MetaGCDAndLCMByFactoring for R where Self::Signature: GCDAndLCMByFactoringSignature
-{}
+impl<R: MetaType> MetaFactoringMonoidNaturalExponent for R where
+    Self::Signature: FactoringMonoidNaturalExponentSignature
+{
+}
 
 impl<FS: FieldSignature> UniqueFactorizationMonoidSignature for FS {
     type FactoredExponent = NaturalCanonicalStructure;

@@ -3,7 +3,10 @@ use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
 use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::structure::BorrowedStructure;
+use algebraeon_sets::structure::CountableSetSignature;
+use algebraeon_sets::structure::FiniteSetSignature;
+use algebraeon_sets::structure::MetaType;
 use std::collections::HashSet;
 
 pub mod berlekamp_zassenhaus;
@@ -241,6 +244,16 @@ impl RealSubsetSignature for IntegerCanonicalStructure {
     }
 }
 
+impl MultiplicativeMonoidSquareOpsSignature for IntegerCanonicalStructure {
+    fn sqrt_if_square(&self, a: &Integer) -> Option<Integer> {
+        a.sqrt_if_square().map(|n: Natural| Integer::from(n))
+    }
+
+    fn is_square(&self, a: &Integer) -> bool {
+        a.is_square()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum IntegerInitialRingGeneratorNeverType {}
 
@@ -296,6 +309,26 @@ mod tests {
         assert_eq!(
             Integer::gcd_by_factor(&Integer::from(12), &Integer::from(18)),
             Integer::from(6)
+        );
+
+        assert_eq!(
+            Integer::lcm_by_factor(&Integer::from(12), &Integer::from(18)),
+            Some(Integer::from(36))
+        );
+
+        assert_eq!(
+            Integer::lcm_by_factor(&Integer::from(0), &Integer::from(18)),
+            None
+        );
+
+        assert_eq!(
+            Integer::lcm_by_factor(&Integer::from(12), &Integer::from(0)),
+            None
+        );
+
+        assert_eq!(
+            Integer::lcm_by_factor(&Integer::from(0), &Integer::from(0)),
+            None
         );
     }
 }

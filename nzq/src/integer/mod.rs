@@ -301,14 +301,6 @@ impl Integer {
             self.abs().is_square()
         }
     }
-
-    pub fn is_squarefree(&self) -> bool {
-        if self < &Integer::ZERO {
-            false
-        } else {
-            self.is_squarefree()
-        }
-    }
 }
 
 impl PartialEq<Natural> for Integer {

@@ -120,6 +120,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> FactoringMonoidS
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_sets::structure::EqSignature;
     use berlekamp_zassenhaus::*;
 
     use crate::structure::IntoErgonomic;

@@ -131,6 +131,30 @@ where
 impl<R: MetaType> MetaMultiplicativeMonoid for R where Self::Signature: MultiplicativeMonoidSignature
 {}
 
+pub trait MultiplicativeMonoidSquareOpsSignature: SetSignature {
+    fn is_square(&self, a: &Self::Set) -> bool {
+        self.sqrt_if_square(a).is_some()
+    }
+
+    fn sqrt_if_square(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+pub trait MetaMultiplicativeMonoidSquareOps: MetaType
+where
+    Self::Signature: MultiplicativeMonoidSquareOpsSignature,
+{
+    fn is_square(&self) -> bool {
+        Self::structure().is_square(self)
+    }
+
+    fn sqrt_if_square(&self) -> Option<Self> {
+        Self::structure().sqrt_if_square(self)
+    }
+}
+impl<R: MetaType> MetaMultiplicativeMonoidSquareOps for R where
+    Self::Signature: MultiplicativeMonoidSquareOpsSignature
+{
+}
+
 /// 0 is such that 0*a=0 for all a in the monoid.
 /// such an element is unqiue if it exists.
 pub trait MultiplicativeMonoidWithZeroSignature:

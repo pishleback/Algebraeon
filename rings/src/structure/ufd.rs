@@ -48,7 +48,7 @@ mod tests {
     fn factorization_invariants() {
         let f = Integer::structure()
             .factorizations()
-            .new_unit_and_powers_unchecked(
+            .new_unit_and_powers_impl(
                 Integer::from(-1),
                 vec![
                     (Integer::from(2), Natural::from(2u8)),
@@ -62,7 +62,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .new_unit_and_powers_unchecked(Integer::from(1), vec![]);
+            .new_unit_and_powers_impl(Integer::from(1), vec![]);
         Integer::structure()
             .factorizations()
             .is_element(&f)
@@ -70,7 +70,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .new_unit_and_powers_unchecked(
+            .new_unit_and_powers_impl(
                 Integer::from(-1),
                 vec![
                     (Integer::from(2), Natural::from(2u8)),
@@ -88,7 +88,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .new_unit_and_powers_unchecked(
+            .new_unit_and_powers_impl(
                 Integer::from(3),
                 vec![(Integer::from(2), Natural::from(2u8))],
             );
@@ -102,7 +102,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .new_unit_and_powers_unchecked(
+            .new_unit_and_powers_impl(
                 Integer::from(1),
                 vec![
                     (Integer::from(0), Natural::from(1u8)),
@@ -119,7 +119,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .new_unit_and_powers_unchecked(
+            .new_unit_and_powers_impl(
                 Integer::from(-1),
                 vec![
                     (Integer::from(4), Natural::from(1u8)),
@@ -136,7 +136,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .new_unit_and_powers_unchecked(
+            .new_unit_and_powers_impl(
                 Integer::from(-1),
                 vec![
                     (Integer::from(-2), Natural::from(2u8)),

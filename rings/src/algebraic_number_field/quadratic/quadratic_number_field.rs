@@ -4,8 +4,9 @@ use crate::algebraic_number_field::{
 use crate::structure::{
     AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroFieldSignature, CharZeroRingSignature,
     CharacteristicSignature, FieldSignature, IntegralDomainSignature,
-    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidUnitsSignature, RingSignature, SemiRingSignature, SetWithZeroSignature,
+    MetaFactoringMonoidNaturalExponent, MultiplicativeIntegralMonoidSignature,
+    MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RingSignature,
+    SemiRingSignature, SetWithZeroSignature,
 };
 use crate::structure::{
     AdditiveMonoidEqSignature, FreeModuleSignature, MetaAdditiveMonoidEq, MetaCharZeroRing,
