@@ -1,14 +1,15 @@
 use crate::structure::{
     AdditiveMonoidEqSignature, FavoriteAssociateSignature, FieldSignature,
-    MultiplicativeGroupSignature, MultiplicativeIntegralMonoidSignature,
-    MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
-    MultiplicativeMonoidWithZeroSignature, SemiRingSignature, SetWithZeroSignature,
+    MetaMultiplicativeMonoid, MetaSemiRing, MultiplicativeGroupSignature,
+    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
+    MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature, SemiRingSignature,
+    SetWithZeroSignature,
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::{
     BorrowedStructure, EqSignature, MetaType, OrdSignature, SetSignature, Signature,
 };
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
@@ -45,7 +46,45 @@ pub enum Factored<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> {
     NonZero(NonZeroFactored<ObjectSet, ExponentSet>),
 }
 
+impl<
+    ObjectSet: Debug + Clone,
+    ExponentSet: Debug + Clone + MetaMultiplicativeMonoid + PartialEq + Eq,
+> Display for Factored<ObjectSet, ExponentSet>
+where
+    ObjectSet: Display,
+    ExponentSet: Display,
+    ExponentSet::Signature: MultiplicativeMonoidSignature,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Factored::Zero => {
+                write!(f, "0")?;
+            }
+            Factored::NonZero(non_zero_factored) => {
+                write!(f, "{}", non_zero_factored.unit)?;
+                for (factor, k) in &non_zero_factored.powers {
+                    write!(f, " * (")?;
+                    write!(f, "{}", factor)?;
+                    write!(f, ")")?;
+                    if k != &ExponentSet::one() {
+                        write!(f, "^")?;
+                        write!(f, "{}", k)?;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, ExponentSet> {
+    pub fn unwrap_nonzero(self) -> NonZeroFactored<ObjectSet, ExponentSet> {
+        match self {
+            Factored::Zero => panic!(),
+            Factored::NonZero(f) => f,
+        }
+    }
+
     pub fn powers<'a>(&'a self) -> Option<&'a Vec<(ObjectSet, ExponentSet)>> {
         match self {
             Factored::Zero => None,
@@ -175,6 +214,70 @@ impl<
                                 debug_assert!(self.objects().is_fav_assoc(a_p));
                                 if self.objects().equal(a_p, b_p) {
                                     *a_k = self.exponents().add(a_k, b_k);
+                                    break 'A_LOOP;
+                                }
+                            }
+                            a.powers.push((b_p.clone(), b_k.clone()));
+                        }
+                    }
+                    a.powers.retain(|(_, k)| !self.exponents().is_zero(k));
+                }
+            },
+        }
+    }
+
+    pub(crate) fn mul_gcd_impl(
+        &self,
+        a: &mut Factored<Object::Set, Exponent::Set>,
+        b: &Factored<Object::Set, Exponent::Set>,
+    ) {
+        match b {
+            Factored::Zero => {
+                *a = Factored::Zero;
+            }
+            Factored::NonZero(b) => match a {
+                Factored::Zero => {}
+                Factored::NonZero(a) => {
+                    a.unit = self.objects().units().mul(&a.unit, &b.unit);
+                    for (b_p, b_k) in &b.powers {
+                        debug_assert!(self.objects().is_fav_assoc(b_p));
+                        'A_LOOP: {
+                            for (a_p, a_k) in &mut a.powers {
+                                debug_assert!(self.objects().is_fav_assoc(a_p));
+                                if self.objects().equal(a_p, b_p) {
+                                    *a_k = self.exponents().min(a_k, b_k);
+                                    break 'A_LOOP;
+                                }
+                            }
+                            a.powers.push((b_p.clone(), b_k.clone()));
+                        }
+                    }
+                    a.powers.retain(|(_, k)| !self.exponents().is_zero(k));
+                }
+            },
+        }
+    }
+
+    pub(crate) fn mul_lcm_impl(
+        &self,
+        a: &mut Factored<Object::Set, Exponent::Set>,
+        b: &Factored<Object::Set, Exponent::Set>,
+    ) {
+        match b {
+            Factored::Zero => {
+                *a = Factored::Zero;
+            }
+            Factored::NonZero(b) => match a {
+                Factored::Zero => {}
+                Factored::NonZero(a) => {
+                    a.unit = self.objects().units().mul(&a.unit, &b.unit);
+                    for (b_p, b_k) in &b.powers {
+                        debug_assert!(self.objects().is_fav_assoc(b_p));
+                        'A_LOOP: {
+                            for (a_p, a_k) in &mut a.powers {
+                                debug_assert!(self.objects().is_fav_assoc(a_p));
+                                if self.objects().equal(a_p, b_p) {
+                                    *a_k = self.exponents().max(a_k, b_k);
                                     break 'A_LOOP;
                                 }
                             }
@@ -414,6 +517,36 @@ impl<
         f
     }
 
+    pub fn gcd(
+        &self,
+        a: &Factored<Object::Set, Exponent::Set>,
+        b: &Factored<Object::Set, Exponent::Set>,
+    ) -> Factored<Object::Set, Exponent::Set> {
+        #[cfg(debug_assertions)]
+        {
+            self.is_element(a).unwrap();
+            self.is_element(b).unwrap();
+        }
+        let mut s = a.clone();
+        self.mul_gcd_impl(&mut s, b);
+        s
+    }
+
+    pub fn lcm(
+        &self,
+        a: &Factored<Object::Set, Exponent::Set>,
+        b: &Factored<Object::Set, Exponent::Set>,
+    ) -> Factored<Object::Set, Exponent::Set> {
+        #[cfg(debug_assertions)]
+        {
+            self.is_element(a).unwrap();
+            self.is_element(b).unwrap();
+        }
+        let mut s = a.clone();
+        self.mul_lcm_impl(&mut s, b);
+        s
+    }
+
     pub fn expand_squarefree(&self, a: &Factored<Object::Set, Exponent::Set>) -> Object::Set {
         #[cfg(debug_assertions)]
         self.is_element(a).unwrap();
@@ -571,10 +704,12 @@ pub trait FactoringMonoidSignature: UniqueFactorizationMonoidSignature {
         self.factorizations()
             .is_irreducible_impl(&self.factor_unchecked(a))
     }
+
     fn factor_unchecked(
         &self,
         a: &Self::Set,
     ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set>;
+
     fn factor(
         &self,
         a: &Self::Set,
@@ -592,6 +727,7 @@ where
     fn is_irreducible(&self) -> bool {
         Self::structure().is_irreducible(self)
     }
+
     fn factor_unchecked(
         &self,
     ) -> Factored<
@@ -599,10 +735,8 @@ where
         <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Set,
     >{
         Self::structure().factor_unchecked(self)
-    }
-    fn factor(
-        &self,
-    ) -> Factored<
+    }    fn factor(
+        &self) -> Factored<
         Self,
         <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Set,
     >{
@@ -610,6 +744,38 @@ where
     }
 }
 impl<R: MetaType> MetaFactoringMonoid for R where Self::Signature: FactoringMonoidSignature {}
+
+pub trait GCDAndLCMByFactoringSignature:
+    FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+{
+    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.factorizations()
+            .expand(&self.factorizations().gcd(&self.factor(a), &self.factor(b)))
+    }
+
+    fn lcm_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.factorizations()
+            .expand(&self.factorizations().lcm(&self.factor(a), &self.factor(b)))
+    }
+}
+impl<S: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>>
+    GCDAndLCMByFactoringSignature for S
+{
+}
+pub trait MetaGCDAndLCMByFactoring: MetaType
+where
+    Self::Signature: GCDAndLCMByFactoringSignature,
+{
+    fn gcd_by_factor(a: &Self, b: &Self) -> Self {
+        Self::structure().gcd_by_factor(a, b)
+    }
+
+    fn lcm_by_factor(a: &Self, b: &Self) -> Self {
+        Self::structure().lcm_by_factor(a, b)
+    }
+}
+impl<R: MetaType> MetaGCDAndLCMByFactoring for R where Self::Signature: GCDAndLCMByFactoringSignature
+{}
 
 impl<FS: FieldSignature> UniqueFactorizationMonoidSignature for FS {
     type FactoredExponent = NaturalCanonicalStructure;

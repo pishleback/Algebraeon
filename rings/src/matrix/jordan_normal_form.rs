@@ -1,15 +1,14 @@
+use super::*;
 use crate::module::{
     finitely_free_module::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
 };
 
-use super::*;
-
 #[derive(Debug, Clone)]
 pub struct JordanBlock<FS: AlgebraicClosureSignature>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>:
-        FactoringMonoidSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     eigenvalue: FS::Set,
     blocksize: usize,
@@ -17,8 +16,8 @@ where
 
 impl<FS: AlgebraicClosureSignature> JordanBlock<FS>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>:
-        FactoringMonoidSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn matrix(&self, field: &FS) -> Matrix<FS::Set> {
         // let base_field = field.base_field();
@@ -37,8 +36,8 @@ where
 #[derive(Debug, Clone)]
 pub struct JordanNormalForm<FS: AlgebraicClosureSignature>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>:
-        FactoringMonoidSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     field: FS,
     blocks: Vec<JordanBlock<FS>>,
@@ -46,8 +45,8 @@ where
 
 impl<FS: AlgebraicClosureSignature> JordanNormalForm<FS>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>:
-        FactoringMonoidSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn matrix(&self) -> Matrix<FS::Set> {
         let ac_mat_structure = MatrixStructure::new(self.field.clone());
@@ -62,8 +61,8 @@ where
 
 impl<FS: AlgebraicClosureSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>:
-        FactoringMonoidSignature + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
 {
     pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetSignature>::Set>) -> Vec<FS::Set> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());

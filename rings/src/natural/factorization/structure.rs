@@ -1,8 +1,8 @@
 use crate::natural::factorization::factor_nat;
 use crate::natural::factorization::primes::is_prime_nat;
 use crate::structure::{
-    Factored, FactoringMonoidSignature, FactoringStructure, MultiplicativeMonoidSignature,
-    SemiRingSignature, UniqueFactorizationMonoidSignature,
+    Factored, FactoringMonoidSignature, FactoringStructure, MetaFactoringMonoid,
+    MultiplicativeMonoidSignature, SemiRingSignature, UniqueFactorizationMonoidSignature,
 };
 use algebraeon_nzq::traits::ModPow;
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure, gcd};

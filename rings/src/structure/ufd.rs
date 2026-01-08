@@ -475,24 +475,6 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> EqSigna
     }
 }
 
-impl<Element> Display for FactoredRingElement<Element>
-where
-    Element: Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.unit)?;
-        for (factor, k) in &self.powers {
-            write!(f, " * (")?;
-            write!(f, "{}", factor)?;
-            write!(f, ")")?;
-            if k != &Natural::ONE {
-                write!(f, "^")?;
-                write!(f, "{}", k)?;
-            }
-        }
-        Ok(())
-    }
-}
 
 impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>> FactoredSignature
     for FactoredRingElementStructure<RS, RSB>

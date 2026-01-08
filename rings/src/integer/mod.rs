@@ -153,9 +153,10 @@ impl FactoringMonoidSignature for IntegerCanonicalStructure {
             let f = a.abs().factor();
             Integer::structure()
                 .factorizations()
-                .from_unit_and_factor_powers_unchecked(
+                .new_unit_and_powers_impl(
                     unit,
-                    f.into_powers()?
+                    f.into_powers()
+                        .unwrap()
                         .into_iter()
                         .map(|(p, k)| (Integer::from(p), k))
                         .collect(),

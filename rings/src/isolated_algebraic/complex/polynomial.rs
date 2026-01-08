@@ -698,15 +698,12 @@ impl Polynomial<Integer> {
 
     pub fn all_complex_roots(&self) -> Vec<ComplexAlgebraic> {
         assert_ne!(self, &Self::zero());
-        let factors = self.factor().unwrap();
+        let factors = self.factor();
         let mut roots = vec![];
-        for (factor, k) in Polynomial::<Integer>::structure()
-            .factorizations()
-            .to_powers(&factors)
-        {
+        for (factor, k) in factors.into_powers().unwrap() {
             for root in factor.all_complex_roots_irreducible() {
                 let mut i = Natural::from(0u8);
-                while &i < k {
+                while i < k {
                     roots.push(root.clone());
                     i += Natural::from(1u8);
                 }

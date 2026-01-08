@@ -12,9 +12,12 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FactoringMonoidSignat
     for PolynomialStructure<FS, FSB>
 {
     fn factor_unchecked(&self, p: &Self::Set) -> Factored<Self::Set, Natural> {
-        self.factorize_monic(p)?
-            .factorize_squarefree()
-            .factorize_distinct_degree()
-            .factorize_cantor_zassenhaus()
+        if let Some(p) = self.factorize_monic(p) {
+            p.factorize_squarefree()
+                .factorize_distinct_degree()
+                .factorize_cantor_zassenhaus()
+        } else {
+            Factored::Zero
+        }
     }
 }

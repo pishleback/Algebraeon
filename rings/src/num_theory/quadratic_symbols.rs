@@ -1,6 +1,6 @@
 use crate::structure::{
-    MetaUniqueFactorizationMonoid, MultiplicativeMonoidSignature, RingToQuotientFieldSignature,
-    RingToQuotientRingSignature,
+    Factored, MetaFactoringMonoid, MetaUniqueFactorizationMonoid, MultiplicativeMonoidSignature,
+    RingToQuotientFieldSignature, RingToQuotientRingSignature,
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
 
@@ -179,7 +179,7 @@ pub fn jacobi_symbol(a: &Integer, n: &Natural) -> Result<QuadraticSymbolValue, J
 
 pub fn kronecker_symbol(a: &Integer, n: &Integer) -> QuadraticSymbolValue {
     match n.factor() {
-        None => {
+        Factored::Zero => {
             // n == 0
             if a.abs() == Natural::ONE {
                 // (1/0) = (-1/0) = 1
@@ -189,7 +189,7 @@ pub fn kronecker_symbol(a: &Integer, n: &Integer) -> QuadraticSymbolValue {
                 QuadraticSymbolValue::Zero
             }
         }
-        Some(n) => {
+        Factored::NonZero(n) => {
             let (u, powers) = n.into_unit_and_powers();
             let mut val = if u == Integer::ONE {
                 QuadraticSymbolValue::Pos

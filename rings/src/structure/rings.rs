@@ -976,8 +976,8 @@ impl<R: MetaType> MetaPositiveRealNthRoot for R where
 pub trait AlgebraicClosureSignature: FieldSignature
 where
     //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
-    PolynomialStructure<Self::BFS, Self::BFS>:
-        FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure> + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
+    PolynomialStructure<Self::BFS, Self::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
 {
     type BFS: FieldSignature; //base field structure
 

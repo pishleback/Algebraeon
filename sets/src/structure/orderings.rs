@@ -69,6 +69,22 @@ impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Set> Iterator for VecMerger<'
 pub trait OrdSignature: EqSignature {
     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering;
 
+    fn max(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        let c = self.cmp(a, b);
+        match c {
+            Ordering::Less | Ordering::Equal => b.clone(),
+            Ordering::Greater => a.clone(),
+        }
+    }
+
+    fn min(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        let c = self.cmp(a, b);
+        match c {
+            Ordering::Less | Ordering::Equal => a.clone(),
+            Ordering::Greater => b.clone(),
+        }
+    }
+
     fn is_sorted(&self, a: &[impl Borrow<Self::Set>]) -> bool {
         for i in 1..a.len() {
             if self.cmp(a[i - 1].borrow(), a[i].borrow()) == Ordering::Greater {

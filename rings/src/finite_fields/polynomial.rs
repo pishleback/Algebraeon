@@ -183,9 +183,9 @@ where
 {
     pub fn into_distinct_degree_factored(
         &self,
-        a: Factored<Polynomial<FS::Set>, Natural>,
+        a: NonZeroFactored<Polynomial<FS::Set>, Natural>,
     ) -> DistinctDegreeFactored<FS, FSB> {
-        let poly_ring = self.ring().clone();
+        let poly_ring = self.objects().clone();
         let (unit, factors) = a.into_unit_and_powers();
         let unit = poly_ring.as_constant(&unit).unwrap();
         let distinct_degree_factors = factors
@@ -371,15 +371,15 @@ where
         let mut factors = self
             .poly_ring
             .factorizations()
-            .from_unit_and_factor_powers(Polynomial::constant(self.unit.clone()), vec![]);
+            .new_unit_and_powers_impl(Polynomial::constant(self.unit.clone()), vec![]);
         for (sqfree_poly, power) in &self.squarefree_factors {
             self.poly_ring.factorizations().mul_mut(
                 &mut factors,
-                self.poly_ring.factorizations().pow(
-                    factorize_by_find_factor(&self.poly_ring, sqfree_poly.clone(), &|f| {
+                &self.poly_ring.factorizations().pow(
+                    &factorize_by_find_factor(&self.poly_ring, sqfree_poly.clone(), &|f| {
                         self.poly_ring.find_factor_by_berlekamps_algorithm(f)
                     }),
-                    power,
+                    &power,
                 ),
             );
         }
@@ -518,7 +518,7 @@ where
         let poly_ring = &self.poly_ring;
         let mut fs = poly_ring
             .factorizations()
-            .from_unit(Polynomial::constant(self.unit.clone()));
+            .new_unit_impl(Polynomial::constant(self.unit.clone()));
         for (ddf, mult) in &self.distinct_degree_factors {
             let d = ddf.irreducible_factor_degree;
             let n = self.poly_ring.degree(&ddf.polynomial).unwrap();
@@ -546,9 +546,9 @@ where
                         if self.poly_ring.degree(&f).unwrap() == d {
                             poly_ring.factorizations().mul_mut(
                                 &mut fs,
-                                poly_ring
+                                &poly_ring
                                     .factorizations()
-                                    .pow(poly_ring.factorizations().new_prime(f), mult),
+                                    .pow(&poly_ring.factorizations().new_irreducible_impl(f), mult),
                             );
                             None
                         } else {
@@ -663,7 +663,7 @@ mod tests {
         let p = (1 + x.pow(4) + x.pow(5)).pow(12).into_verbose();
         let ans = Polynomial::<Modulo<2>>::structure()
             .factorizations()
-            .from_unit_and_factor_powers(
+            .new_unit_and_powers_unchecked(
                 Polynomial::one(),
                 vec![
                     ((1 + x + x.pow(2)).into_verbose(), Natural::from(12u32)),
@@ -671,9 +671,7 @@ mod tests {
                 ],
             );
 
-        let f = Polynomial::<Modulo<2>>::structure()
-            .factorize_by_trying_all_factors(p.clone())
-            .unwrap();
+        let f = Polynomial::<Modulo<2>>::structure().factorize_by_trying_all_factors(p.clone());
         println!("{} = {}", p, f);
         assert!(
             Polynomial::<Modulo<2>>::structure()
@@ -701,7 +699,7 @@ mod tests {
             ((1 + x.pow(4) + x.pow(7)).pow(6) * (1 + x.pow(6) + x.pow(7)).pow(4)).into_verbose();
         let ans = Polynomial::<Modulo<2>>::structure()
             .factorizations()
-            .from_unit_and_factor_powers(
+            .new_unit_and_powers_unchecked(
                 Polynomial::one(),
                 vec![
                     (
@@ -715,9 +713,7 @@ mod tests {
                 ],
             );
 
-        let f = Polynomial::<Modulo<2>>::structure()
-            .factorize_by_trying_all_factors(p.clone())
-            .unwrap();
+        let f = Polynomial::<Modulo<2>>::structure().factorize_by_trying_all_factors(p.clone());
         println!("{} = {}", p, f);
         assert!(
             Polynomial::<Modulo<2>>::structure()
@@ -743,7 +739,7 @@ mod tests {
         let x = &Polynomial::<Modulo<5>>::var().into_ergonomic();
         let p = (1 + x.pow(4)).pow(5).into_verbose();
         let fs = Polynomial::<Modulo<5>>::structure().into_factorizations();
-        let ans = fs.from_unit_and_factor_powers(
+        let ans = fs.new_unit_and_powers_unchecked(
             Polynomial::one(),
             vec![
                 ((2 + x.pow(2)).into_verbose(), Natural::from(5u8)),
@@ -751,9 +747,7 @@ mod tests {
             ],
         );
 
-        let f = Polynomial::<Modulo<5>>::structure()
-            .factorize_by_trying_all_factors(p.clone())
-            .unwrap();
+        let f = Polynomial::<Modulo<5>>::structure().factorize_by_trying_all_factors(p.clone());
         println!("{} = {}", p, f);
         assert!(fs.equal(&f, &ans));
 
@@ -772,14 +766,12 @@ mod tests {
         let p = (3 + 2 * x.pow(2) + x.pow(4) + x.pow(6)).into_verbose();
         let ans = Polynomial::<Modulo<5>>::structure()
             .factorizations()
-            .from_unit_and_factor_powers(
+            .new_unit_and_powers_unchecked(
                 Polynomial::one(),
                 vec![((2 + x.pow(2)).into_verbose(), Natural::from(3u8))],
             );
 
-        let f = Polynomial::<Modulo<5>>::structure()
-            .factorize_by_trying_all_factors(p.clone())
-            .unwrap();
+        let f = Polynomial::<Modulo<5>>::structure().factorize_by_trying_all_factors(p.clone());
         println!("{} = {}", p, f);
         assert!(
             Polynomial::<Modulo<5>>::structure()
@@ -806,7 +798,7 @@ mod tests {
         let p = (1 + x.pow(27) + 8 * x.pow(30)).into_verbose();
         let ans = Polynomial::<Modulo<31>>::structure()
             .factorizations()
-            .from_unit_and_factor_powers(
+            .new_unit_and_powers_unchecked(
                 Polynomial::constant(Modulo::from_int(Integer::from(8))),
                 vec![
                     ((12 + x.pow(3)).into_verbose(), Natural::from(1u32)),
@@ -862,7 +854,7 @@ mod tests {
         let p = (1 - x.pow(3)).pow(48).into_verbose();
         let ans = Polynomial::<QuaternaryField>::structure()
             .factorizations()
-            .from_unit_and_factor_powers(
+            .new_unit_and_powers_unchecked(
                 Polynomial::one(),
                 vec![
                     (a.into_verbose(), Natural::from(48u32)),
@@ -873,8 +865,7 @@ mod tests {
 
         let f = QuaternaryField::structure()
             .polynomials()
-            .factorize_by_trying_all_factors(p.clone())
-            .unwrap();
+            .factorize_by_trying_all_factors(p.clone());
         println!("{} = {}", p, f);
         assert!(
             Polynomial::<QuaternaryField>::structure()
