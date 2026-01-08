@@ -559,13 +559,13 @@ where
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None
     pub fn into_hensel_factorization(
         &self,
-        a: Factored<Polynomial<RS::Set>, Natural>,
+        a: NonZeroFactored<Polynomial<RS::Set>, Natural>,
         h: Polynomial<RS::Set>,
     ) -> Option<HenselFactorization<true, RS>>
     where
         RS: EuclideanDomainSignature + GreatestCommonDivisorSignature,
     {
-        let poly_ring_mod = self.ring().clone();
+        let poly_ring_mod = self.objects().clone();
         let ring_mod = poly_ring_mod.coeff_ring();
         let ring = ring_mod.ring().clone();
         // let poly_ring: PolynomialStructure<RS> = PolynomialStructure::new(ring.clone());
