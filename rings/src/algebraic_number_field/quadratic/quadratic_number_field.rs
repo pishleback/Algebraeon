@@ -9,7 +9,7 @@ use crate::structure::{
 };
 use crate::structure::{
     AdditiveMonoidEqSignature, FreeModuleSignature, MetaAdditiveMonoidEq, MetaCharZeroRing,
-    MetaFactorableSignature, PrincipalRationalMap, RingHomomorphismRangeModuleStructure,
+     PrincipalRationalMap, RingHomomorphismRangeModuleStructure,
     SemiModuleSignature,
 };
 use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};

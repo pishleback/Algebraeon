@@ -94,7 +94,7 @@ mod balancable_pairs {
     impl Polynomial<Integer> {
         pub fn balancable_pairs<'a>(&'a self, p: &Natural) -> Vec<BalancablePair<'a>> {
             assert!(!self.is_zero());
-            debug_assert!(p.is_prime());
+            debug_assert!(p.is_irreducible());
             let mut bps = vec![];
             let n = self.degree().unwrap();
             let coeff_valuations = (0..=n)
@@ -307,7 +307,7 @@ impl PAdicRationalBall {
 fn isolatebf0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
     debug_assert!(!f.is_zero());
     debug_assert!(f.is_squarefree());
-    debug_assert!(p.is_prime());
+    debug_assert!(p.is_irreducible());
     let n = f.degree().unwrap();
     if n == 0 {
         vec![]
@@ -350,7 +350,7 @@ fn isolatebf0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
 fn isolate0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
     debug_assert!(!f.is_zero());
     debug_assert!(f.is_squarefree());
-    debug_assert!(p.is_prime());
+    debug_assert!(p.is_irreducible());
     let n = f.degree().unwrap();
     if n == 0 {
         vec![]
@@ -379,7 +379,7 @@ fn isorefine(
 ) -> Vec<PAdicRationalBall> {
     debug_assert!(!f.is_zero());
     debug_assert!(f.is_squarefree());
-    debug_assert!(p.is_prime());
+    debug_assert!(p.is_irreducible());
     debug_assert_eq!(&f.clone().derivative(), df);
     let p_tothe_beta = p.nat_pow(beta);
     let vdfi = padic_int_valuation(
@@ -421,7 +421,7 @@ fn isorefine1(
 ) -> Vec<PAdicRationalBall> {
     debug_assert!(!f.is_zero());
     debug_assert!(f.is_squarefree());
-    debug_assert!(p.is_prime());
+    debug_assert!(p.is_irreducible());
     let val_f_at_i = padic_int_valuation(p, f.evaluate(&Integer::from(i)));
     if Valuation::Finite(Integer::from(beta)) > val_f_at_i {
         return vec![];
@@ -534,7 +534,7 @@ fn refine0_impl(
 }
 
 pub fn isolate(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
-    debug_assert!(p.is_prime());
+    debug_assert!(p.is_irreducible());
     debug_assert!(!f.is_zero());
     debug_assert!(f.is_squarefree());
     debug_assert!(f.degree().unwrap() >= 2);

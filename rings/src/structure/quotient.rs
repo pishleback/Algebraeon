@@ -47,7 +47,7 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>>
     }
 }
 
-impl<RS: EuclideanDomainSignature + FactorableSignature, RSB: BorrowedStructure<RS>>
+impl<RS: EuclideanDomainSignature + FactoringMonoidSignature, RSB: BorrowedStructure<RS>>
     EuclideanRemainderQuotientStructure<RS, RSB, true>
 {
     fn new_field_unchecked(ring: RSB, modulus: RS::Set) -> Self {
@@ -81,7 +81,9 @@ pub trait RingToQuotientRingSignature: EuclideanDomainSignature {
 }
 impl<Ring: EuclideanDomainSignature> RingToQuotientRingSignature for Ring {}
 
-pub trait RingToQuotientFieldSignature: EuclideanDomainSignature + FactorableSignature {
+pub trait RingToQuotientFieldSignature:
+    EuclideanDomainSignature + FactoringMonoidSignature
+{
     fn quotient_field<'a>(
         &'a self,
         modulus: Self::Set,
@@ -110,7 +112,10 @@ pub trait RingToQuotientFieldSignature: EuclideanDomainSignature + FactorableSig
         EuclideanRemainderQuotientStructure::new_field_unchecked(self, modulus)
     }
 }
-impl<Ring: EuclideanDomainSignature + FactorableSignature> RingToQuotientFieldSignature for Ring {}
+impl<Ring: EuclideanDomainSignature + FactoringMonoidSignature> RingToQuotientFieldSignature
+    for Ring
+{
+}
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> PartialEq
     for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>

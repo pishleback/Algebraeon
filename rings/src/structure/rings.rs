@@ -1,6 +1,6 @@
 use super::*;
 use crate::polynomial::*;
-use algebraeon_nzq::{Integer, Natural, Rational, traits::*};
+use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure, Rational, traits::*};
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, fmt::Debug};
 
@@ -977,7 +977,7 @@ pub trait AlgebraicClosureSignature: FieldSignature
 where
     //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
     PolynomialStructure<Self::BFS, Self::BFS>:
-        FactorableSignature + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
+        FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure> + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
 {
     type BFS: FieldSignature; //base field structure
 
@@ -999,7 +999,7 @@ where
         self.all_roots_list(
             &base_field_poly
                 .factorizations()
-                .expanded_squarefree(&base_field_poly.factor(poly).unwrap()),
+                .expand_squarefree(&base_field_poly.factor(poly)),
         )
     }
 
@@ -1009,10 +1009,7 @@ where
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
         let base_field_poly = self.base_field().into_polynomials();
-        for (factor, k) in base_field_poly
-            .factorizations()
-            .into_powers(base_field_poly.factor(poly)?)
-        {
+        for (factor, k) in base_field_poly.factor(poly).into_powers()? {
             for root in self.all_roots_list(&factor).unwrap() {
                 root_powers.push((root, (&k).try_into().unwrap()));
             }

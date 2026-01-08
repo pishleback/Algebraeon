@@ -1,4 +1,7 @@
-use crate::structure::{AdditiveMonoidEqSignature, IntegralDomainSignature};
+use crate::structure::{
+    AdditiveMonoidEqSignature, Factored, IntegralDomainSignature, MultiplicativeMonoidSignature,
+    SemiRingSignature, UniqueFactorizationMonoidSignature,
+};
 
 use super::{FactoredSignature, FavoriteAssociateSignature, FieldSignature};
 use algebraeon_nzq::Natural;
@@ -7,6 +10,8 @@ use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
 };
+
+/*
 
 #[derive(Debug, Clone)]
 pub struct FactoredRingElement<Element> {
@@ -610,6 +615,7 @@ impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
         a.powers.push((p, k));
     }
 }
+*/
 
 #[derive(Debug)]
 pub enum FindFactorResult<Element> {
@@ -617,24 +623,27 @@ pub enum FindFactorResult<Element> {
     Composite(Element, Element),
 }
 
-pub fn factorize_by_find_factor<RS: UniqueFactorizationDomainSignature>(
+pub fn factorize_by_find_factor<
+    Exponent: SemiRingSignature + OrdSignature,
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent> + AdditiveMonoidEqSignature,
+>(
     ring: &RS,
     elem: RS::Set,
     partial_factor: &impl Fn(RS::Set) -> FindFactorResult<RS::Set>,
-) -> FactoredRingElement<RS::Set> {
+) -> Factored<RS::Set, Exponent::Set> {
     debug_assert!(!ring.is_zero(&elem));
     if ring.is_unit(&elem) {
-        ring.factorizations().from_unit(elem)
+        ring.factorizations().new_unit_impl(elem)
     } else {
         debug_assert!(!ring.is_unit(&elem));
         match partial_factor(elem.clone()) {
             FindFactorResult::Composite(g, h) => ring.factorizations().mul(
-                factorize_by_find_factor(ring, g, partial_factor),
-                factorize_by_find_factor(ring, h, partial_factor),
+                &factorize_by_find_factor(ring, g, partial_factor),
+                &factorize_by_find_factor(ring, h, partial_factor),
             ),
             FindFactorResult::Irreducible => {
                 //f is irreducible
-                ring.factorizations().new_prime(elem)
+                ring.factorizations().new_irreducible_impl(elem)
             }
         }
     }
@@ -642,6 +651,8 @@ pub fn factorize_by_find_factor<RS: UniqueFactorizationDomainSignature>(
 
 #[cfg(test)]
 mod tests {
+    use crate::structure::FactoringMonoidSignature;
+
     use super::*;
     use algebraeon_nzq::Integer;
     use algebraeon_sets::structure::MetaType;
@@ -650,7 +661,7 @@ mod tests {
     fn factorization_invariants() {
         let f = Integer::structure()
             .factorizations()
-            .from_unit_and_factor_powers_unchecked(
+            .new_unit_and_powers_unchecked(
                 Integer::from(-1),
                 vec![
                     (Integer::from(2), Natural::from(2u8)),
@@ -664,7 +675,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .from_unit_and_factor_powers(Integer::from(1), vec![]);
+            .new_unit_and_powers_unchecked(Integer::from(1), vec![]);
         Integer::structure()
             .factorizations()
             .is_element(&f)
@@ -672,7 +683,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .from_unit_and_factor_powers_unchecked(
+            .new_unit_and_powers_unchecked(
                 Integer::from(-1),
                 vec![
                     (Integer::from(2), Natural::from(2u8)),
@@ -690,7 +701,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .from_unit_and_factor_powers_unchecked(
+            .new_unit_and_powers_unchecked(
                 Integer::from(3),
                 vec![(Integer::from(2), Natural::from(2u8))],
             );
@@ -704,7 +715,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .from_unit_and_factor_powers_unchecked(
+            .new_unit_and_powers_unchecked(
                 Integer::from(1),
                 vec![
                     (Integer::from(0), Natural::from(1u8)),
@@ -721,7 +732,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .from_unit_and_factor_powers_unchecked(
+            .new_unit_and_powers_unchecked(
                 Integer::from(-1),
                 vec![
                     (Integer::from(4), Natural::from(1u8)),
@@ -738,7 +749,7 @@ mod tests {
 
         let f = Integer::structure()
             .factorizations()
-            .from_unit_and_factor_powers_unchecked(
+            .new_unit_and_powers_unchecked(
                 Integer::from(-1),
                 vec![
                     (Integer::from(-2), Natural::from(2u8)),
@@ -760,14 +771,18 @@ mod tests {
             println!("a = {}", a);
             let b = Integer::from(a);
             println!("b = {}", b);
-            let fs = Integer::structure().factor(&b).unwrap();
+            let fs = Integer::structure().factor(&b);
             println!("fs = {:?}", fs);
             assert_eq!(
-                Integer::structure().factorizations().count_divisors(&fs),
+                Integer::structure()
+                    .factorizations()
+                    .count_divisors(&fs)
+                    .unwrap(),
                 Natural::from(
                     Integer::structure()
                         .factorizations()
                         .divisors(&fs)
+                        .unwrap()
                         .collect::<Vec<Integer>>()
                         .len()
                 )

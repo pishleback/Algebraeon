@@ -168,7 +168,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
         p: &<Self as SetSignature>::Set,
-    ) -> crate::structure::FactoredRingElement<<Self as SetSignature>::Set> {
+    ) -> Factored<<Self as SetSignature>::Set, Natural> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
         let rat_poly_poly_poly = Rational::structure()
@@ -246,7 +246,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     pub fn factor_primitive_sqfree_by_reduced_ring(
         &self,
         p: &<Self as SetSignature>::Set,
-    ) -> FactoredRingElement<<Self as SetSignature>::Set> {
+    ) -> Factored<<Self as SetSignature>::Set, Natural> {
         debug_assert!(!self.is_zero(p));
 
         /*
@@ -559,8 +559,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         f: &<Self as SetSignature>::Set,
         factorize: &impl Fn(
             &<Self as SetSignature>::Set,
-        ) -> FactoredRingElement<<Self as SetSignature>::Set>,
-    ) -> FactoredRingElement<<Self as SetSignature>::Set> {
+        ) -> Factored<<Self as SetSignature>::Set, Natural>,
+    ) -> Factored<<Self as SetSignature>::Set, Natural> {
         debug_assert!(!self.is_zero(f));
         // println!("f = {}", f);
 
@@ -596,26 +596,24 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     }
 }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactorableSignature
+impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactoringMonoidSignature
     for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
-    fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredRingElement<Self::Set>> {
+    fn factor_unchecked(&self, a: &Self::Set) -> Factored<Self::Set, Natural> {
         if self.is_zero(a) {
-            None
+            Factored::Zero
         } else {
-            Some(
-                self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-                    a.clone(),
-                    |c| self.coeff_ring().factor(c),
-                    &|a| {
-                        self.factorize_rational_factorize_first(&a, &|a| {
-                            // Unsure which is faster. One might be better in different cases.
-                            self.factor_primitive_sqfree_by_reduced_ring(a)
-                            // OR
-                            // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
-                        })
-                    },
-                ),
+            self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
+                a.clone(),
+                |c| self.coeff_ring().factor(c),
+                &|a| {
+                    self.factorize_rational_factorize_first(&a, &|a| {
+                        // Unsure which is faster. One might be better in different cases.
+                        self.factor_primitive_sqfree_by_reduced_ring(a)
+                        // OR
+                        // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
+                    })
+                },
             )
         }
     }

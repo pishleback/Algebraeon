@@ -1,9 +1,6 @@
-use crate::{
-    natural::{NaturalFns, factorization::NaturalCanonicalFactorizationStructure},
-    structure::*,
-};
+use crate::structure::*;
 use algebraeon_nzq::{traits::Abs, *};
-use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature, Signature};
+use algebraeon_sets::structure::{BorrowedStructure, SetSignature, Signature};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IntegerIdealsStructure<B: BorrowedStructure<IntegerCanonicalStructure>> {
@@ -96,12 +93,10 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
         &self,
         ideal: &Self::Set,
     ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
-        let f = ideal.clone().factor()?;
+        let f = ideal.clone().factor();
         Some(
             self.factorizations().new_powers(
-                Natural::structure()
-                    .factorizations()
-                    .into_powers(f)
+                f.into_powers()?
                     .into_iter()
                     .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k))
                     .collect(),
@@ -112,7 +107,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
 
 impl DedekindDomainPrimeIdeal<Natural> {
     pub fn try_from_nat(n: Natural) -> Result<Self, ()> {
-        if n.is_prime() {
+        if n.is_irreducible() {
             Ok(DedekindDomainPrimeIdeal::from_ideal_unchecked(n))
         } else {
             Err(())

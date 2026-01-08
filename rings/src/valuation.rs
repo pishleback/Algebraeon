@@ -4,7 +4,8 @@ use algebraeon_nzq::{
 };
 use std::ops::{Add, Mul, Sub};
 
-use crate::natural::NaturalFns;
+use crate::structure::{MetaFactoringMonoid, MetaUniqueFactorizationMonoid};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Valuation {
     Infinity,
@@ -211,7 +212,7 @@ impl Mul<&Valuation> for &Valuation {
 }
 
 pub fn padic_nat_valuation(p: &Natural, mut n: Natural) -> Valuation {
-    debug_assert!(p.is_prime());
+    debug_assert!(p.is_irreducible());
     if n == Natural::ZERO {
         Valuation::Infinity
     } else {

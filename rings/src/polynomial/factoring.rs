@@ -4,24 +4,26 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::{BorrowedStructure, SetSignature};
 
 impl<
-    RS: UniqueFactorizationDomainSignature + GreatestCommonDivisorSignature + CharZeroRingSignature,
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + GreatestCommonDivisorSignature
+        + CharZeroRingSignature,
     RSB: BorrowedStructure<RS>,
 > PolynomialStructure<RS, RSB>
 where
     PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
         + GreatestCommonDivisorSignature
-        + UniqueFactorizationDomainSignature,
+        + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     /// Reduce a factorization problem for polynomials over a ring of characteristic 0 to a factorization of primitive squarefree polynomials over the ring
     //https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
     pub fn factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
         &self,
         f: Polynomial<RS::Set>,
-        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>,
+        factor_coeff: impl Fn(&RS::Set) -> Factored<RS::Set, Natural>,
         primitive_sqfree_factorize: &impl Fn(
             Polynomial<RS::Set>,
-        ) -> FactoredRingElement<Polynomial<RS::Set>>,
-    ) -> FactoredRingElement<Polynomial<RS::Set>> {
+        ) -> Factored<Polynomial<RS::Set>, Natural>,
+    ) -> Factored<Polynomial<RS::Set>, Natural> {
         debug_assert!(!self.is_zero(&f));
         //look for a squarefree factorization of the form
         //  f = x * a_1^1 * a_2^2 * a_3^3 * ... * a_k^k
@@ -71,20 +73,19 @@ where
 }
 
 impl<
-    RS: FactorableSignature + GreatestCommonDivisorSignature + FiniteUnitsSignature,
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + GreatestCommonDivisorSignature
+        + FiniteUnitsSignature,
     RSB: BorrowedStructure<RS>,
 > PolynomialStructure<RS, RSB>
 where
-    PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
+    PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
+        + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     fn factor_primitive_linear_part(
         &self,
         mut f: Polynomial<RS::Set>,
-    ) -> (
-        FactoredRingElement<Polynomial<RS::Set>>,
-        Polynomial<RS::Set>,
-    ) {
+    ) -> (Factored<Polynomial<RS::Set>, Natural>, Polynomial<RS::Set>) {
         debug_assert!(self.is_primitive(f.clone()));
 
         /*
@@ -103,7 +104,7 @@ where
                 f = self.try_div(&f, &self.var()).unwrap();
                 linear_factors = self
                     .factorizations()
-                    .mul(linear_factors, self.factorizations().new_prime(self.var()));
+                    .mul(&linear_factors, self.factorizations().new_prime(self.var()));
                 continue 'seek_linear_factor;
             } else {
                 //look for linear factors of the form (a+bx)
@@ -128,7 +129,7 @@ where
                                 f = new_f;
                                 linear_factors = self
                                     .factorizations()
-                                    .mul(linear_factors, self.factorizations().new_prime(lin));
+                                    .mul(&linear_factors, self.factorizations().new_prime(lin));
                                 continue 'seek_linear_factor;
                             }
                         }
@@ -143,7 +144,10 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationDomainSignature + CharZeroRingSignature + FiniteUnitsSignature + 'static,
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + CharZeroRingSignature
+        + FiniteUnitsSignature
+        + 'static,
     RSB: BorrowedStructure<RS>,
 > PolynomialStructure<RS, RSB>
 where
@@ -152,7 +156,7 @@ where
     fn find_factor_primitive_by_kroneckers_algorithm(
         &self,
         f: &Polynomial<RS::Set>,
-        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>,
+        factor_coeff: impl Fn(&RS::Set) -> Factored<RS::Set, Natural>,
     ) -> FindFactorResult<Polynomial<RS::Set>> {
         /*
         Suppose we want to factor f(x) = 2 + x + x^2 + x^4 + x^5
@@ -234,7 +238,7 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationDomainSignature
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -242,16 +246,16 @@ impl<
     RSB: BorrowedStructure<RS>,
 > PolynomialStructure<RS, RSB>
 where
-    PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
+    PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
+        + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     pub fn factorize_by_kroneckers_method(
         &self,
         f: Polynomial<RS::Set>,
-        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>,
-    ) -> Option<FactoredRingElement<Polynomial<RS::Set>>> {
+        factor_coeff: impl Fn(&RS::Set) -> Factored<RS::Set, Natural>,
+    ) -> Factored<Polynomial<RS::Set>, Natural> {
         if self.is_zero(&f) {
-            None
+            Factored::Zero
         } else {
             let (g, f_prim) = self.factor_primitive(f).unwrap();
             let g_factored = factor_coeff(&g).unwrap();
@@ -268,13 +272,13 @@ where
             });
             self.factorizations().mul_mut(&mut factored, g_factored);
 
-            Some(factored)
+            factored
         }
     }
 }
 
 impl<
-    RS: UniqueFactorizationDomainSignature
+    RS: UniqueFactorizationMonoidSignature
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -284,30 +288,26 @@ impl<
 where
     PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
         + GreatestCommonDivisorSignature
-        + UniqueFactorizationDomainSignature,
+        + UniqueFactorizationMonoidSignature,
 {
     pub fn factorize_by_yuns_and_kroneckers_method(
         &self,
         f: &Polynomial<RS::Set>,
-        factor_coeff: impl Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>,
-    ) -> Option<FactoredRingElement<Polynomial<RS::Set>>> {
+        factor_coeff: impl Fn(&RS::Set) -> Factored<RS::Set, Natural>,
+    ) -> Factored<Polynomial<RS::Set>, Natural> {
         if self.is_zero(f) {
-            None
+            Factored::Zero
         } else {
-            Some(
-                self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-                    f.clone(),
-                    &factor_coeff,
-                    &|f| {
-                        let big_ff = factorize_by_find_factor(self, f, &|f| {
-                            self.find_factor_primitive_by_kroneckers_algorithm(&f, |c| {
-                                factor_coeff(c)
-                            })
-                        });
-                        #[allow(clippy::let_and_return)]
-                        big_ff
-                    },
-                ),
+            self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
+                f.clone(),
+                &factor_coeff,
+                &|f| {
+                    let big_ff = factorize_by_find_factor(self, f, &|f| {
+                        self.find_factor_primitive_by_kroneckers_algorithm(&f, |c| factor_coeff(c))
+                    });
+                    #[allow(clippy::let_and_return)]
+                    big_ff
+                },
             )
         }
     }
@@ -341,12 +341,12 @@ pub fn factorize_by_factorize_primitive_part<
     fof_inclusion: &Fof,
     poly_ring: &PolynomialStructure<Field, FieldB>,
     f: &Polynomial<Field::Set>,
-) -> Option<FactoredRingElement<Polynomial<Field::Set>>>
+) -> Factored<Polynomial<Field::Set>, Natural>
 where
     PolynomialStructure<Field, FieldB>:
-        SetSignature<Set = Polynomial<Field::Set>> + UniqueFactorizationDomainSignature,
+        SetSignature<Set = Polynomial<Field::Set>> + UniqueFactorizationMonoidSignature,
     for<'a> PolynomialStructure<Ring, &'a Ring>:
-        SetSignature<Set = Polynomial<Ring::Set>> + FactorableSignature,
+        SetSignature<Set = Polynomial<Ring::Set>> + FactoringMonoidSignature,
     Ring: GreatestCommonDivisorSignature,
 {
     let (unit, prim) = factor_primitive_fof(fof_inclusion, f);
@@ -367,13 +367,13 @@ where
         poly_ring.mul(&Polynomial::constant(unit), &fof_unit),
         fof_factors,
     );
-    Some(factors)
+    factors
 }
 
 impl<RS: FieldSignature + FiniteUnitsSignature, RSB: BorrowedStructure<RS>>
     PolynomialStructure<RS, RSB>
 where
-    Self: SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
+    Self: SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationMonoidSignature,
 {
     fn find_factor_by_trying_all_factors(
         &self,
@@ -401,13 +401,13 @@ where
     pub fn factorize_by_trying_all_factors(
         &self,
         f: Polynomial<RS::Set>,
-    ) -> Option<FactoredRingElement<Polynomial<RS::Set>>> {
+    ) -> Factored<Polynomial<RS::Set>, Natural> {
         if self.is_zero(&f) {
-            None
+            Factored::Zero
         } else {
-            Some(factorize_by_find_factor(self, f, &|f| {
+            factorize_by_find_factor(self, f, &|f| {
                 self.find_factor_by_trying_all_factors(f)
-            }))
+            })
         }
     }
 }

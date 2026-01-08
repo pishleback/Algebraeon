@@ -36,6 +36,12 @@ impl MultiplicativeMonoidSignature for NaturalCanonicalStructure {
     }
 }
 
+impl FavoriteAssociateSignature for NaturalCanonicalStructure {
+    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+        (Natural::ONE, a.clone())
+    }
+}
+
 impl SemiRingSignature for NaturalCanonicalStructure {}
 
 impl CharacteristicSignature for NaturalCanonicalStructure {
@@ -72,16 +78,16 @@ impl EuclideanDivisionSignature for NaturalCanonicalStructure {
     }
 }
 
-pub trait NaturalFns {
-    fn is_prime(&self) -> bool;
-    fn factor(self) -> Option<Vec<(Natural, Natural)>>;
-}
+// pub trait NaturalFns {
+//     fn is_prime(&self) -> bool;
+//     fn factor(self) -> Option<Vec<(Natural, Natural)>>;
+// }
 
-impl NaturalFns for Natural {
-    fn is_prime(&self) -> bool {
-        factorization::primes::is_prime(self)
-    }
-    fn factor(self) -> Option<Vec<(Natural, Natural)>> {
-        factorization::factor(self)
-    }
-}
+// impl NaturalFns for Natural {
+//     fn is_prime(&self) -> bool {
+//         factorization::primes::is_prime(self)
+//     }
+//     fn factor(self) -> Option<Vec<(Natural, Natural)>> {
+//         factorization::factor(self)
+//     }
+// }

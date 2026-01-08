@@ -48,9 +48,7 @@ For exponentiation, use the method `.pow(&exp)` instead of `^` (which is xor).
 
 ```rust
 use algebraeon::nzq::*;
-use algebraeon::rings::natural::NaturalFns;
-use algebraeon::rings::natural::factorization::NaturalCanonicalFactorizationStructure;
-use algebraeon::sets::structure::*;
+use algebraeon::rings::structure::*;
 
 let a = Natural::from(12u32);
 let b = Natural::from(5u32);
@@ -93,20 +91,20 @@ assert_eq!(gcd(a.clone(), b.clone()), Natural::from(1u32));
 assert_eq!(lcm(a.clone(), b.clone()), Natural::from(60u32));
 
 // is_prime
-assert!(!a.is_prime()); // 12 is not prime
-assert!(b.is_prime()); // 5 is prime
+assert!(!a.is_irreducible()); // 12 is not prime
+assert!(b.is_irreducible()); // 5 is prime
 
 // Euler's totient function
 assert_eq!(
-    Natural::structure()
+    Natural::structure_ref()
         .factorizations()
-        .euler_totient(&a.factor().unwrap()),
+        .euler_totient(&a.factor()),
     Natural::from(4u32)
 ); // φ(12) = 4
 assert_eq!(
-    Natural::structure()
+    Natural::structure_ref()
         .factorizations()
-        .euler_totient(&b.factor().unwrap()),
+        .euler_totient(&b.factor()),
     Natural::from(4u32)
 ); // φ(5) = 4
 ```
@@ -117,20 +115,17 @@ Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedi
 
 ```rust
 use algebraeon::nzq::Natural;
-use algebraeon::rings::natural::NaturalFns;
+use algebraeon::rings::structure::MetaUniqueFactorizationMonoid;
+use algebraeon::rings::structure::UniqueFactorizationMonoidSignature;
 use algebraeon::sets::structure::ToStringSignature;
-use algebraeon::{
-    rings::natural::factorization::NaturalCanonicalFactorizationStructure,
-    sets::structure::MetaType,
-};
 use std::str::FromStr;
 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
-let f = n.clone().factor().unwrap();
+let f = n.clone().factor();
 println!(
     "{} = {}",
     n,
-    Natural::structure().factorizations().to_string(&f)
+    Natural::structure_ref().factorizations().to_string(&f)
 );
 /*
 Output:

@@ -872,28 +872,20 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
 //     }
 // }
 
-impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
-    UniqueFactorizationDomainSignature for PolynomialStructure<RS, RSB>
+impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: BorrowedStructure<RS>>
+    UniqueFactorizationMonoidSignature for PolynomialStructure<RS, RSB>
 {
-    // type FactorOrdering = PolynomialFactorOrderingStructure<RS, RSB>;
+    type FactoredExponent = NaturalCanonicalStructure;
 
-    type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
-
-    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
-        FactoredRingElementStructure::new(self)
+    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+        Natural::structure_ref()
     }
 
-    fn into_factorizations(self) -> Self::Factorizations<Self> {
-        FactoredRingElementStructure::new(self)
+    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+        Natural::structure()
     }
 
-    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
-    //     Cow::Owned(PolynomialFactorOrderingStructure::new(
-    //         self.coeff_ring.clone(),
-    //     ))
-    // }
-
-    fn debug_try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
         None
     }
 }

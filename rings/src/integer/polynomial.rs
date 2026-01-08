@@ -9,10 +9,10 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> GreatestCommonDivisorSigna
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> FactorableSignature
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> FactoringMonoidSignature
     for PolynomialStructure<IntegerCanonicalStructure, B>
 {
-    fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Polynomial<Integer>>> {
+    fn factor_unchecked(&self, p: &Self::Set) -> Factored<Polynomial<Integer>, Natural> {
         use berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm;
         // self.factorize_by_kroneckers_method(p)
         factorize_by_berlekamp_zassenhaus_algorithm(p.clone())
@@ -106,10 +106,10 @@ impl Polynomial<Integer> {
 
 // }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> FactorableSignature
+impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> FactoringMonoidSignature
     for MultiPolynomialStructure<IntegerCanonicalStructure, B>
 {
-    fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Self::Set>> {
+    fn factor_unchecked(&self, p: &Self::Set) -> Factored<Self::Set, Natural> {
         self.factor_by_yuns_and_kroneckers_inductively(
             Rc::new(Integer::factor),
             Rc::new(Polynomial::factor),

@@ -206,17 +206,34 @@ const_assert!(
     impls::impls!(IntegerCanonicalStructure : AlgebraicIntegerRingSignature<RationalCanonicalStructure>)
 );
 
-impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
-    for PolynomialStructure<RationalCanonicalStructure, B>
-{
-    fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Polynomial<Rational>>> {
-        factorize_by_factorize_primitive_part(
-            &PrincipalIntegerMap::new(self.coeff_ring().clone()),
-            self,
-            p,
-        )
-    }
-}
+// impl<B: BorrowedStructure<RationalCanonicalStructure>> UniqueFactorizationMonoidSignature
+//     for PolynomialStructure<RationalCanonicalStructure, B>
+// {
+//     type FactoredExponent = Natural;
+
+//     fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+//         todo!()
+//     }
+
+//     fn into_factorization_exponents(self) -> Self::FactoredExponent {
+//         todo!()
+//     }
+
+//     fn is_irreducible(&self, a: &Self::Set) -> bool {
+//         todo!()
+//     }
+
+//     fn factor_unchecked(
+//         &self,
+//         a: &Self::Set,
+//     ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set> {
+//         factorize_by_factorize_primitive_part(
+//             &PrincipalIntegerMap::new(self.coeff_ring().clone()),
+//             self,
+//             p,
+//         )
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

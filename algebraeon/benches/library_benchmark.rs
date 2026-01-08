@@ -1,5 +1,4 @@
 use algebraeon_nzq::{Integer, Natural, Rational};
-use algebraeon_rings::natural::NaturalFns;
 use algebraeon_rings::parsing::{parse_integer_polynomial, parse_rational_polynomial};
 use algebraeon_rings::polynomial::Polynomial;
 use algebraeon_rings::structure::MetaFactorableSignature;
@@ -11,6 +10,7 @@ use std::str::FromStr;
 #[benches::small(iter = (100u16..=120).map(Natural::from))]
 #[bench::large1(Natural::from_str("706000565581575429997696139445280900").unwrap())]
 fn bench_factor_natural(value: Natural) {
+    use algebraeon_rings::structure::MetaUniqueFactorizationMonoid;
     black_box(value.factor());
 }
 

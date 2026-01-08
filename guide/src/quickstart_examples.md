@@ -5,22 +5,19 @@
 To factor large integers using Algebraeon
 
 ```rust
-use algebraeon::sets::structure::ToStringSignature;
 use algebraeon::nzq::Natural;
-use algebraeon::rings::natural::NaturalFns;
-use algebraeon::{
-    rings::natural::factorization::NaturalCanonicalFactorizationStructure,
-    sets::structure::MetaType,
-};
+use algebraeon::rings::structure::MetaUniqueFactorizationMonoid;
+use algebraeon::rings::structure::UniqueFactorizationMonoidSignature;
+use algebraeon::sets::structure::ToStringSignature;
 use std::str::FromStr;
 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
-let f = n.clone().factor().unwrap();
+let f = n.clone().factor();
 println!(
     "{} = {}",
     n,
-    Natural::structure().factorizations().to_string(&f)
-);;
+    Natural::structure_ref().factorizations().to_string(&f)
+);
 /*
 Output:
     706000565581575429997696139445280900 = 2^2 × 5^2 × 6988699669998001 × 1010203040506070809

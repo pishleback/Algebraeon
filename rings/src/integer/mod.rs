@@ -1,6 +1,4 @@
-use super::natural::factorization::NaturalCanonicalFactorizationStructure;
 use crate::algebraic_number_field::AlgebraicIntegerRingSignature;
-use crate::natural::NaturalFns;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
@@ -126,51 +124,42 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
     }
 }
 
-impl UniqueFactorizationDomainSignature for IntegerCanonicalStructure {
-    // type FactorOrdering = Self;
-    type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+impl UniqueFactorizationMonoidSignature for IntegerCanonicalStructure {
+    type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
-        FactoredRingElementStructure::new(self)
+    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+        Natural::structure_ref()
     }
 
-    fn into_factorizations(self) -> Self::Factorizations<Self> {
-        FactoredRingElementStructure::new(self)
+    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+        Natural::structure()
     }
 
-    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
-    //     Cow::Borrowed(self)
-    // }
-
-    fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(a.abs().is_prime())
+    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+        Some(a.abs().is_irreducible())
     }
 }
 
-impl FactorableSignature for IntegerCanonicalStructure {
-    fn factor(&self, a: &Self::Set) -> Option<FactoredRingElement<Integer>> {
+impl FactoringMonoidSignature for IntegerCanonicalStructure {
+    fn factor_unchecked(&self, a: &Self::Set) -> Factored<Integer, Natural> {
         if a == &Integer::ZERO {
-            None
+            Factored::Zero
         } else {
             let unit = if a < &Integer::ZERO {
                 Integer::from(-1)
             } else {
                 Integer::from(1)
             };
-            let f = a.abs().factor().unwrap();
-            Some(
-                Integer::structure()
-                    .factorizations()
-                    .from_unit_and_factor_powers_unchecked(
-                        unit,
-                        Natural::structure()
-                            .factorizations()
-                            .into_powers(f)
-                            .into_iter()
-                            .map(|(p, k)| (Integer::from(p), k))
-                            .collect(),
-                    ),
-            )
+            let f = a.abs().factor();
+            Integer::structure()
+                .factorizations()
+                .from_unit_and_factor_powers_unchecked(
+                    unit,
+                    f.into_powers()?
+                        .into_iter()
+                        .map(|(p, k)| (Integer::from(p), k))
+                        .collect(),
+                )
         }
     }
 }

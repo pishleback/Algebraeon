@@ -1,12 +1,8 @@
-use crate::{
-    natural::{NaturalFns, factorization::NaturalCanonicalFactorizationStructure},
-    structure::{
-        FactoredSignature, MetaFactorableSignature, MultiplicativeMonoidSignature,
-        RingToQuotientFieldSignature, RingToQuotientRingSignature,
-    },
+use crate::structure::{
+    MetaUniqueFactorizationMonoid, MultiplicativeMonoidSignature, RingToQuotientFieldSignature,
+    RingToQuotientRingSignature,
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
-use algebraeon_sets::structure::MetaType;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QuadraticSymbolValue {
@@ -84,7 +80,7 @@ pub fn legendre_symbol(
     a: &Integer,
     p: &Natural,
 ) -> Result<QuadraticSymbolValue, LegendreSymbolError> {
-    if p % Natural::TWO == Natural::ZERO || !p.is_prime() {
+    if p % Natural::TWO == Natural::ZERO || !p.is_irreducible() {
         Err(LegendreSymbolError::BottomNotOddPrime)
     } else {
         let mod_p = Integer::structure_ref().quotient_field_unchecked(Integer::from(p));
@@ -115,10 +111,7 @@ fn jacobi_symbol_by_factorization(
         let mod_n = Integer::structure_ref().quotient_ring(Integer::from(n));
         let a = mod_n.reduce(a);
         let mut val = QuadraticSymbolValue::Pos;
-        for (p, k) in Natural::structure()
-            .factorizations()
-            .to_powers(&n.clone().factor().unwrap())
-        {
+        for (p, k) in n.factor().powers().unwrap() {
             val = val * legendre_symbol(&a, p).unwrap().nat_pow(k);
         }
         Ok(val)

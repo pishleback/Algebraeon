@@ -175,13 +175,15 @@ impl<
     FS: FiniteFieldSignature,
     FSB: BorrowedStructure<FS>,
     FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
-> FactoredRingElementStructure<PolynomialStructure<FS, FSB>, FSPB>
+    NB: BorrowedStructure<NaturalCanonicalStructure>,
+> FactoringStructure<PolynomialStructure<FS, FSB>, FSPB, NaturalCanonicalStructure, NB>
 where
-    PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>> + FactorableSignature,
+    PolynomialStructure<FS, FSB>:
+        SetSignature<Set = Polynomial<FS::Set>> + FactoringMonoidSignature,
 {
     pub fn into_distinct_degree_factored(
         &self,
-        a: FactoredRingElement<Polynomial<FS::Set>>,
+        a: Factored<Polynomial<FS::Set>, Natural>,
     ) -> DistinctDegreeFactored<FS, FSB> {
         let poly_ring = self.ring().clone();
         let (unit, factors) = a.into_unit_and_powers();
@@ -361,9 +363,10 @@ where
     PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>,
 {
     /// use Berlekamps algorithm for a full factorization from a squarefree
-    pub fn factorize_berlekamps(&self) -> FactoredRingElement<Polynomial<FS::Set>>
+    pub fn factorize_berlekamps(&self) -> Factored<Polynomial<FS::Set>, Natural>
     where
-        PolynomialStructure<FS, FSB>: FactorableSignature,
+        PolynomialStructure<FS, FSB>:
+            FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     {
         let mut factors = self
             .poly_ring
@@ -507,9 +510,10 @@ where
     PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>,
 {
     /// Cantor–Zassenhaus algorithm for equal degree factorization
-    pub fn factorize_cantor_zassenhaus(&self) -> FactoredRingElement<Polynomial<FS::Set>>
+    pub fn factorize_cantor_zassenhaus(&self) -> Factored<Polynomial<FS::Set>, Natural>
     where
-        PolynomialStructure<FS, FSB>: FactorableSignature,
+        PolynomialStructure<FS, FSB>:
+            FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     {
         let poly_ring = &self.poly_ring;
         let mut fs = poly_ring
