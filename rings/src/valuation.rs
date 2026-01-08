@@ -1,10 +1,9 @@
+use crate::structure::MetaFactoringMonoid;
 use algebraeon_nzq::{
     Integer, Natural, Rational,
     traits::{Abs, DivMod},
 };
 use std::ops::{Add, Mul, Sub};
-
-use crate::structure::{MetaFactoringMonoid, MetaUniqueFactorizationMonoid};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Valuation {

@@ -141,7 +141,7 @@ impl Factorizer {
                         prod *= &p;
                         factorizations.mul_mut_impl(
                             &mut self.prime_factors,
-                            &factorizations.new_irreducible_impl(p),
+                            &factorizations.new_irreducible_impl(&p),
                         );
                     }
                     Factor::Composite(d) => {

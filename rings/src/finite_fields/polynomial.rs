@@ -379,7 +379,7 @@ where
                     &factorize_by_find_factor(&self.poly_ring, sqfree_poly.clone(), &|f| {
                         self.poly_ring.find_factor_by_berlekamps_algorithm(f)
                     }),
-                    &power,
+                    power,
                 ),
             );
         }
@@ -546,9 +546,10 @@ where
                         if self.poly_ring.degree(&f).unwrap() == d {
                             poly_ring.factorizations().mul_mut(
                                 &mut fs,
-                                &poly_ring
-                                    .factorizations()
-                                    .pow(&poly_ring.factorizations().new_irreducible_impl(f), mult),
+                                &poly_ring.factorizations().pow(
+                                    &poly_ring.factorizations().new_irreducible_impl(&f),
+                                    mult,
+                                ),
                             );
                             None
                         } else {

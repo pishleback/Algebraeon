@@ -1,6 +1,6 @@
 use crate::structure::{
-    Factored, MetaFactoringMonoid, MetaUniqueFactorizationMonoid, MultiplicativeMonoidSignature,
-    RingToQuotientFieldSignature, RingToQuotientRingSignature,
+    Factored, MetaFactoringMonoid, MultiplicativeMonoidSignature, RingToQuotientFieldSignature,
+    RingToQuotientRingSignature,
 };
 use algebraeon_nzq::{Integer, Natural, traits::Abs};
 

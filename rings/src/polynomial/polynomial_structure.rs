@@ -885,7 +885,7 @@ impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: Borr
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         None
     }
 }

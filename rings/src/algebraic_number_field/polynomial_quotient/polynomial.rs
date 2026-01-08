@@ -214,12 +214,9 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         //the factors of p are gcd(p(x), t_i(x + kθ)) for each squarefree factor t_i of t
 
         let mut p_factors = vec![];
-        for (ti, ti_pow) in Polynomial::<Rational>::structure()
-            .factorizations()
-            .to_powers(&t.factor().unwrap())
-        {
+        for (ti, ti_pow) in t.factor().into_powers().unwrap() {
             // println!("ti = {}", ti);
-            debug_assert_eq!(ti_pow, &Natural::ONE);
+            debug_assert_eq!(ti_pow, Natural::ONE);
             p_factors.push(self.euclidean_gcd(
                 p.clone(),
                 rat_poly_poly_poly.evaluate(
@@ -234,7 +231,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
         // println!("p_factors = {:?}", p_factors);
 
-        self.factorizations().from_unit_and_factor_powers(
+        self.factorizations().new_unit_and_powers_impl(
             self.one(),
             p_factors
                 .into_iter()
@@ -276,9 +273,9 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                     .collect(),
             )
             .factor()
-            .unwrap()
-            .into_unit_and_powers();
-            self.factorizations().from_unit_and_factor_powers(
+            .into_unit_and_powers()
+            .unwrap();
+            self.factorizations().new_unit_and_powers_impl(
                 Polynomial::constant(unit),
                 factors
                     .into_iter()
@@ -451,14 +448,13 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             // println!("gen in la = {}", gen_in_la);
             // println!("x in la {}", &x_in_la);
 
-            let p_factors = Polynomial::<Rational>::structure()
-                .factorizations()
-                .to_powers(&q.factor().unwrap())
+            let p_factors = q
+                .factor()
+                .into_powers()
+                .unwrap()
                 .into_iter()
                 .map(|(qi, pow)| {
-                    // println!("");
-
-                    debug_assert_eq!(pow, &Natural::ONE);
+                    debug_assert_eq!(pow, Natural::ONE);
                     let _ = pow;
 
                     // Q[y]/qi(y)
@@ -546,7 +542,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             //     println!("pi = {}", pi);
             // }
 
-            self.factorizations().from_unit_and_factor_powers(
+            self.factorizations().new_unit_and_powers_impl(
                 self.one(),
                 p_factors.into_iter().map(|pi| (pi, Natural::ONE)).collect(),
             )
@@ -577,10 +573,10 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             Polynomial::<Rational>::from_coeffs(rat_coeffs)
         };
 
-        let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_powers();
+        let (rat_unit, rat_factors) = rat_f.factor().into_unit_and_powers().unwrap();
         let mut factored = self
             .factorizations()
-            .from_unit(Polynomial::constant(rat_unit));
+            .new_unit_impl(Polynomial::constant(rat_unit));
         for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor
@@ -590,7 +586,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                     .collect(),
             );
             self.factorizations()
-                .mul_mut(&mut factored, factorize(&anf_unfactor));
+                .mul_mut(&mut factored, &factorize(&anf_unfactor));
         }
         factored
     }
@@ -635,8 +631,9 @@ mod tests {
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
             k_poly
-                .factorizations()
-                .to_powers(&k_poly.factor(&(x.pow(2) - 12).into_verbose()).unwrap())
+                .factor(&(x.pow(2) - 12).into_verbose())
+                .into_powers()
+                .unwrap()
                 .len(),
             2
         );
@@ -650,12 +647,9 @@ mod tests {
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
             k_poly
-                .factorizations()
-                .to_powers(
-                    &k_poly
-                        .factor(&(x.pow(4) - x.pow(2) + 1).into_verbose())
-                        .unwrap()
-                )
+                .factor(&(x.pow(4) - x.pow(2) + 1).into_verbose())
+                .into_powers()
+                .unwrap()
                 .len(),
             4
         );
@@ -667,8 +661,9 @@ mod tests {
         let k_poly = k.polynomials();
         debug_assert_eq!(
             k_poly
-                .factorizations()
-                .to_powers(&k_poly.factor(&(x.pow(3) - x + 1).into_verbose()).unwrap())
+                .factor(&(x.pow(3) - x + 1).into_verbose())
+                .into_powers()
+                .unwrap()
                 .len(),
             2
         );
@@ -681,8 +676,9 @@ mod tests {
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
             k_poly
-                .factorizations()
-                .to_powers(&k_poly.factor(&(x.pow(12) - 1).into_verbose()).unwrap())
+                .factor(&(x.pow(12) - 1).into_verbose())
+                .into_powers()
+                .unwrap()
                 .len(),
             12
         );

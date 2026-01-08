@@ -1,11 +1,10 @@
 use crate::structure::{
     AdditiveMonoidEqSignature, FavoriteAssociateSignature, FieldSignature,
-    MetaMultiplicativeMonoid, MetaSemiRing, MultiplicativeGroupSignature,
-    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature, SemiRingSignature,
-    SetWithZeroSignature,
+    MetaMultiplicativeMonoid, MultiplicativeGroupSignature, MultiplicativeIntegralMonoidSignature,
+    MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
+    MultiplicativeMonoidWithZeroSignature, SemiRingSignature, SetWithZeroSignature,
 };
-use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::{
     BorrowedStructure, EqSignature, MetaType, OrdSignature, SetSignature, Signature,
 };
@@ -171,8 +170,9 @@ impl<
 {
     pub(crate) fn new_irreducible_impl(
         &self,
-        p: Object::Set,
+        p: &Object::Set,
     ) -> Factored<Object::Set, Exponent::Set> {
+        let p = self.objects().fav_assoc(p);
         Factored::NonZero(NonZeroFactored {
             unit: self.objects().one(),
             powers: vec![(p, self.exponents().one())],
@@ -662,6 +662,57 @@ impl<
             }
         }
     }
+
+    /// Determine whether it is the square of some element
+    fn is_square(&self, a: &Factored<Object::Set, Natural>) -> bool {
+        match a {
+            Factored::Zero => true,
+            Factored::NonZero(a) => a
+                .powers()
+                .iter()
+                .all(|(_, exponent)| exponent % Natural::TWO == Natural::ZERO),
+        }
+    }
+
+    /// Return true if non-zero and factors as a product of distinct primes
+    fn is_squarefree(&self, a: &Factored<Object::Set, Natural>) -> bool {
+        match a {
+            Factored::Zero => false,
+            Factored::NonZero(a) => a
+                .powers()
+                .iter()
+                .all(|(_, exponent)| exponent <= &Natural::ONE),
+        }
+    }
+}
+
+// TODO: generalize this to rings where we can take square-roots in the group of units
+impl<
+    ObjectB: BorrowedStructure<IntegerCanonicalStructure>,
+    ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
+> FactoringStructure<IntegerCanonicalStructure, ObjectB, NaturalCanonicalStructure, ExponentB>
+{
+    /// Return the element whose square equals the input, if it exists.
+    fn sqrt_if_square(&self, a: &Factored<Integer, Natural>) -> Option<Factored<Integer, Natural>> {
+        #[cfg(debug_assertions)]
+        self.is_element(a).unwrap();
+        match a {
+            Factored::Zero => Some(self.zero()),
+            Factored::NonZero(a) => {
+                let mut sqrt_factor_powers = vec![];
+                for (prime, exponent) in a.powers() {
+                    if exponent.clone() % Natural::TWO != Natural::ZERO {
+                        return None;
+                    }
+                    let half = exponent / Natural::TWO;
+                    if half != Natural::ZERO {
+                        sqrt_factor_powers.push((prime.clone(), half.clone()));
+                    }
+                }
+                Some(self.new_unit_and_powers_impl(Integer::one(), sqrt_factor_powers))
+            }
+        }
+    }
 }
 
 pub trait UniqueFactorizationMonoidSignature:
@@ -788,7 +839,7 @@ impl<FS: FieldSignature> UniqueFactorizationMonoidSignature for FS {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         Some(false)
     }
 }

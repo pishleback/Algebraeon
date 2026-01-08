@@ -440,7 +440,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                                 &mut factored,
                                 &Polynomial::<Integer>::structure()
                                     .factorizations()
-                                    .new_irreducible_impl(g),
+                                    .new_irreducible_impl(&g),
                             );
                             // Remove the modular factors for g from future consideration
                             m -= k;
@@ -464,7 +464,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                 &mut factored,
                 &Polynomial::<Integer>::structure()
                     .factorizations()
-                    .new_irreducible_impl(f),
+                    .new_irreducible_impl(&f),
             );
         }
 

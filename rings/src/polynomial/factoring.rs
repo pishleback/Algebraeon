@@ -105,7 +105,7 @@ where
                 f = self.try_div(&f, &self.var()).unwrap();
                 linear_factors = self.factorizations().mul(
                     &linear_factors,
-                    &self.factorizations().new_irreducible_impl(self.var()),
+                    &self.factorizations().new_irreducible_impl(&self.var()),
                 );
                 continue 'seek_linear_factor;
             } else {
@@ -127,7 +127,7 @@ where
                                 f = new_f;
                                 linear_factors = self.factorizations().mul(
                                     &linear_factors,
-                                    &self.factorizations().new_irreducible_impl(lin),
+                                    &self.factorizations().new_irreducible_impl(&lin),
                                 );
                                 continue 'seek_linear_factor;
                             }
@@ -363,11 +363,11 @@ where
             poly_ring.mul_mut(&mut fof_unit, &fof_factor_unit);
             fof_factors.push((fof_factor_prim, power));
         }
-        let factors = poly_ring.factorizations().new_unit_and_powers_impl(
+
+        poly_ring.factorizations().new_unit_and_powers_impl(
             poly_ring.mul(&Polynomial::constant(unit), &fof_unit),
             fof_factors,
-        );
-        factors
+        )
     } else {
         Factored::Zero
     }
@@ -427,10 +427,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::{EqSignature, MetaType};
-
     use super::*;
     use crate::structure::IntoErgonomic;
+    use algebraeon_sets::structure::{EqSignature, MetaType};
 
     #[test]
     fn test_factor_by_kroneckers_method_over_integers() {

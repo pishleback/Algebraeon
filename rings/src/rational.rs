@@ -1,5 +1,5 @@
 use crate::algebraic_number_field::{AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature};
-use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
+use crate::polynomial::{PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
@@ -206,34 +206,20 @@ const_assert!(
     impls::impls!(IntegerCanonicalStructure : AlgebraicIntegerRingSignature<RationalCanonicalStructure>)
 );
 
-// impl<B: BorrowedStructure<RationalCanonicalStructure>> UniqueFactorizationMonoidSignature
-//     for PolynomialStructure<RationalCanonicalStructure, B>
-// {
-//     type FactoredExponent = Natural;
-
-//     fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
-//         todo!()
-//     }
-
-//     fn into_factorization_exponents(self) -> Self::FactoredExponent {
-//         todo!()
-//     }
-
-//     fn is_irreducible(&self, a: &Self::Set) -> bool {
-//         todo!()
-//     }
-
-//     fn factor_unchecked(
-//         &self,
-//         a: &Self::Set,
-//     ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set> {
-//         factorize_by_factorize_primitive_part(
-//             &PrincipalIntegerMap::new(self.coeff_ring().clone()),
-//             self,
-//             p,
-//         )
-//     }
-// }
+impl<B: BorrowedStructure<RationalCanonicalStructure>> FactoringMonoidSignature
+    for PolynomialStructure<RationalCanonicalStructure, B>
+{
+    fn factor_unchecked(
+        &self,
+        p: &Self::Set,
+    ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set> {
+        factorize_by_factorize_primitive_part(
+            &PrincipalIntegerMap::new(self.coeff_ring().clone()),
+            self,
+            p,
+        )
+    }
+}
 
 #[cfg(test)]
 mod tests {

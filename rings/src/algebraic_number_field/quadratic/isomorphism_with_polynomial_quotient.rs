@@ -5,8 +5,8 @@ use crate::{
     },
     polynomial::Polynomial,
     structure::{
-        AdditiveMonoidSignature, CharZeroFieldSignature, FieldSignature, MetaMultiplicativeMonoid,
-        RingHomomorphism, SemiModuleSignature,
+        AdditiveMonoidSignature, CharZeroFieldSignature, FieldSignature, MetaFactoringMonoid,
+        MetaMultiplicativeMonoid, RingHomomorphism, SemiModuleSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
@@ -44,7 +44,7 @@ impl<
             // find s, d such that s^2d = b^2-4ac and d is squarefree
             let (s, d) = {
                 let disc = poly.discriminant().unwrap();
-                let (mut d, powers) = disc.factor().unwrap().into_unit_and_powers();
+                let (mut d, powers) = disc.factor().into_unit_and_powers().unwrap();
                 let mut s = Integer::ONE;
                 for (p, k) in powers {
                     let (q, r) = k.div_mod(Natural::TWO);

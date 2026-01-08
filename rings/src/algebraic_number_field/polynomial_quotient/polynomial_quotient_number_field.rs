@@ -6,8 +6,8 @@ use crate::{
     },
     structure::{
         AdditiveGroupSignature, AdditiveMonoidEqSignature, CharZeroFieldSignature,
-        FactorableSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
-        IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoid, MetaFactorableSignature,
+        FactoringMonoidSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
+        IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoid, MetaFactoringMonoid,
         MetaMultiplicativeMonoid, MultiplicativeIntegralMonoidSignature, PrincipalRationalMap,
         RingHomomorphism, RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
     },
@@ -164,7 +164,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
             let disc = disc.numerator();
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
             //    println!("{}", disc);
-            let (_sign, mut disc_factors) = disc.factor().unwrap().into_unit_and_powers();
+            let (_sign, mut disc_factors) = disc.factor().into_unit_and_powers().unwrap();
             // If p is a prime such that p^2 divides Disc
             // then can find an alg int of the form
             // 1/p (x_1a_1 + ... + x_na_n)
@@ -261,8 +261,8 @@ impl
         let anf = self.range();
         anf.polynomials()
             .factor(&polynomial.apply_map(|x| self.image(x)))
-            .unwrap()
             .into_powers()
+            .unwrap()
             .into_iter()
             .filter_map(|(factor, power)| {
                 match anf.polynomials().degree(&factor) {
