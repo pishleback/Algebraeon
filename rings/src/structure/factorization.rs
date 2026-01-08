@@ -17,6 +17,28 @@ pub struct NonZeroFactored<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone>
     pub powers: Vec<(ObjectSet, ExponentSet)>,
 }
 
+impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> NonZeroFactored<ObjectSet, ExponentSet> {
+    pub fn powers<'a>(&'a self) -> &'a Vec<(ObjectSet, ExponentSet)> {
+        &self.powers
+    }
+
+    pub fn into_powers(self) -> Vec<(ObjectSet, ExponentSet)> {
+        self.powers
+    }
+
+    pub fn unit_and_powers<'a>(&'a self) -> (&'a ObjectSet, &'a Vec<(ObjectSet, ExponentSet)>) {
+        (&self.unit, &self.powers)
+    }
+
+    pub fn into_unit_and_powers(self) -> (ObjectSet, Vec<(ObjectSet, ExponentSet)>) {
+        (self.unit, self.powers)
+    }
+
+    pub fn distinct_irreducibles<'a>(&'a self) -> Vec<&'a ObjectSet> {
+        self.powers.iter().map(|(p, _)| p).collect()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Factored<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> {
     Zero,
@@ -27,14 +49,14 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
     pub fn powers<'a>(&'a self) -> Option<&'a Vec<(ObjectSet, ExponentSet)>> {
         match self {
             Factored::Zero => None,
-            Factored::NonZero(a) => Some(&a.powers),
+            Factored::NonZero(a) => Some(a.powers()),
         }
     }
 
     pub fn into_powers(self) -> Option<Vec<(ObjectSet, ExponentSet)>> {
         match self {
             Factored::Zero => None,
-            Factored::NonZero(a) => Some(a.powers),
+            Factored::NonZero(a) => Some(a.into_powers()),
         }
     }
 
@@ -43,21 +65,21 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
     ) -> Option<(&'a ObjectSet, &'a Vec<(ObjectSet, ExponentSet)>)> {
         match self {
             Factored::Zero => None,
-            Factored::NonZero(a) => Some((&a.unit, &a.powers)),
+            Factored::NonZero(a) => Some(a.unit_and_powers()),
         }
     }
 
     pub fn into_unit_and_powers(self) -> Option<(ObjectSet, Vec<(ObjectSet, ExponentSet)>)> {
         match self {
             Factored::Zero => None,
-            Factored::NonZero(a) => Some((a.unit, a.powers)),
+            Factored::NonZero(a) => Some(a.into_unit_and_powers()),
         }
     }
 
     pub fn distinct_irreducibles<'a>(&'a self) -> Option<Vec<&'a ObjectSet>> {
         match self {
             Factored::Zero => None,
-            Factored::NonZero(a) => Some(a.powers.iter().map(|(p, _)| p).collect()),
+            Factored::NonZero(a) => Some(a.distinct_irreducibles()),
         }
     }
 }
@@ -97,6 +119,134 @@ impl<
 
     pub fn exponents(&self) -> &Exponent {
         self.exponents.borrow()
+    }
+}
+
+// These methods are all completely unchecked, to be used by things which construct factorizations.
+impl<
+    Object: UniqueFactorizationMonoidSignature,
+    ObjectB: BorrowedStructure<Object>,
+    Exponent: SemiRingSignature + OrdSignature,
+    ExponentB: BorrowedStructure<Exponent>,
+> FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+{
+    pub(crate) fn new_irreducible_impl(
+        &self,
+        p: Object::Set,
+    ) -> Factored<Object::Set, Exponent::Set> {
+        Factored::NonZero(NonZeroFactored {
+            unit: self.objects().one(),
+            powers: vec![(p, self.exponents().one())],
+        })
+    }
+
+    pub(crate) fn new_unit_impl(&self, unit: Object::Set) -> Factored<Object::Set, Exponent::Set> {
+        Factored::NonZero(NonZeroFactored {
+            unit,
+            powers: vec![],
+        })
+    }
+
+    pub(crate) fn new_unit_and_powers_impl(
+        &self,
+        unit: Object::Set,
+        powers: Vec<(Object::Set, Exponent::Set)>,
+    ) -> Factored<Object::Set, Exponent::Set> {
+        Factored::NonZero(NonZeroFactored { unit, powers })
+    }
+
+    pub(crate) fn mul_mut_impl(
+        &self,
+        a: &mut Factored<Object::Set, Exponent::Set>,
+        b: &Factored<Object::Set, Exponent::Set>,
+    ) {
+        match b {
+            Factored::Zero => {
+                *a = Factored::Zero;
+            }
+            Factored::NonZero(b) => match a {
+                Factored::Zero => {}
+                Factored::NonZero(a) => {
+                    a.unit = self.objects().units().mul(&a.unit, &b.unit);
+                    for (b_p, b_k) in &b.powers {
+                        debug_assert!(self.objects().is_fav_assoc(b_p));
+                        'A_LOOP: {
+                            for (a_p, a_k) in &mut a.powers {
+                                debug_assert!(self.objects().is_fav_assoc(a_p));
+                                if self.objects().equal(a_p, b_p) {
+                                    *a_k = self.exponents().add(a_k, b_k);
+                                    break 'A_LOOP;
+                                }
+                            }
+                            a.powers.push((b_p.clone(), b_k.clone()));
+                        }
+                    }
+                    a.powers.retain(|(_, k)| !self.exponents().is_zero(k));
+                }
+            },
+        }
+    }
+
+    pub(crate) fn try_div_mut_impl(
+        &self,
+        a: &mut Option<Factored<Object::Set, Exponent::Set>>,
+        b: &Factored<Object::Set, Exponent::Set>,
+    ) {
+        match b {
+            Factored::Zero => {
+                *a = None;
+            }
+            Factored::NonZero(b) => match a {
+                None => {}
+                Some(Factored::Zero) => {}
+                Some(Factored::NonZero(a_nz)) => {
+                    a_nz.unit = self
+                        .objects()
+                        .units()
+                        .mul(&a_nz.unit, &self.objects().units().inv(&b.unit));
+                    for (b_p, b_k) in &b.powers {
+                        debug_assert!(self.objects().is_fav_assoc(b_p));
+                        'A_LOOP: {
+                            for (a_p, a_k) in &mut a_nz.powers {
+                                debug_assert!(self.objects().is_fav_assoc(a_p));
+                                if self.objects().equal(a_p, b_p) {
+                                    if let Some(a_k_minus_b_k) = self.exponents().try_sub(a_k, b_k)
+                                    {
+                                        *a_k = a_k_minus_b_k;
+                                    } else {
+                                        *a = None;
+                                        return;
+                                    }
+                                    break 'A_LOOP;
+                                }
+                            }
+                            if let Some(b_k_neg) = self.exponents().try_neg(b_k) {
+                                a_nz.powers.push((b_p.clone(), b_k_neg));
+                            } else {
+                                *a = None;
+                                return;
+                            }
+                        }
+                    }
+                    a_nz.powers.retain(|(_, k)| !self.exponents().is_zero(k));
+                }
+            },
+        }
+    }
+
+    pub(crate) fn is_irreducible_impl(&self, a: &Factored<Object::Set, Exponent::Set>) -> bool {
+        match a {
+            Factored::Zero => {}
+            Factored::NonZero(a) => {
+                if a.powers.len() == 1 {
+                    let (_, k) = &a.powers[0];
+                    if self.exponents().equal(k, &self.exponents().one()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
     }
 }
 
@@ -246,134 +396,6 @@ impl<
     }
 }
 
-// These methods are all completely unchecked, to be used by things which construct factorizations.
-impl<
-    Object: UniqueFactorizationMonoidSignature,
-    ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> FactoringStructure<Object, ObjectB, Exponent, ExponentB>
-{
-    pub(crate) fn new_irreducible_impl(
-        &self,
-        p: Object::Set,
-    ) -> Factored<Object::Set, Exponent::Set> {
-        Factored::NonZero(NonZeroFactored {
-            unit: self.objects().one(),
-            powers: vec![(p, self.exponents().one())],
-        })
-    }
-
-    pub(crate) fn new_unit_impl(&self, unit: Object::Set) -> Factored<Object::Set, Exponent::Set> {
-        Factored::NonZero(NonZeroFactored {
-            unit,
-            powers: vec![],
-        })
-    }
-
-    pub(crate) fn new_unit_and_powers_impl(
-        &self,
-        unit: Object::Set,
-        powers: Vec<(Object::Set, Exponent::Set)>,
-    ) -> Factored<Object::Set, Exponent::Set> {
-        Factored::NonZero(NonZeroFactored { unit, powers })
-    }
-
-    pub(crate) fn mul_mut_impl(
-        &self,
-        a: &mut Factored<Object::Set, Exponent::Set>,
-        b: &Factored<Object::Set, Exponent::Set>,
-    ) {
-        match b {
-            Factored::Zero => {
-                *a = Factored::Zero;
-            }
-            Factored::NonZero(b) => match a {
-                Factored::Zero => {}
-                Factored::NonZero(a) => {
-                    a.unit = self.objects().units().mul(&a.unit, &b.unit);
-                    for (b_p, b_k) in &b.powers {
-                        debug_assert!(self.objects().is_fav_assoc(b_p));
-                        'A_LOOP: {
-                            for (a_p, a_k) in &mut a.powers {
-                                debug_assert!(self.objects().is_fav_assoc(a_p));
-                                if self.objects().equal(a_p, b_p) {
-                                    *a_k = self.exponents().add(a_k, b_k);
-                                    break 'A_LOOP;
-                                }
-                            }
-                            a.powers.push((b_p.clone(), b_k.clone()));
-                        }
-                    }
-                    a.powers.retain(|(_, k)| !self.exponents().is_zero(k));
-                }
-            },
-        }
-    }
-
-    pub(crate) fn try_div_mut_impl(
-        &self,
-        a: &mut Option<Factored<Object::Set, Exponent::Set>>,
-        b: &Factored<Object::Set, Exponent::Set>,
-    ) {
-        match b {
-            Factored::Zero => {
-                *a = None;
-            }
-            Factored::NonZero(b) => match a {
-                None => {}
-                Some(Factored::Zero) => {}
-                Some(Factored::NonZero(a_nz)) => {
-                    a_nz.unit = self
-                        .objects()
-                        .units()
-                        .mul(&a_nz.unit, &self.objects().units().inv(&b.unit));
-                    for (b_p, b_k) in &b.powers {
-                        debug_assert!(self.objects().is_fav_assoc(b_p));
-                        'A_LOOP: {
-                            for (a_p, a_k) in &mut a_nz.powers {
-                                debug_assert!(self.objects().is_fav_assoc(a_p));
-                                if self.objects().equal(a_p, b_p) {
-                                    if let Some(a_k_minus_b_k) = self.exponents().try_sub(a_k, b_k)
-                                    {
-                                        *a_k = a_k_minus_b_k;
-                                    } else {
-                                        *a = None;
-                                        return;
-                                    }
-                                    break 'A_LOOP;
-                                }
-                            }
-                            if let Some(b_k_neg) = self.exponents().try_neg(b_k) {
-                                a_nz.powers.push((b_p.clone(), b_k_neg));
-                            } else {
-                                *a = None;
-                                return;
-                            }
-                        }
-                    }
-                    a_nz.powers.retain(|(_, k)| !self.exponents().is_zero(k));
-                }
-            },
-        }
-    }
-
-    pub(crate) fn is_irreducible_impl(&self, a: &Factored<Object::Set, Exponent::Set>) -> bool {
-        match a {
-            Factored::Zero => {}
-            Factored::NonZero(a) => {
-                if a.powers.len() == 1 {
-                    let (_, k) = &a.powers[0];
-                    if self.exponents().equal(k, &self.exponents().one()) {
-                        return true;
-                    }
-                }
-            }
-        }
-        false
-    }
-}
-
 impl<
     Object: UniqueFactorizationMonoidSignature,
     ObjectB: BorrowedStructure<Object>,
@@ -414,6 +436,20 @@ impl<
     ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
 > FactoringStructure<Object, ObjectB, NaturalCanonicalStructure, ExponentB>
 {
+    pub fn pow(
+        &self,
+        f: &Factored<Object::Set, Natural>,
+        n: &Natural,
+    ) -> Factored<Object::Set, Natural> {
+        match f {
+            Factored::Zero => Factored::Zero,
+            Factored::NonZero(f) => Factored::NonZero(NonZeroFactored {
+                unit: self.objects().nat_pow(&f.unit, n),
+                powers: f.powers.iter().map(|(p, k)| (p.clone(), k * n)).collect(),
+            }),
+        }
+    }
+
     pub fn expand(&self, a: &Factored<Object::Set, Natural>) -> Object::Set {
         #[cfg(debug_assertions)]
         self.is_element(a).unwrap();
