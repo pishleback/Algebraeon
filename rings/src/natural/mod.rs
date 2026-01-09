@@ -20,7 +20,9 @@ impl AdditiveMonoidSignature for NaturalCanonicalStructure {
         let z = self.zero();
         if a == &z { Some(self.zero()) } else { None }
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for NaturalCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         a.try_sub(b)
     }
@@ -33,6 +35,12 @@ impl MultiplicativeMonoidSignature for NaturalCanonicalStructure {
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
+    }
+}
+
+impl FavoriteAssociateSignature for NaturalCanonicalStructure {
+    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+        (Natural::ONE, a.clone())
     }
 }
 
@@ -72,16 +80,16 @@ impl EuclideanDivisionSignature for NaturalCanonicalStructure {
     }
 }
 
-pub trait NaturalFns {
-    fn is_prime(&self) -> bool;
-    fn factor(self) -> Option<Vec<(Natural, Natural)>>;
-}
+// pub trait NaturalFns {
+//     fn is_prime(&self) -> bool;
+//     fn factor(self) -> Option<Vec<(Natural, Natural)>>;
+// }
 
-impl NaturalFns for Natural {
-    fn is_prime(&self) -> bool {
-        factorization::primes::is_prime(self)
-    }
-    fn factor(self) -> Option<Vec<(Natural, Natural)>> {
-        factorization::factor(self)
-    }
-}
+// impl NaturalFns for Natural {
+//     fn is_prime(&self) -> bool {
+//         factorization::primes::is_prime(self)
+//     }
+//     fn factor(self) -> Option<Vec<(Natural, Natural)>> {
+//         factorization::factor(self)
+//     }
+// }

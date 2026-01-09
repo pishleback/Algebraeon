@@ -201,7 +201,16 @@ impl<
             .map(|(x, a)| Some((x.clone(), self.ring().try_neg(a)?)))
             .collect::<Option<_>>()
     }
+}
 
+impl<
+    Set: OrdSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: SemiRingSignature + EqSignature,
+    RingB: BorrowedStructure<Ring>,
+> CancellativeAdditiveMonoidSignature
+    for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
     fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
         todo!()
     }

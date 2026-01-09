@@ -1,11 +1,12 @@
-use super::natural::factorization::NaturalCanonicalFactorizationStructure;
 use crate::algebraic_number_field::AlgebraicIntegerRingSignature;
-use crate::natural::NaturalFns;
 use crate::structure::*;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::traits::DivMod;
 use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::structure::BorrowedStructure;
+use algebraeon_sets::structure::CountableSetSignature;
+use algebraeon_sets::structure::FiniteSetSignature;
+use algebraeon_sets::structure::MetaType;
 use std::collections::HashSet;
 
 pub mod berlekamp_zassenhaus;
@@ -28,7 +29,9 @@ impl AdditiveMonoidSignature for IntegerCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for IntegerCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -74,7 +77,7 @@ impl MultiplicativeMonoidUnitsSignature for IntegerCanonicalStructure {
     }
 }
 
-impl IntegralDomainSignature for IntegerCanonicalStructure {
+impl MultiplicativeIntegralMonoidSignature for IntegerCanonicalStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         match self.quorem(a, b) {
             Some((q, r)) => {
@@ -88,6 +91,8 @@ impl IntegralDomainSignature for IntegerCanonicalStructure {
         }
     }
 }
+
+impl IntegralDomainSignature for IntegerCanonicalStructure {}
 
 impl OrderedRingSignature for IntegerCanonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
@@ -124,51 +129,47 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
     }
 }
 
-impl UniqueFactorizationDomainSignature for IntegerCanonicalStructure {
-    // type FactorOrdering = Self;
-    type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
+impl UniqueFactorizationMonoidSignature for IntegerCanonicalStructure {
+    type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
-        FactoredRingElementStructure::new(self)
+    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+        Natural::structure_ref()
     }
 
-    fn into_factorizations(self) -> Self::Factorizations<Self> {
-        FactoredRingElementStructure::new(self)
+    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+        Natural::structure()
     }
 
-    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
-    //     Cow::Borrowed(self)
-    // }
+    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+        Some(a.abs().is_irreducible())
+    }
 
-    fn debug_try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(a.abs().is_prime())
+    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+        self.nat_pow(a, k)
     }
 }
 
-impl FactorableSignature for IntegerCanonicalStructure {
-    fn factor(&self, a: &Self::Set) -> Option<FactoredRingElement<Integer>> {
+impl FactoringMonoidSignature for IntegerCanonicalStructure {
+    fn factor_unchecked(&self, a: &Self::Set) -> Factored<Integer, Natural> {
         if a == &Integer::ZERO {
-            None
+            Factored::Zero
         } else {
             let unit = if a < &Integer::ZERO {
                 Integer::from(-1)
             } else {
                 Integer::from(1)
             };
-            let f = a.abs().factor().unwrap();
-            Some(
-                Integer::structure()
-                    .factorizations()
-                    .from_unit_and_factor_powers_unchecked(
-                        unit,
-                        Natural::structure()
-                            .factorizations()
-                            .into_powers(f)
-                            .into_iter()
-                            .map(|(p, k)| (Integer::from(p), k))
-                            .collect(),
-                    ),
-            )
+            let f = a.abs().factor();
+            Integer::structure()
+                .factorizations()
+                .new_unit_and_powers_unchecked(
+                    unit,
+                    f.into_powers()
+                        .unwrap()
+                        .into_iter()
+                        .map(|(p, k)| (Integer::from(p), k))
+                        .collect(),
+                )
         }
     }
 }
@@ -249,6 +250,16 @@ impl RealSubsetSignature for IntegerCanonicalStructure {
     }
 }
 
+impl MultiplicativeMonoidSquareOpsSignature for IntegerCanonicalStructure {
+    fn sqrt_if_square(&self, a: &Integer) -> Option<Integer> {
+        a.sqrt_if_square().map(|n: Natural| Integer::from(n))
+    }
+
+    fn is_square(&self, a: &Integer) -> bool {
+        a.is_square()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum IntegerInitialRingGeneratorNeverType {}
 
@@ -304,6 +315,26 @@ mod tests {
         assert_eq!(
             Integer::gcd_by_factor(&Integer::from(12), &Integer::from(18)),
             Integer::from(6)
+        );
+
+        assert_eq!(
+            Integer::lcm_by_factor(&Integer::from(12), &Integer::from(18)),
+            Some(Integer::from(36))
+        );
+
+        assert_eq!(
+            Integer::lcm_by_factor(&Integer::from(0), &Integer::from(18)),
+            None
+        );
+
+        assert_eq!(
+            Integer::lcm_by_factor(&Integer::from(12), &Integer::from(0)),
+            None
+        );
+
+        assert_eq!(
+            Integer::lcm_by_factor(&Integer::from(0), &Integer::from(0)),
+            None
         );
     }
 }

@@ -55,7 +55,7 @@ impl Display for RealAlgebraicRoot {
             let d = b.as_ref() * b.as_ref() - Integer::from(4) * a.as_ref() * c.as_ref();
             let mut d_sq = Integer::ONE;
             let mut d_sqfreee = Integer::ONE;
-            let (d_sign, d_factors) = d.factor().unwrap().into_unit_and_powers();
+            let (d_sign, d_factors) = d.factor().into_unit_and_powers().unwrap();
             for (d_factor, k) in d_factors {
                 d_sq *= d_factor.nat_pow(&(&k / Natural::TWO));
                 if k % Natural::TWO == Natural::ONE {
@@ -290,7 +290,7 @@ impl RealAlgebraicRoot {
                     }
 
                     // eg: c + bx + ax^2 = c + x(b + x(a))
-                    let mut coeffs = poly.coeffs().into_iter().rev();
+                    let mut coeffs = poly.coeffs().collect::<Vec<_>>().into_iter().rev();
                     let lc = coeffs.next().unwrap();
                     let mut ans = mul_interval_rat((&self.tight_a, &self.tight_b), lc);
                     for (i, c) in coeffs.enumerate() {
@@ -504,7 +504,9 @@ impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -669,7 +671,12 @@ impl MultiplicativeMonoidUnitsSignature for RealAlgebraicCanonicalStructure {
                         },
                     );
                     let (unit, fav_assoc) = Polynomial::from_coeffs(
-                        root.poly.into_coeffs().into_iter().rev().collect(),
+                        root.poly
+                            .coeffs()
+                            .collect::<Vec<_>>()
+                            .into_iter()
+                            .rev()
+                            .collect(),
                     )
                     .factor_fav_assoc();
                     if unit == Polynomial::one() {
@@ -690,11 +697,13 @@ impl MultiplicativeMonoidUnitsSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl IntegralDomainSignature for RealAlgebraicCanonicalStructure {
+impl MultiplicativeIntegralMonoidSignature for RealAlgebraicCanonicalStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.mul(a, &self.try_inv(b)?))
     }
 }
+
+impl IntegralDomainSignature for RealAlgebraicCanonicalStructure {}
 
 impl FieldSignature for RealAlgebraicCanonicalStructure {}
 

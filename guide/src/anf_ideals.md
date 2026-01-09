@@ -65,11 +65,7 @@ let ideal = roi.ideals().principal_ideal(
 );
 
 // Factor the ideal
-for (prime_ideal, power) in roi
-    .ideals()
-    .factorizations()
-    .into_powers(roi.ideals().factor_ideal(&ideal).unwrap())
-{
+for (prime_ideal, power) in roi.ideals().factor(&ideal).into_powers().unwrap() {
     println!("power = {power} prime_ideal_factor = {:?}", prime_ideal);
 }
 

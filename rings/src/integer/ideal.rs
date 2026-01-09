@@ -1,9 +1,8 @@
-use crate::{
-    natural::{NaturalFns, factorization::NaturalCanonicalFactorizationStructure},
-    structure::*,
-};
+use crate::structure::*;
 use algebraeon_nzq::{traits::Abs, *};
-use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature, Signature};
+use algebraeon_sets::structure::{
+    BorrowedStructure, EqSignature, MetaType, SetSignature, Signature,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IntegerIdealsStructure<B: BorrowedStructure<IntegerCanonicalStructure>> {
@@ -40,15 +39,58 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> IdealsSignature<IntegerCan
     }
 }
 
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> EqSignature for IntegerIdealsStructure<B> {
+    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        a == b
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> SetWithZeroSignature
+    for IntegerIdealsStructure<B>
+{
+    fn zero(&self) -> Self::Set {
+        Natural::ZERO
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> AdditiveMonoidSignature
+    for IntegerIdealsStructure<B>
+{
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        gcd(a.clone(), b.clone())
+    }
+
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        if self.is_zero(a) {
+            Some(self.zero())
+        } else {
+            None
+        }
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicativeMonoidSignature
+    for IntegerIdealsStructure<B>
+{
+    fn one(&self) -> Self::Set {
+        Natural::ONE
+    }
+
+    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        a * b
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> SemiRingSignature
+    for IntegerIdealsStructure<B>
+{
+}
+
 impl<B: BorrowedStructure<IntegerCanonicalStructure>>
     IdealsArithmeticSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
 {
     fn principal_ideal(&self, a: &Integer) -> Self::Set {
         a.abs()
-    }
-
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        a == b
     }
 
     fn contains_ideal(&self, a: &Self::Set, b: &Self::Set) -> bool {
@@ -57,14 +99,6 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
 
     fn intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         lcm(a.clone(), b.clone())
-    }
-
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        gcd(a.clone(), b.clone())
-    }
-
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        a * b
     }
 
     fn quotient(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -89,34 +123,49 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
 {
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>>
-    FactorableIdealsSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicativeMonoidUnitsSignature
+    for IntegerIdealsStructure<B>
 {
-    fn factor_ideal(
-        &self,
-        ideal: &Self::Set,
-    ) -> Option<DedekindDomainIdealFactorization<Self::Set>> {
-        let f = ideal.clone().factor()?;
-        Some(
-            self.factorizations().new_powers(
-                Natural::structure()
-                    .factorizations()
-                    .into_powers(f)
-                    .into_iter()
-                    .map(|(n, k)| (DedekindDomainPrimeIdeal::from_ideal_unchecked(n), k))
-                    .collect(),
-            ),
-        )
+    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.factorization_exponents().try_inv(a)
     }
 }
 
-impl DedekindDomainPrimeIdeal<Natural> {
-    pub fn try_from_nat(n: Natural) -> Result<Self, ()> {
-        if n.is_prime() {
-            Ok(DedekindDomainPrimeIdeal::from_ideal_unchecked(n))
-        } else {
-            Err(())
-        }
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> FavoriteAssociateSignature
+    for IntegerIdealsStructure<B>
+{
+    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+        self.factorization_exponents().factor_fav_assoc(a)
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> UniqueFactorizationMonoidSignature
+    for IntegerIdealsStructure<B>
+{
+    type FactoredExponent = NaturalCanonicalStructure;
+
+    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+        Natural::structure_ref()
+    }
+
+    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+        Natural::structure()
+    }
+
+    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+        self.factorization_exponents().nat_pow(a, k)
+    }
+
+    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+        self.factorization_exponents().try_is_irreducible(a)
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> FactoringMonoidSignature
+    for IntegerIdealsStructure<B>
+{
+    fn factor_unchecked(&self, ideal: &Natural) -> Factored<Natural, Natural> {
+        Natural::structure().factor_unchecked(ideal)
     }
 }
 
@@ -156,14 +205,12 @@ mod tests {
 
     #[test]
     fn factor_integer_ideal() {
-        let f =
-            Integer::ideals().factor_ideal(&Integer::ideals().principal_ideal(&Integer::from(0)));
+        let f = Integer::ideals().factor(&Integer::ideals().principal_ideal(&Integer::from(0)));
         println!("{:?}", f);
-        assert!(f.is_none());
+        assert!(f.is_zero());
 
-        let f =
-            Integer::ideals().factor_ideal(&Integer::ideals().principal_ideal(&Integer::from(18)));
+        let f = Integer::ideals().factor(&Integer::ideals().principal_ideal(&Integer::from(18)));
         println!("{:?}", f);
-        assert!(f.is_some());
+        assert!(!f.is_zero());
     }
 }

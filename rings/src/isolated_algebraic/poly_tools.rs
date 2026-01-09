@@ -78,7 +78,10 @@ pub fn root_rat_mul_poly(poly: Polynomial<Integer>, rat: &Rational) -> Polynomia
         }
         debug_assert_eq!(n_pows.len(), degree + 1);
         debug_assert_eq!(d_pows.len(), degree + 1);
-        poly.into_coeffs()
+
+        Integer::structure()
+            .polynomials()
+            .into_coeffs(poly)
             .iter()
             .enumerate()
             .map(|(i, c)| &d_pows[i] * &n_pows[degree - i] * c)

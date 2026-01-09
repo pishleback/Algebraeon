@@ -14,8 +14,9 @@ fn double_poly_to_row(
     let rat_poly_poly = Rational::structure().into_polynomials().into_polynomials();
 
     debug_assert!(rat_poly_poly.num_coeffs(&a) <= outer_poly_len);
-    for c in a.coeffs() {
-        debug_assert!(c.num_coeffs() <= inner_poly_len);
+    #[cfg(debug_assertions)]
+    for c in a.clone().coeffs() {
+        assert!(c.num_coeffs() <= inner_poly_len);
     }
     Matrix::from_rows(vec![
         (0..outer_poly_len)
@@ -123,22 +124,16 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         // }
 
         let e_vals = {
-            let mut min_poly_coeffs = self
-                .coeff_ring()
-                .modulus()
-                .coeffs()
-                .into_iter()
-                .cloned()
-                .collect::<Vec<_>>();
+            let mut min_poly_coeffs = self.coeff_ring().modulus().coeffs().collect::<Vec<_>>();
 
             let lc = min_poly_coeffs.pop().unwrap();
-            debug_assert_eq!(lc, Rational::ONE);
+            debug_assert_eq!(lc, &Rational::ONE);
 
             min_poly_coeffs
                 .into_iter()
                 .rev()
                 .enumerate()
-                .map(|(i, c)| if i % 2 == 0 { -c } else { c })
+                .map(|(i, c)| if i % 2 == 0 { -c } else { c.clone() })
                 .collect::<Vec<_>>()
         };
         debug_assert_eq!(e_vals.len(), n);
@@ -168,7 +163,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
         p: &<Self as SetSignature>::Set,
-    ) -> crate::structure::FactoredRingElement<<Self as SetSignature>::Set> {
+    ) -> Factored<<Self as SetSignature>::Set, Natural> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
         let rat_poly_poly_poly = Rational::structure()
@@ -214,12 +209,9 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         //the factors of p are gcd(p(x), t_i(x + kθ)) for each squarefree factor t_i of t
 
         let mut p_factors = vec![];
-        for (ti, ti_pow) in Polynomial::<Rational>::structure()
-            .factorizations()
-            .to_powers(&t.factor().unwrap())
-        {
+        for (ti, ti_pow) in t.factor().into_powers().unwrap() {
             // println!("ti = {}", ti);
-            debug_assert_eq!(ti_pow, &Natural::ONE);
+            debug_assert_eq!(ti_pow, Natural::ONE);
             p_factors.push(self.euclidean_gcd(
                 p.clone(),
                 rat_poly_poly_poly.evaluate(
@@ -234,7 +226,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
         // println!("p_factors = {:?}", p_factors);
 
-        self.factorizations().from_unit_and_factor_powers(
+        self.factorizations().new_unit_and_powers_unchecked(
             self.one(),
             p_factors
                 .into_iter()
@@ -246,7 +238,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     pub fn factor_primitive_sqfree_by_reduced_ring(
         &self,
         p: &<Self as SetSignature>::Set,
-    ) -> FactoredRingElement<<Self as SetSignature>::Set> {
+    ) -> Factored<<Self as SetSignature>::Set, Natural> {
         debug_assert!(!self.is_zero(p));
 
         /*
@@ -270,15 +262,16 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         let k_deg = self.coeff_ring().degree();
         if k_deg == 1 {
             let (unit, factors) = Polynomial::<Rational>::from_coeffs(
-                p.coeffs()
+                p.clone()
+                    .into_coeffs()
                     .into_iter()
                     .map(|c| self.coeff_ring().reduce(c).as_constant().unwrap())
                     .collect(),
             )
             .factor()
-            .unwrap()
-            .into_unit_and_powers();
-            self.factorizations().from_unit_and_factor_powers(
+            .into_unit_and_powers()
+            .unwrap();
+            self.factorizations().new_unit_and_powers_unchecked(
                 Polynomial::constant(unit),
                 factors
                     .into_iter()
@@ -286,7 +279,6 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                         (
                             Polynomial::<Polynomial<Rational>>::from_coeffs(
                                 f.coeffs()
-                                    .into_iter()
                                     .map(|c| Polynomial::constant(c.clone()))
                                     .collect(),
                             ),
@@ -451,14 +443,13 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             // println!("gen in la = {}", gen_in_la);
             // println!("x in la {}", &x_in_la);
 
-            let p_factors = Polynomial::<Rational>::structure()
-                .factorizations()
-                .to_powers(&q.factor().unwrap())
+            let p_factors = q
+                .factor()
+                .into_powers()
+                .unwrap()
                 .into_iter()
                 .map(|(qi, pow)| {
-                    // println!("");
-
-                    debug_assert_eq!(pow, &Natural::ONE);
+                    debug_assert_eq!(pow, Natural::ONE);
                     let _ = pow;
 
                     // Q[y]/qi(y)
@@ -546,7 +537,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             //     println!("pi = {}", pi);
             // }
 
-            self.factorizations().from_unit_and_factor_powers(
+            self.factorizations().new_unit_and_powers_unchecked(
                 self.one(),
                 p_factors.into_iter().map(|pi| (pi, Natural::ONE)).collect(),
             )
@@ -559,14 +550,14 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         f: &<Self as SetSignature>::Set,
         factorize: &impl Fn(
             &<Self as SetSignature>::Set,
-        ) -> FactoredRingElement<<Self as SetSignature>::Set>,
-    ) -> FactoredRingElement<<Self as SetSignature>::Set> {
+        ) -> Factored<<Self as SetSignature>::Set, Natural>,
+    ) -> Factored<<Self as SetSignature>::Set, Natural> {
         debug_assert!(!self.is_zero(f));
         // println!("f = {}", f);
 
         let rat_f = {
             let mut rat_coeffs = vec![];
-            for c in f.coeffs() {
+            for c in f.clone().into_coeffs() {
                 match c.as_constant() {
                     Some(rat) => rat_coeffs.push(rat),
                     None => {
@@ -577,45 +568,43 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             Polynomial::<Rational>::from_coeffs(rat_coeffs)
         };
 
-        let (rat_unit, rat_factors) = rat_f.factor().unwrap().into_unit_and_powers();
+        let (rat_unit, rat_factors) = rat_f.factor().into_unit_and_powers().unwrap();
         let mut factored = self
             .factorizations()
-            .from_unit(Polynomial::constant(rat_unit));
+            .new_unit_unchecked(Polynomial::constant(rat_unit));
         for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor
-                    .coeffs()
+                    .into_coeffs()
                     .into_iter()
-                    .map(|c| Polynomial::constant(c.clone()))
+                    .map(Polynomial::constant)
                     .collect(),
             );
             self.factorizations()
-                .mul_mut(&mut factored, factorize(&anf_unfactor));
+                .mul_mut(&mut factored, &factorize(&anf_unfactor));
         }
         factored
     }
 }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactorableSignature
+impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactoringMonoidSignature
     for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
-    fn factor(&self, a: &Self::Set) -> Option<crate::structure::FactoredRingElement<Self::Set>> {
+    fn factor_unchecked(&self, a: &Self::Set) -> Factored<Self::Set, Natural> {
         if self.is_zero(a) {
-            None
+            Factored::Zero
         } else {
-            Some(
-                self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-                    a.clone(),
-                    |c| self.coeff_ring().factor(c),
-                    &|a| {
-                        self.factorize_rational_factorize_first(&a, &|a| {
-                            // Unsure which is faster. One might be better in different cases.
-                            self.factor_primitive_sqfree_by_reduced_ring(a)
-                            // OR
-                            // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
-                        })
-                    },
-                ),
+            self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
+                a.clone(),
+                |c| self.coeff_ring().factor(c),
+                &|a| {
+                    self.factorize_rational_factorize_first(&a, &|a| {
+                        // Unsure which is faster. One might be better in different cases.
+                        self.factor_primitive_sqfree_by_reduced_ring(a)
+                        // OR
+                        // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
+                    })
+                },
             )
         }
     }
@@ -637,8 +626,9 @@ mod tests {
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
             k_poly
-                .factorizations()
-                .to_powers(&k_poly.factor(&(x.pow(2) - 12).into_verbose()).unwrap())
+                .factor(&(x.pow(2) - 12).into_verbose())
+                .into_powers()
+                .unwrap()
                 .len(),
             2
         );
@@ -652,12 +642,9 @@ mod tests {
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
             k_poly
-                .factorizations()
-                .to_powers(
-                    &k_poly
-                        .factor(&(x.pow(4) - x.pow(2) + 1).into_verbose())
-                        .unwrap()
-                )
+                .factor(&(x.pow(4) - x.pow(2) + 1).into_verbose())
+                .into_powers()
+                .unwrap()
                 .len(),
             4
         );
@@ -669,8 +656,9 @@ mod tests {
         let k_poly = k.polynomials();
         debug_assert_eq!(
             k_poly
-                .factorizations()
-                .to_powers(&k_poly.factor(&(x.pow(3) - x + 1).into_verbose()).unwrap())
+                .factor(&(x.pow(3) - x + 1).into_verbose())
+                .into_powers()
+                .unwrap()
                 .len(),
             2
         );
@@ -683,8 +671,9 @@ mod tests {
         let x = k_poly.into_ergonomic(k_poly.var());
         debug_assert_eq!(
             k_poly
-                .factorizations()
-                .to_powers(&k_poly.factor(&(x.pow(12) - 1).into_verbose()).unwrap())
+                .factor(&(x.pow(12) - 1).into_verbose())
+                .into_powers()
+                .unwrap()
                 .len(),
             12
         );

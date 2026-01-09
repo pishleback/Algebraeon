@@ -5,11 +5,12 @@ use crate::{
         Polynomial, PolynomialQuotientRingStructure, PolynomialStructure, ToPolynomialSignature,
     },
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidEqSignature, CharZeroFieldSignature,
-        FactorableSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
-        IntegralDomainExtensionAllPolynomialRoots, IntegralDomainSignature, MetaAdditiveMonoid,
-        MetaFactorableSignature, MetaMultiplicativeMonoid, PrincipalRationalMap, RingHomomorphism,
-        RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
+        AdditiveGroupSignature, CharZeroFieldSignature, FactoringMonoidSignature,
+        FiniteDimensionalFieldExtension, FreeModuleSignature,
+        IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoid, MetaFactoringMonoid,
+        MetaMultiplicativeMonoid, MultiplicativeIntegralMonoidSignature, PrincipalRationalMap,
+        RingHomomorphism, RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
+        SetWithZeroAndEqSignature,
     },
 };
 use algebraeon_nzq::{
@@ -140,7 +141,6 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         }
         self.min_poly(a)
             .coeffs()
-            .into_iter()
             .all(|c| c.denominator() == Natural::ONE)
     }
 }
@@ -164,7 +164,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
             let disc = disc.numerator();
             debug_assert_ne!(disc, Integer::ZERO); //discriminant of a basis is non-zero
             //    println!("{}", disc);
-            let (_sign, mut disc_factors) = disc.factor().unwrap().into_unit_and_powers();
+            let (_sign, mut disc_factors) = disc.factor().into_unit_and_powers().unwrap();
             // If p is a prime such that p^2 divides Disc
             // then can find an alg int of the form
             // 1/p (x_1a_1 + ... + x_na_n)
@@ -197,8 +197,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
                                     })
                                     .collect(),
                             )
-                            .into_coeffs()
-                            .into_iter()
+                            .coeffs()
                             .map(|c| c / Rational::from(p))
                             .collect(),
                         );
@@ -261,8 +260,8 @@ impl
         let anf = self.range();
         anf.polynomials()
             .factor(&polynomial.apply_map(|x| self.image(x)))
-            .unwrap()
             .into_powers()
+            .unwrap()
             .into_iter()
             .filter_map(|(factor, power)| {
                 match anf.polynomials().degree(&factor) {

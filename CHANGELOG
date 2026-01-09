@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
  - Removed `RingDivisionError` in favour of `Option`.
  - Added `SetWithZeroSignature`.
  - Added `MultiplicativeMonoidWithZeroSignature`.
+ - Added `MultiplicativeIntegralMonoidSignature`.
+ - Added `CancellativeAdditiveMonoidSignature`.
+ - Removed old factorization traits and structs for natural numbers, elements in UFDs, and ideals in Dedekind domain.
+ - Added new factorization traits and structs which cover all the above in a unifed way, generic with respect to the respective structures.
 
 ## [0.0.15] - 2026-01-06
 

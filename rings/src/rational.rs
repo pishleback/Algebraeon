@@ -1,5 +1,5 @@
 use crate::algebraic_number_field::{AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature};
-use crate::polynomial::{Polynomial, PolynomialStructure, factorize_by_factorize_primitive_part};
+use crate::polynomial::{PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
 use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
@@ -21,7 +21,9 @@ impl AdditiveMonoidSignature for RationalCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for RationalCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -67,7 +69,7 @@ impl MultiplicativeMonoidUnitsSignature for RationalCanonicalStructure {
     }
 }
 
-impl IntegralDomainSignature for RationalCanonicalStructure {
+impl MultiplicativeIntegralMonoidSignature for RationalCanonicalStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         if b == &Rational::ZERO {
             None
@@ -76,6 +78,8 @@ impl IntegralDomainSignature for RationalCanonicalStructure {
         }
     }
 }
+
+impl IntegralDomainSignature for RationalCanonicalStructure {}
 
 impl OrderedRingSignature for RationalCanonicalStructure {
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
@@ -204,10 +208,13 @@ const_assert!(
     impls::impls!(IntegerCanonicalStructure : AlgebraicIntegerRingSignature<RationalCanonicalStructure>)
 );
 
-impl<B: BorrowedStructure<RationalCanonicalStructure>> FactorableSignature
+impl<B: BorrowedStructure<RationalCanonicalStructure>> FactoringMonoidSignature
     for PolynomialStructure<RationalCanonicalStructure, B>
 {
-    fn factor(&self, p: &Self::Set) -> Option<FactoredRingElement<Polynomial<Rational>>> {
+    fn factor_unchecked(
+        &self,
+        p: &Self::Set,
+    ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set> {
         factorize_by_factorize_primitive_part(
             &PrincipalIntegerMap::new(self.coeff_ring().clone()),
             self,

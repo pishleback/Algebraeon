@@ -2,15 +2,15 @@ use crate::algebraic_number_field::{
     AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, QuadraticRingOfIntegersStructure,
 };
 use crate::structure::{
-    AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroFieldSignature, CharZeroRingSignature,
-    CharacteristicSignature, FieldSignature, IntegralDomainSignature,
-    MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RingSignature,
-    SemiRingSignature, SetWithZeroSignature,
+    AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
+    CharZeroFieldSignature, CharZeroRingSignature, CharacteristicSignature, FieldSignature,
+    IntegralDomainSignature, MetaFactoringMonoidNaturalExponent, MetaSetWithZeroAndEq,
+    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
+    MultiplicativeMonoidUnitsSignature, RingSignature, SemiRingSignature, SetWithZeroSignature,
 };
 use crate::structure::{
-    AdditiveMonoidEqSignature, FreeModuleSignature, MetaAdditiveMonoidEq, MetaCharZeroRing,
-    MetaFactorableSignature, PrincipalRationalMap, RingHomomorphismRangeModuleStructure,
-    SemiModuleSignature,
+    FreeModuleSignature, MetaCharZeroRing, PrincipalRationalMap,
+    RingHomomorphismRangeModuleStructure, SemiModuleSignature, SetWithZeroAndEqSignature,
 };
 use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};
 use algebraeon_sets::structure::{BorrowedSet, BorrowedStructure, InjectiveFunction, MetaType};
@@ -138,7 +138,11 @@ impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticNumberFieldSt
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<D: BorrowedSet<Integer>> CancellativeAdditiveMonoidSignature
+    for QuadraticNumberFieldStructure<D>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -192,11 +196,15 @@ impl<D: BorrowedSet<Integer>> MultiplicativeMonoidUnitsSignature
     }
 }
 
-impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticNumberFieldStructure<D> {
+impl<D: BorrowedSet<Integer>> MultiplicativeIntegralMonoidSignature
+    for QuadraticNumberFieldStructure<D>
+{
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.mul(a, &self.try_inv(b)?))
     }
 }
+
+impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticNumberFieldStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> CharacteristicSignature for QuadraticNumberFieldStructure<D> {
     fn characteristic(&self) -> Natural {

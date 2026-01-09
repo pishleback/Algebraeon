@@ -5,7 +5,7 @@ use crate::{
     },
     polynomial::Polynomial,
     structure::{
-        AdditiveMonoidSignature, CharZeroFieldSignature, FieldSignature, MetaFactorableSignature,
+        AdditiveMonoidSignature, CharZeroFieldSignature, FieldSignature, MetaFactoringMonoid,
         MetaMultiplicativeMonoid, RingHomomorphism, SemiModuleSignature,
     },
 };
@@ -37,14 +37,15 @@ impl<
             // g is a root of an integer polynomial
             // ax^2 + bx + c
             let poly = anf_polyquo_borrowed.modulus().primitive_part_fof();
-            debug_assert_eq!(poly.coeffs().len(), 3);
-            let two_a = Integer::TWO * poly.coeff(2).as_ref();
-            let neg_b = -poly.coeff(1).as_ref();
+            let poly_coeffs = poly.clone().into_coeffs();
+            debug_assert_eq!(poly_coeffs.len(), 3);
+            let two_a = Integer::TWO * &poly_coeffs[2];
+            let neg_b = -&poly_coeffs[1];
 
             // find s, d such that s^2d = b^2-4ac and d is squarefree
             let (s, d) = {
                 let disc = poly.discriminant().unwrap();
-                let (mut d, powers) = disc.factor().unwrap().into_unit_and_powers();
+                let (mut d, powers) = disc.factor().into_unit_and_powers().unwrap();
                 let mut s = Integer::ONE;
                 for (p, k) in powers {
                     let (q, r) = k.div_mod(Natural::TWO);
@@ -94,15 +95,15 @@ impl<
     for QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>
 {
     fn image(&self, x: &Polynomial<Rational>) -> QuadraticNumberFieldElement {
-        let x = self.anf_polyquo.borrow().reduce(x);
-        debug_assert!(x.coeffs().len() <= 2);
+        let x = self.anf_polyquo.borrow().to_vec(x);
+        debug_assert!(x.len() == 2);
         self.anf_quadratic.add(
-            &self.anf_quadratic.from_rat(x.coeff(0).as_ref()),
+            &self.anf_quadratic.from_rat(&x[0]),
             &self
                 .anf_quadratic
                 .inbound_principal_rational_map()
                 .range_module_structure()
-                .scalar_mul(&self.generator_image, x.coeff(1).as_ref()),
+                .scalar_mul(&self.generator_image, &x[1]),
         )
     }
 }

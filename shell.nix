@@ -10,6 +10,7 @@ in
       clang
       # Replace llvmPackages with llvmPackages_X, where X is the latest LLVM version
       llvmPackages_21.bintools
+      llvmPackages_21.lldb
       rustup
       pkg-config
       gcc

@@ -47,7 +47,7 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>>
     }
 }
 
-impl<RS: EuclideanDomainSignature + FactorableSignature, RSB: BorrowedStructure<RS>>
+impl<RS: EuclideanDomainSignature + FactoringMonoidSignature, RSB: BorrowedStructure<RS>>
     EuclideanRemainderQuotientStructure<RS, RSB, true>
 {
     fn new_field_unchecked(ring: RSB, modulus: RS::Set) -> Self {
@@ -81,7 +81,9 @@ pub trait RingToQuotientRingSignature: EuclideanDomainSignature {
 }
 impl<Ring: EuclideanDomainSignature> RingToQuotientRingSignature for Ring {}
 
-pub trait RingToQuotientFieldSignature: EuclideanDomainSignature + FactorableSignature {
+pub trait RingToQuotientFieldSignature:
+    EuclideanDomainSignature + FactoringMonoidSignature
+{
     fn quotient_field<'a>(
         &'a self,
         modulus: Self::Set,
@@ -110,7 +112,10 @@ pub trait RingToQuotientFieldSignature: EuclideanDomainSignature + FactorableSig
         EuclideanRemainderQuotientStructure::new_field_unchecked(self, modulus)
     }
 }
-impl<Ring: EuclideanDomainSignature + FactorableSignature> RingToQuotientFieldSignature for Ring {}
+impl<Ring: EuclideanDomainSignature + FactoringMonoidSignature> RingToQuotientFieldSignature
+    for Ring
+{
+}
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> PartialEq
     for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
@@ -189,7 +194,11 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    CancellativeAdditiveMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -264,11 +273,16 @@ impl<
 }
 
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
-    IntegralDomainSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
+    MultiplicativeIntegralMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
 {
     fn try_div(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
         Some(self.mul(top, &self.try_inv(bot)?))
     }
+}
+
+impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
+    IntegralDomainSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
+{
 }
 
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>

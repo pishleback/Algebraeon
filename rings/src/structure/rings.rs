@@ -1,6 +1,6 @@
 use super::*;
 use crate::polynomial::*;
-use algebraeon_nzq::{Integer, Natural, Rational, traits::*};
+use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure, Rational, traits::*};
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, fmt::Debug};
 
@@ -24,11 +24,7 @@ pub trait AdditiveMonoidSignature: SetWithZeroSignature {
         *a = self.add(a, b);
     }
 
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.try_sub(&self.zero(), a)
-    }
-
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set>;
 
     fn sum(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut sum = self.zero();
@@ -51,21 +47,34 @@ where
 }
 impl<R: MetaType> MetaAdditiveMonoid for R where Self::Signature: AdditiveMonoidSignature {}
 
-pub trait AdditiveMonoidEqSignature: AdditiveMonoidSignature + EqSignature {
+pub trait CancellativeAdditiveMonoidSignature: AdditiveMonoidSignature {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+}
+pub trait MetaCancellativeAdditiveMonoid: MetaType
+where
+    Self::Signature: CancellativeAdditiveMonoidSignature,
+{
+}
+impl<R: MetaType> MetaCancellativeAdditiveMonoid for R where
+    Self::Signature: CancellativeAdditiveMonoidSignature
+{
+}
+
+pub trait SetWithZeroAndEqSignature: SetWithZeroSignature + EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
     }
 }
-impl<R: AdditiveMonoidSignature + EqSignature> AdditiveMonoidEqSignature for R {}
-pub trait MetaAdditiveMonoidEq: MetaType
+impl<R: SetWithZeroSignature + EqSignature> SetWithZeroAndEqSignature for R {}
+pub trait MetaSetWithZeroAndEq: MetaType
 where
-    Self::Signature: AdditiveMonoidEqSignature,
+    Self::Signature: SetWithZeroAndEqSignature,
 {
     fn is_zero(&self) -> bool {
         Self::structure().is_zero(self)
     }
 }
-impl<R: MetaType> MetaAdditiveMonoidEq for R where Self::Signature: AdditiveMonoidEqSignature {}
+impl<R: MetaType> MetaSetWithZeroAndEq for R where Self::Signature: SetWithZeroAndEqSignature {}
 
 pub trait MultiplicativeMonoidSignature: SetSignature {
     fn one(&self) -> Self::Set;
@@ -131,6 +140,30 @@ where
 impl<R: MetaType> MetaMultiplicativeMonoid for R where Self::Signature: MultiplicativeMonoidSignature
 {}
 
+pub trait MultiplicativeMonoidSquareOpsSignature: SetSignature {
+    fn is_square(&self, a: &Self::Set) -> bool {
+        self.sqrt_if_square(a).is_some()
+    }
+
+    fn sqrt_if_square(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+pub trait MetaMultiplicativeMonoidSquareOps: MetaType
+where
+    Self::Signature: MultiplicativeMonoidSquareOpsSignature,
+{
+    fn is_square(&self) -> bool {
+        Self::structure().is_square(self)
+    }
+
+    fn sqrt_if_square(&self) -> Option<Self> {
+        Self::structure().sqrt_if_square(self)
+    }
+}
+impl<R: MetaType> MetaMultiplicativeMonoidSquareOps for R where
+    Self::Signature: MultiplicativeMonoidSquareOpsSignature
+{
+}
+
 /// 0 is such that 0*a=0 for all a in the monoid.
 /// such an element is unqiue if it exists.
 pub trait MultiplicativeMonoidWithZeroSignature:
@@ -152,6 +185,16 @@ pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
         self.try_inv(a).is_some()
     }
 
+    fn try_int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
+        if *n == Integer::ZERO {
+            Some(self.one())
+        } else if *n > Integer::ZERO {
+            Some(self.nat_pow(a, &n.abs()))
+        } else {
+            Some(self.nat_pow(&self.try_inv(a)?, &n.abs()))
+        }
+    }
+
     fn units<'a>(&'a self) -> MultiplicativeMonoidUnitsStructure<Self, &'a Self> {
         MultiplicativeMonoidUnitsStructure::new(self)
     }
@@ -170,9 +213,48 @@ where
     fn is_unit(&self) -> bool {
         Self::structure().is_unit(self)
     }
+    fn try_int_pow(&self, n: &Integer) -> Option<Self> {
+        Self::structure().try_int_pow(self, n)
+    }
 }
 impl<R: MetaType> MetaMultiplicativeMonoidUnits for R where
     Self::Signature: MultiplicativeMonoidUnitsSignature<Set = R>
+{
+}
+
+pub trait MultiplicativeIntegralMonoidSignature:
+    MultiplicativeMonoidUnitsSignature + SetWithZeroSignature + EqSignature
+{
+    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+
+    /// return true iff a is divisible by b
+    fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        self.try_div(a, b).is_some()
+    }
+    fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        if self.equal(a, &self.zero()) && self.equal(b, &self.zero()) {
+            true
+        } else {
+            self.try_div(a, b).is_some() && self.try_div(b, a).is_some()
+        }
+    }
+}
+pub trait MetaMultiplicativeIntegralMonoid: MetaType
+where
+    Self::Signature: MultiplicativeIntegralMonoidSignature,
+{
+    fn try_div(a: &Self, b: &Self) -> Option<Self> {
+        Self::structure().try_div(a, b)
+    }
+    fn divisible(a: &Self, b: &Self) -> bool {
+        Self::structure().divisible(a, b)
+    }
+    fn are_associate(a: &Self, b: &Self) -> bool {
+        Self::structure().are_associate(a, b)
+    }
+}
+impl<R: MetaType> MetaMultiplicativeIntegralMonoid for R where
+    Self::Signature: MultiplicativeIntegralMonoidSignature<Set = R>
 {
 }
 
@@ -202,6 +284,41 @@ where
     }
 }
 impl<R: MetaType> MetaMultiplicativeGroup for R where Self::Signature: MultiplicativeGroupSignature {}
+
+pub trait FavoriteAssociateSignature: MultiplicativeMonoidUnitsSignature + EqSignature {
+    //For associate class of elements, choose a unique representative
+    //write self=unit*assoc and return (unit, assoc)
+    //0 is required to return (1, 0)
+    //every unit u is required to return (u, 1) i.e. 1 is the favorite associate of every unit
+    //it seems to happen that the product of favorite associates is another favorite associate. Should this be a requirement?
+
+    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set);
+    fn fav_assoc(&self, a: &Self::Set) -> Self::Set {
+        self.factor_fav_assoc(a).1
+    }
+    fn is_fav_assoc(&self, a: &Self::Set) -> bool {
+        let (_u, b) = self.factor_fav_assoc(a);
+        self.equal(a, &b)
+    }
+}
+pub trait MetaFavoriteAssociate: MetaMultiplicativeMonoidUnits
+where
+    Self::Signature: FavoriteAssociateSignature,
+{
+    fn factor_fav_assoc(&self) -> (Self, Self) {
+        Self::structure().factor_fav_assoc(self)
+    }
+    fn fav_assoc(&self) -> Self {
+        Self::structure().fav_assoc(self)
+    }
+    fn is_fav_assoc(&self) -> bool {
+        Self::structure().is_fav_assoc(self)
+    }
+}
+impl<R: MetaType> MetaFavoriteAssociate for R where
+    Self::Signature: FavoriteAssociateSignature<Set = R>
+{
+}
 
 pub trait SemiRingSignature:
     AdditiveMonoidSignature + MultiplicativeMonoidWithZeroSignature
@@ -257,7 +374,7 @@ impl<R: MetaType> MetaCharacteristic for R where Self::Signature: Characteristic
 pub trait RingUnitsSignature: RingSignature + MultiplicativeMonoidUnitsSignature {}
 impl<Ring: RingSignature + MultiplicativeMonoidUnitsSignature> RingUnitsSignature for Ring {}
 
-pub trait AdditiveGroupSignature: AdditiveMonoidSignature {
+pub trait AdditiveGroupSignature: CancellativeAdditiveMonoidSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -316,61 +433,22 @@ impl<R: MetaType> MetaRing for R where Self::Signature: RingSignature {}
 pub trait RingEqSignature: RingSignature + EqSignature {}
 impl<R: RingSignature + EqSignature> RingEqSignature for R {}
 
-pub trait IntegralDomainSignature: RingUnitsSignature + EqSignature {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
-
+pub trait IntegralDomainSignature:
+    RingUnitsSignature + MultiplicativeIntegralMonoidSignature + EqSignature
+{
     fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
         let n = Fraction::numerator(x);
         let d = Fraction::denominator(x);
         debug_assert!(!d.is_zero());
         self.try_div(&self.from_int(n), &self.from_nat(d))
     }
-
-    fn try_int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
-        if *n == Integer::ZERO {
-            Some(self.one())
-        } else if self.is_zero(a) {
-            Some(self.zero())
-        } else if *n > Integer::ZERO {
-            Some(self.nat_pow(a, &n.abs()))
-        } else {
-            Some(self.nat_pow(&self.try_inv(a)?, &n.abs()))
-        }
-    }
-
-    /// return true iff a is divisible by b
-    fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.try_div(a, b).is_some()
-    }
-    fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        if self.equal(a, &self.zero()) && self.equal(b, &self.zero()) {
-            true
-        } else {
-            self.try_div(a, b).is_some() && self.try_div(b, a).is_some()
-        }
-    }
 }
 pub trait MetaIntegralDomain: MetaRing
 where
     Self::Signature: IntegralDomainSignature,
 {
-    fn try_div(a: &Self, b: &Self) -> Option<Self> {
-        Self::structure().try_div(a, b)
-    }
-
     fn try_from_rat(x: &Rational) -> Option<Self> {
         Self::structure().try_from_rat(x)
-    }
-
-    fn try_int_pow(&self, n: &Integer) -> Option<Self> {
-        Self::structure().try_int_pow(self, n)
-    }
-
-    fn divisible(a: &Self, b: &Self) -> bool {
-        Self::structure().divisible(a, b)
-    }
-    fn are_associate(a: &Self, b: &Self) -> bool {
-        Self::structure().are_associate(a, b)
     }
 }
 impl<R: MetaRing> MetaIntegralDomain for R where Self::Signature: IntegralDomainSignature<Set = R> {}
@@ -429,43 +507,9 @@ where
 }
 impl<R: MetaRing> MetaFiniteUnits for R where Self::Signature: FiniteUnitsSignature<Set = R> {}
 
-pub trait FavoriteAssociateSignature: IntegralDomainSignature {
-    //For associate class of elements, choose a unique representative
-    //write self=unit*assoc and return (unit, assoc)
-    //0 is required to return (1, 0)
-    //every unit u is required to return (u, 1) i.e. 1 is the favorite associate of every unit
-
-    //it seems to happen that the product of favorite associates is another favorite associate. Should this be a requirement?
-
-    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set);
-    fn fav_assoc(&self, a: &Self::Set) -> Self::Set {
-        self.factor_fav_assoc(a).1
-    }
-    fn is_fav_assoc(&self, a: &Self::Set) -> bool {
-        let (_u, b) = self.factor_fav_assoc(a);
-        self.equal(a, &b)
-    }
-}
-pub trait MetaFavoriteAssociate: MetaIntegralDomain
-where
-    Self::Signature: FavoriteAssociateSignature,
+pub trait GreatestCommonDivisorSignature:
+    FavoriteAssociateSignature + IntegralDomainSignature
 {
-    fn factor_fav_assoc(&self) -> (Self, Self) {
-        Self::structure().factor_fav_assoc(self)
-    }
-    fn fav_assoc(&self) -> Self {
-        Self::structure().fav_assoc(self)
-    }
-    fn is_fav_assoc(&self) -> bool {
-        Self::structure().is_fav_assoc(self)
-    }
-}
-impl<R: MetaRing> MetaFavoriteAssociate for R where
-    Self::Signature: FavoriteAssociateSignature<Set = R>
-{
-}
-
-pub trait GreatestCommonDivisorSignature: FavoriteAssociateSignature {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
     fn gcd<'a>(&'a self, x: &Self::Set, y: &Self::Set) -> Self::Set;
@@ -601,7 +645,7 @@ pub trait EuclideanDivisionSignature: SemiRingEqSignature {
         mut y: Self::Set,
     ) -> (Self::Set, Self::Set, Self::Set)
     where
-        Self: FavoriteAssociateSignature,
+        Self: FavoriteAssociateSignature + IntegralDomainSignature,
     {
         let orig_x = x.clone();
         let orig_y = y.clone();
@@ -965,8 +1009,8 @@ impl<R: MetaType> MetaPositiveRealNthRoot for R where
 pub trait AlgebraicClosureSignature: FieldSignature
 where
     //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
-    PolynomialStructure<Self::BFS, Self::BFS>:
-        FactorableSignature + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
+    PolynomialStructure<Self::BFS, Self::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
 {
     type BFS: FieldSignature; //base field structure
 
@@ -988,7 +1032,7 @@ where
         self.all_roots_list(
             &base_field_poly
                 .factorizations()
-                .expanded_squarefree(&base_field_poly.factor(poly).unwrap()),
+                .expand_squarefree(&base_field_poly.factor(poly)),
         )
     }
 
@@ -998,10 +1042,7 @@ where
     ) -> Option<Vec<(Self::Set, usize)>> {
         let mut root_powers = vec![];
         let base_field_poly = self.base_field().into_polynomials();
-        for (factor, k) in base_field_poly
-            .factorizations()
-            .into_powers(base_field_poly.factor(poly)?)
-        {
+        for (factor, k) in base_field_poly.factor(poly).into_powers()? {
             for root in self.all_roots_list(&factor).unwrap() {
                 root_powers.push((root, (&k).try_into().unwrap()));
             }

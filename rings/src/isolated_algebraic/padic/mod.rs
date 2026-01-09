@@ -1,6 +1,5 @@
 use crate::{
     isolated_algebraic::poly_tools::{root_product_poly, root_rat_mul_poly, root_sum_poly},
-    natural::NaturalFns,
     polynomial::*,
     structure::*,
     valuation::*,
@@ -20,7 +19,7 @@ impl IsolatingBall {
     pub fn overlap(x: &Self, y: &Self) -> bool {
         let p = &x.p;
         debug_assert_eq!(p, &y.p);
-        debug_assert!(p.is_prime());
+        debug_assert!(p.is_irreducible());
         let vdiff = padic_rat_valuation(p, &x.c - &y.c);
         vdiff >= x.v && vdiff >= y.v
     }
@@ -38,7 +37,7 @@ pub struct PAdicAlgebraicRoot {
 
 impl PAdicAlgebraicRoot {
     fn new(p: Natural, poly: Polynomial<Integer>, approx: isolate::PAdicRationalBall) -> Self {
-        debug_assert!(p.is_prime());
+        debug_assert!(p.is_irreducible());
         debug_assert!(poly.is_irreducible());
         Self { p, poly, approx }
     }
@@ -84,7 +83,7 @@ pub struct PAdicRational {
 
 impl PAdicRational {
     pub fn from_rational(p: Natural, rat: Rational) -> Self {
-        debug_assert!(p.is_prime());
+        debug_assert!(p.is_irreducible());
         Self { p, rat }
     }
 
@@ -432,17 +431,14 @@ impl Polynomial<Integer> {
     }
 
     pub fn all_padic_roots(&self, p: &Natural) -> Vec<PAdicAlgebraic> {
-        debug_assert!(p.is_prime());
+        debug_assert!(p.is_irreducible());
         assert_ne!(self, &Self::zero());
-        let factors = self.factor().unwrap();
+        let factors = self.factor();
         let mut roots = vec![];
-        for (factor, k) in Polynomial::<Integer>::structure()
-            .factorizations()
-            .to_powers(&factors)
-        {
+        for (factor, k) in factors.into_powers().unwrap() {
             for root in factor.all_padic_roots_irreducible(p) {
                 let mut i = Natural::from(0u8);
-                while &i < k {
+                while i < k {
                     roots.push(root.clone());
                     i += Natural::from(1u8);
                 }
@@ -660,7 +656,12 @@ impl PAdicAlgebraicRoot {
             <= v / max(v, |a|).|a|
         */
         let inv_poly = Polynomial::<Integer>::from_coeffs(
-            self.poly.clone().into_coeffs().into_iter().rev().collect(),
+            self.poly
+                .coeffs()
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect(),
         )
         .fav_assoc();
         debug_assert!(inv_poly.is_irreducible());
@@ -715,7 +716,7 @@ pub struct PAdicAlgebraicStructure {
 
 impl PAdicAlgebraicStructure {
     pub fn new(p: Natural) -> Self {
-        assert!(p.is_prime(), "{} is not prime", p);
+        assert!(p.is_irreducible(), "{} is not prime", p);
         Self { p }
     }
 
@@ -786,7 +787,9 @@ impl AdditiveMonoidSignature for PAdicAlgebraicStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for PAdicAlgebraicStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -850,7 +853,7 @@ impl MultiplicativeMonoidUnitsSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl IntegralDomainSignature for PAdicAlgebraicStructure {
+impl MultiplicativeIntegralMonoidSignature for PAdicAlgebraicStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
@@ -866,7 +869,9 @@ impl IntegralDomainSignature for PAdicAlgebraicStructure {
         }
         Some(self.mul(a, &self.try_inv(b)?))
     }
+}
 
+impl IntegralDomainSignature for PAdicAlgebraicStructure {
     fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
         Some(PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),

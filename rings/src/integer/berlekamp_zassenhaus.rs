@@ -58,7 +58,6 @@ some improvements
 
 */
 
-use crate::natural::NaturalFns;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_nzq::primes;
@@ -119,11 +118,11 @@ struct BerlekampZassenhausAlgorithmStateAtPrime {
 
 impl BerlekampZassenhausAlgorithmStateAtPrime {
     fn new_at_prime(state: &BerlekampAassenhausAlgorithmState, p: Natural) -> Option<Self> {
-        debug_assert!(p.is_prime());
+        debug_assert!(p.is_irreducible());
         let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p));
         let poly_mod_p = mod_p.polynomials();
         if poly_mod_p.degree(&state.poly) == Some(state.degree) {
-            let facotred_f_mod_p = poly_mod_p.factor(&state.poly).unwrap();
+            let facotred_f_mod_p = poly_mod_p.factor(&state.poly).unwrap_nonzero();
             match poly_mod_p
                 .factorizations()
                 .into_hensel_factorization(facotred_f_mod_p, state.poly.clone())
@@ -377,7 +376,7 @@ impl SemigroupSignature for ModularFactorMultSemigrp {
 }
 
 impl BerlekampZassenhausAlgorithmStateAtPrime {
-    fn factor_by_try_all_subsets<'a>(&'a self) -> FactoredRingElement<Polynomial<Integer>> {
+    fn factor_by_try_all_subsets<'a>(&'a self) -> Factored<Polynomial<Integer>, Natural> {
         let n = self.modular_factors.len();
 
         let mut dminusone_test =
@@ -389,9 +388,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
             self.modular_factors.clone(),
         );
 
-        let mut factored = Polynomial::<Integer>::structure()
-            .factorizations()
-            .new_trivial();
+        let mut factored = Polynomial::<Integer>::structure().factorizations().one();
         let mut excluded_modular_factors = vec![];
         let mut f = self.poly.clone();
         let mut k = 1; // The cardinality of the subset to search for each loop
@@ -441,9 +438,9 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                             // Add g to this list of found factors
                             Polynomial::<Integer>::structure().factorizations().mul_mut(
                                 &mut factored,
-                                Polynomial::<Integer>::structure()
+                                &Polynomial::<Integer>::structure()
                                     .factorizations()
-                                    .new_prime(g),
+                                    .new_irreducible_unchecked(g),
                             );
                             // Remove the modular factors for g from future consideration
                             m -= k;
@@ -465,9 +462,9 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
         if m > 0 {
             Polynomial::<Integer>::structure().factorizations().mul_mut(
                 &mut factored,
-                Polynomial::<Integer>::structure()
+                &Polynomial::<Integer>::structure()
                     .factorizations()
-                    .new_prime(f),
+                    .new_irreducible_unchecked(f),
             );
         }
 
@@ -479,28 +476,26 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 /// No optimizations are used when searching for combinations of modular factors yielding true factors.
 pub fn factorize_by_berlekamp_zassenhaus_algorithm(
     poly: Polynomial<Integer>,
-) -> Option<FactoredRingElement<Polynomial<Integer>>> {
+) -> Factored<Polynomial<Integer>, Natural> {
     if poly.is_zero() {
-        None
+        Factored::Zero
     } else {
-        Some(
-            Polynomial::<Integer>::structure()
-                .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-                    poly,
-                    Integer::factor,
-                    &|f| {
-                        if f.degree().unwrap() == 0 {
-                            Integer::structure()
-                                .into_polynomials()
-                                .factorizations()
-                                .from_unit(f)
-                        } else {
-                            let state = BerlekampAassenhausAlgorithmState::new(f).next_prime();
-                            state.factor_by_try_all_subsets()
-                        }
-                    },
-                ),
-        )
+        Polynomial::<Integer>::structure()
+            .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
+                poly,
+                Integer::factor,
+                &|f| {
+                    if f.degree().unwrap() == 0 {
+                        Integer::structure()
+                            .into_polynomials()
+                            .factorizations()
+                            .new_unit_unchecked(f)
+                    } else {
+                        let state = BerlekampAassenhausAlgorithmState::new(f).next_prime();
+                        state.factor_by_try_all_subsets()
+                    }
+                },
+            )
     }
 }
 
@@ -521,7 +516,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
             let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(p));
             let poly_mod_p = mod_p.polynomials();
             if poly_mod_p.degree(&f).unwrap() == f_deg {
-                let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap();
+                let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap_nonzero();
                 if let Some(hensel_factorization_f_over_p) = poly_mod_p
                     .factorizations()
                     .into_hensel_factorization(facotred_f_mod_p, f.clone())
@@ -581,21 +576,19 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
 /// No optimizations are used when searching for combinations of modular factors yielding true factors.
 pub fn factorize_by_berlekamp_zassenhaus_algorithm_naive(
     f: Polynomial<Integer>,
-) -> Option<FactoredRingElement<Polynomial<Integer>>> {
+) -> Factored<Polynomial<Integer>, Natural> {
     if f.is_zero() {
-        None
+        Factored::Zero
     } else {
-        Some(
-            Polynomial::<Integer>::structure()
-                .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-                    f,
-                    Integer::factor,
-                    &|f| {
-                        factorize_by_find_factor(&Polynomial::<Integer>::structure(), f, &|f| {
-                            find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(f)
-                        })
-                    },
-                ),
-        )
+        Polynomial::<Integer>::structure()
+            .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
+                f,
+                Integer::factor,
+                &|f| {
+                    factorize_by_find_factor(&Polynomial::<Integer>::structure(), f, &|f| {
+                        find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(f)
+                    })
+                },
+            )
     }
 }

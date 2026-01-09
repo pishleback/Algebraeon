@@ -81,7 +81,7 @@ fn identify_complex_root(
     let (mut a, mut b, mut c, mut d) = box_gen.next().unwrap();
 
     let irr_poly = {
-        let (_unit, factors) = poly.factor().unwrap().into_unit_and_powers();
+        let (_unit, factors) = poly.factor().into_unit_and_powers().unwrap();
         let irr_polys = factors.into_iter().map(|(f, _k)| f).collect::<Vec<_>>();
         let mut possible_irr_poly_idxs: HashSet<_> = (0..irr_polys.len()).collect();
         loop {
@@ -166,7 +166,7 @@ impl Display for ComplexAlgebraicRoot {
             let d = b.as_ref() * b.as_ref() - Integer::from(4) * a.as_ref() * c.as_ref();
             let mut d_sq = Integer::ONE;
             let mut d_sqfreee = Integer::ONE;
-            let (d_sign, d_factors) = d.factor().unwrap().into_unit_and_powers();
+            let (d_sign, d_factors) = d.factor().into_unit_and_powers().unwrap();
             for (d_factor, k) in d_factors {
                 d_sq *= d_factor.nat_pow(&(&k / Natural::TWO));
                 if k % Natural::TWO == Natural::ONE {
@@ -434,7 +434,7 @@ impl ComplexAlgebraicRoot {
                     }
 
                     // eg: c + bx + ax^2 = c + x(b + x(a))
-                    let mut coeffs = poly.coeffs().into_iter().rev();
+                    let mut coeffs = poly.coeffs().collect::<Vec<_>>().into_iter().rev();
                     let lc = coeffs.next().unwrap();
                     let mut ans = mul_box_rat(
                         (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
@@ -700,7 +700,9 @@ impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -876,7 +878,12 @@ impl MultiplicativeMonoidUnitsSignature for ComplexAlgebraicCanonicalStructure {
                 let mut root = a.clone();
 
                 let inv_poly = Polynomial::from_coeffs(
-                    root.poly.clone().into_coeffs().into_iter().rev().collect(),
+                    root.poly
+                        .coeffs()
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .rev()
+                        .collect(),
                 )
                 .fav_assoc();
                 debug_assert!(inv_poly.is_irreducible());
@@ -975,11 +982,13 @@ impl MultiplicativeMonoidUnitsSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl IntegralDomainSignature for ComplexAlgebraicCanonicalStructure {
+impl MultiplicativeIntegralMonoidSignature for ComplexAlgebraicCanonicalStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.mul(a, &self.try_inv(b)?))
     }
 }
+
+impl IntegralDomainSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl FieldSignature for ComplexAlgebraicCanonicalStructure {}
 

@@ -9,11 +9,12 @@ use crate::{
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
+        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
-        FinitelyFreeModuleSignature, IntegralDomainSignature, MultiplicativeMonoidSignature,
+        FinitelyFreeModuleSignature, IntegralDomainSignature,
+        MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
         MultiplicativeMonoidUnitsSignature, RingSignature, RingToIdealsSignature,
-        SemiModuleSignature, SemiRingSignature, SetWithZeroSignature,
+        SemiModuleSignature, SemiRingSignature, SetWithZeroAndEqSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
@@ -196,7 +197,11 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    CancellativeAdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -353,11 +358,16 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    IntegralDomainSignature for OrderWithBasis<K, KB, MAXIMAL>
+    MultiplicativeIntegralMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.mul(a, &self.try_inv(b)?))
     }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    IntegralDomainSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>

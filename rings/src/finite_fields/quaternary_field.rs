@@ -57,7 +57,9 @@ impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -109,7 +111,7 @@ impl MultiplicativeMonoidUnitsSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
-impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {
+impl MultiplicativeIntegralMonoidSignature for QuaternaryFieldCanonicalStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         #[allow(clippy::match_same_arms)]
         match (&a, &b) {
@@ -125,6 +127,8 @@ impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {
         }
     }
 }
+
+impl IntegralDomainSignature for QuaternaryFieldCanonicalStructure {}
 
 impl FieldSignature for QuaternaryFieldCanonicalStructure {}
 

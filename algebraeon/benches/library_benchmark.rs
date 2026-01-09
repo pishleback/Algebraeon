@@ -1,8 +1,7 @@
 use algebraeon_nzq::{Integer, Natural, Rational};
-use algebraeon_rings::natural::NaturalFns;
 use algebraeon_rings::parsing::{parse_integer_polynomial, parse_rational_polynomial};
 use algebraeon_rings::polynomial::Polynomial;
-use algebraeon_rings::structure::MetaFactorableSignature;
+use algebraeon_rings::structure::MetaFactoringMonoid;
 use gungraun::{library_benchmark, library_benchmark_group, main};
 use std::hint::black_box;
 use std::str::FromStr;

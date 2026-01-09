@@ -2,12 +2,13 @@ use super::functions::*;
 use super::*;
 use crate::polynomial::{Polynomial, ToPolynomialSignature};
 use algebraeon_nzq::traits::AbsDiff;
-pub use factored::*;
-use primes::is_prime;
+use primes::is_prime_nat;
 
 pub mod ecm;
-pub mod factored;
 pub mod primes;
+pub mod structure;
+
+pub use structure::*;
 
 #[derive(Debug, Clone)]
 pub enum Factor {
@@ -19,7 +20,7 @@ pub enum Factor {
 fn trivial_factor(n: ToFactor) -> Vec<Factor> {
     match n.t {
         ToFactorType::Composite => {
-            if is_prime(&n.n) {
+            if is_prime_nat(&n.n) {
                 vec![Factor::Prime(n.n)]
             } else {
                 vec![Factor::Composite(n.n)]
@@ -53,7 +54,7 @@ pub fn trial_division(mut n: Natural, max_d: usize) -> Vec<Factor> {
 }
 
 pub fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> {
-    debug_assert!(!is_prime(&n));
+    debug_assert!(!is_prime_nat(&n));
 
     let nat_polys = Natural::structure().into_polynomials();
 
@@ -108,7 +109,7 @@ impl ToFactor {
 
 #[derive(Debug)]
 struct Factorizer {
-    prime_factors: Vec<(Natural, Natural)>,
+    prime_factors: Factored<Natural, Natural>,
     to_factor: Vec<ToFactor>,
 }
 
@@ -116,13 +117,13 @@ impl Factorizer {
     fn new(n: Natural) -> Self {
         debug_assert_ne!(n, Natural::ZERO);
         Self {
-            prime_factors: Natural::structure().factorizations().new_trivial(),
+            prime_factors: Natural::structure().factorizations().one(),
             to_factor: vec![ToFactor::new_composite(n)],
         }
     }
 
     fn partially_factor_by_method(&mut self, algorithm: impl Fn(ToFactor) -> (Vec<Factor>, bool)) {
-        let factorizations = Natural::structure().factorizations();
+        let factorizations = Natural::structure_ref().factorizations();
         let mut to_factor_now = self.to_factor.clone();
         self.to_factor = vec![];
         #[allow(clippy::manual_while_let_some)]
@@ -136,9 +137,12 @@ impl Factorizer {
                 match factor {
                     Factor::Prime(p) => {
                         debug_assert_ne!(p, Natural::ONE);
-                        debug_assert!(is_prime(&p));
+                        debug_assert!(is_prime_nat(&p));
                         prod *= &p;
-                        factorizations.mul_prime(&mut self.prime_factors, p);
+                        factorizations.mul_mut_impl(
+                            &mut self.prime_factors,
+                            &factorizations.new_irreducible_unchecked(p),
+                        );
                     }
                     Factor::Composite(d) => {
                         debug_assert_ne!(d, Natural::ONE);
@@ -165,7 +169,7 @@ impl Factorizer {
         }
     }
 
-    fn complete(self) -> Vec<(Natural, Natural)> {
+    fn complete(self) -> Factored<Natural, Natural> {
         assert!(self.to_factor.is_empty());
         self.prime_factors
     }
@@ -194,21 +198,21 @@ fn terminate_once_trivial(
 fn exclude_prime_inputs(n: ToFactor, algorithm: impl Fn(Natural) -> Vec<Factor>) -> Vec<Factor> {
     match n.t {
         ToFactorType::Composite => {
-            if is_prime(&n.n) {
+            if is_prime_nat(&n.n) {
                 return vec![Factor::Prime(n.n)];
             }
         }
         ToFactorType::StrictlyComposite => {}
     }
-    debug_assert!(!is_prime(&n.n));
+    debug_assert!(!is_prime_nat(&n.n));
     algorithm(n.n)
 }
 
-pub(super) fn factor(n: Natural) -> Option<Vec<(Natural, Natural)>> {
+pub(super) fn factor_nat(n: Natural) -> Factored<Natural, Natural> {
     if n == Natural::ZERO {
-        None
+        Factored::Zero
     } else if n == Natural::ONE {
-        Some(Natural::structure().factorizations().new_trivial())
+        Natural::structure_ref().factorizations().one()
     } else {
         let mut f = Factorizer::new(n);
         // Trial division
@@ -247,19 +251,17 @@ pub(super) fn factor(n: Natural) -> Option<Vec<(Natural, Natural)>> {
             )
         });
 
-        Some(f.complete())
+        f.complete()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::natural::factorization::factored::IsPrimitiveRootResult;
-
     use super::*;
 
     #[test]
     fn test_factor() {
-        println!("{:?}", factor(Natural::from(12usize)));
+        println!("{:?}", factor_nat(Natural::from(12usize)));
     }
 
     #[test]
@@ -267,61 +269,47 @@ mod tests {
         assert_eq!(
             Natural::structure()
                 .factorizations()
-                .euler_totient(&factor(Natural::from(12usize)).unwrap()),
+                .euler_totient(&factor_nat(Natural::from(12usize))),
             Natural::from(4usize)
         );
     }
 
     #[test]
     fn test_is_primitive_root() {
-        let factorizations = Natural::structure().factorizations();
+        let factorizations = Natural::structure_ref().factorizations();
         assert_eq!(
-            factorizations.is_primitive_root(
-                &Natural::from(0usize),
-                &factor(Natural::from(761usize)).unwrap(),
-            ),
+            factorizations
+                .is_primitive_root(&Natural::from(0usize), &factor_nat(Natural::from(761usize))),
             IsPrimitiveRootResult::NonUnit,
         );
         assert_eq!(
-            factorizations.is_primitive_root(
-                &Natural::from(1usize),
-                &factor(Natural::from(761usize)).unwrap(),
-            ),
+            factorizations
+                .is_primitive_root(&Natural::from(1usize), &factor_nat(Natural::from(761usize))),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factorizations.is_primitive_root(
-                &Natural::from(2usize),
-                &factor(Natural::from(761usize)).unwrap(),
-            ),
+            factorizations
+                .is_primitive_root(&Natural::from(2usize), &factor_nat(Natural::from(761usize))),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factorizations.is_primitive_root(
-                &Natural::from(3usize),
-                &factor(Natural::from(761usize)).unwrap(),
-            ),
+            factorizations
+                .is_primitive_root(&Natural::from(3usize), &factor_nat(Natural::from(761usize))),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factorizations.is_primitive_root(
-                &Natural::from(4usize),
-                &factor(Natural::from(761usize)).unwrap(),
-            ),
+            factorizations
+                .is_primitive_root(&Natural::from(4usize), &factor_nat(Natural::from(761usize))),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factorizations.is_primitive_root(
-                &Natural::from(5usize),
-                &factor(Natural::from(761usize)).unwrap(),
-            ),
+            factorizations
+                .is_primitive_root(&Natural::from(5usize), &factor_nat(Natural::from(761usize))),
             IsPrimitiveRootResult::No,
         );
         assert_eq!(
-            factorizations.is_primitive_root(
-                &Natural::from(6usize),
-                &factor(Natural::from(761usize)).unwrap(),
-            ),
+            factorizations
+                .is_primitive_root(&Natural::from(6usize), &factor_nat(Natural::from(761usize))),
             IsPrimitiveRootResult::Yes,
         );
     }

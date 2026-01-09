@@ -68,7 +68,7 @@ pub fn new_finite_field_extension<FS: FiniteFieldSignature>(
     poly: Polynomial<FS::Set>,
 ) -> PolynomialQuotientRingStructure<FS, FS, PolynomialStructure<FS, FS>, true>
 where
-    PolynomialStructure<FS, FS>: FactorableSignature<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS, FS>: FactoringMonoidSignature<Set = Polynomial<FS::Set>>,
 {
     finite_field
         .into_polynomials()

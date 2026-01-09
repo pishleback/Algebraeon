@@ -31,7 +31,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 
-use crate::natural::factorization::primes::is_prime;
+use crate::natural::factorization::primes::is_prime_nat;
 use crate::structure::MetaMultiplicativeMonoid;
 use algebraeon_nzq::primes;
 use algebraeon_nzq::{Natural, Rng, gcd, traits::ModInv};
@@ -329,7 +329,7 @@ pub fn ecm_one_factor_raw(
     debug_assert_eq!(b1 % 2, 0);
     debug_assert_eq!(b2 % 2, 0);
 
-    debug_assert!(!is_prime(n));
+    debug_assert!(!is_prime_nat(n));
 
     // When calculating T, if (B1 - 2*D) is negative, it cannot be calculated.
     let big_d = std::cmp::min(b2.isqrt(), b1 / 2 - 1);

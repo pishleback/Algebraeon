@@ -151,7 +151,11 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> CancellativeAdditiveMonoidSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -244,7 +248,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeMono
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeIntegralMonoidSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
@@ -281,8 +285,13 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
     }
 }
 
-impl<RS: FavoriteAssociateSignature, RSB: BorrowedStructure<RS>> FavoriteAssociateSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
     for MultiPolynomialStructure<RS, RSB>
+{
+}
+
+impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStructure<RS>>
+    FavoriteAssociateSignature for MultiPolynomialStructure<RS, RSB>
 {
     fn factor_fav_assoc(&self, mpoly: &Self::Set) -> (Self::Set, Self::Set) {
         match mpoly.terms.first() {
@@ -370,89 +379,30 @@ where
     }
 }
 
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// pub struct MultiPolynomialFactorOrderingStructure<
-//     Ring: RingSignature,
-//     RingB: BorrowedStructure<Ring>,
-// > {
-//     _coeff_ring: PhantomData<Ring>,
-//     coeff_ring: RingB,
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-//     MultiPolynomialFactorOrderingStructure<Ring, RingB>
-// {
-//     fn new(coeff_ring: RingB) -> Self {
-//         Self {
-//             _coeff_ring: PhantomData::default(),
-//             coeff_ring,
-//         }
-//     }
-
-//     fn coeff_ring(&self) -> &Ring {
-//         self.coeff_ring.borrow()
-//     }
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> Signature
-//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
-// {
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
-//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
-// {
-//     type Set = MultiPolynomial<Ring::Set>;
-
-//     fn is_element(&self, x: &Self::Set) -> bool {
-//         self.coeff_ring().multivariable_polynomials().is_element(x)
-//     }
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
-//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
-// {
-//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-//         self.coeff_ring().multivariable_polynomials().equal(a, b)
-//     }
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> OrdSignature
-//     for MultiPolynomialFactorOrderingStructure<Ring, RingB>
-// {
-//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-//         std::cmp::Ordering::Equal
-//     }
-// }
-
-impl<RS: UniqueFactorizationDomainSignature, RSB: BorrowedStructure<RS>>
-    UniqueFactorizationDomainSignature for MultiPolynomialStructure<RS, RSB>
+impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: BorrowedStructure<RS>>
+    UniqueFactorizationMonoidSignature for MultiPolynomialStructure<RS, RSB>
 {
-    // type FactorOrdering = MultiPolynomialFactorOrderingStructure<RS, RSB>;
+    type FactoredExponent = NaturalCanonicalStructure;
 
-    type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
-
-    fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
-        FactoredRingElementStructure::new(self)
+    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+        Natural::structure_ref()
     }
 
-    fn into_factorizations(self) -> Self::Factorizations<Self> {
-        FactoredRingElementStructure::new(self)
+    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+        Natural::structure()
     }
 
-    // fn factor_ordering(&self) -> Cow<Self::FactorOrdering> {
-    //     Cow::Owned(MultiPolynomialFactorOrderingStructure::new(
-    //         self.coeff_ring.clone(),
-    //     ))
-    // }
-
-    fn debug_try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         None
+    }
+
+    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+        self.nat_pow(a, k)
     }
 }
 
 impl<
-    RS: UniqueFactorizationDomainSignature
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -462,26 +412,25 @@ impl<
 > PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>
 where
     PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>: SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>
-        + UniqueFactorizationDomainSignature,
-    PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
+        + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
+    PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
+        + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     MultiPolynomialStructure<RS, RSB>: SetSignature<Set = MultiPolynomial<RS::Set>>
-        + UniqueFactorizationDomainSignature
+        + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + GreatestCommonDivisorSignature,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
-        factor_poly: impl Fn(&Polynomial<RS::Set>) -> Option<FactoredRingElement<Polynomial<RS::Set>>>,
+        factor_poly: impl Fn(&Polynomial<RS::Set>) -> Factored<Polynomial<RS::Set>, Natural>,
         factor_multipoly_coeff: impl Fn(
             &MultiPolynomial<RS::Set>,
-        )
-            -> Option<FactoredRingElement<MultiPolynomial<RS::Set>>>,
+        ) -> Factored<MultiPolynomial<RS::Set>, Natural>,
         mpoly: &<Self as SetSignature>::Set,
-    ) -> Option<FactoredRingElement<Polynomial<MultiPolynomial<RS::Set>>>> {
+    ) -> Factored<Polynomial<MultiPolynomial<RS::Set>>, Natural> {
         match |mpoly: &<Self as SetSignature>::Set| -> Option<Polynomial<RS::Set>> {
             let mut const_coeffs = vec![];
-            for coeff in mpoly.coeffs() {
-                const_coeffs.push(self.coeff_ring().as_constant(coeff)?);
+            for coeff in self.into_coeffs(mpoly.clone()) {
+                const_coeffs.push(self.coeff_ring().as_constant(&coeff)?);
             }
             Some(Polynomial::from_coeffs(const_coeffs))
         }(mpoly)
@@ -489,17 +438,15 @@ where
             // It is a polynomial with multipolynomial coefficients where all coefficients are constant
             // So we can defer to a univariate factoring algorithm
             Some(poly) => {
-                let (unit, factors) = factor_poly(&poly)?.into_unit_and_powers();
-                Some(
-                    self.factorizations().from_unit_and_factor_powers(
-                        unit.apply_map_into(MultiPolynomial::constant),
-                        factors
-                            .into_iter()
-                            .map(|(factor, power)| {
-                                (factor.apply_map_into(MultiPolynomial::constant), power)
-                            })
-                            .collect(),
-                    ),
+                let (unit, factors) = factor_poly(&poly).into_unit_and_powers().unwrap();
+                self.factorizations().new_unit_and_powers_unchecked(
+                    unit.apply_map_into(MultiPolynomial::constant),
+                    factors
+                        .into_iter()
+                        .map(|(factor, power)| {
+                            (factor.apply_map_into(MultiPolynomial::constant), power)
+                        })
+                        .collect(),
                 )
             }
             None => {
@@ -510,7 +457,7 @@ where
 }
 
 impl<
-    RS: UniqueFactorizationDomainSignature
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature
         + FiniteUnitsSignature
@@ -518,23 +465,21 @@ impl<
     RSB: BorrowedStructure<RS> + 'static,
 > MultiPolynomialStructure<RS, RSB>
 where
-    MultiPolynomialStructure<RS, RSB>:
-        SetSignature<Set = MultiPolynomial<RS::Set>> + UniqueFactorizationDomainSignature,
-    PolynomialStructure<RS, RSB>:
-        SetSignature<Set = Polynomial<RS::Set>> + UniqueFactorizationDomainSignature,
+    MultiPolynomialStructure<RS, RSB>: SetSignature<Set = MultiPolynomial<RS::Set>>
+        + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
+    PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
+        + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     for<'a> PolynomialStructure<Self, &'a Self>: SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>
-        + UniqueFactorizationDomainSignature,
+        + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
-        factor_coeff: Rc<dyn Fn(&RS::Set) -> Option<FactoredRingElement<RS::Set>>>,
-        factor_poly: Rc<
-            dyn Fn(&Polynomial<RS::Set>) -> Option<FactoredRingElement<Polynomial<RS::Set>>>,
-        >,
+        factor_coeff: Rc<dyn Fn(&RS::Set) -> Factored<RS::Set, Natural>>,
+        factor_poly: Rc<dyn Fn(&Polynomial<RS::Set>) -> Factored<Polynomial<RS::Set>, Natural>>,
         mpoly: &<Self as SetSignature>::Set,
-    ) -> Option<FactoredRingElement<MultiPolynomial<RS::Set>>> {
+    ) -> Factored<MultiPolynomial<RS::Set>, Natural> {
         if self.is_zero(mpoly) {
-            None
+            Factored::Zero
         } else {
             #[allow(clippy::single_match_else)]
             match mpoly.free_vars().into_iter().next() {
@@ -552,18 +497,17 @@ where
                                     factor_poly.clone(),
                                     &dehom_mpoly,
                                 )
-                                .unwrap()
-                                .into_unit_and_powers();
-                            Some(
-                                self.factorizations().from_unit_and_factor_powers(
-                                    self.homogenize(&unit, &free_var),
-                                    factors
-                                        .into_iter()
-                                        .map(|(factor, power)| {
-                                            (self.homogenize(&factor, &free_var), power)
-                                        })
-                                        .collect(),
-                                ),
+                                .into_unit_and_powers()
+                                .unwrap();
+
+                            self.factorizations().new_unit_and_powers_unchecked(
+                                self.homogenize(&unit, &free_var),
+                                factors
+                                    .into_iter()
+                                    .map(|(factor, power)| {
+                                        (self.homogenize(&factor, &free_var), power)
+                                    })
+                                    .collect(),
                             )
                         }
                         HomogeneousOfDegreeResult::No => {
@@ -585,18 +529,17 @@ where
                                     },
                                     &expanded_poly,
                                 )
-                                .unwrap()
-                                .into_unit_and_powers();
-                            Some(
-                                self.factorizations().from_unit_and_factor_powers(
-                                    poly_over_self.evaluate(&unit, &free_var),
-                                    factors
-                                        .into_iter()
-                                        .map(|(factor, power)| {
-                                            (poly_over_self.evaluate(&factor, &free_var), power)
-                                        })
-                                        .collect(),
-                                ),
+                                .into_unit_and_powers()
+                                .unwrap();
+
+                            self.factorizations().new_unit_and_powers_unchecked(
+                                poly_over_self.evaluate(&unit, &free_var),
+                                factors
+                                    .into_iter()
+                                    .map(|(factor, power)| {
+                                        (poly_over_self.evaluate(&factor, &free_var), power)
+                                    })
+                                    .collect(),
                             )
                         }
                         HomogeneousOfDegreeResult::Zero => unreachable!(),
@@ -605,17 +548,17 @@ where
                 None => {
                     // Just an element of the coefficient ring
                     let value = self.as_constant(mpoly).unwrap();
-                    let factored = factor_coeff(&value)?;
-                    let (unit, factors) = factored.into_unit_and_powers();
-                    Some(
-                        self.factorizations().from_unit_and_factor_powers(
+                    if let Some((unit, factors)) = factor_coeff(&value).into_unit_and_powers() {
+                        self.factorizations().new_unit_and_powers_unchecked(
                             MultiPolynomial::constant(unit),
                             factors
                                 .into_iter()
                                 .map(|(factor, power)| (MultiPolynomial::constant(factor), power))
                                 .collect(),
-                        ),
-                    )
+                        )
+                    } else {
+                        Factored::Zero
+                    }
                 }
             }
         }

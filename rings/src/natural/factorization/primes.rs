@@ -93,7 +93,7 @@ pub fn miller_rabin_primality_test(
 
 // https://cr.yp.to/papers/aks.pdf
 pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
-    let factorizations = Natural::structure().factorizations();
+    let factorizations = Natural::structure_ref().factorizations();
     match is_power_test(n) {
         IsPowerTestResult::Zero => PrimalityTestResult::Zero,
         IsPowerTestResult::One => PrimalityTestResult::One,
@@ -116,7 +116,9 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 if r < Natural::from(r0) {
                     continue;
                 }
-                match factorizations.is_primitive_root(n, &factorizations.new_prime(r.clone())) {
+                match factorizations
+                    .is_primitive_root(n, &factorizations.new_irreducible_unchecked(r.clone()))
+                {
                     factorization::IsPrimitiveRootResult::NonUnit => {
                         // n is divisible by r
                         return if *n == r {
@@ -460,7 +462,7 @@ pub fn primality_test(n: &Natural) -> PrimalityTestResult {
     }
 }
 
-pub(crate) fn is_prime(n: &Natural) -> bool {
+pub(crate) fn is_prime_nat(n: &Natural) -> bool {
     match primality_test(n) {
         PrimalityTestResult::Zero | PrimalityTestResult::One | PrimalityTestResult::Composite => {
             false

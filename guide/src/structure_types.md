@@ -19,7 +19,7 @@ The approach taken by Algebraeon to represent such sets with additional structur
    - `SemiRingSignature` so that `Integer`s can be added and multiplied modulo \\(n\\).
    - `RingSignature` so that `Integer`s can be subtracted modulo \\(n\\).
   
-In practice, this could look like
+In practice this looks like
 ```rust
 use algebraeon::nzq::{Integer, Natural};
 use algebraeon::rings::structure::*;
@@ -62,6 +62,12 @@ impl AdditiveMonoidSignature for IntegersModuloN {
         ((a + b) % &self.n).into()
     }
 
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.neg(a))
+    }
+}
+
+impl CancellativeAdditiveMonoidSignature for IntegersModuloN {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }

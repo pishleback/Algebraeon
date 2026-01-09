@@ -227,7 +227,7 @@ impl SquarefreePolyRealRoots {
         match &self.intervals[idx] {
             SquarefreePolyRealRootInterval::Rational(rat) => RealAlgebraic::Rational(rat.clone()),
             SquarefreePolyRealRootInterval::Real(a, b, _dir) => {
-                let (_unit, factors) = self.poly_sqfr.factor().unwrap().into_unit_and_powers();
+                let (_unit, factors) = self.poly_sqfr.factor().into_unit_and_powers().unwrap();
                 for (factor, k) in factors.into_iter() {
                     // println!("factor = {}", factor);
                     debug_assert_eq!(k, Natural::ONE); //square free
@@ -531,10 +531,10 @@ pub fn identify_real_root(
     mut interval_gen: impl Iterator<Item = (Rational, Rational)>,
 ) -> RealAlgebraic {
     let poly = poly.primitive_squarefree_part();
-    let factored_poly = poly.factor().unwrap();
-    let polys = Polynomial::<Integer>::structure()
-        .into_factorizations()
-        .to_powers(&factored_poly)
+    let factored_poly = poly.factor();
+    let polys = factored_poly
+        .into_powers()
+        .unwrap()
         .into_iter()
         .map(|(f, _k)| f)
         .collect::<Vec<_>>();
@@ -591,7 +591,6 @@ impl Polynomial<Integer> {
         //and number of positive real roots is less than this number
         let nonzero_coeffs = self
             .coeffs()
-            .into_iter()
             .filter(|c| c != &&Integer::zero())
             .collect::<Vec<_>>();
         let mut v = 0;
@@ -636,7 +635,12 @@ impl Polynomial<Integer> {
                 //bisect
                 //q_small(x) = 2^n q(x/2)
                 let q_small = q.apply_map_with_powers(|(i, coeff)| {
-                    coeff * Integer::from(Natural::TWO << (q.degree().unwrap() - i))
+                    if coeff == &Integer::ZERO {
+                        // Handle ZERO specially since q may have zero coefficients in higher degrees which could otherwise cause a subtract overflow below
+                        Integer::ZERO
+                    } else {
+                        coeff * Integer::from(Natural::TWO << (q.degree().unwrap() - i))
+                    }
                 });
                 l.push((
                     (c.clone() << 1) + Natural::from(1u8),
@@ -884,15 +888,12 @@ impl Polynomial<Integer> {
         include_b: bool,
     ) -> Vec<RealAlgebraic> {
         assert_ne!(self, &Self::zero());
-        let factors = self.factor().unwrap();
+        let factors = self.factor();
         let mut roots = vec![];
-        for (factor, k) in Polynomial::<Integer>::structure()
-            .factorizations()
-            .to_powers(&factors)
-        {
+        for (factor, k) in factors.into_powers().unwrap() {
             for root in factor.real_roots_irreducible(a, b, include_a, include_b) {
                 let mut i = Natural::from(0u8);
-                while &i < k {
+                while i < k {
                     roots.push(root.clone());
                     i += Natural::from(1u8);
                 }

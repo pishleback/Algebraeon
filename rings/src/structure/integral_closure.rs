@@ -228,7 +228,7 @@ where
 
     fn factor_prime_ideal(
         &self,
-        prime_ideal: DedekindDomainPrimeIdeal<<Self::IdealsZ as SetSignature>::Set>,
+        prime_ideal: <Self::IdealsZ as SetSignature>::Set,
     ) -> DedekindExtensionIdealFactorsAbovePrime<
         <Self::IdealsZ as SetSignature>::Set,
         <Self::IdealsR as SetSignature>::Set,
@@ -246,9 +246,11 @@ where
 
     fn padic_k_element_valuation(
         &self,
-        prime: &DedekindDomainPrimeIdeal<<Self::IdealsR as SetSignature>::Set>,
+        prime: &<Self::IdealsR as SetSignature>::Set,
         a: &<Self::K as SetSignature>::Set,
     ) -> Valuation {
+        #[cfg(debug_assertions)]
+        assert_ne!(self.r_ideals().try_is_irreducible(prime), Some(false));
         let d = self.integralize_multiplier(a);
         let m = self.k_field().mul(a, &self.z_to_k().image(&d));
         self.r_ideals()
@@ -263,9 +265,14 @@ where
     #[allow(non_snake_case)]
     fn is_S_integral(
         &self,
-        S: Vec<&DedekindDomainPrimeIdeal<<Self::IdealsR as SetSignature>::Set>>,
+        S: Vec<&<Self::IdealsR as SetSignature>::Set>,
         a: &<Self::K as SetSignature>::Set,
     ) -> bool {
+        #[cfg(debug_assertions)]
+        for s in &S {
+            assert_ne!(self.r_ideals().try_is_irreducible(s), Some(false));
+        }
+
         let d = self.integralize_multiplier(a);
         let m = self.k_field().mul(a, &self.z_to_k().image(&d));
         // for each prime factor P of d not in S, check if valuation_P(m) ≥ valuation_P(d)
@@ -280,10 +287,9 @@ where
 
         for (prime, _) in d_factorization.unwrap().into_powers() {
             // Skip primes in S
-            if S.iter().any(|s_ideal| {
-                self.r_ideals()
-                    .equal(&(*s_ideal).clone().into_ideal(), prime.ideal())
-            }) {
+            if S.iter()
+                .any(|s_ideal| self.r_ideals().equal(s_ideal, &prime))
+            {
                 continue;
             }
 
@@ -299,18 +305,48 @@ where
 
         true
     }
+
+    fn expand_extension_ideal_factorization(
+        &self,
+        f: &DedekindExtensionIdealFactorization<
+            <Self::IdealsZ as SetSignature>::Set,
+            <Self::IdealsR as SetSignature>::Set,
+        >,
+    ) -> Factored<<Self::IdealsR as SetSignature>::Set, Natural> {
+        self.r_ideals()
+            .factorizations()
+            .new_unit_and_powers_unchecked(self.r_ideals().one(), f.clone().into_powers())
+    }
+
+    /*
+      pub fn into_full_factorization(self) -> IdealR {
+        DedekindDomainIdealFactorization::from_factor_powers(
+            self.factors
+                .into_iter()
+                .map(|f| (f.prime_ideal, f.power))
+                .collect(),
+        )
+    }
+
+     pub fn into_full_factorization(self) -> Factored<<IdealR as SetSignature>::Set, Natural> {
+
+        Factored::NonZero(NonZeroFactored { unit: , powers: () })
+
+        Factored:: ::from_factor_powers(self.into_powers())
+    }
+    */
 }
 
 #[derive(Debug, Clone)]
 pub struct DedekindExtensionIdealFactorsAbovePrimeFactor<Ideal> {
-    pub prime_ideal: DedekindDomainPrimeIdeal<Ideal>,
+    pub prime_ideal: Ideal,
     pub residue_class_degree: usize,
     pub power: Natural,
 }
 
 #[derive(Debug, Clone)]
 pub struct DedekindExtensionIdealFactorsAbovePrime<IdealZ, IdealR> {
-    base_prime: DedekindDomainPrimeIdeal<IdealZ>,
+    base_prime: IdealZ,
     // All factors lie above base_prime
     // All powers are >= 1
     factors: Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<IdealR>>,
@@ -318,7 +354,7 @@ pub struct DedekindExtensionIdealFactorsAbovePrime<IdealZ, IdealR> {
 
 impl<IdealZ, IdealR> DedekindExtensionIdealFactorsAbovePrime<IdealZ, IdealR> {
     pub fn from_powers_unchecked(
-        base_prime: DedekindDomainPrimeIdeal<IdealZ>,
+        base_prime: IdealZ,
         factors: Vec<DedekindExtensionIdealFactorsAbovePrimeFactor<IdealR>>,
     ) -> Self {
         for f in &factors {
@@ -334,24 +370,15 @@ impl<IdealZ, IdealR> DedekindExtensionIdealFactorsAbovePrime<IdealZ, IdealR> {
         self.factors
     }
 
-    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<IdealR>, Natural)> {
+    pub fn into_powers(self) -> Vec<(IdealR, Natural)> {
         self.factors
             .into_iter()
             .map(|f| (f.prime_ideal, f.power))
             .collect()
     }
 
-    pub fn unique_prime_factors(&self) -> Vec<&DedekindDomainPrimeIdeal<IdealR>> {
+    pub fn unique_prime_factors(&self) -> Vec<&IdealR> {
         self.factors.iter().map(|f| &f.prime_ideal).collect()
-    }
-
-    pub fn into_full_factorization(self) -> DedekindDomainIdealFactorization<IdealR> {
-        DedekindDomainIdealFactorization::from_factor_powers(
-            self.factors
-                .into_iter()
-                .map(|f| (f.prime_ideal, f.power))
-                .collect(),
-        )
     }
 
     /// Do any prime factors appear with multiplicity greater than 1?
@@ -387,15 +414,11 @@ impl<IdealZ, IdealR> DedekindExtensionIdealFactorization<IdealZ, IdealR> {
         }
     }
 
-    pub fn into_powers(self) -> Vec<(DedekindDomainPrimeIdeal<IdealR>, Natural)> {
+    pub fn into_powers(self) -> Vec<(IdealR, Natural)> {
         #[allow(clippy::redundant_closure_for_method_calls)]
         self.factors_above_primes
             .into_iter()
             .flat_map(|factors| factors.into_powers())
             .collect()
-    }
-
-    pub fn into_full_factorization(self) -> DedekindDomainIdealFactorization<IdealR> {
-        DedekindDomainIdealFactorization::from_factor_powers(self.into_powers())
     }
 }

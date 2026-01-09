@@ -110,7 +110,9 @@ impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for ConwayFiniteFieldStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -160,11 +162,13 @@ impl MultiplicativeMonoidUnitsSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl IntegralDomainSignature for ConwayFiniteFieldStructure {
+impl MultiplicativeIntegralMonoidSignature for ConwayFiniteFieldStructure {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         self.structure.try_div(a, b)
     }
 }
+
+impl IntegralDomainSignature for ConwayFiniteFieldStructure {}
 
 impl FieldSignature for ConwayFiniteFieldStructure {}
 
