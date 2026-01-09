@@ -6,6 +6,7 @@ use crate::{
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
+use std::hash::Hash;
 use std::{
     borrow::{Borrow, Cow},
     fmt::Display,
@@ -17,12 +18,6 @@ pub struct Polynomial<Set> {
     //vec![c0, c1, c2, c3, ..., cn] represents the polynomial c0 + c1*x + c2*x^2 + c3*x^3 + ... + cn * x^n
     //if non-empty, the last item must not be zero
     coeffs: Vec<Set>,
-}
-
-impl<Set: std::hash::Hash> std::hash::Hash for Polynomial<Set> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.coeffs.hash(state);
-    }
 }
 
 impl<Set> Polynomial<Set> {
@@ -1412,6 +1407,18 @@ where
 impl<R: MetaType> Eq for Polynomial<R> where
     R::Signature: SemiRingEqSignature + CancellativeAdditiveMonoidSignature
 {
+}
+
+impl<R: MetaType + Hash> Hash for Polynomial<R>
+where
+    R::Signature: SemiRingEqSignature + CancellativeAdditiveMonoidSignature,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        Self::structure()
+            .reduce_poly(self.clone())
+            .coeffs
+            .hash(state);
+    }
 }
 
 impl<R: MetaType> Polynomial<R>
