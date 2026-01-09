@@ -4,11 +4,11 @@ use crate::{
         QuadraticNumberFieldStructure,
     },
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, CharZeroRingSignature,
-        CharacteristicSignature, DedekindDomainSignature, IntegralDomainSignature,
-        MetaCharZeroRing, MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-        MultiplicativeMonoidUnitsSignature, RingSignature, SemiModuleSignature, SemiRingSignature,
-        SetWithZeroSignature,
+        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
+        CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
+        IntegralDomainSignature, MetaCharZeroRing, MultiplicativeIntegralMonoidSignature,
+        MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RingSignature,
+        SemiModuleSignature, SemiRingSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
@@ -91,7 +91,11 @@ impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticRingOfInteger
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<D: BorrowedSet<Integer>> CancellativeAdditiveMonoidSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }

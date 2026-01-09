@@ -151,7 +151,11 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> CancellativeAdditiveMonoidSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
@@ -425,8 +429,8 @@ where
     ) -> Factored<Polynomial<MultiPolynomial<RS::Set>>, Natural> {
         match |mpoly: &<Self as SetSignature>::Set| -> Option<Polynomial<RS::Set>> {
             let mut const_coeffs = vec![];
-            for coeff in mpoly.coeffs() {
-                const_coeffs.push(self.coeff_ring().as_constant(coeff)?);
+            for coeff in self.into_coeffs(mpoly.clone()) {
+                const_coeffs.push(self.coeff_ring().as_constant(&coeff)?);
             }
             Some(Polynomial::from_coeffs(const_coeffs))
         }(mpoly)

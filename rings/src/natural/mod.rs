@@ -20,7 +20,9 @@ impl AdditiveMonoidSignature for NaturalCanonicalStructure {
         let z = self.zero();
         if a == &z { Some(self.zero()) } else { None }
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for NaturalCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         a.try_sub(b)
     }

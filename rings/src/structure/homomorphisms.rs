@@ -99,7 +99,12 @@ mod range_module {
         fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
             Some(self.neg(a))
         }
+    }
 
+    impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+        CancellativeAdditiveMonoidSignature
+        for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+    {
         fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
             Some(self.sub(a, b))
         }

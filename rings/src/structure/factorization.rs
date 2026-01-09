@@ -1,9 +1,9 @@
 use crate::structure::{
-    AdditiveMonoidEqSignature, FavoriteAssociateSignature, FieldSignature,
+    CancellativeAdditiveMonoidSignature, FavoriteAssociateSignature, FieldSignature,
     MetaMultiplicativeMonoid, MultiplicativeGroupSignature, MultiplicativeIntegralMonoidSignature,
     MultiplicativeMonoidSignature, MultiplicativeMonoidSquareOpsSignature,
     MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature, SemiRingSignature,
-    SetWithZeroSignature,
+    SetWithZeroAndEqSignature, SetWithZeroSignature,
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::{
@@ -46,6 +46,10 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> NonZeroFactored<Objec
     pub fn distinct_irreducibles<'a>(&'a self) -> Vec<&'a ObjectSet> {
         self.powers.iter().map(|(p, _)| p).collect()
     }
+
+    pub fn into_distinct_irreducibles(self) -> Vec<ObjectSet> {
+        self.powers.into_iter().map(|(p, _)| p).collect()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -86,6 +90,13 @@ where
 }
 
 impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, ExponentSet> {
+    pub fn is_zero(&self) -> bool {
+        match self {
+            Factored::Zero => true,
+            Factored::NonZero(_) => false,
+        }
+    }
+
     pub fn unwrap_nonzero(self) -> NonZeroFactored<ObjectSet, ExponentSet> {
         match self {
             Factored::Zero => panic!(),
@@ -143,13 +154,20 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
             Factored::NonZero(a) => Some(a.distinct_irreducibles()),
         }
     }
+
+    pub fn into_distinct_irreducibles(self) -> Option<Vec<ObjectSet>> {
+        match self {
+            Factored::Zero => None,
+            Factored::NonZero(a) => Some(a.into_distinct_irreducibles()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FactoringStructure<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > {
     _objects: PhantomData<Object>,
@@ -161,7 +179,7 @@ pub struct FactoringStructure<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -187,7 +205,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -343,7 +361,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > Signature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -352,7 +370,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > SetSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -395,7 +413,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > EqSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -412,7 +430,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > SetWithZeroSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -424,7 +442,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > MultiplicativeMonoidSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -450,7 +468,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > MultiplicativeMonoidUnitsSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -474,7 +492,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > MultiplicativeIntegralMonoidSignature
     for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
@@ -489,7 +507,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -502,6 +520,13 @@ impl<
 
     pub fn new_unit_unchecked(&self, unit: Object::Set) -> Factored<Object::Set, Exponent::Set> {
         self.new_unit_and_powers_unchecked(unit, vec![])
+    }
+
+    pub fn new_powers_unchecked(
+        &self,
+        powers: Vec<(Object::Set, Exponent::Set)>,
+    ) -> Factored<Object::Set, Exponent::Set> {
+        self.new_unit_and_powers_unchecked(self.objects().one(), powers)
     }
 
     pub fn new_unit_and_powers_unchecked(
@@ -746,7 +771,7 @@ impl<
 pub trait UniqueFactorizationMonoidSignature:
     MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature
 {
-    type FactoredExponent: SemiRingSignature + OrdSignature;
+    type FactoredExponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature;
 
     fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent;
     fn into_factorization_exponents(self) -> Self::FactoredExponent;
@@ -769,6 +794,8 @@ pub trait UniqueFactorizationMonoidSignature:
         k: &<Self::FactoredExponent as SetSignature>::Set,
     ) -> Self::Set;
 
+    /// This should determine whether a is irreducible _without_ factoring it.
+    /// Factoring a is not allowed because this function is used by factorizations to validate their state.
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
 }
 pub trait MetaUniqueFactorizationMonoid: MetaType
@@ -920,8 +947,8 @@ pub enum FindFactorResult<Element> {
 }
 
 pub fn factorize_by_find_factor<
-    Exponent: SemiRingSignature + OrdSignature,
-    RS: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent> + AdditiveMonoidEqSignature,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent> + SetWithZeroAndEqSignature,
 >(
     ring: &RS,
     elem: RS::Set,

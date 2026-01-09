@@ -141,7 +141,11 @@ impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructu
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<Field: FieldSignature> CancellativeAdditiveMonoidSignature
+    for QuaternionAlgebraStructure<Field>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }

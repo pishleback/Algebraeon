@@ -2,8 +2,8 @@ use crate::{
     algebraic_number_field::{AlgebraicNumberFieldSignature, FullRankSublatticeWithBasisSignature},
     matrix::Matrix,
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, FiniteRankFreeRingExtension,
-        SetWithZeroSignature,
+        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
+        FiniteRankFreeRingExtension, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::Integer;
@@ -147,7 +147,11 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveMonoidS
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> CancellativeAdditiveMonoidSignature
+    for FullRankSublatticeWithBasis<K, KB>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }

@@ -2,7 +2,7 @@ use super::{Canvas2DItem, Canvas2DItemWgpu};
 use crate::{canvas::WgpuState, canvas2d::Canvas2D};
 use algebraeon_rings::{
     polynomial::Polynomial,
-    structure::{ComplexSubsetSignature, MetaComplexSubset},
+    structure::{ComplexSubsetSignature, MetaComplexSubset, SemiRingEqSignature},
 };
 use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, TextureView, util::DeviceExt};
 
@@ -55,7 +55,7 @@ struct PolynomialPlot {
 impl PolynomialPlot {
     fn new<MetaRing: MetaComplexSubset>(p: Polynomial<MetaRing>) -> Self
     where
-        MetaRing::Signature: ComplexSubsetSignature,
+        MetaRing::Signature: ComplexSubsetSignature + SemiRingEqSignature,
     {
         let coeffs = p
             .into_coeffs()
@@ -246,7 +246,7 @@ impl Canvas2DItemWgpu for PolynomialWgpu {
 impl Canvas2D {
     pub fn plot_complex_polynomial<MetaRing: MetaComplexSubset>(&mut self, p: Polynomial<MetaRing>)
     where
-        MetaRing::Signature: ComplexSubsetSignature,
+        MetaRing::Signature: ComplexSubsetSignature + SemiRingEqSignature,
     {
         self.add_item(PolynomialPlot::new(p));
     }

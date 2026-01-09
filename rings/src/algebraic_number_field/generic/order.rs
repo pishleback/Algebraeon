@@ -9,12 +9,12 @@ use crate::{
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidEqSignature, AdditiveMonoidSignature,
+        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
         FinitelyFreeModuleSignature, IntegralDomainSignature,
         MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
         MultiplicativeMonoidUnitsSignature, RingSignature, RingToIdealsSignature,
-        SemiModuleSignature, SemiRingSignature, SetWithZeroSignature,
+        SemiModuleSignature, SemiRingSignature, SetWithZeroAndEqSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
@@ -197,7 +197,11 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    CancellativeAdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }

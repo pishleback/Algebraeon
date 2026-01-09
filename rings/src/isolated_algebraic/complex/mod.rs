@@ -434,11 +434,11 @@ impl ComplexAlgebraicRoot {
                     }
 
                     // eg: c + bx + ax^2 = c + x(b + x(a))
-                    let mut coeffs = poly.coeffs().into_iter().rev();
+                    let mut coeffs = poly.clone().into_coeffs().into_iter().rev();
                     let lc = coeffs.next().unwrap();
                     let mut ans = mul_box_rat(
                         (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
-                        lc,
+                        &lc,
                     );
                     for (i, c) in coeffs.enumerate() {
                         if i != 0 {
@@ -447,7 +447,7 @@ impl ComplexAlgebraicRoot {
                                 (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
                             );
                         }
-                        ans = add_box_rat((&ans.0, &ans.1, &ans.2, &ans.3), c);
+                        ans = add_box_rat((&ans.0, &ans.1, &ans.2, &ans.3), &c);
                     }
 
                     ans
@@ -700,7 +700,9 @@ impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }

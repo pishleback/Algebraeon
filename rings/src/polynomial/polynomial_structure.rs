@@ -1,5 +1,8 @@
-use super::{super::structure::*, Polynomial};
-use crate::matrix::*;
+use super::super::structure::*;
+use crate::{
+    matrix::*,
+    parsing::{parse_integer_polynomial, parse_rational_polynomial},
+};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
@@ -8,6 +11,90 @@ use std::{
     fmt::Display,
     marker::PhantomData,
 };
+
+#[derive(Debug, Clone)]
+pub struct Polynomial<Set> {
+    //vec![c0, c1, c2, c3, ..., cn] represents the polynomial c0 + c1*x + c2*x^2 + c3*x^3 + ... + cn * x^n
+    //if non-empty, the last item must not be zero
+    coeffs: Vec<Set>,
+}
+
+impl<Set: std::hash::Hash> std::hash::Hash for Polynomial<Set> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.coeffs.hash(state);
+    }
+}
+
+impl<Set> Polynomial<Set> {
+    pub fn from_coeffs(coeffs: Vec<impl Into<Set>>) -> Self {
+        #[allow(clippy::redundant_closure_for_method_calls)]
+        Self {
+            coeffs: coeffs.into_iter().map(|x| x.into()).collect(),
+        }
+    }
+
+    pub fn constant(x: Set) -> Self {
+        Self::from_coeffs(vec![x])
+    }
+
+    pub fn apply_map<ImgSet>(&self, f: impl Fn(&Set) -> ImgSet) -> Polynomial<ImgSet> {
+        Polynomial::from_coeffs(self.coeffs.iter().map(f).collect())
+    }
+
+    pub fn apply_map_into<ImgSet>(self, f: impl Fn(Set) -> ImgSet) -> Polynomial<ImgSet> {
+        Polynomial::from_coeffs(self.coeffs.into_iter().map(f).collect())
+    }
+
+    pub fn apply_map_with_powers<ImgSet>(
+        &self,
+        f: impl Fn((usize, &Set)) -> ImgSet,
+    ) -> Polynomial<ImgSet> {
+        Polynomial::from_coeffs(self.coeffs.iter().enumerate().map(f).collect())
+    }
+
+    pub fn apply_map_into_with_powers<ImgSet>(
+        self,
+        f: impl Fn((usize, Set)) -> ImgSet,
+    ) -> Polynomial<ImgSet> {
+        Polynomial::from_coeffs(self.coeffs.into_iter().enumerate().map(f).collect())
+    }
+}
+
+pub trait PolynomialFromStr: Sized {
+    type Err;
+
+    fn from_str(polynomial_str: &str, var: &str) -> Result<Self, Self::Err>;
+}
+
+impl PolynomialFromStr for Polynomial<Natural> {
+    type Err = ();
+
+    fn from_str(polynomial_str: &str, var: &str) -> Result<Self, ()> {
+        Ok(Self::from_coeffs(
+            Polynomial::<Integer>::from_str(polynomial_str, var)?
+                .into_coeffs()
+                .into_iter()
+                .map(Natural::try_from)
+                .collect::<Result<Vec<_>, _>>()?,
+        ))
+    }
+}
+
+impl PolynomialFromStr for Polynomial<Integer> {
+    type Err = ();
+
+    fn from_str(polynomial_str: &str, var: &str) -> Result<Self, ()> {
+        parse_integer_polynomial(polynomial_str, var).map_err(|_| ())
+    }
+}
+
+impl PolynomialFromStr for Polynomial<Rational> {
+    type Err = ();
+
+    fn from_str(polynomial_str: &str, var: &str) -> Result<Self, ()> {
+        parse_rational_polynomial(polynomial_str, var).map_err(|_| ())
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct PolynomialStructure<RS: Signature, RSB: BorrowedStructure<RS>> {
@@ -144,7 +231,6 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
             coeffs.push(b.coeffs[i].borrow().to_owned());
             i += 1;
         }
-
         Polynomial::from_coeffs(coeffs)
     }
 
@@ -171,7 +257,9 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
+    PolynomialStructure<RS, RSB>
+{
     /*
     The idea behind Karatsuba is to reduce the number of multiplications needed
 
@@ -280,29 +368,31 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignatur
     for PolynomialStructure<RS, RSB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.reduce_poly(self.add_impl(a, b))
+        self.add_impl(a, b)
     }
 
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(Polynomial::from_coeffs(
-            a.coeffs()
-                .into_iter()
+            a.coeffs
+                .iter()
                 .map(|c| self.coeff_ring().try_neg(c))
                 .collect::<Option<_>>()?,
         ))
     }
+}
 
+impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
+    CancellativeAdditiveMonoidSignature for PolynomialStructure<RS, RSB>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(
-            self.reduce_poly(Polynomial::from_coeffs(
-                (0..std::cmp::max(a.coeffs.len(), b.coeffs.len()))
-                    .map(|i| {
-                        self.coeff_ring()
-                            .try_sub(self.coeff(a, i).as_ref(), self.coeff(b, i).as_ref())
-                    })
-                    .collect::<Option<_>>()?,
-            )),
-        )
+        Some(Polynomial::from_coeffs(
+            (0..std::cmp::max(a.coeffs.len(), b.coeffs.len()))
+                .map(|i| {
+                    self.coeff_ring()
+                        .try_sub(self.coeff(a, i).as_ref(), self.coeff(b, i).as_ref())
+                })
+                .collect::<Option<_>>()?,
+        ))
     }
 }
 
@@ -310,12 +400,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     for PolynomialStructure<RS, RSB>
 {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        Polynomial::from_coeffs(
-            a.coeffs()
-                .into_iter()
-                .map(|c| self.coeff_ring().neg(c))
-                .collect(),
-        )
+        Polynomial::from_coeffs(a.coeffs.iter().map(|c| self.coeff_ring().neg(c)).collect())
     }
 
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -338,11 +423,8 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSi
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.reduce_poly(if let Some(mul) = self.mul_karatsuba(a, b) {
-            mul
-        } else {
-            self.mul_naive(a, b)
-        })
+        // self.mul_karatsuba(a, b)
+        self.reduce_poly(self.mul_naive(a, b))
     }
 }
 
@@ -386,7 +468,27 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RingSignature
 {
 }
 
+impl<R: MetaType> Polynomial<R>
+where
+    R::Signature: SemiRingEqSignature,
+{
+    pub fn into_coeffs(self) -> Vec<R> {
+        Self::structure().into_coeffs(self)
+    }
+}
+
 impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+    pub fn into_coeffs(&self, a: Polynomial<RS::Set>) -> Vec<RS::Set> {
+        self.reduce_poly(a).coeffs
+    }
+
+    pub fn num_coeffs(&self, p: &Polynomial<RS::Set>) -> usize {
+        match self.degree(p) {
+            Some(n) => n + 1,
+            None => 0,
+        }
+    }
+
     pub fn reduce_poly(&self, mut a: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
         loop {
             if a.coeffs.is_empty() {
@@ -451,7 +553,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
         // f(x) = a + bx + cx^2 + dx^3
         // evaluate as f(x) = a + x(b + x(c + x(d)))
         let mut y = self.coeff_ring().zero();
-        for c in p.coeffs().into_iter().rev() {
+        for c in p.coeffs.iter().rev() {
             self.coeff_ring().mul_mut(&mut y, x);
             self.coeff_ring().add_mut(&mut y, c);
         }
@@ -461,10 +563,10 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
     /// evaluate p(x^k)
     pub fn evaluate_at_var_pow(&self, p: Polynomial<RS::Set>, k: usize) -> Polynomial<RS::Set> {
         if k == 0 {
-            Polynomial::constant(self.coeff_ring().sum(p.coeffs()))
+            Polynomial::constant(self.coeff_ring().sum(p.coeffs))
         } else {
             let mut coeffs = vec![];
-            for (i, c) in p.into_coeffs().into_iter().enumerate() {
+            for (i, c) in p.coeffs.into_iter().enumerate() {
                 if i != 0 {
                     for _j in 0..(k - 1) {
                         coeffs.push(self.coeff_ring().zero());
@@ -501,7 +603,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
 
     pub fn eval_var_pow(&self, p: &Polynomial<RS::Set>, n: usize) -> Polynomial<RS::Set> {
         if n == 0 {
-            Polynomial::constant(self.coeff_ring().sum(p.coeffs()))
+            Polynomial::constant(self.coeff_ring().sum(p.coeffs.iter().collect()))
         } else {
             let gap = n - 1;
             let mut coeffs = vec![];
@@ -524,13 +626,6 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
                 .map(|c| self.coeff_ring().mul(c, x))
                 .collect(),
         ))
-    }
-
-    pub fn num_coeffs(&self, p: &Polynomial<RS::Set>) -> usize {
-        match self.degree(p) {
-            Some(n) => n + 1,
-            None => 0,
-        }
     }
 
     //zero -> None
@@ -1201,8 +1296,8 @@ pub fn factor_primitive_fof<
     let poly_ring = PolynomialStructure::new(ring.clone());
 
     let div = fof_inclusion.domain().lcm_list(
-        p.coeffs()
-            .into_iter()
+        p.coeffs
+            .iter()
             .map(|c| fof_inclusion.denominator(c))
             .collect(),
     );
@@ -1429,6 +1524,12 @@ where
 mod tests {
     use super::*;
     use crate::finite_fields::quaternary_field::*;
+
+    #[test]
+    fn nat_poly_display() {
+        let p = Polynomial::<Natural>::from_coeffs(vec![Natural::ONE, Natural::ONE, Natural::ONE]);
+        println!("{}", p);
+    }
 
     #[test]
     fn test_constant_var_pow() {

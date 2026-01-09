@@ -275,11 +275,11 @@ where
             //c = c^{1/p}
             let p = self.poly_ring.coeff_ring().characteristic_and_power().0;
             let mut reduced_c_coeffs = vec![];
-            for (k, coeff) in c.coeffs().into_iter().enumerate() {
+            for (k, coeff) in self.poly_ring.into_coeffs(c).into_iter().enumerate() {
                 if Natural::from(k) % &p == Natural::ZERO {
                     reduced_c_coeffs.push(coeff.clone());
                 } else {
-                    debug_assert!(self.poly_ring.coeff_ring().is_zero(coeff));
+                    debug_assert!(self.poly_ring.coeff_ring().is_zero(&coeff));
                 }
             }
             let reduced_c: Polynomial<<FS as SetSignature>::Set> =

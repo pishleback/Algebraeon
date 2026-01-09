@@ -76,7 +76,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
         Integer::lcm_list(
             self.inbound_finite_dimensional_rational_extension()
                 .min_poly(a)
-                .coeffs()
+                .into_coeffs()
                 .into_iter()
                 .map(|c| Integer::from(c.denominator()))
                 .collect(),

@@ -3,9 +3,9 @@ use crate::{
     algebraic_number_field::AlgebraicNumberFieldSignature,
     module::finitely_free_module::RingToFinitelyFreeModuleSignature,
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, FiniteRankFreeRingExtension,
-        FinitelyFreeModuleSignature, MultiplicativeMonoidSignature, SemiModuleSignature,
-        SetWithZeroSignature,
+        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
+        FiniteRankFreeRingExtension, FinitelyFreeModuleSignature, MultiplicativeMonoidSignature,
+        SemiModuleSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
@@ -103,7 +103,11 @@ impl<ANF: AlgebraicNumberFieldSignature> AdditiveMonoidSignature for QuaternionO
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl<ANF: AlgebraicNumberFieldSignature> CancellativeAdditiveMonoidSignature
+    for QuaternionOrderZBasis<ANF>
+{
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }

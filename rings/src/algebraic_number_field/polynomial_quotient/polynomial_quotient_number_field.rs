@@ -5,11 +5,12 @@ use crate::{
         Polynomial, PolynomialQuotientRingStructure, PolynomialStructure, ToPolynomialSignature,
     },
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidEqSignature, CharZeroFieldSignature,
-        FactoringMonoidSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
+        AdditiveGroupSignature, CharZeroFieldSignature, FactoringMonoidSignature,
+        FiniteDimensionalFieldExtension, FreeModuleSignature,
         IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoid, MetaFactoringMonoid,
         MetaMultiplicativeMonoid, MultiplicativeIntegralMonoidSignature, PrincipalRationalMap,
         RingHomomorphism, RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
+        SetWithZeroAndEqSignature,
     },
 };
 use algebraeon_nzq::{
@@ -139,7 +140,7 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
             return false;
         }
         self.min_poly(a)
-            .coeffs()
+            .into_coeffs()
             .into_iter()
             .all(|c| c.denominator() == Natural::ONE)
     }

@@ -590,13 +590,14 @@ impl Polynomial<Integer> {
         //equals the number of strictly positive real roots modulo 2
         //and number of positive real roots is less than this number
         let nonzero_coeffs = self
-            .coeffs()
+            .clone()
+            .into_coeffs()
             .into_iter()
-            .filter(|c| c != &&Integer::zero())
+            .filter(|c| c != &Integer::zero())
             .collect::<Vec<_>>();
         let mut v = 0;
         for i in 0..nonzero_coeffs.len() - 1 {
-            if (nonzero_coeffs[i] < &Integer::ZERO) != (nonzero_coeffs[i + 1] < &Integer::ZERO) {
+            if (nonzero_coeffs[i] < Integer::ZERO) != (nonzero_coeffs[i + 1] < Integer::ZERO) {
                 v += 1;
             }
         }

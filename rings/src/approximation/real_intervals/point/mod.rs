@@ -5,8 +5,8 @@ use crate::{
     },
     continued_fraction::{SimpleContinuedFraction, ToSimpleContinuedFractionSignature},
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, ComplexSubsetSignature,
-        MetaMultiplicativeMonoidUnits, MetaRealRounding, MetaRealSubset,
+        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
+        ComplexSubsetSignature, MetaMultiplicativeMonoidUnits, MetaRealRounding, MetaRealSubset,
         MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RealRoundingSignature,
         RealSubsetSignature, RingSignature, SemiRingSignature, SetWithZeroSignature,
     },
@@ -222,7 +222,9 @@ impl AdditiveMonoidSignature for RealApproximatePointCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for RealApproximatePointCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }

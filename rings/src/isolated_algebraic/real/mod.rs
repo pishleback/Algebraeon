@@ -290,14 +290,14 @@ impl RealAlgebraicRoot {
                     }
 
                     // eg: c + bx + ax^2 = c + x(b + x(a))
-                    let mut coeffs = poly.coeffs().into_iter().rev();
+                    let mut coeffs = poly.clone().into_coeffs().into_iter().rev();
                     let lc = coeffs.next().unwrap();
-                    let mut ans = mul_interval_rat((&self.tight_a, &self.tight_b), lc);
+                    let mut ans = mul_interval_rat((&self.tight_a, &self.tight_b), &lc);
                     for (i, c) in coeffs.enumerate() {
                         if i != 0 {
                             ans = mul_intervals((&ans.0, &ans.1), (&self.tight_a, &self.tight_b));
                         }
-                        ans = add_interval_rat((&ans.0, &ans.1), c);
+                        ans = add_interval_rat((&ans.0, &ans.1), &c);
                     }
 
                     ans
@@ -504,7 +504,9 @@ impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
+}
 
+impl CancellativeAdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }

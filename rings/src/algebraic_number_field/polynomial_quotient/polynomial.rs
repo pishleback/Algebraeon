@@ -14,8 +14,9 @@ fn double_poly_to_row(
     let rat_poly_poly = Rational::structure().into_polynomials().into_polynomials();
 
     debug_assert!(rat_poly_poly.num_coeffs(&a) <= outer_poly_len);
-    for c in a.coeffs() {
-        debug_assert!(c.num_coeffs() <= inner_poly_len);
+    #[cfg(debug_assertions)]
+    for c in a.clone().into_coeffs() {
+        assert!(c.num_coeffs() <= inner_poly_len);
     }
     Matrix::from_rows(vec![
         (0..outer_poly_len)
@@ -126,9 +127,9 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             let mut min_poly_coeffs = self
                 .coeff_ring()
                 .modulus()
-                .coeffs()
+                .clone()
+                .into_coeffs()
                 .into_iter()
-                .cloned()
                 .collect::<Vec<_>>();
 
             let lc = min_poly_coeffs.pop().unwrap();
@@ -267,7 +268,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         let k_deg = self.coeff_ring().degree();
         if k_deg == 1 {
             let (unit, factors) = Polynomial::<Rational>::from_coeffs(
-                p.coeffs()
+                p.clone()
+                    .into_coeffs()
                     .into_iter()
                     .map(|c| self.coeff_ring().reduce(c).as_constant().unwrap())
                     .collect(),
@@ -282,7 +284,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                     .map(|(f, f_pow)| {
                         (
                             Polynomial::<Polynomial<Rational>>::from_coeffs(
-                                f.coeffs()
+                                f.into_coeffs()
                                     .into_iter()
                                     .map(|c| Polynomial::constant(c.clone()))
                                     .collect(),
@@ -562,7 +564,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
         let rat_f = {
             let mut rat_coeffs = vec![];
-            for c in f.coeffs() {
+            for c in f.clone().into_coeffs() {
                 match c.as_constant() {
                     Some(rat) => rat_coeffs.push(rat),
                     None => {
@@ -580,7 +582,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor
-                    .coeffs()
+                    .into_coeffs()
                     .into_iter()
                     .map(|c| Polynomial::constant(c.clone()))
                     .collect(),

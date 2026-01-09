@@ -24,11 +24,7 @@ pub trait AdditiveMonoidSignature: SetWithZeroSignature {
         *a = self.add(a, b);
     }
 
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.try_sub(&self.zero(), a)
-    }
-
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set>;
 
     fn sum(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut sum = self.zero();
@@ -51,21 +47,34 @@ where
 }
 impl<R: MetaType> MetaAdditiveMonoid for R where Self::Signature: AdditiveMonoidSignature {}
 
-pub trait AdditiveMonoidEqSignature: AdditiveMonoidSignature + EqSignature {
+pub trait CancellativeAdditiveMonoidSignature: AdditiveMonoidSignature {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+}
+pub trait MetaCancellativeAdditiveMonoid: MetaType
+where
+    Self::Signature: CancellativeAdditiveMonoidSignature,
+{
+}
+impl<R: MetaType> MetaCancellativeAdditiveMonoid for R where
+    Self::Signature: CancellativeAdditiveMonoidSignature
+{
+}
+
+pub trait SetWithZeroAndEqSignature: SetWithZeroSignature + EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
     }
 }
-impl<R: AdditiveMonoidSignature + EqSignature> AdditiveMonoidEqSignature for R {}
-pub trait MetaAdditiveMonoidEq: MetaType
+impl<R: SetWithZeroSignature + EqSignature> SetWithZeroAndEqSignature for R {}
+pub trait MetaSetWithZeroAndEq: MetaType
 where
-    Self::Signature: AdditiveMonoidEqSignature,
+    Self::Signature: SetWithZeroAndEqSignature,
 {
     fn is_zero(&self) -> bool {
         Self::structure().is_zero(self)
     }
 }
-impl<R: MetaType> MetaAdditiveMonoidEq for R where Self::Signature: AdditiveMonoidEqSignature {}
+impl<R: MetaType> MetaSetWithZeroAndEq for R where Self::Signature: SetWithZeroAndEqSignature {}
 
 pub trait MultiplicativeMonoidSignature: SetSignature {
     fn one(&self) -> Self::Set;
@@ -365,7 +374,7 @@ impl<R: MetaType> MetaCharacteristic for R where Self::Signature: Characteristic
 pub trait RingUnitsSignature: RingSignature + MultiplicativeMonoidUnitsSignature {}
 impl<Ring: RingSignature + MultiplicativeMonoidUnitsSignature> RingUnitsSignature for Ring {}
 
-pub trait AdditiveGroupSignature: AdditiveMonoidSignature {
+pub trait AdditiveGroupSignature: CancellativeAdditiveMonoidSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
