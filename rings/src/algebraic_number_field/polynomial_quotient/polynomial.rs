@@ -15,7 +15,7 @@ fn double_poly_to_row(
 
     debug_assert!(rat_poly_poly.num_coeffs(&a) <= outer_poly_len);
     #[cfg(debug_assertions)]
-    for c in a.clone().into_coeffs() {
+    for c in a.clone().coeffs() {
         assert!(c.num_coeffs() <= inner_poly_len);
     }
     Matrix::from_rows(vec![
@@ -124,22 +124,16 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         // }
 
         let e_vals = {
-            let mut min_poly_coeffs = self
-                .coeff_ring()
-                .modulus()
-                .clone()
-                .into_coeffs()
-                .into_iter()
-                .collect::<Vec<_>>();
+            let mut min_poly_coeffs = self.coeff_ring().modulus().coeffs().collect::<Vec<_>>();
 
             let lc = min_poly_coeffs.pop().unwrap();
-            debug_assert_eq!(lc, Rational::ONE);
+            debug_assert_eq!(lc, &Rational::ONE);
 
             min_poly_coeffs
                 .into_iter()
                 .rev()
                 .enumerate()
-                .map(|(i, c)| if i % 2 == 0 { -c } else { c })
+                .map(|(i, c)| if i % 2 == 0 { -c } else { c.clone() })
                 .collect::<Vec<_>>()
         };
         debug_assert_eq!(e_vals.len(), n);
@@ -284,8 +278,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                     .map(|(f, f_pow)| {
                         (
                             Polynomial::<Polynomial<Rational>>::from_coeffs(
-                                f.into_coeffs()
-                                    .into_iter()
+                                f.coeffs()
                                     .map(|c| Polynomial::constant(c.clone()))
                                     .collect(),
                             ),
@@ -584,7 +577,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                 rat_factor
                     .into_coeffs()
                     .into_iter()
-                    .map(|c| Polynomial::constant(c.clone()))
+                    .map(Polynomial::constant)
                     .collect(),
             );
             self.factorizations()

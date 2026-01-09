@@ -656,7 +656,12 @@ impl PAdicAlgebraicRoot {
             <= v / max(v, |a|).|a|
         */
         let inv_poly = Polynomial::<Integer>::from_coeffs(
-            self.poly.clone().into_coeffs().into_iter().rev().collect(),
+            self.poly
+                .coeffs()
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect(),
         )
         .fav_assoc();
         debug_assert!(inv_poly.is_irreducible());

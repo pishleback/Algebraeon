@@ -434,11 +434,11 @@ impl ComplexAlgebraicRoot {
                     }
 
                     // eg: c + bx + ax^2 = c + x(b + x(a))
-                    let mut coeffs = poly.clone().into_coeffs().into_iter().rev();
+                    let mut coeffs = poly.coeffs().collect::<Vec<_>>().into_iter().rev();
                     let lc = coeffs.next().unwrap();
                     let mut ans = mul_box_rat(
                         (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
-                        &lc,
+                        lc,
                     );
                     for (i, c) in coeffs.enumerate() {
                         if i != 0 {
@@ -447,7 +447,7 @@ impl ComplexAlgebraicRoot {
                                 (&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d),
                             );
                         }
-                        ans = add_box_rat((&ans.0, &ans.1, &ans.2, &ans.3), &c);
+                        ans = add_box_rat((&ans.0, &ans.1, &ans.2, &ans.3), c);
                     }
 
                     ans
@@ -878,7 +878,12 @@ impl MultiplicativeMonoidUnitsSignature for ComplexAlgebraicCanonicalStructure {
                 let mut root = a.clone();
 
                 let inv_poly = Polynomial::from_coeffs(
-                    root.poly.clone().into_coeffs().into_iter().rev().collect(),
+                    root.poly
+                        .coeffs()
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .rev()
+                        .collect(),
                 )
                 .fav_assoc();
                 debug_assert!(inv_poly.is_irreducible());

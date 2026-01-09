@@ -140,8 +140,7 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
             return false;
         }
         self.min_poly(a)
-            .into_coeffs()
-            .into_iter()
+            .coeffs()
             .all(|c| c.denominator() == Natural::ONE)
     }
 }
@@ -198,8 +197,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
                                     })
                                     .collect(),
                             )
-                            .into_coeffs()
-                            .into_iter()
+                            .coeffs()
                             .map(|c| c / Rational::from(p))
                             .collect(),
                         );

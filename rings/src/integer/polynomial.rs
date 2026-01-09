@@ -28,7 +28,7 @@ impl Polynomial<Integer> {
     pub fn mignotte_factor_coefficient_bound(&self) -> Option<Natural> {
         let deg = self.degree()?;
         let mut bound = Natural::ZERO;
-        for coeff in self.clone().into_coeffs() {
+        for coeff in self.coeffs() {
             bound += coeff.abs();
         }
         bound *= choose(Natural::from(deg), Natural::from(deg / 2));

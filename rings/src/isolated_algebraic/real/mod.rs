@@ -290,14 +290,14 @@ impl RealAlgebraicRoot {
                     }
 
                     // eg: c + bx + ax^2 = c + x(b + x(a))
-                    let mut coeffs = poly.clone().into_coeffs().into_iter().rev();
+                    let mut coeffs = poly.coeffs().collect::<Vec<_>>().into_iter().rev();
                     let lc = coeffs.next().unwrap();
-                    let mut ans = mul_interval_rat((&self.tight_a, &self.tight_b), &lc);
+                    let mut ans = mul_interval_rat((&self.tight_a, &self.tight_b), lc);
                     for (i, c) in coeffs.enumerate() {
                         if i != 0 {
                             ans = mul_intervals((&ans.0, &ans.1), (&self.tight_a, &self.tight_b));
                         }
-                        ans = add_interval_rat((&ans.0, &ans.1), &c);
+                        ans = add_interval_rat((&ans.0, &ans.1), c);
                     }
 
                     ans
@@ -671,7 +671,12 @@ impl MultiplicativeMonoidUnitsSignature for RealAlgebraicCanonicalStructure {
                         },
                     );
                     let (unit, fav_assoc) = Polynomial::from_coeffs(
-                        root.poly.into_coeffs().into_iter().rev().collect(),
+                        root.poly
+                            .coeffs()
+                            .collect::<Vec<_>>()
+                            .into_iter()
+                            .rev()
+                            .collect(),
                     )
                     .factor_fav_assoc();
                     if unit == Polynomial::one() {
