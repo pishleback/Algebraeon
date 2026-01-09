@@ -208,7 +208,9 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
+    PolynomialStructure<RS, RSB>
+{
     pub fn add_impl<'a, C: Borrow<RS::Set>>(
         &self,
         mut a: &'a Polynomial<C>,
@@ -255,7 +257,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
                 );
             }
         }
-        Polynomial::from_coeffs(coeffs)
+        self.reduce_poly(Polynomial::from_coeffs(coeffs))
     }
 }
 
@@ -351,23 +353,23 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
         let f3 = self.mul_karatsuba(&self.add_impl(&a0, &a1), &self.add_impl(&b0, &b1))?;
         let f1 = self.try_sub(&f3, &self.add(&f2, &f0))?;
 
-        Some(self.add(
+        Some(self.reduce_poly(self.add(
             &self.add(&f0, &self.mul_var_pow(&f1, k)),
             &self.mul_var_pow(&f2, 2 * k),
-        ))
+        )))
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
-    for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
+    SetWithZeroSignature for PolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
         Polynomial { coeffs: vec![] }
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
-    for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
+    AdditiveMonoidSignature for PolynomialStructure<RS, RSB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.add_impl(a, b)
@@ -426,9 +428,10 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         if let Some(s) = self.mul_karatsuba(a, b) {
+            debug_assert!(self.equal(&s, &self.reduce_poly(self.mul_naive(a, b))));
             s
         } else {
-            self.reduce_poly(self.mul_naive(a, b))
+            self.mul_naive(a, b)
         }
     }
 }
@@ -507,10 +510,12 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
     }
 
     pub fn num_coeffs(&self, p: &Polynomial<RS::Set>) -> usize {
-        match self.degree(p) {
+        let k = match self.degree(p) {
             Some(n) => n + 1,
             None => 0,
-        }
+        };
+        debug_assert_eq!(k, self.into_coeffs(p.clone()).len());
+        k
     }
 
     pub fn reduce_poly(&self, mut a: Polynomial<RS::Set>) -> Polynomial<RS::Set> {
@@ -611,7 +616,13 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
     //if n = deg(p)
     //return x^n * p(1/x)
     pub fn reversed(&self, p: &Polynomial<RS::Set>) -> Polynomial<RS::Set> {
-        Polynomial::from_coeffs(p.coeffs.clone().into_iter().rev().collect())
+        Polynomial::from_coeffs(
+            self.reduce_poly(p.clone())
+                .coeffs
+                .into_iter()
+                .rev()
+                .collect(),
+        )
     }
 
     pub fn mul_var_pow(&self, p: &Polynomial<RS::Set>, n: usize) -> Polynomial<RS::Set> {

@@ -635,7 +635,12 @@ impl Polynomial<Integer> {
                 //bisect
                 //q_small(x) = 2^n q(x/2)
                 let q_small = q.apply_map_with_powers(|(i, coeff)| {
-                    coeff * Integer::from(Natural::TWO << (q.degree().unwrap() - i))
+                    if coeff == &Integer::ZERO {
+                        // Handle ZERO specially since q may have zero coefficients in higher degrees which could otherwise cause a subtract overflow below
+                        Integer::ZERO
+                    } else {
+                        coeff * Integer::from(Natural::TWO << (q.degree().unwrap() - i))
+                    }
                 });
                 l.push((
                     (c.clone() << 1) + Natural::from(1u8),
