@@ -391,6 +391,10 @@ impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: Borr
     fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         None
     }
+
+    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+        self.nat_pow(a, k)
+    }
 }
 
 impl<
@@ -431,7 +435,7 @@ where
             // So we can defer to a univariate factoring algorithm
             Some(poly) => {
                 let (unit, factors) = factor_poly(&poly).into_unit_and_powers().unwrap();
-                self.factorizations().new_unit_and_powers_impl(
+                self.factorizations().new_unit_and_powers_unchecked(
                     unit.apply_map_into(MultiPolynomial::constant),
                     factors
                         .into_iter()
@@ -492,7 +496,7 @@ where
                                 .into_unit_and_powers()
                                 .unwrap();
 
-                            self.factorizations().new_unit_and_powers_impl(
+                            self.factorizations().new_unit_and_powers_unchecked(
                                 self.homogenize(&unit, &free_var),
                                 factors
                                     .into_iter()
@@ -524,7 +528,7 @@ where
                                 .into_unit_and_powers()
                                 .unwrap();
 
-                            self.factorizations().new_unit_and_powers_impl(
+                            self.factorizations().new_unit_and_powers_unchecked(
                                 poly_over_self.evaluate(&unit, &free_var),
                                 factors
                                     .into_iter()
@@ -541,7 +545,7 @@ where
                     // Just an element of the coefficient ring
                     let value = self.as_constant(mpoly).unwrap();
                     if let Some((unit, factors)) = factor_coeff(&value).into_unit_and_powers() {
-                        self.factorizations().new_unit_and_powers_impl(
+                        self.factorizations().new_unit_and_powers_unchecked(
                             MultiPolynomial::constant(unit),
                             factors
                                 .into_iter()

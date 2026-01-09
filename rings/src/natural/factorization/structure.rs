@@ -23,6 +23,10 @@ impl UniqueFactorizationMonoidSignature for NaturalCanonicalStructure {
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
         Some(is_prime_nat(a))
     }
+
+    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+        self.nat_pow(a, k)
+    }
 }
 
 impl FactoringMonoidSignature for NaturalCanonicalStructure {
@@ -52,8 +56,8 @@ impl<
                 self.objects().from_nat(&Natural::TWO)
             }
             Factored::NonZero(a) => {
-                let mut prod = a.unit.clone();
-                for (p, k) in &a.powers {
+                let mut prod = a.unit().clone();
+                for (p, k) in a.powers() {
                     debug_assert!(p != &Natural::ZERO);
                     debug_assert!(k != &Natural::ZERO);
                     self.objects().mul_mut(

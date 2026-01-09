@@ -231,7 +231,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
         // println!("p_factors = {:?}", p_factors);
 
-        self.factorizations().new_unit_and_powers_impl(
+        self.factorizations().new_unit_and_powers_unchecked(
             self.one(),
             p_factors
                 .into_iter()
@@ -275,7 +275,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             .factor()
             .into_unit_and_powers()
             .unwrap();
-            self.factorizations().new_unit_and_powers_impl(
+            self.factorizations().new_unit_and_powers_unchecked(
                 Polynomial::constant(unit),
                 factors
                     .into_iter()
@@ -542,7 +542,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             //     println!("pi = {}", pi);
             // }
 
-            self.factorizations().new_unit_and_powers_impl(
+            self.factorizations().new_unit_and_powers_unchecked(
                 self.one(),
                 p_factors.into_iter().map(|pi| (pi, Natural::ONE)).collect(),
             )
@@ -576,7 +576,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         let (rat_unit, rat_factors) = rat_f.factor().into_unit_and_powers().unwrap();
         let mut factored = self
             .factorizations()
-            .new_unit_impl(Polynomial::constant(rat_unit));
+            .new_unit_unchecked(Polynomial::constant(rat_unit));
         for (rat_factor, _rat_pow) in rat_factors {
             let anf_unfactor = Polynomial::<Polynomial<Rational>>::from_coeffs(
                 rat_factor

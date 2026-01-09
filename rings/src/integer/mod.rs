@@ -141,6 +141,10 @@ impl UniqueFactorizationMonoidSignature for IntegerCanonicalStructure {
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
         Some(a.abs().is_irreducible())
     }
+
+    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+        self.nat_pow(a, k)
+    }
 }
 
 impl FactoringMonoidSignature for IntegerCanonicalStructure {
@@ -156,7 +160,7 @@ impl FactoringMonoidSignature for IntegerCanonicalStructure {
             let f = a.abs().factor();
             Integer::structure()
                 .factorizations()
-                .new_unit_and_powers_impl(
+                .new_unit_and_powers_unchecked(
                     unit,
                     f.into_powers()
                         .unwrap()

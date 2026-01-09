@@ -538,7 +538,9 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 }
 
 impl<
-    RS: FactoringMonoidSignature + EuclideanDomainSignature + GreatestCommonDivisorSignature,
+    RS: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + EuclideanDomainSignature
+        + GreatestCommonDivisorSignature,
     RSB: BorrowedStructure<RS>,
     RSQB: BorrowedStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>>,
     RSQPB: BorrowedStructure<
@@ -554,7 +556,8 @@ impl<
     >
 where
     PolynomialStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>, RSQB>:
-        SetSignature<Set = Polynomial<RS::Set>> + FactoringMonoidSignature,
+        SetSignature<Set = Polynomial<RS::Set>>
+            + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None
     pub fn into_hensel_factorization(

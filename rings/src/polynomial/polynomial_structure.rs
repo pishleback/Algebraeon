@@ -888,6 +888,10 @@ impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: Borr
     fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         None
     }
+
+    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+        self.nat_pow(a, k)
+    }
 }
 
 impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {

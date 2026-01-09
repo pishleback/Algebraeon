@@ -178,8 +178,8 @@ impl<
     NB: BorrowedStructure<NaturalCanonicalStructure>,
 > FactoringStructure<PolynomialStructure<FS, FSB>, FSPB, NaturalCanonicalStructure, NB>
 where
-    PolynomialStructure<FS, FSB>:
-        SetSignature<Set = Polynomial<FS::Set>> + FactoringMonoidSignature,
+    PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>
+        + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     pub fn into_distinct_degree_factored(
         &self,
@@ -371,7 +371,7 @@ where
         let mut factors = self
             .poly_ring
             .factorizations()
-            .new_unit_and_powers_impl(Polynomial::constant(self.unit.clone()), vec![]);
+            .new_unit_and_powers_unchecked(Polynomial::constant(self.unit.clone()), vec![]);
         for (sqfree_poly, power) in &self.squarefree_factors {
             self.poly_ring.factorizations().mul_mut(
                 &mut factors,
@@ -518,7 +518,7 @@ where
         let poly_ring = &self.poly_ring;
         let mut fs = poly_ring
             .factorizations()
-            .new_unit_impl(Polynomial::constant(self.unit.clone()));
+            .new_unit_unchecked(Polynomial::constant(self.unit.clone()));
         for (ddf, mult) in &self.distinct_degree_factors {
             let d = ddf.irreducible_factor_degree;
             let n = self.poly_ring.degree(&ddf.polynomial).unwrap();
@@ -547,7 +547,7 @@ where
                             poly_ring.factorizations().mul_mut(
                                 &mut fs,
                                 &poly_ring.factorizations().pow(
-                                    &poly_ring.factorizations().new_irreducible_impl(&f),
+                                    &poly_ring.factorizations().new_irreducible_unchecked(f),
                                     mult,
                                 ),
                             );

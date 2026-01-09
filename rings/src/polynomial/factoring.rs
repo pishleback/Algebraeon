@@ -33,7 +33,7 @@ where
         let (content_unit, content_factors) =
             factor_coeff(&content).into_unit_and_powers().unwrap();
 
-        let mut factors = self.factorizations().new_unit_and_powers_impl(
+        let mut factors = self.factorizations().new_unit_and_powers_unchecked(
             Polynomial::constant(content_unit),
             content_factors
                 .into_iter()
@@ -68,7 +68,7 @@ where
             d = self.add(&self.neg(&self.derivative(b.clone())), &c);
         }
         self.factorizations()
-            .mul_mut(&mut factors, &self.factorizations().new_unit_impl(f));
+            .mul_mut(&mut factors, &self.factorizations().new_unit_unchecked(f));
         factors
     }
 }
@@ -105,7 +105,7 @@ where
                 f = self.try_div(&f, &self.var()).unwrap();
                 linear_factors = self.factorizations().mul(
                     &linear_factors,
-                    &self.factorizations().new_irreducible_impl(&self.var()),
+                    &self.factorizations().new_irreducible_unchecked(self.var()),
                 );
                 continue 'seek_linear_factor;
             } else {
@@ -127,7 +127,7 @@ where
                                 f = new_f;
                                 linear_factors = self.factorizations().mul(
                                     &linear_factors,
-                                    &self.factorizations().new_irreducible_impl(&lin),
+                                    &self.factorizations().new_irreducible_unchecked(lin),
                                 );
                                 continue 'seek_linear_factor;
                             }
@@ -260,7 +260,7 @@ where
             let (g, f_prim) = self.factor_primitive(f).unwrap();
             let g_factored = factor_coeff(&g);
             let (g_unit, g_factors) = g_factored.into_unit_and_powers().unwrap();
-            let g_factored = self.factorizations().new_unit_and_powers_impl(
+            let g_factored = self.factorizations().new_unit_and_powers_unchecked(
                 Polynomial::constant(g_unit),
                 g_factors
                     .into_iter()
@@ -364,7 +364,7 @@ where
             fof_factors.push((fof_factor_prim, power));
         }
 
-        poly_ring.factorizations().new_unit_and_powers_impl(
+        poly_ring.factorizations().new_unit_and_powers_unchecked(
             poly_ring.mul(&Polynomial::constant(unit), &fof_unit),
             fof_factors,
         )

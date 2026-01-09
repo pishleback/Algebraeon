@@ -440,7 +440,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                                 &mut factored,
                                 &Polynomial::<Integer>::structure()
                                     .factorizations()
-                                    .new_irreducible_impl(&g),
+                                    .new_irreducible_unchecked(g),
                             );
                             // Remove the modular factors for g from future consideration
                             m -= k;
@@ -464,7 +464,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                 &mut factored,
                 &Polynomial::<Integer>::structure()
                     .factorizations()
-                    .new_irreducible_impl(&f),
+                    .new_irreducible_unchecked(f),
             );
         }
 
@@ -489,7 +489,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
                         Integer::structure()
                             .into_polynomials()
                             .factorizations()
-                            .new_unit_impl(f)
+                            .new_unit_unchecked(f)
                     } else {
                         let state = BerlekampAassenhausAlgorithmState::new(f).next_prime();
                         state.factor_by_try_all_subsets()

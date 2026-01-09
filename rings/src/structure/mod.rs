@@ -10,7 +10,6 @@ mod lattice;
 mod modules;
 mod quotient;
 mod rings;
-mod ufd;
 mod units;
 
 pub use algebra::*;
@@ -25,5 +24,4 @@ pub use lattice::*;
 pub use modules::*;
 pub use quotient::*;
 pub use rings::*;
-pub use ufd::*;
 pub use units::*;

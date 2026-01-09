@@ -116,7 +116,8 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 if r < Natural::from(r0) {
                     continue;
                 }
-                match factorizations.is_primitive_root(n, &factorizations.new_irreducible_impl(&r))
+                match factorizations
+                    .is_primitive_root(n, &factorizations.new_irreducible_unchecked(r.clone()))
                 {
                     factorization::IsPrimitiveRootResult::NonUnit => {
                         // n is divisible by r

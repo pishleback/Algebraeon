@@ -14,8 +14,8 @@ use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 pub struct NonZeroFactored<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> {
-    pub unit: ObjectSet,
-    pub powers: Vec<(ObjectSet, ExponentSet)>,
+    unit: ObjectSet,
+    powers: Vec<(ObjectSet, ExponentSet)>,
 }
 
 impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> NonZeroFactored<ObjectSet, ExponentSet> {
@@ -25,6 +25,14 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> NonZeroFactored<Objec
 
     pub fn into_powers(self) -> Vec<(ObjectSet, ExponentSet)> {
         self.powers
+    }
+
+    pub fn unit<'a>(&'a self) -> &'a ObjectSet {
+        &self.unit
+    }
+
+    pub fn into_unit(self) -> ObjectSet {
+        self.unit
     }
 
     pub fn unit_and_powers<'a>(&'a self) -> (&'a ObjectSet, &'a Vec<(ObjectSet, ExponentSet)>) {
@@ -99,6 +107,20 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
         }
     }
 
+    pub fn unit<'a>(&'a self) -> Option<&'a ObjectSet> {
+        match self {
+            Factored::Zero => None,
+            Factored::NonZero(a) => Some(a.unit()),
+        }
+    }
+
+    pub fn into_unit(self) -> Option<ObjectSet> {
+        match self {
+            Factored::Zero => None,
+            Factored::NonZero(a) => Some(a.into_unit()),
+        }
+    }
+
     pub fn unit_and_powers<'a>(
         &'a self,
     ) -> Option<(&'a ObjectSet, &'a Vec<(ObjectSet, ExponentSet)>)> {
@@ -125,7 +147,7 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FactoringStructure<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -137,7 +159,7 @@ pub struct FactoringStructure<
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -163,38 +185,12 @@ impl<
 
 // These methods are all completely unchecked, to be used by things which construct factorizations.
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    pub(crate) fn new_irreducible_impl(
-        &self,
-        p: &Object::Set,
-    ) -> Factored<Object::Set, Exponent::Set> {
-        let p = self.objects().fav_assoc(p);
-        Factored::NonZero(NonZeroFactored {
-            unit: self.objects().one(),
-            powers: vec![(p, self.exponents().one())],
-        })
-    }
-
-    pub(crate) fn new_unit_impl(&self, unit: Object::Set) -> Factored<Object::Set, Exponent::Set> {
-        Factored::NonZero(NonZeroFactored {
-            unit,
-            powers: vec![],
-        })
-    }
-
-    pub(crate) fn new_unit_and_powers_impl(
-        &self,
-        unit: Object::Set,
-        powers: Vec<(Object::Set, Exponent::Set)>,
-    ) -> Factored<Object::Set, Exponent::Set> {
-        Factored::NonZero(NonZeroFactored { unit, powers })
-    }
-
     pub(crate) fn mul_mut_impl(
         &self,
         a: &mut Factored<Object::Set, Exponent::Set>,
@@ -345,7 +341,7 @@ impl<
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -354,7 +350,7 @@ impl<
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -397,7 +393,7 @@ impl<
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -414,7 +410,7 @@ impl<
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -426,7 +422,7 @@ impl<
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -452,7 +448,7 @@ impl<
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -476,7 +472,7 @@ impl<
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
@@ -491,18 +487,39 @@ impl<
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
+    pub fn new_irreducible_unchecked(
+        &self,
+        p: Object::Set,
+    ) -> Factored<Object::Set, Exponent::Set> {
+        self.new_unit_and_powers_unchecked(self.objects().one(), vec![(p, self.exponents().one())])
+    }
+
+    pub fn new_unit_unchecked(&self, unit: Object::Set) -> Factored<Object::Set, Exponent::Set> {
+        self.new_unit_and_powers_unchecked(unit, vec![])
+    }
+
     pub fn new_unit_and_powers_unchecked(
         &self,
-        unit: Object::Set,
+        mut unit: Object::Set,
         powers: Vec<(Object::Set, Exponent::Set)>,
     ) -> Factored<Object::Set, Exponent::Set> {
-        let f = self.new_unit_and_powers_impl(unit, powers);
+        let mut fav_assoc_powers = vec![];
+        for (p, k) in powers {
+            let (u, p) = self.objects().factor_fav_assoc(&p);
+            self.objects()
+                .mul_mut(&mut unit, &self.objects().factorization_pow(&u, &k));
+            fav_assoc_powers.push((p, k));
+        }
+        let f = Factored::NonZero(NonZeroFactored {
+            unit,
+            powers: fav_assoc_powers,
+        });
         #[cfg(debug_assertions)]
         self.is_element(&f).unwrap();
         f
@@ -545,6 +562,28 @@ impl<
         }
     }
 
+    pub fn is_irreducible(&self, a: &Factored<Object::Set, Exponent::Set>) -> bool {
+        #[cfg(debug_assertions)]
+        self.is_element(a).unwrap();
+        self.is_irreducible_impl(a)
+    }
+
+    pub fn expand(&self, a: &Factored<Object::Set, Exponent::Set>) -> Object::Set {
+        #[cfg(debug_assertions)]
+        self.is_element(a).unwrap();
+        match a {
+            Factored::Zero => self.objects().zero(),
+            Factored::NonZero(a) => {
+                let mut prod = a.unit.clone();
+                for (p, k) in &a.powers {
+                    self.objects()
+                        .mul_mut(&mut prod, &self.objects().factorization_pow(p, k));
+                }
+                prod
+            }
+        }
+    }
+
     pub fn expand_squarefree(&self, a: &Factored<Object::Set, Exponent::Set>) -> Object::Set {
         #[cfg(debug_assertions)]
         self.is_element(a).unwrap();
@@ -559,50 +598,32 @@ impl<
             }
         }
     }
+
+    pub fn pow(
+        &self,
+        f: &Factored<Object::Set, Exponent::Set>,
+        n: &Exponent::Set,
+    ) -> Factored<Object::Set, Exponent::Set> {
+        match f {
+            Factored::Zero => Factored::Zero,
+            Factored::NonZero(f) => Factored::NonZero(NonZeroFactored {
+                unit: self.objects().factorization_pow(&f.unit, n),
+                powers: f
+                    .powers
+                    .iter()
+                    .map(|(p, k)| (p.clone(), self.exponents().mul(n, k)))
+                    .collect(),
+            }),
+        }
+    }
 }
 
 impl<
-    Object: UniqueFactorizationMonoidSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     ObjectB: BorrowedStructure<Object>,
     ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
 > FactoringStructure<Object, ObjectB, NaturalCanonicalStructure, ExponentB>
 {
-    pub fn pow(
-        &self,
-        f: &Factored<Object::Set, Natural>,
-        n: &Natural,
-    ) -> Factored<Object::Set, Natural> {
-        match f {
-            Factored::Zero => Factored::Zero,
-            Factored::NonZero(f) => Factored::NonZero(NonZeroFactored {
-                unit: self.objects().nat_pow(&f.unit, n),
-                powers: f.powers.iter().map(|(p, k)| (p.clone(), k * n)).collect(),
-            }),
-        }
-    }
-
-    pub fn expand(&self, a: &Factored<Object::Set, Natural>) -> Object::Set {
-        #[cfg(debug_assertions)]
-        self.is_element(a).unwrap();
-        match a {
-            Factored::Zero => self.objects().zero(),
-            Factored::NonZero(a) => {
-                let mut prod = a.unit.clone();
-                for (p, k) in &a.powers {
-                    self.objects()
-                        .mul_mut(&mut prod, &self.objects().nat_pow(p, k));
-                }
-                prod
-            }
-        }
-    }
-
-    pub fn is_irreducible(&self, a: &Factored<Object::Set, Natural>) -> bool {
-        #[cfg(debug_assertions)]
-        self.is_element(a).unwrap();
-        self.is_irreducible_impl(a)
-    }
-
     /// Return an iterator over all divisors of a factorization
     pub fn divisors<'a>(
         &'a self,
@@ -686,7 +707,8 @@ impl<
 
 // TODO: generalize this to rings where we can take square-roots in the group of units
 impl<
-    Object: UniqueFactorizationMonoidSignature + MultiplicativeMonoidSquareOpsSignature,
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + MultiplicativeMonoidSquareOpsSignature,
     ObjectB: BorrowedStructure<Object>,
     ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
 > FactoringStructure<Object, ObjectB, NaturalCanonicalStructure, ExponentB>
@@ -712,7 +734,7 @@ impl<
                             sqrt_factor_powers.push((prime.clone(), half.clone()));
                         }
                     }
-                    Some(self.new_unit_and_powers_impl(unit_sqrt, sqrt_factor_powers))
+                    Some(self.new_unit_and_powers_unchecked(unit_sqrt, sqrt_factor_powers))
                 } else {
                     None
                 }
@@ -740,6 +762,12 @@ pub trait UniqueFactorizationMonoidSignature:
     ) -> FactoringStructure<Self, Self, Self::FactoredExponent, Self::FactoredExponent> {
         FactoringStructure::new(self.clone(), self.into_factorization_exponents())
     }
+
+    fn factorization_pow(
+        &self,
+        a: &Self::Set,
+        k: &<Self::FactoredExponent as SetSignature>::Set,
+    ) -> Self::Set;
 
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
 }
@@ -863,6 +891,10 @@ impl<FS: FieldSignature> UniqueFactorizationMonoidSignature for FS {
     fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
         Some(false)
     }
+
+    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+        self.nat_pow(a, k)
+    }
 }
 
 impl<FS: FieldSignature> FactoringMonoidSignature for FS {
@@ -877,6 +909,168 @@ impl<FS: FieldSignature> FactoringMonoidSignature for FS {
                 unit: a.clone(),
                 powers: vec![],
             })
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum FindFactorResult<Element> {
+    Irreducible,
+    Composite(Element, Element),
+}
+
+pub fn factorize_by_find_factor<
+    Exponent: SemiRingSignature + OrdSignature,
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent> + AdditiveMonoidEqSignature,
+>(
+    ring: &RS,
+    elem: RS::Set,
+    partial_factor: &impl Fn(RS::Set) -> FindFactorResult<RS::Set>,
+) -> Factored<RS::Set, Exponent::Set> {
+    debug_assert!(!ring.is_zero(&elem));
+    if ring.is_unit(&elem) {
+        ring.factorizations().new_unit_unchecked(elem)
+    } else {
+        debug_assert!(!ring.is_unit(&elem));
+        match partial_factor(elem.clone()) {
+            FindFactorResult::Composite(g, h) => ring.factorizations().mul(
+                &factorize_by_find_factor(ring, g, partial_factor),
+                &factorize_by_find_factor(ring, h, partial_factor),
+            ),
+            FindFactorResult::Irreducible => {
+                //f is irreducible
+                ring.factorizations().new_irreducible_unchecked(elem)
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::structure::FactoringMonoidSignature;
+    use algebraeon_nzq::{Integer, Natural};
+    use algebraeon_sets::structure::MetaType;
+
+    #[test]
+    fn factorization_invariants() {
+        let f = Factored::NonZero(NonZeroFactored {
+            unit: Integer::from(-1),
+            powers: vec![
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ],
+        });
+        Integer::structure()
+            .factorizations()
+            .is_element(&f)
+            .unwrap();
+
+        let f = Factored::NonZero(NonZeroFactored {
+            unit: Integer::from(1),
+            powers: vec![],
+        });
+        Integer::structure()
+            .factorizations()
+            .is_element(&f)
+            .unwrap();
+
+        let f = Factored::NonZero(NonZeroFactored {
+            unit: Integer::from(-1),
+            powers: vec![
+                (Integer::from(2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+                (Integer::from(5), Natural::from(0u8)),
+            ],
+        });
+        assert!(
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
+            "can't have a power of zero"
+        );
+
+        let f = Factored::NonZero(NonZeroFactored {
+            unit: Integer::from(3),
+            powers: vec![(Integer::from(2), Natural::from(2u8))],
+        });
+        assert!(
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
+            "unit should be a unit"
+        );
+
+        let f = Factored::NonZero(NonZeroFactored {
+            unit: Integer::from(1),
+            powers: vec![
+                (Integer::from(0), Natural::from(1u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ],
+        });
+        assert!(
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
+            "prime factors must not be zero"
+        );
+
+        let f = Factored::NonZero(NonZeroFactored {
+            unit: Integer::from(-1),
+            powers: vec![
+                (Integer::from(4), Natural::from(1u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ],
+        });
+        assert!(
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
+            "prime factors must be prime"
+        );
+
+        let f = Factored::NonZero(NonZeroFactored {
+            unit: Integer::from(-1),
+            powers: vec![
+                (Integer::from(-2), Natural::from(2u8)),
+                (Integer::from(3), Natural::from(1u8)),
+            ],
+        });
+        assert!(
+            Integer::structure()
+                .factorizations()
+                .is_element(&f)
+                .is_err(),
+            "prime factors must be favoriate associate"
+        );
+    }
+
+    #[test]
+    fn test_count_divisors() {
+        for a in 1..25 {
+            println!("a = {}", a);
+            let b = Integer::from(a);
+            println!("b = {}", b);
+            let fs = Integer::structure().factor(&b);
+            println!("fs = {:?}", fs);
+            assert_eq!(
+                Integer::structure()
+                    .factorizations()
+                    .count_divisors(&fs)
+                    .unwrap(),
+                Natural::from(
+                    Integer::structure()
+                        .factorizations()
+                        .divisors(&fs)
+                        .unwrap()
+                        .collect::<Vec<Integer>>()
+                        .len()
+                )
+            );
         }
     }
 }
