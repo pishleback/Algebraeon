@@ -828,7 +828,10 @@ pub trait FactoringMonoidSignature: UniqueFactorizationMonoidSignature {
     ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set> {
         let f = self.factor_unchecked(a);
         #[cfg(debug_assertions)]
-        self.factorizations().is_element(&f).unwrap();
+        {
+            self.factorizations().is_element(&f).unwrap();
+            assert!(self.equal(a, &self.factorizations().expand(&f)))
+        }
         f
     }
 }
