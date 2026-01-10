@@ -432,7 +432,9 @@ impl ToStringSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl RinglikeSpecializationSignature for RealAlgebraicCanonicalStructure {
-    fn try_char_zero_ring_restructure<'a>(&'a self) -> Option<&'a (impl CharZeroRingSignature + EqSignature)> {
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<&(impl EqSignature<Set = Self::Set> + CharZeroRingSignature)> {
         Some(self)
     }
 }

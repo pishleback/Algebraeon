@@ -153,9 +153,13 @@ impl<
         if self.num_coeffs(elem) == 0 {
             "0".into()
         } else {
-            // if let Some(coeff_ring) = self.coeff_ring().try_char_zero_ring_restructure() {
-            //     let z = coeff_ring.try_to_int(todo!());
-            // }
+            let try_to_int = |c: &RS::Set| -> Option<Integer> {
+                if let Some(coeff_ring) = self.coeff_ring().try_char_zero_ring_restructure() {
+                    coeff_ring.try_to_int(c)
+                } else {
+                    None
+                }
+            };
 
             let mut s = String::new();
             let mut first = true;

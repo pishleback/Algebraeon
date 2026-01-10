@@ -8,7 +8,9 @@ use static_assertions::const_assert;
 use std::borrow::Cow;
 
 impl RinglikeSpecializationSignature for RationalCanonicalStructure {
-    fn try_char_zero_ring_restructure(&self) -> Option<&(impl CharZeroRingSignature + EqSignature)> {
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<&(impl EqSignature<Set = Self::Set> + CharZeroRingSignature)> {
         Some(self)
     }
 }

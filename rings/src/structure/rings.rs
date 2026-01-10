@@ -1,8 +1,127 @@
 use super::*;
 use crate::polynomial::*;
-use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure,IntegerCanonicalStructure , Rational, traits::*};
+use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure, Rational, traits::*};
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, fmt::Debug};
+
+mod unconstructable_everything_structure {
+    use algebraeon_sets::structure::{EqSignature, SetSignature, Signature};
+    use std::fmt::Debug;
+    use std::marker::PhantomData;
+
+    use crate::structure::{
+        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
+        CharZeroRingSignature, CharacteristicSignature, MultiplicativeMonoidSignature,
+        RingSignature, RinglikeSpecializationSignature, SemiRingSignature, SetWithZeroSignature,
+    };
+
+    pub struct UnconstructableStructure<Set> {
+        _set: PhantomData<Set>,
+    }
+
+    unsafe impl<Set> Send for UnconstructableStructure<Set> {}
+
+    unsafe impl<Set> Sync for UnconstructableStructure<Set> {}
+
+    impl<Set> Debug for UnconstructableStructure<Set> {
+        fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            unreachable!()
+        }
+    }
+
+    impl<Set> Clone for UnconstructableStructure<Set> {
+        fn clone(&self) -> Self {
+            unreachable!()
+        }
+    }
+
+    impl<Set> PartialEq for UnconstructableStructure<Set> {
+        fn eq(&self, _other: &Self) -> bool {
+            unreachable!()
+        }
+    }
+
+    impl<Set> Eq for UnconstructableStructure<Set> {}
+
+    impl<Set> Signature for UnconstructableStructure<Set> {}
+
+    impl<Set: Debug + Clone + Send + Sync> SetSignature for UnconstructableStructure<Set> {
+        type Set = Set;
+
+        fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> EqSignature for UnconstructableStructure<Set> {
+        fn equal(&self, _a: &Self::Set, _b: &Self::Set) -> bool {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> RinglikeSpecializationSignature
+        for UnconstructableStructure<Set>
+    {
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> SetWithZeroSignature for UnconstructableStructure<Set> {
+        fn zero(&self) -> Self::Set {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> AdditiveMonoidSignature for UnconstructableStructure<Set> {
+        fn add(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
+            unreachable!()
+        }
+
+        fn try_neg(&self, _a: &Self::Set) -> Option<Self::Set> {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> CancellativeAdditiveMonoidSignature
+        for UnconstructableStructure<Set>
+    {
+        fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> AdditiveGroupSignature for UnconstructableStructure<Set> {
+        fn neg(&self, _a: &Self::Set) -> Self::Set {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> MultiplicativeMonoidSignature
+        for UnconstructableStructure<Set>
+    {
+        fn one(&self) -> Self::Set {
+            unreachable!()
+        }
+
+        fn mul(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> SemiRingSignature for UnconstructableStructure<Set> {}
+
+    impl<Set: Debug + Clone + Send + Sync> CharacteristicSignature for UnconstructableStructure<Set> {
+        fn characteristic(&self) -> algebraeon_nzq::Natural {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> RingSignature for UnconstructableStructure<Set> {}
+
+    impl<Set: Debug + Clone + Send + Sync> CharZeroRingSignature for UnconstructableStructure<Set> {
+        fn try_to_int(&self, _x: &Self::Set) -> Option<algebraeon_nzq::Integer> {
+            unreachable!()
+        }
+    }
+}
 
 /*
 All methods are allowed to return None, and if they do it should only affect speed of algorithms, not correctness.
@@ -13,8 +132,11 @@ pub trait RinglikeSpecializationSignature: SetSignature {
     Used by:
      - Formatting polynomials as strings: If the set of coefficients has this structure then it's possible to call .try_to_int(..) which can allow for nicer formatting at integer coefficients.
      */
-    fn try_char_zero_ring_restructure<'a>(&'a self) -> Option<&'a (impl CharZeroRingSignature + EqSignature)> {
-        Option::<IntegerCanonicalStructure>::None.as_ref()
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<&(impl EqSignature<Set = Self::Set> + CharZeroRingSignature)> {
+        Option::<unconstructable_everything_structure::UnconstructableStructure<Self::Set>>::None
+            .as_ref()
     }
 }
 
@@ -504,8 +626,7 @@ pub trait FiniteUnitsSignature: RingSignature {
 
 impl<R: RingSignature + MultiplicativeMonoidUnitsSignature> FiniteUnitsSignature for R
 where
-    for<'a> MultiplicativeMonoidUnitsStructure<R, &'a R>:
-        FiniteSetSignature<Set = R::Set>,
+    for<'a> MultiplicativeMonoidUnitsStructure<R, &'a R>: FiniteSetSignature<Set = R::Set>,
 {
     fn all_units(&self) -> Vec<Self::Set> {
         self.units().list_all_elements()
@@ -824,9 +945,7 @@ where
 impl<R: MetaType> MetaCharZeroRing for R where Self::Signature: CharZeroRingSignature<Set = R> {}
 
 impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
-    fn generate_distinct_elements(
-        &self,
-    ) -> Box<dyn Iterator<Item = <Self as SetSignature>::Set>> {
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetSignature>::Set>> {
         struct IntegerIterator<RS: CharZeroRingSignature> {
             ring: RS,
             next: Integer,
@@ -873,9 +992,7 @@ where
 }
 impl<R: MetaType> MetaCharZeroField for R where Self::Signature: CharZeroFieldSignature<Set = R> {}
 
-pub trait FiniteFieldSignature:
-    FieldSignature + FiniteUnitsSignature + FiniteSetSignature
-{
+pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSetSignature {
     // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(&self) -> (Natural, Natural);
 }
@@ -896,15 +1013,10 @@ where
         Self::structure().as_f64_real_and_imaginary_parts(self)
     }
 }
-impl<R: MetaType> MetaComplexSubset for R where
-    Self::Signature: ComplexSubsetSignature<Set = R>
-{
-}
+impl<R: MetaType> MetaComplexSubset for R where Self::Signature: ComplexSubsetSignature<Set = R> {}
 
 //is a subset of the real numbers
-pub trait RealSubsetSignature:
-    ComplexSubsetSignature
-{
+pub trait RealSubsetSignature: ComplexSubsetSignature {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         let (r, i) = self.as_f64_real_and_imaginary_parts(x);
         debug_assert_eq!(i, 0.0);
@@ -1034,18 +1146,13 @@ pub trait AlgebraicClosureSignature: FieldSignature
 where
     //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
     PolynomialStructure<Self::BFS, Self::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
-        + SetSignature<
-            Set = Polynomial<<Self::BFS as SetSignature>::Set>,
-        >,
+        + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
 {
     type BFS: FieldSignature; //base field structure
 
     fn base_field(&self) -> Self::BFS;
 
-    fn base_field_inclusion(
-        &self,
-        x: &<Self::BFS as SetSignature>::Set,
-    ) -> Self::Set;
+    fn base_field_inclusion(&self, x: &<Self::BFS as SetSignature>::Set) -> Self::Set;
 
     //return None for the zero polynomial
     fn all_roots_list(

@@ -16,9 +16,11 @@ pub mod polynomial;
 pub mod zimmermann_polys;
 
 impl RinglikeSpecializationSignature for IntegerCanonicalStructure {
-    fn try_char_zero_ring_restructure<'a>(
-        &'a self,
-    ) -> Option<&'a (impl CharZeroRingSignature + algebraeon_sets::structure::EqSignature)> {
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<
+        &(impl algebraeon_sets::structure::EqSignature<Set = Self::Set> + CharZeroRingSignature),
+    > {
         Some(self)
     }
 }
