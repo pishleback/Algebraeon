@@ -755,6 +755,8 @@ impl EqSignature for PAdicAlgebraicStructure {
     }
 }
 
+impl RinglikeSpecializationSignature for PAdicAlgebraicStructure {}
+
 impl SetWithZeroSignature for PAdicAlgebraicStructure {
     fn zero(&self) -> Self::Set {
         PAdicAlgebraic::Rational(PAdicRational {

@@ -108,6 +108,11 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> EqSignature
     }
 }
 
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RinglikeSpecializationSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
+}
+
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
     for MultiPolynomialStructure<RS, RSB>
 {

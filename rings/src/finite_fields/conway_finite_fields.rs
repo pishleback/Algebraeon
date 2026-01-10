@@ -96,6 +96,10 @@ impl EqSignature for ConwayFiniteFieldStructure {
     }
 }
 
+impl RinglikeSpecializationSignature for ConwayFiniteFieldStructure {
+  
+}
+
 impl SetWithZeroSignature for ConwayFiniteFieldStructure {
     fn zero(&self) -> Self::Set {
         self.structure.zero()

@@ -14,7 +14,8 @@ use crate::{
         FinitelyFreeModuleSignature, IntegralDomainSignature,
         MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
         MultiplicativeMonoidUnitsSignature, RingSignature, RingToIdealsSignature,
-        SemiModuleSignature, SemiRingSignature, SetWithZeroAndEqSignature, SetWithZeroSignature,
+        RinglikeSpecializationSignature, SemiModuleSignature, SemiRingSignature,
+        SetWithZeroAndEqSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
@@ -176,6 +177,16 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.full_rank_z_sublattice.equal(a, b)
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    RinglikeSpecializationSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn try_char_zero_ring_restructure<'a>(
+        &'a self,
+    ) -> Option<&'a (impl CharZeroRingSignature + EqSignature)> {
+        Some(self)
     }
 }
 

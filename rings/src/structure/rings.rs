@@ -1,10 +1,24 @@
 use super::*;
 use crate::polynomial::*;
-use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure, Rational, traits::*};
+use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure,IntegerCanonicalStructure , Rational, traits::*};
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, fmt::Debug};
 
-pub trait SetWithZeroSignature: SetSignature {
+/*
+All methods are allowed to return None, and if they do it should only affect speed of algorithms, not correctness.
+Where methods do not return None, the resulting structure may be used for optimizations only.
+*/
+pub trait RinglikeSpecializationSignature: SetSignature {
+    /*
+    Used by:
+     - Formatting polynomials as strings: If the set of coefficients has this structure then it's possible to call .try_to_int(..) which can allow for nicer formatting at integer coefficients.
+     */
+    fn try_char_zero_ring_restructure<'a>(&'a self) -> Option<&'a (impl CharZeroRingSignature + EqSignature)> {
+        Option::<IntegerCanonicalStructure>::None.as_ref()
+    }
+}
+
+pub trait SetWithZeroSignature: RinglikeSpecializationSignature {
     fn zero(&self) -> Self::Set;
 }
 pub trait MetaSetWithZero: MetaType
@@ -76,7 +90,7 @@ where
 }
 impl<R: MetaType> MetaSetWithZeroAndEq for R where Self::Signature: SetWithZeroAndEqSignature {}
 
-pub trait MultiplicativeMonoidSignature: SetSignature {
+pub trait MultiplicativeMonoidSignature: RinglikeSpecializationSignature {
     fn one(&self) -> Self::Set;
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
@@ -140,7 +154,7 @@ where
 impl<R: MetaType> MetaMultiplicativeMonoid for R where Self::Signature: MultiplicativeMonoidSignature
 {}
 
-pub trait MultiplicativeMonoidSquareOpsSignature: SetSignature {
+pub trait MultiplicativeMonoidSquareOpsSignature: RinglikeSpecializationSignature {
     fn is_square(&self, a: &Self::Set) -> bool {
         self.sqrt_if_square(a).is_some()
     }
@@ -490,7 +504,8 @@ pub trait FiniteUnitsSignature: RingSignature {
 
 impl<R: RingSignature + MultiplicativeMonoidUnitsSignature> FiniteUnitsSignature for R
 where
-    for<'a> MultiplicativeMonoidUnitsStructure<R, &'a R>: FiniteSetSignature<Set = R::Set>,
+    for<'a> MultiplicativeMonoidUnitsStructure<R, &'a R>:
+        FiniteSetSignature<Set = R::Set>,
 {
     fn all_units(&self) -> Vec<Self::Set> {
         self.units().list_all_elements()
@@ -724,7 +739,7 @@ impl<R: MetaType> MetaEuclideanDivision for R where
 pub trait EuclideanDomainSignature: EuclideanDivisionSignature + IntegralDomainSignature {}
 impl<Ring: EuclideanDivisionSignature + IntegralDomainSignature> EuclideanDomainSignature for Ring {}
 
-pub trait InfiniteSignature: SetSignature {
+pub trait InfiniteSignature: RinglikeSpecializationSignature {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
 }
 pub trait Infinite: MetaType {
@@ -809,7 +824,9 @@ where
 impl<R: MetaType> MetaCharZeroRing for R where Self::Signature: CharZeroRingSignature<Set = R> {}
 
 impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetSignature>::Set>> {
+    fn generate_distinct_elements(
+        &self,
+    ) -> Box<dyn Iterator<Item = <Self as SetSignature>::Set>> {
         struct IntegerIterator<RS: CharZeroRingSignature> {
             ring: RS,
             next: Integer,
@@ -856,13 +873,15 @@ where
 }
 impl<R: MetaType> MetaCharZeroField for R where Self::Signature: CharZeroFieldSignature<Set = R> {}
 
-pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSetSignature {
+pub trait FiniteFieldSignature:
+    FieldSignature + FiniteUnitsSignature + FiniteSetSignature
+{
     // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(&self) -> (Natural, Natural);
 }
 
 //is a subset of the complex numbers
-pub trait ComplexSubsetSignature: SetSignature {
+pub trait ComplexSubsetSignature: RinglikeSpecializationSignature {
     fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32);
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64);
 }
@@ -877,10 +896,15 @@ where
         Self::structure().as_f64_real_and_imaginary_parts(self)
     }
 }
-impl<R: MetaType> MetaComplexSubset for R where Self::Signature: ComplexSubsetSignature<Set = R> {}
+impl<R: MetaType> MetaComplexSubset for R where
+    Self::Signature: ComplexSubsetSignature<Set = R>
+{
+}
 
 //is a subset of the real numbers
-pub trait RealSubsetSignature: ComplexSubsetSignature {
+pub trait RealSubsetSignature:
+    ComplexSubsetSignature
+{
     fn as_f64(&self, x: &Self::Set) -> f64 {
         let (r, i) = self.as_f64_real_and_imaginary_parts(x);
         debug_assert_eq!(i, 0.0);
@@ -952,7 +976,7 @@ where
 }
 impl<R: MetaType> MetaRealFromFloat for R where Self::Signature: RealFromFloatSignature<Set = R> {}
 
-pub trait ComplexConjugateSignature: SetSignature {
+pub trait ComplexConjugateSignature: RinglikeSpecializationSignature {
     fn conjugate(&self, x: &Self::Set) -> Self::Set;
 }
 pub trait MetaComplexConjugate: MetaType
@@ -1010,13 +1034,18 @@ pub trait AlgebraicClosureSignature: FieldSignature
 where
     //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
     PolynomialStructure<Self::BFS, Self::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
-        + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
+        + SetSignature<
+            Set = Polynomial<<Self::BFS as SetSignature>::Set>,
+        >,
 {
     type BFS: FieldSignature; //base field structure
 
     fn base_field(&self) -> Self::BFS;
 
-    fn base_field_inclusion(&self, x: &<Self::BFS as SetSignature>::Set) -> Self::Set;
+    fn base_field_inclusion(
+        &self,
+        x: &<Self::BFS as SetSignature>::Set,
+    ) -> Self::Set;
 
     //return None for the zero polynomial
     fn all_roots_list(

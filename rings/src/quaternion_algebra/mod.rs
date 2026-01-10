@@ -117,6 +117,8 @@ impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
     }
 }
 
+impl<Field: FieldSignature> RinglikeSpecializationSignature for QuaternionAlgebraStructure<Field> {}
+
 impl<Field: FieldSignature> SetWithZeroSignature for QuaternionAlgebraStructure<Field> {
     fn zero(&self) -> Self::Set {
         QuaternionAlgebraElement {

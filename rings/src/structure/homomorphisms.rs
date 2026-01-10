@@ -64,6 +64,12 @@ mod range_module {
     }
 
     impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+        RinglikeSpecializationSignature
+        for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+    {
+    }
+
+    impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
         SetSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
         type Set = Range::Set;

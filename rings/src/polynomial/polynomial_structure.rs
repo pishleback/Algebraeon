@@ -153,6 +153,10 @@ impl<
         if self.num_coeffs(elem) == 0 {
             "0".into()
         } else {
+            // if let Some(coeff_ring) = self.coeff_ring().try_char_zero_ring_restructure() {
+            //     let z = coeff_ring.try_to_int(todo!());
+            // }
+
             let mut s = String::new();
             let mut first = true;
             for (k, c) in elem.coeffs.iter().enumerate() {
@@ -353,6 +357,11 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
             &self.mul_var_pow(&f2, 2 * k),
         )))
     }
+}
+
+impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
+    RinglikeSpecializationSignature for PolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>

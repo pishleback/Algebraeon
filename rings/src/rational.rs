@@ -7,6 +7,12 @@ use algebraeon_sets::structure::*;
 use static_assertions::const_assert;
 use std::borrow::Cow;
 
+impl RinglikeSpecializationSignature for RationalCanonicalStructure {
+    fn try_char_zero_ring_restructure(&self) -> Option<&(impl CharZeroRingSignature + EqSignature)> {
+        Some(self)
+    }
+}
+
 impl SetWithZeroSignature for RationalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Rational::ZERO

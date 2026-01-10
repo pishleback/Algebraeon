@@ -5,7 +5,7 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
         FiniteRankFreeRingExtension, FinitelyFreeModuleSignature, MultiplicativeMonoidSignature,
-        SemiModuleSignature, SetWithZeroSignature,
+        RinglikeSpecializationSignature, SemiModuleSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
@@ -87,6 +87,11 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
             Err("Element not in order".to_string())
         }
     }
+}
+
+impl<ANF: AlgebraicNumberFieldSignature> RinglikeSpecializationSignature
+    for QuaternionOrderZBasis<ANF>
+{
 }
 
 impl<ANF: AlgebraicNumberFieldSignature> SetWithZeroSignature for QuaternionOrderZBasis<ANF> {

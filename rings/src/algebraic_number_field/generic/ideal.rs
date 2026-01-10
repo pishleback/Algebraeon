@@ -442,6 +442,15 @@ impl<
     KB: BorrowedStructure<K>,
     const MAXIMAL: bool,
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> RinglikeSpecializationSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > SetWithZeroSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
     fn zero(&self) -> Self::Set {

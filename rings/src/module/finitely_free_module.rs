@@ -170,6 +170,11 @@ impl<Ring: RingSignature + EqSignature, RingB: BorrowedStructure<Ring>> EqSignat
     }
 }
 
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> RinglikeSpecializationSignature
+    for FinitelyFreeModuleStructure<Ring, RingB>
+{
+}
+
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetWithZeroSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {

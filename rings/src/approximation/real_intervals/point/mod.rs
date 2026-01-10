@@ -8,7 +8,8 @@ use crate::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
         ComplexSubsetSignature, MetaMultiplicativeMonoidUnits, MetaRealRounding, MetaRealSubset,
         MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RealRoundingSignature,
-        RealSubsetSignature, RingSignature, SemiRingSignature, SetWithZeroSignature,
+        RealSubsetSignature, RingSignature, RinglikeSpecializationSignature, SemiRingSignature,
+        SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};
@@ -204,6 +205,8 @@ impl RealApproximatePointInterface for MulPoints {
         }
     }
 }
+
+impl RinglikeSpecializationSignature for RealApproximatePointCanonicalStructure {}
 
 impl SetWithZeroSignature for RealApproximatePointCanonicalStructure {
     fn zero(&self) -> Self::Set {

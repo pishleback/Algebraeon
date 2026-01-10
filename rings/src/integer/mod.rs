@@ -15,6 +15,14 @@ pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
 
+impl RinglikeSpecializationSignature for IntegerCanonicalStructure {
+    fn try_char_zero_ring_restructure<'a>(
+        &'a self,
+    ) -> Option<&'a (impl CharZeroRingSignature + algebraeon_sets::structure::EqSignature)> {
+        Some(self)
+    }
+}
+
 impl SetWithZeroSignature for IntegerCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Integer::ZERO

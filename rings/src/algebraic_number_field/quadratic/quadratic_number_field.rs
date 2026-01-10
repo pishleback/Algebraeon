@@ -6,7 +6,8 @@ use crate::structure::{
     CharZeroFieldSignature, CharZeroRingSignature, CharacteristicSignature, FieldSignature,
     IntegralDomainSignature, MetaFactoringMonoidNaturalExponent, MetaSetWithZeroAndEq,
     MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidUnitsSignature, RingSignature, SemiRingSignature, SetWithZeroSignature,
+    MultiplicativeMonoidUnitsSignature, RingSignature, RinglikeSpecializationSignature,
+    SemiRingSignature, SetWithZeroSignature,
 };
 use crate::structure::{
     FreeModuleSignature, MetaCharZeroRing, PrincipalRationalMap,
@@ -118,6 +119,14 @@ impl<D: BorrowedSet<Integer>> SetSignature for QuadraticNumberFieldStructure<D> 
 impl<D: BorrowedSet<Integer>> EqSignature for QuadraticNumberFieldStructure<D> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a.rational_part == b.rational_part && a.algebraic_part == b.algebraic_part
+    }
+}
+
+impl<D: BorrowedSet<Integer>> RinglikeSpecializationSignature for QuadraticNumberFieldStructure<D> {
+    fn try_char_zero_ring_restructure<'a>(
+        &'a self,
+    ) -> Option<&'a (impl CharZeroRingSignature + EqSignature)> {
+        Some(self)
     }
 }
 

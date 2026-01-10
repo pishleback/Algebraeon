@@ -2,8 +2,9 @@ use crate::structure::{
     CancellativeAdditiveMonoidSignature, FavoriteAssociateSignature, FieldSignature,
     MetaMultiplicativeMonoid, MultiplicativeGroupSignature, MultiplicativeIntegralMonoidSignature,
     MultiplicativeMonoidSignature, MultiplicativeMonoidSquareOpsSignature,
-    MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature, SemiRingSignature,
-    SetWithZeroAndEqSignature, SetWithZeroSignature,
+    MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature,
+    RinglikeSpecializationSignature, SemiRingSignature, SetWithZeroAndEqSignature,
+    SetWithZeroSignature,
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::{
@@ -425,6 +426,15 @@ impl<
         }
         self.try_div(a, b).is_some() && self.try_div(b, a).is_some()
     }
+}
+
+impl<
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
+    ObjectB: BorrowedStructure<Object>,
+    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    ExponentB: BorrowedStructure<Exponent>,
+> RinglikeSpecializationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+{
 }
 
 impl<

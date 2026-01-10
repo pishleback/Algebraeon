@@ -177,6 +177,11 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    RinglikeSpecializationSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
+}
+
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
     SetWithZeroSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn zero(&self) -> Self::Set {

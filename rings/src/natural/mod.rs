@@ -5,6 +5,8 @@ use algebraeon_sets::structure::*;
 pub mod factorization;
 pub mod functions;
 
+impl RinglikeSpecializationSignature for NaturalCanonicalStructure {}
+
 impl SetWithZeroSignature for NaturalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Natural::ZERO

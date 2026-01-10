@@ -45,6 +45,11 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> EqSignature for IntegerIde
     }
 }
 
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> RinglikeSpecializationSignature
+    for IntegerIdealsStructure<B>
+{
+}
+
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> SetWithZeroSignature
     for IntegerIdealsStructure<B>
 {

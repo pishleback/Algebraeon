@@ -152,6 +152,8 @@ impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
     }
 }
 
+impl<const N: usize> RinglikeSpecializationSignature for ModuloCanonicalStructure<N> {}
+
 impl<const N: usize> SetWithZeroSignature for ModuloCanonicalStructure<N> {
     fn zero(&self) -> Self::Set {
         Modulo { x: 0 }
