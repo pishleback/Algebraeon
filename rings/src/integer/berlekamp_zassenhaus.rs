@@ -466,8 +466,16 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                     .factorizations()
                     .new_irreducible_unchecked(f),
             );
+        } else {
+            // Or maybe there is just a unit left over.
+            debug_assert!(f.is_unit());
+            Polynomial::<Integer>::structure().factorizations().mul_mut(
+                &mut factored,
+                &Polynomial::<Integer>::structure()
+                    .factorizations()
+                    .new_unit_unchecked(f),
+            );
         }
-
         factored
     }
 }
