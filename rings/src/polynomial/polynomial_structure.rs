@@ -165,11 +165,15 @@ impl<
             let mut first = true;
             for (k, c) in elem.coeffs.iter().enumerate() {
                 if !self.coeff_ring().is_zero(c) {
-                    if self.coeff_ring().equal(c, &self.coeff_ring().one()) {
-                        if k == 0 {
-                            s += "1";
-                        } else {
+                    if let Some(c) = try_to_int(c) {
+                        if c > Integer::ZERO && !first {
                             s += "+";
+                        }
+                        if c == Integer::ONE && k != 0 {
+                        } else if c == -Integer::ONE && k != 0 {
+                            s += "-";
+                        } else {
+                            s += &c.to_string();
                         }
                     } else {
                         if !first {
