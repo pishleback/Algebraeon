@@ -843,18 +843,11 @@ where
         Self::structure().is_irreducible(self)
     }
 
-    fn factor_unchecked(
-        &self,
-    ) -> Factored<
-        Self,
-        <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Set,
-    >{
+    fn factor_unchecked(&self) -> Factored<Self, <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Set>{
         Self::structure().factor_unchecked(self)
-    }    fn factor(
-        &self) -> Factored<
-        Self,
-        <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Set,
-    >{
+    }
+
+    fn factor(&self) -> Factored<Self, <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Set>{
         Self::structure().factor(self)
     }
 }
