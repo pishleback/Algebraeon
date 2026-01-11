@@ -8,7 +8,7 @@ pub trait DedekindDomainSignature: IntegralDomainSignature {}
 pub trait RingToIdealsSignature: RingSignature {
     type Ideals<SelfB: BorrowedStructure<Self>>: IdealsSignature<Self, SelfB>;
 
-    fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self>;
+    fn ideals(&self) -> Self::Ideals<&Self>;
     fn into_ideals(self) -> Self::Ideals<Self>;
 }
 pub trait MetaCanonicalIdealsSignature: MetaType

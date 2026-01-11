@@ -12,8 +12,9 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
             Ok(poly_mat_struct
                 .add(
                     &m.apply_map(|x| Polynomial::constant(x.clone())),
-                    &poly_mat_struct
-                        .neg(poly_mat_struct.diag(&(0..n).map(|_i| poly_ring.var()).collect())),
+                    &poly_mat_struct.neg(
+                        poly_mat_struct.diag(&(0..n).map(|_i| poly_ring.var()).collect::<Vec<_>>()),
+                    ),
                 )
                 .unwrap())
         } else {

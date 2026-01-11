@@ -75,6 +75,7 @@ where
         .into_quotient_field_unchecked(poly)
 }
 
+#[allow(unused)]
 pub(crate) fn f9() -> PolynomialQuotientRingStructure<
     ModuloCanonicalStructure<3>,
     ModuloCanonicalStructure<3>,

@@ -61,9 +61,9 @@ impl TryFrom<Integer> for QuadraticSymbolValue {
     }
 }
 
-impl Into<Integer> for QuadraticSymbolValue {
-    fn into(self) -> Integer {
-        match self {
+impl From<QuadraticSymbolValue> for Integer {
+    fn from(val: QuadraticSymbolValue) -> Self {
+        match val {
             QuadraticSymbolValue::Zero => Integer::ZERO,
             QuadraticSymbolValue::Pos => Integer::ONE,
             QuadraticSymbolValue::Neg => -Integer::ONE,
@@ -101,6 +101,7 @@ pub enum JacobiSymbolError {
     BottomEven,
 }
 
+#[allow(unused)]
 fn jacobi_symbol_by_factorization(
     a: &Integer,
     n: &Natural,

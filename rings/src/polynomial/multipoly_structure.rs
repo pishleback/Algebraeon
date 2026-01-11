@@ -36,7 +36,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
 }
 
 pub trait RingToMultiPolynomialRingSignature: RingEqSignature {
-    fn multivariable_polynomial_ring<'a>(&'a self) -> MultiPolynomialStructure<Self, &'a Self> {
+    fn multivariable_polynomial_ring(&self) -> MultiPolynomialStructure<Self, &Self> {
         MultiPolynomialStructure::new(self)
     }
 
@@ -106,6 +106,11 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> EqSignature
             false
         }
     }
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RinglikeSpecializationSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
@@ -384,7 +389,7 @@ impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: Borr
 {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+    fn factorization_exponents(&self) -> &Self::FactoredExponent {
         Natural::structure_ref()
     }
 

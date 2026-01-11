@@ -8,12 +8,12 @@ use std::collections::HashMap;
 lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs");
 
 impl Expr {
-    pub fn from_string(input: String) -> Result<Self, String> {
-        match polynomial_parser::ExprParser::new().parse(&input) {
-            Ok(expr) => Ok(*expr),
-            Err(err) => Err(format!("Failed to parse expression: {}", err)),
-        }
-    }
+    // pub fn from_string(input: String) -> Result<Self, String> {
+    //     match polynomial_parser::ExprParser::new().parse(&input) {
+    //         Ok(expr) => Ok(*expr),
+    //         Err(err) => Err(format!("Failed to parse expression: {}", err)),
+    //     }
+    // }
 
     // Convert expression into univariate integer polynomial
     pub fn build_univariate_integer_polynomial(

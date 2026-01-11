@@ -84,6 +84,7 @@ pub struct PeriodicSimpleContinuedFraction {
 
 impl PeriodicSimpleContinuedFraction {
     pub fn new(initial: Vec<Integer>, repeats: Vec<Integer>) -> Result<Self, ()> {
+        #[allow(clippy::needless_range_loop)]
         for i in 1..initial.len() {
             if initial[i] <= Integer::ZERO {
                 return Err(());
@@ -92,6 +93,7 @@ impl PeriodicSimpleContinuedFraction {
         if repeats.is_empty() {
             return Err(());
         }
+        #[allow(clippy::needless_range_loop)]
         for i in 0..repeats.len() {
             if repeats[i] <= Integer::ZERO {
                 return Err(());

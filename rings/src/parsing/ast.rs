@@ -29,17 +29,17 @@ pub struct Number {
     pub denominator: Integer,
 }
 
-impl Number {
-    pub fn new(numerator: Integer, denominator: Integer) -> Self {
-        if denominator == Integer::from(0) {
-            panic!("Denominator cannot be zero");
-        }
-        Number {
-            numerator,
-            denominator,
-        }
-    }
-}
+// impl Number {
+//     pub fn new(numerator: Integer, denominator: Integer) -> Self {
+//         if denominator == Integer::from(0) {
+//             panic!("Denominator cannot be zero");
+//         }
+//         Number {
+//             numerator,
+//             denominator,
+//         }
+//     }
+// }
 
 impl fmt::Display for Number {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -30,6 +30,8 @@ impl Display for QuaternaryField {
     }
 }
 
+impl RinglikeSpecializationSignature for QuaternaryFieldCanonicalStructure {}
+
 impl SetWithZeroSignature for QuaternaryFieldCanonicalStructure {
     fn zero(&self) -> Self::Set {
         QuaternaryField::Zero

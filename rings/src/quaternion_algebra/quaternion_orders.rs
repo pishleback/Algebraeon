@@ -5,7 +5,7 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
         FiniteRankFreeRingExtension, FinitelyFreeModuleSignature, MultiplicativeMonoidSignature,
-        SemiModuleSignature, SetWithZeroSignature,
+        RinglikeSpecializationSignature, SemiModuleSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
@@ -89,6 +89,11 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
     }
 }
 
+impl<ANF: AlgebraicNumberFieldSignature> RinglikeSpecializationSignature
+    for QuaternionOrderZBasis<ANF>
+{
+}
+
 impl<ANF: AlgebraicNumberFieldSignature> SetWithZeroSignature for QuaternionOrderZBasis<ANF> {
     fn zero(&self) -> Self::Set {
         self.algebra.zero()
@@ -139,6 +144,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStr
 }
 
 impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
+    #[allow(unused)]
     fn check_basis(self) -> bool {
         // 1. Check that the basis has 4n elements
         let expected_len = 4 * self.algebra.base_field().n();

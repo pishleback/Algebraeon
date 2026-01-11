@@ -8,7 +8,8 @@ use crate::{
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
         IntegralDomainSignature, MetaCharZeroRing, MultiplicativeIntegralMonoidSignature,
         MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RingSignature,
-        SemiModuleSignature, SemiRingSignature, SetWithZeroSignature,
+        RinglikeSpecializationSignature, SemiModuleSignature, SemiRingSignature,
+        SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
@@ -52,7 +53,7 @@ impl<D: BorrowedSet<Integer>> QuadraticRingOfIntegersStructure<D> {
         self.qanf.d()
     }
 
-    pub fn anf<'d>(&'d self) -> QuadraticNumberFieldStructure<&'d Integer> {
+    pub fn anf(&self) -> QuadraticNumberFieldStructure<&Integer> {
         QuadraticNumberFieldStructure::new_unchecked(self.d())
     }
 }
@@ -74,6 +75,20 @@ impl<D: BorrowedSet<Integer>> SetSignature for QuadraticRingOfIntegersStructure<
 impl<D: BorrowedSet<Integer>> EqSignature for QuadraticRingOfIntegersStructure<D> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.anf().equal(a, b)
+    }
+}
+
+impl<D: BorrowedSet<Integer>> RinglikeSpecializationSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Some(self.clone())
+    }
+
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+        Some(self.clone())
     }
 }
 

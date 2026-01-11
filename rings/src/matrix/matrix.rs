@@ -22,6 +22,7 @@ pub struct Matrix<Set: Clone> {
 }
 
 impl<Set: Clone> Matrix<Set> {
+    #[allow(unused)]
     fn check_invariants(&self) -> Result<(), &'static str> {
         if self.elems.len() != self.dim1 * self.dim2 {
             return Err("matrix entries has the wrong length");
@@ -79,6 +80,7 @@ impl<Set: Clone> Matrix<Set> {
         let rows = rows_elems.len();
         assert!(rows >= 1);
         let cols = rows_elems[0].len();
+        #[allow(clippy::needless_range_loop)]
         for r in 1..rows {
             assert_eq!(rows_elems[r].len(), cols);
         }
@@ -324,7 +326,7 @@ impl<RS: SetSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
 }
 
 pub trait RingMatricesSignature: SetSignature {
-    fn matrices<'a>(&'a self) -> MatrixStructure<Self, &'a Self> {
+    fn matrices(&self) -> MatrixStructure<Self, &Self> {
         MatrixStructure::new(self)
     }
 
@@ -372,6 +374,7 @@ impl<RS: ToStringSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB>
             })
             .collect();
 
+        #[allow(clippy::needless_range_loop)]
         for r in 0..mat.rows() {
             for c in 0..mat.cols() {
                 while str_rows[r][c].chars().count() < cols_widths[c] {
@@ -381,6 +384,7 @@ impl<RS: ToStringSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB>
             }
         }
 
+        #[allow(clippy::needless_range_loop)]
         for r in 0..mat.rows() {
             if mat.rows() == 1 {
                 print!("( ");
@@ -426,7 +430,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         })
     }
 
-    pub fn diag(&self, diag: &Vec<RS::Set>) -> Matrix<RS::Set> {
+    pub fn diag(&self, diag: &[RS::Set]) -> Matrix<RS::Set> {
         Matrix::construct(diag.len(), diag.len(), |r, c| {
             if r == c {
                 diag[r].clone()
@@ -548,7 +552,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         Ok(s)
     }
 
-    pub fn apply_row(&self, mat: &Matrix<RS::Set>, row: &Vec<RS::Set>) -> Vec<RS::Set> {
+    pub fn apply_row(&self, mat: &Matrix<RS::Set>, row: &[RS::Set]) -> Vec<RS::Set> {
         assert_eq!(mat.rows(), row.len());
         (0..mat.cols())
             .map(|c| {
@@ -561,7 +565,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
             .collect()
     }
 
-    pub fn apply_col(&self, mat: &Matrix<RS::Set>, col: &Vec<RS::Set>) -> Vec<RS::Set> {
+    pub fn apply_col(&self, mat: &Matrix<RS::Set>, col: &[RS::Set]) -> Vec<RS::Set> {
         assert_eq!(mat.cols(), col.len());
         (0..mat.rows())
             .map(|r| {
@@ -697,7 +701,7 @@ where
         Self::structure().ident(n)
     }
 
-    pub fn diag(diag: &Vec<R>) -> Self {
+    pub fn diag(diag: &[R]) -> Self {
         Self::structure().diag(diag)
     }
 
@@ -725,11 +729,11 @@ where
         Self::structure().mul(a, b)
     }
 
-    pub fn apply_row(&self, row: &Vec<R>) -> Vec<R> {
+    pub fn apply_row(&self, row: &[R]) -> Vec<R> {
         Self::structure().apply_row(self, row)
     }
 
-    pub fn apply_col(&self, col: &Vec<R>) -> Vec<R> {
+    pub fn apply_col(&self, col: &[R]) -> Vec<R> {
         Self::structure().apply_col(self, col)
     }
 
@@ -1204,37 +1208,37 @@ mod tests {
         ]);
 
         assert_eq!(
-            m.apply_row(&vec![Integer::from(1), Integer::from(0)]),
+            m.apply_row(&[Integer::from(1), Integer::from(0)]),
             vec![Integer::from(1), Integer::from(2), Integer::from(3)]
         );
 
         assert_eq!(
-            m.apply_row(&vec![Integer::from(0), Integer::from(1)]),
+            m.apply_row(&[Integer::from(0), Integer::from(1)]),
             vec![Integer::from(6), Integer::from(5), Integer::from(4)]
         );
 
         assert_eq!(
-            m.apply_row(&vec![Integer::from(1), Integer::from(1)]),
+            m.apply_row(&[Integer::from(1), Integer::from(1)]),
             vec![Integer::from(7), Integer::from(7), Integer::from(7)]
         );
 
         assert_eq!(
-            m.apply_col(&vec![Integer::from(1), Integer::from(0), Integer::from(0)]),
+            m.apply_col(&[Integer::from(1), Integer::from(0), Integer::from(0)]),
             vec![Integer::from(1), Integer::from(6)]
         );
 
         assert_eq!(
-            m.apply_col(&vec![Integer::from(0), Integer::from(1), Integer::from(0)]),
+            m.apply_col(&[Integer::from(0), Integer::from(1), Integer::from(0)]),
             vec![Integer::from(2), Integer::from(5)]
         );
 
         assert_eq!(
-            m.apply_col(&vec![Integer::from(0), Integer::from(0), Integer::from(1)]),
+            m.apply_col(&[Integer::from(0), Integer::from(0), Integer::from(1)]),
             vec![Integer::from(3), Integer::from(4)]
         );
 
         assert_eq!(
-            m.apply_col(&vec![Integer::from(1), Integer::from(1), Integer::from(1)]),
+            m.apply_col(&[Integer::from(1), Integer::from(1), Integer::from(1)]),
             vec![Integer::from(6), Integer::from(15)]
         );
     }

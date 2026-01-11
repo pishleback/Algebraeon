@@ -1,7 +1,6 @@
 mod algebra;
 mod ergonomic;
 mod factorization;
-mod factorization_old;
 mod homomorphisms;
 mod ideals;
 mod integral_closure;
@@ -14,7 +13,6 @@ mod units;
 pub use algebra::*;
 pub use ergonomic::*;
 pub use factorization::*;
-pub use factorization_old::*;
 pub use homomorphisms::*;
 pub use ideals::*;
 pub use integral_closure::*;

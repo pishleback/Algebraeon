@@ -1,7 +1,6 @@
-use std::borrow::{Borrow, Cow};
-
 use crate::{matrix::Matrix, structure::*};
 use algebraeon_sets::structure::*;
+use std::borrow::{Borrow, Cow};
 
 pub trait SemiModuleSignature<Ring: SemiRingSignature>: AdditiveMonoidSignature {
     fn ring(&self) -> &Ring;

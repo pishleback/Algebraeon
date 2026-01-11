@@ -1,5 +1,6 @@
 use crate::structure::{
-    MultiplicativeGroupSignature, MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
+    MultiplicativeGroupSignature, MultiplicativeMonoidSignature,
+    MultiplicativeMonoidUnitsSignature, RinglikeSpecializationSignature,
 };
 use algebraeon_sets::structure::{BorrowedStructure, SetSignature, Signature};
 use std::marker::PhantomData;
@@ -49,6 +50,11 @@ impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> SetSignatu
             Err("not an element of the monoid".to_string())
         }
     }
+}
+
+impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>>
+    RinglikeSpecializationSignature for MultiplicativeMonoidUnitsStructure<M, MB>
+{
 }
 
 impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> MultiplicativeMonoidSignature

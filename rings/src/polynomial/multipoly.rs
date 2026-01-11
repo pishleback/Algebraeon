@@ -7,7 +7,7 @@ use std::fmt::Display;
 use std::hash::Hash;
 use std::sync::atomic::AtomicUsize;
 
-#[derive(Debug, Hash, Clone)]
+#[derive(Debug, Clone)]
 pub struct Variable {
     pub(crate) ident: usize,
     pub(crate) name: String,
@@ -20,6 +20,12 @@ impl PartialEq for Variable {
 }
 
 impl Eq for Variable {}
+
+impl Hash for Variable {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.ident.hash(state);
+    }
+}
 
 impl Variable {
     pub fn new<S: Into<String>>(name: S) -> Self {

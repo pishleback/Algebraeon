@@ -178,6 +178,15 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
+> RinglikeSpecializationSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
+}
+
+impl<
+    Set: OrdSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: SemiRingSignature + EqSignature,
+    RingB: BorrowedStructure<Ring>,
 > SetWithZeroSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
     fn zero(&self) -> Self::Set {

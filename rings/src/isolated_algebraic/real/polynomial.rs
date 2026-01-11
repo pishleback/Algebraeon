@@ -549,6 +549,8 @@ pub fn identify_real_root(
 
     //store indices of possible roots
     let mut possible = std::collections::HashSet::new();
+
+    #[allow(clippy::needless_range_loop)]
     for i in 0..root_groups.len() {
         for j in 0..root_groups[i].intervals.len() {
             possible.insert((i, j));

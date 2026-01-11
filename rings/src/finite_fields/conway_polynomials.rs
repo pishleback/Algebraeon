@@ -84,12 +84,6 @@ impl ConwayPolynomialDatabase {
         Ok(Self { data })
     }
 
-    fn empty() -> Self {
-        Self {
-            data: HashMap::new(),
-        }
-    }
-
     fn get_polynomial(&self, p: usize, n: usize) -> Option<&Polynomial<Integer>> {
         self.data.get(&p)?.get(&n)
     }

@@ -26,8 +26,10 @@ mod balancable_pairs {
         f: &'a Polynomial<Integer>,
         n: usize, // n = deg(f)
         i: usize,
+        #[allow(unused)]
         j: usize,
         vfi: Integer, // v_p(f_i)
+        #[allow(unused)]
         vfj: Integer, // v_p(f_j)
         bv: Integer,  // the balancing value
     }
@@ -304,6 +306,7 @@ impl PAdicRationalBall {
 
 /// A brute-force algorithm to isolate all roots of f of valuation 0
 /// Return ([r1, ...], alpha) such that each ri is alpha-close to exactly one valuation 0 root of f and vise-versa
+#[allow(unused)]
 fn isolatebf0(p: &Natural, f: &Polynomial<Integer>) -> Vec<PAdicRationalBall> {
     debug_assert!(!f.is_zero());
     debug_assert!(f.is_squarefree());

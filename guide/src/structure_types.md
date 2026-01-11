@@ -49,7 +49,7 @@ impl EqSignature for IntegersModuloN {
     }
 }
 
-use algebraeon::rings::structure::{RingSignature, SemiRingSignature};
+impl RinglikeSpecializationSignature for IntegersModuloN {}
 
 impl SetWithZeroSignature for IntegersModuloN {
     fn zero(&self) -> Self::Set {

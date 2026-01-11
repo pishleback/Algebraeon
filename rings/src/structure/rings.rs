@@ -4,7 +4,154 @@ use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure, Rational, trai
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, fmt::Debug};
 
-pub trait SetWithZeroSignature: SetSignature {
+mod unconstructable_everything_structure {
+    use algebraeon_sets::structure::{EqSignature, SetSignature, Signature};
+    use std::fmt::Debug;
+    use std::marker::PhantomData;
+
+    use crate::structure::{
+        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
+        CharZeroRingSignature, CharacteristicSignature, MultiplicativeMonoidSignature,
+        RingSignature, RinglikeSpecializationSignature, SemiRingSignature, SetWithZeroSignature,
+    };
+
+    pub struct UnconstructableStructure<Set> {
+        _set: PhantomData<Set>,
+    }
+
+    unsafe impl<Set> Send for UnconstructableStructure<Set> {}
+
+    unsafe impl<Set> Sync for UnconstructableStructure<Set> {}
+
+    impl<Set> Debug for UnconstructableStructure<Set> {
+        fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            unreachable!()
+        }
+    }
+
+    impl<Set> Clone for UnconstructableStructure<Set> {
+        fn clone(&self) -> Self {
+            unreachable!()
+        }
+    }
+
+    impl<Set> PartialEq for UnconstructableStructure<Set> {
+        fn eq(&self, _other: &Self) -> bool {
+            unreachable!()
+        }
+    }
+
+    impl<Set> Eq for UnconstructableStructure<Set> {}
+
+    impl<Set> Signature for UnconstructableStructure<Set> {}
+
+    impl<Set: Debug + Clone + Send + Sync> SetSignature for UnconstructableStructure<Set> {
+        type Set = Set;
+
+        fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> EqSignature for UnconstructableStructure<Set> {
+        fn equal(&self, _a: &Self::Set, _b: &Self::Set) -> bool {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> RinglikeSpecializationSignature
+        for UnconstructableStructure<Set>
+    {
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> SetWithZeroSignature for UnconstructableStructure<Set> {
+        fn zero(&self) -> Self::Set {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> AdditiveMonoidSignature for UnconstructableStructure<Set> {
+        fn add(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
+            unreachable!()
+        }
+
+        fn try_neg(&self, _a: &Self::Set) -> Option<Self::Set> {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> CancellativeAdditiveMonoidSignature
+        for UnconstructableStructure<Set>
+    {
+        fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> AdditiveGroupSignature for UnconstructableStructure<Set> {
+        fn neg(&self, _a: &Self::Set) -> Self::Set {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> MultiplicativeMonoidSignature
+        for UnconstructableStructure<Set>
+    {
+        fn one(&self) -> Self::Set {
+            unreachable!()
+        }
+
+        fn mul(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> SemiRingSignature for UnconstructableStructure<Set> {}
+
+    impl<Set: Debug + Clone + Send + Sync> CharacteristicSignature for UnconstructableStructure<Set> {
+        fn characteristic(&self) -> algebraeon_nzq::Natural {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> RingSignature for UnconstructableStructure<Set> {}
+
+    impl<Set: Debug + Clone + Send + Sync> CharZeroRingSignature for UnconstructableStructure<Set> {
+        fn try_to_int(&self, _x: &Self::Set) -> Option<algebraeon_nzq::Integer> {
+            unreachable!()
+        }
+    }
+}
+
+/*
+All methods are allowed to return None, and if they do it should only affect speed of algorithms, not correctness.
+Where methods do not return None, the resulting structure may be used for optimizations only.
+
+The methods currently require cloning some structures when sucessful.
+That's because it's currently prohibitively messy to allow returning by value or by reference depending on context.
+Stabilisation of Rust features such as impl aliases may make this more feasible in future.
+*/
+pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> {
+    /*
+    Used by:
+     - Polynomial rings to determine whether the karatsuba is usable.
+     */
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Option::<unconstructable_everything_structure::UnconstructableStructure<Self::Set>>::None
+    }
+
+    /*
+    Used by:
+     - Formatting polynomials as strings: If the set of coefficients has this structure then it's possible to call .try_to_int(..) which can allow for nicer formatting at integer coefficients.
+     */
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+        Option::<unconstructable_everything_structure::UnconstructableStructure<Self::Set>>::None
+    }
+}
+
+pub trait SetWithZeroSignature: RinglikeSpecializationSignature {
     fn zero(&self) -> Self::Set;
 }
 pub trait MetaSetWithZero: MetaType
@@ -76,7 +223,7 @@ where
 }
 impl<R: MetaType> MetaSetWithZeroAndEq for R where Self::Signature: SetWithZeroAndEqSignature {}
 
-pub trait MultiplicativeMonoidSignature: SetSignature {
+pub trait MultiplicativeMonoidSignature: RinglikeSpecializationSignature {
     fn one(&self) -> Self::Set;
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
@@ -140,7 +287,7 @@ where
 impl<R: MetaType> MetaMultiplicativeMonoid for R where Self::Signature: MultiplicativeMonoidSignature
 {}
 
-pub trait MultiplicativeMonoidSquareOpsSignature: SetSignature {
+pub trait MultiplicativeMonoidSquareOpsSignature: RinglikeSpecializationSignature {
     fn is_square(&self, a: &Self::Set) -> bool {
         self.sqrt_if_square(a).is_some()
     }
@@ -195,7 +342,7 @@ pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
         }
     }
 
-    fn units<'a>(&'a self) -> MultiplicativeMonoidUnitsStructure<Self, &'a Self> {
+    fn units(&self) -> MultiplicativeMonoidUnitsStructure<Self, &Self> {
         MultiplicativeMonoidUnitsStructure::new(self)
     }
 
@@ -335,8 +482,8 @@ pub trait SemiRingSignature:
             let bits: Vec<bool> = x.bits().collect();
             let mut ans = self.zero();
             let mut v = self.one();
-            for i in 0..bits.len() {
-                if bits[i] {
+            for b in bits {
+                if b {
                     self.add_mut(&mut ans, &v);
                 }
                 self.mul_mut(&mut v, &two);
@@ -404,7 +551,7 @@ pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
         }
     }
 
-    fn inbound_principal_integer_map<'a>(&'a self) -> PrincipalIntegerMap<Self, &'a Self> {
+    fn inbound_principal_integer_map(&self) -> PrincipalIntegerMap<Self, &Self> {
         PrincipalIntegerMap::new(self)
     }
 
@@ -512,7 +659,7 @@ pub trait GreatestCommonDivisorSignature:
 {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
-    fn gcd<'a>(&'a self, x: &Self::Set, y: &Self::Set) -> Self::Set;
+    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
     fn gcd_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut gcd = self.zero();
         for x in elems {
@@ -724,7 +871,7 @@ impl<R: MetaType> MetaEuclideanDivision for R where
 pub trait EuclideanDomainSignature: EuclideanDivisionSignature + IntegralDomainSignature {}
 impl<Ring: EuclideanDivisionSignature + IntegralDomainSignature> EuclideanDomainSignature for Ring {}
 
-pub trait InfiniteSignature: SetSignature {
+pub trait InfiniteSignature: RinglikeSpecializationSignature {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
 }
 pub trait Infinite: MetaType {
@@ -839,7 +986,7 @@ impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
 pub trait CharZeroFieldSignature: FieldSignature + CharZeroRingSignature {
     fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
 
-    fn inbound_principal_rational_map<'a>(&'a self) -> PrincipalRationalMap<Self, &'a Self> {
+    fn inbound_principal_rational_map(&self) -> PrincipalRationalMap<Self, &Self> {
         PrincipalRationalMap::new(self)
     }
     fn into_inbound_principal_rational_map(self) -> PrincipalRationalMap<Self, Self> {
@@ -862,7 +1009,7 @@ pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSe
 }
 
 //is a subset of the complex numbers
-pub trait ComplexSubsetSignature: SetSignature {
+pub trait ComplexSubsetSignature: RinglikeSpecializationSignature {
     fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32);
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64);
 }
@@ -952,7 +1099,7 @@ where
 }
 impl<R: MetaType> MetaRealFromFloat for R where Self::Signature: RealFromFloatSignature<Set = R> {}
 
-pub trait ComplexConjugateSignature: SetSignature {
+pub trait ComplexConjugateSignature: RinglikeSpecializationSignature {
     fn conjugate(&self, x: &Self::Set) -> Self::Set;
 }
 pub trait MetaComplexConjugate: MetaType

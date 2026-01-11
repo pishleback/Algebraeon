@@ -83,7 +83,7 @@ impl<const N: usize> From<usize> for Modulo<N> {
 impl<const N: usize> From<isize> for Modulo<N> {
     fn from(value: isize) -> Self {
         Self {
-            x: modulo(value as isize, N),
+            x: modulo(value, N),
         }
     }
 }
@@ -151,6 +151,8 @@ impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
         format!("{}", elem)
     }
 }
+
+impl<const N: usize> RinglikeSpecializationSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> SetWithZeroSignature for ModuloCanonicalStructure<N> {
     fn zero(&self) -> Self::Set {

@@ -96,6 +96,8 @@ impl EqSignature for ConwayFiniteFieldStructure {
     }
 }
 
+impl RinglikeSpecializationSignature for ConwayFiniteFieldStructure {}
+
 impl SetWithZeroSignature for ConwayFiniteFieldStructure {
     fn zero(&self) -> Self::Set {
         self.structure.zero()
@@ -197,12 +199,14 @@ impl FiniteFieldSignature for ConwayFiniteFieldStructure {
 #[derive(Debug, Clone)]
 pub struct ConwayFiniteFieldInclusion {
     // a prime
+    #[allow(unused)]
     p: usize,
     // finite field of order p^m
     domain: ConwayFiniteFieldStructure,
     // finite field of order p^n
     range: ConwayFiniteFieldStructure,
     // n/m
+    #[allow(unused)]
     degree: usize,
     // Linear map F_{p^m} -> F_{p^n} of column vectors of polynomial coefficients over F_p
     inclusion: Matrix<Integer>,

@@ -7,6 +7,7 @@ use itertools::Itertools;
 mod gram_schmidt;
 mod hermite_reduction;
 mod jordan_normal_form;
+#[allow(clippy::module_inception)]
 mod matrix;
 mod polynomial;
 mod primitive;

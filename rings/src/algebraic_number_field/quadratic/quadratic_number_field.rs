@@ -6,7 +6,8 @@ use crate::structure::{
     CharZeroFieldSignature, CharZeroRingSignature, CharacteristicSignature, FieldSignature,
     IntegralDomainSignature, MetaFactoringMonoidNaturalExponent, MetaSetWithZeroAndEq,
     MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidUnitsSignature, RingSignature, SemiRingSignature, SetWithZeroSignature,
+    MultiplicativeMonoidUnitsSignature, RingSignature, RinglikeSpecializationSignature,
+    SemiRingSignature, SetWithZeroSignature,
 };
 use crate::structure::{
     FreeModuleSignature, MetaCharZeroRing, PrincipalRationalMap,
@@ -100,7 +101,7 @@ impl<D: BorrowedSet<Integer>> QuadraticNumberFieldStructure<D> {
         self.d.borrow()
     }
 
-    pub fn roi<'d>(&'d self) -> QuadraticRingOfIntegersStructure<&'d Integer> {
+    pub fn roi(&self) -> QuadraticRingOfIntegersStructure<&Integer> {
         QuadraticRingOfIntegersStructure::new_unchecked(self.d())
     }
 }
@@ -118,6 +119,18 @@ impl<D: BorrowedSet<Integer>> SetSignature for QuadraticNumberFieldStructure<D> 
 impl<D: BorrowedSet<Integer>> EqSignature for QuadraticNumberFieldStructure<D> {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         a.rational_part == b.rational_part && a.algebraic_part == b.algebraic_part
+    }
+}
+
+impl<D: BorrowedSet<Integer>> RinglikeSpecializationSignature for QuadraticNumberFieldStructure<D> {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Some(self.clone())
+    }
+
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+        Some(self.clone())
     }
 }
 
@@ -268,7 +281,7 @@ impl<'h, D: BorrowedSet<Integer>, B: BorrowedStructure<QuadraticNumberFieldStruc
         &self,
         b: &QuadraticNumberFieldBasis,
         v: &'a QuadraticNumberFieldElement,
-    ) -> std::borrow::Cow<'a, Rational> {
+    ) -> Cow<'a, Rational> {
         match b {
             QuadraticNumberFieldBasis::Rational => Cow::Borrowed(&v.rational_part),
             QuadraticNumberFieldBasis::Algebraic => Cow::Borrowed(&v.algebraic_part),
@@ -308,7 +321,7 @@ impl<D: BorrowedSet<Integer>> QuadraticNumberFieldStructure<D> {
         QuadraticRingOfIntegersStructure::new_unchecked(self.d)
     }
 
-    pub fn ring_of_integers<'a>(&'a self) -> QuadraticRingOfIntegersStructure<&'a Integer> {
+    pub fn ring_of_integers(&self) -> QuadraticRingOfIntegersStructure<&Integer> {
         QuadraticRingOfIntegersStructure::new_unchecked(self.d.borrow())
     }
 }
@@ -317,9 +330,7 @@ impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberF
     type Basis = QuadraticNumberFieldBasisCanonicalStructure;
     type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn inbound_finite_dimensional_rational_extension<'a>(
-        &'a self,
-    ) -> Self::RationalInclusion<&'a Self> {
+    fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self> {
         PrincipalRationalMap::new(self)
     }
 

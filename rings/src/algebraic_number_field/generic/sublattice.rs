@@ -3,7 +3,7 @@ use crate::{
     matrix::Matrix,
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-        FiniteRankFreeRingExtension, SetWithZeroSignature,
+        FiniteRankFreeRingExtension, RinglikeSpecializationSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::Integer;
@@ -127,6 +127,11 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> EqSignature
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         self.free_lattice_restructure().equal(a, b)
     }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> RinglikeSpecializationSignature
+    for FullRankSublatticeWithBasis<K, KB>
+{
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetWithZeroSignature

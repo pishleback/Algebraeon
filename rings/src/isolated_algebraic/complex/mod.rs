@@ -619,6 +619,18 @@ impl ToStringSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
+impl RinglikeSpecializationSignature for ComplexAlgebraicCanonicalStructure {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Some(self.clone())
+    }
+
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+        Some(self.clone())
+    }
+}
+
 impl SetWithZeroSignature for ComplexAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
@@ -1115,7 +1127,7 @@ mod tests {
         println!("h = {}", h);
 
         for x in h.primitive_part_fof().all_complex_roots() {
-            println!("");
+            println!();
             println!("x = {} deg = {}", x, x.min_poly().degree().unwrap());
             let gx = x.clone().apply_poly(&g);
             println!("gx = {}", gx);

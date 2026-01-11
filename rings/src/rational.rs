@@ -7,6 +7,18 @@ use algebraeon_sets::structure::*;
 use static_assertions::const_assert;
 use std::borrow::Cow;
 
+impl RinglikeSpecializationSignature for RationalCanonicalStructure {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Some(self.clone())
+    }
+
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+        Some(self.clone())
+    }
+}
+
 impl SetWithZeroSignature for RationalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Rational::ZERO
@@ -178,9 +190,7 @@ impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     type Basis = SingletonSetStructure;
     type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn inbound_finite_dimensional_rational_extension<'a>(
-        &'a self,
-    ) -> Self::RationalInclusion<&'a Self> {
+    fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self> {
         self.inbound_principal_rational_map()
     }
     fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {

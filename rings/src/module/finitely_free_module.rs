@@ -27,7 +27,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
     }
 }
 pub trait RingToFinitelyFreeModuleSignature: RingSignature {
-    fn free_module<'a>(&'a self, n: usize) -> FinitelyFreeModuleStructure<Self, &'a Self> {
+    fn free_module(&self, n: usize) -> FinitelyFreeModuleStructure<Self, &Self> {
         FinitelyFreeModuleStructure::new(self, n)
     }
 
@@ -85,7 +85,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
 impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     FinitelyFreeModuleStructure<Ring, RingB>
 {
-    pub fn submodules<'a>(&'a self) -> FinitelyFreeSubmoduleStructure<Ring, &'a Ring> {
+    pub fn submodules(&self) -> FinitelyFreeSubmoduleStructure<Ring, &Ring> {
         FinitelyFreeSubmoduleStructure::new(FinitelyFreeModuleStructure::new(
             self.ring(),
             self.rank(),
@@ -96,7 +96,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         FinitelyFreeSubmoduleStructure::new(self)
     }
 
-    pub fn cosets<'a>(&'a self) -> FinitelyFreeSubmoduleCosetStructure<Ring, &'a Ring> {
+    pub fn cosets(&self) -> FinitelyFreeSubmoduleCosetStructure<Ring, &Ring> {
         FinitelyFreeSubmoduleCosetStructure::new(FinitelyFreeModuleStructure::new(
             self.ring(),
             self.rank(),
@@ -107,9 +107,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         FinitelyFreeSubmoduleCosetStructure::new(self)
     }
 
-    pub fn affine_subsets<'a>(
-        &'a self,
-    ) -> FinitelyFreeSubmoduleAffineSubsetStructure<Ring, &'a Ring> {
+    pub fn affine_subsets(&self) -> FinitelyFreeSubmoduleAffineSubsetStructure<Ring, &Ring> {
         FinitelyFreeSubmoduleAffineSubsetStructure::new(FinitelyFreeModuleStructure::new(
             self.ring(),
             self.rank(),
@@ -168,6 +166,11 @@ impl<Ring: RingSignature + EqSignature, RingB: BorrowedStructure<Ring>> EqSignat
         debug_assert!(self.is_element(w).is_ok());
         (0..self.rank()).all(|i| self.ring().equal(&v[i], &w[i]))
     }
+}
+
+impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> RinglikeSpecializationSignature
+    for FinitelyFreeModuleStructure<Ring, RingB>
+{
 }
 
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetWithZeroSignature

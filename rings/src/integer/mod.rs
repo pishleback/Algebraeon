@@ -5,6 +5,7 @@ use algebraeon_nzq::traits::DivMod;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::BorrowedStructure;
 use algebraeon_sets::structure::CountableSetSignature;
+use algebraeon_sets::structure::EqSignature;
 use algebraeon_sets::structure::FiniteSetSignature;
 use algebraeon_sets::structure::MetaType;
 use std::collections::HashSet;
@@ -14,6 +15,18 @@ pub mod ideal;
 pub mod modulo;
 pub mod polynomial;
 pub mod zimmermann_polys;
+
+impl RinglikeSpecializationSignature for IntegerCanonicalStructure {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Some(self.clone())
+    }
+
+    fn try_char_zero_ring_restructure(
+        &self,
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+        Some(self.clone())
+    }
+}
 
 impl SetWithZeroSignature for IntegerCanonicalStructure {
     fn zero(&self) -> Self::Set {
@@ -132,7 +145,7 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
 impl UniqueFactorizationMonoidSignature for IntegerCanonicalStructure {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+    fn factorization_exponents(&self) -> &Self::FactoredExponent {
         Natural::structure_ref()
     }
 
