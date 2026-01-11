@@ -47,6 +47,7 @@ impl<
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > HenselProduct<LIFTED_BEZOUT_COEFFS, RS>
 {
+    #[allow(unused)]
     fn check(
         &self,
         ring: &RS,
@@ -370,6 +371,7 @@ impl<
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>
 {
+    #[allow(unused)]
     fn check(&self, ring: &RS, i: &RS::Set, n: &Natural) -> Result<(), &'static str> {
         // let poly_ring = PolynomialStructure::new(ring.clone().into());
         // if !poly_ring.is_monic(&self.h) {
@@ -451,6 +453,7 @@ impl<
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > HenselFactorization<LIFTED_BEZOUT_COEFFS, RS>
 {
+    #[allow(unused)]
     fn check(&self) -> Result<(), &'static str> {
         self.factorization.check(&self.ring, &self.i, &self.n)
     }
