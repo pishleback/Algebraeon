@@ -101,7 +101,7 @@ impl<D: BorrowedSet<Integer>> QuadraticNumberFieldStructure<D> {
         self.d.borrow()
     }
 
-    pub fn roi<'d>(&'d self) -> QuadraticRingOfIntegersStructure<&'d Integer> {
+    pub fn roi(&self) -> QuadraticRingOfIntegersStructure<&Integer> {
         QuadraticRingOfIntegersStructure::new_unchecked(self.d())
     }
 }
@@ -317,7 +317,7 @@ impl<D: BorrowedSet<Integer>> QuadraticNumberFieldStructure<D> {
         QuadraticRingOfIntegersStructure::new_unchecked(self.d)
     }
 
-    pub fn ring_of_integers<'a>(&'a self) -> QuadraticRingOfIntegersStructure<&'a Integer> {
+    pub fn ring_of_integers(&self) -> QuadraticRingOfIntegersStructure<&Integer> {
         QuadraticRingOfIntegersStructure::new_unchecked(self.d.borrow())
     }
 }
@@ -326,9 +326,7 @@ impl<D: BorrowedSet<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberF
     type Basis = QuadraticNumberFieldBasisCanonicalStructure;
     type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn inbound_finite_dimensional_rational_extension<'a>(
-        &'a self,
-    ) -> Self::RationalInclusion<&'a Self> {
+    fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self> {
         PrincipalRationalMap::new(self)
     }
 

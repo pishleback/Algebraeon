@@ -346,6 +346,7 @@ pub struct DedekindExtensionIdealFactorsAbovePrimeFactor<Ideal> {
 
 #[derive(Debug, Clone)]
 pub struct DedekindExtensionIdealFactorsAbovePrime<IdealZ, IdealR> {
+    #[allow(unused)]
     base_prime: IdealZ,
     // All factors lie above base_prime
     // All powers are >= 1

@@ -20,10 +20,9 @@ use crate::{
 };
 use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::{
-    BorrowedStructure, EqSignature, Function, InjectiveFunction, MetaType, Morphism, SetSignature,
-    Signature, ToStringSignature,
+    BorrowedStructure, EqSignature, Function, InjectiveFunction, MetaType, SetSignature, Signature,
+    ToStringSignature,
 };
-use std::marker::PhantomData;
 
 pub type RingOfIntegersWithIntegralBasis<K, KB> = OrderWithBasis<K, KB, true>;
 
@@ -254,6 +253,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
         let mut t = self.zero();
+        #[allow(clippy::needless_range_loop)]
         for i in 0..n {
             for j in 0..n {
                 self.add_mut(
@@ -494,101 +494,101 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> OrderWithBasis<
     }
 }
 
-mod anf_inclusion {
-    use super::*;
-    use crate::structure::RingHomomorphism;
+// mod anf_inclusion {
+//     use super::*;
+//     use crate::structure::RingHomomorphism;
 
-    #[derive(Debug, Clone)]
-    pub struct AlgebraicNumberFieldOrderWithBasisInclusion<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        const MAXIMAL: bool,
-        OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-    > {
-        _k: PhantomData<K>,
-        _kb: PhantomData<KB>,
-        order: OB,
-    }
+//     #[derive(Debug, Clone)]
+//     pub struct AlgebraicNumberFieldOrderWithBasisInclusion<
+//         K: AlgebraicNumberFieldSignature,
+//         KB: BorrowedStructure<K>,
+//         const MAXIMAL: bool,
+//         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+//     > {
+//         _k: PhantomData<K>,
+//         _kb: PhantomData<KB>,
+//         order: OB,
+//     }
 
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        const MAXIMAL: bool,
-        OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-    > AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
-    {
-        pub fn new(order: OB) -> Self {
-            Self {
-                _k: PhantomData,
-                _kb: PhantomData,
-                order,
-            }
-        }
+//     impl<
+//         K: AlgebraicNumberFieldSignature,
+//         KB: BorrowedStructure<K>,
+//         const MAXIMAL: bool,
+//         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+//     > AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
+//     {
+//         pub fn new(order: OB) -> Self {
+//             Self {
+//                 _k: PhantomData,
+//                 _kb: PhantomData,
+//                 order,
+//             }
+//         }
 
-        pub fn order(&self) -> &OrderWithBasis<K, KB, MAXIMAL> {
-            self.order.borrow()
-        }
-    }
+//         pub fn order(&self) -> &OrderWithBasis<K, KB, MAXIMAL> {
+//             self.order.borrow()
+//         }
+//     }
 
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        const MAXIMAL: bool,
-        OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-    > Morphism<OrderWithBasis<K, KB, MAXIMAL>, K>
-        for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
-    {
-        fn domain(&self) -> &OrderWithBasis<K, KB, MAXIMAL> {
-            self.order()
-        }
+//     impl<
+//         K: AlgebraicNumberFieldSignature,
+//         KB: BorrowedStructure<K>,
+//         const MAXIMAL: bool,
+//         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+//     > Morphism<OrderWithBasis<K, KB, MAXIMAL>, K>
+//         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
+//     {
+//         fn domain(&self) -> &OrderWithBasis<K, KB, MAXIMAL> {
+//             self.order()
+//         }
 
-        fn range(&self) -> &K {
-            self.order().anf()
-        }
-    }
+//         fn range(&self) -> &K {
+//             self.order().anf()
+//         }
+//     }
 
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        const MAXIMAL: bool,
-        OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-    > Function<OrderWithBasis<K, KB, MAXIMAL>, K>
-        for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
-    {
-        fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
-            self.order()
-                .full_rank_z_sublattice
-                .outbound_order_to_anf_inclusion()
-                .image(x)
-        }
-    }
+//     impl<
+//         K: AlgebraicNumberFieldSignature,
+//         KB: BorrowedStructure<K>,
+//         const MAXIMAL: bool,
+//         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+//     > Function<OrderWithBasis<K, KB, MAXIMAL>, K>
+//         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
+//     {
+//         fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
+//             self.order()
+//                 .full_rank_z_sublattice
+//                 .outbound_order_to_anf_inclusion()
+//                 .image(x)
+//         }
+//     }
 
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        const MAXIMAL: bool,
-        OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-    > InjectiveFunction<OrderWithBasis<K, KB, MAXIMAL>, K>
-        for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
-    {
-        fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
-            self.order()
-                .full_rank_z_sublattice
-                .outbound_order_to_anf_inclusion()
-                .try_preimage(y)
-        }
-    }
+//     impl<
+//         K: AlgebraicNumberFieldSignature,
+//         KB: BorrowedStructure<K>,
+//         const MAXIMAL: bool,
+//         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+//     > InjectiveFunction<OrderWithBasis<K, KB, MAXIMAL>, K>
+//         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
+//     {
+//         fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
+//             self.order()
+//                 .full_rank_z_sublattice
+//                 .outbound_order_to_anf_inclusion()
+//                 .try_preimage(y)
+//         }
+//     }
 
-    impl<
-        K: AlgebraicNumberFieldSignature,
-        KB: BorrowedStructure<K>,
-        const MAXIMAL: bool,
-        OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-    > RingHomomorphism<OrderWithBasis<K, KB, MAXIMAL>, K>
-        for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
-    {
-    }
-}
+//     impl<
+//         K: AlgebraicNumberFieldSignature,
+//         KB: BorrowedStructure<K>,
+//         const MAXIMAL: bool,
+//         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+//     > RingHomomorphism<OrderWithBasis<K, KB, MAXIMAL>, K>
+//         for AlgebraicNumberFieldOrderWithBasisInclusion<K, KB, MAXIMAL, OB>
+//     {
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

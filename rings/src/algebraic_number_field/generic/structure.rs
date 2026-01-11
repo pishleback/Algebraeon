@@ -23,9 +23,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type Basis: FiniteSetSignature;
     type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
 
-    fn inbound_finite_dimensional_rational_extension<'a>(
-        &'a self,
-    ) -> Self::RationalInclusion<&'a Self>;
+    fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self>;
     fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
 
     /// The dimension of this algebraic number field as a vector space over the rational numbers
@@ -48,7 +46,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     /// A list of self.n() elements which generate the ring of integers as a Z-module
     fn integral_basis(&self) -> Vec<Self::Set>;
 
-    fn ring_of_integers<'a>(&'a self) -> OrderWithBasis<Self, &'a Self, true> {
+    fn ring_of_integers(&self) -> OrderWithBasis<Self, &Self, true> {
         OrderWithBasis::new_maximal_unchecked(self, self.integral_basis())
     }
     fn into_ring_of_integers(self) -> OrderWithBasis<Self, Self, true> {
@@ -56,10 +54,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
         OrderWithBasis::new_maximal_unchecked(self, basis)
     }
 
-    fn order<'a>(
-        &'a self,
-        basis: Vec<Self::Set>,
-    ) -> Result<OrderWithBasis<Self, &'a Self, false>, String> {
+    fn order(&self, basis: Vec<Self::Set>) -> Result<OrderWithBasis<Self, &Self, false>, String> {
         OrderWithBasis::new(self, basis)
     }
     fn into_order(
@@ -109,7 +104,7 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
 
     fn try_from_anf(&self, y: &K::Set) -> Option<Self::Set>;
 
-    fn order<'a>(&'a self) -> OrderWithBasis<K, &'a K, true> {
+    fn order(&self) -> OrderWithBasis<K, &K, true> {
         OrderWithBasis::new_maximal_unchecked(
             self.anf(),
             self.integral_basis()
@@ -125,24 +120,23 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(self)
     }
 
-    fn outbound_roi_to_anf_inclusion<'a>(
-        &'a self,
-    ) -> RingOfIntegersToAlgebraicNumberFieldInclusion<K, Self, &'a Self> {
+    fn outbound_roi_to_anf_inclusion(
+        &self,
+    ) -> RingOfIntegersToAlgebraicNumberFieldInclusion<K, Self, &Self> {
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(self)
     }
 
     fn inbound_order_inclusion<
-        'a,
         KOB: BorrowedStructure<K>,
         const MAXIMAL: bool,
         OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
     >(
-        &'a self,
+        &self,
         order: OB,
     ) -> order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion<
         K,
         Self,
-        &'a Self,
+        &Self,
         KOB,
         MAXIMAL,
         OB,
@@ -151,16 +145,15 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
     }
 
     fn inbound_order_isomorphism<
-        'a,
         KOB: BorrowedStructure<K>,
         OB: BorrowedStructure<OrderWithBasis<K, KOB, true>>,
     >(
-        &'a self,
+        &self,
         order: OB,
     ) -> order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion<
         K,
         Self,
-        &'a Self,
+        &Self,
         KOB,
         true,
         OB,
@@ -272,13 +265,13 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
         RB: BorrowedStructure<R>,
     > RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
     {
-        pub fn zq_extension<'a>(
-            &'a self,
+        pub fn zq_extension(
+            &self,
         ) -> RingOfIntegersIntegralExtension<
             K,
             R,
-            &'a R,
-            RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, &'a R>,
+            &R,
+            RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, &R>,
         > {
             RingOfIntegersIntegralExtension::new_integer_extension(
                 RingOfIntegersToAlgebraicNumberFieldInclusion {
@@ -597,14 +590,14 @@ mod anf_inclusion {
             OB,
         >
     {
-        pub fn zq_extension<'a>(
-            &'a self,
+        pub fn zq_extension(
+            &self,
         ) -> order_integral_extension::OrderIntegralExtension<
             K,
             KOB,
             MAXIMAL,
             OB,
-            &'a AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+            &AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
                 K,
                 OrderWithBasis<K, KOB, MAXIMAL>,
                 OB,
@@ -682,21 +675,21 @@ mod anf_inclusion {
                 }
             }
 
-            pub fn with_ideals<'a>(
-                &'a self,
+            pub fn with_ideals(
+                &self,
             ) -> OrderIntegralExtensionWithIdeals<
                 K,
                 KOB,
                 MAXIMAL,
                 RB,
-                &'a AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                &AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
                     K,
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     RB,
                 >,
                 IntegerIdealsStructure<IntegerCanonicalStructure>,
-                &'a OrderWithBasis<K, KOB, MAXIMAL>,
-                OrderIdealsStructure<K, KOB, MAXIMAL, &'a OrderWithBasis<K, KOB, MAXIMAL>>,
+                &OrderWithBasis<K, KOB, MAXIMAL>,
+                OrderIdealsStructure<K, KOB, MAXIMAL, &OrderWithBasis<K, KOB, MAXIMAL>>,
             > {
                 let ideals_z = Integer::structure().into_ideals();
                 let ideals_r = self.r_to_k.borrow().domain().ideals();
@@ -1021,9 +1014,9 @@ mod sublattice_inclusion {
             s
         }
 
-        pub fn sublattices_inclusion<'a>(
-            &'a self,
-        ) -> SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, &'a Self> {
+        pub fn sublattices_inclusion(
+            &self,
+        ) -> SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, &Self> {
             SublatticeSublatticeInclusion::new(self)
         }
     }
@@ -1322,9 +1315,9 @@ pub trait FullRankSublatticeWithBasisSignature<K: AlgebraicNumberFieldSignature>
         anf_inclusion::AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion::new(self)
     }
 
-    fn outbound_order_to_anf_inclusion<'a>(
-        &'a self,
-    ) -> anf_inclusion::AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<K, Self, &'a Self>
+    fn outbound_order_to_anf_inclusion(
+        &self,
+    ) -> anf_inclusion::AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<K, Self, &Self>
     {
         anf_inclusion::AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion::new(self)
     }
@@ -1340,13 +1333,12 @@ pub trait FullRankSublatticeWithBasisSignature<K: AlgebraicNumberFieldSignature>
     }
 
     fn inbound_sublattice_inclusion<
-        'a,
         Sublat: FullRankSublatticeWithBasisSignature<K>,
         SublatB: BorrowedStructure<Sublat>,
     >(
-        &'a self,
+        &self,
         sublattice: SublatB,
-    ) -> Option<sublattice_inclusion::SublatticeInclusion<K, Self, &'a Self, Sublat, SublatB>> {
+    ) -> Option<sublattice_inclusion::SublatticeInclusion<K, Self, &Self, Sublat, SublatB>> {
         sublattice_inclusion::SublatticeInclusion::new(self, sublattice)
     }
 
@@ -1361,13 +1353,12 @@ pub trait FullRankSublatticeWithBasisSignature<K: AlgebraicNumberFieldSignature>
     }
 
     fn inbound_sublattice_inclusion_unchecked<
-        'a,
         Sublat: FullRankSublatticeWithBasisSignature<K>,
         SublatB: BorrowedStructure<Sublat>,
     >(
-        &'a self,
+        &self,
         sublattice: SublatB,
-    ) -> sublattice_inclusion::SublatticeInclusion<K, Self, &'a Self, Sublat, SublatB> {
+    ) -> sublattice_inclusion::SublatticeInclusion<K, Self, &Self, Sublat, SublatB> {
         sublattice_inclusion::SublatticeInclusion::new_unchecked(self, sublattice)
     }
 }

@@ -12,7 +12,7 @@ use itertools::Itertools;
 impl UniqueFactorizationMonoidSignature for NaturalCanonicalStructure {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+    fn factorization_exponents(&self) -> &Self::FactoredExponent {
         Natural::structure_ref()
     }
 

@@ -319,6 +319,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 let mut p = zero_poly();
                 let coeff_modulus = Natural::ONE << coeff_size;
                 let mut coeff;
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..r_usize {
                     (p_bigint, coeff) = p_bigint.div_mod(&coeff_modulus);
                     p[i] = coeff.rem(n);

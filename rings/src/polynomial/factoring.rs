@@ -83,6 +83,7 @@ where
     PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
+    #[allow(unused)]
     fn factor_primitive_linear_part(
         &self,
         mut f: Polynomial<RS::Set>,
@@ -135,7 +136,6 @@ where
                     }
                 }
             }
-
             break;
         }
         (linear_factors, f)
@@ -332,7 +332,7 @@ where
 // }
 
 pub fn factorize_by_factorize_primitive_part<
-    Ring: RingSignature,
+    Ring: RingSignature + GreatestCommonDivisorSignature,
     Field: FieldSignature,
     FieldB: BorrowedStructure<Field>,
     Fof: FieldOfFractionsInclusion<Ring, Field>,
@@ -346,7 +346,6 @@ where
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     for<'a> PolynomialStructure<Ring, &'a Ring>: SetSignature<Set = Polynomial<Ring::Set>>
         + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
-    Ring: GreatestCommonDivisorSignature,
 {
     let (unit, prim) = factor_primitive_fof(fof_inclusion, f);
     if let Some((prim_unit, prim_factors)) = fof_inclusion

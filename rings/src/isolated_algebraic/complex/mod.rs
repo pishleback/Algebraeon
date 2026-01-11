@@ -1123,7 +1123,7 @@ mod tests {
         println!("h = {}", h);
 
         for x in h.primitive_part_fof().all_complex_roots() {
-            println!("");
+            println!();
             println!("x = {} deg = {}", x, x.min_poly().degree().unwrap());
             let gx = x.clone().apply_poly(&g);
             println!("gx = {}", gx);

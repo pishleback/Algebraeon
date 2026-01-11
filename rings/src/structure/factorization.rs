@@ -20,7 +20,7 @@ pub struct NonZeroFactored<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone>
 }
 
 impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> NonZeroFactored<ObjectSet, ExponentSet> {
-    pub fn powers<'a>(&'a self) -> &'a Vec<(ObjectSet, ExponentSet)> {
+    pub fn powers(&self) -> &Vec<(ObjectSet, ExponentSet)> {
         &self.powers
     }
 
@@ -28,7 +28,7 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> NonZeroFactored<Objec
         self.powers
     }
 
-    pub fn unit<'a>(&'a self) -> &'a ObjectSet {
+    pub fn unit(&self) -> &ObjectSet {
         &self.unit
     }
 
@@ -36,7 +36,7 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> NonZeroFactored<Objec
         self.unit
     }
 
-    pub fn unit_and_powers<'a>(&'a self) -> (&'a ObjectSet, &'a Vec<(ObjectSet, ExponentSet)>) {
+    pub fn unit_and_powers(&self) -> (&ObjectSet, &Vec<(ObjectSet, ExponentSet)>) {
         (&self.unit, &self.powers)
     }
 
@@ -44,7 +44,7 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> NonZeroFactored<Objec
         (self.unit, self.powers)
     }
 
-    pub fn distinct_irreducibles<'a>(&'a self) -> Vec<&'a ObjectSet> {
+    pub fn distinct_irreducibles(&self) -> Vec<&ObjectSet> {
         self.powers.iter().map(|(p, _)| p).collect()
     }
 
@@ -105,7 +105,7 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
         }
     }
 
-    pub fn powers<'a>(&'a self) -> Option<&'a Vec<(ObjectSet, ExponentSet)>> {
+    pub fn powers(&self) -> Option<&Vec<(ObjectSet, ExponentSet)>> {
         match self {
             Factored::Zero => None,
             Factored::NonZero(a) => Some(a.powers()),
@@ -119,7 +119,7 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
         }
     }
 
-    pub fn unit<'a>(&'a self) -> Option<&'a ObjectSet> {
+    pub fn unit(&self) -> Option<&ObjectSet> {
         match self {
             Factored::Zero => None,
             Factored::NonZero(a) => Some(a.unit()),
@@ -133,9 +133,7 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
         }
     }
 
-    pub fn unit_and_powers<'a>(
-        &'a self,
-    ) -> Option<(&'a ObjectSet, &'a Vec<(ObjectSet, ExponentSet)>)> {
+    pub fn unit_and_powers(&self) -> Option<(&ObjectSet, &Vec<(ObjectSet, ExponentSet)>)> {
         match self {
             Factored::Zero => None,
             Factored::NonZero(a) => Some(a.unit_and_powers()),
@@ -149,7 +147,7 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
         }
     }
 
-    pub fn distinct_irreducibles<'a>(&'a self) -> Option<Vec<&'a ObjectSet>> {
+    pub fn distinct_irreducibles(&self) -> Option<Vec<&ObjectSet>> {
         match self {
             Factored::Zero => None,
             Factored::NonZero(a) => Some(a.distinct_irreducibles()),
@@ -718,6 +716,7 @@ impl<
     }
 
     /// Determine whether it is the square of some element
+    #[allow(unused)]
     fn is_square(&self, a: &Factored<Object::Set, Natural>) -> bool {
         match a {
             Factored::Zero => true,
@@ -749,6 +748,7 @@ impl<
 > FactoringStructure<Object, ObjectB, NaturalCanonicalStructure, ExponentB>
 {
     /// Return the element whose square equals the input, if it exists.
+    #[allow(unused)]
     fn sqrt_if_square(
         &self,
         a: &Factored<Object::Set, Natural>,
@@ -783,13 +783,12 @@ pub trait UniqueFactorizationMonoidSignature:
 {
     type FactoredExponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature;
 
-    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent;
+    fn factorization_exponents(&self) -> &Self::FactoredExponent;
     fn into_factorization_exponents(self) -> Self::FactoredExponent;
 
-    fn factorizations<'a>(
-        &'a self,
-    ) -> FactoringStructure<Self, &'a Self, Self::FactoredExponent, &'a Self::FactoredExponent>
-    {
+    fn factorizations(
+        &self,
+    ) -> FactoringStructure<Self, &Self, Self::FactoredExponent, &Self::FactoredExponent> {
         FactoringStructure::new(self, self.factorization_exponents())
     }
     fn into_factorizations(
@@ -913,7 +912,7 @@ impl<R: MetaType> MetaFactoringMonoidNaturalExponent for R where
 impl<FS: FieldSignature> UniqueFactorizationMonoidSignature for FS {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+    fn factorization_exponents(&self) -> &Self::FactoredExponent {
         Natural::structure_ref()
     }
 

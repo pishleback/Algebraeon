@@ -53,7 +53,7 @@ impl<D: BorrowedSet<Integer>> QuadraticRingOfIntegersStructure<D> {
         self.qanf.d()
     }
 
-    pub fn anf<'d>(&'d self) -> QuadraticNumberFieldStructure<&'d Integer> {
+    pub fn anf(&self) -> QuadraticNumberFieldStructure<&Integer> {
         QuadraticNumberFieldStructure::new_unchecked(self.d())
     }
 }

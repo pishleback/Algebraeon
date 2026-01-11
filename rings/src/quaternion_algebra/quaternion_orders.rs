@@ -144,6 +144,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStr
 }
 
 impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
+    #[allow(unused)]
     fn check_basis(self) -> bool {
         // 1. Check that the basis has 4n elements
         let expected_len = 4 * self.algebra.base_field().n();

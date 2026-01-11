@@ -99,7 +99,7 @@ where
     pub fn elementary_symmetric(
         &self,
         n: usize,
-        vars: &Vec<impl Borrow<Variable>>,
+        vars: &[impl Borrow<Variable>],
     ) -> MultiPolynomial<RS::Set> {
         let mp_ring = self.coeff_ring().multivariable_polynomial_ring();
         let mut e = mp_ring.zero();
@@ -196,7 +196,7 @@ where
             .collect_vec();
 
         #[cfg(debug_assertions)]
-        let vars_clone = vars.iter().map(|v| v.borrow().clone()).collect();
+        let vars_clone = vars.iter().map(|v| v.borrow().clone()).collect::<Vec<_>>();
 
         let poly_sym = self.as_elementary_symmetric_polynomials_impl(
             &vars.iter().map(|v| v.borrow().clone()).collect(),

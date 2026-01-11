@@ -115,7 +115,7 @@ impl<RS: Signature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
 }
 
 pub trait ToPolynomialSignature: Signature {
-    fn polynomials<'a>(&'a self) -> PolynomialStructure<Self, &'a Self> {
+    fn polynomials(&self) -> PolynomialStructure<Self, &Self> {
         PolynomialStructure::new(self)
     }
 
@@ -499,7 +499,7 @@ where
         Self::structure().into_coeffs(self)
     }
 
-    pub fn coeffs<'a>(&'a self) -> impl Iterator<Item = &'a R> {
+    pub fn coeffs(&self) -> impl Iterator<Item = &R> {
         Self::structure().structure_into_coeffs(self)
     }
 }
@@ -507,10 +507,7 @@ where
 impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
     PolynomialStructure<RS, RSB>
 {
-    fn structure_into_coeffs<'a>(
-        self,
-        a: &'a Polynomial<RS::Set>,
-    ) -> impl Iterator<Item = &'a RS::Set> {
+    fn structure_into_coeffs(self, a: &Polynomial<RS::Set>) -> impl Iterator<Item = &RS::Set> {
         (0..self.num_coeffs(a)).map(|i| &a.coeffs[i])
     }
 
@@ -1020,7 +1017,7 @@ impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: Borr
 {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+    fn factorization_exponents(&self) -> &Self::FactoredExponent {
         Natural::structure_ref()
     }
 
@@ -1204,7 +1201,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> EuclideanDivisionSignature
 impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
     pub fn interpolate_by_lagrange_basis(
         &self,
-        points: &Vec<(RS::Set, RS::Set)>,
+        points: &[(RS::Set, RS::Set)],
     ) -> Option<Polynomial<RS::Set>> {
         /*
         points should be a list of pairs (xi, yi) where the xi are distinct
@@ -1228,6 +1225,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
             let (_xi, yi) = &points[i];
             let mut term = Polynomial::constant(yi.clone());
 
+            #[allow(clippy::needless_range_loop)]
             for j in i + 1..points.len() {
                 // (x - xj) for j<i
                 let (xj, _yj) = &points[j];
@@ -1239,6 +1237,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                     ]),
                 );
             }
+            #[allow(clippy::needless_range_loop)]
             for j in 0..i {
                 // (xj - x) for i<j
                 let (xj, _yj) = &points[j];
@@ -1271,6 +1270,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
         let mut denominator = self.one();
         for i in 0..points.len() {
             let (xi, _yi) = &points[i];
+            #[allow(clippy::needless_range_loop)]
             for j in i + 1..points.len() {
                 let (xj, _yj) = &points[j];
                 self.mul_mut(
@@ -1293,7 +1293,7 @@ impl<RS: ReducedHermiteAlgorithmSignature, RSB: BorrowedStructure<RS>>
 {
     pub fn interpolate_by_linear_system(
         &self,
-        points: &Vec<(RS::Set, RS::Set)>,
+        points: &[(RS::Set, RS::Set)],
     ) -> Option<Polynomial<RS::Set>> {
         /*
         e.g. finding a degree 2 polynomial f(x)=a+bx+cx^2 such that
@@ -1310,6 +1310,7 @@ impl<RS: ReducedHermiteAlgorithmSignature, RSB: BorrowedStructure<RS>>
 
         let n = points.len();
         let mut mat = matrix_structure.zero(n, n);
+        #[allow(clippy::needless_range_loop)]
         for r in 0..n {
             let (x, _y) = &points[r];
             let mut x_pow = self.coeff_ring().one();
@@ -1398,6 +1399,7 @@ impl<R: MetaType> Polynomial<R>
 where
     R::Signature: RingEqSignature<Set = R>,
 {
+    #[allow(unused)]
     fn reduce(self) -> Self {
         Self::structure().reduce_poly(self)
     }
@@ -1543,7 +1545,7 @@ where
         Self::structure().discriminant(self)
     }
 
-    pub fn interpolate_by_lagrange_basis(points: &Vec<(R, R)>) -> Option<Self> {
+    pub fn interpolate_by_lagrange_basis(points: &[(R, R)]) -> Option<Self> {
         Self::structure().interpolate_by_lagrange_basis(points)
     }
 }
@@ -1552,7 +1554,7 @@ impl<R: MetaType> Polynomial<R>
 where
     R::Signature: ReducedHermiteAlgorithmSignature,
 {
-    pub fn interpolate_by_linear_system(points: &Vec<(R, R)>) -> Option<Self> {
+    pub fn interpolate_by_linear_system(points: &[(R, R)]) -> Option<Self> {
         Self::structure().interpolate_by_linear_system(points)
     }
 }
@@ -1753,18 +1755,18 @@ mod tests {
                 .into_verbose();
             let g = (3 * x.pow(6) + 5 * x.pow(4) - 4 * x.pow(2) - 9 * x + 21).into_verbose();
 
-            println!("f = {}", f.to_string());
-            println!("g = {}", g.to_string());
+            println!("f = {}", f);
+            println!("g = {}", g);
 
             let r1 = Polynomial::pseudorem(&f, &g).unwrap().unwrap();
-            println!("r1 = {}", r1.to_string());
+            println!("r1 = {}", r1);
             assert_eq!(
                 r1.clone().into_ergonomic(),
                 -15 * x.pow(4) + 3 * x.pow(2) - 9
             );
 
             let r2 = Polynomial::pseudorem(&g, &r1).unwrap().unwrap();
-            println!("r2 = {}", r2.to_string());
+            println!("r2 = {}", r2);
             assert_eq!(r2.into_ergonomic(), 15795 * x.pow(2) + 30375 * x - 59535);
         }
         println!();
@@ -1772,11 +1774,11 @@ mod tests {
             let f = (4 * x.pow(3) + 2 * x - 7).into_verbose();
             let g = Polynomial::zero();
 
-            println!("f = {}", f.to_string());
-            println!("g = {}", g.to_string());
+            println!("f = {}", f);
+            println!("g = {}", g);
 
             if Polynomial::pseudorem(&f, &g).is_some() {
-                assert!(false);
+                panic!()
             }
         }
         println!();
@@ -1785,12 +1787,12 @@ mod tests {
             let g = (x.pow(8) + x.pow(6) - 3 * x.pow(4) - 3 * x.pow(3) + 8 * x.pow(2) + 2 * x - 5)
                 .into_verbose();
 
-            println!("f = {}", f.to_string());
-            println!("g = {}", g.to_string());
+            println!("f = {}", f);
+            println!("g = {}", g);
 
             if let Err(_msg) = Polynomial::pseudorem(&f, &g).unwrap() {
             } else {
-                assert!(false);
+                panic!();
             }
         }
     }
@@ -1841,7 +1843,7 @@ mod tests {
         }
 
         //f(x)=2x
-        if let Some(f) = Polynomial::interpolate_by_lagrange_basis(&vec![
+        if let Some(f) = Polynomial::interpolate_by_lagrange_basis(&[
             (Integer::from(0), Integer::from(0)),
             (Integer::from(1), Integer::from(2)),
         ]) {
@@ -1854,7 +1856,7 @@ mod tests {
         }
 
         //f(x)=1/2x does not have integer coefficients
-        if let Some(_f) = Polynomial::interpolate_by_lagrange_basis(&vec![
+        if let Some(_f) = Polynomial::interpolate_by_lagrange_basis(&[
             (Integer::from(0), Integer::from(0)),
             (Integer::from(2), Integer::from(1)),
         ]) {
@@ -1887,7 +1889,7 @@ mod tests {
         }
 
         //f(x)=2x
-        if let Some(f) = Polynomial::interpolate_by_linear_system(&vec![
+        if let Some(f) = Polynomial::interpolate_by_linear_system(&[
             (Integer::from(0), Integer::from(0)),
             (Integer::from(1), Integer::from(2)),
         ]) {
@@ -1900,7 +1902,7 @@ mod tests {
         }
 
         //f(x)=1/2x does not have integer coefficients
-        if let Some(_f) = Polynomial::interpolate_by_linear_system(&vec![
+        if let Some(_f) = Polynomial::interpolate_by_linear_system(&[
             (Integer::from(0), Integer::from(0)),
             (Integer::from(2), Integer::from(1)),
         ]) {

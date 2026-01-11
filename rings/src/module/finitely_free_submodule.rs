@@ -229,6 +229,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
                 .ring()
                 .quo(&reduced_element[c], submodule.row_basis.at(r, c).unwrap())
                 .unwrap();
+            #[allow(clippy::needless_range_loop)]
             for c2 in 0..self.module().rank() {
                 reduced_element[c2] = self.ring().add(
                     &reduced_element[c2],

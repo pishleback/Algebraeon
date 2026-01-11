@@ -399,7 +399,7 @@ pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     /// The monic minimal polynomial of a
     fn min_poly(&self, a: &K::Set) -> Polynomial<F::Set>;
 
-    fn trace_form_matrix(&self, elems: &Vec<K::Set>) -> Matrix<F::Set> {
+    fn trace_form_matrix(&self, elems: &[K::Set]) -> Matrix<F::Set> {
         let n = self.degree();
         assert_eq!(n, elems.len());
         Matrix::construct(n, n, |r, c| {
@@ -407,7 +407,7 @@ pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
         })
     }
 
-    fn discriminant(&self, elems: &Vec<K::Set>) -> F::Set {
+    fn discriminant(&self, elems: &[K::Set]) -> F::Set {
         MatrixStructure::new(self.domain().clone())
             .det(self.trace_form_matrix(elems))
             .unwrap()

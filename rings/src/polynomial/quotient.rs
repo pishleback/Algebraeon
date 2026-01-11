@@ -45,8 +45,8 @@ impl<
 where
     PolynomialStructure<FS, FSB>: SetSignature<Set = Polynomial<FS::Set>>,
 {
-    pub fn coefficient_ring_inclusion<'a>(
-        &'a self,
+    pub fn coefficient_ring_inclusion(
+        &self,
     ) -> PolynomialQuotientRingExtension<FS, FSB, FSPB, IS_FIELD> {
         PolynomialQuotientRingExtension::new(self.clone())
     }

@@ -6,6 +6,7 @@ use bounds::*;
 use interval::*;
 use polynomial::*;
 use std::fmt::Display;
+use std::hash::Hash;
 
 mod bounds;
 mod interval;
@@ -154,6 +155,7 @@ impl RealAlgebraicRoot {
         Ok(())
     }
 
+    #[allow(unused)]
     fn new_wide_bounds(poly: Polynomial<Integer>, wide_a: Rational, wide_b: Rational) -> Self {
         let dir = poly.apply_map(|x| Rational::from(x)).evaluate(&wide_a) < Rational::from(0);
         let x = Self {
@@ -307,7 +309,7 @@ impl RealAlgebraicRoot {
     }
 }
 
-#[derive(Debug, Clone, Hash, CanonicalStructure)]
+#[derive(Debug, Clone, CanonicalStructure)]
 #[canonical_structure(eq, ord)]
 pub enum RealAlgebraic {
     Rational(Rational),
@@ -402,6 +404,12 @@ impl PartialEq for RealAlgebraic {
 }
 
 impl Eq for RealAlgebraic {}
+
+impl Hash for RealAlgebraic {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+    }
+}
 
 #[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for RealAlgebraic {
@@ -874,10 +882,10 @@ mod tests {
             a_neg.check_invariants().unwrap();
             b_neg.check_invariants().unwrap();
 
-            println!("a = {}", a.to_string());
-            println!("b = {}", b.to_string());
-            println!("a_neg = {}", a_neg.to_string());
-            println!("b_neg = {}", b_neg.to_string());
+            println!("a = {}", a);
+            println!("b = {}", b);
+            println!("a_neg = {}", a_neg);
+            println!("b_neg = {}", b_neg);
 
             assert_ne!(a, b);
             assert_eq!(a, &b_neg);
@@ -1020,7 +1028,7 @@ mod tests {
                     a.refine_to_accuracy(&Rational::from_integers(1, i64::MAX));
                 }
             }
-            println!("    {} {:?}", root.to_string(), root);
+            println!("    {} {:?}", root, root);
         }
 
         let mut all_roots_sorted_by_lower_tight_bound = all_roots.clone();

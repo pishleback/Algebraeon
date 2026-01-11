@@ -72,7 +72,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 {
     type Ideals<SelfB: BorrowedStructure<Self>> = OrderIdealsStructure<K, KB, MAXIMAL, SelfB>;
 
-    fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self> {
+    fn ideals(&self) -> Self::Ideals<&Self> {
         OrderIdealsStructure {
             _k: PhantomData,
             _kb: PhantomData,
@@ -305,14 +305,14 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    pub fn outbound_sublattices_inclusion<'a>(
-        &'a self,
+    pub fn outbound_sublattices_inclusion(
+        &self,
     ) -> sublattices_to_ideals::SubmoduleToIdeals<
         K,
         KB,
         MAXIMAL,
         OB,
-        &'a Self,
+        &Self,
         &'static IntegerCanonicalStructure,
         FinitelyFreeSubmoduleStructure<
             IntegerCanonicalStructure,
@@ -515,6 +515,7 @@ impl<
                 debug_assert_eq!(b_basis.len(), n);
 
                 let mut span = vec![];
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..n {
                     for j in 0..n {
                         span.push(self.order().mul(&a_basis[i], &b_basis[j]));
@@ -695,7 +696,7 @@ impl<
 {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+    fn factorization_exponents(&self) -> &Self::FactoredExponent {
         Natural::structure_ref()
     }
 
@@ -1342,14 +1343,14 @@ mod tests {
 
         assert_eq!(
             roi_ideals
-                .all_ideals_norm_eq(&Natural::from(5040 as u32))
+                .all_ideals_norm_eq(&Natural::from(5040_u32))
                 .collect::<Vec<_>>()
                 .len(),
             0
         );
         assert_eq!(
             roi_ideals
-                .all_ideals_norm_eq(&Natural::from(5040 * 7 as u32))
+                .all_ideals_norm_eq(&Natural::from(5040 * 7_u32))
                 .collect::<Vec<_>>()
                 .len(),
             2

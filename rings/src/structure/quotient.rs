@@ -65,10 +65,10 @@ impl<RS: EuclideanDomainSignature + FactoringMonoidSignature, RSB: BorrowedStruc
 }
 
 pub trait RingToQuotientRingSignature: EuclideanDomainSignature {
-    fn quotient_ring<'a>(
-        &'a self,
+    fn quotient_ring(
+        &self,
         modulus: Self::Set,
-    ) -> EuclideanRemainderQuotientStructure<Self, &'a Self, false> {
+    ) -> EuclideanRemainderQuotientStructure<Self, &Self, false> {
         EuclideanRemainderQuotientStructure::new_ring(self, modulus)
     }
 
@@ -84,10 +84,10 @@ impl<Ring: EuclideanDomainSignature> RingToQuotientRingSignature for Ring {}
 pub trait RingToQuotientFieldSignature:
     EuclideanDomainSignature + FactoringMonoidSignature
 {
-    fn quotient_field<'a>(
-        &'a self,
+    fn quotient_field(
+        &self,
         modulus: Self::Set,
-    ) -> Result<EuclideanRemainderQuotientStructure<Self, &'a Self, true>, ()> {
+    ) -> Result<EuclideanRemainderQuotientStructure<Self, &Self, true>, ()> {
         EuclideanRemainderQuotientStructure::new_field(self, modulus)
     }
 
@@ -98,10 +98,10 @@ pub trait RingToQuotientFieldSignature:
         EuclideanRemainderQuotientStructure::new_field(self, modulus)
     }
 
-    fn quotient_field_unchecked<'a>(
-        &'a self,
+    fn quotient_field_unchecked(
+        &self,
         modulus: Self::Set,
-    ) -> EuclideanRemainderQuotientStructure<Self, &'a Self, true> {
+    ) -> EuclideanRemainderQuotientStructure<Self, &Self, true> {
         EuclideanRemainderQuotientStructure::new_field_unchecked(self, modulus)
     }
 

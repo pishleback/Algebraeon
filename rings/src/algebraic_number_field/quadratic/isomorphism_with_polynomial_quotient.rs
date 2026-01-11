@@ -28,6 +28,7 @@ impl<
     AlgebraicNumberFieldPolynomialQuotientStructureBorrowed: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
 > QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>
 {
+    #[allow(unused)]
     fn new(
         anf_polyquo: AlgebraicNumberFieldPolynomialQuotientStructureBorrowed,
     ) -> Result<Self, ()> {
@@ -149,15 +150,15 @@ impl<
 impl AlgebraicNumberFieldPolynomialQuotientStructure {
     /// Returns an isomorphism from this degree 2 polynomial quotient number field representation to the quadratic number field implementation .
     /// Returns `Err` if this number field is not quadratic.
-    fn quadratic_anf_isomorphism<'a>(
-        &'a self,
-    ) -> Result<QuadraticNumberFieldIsomorphism<&'a Self>, ()> {
+    pub fn quadratic_anf_isomorphism(&self) -> Result<QuadraticNumberFieldIsomorphism<&Self>, ()> {
         QuadraticNumberFieldIsomorphism::new(self)
     }
 
     /// Returns an isomorphism from the quadratic number field implementation to this degree 2 polynomial quotient number field representation.
     /// Returns `Err` if this number field is not quadratic.
-    fn into_quadratic_anf_isomorphism(self) -> Result<QuadraticNumberFieldIsomorphism<Self>, ()> {
+    pub fn into_quadratic_anf_isomorphism(
+        self,
+    ) -> Result<QuadraticNumberFieldIsomorphism<Self>, ()> {
         QuadraticNumberFieldIsomorphism::new(self)
     }
 }

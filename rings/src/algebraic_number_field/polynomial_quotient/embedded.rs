@@ -13,6 +13,7 @@ use std::rc::Rc;
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
     // must have anf.modulus() equal to gen.min_poly()
+    #[allow(unused)]
     anf: Rc<AlgebraicNumberFieldPolynomialQuotientStructure>,
     generator: ComplexAlgebraic,
 }

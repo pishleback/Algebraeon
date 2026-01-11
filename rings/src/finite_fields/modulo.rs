@@ -83,7 +83,7 @@ impl<const N: usize> From<usize> for Modulo<N> {
 impl<const N: usize> From<isize> for Modulo<N> {
     fn from(value: isize) -> Self {
         Self {
-            x: modulo(value as isize, N),
+            x: modulo(value, N),
         }
     }
 }

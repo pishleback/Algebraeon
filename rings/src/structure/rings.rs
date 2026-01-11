@@ -331,7 +331,7 @@ pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
         }
     }
 
-    fn units<'a>(&'a self) -> MultiplicativeMonoidUnitsStructure<Self, &'a Self> {
+    fn units(&self) -> MultiplicativeMonoidUnitsStructure<Self, &Self> {
         MultiplicativeMonoidUnitsStructure::new(self)
     }
 
@@ -471,8 +471,8 @@ pub trait SemiRingSignature:
             let bits: Vec<bool> = x.bits().collect();
             let mut ans = self.zero();
             let mut v = self.one();
-            for i in 0..bits.len() {
-                if bits[i] {
+            for b in bits {
+                if b {
                     self.add_mut(&mut ans, &v);
                 }
                 self.mul_mut(&mut v, &two);
@@ -540,7 +540,7 @@ pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
         }
     }
 
-    fn inbound_principal_integer_map<'a>(&'a self) -> PrincipalIntegerMap<Self, &'a Self> {
+    fn inbound_principal_integer_map(&self) -> PrincipalIntegerMap<Self, &Self> {
         PrincipalIntegerMap::new(self)
     }
 
@@ -648,7 +648,7 @@ pub trait GreatestCommonDivisorSignature:
 {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
-    fn gcd<'a>(&'a self, x: &Self::Set, y: &Self::Set) -> Self::Set;
+    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
     fn gcd_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut gcd = self.zero();
         for x in elems {
@@ -975,7 +975,7 @@ impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
 pub trait CharZeroFieldSignature: FieldSignature + CharZeroRingSignature {
     fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
 
-    fn inbound_principal_rational_map<'a>(&'a self) -> PrincipalRationalMap<Self, &'a Self> {
+    fn inbound_principal_rational_map(&self) -> PrincipalRationalMap<Self, &Self> {
         PrincipalRationalMap::new(self)
     }
     fn into_inbound_principal_rational_map(self) -> PrincipalRationalMap<Self, Self> {

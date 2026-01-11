@@ -110,9 +110,7 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
     type Basis = EnumeratedFiniteSetStructure;
     type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
 
-    fn inbound_finite_dimensional_rational_extension<'a>(
-        &'a self,
-    ) -> Self::RationalInclusion<&'a Self> {
+    fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self> {
         self.inbound_principal_rational_map()
     }
 

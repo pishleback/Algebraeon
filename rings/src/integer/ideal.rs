@@ -13,7 +13,7 @@ impl RingToIdealsSignature for IntegerCanonicalStructure {
     type Ideals<SelfB: BorrowedStructure<IntegerCanonicalStructure>> =
         IntegerIdealsStructure<SelfB>;
 
-    fn ideals<'a>(&'a self) -> Self::Ideals<&'a Self> {
+    fn ideals(&self) -> Self::Ideals<&Self> {
         IntegerIdealsStructure { integers: self }
     }
 
@@ -149,7 +149,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> UniqueFactorizationMonoidS
 {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+    fn factorization_exponents(&self) -> &Self::FactoredExponent {
         Natural::structure_ref()
     }
 

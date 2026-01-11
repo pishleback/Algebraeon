@@ -661,6 +661,7 @@ impl Polynomial<Integer> {
         }
     }
 
+    #[allow(unused)]
     fn lhp_complex_roots_irreducible_impl(
         &self,
         num_real_roots: usize,

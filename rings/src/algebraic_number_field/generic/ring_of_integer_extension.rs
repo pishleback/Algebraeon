@@ -44,16 +44,16 @@ impl<
         }
     }
 
-    pub fn with_ideals<'a>(
-        &'a self,
+    pub fn with_ideals(
+        &self,
     ) -> RingOfIntegersIntegralExtensionWithIdeals<
         K,
         R,
         RB,
-        &'a RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>,
+        &RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>,
         IntegerIdealsStructure<IntegerCanonicalStructure>,
-        &'a R,
-        <R as RingToIdealsSignature>::Ideals<&'a R>,
+        &R,
+        <R as RingToIdealsSignature>::Ideals<&R>,
     >
     where
         R: RingToIdealsSignature,

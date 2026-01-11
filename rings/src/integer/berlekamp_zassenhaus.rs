@@ -74,7 +74,6 @@ fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
 struct BerlekampAassenhausAlgorithmState {
     poly: Polynomial<Integer>,
     degree: usize,
-    factor_coeff_bound: Natural,
     minimum_modolus: Natural,
     prime_gen: Box<dyn Iterator<Item = usize>>,
 }
@@ -89,7 +88,6 @@ impl BerlekampAassenhausAlgorithmState {
         Self {
             poly,
             degree,
-            factor_coeff_bound,
             minimum_modolus,
             prime_gen,
         }
@@ -111,7 +109,6 @@ impl BerlekampAassenhausAlgorithmState {
 struct BerlekampZassenhausAlgorithmStateAtPrime {
     poly: Polynomial<Integer>,
     leading_coeff: Integer,
-    degree: usize,
     modulus: Integer,
     modular_factors: Vec<Polynomial<Integer>>,
 }
@@ -142,7 +139,6 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                     Some(BerlekampZassenhausAlgorithmStateAtPrime {
                         poly: state.poly.clone(),
                         leading_coeff: state.poly.leading_coeff().unwrap(),
-                        degree: state.degree,
                         modulus,
                         modular_factors,
                     })
@@ -188,7 +184,7 @@ impl<SG: SemigroupSignature> MemoryStack<SG> {
         &self.modular_factor_values[i]
     }
 
-    fn get_product(&mut self, subset: &Vec<usize>) -> &<SG as SetSignature>::Set {
+    fn get_product(&mut self, subset: &[usize]) -> &<SG as SetSignature>::Set {
         debug_assert!(!subset.is_empty());
         let mut i = 0;
         loop {
@@ -218,6 +214,7 @@ impl<SG: SemigroupSignature> MemoryStack<SG> {
             i += 1;
         }
         // subset and memory still agree in the first i >=1 places
+        #[allow(clippy::needless_range_loop)]
         for j in i..subset.len() {
             let ss = subset[j];
             self.prev_calc.push((
@@ -277,7 +274,7 @@ mod dminusone_test {
         pub fn new(
             modulus: &Integer,
             f: &Polynomial<Integer>,
-            modular_factors: &Vec<Polynomial<Integer>>,
+            modular_factors: &[Polynomial<Integer>],
         ) -> Self {
             // Probably 2^64
             let machine_range = Natural::from(usize::MAX) + Natural::ONE;
@@ -331,7 +328,7 @@ mod dminusone_test {
 
         /// Return true if the subset definitely wont yield a true factor.
         /// Return false if the subset might yield a true factor.
-        pub fn test(&mut self, subset: &Vec<usize>) -> bool {
+        pub fn test(&mut self, subset: &[usize]) -> bool {
             let DMinusOneTestSemigroupElem {
                 approx_coeff_lower_bound: range_bot,
                 degree: d,
@@ -376,7 +373,7 @@ impl SemigroupSignature for ModularFactorMultSemigrp {
 }
 
 impl BerlekampZassenhausAlgorithmStateAtPrime {
-    fn factor_by_try_all_subsets<'a>(&'a self) -> Factored<Polynomial<Integer>, Natural> {
+    fn factor_by_try_all_subsets(&self) -> Factored<Polynomial<Integer>, Natural> {
         let n = self.modular_factors.len();
 
         let mut dminusone_test =

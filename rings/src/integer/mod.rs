@@ -142,7 +142,7 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
 impl UniqueFactorizationMonoidSignature for IntegerCanonicalStructure {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents<'a>(&'a self) -> &'a Self::FactoredExponent {
+    fn factorization_exponents(&self) -> &Self::FactoredExponent {
         Natural::structure_ref()
     }
 
