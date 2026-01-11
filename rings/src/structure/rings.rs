@@ -126,17 +126,28 @@ mod unconstructable_everything_structure {
 /*
 All methods are allowed to return None, and if they do it should only affect speed of algorithms, not correctness.
 Where methods do not return None, the resulting structure may be used for optimizations only.
+
+The methods currently require cloning some structures when sucessful.
+That's because it's currently prohibitively messy to allow returning by value or by reference depending on context.
+Stabilisation of Rust features such as impl aliases may make this more feasible in future.
 */
-pub trait RinglikeSpecializationSignature: SetSignature {
+pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> {
+    /*
+    Used by:
+     - Polynomial rings to determine whether the karatsuba is usable.
+     */
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Option::<unconstructable_everything_structure::UnconstructableStructure<Self::Set>>::None
+    }
+
     /*
     Used by:
      - Formatting polynomials as strings: If the set of coefficients has this structure then it's possible to call .try_to_int(..) which can allow for nicer formatting at integer coefficients.
      */
     fn try_char_zero_ring_restructure(
         &self,
-    ) -> Option<&(impl EqSignature<Set = Self::Set> + CharZeroRingSignature)> {
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
         Option::<unconstructable_everything_structure::UnconstructableStructure<Self::Set>>::None
-            .as_ref()
     }
 }
 

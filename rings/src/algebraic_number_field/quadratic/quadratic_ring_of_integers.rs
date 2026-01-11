@@ -81,10 +81,14 @@ impl<D: BorrowedSet<Integer>> EqSignature for QuadraticRingOfIntegersStructure<D
 impl<D: BorrowedSet<Integer>> RinglikeSpecializationSignature
     for QuadraticRingOfIntegersStructure<D>
 {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Some(self.clone())
+    }
+
     fn try_char_zero_ring_restructure(
         &self,
-    ) -> Option<&(impl EqSignature<Set = Self::Set> + CharZeroRingSignature)> {
-        Some(self)
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+        Some(self.clone())
     }
 }
 

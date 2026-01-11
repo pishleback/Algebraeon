@@ -144,10 +144,8 @@ impl<RS: Signature, RSB: BorrowedStructure<RS>> PartialEq for PolynomialStructur
 
 impl<RS: Signature, RSB: BorrowedStructure<RS>> Eq for PolynomialStructure<RS, RSB> {}
 
-impl<
-    RS: SemiRingSignature + CancellativeAdditiveMonoidSignature + EqSignature + ToStringSignature,
-    RSB: BorrowedStructure<RS>,
-> ToStringSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingSignature + EqSignature + ToStringSignature, RSB: BorrowedStructure<RS>>
+    ToStringSignature for PolynomialStructure<RS, RSB>
 {
     fn to_string(&self, elem: &Self::Set) -> String {
         if self.num_coeffs(elem) == 0 {
@@ -200,8 +198,8 @@ impl<
     }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    EqSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> EqSignature
+    for PolynomialStructure<RS, RSB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         for i in 0..std::cmp::max(a.coeffs.len(), b.coeffs.len()) {
@@ -216,9 +214,7 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
     }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    PolynomialStructure<RS, RSB>
-{
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
     pub fn add_impl<'a, C: Borrow<RS::Set>>(
         &self,
         mut a: &'a Polynomial<C>,
@@ -269,9 +265,7 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
     }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    PolynomialStructure<RS, RSB>
-{
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
     /*
     The idea behind Karatsuba is to reduce the number of multiplications needed
 
@@ -304,15 +298,14 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
 
     So a(x) * b(x) can be found with 3 multiplications
     */
-    #[allow(clippy::redundant_closure_for_method_calls)]
     fn mul_karatsuba<'a, C: Borrow<RS::Set>>(
         &self,
         a: &'a Polynomial<C>,
         b: &'a Polynomial<C>,
-    ) -> Option<Polynomial<RS::Set>> {
+    ) -> Polynomial<RS::Set> {
         let n = std::cmp::max(a.coeffs.len(), b.coeffs.len());
         if n <= 10 {
-            return Some(self.mul_naive(a, b));
+            return self.mul_naive(a, b);
         }
 
         let k = n / 2;
@@ -356,33 +349,38 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
             )
         ));
 
-        let f0 = self.mul_karatsuba(&a0, &b0)?;
-        let f2 = self.mul_karatsuba(&a1, &b1)?;
-        let f3 = self.mul_karatsuba(&self.add_impl(&a0, &a1), &self.add_impl(&b0, &b1))?;
-        let f1 = self.try_sub(&f3, &self.add(&f2, &f0))?;
+        let f0 = self.mul_karatsuba(&a0, &b0);
+        let f2 = self.mul_karatsuba(&a1, &b1);
+        let f3 = self.mul_karatsuba(&self.add_impl(&a0, &a1), &self.add_impl(&b0, &b1));
+        let f1 = self.sub(&f3, &self.add(&f2, &f0));
 
-        Some(self.reduce_poly(self.add(
+        self.reduce_poly(self.add(
             &self.add(&f0, &self.mul_var_pow(&f1, k)),
             &self.mul_var_pow(&f2, 2 * k),
-        )))
+        ))
     }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    RinglikeSpecializationSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> RinglikeSpecializationSignature
+    for PolynomialStructure<RS, RSB>
 {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        self.coeff_ring()
+            .try_ring_restructure()
+            .map(|coeff_ring| coeff_ring.into_polynomials())
+    }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    SetWithZeroSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
+    for PolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
         Polynomial { coeffs: vec![] }
     }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    AdditiveMonoidSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+    for PolynomialStructure<RS, RSB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.add_impl(a, b)
@@ -432,30 +430,29 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    MultiplicativeMonoidSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
+    for PolynomialStructure<RS, RSB>
 {
     fn one(&self) -> Self::Set {
         Polynomial::from_coeffs(vec![self.coeff_ring().one()])
     }
 
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        if let Some(s) = self.mul_karatsuba(a, b) {
-            debug_assert!(self.equal(&s, &self.reduce_poly(self.mul_naive(a, b))));
-            s
+        if let Some(coeff_ring) = self.coeff_ring().try_ring_restructure() {
+            coeff_ring.polynomials().mul_karatsuba(a, b)
         } else {
             self.mul_naive(a, b)
         }
     }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    SemiRingSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
+    for PolynomialStructure<RS, RSB>
 {
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    SemiModuleSignature<RS> for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiModuleSignature<RS>
+    for PolynomialStructure<RS, RSB>
 {
     fn ring(&self) -> &RS {
         self.coeff_ring()
@@ -476,10 +473,8 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AlgebraSignature<RS>
 {
 }
 
-impl<
-    RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature + CharacteristicSignature,
-    RSB: BorrowedStructure<RS>,
-> CharacteristicSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature + CharacteristicSignature, RSB: BorrowedStructure<RS>>
+    CharacteristicSignature for PolynomialStructure<RS, RSB>
 {
     fn characteristic(&self) -> Natural {
         self.coeff_ring().characteristic()
@@ -493,7 +488,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RingSignature
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Signature: SemiRingEqSignature + CancellativeAdditiveMonoidSignature,
+    R::Signature: SemiRingEqSignature,
 {
     pub fn into_coeffs(self) -> Vec<R> {
         Self::structure().into_coeffs(self)
@@ -504,9 +499,7 @@ where
     }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    PolynomialStructure<RS, RSB>
-{
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
     fn structure_into_coeffs(self, a: &Polynomial<RS::Set>) -> impl Iterator<Item = &RS::Set> {
         (0..self.num_coeffs(a)).map(|i| &a.coeffs[i])
     }
@@ -1407,8 +1400,7 @@ where
 
 impl<R: MetaType> Display for Polynomial<R>
 where
-    R::Signature:
-        SemiRingSignature + CancellativeAdditiveMonoidSignature + EqSignature + ToStringSignature,
+    R::Signature: SemiRingSignature + EqSignature + ToStringSignature,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Self::structure().to_string(self))
@@ -1417,21 +1409,18 @@ where
 
 impl<R: MetaType> PartialEq for Polynomial<R>
 where
-    R::Signature: SemiRingEqSignature + CancellativeAdditiveMonoidSignature,
+    R::Signature: SemiRingEqSignature,
 {
     fn eq(&self, other: &Self) -> bool {
         Self::structure().equal(self, other)
     }
 }
 
-impl<R: MetaType> Eq for Polynomial<R> where
-    R::Signature: SemiRingEqSignature + CancellativeAdditiveMonoidSignature
-{
-}
+impl<R: MetaType> Eq for Polynomial<R> where R::Signature: SemiRingEqSignature {}
 
 impl<R: MetaType + Hash> Hash for Polynomial<R>
 where
-    R::Signature: SemiRingEqSignature + CancellativeAdditiveMonoidSignature,
+    R::Signature: SemiRingEqSignature,
 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         Self::structure()
@@ -1443,7 +1432,7 @@ where
 
 impl<R: MetaType> Polynomial<R>
 where
-    R::Signature: SemiRingEqSignature<Set = R> + CancellativeAdditiveMonoidSignature,
+    R::Signature: SemiRingEqSignature<Set = R>,
 {
     pub fn var() -> Self {
         Self::structure().var()

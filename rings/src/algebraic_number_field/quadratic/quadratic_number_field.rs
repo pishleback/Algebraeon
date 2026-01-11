@@ -123,10 +123,14 @@ impl<D: BorrowedSet<Integer>> EqSignature for QuadraticNumberFieldStructure<D> {
 }
 
 impl<D: BorrowedSet<Integer>> RinglikeSpecializationSignature for QuadraticNumberFieldStructure<D> {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Some(self.clone())
+    }
+
     fn try_char_zero_ring_restructure(
         &self,
-    ) -> Option<&(impl EqSignature<Set = Self::Set> + CharZeroRingSignature)> {
-        Some(self)
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+        Some(self.clone())
     }
 }
 
@@ -277,7 +281,7 @@ impl<'h, D: BorrowedSet<Integer>, B: BorrowedStructure<QuadraticNumberFieldStruc
         &self,
         b: &QuadraticNumberFieldBasis,
         v: &'a QuadraticNumberFieldElement,
-    ) -> std::borrow::Cow<'a, Rational> {
+    ) -> Cow<'a, Rational> {
         match b {
             QuadraticNumberFieldBasis::Rational => Cow::Borrowed(&v.rational_part),
             QuadraticNumberFieldBasis::Algebraic => Cow::Borrowed(&v.algebraic_part),

@@ -182,10 +182,14 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
     RinglikeSpecializationSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+        Some(self.clone())
+    }
+
     fn try_char_zero_ring_restructure(
         &self,
-    ) -> Option<&(impl EqSignature<Set = Self::Set> + CharZeroRingSignature)> {
-        Some(self)
+    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+        Some(self.clone())
     }
 }
 
