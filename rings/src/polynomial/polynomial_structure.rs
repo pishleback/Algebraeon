@@ -162,15 +162,17 @@ impl<
             };
 
             let mut s = String::new();
-            let mut first = true;
-            for (k, c) in elem.coeffs.iter().enumerate() {
-                if !self.coeff_ring().is_zero(c) {
-                    if let Some(c) = try_to_int(c) {
+            for (idx, (power, coeff)) in elem.coeffs.iter().enumerate().rev().enumerate() {
+                let first = idx == 0;
+                let constant = power == 0;
+
+                if !self.coeff_ring().is_zero(coeff) {
+                    if let Some(c) = try_to_int(coeff) {
                         if c > Integer::ZERO && !first {
                             s += "+";
                         }
-                        if c == Integer::ONE && k != 0 {
-                        } else if c == -Integer::ONE && k != 0 {
+                        if c == Integer::ONE && !constant {
+                        } else if c == -Integer::ONE && !constant {
                             s += "-";
                         } else {
                             s += &c.to_string();
@@ -180,18 +182,17 @@ impl<
                             s += "+";
                         }
                         s += "(";
-                        s += &self.coeff_ring().to_string(c);
+                        s += &self.coeff_ring().to_string(coeff);
                         s += ")";
                     }
-                    if k == 0 {
-                    } else if k == 1 {
+                    if power == 0 {
+                    } else if power == 1 {
                         s += "λ";
                     } else {
                         s += "λ";
                         s += "^";
-                        s += &k.to_string();
+                        s += &power.to_string();
                     }
-                    first = false;
                 }
             }
             s
