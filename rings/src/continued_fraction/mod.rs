@@ -244,8 +244,6 @@ impl<R: RealRoundingSignature + FieldSignature + RingUnitsSignature>
 {
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
