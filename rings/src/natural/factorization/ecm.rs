@@ -32,7 +32,7 @@ DAMAGE.
 */
 
 use crate::natural::factorization::primes::is_prime_nat;
-use crate::structure::MetaMultiplicativeMonoid;
+use crate::structure::MetaMultiplicativeMonoidSignature;
 use algebraeon_nzq::primes;
 use algebraeon_nzq::{Natural, Rng, gcd, traits::ModInv};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};

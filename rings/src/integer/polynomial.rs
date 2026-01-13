@@ -29,7 +29,7 @@ impl Polynomial<Integer> {
         let deg = self.degree()?;
         let mut bound = Natural::ZERO;
         for coeff in self.coeffs() {
-            bound += coeff.abs();
+            bound += Abs::abs(coeff);
         }
         bound *= choose(Natural::from(deg), Natural::from(deg / 2));
         Some(bound)

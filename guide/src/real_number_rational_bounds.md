@@ -7,7 +7,7 @@ Compute the following rational bounds on \\(\pi + e\\), where the difference bet
 ```rust
 use algebraeon::nzq::Rational;
 use algebraeon::rings::approximation::{RealApproximatePoint, e, pi};
-use algebraeon::rings::structure::MetaAdditiveMonoid;
+use algebraeon::rings::structure::MetaAdditiveMonoidSignature;
 use std::str::FromStr;
 
 let p = RealApproximatePoint::add(&pi(), &e());

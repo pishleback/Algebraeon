@@ -6,10 +6,10 @@ use crate::{
     continued_fraction::{SimpleContinuedFraction, ToSimpleContinuedFractionSignature},
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-        ComplexSubsetSignature, MetaMultiplicativeMonoidUnits, MetaRealRounding, MetaRealSubset,
-        MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RealRoundingSignature,
-        RealSubsetSignature, RingSignature, RinglikeSpecializationSignature, SemiRingSignature,
-        SetWithZeroSignature,
+        ComplexSubsetSignature, MetaMultiplicativeMonoidUnitsSignature, MetaRealRoundingSignature,
+        MetaRealSubsetSignature, MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
+        RealRoundingSignature, RealSubsetSignature, RingSignature, RinglikeSpecializationSignature,
+        SemiRingSignature, SetWithZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};

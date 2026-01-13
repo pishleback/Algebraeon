@@ -286,7 +286,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
 
             // For all b in S check whether b^(n-1)=1 mod n
             for b in &s_set {
-                if b.rem(n).mod_pow(n - Natural::ONE, n) != Natural::ONE {
+                if Rem::rem(b, n).mod_pow(n - Natural::ONE, n) != Natural::ONE {
                     return PrimalityTestResult::Composite;
                 }
             }

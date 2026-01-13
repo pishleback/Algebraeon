@@ -1,6 +1,8 @@
 use crate::parsing::ast::*;
 use crate::polynomial::{MultiPolynomial, Polynomial, Variable};
-use crate::structure::{MetaAdditiveMonoid, MetaMultiplicativeMonoid, MetaRing};
+use crate::structure::{
+    MetaAdditiveGroupSignature, MetaAdditiveMonoidSignature, MetaMultiplicativeMonoidSignature,
+};
 use algebraeon_nzq::*;
 use lalrpop_util::lalrpop_mod;
 use std::collections::HashMap;

@@ -4,13 +4,13 @@ use crate::algebraic_number_field::{
 use crate::structure::{
     AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
     CharZeroFieldSignature, CharZeroRingSignature, CharacteristicSignature, FieldSignature,
-    IntegralDomainSignature, MetaFactoringMonoidNaturalExponent, MetaSetWithZeroAndEq,
+    IntegralDomainSignature, MetaFactoringMonoidNaturalExponent, MetaSetWithZeroAndEqSignature,
     MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
     MultiplicativeMonoidUnitsSignature, RingSignature, RinglikeSpecializationSignature,
     SemiRingSignature, SetWithZeroSignature,
 };
 use crate::structure::{
-    FreeModuleSignature, MetaCharZeroRing, PrincipalRationalMap,
+    FreeModuleSignature, MetaCharZeroRingSignature, PrincipalRationalMap,
     RingHomomorphismRangeModuleStructure, SemiModuleSignature, SetWithZeroAndEqSignature,
 };
 use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};

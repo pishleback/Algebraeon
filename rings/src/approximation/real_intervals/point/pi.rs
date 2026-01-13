@@ -16,7 +16,7 @@ use crate::{
         rational_interval::RationalInterval,
         real_intervals::{RealApproximatePointInterface, Subset},
     },
-    structure::MetaMultiplicativeMonoid,
+    structure::MetaMultiplicativeMonoidSignature,
 };
 
 fn r(k: Natural) -> Rational {

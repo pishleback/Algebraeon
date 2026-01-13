@@ -417,7 +417,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                             modular_factor_product_memory_stack.get_product(&subset),
                         )
                         .apply_map(|c| {
-                            let c = c.rem(&self.modulus);
+                            let c = Rem::rem(c, &self.modulus);
                             if c > Integer::quo(&self.modulus, &Integer::TWO).unwrap() {
                                 c - &self.modulus
                             } else {
@@ -550,7 +550,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                             ),
                         )
                         .apply_map(|c| {
-                            let c = c.rem(&modulus);
+                            let c = Rem::rem(c, &modulus);
                             if c > Integer::quo(&modulus, &Integer::TWO).unwrap() {
                                 c - &modulus
                             } else {

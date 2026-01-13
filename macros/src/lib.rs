@@ -5,8 +5,8 @@ use proc_macro2::Span;
 use quote::quote;
 use syn::visit_mut::VisitMut;
 use syn::{
-    Attribute, DeriveInput, Error, FnArg, Ident, ItemTrait, TraitItem, TraitItemFn,
-    parse_macro_input,
+    Attribute, DeriveInput, Error, FnArg, Ident, ItemTrait, PatIdent, Receiver, TraitItem,
+    TraitItemFn, parse_macro_input,
 };
 
 fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
@@ -134,11 +134,13 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+/// Decorate fns of a structure trait decorated with `signature_meta_trait` to omit the fn from the meta structure trait.
 #[proc_macro_attribute]
 pub fn skip_meta(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
+/// Decorate a structure trait with this to auto-generate a meta structure trait.
 #[proc_macro_attribute]
 pub fn signature_meta_trait(_args: TokenStream, input: TokenStream) -> TokenStream {
     let trait_item = parse_macro_input!(input as ItemTrait);
@@ -158,7 +160,6 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
     let meta_trait_ident = Ident::new(&format!("Meta{}", sig_trait_ident), Span::call_site());
 
     let mut meta_methods = Vec::new();
-    // let mut impl_methods = Vec::new();
 
     for item in &trait_item.items {
         if let TraitItem::Fn(TraitItemFn { attrs, sig, .. }) = item {
@@ -166,23 +167,27 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                 continue;
             }
 
-            let mut sig = sig.clone();
-            // Check the first argument
-            if let Some(first_arg) = sig.inputs.first() {
+            let mut meta_sig = sig.clone();
+            // Check the first argument is self, &self, or &mut self
+            if let Some(first_arg) = meta_sig.inputs.first() {
                 match first_arg {
                     FnArg::Receiver(_) => {
-                        sig.inputs = sig.inputs.into_iter().skip(1).collect();
-                        ReplaceSelfSet.visit_signature_mut(&mut sig);
+                        meta_sig.inputs = meta_sig.inputs.into_iter().skip(1).collect();
+                        ReplaceSelfSetSignature {
+                            sig_trait_ident: sig_trait_ident.clone(),
+                        }
+                        .visit_signature_mut(&mut meta_sig);
 
-                        let ident = sig.ident.clone();
+                        let ident = meta_sig.ident.clone();
 
-                        let mut arg_names = Vec::new();
+                        let mut meta_args = Vec::new();
                         #[allow(clippy::never_loop)]
-                        for arg in &sig.inputs {
+                        for arg in &mut meta_sig.inputs {
                             match arg {
-                                FnArg::Typed(pat_type) => match pat_type.pat.as_ref() {
+                                FnArg::Typed(pat_type) => match pat_type.pat.as_mut() {
                                     syn::Pat::Ident(pat_ident) => {
-                                        arg_names.push(pat_ident.clone());
+                                        pat_ident.mutability = None;
+                                        meta_args.push(pat_ident.clone());
                                     }
                                     _ => {
                                         return Error::new_spanned(
@@ -198,10 +203,95 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                             }
                         }
 
+                        if let Some(first) = sig.inputs.iter().nth(1) {
+                            match first {
+                                FnArg::Receiver(_) => {}
+                                FnArg::Typed(pat_type) => match pat_type.ty.as_ref() {
+                                    syn::Type::Reference(type_reference) => {
+                                        if let syn::Type::Path(type_path) =
+                                            type_reference.elem.as_ref()
+                                            && is_self_set(type_path)
+                                        {
+                                            // if the first argument is `a: &Self::Set` then replace it with `&self` in the meta type
+                                            // if the first argument is `a: &mut Self::Set` then replace it with `&mut self` in the meta type
+                                            meta_args[0] = PatIdent {
+                                                attrs: vec![],
+                                                by_ref: None,
+                                                mutability: None,
+                                                ident: Ident::new("self", Span::call_site()),
+                                                subpat: None,
+                                            };
+                                            meta_sig.inputs[0] = FnArg::Receiver(Receiver {
+                                                attrs: vec![],
+                                                reference: Some((
+                                                    syn::token::And {
+                                                        spans: [Span::call_site()],
+                                                    },
+                                                    None,
+                                                )),
+                                                mutability: type_reference.mutability,
+                                                self_token: syn::token::SelfValue {
+                                                    span: Span::call_site(),
+                                                },
+                                                colon_token: None,
+                                                ty: Box::new(syn::Type::Reference(
+                                                    syn::TypeReference {
+                                                        and_token: syn::token::And {
+                                                            spans: [Span::call_site()],
+                                                        },
+                                                        lifetime: None,
+                                                        mutability: type_reference.mutability,
+                                                        elem: Box::new(syn::Type::Path(
+                                                            syn::TypePath {
+                                                                qself: None,
+                                                                path: syn::Path::from(Ident::new(
+                                                                    "Self",
+                                                                    Span::call_site(),
+                                                                )),
+                                                            },
+                                                        )),
+                                                    },
+                                                )),
+                                            });
+                                        }
+                                    }
+                                    syn::Type::Path(type_path) => {
+                                        // if the first argument is `a: Self::Set` then replace it with `self` in the meta type (TODO)
+                                        if is_self_set(type_path) {
+                                            meta_args[0] = PatIdent {
+                                                attrs: vec![],
+                                                by_ref: None,
+                                                mutability: None,
+                                                ident: Ident::new("self", Span::call_site()),
+                                                subpat: None,
+                                            };
+                                            meta_sig.inputs[0] = FnArg::Receiver(Receiver {
+                                                attrs: vec![],
+                                                reference: None,
+                                                mutability: None,
+                                                self_token: syn::token::SelfValue {
+                                                    span: Span::call_site(),
+                                                },
+                                                colon_token: None,
+                                                ty: Box::new(syn::Type::Path(syn::TypePath {
+                                                    qself: None,
+                                                    path: syn::Path::from(Ident::new(
+                                                        "Self",
+                                                        Span::call_site(),
+                                                    )),
+                                                })),
+                                            });
+                                        }
+                                    }
+                                    _ => {}
+                                },
+                            }
+                        }
+
                         meta_methods.push(quote! {
                             #(#attrs)*
-                            #sig {
-                                Self::structure().#ident(#(#arg_names),*)
+                            #meta_sig {
+                                Self::structure().#ident(#(#meta_args),*)
                             }
                         });
                     }
@@ -230,19 +320,32 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
     }
 }
 
-struct ReplaceSelfSet;
-
-impl VisitMut for ReplaceSelfSet {
+struct ReplaceSelfSetSignature {
+    #[allow(unused)]
+    sig_trait_ident: Ident,
+}
+impl VisitMut for ReplaceSelfSetSignature {
     fn visit_type_path_mut(&mut self, ty: &mut syn::TypePath) {
         syn::visit_mut::visit_type_path_mut(self, ty);
-
-        if ty.qself.is_none()
-            && ty.path.segments.len() == 2
-            && ty.path.segments[0].ident == "Self"
-            && ty.path.segments[1].ident == "Set"
-            && ty.path.segments[1].arguments.is_empty()
-        {
+        if is_self_set(ty) {
             *ty = syn::parse_quote!(Self);
+        } else if is_self(ty) {
+            *ty = syn::parse_quote!(Self::Signature);
         }
     }
+}
+
+fn is_self_set(ty: &syn::TypePath) -> bool {
+    ty.qself.is_none()
+        && ty.path.segments.len() == 2
+        && ty.path.segments[0].ident == "Self"
+        && ty.path.segments[1].ident == "Set"
+        && ty.path.segments[1].arguments.is_empty()
+}
+
+fn is_self(ty: &syn::TypePath) -> bool {
+    ty.qself.is_none()
+        && ty.path.segments.len() == 1
+        && ty.path.segments[0].ident == "Self"
+        && ty.path.segments[0].arguments.is_empty()
 }

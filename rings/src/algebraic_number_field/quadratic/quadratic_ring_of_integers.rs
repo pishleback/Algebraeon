@@ -6,7 +6,7 @@ use crate::{
     structure::{
         AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
         CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
-        IntegralDomainSignature, MetaCharZeroRing, MultiplicativeIntegralMonoidSignature,
+        IntegralDomainSignature, MetaCharZeroRingSignature, MultiplicativeIntegralMonoidSignature,
         MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RingSignature,
         RinglikeSpecializationSignature, SemiModuleSignature, SemiRingSignature,
         SetWithZeroSignature,

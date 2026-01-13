@@ -95,7 +95,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
     IdealsArithmeticSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
 {
     fn principal_ideal(&self, a: &Integer) -> Self::Set {
-        a.abs()
+        Abs::abs(a)
     }
 
     fn contains_ideal(&self, a: &Self::Set, b: &Self::Set) -> bool {

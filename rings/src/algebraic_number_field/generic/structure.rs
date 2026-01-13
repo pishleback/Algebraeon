@@ -6,7 +6,7 @@ use crate::{
     structure::{
         AdditiveGroupSignature, CharZeroFieldSignature, CharZeroRingSignature,
         DedekindDomainSignature, FieldOfFractionsInclusion, FiniteDimensionalFieldExtension,
-        FiniteRankFreeRingExtension, MetaGreatestCommonDivisor, RingHomomorphism,
+        FiniteRankFreeRingExtension, MetaGreatestCommonDivisorSignature, RingHomomorphism,
     },
 };
 use algebraeon_nzq::{
@@ -442,7 +442,9 @@ mod anf_inclusion {
     use super::*;
     use crate::{
         matrix::Matrix,
-        structure::{FieldOfFractionsInclusion, IntegralClosureExtension, MetaCharZeroRing},
+        structure::{
+            FieldOfFractionsInclusion, IntegralClosureExtension, MetaCharZeroRingSignature,
+        },
     };
 
     #[derive(Debug, Clone)]

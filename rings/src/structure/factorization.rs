@@ -1,10 +1,10 @@
 use crate::structure::{
     CancellativeAdditiveMonoidSignature, FavoriteAssociateSignature, FieldSignature,
-    MetaMultiplicativeMonoid, MultiplicativeGroupSignature, MultiplicativeIntegralMonoidSignature,
-    MultiplicativeMonoidSignature, MultiplicativeMonoidSquareOpsSignature,
-    MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature,
-    RinglikeSpecializationSignature, SemiRingSignature, SetWithZeroAndEqSignature,
-    SetWithZeroSignature,
+    MetaMultiplicativeMonoidSignature, MultiplicativeGroupSignature,
+    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
+    MultiplicativeMonoidSquareOpsSignature, MultiplicativeMonoidUnitsSignature,
+    MultiplicativeMonoidWithZeroSignature, RinglikeSpecializationSignature, SemiRingSignature,
+    SetWithZeroAndEqSignature, SetWithZeroSignature,
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::{
@@ -61,7 +61,7 @@ pub enum Factored<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> {
 
 impl<
     ObjectSet: Debug + Clone,
-    ExponentSet: Debug + Clone + MetaMultiplicativeMonoid + PartialEq + Eq,
+    ExponentSet: Debug + Clone + MetaMultiplicativeMonoidSignature + PartialEq + Eq,
 > Display for Factored<ObjectSet, ExponentSet>
 where
     ObjectSet: Display,
@@ -807,7 +807,7 @@ pub trait UniqueFactorizationMonoidSignature:
     /// Factoring a is not allowed because this function is used by factorizations to validate their state.
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
 }
-pub trait MetaUniqueFactorizationMonoid: MetaType
+pub trait MetaUniqueFactorizationMonoidSignature: MetaType
 where
     Self::Signature: UniqueFactorizationMonoidSignature,
 {
@@ -815,7 +815,7 @@ where
         Self::structure().try_is_irreducible(self)
     }
 }
-impl<R: MetaType> MetaUniqueFactorizationMonoid for R where
+impl<R: MetaType> MetaUniqueFactorizationMonoidSignature for R where
     Self::Signature: UniqueFactorizationMonoidSignature
 {
 }

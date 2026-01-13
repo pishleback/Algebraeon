@@ -726,9 +726,9 @@ impl Polynomial<Integer> {
                 //m = (Cauchy's bound + 1) https://captainblack.wordpress.com/2009/03/08/cauchys-upper-bound-for-the-roots-of-a-polynomial/
                 let m = Rational::from(2)
                     + Rational::from_integers(
-                        itertools::max((0..d).map(|i| self.coeff(i).as_ref().abs().clone()))
+                        itertools::max((0..d).map(|i| Abs::abs(self.coeff(i).as_ref()).clone()))
                             .unwrap(),
-                        self.coeff(d).as_ref().abs().clone(),
+                        Abs::abs(self.coeff(d).as_ref()).clone(),
                     );
 
                 debug_assert!(m > Rational::ZERO);

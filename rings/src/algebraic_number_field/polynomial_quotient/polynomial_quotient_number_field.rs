@@ -7,9 +7,10 @@ use crate::{
     structure::{
         AdditiveGroupSignature, CharZeroFieldSignature, FactoringMonoidSignature,
         FiniteDimensionalFieldExtension, FreeModuleSignature,
-        IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoid, MetaFactoringMonoid,
-        MetaMultiplicativeMonoid, MultiplicativeIntegralMonoidSignature, PrincipalRationalMap,
-        RingHomomorphism, RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
+        IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoidSignature,
+        MetaFactoringMonoid, MetaMultiplicativeMonoidSignature,
+        MultiplicativeIntegralMonoidSignature, PrincipalRationalMap, RingHomomorphism,
+        RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
         SetWithZeroAndEqSignature,
     },
 };

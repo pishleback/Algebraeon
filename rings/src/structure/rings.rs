@@ -5,7 +5,7 @@ use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure, Rational, trai
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, fmt::Debug};
 
-mod unconstructable_everything_structure {
+mod unconstructable_universal_structure {
     use algebraeon_sets::structure::{EqSignature, SetSignature, Signature};
     use std::fmt::Debug;
     use std::marker::PhantomData;
@@ -138,7 +138,7 @@ pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> 
      - Polynomial rings to determine whether the karatsuba is usable.
      */
     fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
-        Option::<unconstructable_everything_structure::UnconstructableStructure<Self::Set>>::None
+        Option::<unconstructable_universal_structure::UnconstructableStructure<Self::Set>>::None
     }
 
     /*
@@ -148,7 +148,7 @@ pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> 
     fn try_char_zero_ring_restructure(
         &self,
     ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
-        Option::<unconstructable_everything_structure::UnconstructableStructure<Self::Set>>::None
+        Option::<unconstructable_universal_structure::UnconstructableStructure<Self::Set>>::None
     }
 }
 
@@ -157,6 +157,7 @@ pub trait SetWithZeroSignature: RinglikeSpecializationSignature {
     fn zero(&self) -> Self::Set;
 }
 
+#[signature_meta_trait]
 pub trait AdditiveMonoidSignature: SetWithZeroSignature {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 
@@ -174,48 +175,21 @@ pub trait AdditiveMonoidSignature: SetWithZeroSignature {
         sum
     }
 }
-pub trait MetaAdditiveMonoid: MetaType
-where
-    Self::Signature: AdditiveMonoidSignature,
-{
-    fn add(a: &Self, b: &Self) -> Self {
-        Self::structure().add(a, b)
-    }
-    fn sum(vals: Vec<impl Borrow<Self>>) -> Self {
-        Self::structure().sum(vals)
-    }
-}
-impl<R: MetaType> MetaAdditiveMonoid for R where Self::Signature: AdditiveMonoidSignature {}
 
+#[signature_meta_trait]
 pub trait CancellativeAdditiveMonoidSignature: AdditiveMonoidSignature {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
 }
-pub trait MetaCancellativeAdditiveMonoid: MetaType
-where
-    Self::Signature: CancellativeAdditiveMonoidSignature,
-{
-}
-impl<R: MetaType> MetaCancellativeAdditiveMonoid for R where
-    Self::Signature: CancellativeAdditiveMonoidSignature
-{
-}
 
+#[signature_meta_trait]
 pub trait SetWithZeroAndEqSignature: SetWithZeroSignature + EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
     }
 }
 impl<R: SetWithZeroSignature + EqSignature> SetWithZeroAndEqSignature for R {}
-pub trait MetaSetWithZeroAndEq: MetaType
-where
-    Self::Signature: SetWithZeroAndEqSignature,
-{
-    fn is_zero(&self) -> bool {
-        Self::structure().is_zero(self)
-    }
-}
-impl<R: MetaType> MetaSetWithZeroAndEq for R where Self::Signature: SetWithZeroAndEqSignature {}
 
+#[signature_meta_trait]
 pub trait MultiplicativeMonoidSignature: RinglikeSpecializationSignature {
     fn one(&self) -> Self::Set;
 
@@ -257,29 +231,8 @@ pub trait MultiplicativeMonoidSignature: RinglikeSpecializationSignature {
         }
     }
 }
-pub trait MetaMultiplicativeMonoid: MetaType
-where
-    Self::Signature: MultiplicativeMonoidSignature,
-{
-    fn one() -> Self {
-        Self::structure().one()
-    }
 
-    fn mul(a: &Self, b: &Self) -> Self {
-        Self::structure().mul(a, b)
-    }
-
-    fn product(vals: Vec<impl Borrow<Self>>) -> Self {
-        Self::structure().product(vals)
-    }
-
-    fn nat_pow(&self, n: &Natural) -> Self {
-        Self::structure().nat_pow(self, n)
-    }
-}
-impl<R: MetaType> MetaMultiplicativeMonoid for R where Self::Signature: MultiplicativeMonoidSignature
-{}
-
+#[signature_meta_trait]
 pub trait MultiplicativeMonoidSquareOpsSignature: RinglikeSpecializationSignature {
     fn is_square(&self, a: &Self::Set) -> bool {
         self.sqrt_if_square(a).is_some()
@@ -287,25 +240,10 @@ pub trait MultiplicativeMonoidSquareOpsSignature: RinglikeSpecializationSignatur
 
     fn sqrt_if_square(&self, a: &Self::Set) -> Option<Self::Set>;
 }
-pub trait MetaMultiplicativeMonoidSquareOps: MetaType
-where
-    Self::Signature: MultiplicativeMonoidSquareOpsSignature,
-{
-    fn is_square(&self) -> bool {
-        Self::structure().is_square(self)
-    }
-
-    fn sqrt_if_square(&self) -> Option<Self> {
-        Self::structure().sqrt_if_square(self)
-    }
-}
-impl<R: MetaType> MetaMultiplicativeMonoidSquareOps for R where
-    Self::Signature: MultiplicativeMonoidSquareOpsSignature
-{
-}
 
 /// 0 is such that 0*a=0 for all a in the monoid.
 /// such an element is unqiue if it exists.
+#[signature_meta_trait]
 pub trait MultiplicativeMonoidWithZeroSignature:
     MultiplicativeMonoidSignature + SetWithZeroSignature
 {
@@ -315,6 +253,7 @@ impl<R: MultiplicativeMonoidSignature + SetWithZeroSignature> MultiplicativeMono
 {
 }
 
+#[signature_meta_trait]
 pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
     /// b such that a*b=1 and b*a=1
     /// Err(DivideByZero) if b is zero
@@ -329,39 +268,24 @@ pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
         if *n == Integer::ZERO {
             Some(self.one())
         } else if *n > Integer::ZERO {
-            Some(self.nat_pow(a, &n.abs()))
+            Some(self.nat_pow(a, &Abs::abs(n)))
         } else {
-            Some(self.nat_pow(&self.try_inv(a)?, &n.abs()))
+            Some(self.nat_pow(&self.try_inv(a)?, &Abs::abs(n)))
         }
     }
 
+    #[skip_meta]
     fn units(&self) -> MultiplicativeMonoidUnitsStructure<Self, &Self> {
         MultiplicativeMonoidUnitsStructure::new(self)
     }
 
+    #[skip_meta]
     fn into_units(self) -> MultiplicativeMonoidUnitsStructure<Self, Self> {
         MultiplicativeMonoidUnitsStructure::new(self)
     }
 }
-pub trait MetaMultiplicativeMonoidUnits: MetaType
-where
-    Self::Signature: MultiplicativeMonoidUnitsSignature,
-{
-    fn try_inv(&self) -> Option<Self> {
-        Self::structure().try_inv(self)
-    }
-    fn is_unit(&self) -> bool {
-        Self::structure().is_unit(self)
-    }
-    fn try_int_pow(&self, n: &Integer) -> Option<Self> {
-        Self::structure().try_int_pow(self, n)
-    }
-}
-impl<R: MetaType> MetaMultiplicativeMonoidUnits for R where
-    Self::Signature: MultiplicativeMonoidUnitsSignature<Set = R>
-{
-}
 
+#[signature_meta_trait]
 pub trait MultiplicativeIntegralMonoidSignature:
     MultiplicativeMonoidUnitsSignature + SetWithZeroSignature + EqSignature
 {
@@ -379,25 +303,8 @@ pub trait MultiplicativeIntegralMonoidSignature:
         }
     }
 }
-pub trait MetaMultiplicativeIntegralMonoid: MetaType
-where
-    Self::Signature: MultiplicativeIntegralMonoidSignature,
-{
-    fn try_div(a: &Self, b: &Self) -> Option<Self> {
-        Self::structure().try_div(a, b)
-    }
-    fn divisible(a: &Self, b: &Self) -> bool {
-        Self::structure().divisible(a, b)
-    }
-    fn are_associate(a: &Self, b: &Self) -> bool {
-        Self::structure().are_associate(a, b)
-    }
-}
-impl<R: MetaType> MetaMultiplicativeIntegralMonoid for R where
-    Self::Signature: MultiplicativeIntegralMonoidSignature<Set = R>
-{
-}
 
+#[signature_meta_trait]
 pub trait MultiplicativeGroupSignature: MultiplicativeMonoidSignature {
     fn inv(&self, a: &Self::Set) -> Self::Set;
 
@@ -405,26 +312,14 @@ pub trait MultiplicativeGroupSignature: MultiplicativeMonoidSignature {
         if *n == Integer::ZERO {
             self.one()
         } else if *n > Integer::ZERO {
-            self.nat_pow(a, &n.abs())
+            self.nat_pow(a, &Abs::abs(n))
         } else {
-            self.nat_pow(&self.inv(a), &n.abs())
+            self.nat_pow(&self.inv(a), &Abs::abs(n))
         }
     }
 }
-pub trait MetaMultiplicativeGroup: MetaType
-where
-    Self::Signature: MultiplicativeGroupSignature,
-{
-    fn inv(a: &Self) -> Self {
-        Self::structure().inv(a)
-    }
 
-    fn int_pow(&self, n: &Integer) -> Self {
-        Self::structure().int_pow(self, n)
-    }
-}
-impl<R: MetaType> MetaMultiplicativeGroup for R where Self::Signature: MultiplicativeGroupSignature {}
-
+#[signature_meta_trait]
 pub trait FavoriteAssociateSignature: MultiplicativeMonoidUnitsSignature + EqSignature {
     //For associate class of elements, choose a unique representative
     //write self=unit*assoc and return (unit, assoc)
@@ -441,25 +336,8 @@ pub trait FavoriteAssociateSignature: MultiplicativeMonoidUnitsSignature + EqSig
         self.equal(a, &b)
     }
 }
-pub trait MetaFavoriteAssociate: MetaMultiplicativeMonoidUnits
-where
-    Self::Signature: FavoriteAssociateSignature,
-{
-    fn factor_fav_assoc(&self) -> (Self, Self) {
-        Self::structure().factor_fav_assoc(self)
-    }
-    fn fav_assoc(&self) -> Self {
-        Self::structure().fav_assoc(self)
-    }
-    fn is_fav_assoc(&self) -> bool {
-        Self::structure().is_fav_assoc(self)
-    }
-}
-impl<R: MetaType> MetaFavoriteAssociate for R where
-    Self::Signature: FavoriteAssociateSignature<Set = R>
-{
-}
 
+#[signature_meta_trait]
 pub trait SemiRingSignature:
     AdditiveMonoidSignature + MultiplicativeMonoidWithZeroSignature
 {
@@ -485,35 +363,21 @@ pub trait SemiRingSignature:
         }
     }
 }
-pub trait MetaSemiRing: MetaType
-where
-    Self::Signature: SemiRingSignature,
-{
-    fn from_nat(x: impl Into<Natural>) -> Self {
-        Self::structure().from_nat(x)
-    }
-}
-impl<R: MetaType> MetaSemiRing for R where Self::Signature: SemiRingSignature {}
 
+#[signature_meta_trait]
 pub trait SemiRingEqSignature: SemiRingSignature + EqSignature {}
 impl<R: SemiRingSignature + EqSignature> SemiRingEqSignature for R {}
 
+#[signature_meta_trait]
 pub trait CharacteristicSignature: SemiRingSignature {
     fn characteristic(&self) -> Natural;
 }
-pub trait MetaCharacteristic: MetaType
-where
-    Self::Signature: CharacteristicSignature,
-{
-    fn characteristic() -> Natural {
-        Self::structure().characteristic()
-    }
-}
-impl<R: MetaType> MetaCharacteristic for R where Self::Signature: CharacteristicSignature {}
 
+#[signature_meta_trait]
 pub trait RingUnitsSignature: RingSignature + MultiplicativeMonoidUnitsSignature {}
 impl<Ring: RingSignature + MultiplicativeMonoidUnitsSignature> RingUnitsSignature for Ring {}
 
+#[signature_meta_trait]
 pub trait AdditiveGroupSignature: CancellativeAdditiveMonoidSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
@@ -522,6 +386,7 @@ pub trait AdditiveGroupSignature: CancellativeAdditiveMonoidSignature {
     }
 }
 
+#[signature_meta_trait]
 pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
     /// Determine whether the ring is reduced.
     ///
@@ -544,35 +409,22 @@ pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
         }
     }
 
+    #[skip_meta]
     fn inbound_principal_integer_map(&self) -> PrincipalIntegerMap<Self, &Self> {
         PrincipalIntegerMap::new(self)
     }
 
+    #[skip_meta]
     fn into_inbound_principal_integer_map(self) -> PrincipalIntegerMap<Self, Self> {
         PrincipalIntegerMap::new(self)
     }
 }
-pub trait MetaRing: MetaType
-where
-    Self::Signature: RingSignature,
-{
-    fn ring_is_reduced() -> Result<bool, String> {
-        Self::structure().is_reduced()
-    }
 
-    fn neg(&self) -> Self {
-        Self::structure().neg(self)
-    }
-
-    fn from_int(x: impl Into<Integer>) -> Self {
-        Self::structure().from_int(x)
-    }
-}
-impl<R: MetaType> MetaRing for R where Self::Signature: RingSignature {}
-
+#[signature_meta_trait]
 pub trait RingEqSignature: RingSignature + EqSignature {}
 impl<R: RingSignature + EqSignature> RingEqSignature for R {}
 
+#[signature_meta_trait]
 pub trait IntegralDomainSignature:
     RingUnitsSignature + MultiplicativeIntegralMonoidSignature + EqSignature
 {
@@ -583,16 +435,8 @@ pub trait IntegralDomainSignature:
         self.try_div(&self.from_int(n), &self.from_nat(d))
     }
 }
-pub trait MetaIntegralDomain: MetaRing
-where
-    Self::Signature: IntegralDomainSignature,
-{
-    fn try_from_rat(x: &Rational) -> Option<Self> {
-        Self::structure().try_from_rat(x)
-    }
-}
-impl<R: MetaRing> MetaIntegralDomain for R where Self::Signature: IntegralDomainSignature<Set = R> {}
 
+#[signature_meta_trait]
 pub trait OrderedRingSignature: IntegralDomainSignature {
     // <= satisfying translation invariance and multiplication by positive scalar
     fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering;
@@ -604,20 +448,8 @@ pub trait OrderedRingSignature: IntegralDomainSignature {
         }
     }
 }
-pub trait MetaOrderedRing: MetaType
-where
-    Self::Signature: OrderedRingSignature,
-{
-    fn ring_cmp(a: &Self, b: &Self) -> std::cmp::Ordering {
-        Self::structure().ring_cmp(a, b)
-    }
 
-    fn abs(a: &Self) -> Self {
-        Self::structure().abs(a)
-    }
-}
-impl<R: MetaType> MetaOrderedRing for R where Self::Signature: OrderedRingSignature<Set = R> {}
-
+#[signature_meta_trait]
 pub trait FiniteUnitsSignature: RingSignature {
     fn all_units(&self) -> Vec<Self::Set>;
 
@@ -637,16 +469,7 @@ where
     }
 }
 
-pub trait MetaFiniteUnits: MetaRing
-where
-    Self::Signature: FiniteUnitsSignature,
-{
-    fn all_units(&self) -> Vec<Self> {
-        Self::structure().all_units()
-    }
-}
-impl<R: MetaRing> MetaFiniteUnits for R where Self::Signature: FiniteUnitsSignature<Set = R> {}
-
+#[signature_meta_trait]
 pub trait GreatestCommonDivisorSignature:
     FavoriteAssociateSignature + IntegralDomainSignature
 {
@@ -675,31 +498,8 @@ pub trait GreatestCommonDivisorSignature:
         lcm
     }
 }
-pub trait MetaGreatestCommonDivisor: MetaFavoriteAssociate
-where
-    Self::Signature: GreatestCommonDivisorSignature,
-{
-    fn gcd(x: &Self, y: &Self) -> Self {
-        Self::structure().gcd(x, y)
-    }
 
-    fn gcd_list(elems: Vec<impl Borrow<Self>>) -> Self {
-        Self::structure().gcd_list(elems)
-    }
-
-    fn lcm(x: &Self, y: &Self) -> Self {
-        Self::structure().lcm(x, y)
-    }
-
-    fn lcm_list(elems: Vec<impl Borrow<Self>>) -> Self {
-        Self::structure().lcm_list(elems)
-    }
-}
-impl<R: MetaRing> MetaGreatestCommonDivisor for R where
-    Self::Signature: GreatestCommonDivisorSignature<Set = R>
-{
-}
-
+#[signature_meta_trait]
 pub trait BezoutDomainSignature: GreatestCommonDivisorSignature {
     //any gcds should be the standard associate representative
     fn xgcd(&self, a: &Self::Set, b: &Self::Set) -> (Self::Set, Self::Set, Self::Set); //(g, x, y) s.t. g = ax + by
@@ -732,20 +532,8 @@ pub trait BezoutDomainSignature: GreatestCommonDivisorSignature {
         }
     }
 }
-pub trait MetaBezoutDomain: MetaGreatestCommonDivisor
-where
-    Self::Signature: BezoutDomainSignature,
-{
-    fn xgcd(x: &Self, y: &Self) -> (Self, Self, Self) {
-        Self::structure().xgcd(x, y)
-    }
 
-    fn xgcd_list(elems: Vec<&Self>) -> (Self, Vec<Self>) {
-        Self::structure().xgcd_list(elems)
-    }
-}
-impl<R: MetaRing> MetaBezoutDomain for R where Self::Signature: BezoutDomainSignature<Set = R> {}
-
+#[signature_meta_trait]
 pub trait EuclideanDivisionSignature: SemiRingEqSignature {
     /// None for 0 and Some(norm) for everything else
     fn norm(&self, elem: &Self::Set) -> Option<Natural>;
@@ -822,77 +610,22 @@ pub trait EuclideanDivisionSignature: SemiRingEqSignature {
         (g, a, b)
     }
 }
-pub trait MetaEuclideanDivision: MetaType
-where
-    Self::Signature: EuclideanDivisionSignature,
-{
-    fn norm(&self) -> Option<Natural> {
-        Self::structure().norm(self)
-    }
 
-    fn quorem(a: &Self, b: &Self) -> Option<(Self, Self)> {
-        Self::structure().quorem(a, b)
-    }
-
-    fn quo(a: &Self, b: &Self) -> Option<Self> {
-        Self::structure().quo(a, b)
-    }
-
-    fn rem(a: &Self, b: &Self) -> Self {
-        Self::structure().rem(a, b)
-    }
-
-    fn euclidean_gcd(x: Self, y: Self) -> Self
-    where
-        Self::Signature: FavoriteAssociateSignature,
-    {
-        Self::structure().euclidean_gcd(x, y)
-    }
-
-    fn euclidean_xgcd(x: Self, y: Self) -> (Self, Self, Self)
-    where
-        Self::Signature: GreatestCommonDivisorSignature,
-    {
-        Self::structure().euclidean_xgcd(x, y)
-    }
-}
-impl<R: MetaType> MetaEuclideanDivision for R where
-    Self::Signature: EuclideanDivisionSignature<Set = R>
-{
-}
-
+#[signature_meta_trait]
 pub trait EuclideanDomainSignature: EuclideanDivisionSignature + IntegralDomainSignature {}
 impl<Ring: EuclideanDivisionSignature + IntegralDomainSignature> EuclideanDomainSignature for Ring {}
 
+#[signature_meta_trait]
 pub trait InfiniteSignature: RinglikeSpecializationSignature {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
 }
-pub trait Infinite: MetaType {
-    fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>>;
-}
-impl<T: MetaType> Infinite for T
-where
-    T::Signature: InfiniteSignature,
-{
-    fn generate_distinct_elements() -> Box<dyn Iterator<Item = Self>> {
-        Self::structure().generate_distinct_elements()
-    }
-}
 
+#[signature_meta_trait]
 pub trait FieldSignature: IntegralDomainSignature {
     fn from_rat(&self, x: &Rational) -> Self::Set {
         self.try_from_rat(x).unwrap()
     }
 }
-pub trait MetaField: MetaType
-where
-    Self::Signature: FieldSignature<Set = Self>,
-{
-    fn from_rat(x: &Rational) -> Self {
-        Self::structure().from_rat(x)
-    }
-}
-impl<T: MetaType> MetaField for T where T::Signature: FieldSignature<Set = Self> {}
 
 impl<FS: FieldSignature> FavoriteAssociateSignature for FS {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
@@ -934,19 +667,11 @@ impl<FS: FieldSignature> BezoutDomainSignature for FS {
     }
 }
 
-// A trait to indicate that characteristic() always returns 0
+/// When `.characteristic()` always returns 0
+#[signature_meta_trait]
 pub trait CharZeroRingSignature: RingSignature + CharacteristicSignature {
     fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
 }
-pub trait MetaCharZeroRing: MetaRing
-where
-    Self::Signature: CharZeroRingSignature,
-{
-    fn try_to_int(&self) -> Option<Integer> {
-        Self::structure().try_to_int(self)
-    }
-}
-impl<R: MetaType> MetaCharZeroRing for R where Self::Signature: CharZeroRingSignature<Set = R> {}
 
 impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
     fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetSignature>::Set>> {
@@ -976,50 +701,35 @@ impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
     }
 }
 
+#[signature_meta_trait]
 pub trait CharZeroFieldSignature: FieldSignature + CharZeroRingSignature {
     fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
 
+    #[skip_meta]
     fn inbound_principal_rational_map(&self) -> PrincipalRationalMap<Self, &Self> {
         PrincipalRationalMap::new(self)
     }
+    #[skip_meta]
     fn into_inbound_principal_rational_map(self) -> PrincipalRationalMap<Self, Self> {
         PrincipalRationalMap::new(self)
     }
 }
-pub trait MetaCharZeroField: MetaRing
-where
-    Self::Signature: CharZeroFieldSignature,
-{
-    fn try_to_rat(&self) -> Option<Rational> {
-        Self::structure().try_to_rat(self)
-    }
-}
-impl<R: MetaType> MetaCharZeroField for R where Self::Signature: CharZeroFieldSignature<Set = R> {}
 
+#[signature_meta_trait]
 pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSetSignature {
     // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(&self) -> (Natural, Natural);
 }
 
 //is a subset of the complex numbers
+#[signature_meta_trait]
 pub trait ComplexSubsetSignature: RinglikeSpecializationSignature {
     fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32);
     fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64);
 }
-pub trait MetaComplexSubset: MetaType
-where
-    Self::Signature: ComplexSubsetSignature,
-{
-    fn as_f32_real_and_imaginary_parts(&self) -> (f32, f32) {
-        Self::structure().as_f32_real_and_imaginary_parts(self)
-    }
-    fn as_f64_real_and_imaginary_parts(&self) -> (f64, f64) {
-        Self::structure().as_f64_real_and_imaginary_parts(self)
-    }
-}
-impl<R: MetaType> MetaComplexSubset for R where Self::Signature: ComplexSubsetSignature<Set = R> {}
 
 //is a subset of the real numbers
+#[signature_meta_trait]
 pub trait RealSubsetSignature: ComplexSubsetSignature {
     fn as_f64(&self, x: &Self::Set) -> f64 {
         let (r, i) = self.as_f64_real_and_imaginary_parts(x);
@@ -1032,45 +742,15 @@ pub trait RealSubsetSignature: ComplexSubsetSignature {
         r
     }
 }
-pub trait MetaRealSubset: MetaType
-where
-    Self::Signature: RealSubsetSignature,
-{
-    fn as_f64(&self) -> f64 {
-        Self::structure().as_f64(self)
-    }
 
-    fn as_f32(&self) -> f32 {
-        Self::structure().as_f32(self)
-    }
-}
-impl<R: MetaType> MetaRealSubset for R where Self::Signature: RealSubsetSignature {}
-
+#[signature_meta_trait]
 pub trait RealRoundingSignature: RealSubsetSignature {
     fn floor(&self, x: &Self::Set) -> Integer; //round down
     fn ceil(&self, x: &Self::Set) -> Integer; //round up
     fn round(&self, x: &Self::Set) -> Integer; //round closets, either direction is fine if mid way
 }
 
-pub trait MetaRealRounding: MetaType
-where
-    Self::Signature: RealRoundingSignature,
-{
-    fn floor(&self) -> Integer {
-        Self::structure().floor(self)
-    }
-
-    fn ceil(&self) -> Integer {
-        Self::structure().ceil(self)
-    }
-
-    fn round(&self) -> Integer {
-        Self::structure().round(self)
-    }
-}
-impl<R: MetaType> MetaRealRounding for R where Self::Signature: RealRoundingSignature<Set = R> {}
-
-#[allow(clippy::wrong_self_convention)]
+#[signature_meta_trait]
 pub trait RealFromFloatSignature: RealSubsetSignature {
     fn from_f64_approx(&self, x: f64) -> Self::Set;
     fn from_f32_approx(&self, x: f32) -> Self::Set {
@@ -1078,34 +758,9 @@ pub trait RealFromFloatSignature: RealSubsetSignature {
     }
 }
 
-pub trait MetaRealFromFloat: MetaType
-where
-    Self::Signature: RealFromFloatSignature,
-{
-    fn from_f64_approx(x: f64) -> Self {
-        Self::structure().from_f64_approx(x)
-    }
-
-    fn from_f32_approx(x: f32) -> Self {
-        Self::structure().from_f32_approx(x)
-    }
-}
-impl<R: MetaType> MetaRealFromFloat for R where Self::Signature: RealFromFloatSignature<Set = R> {}
-
+#[signature_meta_trait]
 pub trait ComplexConjugateSignature: RinglikeSpecializationSignature {
     fn conjugate(&self, x: &Self::Set) -> Self::Set;
-}
-pub trait MetaComplexConjugate: MetaType
-where
-    Self::Signature: ComplexConjugateSignature,
-{
-    fn conjugate(&self) -> Self {
-        Self::structure().conjugate(self)
-    }
-}
-impl<R: MetaType> MetaComplexConjugate for R where
-    Self::Signature: ComplexConjugateSignature<Set = R>
-{
 }
 
 impl<RS: RealSubsetSignature> ComplexConjugateSignature for RS {
@@ -1114,6 +769,7 @@ impl<RS: RealSubsetSignature> ComplexConjugateSignature for RS {
     }
 }
 
+#[signature_meta_trait]
 pub trait PositiveRealNthRootSignature: ComplexSubsetSignature {
     //if x is a non-negative real number, return the nth root of x
     //may also return Ok for other well-defined values such as for 1st root of any x and 0th root of any non-zero x, but is not required to
@@ -1126,26 +782,8 @@ pub trait PositiveRealNthRootSignature: ComplexSubsetSignature {
     }
 }
 
-pub trait MetaPositiveRealNthRoot: MetaType
-where
-    Self::Signature: PositiveRealNthRootSignature,
-{
-    fn nth_root(&self, n: usize) -> Result<Self, ()> {
-        Self::structure().nth_root(self, n)
-    }
-    fn square_root(&self) -> Result<Self, ()> {
-        Self::structure().square_root(self)
-    }
-    fn cube_root(&self) -> Result<Self, ()> {
-        Self::structure().cube_root(self)
-    }
-}
-impl<R: MetaType> MetaPositiveRealNthRoot for R where
-    Self::Signature: PositiveRealNthRootSignature<Set = R>
-{
-}
-
-//TODO: Move this sort of struture to the field inclusion homomorphism
+// TODO: Move this sort of struture to the field inclusion homomorphism
+// #[signature_meta_trait]
 pub trait AlgebraicClosureSignature: FieldSignature
 where
     //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
