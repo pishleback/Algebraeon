@@ -1,5 +1,6 @@
 use super::*;
 use crate::polynomial::*;
+use algebraeon_macros::{signature_meta_trait, skip_meta};
 use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure, Rational, traits::*};
 use algebraeon_sets::structure::*;
 use std::{borrow::Borrow, fmt::Debug};
@@ -151,18 +152,10 @@ pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> 
     }
 }
 
+#[signature_meta_trait]
 pub trait SetWithZeroSignature: RinglikeSpecializationSignature {
     fn zero(&self) -> Self::Set;
 }
-pub trait MetaSetWithZero: MetaType
-where
-    Self::Signature: SetWithZeroSignature,
-{
-    fn zero() -> Self {
-        Self::structure().zero()
-    }
-}
-impl<R: MetaType> MetaSetWithZero for R where Self::Signature: SetWithZeroSignature {}
 
 pub trait AdditiveMonoidSignature: SetWithZeroSignature {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;

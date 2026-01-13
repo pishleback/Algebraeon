@@ -144,6 +144,7 @@ name = "algebraeon-rings"
 version = "0.0.15"
 dependencies = [
  "algebraeon-groups",
+ "algebraeon-macros",
  "algebraeon-nzq",
  "algebraeon-sets",
  "impls",

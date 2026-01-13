@@ -1,3 +1,5 @@
+use crate::structure::orderings::PartialOrdSignature;
+
 use super::{EqSignature, OrdSignature, SetSignature, Signature};
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -45,6 +47,12 @@ impl<Set: Debug + Clone + Send + Sync> SetSignature for EmptySetStructure<Set> {
 impl<Set: Debug + Clone + Send + Sync> EqSignature for EmptySetStructure<Set> {
     fn equal(&self, _: &Self::Set, _: &Self::Set) -> bool {
         panic!("Empty set had no elements to compare for equality")
+    }
+}
+
+impl<Set: Debug + Clone + Send + Sync> PartialOrdSignature for EmptySetStructure<Set> {
+    fn partial_cmp(&self, a: &Self::Set, b: &Self::Set) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(a, b))
     }
 }
 

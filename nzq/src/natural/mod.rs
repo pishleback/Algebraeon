@@ -4,8 +4,8 @@ use crate::Rational;
 use crate::integer::Integer;
 use crate::traits::{AbsDiff, DivMod, ModInv, ModPow};
 use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
-    Signature, ToStringSignature,
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature,
+    PartialOrdSignature, SetSignature, Signature, ToStringSignature,
 };
 use malachite_base::num::arithmetic::traits::CheckedSub;
 use malachite_base::num::{
@@ -30,7 +30,7 @@ pub use functions::primes;
 
 /// Represents a natural number {0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
-#[canonical_structure(eq, ord)]
+#[canonical_structure(eq, partial_ord, ord)]
 pub struct Natural(malachite_nz::natural::Natural);
 
 #[allow(clippy::wrong_self_convention)]

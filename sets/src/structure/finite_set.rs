@@ -1,5 +1,5 @@
 use super::{EqSignature, OrdSignature, SetSignature, Signature};
-use crate::structure::{CountableSetSignature, FiniteSetSignature};
+use crate::structure::{CountableSetSignature, FiniteSetSignature, orderings::PartialOrdSignature};
 use std::fmt::Debug;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -29,6 +29,12 @@ impl SetSignature for EnumeratedFiniteSetStructure {
 impl EqSignature for EnumeratedFiniteSetStructure {
     fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
         x == y
+    }
+}
+
+impl PartialOrdSignature for EnumeratedFiniteSetStructure {
+    fn partial_cmp(&self, x: &Self::Set, y: &Self::Set) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(x, y))
     }
 }
 
