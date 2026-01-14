@@ -11,7 +11,7 @@ use crate::{
         MetaFactoringMonoid, MetaMultiplicativeMonoidSignature,
         MultiplicativeIntegralMonoidSignature, PrincipalRationalMap, RingHomomorphism,
         RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
-        SetWithZeroAndEqSignature,
+        ZeroEqSignature,
     },
 };
 use algebraeon_nzq::{

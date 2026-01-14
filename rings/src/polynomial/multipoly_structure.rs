@@ -113,7 +113,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RinglikeSpecializationSign
 {
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> ZeroSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
@@ -121,7 +121,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
     }
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditionSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -152,18 +152,27 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
         }
         self.reduce(a) //sort the coeffs
     }
-
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
-        Some(self.neg(a))
-    }
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> CancellativeAdditiveMonoidSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> CancellativeAdditionSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> TryNegateSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.neg(a))
+    }
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature

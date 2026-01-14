@@ -757,7 +757,7 @@ impl EqSignature for PAdicAlgebraicStructure {
 
 impl RinglikeSpecializationSignature for PAdicAlgebraicStructure {}
 
-impl SetWithZeroSignature for PAdicAlgebraicStructure {
+impl ZeroSignature for PAdicAlgebraicStructure {
     fn zero(&self) -> Self::Set {
         PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
@@ -766,7 +766,7 @@ impl SetWithZeroSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl AdditiveMonoidSignature for PAdicAlgebraicStructure {
+impl AdditionSignature for PAdicAlgebraicStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
@@ -785,17 +785,21 @@ impl AdditiveMonoidSignature for PAdicAlgebraicStructure {
             }
         }
     }
+}
 
+impl CancellativeAdditionSignature for PAdicAlgebraicStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for PAdicAlgebraicStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for PAdicAlgebraicStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for PAdicAlgebraicStructure {}
 
 impl AdditiveGroupSignature for PAdicAlgebraicStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {

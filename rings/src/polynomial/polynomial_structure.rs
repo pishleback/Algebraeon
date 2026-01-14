@@ -371,7 +371,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> RinglikeSpecialization
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> ZeroSignature
     for PolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
@@ -379,25 +379,16 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditionSignature
     for PolynomialStructure<RS, RSB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.add_impl(a, b)
     }
-
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
-        Some(Polynomial::from_coeffs(
-            a.coeffs
-                .iter()
-                .map(|c| self.coeff_ring().try_neg(c))
-                .collect::<Option<_>>()?,
-        ))
-    }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    CancellativeAdditiveMonoidSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature + CancellativeAdditionSignature, RSB: BorrowedStructure<RS>>
+    CancellativeAdditionSignature for PolynomialStructure<RS, RSB>
 {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(Polynomial::from_coeffs(
@@ -409,6 +400,24 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
                 .collect::<Option<_>>()?,
         ))
     }
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> TryNegateSignature
+    for PolynomialStructure<RS, RSB>
+{
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(Polynomial::from_coeffs(
+            a.coeffs
+                .iter()
+                .map(|c| self.coeff_ring().try_neg(c))
+                .collect::<Option<_>>()?,
+        ))
+    }
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+    for PolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature

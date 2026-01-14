@@ -28,27 +28,31 @@ impl RinglikeSpecializationSignature for IntegerCanonicalStructure {
     }
 }
 
-impl SetWithZeroSignature for IntegerCanonicalStructure {
+impl ZeroSignature for IntegerCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
 }
 
-impl AdditiveMonoidSignature for IntegerCanonicalStructure {
+impl AdditionSignature for IntegerCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
+}
 
+impl CancellativeAdditionSignature for IntegerCanonicalStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for IntegerCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for IntegerCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for IntegerCanonicalStructure {}
 
 impl AdditiveGroupSignature for IntegerCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {

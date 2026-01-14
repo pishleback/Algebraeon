@@ -154,27 +154,31 @@ impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
 
 impl<const N: usize> RinglikeSpecializationSignature for ModuloCanonicalStructure<N> {}
 
-impl<const N: usize> SetWithZeroSignature for ModuloCanonicalStructure<N> {
+impl<const N: usize> ZeroSignature for ModuloCanonicalStructure<N> {
     fn zero(&self) -> Self::Set {
         Modulo { x: 0 }
     }
 }
 
-impl<const N: usize> AdditiveMonoidSignature for ModuloCanonicalStructure<N> {
+impl<const N: usize> AdditionSignature for ModuloCanonicalStructure<N> {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         Modulo { x: (a.x + b.x) % N }
     }
+}
 
+impl<const N: usize> CancellativeAdditionSignature for ModuloCanonicalStructure<N> {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl<const N: usize> TryNegateSignature for ModuloCanonicalStructure<N> {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl<const N: usize> CancellativeAdditiveMonoidSignature for ModuloCanonicalStructure<N> {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl<const N: usize> AdditiveMonoidSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
     fn neg(&self, a: &Self::Set) -> Self::Set {

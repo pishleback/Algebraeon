@@ -3,7 +3,7 @@ use crate::{canvas::WgpuState, canvas2d::Canvas2D};
 use algebraeon_rings::{
     polynomial::Polynomial,
     structure::{
-        CancellativeAdditiveMonoidSignature, ComplexSubsetSignature, MetaComplexSubsetSignature,
+        CancellativeAdditionSignature, ComplexSubsetSignature, MetaComplexSubsetSignature,
         SemiRingEqSignature,
     },
 };
@@ -59,7 +59,7 @@ impl PolynomialPlot {
     fn new<MetaRing: MetaComplexSubsetSignature>(p: Polynomial<MetaRing>) -> Self
     where
         MetaRing::Signature:
-            ComplexSubsetSignature + SemiRingEqSignature + CancellativeAdditiveMonoidSignature,
+            ComplexSubsetSignature + SemiRingEqSignature + CancellativeAdditionSignature,
     {
         let coeffs = p
             .coeffs()
@@ -252,7 +252,7 @@ impl Canvas2D {
         p: Polynomial<MetaRing>,
     ) where
         MetaRing::Signature:
-            ComplexSubsetSignature + SemiRingEqSignature + CancellativeAdditiveMonoidSignature,
+            ComplexSubsetSignature + SemiRingEqSignature + CancellativeAdditionSignature,
     {
         self.add_item(PolynomialPlot::new(p));
     }

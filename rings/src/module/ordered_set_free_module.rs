@@ -187,7 +187,7 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
-> SetWithZeroSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+> ZeroSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
     fn zero(&self) -> Self::Set {
         vec![]
@@ -199,12 +199,32 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
-> AdditiveMonoidSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+> AdditionSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
     fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
         self.collapse_terms(v.iter().chain(w.iter()).cloned().collect())
     }
+}
 
+impl<
+    Set: OrdSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: SemiRingSignature + EqSignature,
+    RingB: BorrowedStructure<Ring>,
+> CancellativeAdditionSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
+    fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
+        todo!()
+    }
+}
+
+impl<
+    Set: OrdSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: SemiRingSignature + EqSignature,
+    RingB: BorrowedStructure<Ring>,
+> TryNegateSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+{
     fn try_neg(&self, v: &Self::Set) -> Option<Self::Set> {
         v.iter()
             .map(|(x, a)| Some((x.clone(), self.ring().try_neg(a)?)))
@@ -217,12 +237,8 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: SemiRingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
-> CancellativeAdditiveMonoidSignature
-    for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+> AdditiveMonoidSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
-    fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
-        todo!()
-    }
 }
 
 impl<

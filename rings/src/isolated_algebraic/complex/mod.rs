@@ -631,13 +631,13 @@ impl RinglikeSpecializationSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl SetWithZeroSignature for ComplexAlgebraicCanonicalStructure {
+impl ZeroSignature for ComplexAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
     }
 }
 
-impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
+impl AdditionSignature for ComplexAlgebraicCanonicalStructure {
     fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
         // println!("add {:?} {:?}", alg1, alg2);
         // alg1.check_invariants().unwrap();
@@ -708,17 +708,21 @@ impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
             }
         }
     }
+}
 
+impl CancellativeAdditionSignature for ComplexAlgebraicCanonicalStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for ComplexAlgebraicCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl AdditiveGroupSignature for ComplexAlgebraicCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {

@@ -1,7 +1,7 @@
 use crate::parsing::polynomial::*;
 use crate::polynomial::{MultiPolynomial, Polynomial, Variable};
 use crate::structure::{
-    MetaAdditiveGroupSignature, MetaAdditiveMonoidSignature, MetaMultiplicativeMonoidSignature,
+    MetaAdditionSignature, MetaAdditiveGroupSignature, MetaMultiplicativeMonoidSignature,
 };
 use algebraeon_nzq::*;
 use std::collections::HashMap;

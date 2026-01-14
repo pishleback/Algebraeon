@@ -7,28 +7,32 @@ pub mod functions;
 
 impl RinglikeSpecializationSignature for NaturalCanonicalStructure {}
 
-impl SetWithZeroSignature for NaturalCanonicalStructure {
+impl ZeroSignature for NaturalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Natural::ZERO
     }
 }
 
-impl AdditiveMonoidSignature for NaturalCanonicalStructure {
+impl AdditionSignature for NaturalCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
+}
 
+impl CancellativeAdditionSignature for NaturalCanonicalStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        a.try_sub(b)
+    }
+}
+
+impl TryNegateSignature for NaturalCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         let z = self.zero();
         if a == &z { Some(self.zero()) } else { None }
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for NaturalCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        a.try_sub(b)
-    }
-}
+impl AdditiveMonoidSignature for NaturalCanonicalStructure {}
 
 impl MultiplicativeMonoidSignature for NaturalCanonicalStructure {
     fn one(&self) -> Self::Set {

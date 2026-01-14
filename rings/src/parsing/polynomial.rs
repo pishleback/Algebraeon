@@ -1,7 +1,7 @@
 use crate::parsing::ast::*;
 use crate::polynomial::{MultiPolynomial, Polynomial, Variable};
 use crate::structure::{
-    MetaAdditiveGroupSignature, MetaAdditiveMonoidSignature, MetaMultiplicativeMonoidSignature,
+    MetaAdditionSignature, MetaAdditiveGroupSignature, MetaMultiplicativeMonoidSignature,
 };
 use algebraeon_nzq::*;
 use lalrpop_util::lalrpop_mod;

@@ -19,27 +19,31 @@ impl RinglikeSpecializationSignature for RationalCanonicalStructure {
     }
 }
 
-impl SetWithZeroSignature for RationalCanonicalStructure {
+impl ZeroSignature for RationalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Rational::ZERO
     }
 }
 
-impl AdditiveMonoidSignature for RationalCanonicalStructure {
+impl AdditionSignature for RationalCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
+}
 
+impl CancellativeAdditionSignature for RationalCanonicalStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for RationalCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for RationalCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for RationalCanonicalStructure {}
 
 impl AdditiveGroupSignature for RationalCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {

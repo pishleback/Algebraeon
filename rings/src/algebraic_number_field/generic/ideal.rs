@@ -451,7 +451,7 @@ impl<
     KB: BorrowedStructure<K>,
     const MAXIMAL: bool,
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-> SetWithZeroSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+> ZeroSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
     fn zero(&self) -> Self::Set {
         Self::Set::Zero
@@ -463,7 +463,7 @@ impl<
     KB: BorrowedStructure<K>,
     const MAXIMAL: bool,
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-> AdditiveMonoidSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+> AdditionSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(a).is_ok());
@@ -482,7 +482,15 @@ impl<
             }
         }
     }
+}
 
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> TryNegateSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         if self.is_zero(a) {
             Some(self.zero())
@@ -490,6 +498,15 @@ impl<
             None
         }
     }
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> AdditiveMonoidSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
 }
 
 impl<

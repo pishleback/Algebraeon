@@ -2,16 +2,16 @@ use crate::algebraic_number_field::{
     AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, QuadraticRingOfIntegersStructure,
 };
 use crate::structure::{
-    AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-    CharZeroFieldSignature, CharZeroRingSignature, CharacteristicSignature, FieldSignature,
-    IntegralDomainSignature, MetaFactoringMonoidNaturalExponent, MetaSetWithZeroAndEqSignature,
-    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidUnitsSignature, RingSignature, RinglikeSpecializationSignature,
-    SemiRingSignature, SetWithZeroSignature,
+    AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
+    CancellativeAdditionSignature, CharZeroFieldSignature, CharZeroRingSignature,
+    CharacteristicSignature, FieldSignature, IntegralDomainSignature,
+    MetaFactoringMonoidNaturalExponent, MetaZeroEqSignature, MultiplicativeIntegralMonoidSignature,
+    MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RingSignature,
+    RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature, ZeroSignature,
 };
 use crate::structure::{
     FreeModuleSignature, MetaCharZeroRingSignature, PrincipalRationalMap,
-    RingHomomorphismRangeModuleStructure, SemiModuleSignature, SetWithZeroAndEqSignature,
+    RingHomomorphismRangeModuleStructure, SemiModuleSignature, ZeroEqSignature,
 };
 use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};
 use algebraeon_sets::structure::{BorrowedSet, BorrowedStructure, InjectiveFunction, MetaType};
@@ -134,32 +134,34 @@ impl<D: BorrowedSet<Integer>> RinglikeSpecializationSignature for QuadraticNumbe
     }
 }
 
-impl<D: BorrowedSet<Integer>> SetWithZeroSignature for QuadraticNumberFieldStructure<D> {
+impl<D: BorrowedSet<Integer>> ZeroSignature for QuadraticNumberFieldStructure<D> {
     fn zero(&self) -> Self::Set {
         Self::Set::ZERO
     }
 }
 
-impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticNumberFieldStructure<D> {
+impl<D: BorrowedSet<Integer>> AdditionSignature for QuadraticNumberFieldStructure<D> {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         QuadraticNumberFieldElement {
             rational_part: &a.rational_part + &b.rational_part,
             algebraic_part: &a.algebraic_part + &b.algebraic_part,
         }
     }
+}
 
+impl<D: BorrowedSet<Integer>> CancellativeAdditionSignature for QuadraticNumberFieldStructure<D> {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl<D: BorrowedSet<Integer>> TryNegateSignature for QuadraticNumberFieldStructure<D> {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl<D: BorrowedSet<Integer>> CancellativeAdditiveMonoidSignature
-    for QuadraticNumberFieldStructure<D>
-{
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticNumberFieldStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> AdditiveGroupSignature for QuadraticNumberFieldStructure<D> {
     fn neg(&self, a: &Self::Set) -> Self::Set {

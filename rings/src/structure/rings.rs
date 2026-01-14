@@ -11,9 +11,10 @@ mod unconstructable_universal_structure {
     use std::marker::PhantomData;
 
     use crate::structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-        CharZeroRingSignature, CharacteristicSignature, MultiplicativeMonoidSignature,
-        RingSignature, RinglikeSpecializationSignature, SemiRingSignature, SetWithZeroSignature,
+        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
+        CancellativeAdditionSignature, CharZeroRingSignature, CharacteristicSignature,
+        MultiplicativeMonoidSignature, RingSignature, RinglikeSpecializationSignature,
+        SemiRingSignature, TryNegateSignature, ZeroSignature,
     };
 
     pub struct UnconstructableStructure<Set> {
@@ -65,29 +66,33 @@ mod unconstructable_universal_structure {
     {
     }
 
-    impl<Set: Debug + Clone + Send + Sync> SetWithZeroSignature for UnconstructableStructure<Set> {
+    impl<Set: Debug + Clone + Send + Sync> ZeroSignature for UnconstructableStructure<Set> {
         fn zero(&self) -> Self::Set {
             unreachable!()
         }
     }
 
-    impl<Set: Debug + Clone + Send + Sync> AdditiveMonoidSignature for UnconstructableStructure<Set> {
+    impl<Set: Debug + Clone + Send + Sync> AdditionSignature for UnconstructableStructure<Set> {
         fn add(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
-            unreachable!()
-        }
-
-        fn try_neg(&self, _a: &Self::Set) -> Option<Self::Set> {
             unreachable!()
         }
     }
 
-    impl<Set: Debug + Clone + Send + Sync> CancellativeAdditiveMonoidSignature
+    impl<Set: Debug + Clone + Send + Sync> CancellativeAdditionSignature
         for UnconstructableStructure<Set>
     {
         fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
             unreachable!()
         }
     }
+
+    impl<Set: Debug + Clone + Send + Sync> TryNegateSignature for UnconstructableStructure<Set> {
+        fn try_neg(&self, _a: &Self::Set) -> Option<Self::Set> {
+            unreachable!()
+        }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> AdditiveMonoidSignature for UnconstructableStructure<Set> {}
 
     impl<Set: Debug + Clone + Send + Sync> AdditiveGroupSignature for UnconstructableStructure<Set> {
         fn neg(&self, _a: &Self::Set) -> Self::Set {
@@ -152,21 +157,31 @@ pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> 
     }
 }
 
+/// A set with a special element `0`.
 #[signature_meta_trait]
-pub trait SetWithZeroSignature: RinglikeSpecializationSignature {
+pub trait ZeroSignature: RinglikeSpecializationSignature {
     fn zero(&self) -> Self::Set;
 }
 
+/// A set with an associative commutative binary operation of addition.
 #[signature_meta_trait]
-pub trait AdditiveMonoidSignature: SetWithZeroSignature {
+pub trait AdditionSignature: RinglikeSpecializationSignature {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 
     fn add_mut(&self, a: &mut Self::Set, b: &Self::Set) {
         *a = self.add(a, b);
     }
+}
 
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set>;
+/// When `a + x` = `a + y` implies `x` = `y` for all `a`, `x`, `y`.
+#[signature_meta_trait]
+pub trait CancellativeAdditionSignature: AdditionSignature {
+    /// Return the unique `x` such that `a` = `b + x`, or `None` if no such `x` exists.
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+}
 
+#[signature_meta_trait]
+pub trait AdditiveMonoidSignature: ZeroSignature + AdditionSignature {
     fn sum(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut sum = self.zero();
         for val in vals {
@@ -177,17 +192,17 @@ pub trait AdditiveMonoidSignature: SetWithZeroSignature {
 }
 
 #[signature_meta_trait]
-pub trait CancellativeAdditiveMonoidSignature: AdditiveMonoidSignature {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+pub trait TryNegateSignature: AdditiveMonoidSignature {
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set>;
 }
 
 #[signature_meta_trait]
-pub trait SetWithZeroAndEqSignature: SetWithZeroSignature + EqSignature {
+pub trait ZeroEqSignature: ZeroSignature + EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
     }
 }
-impl<R: SetWithZeroSignature + EqSignature> SetWithZeroAndEqSignature for R {}
+impl<R: ZeroSignature + EqSignature> ZeroEqSignature for R {}
 
 #[signature_meta_trait]
 pub trait MultiplicativeMonoidSignature: RinglikeSpecializationSignature {
@@ -245,13 +260,10 @@ pub trait MultiplicativeMonoidSquareOpsSignature: RinglikeSpecializationSignatur
 /// such an element is unqiue if it exists.
 #[signature_meta_trait]
 pub trait MultiplicativeMonoidWithZeroSignature:
-    MultiplicativeMonoidSignature + SetWithZeroSignature
+    MultiplicativeMonoidSignature + ZeroSignature
 {
 }
-impl<R: MultiplicativeMonoidSignature + SetWithZeroSignature> MultiplicativeMonoidWithZeroSignature
-    for R
-{
-}
+impl<R: MultiplicativeMonoidSignature + ZeroSignature> MultiplicativeMonoidWithZeroSignature for R {}
 
 #[signature_meta_trait]
 pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
@@ -287,7 +299,7 @@ pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
 
 #[signature_meta_trait]
 pub trait MultiplicativeIntegralMonoidSignature:
-    MultiplicativeMonoidUnitsSignature + SetWithZeroSignature + EqSignature
+    MultiplicativeMonoidUnitsSignature + ZeroSignature + EqSignature
 {
     fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
 
@@ -337,9 +349,11 @@ pub trait FavoriteAssociateSignature: MultiplicativeMonoidUnitsSignature + EqSig
     }
 }
 
+// semi-rings need not have cancellative addition
+// but inverses are unique when they exist because all inverses are two-sided due to commutativity
 #[signature_meta_trait]
 pub trait SemiRingSignature:
-    AdditiveMonoidSignature + MultiplicativeMonoidWithZeroSignature
+    AdditiveMonoidSignature + TryNegateSignature + MultiplicativeMonoidWithZeroSignature
 {
     fn from_nat(&self, x: impl Into<Natural>) -> Self::Set {
         let x = x.into();
@@ -378,7 +392,7 @@ pub trait RingUnitsSignature: RingSignature + MultiplicativeMonoidUnitsSignature
 impl<Ring: RingSignature + MultiplicativeMonoidUnitsSignature> RingUnitsSignature for Ring {}
 
 #[signature_meta_trait]
-pub trait AdditiveGroupSignature: CancellativeAdditiveMonoidSignature {
+pub trait AdditiveGroupSignature: CancellativeAdditionSignature {
     fn neg(&self, a: &Self::Set) -> Self::Set;
 
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {

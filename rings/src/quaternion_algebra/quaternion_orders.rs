@@ -3,9 +3,10 @@ use crate::{
     algebraic_number_field::AlgebraicNumberFieldSignature,
     module::finitely_free_module::RingToFinitelyFreeModuleSignature,
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-        FiniteRankFreeRingExtension, FinitelyFreeModuleSignature, MultiplicativeMonoidSignature,
-        RinglikeSpecializationSignature, SemiModuleSignature, SetWithZeroSignature,
+        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
+        CancellativeAdditionSignature, FiniteRankFreeRingExtension, FinitelyFreeModuleSignature,
+        MultiplicativeMonoidSignature, RinglikeSpecializationSignature, SemiModuleSignature,
+        TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
@@ -94,29 +95,33 @@ impl<ANF: AlgebraicNumberFieldSignature> RinglikeSpecializationSignature
 {
 }
 
-impl<ANF: AlgebraicNumberFieldSignature> SetWithZeroSignature for QuaternionOrderZBasis<ANF> {
+impl<ANF: AlgebraicNumberFieldSignature> ZeroSignature for QuaternionOrderZBasis<ANF> {
     fn zero(&self) -> Self::Set {
         self.algebra.zero()
     }
 }
 
-impl<ANF: AlgebraicNumberFieldSignature> AdditiveMonoidSignature for QuaternionOrderZBasis<ANF> {
+impl<ANF: AlgebraicNumberFieldSignature> AdditionSignature for QuaternionOrderZBasis<ANF> {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.algebra.add(a, b)
     }
-
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
-        Some(self.neg(a))
-    }
 }
 
-impl<ANF: AlgebraicNumberFieldSignature> CancellativeAdditiveMonoidSignature
+impl<ANF: AlgebraicNumberFieldSignature> CancellativeAdditionSignature
     for QuaternionOrderZBasis<ANF>
 {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
 }
+
+impl<ANF: AlgebraicNumberFieldSignature> TryNegateSignature for QuaternionOrderZBasis<ANF> {
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.neg(a))
+    }
+}
+
+impl<ANF: AlgebraicNumberFieldSignature> AdditiveMonoidSignature for QuaternionOrderZBasis<ANF> {}
 
 impl<ANF: AlgebraicNumberFieldSignature> AdditiveGroupSignature for QuaternionOrderZBasis<ANF> {
     fn neg(&self, a: &Self::Set) -> Self::Set {

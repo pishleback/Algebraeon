@@ -184,8 +184,8 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
     }
 }
 
-impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    SetWithZeroSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> ZeroSignature
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn zero(&self) -> Self::Set {
         self.ring().zero()
@@ -193,23 +193,32 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    AdditiveMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+    AdditionSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.ring().rem(&self.ring().add(a, b), &self.modulus)
     }
+}
 
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    CancellativeAdditionSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    TryNegateSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    CancellativeAdditiveMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+    AdditiveMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>

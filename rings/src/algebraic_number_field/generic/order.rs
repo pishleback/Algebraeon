@@ -9,13 +9,13 @@ use crate::{
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-        CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
-        FinitelyFreeModuleSignature, IntegralDomainSignature,
+        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
+        CancellativeAdditionSignature, CharZeroRingSignature, CharacteristicSignature,
+        DedekindDomainSignature, FinitelyFreeModuleSignature, IntegralDomainSignature,
         MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
         MultiplicativeMonoidUnitsSignature, RingSignature, RingToIdealsSignature,
         RinglikeSpecializationSignature, SemiModuleSignature, SemiRingSignature,
-        SetWithZeroAndEqSignature, SetWithZeroSignature,
+        ZeroEqSignature, TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
@@ -193,8 +193,8 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
     }
 }
 
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    SetWithZeroSignature for OrderWithBasis<K, KB, MAXIMAL>
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> ZeroSignature
+    for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn zero(&self) -> Self::Set {
         self.full_rank_z_sublattice.zero()
@@ -202,23 +202,32 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    AdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+    AdditionSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.full_rank_z_sublattice.add(a, b)
     }
+}
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    CancellativeAdditionSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    TryNegateSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    CancellativeAdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+    AdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>

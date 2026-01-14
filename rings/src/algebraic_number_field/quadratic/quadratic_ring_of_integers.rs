@@ -4,12 +4,12 @@ use crate::{
         QuadraticNumberFieldStructure,
     },
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-        CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
-        IntegralDomainSignature, MetaCharZeroRingSignature, MultiplicativeIntegralMonoidSignature,
-        MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RingSignature,
-        RinglikeSpecializationSignature, SemiModuleSignature, SemiRingSignature,
-        SetWithZeroSignature,
+        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
+        CancellativeAdditionSignature, CharZeroRingSignature, CharacteristicSignature,
+        DedekindDomainSignature, IntegralDomainSignature, MetaCharZeroRingSignature,
+        MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
+        MultiplicativeMonoidUnitsSignature, RingSignature, RinglikeSpecializationSignature,
+        SemiModuleSignature, SemiRingSignature, TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
@@ -92,29 +92,33 @@ impl<D: BorrowedSet<Integer>> RinglikeSpecializationSignature
     }
 }
 
-impl<D: BorrowedSet<Integer>> SetWithZeroSignature for QuadraticRingOfIntegersStructure<D> {
+impl<D: BorrowedSet<Integer>> ZeroSignature for QuadraticRingOfIntegersStructure<D> {
     fn zero(&self) -> Self::Set {
         self.anf().zero()
     }
 }
 
-impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticRingOfIntegersStructure<D> {
+impl<D: BorrowedSet<Integer>> AdditionSignature for QuadraticRingOfIntegersStructure<D> {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.anf().add(a, b)
     }
-
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
-        Some(self.neg(a))
-    }
 }
 
-impl<D: BorrowedSet<Integer>> CancellativeAdditiveMonoidSignature
+impl<D: BorrowedSet<Integer>> CancellativeAdditionSignature
     for QuadraticRingOfIntegersStructure<D>
 {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
 }
+
+impl<D: BorrowedSet<Integer>> TryNegateSignature for QuadraticRingOfIntegersStructure<D> {
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.neg(a))
+    }
+}
+
+impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticRingOfIntegersStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> AdditiveGroupSignature for QuadraticRingOfIntegersStructure<D> {
     fn neg(&self, a: &Self::Set) -> Self::Set {

@@ -98,27 +98,31 @@ impl EqSignature for ConwayFiniteFieldStructure {
 
 impl RinglikeSpecializationSignature for ConwayFiniteFieldStructure {}
 
-impl SetWithZeroSignature for ConwayFiniteFieldStructure {
+impl ZeroSignature for ConwayFiniteFieldStructure {
     fn zero(&self) -> Self::Set {
         self.structure.zero()
     }
 }
 
-impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {
+impl AdditionSignature for ConwayFiniteFieldStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.structure.add(a, b)
     }
+}
 
+impl CancellativeAdditionSignature for ConwayFiniteFieldStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for ConwayFiniteFieldStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for ConwayFiniteFieldStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {}
 
 impl AdditiveGroupSignature for ConwayFiniteFieldStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {

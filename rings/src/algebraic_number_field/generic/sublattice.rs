@@ -2,8 +2,9 @@ use crate::{
     algebraic_number_field::{AlgebraicNumberFieldSignature, FullRankSublatticeWithBasisSignature},
     matrix::Matrix,
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-        FiniteRankFreeRingExtension, RinglikeSpecializationSignature, SetWithZeroSignature,
+        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
+        CancellativeAdditionSignature, FiniteRankFreeRingExtension,
+        RinglikeSpecializationSignature, TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::Integer;
@@ -134,7 +135,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> RinglikeSpecial
 {
 }
 
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetWithZeroSignature
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> ZeroSignature
     for FullRankSublatticeWithBasis<K, KB>
 {
     fn zero(&self) -> Self::Set {
@@ -142,24 +143,33 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetWithZeroSign
     }
 }
 
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveMonoidSignature
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditionSignature
     for FullRankSublatticeWithBasis<K, KB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.free_lattice_restructure().add(a, b)
     }
-
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
-        Some(self.neg(a))
-    }
 }
 
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> CancellativeAdditiveMonoidSignature
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> CancellativeAdditionSignature
     for FullRankSublatticeWithBasis<K, KB>
 {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> TryNegateSignature
+    for FullRankSublatticeWithBasis<K, KB>
+{
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.neg(a))
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveMonoidSignature
+    for FullRankSublatticeWithBasis<K, KB>
+{
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveGroupSignature

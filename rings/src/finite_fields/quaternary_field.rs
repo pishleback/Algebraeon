@@ -32,13 +32,13 @@ impl Display for QuaternaryField {
 
 impl RinglikeSpecializationSignature for QuaternaryFieldCanonicalStructure {}
 
-impl SetWithZeroSignature for QuaternaryFieldCanonicalStructure {
+impl ZeroSignature for QuaternaryFieldCanonicalStructure {
     fn zero(&self) -> Self::Set {
         QuaternaryField::Zero
     }
 }
 
-impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
+impl AdditionSignature for QuaternaryFieldCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         #[allow(clippy::match_same_arms)]
         match (a, b) {
@@ -55,17 +55,21 @@ impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
             (QuaternaryField::Beta, QuaternaryField::Beta) => QuaternaryField::Zero,
         }
     }
+}
 
+impl CancellativeAdditionSignature for QuaternaryFieldCanonicalStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for QuaternaryFieldCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {}
 
 impl MultiplicativeMonoidSignature for QuaternaryFieldCanonicalStructure {
     fn one(&self) -> Self::Set {

@@ -5,7 +5,7 @@ use crate::{
     },
     polynomial::Polynomial,
     structure::{
-        AdditiveMonoidSignature, CharZeroFieldSignature, FieldSignature, MetaFactoringMonoid,
+        AdditionSignature, CharZeroFieldSignature, FieldSignature, MetaFactoringMonoid,
         MetaMultiplicativeMonoidSignature, RingHomomorphism, SemiModuleSignature,
     },
 };

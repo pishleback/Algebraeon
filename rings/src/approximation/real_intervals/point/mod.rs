@@ -5,11 +5,12 @@ use crate::{
     },
     continued_fraction::{SimpleContinuedFraction, ToSimpleContinuedFractionSignature},
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-        ComplexSubsetSignature, MetaMultiplicativeMonoidUnitsSignature, MetaRealRoundingSignature,
-        MetaRealSubsetSignature, MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
-        RealRoundingSignature, RealSubsetSignature, RingSignature, RinglikeSpecializationSignature,
-        SemiRingSignature, SetWithZeroSignature,
+        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
+        CancellativeAdditionSignature, ComplexSubsetSignature,
+        MetaMultiplicativeMonoidUnitsSignature, MetaRealRoundingSignature, MetaRealSubsetSignature,
+        MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RealRoundingSignature,
+        RealSubsetSignature, RingSignature, RinglikeSpecializationSignature, SemiRingSignature,
+        TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};
@@ -208,30 +209,34 @@ impl RealApproximatePointInterface for MulPoints {
 
 impl RinglikeSpecializationSignature for RealApproximatePointCanonicalStructure {}
 
-impl SetWithZeroSignature for RealApproximatePointCanonicalStructure {
+impl ZeroSignature for RealApproximatePointCanonicalStructure {
     fn zero(&self) -> Self::Set {
         RealApproximatePoint::new(rational::RationalPoint { x: Rational::ZERO })
     }
 }
 
-impl AdditiveMonoidSignature for RealApproximatePointCanonicalStructure {
+impl AdditionSignature for RealApproximatePointCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         RealApproximatePoint::new(AddPoints {
             first: a.clone(),
             second: b.clone(),
         })
     }
+}
 
+impl CancellativeAdditionSignature for RealApproximatePointCanonicalStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for RealApproximatePointCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for RealApproximatePointCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for RealApproximatePointCanonicalStructure {}
 
 impl AdditiveGroupSignature for RealApproximatePointCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {

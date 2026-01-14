@@ -50,21 +50,28 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> RinglikeSpecializationSign
 {
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> SetWithZeroSignature
-    for IntegerIdealsStructure<B>
-{
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> ZeroSignature for IntegerIdealsStructure<B> {
     fn zero(&self) -> Self::Set {
         Natural::ZERO
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> AdditionSignature
+    for IntegerIdealsStructure<B>
+{
+    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        gcd(a.clone(), b.clone())
     }
 }
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> AdditiveMonoidSignature
     for IntegerIdealsStructure<B>
 {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        gcd(a.clone(), b.clone())
-    }
+}
 
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryNegateSignature
+    for IntegerIdealsStructure<B>
+{
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         if self.is_zero(a) {
             Some(self.zero())
