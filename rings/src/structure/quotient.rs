@@ -233,16 +233,25 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
     }
 }
 
-impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    MultiplicativeMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> OneSignature
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
     fn one(&self) -> Self::Set {
         self.ring().one()
     }
+}
 
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    MultiplicationSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.ring().rem(&self.ring().mul(a, b), &self.modulus)
     }
+}
+
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    MultiplicativeMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>

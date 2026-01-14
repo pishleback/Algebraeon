@@ -514,12 +514,20 @@ impl<
     KB: BorrowedStructure<K>,
     const MAXIMAL: bool,
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-> MultiplicativeMonoidSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+> OneSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
     fn one(&self) -> Self::Set {
         self.principal_ideal(&self.ring().one())
     }
+}
 
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> MultiplicationSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
@@ -543,6 +551,15 @@ impl<
             _ => Self::Set::Zero,
         }
     }
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> MultiplicativeMonoidSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
 }
 
 impl<

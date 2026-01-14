@@ -190,7 +190,7 @@ impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> MultiplicativeMonoidSignature for ModuloCanonicalStructure<N> {
+impl<const N: usize> OneSignature for ModuloCanonicalStructure<N> {
     fn one(&self) -> Self::Set {
         if N == 1 {
             Modulo { x: 0 }
@@ -198,11 +198,15 @@ impl<const N: usize> MultiplicativeMonoidSignature for ModuloCanonicalStructure<
             Modulo { x: 1 }
         }
     }
+}
 
+impl<const N: usize> MultiplicationSignature for ModuloCanonicalStructure<N> {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         Modulo { x: (a.x * b.x) % N }
     }
 }
+
+impl<const N: usize> MultiplicativeMonoidSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {}
 

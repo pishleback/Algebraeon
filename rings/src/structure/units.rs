@@ -1,6 +1,6 @@
 use crate::structure::{
-    MultiplicativeGroupSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidUnitsSignature, RinglikeSpecializationSignature,
+    MultiplicationSignature, MultiplicativeGroupSignature, MultiplicativeMonoidSignature,
+    MultiplicativeMonoidUnitsSignature, OneSignature, RinglikeSpecializationSignature,
 };
 use algebraeon_sets::structure::{BorrowedStructure, SetSignature, Signature};
 use std::marker::PhantomData;
@@ -57,16 +57,25 @@ impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>>
 {
 }
 
-impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> MultiplicativeMonoidSignature
+impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> OneSignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
     fn one(&self) -> Self::Set {
         self.monoid().one()
     }
+}
 
+impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> MultiplicationSignature
+    for MultiplicativeMonoidUnitsStructure<M, MB>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.monoid().mul(a, b)
     }
+}
+
+impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> MultiplicativeMonoidSignature
+    for MultiplicativeMonoidUnitsStructure<M, MB>
+{
 }
 
 impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> MultiplicativeGroupSignature

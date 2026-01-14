@@ -733,11 +733,13 @@ impl AdditiveGroupSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for ComplexAlgebraicCanonicalStructure {
+impl OneSignature for ComplexAlgebraicCanonicalStructure {
     fn one(&self) -> Self::Set {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::one()))
     }
+}
 
+impl MultiplicationSignature for ComplexAlgebraicCanonicalStructure {
     fn mul(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
         // println!("mul {:?} {:?}", alg1, alg2);
         // alg1.check_invariants().unwrap();
@@ -868,6 +870,8 @@ impl MultiplicativeMonoidSignature for ComplexAlgebraicCanonicalStructure {
         }
     }
 }
+
+impl MultiplicativeMonoidSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {}
 

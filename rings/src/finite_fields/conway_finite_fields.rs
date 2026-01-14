@@ -130,15 +130,19 @@ impl AdditiveGroupSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for ConwayFiniteFieldStructure {
+impl OneSignature for ConwayFiniteFieldStructure {
     fn one(&self) -> Self::Set {
         self.structure.one()
     }
+}
 
+impl MultiplicationSignature for ConwayFiniteFieldStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.structure.mul(a, b)
     }
 }
+
+impl MultiplicativeMonoidSignature for ConwayFiniteFieldStructure {}
 
 impl SemiRingSignature for ConwayFiniteFieldStructure {}
 

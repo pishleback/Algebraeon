@@ -71,11 +71,13 @@ impl TryNegateSignature for QuaternaryFieldCanonicalStructure {
 
 impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {}
 
-impl MultiplicativeMonoidSignature for QuaternaryFieldCanonicalStructure {
+impl OneSignature for QuaternaryFieldCanonicalStructure {
     fn one(&self) -> Self::Set {
         QuaternaryField::One
     }
+}
 
+impl MultiplicationSignature for QuaternaryFieldCanonicalStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         #[allow(clippy::match_same_arms)]
         match (a, b) {
@@ -90,6 +92,8 @@ impl MultiplicativeMonoidSignature for QuaternaryFieldCanonicalStructure {
         }
     }
 }
+
+impl MultiplicativeMonoidSignature for QuaternaryFieldCanonicalStructure {}
 
 impl SemiRingSignature for QuaternaryFieldCanonicalStructure {}
 

@@ -59,9 +59,35 @@ pub trait IdentitySignature: SetSignature {
     fn identity(&self) -> Self::Set;
 }
 
+/// When the solution to `compose(x, a)` = `e` for `x` given `a` is unique whenever it exists.
+#[signature_meta_trait]
+pub trait TryLeftInverseSignature: IdentitySignature + CompositionSignature {
+    /// Return `x` such that `compose(x, a)` = `e` or `None` if no such `x` exists.
+    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+
+/// When the solution to `compose(a, x)` = `e` for `x` given `a` is unique whenever it exists.
+#[signature_meta_trait]
+pub trait TryRightInverseSignature: IdentitySignature + CompositionSignature {
+    /// Return `x` such that `compose(a, x)` = `e` or `None` if no such `x` exists.
+    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+
+/// When the solution to `compose(x, a)` = `compose(a, x)` = `e` for `x` given `a` is unique whenever it exists.
+#[signature_meta_trait]
+pub trait TryInverseSignature: IdentitySignature + CompositionSignature {
+    /// Return `x` such that `compose(x, a)` = `compose(a, x)` = `e` or `None` if no such `x` exists.
+    ///
+    /// Note, whenever `try_inverse` returns `Some`, `try_left_inverse` and `try_right_inverse` must also return the same value.
+    /// Also, whenever `try_left_inverse` and `try_right_inverse` both return a value, it must be the same value an `try_inverse` must also return that same value.
+    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+
 /// When `compose(x, e)` = `compose(e, x)` = `x` for all `x`.
 #[signature_meta_trait]
-pub trait MonoidSignature: IdentitySignature + AssociativeCompositionSignature {
+pub trait MonoidSignature:
+    IdentitySignature + AssociativeCompositionSignature + TryInverseSignature
+{
     fn compose_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         if elems.is_empty() {
             self.identity()
@@ -93,30 +119,6 @@ pub trait MonoidSignature: IdentitySignature + AssociativeCompositionSignature {
             ans
         }
     }
-}
-
-/// When the solution to `compose(x, a)` = `e` for `x` given `a` is unique whenever it exists.
-#[signature_meta_trait]
-pub trait TryLeftInverseSignature: MonoidSignature {
-    /// Return `x` such that `compose(x, a)` = `e` or `None` if no such `x` exists.
-    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
-}
-
-/// When the solution to `compose(a, x)` = `e` for `x` given `a` is unique whenever it exists.
-#[signature_meta_trait]
-pub trait TryRightInverseSignature: MonoidSignature {
-    /// Return `x` such that `compose(a, x)` = `e` or `None` if no such `x` exists.
-    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
-}
-
-/// When the solution to `compose(x, a)` = `compose(a, x)` = `e` for `x` given `a` is unique whenever it exists.
-#[signature_meta_trait]
-pub trait TryInverseSignature: MonoidSignature {
-    /// Return `x` such that `compose(x, a)` = `compose(a, x)` = `e` or `None` if no such `x` exists.
-    ///
-    /// Note, whenever `try_inverse` returns `Some`, `try_left_inverse` and `try_right_inverse` must also return the same value.
-    /// Also, whenever `try_left_inverse` and `try_right_inverse` both return a value, it must be the same value an `try_inverse` must also return that same value.
-    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
 }
 
 /// When inverses always exist.

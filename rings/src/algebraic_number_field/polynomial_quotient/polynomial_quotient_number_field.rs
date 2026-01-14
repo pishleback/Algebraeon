@@ -8,9 +8,9 @@ use crate::{
         AdditiveGroupSignature, CharZeroFieldSignature, FactoringMonoidSignature,
         FiniteDimensionalFieldExtension, FreeModuleSignature,
         IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoidSignature,
-        MetaFactoringMonoid, MetaMultiplicativeMonoidSignature,
-        MultiplicativeIntegralMonoidSignature, PrincipalRationalMap, RingHomomorphism,
-        RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature, ZeroEqSignature,
+        MetaFactoringMonoid, MetaMultiplicationSignature, MultiplicativeIntegralMonoidSignature,
+        PrincipalRationalMap, RingHomomorphism, RingHomomorphismRangeModuleStructure,
+        RingToQuotientFieldSignature, ZeroEqSignature,
     },
 };
 use algebraeon_nzq::{

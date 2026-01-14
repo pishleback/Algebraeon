@@ -545,11 +545,13 @@ impl AdditiveGroupSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for RealAlgebraicCanonicalStructure {
+impl OneSignature for RealAlgebraicCanonicalStructure {
     fn one(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(1))
     }
+}
 
+impl MultiplicationSignature for RealAlgebraicCanonicalStructure {
     fn mul(&self, elem1: &Self::Set, elem2: &Self::Set) -> Self::Set {
         match elem1.cmp(&self.zero()) {
             std::cmp::Ordering::Less => {
@@ -627,6 +629,8 @@ impl MultiplicativeMonoidSignature for RealAlgebraicCanonicalStructure {
         }
     }
 }
+
+impl MultiplicativeMonoidSignature for RealAlgebraicCanonicalStructure {}
 
 impl SemiRingSignature for RealAlgebraicCanonicalStructure {}
 

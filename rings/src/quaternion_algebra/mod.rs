@@ -179,7 +179,7 @@ impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructur
     }
 }
 
-impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraStructure<Field> {
+impl<Field: FieldSignature> OneSignature for QuaternionAlgebraStructure<Field> {
     fn one(&self) -> Self::Set {
         QuaternionAlgebraElement {
             x: self.base.one(),
@@ -188,7 +188,9 @@ impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraS
             w: self.base.zero(),
         }
     }
+}
 
+impl<Field: FieldSignature> MultiplicationSignature for QuaternionAlgebraStructure<Field> {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let a_param = &self.a;
         let b_param = &self.b;
@@ -250,6 +252,8 @@ impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraS
         }
     }
 }
+
+impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {}
 

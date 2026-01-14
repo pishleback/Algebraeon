@@ -12,10 +12,10 @@ use crate::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
         CancellativeAdditionSignature, CharZeroRingSignature, CharacteristicSignature,
         DedekindDomainSignature, FinitelyFreeModuleSignature, IntegralDomainSignature,
-        MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-        MultiplicativeMonoidUnitsSignature, RingSignature, RingToIdealsSignature,
-        RinglikeSpecializationSignature, SemiModuleSignature, SemiRingSignature,
-        TryNegateSignature, ZeroEqSignature, ZeroSignature,
+        MultiplicationSignature, MultiplicativeIntegralMonoidSignature,
+        MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, OneSignature,
+        RingSignature, RingToIdealsSignature, RinglikeSpecializationSignature, SemiModuleSignature,
+        SemiRingSignature, TryNegateSignature, ZeroEqSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
@@ -254,13 +254,17 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
     }
 }
 
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    MultiplicativeMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> OneSignature
+    for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn one(&self) -> Self::Set {
         self.one.clone()
     }
+}
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    MultiplicationSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let n = self.n();
         debug_assert!(self.is_element(a).is_ok());
@@ -291,6 +295,11 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
         );
         t
     }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    MultiplicativeMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>

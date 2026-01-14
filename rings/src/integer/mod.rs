@@ -64,15 +64,19 @@ impl AdditiveGroupSignature for IntegerCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for IntegerCanonicalStructure {
+impl OneSignature for IntegerCanonicalStructure {
     fn one(&self) -> Self::Set {
         Integer::ONE
     }
+}
 
+impl MultiplicationSignature for IntegerCanonicalStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
 }
+
+impl MultiplicativeMonoidSignature for IntegerCanonicalStructure {}
 
 impl SemiRingSignature for IntegerCanonicalStructure {}
 

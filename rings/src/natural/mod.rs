@@ -34,15 +34,19 @@ impl TryNegateSignature for NaturalCanonicalStructure {
 
 impl AdditiveMonoidSignature for NaturalCanonicalStructure {}
 
-impl MultiplicativeMonoidSignature for NaturalCanonicalStructure {
+impl OneSignature for NaturalCanonicalStructure {
     fn one(&self) -> Self::Set {
         Natural::ONE
     }
+}
 
+impl MultiplicationSignature for NaturalCanonicalStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
 }
+
+impl MultiplicativeMonoidSignature for NaturalCanonicalStructure {}
 
 impl FavoriteAssociateSignature for NaturalCanonicalStructure {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {

@@ -10,13 +10,13 @@ Let \\(X\\) be a set. This section outlines the traits Algebraeon provides for d
 \\[a + (b + c) = (a + b) + c \quad \forall a, b, c \in X\\]
 \\[a + b = b + a \quad \forall a, b \in X\\]
 The method `add(a: X, b: X) -> X` computes \\(a + b\\).
- - `AdditiveMonoid : Zero + Addition` when
-\\[a + 0 = 0 + a = a \quad \forall a \in X\\]
- - `CancellativeAddition : Composition` when 
+ - `CancellativeAddition : Addition` when 
 \\[a + x = a + y \implies x = y \quad \forall a, x, y \in X\\]
 In that case the solution (or lack thereof) to \\(a = b + x\\) for \\(x\\) given \\(a\\) and \\(b\\) is unique whenever it exists and is computed using `.try_sub(a: X, b: X) -> Option<X>`.
- - `TryNegate : AdditiveMonoid` when the solution to \\[x + a = 0\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_neg(a: X) -> Option<X>`.
- - `AdditiveGroup : TryNegate + CancellativeAddition` when every element has an additive inverse which can be computed using `.neg(a: X) -> X`.
+ - `TryNegate : Zero + Addition` when the solution to \\[x + a = 0\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_neg(a: X) -> Option<X>`.
+ - `AdditiveMonoid : Zero + Addition + TryNegate` when
+\\[a + 0 = 0 + a = a \quad \forall a \in X\\]
+ - `AdditiveGroup : AdditiveMonoid + CancellativeAddition` when every element has an additive inverse which can be computed using `.neg(a: X) -> X`.
 
 ## Multiplicative Structure
 
@@ -26,7 +26,10 @@ In that case the solution (or lack thereof) to \\(a = b + x\\) for \\(x\\) given
 \\[a \times (b \times c) = (a \times b) \times c \quad \forall a, b, c \in X\\]
 The method `mul(a: X, b: X) -> X` computes \\(a \times b\\).
  - `CommutativeMultiplication : Multiplication` when `*` is commutative, so `a * b = b * a` for all `a` and `b`.
- - `MultiplicativeMonoid : One + Multiplication` when
+ - `TryLeftReciprocal : MultiplicativeMonoid` when the solution to \\[x \times a = 1\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_left_reciprocal(a: X) -> Option<X>`.
+ - `TryRightReciprocal : MultiplicativeMonoid` when the solution to \\[a \times x = 1\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_right_reciprocal(a: X) -> Option<X>`.
+ - `TryReciprocal : MultiplicativeMonoid` when the solution to \\[x \times a = a \times x = 1\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_reciprocal(a: X) -> Option<X>`.
+ - `MultiplicativeMonoid : One + Multiplication + TryReciprocal` when
 \\[a \times 1 = 1 \times a = a \quad \forall a \in X\\]
 
 ## Combined Additive and Multiplicative Structure
@@ -45,9 +48,6 @@ The method `mul(a: X, b: X) -> X` computes \\(a \times b\\).
  \\[x \times a = y \times a \implies x = y \quad \forall x, y \in X \quad a \in X \setminus \\{0\\}\\]
  In that case the solution (or lack thereof) to \\(a = x \times b\\) for \\(x\\) given \\(a\\) and non-zero \\(b\\) is unique whenever it exists and is computed using `.try_right_div(a: X, b: X) -> Option<X>`. `None` is also returned if \\(b = 0\\).
  - `CancellativeMultiplication := CommutativeMultiplication + LeftCancellativeMultiplication + RightCancellativeMultiplication`. `.try_div(a: X, b: X) -> Option<X>` can be used as an alias for `try_left_div` and (equivalently) `try_right_div`.
- - `TryLeftReciprocal : MultiplicativeMonoid` when the solution to \\[x \times a = 1\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_left_reciprocal(a: X) -> Option<X>`.
- - `TryRightReciprocal : MultiplicativeMonoid` when the solution to \\[a \times x = 1\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_right_reciprocal(a: X) -> Option<X>`.
- - `TryReciprocal : MultiplicativeMonoid` when the solution to \\[x \times a = a \times x = 1\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_reciprocal(a: X) -> Option<X>`.
  - `MultiplicativeIntegralMonoid : MultiplicativeAbsorptionMonoid + TryReciprocal + TryLeftReciprocal + TryRightReciprocal + LeftCancellativeMultiplication + RightCancellativeMultiplication` when 
  \\[a \times b = 0 \implies a = 0 \quad \text{or} \quad b = 0 \quad \forall a, b \in X\\]
 

@@ -1,10 +1,10 @@
 use crate::structure::{
     CancellativeAdditionSignature, FavoriteAssociateSignature, FieldSignature,
-    MetaMultiplicativeMonoidSignature, MultiplicativeGroupSignature,
-    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidSquareOpsSignature, MultiplicativeMonoidUnitsSignature,
-    MultiplicativeMonoidWithZeroSignature, RinglikeSpecializationSignature, SemiRingSignature,
-    ZeroEqSignature, ZeroSignature,
+    MetaMultiplicativeMonoidSignature, MetaOneSignature, MultiplicationSignature,
+    MultiplicativeGroupSignature, MultiplicativeIntegralMonoidSignature,
+    MultiplicativeMonoidSignature, MultiplicativeMonoidSquareOpsSignature,
+    MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature, OneSignature,
+    RinglikeSpecializationSignature, SemiRingSignature, ZeroEqSignature, ZeroSignature,
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::{
@@ -452,7 +452,7 @@ impl<
     ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
-> MultiplicativeMonoidSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> OneSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
     fn one(&self) -> Self::Set {
         Factored::NonZero(NonZeroFactored {
@@ -460,7 +460,15 @@ impl<
             powers: vec![],
         })
     }
+}
 
+impl<
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
+    ObjectB: BorrowedStructure<Object>,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
+    ExponentB: BorrowedStructure<Exponent>,
+> MultiplicationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         #[cfg(debug_assertions)]
         {
@@ -471,6 +479,15 @@ impl<
         self.mul_mut_impl(&mut s, b);
         s
     }
+}
+
+impl<
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
+    ObjectB: BorrowedStructure<Object>,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
+    ExponentB: BorrowedStructure<Exponent>,
+> MultiplicativeMonoidSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+{
 }
 
 impl<

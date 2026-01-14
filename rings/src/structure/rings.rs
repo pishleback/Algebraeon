@@ -13,8 +13,8 @@ mod unconstructable_universal_structure {
     use crate::structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
         CancellativeAdditionSignature, CharZeroRingSignature, CharacteristicSignature,
-        MultiplicativeMonoidSignature, RingSignature, RinglikeSpecializationSignature,
-        SemiRingSignature, TryNegateSignature, ZeroSignature,
+        MultiplicationSignature, MultiplicativeMonoidSignature, OneSignature, RingSignature,
+        RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature, ZeroSignature,
     };
 
     pub struct UnconstructableStructure<Set> {
@@ -100,16 +100,21 @@ mod unconstructable_universal_structure {
         }
     }
 
-    impl<Set: Debug + Clone + Send + Sync> MultiplicativeMonoidSignature
-        for UnconstructableStructure<Set>
-    {
+    impl<Set: Debug + Clone + Send + Sync> OneSignature for UnconstructableStructure<Set> {
         fn one(&self) -> Self::Set {
             unreachable!()
         }
+    }
 
+    impl<Set: Debug + Clone + Send + Sync> MultiplicationSignature for UnconstructableStructure<Set> {
         fn mul(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
             unreachable!()
         }
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> MultiplicativeMonoidSignature
+        for UnconstructableStructure<Set>
+    {
     }
 
     impl<Set: Debug + Clone + Send + Sync> SemiRingSignature for UnconstructableStructure<Set> {}
@@ -181,7 +186,12 @@ pub trait CancellativeAdditionSignature: AdditionSignature {
 }
 
 #[signature_meta_trait]
-pub trait AdditiveMonoidSignature: ZeroSignature + AdditionSignature {
+pub trait TryNegateSignature: ZeroSignature + AdditionSignature {
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+
+#[signature_meta_trait]
+pub trait AdditiveMonoidSignature: ZeroSignature + AdditionSignature + TryNegateSignature {
     fn sum(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut sum = self.zero();
         for val in vals {
@@ -192,11 +202,6 @@ pub trait AdditiveMonoidSignature: ZeroSignature + AdditionSignature {
 }
 
 #[signature_meta_trait]
-pub trait TryNegateSignature: AdditiveMonoidSignature {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set>;
-}
-
-#[signature_meta_trait]
 pub trait ZeroEqSignature: ZeroSignature + EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
@@ -204,16 +209,24 @@ pub trait ZeroEqSignature: ZeroSignature + EqSignature {
 }
 impl<R: ZeroSignature + EqSignature> ZeroEqSignature for R {}
 
+/// A set with a special element `1`.
 #[signature_meta_trait]
-pub trait MultiplicativeMonoidSignature: RinglikeSpecializationSignature {
+pub trait OneSignature: RinglikeSpecializationSignature {
     fn one(&self) -> Self::Set;
+}
 
+/// A set with an associative binary opperation `*`.
+#[signature_meta_trait]
+pub trait MultiplicationSignature: RinglikeSpecializationSignature {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
 
     fn mul_mut(&self, a: &mut Self::Set, b: &Self::Set) {
         *a = self.mul(a, b);
     }
+}
 
+#[signature_meta_trait]
+pub trait MultiplicativeMonoidSignature: OneSignature + MultiplicationSignature {
     fn product(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         let mut prod = self.one();
         for val in vals {
@@ -331,24 +344,6 @@ pub trait MultiplicativeGroupSignature: MultiplicativeMonoidSignature {
     }
 }
 
-#[signature_meta_trait]
-pub trait FavoriteAssociateSignature: MultiplicativeMonoidUnitsSignature + EqSignature {
-    //For associate class of elements, choose a unique representative
-    //write self=unit*assoc and return (unit, assoc)
-    //0 is required to return (1, 0)
-    //every unit u is required to return (u, 1) i.e. 1 is the favorite associate of every unit
-    //it seems to happen that the product of favorite associates is another favorite associate. Should this be a requirement?
-
-    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set);
-    fn fav_assoc(&self, a: &Self::Set) -> Self::Set {
-        self.factor_fav_assoc(a).1
-    }
-    fn is_fav_assoc(&self, a: &Self::Set) -> bool {
-        let (_u, b) = self.factor_fav_assoc(a);
-        self.equal(a, &b)
-    }
-}
-
 // semi-rings need not have cancellative addition
 // but inverses are unique when they exist because all inverses are two-sided due to commutativity
 #[signature_meta_trait]
@@ -381,11 +376,6 @@ pub trait SemiRingSignature:
 #[signature_meta_trait]
 pub trait SemiRingEqSignature: SemiRingSignature + EqSignature {}
 impl<R: SemiRingSignature + EqSignature> SemiRingEqSignature for R {}
-
-#[signature_meta_trait]
-pub trait CharacteristicSignature: SemiRingSignature {
-    fn characteristic(&self) -> Natural;
-}
 
 #[signature_meta_trait]
 pub trait RingUnitsSignature: RingSignature + MultiplicativeMonoidUnitsSignature {}
@@ -448,6 +438,29 @@ pub trait IntegralDomainSignature:
         debug_assert!(!d.is_zero());
         self.try_div(&self.from_int(n), &self.from_nat(d))
     }
+}
+
+#[signature_meta_trait]
+pub trait FavoriteAssociateSignature: MultiplicativeMonoidUnitsSignature + EqSignature {
+    //For associate class of elements, choose a unique representative
+    //write self=unit*assoc and return (unit, assoc)
+    //0 is required to return (1, 0)
+    //every unit u is required to return (u, 1) i.e. 1 is the favorite associate of every unit
+    //it seems to happen that the product of favorite associates is another favorite associate. Should this be a requirement?
+
+    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set);
+    fn fav_assoc(&self, a: &Self::Set) -> Self::Set {
+        self.factor_fav_assoc(a).1
+    }
+    fn is_fav_assoc(&self, a: &Self::Set) -> bool {
+        let (_u, b) = self.factor_fav_assoc(a);
+        self.equal(a, &b)
+    }
+}
+
+#[signature_meta_trait]
+pub trait CharacteristicSignature: SemiRingSignature {
+    fn characteristic(&self) -> Natural;
 }
 
 #[signature_meta_trait]

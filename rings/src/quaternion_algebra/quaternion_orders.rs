@@ -5,8 +5,8 @@ use crate::{
     structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
         CancellativeAdditionSignature, FiniteRankFreeRingExtension, FinitelyFreeModuleSignature,
-        MultiplicativeMonoidSignature, RinglikeSpecializationSignature, SemiModuleSignature,
-        TryNegateSignature, ZeroSignature,
+        MultiplicationSignature, OneSignature, RinglikeSpecializationSignature,
+        SemiModuleSignature, TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};

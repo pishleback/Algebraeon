@@ -55,15 +55,19 @@ impl AdditiveGroupSignature for RationalCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for RationalCanonicalStructure {
+impl OneSignature for RationalCanonicalStructure {
     fn one(&self) -> Self::Set {
         Rational::ONE
     }
+}
 
+impl MultiplicationSignature for RationalCanonicalStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
 }
+
+impl MultiplicativeMonoidSignature for RationalCanonicalStructure {}
 
 impl SemiRingSignature for RationalCanonicalStructure {}
 

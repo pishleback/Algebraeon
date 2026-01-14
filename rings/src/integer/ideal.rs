@@ -81,16 +81,23 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryNegateSignature
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicativeMonoidSignature
-    for IntegerIdealsStructure<B>
-{
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> OneSignature for IntegerIdealsStructure<B> {
     fn one(&self) -> Self::Set {
         Natural::ONE
     }
+}
 
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicationSignature
+    for IntegerIdealsStructure<B>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicativeMonoidSignature
+    for IntegerIdealsStructure<B>
+{
 }
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> SemiRingSignature

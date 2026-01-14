@@ -5,8 +5,9 @@ use crate::structure::{
     AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
     CancellativeAdditionSignature, CharZeroFieldSignature, CharZeroRingSignature,
     CharacteristicSignature, FieldSignature, IntegralDomainSignature,
-    MetaFactoringMonoidNaturalExponent, MetaZeroEqSignature, MultiplicativeIntegralMonoidSignature,
-    MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RingSignature,
+    MetaFactoringMonoidNaturalExponent, MetaZeroEqSignature, MultiplicationSignature,
+    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
+    MultiplicativeMonoidUnitsSignature, OneSignature, RingSignature,
     RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature, ZeroSignature,
 };
 use crate::structure::{
@@ -172,11 +173,13 @@ impl<D: BorrowedSet<Integer>> AdditiveGroupSignature for QuadraticNumberFieldStr
     }
 }
 
-impl<D: BorrowedSet<Integer>> MultiplicativeMonoidSignature for QuadraticNumberFieldStructure<D> {
+impl<D: BorrowedSet<Integer>> OneSignature for QuadraticNumberFieldStructure<D> {
     fn one(&self) -> Self::Set {
         Self::Set::ONE
     }
+}
 
+impl<D: BorrowedSet<Integer>> MultiplicationSignature for QuadraticNumberFieldStructure<D> {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         // (x + y sqrd(d))(z + w sqrt(d)) = (xz + dyw) + (xw + yz) sqrt(d)
         QuadraticNumberFieldElement {
@@ -187,6 +190,8 @@ impl<D: BorrowedSet<Integer>> MultiplicativeMonoidSignature for QuadraticNumberF
         }
     }
 }
+
+impl<D: BorrowedSet<Integer>> MultiplicativeMonoidSignature for QuadraticNumberFieldStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> SemiRingSignature for QuadraticNumberFieldStructure<D> {}
 

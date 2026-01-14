@@ -439,13 +439,17 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> OneSignature
     for PolynomialStructure<RS, RSB>
 {
     fn one(&self) -> Self::Set {
         Polynomial::from_coeffs(vec![self.coeff_ring().one()])
     }
+}
 
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicationSignature
+    for PolynomialStructure<RS, RSB>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         if let Some(coeff_ring) = self.coeff_ring().try_ring_restructure() {
             coeff_ring.polynomials().mul_karatsuba(a, b)
@@ -453,6 +457,11 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSi
             self.mul_naive(a, b)
         }
     }
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
+    for PolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature

@@ -808,14 +808,16 @@ impl AdditiveGroupSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for PAdicAlgebraicStructure {
+impl OneSignature for PAdicAlgebraicStructure {
     fn one(&self) -> Self::Set {
         PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: Rational::ONE,
         })
     }
+}
 
+impl MultiplicationSignature for PAdicAlgebraicStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
@@ -834,6 +836,8 @@ impl MultiplicativeMonoidSignature for PAdicAlgebraicStructure {
         }
     }
 }
+
+impl MultiplicativeMonoidSignature for PAdicAlgebraicStructure {}
 
 impl SemiRingSignature for PAdicAlgebraicStructure {}
 

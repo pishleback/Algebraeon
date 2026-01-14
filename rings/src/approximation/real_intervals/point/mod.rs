@@ -8,9 +8,9 @@ use crate::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
         CancellativeAdditionSignature, ComplexSubsetSignature,
         MetaMultiplicativeMonoidUnitsSignature, MetaRealRoundingSignature, MetaRealSubsetSignature,
-        MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, RealRoundingSignature,
-        RealSubsetSignature, RingSignature, RinglikeSpecializationSignature, SemiRingSignature,
-        TryNegateSignature, ZeroSignature,
+        MultiplicationSignature, MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
+        OneSignature, RealRoundingSignature, RealSubsetSignature, RingSignature,
+        RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};
@@ -244,11 +244,13 @@ impl AdditiveGroupSignature for RealApproximatePointCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for RealApproximatePointCanonicalStructure {
+impl OneSignature for RealApproximatePointCanonicalStructure {
     fn one(&self) -> Self::Set {
         RealApproximatePoint::new(rational::RationalPoint { x: Rational::ONE })
     }
+}
 
+impl MultiplicationSignature for RealApproximatePointCanonicalStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         RealApproximatePoint::new(MulPoints {
             first: a.clone(),
@@ -256,6 +258,8 @@ impl MultiplicativeMonoidSignature for RealApproximatePointCanonicalStructure {
         })
     }
 }
+
+impl MultiplicativeMonoidSignature for RealApproximatePointCanonicalStructure {}
 
 impl SemiRingSignature for RealApproximatePointCanonicalStructure {}
 

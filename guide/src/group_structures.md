@@ -22,11 +22,11 @@ In that case the solution (or lack thereof) to \\(a = x \circ b\\) for \\(x\\) g
 ## Identity
 
  - `Identity : Set` for a set with a special element called the identity element which we'll denote by `e`.
- - `Monoid : Identity + AssociativeComposition` when 
+ - `TryLeftInverse : Identity + Composition` when the solution to \\[x \circ a = e\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_left_inverse(a: X) -> Option<X>`.
+ - `TryRightInverse : Identity + Composition` when the solution to \\[a \circ x = e\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_right_inverse(a: X) -> Option<X>`.
+ - `TryInverse: Identity + Composition` when the solution to \\[x \circ a = a \circ x = e\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_inverse(a: X) -> Option<X>`.
+ - `Monoid : Identity + AssociativeComposition + TryInverse` when 
 \\[a \circ e = e \circ a = a \quad \forall a \in X\\]
- - `TryLeftInverse : Monoid` when the solution to \\[x \circ a = e\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_left_inverse(a: X) -> Option<X>`.
- - `TryRightInverse : Monoid` when the solution to \\[a \circ x = e\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_right_inverse(a: X) -> Option<X>`.
- - `TryInverse: Monoid` when the solution to \\[x \circ a = a \circ x = e\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_inverse(a: X) -> Option<X>`.
  - `Group : TryInverse + TryLeftInverse + TryRightInverse + LeftCancellativeComposition + RightCancellativeComposition` when every element has an inverse. Left-, right-, and two-sided-inverses all coencide in this case and are computed using `.inverse(a: X) -> X`.
  - `AbelianGroup := Group + CommutativeComposition`.
 

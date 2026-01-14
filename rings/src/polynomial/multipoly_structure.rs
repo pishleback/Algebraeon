@@ -197,7 +197,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     }
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> OneSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn one(&self) -> Self::Set {
@@ -208,7 +208,11 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignat
             }],
         }
     }
+}
 
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicationSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let mut terms: HashMap<Monomial, RS::Set> = HashMap::new();
         for Term {
@@ -234,6 +238,11 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignat
                 .collect(),
         ))
     }
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
