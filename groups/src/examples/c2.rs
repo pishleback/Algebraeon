@@ -73,9 +73,8 @@ impl GroupSignature for C2CanonicalStructure {
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::{MetaCompositionSignature, MetaGroupSignature, MetaIdentitySignature};
-
     use super::*;
+    use crate::structure::{MetaCompositionSignature, MetaGroupSignature, MetaIdentitySignature};
 
     #[test]
     fn test_c2() {
