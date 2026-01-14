@@ -783,7 +783,7 @@ pub trait PositiveRealNthRootSignature: ComplexSubsetSignature {
 }
 
 // TODO: Move this sort of struture to the field inclusion homomorphism
-// #[signature_meta_trait]
+#[signature_meta_trait]
 pub trait AlgebraicClosureSignature: FieldSignature
 where
     //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
@@ -832,6 +832,7 @@ where
 /// The free ring of rank 0 is the integers
 /// The free ring of rank 1 is the polynomial ring over the integers
 /// The free ring of rank n is the multipolynomial ring over the integers
+#[signature_meta_trait]
 pub trait FreeRingSignature: RingSignature {
     type Generator: Clone + Debug + PartialEq + Eq + std::hash::Hash + Send + Sync;
 
