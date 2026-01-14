@@ -10,8 +10,7 @@ use crate::{
         IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoidSignature,
         MetaFactoringMonoid, MetaMultiplicativeMonoidSignature,
         MultiplicativeIntegralMonoidSignature, PrincipalRationalMap, RingHomomorphism,
-        RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature,
-        ZeroEqSignature,
+        RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature, ZeroEqSignature,
     },
 };
 use algebraeon_nzq::{

@@ -15,7 +15,7 @@ use crate::{
         MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
         MultiplicativeMonoidUnitsSignature, RingSignature, RingToIdealsSignature,
         RinglikeSpecializationSignature, SemiModuleSignature, SemiRingSignature,
-        ZeroEqSignature, TryNegateSignature, ZeroSignature,
+        TryNegateSignature, ZeroEqSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
