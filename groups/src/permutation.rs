@@ -1,6 +1,9 @@
 use super::examples::c2::C2;
 use crate::structure::{
-    AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature, LeftCancellativeCompositionSignature, MetaCompositionSignature, MetaGroupSignature, MetaIdentitySignature, MonoidSignature, RightCancellativeCompositionSignature, TryInverseSignature, TryLeftInverseSignature, TryRightInverseSignature
+    AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature,
+    LeftCancellativeCompositionSignature, MetaCompositionSignature, MetaGroupSignature,
+    MetaIdentitySignature, MonoidSignature, RightCancellativeCompositionSignature,
+    TryInverseSignature, TryLeftInverseSignature, TryRightInverseSignature,
 };
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_sets::structure::{EqSignature, MetaType, SetSignature, Signature};
@@ -215,13 +218,13 @@ impl AssociativeCompositionSignature for PermutationCanonicalStructure {}
 
 impl LeftCancellativeCompositionSignature for PermutationCanonicalStructure {
     fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.compose(&self.inverse(b), &a))
+        Some(self.compose(&self.inverse(b), a))
     }
 }
 
 impl RightCancellativeCompositionSignature for PermutationCanonicalStructure {
     fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.compose(&a, &self.inverse(b)))
+        Some(self.compose(a, &self.inverse(b)))
     }
 }
 

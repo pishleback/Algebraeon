@@ -238,13 +238,13 @@ impl<const N: usize> AssociativeCompositionSignature for PermutationCanonicalStr
 
 impl<const N: usize> LeftCancellativeCompositionSignature for PermutationCanonicalStructure<N> {
     fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.compose(&self.inverse(b), &a))
+        Some(self.compose(&self.inverse(b), a))
     }
 }
 
 impl<const N: usize> RightCancellativeCompositionSignature for PermutationCanonicalStructure<N> {
     fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.compose(&a, &self.inverse(b)))
+        Some(self.compose(a, &self.inverse(b)))
     }
 }
 

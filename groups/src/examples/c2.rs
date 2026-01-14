@@ -29,13 +29,13 @@ impl AssociativeCompositionSignature for C2CanonicalStructure {}
 
 impl LeftCancellativeCompositionSignature for C2CanonicalStructure {
     fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.compose(&self.inverse(b), &a))
+        Some(self.compose(&self.inverse(b), a))
     }
 }
 
 impl RightCancellativeCompositionSignature for C2CanonicalStructure {
     fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.compose(&a, &self.inverse(b)))
+        Some(self.compose(a, &self.inverse(b)))
     }
 }
 
@@ -67,7 +67,7 @@ impl TryInverseSignature for C2CanonicalStructure {
 
 impl GroupSignature for C2CanonicalStructure {
     fn inverse(&self, a: &Self::Set) -> Self::Set {
-        a.clone()
+        *a
     }
 }
 
