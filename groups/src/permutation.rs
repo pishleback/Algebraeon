@@ -1,9 +1,12 @@
+use super::examples::c2::C2;
+use crate::structure::{
+    AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature, LeftCancellativeCompositionSignature, MetaCompositionSignature, MetaGroupSignature, MetaIdentitySignature, MonoidSignature, RightCancellativeCompositionSignature, TryInverseSignature, TryLeftInverseSignature, TryRightInverseSignature
+};
+use algebraeon_macros::CanonicalStructure;
+use algebraeon_sets::structure::{EqSignature, MetaType, SetSignature, Signature};
+use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-
-use itertools::Itertools;
-
-use super::{examples::c2::C2, structure::Group};
 
 #[derive(Debug, Clone)]
 pub struct Cycle {
@@ -50,7 +53,8 @@ impl std::convert::From<Cycle> for Permutation {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, CanonicalStructure)]
+#[canonical_structure(eq)]
 pub struct Permutation {
     perm: Vec<usize>,
 }
@@ -200,26 +204,60 @@ impl Permutation {
 //     }
 // }
 
-impl Group for Permutation {
-    fn identity() -> Self {
-        Self { perm: vec![] }
-    }
-
-    fn inverse(self) -> Self {
-        let mut inv_perm = vec![0; self.perm.len()];
-        for (i, j) in self.perm.into_iter().enumerate() {
-            inv_perm[j] = i;
-        }
-        Self::new_unchecked(inv_perm)
-    }
-
-    fn compose_refs(a: &Self, b: &Self) -> Self {
+impl CompositionSignature for PermutationCanonicalStructure {
+    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let n = std::cmp::max(a.perm.len(), b.perm.len());
-        Self::new_unchecked((0..n).map(|i| a.call(b.call(i))).collect())
+        Permutation::new_unchecked((0..n).map(|i| a.call(b.call(i))).collect())
     }
+}
 
-    fn compose_mut(&mut self, other: &Self) {
-        *self = Self::compose_refs(self, other);
+impl AssociativeCompositionSignature for PermutationCanonicalStructure {}
+
+impl LeftCancellativeCompositionSignature for PermutationCanonicalStructure {
+    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.compose(&self.inverse(b), &a))
+    }
+}
+
+impl RightCancellativeCompositionSignature for PermutationCanonicalStructure {
+    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.compose(&a, &self.inverse(b)))
+    }
+}
+
+impl IdentitySignature for PermutationCanonicalStructure {
+    fn identity(&self) -> Self::Set {
+        Permutation { perm: vec![] }
+    }
+}
+
+impl MonoidSignature for PermutationCanonicalStructure {}
+
+impl TryLeftInverseSignature for PermutationCanonicalStructure {
+    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.inverse(a))
+    }
+}
+
+impl TryRightInverseSignature for PermutationCanonicalStructure {
+    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.inverse(a))
+    }
+}
+
+impl TryInverseSignature for PermutationCanonicalStructure {
+    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.inverse(a))
+    }
+}
+
+impl GroupSignature for PermutationCanonicalStructure {
+    fn inverse(&self, a: &Self::Set) -> Self::Set {
+        let mut inv_perm = vec![0; a.perm.len()];
+        for (i, j) in a.perm.iter().enumerate() {
+            inv_perm[*j] = i;
+        }
+        Permutation::new_unchecked(inv_perm)
     }
 }
 
@@ -254,6 +292,8 @@ impl std::fmt::Display for Permutation {
 
 #[cfg(test)]
 mod tests {
+    use crate::structure::MetaCompositionSignature;
+
     use super::*;
 
     #[test]
@@ -264,10 +304,10 @@ mod tests {
 
         println!("a = {}", a);
         println!("b = {}", b);
-        println!("ab = {}", Permutation::compose_refs(&a, &b));
+        println!("ab = {}", Permutation::compose(&a, &b));
         println!("c = {}", c);
 
-        assert_eq!(Permutation::compose(a, b), c);
+        assert_eq!(Permutation::compose(&a, &b), c);
     }
 
     // #[test]

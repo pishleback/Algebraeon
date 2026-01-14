@@ -1,10 +1,9 @@
+use crate::{permutation::Permutation, structure::MetaGroupSignature};
 use std::{
     collections::HashMap,
     ops::Mul,
     sync::atomic::{AtomicUsize, Ordering},
 };
-
-use crate::{permutation::Permutation, structure::Group};
 
 #[derive(Clone, Copy)]
 enum Neighbor {
@@ -348,7 +347,7 @@ the list of generators for this finitely generated group"
         #[allow(clippy::redundant_closure_for_method_calls)]
         let inv_gen_perms = gen_perms
             .iter()
-            .map(|perm| perm.inverse_ref())
+            .map(|perm| perm.inverse())
             .collect::<Vec<Permutation>>();
 
         //write each element as a word in the n generators

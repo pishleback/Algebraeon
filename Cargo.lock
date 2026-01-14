@@ -114,6 +114,7 @@ dependencies = [
 name = "algebraeon-groups"
 version = "0.0.15"
 dependencies = [
+ "algebraeon-macros",
  "algebraeon-nzq",
  "algebraeon-sets",
  "itertools 0.14.0",
