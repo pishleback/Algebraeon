@@ -20,6 +20,8 @@ debug = true
 # https://github.com/pksunkara/cargo-workspaces
 # To publish
 # Update CHANGELOG
+# Install cargo-workspaces
+#   cargo install cargo-workspaces
 # Bump versions
 #   cargo ws version --no-individual-tags --exact --force *
 # Check all ok:
