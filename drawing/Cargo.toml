@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-drawing"
-version = "0.0.15"
+version = "0.0.16"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "For drawing algebraeon things."
@@ -9,10 +9,10 @@ description = "For drawing algebraeon things."
 name = "algebraeon_drawing"
 
 [dependencies]
-algebraeon-sets = { version = "=0.0.14", path = "../sets", default-features = false }
-algebraeon-rings = { version = "=0.0.15", path = "../rings", default-features = false }
-algebraeon-nzq = { version = "=0.0.15", path = "../nzq", default-features = false }
-algebraeon-geometry = { version = "=0.0.15", path = "../geometry", default-features = false }
+algebraeon-sets = { version = "=0.0.16", path = "../sets", default-features = false }
+algebraeon-rings = { version = "=0.0.16", path = "../rings", default-features = false }
+algebraeon-nzq = { version = "=0.0.16", path = "../nzq", default-features = false }
+algebraeon-geometry = { version = "=0.0.16", path = "../geometry", default-features = false }
 bytemuck = "1.22.0"
 log = "0.4.27"
 pollster = "0.4.0"

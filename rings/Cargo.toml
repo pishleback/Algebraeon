@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-rings"
-version = "0.0.15"
+version = "0.0.16"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "Algorithms in linear algebra, polynomials, and number theory."
@@ -13,10 +13,10 @@ readme = "../README.md"
 name = "algebraeon_rings"
 
 [dependencies]
-algebraeon-sets = { version = "=0.0.14", path = "../sets", default-features = false }
-algebraeon-nzq = { version = "=0.0.15", path = "../nzq", default-features = false }
-algebraeon-groups = { version = "=0.0.15", path = "../groups", default-features = false }
-algebraeon-macros = { version = "=0.0.13", path = "../macros", default-features = false }
+algebraeon-sets = { version = "=0.0.16", path = "../sets", default-features = false }
+algebraeon-nzq = { version = "=0.0.16", path = "../nzq", default-features = false }
+algebraeon-groups = { version = "=0.0.16", path = "../groups", default-features = false }
+algebraeon-macros = { version = "=0.0.16", path = "../macros", default-features = false }
 rand = "0.9.1"
 rayon = "1.7.0"
 itertools = "0.14.0"

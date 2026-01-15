@@ -13,7 +13,7 @@ readme = "../README.md"
 name = "algebraeon_examples"
 
 [dependencies]
-algebraeon = { version = "=0.0.15", path = "../algebraeon" }
+algebraeon = { version = "=0.0.16", path = "../algebraeon" }
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]

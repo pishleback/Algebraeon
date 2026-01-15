@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-macros"
-version = "0.0.13"
+version = "0.0.16"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "Macros for Algebraeon."
