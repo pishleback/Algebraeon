@@ -8,10 +8,10 @@ This example computes the first \\(10\\) continued fraction coefficients of \\(\
 use algebraeon::nzq::Integer;
 use algebraeon::rings::approximation::{e, pi};
 use algebraeon::rings::continued_fraction::{
-    MetaToSimpleContinuedFraction, SimpleContinuedFraction,
+    MetaToSimpleContinuedFractionSignature, SimpleContinuedFraction,
 };
 use algebraeon::rings::isolated_algebraic::RealAlgebraic;
-use algebraeon::rings::structure::{MetaPositiveRealNthRoot, MetaRing};
+use algebraeon::rings::structure::{MetaPositiveRealNthRootSignature, MetaRingSignature};
 
 println!(
     "e: {:?}",
@@ -55,7 +55,7 @@ We can also compute continued fractions for rational numbers, for example
 ```rust
 use algebraeon::{
     nzq::{Integer, Rational},
-    rings::continued_fraction::{MetaToSimpleContinuedFraction, SimpleContinuedFraction},
+    rings::continued_fraction::{MetaToSimpleContinuedFractionSignature, SimpleContinuedFraction},
 };
 use std::str::FromStr;
 
@@ -88,7 +88,7 @@ Defining the real number
 use algebraeon::nzq::Integer;
 use algebraeon::rings::approximation::RealApproximatePoint;
 use algebraeon::rings::continued_fraction::IrrationalSimpleContinuedFractionGenerator;
-use algebraeon::rings::structure::MetaRealSubset;
+use algebraeon::rings::structure::MetaRealSubsetSignature;
 
 #[derive(Debug, Clone)]
 struct MyContinuedFraction {
@@ -121,7 +121,7 @@ Defining the Golden Ratio
 use algebraeon::nzq::Integer;
 use algebraeon::rings::approximation::RealApproximatePoint;
 use algebraeon::rings::continued_fraction::PeriodicSimpleContinuedFraction;
-use algebraeon::rings::structure::MetaRealSubset;
+use algebraeon::rings::structure::MetaRealSubsetSignature;
 
 let phi = RealApproximatePoint::from_continued_fraction(
     PeriodicSimpleContinuedFraction::new(vec![], vec![Integer::from(1)]).unwrap(),
@@ -144,7 +144,7 @@ Defining \\(\sqrt{2}\\)
 use algebraeon::nzq::Integer;
 use algebraeon::rings::approximation::RealApproximatePoint;
 use algebraeon::rings::continued_fraction::PeriodicSimpleContinuedFraction;
-use algebraeon::rings::structure::MetaRealSubset;
+use algebraeon::rings::structure::MetaRealSubsetSignature;
 
 let sqrt2 = RealApproximatePoint::from_continued_fraction(
     PeriodicSimpleContinuedFraction::new(vec![Integer::from(1)], vec![Integer::from(2)])

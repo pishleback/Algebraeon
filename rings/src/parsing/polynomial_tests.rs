@@ -1,6 +1,9 @@
 use crate::parsing::polynomial::*;
 use crate::polynomial::{MultiPolynomial, Polynomial, Variable};
-use crate::structure::{MetaAdditiveMonoid, MetaMultiplicativeMonoid, MetaRing};
+use crate::structure::{
+    MetaAdditionSignature, MetaAdditiveGroupSignature, MetaMultiplicationSignature,
+    MetaMultiplicativeMonoidSignature,
+};
 use algebraeon_nzq::*;
 use std::collections::HashMap;
 use std::str::FromStr;

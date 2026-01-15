@@ -28,27 +28,31 @@ impl RinglikeSpecializationSignature for IntegerCanonicalStructure {
     }
 }
 
-impl SetWithZeroSignature for IntegerCanonicalStructure {
+impl ZeroSignature for IntegerCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
 }
 
-impl AdditiveMonoidSignature for IntegerCanonicalStructure {
+impl AdditionSignature for IntegerCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
+}
 
+impl CancellativeAdditionSignature for IntegerCanonicalStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for IntegerCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for IntegerCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for IntegerCanonicalStructure {}
 
 impl AdditiveGroupSignature for IntegerCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
@@ -60,15 +64,27 @@ impl AdditiveGroupSignature for IntegerCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for IntegerCanonicalStructure {
+impl OneSignature for IntegerCanonicalStructure {
     fn one(&self) -> Self::Set {
         Integer::ONE
     }
+}
 
+impl MultiplicationSignature for IntegerCanonicalStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
 }
+
+impl CommutativeMultiplicationSignature for IntegerCanonicalStructure {}
+
+impl MultiplicativeMonoidSignature for IntegerCanonicalStructure {}
+
+impl MultiplicativeAbsorptionMonoidSignature for IntegerCanonicalStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for IntegerCanonicalStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for IntegerCanonicalStructure {}
 
 impl SemiRingSignature for IntegerCanonicalStructure {}
 
@@ -84,14 +100,14 @@ impl CharacteristicSignature for IntegerCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for IntegerCanonicalStructure {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.try_div(&self.one(), a)
+impl TryReciprocalSignature for IntegerCanonicalStructure {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_divide(&self.one(), a)
     }
 }
 
-impl MultiplicativeIntegralMonoidSignature for IntegerCanonicalStructure {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+impl CancellativeMultiplicationSignature for IntegerCanonicalStructure {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         match self.quorem(a, b) {
             Some((q, r)) => {
                 if r == self.zero() {
@@ -104,6 +120,8 @@ impl MultiplicativeIntegralMonoidSignature for IntegerCanonicalStructure {
         }
     }
 }
+
+impl MultiplicativeIntegralMonoidSignature for IntegerCanonicalStructure {}
 
 impl IntegralDomainSignature for IntegerCanonicalStructure {}
 
@@ -154,7 +172,7 @@ impl UniqueFactorizationMonoidSignature for IntegerCanonicalStructure {
     }
 
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
-        Some(a.abs().is_irreducible())
+        Some(Abs::abs(a).is_irreducible())
     }
 
     fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
@@ -172,7 +190,7 @@ impl FactoringMonoidSignature for IntegerCanonicalStructure {
             } else {
                 Integer::from(1)
             };
-            let f = a.abs().factor();
+            let f = Abs::abs(a).factor();
             Integer::structure()
                 .factorizations()
                 .new_unit_and_powers_unchecked(
@@ -192,7 +210,7 @@ impl EuclideanDivisionSignature for IntegerCanonicalStructure {
         if elem == &Integer::ZERO {
             None
         } else {
-            Some(elem.abs())
+            Some(Abs::abs(elem))
         }
     }
 

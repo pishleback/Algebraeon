@@ -268,7 +268,7 @@ mod dminusone_test {
 
     pub struct DMinusOneTest {
         memory_stack: MemoryStack<DMinusOneTestSemigroup>,
-        factor_dminusone_coeff_bound_divby_gdeg: usize,
+        factor_dminusone_coeff_bound_divideby_gdeg: usize,
     }
     impl DMinusOneTest {
         pub fn new(
@@ -292,16 +292,16 @@ mod dminusone_test {
 
             Here we compute M*B and leave the multiplication by deg(g) for later
             */
-            let factor_dminusone_coeff_bound_divby_gdeg =
+            let factor_dminusone_coeff_bound_divideby_gdeg =
                 Rational::from(f.leading_coeff().unwrap().abs()) * f.cauchys_root_bound().unwrap();
 
             Self {
-                factor_dminusone_coeff_bound_divby_gdeg: (factor_dminusone_coeff_bound_divby_gdeg
-                    * &conversion_mult)
-                    .ceil()
-                    .abs()
-                    .try_into()
-                    .unwrap_or(usize::MAX),
+                factor_dminusone_coeff_bound_divideby_gdeg:
+                    (factor_dminusone_coeff_bound_divideby_gdeg * &conversion_mult)
+                        .ceil()
+                        .abs()
+                        .try_into()
+                        .unwrap_or(usize::MAX),
                 memory_stack: MemoryStack::new(
                     DMinusOneTestSemigroup {},
                     modular_factors
@@ -341,7 +341,7 @@ mod dminusone_test {
             So we need to check whether [0, b] union [usize::MAX - b + 1, usize::MAX] is disjoint from [range_bot, range_top]
             */
             let b1 = self
-                .factor_dminusone_coeff_bound_divby_gdeg
+                .factor_dminusone_coeff_bound_divideby_gdeg
                 .saturating_mul(d);
             if b1 == 0 {
                 0 < range_bot && range_bot <= range_top
@@ -417,7 +417,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                             modular_factor_product_memory_stack.get_product(&subset),
                         )
                         .apply_map(|c| {
-                            let c = c.rem(&self.modulus);
+                            let c = Rem::rem(c, &self.modulus);
                             if c > Integer::quo(&self.modulus, &Integer::TWO).unwrap() {
                                 c - &self.modulus
                             } else {
@@ -427,7 +427,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                         .primitive_part() //factoring f(x) = 49x^2-10000 had possible_factor = 49x-700, which is only a factor over the rationals and not over the integers unless we take the primitive part which is 7x-100, soo this seems to make sense though I cant properly justify it right now.
                         .unwrap();
                         debug_assert_ne!(g.degree().unwrap(), 0);
-                        if let Some(h) = Polynomial::try_div(&f, &g) {
+                        if let Some(h) = Polynomial::try_divide(&f, &g) {
                             //f = gh
                             // Update variables for next loop:
                             // Divide f by the found factor g
@@ -550,7 +550,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                             ),
                         )
                         .apply_map(|c| {
-                            let c = c.rem(&modulus);
+                            let c = Rem::rem(c, &modulus);
                             if c > Integer::quo(&modulus, &Integer::TWO).unwrap() {
                                 c - &modulus
                             } else {
@@ -564,7 +564,8 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                             && possible_factor.degree().unwrap() != f_deg
                         {
                             debug_assert!(!possible_factor.is_zero());
-                            if let Some(other_factor) = Polynomial::try_div(&f, &possible_factor) {
+                            if let Some(other_factor) = Polynomial::try_divide(&f, &possible_factor)
+                            {
                                 return FindFactorResult::Composite(possible_factor, other_factor);
                             }
                         }

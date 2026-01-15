@@ -51,27 +51,31 @@ impl EqSignature for IntegersModuloN {
 
 impl RinglikeSpecializationSignature for IntegersModuloN {}
 
-impl SetWithZeroSignature for IntegersModuloN {
+impl ZeroSignature for IntegersModuloN {
     fn zero(&self) -> Self::Set {
         Integer::ZERO
     }
 }
 
-impl AdditiveMonoidSignature for IntegersModuloN {
+impl AdditionSignature for IntegersModuloN {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         ((a + b) % &self.n).into()
     }
+}
 
+impl CancellativeAdditionSignature for IntegersModuloN {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for IntegersModuloN {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for IntegersModuloN {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for IntegersModuloN {}
 
 impl AdditiveGroupSignature for IntegersModuloN {
     fn neg(&self, a: &Self::Set) -> Self::Set {
@@ -79,15 +83,27 @@ impl AdditiveGroupSignature for IntegersModuloN {
     }
 }
 
-impl MultiplicativeMonoidSignature for IntegersModuloN {
+impl OneSignature for IntegersModuloN {
     fn one(&self) -> Self::Set {
         (Integer::ONE % &self.n).into()
     }
+}
 
+impl MultiplicationSignature for IntegersModuloN {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         ((a * b) % &self.n).into()
     }
 }
+
+impl CommutativeMultiplicationSignature for IntegersModuloN {}
+
+impl LeftDistributiveMultiplicationOverAddition for IntegersModuloN {}
+
+impl RightDistributiveMultiplicationOverAddition for IntegersModuloN {}
+
+impl MultiplicativeMonoidSignature for IntegersModuloN {}
+
+impl MultiplicativeAbsorptionMonoidSignature for IntegersModuloN {}
 
 impl SemiRingSignature for IntegersModuloN {}
 

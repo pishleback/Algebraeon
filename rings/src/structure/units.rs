@@ -1,20 +1,19 @@
-use crate::structure::{
-    MultiplicativeGroupSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidUnitsSignature, RinglikeSpecializationSignature,
+use crate::structure::TryReciprocalSignature;
+use algebraeon_groups::structure::{
+    AssociativeCompositionSignature, CommutativeCompositionSignature, CompositionSignature,
+    GroupSignature, IdentitySignature, LeftCancellativeCompositionSignature, MonoidSignature,
+    RightCancellativeCompositionSignature, TryInverseSignature,
 };
 use algebraeon_sets::structure::{BorrowedStructure, SetSignature, Signature};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MultiplicativeMonoidUnitsStructure<
-    M: MultiplicativeMonoidUnitsSignature,
-    MB: BorrowedStructure<M>,
-> {
+pub struct MultiplicativeMonoidUnitsStructure<M: TryReciprocalSignature, MB: BorrowedStructure<M>> {
     _monoid: PhantomData<M>,
     monoid: MB,
 }
 
-impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>>
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>>
     MultiplicativeMonoidUnitsStructure<M, MB>
 {
     pub fn new(monoid: MB) -> Self {
@@ -29,12 +28,12 @@ impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>>
     }
 }
 
-impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> Signature
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> Signature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
 }
 
-impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> SetSignature
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> SetSignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
     type Set = M::Set;
@@ -52,27 +51,65 @@ impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> SetSignatu
     }
 }
 
-impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>>
-    RinglikeSpecializationSignature for MultiplicativeMonoidUnitsStructure<M, MB>
-{
-}
-
-impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> MultiplicativeMonoidSignature
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> IdentitySignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
-    fn one(&self) -> Self::Set {
+    fn identity(&self) -> Self::Set {
         self.monoid().one()
     }
+}
 
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> CompositionSignature
+    for MultiplicativeMonoidUnitsStructure<M, MB>
+{
+    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.monoid().mul(a, b)
     }
 }
 
-impl<M: MultiplicativeMonoidUnitsSignature, MB: BorrowedStructure<M>> MultiplicativeGroupSignature
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> AssociativeCompositionSignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
-    fn inv(&self, a: &Self::Set) -> Self::Set {
-        self.monoid().try_inv(a).unwrap()
+}
+
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> CommutativeCompositionSignature
+    for MultiplicativeMonoidUnitsStructure<M, MB>
+{
+}
+
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> TryInverseSignature
+    for MultiplicativeMonoidUnitsStructure<M, MB>
+{
+    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.inverse(a))
+    }
+}
+
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> LeftCancellativeCompositionSignature
+    for MultiplicativeMonoidUnitsStructure<M, MB>
+{
+    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.compose(&self.inverse(b), a))
+    }
+}
+
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> RightCancellativeCompositionSignature
+    for MultiplicativeMonoidUnitsStructure<M, MB>
+{
+    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.compose(a, &self.inverse(b)))
+    }
+}
+
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> MonoidSignature
+    for MultiplicativeMonoidUnitsStructure<M, MB>
+{
+}
+
+impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> GroupSignature
+    for MultiplicativeMonoidUnitsStructure<M, MB>
+{
+    fn inverse(&self, a: &Self::Set) -> Self::Set {
+        self.monoid().try_reciprocal(a).unwrap()
     }
 }

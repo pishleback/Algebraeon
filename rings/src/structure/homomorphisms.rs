@@ -88,7 +88,7 @@ mod range_module {
     }
 
     impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
-        SetWithZeroSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+        ZeroSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
         fn zero(&self) -> Self::Set {
             self.hom.range().zero()
@@ -96,24 +96,33 @@ mod range_module {
     }
 
     impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
-        AdditiveMonoidSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+        AdditionSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
         fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
             self.hom.range().add(a, b)
         }
+    }
 
+    impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+        CancellativeAdditionSignature
+        for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+    {
+        fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+            Some(self.sub(a, b))
+        }
+    }
+
+    impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
+        TryNegateSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+    {
         fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
             Some(self.neg(a))
         }
     }
 
     impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
-        CancellativeAdditiveMonoidSignature
-        for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+        AdditiveMonoidSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
-        fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-            Some(self.sub(a, b))
-        }
     }
 
     impl<'h, Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>

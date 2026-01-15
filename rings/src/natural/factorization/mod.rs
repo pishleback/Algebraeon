@@ -30,7 +30,7 @@ fn trivial_factor(n: ToFactor) -> Vec<Factor> {
     }
 }
 
-pub fn trial_division(mut n: Natural, max_d: usize) -> Vec<Factor> {
+pub fn trial_divideision(mut n: Natural, max_d: usize) -> Vec<Factor> {
     let mut factors = vec![];
     let mut d = 2usize;
     while Natural::from(d * d) <= n {
@@ -216,7 +216,7 @@ pub(super) fn factor_nat(n: Natural) -> Factored<Natural, Natural> {
     } else {
         let mut f = Factorizer::new(n);
         // Trial division
-        f.partially_factor_by_method(|n| (trial_division(n.n, 100_000), true));
+        f.partially_factor_by_method(|n| (trial_divideision(n.n, 100_000), true));
 
         // Pollard-Rho
         for x in [2u32, 3, 4] {

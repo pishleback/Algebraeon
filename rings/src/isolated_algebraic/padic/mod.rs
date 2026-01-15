@@ -480,7 +480,7 @@ impl PAdicRational {
     fn try_inv(self) -> Option<Self> {
         Some(Self {
             p: self.p,
-            rat: Rational::try_inv(&self.rat)?,
+            rat: Rational::try_reciprocal(&self.rat)?,
         })
     }
 }
@@ -677,7 +677,7 @@ impl PAdicAlgebraicRoot {
                 vc.clone().unwrap_int();
                 let iball = IsolatingBall {
                     p: p.clone(),
-                    c: sball.c.try_inv().unwrap(),
+                    c: sball.c.try_reciprocal().unwrap(),
                     v: &sball.v - std::cmp::min(&sball.v, &vc) - vc,
                 };
                 candidates = candidates
@@ -757,7 +757,7 @@ impl EqSignature for PAdicAlgebraicStructure {
 
 impl RinglikeSpecializationSignature for PAdicAlgebraicStructure {}
 
-impl SetWithZeroSignature for PAdicAlgebraicStructure {
+impl ZeroSignature for PAdicAlgebraicStructure {
     fn zero(&self) -> Self::Set {
         PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
@@ -766,7 +766,7 @@ impl SetWithZeroSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl AdditiveMonoidSignature for PAdicAlgebraicStructure {
+impl AdditionSignature for PAdicAlgebraicStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
@@ -785,17 +785,21 @@ impl AdditiveMonoidSignature for PAdicAlgebraicStructure {
             }
         }
     }
+}
 
+impl CancellativeAdditionSignature for PAdicAlgebraicStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for PAdicAlgebraicStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for PAdicAlgebraicStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for PAdicAlgebraicStructure {}
 
 impl AdditiveGroupSignature for PAdicAlgebraicStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
@@ -804,14 +808,16 @@ impl AdditiveGroupSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for PAdicAlgebraicStructure {
+impl OneSignature for PAdicAlgebraicStructure {
     fn one(&self) -> Self::Set {
         PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: Rational::ONE,
         })
     }
+}
 
+impl MultiplicationSignature for PAdicAlgebraicStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
@@ -831,6 +837,16 @@ impl MultiplicativeMonoidSignature for PAdicAlgebraicStructure {
     }
 }
 
+impl CommutativeMultiplicationSignature for PAdicAlgebraicStructure {}
+
+impl MultiplicativeMonoidSignature for PAdicAlgebraicStructure {}
+
+impl MultiplicativeAbsorptionMonoidSignature for PAdicAlgebraicStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for PAdicAlgebraicStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for PAdicAlgebraicStructure {}
+
 impl SemiRingSignature for PAdicAlgebraicStructure {}
 
 impl RingSignature for PAdicAlgebraicStructure {
@@ -845,8 +861,8 @@ impl CharacteristicSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for PAdicAlgebraicStructure {
-    fn try_inv(&self, a: &PAdicAlgebraic) -> Option<PAdicAlgebraic> {
+impl TryReciprocalSignature for PAdicAlgebraicStructure {
+    fn try_reciprocal(&self, a: &PAdicAlgebraic) -> Option<PAdicAlgebraic> {
         debug_assert!(self.is_element(a).is_ok());
         match a {
             PAdicAlgebraic::Rational(a) => Some(PAdicAlgebraic::Rational(a.clone().try_inv()?)),
@@ -855,8 +871,8 @@ impl MultiplicativeMonoidUnitsSignature for PAdicAlgebraicStructure {
     }
 }
 
-impl MultiplicativeIntegralMonoidSignature for PAdicAlgebraicStructure {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+impl CancellativeMultiplicationSignature for PAdicAlgebraicStructure {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
         #[allow(clippy::single_match)]
@@ -864,14 +880,16 @@ impl MultiplicativeIntegralMonoidSignature for PAdicAlgebraicStructure {
             (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                 return Some(PAdicAlgebraic::Rational(PAdicRational {
                     p: self.p.clone(),
-                    rat: Rational::try_div(&a.rat, &b.rat)?,
+                    rat: Rational::try_divide(&a.rat, &b.rat)?,
                 }));
             }
             _ => {}
         }
-        Some(self.mul(a, &self.try_inv(b)?))
+        Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
+
+impl MultiplicativeIntegralMonoidSignature for PAdicAlgebraicStructure {}
 
 impl IntegralDomainSignature for PAdicAlgebraicStructure {
     fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
@@ -1230,9 +1248,12 @@ mod structure_tests {
             ))
         );
 
-        println!("a^-1 = {}", ring.try_inv(&a).unwrap());
+        println!("a^-1 = {}", ring.try_reciprocal(&a).unwrap());
         assert_eq!(
-            ring.try_inv(&a).unwrap().truncate(&6.into()).digits(),
+            ring.try_reciprocal(&a)
+                .unwrap()
+                .truncate(&6.into())
+                .digits(),
             Some((
                 vec![3, 1, 1, 4, 2, 1]
                     .into_iter()
@@ -1241,9 +1262,12 @@ mod structure_tests {
                 0.into()
             ))
         );
-        println!("b^-1 = {}", ring.try_inv(&b).unwrap());
+        println!("b^-1 = {}", ring.try_reciprocal(&b).unwrap());
         assert_eq!(
-            ring.try_inv(&b).unwrap().truncate(&6.into()).digits(),
+            ring.try_reciprocal(&b)
+                .unwrap()
+                .truncate(&6.into())
+                .digits(),
             Some((
                 vec![3, 0, 0, 4, 0, 0]
                     .into_iter()
@@ -1252,9 +1276,12 @@ mod structure_tests {
                 0.into()
             ))
         );
-        println!("c^-1 = {}", ring.try_inv(&c).unwrap());
+        println!("c^-1 = {}", ring.try_reciprocal(&c).unwrap());
         assert_eq!(
-            ring.try_inv(&c).unwrap().truncate(&6.into()).digits(),
+            ring.try_reciprocal(&c)
+                .unwrap()
+                .truncate(&6.into())
+                .digits(),
             Some((
                 vec![1, 4, 2, 0, 3, 4]
                     .into_iter()
@@ -1263,9 +1290,12 @@ mod structure_tests {
                 0.into()
             ))
         );
-        println!("d^-1 = {}", ring.try_inv(&d).unwrap());
+        println!("d^-1 = {}", ring.try_reciprocal(&d).unwrap());
         assert_eq!(
-            ring.try_inv(&d).unwrap().truncate(&6.into()).digits(),
+            ring.try_reciprocal(&d)
+                .unwrap()
+                .truncate(&6.into())
+                .digits(),
             Some((
                 vec![1, 3, 2, 2, 2, 2]
                     .into_iter()
@@ -1274,9 +1304,12 @@ mod structure_tests {
                 0.into()
             ))
         );
-        println!("e^-1 = {}", ring.try_inv(&e).unwrap());
+        println!("e^-1 = {}", ring.try_reciprocal(&e).unwrap());
         assert_eq!(
-            ring.try_inv(&e).unwrap().truncate(&6.into()).digits(),
+            ring.try_reciprocal(&e)
+                .unwrap()
+                .truncate(&6.into())
+                .digits(),
             Some((
                 vec![2, 2, 2, 2, 2, 2]
                     .into_iter()

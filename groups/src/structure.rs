@@ -1,95 +1,185 @@
+use algebraeon_macros::signature_meta_trait;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::{Integer, Natural};
-use itertools::Itertools;
-use std::{
-    borrow::Borrow,
-    collections::{HashMap, HashSet},
-    fmt::Debug,
-    hash::Hash,
-};
+use algebraeon_sets::structure::{MetaType, SetSignature};
+use std::borrow::Borrow;
+use std::collections::{HashMap, HashSet};
 
-pub trait Group: Debug + Clone + PartialEq + Eq {
-    fn identity() -> Self;
+/// A set with a binary operation of composition.
+#[signature_meta_trait]
+pub trait CompositionSignature: SetSignature {
+    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+    fn compose_mut(&self, a: &mut Self::Set, b: &Self::Set) {
+        *a = self.compose(a, b);
+    }
+}
 
-    fn inverse(self) -> Self;
-    fn inverse_ref(&self) -> Self {
-        self.clone().inverse()
-    }
-
-    fn compose_mut(&mut self, other: &Self);
-    fn compose(mut a: Self, b: Self) -> Self {
-        Self::compose_mut(&mut a, &b);
-        a
-    }
-    fn compose_lref(a: &Self, b: Self) -> Self {
-        Self::compose(a.clone(), b)
-    }
-    fn compose_rref(a: Self, b: &Self) -> Self {
-        Self::compose(a, b.clone())
-    }
-    fn compose_refs(a: &Self, b: &Self) -> Self {
-        Self::compose(a.clone(), b.clone())
-    }
-
-    fn compose_list(elems: Vec<impl Borrow<Self>>) -> Self {
-        let mut ans = Self::identity();
+/// When composition is associative.
+#[signature_meta_trait]
+pub trait AssociativeCompositionSignature: CompositionSignature {
+    /// Returns `None` if the list is empty.
+    fn compose_nonempty_list(&self, mut elems: Vec<impl Borrow<Self::Set>>) -> Option<Self::Set> {
+        let mut total = elems.pop()?.borrow().clone();
         for elem in elems {
-            ans.compose_mut(elem.borrow());
+            total = self.compose(&total, elem.borrow());
         }
-        ans
+        Some(total)
+    }
+}
+
+/// When composition is commutative.
+#[signature_meta_trait]
+pub trait CommutativeCompositionSignature: CompositionSignature {}
+
+/// When `compose(a, x)` = `compose(a, y)` implies `x` = `y` for all `a`, `x`, `y`.
+#[signature_meta_trait]
+pub trait LeftCancellativeCompositionSignature: CompositionSignature {
+    /// Try to find `x` such that `a` = `compose(b, x)`.
+    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+}
+
+/// When `compose(x, a)` = `compose(y, a)` implies `x` = `y` for all `a`, `x`, `y`.
+#[signature_meta_trait]
+pub trait RightCancellativeCompositionSignature: CompositionSignature {
+    /// Try to find `x` such that `a` = `compose(x, b)`.
+    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+}
+
+#[signature_meta_trait]
+pub trait CancellativeCompositionSignature:
+    CommutativeCompositionSignature
+    + LeftCancellativeCompositionSignature
+    + RightCancellativeCompositionSignature
+{
+    fn try_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+}
+impl<S: CancellativeCompositionSignature> LeftCancellativeCompositionSignature for S {
+    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.try_difference(a, b)
+    }
+}
+impl<S: CancellativeCompositionSignature> RightCancellativeCompositionSignature for S {
+    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.try_difference(a, b)
+    }
+}
+
+/// A set with a special element `e` called the identity element.
+#[signature_meta_trait]
+pub trait IdentitySignature: SetSignature {
+    /// Returns the identity element `e`.
+    fn identity(&self) -> Self::Set;
+}
+
+/// When the solution to `compose(x, a)` = `e` for `x` given `a` is unique whenever it exists.
+#[signature_meta_trait]
+pub trait TryLeftInverseSignature: IdentitySignature + CompositionSignature {
+    /// Return `x` such that `compose(x, a)` = `e` or `None` if no such `x` exists.
+    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+
+/// When the solution to `compose(a, x)` = `e` for `x` given `a` is unique whenever it exists.
+#[signature_meta_trait]
+pub trait TryRightInverseSignature: IdentitySignature + CompositionSignature {
+    /// Return `x` such that `compose(a, x)` = `e` or `None` if no such `x` exists.
+    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+
+/// When the solution to `compose(x, a)` = `compose(a, x)` = `e` for `x` given `a` is unique whenever it exists.
+#[signature_meta_trait]
+pub trait TryInverseSignature: IdentitySignature + CompositionSignature {
+    /// Return `x` such that `compose(x, a)` = `compose(a, x)` = `e` or `None` if no such `x` exists.
+    ///
+    /// Note, whenever `try_inverse` returns `Some`, `try_left_inverse` and `try_right_inverse` must also return the same value.
+    /// Also, whenever `try_left_inverse` and `try_right_inverse` both return a value, it must be the same value an `try_inverse` must also return that same value.
+    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+
+impl<S: TryInverseSignature + CommutativeCompositionSignature> TryLeftInverseSignature for S {
+    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_inverse(a)
+    }
+}
+
+impl<S: TryInverseSignature + CommutativeCompositionSignature> TryRightInverseSignature for S {
+    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_inverse(a)
+    }
+}
+
+/// When `compose(x, e)` = `compose(e, x)` = `x` for all `x`.
+#[signature_meta_trait]
+pub trait MonoidSignature: IdentitySignature + AssociativeCompositionSignature {
+    fn compose_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
+        if elems.is_empty() {
+            self.identity()
+        } else {
+            self.compose_nonempty_list(elems).unwrap()
+        }
     }
 
-    fn nat_pow(&self, n: &Natural) -> Self {
+    fn nat_pow(&self, a: &Self::Set, n: &Natural) -> Self::Set {
         if *n == Natural::ZERO {
-            Self::identity()
+            self.identity()
         } else if *n == Natural::ONE {
-            self.clone()
+            a.clone()
         } else {
             debug_assert!(*n >= Natural::TWO);
             let bits: Vec<_> = n.bits().collect();
-            let mut pows = vec![self.clone()];
+            let mut pows = vec![a.clone()];
             while pows.len() < bits.len() {
-                pows.push(Self::compose_refs(
-                    pows.last().unwrap(),
-                    pows.last().unwrap(),
-                ));
+                pows.push(self.compose(pows.last().unwrap(), pows.last().unwrap()));
             }
             let count = bits.len();
             debug_assert_eq!(count, pows.len());
-            let mut ans = Self::identity();
+            let mut ans = self.identity();
             for i in 0..count {
                 if bits[i] {
-                    ans.compose_mut(&pows[i]);
+                    ans = self.compose(&ans, &pows[i]);
                 }
             }
             ans
         }
     }
+}
 
-    fn int_pow(&self, n: &Integer) -> Self {
+/// When inverses always exist.
+#[signature_meta_trait]
+pub trait GroupSignature:
+    MonoidSignature
+    + TryInverseSignature
+    + TryLeftInverseSignature
+    + TryRightInverseSignature
+    + LeftCancellativeCompositionSignature
+    + RightCancellativeCompositionSignature
+{
+    fn inverse(&self, a: &Self::Set) -> Self::Set;
+
+    fn int_pow(&self, a: &Self::Set, n: &Integer) -> Self::Set {
         #[allow(clippy::comparison_chain)]
         if *n == Integer::ZERO {
-            Self::identity()
+            self.identity()
         } else if *n > Integer::ZERO {
-            self.nat_pow(&n.abs())
+            self.nat_pow(a, &n.abs())
         } else {
-            self.nat_pow(&n.abs()).inverse()
+            self.nat_pow(&self.inverse(a), &n.abs())
         }
     }
 
     fn generated_finite_subgroup_table(
-        generators: Vec<Self>,
+        &self,
+        generators: Vec<Self::Set>,
     ) -> (
         crate::composition_table::group::FiniteGroupMultiplicationTable,
-        Vec<Self>,
-        HashMap<Self, usize>,
+        Vec<Self::Set>,
+        HashMap<Self::Set, usize>,
     )
     where
-        Self: std::hash::Hash,
+        Self::Set: std::hash::Hash + Eq,
     {
         let mut n = 0;
-        let mut idx_to_elem: Vec<Self> = vec![];
-        let mut elem_to_idx: HashMap<Self, usize> = HashMap::new();
+        let mut idx_to_elem: Vec<Self::Set> = vec![];
+        let mut elem_to_idx: HashMap<Self::Set, usize> = HashMap::new();
         let mut mul: Vec<Vec<Option<usize>>> = vec![];
         let mut to_mul: Vec<(usize, usize)> = vec![];
 
@@ -120,26 +210,26 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
             }};
         }
 
-        add_elem!(Self::identity());
+        add_elem!(self.identity());
         for g in generators {
             add_elem!(g);
         }
         #[allow(clippy::manual_while_let_some)]
         while !to_mul.is_empty() {
             let (i, j) = to_mul.pop().unwrap();
-            let k = add_elem!(Self::compose_refs(&idx_to_elem[i], &idx_to_elem[j]));
+            let k = add_elem!(self.compose(&idx_to_elem[i], &idx_to_elem[j]));
             debug_assert!(mul[i][j].is_none());
             mul[i][j] = Some(k);
         }
         drop(to_mul);
         let mul = mul
             .into_iter()
-            .map(|m| m.into_iter().map(|x| x.unwrap()).collect_vec())
-            .collect_vec();
+            .map(|m| m.into_iter().map(|x| x.unwrap()).collect::<Vec<_>>())
+            .collect::<Vec<_>>();
         let inv = idx_to_elem
             .iter()
-            .map(|elem| *elem_to_idx.get(&Self::inverse_ref(elem)).unwrap())
-            .collect_vec();
+            .map(|elem| *elem_to_idx.get(&self.inverse(elem)).unwrap())
+            .collect::<Vec<_>>();
 
         let grp = crate::composition_table::group::FiniteGroupMultiplicationTable::new_unchecked(
             n, 0, inv, mul, None, None,
@@ -151,23 +241,22 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
         (grp, idx_to_elem, elem_to_idx)
     }
 
-    #[allow(clippy::assigning_clones)]
-    fn generated_finite_subgroup(gens: Vec<Self>) -> FiniteSubgroup<Self>
+    fn generated_finite_subgroup(&self, gens: Vec<Self::Set>) -> FiniteSubgroup<Self::Set>
     where
-        Self: Hash,
+        Self::Set: std::hash::Hash + Eq,
     {
         //generate subgroup by adding all generated elements
         let mut sg = HashSet::new();
-        sg.insert(Self::identity());
+        sg.insert(self.identity());
 
-        let mut boundary = vec![Self::identity()];
+        let mut boundary = vec![self.identity()];
         let mut next_boundary = vec![];
         let mut y;
         while !boundary.is_empty() {
             println!("{}", sg.len());
             for x in &boundary {
                 for g in &gens {
-                    y = Self::compose_refs(x, g);
+                    y = self.compose(x, g);
                     if !sg.contains(&y) {
                         sg.insert(y.clone());
                         next_boundary.push(y);
@@ -184,71 +273,27 @@ pub trait Group: Debug + Clone + PartialEq + Eq {
     }
 }
 
-pub trait Pow<ExpT> {
-    fn pow(&self, exp: ExpT) -> Self;
+#[signature_meta_trait]
+pub trait AbelianGroupSignature:
+    GroupSignature + CommutativeCompositionSignature + CancellativeCompositionSignature
+{
 }
-impl<G: Group> Pow<Natural> for G {
-    fn pow(&self, exp: Natural) -> Self {
-        self.nat_pow(&exp)
-    }
-}
-impl<G: Group> Pow<u8> for G {
-    fn pow(&self, exp: u8) -> Self {
-        self.nat_pow(&Natural::from(exp))
-    }
-}
-impl<G: Group> Pow<u16> for G {
-    fn pow(&self, exp: u16) -> Self {
-        self.nat_pow(&Natural::from(exp))
-    }
-}
-impl<G: Group> Pow<u32> for G {
-    fn pow(&self, exp: u32) -> Self {
-        self.nat_pow(&Natural::from(exp))
-    }
-}
-impl<G: Group> Pow<u64> for G {
-    fn pow(&self, exp: u64) -> Self {
-        self.nat_pow(&Natural::from(exp))
-    }
-}
-impl<G: Group> Pow<Integer> for G {
-    fn pow(&self, exp: Integer) -> Self {
-        self.int_pow(&exp)
-    }
-}
-impl<G: Group> Pow<i8> for G {
-    fn pow(&self, exp: i8) -> Self {
-        self.int_pow(&Integer::from(exp))
-    }
-}
-impl<G: Group> Pow<i16> for G {
-    fn pow(&self, exp: i16) -> Self {
-        self.int_pow(&Integer::from(exp))
-    }
-}
-impl<G: Group> Pow<i32> for G {
-    fn pow(&self, exp: i32) -> Self {
-        self.int_pow(&Integer::from(exp))
-    }
-}
-impl<G: Group> Pow<i64> for G {
-    fn pow(&self, exp: i64) -> Self {
-        self.int_pow(&Integer::from(exp))
-    }
+impl<S: GroupSignature + CommutativeCompositionSignature + CancellativeCompositionSignature>
+    AbelianGroupSignature for S
+{
 }
 
 #[derive(Debug, Clone)]
-pub struct FiniteSubgroup<G: Group> {
-    elems: Vec<G>,
+pub struct FiniteSubgroup<Set> {
+    elems: Vec<Set>,
 }
 
-impl<G: Group> FiniteSubgroup<G> {
+impl<Set> FiniteSubgroup<Set> {
     pub fn size(&self) -> usize {
         self.elems.len()
     }
 
-    pub fn elements(&self) -> impl Iterator<Item = &G> {
+    pub fn elements(&self) -> impl Iterator<Item = &Set> {
         self.elems.iter()
     }
 }

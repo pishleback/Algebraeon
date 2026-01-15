@@ -9,13 +9,16 @@ use crate::{
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
     structure::{
-        AdditiveGroupSignature, AdditiveMonoidSignature, CancellativeAdditiveMonoidSignature,
-        CharZeroRingSignature, CharacteristicSignature, DedekindDomainSignature,
+        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
+        CancellativeAdditionSignature, CancellativeMultiplicationSignature, CharZeroRingSignature,
+        CharacteristicSignature, CommutativeMultiplicationSignature, DedekindDomainSignature,
         FinitelyFreeModuleSignature, IntegralDomainSignature,
-        MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-        MultiplicativeMonoidUnitsSignature, RingSignature, RingToIdealsSignature,
-        RinglikeSpecializationSignature, SemiModuleSignature, SemiRingSignature,
-        SetWithZeroAndEqSignature, SetWithZeroSignature,
+        LeftDistributiveMultiplicationOverAddition, MultiplicationSignature,
+        MultiplicativeAbsorptionMonoidSignature, MultiplicativeIntegralMonoidSignature,
+        MultiplicativeMonoidSignature, OneSignature, RightDistributiveMultiplicationOverAddition,
+        RingSignature, RingToIdealsSignature, RinglikeSpecializationSignature, SemiModuleSignature,
+        SemiRingSignature, TryNegateSignature, TryReciprocalSignature, ZeroEqSignature,
+        ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural};
@@ -193,8 +196,8 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
     }
 }
 
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    SetWithZeroSignature for OrderWithBasis<K, KB, MAXIMAL>
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> ZeroSignature
+    for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn zero(&self) -> Self::Set {
         self.full_rank_z_sublattice.zero()
@@ -202,23 +205,32 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    AdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+    AdditionSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.full_rank_z_sublattice.add(a, b)
     }
+}
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    CancellativeAdditionSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    TryNegateSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    CancellativeAdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+    AdditiveMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
@@ -245,13 +257,17 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
     }
 }
 
-impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    MultiplicativeMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool> OneSignature
+    for OrderWithBasis<K, KB, MAXIMAL>
 {
     fn one(&self) -> Self::Set {
         self.one.clone()
     }
+}
 
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    MultiplicationSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let n = self.n();
         debug_assert!(self.is_element(a).is_ok());
@@ -282,6 +298,31 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
         );
         t
     }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    CommutativeMultiplicationSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    MultiplicativeMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    MultiplicativeAbsorptionMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    LeftDistributiveMultiplicationOverAddition for OrderWithBasis<K, KB, MAXIMAL>
+{
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    RightDistributiveMultiplicationOverAddition for OrderWithBasis<K, KB, MAXIMAL>
+{
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
@@ -356,16 +397,16 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
-    MultiplicativeMonoidUnitsSignature for OrderWithBasis<K, KB, MAXIMAL>
+    TryReciprocalSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         if self.is_zero(a) {
             None
         } else {
             self.outbound_order_to_anf_inclusion().try_preimage(
                 &self
                     .anf()
-                    .try_inv(&self.outbound_order_to_anf_inclusion().image(a))
+                    .try_reciprocal(&self.outbound_order_to_anf_inclusion().image(a))
                     .unwrap(),
             )
         }
@@ -373,11 +414,16 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
+    CancellativeMultiplicationSignature for OrderWithBasis<K, KB, MAXIMAL>
+{
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.mul(a, &self.try_reciprocal(b)?))
+    }
+}
+
+impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
     MultiplicativeIntegralMonoidSignature for OrderWithBasis<K, KB, MAXIMAL>
 {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.mul(a, &self.try_inv(b)?))
-    }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: bool>
@@ -705,12 +751,12 @@ mod tests {
 
             {
                 assert_eq!(
-                    roi.try_inv(&roi.neg(&roi.one())).unwrap(),
+                    roi.try_reciprocal(&roi.neg(&roi.one())).unwrap(),
                     roi.neg(&roi.one())
                 );
-                assert_eq!(roi.try_inv(&roi.one()).unwrap(), roi.one());
-                assert!(roi.try_inv(&alpha).is_none());
-                assert!(roi.try_inv(&beta).is_none());
+                assert_eq!(roi.try_reciprocal(&roi.one()).unwrap(), roi.one());
+                assert!(roi.try_reciprocal(&alpha).is_none());
+                assert!(roi.try_reciprocal(&beta).is_none());
             }
         }
 

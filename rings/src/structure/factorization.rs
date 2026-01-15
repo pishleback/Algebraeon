@@ -1,11 +1,12 @@
 use crate::structure::{
-    CancellativeAdditiveMonoidSignature, FavoriteAssociateSignature, FieldSignature,
-    MetaMultiplicativeMonoid, MultiplicativeGroupSignature, MultiplicativeIntegralMonoidSignature,
-    MultiplicativeMonoidSignature, MultiplicativeMonoidSquareOpsSignature,
-    MultiplicativeMonoidUnitsSignature, MultiplicativeMonoidWithZeroSignature,
-    RinglikeSpecializationSignature, SemiRingSignature, SetWithZeroAndEqSignature,
-    SetWithZeroSignature,
+    CancellativeAdditionSignature, CancellativeMultiplicationSignature,
+    CommutativeMultiplicationSignature, FavoriteAssociateSignature, FieldSignature,
+    MetaMultiplicativeMonoidSignature, MetaOneSignature, MultiplicationSignature,
+    MultiplicativeAbsorptionMonoidSignature, MultiplicativeMonoidSignature,
+    MultiplicativeMonoidSquareOpsSignature, OneSignature, RinglikeSpecializationSignature,
+    SemiRingSignature, TryReciprocalSignature, ZeroEqSignature, ZeroSignature,
 };
+use algebraeon_groups::structure::{CompositionSignature, GroupSignature};
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::{
     BorrowedStructure, EqSignature, MetaType, OrdSignature, SetSignature, Signature,
@@ -61,7 +62,7 @@ pub enum Factored<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> {
 
 impl<
     ObjectSet: Debug + Clone,
-    ExponentSet: Debug + Clone + MetaMultiplicativeMonoid + PartialEq + Eq,
+    ExponentSet: Debug + Clone + MetaMultiplicativeMonoidSignature + PartialEq + Eq,
 > Display for Factored<ObjectSet, ExponentSet>
 where
     ObjectSet: Display,
@@ -166,7 +167,7 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
 pub struct FactoringStructure<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > {
     _objects: PhantomData<Object>,
@@ -178,7 +179,7 @@ pub struct FactoringStructure<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -204,7 +205,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -220,7 +221,7 @@ impl<
             Factored::NonZero(b) => match a {
                 Factored::Zero => {}
                 Factored::NonZero(a) => {
-                    a.unit = self.objects().units().mul(&a.unit, &b.unit);
+                    a.unit = self.objects().units().compose(&a.unit, &b.unit);
                     for (b_p, b_k) in &b.powers {
                         debug_assert!(self.objects().is_fav_assoc(b_p));
                         'A_LOOP: {
@@ -252,7 +253,7 @@ impl<
                     *a = Factored::NonZero(b.clone());
                 }
                 Factored::NonZero(a) => {
-                    a.unit = self.objects().units().mul(&a.unit, &b.unit);
+                    a.unit = self.objects().units().compose(&a.unit, &b.unit);
                     for (b_p, b_k) in &b.powers {
                         debug_assert!(self.objects().is_fav_assoc(b_p));
                         'A_LOOP: {
@@ -277,7 +278,7 @@ impl<
         a: &mut NonZeroFactored<Object::Set, Exponent::Set>,
         b: &NonZeroFactored<Object::Set, Exponent::Set>,
     ) {
-        a.unit = self.objects().units().mul(&a.unit, &b.unit);
+        a.unit = self.objects().units().compose(&a.unit, &b.unit);
         for (b_p, b_k) in &b.powers {
             debug_assert!(self.objects().is_fav_assoc(b_p));
             'A_LOOP: {
@@ -294,7 +295,7 @@ impl<
         a.powers.retain(|(_, k)| !self.exponents().is_zero(k));
     }
 
-    pub(crate) fn try_div_mut_impl(
+    pub(crate) fn try_divide_mut_impl(
         &self,
         a: &mut Option<Factored<Object::Set, Exponent::Set>>,
         b: &Factored<Object::Set, Exponent::Set>,
@@ -310,7 +311,7 @@ impl<
                     a_nz.unit = self
                         .objects()
                         .units()
-                        .mul(&a_nz.unit, &self.objects().units().inv(&b.unit));
+                        .compose(&a_nz.unit, &self.objects().units().inverse(&b.unit));
                     for (b_p, b_k) in &b.powers {
                         debug_assert!(self.objects().is_fav_assoc(b_p));
                         'A_LOOP: {
@@ -360,7 +361,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > Signature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -369,7 +370,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > SetSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -412,7 +413,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > EqSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -422,14 +423,14 @@ impl<
             self.is_element(a).unwrap();
             self.is_element(b).unwrap();
         }
-        self.try_div(a, b).is_some() && self.try_div(b, a).is_some()
+        self.try_divide(a, b).is_some() && self.try_divide(b, a).is_some()
     }
 }
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > RinglikeSpecializationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -438,9 +439,9 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
-> SetWithZeroSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> ZeroSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
     fn zero(&self) -> Self::Set {
         Factored::Zero
@@ -450,9 +451,9 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
-> MultiplicativeMonoidSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> OneSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
     fn one(&self) -> Self::Set {
         Factored::NonZero(NonZeroFactored {
@@ -460,7 +461,15 @@ impl<
             powers: vec![],
         })
     }
+}
 
+impl<
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
+    ObjectB: BorrowedStructure<Object>,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
+    ExponentB: BorrowedStructure<Exponent>,
+> MultiplicationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         #[cfg(debug_assertions)]
         {
@@ -476,17 +485,35 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
-> MultiplicativeMonoidUnitsSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> CommutativeMultiplicationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+}
+
+impl<
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
+    ObjectB: BorrowedStructure<Object>,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
+    ExponentB: BorrowedStructure<Exponent>,
+> MultiplicativeMonoidSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+{
+}
+
+impl<
+    Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
+    ObjectB: BorrowedStructure<Object>,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
+    ExponentB: BorrowedStructure<Exponent>,
+> TryReciprocalSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+{
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         #[cfg(debug_assertions)]
         self.is_element(a).unwrap();
         match a {
             Factored::Zero => None,
             Factored::NonZero(a) => Some(Factored::NonZero(NonZeroFactored {
-                unit: self.objects().units().inv(&a.unit),
+                unit: self.objects().units().inverse(&a.unit),
                 powers: a
                     .powers
                     .iter()
@@ -500,14 +527,13 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
-> MultiplicativeIntegralMonoidSignature
-    for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> CancellativeMultiplicationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         let mut s = Some(a.clone());
-        self.try_div_mut_impl(&mut s, b);
+        self.try_divide_mut_impl(&mut s, b);
         s
     }
 }
@@ -515,7 +541,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
     ObjectB: BorrowedStructure<Object>,
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     ExponentB: BorrowedStructure<Exponent>,
 > FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
@@ -699,7 +725,7 @@ impl<
     }
 
     /// The number of divisors of a factorization
-    pub fn count_divisors(&self, a: &Factored<Object::Set, Natural>) -> Option<Natural> {
+    pub fn count_divideisors(&self, a: &Factored<Object::Set, Natural>) -> Option<Natural> {
         #[cfg(debug_assertions)]
         self.is_element(a).unwrap();
         match a {
@@ -779,9 +805,9 @@ impl<
 }
 
 pub trait UniqueFactorizationMonoidSignature:
-    MultiplicativeMonoidWithZeroSignature + FavoriteAssociateSignature + EqSignature
+    MultiplicativeAbsorptionMonoidSignature + FavoriteAssociateSignature + EqSignature
 {
-    type FactoredExponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature;
+    type FactoredExponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature;
 
     fn factorization_exponents(&self) -> &Self::FactoredExponent;
     fn into_factorization_exponents(self) -> Self::FactoredExponent;
@@ -807,7 +833,7 @@ pub trait UniqueFactorizationMonoidSignature:
     /// Factoring a is not allowed because this function is used by factorizations to validate their state.
     fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
 }
-pub trait MetaUniqueFactorizationMonoid: MetaType
+pub trait MetaUniqueFactorizationMonoidSignature: MetaType
 where
     Self::Signature: UniqueFactorizationMonoidSignature,
 {
@@ -815,7 +841,7 @@ where
         Self::structure().try_is_irreducible(self)
     }
 }
-impl<R: MetaType> MetaUniqueFactorizationMonoid for R where
+impl<R: MetaType> MetaUniqueFactorizationMonoidSignature for R where
     Self::Signature: UniqueFactorizationMonoidSignature
 {
 }
@@ -952,8 +978,8 @@ pub enum FindFactorResult<Element> {
 }
 
 pub fn factorize_by_find_factor<
-    Exponent: SemiRingSignature + CancellativeAdditiveMonoidSignature + OrdSignature,
-    RS: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent> + SetWithZeroAndEqSignature,
+    Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent> + ZeroEqSignature,
 >(
     ring: &RS,
     elem: RS::Set,
@@ -1082,7 +1108,7 @@ mod tests {
     }
 
     #[test]
-    fn test_count_divisors() {
+    fn test_count_divideisors() {
         for a in 1..25 {
             println!("a = {}", a);
             let b = Integer::from(a);
@@ -1092,7 +1118,7 @@ mod tests {
             assert_eq!(
                 Integer::structure()
                     .factorizations()
-                    .count_divisors(&fs)
+                    .count_divideisors(&fs)
                     .unwrap(),
                 Natural::from(
                     Integer::structure()

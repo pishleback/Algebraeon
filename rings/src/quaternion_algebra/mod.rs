@@ -123,7 +123,7 @@ impl<Field: FieldSignature> RinglikeSpecializationSignature for QuaternionAlgebr
     }
 }
 
-impl<Field: FieldSignature> SetWithZeroSignature for QuaternionAlgebraStructure<Field> {
+impl<Field: FieldSignature> ZeroSignature for QuaternionAlgebraStructure<Field> {
     fn zero(&self) -> Self::Set {
         QuaternionAlgebraElement {
             x: self.base.zero(),
@@ -134,7 +134,7 @@ impl<Field: FieldSignature> SetWithZeroSignature for QuaternionAlgebraStructure<
     }
 }
 
-impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructure<Field> {
+impl<Field: FieldSignature> AdditionSignature for QuaternionAlgebraStructure<Field> {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         QuaternionAlgebraElement {
             x: self.base.add(&a.x, &b.x),
@@ -143,19 +143,21 @@ impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructu
             w: self.base.add(&a.w, &b.w),
         }
     }
+}
 
+impl<Field: FieldSignature> CancellativeAdditionSignature for QuaternionAlgebraStructure<Field> {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl<Field: FieldSignature> TryNegateSignature for QuaternionAlgebraStructure<Field> {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl<Field: FieldSignature> CancellativeAdditiveMonoidSignature
-    for QuaternionAlgebraStructure<Field>
-{
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructure<Field> {
     fn neg(&self, a: &Self::Set) -> Self::Set {
@@ -177,7 +179,7 @@ impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructur
     }
 }
 
-impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraStructure<Field> {
+impl<Field: FieldSignature> OneSignature for QuaternionAlgebraStructure<Field> {
     fn one(&self) -> Self::Set {
         QuaternionAlgebraElement {
             x: self.base.one(),
@@ -186,7 +188,9 @@ impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraS
             w: self.base.zero(),
         }
     }
+}
 
+impl<Field: FieldSignature> MultiplicationSignature for QuaternionAlgebraStructure<Field> {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let a_param = &self.a;
         let b_param = &self.b;
@@ -249,13 +253,33 @@ impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraS
     }
 }
 
-impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {}
-
-impl<Field: FieldSignature> MultiplicativeMonoidUnitsSignature
+impl<Field: FieldSignature> CommutativeMultiplicationSignature
     for QuaternionAlgebraStructure<Field>
 {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        let n_inv = self.base.try_inv(&self.reduced_norm(a))?;
+}
+
+impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraStructure<Field> {}
+
+impl<Field: FieldSignature> MultiplicativeAbsorptionMonoidSignature
+    for QuaternionAlgebraStructure<Field>
+{
+}
+
+impl<Field: FieldSignature> LeftDistributiveMultiplicationOverAddition
+    for QuaternionAlgebraStructure<Field>
+{
+}
+
+impl<Field: FieldSignature> RightDistributiveMultiplicationOverAddition
+    for QuaternionAlgebraStructure<Field>
+{
+}
+
+impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {}
+
+impl<Field: FieldSignature> TryReciprocalSignature for QuaternionAlgebraStructure<Field> {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        let n_inv = self.base.try_reciprocal(&self.reduced_norm(a))?;
         Some(self.scalar_mul(&self.conjugate(a), &n_inv))
     }
 

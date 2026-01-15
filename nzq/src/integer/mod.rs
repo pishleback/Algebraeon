@@ -4,8 +4,8 @@ use crate::Rational;
 use crate::natural::Natural;
 use crate::traits::{Abs, AbsDiff, DivMod};
 use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
-    Signature, ToStringSignature,
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature,
+    PartialOrdSignature, SetSignature, Signature, ToStringSignature,
 };
 use malachite_base::num::basic::traits::{One, Two, Zero};
 use std::iter::{Product, Sum};
@@ -16,7 +16,7 @@ use std::{
 
 /// Represent an integer {..., -2, -1, 0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
-#[canonical_structure(eq, ord)]
+#[canonical_structure(eq, partial_ord, ord)]
 pub struct Integer(malachite_nz::integer::Integer);
 
 #[allow(clippy::wrong_self_convention)]

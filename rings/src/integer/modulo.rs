@@ -26,7 +26,7 @@ impl<
     fn list_all_elements(&self) -> Vec<Self::Set> {
         let mut units = vec![];
         let mut u = Integer::from(1);
-        while u < self.monoid().modulus().abs() {
+        while u < Abs::abs(self.monoid().modulus()) {
             units.push(u.clone());
             u += Integer::ONE;
         }
@@ -38,7 +38,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteFieldSignature
     for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>
 {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
-        (self.modulus().abs(), Natural::ONE)
+        (Abs::abs(self.modulus()), Natural::ONE)
     }
 }
 
@@ -56,7 +56,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> Fini
     for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
 {
     fn size(&self) -> usize {
-        self.modulus().abs().try_into().unwrap()
+        Abs::abs(self.modulus()).try_into().unwrap()
     }
 }
 

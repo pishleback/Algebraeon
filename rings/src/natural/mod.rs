@@ -7,44 +7,60 @@ pub mod functions;
 
 impl RinglikeSpecializationSignature for NaturalCanonicalStructure {}
 
-impl SetWithZeroSignature for NaturalCanonicalStructure {
+impl ZeroSignature for NaturalCanonicalStructure {
     fn zero(&self) -> Self::Set {
         Natural::ZERO
     }
 }
 
-impl AdditiveMonoidSignature for NaturalCanonicalStructure {
+impl AdditionSignature for NaturalCanonicalStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a + b
     }
+}
 
+impl CancellativeAdditionSignature for NaturalCanonicalStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        a.try_sub(b)
+    }
+}
+
+impl TryNegateSignature for NaturalCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         let z = self.zero();
         if a == &z { Some(self.zero()) } else { None }
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for NaturalCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        a.try_sub(b)
-    }
-}
+impl AdditiveMonoidSignature for NaturalCanonicalStructure {}
 
-impl MultiplicativeMonoidSignature for NaturalCanonicalStructure {
+impl OneSignature for NaturalCanonicalStructure {
     fn one(&self) -> Self::Set {
         Natural::ONE
     }
+}
 
+impl MultiplicationSignature for NaturalCanonicalStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         a * b
     }
 }
+
+impl CommutativeMultiplicationSignature for NaturalCanonicalStructure {}
+
+impl MultiplicativeMonoidSignature for NaturalCanonicalStructure {}
 
 impl FavoriteAssociateSignature for NaturalCanonicalStructure {
     fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
         (Natural::ONE, a.clone())
     }
 }
+
+impl MultiplicativeAbsorptionMonoidSignature for NaturalCanonicalStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for NaturalCanonicalStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for NaturalCanonicalStructure {}
 
 impl SemiRingSignature for NaturalCanonicalStructure {}
 
@@ -54,8 +70,8 @@ impl CharacteristicSignature for NaturalCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for NaturalCanonicalStructure {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+impl TryReciprocalSignature for NaturalCanonicalStructure {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         match *a {
             Natural::ZERO => None,
             Natural::ONE => Some(Natural::ONE),

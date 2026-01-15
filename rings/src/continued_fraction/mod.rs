@@ -1,4 +1,5 @@
 use crate::structure::{FieldSignature, RealRoundingSignature, RingUnitsSignature};
+use algebraeon_macros::signature_meta_trait;
 use algebraeon_nzq::{Integer, Rational};
 use algebraeon_sets::structure::MetaType;
 use std::{
@@ -213,7 +214,7 @@ impl<R: ToSimpleContinuedFractionSignature> SimpleContinuedFraction
             let c = self.ring.floor(cache_value);
             if let Some(value) = self
                 .ring
-                .try_inv(&self.ring.sub(cache_value, &self.ring.from_int(&c)))
+                .try_reciprocal(&self.ring.sub(cache_value, &self.ring.from_int(&c)))
             {
                 cache.value = Some(value);
             } else {
@@ -226,6 +227,7 @@ impl<R: ToSimpleContinuedFractionSignature> SimpleContinuedFraction
 }
 
 /// Implementing this trait is only valid if self.try_inv only returns None when given 0
+#[signature_meta_trait]
 pub trait ToSimpleContinuedFractionSignature: RealRoundingSignature + RingUnitsSignature {
     /// # Warning
     /// `value` should be irrational.
@@ -239,24 +241,6 @@ pub trait ToSimpleContinuedFractionSignature: RealRoundingSignature + RingUnitsS
 }
 impl<R: RealRoundingSignature + FieldSignature + RingUnitsSignature>
     ToSimpleContinuedFractionSignature for R
-{
-}
-
-pub trait MetaToSimpleContinuedFraction: MetaType
-where
-    Self::Signature: ToSimpleContinuedFractionSignature,
-{
-    /// # Warning
-    /// `value` should be irrational.
-    /// If `value` is not irrational then calls to `.next()` on the resulting `SimpleContinuedFraction` may panic.
-    fn simple_continued_fraction(
-        self,
-    ) -> SimpleContinuedFractionFromRealStructure<Self::Signature> {
-        Self::structure().simple_continued_fraction(self)
-    }
-}
-impl<R: MetaType> MetaToSimpleContinuedFraction for R where
-    Self::Signature: ToSimpleContinuedFractionSignature
 {
 }
 

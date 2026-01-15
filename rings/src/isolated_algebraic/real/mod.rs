@@ -310,7 +310,7 @@ impl RealAlgebraicRoot {
 }
 
 #[derive(Debug, Clone, CanonicalStructure)]
-#[canonical_structure(eq, ord)]
+#[canonical_structure(eq, partial_ord, ord)]
 pub enum RealAlgebraic {
     Rational(Rational),
     Real(RealAlgebraicRoot),
@@ -451,13 +451,13 @@ impl RinglikeSpecializationSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl SetWithZeroSignature for RealAlgebraicCanonicalStructure {
+impl ZeroSignature for RealAlgebraicCanonicalStructure {
     fn zero(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(0))
     }
 }
 
-impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
+impl AdditionSignature for RealAlgebraicCanonicalStructure {
     fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
         // println!("add {:?} {:?}", alg1, alg2);
 
@@ -520,17 +520,21 @@ impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
             }
         }
     }
+}
 
+impl CancellativeAdditionSignature for RealAlgebraicCanonicalStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for RealAlgebraicCanonicalStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for RealAlgebraicCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {}
 
 impl AdditiveGroupSignature for RealAlgebraicCanonicalStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
@@ -541,11 +545,13 @@ impl AdditiveGroupSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for RealAlgebraicCanonicalStructure {
+impl OneSignature for RealAlgebraicCanonicalStructure {
     fn one(&self) -> Self::Set {
         RealAlgebraic::Rational(Rational::from(1))
     }
+}
 
+impl MultiplicationSignature for RealAlgebraicCanonicalStructure {
     fn mul(&self, elem1: &Self::Set, elem2: &Self::Set) -> Self::Set {
         match elem1.cmp(&self.zero()) {
             std::cmp::Ordering::Less => {
@@ -624,6 +630,16 @@ impl MultiplicativeMonoidSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
+impl CommutativeMultiplicationSignature for RealAlgebraicCanonicalStructure {}
+
+impl MultiplicativeMonoidSignature for RealAlgebraicCanonicalStructure {}
+
+impl MultiplicativeAbsorptionMonoidSignature for RealAlgebraicCanonicalStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for RealAlgebraicCanonicalStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for RealAlgebraicCanonicalStructure {}
+
 impl SemiRingSignature for RealAlgebraicCanonicalStructure {}
 
 impl RingSignature for RealAlgebraicCanonicalStructure {
@@ -638,16 +654,16 @@ impl CharacteristicSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for RealAlgebraicCanonicalStructure {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+impl TryReciprocalSignature for RealAlgebraicCanonicalStructure {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         let mut a = a.clone();
         match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {
-            std::cmp::Ordering::Less => Some(self.neg(&self.try_inv(&self.neg(&a))?)),
+            std::cmp::Ordering::Less => Some(self.neg(&self.try_reciprocal(&self.neg(&a))?)),
             std::cmp::Ordering::Equal => None,
             std::cmp::Ordering::Greater => match a {
-                RealAlgebraic::Rational(x) => {
-                    Some(RealAlgebraic::Rational(Rational::try_inv(&x).unwrap()))
-                }
+                RealAlgebraic::Rational(x) => Some(RealAlgebraic::Rational(
+                    Rational::try_reciprocal(&x).unwrap(),
+                )),
                 RealAlgebraic::Real(mut root) => {
                     debug_assert!(root.tight_a >= Rational::from(0));
                     while root.tight_a == Rational::from(0) {
@@ -655,8 +671,8 @@ impl MultiplicativeMonoidUnitsSignature for RealAlgebraicCanonicalStructure {
                     }
                     debug_assert!(Rational::from(0) < root.tight_a);
                     (root.tight_a, root.tight_b) = (
-                        Rational::try_inv(&root.tight_b).unwrap(),
-                        Rational::try_inv(&root.tight_a).unwrap(),
+                        Rational::try_reciprocal(&root.tight_b).unwrap(),
+                        Rational::try_reciprocal(&root.tight_a).unwrap(),
                     );
                     (root.wide_a, root.wide_b) = (
                         {
@@ -669,7 +685,7 @@ impl MultiplicativeMonoidUnitsSignature for RealAlgebraicCanonicalStructure {
                                             "wide upper bound of strictly positive root should be strictly positive i.e. non-zero"
                                         );
                                     }
-                                    match Rational::try_inv(&x) {
+                                    match Rational::try_reciprocal(&x) {
                                         Some(x_inv) => LowerBound::Finite(x_inv),
                                         None => panic!(),
                                     }
@@ -684,7 +700,7 @@ impl MultiplicativeMonoidUnitsSignature for RealAlgebraicCanonicalStructure {
                                         UpperBound::Inf
                                     }
                                     std::cmp::Ordering::Greater => {
-                                        UpperBound::Finite(Rational::try_inv(&x).unwrap())
+                                        UpperBound::Finite(Rational::try_reciprocal(&x).unwrap())
                                     }
                                 },
                             }
@@ -717,11 +733,13 @@ impl MultiplicativeMonoidUnitsSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl MultiplicativeIntegralMonoidSignature for RealAlgebraicCanonicalStructure {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.mul(a, &self.try_inv(b)?))
+impl CancellativeMultiplicationSignature for RealAlgebraicCanonicalStructure {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
+
+impl MultiplicativeIntegralMonoidSignature for RealAlgebraicCanonicalStructure {}
 
 impl IntegralDomainSignature for RealAlgebraicCanonicalStructure {}
 

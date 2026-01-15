@@ -371,7 +371,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> RinglikeSpecialization
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> ZeroSignature
     for PolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
@@ -379,25 +379,16 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditionSignature
     for PolynomialStructure<RS, RSB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.add_impl(a, b)
     }
-
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
-        Some(Polynomial::from_coeffs(
-            a.coeffs
-                .iter()
-                .map(|c| self.coeff_ring().try_neg(c))
-                .collect::<Option<_>>()?,
-        ))
-    }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: BorrowedStructure<RS>>
-    CancellativeAdditiveMonoidSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature + CancellativeAdditionSignature, RSB: BorrowedStructure<RS>>
+    CancellativeAdditionSignature for PolynomialStructure<RS, RSB>
 {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(Polynomial::from_coeffs(
@@ -409,6 +400,24 @@ impl<RS: SemiRingEqSignature + CancellativeAdditiveMonoidSignature, RSB: Borrowe
                 .collect::<Option<_>>()?,
         ))
     }
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> TryNegateSignature
+    for PolynomialStructure<RS, RSB>
+{
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(Polynomial::from_coeffs(
+            a.coeffs
+                .iter()
+                .map(|c| self.coeff_ring().try_neg(c))
+                .collect::<Option<_>>()?,
+        ))
+    }
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+    for PolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
@@ -430,13 +439,17 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> OneSignature
     for PolynomialStructure<RS, RSB>
 {
     fn one(&self) -> Self::Set {
         Polynomial::from_coeffs(vec![self.coeff_ring().one()])
     }
+}
 
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicationSignature
+    for PolynomialStructure<RS, RSB>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         if let Some(coeff_ring) = self.coeff_ring().try_ring_restructure() {
             coeff_ring.polynomials().mul_karatsuba(a, b)
@@ -444,6 +457,31 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSi
             self.mul_naive(a, b)
         }
     }
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> CommutativeMultiplicationSignature
+    for PolynomialStructure<RS, RSB>
+{
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
+    for PolynomialStructure<RS, RSB>
+{
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeAbsorptionMonoidSignature
+    for PolynomialStructure<RS, RSB>
+{
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> LeftDistributiveMultiplicationOverAddition
+    for PolynomialStructure<RS, RSB>
+{
+}
+
+impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>>
+    RightDistributiveMultiplicationOverAddition for PolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
@@ -739,7 +777,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
             for i in (0..k).rev() {
                 //a[i+n-1] = q[i] * b[n-1]
                 debug_assert!(!self.coeff_ring().is_zero(self.coeff(b, n - 1).as_ref()));
-                match self.coeff_ring().try_div(
+                match self.coeff_ring().try_divide(
                     self.coeff(&a, i + n - 1).as_ref(),
                     self.coeff(b, n - 1).as_ref(),
                 ) {
@@ -844,7 +882,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                                 &self.coeff_ring().nat_pow(&gamma, &Natural::from(diff_deg)),
                             );
                             r = self
-                                .try_div(
+                                .try_divide(
                                     &self.pseudorem(a, &b).unwrap().unwrap(),
                                     &Polynomial::constant(beta),
                                 )
@@ -852,7 +890,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                             lc_b = self.leading_coeff(&b).unwrap().clone();
                             gamma = if diff_deg > 1 {
                                 self.coeff_ring()
-                                    .try_div(
+                                    .try_divide(
                                         &self.coeff_ring().nat_pow(
                                             &self.coeff_ring().neg(&lc_b),
                                             &Natural::from(diff_deg),
@@ -917,7 +955,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                     let dp = self.derivative(p.clone());
                     let disc = self
                         .coeff_ring()
-                        .try_div(&self.resultant(p, dp), &an)
+                        .try_divide(&self.resultant(p, dp), &an)
                         .unwrap();
                     // multiply by (-1)^{n(n+1)/2}
                     match n % 4 {
@@ -932,20 +970,25 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidUnitsSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> TryReciprocalSignature
     for PolynomialStructure<RS, RSB>
 {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.try_div(&self.one(), a)
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_divide(&self.one(), a)
+    }
+}
+
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> CancellativeMultiplicationSignature
+    for PolynomialStructure<RS, RSB>
+{
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.div_impl(a, b)
     }
 }
 
 impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeIntegralMonoidSignature
     for PolynomialStructure<RS, RSB>
 {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        self.div_impl(a, b)
-    }
 }
 
 impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
@@ -1037,7 +1080,7 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> PolynomialS
         } else {
             let g = self.coeff_ring().gcd_list(p.coeffs.iter().collect());
             for i in 0..p.coeffs.len() {
-                p.coeffs[i] = self.coeff_ring().try_div(&p.coeffs[i], &g).unwrap();
+                p.coeffs[i] = self.coeff_ring().try_divide(&p.coeffs[i], &g).unwrap();
             }
             Some((g, p))
         }
@@ -1103,7 +1146,7 @@ impl<RS: GreatestCommonDivisorSignature + CharZeroRingSignature, RSB: BorrowedSt
             let g = self.subresultant_gcd(f.clone(), self.derivative(f.clone()));
             let (_c, g_prim) = self.factor_primitive(g).unwrap();
             let (_c, f_prim) = self.factor_primitive(f).unwrap();
-            let f_prim_sqfree = self.try_div(&f_prim, &g_prim).unwrap();
+            let f_prim_sqfree = self.try_divide(&f_prim, &g_prim).unwrap();
             f_prim_sqfree
         }
     }
@@ -1124,7 +1167,7 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStru
                 .coeff_ring()
                 .factor_fav_assoc(&a.coeffs[self.num_coeffs(&a) - 1]);
             for i in 0..a.coeffs.len() {
-                a.coeffs[i] = self.coeff_ring().try_div(&a.coeffs[i], &u).unwrap();
+                a.coeffs[i] = self.coeff_ring().try_divide(&a.coeffs[i], &u).unwrap();
             }
             (Polynomial::constant(u), a.clone())
         }
@@ -1140,7 +1183,7 @@ impl<RS: CharZeroRingSignature + EqSignature, RSB: BorrowedStructure<RS>> CharZe
 }
 
 impl<
-    RS: IntegralDomainSignature + MultiplicativeMonoidUnitsSignature,
+    RS: IntegralDomainSignature + TryReciprocalSignature,
     RSB: BorrowedStructure<RS>,
     B: BorrowedStructure<PolynomialStructure<RS, RSB>>,
 > CountableSetSignature for MultiplicativeMonoidUnitsStructure<PolynomialStructure<RS, RSB>, B>
@@ -1153,7 +1196,7 @@ where
 }
 
 impl<
-    RS: IntegralDomainSignature + MultiplicativeMonoidUnitsSignature,
+    RS: IntegralDomainSignature + TryReciprocalSignature,
     RSB: BorrowedStructure<RS>,
     B: BorrowedStructure<PolynomialStructure<RS, RSB>>,
 > FiniteSetSignature for MultiplicativeMonoidUnitsStructure<PolynomialStructure<RS, RSB>, B>
@@ -1277,7 +1320,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
             panic!("are the input points distinct?");
         }
 
-        self.try_div(&numerator, &denominator)
+        self.try_divide(&numerator, &denominator)
     }
 }
 
@@ -1354,7 +1397,7 @@ pub fn factor_primitive_fof<
 
     (
         field
-            .try_div(&fof_inclusion.image(&mul), &fof_inclusion.image(&div))
+            .try_divide(&fof_inclusion.image(&mul), &fof_inclusion.image(&div))
             .unwrap(),
         prim,
     )
@@ -1642,7 +1685,7 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
-        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+        match Polynomial::try_divide(a.ref_set(), b.ref_set()) {
             Some(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
                 assert_eq!(a, b * c.into_ergonomic());
@@ -1652,28 +1695,28 @@ mod tests {
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) + 1;
-        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+        match Polynomial::try_divide(a.ref_set(), b.ref_set()) {
             Some(_) => panic!(),
             None => {}
         }
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = (2 * x + 1) * (3 * x + 2) * (4 * x + 5) * (5 * x + 6) * (6 * x + 7);
-        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+        match Polynomial::try_divide(a.ref_set(), b.ref_set()) {
             Some(_) => panic!(),
             None => {}
         }
 
         let a = (2 * x + 1) * (3 * x + 2) * (4 * x + 5);
         let b = 0 * x;
-        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+        match Polynomial::try_divide(a.ref_set(), b.ref_set()) {
             Some(_) => panic!(),
             None => {}
         }
 
         let a = 0 * x;
         let b = (x - x) + 5;
-        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+        match Polynomial::try_divide(a.ref_set(), b.ref_set()) {
             Some(c) => {
                 assert_eq!(c, Polynomial::zero());
             }
@@ -1682,7 +1725,7 @@ mod tests {
 
         let a = 3087 * x - 8805 * x.pow(2) + 607 * x.pow(3) + x.pow(4);
         let b = (x - x) + 1;
-        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+        match Polynomial::try_divide(a.ref_set(), b.ref_set()) {
             Some(c) => {
                 assert_eq!(c.into_ergonomic(), a);
             }
@@ -1696,7 +1739,7 @@ mod tests {
 
         let a = 1 + x + x.pow(2);
         let b = Polynomial::constant(QuaternaryField::Alpha).into_ergonomic() + x;
-        match Polynomial::try_div(a.ref_set(), b.ref_set()) {
+        match Polynomial::try_divide(a.ref_set(), b.ref_set()) {
             Some(c) => {
                 println!("{:?} {:?} {:?}", a, b, c);
                 assert_eq!(a, b * c.into_ergonomic());
@@ -1732,8 +1775,8 @@ mod tests {
         let g = Polynomial::gcd(x.ref_set(), y.ref_set());
 
         println!("gcd({:?} , {:?}) = {:?}", x, y, g);
-        Polynomial::try_div(&g, b.ref_set()).unwrap();
-        Polynomial::try_div(b.ref_set(), &g).unwrap();
+        Polynomial::try_divide(&g, b.ref_set()).unwrap();
+        Polynomial::try_divide(b.ref_set(), &g).unwrap();
     }
 
     #[test]

@@ -81,7 +81,7 @@ mod balancable_pairs {
                             self.f.coeff(k).as_ref() * Integer::from(self.p.nat_pow(&p_pow))
                         } else {
                             let neg_p_pow = (-p_pow).abs();
-                            Integer::try_div(
+                            Integer::try_divide(
                                 &self.f.coeff(k),
                                 &Integer::from(self.p.nat_pow(&neg_p_pow)),
                             )
@@ -107,7 +107,7 @@ mod balancable_pairs {
                     #[allow(clippy::single_match_else)]
                     match (&coeff_valuations[i], &coeff_valuations[j]) {
                         (Valuation::Finite(vfi), Valuation::Finite(vfj)) => {
-                            match Integer::try_div(&(vfi - vfj), &Integer::from(j - i)) {
+                            match Integer::try_divide(&(vfi - vfj), &Integer::from(j - i)) {
                                 Some(bv) => bps.push(BalancablePair {
                                     p: p.clone(),
                                     f: self,

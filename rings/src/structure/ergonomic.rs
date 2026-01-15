@@ -204,7 +204,7 @@ impl<RS: IntegralDomainSignature> Div<&StructuredElement<RS>> for &StructuredEle
         StructuredElement::new(
             self.structure().clone(),
             self.structure()
-                .try_div(self.ref_set(), rhs.ref_set())
+                .try_divide(self.ref_set(), rhs.ref_set())
                 .unwrap(),
         )
     }

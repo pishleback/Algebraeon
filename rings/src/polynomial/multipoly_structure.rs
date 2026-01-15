@@ -113,7 +113,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RinglikeSpecializationSign
 {
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> ZeroSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn zero(&self) -> Self::Set {
@@ -121,7 +121,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SetWithZeroSignature
     }
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditionSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -152,18 +152,27 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
         }
         self.reduce(a) //sort the coeffs
     }
-
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
-        Some(self.neg(a))
-    }
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> CancellativeAdditiveMonoidSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> CancellativeAdditionSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
     }
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> TryNegateSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
+    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.neg(a))
+    }
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
@@ -188,7 +197,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     }
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> OneSignature
     for MultiPolynomialStructure<RS, RSB>
 {
     fn one(&self) -> Self::Set {
@@ -199,7 +208,11 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignat
             }],
         }
     }
+}
 
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicationSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let mut terms: HashMap<Monomial, RS::Set> = HashMap::new();
         for Term {
@@ -227,6 +240,31 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignat
     }
 }
 
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> CommutativeMultiplicationSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeAbsorptionMonoidSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> LeftDistributiveMultiplicationOverAddition
+    for MultiPolynomialStructure<RS, RSB>
+{
+}
+
+impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RightDistributiveMultiplicationOverAddition
+    for MultiPolynomialStructure<RS, RSB>
+{
+}
+
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
     for MultiPolynomialStructure<RS, RSB>
 {
@@ -245,18 +283,18 @@ impl<RS: CharacteristicSignature + RingEqSignature, RSB: BorrowedStructure<RS>>
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidUnitsSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> TryReciprocalSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.try_div(&self.one(), a)
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_divide(&self.one(), a)
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeIntegralMonoidSignature
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> CancellativeMultiplicationSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         let mut vars = HashSet::new();
         vars.extend(a.free_vars());
         vars.extend(b.free_vars());
@@ -274,7 +312,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeInte
                 debug_assert!(!self.coeff_ring().is_zero(&b.terms[0].coeff));
                 Some(MultiPolynomial::constant(
                     self.coeff_ring()
-                        .try_div(&a.terms[0].coeff, &b.terms[0].coeff)?,
+                        .try_divide(&a.terms[0].coeff, &b.terms[0].coeff)?,
                 ))
             }
         } else {
@@ -283,11 +321,16 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeInte
             let b_poly = self.expand(b, var);
             let poly_ring = self.polynomials();
             Some(poly_ring.evaluate(
-                &poly_ring.try_div(&a_poly, &b_poly)?,
+                &poly_ring.try_divide(&a_poly, &b_poly)?,
                 &self.var(var.clone()),
             ))
         }
     }
+}
+
+impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeIntegralMonoidSignature
+    for MultiPolynomialStructure<RS, RSB>
+{
 }
 
 impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
@@ -307,7 +350,8 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStru
             Some(first_term) => {
                 debug_assert!(!self.is_zero(mpoly));
                 let (unit, _) = self.coeff_ring().factor_fav_assoc(&first_term.coeff);
-                let unit_inv = MultiPolynomial::constant(self.coeff_ring().try_inv(&unit).unwrap());
+                let unit_inv =
+                    MultiPolynomial::constant(self.coeff_ring().try_reciprocal(&unit).unwrap());
                 let unit = MultiPolynomial::constant(unit);
                 (unit, self.mul(&unit_inv, mpoly))
             }
@@ -876,7 +920,7 @@ mod tests {
     }
 
     #[test]
-    fn test_division() {
+    fn test_divideision() {
         let x = MultiPolynomial::<Integer>::var(Variable::new(String::from("x")));
         let y = MultiPolynomial::<Integer>::var(Variable::new(String::from("y")));
 
@@ -885,7 +929,7 @@ mod tests {
             &MultiPolynomial::neg(&MultiPolynomial::product(vec![&y, &y])),
         ]);
         let g = MultiPolynomial::sum(vec![&x, &MultiPolynomial::neg(&y)]);
-        match MultiPolynomial::try_div(&f, &g) {
+        match MultiPolynomial::try_divide(&f, &g) {
             Some(h) => {
                 assert_eq!(f, MultiPolynomial::mul(&g, &h));
             }
@@ -897,14 +941,14 @@ mod tests {
             &MultiPolynomial::neg(&MultiPolynomial::product(vec![&y, &y])),
         ]);
         let g = MultiPolynomial::zero();
-        assert!(MultiPolynomial::try_div(&f, &g).is_none());
+        assert!(MultiPolynomial::try_divide(&f, &g).is_none());
 
         let f = MultiPolynomial::sum(vec![
             &MultiPolynomial::product(vec![&x, &x]),
             &MultiPolynomial::neg(&MultiPolynomial::product(vec![&y, &y])),
         ]);
         let g = MultiPolynomial::sum(vec![&x]);
-        assert!(MultiPolynomial::try_div(&f, &g).is_none());
+        assert!(MultiPolynomial::try_divide(&f, &g).is_none());
     }
 
     #[test]

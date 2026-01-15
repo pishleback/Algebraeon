@@ -1,4 +1,5 @@
 use super::EqSignature;
+use algebraeon_macros::{signature_meta_trait, skip_meta};
 use std::{borrow::Borrow, cmp::Ordering};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,7 +67,15 @@ impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Set> Iterator for VecMerger<'
     }
 }
 
-pub trait OrdSignature: EqSignature {
+use super::MetaType;
+
+#[signature_meta_trait]
+pub trait PartialOrdSignature: EqSignature {
+    fn partial_cmp(&self, a: &Self::Set, b: &Self::Set) -> Option<Ordering>;
+}
+
+#[signature_meta_trait]
+pub trait OrdSignature: PartialOrdSignature {
     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering;
 
     fn max(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
@@ -154,6 +163,7 @@ pub trait OrdSignature: EqSignature {
         None
     }
 
+    #[skip_meta]
     fn merge_sorted<'s, S: Borrow<Self::Set> + 's>(
         &'s self,
         a: Vec<S>,
@@ -162,6 +172,7 @@ pub trait OrdSignature: EqSignature {
         self.merge_sorted_by_key(a, b, |x| (*x).borrow())
     }
 
+    #[skip_meta]
     fn merge_sorted_by_key<X>(
         &self,
         a: Vec<X>,
@@ -177,6 +188,7 @@ pub trait OrdSignature: EqSignature {
         self.sort_by_key(a, &|x| x.borrow())
     }
 
+    #[skip_meta]
     fn sort_by_key<X>(&self, mut a: Vec<X>, key: &impl Fn(&X) -> &Self::Set) -> Vec<X> {
         match a.len() {
             0 | 1 => a,
@@ -242,6 +254,12 @@ mod tests {
     impl EqSignature for UsizeStructure {
         fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
             a == b
+        }
+    }
+
+    impl PartialOrdSignature for UsizeStructure {
+        fn partial_cmp(&self, a: &Self::Set, b: &Self::Set) -> Option<Ordering> {
+            Some(self.cmp(a, b))
         }
     }
 

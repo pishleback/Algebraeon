@@ -1,10 +1,14 @@
-use std::collections::HashMap;
-
-use itertools::Itertools;
-
-use crate::structure::Group;
-
 use super::c2::C2;
+use crate::structure::{
+    AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature,
+    LeftCancellativeCompositionSignature, MetaCompositionSignature, MetaGroupSignature,
+    MetaIdentitySignature, MetaMonoidSignature, MonoidSignature,
+    RightCancellativeCompositionSignature, TryInverseSignature, TryLeftInverseSignature,
+    TryRightInverseSignature,
+};
+use algebraeon_sets::structure::{MetaType, SetSignature, Signature};
+use itertools::Itertools;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Cycle<const N: usize> {
@@ -83,7 +87,6 @@ impl<const N: usize> Permutation<N> {
                 return Err("Not a valid permutation");
             }
         }
-
         Ok(Self { perm })
     }
 
@@ -200,33 +203,88 @@ impl<const N: usize> std::fmt::Display for Permutation<N> {
     }
 }
 
-impl<const N: usize> Group for Permutation<N> {
-    fn identity() -> Self {
-        let mut perm = [0; N];
-        for i in 0..N {
-            perm[i] = i;
-        }
-        Self { perm }
-    }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PermutationCanonicalStructure<const N: usize> {}
 
-    fn inverse(self) -> Self {
-        let mut inv_perm = [0; N];
-        for (i, j) in self.perm.into_iter().enumerate() {
-            inv_perm[j] = i;
-        }
-        Self { perm: inv_perm }
-    }
+impl<const N: usize> Signature for PermutationCanonicalStructure<N> {}
 
-    fn compose_refs(a: &Self, b: &Self) -> Self {
+impl<const N: usize> SetSignature for PermutationCanonicalStructure<N> {
+    type Set = Permutation<N>;
+
+    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        Ok(())
+    }
+}
+
+impl<const N: usize> MetaType for Permutation<N> {
+    type Signature = PermutationCanonicalStructure<N>;
+
+    fn structure() -> Self::Signature {
+        PermutationCanonicalStructure {}
+    }
+}
+
+impl<const N: usize> CompositionSignature for PermutationCanonicalStructure<N> {
+    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let mut comp_perm = [0; N];
         for i in 0..N {
             comp_perm[i] = a.perm[b.perm[i]];
         }
-        Self { perm: comp_perm }
+        Permutation { perm: comp_perm }
     }
+}
 
-    fn compose_mut(&mut self, other: &Self) {
-        *self = Self::compose_refs(self, other);
+impl<const N: usize> AssociativeCompositionSignature for PermutationCanonicalStructure<N> {}
+
+impl<const N: usize> LeftCancellativeCompositionSignature for PermutationCanonicalStructure<N> {
+    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.compose(&self.inverse(b), a))
+    }
+}
+
+impl<const N: usize> RightCancellativeCompositionSignature for PermutationCanonicalStructure<N> {
+    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.compose(a, &self.inverse(b)))
+    }
+}
+
+impl<const N: usize> IdentitySignature for PermutationCanonicalStructure<N> {
+    fn identity(&self) -> Self::Set {
+        let mut perm = [0; N];
+        for i in 0..N {
+            perm[i] = i;
+        }
+        Permutation { perm }
+    }
+}
+
+impl<const N: usize> MonoidSignature for PermutationCanonicalStructure<N> {}
+
+impl<const N: usize> TryLeftInverseSignature for PermutationCanonicalStructure<N> {
+    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.inverse(a))
+    }
+}
+
+impl<const N: usize> TryRightInverseSignature for PermutationCanonicalStructure<N> {
+    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.inverse(a))
+    }
+}
+
+impl<const N: usize> TryInverseSignature for PermutationCanonicalStructure<N> {
+    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        Some(self.inverse(a))
+    }
+}
+
+impl<const N: usize> GroupSignature for PermutationCanonicalStructure<N> {
+    fn inverse(&self, a: &Self::Set) -> Self::Set {
+        let mut inv_perm = [0; N];
+        for (i, j) in a.perm.into_iter().enumerate() {
+            inv_perm[j] = i;
+        }
+        Permutation { perm: inv_perm }
     }
 }
 
@@ -242,10 +300,10 @@ mod tests {
 
         println!("a = {}", a);
         println!("b = {}", b);
-        println!("ab = {}", Permutation::compose_refs(&a, &b));
+        println!("ab = {}", Permutation::compose(&a, &b));
         println!("c = {}", c);
 
-        assert_eq!(Permutation::compose(a, b), c);
+        assert_eq!(Permutation::compose(&a, &b), c);
     }
 
     #[test]

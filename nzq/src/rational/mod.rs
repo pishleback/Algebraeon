@@ -3,8 +3,8 @@ use crate::integer::Integer;
 use crate::natural::Natural;
 use crate::traits::{Abs, Ceil, Floor, Fraction};
 use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature, SetSignature,
-    Signature, ToStringSignature,
+    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature,
+    PartialOrdSignature, SetSignature, Signature, ToStringSignature,
 };
 use malachite_base::num::arithmetic::traits::Pow;
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
@@ -18,7 +18,7 @@ use std::{
 
 /// Represent a rational number - a number of the form `a`/`b` where `a` is an integer and `b` is a non-zero integer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
-#[canonical_structure(eq, ord)]
+#[canonical_structure(eq, partial_ord, ord)]
 pub struct Rational(malachite_q::Rational);
 
 impl ToStringSignature for RationalCanonicalStructure {

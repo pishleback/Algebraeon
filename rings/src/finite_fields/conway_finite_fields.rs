@@ -98,27 +98,31 @@ impl EqSignature for ConwayFiniteFieldStructure {
 
 impl RinglikeSpecializationSignature for ConwayFiniteFieldStructure {}
 
-impl SetWithZeroSignature for ConwayFiniteFieldStructure {
+impl ZeroSignature for ConwayFiniteFieldStructure {
     fn zero(&self) -> Self::Set {
         self.structure.zero()
     }
 }
 
-impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {
+impl AdditionSignature for ConwayFiniteFieldStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.structure.add(a, b)
     }
+}
 
+impl CancellativeAdditionSignature for ConwayFiniteFieldStructure {
+    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.sub(a, b))
+    }
+}
+
+impl TryNegateSignature for ConwayFiniteFieldStructure {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
     }
 }
 
-impl CancellativeAdditiveMonoidSignature for ConwayFiniteFieldStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.sub(a, b))
-    }
-}
+impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {}
 
 impl AdditiveGroupSignature for ConwayFiniteFieldStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
@@ -126,15 +130,27 @@ impl AdditiveGroupSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl MultiplicativeMonoidSignature for ConwayFiniteFieldStructure {
+impl OneSignature for ConwayFiniteFieldStructure {
     fn one(&self) -> Self::Set {
         self.structure.one()
     }
+}
 
+impl MultiplicationSignature for ConwayFiniteFieldStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.structure.mul(a, b)
     }
 }
+
+impl CommutativeMultiplicationSignature for ConwayFiniteFieldStructure {}
+
+impl MultiplicativeMonoidSignature for ConwayFiniteFieldStructure {}
+
+impl MultiplicativeAbsorptionMonoidSignature for ConwayFiniteFieldStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for ConwayFiniteFieldStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for ConwayFiniteFieldStructure {}
 
 impl SemiRingSignature for ConwayFiniteFieldStructure {}
 
@@ -158,17 +174,19 @@ impl CharacteristicSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for ConwayFiniteFieldStructure {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.structure.try_inv(a)
+impl TryReciprocalSignature for ConwayFiniteFieldStructure {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.structure.try_reciprocal(a)
     }
 }
 
-impl MultiplicativeIntegralMonoidSignature for ConwayFiniteFieldStructure {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        self.structure.try_div(a, b)
+impl CancellativeMultiplicationSignature for ConwayFiniteFieldStructure {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.structure.try_divide(a, b)
     }
 }
+
+impl MultiplicativeIntegralMonoidSignature for ConwayFiniteFieldStructure {}
 
 impl IntegralDomainSignature for ConwayFiniteFieldStructure {}
 

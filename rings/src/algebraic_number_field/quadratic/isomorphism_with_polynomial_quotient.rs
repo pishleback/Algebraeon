@@ -5,8 +5,8 @@ use crate::{
     },
     polynomial::Polynomial,
     structure::{
-        AdditiveMonoidSignature, CharZeroFieldSignature, FieldSignature, MetaFactoringMonoid,
-        MetaMultiplicativeMonoid, RingHomomorphism, SemiModuleSignature,
+        AdditionSignature, CharZeroFieldSignature, FieldSignature, MetaFactoringMonoid,
+        MetaMultiplicativeMonoidSignature, RingHomomorphism, SemiModuleSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
