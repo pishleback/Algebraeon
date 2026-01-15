@@ -80,7 +80,7 @@ impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusion<ICS::R, ICS::K>
                 a,
                 &self
                     .range()
-                    .try_div(&self.image(&n), &self.image(&d))
+                    .try_divide(&self.image(&n), &self.image(&d))
                     .unwrap()
             )
         );

@@ -83,15 +83,27 @@ impl AdditiveGroupSignature for IntegersModuloN {
     }
 }
 
-impl MultiplicativeMonoidSignature for IntegersModuloN {
+impl OneSignature for IntegersModuloN {
     fn one(&self) -> Self::Set {
         (Integer::ONE % &self.n).into()
     }
+}
 
+impl MultiplicationSignature for IntegersModuloN {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         ((a * b) % &self.n).into()
     }
 }
+
+impl CommutativeMultiplicationSignature for IntegersModuloN {}
+
+impl LeftDistributiveMultiplicationOverAddition for IntegersModuloN {}
+
+impl RightDistributiveMultiplicationOverAddition for IntegersModuloN {}
+
+impl MultiplicativeMonoidSignature for IntegersModuloN {}
+
+impl MultiplicativeAbsorptionMonoidSignature for IntegersModuloN {}
 
 impl SemiRingSignature for IntegersModuloN {}
 

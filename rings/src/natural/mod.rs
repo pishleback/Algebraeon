@@ -46,6 +46,8 @@ impl MultiplicationSignature for NaturalCanonicalStructure {
     }
 }
 
+impl CommutativeMultiplicationSignature for NaturalCanonicalStructure {}
+
 impl MultiplicativeMonoidSignature for NaturalCanonicalStructure {}
 
 impl FavoriteAssociateSignature for NaturalCanonicalStructure {
@@ -53,6 +55,12 @@ impl FavoriteAssociateSignature for NaturalCanonicalStructure {
         (Natural::ONE, a.clone())
     }
 }
+
+impl MultiplicativeAbsorptionMonoidSignature for NaturalCanonicalStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for NaturalCanonicalStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for NaturalCanonicalStructure {}
 
 impl SemiRingSignature for NaturalCanonicalStructure {}
 
@@ -62,8 +70,8 @@ impl CharacteristicSignature for NaturalCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for NaturalCanonicalStructure {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+impl TryReciprocalSignature for NaturalCanonicalStructure {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         match *a {
             Natural::ZERO => None,
             Natural::ONE => Some(Natural::ONE),

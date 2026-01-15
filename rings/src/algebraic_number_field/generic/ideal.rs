@@ -558,7 +558,43 @@ impl<
     KB: BorrowedStructure<K>,
     const MAXIMAL: bool,
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> CommutativeMultiplicationSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > MultiplicativeMonoidSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> LeftDistributiveMultiplicationOverAddition for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> RightDistributiveMultiplicationOverAddition for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+{
+}
+
+impl<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+    const MAXIMAL: bool,
+    OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
+> MultiplicativeAbsorptionMonoidSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
 }
 
@@ -576,9 +612,9 @@ impl<
     KB: BorrowedStructure<K>,
     const MAXIMAL: bool,
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
-> MultiplicativeMonoidUnitsSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
+> TryReciprocalSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         // (1)=R is the only unit since a product of proper ideals is always a proper ideal
         if self.equal(a, &self.one()) {
             Some(self.one())

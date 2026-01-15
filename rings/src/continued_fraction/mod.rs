@@ -214,7 +214,7 @@ impl<R: ToSimpleContinuedFractionSignature> SimpleContinuedFraction
             let c = self.ring.floor(cache_value);
             if let Some(value) = self
                 .ring
-                .try_inv(&self.ring.sub(cache_value, &self.ring.from_int(&c)))
+                .try_reciprocal(&self.ring.sub(cache_value, &self.ring.from_int(&c)))
             {
                 cache.value = Some(value);
             } else {

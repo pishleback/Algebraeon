@@ -253,7 +253,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedHyperplane<'f, FS> {
         ) {
             (std::cmp::Ordering::Less, std::cmp::Ordering::Greater) => {
                 let t = field
-                    .try_div(&a_val, &field.add(&a_val, &field.neg(&b_val)))
+                    .try_divide(&a_val, &field.add(&a_val, &field.neg(&b_val)))
                     .unwrap();
                 {
                     debug_assert_eq!(
@@ -271,7 +271,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedHyperplane<'f, FS> {
             }
             (std::cmp::Ordering::Greater, std::cmp::Ordering::Less) => {
                 let t = field
-                    .try_div(&a_val, &field.add(&a_val, &field.neg(&b_val)))
+                    .try_divide(&a_val, &field.add(&a_val, &field.neg(&b_val)))
                     .unwrap();
                 {
                     debug_assert_eq!(

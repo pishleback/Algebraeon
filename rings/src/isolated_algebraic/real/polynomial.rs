@@ -622,7 +622,7 @@ impl Polynomial<Integer> {
             let (c, k, mut q) = l.pop().unwrap();
             if q.evaluate(&Integer::from(0)) == Integer::from(0) {
                 //q = q/x
-                q = Self::try_div(&q, &Self::var()).unwrap();
+                q = Self::try_divide(&q, &Self::var()).unwrap();
                 isol.push((c.clone(), k, false)); //rational root
             }
             let v = Self::compose(
@@ -756,7 +756,7 @@ impl Polynomial<Integer> {
             let mut poly_no_endroots = self.clone();
             let mut intervals = vec![];
             if evaluate_at_rational(&self, a) == Rational::from(0) {
-                poly_no_endroots = Self::try_div(
+                poly_no_endroots = Self::try_divide(
                     &poly_no_endroots,
                     &Polynomial::from_coeffs(vec![-a.numerator(), a.denominator().into()]),
                 )
@@ -767,7 +767,7 @@ impl Polynomial<Integer> {
             }
             let mut do_add_b = false;
             if evaluate_at_rational(&self, b) == Rational::from(0) {
-                poly_no_endroots = Self::try_div(
+                poly_no_endroots = Self::try_divide(
                     &poly_no_endroots,
                     &Polynomial::from_coeffs(vec![-b.numerator(), b.denominator().into()]),
                 )

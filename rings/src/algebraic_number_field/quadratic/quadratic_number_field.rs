@@ -3,12 +3,14 @@ use crate::algebraic_number_field::{
 };
 use crate::structure::{
     AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
-    CancellativeAdditionSignature, CharZeroFieldSignature, CharZeroRingSignature,
-    CharacteristicSignature, FieldSignature, IntegralDomainSignature,
+    CancellativeAdditionSignature, CancellativeMultiplicationSignature, CharZeroFieldSignature,
+    CharZeroRingSignature, CharacteristicSignature, CommutativeMultiplicationSignature,
+    FieldSignature, IntegralDomainSignature, LeftDistributiveMultiplicationOverAddition,
     MetaFactoringMonoidNaturalExponent, MetaZeroEqSignature, MultiplicationSignature,
-    MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-    MultiplicativeMonoidUnitsSignature, OneSignature, RingSignature,
-    RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature, ZeroSignature,
+    MultiplicativeAbsorptionMonoidSignature, MultiplicativeIntegralMonoidSignature,
+    MultiplicativeMonoidSignature, OneSignature, RightDistributiveMultiplicationOverAddition,
+    RingSignature, RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature,
+    TryReciprocalSignature, ZeroSignature,
 };
 use crate::structure::{
     FreeModuleSignature, MetaCharZeroRingSignature, PrincipalRationalMap,
@@ -191,16 +193,34 @@ impl<D: BorrowedSet<Integer>> MultiplicationSignature for QuadraticNumberFieldSt
     }
 }
 
+impl<D: BorrowedSet<Integer>> CommutativeMultiplicationSignature
+    for QuadraticNumberFieldStructure<D>
+{
+}
+
 impl<D: BorrowedSet<Integer>> MultiplicativeMonoidSignature for QuadraticNumberFieldStructure<D> {}
+
+impl<D: BorrowedSet<Integer>> MultiplicativeAbsorptionMonoidSignature
+    for QuadraticNumberFieldStructure<D>
+{
+}
+
+impl<D: BorrowedSet<Integer>> LeftDistributiveMultiplicationOverAddition
+    for QuadraticNumberFieldStructure<D>
+{
+}
+
+impl<D: BorrowedSet<Integer>> RightDistributiveMultiplicationOverAddition
+    for QuadraticNumberFieldStructure<D>
+{
+}
 
 impl<D: BorrowedSet<Integer>> SemiRingSignature for QuadraticNumberFieldStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> RingSignature for QuadraticNumberFieldStructure<D> {}
 
-impl<D: BorrowedSet<Integer>> MultiplicativeMonoidUnitsSignature
-    for QuadraticNumberFieldStructure<D>
-{
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+impl<D: BorrowedSet<Integer>> TryReciprocalSignature for QuadraticNumberFieldStructure<D> {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         // (x + y sqrt(d))^{-1} = (a - b sqrt(d)) / (x^2 + dy^2)
         debug_assert!(!self.d().is_zero()); // it's squarefree in particular non-zero
         let d = &a.rational_part * &a.rational_part
@@ -216,12 +236,17 @@ impl<D: BorrowedSet<Integer>> MultiplicativeMonoidUnitsSignature
     }
 }
 
+impl<D: BorrowedSet<Integer>> CancellativeMultiplicationSignature
+    for QuadraticNumberFieldStructure<D>
+{
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.mul(a, &self.try_reciprocal(b)?))
+    }
+}
+
 impl<D: BorrowedSet<Integer>> MultiplicativeIntegralMonoidSignature
     for QuadraticNumberFieldStructure<D>
 {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.mul(a, &self.try_inv(b)?))
-    }
 }
 
 impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticNumberFieldStructure<D> {}

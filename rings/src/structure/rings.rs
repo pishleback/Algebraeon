@@ -13,8 +13,11 @@ mod unconstructable_universal_structure {
     use crate::structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
         CancellativeAdditionSignature, CharZeroRingSignature, CharacteristicSignature,
-        MultiplicationSignature, MultiplicativeMonoidSignature, OneSignature, RingSignature,
-        RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature, ZeroSignature,
+        CommutativeMultiplicationSignature, LeftDistributiveMultiplicationOverAddition,
+        MultiplicationSignature, MultiplicativeAbsorptionMonoidSignature,
+        MultiplicativeMonoidSignature, OneSignature, RightDistributiveMultiplicationOverAddition,
+        RingSignature, RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature,
+        TryReciprocalSignature, ZeroSignature,
     };
 
     pub struct UnconstructableStructure<Set> {
@@ -112,7 +115,33 @@ mod unconstructable_universal_structure {
         }
     }
 
+    impl<Set: Debug + Clone + Send + Sync> CommutativeMultiplicationSignature
+        for UnconstructableStructure<Set>
+    {
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> TryReciprocalSignature for UnconstructableStructure<Set> {
+        fn try_reciprocal(&self, _a: &Self::Set) -> Option<Self::Set> {
+            unreachable!()
+        }
+    }
+
     impl<Set: Debug + Clone + Send + Sync> MultiplicativeMonoidSignature
+        for UnconstructableStructure<Set>
+    {
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> MultiplicativeAbsorptionMonoidSignature
+        for UnconstructableStructure<Set>
+    {
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> LeftDistributiveMultiplicationOverAddition
+        for UnconstructableStructure<Set>
+    {
+    }
+
+    impl<Set: Debug + Clone + Send + Sync> RightDistributiveMultiplicationOverAddition
         for UnconstructableStructure<Set>
     {
     }
@@ -202,6 +231,15 @@ pub trait AdditiveMonoidSignature: ZeroSignature + AdditionSignature + TryNegate
 }
 
 #[signature_meta_trait]
+pub trait AdditiveGroupSignature: CancellativeAdditionSignature {
+    fn neg(&self, a: &Self::Set) -> Self::Set;
+
+    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        self.add(a, &self.neg(b))
+    }
+}
+
+#[signature_meta_trait]
 pub trait ZeroEqSignature: ZeroSignature + EqSignature {
     fn is_zero(&self, a: &Self::Set) -> bool {
         self.equal(a, &self.zero())
@@ -225,6 +263,11 @@ pub trait MultiplicationSignature: RinglikeSpecializationSignature {
     }
 }
 
+/// When `*` is commutative.
+#[signature_meta_trait]
+pub trait CommutativeMultiplicationSignature: MultiplicationSignature {}
+
+/// When `1 * a` = `a * 1` = `a` for all `a`.
 #[signature_meta_trait]
 pub trait MultiplicativeMonoidSignature: OneSignature + MultiplicationSignature {
     fn product(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
@@ -261,42 +304,24 @@ pub trait MultiplicativeMonoidSignature: OneSignature + MultiplicationSignature 
 }
 
 #[signature_meta_trait]
-pub trait MultiplicativeMonoidSquareOpsSignature: RinglikeSpecializationSignature {
-    fn is_square(&self, a: &Self::Set) -> bool {
-        self.sqrt_if_square(a).is_some()
-    }
-
-    fn sqrt_if_square(&self, a: &Self::Set) -> Option<Self::Set>;
+pub trait TryLeftReciprocalSignature: OneSignature + MultiplicationSignature {
+    /// `x` such that `x*a`=`1` or `None` if no such `x` exists.
+    fn try_left_reciprocal(&self, a: &Self::Set) -> Option<Self::Set>;
 }
 
-/// 0 is such that 0*a=0 for all a in the monoid.
-/// such an element is unqiue if it exists.
 #[signature_meta_trait]
-pub trait MultiplicativeMonoidWithZeroSignature:
-    MultiplicativeMonoidSignature + ZeroSignature
-{
+pub trait TryRightReciprocalSignature: OneSignature + MultiplicationSignature {
+    /// `x` such that `a*x`=`1` or `None` if no such `x` exists.
+    fn try_right_reciprocal(&self, a: &Self::Set) -> Option<Self::Set>;
 }
-impl<R: MultiplicativeMonoidSignature + ZeroSignature> MultiplicativeMonoidWithZeroSignature for R {}
 
 #[signature_meta_trait]
-pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
-    /// b such that a*b=1 and b*a=1
-    /// Err(DivideByZero) if b is zero
-    /// Err(NotDivisible) if no such b exists
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set>;
+pub trait TryReciprocalSignature: OneSignature + MultiplicationSignature {
+    /// `b` such that `a*b`=`1` and `b*a`=`1` or `None` if no such `b` exists.
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set>;
 
     fn is_unit(&self, a: &Self::Set) -> bool {
-        self.try_inv(a).is_some()
-    }
-
-    fn try_int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
-        if *n == Integer::ZERO {
-            Some(self.one())
-        } else if *n > Integer::ZERO {
-            Some(self.nat_pow(a, &Abs::abs(n)))
-        } else {
-            Some(self.nat_pow(&self.try_inv(a)?, &Abs::abs(n)))
-        }
+        self.try_reciprocal(a).is_some()
     }
 
     #[skip_meta]
@@ -310,45 +335,149 @@ pub trait MultiplicativeMonoidUnitsSignature: MultiplicativeMonoidSignature {
     }
 }
 
-#[signature_meta_trait]
-pub trait MultiplicativeIntegralMonoidSignature:
-    MultiplicativeMonoidUnitsSignature + ZeroSignature + EqSignature
+impl<S: TryReciprocalSignature + CommutativeMultiplicationSignature> TryLeftReciprocalSignature
+    for S
 {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_left_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_reciprocal(a)
+    }
+}
+
+impl<S: TryReciprocalSignature + CommutativeMultiplicationSignature> TryRightReciprocalSignature
+    for S
+{
+    fn try_right_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_reciprocal(a)
+    }
+}
+
+#[signature_meta_trait]
+pub trait MultiplicativeMonoidTryInverseSignature:
+    MultiplicativeMonoidSignature + TryReciprocalSignature
+{
+    fn try_int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
+        if *n == Integer::ZERO {
+            Some(self.one())
+        } else if *n > Integer::ZERO {
+            Some(self.nat_pow(a, &Abs::abs(n)))
+        } else {
+            Some(self.nat_pow(&self.try_reciprocal(a)?, &Abs::abs(n)))
+        }
+    }
+}
+impl<S: MultiplicativeMonoidSignature + TryReciprocalSignature>
+    MultiplicativeMonoidTryInverseSignature for S
+{
+}
+
+#[signature_meta_trait]
+pub trait MultiplicativeMonoidSquareOpsSignature: MultiplicativeMonoidSignature {
+    fn is_square(&self, a: &Self::Set) -> bool {
+        self.sqrt_if_square(a).is_some()
+    }
+
+    fn sqrt_if_square(&self, a: &Self::Set) -> Option<Self::Set>;
+}
+
+/// 0 is such that `a*0` = `0*a` = `0` for all a in the monoid.
+/// such an element is unqiue if it exists.
+#[signature_meta_trait]
+pub trait MultiplicativeAbsorptionMonoidSignature:
+    MultiplicativeMonoidSignature + ZeroSignature
+{
+}
+
+/// When `a*(b + c) = a*b + a*c`.
+#[signature_meta_trait]
+pub trait LeftDistributiveMultiplicationOverAddition:
+    AdditionSignature + MultiplicationSignature
+{
+}
+
+/// When `(a + b)*c = a*c + b*c`.
+#[signature_meta_trait]
+pub trait RightDistributiveMultiplicationOverAddition:
+    AdditionSignature + MultiplicationSignature
+{
+}
+
+/// When `a * x` = `a * y` implies `x` = `y` for all `a`, `x`, `y`.
+#[signature_meta_trait]
+pub trait LeftCancellativeMultiplicationSignature: MultiplicationSignature {
+    /// Try to find `x` such that `a` = `b * x`.
+    fn try_left_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+}
+
+/// When `x * a` = `y * a` implies `x` = `y` for all `a`, `x`, `y`.
+#[signature_meta_trait]
+pub trait RightCancellativeMultiplicationSignature: MultiplicationSignature {
+    /// Try to find `x` such that `a` = `x * b`.
+    fn try_right_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+}
+
+#[signature_meta_trait]
+pub trait CancellativeMultiplicationSignature:
+    CommutativeMultiplicationSignature
+    + LeftCancellativeMultiplicationSignature
+    + RightCancellativeMultiplicationSignature
+{
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
 
     /// return true iff a is divisible by b
     fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.try_div(a, b).is_some()
+        self.try_divide(a, b).is_some()
     }
+}
+
+impl<S: CancellativeMultiplicationSignature> LeftCancellativeMultiplicationSignature for S {
+    fn try_left_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.try_divide(a, b)
+    }
+}
+
+impl<S: CancellativeMultiplicationSignature> RightCancellativeMultiplicationSignature for S {
+    fn try_right_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.try_divide(a, b)
+    }
+}
+
+#[signature_meta_trait]
+pub trait AreAssociateMultiplicationSignature:
+    CancellativeMultiplicationSignature + ZeroEqSignature
+{
     fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
         if self.equal(a, &self.zero()) && self.equal(b, &self.zero()) {
             true
         } else {
-            self.try_div(a, b).is_some() && self.try_div(b, a).is_some()
+            self.try_divide(a, b).is_some() && self.try_divide(b, a).is_some()
         }
     }
 }
+impl<S: CancellativeMultiplicationSignature + ZeroEqSignature> AreAssociateMultiplicationSignature
+    for S
+{
+}
 
 #[signature_meta_trait]
-pub trait MultiplicativeGroupSignature: MultiplicativeMonoidSignature {
-    fn inv(&self, a: &Self::Set) -> Self::Set;
-
-    fn int_pow(&self, a: &Self::Set, n: &Integer) -> Self::Set {
-        if *n == Integer::ZERO {
-            self.one()
-        } else if *n > Integer::ZERO {
-            self.nat_pow(a, &Abs::abs(n))
-        } else {
-            self.nat_pow(&self.inv(a), &Abs::abs(n))
-        }
-    }
+pub trait MultiplicativeIntegralMonoidSignature:
+    MultiplicativeAbsorptionMonoidSignature
+    + TryLeftReciprocalSignature
+    + TryRightReciprocalSignature
+    + LeftCancellativeMultiplicationSignature
+    + RightCancellativeMultiplicationSignature
+{
 }
 
 // semi-rings need not have cancellative addition
-// but inverses are unique when they exist because all inverses are two-sided due to commutativity
+// but reciprocals are unique when they exist because all reciprocals are two-sided due to commutativity
 #[signature_meta_trait]
 pub trait SemiRingSignature:
-    AdditiveMonoidSignature + TryNegateSignature + MultiplicativeMonoidWithZeroSignature
+    AdditiveMonoidSignature
+    + TryNegateSignature
+    + MultiplicativeAbsorptionMonoidSignature
+    + CommutativeMultiplicationSignature
+    + LeftDistributiveMultiplicationOverAddition
+    + RightDistributiveMultiplicationOverAddition
 {
     fn from_nat(&self, x: impl Into<Natural>) -> Self::Set {
         let x = x.into();
@@ -378,17 +507,8 @@ pub trait SemiRingEqSignature: SemiRingSignature + EqSignature {}
 impl<R: SemiRingSignature + EqSignature> SemiRingEqSignature for R {}
 
 #[signature_meta_trait]
-pub trait RingUnitsSignature: RingSignature + MultiplicativeMonoidUnitsSignature {}
-impl<Ring: RingSignature + MultiplicativeMonoidUnitsSignature> RingUnitsSignature for Ring {}
-
-#[signature_meta_trait]
-pub trait AdditiveGroupSignature: CancellativeAdditionSignature {
-    fn neg(&self, a: &Self::Set) -> Self::Set;
-
-    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.add(a, &self.neg(b))
-    }
-}
+pub trait RingUnitsSignature: RingSignature + TryReciprocalSignature {}
+impl<Ring: RingSignature + TryReciprocalSignature> RingUnitsSignature for Ring {}
 
 #[signature_meta_trait]
 pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
@@ -430,18 +550,22 @@ impl<R: RingSignature + EqSignature> RingEqSignature for R {}
 
 #[signature_meta_trait]
 pub trait IntegralDomainSignature:
-    RingUnitsSignature + MultiplicativeIntegralMonoidSignature + EqSignature
+    RingSignature
+    + TryReciprocalSignature
+    + MultiplicativeIntegralMonoidSignature
+    + CancellativeMultiplicationSignature
+    + EqSignature
 {
     fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
         let n = Fraction::numerator(x);
         let d = Fraction::denominator(x);
         debug_assert!(!d.is_zero());
-        self.try_div(&self.from_int(n), &self.from_nat(d))
+        self.try_divide(&self.from_int(n), &self.from_nat(d))
     }
 }
 
 #[signature_meta_trait]
-pub trait FavoriteAssociateSignature: MultiplicativeMonoidUnitsSignature + EqSignature {
+pub trait FavoriteAssociateSignature: TryReciprocalSignature + EqSignature {
     //For associate class of elements, choose a unique representative
     //write self=unit*assoc and return (unit, assoc)
     //0 is required to return (1, 0)
@@ -487,7 +611,7 @@ pub trait FiniteUnitsSignature: RingSignature {
     }
 }
 
-impl<R: RingSignature + MultiplicativeMonoidUnitsSignature> FiniteUnitsSignature for R
+impl<R: RingSignature + TryReciprocalSignature> FiniteUnitsSignature for R
 where
     for<'a> MultiplicativeMonoidUnitsStructure<R, &'a R>: FiniteSetSignature<Set = R::Set>,
 {
@@ -514,7 +638,7 @@ pub trait GreatestCommonDivisorSignature:
         if self.is_zero(x) && self.is_zero(y) {
             self.zero()
         } else {
-            self.try_div(&self.mul(x, y), &self.gcd(x, y)).unwrap()
+            self.try_divide(&self.mul(x, y), &self.gcd(x, y)).unwrap()
         }
     }
     fn lcm_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
@@ -536,7 +660,7 @@ pub trait BezoutDomainSignature: GreatestCommonDivisorSignature {
             0 => (self.zero(), vec![]),
             1 => {
                 let (unit, assoc) = self.factor_fav_assoc(elems[0]);
-                (assoc, vec![self.try_inv(&unit).unwrap()])
+                (assoc, vec![self.try_reciprocal(&unit).unwrap()])
             }
             2 => {
                 let (g, x, y) = self.xgcd(elems[0], elems[1]);
@@ -625,8 +749,8 @@ pub trait EuclideanDivisionSignature: SemiRingEqSignature {
         debug_assert!(self.is_unit(&unit));
         let (g, a, b) = (
             ass_x,
-            self.try_div(&pa, &unit).unwrap(),
-            self.try_div(&pb, &unit).unwrap(),
+            self.try_divide(&pa, &unit).unwrap(),
+            self.try_divide(&pb, &unit).unwrap(),
         );
         // println!("{:?} = {:?} * {:?} + {:?} * {:?}", g, a, orig_x, b, orig_y);
         debug_assert!(self.equal(
@@ -677,7 +801,7 @@ impl<FS: FieldSignature> EuclideanDivisionSignature for FS {
         if self.is_zero(b) {
             None
         } else {
-            Some((self.try_div(a, b).unwrap(), self.zero()))
+            Some((self.try_divide(a, b).unwrap(), self.zero()))
         }
     }
 }

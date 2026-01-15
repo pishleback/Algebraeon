@@ -6,11 +6,13 @@ use crate::{
     continued_fraction::{SimpleContinuedFraction, ToSimpleContinuedFractionSignature},
     structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
-        CancellativeAdditionSignature, ComplexSubsetSignature,
-        MetaMultiplicativeMonoidUnitsSignature, MetaRealRoundingSignature, MetaRealSubsetSignature,
-        MultiplicationSignature, MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature,
-        OneSignature, RealRoundingSignature, RealSubsetSignature, RingSignature,
-        RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature, ZeroSignature,
+        CancellativeAdditionSignature, CommutativeMultiplicationSignature, ComplexSubsetSignature,
+        LeftDistributiveMultiplicationOverAddition, MetaRealRoundingSignature,
+        MetaRealSubsetSignature, MetaTryReciprocalSignature, MultiplicationSignature,
+        MultiplicativeAbsorptionMonoidSignature, MultiplicativeMonoidSignature, OneSignature,
+        RealRoundingSignature, RealSubsetSignature, RightDistributiveMultiplicationOverAddition,
+        RingSignature, RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature,
+        TryReciprocalSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};
@@ -259,7 +261,15 @@ impl MultiplicationSignature for RealApproximatePointCanonicalStructure {
     }
 }
 
+impl CommutativeMultiplicationSignature for RealApproximatePointCanonicalStructure {}
+
 impl MultiplicativeMonoidSignature for RealApproximatePointCanonicalStructure {}
+
+impl MultiplicativeAbsorptionMonoidSignature for RealApproximatePointCanonicalStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for RealApproximatePointCanonicalStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for RealApproximatePointCanonicalStructure {}
 
 impl SemiRingSignature for RealApproximatePointCanonicalStructure {}
 
@@ -277,7 +287,7 @@ impl RealApproximatePointInterface for InvPoint {
             let nbd = self.pt.lock().rational_interval_neighbourhood();
             match nbd {
                 Subset::Singleton(rational) => {
-                    return Subset::Singleton(rational.try_inv().expect(
+                    return Subset::Singleton(rational.try_reciprocal().expect(
                         "\
 Inverse called on an approximate value which later turned out to be exactly 0.",
                     ));
@@ -289,8 +299,8 @@ Inverse called on an approximate value which later turned out to be exactly 0.",
                         (std::cmp::Ordering::Less, std::cmp::Ordering::Less)
                         | (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater) => {
                             return Subset::Interval(RationalInterval::new_unchecked(
-                                b.try_inv().unwrap(),
-                                a.try_inv().unwrap(),
+                                b.try_reciprocal().unwrap(),
+                                a.try_reciprocal().unwrap(),
                             ));
                         }
                         _ => {
@@ -307,14 +317,14 @@ Inverse called on an approximate value which later turned out to be exactly 0.",
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for RealApproximatePointCanonicalStructure {
+impl TryReciprocalSignature for RealApproximatePointCanonicalStructure {
     /// # Warning
     /// May fail to halt if the input is zero.
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         let nbd = a.lock().rational_interval_neighbourhood();
         match nbd {
             Subset::Singleton(rational) => Some(RealApproximatePoint::new(RationalPoint {
-                x: rational.try_inv()?,
+                x: rational.try_reciprocal()?,
             })),
             Subset::Interval(_) => Some(RealApproximatePoint::new(InvPoint { pt: a.clone() })),
         }

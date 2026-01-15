@@ -67,7 +67,15 @@ impl MultiplicationSignature for RationalCanonicalStructure {
     }
 }
 
+impl CommutativeMultiplicationSignature for RationalCanonicalStructure {}
+
 impl MultiplicativeMonoidSignature for RationalCanonicalStructure {}
+
+impl MultiplicativeAbsorptionMonoidSignature for RationalCanonicalStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for RationalCanonicalStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for RationalCanonicalStructure {}
 
 impl SemiRingSignature for RationalCanonicalStructure {}
 
@@ -83,14 +91,14 @@ impl CharacteristicSignature for RationalCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for RationalCanonicalStructure {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.try_div(&self.one(), a)
+impl TryReciprocalSignature for RationalCanonicalStructure {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_divide(&self.one(), a)
     }
 }
 
-impl MultiplicativeIntegralMonoidSignature for RationalCanonicalStructure {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+impl CancellativeMultiplicationSignature for RationalCanonicalStructure {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         if b == &Rational::ZERO {
             None
         } else {
@@ -98,6 +106,8 @@ impl MultiplicativeIntegralMonoidSignature for RationalCanonicalStructure {
         }
     }
 }
+
+impl MultiplicativeIntegralMonoidSignature for RationalCanonicalStructure {}
 
 impl IntegralDomainSignature for RationalCanonicalStructure {}
 

@@ -5,12 +5,14 @@ use crate::{
     },
     structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
-        CancellativeAdditionSignature, CharZeroRingSignature, CharacteristicSignature,
-        DedekindDomainSignature, IntegralDomainSignature, MetaCharZeroRingSignature,
-        MultiplicationSignature, MultiplicativeIntegralMonoidSignature,
-        MultiplicativeMonoidSignature, MultiplicativeMonoidUnitsSignature, OneSignature,
+        CancellativeAdditionSignature, CancellativeMultiplicationSignature, CharZeroRingSignature,
+        CharacteristicSignature, CommutativeMultiplicationSignature, DedekindDomainSignature,
+        IntegralDomainSignature, LeftDistributiveMultiplicationOverAddition,
+        MetaCharZeroRingSignature, MultiplicationSignature,
+        MultiplicativeAbsorptionMonoidSignature, MultiplicativeIntegralMonoidSignature,
+        MultiplicativeMonoidSignature, OneSignature, RightDistributiveMultiplicationOverAddition,
         RingSignature, RinglikeSpecializationSignature, SemiModuleSignature, SemiRingSignature,
-        TryNegateSignature, ZeroSignature,
+        TryNegateSignature, TryReciprocalSignature, ZeroSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
@@ -139,7 +141,27 @@ impl<D: BorrowedSet<Integer>> MultiplicationSignature for QuadraticRingOfInteger
     }
 }
 
+impl<D: BorrowedSet<Integer>> CommutativeMultiplicationSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
+}
+
 impl<D: BorrowedSet<Integer>> MultiplicativeMonoidSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
+}
+
+impl<D: BorrowedSet<Integer>> MultiplicativeAbsorptionMonoidSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
+}
+
+impl<D: BorrowedSet<Integer>> LeftDistributiveMultiplicationOverAddition
+    for QuadraticRingOfIntegersStructure<D>
+{
+}
+
+impl<D: BorrowedSet<Integer>> RightDistributiveMultiplicationOverAddition
     for QuadraticRingOfIntegersStructure<D>
 {
 }
@@ -148,13 +170,24 @@ impl<D: BorrowedSet<Integer>> SemiRingSignature for QuadraticRingOfIntegersStruc
 
 impl<D: BorrowedSet<Integer>> RingSignature for QuadraticRingOfIntegersStructure<D> {}
 
-impl<D: BorrowedSet<Integer>> MultiplicativeMonoidUnitsSignature
-    for QuadraticRingOfIntegersStructure<D>
-{
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        let b = self.anf().try_inv(a)?;
+impl<D: BorrowedSet<Integer>> TryReciprocalSignature for QuadraticRingOfIntegersStructure<D> {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        let b = self.anf().try_reciprocal(a)?;
         if self.anf().is_algebraic_integer(&b) {
             Some(b)
+        } else {
+            None
+        }
+    }
+}
+
+impl<D: BorrowedSet<Integer>> CancellativeMultiplicationSignature
+    for QuadraticRingOfIntegersStructure<D>
+{
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        let d = self.anf().try_divide(a, b)?;
+        if self.anf().is_algebraic_integer(&d) {
+            Some(d)
         } else {
             None
         }
@@ -164,14 +197,6 @@ impl<D: BorrowedSet<Integer>> MultiplicativeMonoidUnitsSignature
 impl<D: BorrowedSet<Integer>> MultiplicativeIntegralMonoidSignature
     for QuadraticRingOfIntegersStructure<D>
 {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        let d = self.anf().try_div(a, b)?;
-        if self.anf().is_algebraic_integer(&d) {
-            Some(d)
-        } else {
-            None
-        }
-    }
 }
 
 impl<D: BorrowedSet<Integer>> IntegralDomainSignature for QuadraticRingOfIntegersStructure<D> {}

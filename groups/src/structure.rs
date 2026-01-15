@@ -34,22 +34,34 @@ pub trait CommutativeCompositionSignature: CompositionSignature {}
 /// When `compose(a, x)` = `compose(a, y)` implies `x` = `y` for all `a`, `x`, `y`.
 #[signature_meta_trait]
 pub trait LeftCancellativeCompositionSignature: CompositionSignature {
-    /// Try to find `x` such that `a` = `compose(b, x).`
+    /// Try to find `x` such that `a` = `compose(b, x)`.
     fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
 }
 
 /// When `compose(x, a)` = `compose(y, a)` implies `x` = `y` for all `a`, `x`, `y`.
 #[signature_meta_trait]
 pub trait RightCancellativeCompositionSignature: CompositionSignature {
-    /// Try to find `x` such that `a` = `compose(x, b).`
+    /// Try to find `x` such that `a` = `compose(x, b)`.
     fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
 }
 
 #[signature_meta_trait]
-pub trait CancellativeCompositionSignature: CompositionSignature {}
-impl<S: LeftCancellativeCompositionSignature + RightCancellativeCompositionSignature>
-    CancellativeCompositionSignature for S
+pub trait CancellativeCompositionSignature:
+    CommutativeCompositionSignature
+    + LeftCancellativeCompositionSignature
+    + RightCancellativeCompositionSignature
 {
+    fn try_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+}
+impl<S: CancellativeCompositionSignature> LeftCancellativeCompositionSignature for S {
+    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.try_difference(a, b)
+    }
+}
+impl<S: CancellativeCompositionSignature> RightCancellativeCompositionSignature for S {
+    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.try_difference(a, b)
+    }
 }
 
 /// A set with a special element `e` called the identity element.
@@ -83,11 +95,21 @@ pub trait TryInverseSignature: IdentitySignature + CompositionSignature {
     fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
 }
 
+impl<S: TryInverseSignature + CommutativeCompositionSignature> TryLeftInverseSignature for S {
+    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_inverse(a)
+    }
+}
+
+impl<S: TryInverseSignature + CommutativeCompositionSignature> TryRightInverseSignature for S {
+    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_inverse(a)
+    }
+}
+
 /// When `compose(x, e)` = `compose(e, x)` = `x` for all `x`.
 #[signature_meta_trait]
-pub trait MonoidSignature:
-    IdentitySignature + AssociativeCompositionSignature + TryInverseSignature
-{
+pub trait MonoidSignature: IdentitySignature + AssociativeCompositionSignature {
     fn compose_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
         if elems.is_empty() {
             self.identity()
@@ -252,8 +274,14 @@ pub trait GroupSignature:
 }
 
 #[signature_meta_trait]
-pub trait AbelianGroupSignature: GroupSignature + CommutativeCompositionSignature {}
-impl<S: GroupSignature + CommutativeCompositionSignature> AbelianGroupSignature for S {}
+pub trait AbelianGroupSignature:
+    GroupSignature + CommutativeCompositionSignature + CancellativeCompositionSignature
+{
+}
+impl<S: GroupSignature + CommutativeCompositionSignature + CancellativeCompositionSignature>
+    AbelianGroupSignature for S
+{
+}
 
 #[derive(Debug, Clone)]
 pub struct FiniteSubgroup<Set> {

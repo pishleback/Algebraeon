@@ -5,12 +5,11 @@ use crate::{
         Polynomial, PolynomialQuotientRingStructure, PolynomialStructure, ToPolynomialSignature,
     },
     structure::{
-        AdditiveGroupSignature, CharZeroFieldSignature, FactoringMonoidSignature,
-        FiniteDimensionalFieldExtension, FreeModuleSignature,
+        AdditiveGroupSignature, CancellativeMultiplicationSignature, CharZeroFieldSignature,
+        FactoringMonoidSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
         IntegralDomainExtensionAllPolynomialRoots, MetaAdditiveMonoidSignature,
-        MetaFactoringMonoid, MetaMultiplicationSignature, MultiplicativeIntegralMonoidSignature,
-        PrincipalRationalMap, RingHomomorphism, RingHomomorphismRangeModuleStructure,
-        RingToQuotientFieldSignature, ZeroEqSignature,
+        MetaFactoringMonoid, MetaMultiplicationSignature, PrincipalRationalMap, RingHomomorphism,
+        RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature, ZeroEqSignature,
     },
 };
 use algebraeon_nzq::{
@@ -270,7 +269,9 @@ impl
                         let a = anf.polynomials().coeff(&factor, 0);
                         let b = anf.polynomials().coeff(&factor, 1);
                         Some(vec![
-                            anf.neg(&anf.try_div(a.as_ref(), b.as_ref()).unwrap());
+                            anf.neg(
+                                &anf.try_divide(a.as_ref(), b.as_ref()).unwrap()
+                            );
                             power.try_into().unwrap()
                         ])
                     }

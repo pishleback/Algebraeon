@@ -250,33 +250,17 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 }
 
 impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    MultiplicativeMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+    CommutativeMultiplicationSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
-}
-
-impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
-    SemiRingSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
-{
-}
-
-impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> RingSignature
-    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
-{
-    fn is_reduced(&self) -> Result<bool, String> {
-        if IS_FIELD {
-            return Ok(true);
-        }
-        Err("not implemented yet: is_reduced for quotient rings that are not fields".to_string())
-    }
 }
 
 impl<
     RS: EuclideanDomainSignature + FavoriteAssociateSignature,
     RSB: BorrowedStructure<RS>,
     const IS_FIELD: bool,
-> MultiplicativeMonoidUnitsSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+> TryReciprocalSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
 {
-    fn try_inv(&self, x: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, x: &Self::Set) -> Option<Self::Set> {
         if self.is_zero(x) {
             None
         } else {
@@ -298,12 +282,56 @@ impl<
     }
 }
 
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    MultiplicativeMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
+}
+
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    MultiplicativeAbsorptionMonoidSignature
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
+}
+
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    LeftDistributiveMultiplicationOverAddition
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
+}
+
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    RightDistributiveMultiplicationOverAddition
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
+}
+
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool>
+    SemiRingSignature for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
+}
+
+impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: bool> RingSignature
+    for EuclideanRemainderQuotientStructure<RS, RSB, IS_FIELD>
+{
+    fn is_reduced(&self) -> Result<bool, String> {
+        if IS_FIELD {
+            return Ok(true);
+        }
+        Err("not implemented yet: is_reduced for quotient rings that are not fields".to_string())
+    }
+}
+
+impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
+    CancellativeMultiplicationSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
+{
+    fn try_divide(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
+        Some(self.mul(top, &self.try_reciprocal(bot)?))
+    }
+}
+
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
     MultiplicativeIntegralMonoidSignature for EuclideanRemainderQuotientStructure<RS, RSB, true>
 {
-    fn try_div(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
-        Some(self.mul(top, &self.try_inv(bot)?))
-    }
 }
 
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStructure<RS>>
@@ -327,9 +355,13 @@ mod tests {
             EuclideanRemainderQuotientStructure::new_field(Integer::structure(), Integer::from(5))
                 .unwrap();
 
-        assert!(mod5.equal(
-            &mod5.try_div(&Integer::from(3), &Integer::from(2)).unwrap(),
-            &Integer::from(9)
-        ));
+        assert!(
+            mod5.equal(
+                &mod5
+                    .try_divide(&Integer::from(3), &Integer::from(2))
+                    .unwrap(),
+                &Integer::from(9)
+            )
+        );
     }
 }

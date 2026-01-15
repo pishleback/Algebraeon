@@ -17,7 +17,7 @@ In that case the solution (or lack thereof) to \\(a = b \circ x\\) for \\(x\\) g
  - `RightCancellativeComposition : Composition` when 
 \\[x \circ a = y \circ a \implies x = y \quad \forall a, x, y \in X\\]
 In that case the solution (or lack thereof) to \\(a = x \circ b\\) for \\(x\\) given \\(a\\) and \\(b\\) is unique whenever it exists and is computed using `.try_right_difference(a: X, b: X) -> Option<X>`.
- - `CancellativeComposition := CommutativeComposition + LeftCancellativeComposition + RightCancellativeComposition`. `.try_difference(a: X, b: X) -> Option<X>` can be used as an alias for `try_left_difference` and (equivalently) `try_right_difference`.
+ - `CancellativeComposition : Composition`. `.try_difference(a: X, b: X) -> Option<X>`.
 
 ## Identity
 
@@ -25,8 +25,8 @@ In that case the solution (or lack thereof) to \\(a = x \circ b\\) for \\(x\\) g
  - `TryLeftInverse : Identity + Composition` when the solution to \\[x \circ a = e\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_left_inverse(a: X) -> Option<X>`.
  - `TryRightInverse : Identity + Composition` when the solution to \\[a \circ x = e\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_right_inverse(a: X) -> Option<X>`.
  - `TryInverse: Identity + Composition` when the solution to \\[x \circ a = a \circ x = e\\] for \\(x\\) given \\(a\\) is unique whenever it exists. The solution (or lack thereof) is computed using `.try_inverse(a: X) -> Option<X>`.
- - `Monoid : Identity + AssociativeComposition + TryInverse` when 
+ - `Monoid : Identity + AssociativeComposition` when 
 \\[a \circ e = e \circ a = a \quad \forall a \in X\\]
  - `Group : TryInverse + TryLeftInverse + TryRightInverse + LeftCancellativeComposition + RightCancellativeComposition` when every element has an inverse. Left-, right-, and two-sided-inverses all coencide in this case and are computed using `.inverse(a: X) -> X`.
- - `AbelianGroup := Group + CommutativeComposition`.
+ - `AbelianGroup := Group + CommutativeComposition + CancellativeComposition`.
 

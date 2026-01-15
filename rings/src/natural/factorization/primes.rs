@@ -18,7 +18,7 @@ pub enum InconclusivePrimalityTestResult {
     },
 }
 
-pub fn try_divisors_primality_test(n: &Natural) -> PrimalityTestResult {
+pub fn try_divideisors_primality_test(n: &Natural) -> PrimalityTestResult {
     if *n == Natural::ZERO {
         PrimalityTestResult::Zero
     } else if *n == Natural::ONE {
@@ -243,7 +243,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 if g != Natural::ONE {
                     return if g == *n {
                         // b and thus also n=g is small, so we can do a naive test
-                        try_divisors_primality_test(n)
+                        try_divideisors_primality_test(n)
                     } else {
                         PrimalityTestResult::Composite
                     };
@@ -259,7 +259,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     if g != Natural::ONE {
                         return if g == *n {
                             // bi*bj-1 and thus also n=g is small, so we can do a naive test
-                            try_divisors_primality_test(n)
+                            try_divideisors_primality_test(n)
                         } else {
                             PrimalityTestResult::Composite
                         };
@@ -276,7 +276,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                     if g != Natural::ONE {
                         return if g == *n {
                             // bj-bi and thus also n=g is small, so we can do a naive test
-                            try_divisors_primality_test(n)
+                            try_divideisors_primality_test(n)
                         } else {
                             PrimalityTestResult::Composite
                         };
@@ -409,14 +409,14 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
 }
 
 pub fn primality_test(n: &Natural) -> PrimalityTestResult {
-    let small_divisor_limit = Natural::from(1000u32);
-    if n <= &small_divisor_limit {
+    let small_divideisor_limit = Natural::from(1000u32);
+    if n <= &small_divideisor_limit {
         // Determine the primality of n by trying small divisors
-        try_divisors_primality_test(n)
+        try_divideisors_primality_test(n)
     } else {
         // Try to show n is composite by finding small divisors
         let mut d = Natural::TWO;
-        while d < small_divisor_limit {
+        while d < small_divideisor_limit {
             if n % &d == Natural::ZERO {
                 return PrimalityTestResult::Composite;
             }
@@ -507,33 +507,33 @@ mod tests {
     }
 
     #[test]
-    fn test_try_divisors_primality_test() {
+    fn test_try_divideisors_primality_test() {
         assert_eq!(
-            try_divisors_primality_test(&0u32.into()),
+            try_divideisors_primality_test(&0u32.into()),
             PrimalityTestResult::Zero
         );
         assert_eq!(
-            try_divisors_primality_test(&1u32.into()),
+            try_divideisors_primality_test(&1u32.into()),
             PrimalityTestResult::One
         );
         assert_eq!(
-            try_divisors_primality_test(&2u32.into()),
+            try_divideisors_primality_test(&2u32.into()),
             PrimalityTestResult::Prime
         );
         assert_eq!(
-            try_divisors_primality_test(&3u32.into()),
+            try_divideisors_primality_test(&3u32.into()),
             PrimalityTestResult::Prime
         );
         assert_eq!(
-            try_divisors_primality_test(&4u32.into()),
+            try_divideisors_primality_test(&4u32.into()),
             PrimalityTestResult::Composite
         );
         assert_eq!(
-            try_divisors_primality_test(&5u32.into()),
+            try_divideisors_primality_test(&5u32.into()),
             PrimalityTestResult::Prime
         );
         assert_eq!(
-            try_divisors_primality_test(&6u32.into()),
+            try_divideisors_primality_test(&6u32.into()),
             PrimalityTestResult::Composite
         );
     }

@@ -206,7 +206,15 @@ impl<const N: usize> MultiplicationSignature for ModuloCanonicalStructure<N> {
     }
 }
 
+impl<const N: usize> CommutativeMultiplicationSignature for ModuloCanonicalStructure<N> {}
+
 impl<const N: usize> MultiplicativeMonoidSignature for ModuloCanonicalStructure<N> {}
+
+impl<const N: usize> MultiplicativeAbsorptionMonoidSignature for ModuloCanonicalStructure<N> {}
+
+impl<const N: usize> LeftDistributiveMultiplicationOverAddition for ModuloCanonicalStructure<N> {}
+
+impl<const N: usize> RightDistributiveMultiplicationOverAddition for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {}
 
@@ -218,8 +226,8 @@ impl<const N: usize> CharacteristicSignature for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> MultiplicativeMonoidUnitsSignature for ModuloCanonicalStructure<N> {
-    fn try_inv(&self, x: &Self::Set) -> Option<Self::Set> {
+impl<const N: usize> TryReciprocalSignature for ModuloCanonicalStructure<N> {
+    fn try_reciprocal(&self, x: &Self::Set) -> Option<Self::Set> {
         if x == &self.zero() {
             None
         } else {
@@ -248,11 +256,13 @@ impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
 
 macro_rules! impl_field {
     ($N: literal) => {
-        impl MultiplicativeIntegralMonoidSignature for ModuloCanonicalStructure<$N> {
-            fn try_div(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
-                Some(self.mul(top, &self.try_inv(bot)?))
+        impl CancellativeMultiplicationSignature for ModuloCanonicalStructure<$N> {
+            fn try_divide(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
+                Some(self.mul(top, &self.try_reciprocal(bot)?))
             }
         }
+
+        impl MultiplicativeIntegralMonoidSignature for ModuloCanonicalStructure<$N> {}
 
         impl IntegralDomainSignature for ModuloCanonicalStructure<$N> {}
 

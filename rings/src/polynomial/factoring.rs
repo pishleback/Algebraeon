@@ -45,8 +45,8 @@ where
         let f_prime = self.derivative(f.clone());
         let mut i: usize = 1;
         let mut a = self.gcd_by_primitive_subresultant(f.clone(), f_prime.clone());
-        let mut b = self.try_div(&f, &a).unwrap();
-        let mut c = self.try_div(&f_prime, &a).unwrap();
+        let mut b = self.try_divide(&f, &a).unwrap();
+        let mut c = self.try_divide(&f_prime, &a).unwrap();
         let mut d = self.add(&self.neg(&self.derivative(b.clone())), &c);
 
         while self.degree(&f).unwrap() != 0 {
@@ -60,10 +60,13 @@ where
                     .pow(&primitive_sqfree_factorize(a.clone()), &Natural::from(i)),
             );
             f = self
-                .try_div(&f, &self.nat_pow(&a, &Natural::from(i)))
+                .try_divide(&f, &self.nat_pow(&a, &Natural::from(i)))
                 .unwrap();
 
-            (b, c) = (self.try_div(&b, &a).unwrap(), self.try_div(&d, &a).unwrap());
+            (b, c) = (
+                self.try_divide(&b, &a).unwrap(),
+                self.try_divide(&d, &a).unwrap(),
+            );
             i += 1;
             d = self.add(&self.neg(&self.derivative(b.clone())), &c);
         }
@@ -103,7 +106,7 @@ where
             #[allow(clippy::redundant_else)]
             if self.coeff_ring().is_zero(c0.as_ref()) {
                 //linear factor of x
-                f = self.try_div(&f, &self.var()).unwrap();
+                f = self.try_divide(&f, &self.var()).unwrap();
                 linear_factors = self.factorizations().mul(
                     &linear_factors,
                     &self.factorizations().new_irreducible_unchecked(self.var()),
@@ -124,7 +127,7 @@ where
                             //try the linear factor (a+bx)
                             let lin = Polynomial::from_coeffs(vec![a.clone(), b]);
                             debug_assert!(!self.is_zero(&lin));
-                            if let Some(new_f) = self.try_div(&f, &lin) {
+                            if let Some(new_f) = self.try_divide(&f, &lin) {
                                 f = new_f;
                                 linear_factors = self.factorizations().mul(
                                     &linear_factors,
@@ -189,7 +192,7 @@ where
 
             //compute all factors of each y value. choose the y with the most divisors to only factor up to units
             f_points.sort_by_cached_key(|(_x, yf)| {
-                self.coeff_ring().factorizations().count_divisors(yf)
+                self.coeff_ring().factorizations().count_divideisors(yf)
             });
             let _ = f_points.split_off(max_factor_degree + 1);
             //possible_g_points is (x, possible_y_values)
@@ -198,26 +201,28 @@ where
                 .rev()
                 .enumerate()
                 .map(|(i, (x, yf))| {
-                    let mut y_divs = vec![];
+                    let mut y_divides = vec![];
                     for d in self.coeff_ring().factorizations().divisors(&yf).unwrap() {
                         if i == 0 {
                             //take divisors up to associates for one, because we only care about g up to associates
-                            y_divs.push(d);
+                            y_divides.push(d);
                         } else {
                             //take _all_ divisors for the rest
                             for u in self.coeff_ring().all_units() {
-                                y_divs.push(self.coeff_ring().mul(&u, &d));
+                                y_divides.push(self.coeff_ring().mul(&u, &d));
                             }
                         }
                     }
-                    (x, y_divs)
+                    (x, y_divides)
                 })
                 .collect();
 
             for possible_g_points in itertools::Itertools::multi_cartesian_product(
-                all_possible_g_points
-                    .into_iter()
-                    .map(|(x, y_divs)| y_divs.into_iter().map(move |y_div| (x.clone(), y_div))),
+                all_possible_g_points.into_iter().map(|(x, y_divides)| {
+                    y_divides
+                        .into_iter()
+                        .map(move |y_divide| (x.clone(), y_divide))
+                }),
             ) {
                 // println!("{:?}", possible_g_points);
                 if let Some(g) = self.interpolate_by_lagrange_basis(&possible_g_points)
@@ -225,7 +230,7 @@ where
                 {
                     //g is a possible proper divisor of f
                     debug_assert!(!self.is_zero(&g));
-                    if let Some(h) = self.try_div(f, &g) {
+                    if let Some(h) = self.try_divide(f, &g) {
                         //g really is a proper divisor of f
                         return FindFactorResult::Composite(g, h);
                     }
@@ -393,7 +398,7 @@ where
                 coeffs.push(self.coeff_ring().one());
                 let g = Polynomial::from_coeffs(coeffs);
                 debug_assert!(!self.is_zero(&g));
-                if let Some(h) = self.try_div(&f, &g) {
+                if let Some(h) = self.try_divide(&f, &g) {
                     return FindFactorResult::Composite(g, h);
                 }
             }

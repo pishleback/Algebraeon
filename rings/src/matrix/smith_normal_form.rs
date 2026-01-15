@@ -64,17 +64,17 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                 self.ring().clone(),
                 ElementaryOppType::UnitMul {
                     row: n,
-                    unit: self.ring().try_inv(&unit).unwrap(),
+                    unit: self.ring().try_reciprocal(&unit).unwrap(),
                 },
             );
             row_opp.apply(&mut m);
             row_opp.apply(&mut u);
 
             let mut first = true;
-            let mut all_divisible;
+            let mut all_divideisible;
             'zero_first_row_and_column_loop: loop {
                 //replace the first row (a0, a1, ..., ak) with (gcd, 0, ..., 0). Might mess up the first column in the process
-                all_divisible = true;
+                all_divideisible = true;
                 for c in n + 1..m.cols() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(n, c).unwrap();
@@ -89,7 +89,7 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                         col_opp.apply(&mut m);
                         col_opp.apply(&mut v);
                     } else {
-                        match self.ring().try_div(b, a) {
+                        match self.ring().try_divide(b, a) {
                             Some(q) => {
                                 //b is a multiple of a
                                 //replace (a, b) with (a, 0) by subtracting a multiple of a from b
@@ -105,7 +105,7 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                                 col_opp.apply(&mut v);
                             }
                             None => {
-                                all_divisible = false;
+                                all_divideisible = false;
                                 //b is not a multiple of a
                                 //replace (a, b) with (gcd, 0)
                                 let (d, x, y) = self.ring().xgcd(a, b);
@@ -124,8 +124,8 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                                         j: c,
                                         a: x,
                                         b: y,
-                                        c: self.ring().neg(&self.ring().try_div(b, &d).unwrap()),
-                                        d: self.ring().try_div(a, &d).unwrap(),
+                                        c: self.ring().neg(&self.ring().try_divide(b, &d).unwrap()),
+                                        d: self.ring().try_divide(a, &d).unwrap(),
                                     },
                                 );
                                 col_opp.apply(&mut m);
@@ -134,13 +134,13 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                         }
                     }
                 }
-                if all_divisible && !first {
+                if all_divideisible && !first {
                     break 'zero_first_row_and_column_loop;
                 }
                 first = false;
 
                 //replace the first column (a0, a1, ..., ak) with (gcd, 0, ..., 0). Might mess up the first row in the process
-                all_divisible = true;
+                all_divideisible = true;
                 for r in n + 1..m.rows() {
                     let a = m.at(n, n).unwrap();
                     let b = m.at(r, n).unwrap();
@@ -154,7 +154,7 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                         col_opp.apply(&mut m);
                         col_opp.apply(&mut u);
                     } else {
-                        match self.ring().try_div(b, a) {
+                        match self.ring().try_divide(b, a) {
                             Some(q) => {
                                 //b is a multiple of a
                                 //replace (a, b) with (a, 0) by subtracting a multiple of a from b
@@ -170,7 +170,7 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                                 col_opp.apply(&mut u);
                             }
                             None => {
-                                all_divisible = false;
+                                all_divideisible = false;
                                 //b is not a multiple of a
                                 //replace (a, b) with (gcd, 0)
                                 let (d, x, y) = self.ring().xgcd(a, b);
@@ -189,8 +189,8 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                                         j: r,
                                         a: x,
                                         b: y,
-                                        c: self.ring().neg(&self.ring().try_div(b, &d).unwrap()),
-                                        d: self.ring().try_div(a, &d).unwrap(),
+                                        c: self.ring().neg(&self.ring().try_divide(b, &d).unwrap()),
+                                        d: self.ring().try_divide(a, &d).unwrap(),
                                     },
                                 );
                                 row_opp.apply(&mut m);
@@ -199,7 +199,7 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                         }
                     }
                 }
-                if all_divisible {
+                if all_divideisible {
                     break 'zero_first_row_and_column_loop;
                 }
             }
@@ -244,8 +244,8 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
                                 j: c,
                                 a: x,
                                 b: y,
-                                c: self.ring().neg(&self.ring().try_div(b, &g).unwrap()),
-                                d: self.ring().try_div(a, &g).unwrap(),
+                                c: self.ring().neg(&self.ring().try_divide(b, &g).unwrap()),
+                                d: self.ring().try_divide(a, &g).unwrap(),
                             },
                         );
                         col_opp.apply(&mut m);
@@ -258,7 +258,7 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
             for fix_r in n + 1..m.rows() {
                 let a = m.at(n, n).unwrap();
                 let b = m.at(fix_r, n).unwrap();
-                let q = self.ring().try_div(b, a).unwrap();
+                let q = self.ring().try_divide(b, a).unwrap();
                 let col_opp = ElementaryOpp::new_row_opp(
                     self.ring().clone(),
                     ElementaryOppType::AddRowMul {

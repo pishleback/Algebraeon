@@ -253,15 +253,33 @@ impl<Field: FieldSignature> MultiplicationSignature for QuaternionAlgebraStructu
     }
 }
 
+impl<Field: FieldSignature> CommutativeMultiplicationSignature
+    for QuaternionAlgebraStructure<Field>
+{
+}
+
 impl<Field: FieldSignature> MultiplicativeMonoidSignature for QuaternionAlgebraStructure<Field> {}
+
+impl<Field: FieldSignature> MultiplicativeAbsorptionMonoidSignature
+    for QuaternionAlgebraStructure<Field>
+{
+}
+
+impl<Field: FieldSignature> LeftDistributiveMultiplicationOverAddition
+    for QuaternionAlgebraStructure<Field>
+{
+}
+
+impl<Field: FieldSignature> RightDistributiveMultiplicationOverAddition
+    for QuaternionAlgebraStructure<Field>
+{
+}
 
 impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {}
 
-impl<Field: FieldSignature> MultiplicativeMonoidUnitsSignature
-    for QuaternionAlgebraStructure<Field>
-{
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        let n_inv = self.base.try_inv(&self.reduced_norm(a))?;
+impl<Field: FieldSignature> TryReciprocalSignature for QuaternionAlgebraStructure<Field> {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        let n_inv = self.base.try_reciprocal(&self.reduced_norm(a))?;
         Some(self.scalar_mul(&self.conjugate(a), &n_inv))
     }
 

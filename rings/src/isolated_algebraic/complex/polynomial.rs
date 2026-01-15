@@ -331,7 +331,7 @@ impl Polynomial<Integer> {
                 }
 
                 if evaluate_at_rational(&re_sqfr, s) == Rational::from(0) {
-                    re_sqfr = Polynomial::try_div(
+                    re_sqfr = Polynomial::try_divide(
                         &re_sqfr,
                         &Polynomial::from_coeffs(vec![-s.numerator(), s.denominator().into()]),
                     )
@@ -339,7 +339,7 @@ impl Polynomial<Integer> {
                 }
 
                 if evaluate_at_rational(&re_sqfr, t) == Rational::from(0) {
-                    re_sqfr = Polynomial::try_div(
+                    re_sqfr = Polynomial::try_divide(
                         &re_sqfr,
                         &Polynomial::from_coeffs(vec![-t.numerator(), t.denominator().into()]),
                     )
@@ -347,14 +347,14 @@ impl Polynomial<Integer> {
                 }
 
                 if evaluate_at_rational(&im_sqfr, s) == Rational::from(0) {
-                    im_sqfr = Polynomial::try_div(
+                    im_sqfr = Polynomial::try_divide(
                         &im_sqfr,
                         &Polynomial::from_coeffs(vec![-s.numerator(), s.denominator().into()]),
                     )
                     .unwrap();
                 }
                 if evaluate_at_rational(&im_sqfr, t) == Rational::from(0) {
-                    im_sqfr = Polynomial::try_div(
+                    im_sqfr = Polynomial::try_divide(
                         &im_sqfr,
                         &Polynomial::from_coeffs(vec![-t.numerator(), t.denominator().into()]),
                     )

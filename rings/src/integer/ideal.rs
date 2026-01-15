@@ -95,7 +95,27 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicationSignature
     }
 }
 
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> CommutativeMultiplicationSignature
+    for IntegerIdealsStructure<B>
+{
+}
+
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicativeMonoidSignature
+    for IntegerIdealsStructure<B>
+{
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicativeAbsorptionMonoidSignature
+    for IntegerIdealsStructure<B>
+{
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> LeftDistributiveMultiplicationOverAddition
+    for IntegerIdealsStructure<B>
+{
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> RightDistributiveMultiplicationOverAddition
     for IntegerIdealsStructure<B>
 {
 }
@@ -142,11 +162,11 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
 {
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicativeMonoidUnitsSignature
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryReciprocalSignature
     for IntegerIdealsStructure<B>
 {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.factorization_exponents().try_inv(a)
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.factorization_exponents().try_reciprocal(a)
     }
 }
 

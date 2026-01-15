@@ -871,7 +871,15 @@ impl MultiplicationSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
+impl CommutativeMultiplicationSignature for ComplexAlgebraicCanonicalStructure {}
+
 impl MultiplicativeMonoidSignature for ComplexAlgebraicCanonicalStructure {}
+
+impl MultiplicativeAbsorptionMonoidSignature for ComplexAlgebraicCanonicalStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for ComplexAlgebraicCanonicalStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for ComplexAlgebraicCanonicalStructure {}
 
 impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {}
 
@@ -887,13 +895,13 @@ impl CharacteristicSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
+impl TryReciprocalSignature for ComplexAlgebraicCanonicalStructure {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         // println!("inv {:?}", a);
         // a.check_invariants().unwrap();
 
         match a {
-            ComplexAlgebraic::Real(a) => Some(ComplexAlgebraic::Real(a.try_inv()?)),
+            ComplexAlgebraic::Real(a) => Some(ComplexAlgebraic::Real(a.try_reciprocal()?)),
             ComplexAlgebraic::Complex(a) => {
                 let mut root = a.clone();
 
@@ -1002,11 +1010,13 @@ impl MultiplicativeMonoidUnitsSignature for ComplexAlgebraicCanonicalStructure {
     }
 }
 
-impl MultiplicativeIntegralMonoidSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        Some(self.mul(a, &self.try_inv(b)?))
+impl CancellativeMultiplicationSignature for ComplexAlgebraicCanonicalStructure {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
+
+impl MultiplicativeIntegralMonoidSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl IntegralDomainSignature for ComplexAlgebraicCanonicalStructure {}
 
@@ -1236,7 +1246,7 @@ mod tests {
 
         for root in f.all_complex_roots() {
             assert_eq!(
-                ComplexAlgebraic::mul(&root.try_inv().unwrap(), &root),
+                ComplexAlgebraic::mul(&root.try_reciprocal().unwrap(), &root),
                 ComplexAlgebraic::one()
             );
         }

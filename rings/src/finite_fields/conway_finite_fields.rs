@@ -142,7 +142,15 @@ impl MultiplicationSignature for ConwayFiniteFieldStructure {
     }
 }
 
+impl CommutativeMultiplicationSignature for ConwayFiniteFieldStructure {}
+
 impl MultiplicativeMonoidSignature for ConwayFiniteFieldStructure {}
+
+impl MultiplicativeAbsorptionMonoidSignature for ConwayFiniteFieldStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for ConwayFiniteFieldStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for ConwayFiniteFieldStructure {}
 
 impl SemiRingSignature for ConwayFiniteFieldStructure {}
 
@@ -166,17 +174,19 @@ impl CharacteristicSignature for ConwayFiniteFieldStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for ConwayFiniteFieldStructure {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.structure.try_inv(a)
+impl TryReciprocalSignature for ConwayFiniteFieldStructure {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.structure.try_reciprocal(a)
     }
 }
 
-impl MultiplicativeIntegralMonoidSignature for ConwayFiniteFieldStructure {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        self.structure.try_div(a, b)
+impl CancellativeMultiplicationSignature for ConwayFiniteFieldStructure {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+        self.structure.try_divide(a, b)
     }
 }
+
+impl MultiplicativeIntegralMonoidSignature for ConwayFiniteFieldStructure {}
 
 impl IntegralDomainSignature for ConwayFiniteFieldStructure {}
 

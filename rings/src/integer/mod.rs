@@ -76,7 +76,15 @@ impl MultiplicationSignature for IntegerCanonicalStructure {
     }
 }
 
+impl CommutativeMultiplicationSignature for IntegerCanonicalStructure {}
+
 impl MultiplicativeMonoidSignature for IntegerCanonicalStructure {}
+
+impl MultiplicativeAbsorptionMonoidSignature for IntegerCanonicalStructure {}
+
+impl LeftDistributiveMultiplicationOverAddition for IntegerCanonicalStructure {}
+
+impl RightDistributiveMultiplicationOverAddition for IntegerCanonicalStructure {}
 
 impl SemiRingSignature for IntegerCanonicalStructure {}
 
@@ -92,14 +100,14 @@ impl CharacteristicSignature for IntegerCanonicalStructure {
     }
 }
 
-impl MultiplicativeMonoidUnitsSignature for IntegerCanonicalStructure {
-    fn try_inv(&self, a: &Self::Set) -> Option<Self::Set> {
-        self.try_div(&self.one(), a)
+impl TryReciprocalSignature for IntegerCanonicalStructure {
+    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+        self.try_divide(&self.one(), a)
     }
 }
 
-impl MultiplicativeIntegralMonoidSignature for IntegerCanonicalStructure {
-    fn try_div(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+impl CancellativeMultiplicationSignature for IntegerCanonicalStructure {
+    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         match self.quorem(a, b) {
             Some((q, r)) => {
                 if r == self.zero() {
@@ -112,6 +120,8 @@ impl MultiplicativeIntegralMonoidSignature for IntegerCanonicalStructure {
         }
     }
 }
+
+impl MultiplicativeIntegralMonoidSignature for IntegerCanonicalStructure {}
 
 impl IntegralDomainSignature for IntegerCanonicalStructure {}
 
