@@ -14,15 +14,14 @@ mod primitive;
 mod row_operations;
 mod smith_normal_form;
 mod symmetric_matrix;
+mod lll_reduction;
 
 pub use hermite_reduction::*;
 pub use matrix::*;
 pub use symmetric_matrix::*;
-// pub use polynomial::*;
 use row_operations::*;
-// pub use smith_normal_form::*;
-// pub use gram_schmidt::*;
 pub use jordan_normal_form::*;
+pub use lll_reduction::*;
 
 /*
 //for LLL testing from wikipeida

@@ -2,7 +2,7 @@ use std::{fmt::Debug, marker::PhantomData};
 
 use algebraeon_sets::structure::{BorrowedStructure, EqSignature, SetSignature, Signature};
 
-use crate::matrix::MatOppErr;
+use crate::matrix::{MatOppErr, Matrix};
 
 #[derive(Debug, Clone)]
 pub struct SymmetricMatrix<Set: Clone> {
@@ -27,6 +27,43 @@ impl<Set: Debug + Clone + PartialEq> SymmetricMatrix<Set> {
             elems.push(row);
         }
         Self { n, elems }
+    }
+
+    pub fn try_construct(n: usize, make_entry: impl Fn(usize, usize) -> Set) -> Option<Self> {
+        let mut elems = Vec::with_capacity(n);
+        for r in 0..n {
+            let mut row = Vec::with_capacity(r);
+            for c in 0..(r + 1) {
+                let a = make_entry(r, c);
+                #[cfg(debug_assertions)]
+                {
+                    let b = make_entry(c, r);
+                    if a != b {
+                        return None;
+                    }
+                }
+                row.push(a);
+            }
+            elems.push(row);
+        }
+        Some(Self { n, elems })
+    }
+}
+
+impl<Set: Debug + Clone + PartialEq> TryFrom<Matrix<Set>> for SymmetricMatrix<Set> {
+    type Error = ();
+
+    fn try_from(mat: Matrix<Set>) -> Result<Self, Self::Error> {
+        let n = mat.rows();
+        if n != mat.cols() {
+            return Err(());
+        }
+        if let Some(smat) = SymmetricMatrix::try_construct(n, |r, c| mat.at(r, c).unwrap().clone())
+        {
+            Ok(smat)
+        } else {
+            Err(())
+        }
     }
 }
 

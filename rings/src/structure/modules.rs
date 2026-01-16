@@ -34,7 +34,7 @@ pub trait FinitelyGeneratedModuleSignature<Ring: RingSignature>: ModuleSignature
 pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
     type Basis: SetSignature;
 
-    fn basis_set<'a>(&'a self) -> impl Borrow<Self::Basis> + 'a;
+    fn basis_set(&self) -> impl Borrow<Self::Basis>;
 
     fn to_component<'a>(
         &self,

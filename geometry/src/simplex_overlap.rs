@@ -1,10 +1,10 @@
 use crate::{ambient_space::common_space, simplex::Simplex, vector::DotProduct};
 use algebraeon_rings::{
-    matrix::{Matrix, MatrixStructure},
     linear::{
         finitely_free_module::FinitelyFreeModuleStructure,
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
     },
+    matrix::{Matrix, MatrixStructure},
     structure::{FieldSignature, OrderedRingSignature, ZeroEqSignature},
 };
 use itertools::Itertools;
