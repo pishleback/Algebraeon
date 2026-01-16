@@ -11,7 +11,7 @@ pub mod finite_fields;
 pub mod integer;
 pub mod isolated_algebraic;
 pub mod matrix;
-pub mod module;
+pub mod linear;
 pub mod natural;
 pub mod num_theory;
 pub mod parsing;

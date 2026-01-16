@@ -1,4 +1,4 @@
-use crate::module::{
+use crate::linear::{
     finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
     finitely_free_module::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
@@ -452,7 +452,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::module::finitely_free_module::RingToFinitelyFreeModuleSignature;
+    use crate::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 
     use super::*;
 

@@ -1,7 +1,7 @@
 use crate::{ambient_space::common_space, simplex::Simplex, vector::DotProduct};
 use algebraeon_rings::{
     matrix::{Matrix, MatrixStructure},
-    module::{
+    linear::{
         finitely_free_module::FinitelyFreeModuleStructure,
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
     },

@@ -4,7 +4,7 @@ use crate::{
         FullRankIntegerSubmoduleWithBasis, FullRankIntegerSubmoduleWithBasisSignature, OrderIdeal,
     },
     matrix::{Matrix, SymmetricMatrix},
-    module::{
+    linear::{
         finitely_free_module::RingToFinitelyFreeModuleSignature,
         finitely_free_submodule::FinitelyFreeSubmodule,
     },

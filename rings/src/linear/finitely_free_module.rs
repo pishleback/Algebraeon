@@ -249,7 +249,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ri
 {
     type Basis = EnumeratedFiniteSetStructure;
 
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+    fn basis_set<'a>(&'a self) -> impl std::borrow::Borrow<Self::Basis> + 'a {
         &self.basis_set
     }
 

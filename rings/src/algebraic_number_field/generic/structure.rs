@@ -1,6 +1,6 @@
 use crate::{
     algebraic_number_field::{OrderWithBasis, RingOfIntegersIntegralExtension},
-    module::finitely_free_module::{
+    linear::finitely_free_module::{
         FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
     },
     structure::{
@@ -968,7 +968,7 @@ mod anf_inclusion {
 mod integer_submodule_inclusion {
     use super::*;
     use crate::{
-        module::finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
+        linear::finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
         structure::RingSignature,
     };
     use algebraeon_sets::structure::{BorrowedMorphism, BorrowedStructure};
