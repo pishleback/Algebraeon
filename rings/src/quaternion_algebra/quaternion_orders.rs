@@ -13,7 +13,7 @@ use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
 use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
 use itertools::Itertools;
 
-// an integer sublattice and subring of a quaternion algebra over an algebraic number field
+// an integer submodule and subring of a quaternion algebra over an algebraic number field
 #[derive(Debug, Clone)]
 pub struct QuaternionOrderZBasis<ANF: AlgebraicNumberFieldSignature> {
     integers: IntegerCanonicalStructure, // so we can return a reference to it in .ring()

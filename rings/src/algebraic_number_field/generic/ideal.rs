@@ -1,5 +1,5 @@
 use crate::algebraic_number_field::{
-    FullRankSublatticeWithBasisSignature, RingOfIntegersIntegralExtensionWithIdeals,
+    FullRankIntegerSubmoduleWithBasisSignature, RingOfIntegersIntegralExtensionWithIdeals,
     RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
 use crate::{
@@ -38,7 +38,7 @@ impl OrderIdeal {
     pub fn basis(&self) -> Option<Vec<Vec<Integer>>> {
         match self {
             OrderIdeal::Zero => None,
-            OrderIdeal::NonZero(sublattice) => Some(sublattice.basis()),
+            OrderIdeal::NonZero(integer_submodule) => Some(integer_submodule.basis()),
         }
     }
 }
@@ -105,36 +105,39 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn does_sublattice_define_an_ideal(&self, sublattice: &FinitelyFreeSubmodule<Integer>) -> bool {
+    fn does_integer_submodule_define_an_ideal(
+        &self,
+        integer_submodule: &FinitelyFreeSubmodule<Integer>,
+    ) -> bool {
         #[cfg(debug_assertions)]
         self.order()
-            .free_lattice_restructure()
+            .free_integer_submodule_restructure()
             .into_submodules()
-            .is_element(sublattice)
+            .is_element(integer_submodule)
             .unwrap();
 
         // check it's an ideal
-        for ideal_basis_elem in sublattice.basis() {
+        for ideal_basis_elem in integer_submodule.basis() {
             for ring_basis_elem in (0..self.order().n()).map(|i| {
                 self.order
                     .borrow()
-                    .free_lattice_restructure()
+                    .free_integer_submodule_restructure()
                     .basis_element(i)
             }) {
                 let x = self.order().mul(&ideal_basis_elem, &ring_basis_elem);
                 if !self
                     .order
                     .borrow()
-                    .free_lattice_restructure()
+                    .free_integer_submodule_restructure()
                     .submodules()
-                    .contains_element(sublattice, &x)
+                    .contains_element(integer_submodule, &x)
                 {
                     return false;
                 }
             }
         }
         // All ideals should have full rank in an order
-        debug_assert_eq!(sublattice.rank(), self.order().n());
+        debug_assert_eq!(integer_submodule.rank(), self.order().n());
         true
     }
 }
@@ -151,16 +154,16 @@ impl<
     fn is_element(&self, ideal: &Self::Set) -> Result<(), String> {
         match ideal {
             OrderIdeal::Zero => Ok(()),
-            OrderIdeal::NonZero(sublattice) => {
-                // check it's a sublattice
+            OrderIdeal::NonZero(integer_submodule) => {
+                // check it's an integer submodule
                 self.order
                     .borrow()
-                    .free_lattice_restructure()
+                    .free_integer_submodule_restructure()
                     .submodules()
-                    .is_element(sublattice)?;
+                    .is_element(integer_submodule)?;
                 // check it's an ideal
-                if !self.does_sublattice_define_an_ideal(sublattice) {
-                    return Err("sublattice is not an ideal".to_string());
+                if !self.does_integer_submodule_define_an_ideal(integer_submodule) {
+                    return Err("integer submodule is not an ideal".to_string());
                 }
                 Ok(())
             }
@@ -168,7 +171,7 @@ impl<
     }
 }
 
-mod sublattices_to_ideals {
+mod integer_submodules_to_ideals {
     use super::*;
     use algebraeon_sets::structure::Morphism;
 
@@ -187,7 +190,7 @@ mod sublattices_to_ideals {
         _ob: PhantomData<OB>,
         _intb: PhantomData<IntB>,
         ideals: IB,
-        sublattices: SB,
+        integer_submodules: SB,
     }
 
     impl<
@@ -200,14 +203,14 @@ mod sublattices_to_ideals {
         SB: BorrowedStructure<FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB>>,
     > SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
     {
-        pub fn new(ideals: IB, sublattices: SB) -> Self {
+        pub fn new(ideals: IB, integer_submodules: SB) -> Self {
             Self {
                 _k: PhantomData,
                 _kb: PhantomData,
                 _ob: PhantomData,
                 _intb: PhantomData,
                 ideals,
-                sublattices,
+                integer_submodules,
             }
         }
 
@@ -215,8 +218,10 @@ mod sublattices_to_ideals {
             self.ideals.borrow()
         }
 
-        fn sublattices(&self) -> &FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB> {
-            self.sublattices.borrow()
+        fn integer_submodules(
+            &self,
+        ) -> &FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB> {
+            self.integer_submodules.borrow()
         }
     }
 
@@ -239,7 +244,7 @@ mod sublattices_to_ideals {
         }
 
         fn range(&self) -> &FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB> {
-            self.sublattices()
+            self.integer_submodules()
         }
     }
 
@@ -261,8 +266,8 @@ mod sublattices_to_ideals {
             #[cfg(debug_assertions)]
             self.ideals().is_element(x).unwrap();
             match x {
-                OrderIdeal::Zero => self.sublattices().zero_submodule(),
-                OrderIdeal::NonZero(sublattice) => sublattice.clone(),
+                OrderIdeal::Zero => self.integer_submodules().zero_submodule(),
+                OrderIdeal::NonZero(integer_submodule) => integer_submodule.clone(),
             }
         }
     }
@@ -283,10 +288,10 @@ mod sublattices_to_ideals {
     {
         fn try_preimage(&self, y: &FinitelyFreeSubmodule<Integer>) -> Option<OrderIdeal> {
             #[cfg(debug_assertions)]
-            self.sublattices().is_element(y).unwrap();
+            self.integer_submodules().is_element(y).unwrap();
             if y.rank() == 0 {
                 Some(OrderIdeal::Zero)
-            } else if self.ideals().does_sublattice_define_an_ideal(y) {
+            } else if self.ideals().does_integer_submodule_define_an_ideal(y) {
                 let ideal = OrderIdeal::NonZero(y.clone());
                 #[cfg(debug_assertions)]
                 self.ideals().is_element(&ideal).unwrap();
@@ -305,9 +310,9 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    pub fn outbound_sublattices_inclusion(
+    pub fn outbound_integer_submodules_inclusion(
         &self,
-    ) -> sublattices_to_ideals::SubmoduleToIdeals<
+    ) -> integer_submodules_to_ideals::SubmoduleToIdeals<
         K,
         KB,
         MAXIMAL,
@@ -319,15 +324,17 @@ impl<
             &'static IntegerCanonicalStructure,
         >,
     > {
-        sublattices_to_ideals::SubmoduleToIdeals::new(
+        integer_submodules_to_ideals::SubmoduleToIdeals::new(
             self,
-            self.order().free_lattice_restructure().into_submodules(),
+            self.order()
+                .free_integer_submodule_restructure()
+                .into_submodules(),
         )
     }
 
-    pub fn into_outbound_sublattices_inclusion(
+    pub fn into_outbound_integer_submodules_inclusion(
         self,
-    ) -> sublattices_to_ideals::SubmoduleToIdeals<
+    ) -> integer_submodules_to_ideals::SubmoduleToIdeals<
         K,
         KB,
         MAXIMAL,
@@ -339,8 +346,11 @@ impl<
             &'static IntegerCanonicalStructure,
         >,
     > {
-        let sublattices = self.order().free_lattice_restructure().into_submodules();
-        sublattices_to_ideals::SubmoduleToIdeals::new(self, sublattices)
+        let integer_submodules = self
+            .order()
+            .free_integer_submodule_restructure()
+            .into_submodules();
+        integer_submodules_to_ideals::SubmoduleToIdeals::new(self, integer_submodules)
     }
 }
 
@@ -388,9 +398,9 @@ impl<
         debug_assert!(self.is_element(ideal).is_ok());
         match ideal {
             OrderIdeal::Zero => Natural::ZERO,
-            OrderIdeal::NonZero(sublattice) => {
+            OrderIdeal::NonZero(integer_submodule) => {
                 let n = self.order().n();
-                let cols = sublattice.basis();
+                let cols = integer_submodule.basis();
                 #[cfg(debug_assertions)]
                 for col in &cols {
                     assert_eq!(col.len(), n);
@@ -402,11 +412,14 @@ impl<
     }
 
     /// The sub z-module of points defining this ideal
-    pub fn to_sublattice<'a>(&self, i: &'a OrderIdeal) -> Cow<'a, FinitelyFreeSubmodule<Integer>> {
+    pub fn to_integer_submodule<'a>(
+        &self,
+        i: &'a OrderIdeal,
+    ) -> Cow<'a, FinitelyFreeSubmodule<Integer>> {
         match i {
             OrderIdeal::Zero => Cow::Owned(
                 self.order()
-                    .free_lattice_restructure()
+                    .free_integer_submodule_restructure()
                     .submodules()
                     .zero_submodule(),
             ),
@@ -427,11 +440,14 @@ impl<
         debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
             (OrderIdeal::Zero, OrderIdeal::Zero) => true,
-            (OrderIdeal::NonZero(a_sublattice), OrderIdeal::NonZero(b_sublattice)) => self
+            (
+                OrderIdeal::NonZero(a_integer_submodule),
+                OrderIdeal::NonZero(b_integer_submodule),
+            ) => self
                 .ring()
-                .free_lattice_restructure()
+                .free_integer_submodule_restructure()
                 .submodules()
-                .equal(a_sublattice, b_sublattice),
+                .equal(a_integer_submodule, b_integer_submodule),
             _ => false,
         }
     }
@@ -472,14 +488,15 @@ impl<
             (OrderIdeal::Zero, OrderIdeal::Zero) => OrderIdeal::Zero,
             (OrderIdeal::Zero, OrderIdeal::NonZero { .. }) => b.clone(),
             (OrderIdeal::NonZero { .. }, OrderIdeal::Zero) => a.clone(),
-            (OrderIdeal::NonZero(a_sublattice), OrderIdeal::NonZero(b_sublattice)) => {
-                Self::Set::NonZero(
-                    self.order()
-                        .free_lattice_restructure()
-                        .submodules()
-                        .add(a_sublattice.clone(), b_sublattice.clone()),
-                )
-            }
+            (
+                OrderIdeal::NonZero(a_integer_submodule),
+                OrderIdeal::NonZero(b_integer_submodule),
+            ) => Self::Set::NonZero(
+                self.order()
+                    .free_integer_submodule_restructure()
+                    .submodules()
+                    .add(a_integer_submodule.clone(), b_integer_submodule.clone()),
+            ),
         }
     }
 }
@@ -532,10 +549,13 @@ impl<
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
-            (OrderIdeal::NonZero(a_sublattice), OrderIdeal::NonZero(b_sublattice)) => {
+            (
+                OrderIdeal::NonZero(a_integer_submodule),
+                OrderIdeal::NonZero(b_integer_submodule),
+            ) => {
                 let n = self.order().n();
-                let a_basis = a_sublattice.basis();
-                let b_basis = b_sublattice.basis();
+                let a_basis = a_integer_submodule.basis();
+                let b_basis = b_integer_submodule.basis();
                 debug_assert_eq!(a_basis.len(), n);
                 debug_assert_eq!(b_basis.len(), n);
 
@@ -676,11 +696,14 @@ impl<
                 debug_assert_ne!(self.order().n(), 0);
                 false
             }
-            (OrderIdeal::NonZero(a_sublattice), OrderIdeal::NonZero(b_sublattice)) => self
+            (
+                OrderIdeal::NonZero(a_integer_submodule),
+                OrderIdeal::NonZero(b_integer_submodule),
+            ) => self
                 .ring()
-                .free_lattice_restructure()
+                .free_integer_submodule_restructure()
                 .submodules()
-                .contains(a_sublattice, b_sublattice),
+                .contains(a_integer_submodule, b_integer_submodule),
         }
     }
 
@@ -689,11 +712,11 @@ impl<
         debug_assert!(self.order().is_element(x).is_ok());
         match a {
             OrderIdeal::Zero => self.order().is_zero(x),
-            OrderIdeal::NonZero(sublattice) => self
+            OrderIdeal::NonZero(integer_submodule) => self
                 .ring()
-                .free_lattice_restructure()
+                .free_integer_submodule_restructure()
                 .submodules()
-                .contains_element(sublattice, x),
+                .contains_element(integer_submodule, x),
         }
     }
 
@@ -701,22 +724,23 @@ impl<
         debug_assert!(self.is_element(a).is_ok());
         debug_assert!(self.is_element(b).is_ok());
         match (a, b) {
-            (OrderIdeal::NonZero(a_sublattice), OrderIdeal::NonZero(b_sublattice)) => {
-                Self::Set::NonZero(
-                    self.order()
-                        .free_lattice_restructure()
-                        .submodules()
-                        .intersect(a_sublattice.clone(), b_sublattice.clone()),
-                )
-            }
+            (
+                OrderIdeal::NonZero(a_integer_submodule),
+                OrderIdeal::NonZero(b_integer_submodule),
+            ) => Self::Set::NonZero(
+                self.order()
+                    .free_integer_submodule_restructure()
+                    .submodules()
+                    .intersect(a_integer_submodule.clone(), b_integer_submodule.clone()),
+            ),
             _ => Self::Set::Zero,
         }
     }
 
     fn quotient(&self, i: &Self::Set, j: &Self::Set) -> Self::Set {
-        let j = self.to_sublattice(j);
+        let j = self.to_integer_submodule(j);
         let j = j.as_ref();
-        self.quotient_ideal_by_sublattice(i, j)
+        self.quotient_ideal_by_integer_submodule(i, j)
     }
 }
 
@@ -727,20 +751,20 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn quotient_ideal_by_sublattice(
+    fn quotient_ideal_by_integer_submodule(
         &self,
         i: &<Self as SetSignature>::Set,
         s: &FinitelyFreeSubmodule<Integer>,
     ) -> <Self as SetSignature>::Set {
-        let i = self.to_sublattice(i);
+        let i = self.to_integer_submodule(i);
         let i = i.as_ref();
 
-        let quotient_sublattice = self.order().quotient_sublattice(i, s);
+        let quotient_integer_submodule = self.order().quotient_integer_submodule(i, s);
 
-        let quotient_ideal = if quotient_sublattice.rank() == 0 {
+        let quotient_ideal = if quotient_integer_submodule.rank() == 0 {
             OrderIdeal::Zero
         } else {
-            OrderIdeal::NonZero(quotient_sublattice)
+            OrderIdeal::NonZero(quotient_integer_submodule)
         };
         #[cfg(debug_assertions)]
         self.is_element(&quotient_ideal).unwrap();
@@ -1019,7 +1043,7 @@ where
         // this is all b not in any q and in all p^{e_i}
         let b_set = self
             .ring()
-            .free_lattice_restructure()
+            .free_integer_submodule_restructure()
             .affine_subsets()
             .intersect_list(
                 ideal_factored
@@ -1028,12 +1052,12 @@ where
                     .iter()
                     .map(|(p, k)| match self.nat_pow(p, k) {
                         OrderIdeal::Zero => unreachable!(),
-                        OrderIdeal::NonZero(pk_sublattice) => {
+                        OrderIdeal::NonZero(pk_integer_submodule) => {
                             FinitelyFreeSubmoduleAffineSubset::NonEmpty(
                                 self.order()
-                                    .free_lattice_restructure()
+                                    .free_integer_submodule_restructure()
                                     .cosets()
-                                    .from_submodule(pk_sublattice),
+                                    .from_submodule(pk_integer_submodule),
                             )
                         }
                     })
@@ -1051,14 +1075,14 @@ where
                             })
                             .map(|q| match q {
                                 OrderIdeal::Zero => unreachable!(),
-                                OrderIdeal::NonZero(q_sublattice) => {
+                                OrderIdeal::NonZero(q_integer_submodule) => {
                                     FinitelyFreeSubmoduleAffineSubset::NonEmpty(
                                         self.order()
-                                            .free_lattice_restructure()
+                                            .free_integer_submodule_restructure()
                                             .cosets()
                                             .from_offset_and_submodule(
                                                 &self.order().one(),
-                                                q_sublattice.clone(),
+                                                q_integer_submodule.clone(),
                                             ),
                                     )
                                 }
@@ -1070,7 +1094,7 @@ where
         //need to filter out the b in some p^{e_i+1}
         let rm_b_set = self
             .ring()
-            .free_lattice_restructure()
+            .free_integer_submodule_restructure()
             .affine_subsets()
             .intersect_list(
                 ideal_factored
@@ -1079,12 +1103,12 @@ where
                     .into_iter()
                     .map(|(p, k)| match self.nat_pow(&p, &(k + Natural::ONE)) {
                         OrderIdeal::Zero => unreachable!(),
-                        OrderIdeal::NonZero(pk_sublattice) => {
+                        OrderIdeal::NonZero(pk_integer_submodule) => {
                             FinitelyFreeSubmoduleAffineSubset::NonEmpty(
                                 self.order()
-                                    .free_lattice_restructure()
+                                    .free_integer_submodule_restructure()
                                     .cosets()
-                                    .from_submodule(pk_sublattice),
+                                    .from_submodule(pk_integer_submodule),
                             )
                         }
                     })
@@ -1095,14 +1119,14 @@ where
         //but this is not the case, so some basis of b_set is not in rm_b_set
 
         self.order()
-            .free_lattice_restructure()
+            .free_integer_submodule_restructure()
             .affine_subsets()
             .affine_basis(&b_set)
             .into_iter()
             .find(|b| {
                 !self
                     .ring()
-                    .free_lattice_restructure()
+                    .free_integer_submodule_restructure()
                     .affine_subsets()
                     .contains_element(&rm_b_set, b)
             })
@@ -1113,8 +1137,8 @@ where
     pub fn ideal_two_generators(&self, ideal: &OrderIdeal) -> (Vec<Integer>, Vec<Integer>) {
         let (a, b) = match ideal {
             OrderIdeal::Zero => (self.order().zero(), self.order().zero()),
-            OrderIdeal::NonZero(sublattice) => {
-                let a = sublattice.basis().into_iter().next().unwrap();
+            OrderIdeal::NonZero(integer_submodule) => {
+                let a = integer_submodule.basis().into_iter().next().unwrap();
                 let b = self.ideal_other_generator(&a, ideal);
                 (a, b)
             }
@@ -1356,7 +1380,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sublattices_to_ideals() {
+    fn test_integer_submodules_to_ideals() {
         let anf = parse_rational_polynomial("x^2+3", "x")
             .unwrap()
             .algebraic_number_field()
@@ -1368,24 +1392,27 @@ mod tests {
             ])
             .unwrap();
         let ideals = order.ideals();
-        let sublattices = order.free_lattice_restructure().into_submodules();
+        let integer_submodules = order.free_integer_submodule_restructure().into_submodules();
 
-        // f : {ideals of the order} -> {z-sublattices of the order}
-        let f = ideals.outbound_sublattices_inclusion();
+        // f : {ideals of the order} -> {z-integer_submodules of the order}
+        let f = ideals.outbound_integer_submodules_inclusion();
 
         assert!(
-            f.try_preimage(&sublattices.matrix_row_span(Matrix::from_rows(vec![
+            f.try_preimage(&integer_submodules.matrix_row_span(Matrix::from_rows(vec![
                 vec![Integer::from(1), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1)],
             ])))
             .is_some()
         );
 
-        assert!(f.try_preimage(&sublattices.zero_submodule()).is_some());
+        assert!(
+            f.try_preimage(&integer_submodules.zero_submodule())
+                .is_some()
+        );
 
         assert!(
             f.try_preimage(
-                &sublattices
+                &integer_submodules
                     .matrix_row_span(Matrix::from_row(vec![Integer::from(1), Integer::from(0)]))
             )
             .is_none()
@@ -1393,7 +1420,7 @@ mod tests {
 
         // S = {2*a + b*sqrt(3) : a,b in ZZ} is not an ideal because sqrt(3) in R times sqrt(3) in S is 3 which is not in S
         assert!(
-            f.try_preimage(&sublattices.matrix_row_span(Matrix::from_rows(vec![
+            f.try_preimage(&integer_submodules.matrix_row_span(Matrix::from_rows(vec![
                 vec![Integer::from(2), Integer::from(0)],
                 vec![Integer::from(0), Integer::from(1)],
             ])))

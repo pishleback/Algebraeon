@@ -448,64 +448,79 @@ mod anf_inclusion {
     };
 
     #[derive(Debug, Clone)]
-    pub struct AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+    pub struct AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
     > {
         _k: PhantomData<K>,
-        _lat: PhantomData<Lat>,
-        sublattice: LatB,
+        _lat: PhantomData<IntegerModule>,
+        integer_submodule: IntegerModuleB,
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-    > AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<K, Lat, LatB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+    >
+        AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+        >
     {
-        pub fn new(sublattice: LatB) -> Self {
+        pub fn new(integer_submodule: IntegerModuleB) -> Self {
             Self {
                 _k: PhantomData,
                 _lat: PhantomData,
-                sublattice,
+                integer_submodule,
             }
         }
 
-        pub fn sublattice(&self) -> &Lat {
-            self.sublattice.borrow()
+        pub fn integer_submodule(&self) -> &IntegerModule {
+            self.integer_submodule.borrow()
         }
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-    > Morphism<Lat, K> for AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<K, Lat, LatB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+    > Morphism<IntegerModule, K>
+        for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+        >
     {
-        fn domain(&self) -> &Lat {
-            self.sublattice()
+        fn domain(&self) -> &IntegerModule {
+            self.integer_submodule()
         }
 
         fn range(&self) -> &K {
-            self.sublattice().anf()
+            self.integer_submodule().anf()
         }
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-    > Function<Lat, K> for AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<K, Lat, LatB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+    > Function<IntegerModule, K>
+        for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+        >
     {
         fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
-            debug_assert!(self.sublattice().is_element(x).is_ok());
-            let k = self.sublattice().anf();
+            debug_assert!(self.integer_submodule().is_element(x).is_ok());
+            let k = self.integer_submodule().anf();
             let n = k.n();
             debug_assert_eq!(n, x.len());
             k.sum(
                 (0..n)
-                    .map(|i| k.mul(&k.from_int(&x[i]), self.sublattice().basis_vector(i)))
+                    .map(|i| k.mul(&k.from_int(&x[i]), self.integer_submodule().basis_vector(i)))
                     .collect(),
             )
         }
@@ -513,13 +528,17 @@ mod anf_inclusion {
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-    > InjectiveFunction<Lat, K>
-        for AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<K, Lat, LatB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+    > InjectiveFunction<IntegerModule, K>
+        for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+        >
     {
         fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
-            let k = self.sublattice().anf();
+            let k = self.integer_submodule().anf();
             let n = k.n();
             debug_assert!(k.is_element(y).is_ok());
             let mat = Matrix::join_cols(
@@ -527,7 +546,7 @@ mod anf_inclusion {
                 (0..n)
                     .map(|i| {
                         k.inbound_finite_dimensional_rational_extension()
-                            .to_col(self.sublattice().basis_vector(i))
+                            .to_col(self.integer_submodule().basis_vector(i))
                     })
                     .collect(),
             );
@@ -547,7 +566,7 @@ mod anf_inclusion {
         const MAXIMAL: bool,
         OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
     > RingHomomorphism<OrderWithBasis<K, KOB, MAXIMAL>, K>
-        for AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+        for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
             K,
             OrderWithBasis<K, KOB, MAXIMAL>,
             OB,
@@ -561,7 +580,7 @@ mod anf_inclusion {
         const MAXIMAL: bool,
         OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
     > FieldOfFractionsInclusion<OrderWithBasis<K, KOB, MAXIMAL>, K>
-        for AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+        for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
             K,
             OrderWithBasis<K, KOB, MAXIMAL>,
             OB,
@@ -586,7 +605,7 @@ mod anf_inclusion {
         const MAXIMAL: bool,
         OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
     >
-        AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+        AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
             K,
             OrderWithBasis<K, KOB, MAXIMAL>,
             OB,
@@ -599,7 +618,7 @@ mod anf_inclusion {
             KOB,
             MAXIMAL,
             OB,
-            &AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+            &AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                 K,
                 OrderWithBasis<K, KOB, MAXIMAL>,
                 OB,
@@ -639,7 +658,7 @@ mod anf_inclusion {
             RtoK: BorrowedMorphism<
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     K,
-                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                    AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                         K,
                         OrderWithBasis<K, KOB, MAXIMAL>,
                         RB,
@@ -660,7 +679,7 @@ mod anf_inclusion {
             RtoK: BorrowedMorphism<
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     K,
-                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                    AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                         K,
                         OrderWithBasis<K, KOB, MAXIMAL>,
                         RB,
@@ -684,7 +703,7 @@ mod anf_inclusion {
                 KOB,
                 MAXIMAL,
                 RB,
-                &AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                &AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                     K,
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     RB,
@@ -732,7 +751,7 @@ mod anf_inclusion {
             RtoK: BorrowedMorphism<
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     K,
-                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                    AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                         K,
                         OrderWithBasis<K, KOB, MAXIMAL>,
                         RB,
@@ -752,7 +771,7 @@ mod anf_inclusion {
             type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>> =
                 K::RationalInclusion<BK>;
             type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>> =
-                AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                     K,
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     RB,
@@ -805,7 +824,7 @@ mod anf_inclusion {
             RtoK: BorrowedMorphism<
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     K,
-                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                    AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                         K,
                         OrderWithBasis<K, KOB, MAXIMAL>,
                         RB,
@@ -832,7 +851,7 @@ mod anf_inclusion {
             RtoK: BorrowedMorphism<
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     K,
-                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                    AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                         K,
                         OrderWithBasis<K, KOB, MAXIMAL>,
                         RB,
@@ -876,7 +895,7 @@ mod anf_inclusion {
             RtoK: BorrowedMorphism<
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     K,
-                    AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                    AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                         K,
                         OrderWithBasis<K, KOB, MAXIMAL>,
                         RB,
@@ -900,7 +919,7 @@ mod anf_inclusion {
             type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>> =
                 K::RationalInclusion<BK>;
             type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>> =
-                AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<
+                AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                     K,
                     OrderWithBasis<K, KOB, MAXIMAL>,
                     RB,
@@ -946,7 +965,7 @@ mod anf_inclusion {
     }
 }
 
-mod sublattice_inclusion {
+mod integer_submodule_inclusion {
     use super::*;
     use crate::{
         module::finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
@@ -956,154 +975,228 @@ mod sublattice_inclusion {
     use std::marker::PhantomData;
 
     #[derive(Debug, Clone)]
-    pub struct SublatticeInclusion<
+    pub struct IntegerSubmoduleInclusion<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
     > {
         _k: PhantomData<K>,
-        _lat: PhantomData<Lat>,
-        _sublat: PhantomData<Sublat>,
-        lattice: LatB,
-        sublattice: SublatB,
+        _lat: PhantomData<IntegerModule>,
+        _sublat: PhantomData<IntegerSubmodule>,
+        integer_module: IntegerModuleB,
+        integer_submodule: IntegerSubmoduleB,
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
-    > SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+    >
+        IntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+        >
     {
-        pub fn lattice(&self) -> &Lat {
-            self.lattice.borrow()
+        pub fn integer_module(&self) -> &IntegerModule {
+            self.integer_module.borrow()
         }
 
-        pub fn sublattice(&self) -> &Sublat {
-            self.sublattice.borrow()
+        pub fn integer_submodule(&self) -> &IntegerSubmodule {
+            self.integer_submodule.borrow()
         }
 
         fn check(&self) -> Result<(), String> {
-            if self.lattice().contains_sublattice(self.sublattice()) {
+            if self
+                .integer_module()
+                .contains_integer_submodule(self.integer_submodule())
+            {
                 Ok(())
             } else {
-                Err("Lattice does not contain sublattice".to_string())
+                Err("Integer module does not contain submodule".to_string())
             }
         }
 
-        fn new_impl(lattice: LatB, sublattice: SublatB) -> Self {
+        fn new_impl(integer_module: IntegerModuleB, integer_submodule: IntegerSubmoduleB) -> Self {
             Self {
                 _k: PhantomData,
                 _lat: PhantomData,
                 _sublat: PhantomData,
-                lattice,
-                sublattice,
+                integer_module,
+                integer_submodule,
             }
         }
 
-        pub fn new(lattice: LatB, sublattice: SublatB) -> Option<Self> {
-            let s = Self::new_impl(lattice, sublattice);
+        pub fn new(
+            integer_module: IntegerModuleB,
+            integer_submodule: IntegerSubmoduleB,
+        ) -> Option<Self> {
+            let s = Self::new_impl(integer_module, integer_submodule);
             if s.check().is_ok() { Some(s) } else { None }
         }
 
-        pub fn new_unchecked(lattice: LatB, sublattice: SublatB) -> Self {
-            let s = Self::new_impl(lattice, sublattice);
+        pub fn new_unchecked(
+            integer_module: IntegerModuleB,
+            integer_submodule: IntegerSubmoduleB,
+        ) -> Self {
+            let s = Self::new_impl(integer_module, integer_submodule);
             #[cfg(debug_assertions)]
             s.check().unwrap();
             s
         }
 
-        pub fn sublattices_inclusion(
+        pub fn integer_submodules_inclusion(
             &self,
-        ) -> SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, &Self> {
-            SublatticeSublatticeInclusion::new(self)
+        ) -> IntegerSubmoduleIntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+            &Self,
+        > {
+            IntegerSubmoduleIntegerSubmoduleInclusion::new(self)
         }
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
-    > Morphism<Sublat, Lat> for SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+    > Morphism<IntegerSubmodule, IntegerModule>
+        for IntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+        >
     {
-        fn domain(&self) -> &Sublat {
-            self.sublattice()
+        fn domain(&self) -> &IntegerSubmodule {
+            self.integer_submodule()
         }
 
-        fn range(&self) -> &Lat {
-            self.lattice()
+        fn range(&self) -> &IntegerModule {
+            self.integer_module()
         }
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K> + RingSignature,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K> + RingSignature,
-        SublatB: BorrowedStructure<Sublat>,
-    > RingHomomorphism<Sublat, Lat> for SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K> + RingSignature,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K> + RingSignature,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+    > RingHomomorphism<IntegerSubmodule, IntegerModule>
+        for IntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+        >
     {
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
-    > Function<Sublat, Lat> for SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+    > Function<IntegerSubmodule, IntegerModule>
+        for IntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+        >
     {
-        fn image(&self, x: &<Sublat as SetSignature>::Set) -> <Lat as SetSignature>::Set {
-            self.lattice()
+        fn image(
+            &self,
+            x: &<IntegerSubmodule as SetSignature>::Set,
+        ) -> <IntegerModule as SetSignature>::Set {
+            self.integer_module()
                 .outbound_order_to_anf_inclusion()
-                .try_preimage(&self.sublattice().outbound_order_to_anf_inclusion().image(x))
+                .try_preimage(
+                    &self
+                        .integer_submodule()
+                        .outbound_order_to_anf_inclusion()
+                        .image(x),
+                )
                 .unwrap()
         }
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
-    > InjectiveFunction<Sublat, Lat> for SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+    > InjectiveFunction<IntegerSubmodule, IntegerModule>
+        for IntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+        >
     {
         fn try_preimage(
             &self,
-            y: &<Lat as SetSignature>::Set,
-        ) -> Option<<Sublat as SetSignature>::Set> {
-            self.sublattice()
+            y: &<IntegerModule as SetSignature>::Set,
+        ) -> Option<<IntegerSubmodule as SetSignature>::Set> {
+            self.integer_submodule()
                 .outbound_order_to_anf_inclusion()
-                .try_preimage(&self.lattice().outbound_order_to_anf_inclusion().image(y))
+                .try_preimage(
+                    &self
+                        .integer_module()
+                        .outbound_order_to_anf_inclusion()
+                        .image(y),
+                )
         }
     }
 
     #[derive(Debug, Clone)]
-    pub struct SublatticeSublatticeInclusion<
+    pub struct IntegerSubmoduleIntegerSubmoduleInclusion<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
-        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+        IntegerSubmoduleInclusionB: BorrowedMorphism<
+                IntegerSubmodule,
+                IntegerModule,
+                IntegerSubmoduleInclusion<
+                    K,
+                    IntegerModule,
+                    IntegerModuleB,
+                    IntegerSubmodule,
+                    IntegerSubmoduleB,
+                >,
+            >,
     > {
         _k: PhantomData<K>,
-        _lat: PhantomData<Lat>,
-        _latb: PhantomData<LatB>,
-        _sublat: PhantomData<Sublat>,
-        _sublatb: PhantomData<SublatB>,
-        sublattice_to_lattice: SublatticeInclusionB,
-        lattice_sublattices: FinitelyFreeSubmoduleStructure<
+        _lat: PhantomData<IntegerModule>,
+        _latb: PhantomData<IntegerModuleB>,
+        _sublat: PhantomData<IntegerSubmodule>,
+        _sublatb: PhantomData<IntegerSubmoduleB>,
+        integer_submodule_to_module: IntegerSubmoduleInclusionB,
+        integer_module_to_submodule: FinitelyFreeSubmoduleStructure<
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         >,
-        sublattice_sublattices: FinitelyFreeSubmoduleStructure<
+        integer_submodule_to_submodules: FinitelyFreeSubmoduleStructure<
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         >,
@@ -1111,64 +1204,100 @@ mod sublattice_inclusion {
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
-        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
-    > SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, SublatticeInclusionB>
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+        IntegerSubmoduleInclusionB: BorrowedMorphism<
+                IntegerSubmodule,
+                IntegerModule,
+                IntegerSubmoduleInclusion<
+                    K,
+                    IntegerModule,
+                    IntegerModuleB,
+                    IntegerSubmodule,
+                    IntegerSubmoduleB,
+                >,
+            >,
+    >
+        IntegerSubmoduleIntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+            IntegerSubmoduleInclusionB,
+        >
     {
-        pub fn new(sublattice_to_lattice: SublatticeInclusionB) -> Self {
+        pub fn new(integer_submodule_to_module: IntegerSubmoduleInclusionB) -> Self {
             Self {
                 _k: PhantomData,
                 _lat: PhantomData,
                 _latb: PhantomData,
                 _sublat: PhantomData,
                 _sublatb: PhantomData,
-                lattice_sublattices: sublattice_to_lattice
+                integer_module_to_submodule: integer_submodule_to_module
                     .borrow()
-                    .lattice()
-                    .free_lattice_restructure()
+                    .integer_module()
+                    .free_integer_submodule_restructure()
                     .into_submodules(),
-                sublattice_sublattices: sublattice_to_lattice
+                integer_submodule_to_submodules: integer_submodule_to_module
                     .borrow()
-                    .sublattice()
-                    .free_lattice_restructure()
+                    .integer_submodule()
+                    .free_integer_submodule_restructure()
                     .into_submodules(),
-                sublattice_to_lattice,
+                integer_submodule_to_module,
             }
         }
 
-        pub fn sublattice_to_lattice(&self) -> &SublatticeInclusion<K, Lat, LatB, Sublat, SublatB> {
-            self.sublattice_to_lattice.borrow()
+        pub fn integer_submodule_to_module(
+            &self,
+        ) -> &IntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+        > {
+            self.integer_submodule_to_module.borrow()
         }
 
-        pub fn lattice_sublattices(
+        pub fn integer_module_to_submodule(
             &self,
         ) -> &FinitelyFreeSubmoduleStructure<
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         > {
-            &self.lattice_sublattices
+            &self.integer_module_to_submodule
         }
 
-        pub fn sublattice_sublattices(
+        pub fn integer_submodule_to_submodules(
             &self,
         ) -> &FinitelyFreeSubmoduleStructure<
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         > {
-            &self.sublattice_sublattices
+            &self.integer_submodule_to_submodules
         }
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
-        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+        IntegerSubmoduleInclusionB: BorrowedMorphism<
+                IntegerSubmodule,
+                IntegerModule,
+                IntegerSubmoduleInclusion<
+                    K,
+                    IntegerModule,
+                    IntegerModuleB,
+                    IntegerSubmodule,
+                    IntegerSubmoduleB,
+                >,
+            >,
     >
         Morphism<
             FinitelyFreeSubmoduleStructure<
@@ -1179,7 +1308,15 @@ mod sublattice_inclusion {
                 IntegerCanonicalStructure,
                 &'static IntegerCanonicalStructure,
             >,
-        > for SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, SublatticeInclusionB>
+        >
+        for IntegerSubmoduleIntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+            IntegerSubmoduleInclusionB,
+        >
     {
         fn domain(
             &self,
@@ -1187,7 +1324,7 @@ mod sublattice_inclusion {
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         > {
-            &self.sublattice_sublattices
+            &self.integer_submodule_to_submodules
         }
 
         fn range(
@@ -1196,17 +1333,27 @@ mod sublattice_inclusion {
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         > {
-            &self.lattice_sublattices
+            &self.integer_module_to_submodule
         }
     }
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
-        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+        IntegerSubmoduleInclusionB: BorrowedMorphism<
+                IntegerSubmodule,
+                IntegerModule,
+                IntegerSubmoduleInclusion<
+                    K,
+                    IntegerModule,
+                    IntegerModuleB,
+                    IntegerSubmodule,
+                    IntegerSubmoduleB,
+                >,
+            >,
     >
         Function<
             FinitelyFreeSubmoduleStructure<
@@ -1217,13 +1364,21 @@ mod sublattice_inclusion {
                 IntegerCanonicalStructure,
                 &'static IntegerCanonicalStructure,
             >,
-        > for SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, SublatticeInclusionB>
+        >
+        for IntegerSubmoduleIntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+            IntegerSubmoduleInclusionB,
+        >
     {
         fn image(&self, x: &FinitelyFreeSubmodule<Integer>) -> FinitelyFreeSubmodule<Integer> {
-            self.lattice_sublattices().span(
+            self.integer_module_to_submodule().span(
                 x.basis()
                     .into_iter()
-                    .map(|bv| self.sublattice_to_lattice().image(&bv))
+                    .map(|bv| self.integer_submodule_to_module().image(&bv))
                     .collect(),
             )
         }
@@ -1231,11 +1386,21 @@ mod sublattice_inclusion {
 
     impl<
         K: AlgebraicNumberFieldSignature,
-        Lat: FullRankSublatticeWithBasisSignature<K>,
-        LatB: BorrowedStructure<Lat>,
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
-        SublatticeInclusionB: BorrowedMorphism<Sublat, Lat, SublatticeInclusion<K, Lat, LatB, Sublat, SublatB>>,
+        IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerModuleB: BorrowedStructure<IntegerModule>,
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
+        IntegerSubmoduleInclusionB: BorrowedMorphism<
+                IntegerSubmodule,
+                IntegerModule,
+                IntegerSubmoduleInclusion<
+                    K,
+                    IntegerModule,
+                    IntegerModuleB,
+                    IntegerSubmodule,
+                    IntegerSubmoduleB,
+                >,
+            >,
     >
         InjectiveFunction<
             FinitelyFreeSubmoduleStructure<
@@ -1246,17 +1411,25 @@ mod sublattice_inclusion {
                 IntegerCanonicalStructure,
                 &'static IntegerCanonicalStructure,
             >,
-        > for SublatticeSublatticeInclusion<K, Lat, LatB, Sublat, SublatB, SublatticeInclusionB>
+        >
+        for IntegerSubmoduleIntegerSubmoduleInclusion<
+            K,
+            IntegerModule,
+            IntegerModuleB,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+            IntegerSubmoduleInclusionB,
+        >
     {
         fn try_preimage(
             &self,
             y: &FinitelyFreeSubmodule<Integer>,
         ) -> Option<FinitelyFreeSubmodule<Integer>> {
             Some(
-                self.sublattice_sublattices().span(
+                self.integer_submodule_to_submodules().span(
                     y.basis()
                         .into_iter()
-                        .map(|bv| self.sublattice_to_lattice().try_preimage(&bv))
+                        .map(|bv| self.integer_submodule_to_module().try_preimage(&bv))
                         .collect::<Option<Vec<_>>>()?,
                 ),
             )
@@ -1264,7 +1437,7 @@ mod sublattice_inclusion {
     }
 }
 
-pub trait FullRankSublatticeWithBasisSignature<K: AlgebraicNumberFieldSignature>:
+pub trait FullRankIntegerSubmoduleWithBasisSignature<K: AlgebraicNumberFieldSignature>:
     AdditiveGroupSignature<Set = Vec<Integer>>
 {
     fn anf(&self) -> &K;
@@ -1281,7 +1454,7 @@ pub trait FullRankSublatticeWithBasisSignature<K: AlgebraicNumberFieldSignature>
         self.anf().n()
     }
 
-    fn free_lattice_restructure(
+    fn free_integer_submodule_restructure(
         &self,
     ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, &'static IntegerCanonicalStructure>
     {
@@ -1294,11 +1467,13 @@ pub trait FullRankSublatticeWithBasisSignature<K: AlgebraicNumberFieldSignature>
             .is_some()
     }
 
-    fn contains_sublattice<Sublat: FullRankSublatticeWithBasisSignature<K>>(
+    fn contains_integer_submodule<
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+    >(
         &self,
-        sublattice: &Sublat,
+        integer_submodule: &IntegerSubmodule,
     ) -> bool {
-        sublattice
+        integer_submodule
             .basis()
             .iter()
             .all(|sublat_basis_vector| self.contains_element(sublat_basis_vector))
@@ -1312,55 +1487,89 @@ pub trait FullRankSublatticeWithBasisSignature<K: AlgebraicNumberFieldSignature>
 
     fn into_outbound_order_to_anf_inclusion(
         self,
-    ) -> anf_inclusion::AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<K, Self, Self>
+    ) -> anf_inclusion::AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<K, Self, Self>
     {
-        anf_inclusion::AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion::new(self)
+        anf_inclusion::AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion::new(self)
     }
 
     fn outbound_order_to_anf_inclusion(
         &self,
-    ) -> anf_inclusion::AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion<K, Self, &Self>
+    ) -> anf_inclusion::AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<K, Self, &Self>
     {
-        anf_inclusion::AlgebraicNumberFieldFullRankSublatticeWithBasisInclusion::new(self)
+        anf_inclusion::AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion::new(self)
     }
 
-    fn into_inbound_sublattice_inclusion<
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
+    fn into_inbound_integer_submodule_inclusion<
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
     >(
         self,
-        sublattice: SublatB,
-    ) -> Option<sublattice_inclusion::SublatticeInclusion<K, Self, Self, Sublat, SublatB>> {
-        sublattice_inclusion::SublatticeInclusion::new(self, sublattice)
+        integer_submodule: IntegerSubmoduleB,
+    ) -> Option<
+        integer_submodule_inclusion::IntegerSubmoduleInclusion<
+            K,
+            Self,
+            Self,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+        >,
+    > {
+        integer_submodule_inclusion::IntegerSubmoduleInclusion::new(self, integer_submodule)
     }
 
-    fn inbound_sublattice_inclusion<
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
+    fn inbound_integer_submodule_inclusion<
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
     >(
         &self,
-        sublattice: SublatB,
-    ) -> Option<sublattice_inclusion::SublatticeInclusion<K, Self, &Self, Sublat, SublatB>> {
-        sublattice_inclusion::SublatticeInclusion::new(self, sublattice)
+        integer_submodule: IntegerSubmoduleB,
+    ) -> Option<
+        integer_submodule_inclusion::IntegerSubmoduleInclusion<
+            K,
+            Self,
+            &Self,
+            IntegerSubmodule,
+            IntegerSubmoduleB,
+        >,
+    > {
+        integer_submodule_inclusion::IntegerSubmoduleInclusion::new(self, integer_submodule)
     }
 
-    fn into_inbound_sublattice_inclusion_unchecked<
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
+    fn into_inbound_integer_submodule_inclusion_unchecked<
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
     >(
         self,
-        sublattice: SublatB,
-    ) -> sublattice_inclusion::SublatticeInclusion<K, Self, Self, Sublat, SublatB> {
-        sublattice_inclusion::SublatticeInclusion::new_unchecked(self, sublattice)
+        integer_submodule: IntegerSubmoduleB,
+    ) -> integer_submodule_inclusion::IntegerSubmoduleInclusion<
+        K,
+        Self,
+        Self,
+        IntegerSubmodule,
+        IntegerSubmoduleB,
+    > {
+        integer_submodule_inclusion::IntegerSubmoduleInclusion::new_unchecked(
+            self,
+            integer_submodule,
+        )
     }
 
-    fn inbound_sublattice_inclusion_unchecked<
-        Sublat: FullRankSublatticeWithBasisSignature<K>,
-        SublatB: BorrowedStructure<Sublat>,
+    fn inbound_integer_submodule_inclusion_unchecked<
+        IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
+        IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
     >(
         &self,
-        sublattice: SublatB,
-    ) -> sublattice_inclusion::SublatticeInclusion<K, Self, &Self, Sublat, SublatB> {
-        sublattice_inclusion::SublatticeInclusion::new_unchecked(self, sublattice)
+        integer_submodule: IntegerSubmoduleB,
+    ) -> integer_submodule_inclusion::IntegerSubmoduleInclusion<
+        K,
+        Self,
+        &Self,
+        IntegerSubmodule,
+        IntegerSubmoduleB,
+    > {
+        integer_submodule_inclusion::IntegerSubmoduleInclusion::new_unchecked(
+            self,
+            integer_submodule,
+        )
     }
 }

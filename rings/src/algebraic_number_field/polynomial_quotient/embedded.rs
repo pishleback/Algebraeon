@@ -257,7 +257,7 @@ pub fn anf_multi_primitive_element_theorem(
 mod tests {
     use crate::{
         algebraic_number_field::{
-            AlgebraicNumberFieldSignature, FullRankSublatticeWithBasisSignature,
+            AlgebraicNumberFieldSignature, FullRankIntegerSubmoduleWithBasisSignature,
         },
         structure::IntoErgonomic,
     };

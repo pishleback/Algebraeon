@@ -1,5 +1,7 @@
 use crate::{
-    algebraic_number_field::{AlgebraicNumberFieldSignature, FullRankSublatticeWithBasisSignature},
+    algebraic_number_field::{
+        AlgebraicNumberFieldSignature, FullRankIntegerSubmoduleWithBasisSignature,
+    },
     matrix::Matrix,
     structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
@@ -13,14 +15,17 @@ use algebraeon_sets::structure::{
 };
 
 #[derive(Debug, Clone)]
-pub struct FullRankSublatticeWithBasis<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> {
+pub struct FullRankIntegerSubmoduleWithBasis<
+    K: AlgebraicNumberFieldSignature,
+    KB: BorrowedStructure<K>,
+> {
     anf: KB,
     // length = degree of k
     basis: Vec<K::Set>,
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
-    FullRankSublatticeWithBasis<K, KB>
+    FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn check(&self) -> Result<(), String> {
         let n = self.anf.borrow().n();
@@ -71,7 +76,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> PartialEq
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn eq(&self, other: &Self) -> bool {
         let n = self.anf().n();
@@ -91,17 +96,17 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> PartialEq
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> Eq
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> Signature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetSignature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     type Set = Vec<Integer>;
 
@@ -114,7 +119,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetSignature
 }
 
 impl<K: AlgebraicNumberFieldSignature + ToStringSignature, KB: BorrowedStructure<K>>
-    ToStringSignature for FullRankSublatticeWithBasis<K, KB>
+    ToStringSignature for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn to_string(&self, elem: &Self::Set) -> String {
         self.anf()
@@ -123,36 +128,36 @@ impl<K: AlgebraicNumberFieldSignature + ToStringSignature, KB: BorrowedStructure
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> EqSignature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        self.free_lattice_restructure().equal(a, b)
+        self.free_integer_submodule_restructure().equal(a, b)
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> RinglikeSpecializationSignature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> ZeroSignature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn zero(&self) -> Self::Set {
-        self.free_lattice_restructure().zero()
+        self.free_integer_submodule_restructure().zero()
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditionSignature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.free_lattice_restructure().add(a, b)
+        self.free_integer_submodule_restructure().add(a, b)
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> CancellativeAdditionSignature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
         Some(self.sub(a, b))
@@ -160,7 +165,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> CancellativeAdd
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> TryNegateSignature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
         Some(self.neg(a))
@@ -168,24 +173,24 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> TryNegateSignat
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveMonoidSignature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveGroupSignature
-    for FullRankSublatticeWithBasis<K, KB>
+    for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        self.free_lattice_restructure().neg(a)
+        self.free_integer_submodule_restructure().neg(a)
     }
 
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        self.free_lattice_restructure().sub(a, b)
+        self.free_integer_submodule_restructure().sub(a, b)
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
-    FullRankSublatticeWithBasisSignature<K> for FullRankSublatticeWithBasis<K, KB>
+    FullRankIntegerSubmoduleWithBasisSignature<K> for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
     fn anf(&self) -> &K {
         self.anf.borrow()
@@ -209,7 +214,7 @@ mod tests {
             .algebraic_number_field()
             .unwrap();
 
-        let abgrp = FullRankSublatticeWithBasis::new(
+        let abgrp = FullRankIntegerSubmoduleWithBasis::new(
             anf.clone(),
             vec![
                 parse_rational_polynomial("2 + 3*x", "x").unwrap(),
