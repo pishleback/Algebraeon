@@ -910,10 +910,9 @@ pub trait RealFromFloatSignature: RealSubsetSignature {
 }
 
 #[signature_meta_trait]
-pub trait ComplexConjugateSignature: RinglikeSpecializationSignature {
+pub trait ComplexConjugateSignature: ComplexSubsetSignature {
     fn conjugate(&self, x: &Self::Set) -> Self::Set;
 }
-
 impl<RS: RealSubsetSignature> ComplexConjugateSignature for RS {
     fn conjugate(&self, x: &Self::Set) -> Self::Set {
         x.clone()

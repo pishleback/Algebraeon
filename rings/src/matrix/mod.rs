@@ -6,7 +6,9 @@ use itertools::Itertools;
 
 mod gram_schmidt;
 mod hermite_reduction;
+mod inner_product;
 mod jordan_normal_form;
+// mod lll_reduction;
 #[allow(clippy::module_inception)]
 mod matrix;
 mod polynomial;
@@ -14,14 +16,14 @@ mod primitive;
 mod row_operations;
 mod smith_normal_form;
 mod symmetric_matrix;
-mod lll_reduction;
 
 pub use hermite_reduction::*;
-pub use matrix::*;
-pub use symmetric_matrix::*;
-use row_operations::*;
+pub use inner_product::*;
 pub use jordan_normal_form::*;
-pub use lll_reduction::*;
+// pub use lll_reduction::*;
+pub use matrix::*;
+use row_operations::*;
+pub use symmetric_matrix::*;
 
 /*
 //for LLL testing from wikipeida
