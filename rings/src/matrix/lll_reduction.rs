@@ -83,6 +83,19 @@ impl<FS: RealSubsetSignature + FieldSignature, FSB: BorrowedStructure<FS>>
 
         println!("n={n} m={m}");
 
+        let mut h = self.ident(n);
+
+        let mut k = 1;
+        while k < n {
+            println!("k={k}");
+
+            for i in 0..k {
+                println!("i={i}");
+            }
+
+            k += 1;
+        }
+
         todo!()
     }
 }
