@@ -116,22 +116,42 @@ impl<Ring: RealSubsetSignature, RingB: BorrowedStructure<Ring>>
             mat,
         }
     }
+
+    pub fn ring(&self) -> &Ring {
+        self.ring.borrow()
+    }
 }
 
-impl<Ring: RealSubsetSignature, RingB: BorrowedStructure<Ring>> ComplexInnerProduct<Ring>
-    for RealSymmetricInnerProduct<Ring, RingB>
+impl<Ring: RingSignature + RealSubsetSignature, RingB: BorrowedStructure<Ring>>
+    ComplexInnerProduct<Ring> for RealSymmetricInnerProduct<Ring, RingB>
 {
     fn inner_product(
         &self,
         a: &[impl Borrow<Ring::Set>],
         b: &[impl Borrow<Ring::Set>],
     ) -> <Ring>::Set {
-        todo!()
+        let n = self.mat.n();
+        assert_eq!(n, a.len());
+        assert_eq!(n, b.len());
+        let mut t = self.ring().zero();
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..n {
+            for j in 0..n {
+                self.ring().add_mut(
+                    &mut t,
+                    &self.ring().mul(
+                        self.mat.get(i, j).unwrap(),
+                        &self.ring().mul(a[i].borrow(), b[j].borrow()),
+                    ),
+                );
+            }
+        }
+        t
     }
 }
 
-impl<Ring: RealSubsetSignature, RingB: BorrowedStructure<Ring>> RealInnerProduct<Ring>
-    for RealSymmetricInnerProduct<Ring, RingB>
+impl<Ring: RealSubsetSignature + RingSignature, RingB: BorrowedStructure<Ring>>
+    RealInnerProduct<Ring> for RealSymmetricInnerProduct<Ring, RingB>
 {
 }
 
