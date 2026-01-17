@@ -237,6 +237,10 @@ pub trait AdditiveGroupSignature: CancellativeAdditionSignature {
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.add(a, &self.neg(b))
     }
+
+    fn sub_mut(&self, a: &mut Self::Set, b: &Self::Set) {
+        *a = self.sub(a, b);
+    }
 }
 
 #[signature_meta_trait]

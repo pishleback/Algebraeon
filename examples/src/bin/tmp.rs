@@ -30,10 +30,12 @@ fn main() {
 
     m.pprint();
 
-    let h = m.lll_row_reduction_algorithm(
+    let h = m.clone().lll_row_reduction_algorithm(
         &StandardInnerProduct::new(Rational::structure()),
         &Rational::from_str("3/4").unwrap(),
     );
 
     h.pprint();
+
+    Matrix::<Rational>::mul(&h, &m).unwrap().pprint();
 }

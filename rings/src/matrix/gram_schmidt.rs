@@ -10,10 +10,10 @@ impl<FS: ComplexConjugateSignature, FSB: BorrowedStructure<FS>> MatrixStructure<
     }
 }
 
-impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
+impl<FS: ComplexConjugateSignature + FieldSignature + ToStringSignature, FSB: BorrowedStructure<FS>>
     MatrixStructure<FS, FSB>
 {
-    //return mat=LQ where L is lower triangular and Q is row-orthogonal (not orthonormal)
+    /// return L and Q such that mat=L*Q where L is lower triangular and Q is row-orthogonal (not orthonormal)
     pub fn gram_schmidt_row_orthogonalization_algorithm(
         &self,
         mut mat: Matrix<FS::Set>,
@@ -93,7 +93,7 @@ impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
 }
 
 impl<
-    FS: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature,
+    FS: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature + ToStringSignature,
     FSB: BorrowedStructure<FS>,
 > MatrixStructure<FS, FSB>
 {
@@ -164,7 +164,7 @@ impl<
 
 impl<F: MetaType> Matrix<F>
 where
-    F::Signature: ComplexConjugateSignature + FieldSignature,
+    F::Signature: ComplexConjugateSignature + FieldSignature + ToStringSignature,
 {
     pub fn gram_schmidt_row_orthogonalization_algorithm(
         self,
@@ -197,7 +197,10 @@ where
 
 impl<F: MetaType> Matrix<F>
 where
-    F::Signature: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature,
+    F::Signature: ComplexConjugateSignature
+        + PositiveRealNthRootSignature
+        + FieldSignature
+        + ToStringSignature,
 {
     pub fn lq_decomposition_algorithm(
         self,
