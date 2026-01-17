@@ -55,7 +55,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
                 }
                 ambient_space.vector(kernel.into_iter().next().unwrap())
             };
-            let flip = match ambient_space.field().ring_cmp(
+            let flip = match ambient_space.field().cmp(
                 &(ref_point - root).dot(&positive_normal),
                 &ambient_space.field().zero(),
             ) {
@@ -166,7 +166,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
         let space = self.ambient_space();
         let field = space.field();
         let value = self.classify_point_quantitatively(point);
-        match field.ring_cmp(&value, &field.zero()) {
+        match field.cmp(&value, &field.zero()) {
             std::cmp::Ordering::Less => OrientationSide::Negative,
             std::cmp::Ordering::Equal => OrientationSide::Neutral,
             std::cmp::Ordering::Greater => OrientationSide::Positive,
@@ -248,8 +248,8 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedHyperplane<'f, FS> {
         let b_val = self.oriented_simplex.classify_point_quantitatively(b);
 
         match (
-            field.ring_cmp(&a_val, &field.zero()),
-            field.ring_cmp(&b_val, &field.zero()),
+            field.cmp(&a_val, &field.zero()),
+            field.cmp(&b_val, &field.zero()),
         ) {
             (std::cmp::Ordering::Less, std::cmp::Ordering::Greater) => {
                 let t = field

@@ -1,16 +1,21 @@
 use crate::{
-    matrix::{Matrix, RingMatricesSignature},
+    matrix::{Matrix, RingMatricesSignature, SymmetricMatrix},
     structure::{
-        ComplexConjugateSignature, ComplexSubsetSignature, RealSubsetSignature, RingSignature,
+        ComplexConjugateSignature, ComplexSubsetSignature, OrderedRingSignature,
+        RealSubsetSignature, RingSignature,
     },
 };
 use algebraeon_sets::structure::BorrowedStructure;
-use std::marker::PhantomData;
+use std::{borrow::Borrow, marker::PhantomData};
 
 pub trait ComplexInnerProduct<Ring: ComplexSubsetSignature> {
     /// # Panics
     /// If the dimensions of `a` and `b` do not match.
-    fn inner_product(&self, a: &Matrix<Ring::Set>, b: &Matrix<Ring::Set>) -> Ring::Set;
+    fn inner_product(
+        &self,
+        a: &[impl Borrow<Ring::Set>],
+        b: &[impl Borrow<Ring::Set>],
+    ) -> Ring::Set;
 }
 
 pub trait RealInnerProduct<Ring: RealSubsetSignature>: ComplexInnerProduct<Ring> {}
@@ -43,10 +48,23 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > ComplexInnerProduct<Ring> for StandardInnerProduct<Ring, RingB>
 {
-    fn inner_product(&self, a: &Matrix<Ring::Set>, b: &Matrix<Ring::Set>) -> Ring::Set {
-        self.ring()
-            .matrix_structure()
-            .dot(a, &self.ring().matrix_structure().conjugate(b))
+    fn inner_product(
+        &self,
+        a: &[impl Borrow<Ring::Set>],
+        b: &[impl Borrow<Ring::Set>],
+    ) -> Ring::Set {
+        let n = a.len();
+        assert_eq!(n, b.len());
+        let mut t = self.ring().zero();
+        for i in 0..n {
+            self.ring().add_mut(
+                &mut t,
+                &self
+                    .ring()
+                    .mul(a[i].borrow(), &self.ring().conjugate(b[i].borrow())),
+            );
+        }
+        t
     }
 }
 
@@ -55,12 +73,67 @@ impl<Ring: RealSubsetSignature + RingSignature, RingB: BorrowedStructure<Ring>>
 {
 }
 
-// struct RealSymmetricInnerProduct {
-//     // symmetric and positive-definite
-//     mat: SymmetricMatrix,
-// }
+pub struct RealSymmetricInnerProduct<Ring: RealSubsetSignature, RingB: BorrowedStructure<Ring>> {
+    _ring: PhantomData<Ring>,
+    ring: RingB,
+    mat: SymmetricMatrix<Ring::Set>, // symmetric and positive-definite
+}
 
-// impl InnerProduct for RealSymmetricInnerProduct {}
+fn is_positive_definite<Ring: OrderedRingSignature + RealSubsetSignature>(
+    ring: &Ring,
+    mat: &SymmetricMatrix<Ring::Set>,
+) -> bool {
+    let ring_mat = ring.matrix_structure();
+    let n = mat.n();
+    let mat = Matrix::construct(n, n, |r, c| mat.get(r, c).unwrap().clone());
+    for i in 1..n {
+        if ring
+            .cmp(
+                &ring_mat
+                    .det_naive(&mat.submatrix((0..i).collect(), (0..i).collect()))
+                    .unwrap(),
+                &ring.zero(),
+            )
+            .is_le()
+        {
+            return false;
+        }
+    }
+    true
+}
+
+impl<Ring: RealSubsetSignature, RingB: BorrowedStructure<Ring>>
+    RealSymmetricInnerProduct<Ring, RingB>
+{
+    pub fn new(ring: RingB, mat: SymmetricMatrix<Ring::Set>) -> Self
+    where
+        Ring: OrderedRingSignature,
+    {
+        debug_assert!(is_positive_definite(ring.borrow(), &mat));
+        Self {
+            _ring: PhantomData,
+            ring,
+            mat,
+        }
+    }
+}
+
+impl<Ring: RealSubsetSignature, RingB: BorrowedStructure<Ring>> ComplexInnerProduct<Ring>
+    for RealSymmetricInnerProduct<Ring, RingB>
+{
+    fn inner_product(
+        &self,
+        a: &[impl Borrow<Ring::Set>],
+        b: &[impl Borrow<Ring::Set>],
+    ) -> <Ring>::Set {
+        todo!()
+    }
+}
+
+impl<Ring: RealSubsetSignature, RingB: BorrowedStructure<Ring>> RealInnerProduct<Ring>
+    for RealSymmetricInnerProduct<Ring, RingB>
+{
+}
 
 // struct ComplexHermitianInnerProduct {
 //     // Hermitian and positive-definite

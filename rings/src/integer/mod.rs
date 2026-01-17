@@ -125,11 +125,7 @@ impl MultiplicativeIntegralMonoidSignature for IntegerCanonicalStructure {}
 
 impl IntegralDomainSignature for IntegerCanonicalStructure {}
 
-impl OrderedRingSignature for IntegerCanonicalStructure {
-    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-        Self::Set::cmp(a, b)
-    }
-}
+impl OrderedRingSignature for IntegerCanonicalStructure {}
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<IntegerCanonicalStructure, B>

@@ -111,11 +111,7 @@ impl MultiplicativeIntegralMonoidSignature for RationalCanonicalStructure {}
 
 impl IntegralDomainSignature for RationalCanonicalStructure {}
 
-impl OrderedRingSignature for RationalCanonicalStructure {
-    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-        Self::Set::cmp(a, b)
-    }
-}
+impl OrderedRingSignature for RationalCanonicalStructure {}
 
 impl FieldSignature for RationalCanonicalStructure {}
 

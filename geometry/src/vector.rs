@@ -268,10 +268,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Ord for Vector<'f, FS> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         let space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
         for i in 0..space.linear_dimension().unwrap() {
-            match space
-                .field()
-                .ring_cmp(self.coordinate(i), other.coordinate(i))
-            {
+            match space.field().cmp(self.coordinate(i), other.coordinate(i)) {
                 std::cmp::Ordering::Less => {
                     return std::cmp::Ordering::Less;
                 }
