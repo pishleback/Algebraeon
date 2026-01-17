@@ -25,6 +25,8 @@ impl<
     /// Take the rows of M = `mat` as the basis for a lattice.
     ///
     /// Perform an LLL reduction on the lattice, returning a matrix H such that the rows of H*M are an LLL reduced basis for the lattice.
+    /// 
+    /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
     pub fn lll_row_reduction_algorithm(
         &self,
         mut basis: Matrix<FS::Set>,
@@ -208,7 +210,6 @@ impl<
                     self.ring().clone(),
                     ElementaryOppType::Swap(k, k - 1),
                 );
-                println!("{:?}", row_opp);
                 row_opp.apply(&mut basis);
                 row_opp.apply(&mut h);
 
