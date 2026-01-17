@@ -8,7 +8,7 @@ mod gram_schmidt;
 mod hermite_reduction;
 mod inner_product;
 mod jordan_normal_form;
-// mod lll_reduction;
+mod lll_reduction;
 #[allow(clippy::module_inception)]
 mod matrix;
 mod polynomial;
@@ -20,7 +20,7 @@ mod symmetric_matrix;
 pub use hermite_reduction::*;
 pub use inner_product::*;
 pub use jordan_normal_form::*;
-// pub use lll_reduction::*;
+pub use lll_reduction::*;
 pub use matrix::*;
 use row_operations::*;
 pub use symmetric_matrix::*;
