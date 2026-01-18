@@ -1,7 +1,9 @@
-use algebraeon_nzq::{Integer, Natural, Rational};
-use algebraeon_rings::parsing::{parse_integer_polynomial, parse_rational_polynomial};
-use algebraeon_rings::polynomial::Polynomial;
-use algebraeon_rings::structure::MetaFactoringMonoid;
+use algebraeon::nzq::{Integer, IntegerCanonicalStructure, Natural, Rational};
+use algebraeon::rings::matrix::{Matrix, RealInnerProduct, StandardInnerProduct};
+use algebraeon::rings::parsing::{parse_integer_polynomial, parse_rational_polynomial};
+use algebraeon::rings::polynomial::Polynomial;
+use algebraeon::rings::structure::MetaFactoringMonoid;
+use algebraeon::sets::structure::MetaType;
 use gungraun::{library_benchmark, library_benchmark_group, main};
 use std::hint::black_box;
 use std::str::FromStr;
@@ -51,6 +53,27 @@ fn bench_isolate_real_polynomial_roots(polynomial: Polynomial<Rational>) {
 #[bench::poly1(parse_rational_polynomial("x^5 - x + 1", "x").unwrap())]
 fn bench_isolate_complex_polynomial_roots(polynomial: Polynomial<Rational>) {
     black_box(polynomial.all_complex_roots());
+}
+
+#[library_benchmark]
+#[bench::lll(
+    Matrix::<Integer>::from_rows(vec![
+            vec![1, 0, 0, 0, 0, 0, 10000000000i64],
+            vec![0, 1, 0, 0, 0, 0, 11614471390],
+            vec![0, 0, 1, 0, 0, 0, 13489594567],
+            vec![0, 0, 0, 1, 0, 0, 15667451017],
+            vec![0, 0, 0, 0, 1, 0, 18196916159],
+            vec![0, 0, 0, 0, 0, 1, 21134756212],
+    ]),
+    &StandardInnerProduct::new(Integer::structure()),
+    Rational::from_str("3/4").unwrap()
+)]
+fn bench_lll_integral_dim6(
+    mat: Matrix<Integer>,
+    inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+    delta: Rational,
+) {
+    black_box(mat.lll_integral_row_reduction_algorithm(inner_product, &delta));
 }
 
 library_benchmark_group!(
