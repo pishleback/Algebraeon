@@ -20,7 +20,6 @@ mod symmetric_matrix;
 pub use hermite_reduction::*;
 pub use inner_product::*;
 pub use jordan_normal_form::*;
-pub use lll_reduction::*;
 pub use matrix::*;
 use row_operations::*;
 pub use symmetric_matrix::*;
