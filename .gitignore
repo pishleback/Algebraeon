@@ -6,5 +6,5 @@
 /geometry/target
 /drawing/target
 .vscode/launch.json
-# /examples/src/bin/*
+/examples/src/bin/*
 /guide/book
