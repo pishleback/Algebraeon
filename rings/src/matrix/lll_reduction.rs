@@ -1,7 +1,8 @@
-use crate::matrix::{ComplexInnerProduct, RealSymmetricInnerProduct, SymmetricMatrix};
+#[cfg(debug_assertions)]
+use crate::matrix::{RealSymmetricInnerProduct, SymmetricMatrix};
 use crate::structure::{
-    AdditionSignature, AdditiveGroupSignature, CancellativeMultiplicationSignature,
-    EuclideanDivisionSignature, MetaCancellativeMultiplicationSignature, SemiModuleSignature,
+    AdditionSignature, AdditiveGroupSignature, EuclideanDivisionSignature,
+    MetaCancellativeMultiplicationSignature, SemiModuleSignature,
 };
 use crate::{
     linear::finitely_free_module::RingToFinitelyFreeModuleSignature, structure::ZeroEqSignature,
@@ -15,8 +16,7 @@ use crate::{
 };
 use algebraeon_nzq::traits::Fraction;
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
-use algebraeon_sets::structure::EqSignature;
-use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature, ToStringSignature};
+use algebraeon_sets::structure::{BorrowedStructure, MetaType, ToStringSignature};
 
 impl<
     FS: RealSubsetSignature
@@ -69,6 +69,8 @@ impl<
             let true_mat_gs = self.gram_schmidt_row_orthogonalization(basis.clone(), inner_product);
             for (k, cache_entry) in cache.iter().enumerate() {
                 // check mu
+
+                use algebraeon_sets::structure::{EqSignature, SetSignature};
                 assert_eq!(cache_entry.mu.len(), k);
                 for i in 0..k {
                     assert!(
@@ -395,6 +397,10 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
                 .apply_map(|x| Rational::from(x))
                 .gram_schmidt_row_orthogonalization(&rational_inner_product);
             let true_mu = Matrix::construct(n, n, |i, j| {
+                use crate::{
+                    matrix::ComplexInnerProduct, structure::CancellativeMultiplicationSignature,
+                };
+
                 Rational::structure()
                     .try_divide(
                         &rational_inner_product.inner_product(
