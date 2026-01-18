@@ -1,5 +1,3 @@
-use std::hint::black_box;
-
 use crate::matrix::{ComplexInnerProduct, RealSymmetricInnerProduct, SymmetricMatrix};
 use crate::structure::{
     AdditionSignature, AdditiveGroupSignature, CancellativeMultiplicationSignature,
@@ -477,7 +475,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
                 }
 
                 #[cfg(debug_assertions)]
-                validate_cache(&basis, &cache);
+                validate_cache(basis, cache);
             }
         };
 
@@ -674,7 +672,7 @@ mod tests {
     use std::str::FromStr;
 
     use crate::matrix::{Matrix, StandardInnerProduct};
-    use algebraeon_nzq::Rational;
+    use algebraeon_nzq::{Integer, Rational};
     use algebraeon_sets::structure::MetaType;
 
     #[test]
@@ -796,6 +794,129 @@ mod tests {
                 Rational::from_str("-2").unwrap(),
                 Rational::from_str("-3").unwrap(),
                 Rational::from_str("1").unwrap(),
+            ],
+        );
+    }
+
+    #[test]
+    fn approx_golden_ratio_integral() {
+        let m = Matrix::<Integer>::from_rows(vec![
+            vec![
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("10000").unwrap(),
+            ],
+            vec![
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("16180").unwrap(),
+            ],
+            vec![
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("26180").unwrap(),
+            ],
+        ]);
+
+        m.pprint();
+
+        assert_eq!(
+            m.clone()
+                .lll_integral_row_reduction_algorithm(
+                    &StandardInnerProduct::new(Integer::structure()),
+                    &Rational::from_str("3/4").unwrap(),
+                )
+                .0
+                .get_row(0),
+            vec![
+                Integer::from_str("-1").unwrap(),
+                Integer::from_str("-1").unwrap(),
+                Integer::from_str("1").unwrap(),
+            ],
+        );
+    }
+
+    #[test]
+    fn approx_degree_5_root_integral() {
+        // Find the polynomial x^5-3x^4-2x^3+x^2+7x-3 of which ~1.1614471390 is a root
+
+        let m = Matrix::<Integer>::from_rows(vec![
+            vec![
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("10000000000").unwrap(),
+            ],
+            vec![
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("11614471390").unwrap(),
+            ],
+            vec![
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("13489594567").unwrap(),
+            ],
+            vec![
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("15667451017").unwrap(),
+            ],
+            vec![
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("18196916159").unwrap(),
+            ],
+            vec![
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("0").unwrap(),
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("21134756212").unwrap(),
+            ],
+        ]);
+
+        m.pprint();
+
+        assert_eq!(
+            m.clone()
+                .lll_integral_row_reduction_algorithm(
+                    &StandardInnerProduct::new(Integer::structure()),
+                    &Rational::from_str("3/4").unwrap(),
+                )
+                .0
+                .get_row(0),
+            vec![
+                Integer::from_str("-3").unwrap(),
+                Integer::from_str("7").unwrap(),
+                Integer::from_str("1").unwrap(),
+                Integer::from_str("-2").unwrap(),
+                Integer::from_str("-3").unwrap(),
+                Integer::from_str("1").unwrap(),
             ],
         );
     }
