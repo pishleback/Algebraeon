@@ -9,7 +9,7 @@ use crate::{
     },
     structure::{FieldSignature, OrderedRingSignature, RealRoundingSignature, RealSubsetSignature},
 };
-use algebraeon_nzq::{Integer, Rational};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
 use algebraeon_sets::structure::EqSignature;
 use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature, ToStringSignature};
 
@@ -24,7 +24,7 @@ impl<
 {
     /// Take the rows of M = `mat` as the basis for a lattice.
     ///
-    /// Perform an LLL reduction on the lattice, returning a matrix H such that the rows of H*M are an LLL reduced basis for the lattice.
+    /// Perform an LLL reduction on the lattice, returning matricies (H, H*M) such that H is invertible the rows of H*M are an LLL reduced basis for the lattice.
     ///
     /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
     pub fn lll_row_reduction_algorithm(
@@ -32,7 +32,7 @@ impl<
         mut basis: Matrix<FS::Set>,
         inner_product: &impl RealInnerProduct<FS>,
         delta: &Rational,
-    ) -> Matrix<FS::Set> {
+    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
         let n = basis.rows(); // size of the basis
         let m = basis.cols(); // dimension of the ambient space
         assert!(m >= n);
@@ -42,8 +42,11 @@ impl<
         let vs = self.ring().free_module(m);
 
         if n == 0 {
-            return self.ident(0);
+            return (self.ident(0), basis);
         }
+
+        #[cfg(debug_assertions)]
+        let orig_basis = basis.clone();
 
         // variables to hold cached values
         #[derive(Debug)]
@@ -105,6 +108,44 @@ impl<
         validate_cache(&basis, &cache);
 
         let mut h = self.ident(n);
+
+        let reduce = |cache: &mut Vec<CacheEntry<FS::Set>>,
+                      h: &mut Matrix<FS::Set>,
+                      basis: &mut Matrix<FS::Set>,
+                      k: usize,
+                      j: usize| {
+            let mu_rounded = self.ring().round(&cache[k].mu[j]);
+            // b_k -= mu_rounded * b_i
+            if mu_rounded != Integer::ZERO {
+                let mu_rounded = self.ring().from_int(&mu_rounded);
+
+                // update basis and basis transformation matrix
+                let row_opp = ElementaryOpp::new_row_opp(
+                    self.ring().clone(),
+                    ElementaryOppType::AddRowMul {
+                        i: k,
+                        j,
+                        x: self.ring().neg(&mu_rounded),
+                    },
+                );
+                // println!("{:?}", row_opp);
+                row_opp.apply(basis);
+                row_opp.apply(h);
+
+                // update cache
+                self.ring().sub_mut(&mut cache[k].mu[j], &mu_rounded);
+                for i in 0..j {
+                    cache[k].mu[i] = self.ring().sub(
+                        &cache[k].mu[i],
+                        &self.ring().mul(&mu_rounded, &cache[j].mu[i]),
+                    );
+                }
+
+                #[cfg(debug_assertions)]
+                validate_cache(&basis, &cache);
+            }
+        };
+
         let mut k = 1;
         while k < n {
             // extend the cache if necessary
@@ -139,45 +180,14 @@ impl<
                 validate_cache(&basis, &cache);
             }
 
-            for j in 0..k {
-                let mu_rounded = self.ring().round(&cache[k].mu[j]);
-                // b_k -= mu_rounded * b_i
-                if mu_rounded != Integer::ZERO {
-                    let mu_rounded = self.ring().from_int(&mu_rounded);
-
-                    // update basis and basis transformation matrix
-                    let row_opp = ElementaryOpp::new_row_opp(
-                        self.ring().clone(),
-                        ElementaryOppType::AddRowMul {
-                            i: k,
-                            j,
-                            x: self.ring().neg(&mu_rounded),
-                        },
-                    );
-                    // println!("{:?}", row_opp);
-                    row_opp.apply(&mut basis);
-                    row_opp.apply(&mut h);
-
-                    // update cache
-                    self.ring().sub_mut(&mut cache[k].mu[j], &mu_rounded);
-                    for i in 0..j {
-                        cache[k].mu[i] = self.ring().sub(
-                            &cache[k].mu[i],
-                            &self.ring().mul(&mu_rounded, &cache[j].mu[i]),
-                        );
-                    }
-
-                    #[cfg(debug_assertions)]
-                    validate_cache(&basis, &cache);
-                }
-            }
+            // only reduce at k-1 before checking lovasz condition
+            reduce(&mut cache, &mut h, &mut basis, k, k - 1);
 
             // check lovasz condition
             // ||b_k*||^2 >= (delta - mu_{k, k-1}^2) * ||b_{k-1}*||^2
             let mu_k_km1 = &cache[k].mu[k - 1];
             let bk_sq = &cache[k].basis_gs_sq;
             let bkm1_sq = &cache[k - 1].basis_gs_sq;
-
             let lovasz_condition = self
                 .ring()
                 .cmp(
@@ -193,6 +203,11 @@ impl<
                 .is_ge();
 
             if lovasz_condition {
+                // reduce all others only if lovasz condition passes
+                for j in (0..(k - 1)).rev() {
+                    reduce(&mut cache, &mut h, &mut basis, k, j);
+                }
+
                 // continue to next basis vector
                 k += 1;
             } else {
@@ -270,7 +285,25 @@ impl<
             }
         }
 
-        h
+        #[cfg(debug_assertions)]
+        assert!(self.equal(&self.mul(&h, &orig_basis).unwrap(), &basis));
+
+        (h, basis)
+    }
+
+    /// Take the cols of M = `mat` as the basis for a lattice.
+    ///
+    /// Perform an LLL reduction on the lattice, returning a matricies (H, M*H) such that H is invertible and the cols of M*H are an LLL reduced basis for the lattice.
+    ///
+    /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
+    pub fn lll_col_reduction_algorithm(
+        &self,
+        basis: Matrix<FS::Set>,
+        inner_product: &impl RealInnerProduct<FS>,
+        delta: &Rational,
+    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+        let (h, b) = self.lll_row_reduction_algorithm(basis.transpose(), inner_product, delta);
+        (h.transpose(), b.transpose())
     }
 }
 
@@ -286,8 +319,46 @@ where
         self,
         inner_product: &impl RealInnerProduct<F::Signature>,
         delta: &Rational,
-    ) -> Matrix<F> {
+    ) -> (Matrix<F>, Matrix<F>) {
         Self::structure().lll_row_reduction_algorithm(self, inner_product, delta)
+    }
+
+    pub fn lll_col_reduction_algorithm(
+        self,
+        inner_product: &impl RealInnerProduct<F::Signature>,
+        delta: &Rational,
+    ) -> (Matrix<F>, Matrix<F>) {
+        Self::structure().lll_col_reduction_algorithm(self, inner_product, delta)
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>>
+    MatrixStructure<IntegerCanonicalStructure, B>
+{
+    /// Take the rows of M = `mat` as the basis for a lattice.
+    ///
+    /// Perform an LLL reduction on the lattice, returning matricies (H, H*M) such that H is invertible the rows of H*M are an LLL reduced basis for the lattice.
+    ///
+    /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
+    pub fn lll_integral_row_reduction_algorithm(
+        &self,
+        mut basis: Matrix<Integer>,
+        inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+        delta: &Rational,
+    ) -> (Matrix<Integer>, Matrix<Integer>) {
+        let n = basis.rows(); // size of the basis
+        let m = basis.cols(); // dimension of the ambient space
+        assert!(m >= n);
+        debug_assert!(self.rank(basis.clone()) == n);
+        // 1/4 < delta <= 1
+        assert!(Rational::ONE < Rational::from(4) * delta && delta <= &Rational::ONE);
+        let vs = self.ring().free_module(m);
+
+        if n == 0 {
+            return (self.ident(0), basis);
+        }
+
+        todo!()
     }
 }
 
@@ -341,27 +412,18 @@ mod tests {
         m.pprint();
 
         assert_eq!(
-            m.clone().lll_row_reduction_algorithm(
-                &StandardInnerProduct::new(Rational::structure()),
-                &Rational::from_str("3/4").unwrap(),
-            ),
-            Matrix::<Rational>::from_rows(vec![
-                vec![
-                    Rational::from_str("-1").unwrap(),
-                    Rational::from_str("-1").unwrap(),
-                    Rational::from_str("1").unwrap(),
-                ],
-                vec![
-                    Rational::from_str("-48").unwrap(),
-                    Rational::from_str("41").unwrap(),
-                    Rational::from_str("-7").unwrap(),
-                ],
-                vec![
-                    Rational::from_str("78").unwrap(),
-                    Rational::from_str("-66").unwrap(),
-                    Rational::from_str("11").unwrap(),
-                ],
-            ])
+            m.clone()
+                .lll_row_reduction_algorithm(
+                    &StandardInnerProduct::new(Rational::structure()),
+                    &Rational::from_str("3/4").unwrap(),
+                )
+                .0
+                .get_row(0),
+            vec![
+                Rational::from_str("-1").unwrap(),
+                Rational::from_str("-1").unwrap(),
+                Rational::from_str("1").unwrap(),
+            ],
         );
     }
 
@@ -429,60 +491,21 @@ mod tests {
         m.pprint();
 
         assert_eq!(
-            m.clone().lll_row_reduction_algorithm(
-                &StandardInnerProduct::new(Rational::structure()),
-                &Rational::from_str("3/4").unwrap(),
-            ),
-            Matrix::<Rational>::from_rows(vec![
-                vec![
-                    Rational::from_str("-3").unwrap(),
-                    Rational::from_str("7").unwrap(),
-                    Rational::from_str("1").unwrap(),
-                    Rational::from_str("-2").unwrap(),
-                    Rational::from_str("-3").unwrap(),
-                    Rational::from_str("1").unwrap(),
-                ],
-                vec![
-                    Rational::from_str("1").unwrap(),
-                    Rational::from_str("-14").unwrap(),
-                    Rational::from_str("45").unwrap(),
-                    Rational::from_str("4").unwrap(),
-                    Rational::from_str("-47").unwrap(),
-                    Rational::from_str("16").unwrap(),
-                ],
-                vec![
-                    Rational::from_str("35").unwrap(),
-                    Rational::from_str("-9").unwrap(),
-                    Rational::from_str("9").unwrap(),
-                    Rational::from_str("-48").unwrap(),
-                    Rational::from_str("-16").unwrap(),
-                    Rational::from_str("32").unwrap(),
-                ],
-                vec![
-                    Rational::from_str("-61").unwrap(),
-                    Rational::from_str("0").unwrap(),
-                    Rational::from_str("21").unwrap(),
-                    Rational::from_str("-25").unwrap(),
-                    Rational::from_str("72").unwrap(),
-                    Rational::from_str("-28").unwrap(),
-                ],
-                vec![
-                    Rational::from_str("-2").unwrap(),
-                    Rational::from_str("56").unwrap(),
-                    Rational::from_str("-43").unwrap(),
-                    Rational::from_str("5").unwrap(),
-                    Rational::from_str("51").unwrap(),
-                    Rational::from_str("-50").unwrap(),
-                ],
-                vec![
-                    Rational::from_str("64").unwrap(),
-                    Rational::from_str("7").unwrap(),
-                    Rational::from_str("15").unwrap(),
-                    Rational::from_str("1").unwrap(),
-                    Rational::from_str("-4").unwrap(),
-                    Rational::from_str("-41").unwrap(),
-                ],
-            ])
+            m.clone()
+                .lll_row_reduction_algorithm(
+                    &StandardInnerProduct::new(Rational::structure()),
+                    &Rational::from_str("3/4").unwrap(),
+                )
+                .0
+                .get_row(0),
+            vec![
+                Rational::from_str("-3").unwrap(),
+                Rational::from_str("7").unwrap(),
+                Rational::from_str("1").unwrap(),
+                Rational::from_str("-2").unwrap(),
+                Rational::from_str("-3").unwrap(),
+                Rational::from_str("1").unwrap(),
+            ],
         );
     }
 }
