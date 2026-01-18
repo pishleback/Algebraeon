@@ -1,4 +1,10 @@
-use crate::structure::{AdditionSignature, AdditiveGroupSignature, SemiModuleSignature};
+use std::hint::black_box;
+
+use crate::matrix::{ComplexInnerProduct, RealSymmetricInnerProduct, SymmetricMatrix};
+use crate::structure::{
+    AdditionSignature, AdditiveGroupSignature, CancellativeMultiplicationSignature,
+    EuclideanDivisionSignature, MetaCancellativeMultiplicationSignature, SemiModuleSignature,
+};
 use crate::{
     linear::finitely_free_module::RingToFinitelyFreeModuleSignature, structure::ZeroEqSignature,
 };
@@ -9,6 +15,7 @@ use crate::{
     },
     structure::{FieldSignature, OrderedRingSignature, RealRoundingSignature, RealSubsetSignature},
 };
+use algebraeon_nzq::traits::Fraction;
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
 use algebraeon_sets::structure::EqSignature;
 use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature, ToStringSignature};
@@ -142,7 +149,7 @@ impl<
                 }
 
                 #[cfg(debug_assertions)]
-                validate_cache(&basis, &cache);
+                validate_cache(basis, cache);
             }
         };
 
@@ -358,7 +365,221 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
             return (self.ident(0), basis);
         }
 
-        todo!()
+        let (delta_numerator, delta_denominator) = delta.numerator_and_denominator();
+        debug_assert!(delta_numerator > Integer::ZERO);
+        let delta_denominator = Integer::from(delta_denominator);
+
+        let rational_inner_product = RealSymmetricInnerProduct::new(
+            Rational::structure(),
+            SymmetricMatrix::construct(m, |i, j| {
+                Rational::from(
+                    inner_product.inner_product(&vs.basis_element(i), &vs.basis_element(j)),
+                )
+            }),
+        );
+
+        #[cfg(debug_assertions)]
+        let orig_basis = basis.clone();
+
+        let mut h = self.ident(n);
+
+        let mut k = 1;
+        while k < n {
+            println!("k={k}");
+
+            for j in (0..k).rev() {
+                println!("reduce k={k} j={j}");
+
+                let true_mat_gs = basis
+                    .apply_map(|x| Rational::from(x))
+                    .gram_schmidt_row_orthogonalization(&rational_inner_product);
+                let true_mu = Matrix::construct(n, n, |i, j| {
+                    Rational::structure()
+                        .try_divide(
+                            &rational_inner_product.inner_product(
+                                &basis
+                                    .get_row(i)
+                                    .iter()
+                                    .map(Rational::from)
+                                    .collect::<Vec<_>>(),
+                                &true_mat_gs.get_row(j),
+                            ),
+                            &rational_inner_product
+                                .inner_product(&true_mat_gs.get_row(j), &true_mat_gs.get_row(j)),
+                        )
+                        .unwrap()
+                });
+                let true_gram_mat = Matrix::construct(n, n, |i, j| {
+                    inner_product.inner_product(&basis.get_row(i), &basis.get_row(j))
+                });
+                let true_d = (0..n)
+                    .map(|i| {
+                        true_gram_mat
+                            .submatrix((0..(i + 1)).collect(), (0..(i + 1)).collect())
+                            .det()
+                            .unwrap()
+                    })
+                    .collect::<Vec<_>>();
+                let true_lambda = Matrix::construct(n, n, |i, j| {
+                    Integer::try_from(
+                        Rational::from(&true_d[j]) * true_mu.at(i, j).unwrap().clone(),
+                    )
+                    .unwrap()
+                });
+
+                // println!("true_mat_gs");
+                // true_mat_gs.pprint();
+                // println!("true_mu");
+                // true_mu.pprint();
+                // println!("true_gram_mat");
+                // true_gram_mat.pprint();
+                // println!("d = {:?}", true_d);
+                // println!("true_lambda");
+                // true_lambda.pprint();
+
+                // The integer closest to lambda_{k, j}/d_j
+                let q = Integer::structure()
+                    .quo(
+                        &(Integer::TWO * true_lambda.at(k, j).unwrap() + &true_d[j]),
+                        &(Integer::TWO * &true_d[j]),
+                    )
+                    .unwrap();
+                println!("q={q}");
+
+                if q != Integer::ZERO {
+                    let neg_q = -q;
+                    // update basis and basis transformation matrix
+                    let row_opp = ElementaryOpp::new_row_opp(
+                        self.ring().clone(),
+                        ElementaryOppType::AddRowMul { i: k, j, x: neg_q },
+                    );
+                    println!("{:?}", row_opp);
+                    row_opp.apply(&mut basis);
+                    row_opp.apply(&mut h);
+                }
+            }
+
+            let true_mat_gs = basis
+                .apply_map(|x| Rational::from(x))
+                .gram_schmidt_row_orthogonalization(&rational_inner_product);
+            let true_mu = Matrix::construct(n, n, |i, j| {
+                Rational::structure()
+                    .try_divide(
+                        &rational_inner_product.inner_product(
+                            &basis
+                                .get_row(i)
+                                .iter()
+                                .map(Rational::from)
+                                .collect::<Vec<_>>(),
+                            &true_mat_gs.get_row(j),
+                        ),
+                        &rational_inner_product
+                            .inner_product(&true_mat_gs.get_row(j), &true_mat_gs.get_row(j)),
+                    )
+                    .unwrap()
+            });
+            let true_gram_mat = Matrix::construct(n, n, |i, j| {
+                inner_product.inner_product(&basis.get_row(i), &basis.get_row(j))
+            });
+            let true_d = (0..n)
+                .map(|i| {
+                    true_gram_mat
+                        .submatrix((0..(i + 1)).collect(), (0..(i + 1)).collect())
+                        .det()
+                        .unwrap()
+                })
+                .collect::<Vec<_>>();
+            let true_lambda = Matrix::construct(n, n, |i, j| {
+                Integer::try_from(Rational::from(&true_d[j]) * true_mu.at(i, j).unwrap().clone())
+                    .unwrap()
+            });
+
+            // d_k * d_{k-2} >= delta * d_{k-1}^2 - lambda_{k, k-1}^2
+
+            let lambda_k_km1 = true_lambda.at(k, k - 1).unwrap();
+            let lovasz_condition = {
+                if k == 1 {
+                    &delta_denominator * &true_d[1]
+                } else {
+                    &delta_denominator * &true_d[k] * &true_d[k - 2]
+                }
+            }
+            .cmp(
+                &(&delta_numerator * &true_d[k - 1] * &true_d[k - 1] - lambda_k_km1 * lambda_k_km1),
+            )
+            .is_ge();
+
+            if lovasz_condition {
+                k += 1
+            } else {
+                // swap b_{k} and b_{k-1}
+                let row_opp = ElementaryOpp::new_row_opp(
+                    self.ring().clone(),
+                    ElementaryOppType::Swap(k, k - 1),
+                );
+                println!("{:?}", row_opp);
+                row_opp.apply(&mut basis);
+                row_opp.apply(&mut h);
+
+                // now only up to k-1 are LLL reduced
+                k -= 1;
+                if k == 0 {
+                    // though k=1 is fine since the first vector is always LLL reduced on it's own
+                    k += 1;
+                };
+            }
+        }
+
+        #[cfg(debug_assertions)]
+        {
+            use crate::matrix::RingMatricesSignature;
+
+            let (rational_lll_h, _) = basis
+                .apply_map(|x| Rational::from(x))
+                .lll_row_reduction_algorithm(&rational_inner_product, delta);
+            assert_eq!(
+                rational_lll_h,
+                Rational::structure().matrix_structure().ident(n)
+            ); // since basis should now be LLL reduced
+
+            assert!(self.equal(&self.mul(&h, &orig_basis).unwrap(), &basis));
+        }
+
+        (h, basis)
+    }
+
+    /// Take the cols of M = `mat` as the basis for a lattice.
+    ///
+    /// Perform an LLL reduction on the lattice, returning a matricies (H, M*H) such that H is invertible and the cols of M*H are an LLL reduced basis for the lattice.
+    ///
+    /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
+    pub fn lll_integral_col_reduction_algorithm(
+        &self,
+        basis: Matrix<Integer>,
+        inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+        delta: &Rational,
+    ) -> (Matrix<Integer>, Matrix<Integer>) {
+        let (h, b) =
+            self.lll_integral_row_reduction_algorithm(basis.transpose(), inner_product, delta);
+        (h.transpose(), b.transpose())
+    }
+}
+
+impl Matrix<Integer> {
+    pub fn lll_integral_row_reduction_algorithm(
+        self,
+        inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+        delta: &Rational,
+    ) -> (Matrix<Integer>, Matrix<Integer>) {
+        Self::structure().lll_integral_row_reduction_algorithm(self, inner_product, delta)
+    }
+
+    pub fn lll_integral_col_reduction_algorithm(
+        self,
+        inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+        delta: &Rational,
+    ) -> (Matrix<Integer>, Matrix<Integer>) {
+        Self::structure().lll_integral_col_reduction_algorithm(self, inner_product, delta)
     }
 }
 
