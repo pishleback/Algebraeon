@@ -1,27 +1,5 @@
 use super::*;
 
-// #[derive(Debug, Clone)]
-// struct FiniteDimensionalInnerProductSpaceStructure<Ring: ComplexSubsetStructure> {
-//     ring: Ring,
-//     rows: usize,
-//     cols: usize,
-//     // Let n = self.rows * self.cols.
-//     // Then self.values is an n by n matrix containing the inner products
-//     // of the elementary basis vectors when expressed as metamatricies.
-//     values: Matrix<Ring::Set>,
-// }
-
-// impl<Ring: ComplexSubsetStructure> PartialEq for FiniteDimensionalInnerProductSpaceStructure<Ring> {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.ring == other.ring
-//             && self.rows == other.rows
-//             && self.cols == other.cols
-//             && MatrixStructure::new(self.ring.clone()).equal(&self.values, &other.values)
-//     }
-// }
-
-// impl<Ring: ComplexSubsetStructure> Eq for FiniteDimensionalInnerProductSpaceStructure<Ring> {}
-
 impl<FS: ComplexConjugateSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
     pub fn conjugate(&self, mat: &Matrix<FS::Set>) -> Matrix<FS::Set> {
         mat.apply_map(|x| self.ring().conjugate(x))
@@ -32,22 +10,14 @@ impl<FS: ComplexConjugateSignature, FSB: BorrowedStructure<FS>> MatrixStructure<
     }
 }
 
-impl<FS: ComplexConjugateSignature + RingSignature, FSB: BorrowedStructure<FS>>
+impl<FS: ComplexConjugateSignature + FieldSignature + ToStringSignature, FSB: BorrowedStructure<FS>>
     MatrixStructure<FS, FSB>
 {
-    // dot product of a and conj(b)
-    pub fn inner_product(&self, a: &Matrix<FS::Set>, b: &Matrix<FS::Set>) -> FS::Set {
-        self.dot(a, &self.conjugate(b))
-    }
-}
-
-impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
-    MatrixStructure<FS, FSB>
-{
-    //return mat=LQ where L is lower triangular and Q is row-orthogonal (not orthonormal)
+    /// return L and Q such that mat=L*Q where L is lower triangular and Q is row-orthogonal (not orthonormal)
     pub fn gram_schmidt_row_orthogonalization_algorithm(
         &self,
         mut mat: Matrix<FS::Set>,
+        inner_product: &impl ComplexInnerProduct<FS>,
     ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
         #[cfg(debug_assertions)]
         let original_mat = mat.clone();
@@ -59,8 +29,8 @@ impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
                 let lambda = self
                     .ring()
                     .try_divide(
-                        &self.inner_product(&mat.get_row_submatrix(i), &mat.get_row_submatrix(j)),
-                        &self.inner_product(&mat.get_row_submatrix(j), &mat.get_row_submatrix(j)),
+                        &inner_product.inner_product(&mat.get_row(i), &mat.get_row(j)),
+                        &inner_product.inner_product(&mat.get_row(j), &mat.get_row(j)),
                     )
                     .unwrap();
                 //col_i -= lambda col_j
@@ -79,9 +49,10 @@ impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
 
         for i in 0..mat.rows() {
             for j in (i + 1)..mat.rows() {
-                debug_assert!(self.ring().is_zero(
-                    &self.inner_product(&mat.get_row_submatrix(i), &mat.get_row_submatrix(j)),
-                ));
+                debug_assert!(
+                    self.ring()
+                        .is_zero(&inner_product.inner_product(&mat.get_row(i), &mat.get_row(j)),)
+                );
             }
         }
 
@@ -95,22 +66,34 @@ impl<FS: ComplexConjugateSignature + FieldSignature, FSB: BorrowedStructure<FS>>
     pub fn gram_schmidt_col_orthogonalization_algorithm(
         &self,
         mat: Matrix<FS::Set>,
+        inner_product: &impl ComplexInnerProduct<FS>,
     ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
-        let (l, q) = self.gram_schmidt_row_orthogonalization_algorithm(mat.transpose());
+        let (l, q) =
+            self.gram_schmidt_row_orthogonalization_algorithm(mat.transpose(), inner_product);
         (q.transpose(), l.transpose())
     }
 
-    pub fn gram_schmidt_row_orthogonalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
-        self.gram_schmidt_row_orthogonalization_algorithm(mat).1
+    pub fn gram_schmidt_row_orthogonalization(
+        &self,
+        mat: Matrix<FS::Set>,
+        inner_product: &impl ComplexInnerProduct<FS>,
+    ) -> Matrix<FS::Set> {
+        self.gram_schmidt_row_orthogonalization_algorithm(mat, inner_product)
+            .1
     }
 
-    pub fn gram_schmidt_col_orthogonalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
-        self.gram_schmidt_col_orthogonalization_algorithm(mat).0
+    pub fn gram_schmidt_col_orthogonalization(
+        &self,
+        mat: Matrix<FS::Set>,
+        inner_product: &impl ComplexInnerProduct<FS>,
+    ) -> Matrix<FS::Set> {
+        self.gram_schmidt_col_orthogonalization_algorithm(mat, inner_product)
+            .0
     }
 }
 
 impl<
-    FS: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature,
+    FS: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature + ToStringSignature,
     FSB: BorrowedStructure<FS>,
 > MatrixStructure<FS, FSB>
 {
@@ -118,12 +101,14 @@ impl<
     pub fn lq_decomposition_algorithm(
         &self,
         mat: Matrix<FS::Set>,
+        inner_product: &impl ComplexInnerProduct<FS>,
     ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
-        let (mut lt, mut mat) = self.gram_schmidt_row_orthogonalization_algorithm(mat);
+        let (mut lt, mut mat) =
+            self.gram_schmidt_row_orthogonalization_algorithm(mat, inner_product);
 
         for r in 0..mat.rows() {
-            let row = mat.get_row_submatrix(r);
-            let lensq = self.inner_product(&row, &row);
+            let row = mat.get_row(r);
+            let lensq = inner_product.inner_product(&row, &row);
             let row_opp = ElementaryOpp::new_row_opp(
                 self.ring().clone(),
                 ElementaryOppType::UnitMul {
@@ -154,59 +139,95 @@ impl<
     pub fn qr_decomposition_algorithm(
         &self,
         mat: Matrix<FS::Set>,
+        inner_product: &impl ComplexInnerProduct<FS>,
     ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
-        let (l, q) = self.lq_decomposition_algorithm(mat.transpose());
+        let (l, q) = self.lq_decomposition_algorithm(mat.transpose(), inner_product);
         (q.transpose(), l.transpose())
     }
 
-    pub fn gram_schmidt_row_orthonormalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
-        self.lq_decomposition_algorithm(mat).1
+    pub fn gram_schmidt_row_orthonormalization(
+        &self,
+        mat: Matrix<FS::Set>,
+        inner_product: &impl ComplexInnerProduct<FS>,
+    ) -> Matrix<FS::Set> {
+        self.lq_decomposition_algorithm(mat, inner_product).1
     }
 
-    pub fn gram_schmidt_col_orthonormalization(&self, mat: Matrix<FS::Set>) -> Matrix<FS::Set> {
-        self.qr_decomposition_algorithm(mat).0
-    }
-}
-
-impl<F: MetaType> Matrix<F>
-where
-    F::Signature: ComplexConjugateSignature + FieldSignature,
-{
-    pub fn gram_schmidt_row_orthogonalization_algorithm(self) -> (Matrix<F>, Matrix<F>) {
-        Self::structure().gram_schmidt_row_orthogonalization_algorithm(self)
-    }
-
-    pub fn gram_schmidt_col_orthogonalization_algorithm(self) -> (Matrix<F>, Matrix<F>) {
-        Self::structure().gram_schmidt_col_orthogonalization_algorithm(self)
-    }
-
-    pub fn gram_schmidt_row_orthogonalization(self) -> Matrix<F> {
-        Self::structure().gram_schmidt_row_orthogonalization(self)
-    }
-
-    pub fn gram_schmidt_col_orthogonalization(self) -> Matrix<F> {
-        Self::structure().gram_schmidt_col_orthogonalization(self)
+    pub fn gram_schmidt_col_orthonormalization(
+        &self,
+        mat: Matrix<FS::Set>,
+        inner_product: &impl ComplexInnerProduct<FS>,
+    ) -> Matrix<FS::Set> {
+        self.qr_decomposition_algorithm(mat, inner_product).0
     }
 }
 
 impl<F: MetaType> Matrix<F>
 where
-    F::Signature: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature,
+    F::Signature: ComplexConjugateSignature + FieldSignature + ToStringSignature,
 {
-    pub fn lq_decomposition_algorithm(self) -> (Matrix<F>, Matrix<F>) {
-        Self::structure().lq_decomposition_algorithm(self)
+    pub fn gram_schmidt_row_orthogonalization_algorithm(
+        self,
+        inner_product: &impl ComplexInnerProduct<F::Signature>,
+    ) -> (Matrix<F>, Matrix<F>) {
+        Self::structure().gram_schmidt_row_orthogonalization_algorithm(self, inner_product)
     }
 
-    pub fn qr_decomposition_algorithm(self) -> (Matrix<F>, Matrix<F>) {
-        Self::structure().qr_decomposition_algorithm(self)
+    pub fn gram_schmidt_col_orthogonalization_algorithm(
+        self,
+        inner_product: &impl ComplexInnerProduct<F::Signature>,
+    ) -> (Matrix<F>, Matrix<F>) {
+        Self::structure().gram_schmidt_col_orthogonalization_algorithm(self, inner_product)
     }
 
-    pub fn gram_schmidt_row_orthonormalization(self) -> Matrix<F> {
-        Self::structure().gram_schmidt_row_orthonormalization(self)
+    pub fn gram_schmidt_row_orthogonalization(
+        self,
+        inner_product: &impl ComplexInnerProduct<F::Signature>,
+    ) -> Matrix<F> {
+        Self::structure().gram_schmidt_row_orthogonalization(self, inner_product)
     }
 
-    pub fn gram_schmidt_col_orthonormalization(self) -> Matrix<F> {
-        Self::structure().gram_schmidt_col_orthonormalization(self)
+    pub fn gram_schmidt_col_orthogonalization(
+        self,
+        inner_product: &impl ComplexInnerProduct<F::Signature>,
+    ) -> Matrix<F> {
+        Self::structure().gram_schmidt_col_orthogonalization(self, inner_product)
+    }
+}
+
+impl<F: MetaType> Matrix<F>
+where
+    F::Signature: ComplexConjugateSignature
+        + PositiveRealNthRootSignature
+        + FieldSignature
+        + ToStringSignature,
+{
+    pub fn lq_decomposition_algorithm(
+        self,
+        inner_product: &impl ComplexInnerProduct<F::Signature>,
+    ) -> (Matrix<F>, Matrix<F>) {
+        Self::structure().lq_decomposition_algorithm(self, inner_product)
+    }
+
+    pub fn qr_decomposition_algorithm(
+        self,
+        inner_product: &impl ComplexInnerProduct<F::Signature>,
+    ) -> (Matrix<F>, Matrix<F>) {
+        Self::structure().qr_decomposition_algorithm(self, inner_product)
+    }
+
+    pub fn gram_schmidt_row_orthonormalization(
+        self,
+        inner_product: &impl ComplexInnerProduct<F::Signature>,
+    ) -> Matrix<F> {
+        Self::structure().gram_schmidt_row_orthonormalization(self, inner_product)
+    }
+
+    pub fn gram_schmidt_col_orthonormalization(
+        self,
+        inner_product: &impl ComplexInnerProduct<F::Signature>,
+    ) -> Matrix<F> {
+        Self::structure().gram_schmidt_col_orthonormalization(self, inner_product)
     }
 }
 
@@ -245,14 +266,22 @@ mod tests {
         mat.pprint();
         mat_expected_gs.pprint();
 
-        let (mat_actual_gs, mat_actual_ut) =
-            mat.clone().gram_schmidt_col_orthogonalization_algorithm();
+        let (mat_actual_gs, mat_actual_ut) = mat
+            .clone()
+            .gram_schmidt_col_orthogonalization_algorithm(&StandardInnerProduct::new(
+                Rational::structure(),
+            ));
 
         mat_actual_gs.pprint();
         mat_actual_ut.pprint();
         Matrix::mul(&mat, &mat_actual_ut).unwrap().pprint();
 
-        assert_eq!(mat.gram_schmidt_col_orthogonalization(), mat_expected_gs);
+        assert_eq!(
+            mat.gram_schmidt_col_orthogonalization(&StandardInnerProduct::new(
+                Rational::structure(),
+            )),
+            mat_expected_gs
+        );
     }
 
     #[allow(clippy::erasing_op)]
@@ -265,7 +294,10 @@ mod tests {
             vec![(1 + 0 * i).into_verbose(), (1 + 0 * i).into_verbose()],
         ]);
         mat.pprint();
-        mat.gram_schmidt_col_orthogonalization().pprint();
+        mat.gram_schmidt_col_orthogonalization(&StandardInnerProduct::new(
+            ComplexAlgebraic::structure(),
+        ))
+        .pprint();
 
         let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
             vec![
@@ -285,7 +317,11 @@ mod tests {
             ],
         ]);
         mat.pprint();
-        mat.clone().gram_schmidt_col_orthogonalization().pprint();
+        mat.clone()
+            .gram_schmidt_col_orthogonalization(&StandardInnerProduct::new(
+                ComplexAlgebraic::structure(),
+            ))
+            .pprint();
     }
 
     #[test]
@@ -297,7 +333,10 @@ mod tests {
             vec![(1 * one).into_verbose(), (2 * one).into_verbose()],
         ]);
         mat.pprint();
-        mat.gram_schmidt_col_orthonormalization().pprint();
+        mat.gram_schmidt_col_orthonormalization(&StandardInnerProduct::new(
+            RealAlgebraic::structure(),
+        ))
+        .pprint();
 
         let i = &ComplexAlgebraic::i().into_ergonomic();
         let mat = Matrix::<ComplexAlgebraic>::from_rows(vec![
@@ -305,6 +344,10 @@ mod tests {
             vec![(3 + 3 * i).into_verbose(), (-2 + 4 * i).into_verbose()],
         ]);
         mat.pprint();
-        mat.clone().gram_schmidt_col_orthonormalization().pprint();
+        mat.clone()
+            .gram_schmidt_col_orthonormalization(&StandardInnerProduct::new(
+                ComplexAlgebraic::structure(),
+            ))
+            .pprint();
     }
 }

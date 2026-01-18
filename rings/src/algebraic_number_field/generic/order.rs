@@ -3,11 +3,11 @@ use crate::{
         AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature,
         FullRankIntegerSubmoduleWithBasis, FullRankIntegerSubmoduleWithBasisSignature, OrderIdeal,
     },
-    matrix::{Matrix, SymmetricMatrix},
-    module::{
+    linear::{
         finitely_free_module::RingToFinitelyFreeModuleSignature,
         finitely_free_submodule::FinitelyFreeSubmodule,
     },
+    matrix::{Matrix, SymmetricMatrix},
     structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
         CancellativeAdditionSignature, CancellativeMultiplicationSignature, CharZeroRingSignature,

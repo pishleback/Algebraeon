@@ -298,8 +298,8 @@ impl<Set: Clone> Matrix<Set> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MatrixStructure<RS: SetSignature, RSB: BorrowedStructure<RS>> {
-    _ring: PhantomData<RS>,
-    ring: RSB,
+    _set: PhantomData<RS>,
+    set: RSB,
 }
 
 impl<RS: SetSignature, RSB: BorrowedStructure<RS>> Signature for MatrixStructure<RS, RSB> {}
@@ -313,28 +313,27 @@ impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature for MatrixStruct
 }
 
 impl<RS: SetSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
-    pub fn new(ring: RSB) -> Self {
+    pub fn new(set: RSB) -> Self {
         Self {
-            _ring: PhantomData,
-            ring,
+            _set: PhantomData,
+            set,
         }
     }
 
     pub fn ring(&self) -> &RS {
-        self.ring.borrow()
+        self.set.borrow()
     }
 }
 
 pub trait RingMatricesSignature: SetSignature {
-    fn matrices(&self) -> MatrixStructure<Self, &Self> {
+    fn matrix_structure(&self) -> MatrixStructure<Self, &Self> {
         MatrixStructure::new(self)
     }
 
-    fn into_matrices(self) -> MatrixStructure<Self, Self> {
+    fn into_matrix_structure(self) -> MatrixStructure<Self, Self> {
         MatrixStructure::new(self)
     }
 }
-
 impl<RS: SetSignature> RingMatricesSignature for RS {}
 
 impl<RS: EqSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {

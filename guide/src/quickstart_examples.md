@@ -65,7 +65,7 @@ for integers \\(a\\), \\(b\\) and \\(c\\).
 
 ```rust
 use algebraeon::nzq::Integer;
-use algebraeon::rings::module::finitely_free_module::RingToFinitelyFreeModuleSignature;
+use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 use algebraeon::rings::matrix::Matrix;
 use algebraeon::sets::structure::MetaType;
 let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);

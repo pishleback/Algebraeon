@@ -88,7 +88,7 @@ for integers $a$, $b$ and $c$.
 
 ```rust
 use algebraeon::nzq::Integer;
-use algebraeon::rings::module::finitely_free_module::RingToFinitelyFreeModuleSignature;
+use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 use algebraeon::rings::matrix::Matrix;
 use algebraeon::sets::structure::MetaType;
 

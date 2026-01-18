@@ -1,7 +1,7 @@
 use super::{QuaternionAlgebraElement, QuaternionAlgebraStructure};
 use crate::{
     algebraic_number_field::AlgebraicNumberFieldSignature,
-    module::finitely_free_module::RingToFinitelyFreeModuleSignature,
+    linear::finitely_free_module::RingToFinitelyFreeModuleSignature,
     structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
         CancellativeAdditionSignature, FiniteRankFreeRingExtension, FinitelyFreeModuleSignature,

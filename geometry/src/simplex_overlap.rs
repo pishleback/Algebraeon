@@ -1,10 +1,10 @@
 use crate::{ambient_space::common_space, simplex::Simplex, vector::DotProduct};
 use algebraeon_rings::{
-    matrix::{Matrix, MatrixStructure},
-    module::{
+    linear::{
         finitely_free_module::FinitelyFreeModuleStructure,
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
     },
+    matrix::{Matrix, MatrixStructure},
     structure::{FieldSignature, OrderedRingSignature, ZeroEqSignature},
 };
 use itertools::Itertools;
@@ -213,10 +213,10 @@ where
             let mut max_a_proj = a_proj;
             for a_pt in a_points {
                 let proj = normal.dot(a_pt);
-                if field.ring_cmp(&proj, &min_a_proj) == std::cmp::Ordering::Less {
+                if field.cmp(&proj, &min_a_proj) == std::cmp::Ordering::Less {
                     min_a_proj = proj.clone();
                 }
-                if field.ring_cmp(&proj, &max_a_proj) == std::cmp::Ordering::Greater {
+                if field.cmp(&proj, &max_a_proj) == std::cmp::Ordering::Greater {
                     max_a_proj = proj.clone();
                 }
             }
@@ -228,18 +228,18 @@ where
             let mut max_b_proj = b_proj;
             for b_pt in b_points {
                 let proj = normal.dot(b_pt);
-                if field.ring_cmp(&proj, &min_b_proj) == std::cmp::Ordering::Less {
+                if field.cmp(&proj, &min_b_proj) == std::cmp::Ordering::Less {
                     min_b_proj = proj.clone();
                 }
-                if field.ring_cmp(&proj, &max_b_proj) == std::cmp::Ordering::Greater {
+                if field.cmp(&proj, &max_b_proj) == std::cmp::Ordering::Greater {
                     max_b_proj = proj.clone();
                 }
             }
 
             // Check how the projections of A and B overlap
             match (
-                field.ring_cmp(&max_a_proj, &min_b_proj),
-                field.ring_cmp(&max_b_proj, &min_a_proj),
+                field.cmp(&max_a_proj, &min_b_proj),
+                field.cmp(&max_b_proj, &min_a_proj),
             ) {
                 (std::cmp::Ordering::Less, _) | (_, std::cmp::Ordering::Less) => {
                     return SimplexOverlapResult::Disjoint;

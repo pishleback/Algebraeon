@@ -1,6 +1,8 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, marker::PhantomData};
 
-use crate::matrix::MatOppErr;
+use algebraeon_sets::structure::{BorrowedStructure, EqSignature, SetSignature, Signature};
+
+use crate::matrix::{MatOppErr, Matrix};
 
 #[derive(Debug, Clone)]
 pub struct SymmetricMatrix<Set: Clone> {
@@ -26,9 +28,50 @@ impl<Set: Debug + Clone + PartialEq> SymmetricMatrix<Set> {
         }
         Self { n, elems }
     }
+
+    pub fn try_construct(n: usize, make_entry: impl Fn(usize, usize) -> Set) -> Option<Self> {
+        let mut elems = Vec::with_capacity(n);
+        for r in 0..n {
+            let mut row = Vec::with_capacity(r);
+            for c in 0..(r + 1) {
+                let a = make_entry(r, c);
+                #[cfg(debug_assertions)]
+                {
+                    let b = make_entry(c, r);
+                    if a != b {
+                        return None;
+                    }
+                }
+                row.push(a);
+            }
+            elems.push(row);
+        }
+        Some(Self { n, elems })
+    }
+}
+
+impl<Set: Debug + Clone + PartialEq> TryFrom<Matrix<Set>> for SymmetricMatrix<Set> {
+    type Error = ();
+
+    fn try_from(mat: Matrix<Set>) -> Result<Self, Self::Error> {
+        let n = mat.rows();
+        if n != mat.cols() {
+            return Err(());
+        }
+        if let Some(smat) = SymmetricMatrix::try_construct(n, |r, c| mat.at(r, c).unwrap().clone())
+        {
+            Ok(smat)
+        } else {
+            Err(())
+        }
+    }
 }
 
 impl<Set: Clone> SymmetricMatrix<Set> {
+    pub fn n(&self) -> usize {
+        self.n
+    }
+
     pub fn filled(n: usize, s: Set) -> Self {
         Self::construct_top_right(n, |_, _| s.clone())
     }
@@ -108,6 +151,66 @@ impl<Set: Clone> SymmetricMatrix<Option<Set>> {
                 .map(|row| row.into_iter().collect::<Option<Vec<Set>>>())
                 .collect::<Option<Vec<Vec<Set>>>>()?,
         })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SymmetricMatrixStructure<RS: SetSignature, RSB: BorrowedStructure<RS>> {
+    _set: PhantomData<RS>,
+    set: RSB,
+}
+
+impl<RS: SetSignature, RSB: BorrowedStructure<RS>> Signature for SymmetricMatrixStructure<RS, RSB> {}
+
+impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature
+    for SymmetricMatrixStructure<RS, RSB>
+{
+    type Set = SymmetricMatrix<RS::Set>;
+
+    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        Ok(())
+    }
+}
+
+impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SymmetricMatrixStructure<RS, RSB> {
+    pub fn new(set: RSB) -> Self {
+        Self {
+            _set: PhantomData,
+            set,
+        }
+    }
+
+    pub fn set(&self) -> &RS {
+        self.set.borrow()
+    }
+}
+
+pub trait ToSymmetrixMatricesSignature: SetSignature {
+    fn symmetric_matrix_structure(&self) -> SymmetricMatrixStructure<Self, &Self> {
+        SymmetricMatrixStructure::new(self)
+    }
+
+    fn into_symmetric_matrix_structure(self) -> SymmetricMatrixStructure<Self, Self> {
+        SymmetricMatrixStructure::new(self)
+    }
+}
+impl<RS: SetSignature> ToSymmetrixMatricesSignature for RS {}
+
+impl<RS: EqSignature, RSB: BorrowedStructure<RS>> SymmetricMatrixStructure<RS, RSB> {
+    pub fn equal(&self, a: &SymmetricMatrix<RS::Set>, b: &SymmetricMatrix<RS::Set>) -> bool {
+        let n = a.n();
+        if n != b.n() {
+            false
+        } else {
+            for c in 0..n {
+                for r in c..n {
+                    if !self.set().equal(a.get(r, c).unwrap(), b.get(r, c).unwrap()) {
+                        return false;
+                    }
+                }
+            }
+            true
+        }
     }
 }
 

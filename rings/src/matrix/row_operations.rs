@@ -29,6 +29,7 @@ pub enum ElementaryOppType<RS: RingSignature> {
     },
 }
 
+#[derive(Debug)]
 pub struct ElementaryOpp<RS: RingSignature> {
     ring: RS,
     transpose: bool, //false = row opp, true = column opp

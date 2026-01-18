@@ -793,11 +793,7 @@ impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
     }
 }
 
-impl OrderedRingSignature for RealAlgebraicCanonicalStructure {
-    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
-        a.cmp(b)
-    }
-}
+impl OrderedRingSignature for RealAlgebraicCanonicalStructure {}
 
 impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
     fn floor(&self, x: &Self::Set) -> Integer {

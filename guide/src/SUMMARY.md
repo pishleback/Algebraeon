@@ -22,6 +22,7 @@
   - [Smith Normal Form]()
   - [Jordan Normal Form]()
   - [Free Modules](./finitely_free_modules.md)
+  - [LLL Lattice Basis Reduction](./lll.md)
 - [Polynomials]()
   - [Univariate Polynomials]()
   - [Multivariate Polynomials](./multi_polys.md)

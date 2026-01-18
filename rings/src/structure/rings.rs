@@ -237,6 +237,10 @@ pub trait AdditiveGroupSignature: CancellativeAdditionSignature {
     fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.add(a, &self.neg(b))
     }
+
+    fn sub_mut(&self, a: &mut Self::Set, b: &Self::Set) {
+        *a = self.sub(a, b);
+    }
 }
 
 #[signature_meta_trait]
@@ -588,11 +592,9 @@ pub trait CharacteristicSignature: SemiRingSignature {
 }
 
 #[signature_meta_trait]
-pub trait OrderedRingSignature: IntegralDomainSignature {
-    // <= satisfying translation invariance and multiplication by positive scalar
-    fn ring_cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering;
+pub trait OrderedRingSignature: IntegralDomainSignature + OrdSignature {
     fn abs(&self, a: &Self::Set) -> Self::Set {
-        match self.ring_cmp(a, &self.zero()) {
+        match self.cmp(a, &self.zero()) {
             std::cmp::Ordering::Less => self.neg(a),
             std::cmp::Ordering::Equal => self.zero(),
             std::cmp::Ordering::Greater => a.clone(),
@@ -887,6 +889,7 @@ pub trait RealSubsetSignature: ComplexSubsetSignature {
         debug_assert_eq!(i, 0.0);
         r
     }
+
     fn as_f32(&self, x: &Self::Set) -> f32 {
         let (r, i) = self.as_f32_real_and_imaginary_parts(x);
         debug_assert_eq!(i, 0.0);
@@ -910,10 +913,9 @@ pub trait RealFromFloatSignature: RealSubsetSignature {
 }
 
 #[signature_meta_trait]
-pub trait ComplexConjugateSignature: RinglikeSpecializationSignature {
+pub trait ComplexConjugateSignature: ComplexSubsetSignature {
     fn conjugate(&self, x: &Self::Set) -> Self::Set;
 }
-
 impl<RS: RealSubsetSignature> ComplexConjugateSignature for RS {
     fn conjugate(&self, x: &Self::Set) -> Self::Set {
         x.clone()
