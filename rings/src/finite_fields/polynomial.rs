@@ -568,6 +568,7 @@ where
                 let h = Polynomial::<FS::Set>::from_coeffs(
                     (0..n).map(|_| prand_elements.next().unwrap()).collect(),
                 );
+                let poly_mod_f = self.poly_ring.quotient_ring(ddf.polynomial.clone());
                 let g = if p == Natural::TWO {
                     // when char = 2 use h + h^2 + h^4 + ... + h^{2^{kd-1}}
                     // https://math.stackexchange.com/questions/1636518/how-do-i-apply-the-cantor-zassenhaus-algorithm-to-mathbbf-2
@@ -575,14 +576,13 @@ where
                     let mut square_powers = h.clone();
                     let mut square_pow = 0usize;
                     while Natural::from(square_pow) < &k * Natural::from(d) {
-                        self.poly_ring.add_mut(&mut sum, &square_powers);
-                        square_powers = self.poly_ring.mul(&square_powers, &square_powers);
+                        poly_mod_f.add_mut(&mut sum, &square_powers);
+                        square_powers = poly_mod_f.mul(&square_powers, &square_powers);
                         square_pow += 1;
                     }
                     sum
                 } else {
                     // when char != 2 use h^{(q^d-1)/2}-1 mod f
-                    let poly_mod_f = self.poly_ring.quotient_ring(ddf.polynomial.clone());
                     let a = (q.nat_pow(&d.into()) - Natural::ONE) / Natural::TWO;
                     poly_mod_f.add(
                         &poly_mod_f.nat_pow(&h, &a),
