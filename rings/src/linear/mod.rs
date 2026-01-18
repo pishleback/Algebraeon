@@ -1,4 +1,3 @@
-pub mod finite_inner_product_space;
 pub mod finitely_free_affine;
 pub mod finitely_free_coset;
 pub mod finitely_free_module;
