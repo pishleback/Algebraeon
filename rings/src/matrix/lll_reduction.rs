@@ -356,6 +356,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
         debug_assert!(self.rank(basis.clone()) == n);
         // 1/4 < delta <= 1
         assert!(Rational::ONE < Rational::from(4) * delta && delta <= &Rational::ONE);
+        #[cfg(debug_assertions)]
         let vs = self.ring().free_module(m);
 
         if n == 0 {
@@ -464,7 +465,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
                     self.ring().clone(),
                     ElementaryOppType::AddRowMul { i: k, j, x: neg_q },
                 );
-                println!("{:?}", row_opp);
+                // println!("{:?}", row_opp);
                 row_opp.apply(basis);
                 row_opp.apply(h);
 
@@ -544,7 +545,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
                     self.ring().clone(),
                     ElementaryOppType::Swap(k, k - 1),
                 );
-                println!("{:?}", row_opp);
+                // println!("{:?}", row_opp);
                 row_opp.apply(&mut basis);
                 row_opp.apply(&mut h);
 
