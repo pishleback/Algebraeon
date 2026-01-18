@@ -55,6 +55,14 @@ fn bench_isolate_complex_polynomial_roots(polynomial: Polynomial<Rational>) {
     black_box(polynomial.all_complex_roots());
 }
 
+library_benchmark_group!(
+    name = bench_count_polynomial_roots;
+    benchmarks =
+        bench_count_real_polynomial_roots,
+        bench_isolate_real_polynomial_roots,
+        bench_isolate_complex_polynomial_roots
+);
+
 #[library_benchmark]
 #[bench::lll(
     Matrix::<Integer>::from_rows(vec![
@@ -77,15 +85,14 @@ fn bench_lll_integral_dim6(
 }
 
 library_benchmark_group!(
-    name = bench_count_polynomial_roots;
+    name = lll;
     benchmarks =
-        bench_count_real_polynomial_roots,
-        bench_isolate_real_polynomial_roots,
-        bench_isolate_complex_polynomial_roots
+        bench_lll_integral_dim6,
 );
 
 main!(
     library_benchmark_groups = bench_factor_natural_group,
     bench_factor_integer_polynomial_group,
-    bench_count_polynomial_roots
+    bench_count_polynomial_roots,
+    lll
 );
