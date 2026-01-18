@@ -685,24 +685,9 @@ mod tests {
     #[test]
     fn approx_golden_ratio() {
         let m = Matrix::<Rational>::from_rows(vec![
-            vec![
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("10000").unwrap(),
-            ],
-            vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("16180").unwrap(),
-            ],
-            vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("26180").unwrap(),
-            ],
+            vec![1, 0, 0, 10000],
+            vec![0, 1, 0, 16180],
+            vec![0, 0, 1, 26180],
         ]);
 
         m.pprint();
@@ -715,11 +700,7 @@ mod tests {
                 )
                 .0
                 .get_row(0),
-            vec![
-                Rational::from_str("-1").unwrap(),
-                Rational::from_str("-1").unwrap(),
-                Rational::from_str("1").unwrap(),
-            ],
+            vec![Rational::from(-1), Rational::from(-1), Rational::from(1),],
         );
     }
 
@@ -728,60 +709,12 @@ mod tests {
         // Find the polynomial x^5-3x^4-2x^3+x^2+7x-3 of which ~1.1614471390 is a root
 
         let m = Matrix::<Rational>::from_rows(vec![
-            vec![
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("10000000000").unwrap(),
-            ],
-            vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("11614471390").unwrap(),
-            ],
-            vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("13489594567").unwrap(),
-            ],
-            vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("15667451017").unwrap(),
-            ],
-            vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("18196916159").unwrap(),
-            ],
-            vec![
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("0").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("21134756212").unwrap(),
-            ],
+            vec![1, 0, 0, 0, 0, 0, 10000000000i64],
+            vec![0, 1, 0, 0, 0, 0, 11614471390],
+            vec![0, 0, 1, 0, 0, 0, 13489594567],
+            vec![0, 0, 0, 1, 0, 0, 15667451017],
+            vec![0, 0, 0, 0, 1, 0, 18196916159],
+            vec![0, 0, 0, 0, 0, 1, 21134756212],
         ]);
 
         m.pprint();
@@ -795,12 +728,12 @@ mod tests {
                 .0
                 .get_row(0),
             vec![
-                Rational::from_str("-3").unwrap(),
-                Rational::from_str("7").unwrap(),
-                Rational::from_str("1").unwrap(),
-                Rational::from_str("-2").unwrap(),
-                Rational::from_str("-3").unwrap(),
-                Rational::from_str("1").unwrap(),
+                Rational::from(-3),
+                Rational::from(7),
+                Rational::from(1),
+                Rational::from(-2),
+                Rational::from(-3),
+                Rational::from(1),
             ],
         );
     }
@@ -808,24 +741,9 @@ mod tests {
     #[test]
     fn approx_golden_ratio_integral() {
         let m = Matrix::<Integer>::from_rows(vec![
-            vec![
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("10000").unwrap(),
-            ],
-            vec![
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("16180").unwrap(),
-            ],
-            vec![
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("26180").unwrap(),
-            ],
+            vec![1, 0, 0, 10000],
+            vec![0, 1, 0, 16180],
+            vec![0, 0, 1, 26180],
         ]);
 
         m.pprint();
@@ -838,11 +756,7 @@ mod tests {
                 )
                 .0
                 .get_row(0),
-            vec![
-                Integer::from_str("-1").unwrap(),
-                Integer::from_str("-1").unwrap(),
-                Integer::from_str("1").unwrap(),
-            ],
+            vec![Integer::from(-1), Integer::from(-1), Integer::from(1),],
         );
     }
 
@@ -851,60 +765,12 @@ mod tests {
         // Find the polynomial x^5-3x^4-2x^3+x^2+7x-3 of which ~1.1614471390 is a root
 
         let m = Matrix::<Integer>::from_rows(vec![
-            vec![
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("10000000000").unwrap(),
-            ],
-            vec![
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("11614471390").unwrap(),
-            ],
-            vec![
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("13489594567").unwrap(),
-            ],
-            vec![
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("15667451017").unwrap(),
-            ],
-            vec![
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("18196916159").unwrap(),
-            ],
-            vec![
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("0").unwrap(),
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("21134756212").unwrap(),
-            ],
+            vec![1, 0, 0, 0, 0, 0, 10000000000i64],
+            vec![0, 1, 0, 0, 0, 0, 11614471390],
+            vec![0, 0, 1, 0, 0, 0, 13489594567],
+            vec![0, 0, 0, 1, 0, 0, 15667451017],
+            vec![0, 0, 0, 0, 1, 0, 18196916159],
+            vec![0, 0, 0, 0, 0, 1, 21134756212],
         ]);
 
         m.pprint();
@@ -918,12 +784,12 @@ mod tests {
                 .0
                 .get_row(0),
             vec![
-                Integer::from_str("-3").unwrap(),
-                Integer::from_str("7").unwrap(),
-                Integer::from_str("1").unwrap(),
-                Integer::from_str("-2").unwrap(),
-                Integer::from_str("-3").unwrap(),
-                Integer::from_str("1").unwrap(),
+                Integer::from(-3),
+                Integer::from(7),
+                Integer::from(1),
+                Integer::from(-2),
+                Integer::from(-3),
+                Integer::from(1),
             ],
         );
     }
