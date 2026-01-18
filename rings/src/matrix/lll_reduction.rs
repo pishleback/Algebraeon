@@ -660,27 +660,10 @@ impl Matrix<Integer> {
 
 #[cfg(test)]
 mod tests {
-    // use crate::matrix::{
-    //     Matrix, SymmetricMatrix,
-    //     lll_reduction::{integral_lll_reduction, is_positive_definite},
-    // };
-    // use algebraeon_nzq::Integer;
-
-    // #[test]
-    // fn test_is_positive_definite() {
-    //     let mat = Matrix::from_rows(vec![
-    //         vec![Integer::from(2), Integer::from(-1), Integer::from(0)],
-    //         vec![Integer::from(-1), Integer::from(2), Integer::from(-1)],
-    //         vec![Integer::from(0), Integer::from(-1), Integer::from(0)],
-    //     ]);
-    //     assert!(is_positive_definite(&mat.try_into().unwrap()));
-    // }
-
-    use std::str::FromStr;
-
     use crate::matrix::{Matrix, StandardInnerProduct};
     use algebraeon_nzq::{Integer, Rational};
     use algebraeon_sets::structure::MetaType;
+    use std::str::FromStr;
 
     #[test]
     fn approx_golden_ratio() {
