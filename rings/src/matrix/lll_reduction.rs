@@ -55,7 +55,6 @@ impl<
         #[cfg(debug_assertions)]
         let orig_basis = basis.clone();
 
-        // variables to hold cached values
         #[derive(Debug)]
         struct CacheEntry<Set> {
             // for i < k the ith entry is m_{k,i} = <bj, bi>/<bi, bi>
@@ -369,6 +368,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
         debug_assert!(delta_numerator > Integer::ZERO);
         let delta_denominator = Integer::from(delta_denominator);
 
+        #[cfg(debug_assertions)]
         let rational_inner_product = RealSymmetricInnerProduct::new(
             Rational::structure(),
             SymmetricMatrix::construct(m, |i, j| {
@@ -381,84 +381,17 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
         #[cfg(debug_assertions)]
         let orig_basis = basis.clone();
 
-        let mut h = self.ident(n);
+        #[derive(Debug)]
+        struct CacheEntry {
+            // for i < k the ith entry is lambda_{k,i} = d_i mu_{k,i} = d_i <bj, bi>/<bi, bi>
+            lambda: Vec<Integer>,
+            // the determinant of the top k x k submatrix of the gram matrix of the basis
+            d: Integer,
+        }
+        let mut cache = Vec::<CacheEntry>::with_capacity(n);
 
-        let mut k = 1;
-        while k < n {
-            println!("k={k}");
-
-            for j in (0..k).rev() {
-                println!("reduce k={k} j={j}");
-
-                let true_mat_gs = basis
-                    .apply_map(|x| Rational::from(x))
-                    .gram_schmidt_row_orthogonalization(&rational_inner_product);
-                let true_mu = Matrix::construct(n, n, |i, j| {
-                    Rational::structure()
-                        .try_divide(
-                            &rational_inner_product.inner_product(
-                                &basis
-                                    .get_row(i)
-                                    .iter()
-                                    .map(Rational::from)
-                                    .collect::<Vec<_>>(),
-                                &true_mat_gs.get_row(j),
-                            ),
-                            &rational_inner_product
-                                .inner_product(&true_mat_gs.get_row(j), &true_mat_gs.get_row(j)),
-                        )
-                        .unwrap()
-                });
-                let true_gram_mat = Matrix::construct(n, n, |i, j| {
-                    inner_product.inner_product(&basis.get_row(i), &basis.get_row(j))
-                });
-                let true_d = (0..n)
-                    .map(|i| {
-                        true_gram_mat
-                            .submatrix((0..(i + 1)).collect(), (0..(i + 1)).collect())
-                            .det()
-                            .unwrap()
-                    })
-                    .collect::<Vec<_>>();
-                let true_lambda = Matrix::construct(n, n, |i, j| {
-                    Integer::try_from(
-                        Rational::from(&true_d[j]) * true_mu.at(i, j).unwrap().clone(),
-                    )
-                    .unwrap()
-                });
-
-                // println!("true_mat_gs");
-                // true_mat_gs.pprint();
-                // println!("true_mu");
-                // true_mu.pprint();
-                // println!("true_gram_mat");
-                // true_gram_mat.pprint();
-                // println!("d = {:?}", true_d);
-                // println!("true_lambda");
-                // true_lambda.pprint();
-
-                // The integer closest to lambda_{k, j}/d_j
-                let q = Integer::structure()
-                    .quo(
-                        &(Integer::TWO * true_lambda.at(k, j).unwrap() + &true_d[j]),
-                        &(Integer::TWO * &true_d[j]),
-                    )
-                    .unwrap();
-                println!("q={q}");
-
-                if q != Integer::ZERO {
-                    let neg_q = -q;
-                    // update basis and basis transformation matrix
-                    let row_opp = ElementaryOpp::new_row_opp(
-                        self.ring().clone(),
-                        ElementaryOppType::AddRowMul { i: k, j, x: neg_q },
-                    );
-                    println!("{:?}", row_opp);
-                    row_opp.apply(&mut basis);
-                    row_opp.apply(&mut h);
-                }
-            }
-
+        #[cfg(debug_assertions)]
+        let validate_cache = |basis: &Matrix<Integer>, cache: &Vec<CacheEntry>| {
             let true_mat_gs = basis
                 .apply_map(|x| Rational::from(x))
                 .gram_schmidt_row_orthogonalization(&rational_inner_product);
@@ -494,22 +427,118 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
                     .unwrap()
             });
 
-            // d_k * d_{k-2} >= delta * d_{k-1}^2 - lambda_{k, k-1}^2
+            for (k, cache_entry) in cache.iter().enumerate() {
+                assert_eq!(cache_entry.lambda.len(), k);
+                for j in 0..k {
+                    assert_eq!(&cache_entry.lambda[j], true_lambda.at(k, j).unwrap());
+                }
+                assert_eq!(cache_entry.d, true_d[k]);
+            }
+        };
 
-            let lambda_k_km1 = true_lambda.at(k, k - 1).unwrap();
+        cache.push(CacheEntry {
+            lambda: vec![],
+            d: inner_product.inner_product(&basis.get_row(0), &basis.get_row(0)),
+        });
+
+        #[cfg(debug_assertions)]
+        validate_cache(&basis, &cache);
+
+        let mut h = self.ident(n);
+
+        let reduce = |cache: &mut Vec<CacheEntry>,
+                      h: &mut Matrix<Integer>,
+                      basis: &mut Matrix<Integer>,
+                      k: usize,
+                      j: usize| {
+            // The integer closest to lambda_{k, j}/d_j
+            let q = Integer::structure()
+                .quo(
+                    &(Integer::TWO * &cache[k].lambda[j] + &cache[j].d),
+                    &(Integer::TWO * &cache[j].d),
+                )
+                .unwrap();
+
+            if q != Integer::ZERO {
+                let neg_q = -&q;
+                // update basis and basis transformation matrix
+                let row_opp = ElementaryOpp::new_row_opp(
+                    self.ring().clone(),
+                    ElementaryOppType::AddRowMul { i: k, j, x: neg_q },
+                );
+                println!("{:?}", row_opp);
+                row_opp.apply(basis);
+                row_opp.apply(h);
+
+                // update the cache
+                cache[k].lambda[j] = &cache[k].lambda[j] - &q * &cache[j].d;
+                for i in 0..j {
+                    cache[k].lambda[i] = &cache[k].lambda[i] - &q * &cache[j].lambda[i];
+                }
+
+                #[cfg(debug_assertions)]
+                validate_cache(&basis, &cache);
+            }
+        };
+
+        let mut k = 1;
+        while k < n {
+            // extend the cache if necessary
+            if k >= cache.len() {
+                debug_assert_eq!(k, cache.len());
+
+                cache.push(CacheEntry {
+                    lambda: vec![],   // to be filled in below
+                    d: Integer::ZERO, // to be filled in below
+                });
+                for j in 0..(k + 1) {
+                    let mut u = inner_product.inner_product(&basis.get_row(k), &basis.get_row(j));
+                    for i in 0..j {
+                        u = &cache[i].d * u - &cache[k].lambda[i] * &cache[j].lambda[i];
+                        if i > 0 {
+                            debug_assert!(u.divisible(&cache[i - 1].d));
+                            u = u / &cache[i - 1].d;
+                        }
+                    }
+                    if j < k {
+                        cache[k].lambda.push(u);
+                    } else {
+                        debug_assert_eq!(j, k);
+                        cache[k].d = u;
+                    }
+                }
+
+                #[cfg(debug_assertions)]
+                validate_cache(&basis, &cache);
+                debug_assert_eq!(k + 1, cache.len());
+            }
+
+            // only reduce at k-1 before checking lovasz condition
+            reduce(&mut cache, &mut h, &mut basis, k, k - 1);
+
+            // The Lovasz condition is
+            // d_k * d_{k-2} >= delta * d_{k-1}^2 - lambda_{k, k-1}^2
+            let lambda_k_km1 = &cache[k].lambda[k - 1];
             let lovasz_condition = {
                 if k == 1 {
-                    &delta_denominator * &true_d[1]
+                    &delta_denominator * &cache[1].d
                 } else {
-                    &delta_denominator * &true_d[k] * &true_d[k - 2]
+                    &delta_denominator * &cache[k].d * &cache[k - 2].d
                 }
             }
             .cmp(
-                &(&delta_numerator * &true_d[k - 1] * &true_d[k - 1] - lambda_k_km1 * lambda_k_km1),
+                &(&delta_numerator * &cache[k - 1].d * &cache[k - 1].d
+                    - lambda_k_km1 * lambda_k_km1),
             )
             .is_ge();
 
             if lovasz_condition {
+                // reduce all others only if lovasz condition passes
+                for j in (0..(k - 1)).rev() {
+                    reduce(&mut cache, &mut h, &mut basis, k, j);
+                }
+
+                // continue to next basis vector
                 k += 1
             } else {
                 // swap b_{k} and b_{k-1}
@@ -520,6 +549,47 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
                 println!("{:?}", row_opp);
                 row_opp.apply(&mut basis);
                 row_opp.apply(&mut h);
+
+                // update the cache
+                if k > 1 {
+                    for j in 0..(k - 1) {
+                        (cache[k].lambda[j], cache[k - 1].lambda[j]) =
+                            (cache[k - 1].lambda[j].clone(), cache[k].lambda[j].clone());
+                    }
+                }
+                let lambda = cache[k].lambda[k - 1].clone();
+                let d_km1 = {
+                    // compute x = (d_{k-2} * d_k + lambda^2) / d_{k-1}
+                    let mut x = cache[k].d.clone();
+                    if k > 1 {
+                        x *= &cache[k - 2].d;
+                    }
+                    x += &lambda * &lambda;
+                    debug_assert!(x.divisible(&cache[k - 1].d));
+                    x = x / &cache[k - 1].d;
+                    x
+                };
+                for i in (k + 1)..cache.len() {
+                    let t = cache[i].lambda[k].clone();
+                    cache[i].lambda[k] = {
+                        // compute x = dk
+                        let mut x = &cache[k].d * &cache[i].lambda[k - 1] - &lambda * &t;
+                        debug_assert!(x.divisible(&cache[k - 1].d));
+                        x = x / &cache[k - 1].d;
+                        x
+                    };
+                    cache[i].lambda[k - 1] = {
+                        // compute x = (d_km1 * t + lambda * lambda_{i, k}) / d_k
+                        let mut x = &d_km1 * &t + &lambda * &cache[i].lambda[k];
+                        debug_assert!(x.divisible(&cache[k].d));
+                        x = x / &cache[k].d;
+                        x
+                    };
+                }
+                cache[k - 1].d = d_km1;
+
+                #[cfg(debug_assertions)]
+                validate_cache(&basis, &cache);
 
                 // now only up to k-1 are LLL reduced
                 k -= 1;
