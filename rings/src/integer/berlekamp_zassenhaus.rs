@@ -69,6 +69,7 @@ use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use std::collections::BTreeSet;
 use std::ops::Rem;
+use std::usize;
 
 fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
@@ -647,27 +648,20 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
                 .factorizations()
                 .new_irreducible_unchecked(f.clone());
         }
-        if prime_search.smallest_n < 16 {
+
+        if prime_search.smallest_n < 18 {
             break;
         }
 
         let possible_proper_factor_degrees = prime_search.possible_proper_factor_degrees.clone();
         let at_prime = prime_search.at_most_recent_prime().unwrap();
+        println!("p={}", at_prime.p);
         at_prime.lift_to_modulus(&Natural::from(1000000000u64));
         let partially_factored =
             at_prime.partial_factor_by_test_modular_subsets(3, &possible_proper_factor_degrees);
         debug_assert!(!partially_factored.is_empty());
-
-        println!(
-            "partial_factors = {:?}",
-            partially_factored
-                .iter()
-                .map(|f| f.degree().unwrap())
-                .collect::<Vec<_>>()
-        );
-
         if partially_factored.len() >= 2 {
-            println!("awunga");
+            println!("awunga 1");
             let mut factored = Integer::structure().polynomials().factorizations().one();
             for f in partially_factored {
                 Integer::structure().polynomials().factorizations().mul_mut(
