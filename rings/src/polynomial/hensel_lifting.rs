@@ -45,6 +45,32 @@ pub struct HenselFactorization<
 impl<
     const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
+> HenselFactorization<LIFTED_BEZOUT_COEFFS, RS>
+{
+    pub fn bezout_coeff_modulus_base(&self) -> &RS::Set {
+        &self.i
+    }
+
+    pub fn bezout_coeff_modulus_power(&self) -> Natural {
+        if LIFTED_BEZOUT_COEFFS {
+            self.n.clone()
+        } else {
+            Natural::ONE
+        }
+    }
+
+    pub fn factorization_modulus_base(&self) -> &RS::Set {
+        &self.i
+    }
+
+    pub fn factorization_modulus_power(&self) -> &Natural {
+        &self.n
+    }
+}
+
+impl<
+    const LIFTED_BEZOUT_COEFFS: bool,
+    RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > HenselFactorizationNodeCases<LIFTED_BEZOUT_COEFFS, RS>
 {
     #[allow(unused)]
@@ -512,7 +538,7 @@ impl<
         ans
     }
 
-    pub fn modolus(&self) -> RS::Set {
+    pub fn modulus(&self) -> RS::Set {
         self.ring.nat_pow(&self.i, &self.n)
     }
 
@@ -526,10 +552,15 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
     HenselFactorization<true, RS>
 {
     pub fn dont_lift_bezout_coeffs(self) -> HenselFactorization<false, RS> {
+        // When LIFTED_BEZOUT_COEFFS = true, the pair (self.i, self.n) means the factorization is modulo i^n and the bezout coeffs are modulo i^n
+        // When LIFTED_BEZOUT_COEFFS = false, the pair (self.i, self.n) means the factorization is modulo i^n and the bezout coeffs are modulo i
+        // So when LIFTED_BEZOUT_COEFFS goes from true -> false it's not logically incorrect to send (i, n) -> (i, n), but it's better to send (i, n) -> (i^n, 1)
+        let i = self.ring.nat_pow(&self.i, &self.n);
+        let n = Natural::ONE;
         HenselFactorization {
             ring: self.ring,
-            i: self.i,
-            n: self.n,
+            i,
+            n,
             factorization: self.factorization.dont_lift_bezout_coeffs(),
         }
     }
@@ -555,19 +586,6 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
         self.n *= Natural::TWO;
     }
 }
-
-// impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
-//     HenselFactorization<LIFTED_BEZOUR_COEFFS, RS>
-// {
-//     /// update the Hensel factorization sending (i, i^n) -> (i^k, i^{n/k}) for some divisor k of n
-//     pub fn increase_modulus(&mut self, k: &Natural) {
-//         debug_assert!(&Natural::ONE <= k);
-//         debug_assert!(k <= &self.n);
-//         debug_assert!(&self.n % k == Natural::ZERO);
-//         self.i = self.ring.nat_pow(&self.i, k);
-//         self.n = &self.n / k;
-//     }
-// }
 
 impl<
     RS: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
@@ -671,7 +689,7 @@ mod tests {
                 &Polynomial::constant(Polynomial::leading_coeff(&h).unwrap()),
                 &Polynomial::product(hensel_fact.factors()),
             )
-            .apply_map(|c| Integer::rem(c, &hensel_fact.modolus()));
+            .apply_map(|c| Integer::rem(c, &hensel_fact.modulus()));
             println!("{:?} {:?}", lifted_product, h);
             assert_eq!(lifted_product, h);
         }
