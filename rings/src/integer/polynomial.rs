@@ -161,7 +161,6 @@ mod tests {
             &factorize_by_berlekamp_zassenhaus_algorithm_naive(f.clone())
         ));
 
-
         println!("{}", fs);
         println!("{}", factorize_by_berlekamp_zassenhaus_algorithm(f.clone()));
 
