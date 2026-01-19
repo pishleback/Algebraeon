@@ -1,7 +1,7 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
 use algebraeon_nzq::*;
-use algebraeon_sets::structure::{BorrowedStructure, SetSignature};
+use algebraeon_sets::structure::{BorrowedStructure, EqSignature, SetSignature};
 
 impl<
     RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
@@ -14,12 +14,55 @@ where
         + GreatestCommonDivisorSignature
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
-    /// Reduce a factorization problem for polynomials over a ring of characteristic 0 to a factorization of primitive squarefree polynomials over the ring
-    //https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
-    pub fn factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
+    /// Reduce a factorization problem for polynomials over a ring of characteristic 0 to a factorization of non-constant primitive polynomials
+    pub fn factorize_by_primitive_factorize(
         &self,
         f: Polynomial<RS::Set>,
         factor_coeff: impl Fn(&RS::Set) -> Factored<RS::Set, Natural>,
+        primitive_factorize: &impl Fn(Polynomial<RS::Set>) -> Factored<Polynomial<RS::Set>, Natural>,
+    ) -> Factored<Polynomial<RS::Set>, Natural> {
+        #[cfg(debug_assertions)]
+        let f_orig = f.clone();
+        let (content, prim) = self.factor_primitive(f.clone()).unwrap();
+        let (content_unit, content_factors) =
+            factor_coeff(&content).into_unit_and_powers().unwrap();
+        let mut factors = self.factorizations().new_unit_and_powers_unchecked(
+            Polynomial::constant(content_unit),
+            content_factors
+                .into_iter()
+                .map(|(factor, power)| (Polynomial::constant(factor), power))
+                .collect(),
+        );
+        if self.degree(&prim).unwrap() == 0 {
+            self.factorizations().mul_mut(
+                &mut factors,
+                &self.factorizations().new_unit_unchecked(prim),
+            );
+        } else {
+            self.factorizations()
+                .mul_mut(&mut factors, &primitive_factorize(prim));
+        }
+        #[cfg(debug_assertions)]
+        assert!(self.equal(&f_orig, &self.factorizations().expand(&factors)));
+        factors
+    }
+}
+
+impl<
+    RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+        + GreatestCommonDivisorSignature
+        + CharZeroRingSignature,
+    RSB: BorrowedStructure<RS>,
+> PolynomialStructure<RS, RSB>
+where
+    PolynomialStructure<RS, RSB>:
+        SetSignature<Set = Polynomial<RS::Set>> + GreatestCommonDivisorSignature,
+{
+    /// Reduce a factorization problem for primitive polynomials over a ring of characteristic 0 to a factorization of non-constant primitive squarefree polynomials over the ring
+    //https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
+    pub fn factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
+        &self,
+        mut f: Polynomial<RS::Set>,
         primitive_sqfree_factorize: &impl Fn(
             Polynomial<RS::Set>,
         ) -> Factored<Polynomial<RS::Set>, Natural>,
@@ -29,19 +72,19 @@ where
         //  f = x * a_1^1 * a_2^2 * a_3^3 * ... * a_k^k
         //where each a_i is a squarefree primitive polynomial and x is an element of R
 
-        let (content, prim) = self.factor_primitive(f.clone()).unwrap();
-        let (content_unit, content_factors) =
-            factor_coeff(&content).into_unit_and_powers().unwrap();
+        let primitive_sqfree_factorize_handle_constants =
+            |f: Polynomial<RS::Set>| -> Factored<Polynomial<RS::Set>, Natural> {
+                if self.degree(&f).unwrap() == 0 {
+                    self.factorizations().new_unit_unchecked(f)
+                } else {
+                    primitive_sqfree_factorize(f)
+                }
+            };
 
-        let mut factors = self.factorizations().new_unit_and_powers_unchecked(
-            Polynomial::constant(content_unit),
-            content_factors
-                .into_iter()
-                .map(|(factor, power)| (Polynomial::constant(factor), power))
-                .collect(),
-        );
+        debug_assert!(self.is_primitive(f.clone()));
 
-        let mut f = prim;
+        let mut factors = self.factorizations().one();
+
         let f_prime = self.derivative(f.clone());
         let mut i: usize = 1;
         let mut a = self.gcd_by_primitive_subresultant(f.clone(), f_prime.clone());
@@ -55,9 +98,10 @@ where
             //a^i is a power of a squarefree factor of f
             self.factorizations().mul_mut(
                 &mut factors,
-                &self
-                    .factorizations()
-                    .pow(&primitive_sqfree_factorize(a.clone()), &Natural::from(i)),
+                &self.factorizations().pow(
+                    &primitive_sqfree_factorize_handle_constants(a.clone()),
+                    &Natural::from(i),
+                ),
             );
             f = self
                 .try_divide(&f, &self.nat_pow(&a, &Natural::from(i)))
@@ -72,6 +116,7 @@ where
         }
         self.factorizations()
             .mul_mut(&mut factors, &self.factorizations().new_unit_unchecked(f));
+
         factors
     }
 }
@@ -302,17 +347,15 @@ where
         if self.is_zero(f) {
             Factored::Zero
         } else {
-            self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-                f.clone(),
-                &factor_coeff,
-                &|f| {
+            self.factorize_by_primitive_factorize(f.clone(), &factor_coeff, &|f| {
+                self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(f.clone(), &|f| {
                     let big_ff = factorize_by_find_factor(self, f, &|f| {
                         self.find_factor_primitive_by_kroneckers_algorithm(&f, |c| factor_coeff(c))
                     });
                     #[allow(clippy::let_and_return)]
                     big_ff
-                },
-            )
+                })
+            })
         }
     }
 }

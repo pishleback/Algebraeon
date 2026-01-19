@@ -590,19 +590,21 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactoringMonoidSignature
     for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
-    fn factor_unchecked(&self, a: &Self::Set) -> Factored<Self::Set, Natural> {
-        if self.is_zero(a) {
+    fn factor_unchecked(&self, f: &Self::Set) -> Factored<Self::Set, Natural> {
+        if self.is_zero(f) {
             Factored::Zero
         } else {
-            self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-                a.clone(),
+            self.factorize_by_primitive_factorize(
+                f.clone(),
                 |c| self.coeff_ring().factor(c),
-                &|a| {
-                    self.factorize_rational_factorize_first(&a, &|a| {
-                        // Unsure which is faster. One might be better in different cases.
-                        self.factor_primitive_sqfree_by_reduced_ring(a)
-                        // OR
-                        // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
+                &|f| {
+                    self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(f, &|a| {
+                        self.factorize_rational_factorize_first(&a, &|a| {
+                            // Unsure which is faster. One might be better in different cases.
+                            self.factor_primitive_sqfree_by_reduced_ring(a)
+                            // OR
+                            // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
+                        })
                     })
                 },
             )
