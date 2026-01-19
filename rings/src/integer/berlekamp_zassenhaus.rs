@@ -69,7 +69,6 @@ use algebraeon_sets::structure::*;
 use itertools::Itertools;
 use std::collections::BTreeSet;
 use std::ops::Rem;
-use std::usize;
 
 fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
