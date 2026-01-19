@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+ - Added an LLL implementation over any field with the appropriate structure inherited from the real numbers.
+ - Added an LLL implementation over the integers using integer-only operations.
+ - Bugfix in Cantor-Zassenhaus for factoring polynomials over finite fields in characteristic 2 where the construction of a high-degree polynomial without doing a reduction caused very poor performance on large inputs.
+
 ## [0.0.16] - 2026-01-15
 
  - Added `MultiplicativeMonoidSignature`.
