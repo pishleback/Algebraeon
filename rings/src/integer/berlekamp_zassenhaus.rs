@@ -60,102 +60,216 @@ some improvements
 
 use crate::polynomial::*;
 use crate::structure::*;
+use algebraeon_groups::structure::AssociativeCompositionSignature;
+use algebraeon_groups::structure::CompositionSignature;
 use algebraeon_nzq::primes;
 use algebraeon_nzq::*;
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
+use std::collections::BTreeSet;
 use std::ops::Rem;
 
 fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
 }
 
-struct BerlekampAassenhausAlgorithmState {
-    poly: Polynomial<Integer>,
-    degree: usize,
-    minimum_modolus: Natural,
+struct BerlekampZassenhausPrimeSearch<'a> {
+    sqfree_prim_poly: &'a Polynomial<Integer>,
     prime_gen: Box<dyn Iterator<Item = usize>>,
+    at_primes: Vec<BerlekampZassenhausAlgorithmStateAtPrime<'a>>,
+    possible_proper_factor_degrees: BTreeSet<usize>,
+    best_idx: Option<usize>,
+    smallest_n: usize, // the smallest number of modular factors, achived by `at_primes[best_idx]`.
 }
 
-impl BerlekampAassenhausAlgorithmState {
-    fn new(poly: Polynomial<Integer>) -> Self {
-        let degree = poly.degree().unwrap();
-        debug_assert_ne!(degree, 0);
-        let factor_coeff_bound = compute_polynomial_factor_bound(&poly);
-        let minimum_modolus = Natural::TWO * &factor_coeff_bound;
+impl<'a> BerlekampZassenhausPrimeSearch<'a> {
+    fn new(sqfree_prim_poly: &'a Polynomial<Integer>) -> Self {
+        debug_assert_ne!(sqfree_prim_poly.degree().unwrap(), 0);
         let prime_gen = Box::new(primes());
         Self {
-            poly,
-            degree,
-            minimum_modolus,
+            sqfree_prim_poly,
             prime_gen,
+            at_primes: vec![],
+            possible_proper_factor_degrees: (1..sqfree_prim_poly.degree().unwrap())
+                .collect::<BTreeSet<_>>(),
+            best_idx: None,
+            smallest_n: usize::MAX,
         }
     }
 
-    fn next_prime(&mut self) -> BerlekampZassenhausAlgorithmStateAtPrime {
+    // Yield primes `p` for which `self.poly` mod `p` is of full degree and the factorization of `self.poly` mod `p` remains squarefree
+    fn next_good_prime(&mut self) {
         loop {
             let p = Natural::from(self.prime_gen.next().unwrap());
-            if let Some(state_at_p) =
-                BerlekampZassenhausAlgorithmStateAtPrime::new_at_prime(self, p)
-            {
-                return state_at_p;
+            if let Some(state_at_p) = BerlekampZassenhausAlgorithmStateAtPrime::try_new_at_prime(
+                self.sqfree_prim_poly,
+                p.clone(),
+            ) {
+                let modular_factors = state_at_p.hensel_factorization.factors();
+                let n = modular_factors.len();
+
+                // is `n` the smallest so far?
+                if self.best_idx.is_none_or(|_| n < self.smallest_n) {
+                    self.smallest_n = n;
+                    self.best_idx = Some(self.at_primes.len());
+                }
+
+                // update the list of possible degrees of true factors
+                let mut possible_proper_factor_degrees_at_p = BTreeSet::new();
+                for mf in &modular_factors {
+                    let d = mf.degree().unwrap();
+                    for e in possible_proper_factor_degrees_at_p.clone() {
+                        possible_proper_factor_degrees_at_p.insert(d + e);
+                    }
+                    possible_proper_factor_degrees_at_p.insert(d);
+                }
+                self.possible_proper_factor_degrees = self
+                    .possible_proper_factor_degrees
+                    .intersection(&possible_proper_factor_degrees_at_p)
+                    .copied()
+                    .collect();
+
+                self.at_primes.push(state_at_p);
+                return;
             }
         }
     }
+
+    fn at_most_recent_prime(
+        &mut self,
+    ) -> Option<&mut BerlekampZassenhausAlgorithmStateAtPrime<'a>> {
+        self.at_primes.last_mut()
+    }
+
+    fn at_best_prime(&self) -> Option<&BerlekampZassenhausAlgorithmStateAtPrime<'a>> {
+        Some(&self.at_primes[self.best_idx?])
+    }
 }
 
-#[derive(Debug)]
-struct BerlekampZassenhausAlgorithmStateAtPrime {
-    poly: Polynomial<Integer>,
-    leading_coeff: Integer,
-    modulus: Integer,
-    modular_factors: Vec<Polynomial<Integer>>,
+#[derive(Default, Debug, Clone)]
+enum BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization {
+    #[default]
+    Empty,
+    Quadratic(HenselFactorization<true, IntegerCanonicalStructure>),
+    Linear(HenselFactorization<false, IntegerCanonicalStructure>),
 }
 
-impl BerlekampZassenhausAlgorithmStateAtPrime {
-    fn new_at_prime(state: &BerlekampAassenhausAlgorithmState, p: Natural) -> Option<Self> {
+impl BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization {
+    fn modulus(&self) -> Integer {
+        match self {
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Empty => unreachable!(),
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Quadratic(hf) => {
+                hf.modulus()
+            }
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Linear(hf) => hf.modulus(),
+        }
+    }
+
+    fn factors(&self) -> Vec<&Polynomial<Integer>> {
+        match self {
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Empty => unreachable!(),
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Quadratic(hf) => {
+                hf.factors()
+            }
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Linear(hf) => hf.factors(),
+        }
+    }
+
+    fn lift_to_modulus(&mut self, target_modulus: &Natural) {
+        // For hensel lifting it is more efficient (due to how the coefficients grow during Hensel lifting) to begin
+        // with quadratic lifts until the modulus is just below the size limit for primitive integers, and then proceed with linear lifts
+
+        // quadratic lifting
+        match self {
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Empty => unreachable!(),
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Quadratic(
+                hensel_factorization,
+            ) => {
+                while hensel_factorization
+                    .factorization_modulus_base()
+                    .nat_pow(&(Natural::TWO * hensel_factorization.factorization_modulus_power()))
+                    < Natural::from(u64::MAX)
+                {
+                    if hensel_factorization.modulus() >= target_modulus {
+                        return;
+                    }
+                    hensel_factorization.quadratic_lift();
+                }
+            }
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Linear(_) => {}
+        }
+
+        *self = match std::mem::take(self) {
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Empty => unreachable!(),
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Quadratic(
+                hensel_factorization,
+            ) => BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Linear(
+                hensel_factorization.dont_lift_bezout_coeffs(),
+            ),
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Linear(hf) => {
+                BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Linear(hf)
+            }
+        };
+
+        // linear lifting
+        match self {
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Empty => unreachable!(),
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Quadratic(_) => {
+                unreachable!()
+            }
+            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Linear(
+                hensel_factorization,
+            ) => loop {
+                if hensel_factorization.modulus() >= target_modulus {
+                    return;
+                }
+                hensel_factorization.linear_lift();
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct BerlekampZassenhausAlgorithmStateAtPrime<'a> {
+    p: Natural,
+    sqfree_prim_poly: &'a Polynomial<Integer>,
+    hensel_factorization: BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization,
+}
+
+impl<'a> BerlekampZassenhausAlgorithmStateAtPrime<'a> {
+    fn try_new_at_prime(sqfree_prim_poly: &'a Polynomial<Integer>, p: Natural) -> Option<Self> {
         debug_assert!(p.is_irreducible());
         let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p));
         let poly_mod_p = mod_p.polynomials();
-        if poly_mod_p.degree(&state.poly) == Some(state.degree) {
-            let facotred_f_mod_p = poly_mod_p.factor(&state.poly).unwrap_nonzero();
-            match poly_mod_p
+        if poly_mod_p.degree(sqfree_prim_poly) == sqfree_prim_poly.degree() {
+            poly_mod_p
                 .factorizations()
-                .into_hensel_factorization(facotred_f_mod_p, state.poly.clone())
-            {
-                Some(hensel_factorization_f_over_p) => {
-                    let mut hensel_factorization_f_over_p =
-                        hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
-                    while hensel_factorization_f_over_p.modolus() < state.minimum_modolus {
-                        hensel_factorization_f_over_p.linear_lift();
-                    }
-                    let modulus = hensel_factorization_f_over_p.modolus();
-                    let modular_factors = hensel_factorization_f_over_p
-                        .factors()
-                        .into_iter()
-                        .cloned()
-                        .collect();
-                    Some(BerlekampZassenhausAlgorithmStateAtPrime {
-                        poly: state.poly.clone(),
-                        leading_coeff: state.poly.leading_coeff().unwrap(),
-                        modulus,
-                        modular_factors,
-                    })
-                }
-                None => None,
-            }
+                .into_hensel_factorization(
+                    poly_mod_p.factor(sqfree_prim_poly).unwrap_nonzero(),
+                    sqfree_prim_poly.clone(),
+                )
+                .map(
+                    |hensel_factorization| BerlekampZassenhausAlgorithmStateAtPrime {
+                        p,
+                        sqfree_prim_poly,
+                        hensel_factorization:
+                            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Quadratic(
+                                hensel_factorization,
+                            ),
+                    },
+                )
         } else {
             None
         }
     }
+
+    fn lift_to_modulus(&mut self, target_modulus: &Natural) {
+        self.hensel_factorization.lift_to_modulus(target_modulus);
+    }
 }
 
-trait SemigroupSignature: SetSignature {
-    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
-}
-
-struct MemoryStack<SG: SemigroupSignature> {
+struct MemoryStack<SG: AssociativeCompositionSignature> {
     semigroup: SG,
     modular_factor_values: Vec<SG::Set>,
     // Store the partial products of a previous calculation
@@ -171,7 +285,7 @@ struct MemoryStack<SG: SemigroupSignature> {
     prev_calc: Vec<(usize, SG::Set)>,
 }
 
-impl<SG: SemigroupSignature> MemoryStack<SG> {
+impl<SG: AssociativeCompositionSignature> MemoryStack<SG> {
     fn new(semigroup: SG, modular_factor_values: Vec<SG::Set>) -> Self {
         Self {
             semigroup,
@@ -255,7 +369,7 @@ mod dminusone_test {
             Ok(())
         }
     }
-    impl SemigroupSignature for DMinusOneTestSemigroup {
+    impl CompositionSignature for DMinusOneTestSemigroup {
         fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
             DMinusOneTestSemigroupElem {
                 approx_coeff_lower_bound: a
@@ -265,6 +379,7 @@ mod dminusone_test {
             }
         }
     }
+    impl AssociativeCompositionSignature for DMinusOneTestSemigroup {}
 
     pub struct DMinusOneTest {
         memory_stack: MemoryStack<DMinusOneTestSemigroup>,
@@ -366,35 +481,74 @@ type ModularFactorMultSemigrp = PolynomialStructure<
         false,
     >,
 >;
-impl SemigroupSignature for ModularFactorMultSemigrp {
+impl CompositionSignature for ModularFactorMultSemigrp {
     fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         self.mul(a, b)
     }
 }
+impl AssociativeCompositionSignature for ModularFactorMultSemigrp {}
 
-impl BerlekampZassenhausAlgorithmStateAtPrime {
-    fn factor_by_try_all_subsets(&self) -> Factored<Polynomial<Integer>, Natural> {
-        let n = self.modular_factors.len();
+// Polynomial degree
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ModularFactorDegreeSumSemigrp {}
+impl Signature for ModularFactorDegreeSumSemigrp {}
+impl SetSignature for ModularFactorDegreeSumSemigrp {
+    type Set = usize;
+    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        Ok(())
+    }
+}
+impl CompositionSignature for ModularFactorDegreeSumSemigrp {
+    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        a + b
+    }
+}
+impl AssociativeCompositionSignature for ModularFactorDegreeSumSemigrp {}
+
+impl<'a> BerlekampZassenhausAlgorithmStateAtPrime<'a> {
+    // try to find some factors of the polynomial by trying combinations of modular subsets
+    fn partial_factor_by_test_modular_subsets(
+        &self,
+        max_subset_size: usize,
+        possible_proper_factor_degrees: &BTreeSet<usize>,
+    ) -> Vec<Polynomial<Integer>> {
+        let modulus = self.hensel_factorization.modulus();
+        let modular_factors = self
+            .hensel_factorization
+            .factors()
+            .into_iter()
+            .cloned()
+            .collect::<Vec<_>>();
+        let leading_coeff = self.sqfree_prim_poly.leading_coeff().unwrap();
+
+        let n = modular_factors.len();
 
         let mut dminusone_test =
-            dminusone_test::DMinusOneTest::new(&self.modulus, &self.poly, &self.modular_factors);
+            dminusone_test::DMinusOneTest::new(&modulus, self.sqfree_prim_poly, &modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
             Integer::structure()
-                .into_quotient_ring(self.modulus.clone())
+                .into_quotient_ring(modulus.clone())
                 .into_polynomials(),
-            self.modular_factors.clone(),
+            modular_factors.clone(),
+        );
+        let mut modular_factor_degree_memory_stack = MemoryStack::new(
+            ModularFactorDegreeSumSemigrp {},
+            modular_factors
+                .iter()
+                .map(|mf| mf.degree().unwrap())
+                .collect(),
         );
 
-        let mut factored = Polynomial::<Integer>::structure().factorizations().one();
+        let mut factors = vec![];
         let mut excluded_modular_factors = vec![];
-        let mut f = self.poly.clone();
+        let mut f = self.sqfree_prim_poly.clone();
         let mut k = 1; // The cardinality of the subset to search for each loop
         let mut m = n; // Keep track of the number of remaining modular factors i.e. m = n - excluded_modular_factors.len()
 
         // Loop over subsets of modular factors in order of increasing cardinality, then in lexicographic order for each cardinality
         // Only half of the cardinalities need to be checked since complimentary subsets need not be checked
         // Keep searching for cardinalities up to and including half the number of remaining modular factors
-        while k <= m / 2 {
+        while k <= std::cmp::min(m / 2, max_subset_size) {
             let mut k_combinations = LexicographicSubsetsWithRemovals::new(n, k);
             if 2 * k == m {
                 // When m is even and k = m/2 we only need to iterate over half the subsets of size k
@@ -408,18 +562,31 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
             loop {
                 match k_combinations.next() {
                     Some(subset) => {
+                        let d = modular_factor_degree_memory_stack.get_product(&subset);
+                        debug_assert_eq!(
+                            *d,
+                            subset
+                                .iter()
+                                .map(|i| modular_factors[*i].degree().unwrap())
+                                .sum::<usize>()
+                        );
+
                         if dminusone_test.test(&subset) {
                             continue;
                         }
 
+                        if !possible_proper_factor_degrees.contains(d) {
+                            continue;
+                        }
+
                         let g = Polynomial::mul(
-                            &Polynomial::constant(self.leading_coeff.clone()),
+                            &Polynomial::constant(leading_coeff.clone()),
                             modular_factor_product_memory_stack.get_product(&subset),
                         )
                         .apply_map(|c| {
-                            let c = Rem::rem(c, &self.modulus);
-                            if c > Integer::quo(&self.modulus, &Integer::TWO).unwrap() {
-                                c - &self.modulus
+                            let c = Rem::rem(c, &modulus);
+                            if c > Integer::quo(&modulus, &Integer::TWO).unwrap() {
+                                c - &modulus
                             } else {
                                 c.clone()
                             }
@@ -433,12 +600,7 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
                             // Divide f by the found factor g
                             f = h;
                             // Add g to this list of found factors
-                            Polynomial::<Integer>::structure().factorizations().mul_mut(
-                                &mut factored,
-                                &Polynomial::<Integer>::structure()
-                                    .factorizations()
-                                    .new_irreducible_unchecked(g),
-                            );
+                            factors.push(g);
                             // Remove the modular factors for g from future consideration
                             m -= k;
                             for i in subset {
@@ -457,24 +619,92 @@ impl BerlekampZassenhausAlgorithmStateAtPrime {
 
         // The remaining modular factors must give the last irreducible factor in the factorization
         if m > 0 {
-            Polynomial::<Integer>::structure().factorizations().mul_mut(
-                &mut factored,
-                &Polynomial::<Integer>::structure()
-                    .factorizations()
-                    .new_irreducible_unchecked(f),
-            );
+            factors.push(f);
         } else {
             // Or maybe there is just a unit left over.
             debug_assert!(f.is_unit());
-            Polynomial::<Integer>::structure().factorizations().mul_mut(
-                &mut factored,
-                &Polynomial::<Integer>::structure()
-                    .factorizations()
-                    .new_unit_unchecked(f),
-            );
+            factors[0].mul_mut(&f);
         }
-        factored
+        factors
     }
+}
+
+fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
+    f: Polynomial<Integer>,
+) -> Factored<Polynomial<Integer>, Natural> {
+    debug_assert_ne!(f.degree().unwrap(), 0);
+    debug_assert!(Integer::structure().polynomials().is_primitive(f.clone()));
+
+    // We factor f into its modular factors at some primes p
+    // There exists some partition of the modular factors yielding the true irreducible factors of f
+    // For each prime we can take the set of possible sums of degrees of modular factors mod p - those are the only possible degrees of irreducible factors of f
+
+    let mut prime_search = BerlekampZassenhausPrimeSearch::new(&f);
+    for _ in 1..10 {
+        prime_search.next_good_prime();
+        if prime_search.possible_proper_factor_degrees.is_empty() {
+            return Polynomial::<Integer>::structure()
+                .factorizations()
+                .new_irreducible_unchecked(f.clone());
+        }
+        if prime_search.smallest_n < 16 {
+            break;
+        }
+
+        let possible_proper_factor_degrees = prime_search.possible_proper_factor_degrees.clone();
+        let at_prime = prime_search.at_most_recent_prime().unwrap();
+        at_prime.lift_to_modulus(&Natural::from(1000000000u64));
+        let partially_factored =
+            at_prime.partial_factor_by_test_modular_subsets(3, &possible_proper_factor_degrees);
+        debug_assert!(!partially_factored.is_empty());
+
+        println!(
+            "partial_factors = {:?}",
+            partially_factored
+                .iter()
+                .map(|f| f.degree().unwrap())
+                .collect::<Vec<_>>()
+        );
+
+        if partially_factored.len() >= 2 {
+            println!("awunga");
+            let mut factored = Integer::structure().polynomials().factorizations().one();
+            for f in partially_factored {
+                Integer::structure().polynomials().factorizations().mul_mut(
+                    &mut factored,
+                    &factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(f),
+                );
+            }
+            return factored;
+        }
+    }
+    let mut at_prime = prime_search.at_best_prime().unwrap().clone();
+
+    println!(
+        "p = {}, n = {}, possible_proper_factor_degrees = {:?}",
+        at_prime.p,
+        at_prime.hensel_factorization.factors().len(),
+        prime_search.possible_proper_factor_degrees
+    );
+
+    let factor_coeff_bound = compute_polynomial_factor_bound(at_prime.sqfree_prim_poly);
+    let minimum_modolus = Natural::TWO * &factor_coeff_bound;
+    at_prime.lift_to_modulus(&minimum_modolus);
+    Integer::structure().polynomials().factorizations().product(
+        at_prime
+            .partial_factor_by_test_modular_subsets(
+                usize::MAX,
+                &prime_search.possible_proper_factor_degrees,
+            )
+            .into_iter()
+            .map(|g| {
+                Integer::structure()
+                    .polynomials()
+                    .factorizations()
+                    .new_irreducible_unchecked(g)
+            })
+            .collect(),
+    )
 }
 
 /// Factor an integer polynomial using a naive implementation of the Berlekamp-Zassenhaus algorithm.
@@ -485,22 +715,54 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
     if poly.is_zero() {
         Factored::Zero
     } else {
-        Polynomial::<Integer>::structure()
-            .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-                poly,
-                Integer::factor,
-                &|f| {
-                    if f.degree().unwrap() == 0 {
-                        Integer::structure()
-                            .into_polynomials()
-                            .factorizations()
-                            .new_unit_unchecked(f)
-                    } else {
-                        let state = BerlekampAassenhausAlgorithmState::new(f).next_prime();
-                        state.factor_by_try_all_subsets()
+        Polynomial::<Integer>::structure().factorize_by_primitive_factorize(
+            poly,
+            Integer::factor,
+            &|poly| {
+                // optimization for square-free inputs
+                // if we can prove it's already square-free then we can skip yuns algorithm
+                // test if it is square-free modulo some big random primes
+                // if it is square-free then it's very likely square-free modulo one of the primes, proving the original is square-free too
+                // this is a quicker test because computing the discriminant mod p does not suffer from coefficient blow-up
+                const SQUARE_FREE_TEST_PRIMES: [u64; 3] = [179424691, 179424697, 179424719];
+                #[cfg(debug_assertions)]
+                let disc = poly.clone().discriminant().unwrap();
+                for p in SQUARE_FREE_TEST_PRIMES {
+                    let mod_p =
+                        Integer::structure().into_quotient_field_unchecked(Integer::from(p));
+                    let poly_mod_p = mod_p.polynomials();
+
+                    if Integer::structure()
+                        .polynomials()
+                        .leading_coeff(&poly)
+                        .unwrap()
+                        .divisible(&Integer::from(p))
+                    {
+                        continue;
                     }
-                },
-            )
+
+                    let disc_mod_p = poly_mod_p.discriminant(poly.clone()).unwrap();
+                    let disc_mod_p_is_zero = mod_p.is_zero(&disc_mod_p);
+
+                    #[cfg(debug_assertions)]
+                    assert_eq!(disc.divisible(&Integer::from(p)), disc_mod_p_is_zero);
+
+                    if !disc_mod_p_is_zero {
+                        // the poly is square-free
+                        return factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
+                            poly,
+                        );
+                    }
+                }
+
+                // it may already be square-free but we couldn't quickly prove it
+                // use yuns algorithm to reduce to the case of square-free polynomials
+                Polynomial::<Integer>::structure()
+                    .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(poly, &|poly| {
+                        factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(poly)
+                    })
+            },
+        )
     }
 }
 
@@ -528,14 +790,11 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                 {
                     let mut hensel_factorization_f_over_p =
                         hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
-                    while hensel_factorization_f_over_p.modolus() < minimum_modolus {
+                    while hensel_factorization_f_over_p.modulus() < minimum_modolus {
                         hensel_factorization_f_over_p.linear_lift();
                     }
-
-                    let modulus = hensel_factorization_f_over_p.modolus();
-
+                    let modulus = hensel_factorization_f_over_p.modulus();
                     let modular_factors = hensel_factorization_f_over_p.factors();
-
                     for subset in (0..modular_factors.len())
                         .map(|_i| vec![false, true])
                         .multi_cartesian_product()
@@ -586,15 +845,17 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm_naive(
     if f.is_zero() {
         Factored::Zero
     } else {
-        Polynomial::<Integer>::structure()
-            .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-                f,
-                Integer::factor,
-                &|f| {
-                    factorize_by_find_factor(&Polynomial::<Integer>::structure(), f, &|f| {
-                        find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(f)
+        Polynomial::<Integer>::structure().factorize_by_primitive_factorize(
+            f,
+            Integer::factor,
+            &|f| {
+                Polynomial::<Integer>::structure()
+                    .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(f, &|f| {
+                        factorize_by_find_factor(&Polynomial::<Integer>::structure(), f, &|f| {
+                            find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(f)
+                        })
                     })
-                },
-            )
+            },
+        )
     }
 }
