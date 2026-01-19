@@ -4,33 +4,33 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 
 #[derive(Debug, Clone)]
-enum HenselProduct<
+enum HenselFactorizationNodeCases<
     const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > {
     Leaf,
     Branch {
-        //let alpha be the leading coefficient of h. Then
-        //alpha is invertible modulo i (thus also any power of i)
-        //h = alpha*f*g mod i^n
-        //af + bg = 1 mod i
-        f_factorization: Box<HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>>, //defined modulo i^n
-        g_factorization: Box<HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>>, //defined modulo i^n
-        a: Polynomial<RS::Set>,                                                  //defined modulo i
-        b: Polynomial<RS::Set>,                                                  //defined modulo i
+        // let alpha be the leading coefficient of `h`. Then
+        // alpha is invertible modulo `i` (thus also any power of `i`)
+        // `h = alpha*f*g mod i^n`
+        // `af + bg = 1 mod i`, or if LIFTED_BEZOUT_COEFFS = true, `af + bg = 1 mod i^n`
+        f_factorization: Box<HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>>, // defined modulo i^n
+        g_factorization: Box<HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>>, // defined modulo i^n
+        a: Polynomial<RS::Set>,                                                  // defined modulo i
+        b: Polynomial<RS::Set>,                                                  // defined modulo i
     },
 }
 
 #[derive(Debug, Clone)]
-struct HenselFactorizationImpl<
+struct HenselFactorizationNode<
     const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > {
     h: Polynomial<RS::Set>,
-    factorization: HenselProduct<LIFTED_BEZOUT_COEFFS, RS>,
+    factorization: HenselFactorizationNodeCases<LIFTED_BEZOUT_COEFFS, RS>,
 }
 
-//represent a factorization of a polynomial h(x) as a product alpha f_1(x)f_2(x)...f_k(x) modulo i^n where f_1(x), f_2(x), ..., f_n(x) are monic and alpha is the leading coefficient of h and is non-zero modulo i
+/// A factorization of a polynomial `h` as a product `h = alpha*f_1*f_2*...*f_k mod i^n` for some `k >= 1` where `f_1, f_2, ..., f_n` are monic and `alpha` is the leading coefficient of `h` and is non-zero modulo `i`
 #[derive(Debug, Clone)]
 pub struct HenselFactorization<
     const LIFTED_BEZOUT_COEFFS: bool,
@@ -39,13 +39,13 @@ pub struct HenselFactorization<
     ring: RS,
     i: RS::Set,
     n: Natural,
-    factorization: HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>, //defined absolutely and factored modulo i^n
+    factorization: HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>, //defined absolutely and factored modulo i^n
 }
 
 impl<
     const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
-> HenselProduct<LIFTED_BEZOUT_COEFFS, RS>
+> HenselFactorizationNodeCases<LIFTED_BEZOUT_COEFFS, RS>
 {
     #[allow(unused)]
     fn check(
@@ -56,8 +56,8 @@ impl<
         n: &Natural,
     ) -> Result<(), &'static str> {
         match self {
-            HenselProduct::Leaf => {}
-            HenselProduct::Branch {
+            HenselFactorizationNodeCases::Leaf => {}
+            HenselFactorizationNodeCases::Branch {
                 f_factorization,
                 g_factorization,
                 a,
@@ -143,8 +143,8 @@ impl<
         );
 
         Self::Branch {
-            f_factorization: Box::new(HenselFactorizationImpl::new(ring, p, n, first_h, first_fs)),
-            g_factorization: Box::new(HenselFactorizationImpl::new(
+            f_factorization: Box::new(HenselFactorizationNode::new(ring, p, n, first_h, first_fs)),
+            g_factorization: Box::new(HenselFactorizationNode::new(
                 ring, p, n, second_h, second_fs,
             )),
             a,
@@ -154,8 +154,8 @@ impl<
 
     fn factor_list<'a>(&'a self, h: &'a Polynomial<RS::Set>) -> Vec<&'a Polynomial<RS::Set>> {
         match self {
-            HenselProduct::Leaf => vec![h],
-            HenselProduct::Branch {
+            HenselFactorizationNodeCases::Leaf => vec![h],
+            HenselFactorizationNodeCases::Branch {
                 f_factorization,
                 g_factorization,
                 a: _,
@@ -171,17 +171,17 @@ impl<
 }
 
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
-    HenselProduct<true, RS>
+    HenselFactorizationNodeCases<true, RS>
 {
-    fn dont_lift_bezout_coeffs(self) -> HenselProduct<false, RS> {
+    fn dont_lift_bezout_coeffs(self) -> HenselFactorizationNodeCases<false, RS> {
         match self {
-            HenselProduct::Leaf => HenselProduct::Leaf,
-            HenselProduct::Branch {
+            HenselFactorizationNodeCases::Leaf => HenselFactorizationNodeCases::Leaf,
+            HenselFactorizationNodeCases::Branch {
                 f_factorization,
                 g_factorization,
                 a,
                 b,
-            } => HenselProduct::Branch {
+            } => HenselFactorizationNodeCases::Branch {
                 f_factorization: Box::new(f_factorization.dont_lift_bezout_coeffs()),
                 g_factorization: Box::new(g_factorization.dont_lift_bezout_coeffs()),
                 a,
@@ -191,6 +191,17 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
     }
 }
 
+/// https://en.wikipedia.org/wiki/Hensel%27s_lemma
+///
+/// Input is such that:
+///  - `h = fg mod i^n`
+///  - `af + bg = 1 mod i`
+///   
+/// Output (df, dg, f', g') such that:
+///  - `h = (f + df)(g + dg) mod i^{n+1}`
+///  - `a(f + df) + b(g + dg) = 1 mod i`
+///  - `f' = f + df mod i^{n+1}`
+///  - `g' = g + dg mod i^{n+1}`
 #[allow(clippy::too_many_arguments)]
 fn compute_lift_factors<
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
@@ -275,12 +286,12 @@ fn compute_lift_factors<
 }
 
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
-    HenselProduct<false, RS>
+    HenselFactorizationNodeCases<false, RS>
 {
     fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
         match self {
-            HenselProduct::Leaf => {}
-            HenselProduct::Branch {
+            HenselFactorizationNodeCases::Leaf => {}
+            HenselFactorizationNodeCases::Branch {
                 f_factorization,
                 g_factorization,
                 a,
@@ -303,12 +314,12 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 }
 
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
-    HenselProduct<true, RS>
+    HenselFactorizationNodeCases<true, RS>
 {
     fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
         match self {
-            HenselProduct::Leaf => {}
-            HenselProduct::Branch {
+            HenselFactorizationNodeCases::Leaf => {}
+            HenselFactorizationNodeCases::Branch {
                 f_factorization,
                 g_factorization,
                 a,
@@ -369,7 +380,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 impl<
     const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
-> HenselFactorizationImpl<LIFTED_BEZOUT_COEFFS, RS>
+> HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>
 {
     #[allow(unused)]
     fn check(&self, ring: &RS, i: &RS::Set, n: &Natural) -> Result<(), &'static str> {
@@ -393,7 +404,7 @@ impl<
             0 => panic!(),
             1 => Self {
                 h,
-                factorization: HenselProduct::Leaf,
+                factorization: HenselFactorizationNodeCases::Leaf,
             },
             fs_len => {
                 debug_assert!(fs_len >= 2);
@@ -410,7 +421,9 @@ impl<
 
                 Self {
                     h,
-                    factorization: HenselProduct::new_split(ring, p, n, first_fs, second_fs),
+                    factorization: HenselFactorizationNodeCases::new_split(
+                        ring, p, n, first_fs, second_fs,
+                    ),
                 }
             }
         }
@@ -422,10 +435,10 @@ impl<
 }
 
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
-    HenselFactorizationImpl<true, RS>
+    HenselFactorizationNode<true, RS>
 {
-    fn dont_lift_bezout_coeffs(self) -> HenselFactorizationImpl<false, RS> {
-        HenselFactorizationImpl {
+    fn dont_lift_bezout_coeffs(self) -> HenselFactorizationNode<false, RS> {
+        HenselFactorizationNode {
             h: self.h,
             factorization: self.factorization.dont_lift_bezout_coeffs(),
         }
@@ -433,7 +446,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 }
 
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
-    HenselFactorizationImpl<false, RS>
+    HenselFactorizationNode<false, RS>
 {
     fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
         self.factorization.linear_lift(ring, i, n, &self.h);
@@ -441,7 +454,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 }
 
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
-    HenselFactorizationImpl<true, RS>
+    HenselFactorizationNode<true, RS>
 {
     fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
         self.factorization.quadratic_lift(ring, i, n, &self.h);
@@ -487,7 +500,7 @@ impl<
         ));
         // fs are coprime mod i - checked when computing bezout coefficients
         let ans_ring = ring.clone();
-        let factors = HenselFactorizationImpl::new(&ring, &p, &n, h, fs.iter().collect());
+        let factors = HenselFactorizationNode::new(&ring, &p, &n, h, fs.iter().collect());
         let ans = Self {
             ring: ans_ring,
             i: p,
@@ -525,6 +538,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorization<false, RS>
 {
+    /// update the Hensel factorization sending (i, i^n) -> (i, i^{n+1})
     pub fn linear_lift(&mut self) {
         self.factorization.linear_lift(&self.ring, &self.i, &self.n);
         self.n += Natural::ONE;
@@ -534,12 +548,26 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorization<true, RS>
 {
+    /// update the Hensel factorization sending (i, i^n) -> (i, i^{2n})
     pub fn quadratic_lift(&mut self) {
         self.factorization
             .quadratic_lift(&self.ring, &self.i, &self.n);
         self.n *= Natural::TWO;
     }
 }
+
+// impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
+//     HenselFactorization<LIFTED_BEZOUR_COEFFS, RS>
+// {
+//     /// update the Hensel factorization sending (i, i^n) -> (i^k, i^{n/k}) for some divisor k of n
+//     pub fn increase_modulus(&mut self, k: &Natural) {
+//         debug_assert!(&Natural::ONE <= k);
+//         debug_assert!(k <= &self.n);
+//         debug_assert!(&self.n % k == Natural::ZERO);
+//         self.i = self.ring.nat_pow(&self.i, k);
+//         self.n = &self.n / k;
+//     }
+// }
 
 impl<
     RS: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
