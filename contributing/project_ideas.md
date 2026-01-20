@@ -9,7 +9,7 @@ To take on a projects with us there are some general requirements:
 
 Bonus points if you are already familiar with programming in Rust.
 
-## Finding Four Squares of Lagrange's Theorem
+## Finding The Four Squares of Lagrange's Theorem
 A theorem of Lagrange states that for every non-negative integer $n \in \mathbb{Z}$ there exists $4$ square numbers $a^2$, $b^2$, $c^2$ and $d^2$ such that
 ```math
 n = a^2 + b^2 + c^2 + d^2
