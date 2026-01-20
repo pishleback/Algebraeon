@@ -186,7 +186,7 @@ x^6+27578084871448383028954307699482484177292371088638694175094794599157673413\
 }
 
 // has degree 336, coefficients up to 597 digits and 16 factors (4 of degree 12 and 12 of degree 24)
-// come from the RUR of Cyclic 7
+// comes from the RUR of Cyclic 7
 pub fn p3() -> Polynomial<Integer> {
     parse_integer_polynomial(
         "\
