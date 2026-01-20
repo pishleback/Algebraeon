@@ -639,6 +639,33 @@ where
         hensel_factorization.check().unwrap();
         Some(hensel_factorization)
     }
+
+    /// If the polynomial is squarefree return a hensel factorization, otherwise return None
+    pub fn into_hensel_factorization_unchecked(
+        &self,
+        a: NonZeroFactored<Polynomial<RS::Set>, Natural>,
+        h: Polynomial<RS::Set>,
+    ) -> HenselFactorization<true, RS>
+    where
+        RS: EuclideanDomainSignature + GreatestCommonDivisorSignature,
+    {
+        let poly_ring_mod = self.objects().clone();
+        let ring_mod = poly_ring_mod.coeff_ring();
+        let ring = ring_mod.ring().clone();
+
+        let mut fs = vec![];
+        let (_unit, factors) = a.into_unit_and_powers();
+        for (factor, power) in factors {
+            debug_assert!(power == Natural::ONE);
+            fs.push(factor);
+        }
+
+        let hensel_factorization =
+            HenselFactorization::new(ring, ring_mod.modulus().clone(), Natural::ONE, h, fs);
+        #[cfg(debug_assertions)]
+        hensel_factorization.check().unwrap();
+        hensel_factorization
+    }
 }
 
 #[cfg(test)]
