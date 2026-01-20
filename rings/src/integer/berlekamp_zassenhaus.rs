@@ -232,7 +232,6 @@ impl BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization {
 
 #[derive(Debug, Clone)]
 struct BerlekampZassenhausAlgorithmStateAtPrime<'a> {
-    p: Natural,
     sqfree_prim_poly: &'a Polynomial<Integer>,
     hensel_factorization: BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization,
 }
@@ -243,25 +242,29 @@ impl<'a> BerlekampZassenhausAlgorithmStateAtPrime<'a> {
         let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p));
         let poly_mod_p = mod_p.polynomials();
         if poly_mod_p.degree(sqfree_prim_poly) == sqfree_prim_poly.degree() {
-            poly_mod_p
-                .factorizations()
-                .into_hensel_factorization(
-                    poly_mod_p.factor(sqfree_prim_poly).unwrap_nonzero(),
-                    sqfree_prim_poly.clone(),
-                )
-                .map(
-                    |hensel_factorization| BerlekampZassenhausAlgorithmStateAtPrime {
-                        p,
-                        sqfree_prim_poly,
-                        hensel_factorization:
-                            BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Quadratic(
-                                hensel_factorization,
+            let fs = poly_mod_p
+                .factorize_monic(sqfree_prim_poly)
+                .unwrap()
+                .factorize_squarefree();
+            if !fs.is_squarefree() {
+                return None;
+            }
+            return Some(BerlekampZassenhausAlgorithmStateAtPrime {
+                sqfree_prim_poly,
+                hensel_factorization:
+                    BerlekampZassenhausAlgorithmStateAtPrimeHenselFactorization::Quadratic(
+                        poly_mod_p
+                            .factorizations()
+                            .into_hensel_factorization_unchecked(
+                                fs.factorize_distinct_degree()
+                                    .factorize_cantor_zassenhaus()
+                                    .unwrap_nonzero(),
+                                sqfree_prim_poly.clone(),
                             ),
-                    },
-                )
-        } else {
-            None
+                    ),
+            });
         }
+        None
     }
 
     fn lift_to_modulus(&mut self, target_modulus: &Natural) {
@@ -648,19 +651,15 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
                 .new_irreducible_unchecked(f.clone());
         }
 
-        if prime_search.smallest_n < 18 {
-            break;
-        }
-
         let possible_proper_factor_degrees = prime_search.possible_proper_factor_degrees.clone();
         let at_prime = prime_search.at_most_recent_prime().unwrap();
-        println!("p={}", at_prime.p);
+        // quickly check for factors with small coefficients. Saves doing the full hensel lifting if this works.
         at_prime.lift_to_modulus(&Natural::from(1000000000u64));
         let partially_factored =
             at_prime.partial_factor_by_test_modular_subsets(3, &possible_proper_factor_degrees);
         debug_assert!(!partially_factored.is_empty());
         if partially_factored.len() >= 2 {
-            println!("awunga 1");
+            // recursively call using the found partial factorization
             let mut factored = Integer::structure().polynomials().factorizations().one();
             for f in partially_factored {
                 Integer::structure().polynomials().factorizations().mul_mut(
@@ -670,16 +669,12 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
             }
             return factored;
         }
+
+        if prime_search.smallest_n <= 18 {
+            break;
+        }
     }
     let mut at_prime = prime_search.at_best_prime().unwrap().clone();
-
-    println!(
-        "p = {}, n = {}, possible_proper_factor_degrees = {:?}",
-        at_prime.p,
-        at_prime.hensel_factorization.factors().len(),
-        prime_search.possible_proper_factor_degrees
-    );
-
     let factor_coeff_bound = compute_polynomial_factor_bound(at_prime.sqfree_prim_poly);
     let minimum_modolus = Natural::TWO * &factor_coeff_bound;
     at_prime.lift_to_modulus(&minimum_modolus);
