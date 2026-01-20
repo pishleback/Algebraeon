@@ -119,6 +119,12 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS
         }
     }
 
+    pub fn is_squarefree(&self) -> bool {
+        self.squarefree_factors
+            .iter()
+            .all(|(_, k)| k == &Natural::ONE)
+    }
+
     pub fn pow(mut self, power: &Natural) -> Self {
         for (_, poly_power) in &mut self.squarefree_factors {
             *poly_power *= power;
@@ -411,14 +417,31 @@ where
             let mod_poly_ring = self.poly_ring.quotient_ring(poly.clone());
             let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring().clone());
             let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
-            let qth_power_matrix = Matrix::join_cols(
-                n,
-                (0..n)
-                    .map(|c| {
-                        //compute (x^c)^q mod poly as a length n column vector of coefficients
-                        mod_poly_ring.to_col(&mod_poly_ring.nat_pow(&self.poly_ring.var_pow(c), &q))
-                    })
-                    .collect(),
+            // column c is (x^c)^q mod poly as a length n column vector of coefficients
+            let qth_power_matrix = Matrix::join_cols(n, {
+                let mut cols = vec![];
+                let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
+                let mut xcq = mod_poly_ring.one();
+                for _ in 0..n {
+                    cols.push(mod_poly_ring.to_col(&xcq));
+                    mod_poly_ring.mul_mut(&mut xcq, &xq);
+                }
+                cols
+            });
+            debug_assert!(
+                self.poly_ring.coeff_ring().matrix_structure().equal(
+                    &qth_power_matrix,
+                    &Matrix::join_cols(
+                        n,
+                        (0..n)
+                            .map(|c| {
+                                //compute (x^c)^q mod poly as a length n column vector of coefficients
+                                mod_poly_ring
+                                    .to_col(&mod_poly_ring.nat_pow(&self.poly_ring.var_pow(c), &q))
+                            })
+                            .collect(),
+                    )
+                )
             );
 
             let mut i = 1;
@@ -532,7 +555,8 @@ where
             let mut to_factor = vec![ddf.polynomial.clone()];
             loop {
                 // println!(
-                //     "{} {:?}",
+                //     "{} {} {:?}",
+                //     p,
                 //     d,
                 //     to_factor
                 //         .iter()
