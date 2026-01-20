@@ -588,7 +588,7 @@ where
                 }
 
                 // Try to factor what's left using Cantor-Zassenhaus
-                // let h be a random polynomial of degree <n
+                // let h be a random polynomial of degree < n
                 let h = Polynomial::<FS::Set>::from_coeffs(
                     (0..n).map(|_| prand_elements.next().unwrap()).collect(),
                 );
