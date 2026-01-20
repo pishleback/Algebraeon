@@ -1,7 +1,7 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
 use algebraeon_nzq::*;
-use algebraeon_sets::structure::{BorrowedStructure, EqSignature, SetSignature};
+use algebraeon_sets::structure::{BorrowedStructure, SetSignature};
 
 impl<
     RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
@@ -43,7 +43,10 @@ where
                 .mul_mut(&mut factors, &primitive_factorize(prim));
         }
         #[cfg(debug_assertions)]
-        assert!(self.equal(&f_orig, &self.factorizations().expand(&factors)));
+        {
+            use algebraeon_sets::structure::EqSignature;
+            assert!(self.equal(&f_orig, &self.factorizations().expand(&factors)));
+        }
         factors
     }
 }
