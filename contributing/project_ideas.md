@@ -27,7 +27,7 @@ Easy
 ### Duration
 ~175 hours
 
-### Requirements
+### Requirementscc
 You must be familiar with:
  - Modular arithmetic.
  - Ring theory.
@@ -76,7 +76,7 @@ It is preferable if you are familiar with:
  
 
 ## More Efficient Polynomials over Finite Fields
-The simplest way to represent a polynomial $c_0 + c_1 x + c_2 x^2 + \dots + c_d x^d \in R[x]$ over a ring $R$ is by storing a `Vec` of the coefficients $c_0, c_1, c_2, \dots, c_d \in R$. This is how Algebraeon currently does it, but for certain rings such as $R=\frac{\mathbb{Z}}{n \mathbb{Z}}$ it is possible to do better. For example, over the ring $R = \frac{\mathbb{Z}}{2 \mathbb{Z}} = \{0, 1\}$ polynomials can be more efficiently represented as the binary expansion of a natural number - polynomial addition becomes a bitwise XOR and polynomial multiplication becomes multiplication of natural numbers. Optimizations of a similar kind can be made for $R=\frac{\mathbb{Z}}{n \mathbb{Z}}$ with $n > 2$ too.
+The simplest way to represent a polynomial $c_0 + c_1 x + c_2 x^2 + \dots + c_d x^d \in R[x]$ over a ring $R$ is by storing a `Vec` of the coefficients $c_0, c_1, c_2, \dots, c_d \in R$. This is how Algebraeon currently does it, but for certain rings such as $R=\frac{\mathbb{Z}}{n \mathbb{Z}}$ it is possible to do better. For example, over the ring $R = \frac{\mathbb{Z}}{2 \mathbb{Z}}$ polynomials can be more efficiently represented as the binary expansion of a natural number - polynomial addition becomes a bitwise XOR and polynomial multiplication becomes multiplication of natural numbers. Optimizations of a similar kind can be made for $R=\frac{\mathbb{Z}}{n \mathbb{Z}}$ with $n > 2$ too.
 
 ### Expected Outcomes
 Main outcome:
