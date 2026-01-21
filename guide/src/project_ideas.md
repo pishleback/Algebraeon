@@ -117,7 +117,7 @@ Main outcome:
 
 Secondary outcomes:
  - An algorithm to compute the size and structure of the class group of real quadratic number fields using reduction theory for binary integral quadratic forms.
- - Solving the principal ideal problem for quadratic number fields - an algorithm which determines whether an ideal in **\mathcal{O}_d** is principal, and return a generator if it is.
+ - Solving the principal ideal problem for quadratic number fields - an algorithm which determines whether an ideal in \\(\mathcal{O}_d\\) is principal, and return a generator if it is.
 
 Stretch outcomes:
  - Look further into the theory of binary integral quadratic forms and exposing some more of their structure, for example Genus theory.
