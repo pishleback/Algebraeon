@@ -165,36 +165,35 @@ You must be familiar with:
  
 
 
-
 ## Faster Factoring of Integer Polynomials
-The Berlekamp–Zassenhaus algorithm is currently used by Algebraeon for factoring integer polynomials. At a high level it works by factoring the polynomial modulo some prime $p$, lifting that factorization so that it holds modulo higher powers of $p$, and finally finding which subsets of the irreducible factors combine to produce irreducible factors over the integers. The algorithm is very fast when the number of factors modulo $p$ is small. However, due to the search over all subsets of factors modulo $p$, the running time is exponential in the number of factors modulo $p$. Mark van Hoeij's Knapsack Algorithm is a state-of-the-art improvement to the Berlekamp–Zassenhaus algorithm which turns the exponential-time task of checking all subsets of modular factors into a knapsack type problem which can be solved in polynomial type using LLL.
+The Berlekamp–Zassenhaus algorithm is currently used by Algebraeon for factoring integer polynomials. At a high level it works by factoring the polynomial modulo some prime \\(p\\), lifting that factorization so that it holds modulo higher powers of \\(p\\), and finally finding which subsets of the irreducible factors combine to produce irreducible factors over the integers. The algorithm is very fast when the number of factors modulo \\(p\\) is small. However, due to the search over all subsets of factors modulo \\(p\\), the running time is exponential in the number of factors modulo \\(p\\). Mark van Hoeij's Knapsack Algorithm is a state-of-the-art improvement to the Berlekamp–Zassenhaus algorithm which turns the exponential-time task of checking all subsets of modular factors into a knapsack type problem which can be solved in polynomial type using LLL.
 
-### Expected Outcomes
+**Expected Outcomes**
+
 Main outcome:
  - You will implement version of the Knapsack algorithm for factoring integer polynomials in Algebraeon.
 
 Stretch outcome:
- - Paul Zimmermann has a list of benchmark polynomials here https://homepages.loria.fr/PZimmermann/mupad/. It would be delightful if Algebraeon could factor all 8 of these polynomials in a reasonable time. The current implementation of the Berlekamp–Zassenhaus algorithm can only factor the first two.
+ - Paul Zimmermann has a list of benchmark polynomials [here](https://homepages.loria.fr/PZimmermann/mupad/). It would be delightful if Algebraeon could factor all 8 of these polynomials in a reasonable time. The current implementation of the Berlekamp–Zassenhaus algorithm can factor the first two.
 
-### Difficulty
-Hard
+**Difficulty:** Hard
 
-### Duration
-~350 hours
+**Duration:** ~350 hours
 
-### Requirements
+**Requirements**
+
 You must be familiar with:
  - Linear algebra.
  - Ring theory including UFDs and polynomial rings.
  - Finite fields.
 
 It is preferable if you are familiar with:
- - $p$-adic numbers.
+ - \\(p\\)-adic numbers.
  - Hensel lifting.
  - LLL lattice basis reduction.
  - Details of the Berlekamp–Zassenhaus algorithm for factoring integer polynomials.
 
-### Possible Mentors
+**Possible Mentors**
  - Pishleback
 
 ## Your Own Project Proposal
