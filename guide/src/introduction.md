@@ -5,7 +5,7 @@ Algebraeon is a computer algebra system written purely in Rust. It implements al
 
 ## Source Code and Contributing
 
-The project is open source and is hosted [on GitHub here](https://github.com/pishleback/Algebraeon). Contributions are welcome and should be made via GitHub.
+The project is open source and is hosted [on GitHub here](https://github.com/pishleback/Algebraeon). See the [contributing](contributing.md) section for more information.
 
 ## Stability
 

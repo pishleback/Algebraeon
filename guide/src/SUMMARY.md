@@ -43,3 +43,5 @@
   - [Quaternion Orders]()
 - [Shapes](./shapes.md)
 - [Groups]()
+- [Contributing](contributing.md)
+  - [Project Ideas](project_ideas.md)
