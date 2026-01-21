@@ -19,7 +19,7 @@ In other words, every non-negative integer can be expressed a sum of four square
 ### Expected Outcomes
  - A new framework for working with quaternions and integer quaternions.
  - Algorithms to efficiently solve the necessary problems in modular arithmetic.
- - Using the above, an algorithm to express any non-negative integer, even extremely large ones, as a sum of four squares.
+ - Using the above, an algorithm to express non-negative integers, even extremely large ones, as a sum of four squares.
 
 ### Difficulty
 Easy
@@ -51,10 +51,12 @@ where $x$ and $y$ are integers to be found.
 
 ### Expected Outcomes
 Main outcome:
- - An algorithm to find the fundamental solution to Pell's equation $x^2 - dy^2 = 1$ using the existing capability in Algebraeon for computing continued fractions.
+ - Find the fundamental solution to Pell's equation $x^2 - dy^2 = 1$ using the existing capability in Algebraeon for computing continued fractions.
+ - Generate all other solutions to Pell's equation once the fundamental solution is found.
 
 Stretch outcome:
- - An algorithm to find the finite set of solutions to a generalized Pell equation $x^2 - dy^2 = n$ from which all others are generated.
+ - Find the finite set of solutions to a generalized Pell equation $x^2 - dy^2 = n$ from which all others are generated.
+ - Generate all solutions to a generalized Pell's equation.
 
 ### Difficulty
 Easy
@@ -73,14 +75,46 @@ It is preferable if you are familiar with:
  - Pishleback
  
 
-## Computing Class Groups in Quadratic Number Fields
+## More Efficient Polynomials over Finite Fields
+The simplest way to represent a polynomial $c_0 + c_1 x + c_2 x^2 + \dots + c_d x^d \in R[x]$ over a ring $R$ is by storing a `Vec` of the coefficients $c_0, c_1, c_2, \dots, c_d \in R$. This is how Algebraeon currently does it, but for certain rings such as $R=\frac{\mathbb{Z}}{n \mathbb{Z}}$ it is possible to do better. For example, over the ring $R = \frac{\mathbb{Z}}{2 \mathbb{Z}} = \{0, 1\}$ polynomials can be more efficiently represented as the binary expansion of a natural number - polynomial addition becomes a bitwise XOR and polynomial multiplication becomes multiplication of natural numbers. Optimizations of a similar kind can be made for $R=\frac{\mathbb{Z}}{n \mathbb{Z}}$ with $n > 2$ too.
+
+### Expected Outcomes
+Main outcome:
+ - Efficient representations of polynomials over $\frac{\mathbb{Z}}{2 \mathbb{Z}}$ with coefficients represented internally as the bits in the binary expantion of a natural number.
+ - Refine Algebraeon's polynomials structure system to allow general-purpose polynomial algorithms to operate on these newly defined polynomials.
+
+Secondary outcome:
+ - Efficient representations of polynomials over $\frac{\mathbb{Z}}{n \mathbb{Z}}$ for $n > 2$ with coefficients represented internally as blocks of bits in the binary expantion of a natural number.
+
+Stretch outcomes:
+ - Make use of the new polynomial representations in the existing implementation of the Berlekamp–Zassenhaus algorithm for factoring polynomials over the integers. Do we see the expected performance boost in the benchmarks?
+
+### Difficulty
+Medium
+
+### Duration
+~175 hours
+
+### Requirements
+You must be familiar with:
+ - Modular arithmetic.
+ - Binary expansions.
+
+It is preferable if you are familiar with:
+ - Writing optimized low-level code exploiting the binary representations of data structures. 
+
+### Possible Mentors
+ - Pishleback
+ 
+
+## Computing The Class Group of Quadratic Number Fields
 A quadratic number field is the ring of integers of an algebraic number field of the form $\mathbb{Q}[\sqrt{d}]$ where $\sqrt{d}$ is a square-free integer other than $1$. The ring of integers of the quadratic number field is given by
 ```math
 \mathcal{O}_d = \begin{cases} \mathbb{Z}[\frac{1 + \sqrt{d}}{2}] & d \equiv 1 \pmod 4 \\ \mathbb{Z}[\sqrt{d}] & d \equiv 2, 3 \pmod 4  \end{cases}
 ```
-The fractional ideals of $\mathcal{O}_d$ form an abelian group and the subgroup of principal fractional ideals has finite index. The finite quotient group of the fractional ideals by the principal fractional ideals is called the class group.
+The class group of $\mathcal{O}_d$ is the quotient of the fractional ideals by the principal fractional ideals. It is a theorem of algebraic number theory that the class group is always finite.
 
-In this project you will use the theory of binary integral quadratic forms as a means to compute the size and structure of the class group. The approach splits naturally into two cases; the imaginary case when $d < 0$ and the real case when $d > 0$.
+For this project you will use the theory of binary integral quadratic forms as a means to compute the size and structure of the class group. The approach splits naturally into two cases; the imaginary case when $d < 0$ and the real case when $d > 0$.
 
 ### Expected Outcomes
 Main outcome:
@@ -113,32 +147,43 @@ It is preferable if you are familiar with:
  - Pishleback
  
 
-<!-- ## Factoring Integers using the Quadratic Number Field Seive
-basic proof-of-concept algorithm
 
-get it faster than ECM using optimizations like MPQNFS
+## Working in The Algebraic Closure of Finite Fields
+Let $p$ be a prime number. For any positive integer $k$ there is a unique finite field $\mathbb{F}_{p^k}$ of order $p^k$, and $\mathbb{F}_{p^a}$ is a subfield of $\mathbb{F}_{p^b}$ if and only if $a$ divides $b$. The algebraic closure of $\mathbb{F}_p$ can be viewed as the inverse limit with respect to the subfield inclusions $\mathbb{F}_{p^a} \subseteq \mathbb{F}_{p^b}$ of all the finite fields $\mathbb{F}_{p^k}$
+```math
+\overline{\mathbb{F}}_p = \bigcup_{k=1}^{\infty} \mathbb{F}_k
+```
+There are a variety of techniques for doing computations in $\overline{\mathbb{F}}_p$ each with their own advantages. The use of Conway polynomials is one way, which Algebraeon already implements.
 
+In this project you will explore and implement other methods for computing in $\overline{\mathbb{F}}_p$.
 
-## Computations in the Algebraic Closure of Finite Fields
-open ended explore ways to compute in the algebraic closure of finite fields -->
+### Difficulty
+Hard
+
+### Duration
+~175 hours
+
+### Requirements
+You must be familiar with:
+ - Group theory.
+ - Field theory including the Galois theory of finite fields.
+ - The construction of an algebraic closure as an inverse limit.
+
+### Possible mentors:
+ - Pishleback
+ 
+
 
 
 ## Faster Factoring of Integer Polynomials
-The Berlekamp–Zassenhaus algorithm is currently used by Algebraeon for factoring integer polynomials. The essential steps used to factor a polynomial $f(x) \in \mathbb{Z}[x]$ are as follows:
- - $f(x)$ is factored into irreducibles modulo some prime $p$, say $f(x) = f_1(x) \cdots f_n(x) \pmod p$ with $f_1(x), \dots, f_n(x)$ the irreducible factors of $f(x)$ modulo $p$. This can already be done very quickly in Algebraeon using the Cantor–Zassenhaus algorithm, whose inner workings need not be understood for this project. The polynomials $f_1(x), \dots, f_n(x)$ are called the modular factors of $f(x)$.
- - The factorization $f(x) = f_1(x) \cdots f_n(x) \pmod p$ mod $p$ is "lifted" via Hensel's lemma to factorizations modulo $p^k$ for increasingly large $k$. In a $p$-adic sense, these lifted factorizations give increasingly good approximations to the desired factorization of $f(x)$ in $\mathbb{Z}[x]$.
- - There is not a 1-to-1 correspondence between the modular factors of $f(x)$ and its true factors. Rather, each true factor corresponds to some subset of the modular factors, and the set of all true factors of $f(x)$ corresponds to a partition of the modular factors. To finish the factorization of $f(x)$, the Berlekamp–Zassenhaus algorithm loops over all subsets of the modular factors and checks whether they correspond to a true irreducible factor of $f(x)$.
-
-This algorithm performs quite well in practice. However, in the last step, the number of subsets of modular factors to check grows like $2^n$. 
-
-Mark van Hoeij's Knapsack Algorithm is a state-of-the-art improvement to the Berlekamp–Zassenhaus algorithm turns the exponential-time task of checking all subsets of modular factors into a knapsack type problem which can be solved in polynomial type using LLL. A good implementation of the Knapsack algorithm can vastly speed up the factorization of integer polynomials compared to Berlekamp–Zassenhaus. A description of the algorithm can be found here https://www.math.fsu.edu/~hoeij/knapsack/paper/knapsack.pdf.
+The Berlekamp–Zassenhaus algorithm is currently used by Algebraeon for factoring integer polynomials. At a high level it works by factoring the polynomial modulo some prime $p$, lifting that factorization so that it holds modulo higher powers of $p$, and finally finding which subsets of the irreducible factors combine to produce irreducible factors over the integers. The algorithm is very fast when the number of factors modulo $p$ is small. However, due to the search over all subsets of factors modulo $p$, the running time is exponential in the number of factors modulo $p$. Mark van Hoeij's Knapsack Algorithm is a state-of-the-art improvement to the Berlekamp–Zassenhaus algorithm which turns the exponential-time task of checking all subsets of modular factors into a knapsack type problem which can be solved in polynomial type using LLL.
 
 ### Expected Outcomes
 Main outcome:
- - You will implement the Knapsack algorithm for factoring integer polynomials in Algebraeon.
+ - You will implement version of the Knapsack algorithm for factoring integer polynomials in Algebraeon.
 
 Stretch outcome:
- - Paul Zimmermann has a list of benchmark polynomials here https://homepages.loria.fr/PZimmermann/mupad/. It would be delightful if Algebraeon can factor all 8 of these polynomials in a reasonable time. The current implementation of the Berlekamp–Zassenhaus algorithm can only factor the first two.
+ - Paul Zimmermann has a list of benchmark polynomials here https://homepages.loria.fr/PZimmermann/mupad/. It would be delightful if Algebraeon could factor all 8 of these polynomials in a reasonable time. The current implementation of the Berlekamp–Zassenhaus algorithm can only factor the first two.
 
 ### Difficulty
 Hard
