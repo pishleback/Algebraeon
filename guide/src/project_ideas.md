@@ -31,7 +31,7 @@ You must be familiar with:
 
 It is preferable if you are familiar with:
  - The algebraic structure of quaternions.
- - Euclidean domains and Euclidean division in $\mathbb{Z}[i]$, as it provides a nice analogue to the integer quaternions.
+ - Euclidean domains and Euclidean division in \\(\mathbb{Z}[i]\\), as it provides a nice analogue to the integer quaternions.
 
 **Possible Mentors**
  - Pishleback
