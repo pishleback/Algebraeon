@@ -34,7 +34,7 @@ It is preferable if you are familiar with:
  - Euclidean domains and Euclidean division in \\(\mathbb{Z}[i]\\), as it provides a nice analogue to the integer quaternions.
 
 **Possible Mentors**
- - Pishleback
+ - Michael Thompson (Pishleback)
  
 
 ## Generalized Pell Equations
@@ -67,8 +67,34 @@ It is preferable if you are familiar with:
  - Continued fractions including the eventual periodicity of continued fractions on quadratic values.
 
 **Possible Mentors**
- - Pishleback
+ - Michael Thompson (Pishleback)
  
+
+## More Efficient Modular Arithmetic
+For this project you will make use of Montgomery form to implement a version of the ring \\(\frac{\mathbb{Z}}{n \mathbb{Z}}\\) of integers moudlo \\(n\\) which is more efficient than the naive implementation.
+
+**Expected Outcomes**
+
+Main outcome:
+ - An efficient version of \\(\frac{\mathbb{Z}}{n \mathbb{Z}}\\) for all odd \\(n\\).
+
+Secondary outcome:
+ - An efficient version of \\(\frac{\mathbb{Z}}{n \mathbb{Z}}\\) for all \\(n\\), making use of the Chinese remainder theorem: \\(\frac{\mathbb{Z}}{n \mathbb{Z}} \cong \frac{\mathbb{Z}}{m \mathbb{Z}}\\times \frac{\mathbb{Z}}{2^k \mathbb{Z}}\\) where \\(m\\) is odd.
+
+**Difficulty:** Easy
+
+**Duration:** ~90 hours
+
+**Requirements**
+
+You must be familiar with:
+ - Modular arithmetic.
+ - Exploiting the binary representations of data structures. 
+
+**Possible Mentors**
+ - Michael Thompson (Pishleback)
+
+
 
 ## More Efficient Polynomials over Finite Fields
 The simplest way to represent a polynomial \\(c_0 + c_1 x + c_2 x^2 + \dots + c_d x^d \in R[x]\\) over a ring \\(R\\) is by storing a `Vec` of coefficients \\(c_0, c_1, c_2, \dots, c_d \in R\\). This is how Algebraeon currently does it, but for certain rings such as \\(R=\frac{\mathbb{Z}}{n \mathbb{Z}}\\) it is possible to do better. For example, over the ring \\(R = \frac{\mathbb{Z}}{2 \mathbb{Z}}\\) polynomials can be more efficiently represented as the binary expansion of a natural number - polynomial addition becomes a bitwise XOR and polynomial multiplication becomes multiplication of natural numbers. Optimizations of a similar kind can be made for \\(R=\frac{\mathbb{Z}}{n \mathbb{Z}}\\) when \\(n > 2\\) too.
@@ -100,7 +126,7 @@ It is preferable if you are familiar with:
 
 **Possible Mentors**
 
- - Pishleback
+ - Michael Thompson (Pishleback)
  
 
 ## Computing The Class Group of Quadratic Number Fields
@@ -137,7 +163,7 @@ It is preferable if you are familiar with:
  - Binary integral quadratic forms.
 
 **Possible mentors**
- - Pishleback
+ - Michael Thompson (Pishleback)
 
 
 
@@ -161,7 +187,7 @@ You must be familiar with:
 
 **Possible mentors**
 
- - Pishleback
+ - Michael Thompson (Pishleback)
  
 
 
@@ -194,7 +220,7 @@ It is preferable if you are familiar with:
  - Details of the Berlekamp–Zassenhaus algorithm for factoring integer polynomials.
 
 **Possible Mentors**
- - Pishleback
+ - Michael Thompson (Pishleback)
 
 ## Your Own Project Proposal
 You can come to us with your own project proposal. Perhaps there is an interesting algorithm you've always wanted to implement? Or something you find useful in another CAS which Algebraeon is not yet capable of? Get in touch.

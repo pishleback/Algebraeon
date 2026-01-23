@@ -2,7 +2,7 @@
 
 ## Factoring Integers
 
-To factor large integers using Algebraeon
+Factor an integer with large prime factors
 
 ```rust
 use algebraeon::nzq::Natural;
@@ -23,29 +23,27 @@ Output:
 */
 ```
 
-Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization) for quickly finding prime factors with around 20 digits.
+Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization) for quickly finding prime factors with up to around 20 digits.
 
 ## Factoring Polynomials
 
 Factor the polynomials \\(x^2 - 5x + 6\\) and \\(x^{15} - 1\\).
 
 ```rust
-use algebraeon::rings::{polynomial::*, structure::*};
-use algebraeon::nzq::Integer;
+use algebraeon::rings::{parsing::parse_integer_polynomial, structure::MetaFactoringMonoid};
 
-let x = &Polynomial::<Integer>::var().into_ergonomic();
-let f = (x.pow(2) - 5*x + 6).into_verbose();
-println!("f(λ) = {}", f.factor());
+let f = parse_integer_polynomial("x^2 - 5*x + 6", "x").unwrap();
+println!("{} = {}", f, f.factor());
 /*
 Output:
-    f(λ) = 1 * ((-2)+λ) * ((-3)+λ)
+    λ^2-5λ+6 = 1 * (λ-2) * (λ-3)
 */
 
-let f = (x.pow(15) - 1).into_verbose();
-println!("f(λ) = {}", f.factor());
+let f = parse_integer_polynomial("x^15 - 1", "x").unwrap();
+println!("{} = {}", f, f.factor());
 /*
 Output:
-    f(λ) = 1 * ((-1)+λ) * (1+λ+λ^2) * (1+λ+λ^2+λ^3+λ^4) * (1+(-1)λ+λ^3+(-1)λ^4+λ^5+(-1)λ^7+λ^8)
+    λ^15-1 = 1 * (λ-1) * (λ^2+λ+1) * (λ^4+λ^3+λ^2+λ+1) * (λ^8-λ^7+λ^5-λ^4+λ^3-λ+1)
 */
 ```
 
@@ -54,6 +52,8 @@ so
 \\[x^2 - 5x + 6 = (x-2)(x-3)\\]
 
 \\[x^{15}-1 = (x-1)(x^2+x+1)(x^4+x^3+x^2+x+1)(x^8-x^7+x^5-x^4+x^3-x+1)\\]
+
+Algebraeon uses the [Berlekamp–Zassenhaus algorithm](https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Zassenhaus_algorithm) for factoring integer polynomials. Try factoring something a bit harder, such as \\((x^{120}-1)^{100}\\).
 
 ## Linear Systems of Equations
 
@@ -68,7 +68,13 @@ use algebraeon::nzq::Integer;
 use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 use algebraeon::rings::matrix::Matrix;
 use algebraeon::sets::structure::MetaType;
-let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
+let m = Matrix::<Integer>::from_rows(
+    vec![
+        vec![3, 4, 1], 
+        vec![2, 1, 2], 
+        vec![1, 3, -1]
+    ]
+);
 let y = vec![5.into(), 5.into(), 3.into()];
 for x in Integer::structure()
     .free_module(3)
@@ -112,7 +118,6 @@ Output:
     root -i of degree 2
     root i of degree 2
 */
-
 ```
 
 Despite the output, the roots found are _not_ numerical approximations. Rather, they are stored internally as exact algebraic numbers by using isolating boxes in the complex plane.
@@ -147,10 +152,10 @@ so the factorization of \\(f(x, y)\\) is
 Find the \\(2\\)-adic square roots of \\(17\\).
 
 ```rust
-use algebraeon::nzq::{Natural, Integer};
-use algebraeon::rings::{polynomial::*, structure::*};
-let x = Polynomial::<Integer>::var().into_ergonomic();
-let f = (x.pow(2) - 17).into_verbose();
+use algebraeon::nzq::Natural;
+use algebraeon::rings::parsing::parse_integer_polynomial;
+
+let f = parse_integer_polynomial("x^2-17", "x").unwrap();
 for mut root in f.all_padic_roots(&Natural::from(2u32)) {
     println!("{}", root.truncate(&20.into()).string_repr()); // Show 20 2-adic digits
 }

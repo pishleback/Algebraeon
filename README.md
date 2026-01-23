@@ -48,22 +48,20 @@ Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedi
 Factor the polynomials $x^2 - 5x + 6$ and $x^{15} - 1$.
 
 ```rust
-use algebraeon::rings::{polynomial::*, structure::*};
-use algebraeon::nzq::Integer;
+use algebraeon::rings::{parsing::parse_integer_polynomial, structure::MetaFactoringMonoid};
 
-let x = &Polynomial::<Integer>::var().into_ergonomic();
-let f = (x.pow(2) - 5*x + 6).into_verbose();
-println!("f(λ) = {}", f.factor());
+let f = parse_integer_polynomial("x^2 - 5*x + 6", "x").unwrap();
+println!("{} = {}", f, f.factor());
 /*
 Output:
-    f(λ) = 1 * ((-2)+λ) * ((-3)+λ)
+    λ^2-5λ+6 = 1 * (λ-2) * (λ-3)
 */
 
-let f = (x.pow(15) - 1).into_verbose();
-println!("f(λ) = {}", f.factor());
+let f = parse_integer_polynomial("x^15 - 1", "x").unwrap();
+println!("{} = {}", f, f.factor());
 /*
 Output:
-    f(λ) = 1 * ((-1)+λ) * (1+λ+λ^2) * (1+λ+λ^2+λ^3+λ^4) * (1+(-1)λ+λ^3+(-1)λ^4+λ^5+(-1)λ^7+λ^8)
+    λ^15-1 = 1 * (λ-1) * (λ^2+λ+1) * (λ^4+λ^3+λ^2+λ+1) * (λ^8-λ^7+λ^5-λ^4+λ^3-λ+1)
 */
 ```
 
