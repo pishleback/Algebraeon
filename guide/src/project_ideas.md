@@ -1,14 +1,15 @@
 # Project Ideas
 
-This document contains a list of project ideas for those wishing to take on a project to contribute a chunk of work to Algebraeon, with mentoring.
+This document contains a list of project ideas for those wishing to take on a chunk of work to contribute to Algebraeon, with mentoring.
+
+Good places to get in contact are via the community Discord server [here](https://discord.gg/DBqbPqPMKR) and the discussions page on GitHub [here](https://github.com/pishleback/Algebraeon/discussions).
 
 **General Requirements**
-To take on a project with mentoring with us there are some general requirements:
- - You should be comfortable writing complex programs in a high level programming language.
- - You need to be comfortable with the mathematical concepts underpinning a particular project. Generally this will mean some combination of: Ring Theory, Linear Algebra, Modular Arithmetic, Number Theory, Group Theory, Galois Theory, and Algebraic Number Theory.
-
-Bonus points if you are already familiar with programming in Rust.
-
+To take on a project with us there are some general requirements:
+ - You must be comfortable writing complex programs in a high level programming language.
+ - You must have some experience with Rust.
+ - You must be comfortable with the mathematical concepts underpinning a particular project. Generally this involves some combination of: Ring Theory, Linear Algebra, Modular Arithmetic, Number Theory, Group Theory, Galois Theory, and Algebraic Number Theory. Though the exact requirements depends on the project. 
+ 
 ## Finding The Four Squares of Lagrange's Theorem
 A theorem of Lagrange states that for every non-negative integer \\(n \in \mathbb{Z}\\) there exist \\(4\\) square numbers \\(a^2\\), \\(b^2\\), \\(c^2\\) and \\(d^2\\) such that
 \\[n = a^2 + b^2 + c^2 + d^2\\]
