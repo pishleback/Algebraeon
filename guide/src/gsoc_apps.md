@@ -1,25 +1,25 @@
 # Google Summer of Code 2026
 
-Do you have a strong background in pure maths and enjoy programming? You could get paid to contribute to Algebraeon with Google Summer of Code 2026.
+If you have a background in pure maths and enjoy programming, you could get paid to contribute to Algebraeon with Google Summer of Code 2026.
 
 > [!NOTE]
-> We are hoping to be a mentoring organization in GSoC 2026, though there is no guarantee at this time that we will be accepted into the programme.
+> We are hoping to be a mentoring organization in GSoC 2026, though there is no guarantee at this time that we will be accepted as a participating organization in the programme.
 
 ## How To Apply
 
-1) Make sure you are familiar with Google Summer of Code and how it works. A good place to start is [here](https://summerofcode.withgoogle.com/how-it-works).
-2) Choose a project which interests you from the [project list](project_ideas.md). Alternatively, get in touch with your project idea and we'll see if it's a good fit.
-3) Get involved with the community. Try using Algebraeon, ask questions, submit a pull request with a small improvement (fix a typo, add a new test, improve the documentation), etc.
-4) Prepare your application. You are strongly encouraged to get feedback before submitting your final application via GSoC [here](https://summerofcode.withgoogle.com/).
+1) Become familiar with what Google Summer of Code is. A good place to start is [here](https://summerofcode.withgoogle.com/how-it-works).
+2) Choose a project from the [project list](project_ideas.md) or get in touch with your own project idea, and we'll see if it could be a good fit.
+3) Get involved with the community. Try using Algebraeon do to something, ask questions, submit a pull request with a small a improvement, fix a typo, add a new test, improve the documentation, etc. These all help your chances as it shows proactivity and genuine interest in the project.
+4) Prepare your application. You are strongly encouraged to get feedback from us before submitting your final application.
+5) Submit your final application via GSoC [here](https://summerofcode.withgoogle.com/) before the deadline.
 
-A good place to get in contact is via the community Discord server [here](https://discord.gg/DBqbPqPMKR) or the discussions page on GitHub [here](https://github.com/pishleback/Algebraeon/discussions).
+The best places to get in contact are via the community Discord server [here](https://discord.gg/DBqbPqPMKR) and the discussions page on GitHub [here](https://github.com/pishleback/Algebraeon/discussions).
 
 ## The Application
 
-The main things we want to get out of your application are:
-1) A description of the project you wish to undertake. It should include a breakdown of the project into milestones with a rough expected timeline.
-2) That you have sufficient expertise in the mathematical areas relevent to the project. You aren't expected to be an expert, but you should have sufficient background knowledge to understand any relevent algorithms.
-3) Why you are interested in Algebraeon. Have you used similar tools before. What did you do with them?
+Your application should tell us who you are, why you are interested in Algebraeon, and why you are suitable to take on your chosen project. You can tell us about your background, the areas of mathematics which interest you the most (especially those related to your project), and your programming experience.
+
+Your application should include a reasonably detailed breakdown of your project into milestones. We want to see you have a coherent plan and a sensible idea of what needs doing and how long things will take. You're welcome to come to us asking for feedback before submitting.
 
 You should also include the following information:
 
@@ -29,10 +29,10 @@ You should also include the following information:
 4) Your time zone.
 5) Any commitments you have over summer, so we can plan around them.
 
-You can also let us know who you would prefer to be accepted by if you are also applying to other organizations as part of GSoC.
+If you are applying to other organizations as part of GSoC you can also let us know who you would prefer to be accepted by.
 
 ## Next Steps
 
-If your application is successful, you will spend some time getting familiar with Algebraeon and planning your project with us. You will then spend summer implementing your project. 
+For all shortlisted applicants we will arrange an informal virtual interview before deciding who to accept. 
 
-We will have regular (~weekly) meetings to check progress, do code reviews, answer questions, etc.
+Once accepted we will proceed into the community bonding phase and coding peroid with regular (~weekly) meetings to check progress, do code reviews, answer questions, etc.
