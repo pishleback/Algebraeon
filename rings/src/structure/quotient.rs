@@ -44,9 +44,9 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>>
 {
     fn try_new_ring(ring: RSB, modulus: RS::Set) -> Option<Self> {
         if ring.borrow().is_zero(&modulus) {
-            Some(Self::new_unchecked(ring, modulus))
-        } else {
             None
+        } else {
+            Some(Self::new_unchecked(ring, modulus))
         }
     }
 }
