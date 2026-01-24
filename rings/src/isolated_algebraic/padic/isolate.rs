@@ -389,6 +389,7 @@ fn isorefine(
         p,
         Integer::structure()
             .into_quotient_ring(Integer::from(&p_tothe_beta))
+            .unwrap()
             .into_polynomials()
             .evaluate(df, &Integer::from(i)),
     );

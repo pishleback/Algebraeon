@@ -414,7 +414,7 @@ where
             let n = self.poly_ring.degree(poly).unwrap();
             debug_assert!(n >= 1);
 
-            let mod_poly_ring = self.poly_ring.quotient_ring(poly.clone());
+            let mod_poly_ring = self.poly_ring.quotient_ring(poly.clone()).unwrap();
             let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring().clone());
             let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
             // column c is (x^c)^q mod poly as a length n column vector of coefficients
@@ -592,7 +592,10 @@ where
                 let h = Polynomial::<FS::Set>::from_coeffs(
                     (0..n).map(|_| prand_elements.next().unwrap()).collect(),
                 );
-                let poly_mod_f = self.poly_ring.quotient_ring(ddf.polynomial.clone());
+                let poly_mod_f = self
+                    .poly_ring
+                    .quotient_ring(ddf.polynomial.clone())
+                    .unwrap();
                 let g = if p == Natural::TWO {
                     // when char = 2 use h + h^2 + h^4 + ... + h^{2^{kd-1}}
                     // https://math.stackexchange.com/questions/1636518/how-do-i-apply-the-cantor-zassenhaus-algorithm-to-mathbbf-2

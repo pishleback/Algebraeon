@@ -49,7 +49,7 @@ pub fn miller_rabin_primality_test(
     } else if n % Natural::TWO == Natural::ZERO {
         Ok(PrimalityTestResult::Composite)
     } else {
-        let mod_n = Integer::structure().into_quotient_ring(n.into());
+        let mod_n = Integer::structure().into_quotient_ring(n.into()).unwrap();
         debug_assert!(n % Natural::TWO == Natural::ONE); // n is odd
         for a in &a_list {
             debug_assert!(Natural::TWO <= *a);
@@ -463,7 +463,7 @@ pub fn primality_test(n: &Natural) -> PrimalityTestResult {
     }
 }
 
-pub(crate) fn is_prime_nat(n: &Natural) -> bool {
+pub fn is_prime_nat(n: &Natural) -> bool {
     match primality_test(n) {
         PrimalityTestResult::Zero | PrimalityTestResult::One | PrimalityTestResult::Composite => {
             false

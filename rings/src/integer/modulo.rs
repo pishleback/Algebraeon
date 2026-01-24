@@ -69,6 +69,7 @@ mod tests {
         assert_eq!(
             Integer::structure()
                 .into_quotient_ring(26.into())
+                .unwrap()
                 .list_all_elements()
                 .len(),
             26

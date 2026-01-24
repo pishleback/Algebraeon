@@ -93,10 +93,12 @@ impl<
                 g_factorization.check(ring, i, n)?;
 
                 let poly_ring = ring.polynomials();
-                let ring_mod_i = ring.quotient_ring(i.clone());
+                let ring_mod_i = ring.quotient_ring(i.clone()).unwrap();
                 let poly_ring_mod_i = ring_mod_i.polynomials();
-                let poly_ring_mod_i_tothe_n =
-                    ring.quotient_ring(ring.nat_pow(i, n)).into_polynomials();
+                let poly_ring_mod_i_tothe_n = ring
+                    .quotient_ring(ring.nat_pow(i, n))
+                    .unwrap()
+                    .into_polynomials();
 
                 //af + bg = 1 mod i
                 if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(vec![
@@ -254,7 +256,7 @@ fn compute_lift_factors<
     drop(gcd);
     drop(gamma);
 
-    let ring_mod_i = ring.quotient_ring(i.clone());
+    let ring_mod_i = ring.quotient_ring(i.clone()).unwrap();
     debug_assert!(ring_mod_i.equal(alpha, poly_ring.leading_coeff(h).unwrap()));
 
     let delta_h = poly_ring
@@ -268,6 +270,7 @@ fn compute_lift_factors<
     //delta_h = h - alpha*f*g mod i^n+1
     let poly_ring_mod_i_tothe_nplusone = ring
         .quotient_ring(ring.nat_pow(i, &(n + Natural::ONE)))
+        .unwrap()
         .into_polynomials();
     debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
         &delta_h,
@@ -353,6 +356,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
             } => {
                 let pring_mod_i2n = ring
                     .quotient_ring(ring.nat_pow(i, &(n * Natural::TWO)))
+                    .unwrap()
                     .into_polynomials();
 
                 let f = &f_factorization.h;
@@ -515,7 +519,10 @@ impl<
             debug_assert!(poly_ring.is_monic(f));
         }
         // h = product of fs modulo i^n
-        let poly_ring_mod_p_tothe_n = ring.quotient_ring(ring.nat_pow(&p, &n)).into_polynomials();
+        let poly_ring_mod_p_tothe_n = ring
+            .quotient_ring(ring.nat_pow(&p, &n))
+            .unwrap()
+            .into_polynomials();
         let alpha = poly_ring.leading_coeff(&h).unwrap();
         debug_assert!(poly_ring_mod_p_tothe_n.equal(
             &h,

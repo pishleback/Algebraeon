@@ -257,7 +257,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         */
         // println!("p = {}", p);
 
-        let l_reduced_ring = self.quotient_ring(p.clone());
+        let l_reduced_ring = self.quotient_ring(p.clone()).unwrap();
         //n = degree over L over Q
         let k_deg = self.coeff_ring().degree();
         if k_deg == 1 {

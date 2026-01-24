@@ -30,9 +30,7 @@ pub type AlgebraicNumberFieldPolynomialQuotientStructure = PolynomialQuotientRin
 >;
 
 impl Polynomial<Rational> {
-    pub fn algebraic_number_field(
-        self,
-    ) -> Result<AlgebraicNumberFieldPolynomialQuotientStructure, ()> {
+    pub fn algebraic_number_field(self) -> Option<AlgebraicNumberFieldPolynomialQuotientStructure> {
         Rational::structure()
             .into_polynomials()
             .into_quotient_field(self)

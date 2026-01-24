@@ -531,6 +531,7 @@ impl<'a> BerlekampZassenhausAlgorithmStateAtPrime<'a> {
         let mut modular_factor_product_memory_stack = MemoryStack::new(
             Integer::structure()
                 .into_quotient_ring(modulus.clone())
+                .unwrap()
                 .into_polynomials(),
             modular_factors.clone(),
         );
