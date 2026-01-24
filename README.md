@@ -3,16 +3,18 @@
 # What is it?
 Algebraeon is a computational algebra system (CAS) written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API subject to change. Algebraeon uses [Malachite](https://www.malachite.rs/) under the hood for arbitrary sized integer and rational numbers.
 
- - See the [User Guide](https://pishleback.github.io/Algebraeon/) (a work in progress) to get started.
- - There is a [![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?logo=discord&logoColor=white)](https://discord.gg/DBqbPqPMKR) for informal discussions about Algebraeon.
- - [Published to crates.io](https://crates.io/crates/algebraeon).
- - [Formal documentation for the most recent release](https://docs.rs/algebraeon/latest/algebraeon/).
+There is a [![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?logo=discord&logoColor=white)](https://discord.gg/DBqbPqPMKR) for informal discussions about Algebraeon. Contributions are welcome.
 
-Contributions are welcome and I am happy to do some hand-holding to help out new contributors. See below for the best ways to contribute.
+# As a Rust Library
+
+This is the repository for Algebraeon as a Rust library.
+ - [User Guide](https://pishleback.github.io/Algebraeon/)
+ - [Published to crates.io](https://crates.io/crates/algebraeon)
+ - [Documentation for the latest release](https://docs.rs/algebraeon/latest/algebraeon/)
 
 # As a Python Library
 
-Algebraeon can be used as a Python library, though it is not fully featured in that case.
+Algebraeon can also be used as a Python library, though it is not fully featured in that case.
  - [GitHub](https://github.com/pishleback/Algebraeon-Python)
  - [User Guide](https://pishleback.github.io/Algebraeon-Python/)
 
