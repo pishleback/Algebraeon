@@ -152,7 +152,7 @@ impl<RS: EuclideanDomainSignature, RSB: BorrowedStructure<RS>, const IS_FIELD: b
 {
     type Set = RS::Set;
 
-    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

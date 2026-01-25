@@ -69,7 +69,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Set
 {
     type Set = FinitelyFreeSubmodule<Ring::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
         if x.row_basis.cols() != self.module.rank() {
             return Err("dimensions don't match".to_string());
         }
@@ -220,8 +220,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         submodule: &FinitelyFreeSubmodule<Ring::Set>,
         element: &Vec<Ring::Set>,
     ) -> (Vec<Ring::Set>, Vec<Ring::Set>) {
-        debug_assert!(self.is_element(submodule).is_ok());
-        debug_assert!(self.module().is_element(element).is_ok());
+        debug_assert!(self.validate_element(submodule).is_ok());
+        debug_assert!(self.module().validate_element(element).is_ok());
         let mut reduced_element = element.clone();
         let mut coset = vec![];
         for (r, &c) in submodule.pivots.iter().enumerate() {
@@ -250,8 +250,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         x: &FinitelyFreeSubmodule<Ring::Set>,
         y: &FinitelyFreeSubmodule<Ring::Set>,
     ) -> bool {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        debug_assert!(self.validate_element(x).is_ok());
+        debug_assert!(self.validate_element(y).is_ok());
         self.contains(x, y) && self.contains(y, x)
     }
 
@@ -260,8 +260,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         submodule: &FinitelyFreeSubmodule<Ring::Set>,
         element: &Vec<Ring::Set>,
     ) -> bool {
-        debug_assert!(self.is_element(submodule).is_ok());
-        debug_assert!(self.module().is_element(element).is_ok());
+        debug_assert!(self.validate_element(submodule).is_ok());
+        debug_assert!(self.module().validate_element(element).is_ok());
         let (_offset, element_reduced) = self.reduce_element(submodule, element);
         element_reduced
             .iter()
@@ -273,8 +273,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         x: &FinitelyFreeSubmodule<Ring::Set>,
         y: &FinitelyFreeSubmodule<Ring::Set>,
     ) -> bool {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        debug_assert!(self.validate_element(x).is_ok());
+        debug_assert!(self.validate_element(y).is_ok());
         for b in y.basis() {
             if !self.contains_element(x, &b) {
                 return false;
@@ -296,7 +296,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         xs: Vec<FinitelyFreeSubmodule<Ring::Set>>,
     ) -> FinitelyFreeSubmodule<Ring::Set> {
         for x in &xs {
-            debug_assert!(self.is_element(x).is_ok());
+            debug_assert!(self.validate_element(x).is_ok());
         }
         let cols = self.module().rank();
         self.matrix_row_span(Matrix::join_rows(
@@ -310,8 +310,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         x: FinitelyFreeSubmodule<Ring::Set>,
         y: FinitelyFreeSubmodule<Ring::Set>,
     ) -> FinitelyFreeSubmodule<Ring::Set> {
-        debug_assert!(self.is_element(&x).is_ok());
-        debug_assert!(self.is_element(&y).is_ok());
+        debug_assert!(self.validate_element(&x).is_ok());
+        debug_assert!(self.validate_element(&y).is_ok());
 
         let cols = self.module().rank();
         let x_rows = x.into_row_basis_matrix();
@@ -359,8 +359,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         x: &FinitelyFreeSubmodule<Ring::Set>,
         y: &FinitelyFreeSubmodule<Ring::Set>,
     ) -> Vec<Vec<Ring::Set>> {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        debug_assert!(self.validate_element(x).is_ok());
+        debug_assert!(self.validate_element(y).is_ok());
 
         //https://math.stackexchange.com/questions/2554408/how-to-find-the-basis-of-a-quotient-space
         debug_assert!(self.contains(y, x));
@@ -414,8 +414,8 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring
         x: &FinitelyFreeSubmodule<Ring::Set>,
         y: &FinitelyFreeSubmodule<Ring::Set>,
     ) -> bool {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        debug_assert!(self.validate_element(x).is_ok());
+        debug_assert!(self.validate_element(y).is_ok());
         MatrixStructure::<Ring, _>::new(self.ring()).equal(&x.row_basis, &y.row_basis)
     }
 }

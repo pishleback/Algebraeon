@@ -113,7 +113,7 @@ impl<
         self.order()
             .free_integer_submodule_restructure()
             .into_submodules()
-            .is_element(integer_submodule)
+            .validate_element(integer_submodule)
             .unwrap();
 
         // check it's an ideal
@@ -151,7 +151,7 @@ impl<
 {
     type Set = OrderIdeal;
 
-    fn is_element(&self, ideal: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, ideal: &Self::Set) -> Result<(), String> {
         match ideal {
             OrderIdeal::Zero => Ok(()),
             OrderIdeal::NonZero(integer_submodule) => {
@@ -160,7 +160,7 @@ impl<
                     .borrow()
                     .free_integer_submodule_restructure()
                     .submodules()
-                    .is_element(integer_submodule)?;
+                    .validate_element(integer_submodule)?;
                 // check it's an ideal
                 if !self.does_integer_submodule_define_an_ideal(integer_submodule) {
                     return Err("integer submodule is not an ideal".to_string());
@@ -264,7 +264,7 @@ mod integer_submodules_to_ideals {
     {
         fn image(&self, x: &OrderIdeal) -> FinitelyFreeSubmodule<Integer> {
             #[cfg(debug_assertions)]
-            self.ideals().is_element(x).unwrap();
+            self.ideals().validate_element(x).unwrap();
             match x {
                 OrderIdeal::Zero => self.integer_submodules().zero_submodule(),
                 OrderIdeal::NonZero(integer_submodule) => integer_submodule.clone(),
@@ -288,13 +288,13 @@ mod integer_submodules_to_ideals {
     {
         fn try_preimage(&self, y: &FinitelyFreeSubmodule<Integer>) -> Option<OrderIdeal> {
             #[cfg(debug_assertions)]
-            self.integer_submodules().is_element(y).unwrap();
+            self.integer_submodules().validate_element(y).unwrap();
             if y.rank() == 0 {
                 Some(OrderIdeal::Zero)
             } else if self.ideals().does_integer_submodule_define_an_ideal(y) {
                 let ideal = OrderIdeal::NonZero(y.clone());
                 #[cfg(debug_assertions)]
-                self.ideals().is_element(&ideal).unwrap();
+                self.ideals().validate_element(&ideal).unwrap();
                 Some(ideal)
             } else {
                 None
@@ -376,7 +376,7 @@ impl<
     /// Construct an ideal from a Z-linear span
     pub fn from_integer_span(&self, span: Vec<Vec<Integer>>) -> OrderIdeal {
         for elem in &span {
-            debug_assert!(self.order().is_element(elem).is_ok());
+            debug_assert!(self.order().validate_element(elem).is_ok());
         }
         let n = self.order().n();
         let ideal = OrderIdeal::NonZero(
@@ -389,13 +389,13 @@ impl<
             .col_span(),
         );
         #[cfg(debug_assertions)]
-        self.is_element(&ideal).unwrap();
+        self.validate_element(&ideal).unwrap();
         ideal
     }
 
     /// The cardinality of the quotient ring, or 0 if the ideal is 0
     pub fn norm(&self, ideal: &OrderIdeal) -> Natural {
-        debug_assert!(self.is_element(ideal).is_ok());
+        debug_assert!(self.validate_element(ideal).is_ok());
         match ideal {
             OrderIdeal::Zero => Natural::ZERO,
             OrderIdeal::NonZero(integer_submodule) => {
@@ -436,8 +436,8 @@ impl<
 > EqSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
             (OrderIdeal::Zero, OrderIdeal::Zero) => true,
             (
@@ -482,8 +482,8 @@ impl<
 > AdditionSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
             (OrderIdeal::Zero, OrderIdeal::Zero) => OrderIdeal::Zero,
             (OrderIdeal::Zero, OrderIdeal::NonZero { .. }) => b.clone(),
@@ -546,8 +546,8 @@ impl<
 > MultiplicationSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
             (
                 OrderIdeal::NonZero(a_integer_submodule),
@@ -682,14 +682,14 @@ impl<
                     })
                     .collect(),
             );
-            debug_assert!(self.is_element(&ideal).is_ok());
+            debug_assert!(self.validate_element(&ideal).is_ok());
             ideal
         }
     }
 
     fn contains_ideal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
             (_, OrderIdeal::Zero) => true,
             (OrderIdeal::Zero, OrderIdeal::NonZero { .. }) => {
@@ -708,8 +708,8 @@ impl<
     }
 
     fn contains_element(&self, a: &Self::Set, x: &Vec<Integer>) -> bool {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.order().is_element(x).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.order().validate_element(x).is_ok());
         match a {
             OrderIdeal::Zero => self.order().is_zero(x),
             OrderIdeal::NonZero(integer_submodule) => self
@@ -721,8 +721,8 @@ impl<
     }
 
     fn intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
             (
                 OrderIdeal::NonZero(a_integer_submodule),
@@ -767,7 +767,7 @@ impl<
             OrderIdeal::NonZero(quotient_integer_submodule)
         };
         #[cfg(debug_assertions)]
-        self.is_element(&quotient_ideal).unwrap();
+        self.validate_element(&quotient_ideal).unwrap();
         quotient_ideal
     }
 }

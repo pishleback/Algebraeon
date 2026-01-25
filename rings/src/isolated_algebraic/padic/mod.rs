@@ -730,7 +730,7 @@ impl Signature for PAdicAlgebraicStructure {}
 impl SetSignature for PAdicAlgebraicStructure {
     type Set = PAdicAlgebraic;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
         if &self.p != x.p() {
             return Err("primes don't match".to_string());
         }
@@ -740,8 +740,8 @@ impl SetSignature for PAdicAlgebraicStructure {
 
 impl EqSignature for PAdicAlgebraicStructure {
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
             (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                 PAdicRational::equal(a, b)
@@ -768,8 +768,8 @@ impl ZeroSignature for PAdicAlgebraicStructure {
 
 impl AdditionSignature for PAdicAlgebraicStructure {
     fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
             (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                 PAdicAlgebraic::Rational(PAdicRational::add(a, b))
@@ -803,7 +803,7 @@ impl AdditiveMonoidSignature for PAdicAlgebraicStructure {}
 
 impl AdditiveGroupSignature for PAdicAlgebraicStructure {
     fn neg(&self, a: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
         a.clone().neg()
     }
 }
@@ -819,8 +819,8 @@ impl OneSignature for PAdicAlgebraicStructure {
 
 impl MultiplicationSignature for PAdicAlgebraicStructure {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
             (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {
                 PAdicAlgebraic::Rational(PAdicRational {
@@ -863,7 +863,7 @@ impl CharacteristicSignature for PAdicAlgebraicStructure {
 
 impl TryReciprocalSignature for PAdicAlgebraicStructure {
     fn try_reciprocal(&self, a: &PAdicAlgebraic) -> Option<PAdicAlgebraic> {
-        debug_assert!(self.is_element(a).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
         match a {
             PAdicAlgebraic::Rational(a) => Some(PAdicAlgebraic::Rational(a.clone().try_inv()?)),
             PAdicAlgebraic::Algebraic(a) => Some(a.clone().inv_mut()?),
@@ -873,8 +873,8 @@ impl TryReciprocalSignature for PAdicAlgebraicStructure {
 
 impl CancellativeMultiplicationSignature for PAdicAlgebraicStructure {
     fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         #[allow(clippy::single_match)]
         match (a, b) {
             (PAdicAlgebraic::Rational(a), PAdicAlgebraic::Rational(b)) => {

@@ -85,7 +85,7 @@ impl Signature for ConwayFiniteFieldStructure {}
 impl SetSignature for ConwayFiniteFieldStructure {
     type Set = Polynomial<Integer>;
 
-    fn is_element(&self, _: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

@@ -114,7 +114,7 @@ impl<D: BorrowedSet<Integer>> Signature for QuadraticNumberFieldStructure<D> {}
 impl<D: BorrowedSet<Integer>> SetSignature for QuadraticNumberFieldStructure<D> {
     type Set = QuadraticNumberFieldElement;
 
-    fn is_element(&self, _: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

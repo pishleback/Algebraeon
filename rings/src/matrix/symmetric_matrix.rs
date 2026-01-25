@@ -167,7 +167,7 @@ impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature
 {
     type Set = SymmetricMatrix<RS::Set>;
 
-    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

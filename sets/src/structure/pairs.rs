@@ -16,8 +16,8 @@ impl<S: SetSignature> PairsStructure<S> {
 
     /// Construct a new pair from two elements of a set
     pub fn new_pair(&self, a: S::Set, b: S::Set) -> Result<(S::Set, S::Set), String> {
-        self.set.is_element(&a)?;
-        self.set.is_element(&b)?;
+        self.set.validate_element(&a)?;
+        self.set.validate_element(&b)?;
         Ok((a, b))
     }
 }
@@ -27,9 +27,9 @@ impl<S: SetSignature> Signature for PairsStructure<S> {}
 impl<S: SetSignature> SetSignature for PairsStructure<S> {
     type Set = (S::Set, S::Set);
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
-        self.set.is_element(&x.0)?;
-        self.set.is_element(&x.1)?;
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+        self.set.validate_element(&x.0)?;
+        self.set.validate_element(&x.1)?;
         Ok(())
     }
 }
@@ -70,9 +70,9 @@ impl<S: SetSignature> Signature for UnorderedPairs<S> {}
 impl<S: SetSignature + EqSignature> SetSignature for UnorderedPairs<S> {
     type Set = UnorderedPair<S::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
-        self.set.is_element(&x.0)?;
-        self.set.is_element(&x.1)?;
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+        self.set.validate_element(&x.0)?;
+        self.set.validate_element(&x.1)?;
         if self.set.equal(&x.0, &x.1) {
             Err("UnorderedPair elements must be distinct".to_string())
         } else {

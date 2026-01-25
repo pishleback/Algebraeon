@@ -91,8 +91,8 @@ pub trait DedekindDomainIdealsSignature<
     /// return the valuation of an element `a` with respect to an ideal `I`
     /// this is the largest power `k` such that `I^k` contains `a`
     fn padic_r_element_valuation(&self, prime: &Self::Set, a: &Ring::Set) -> Valuation {
-        debug_assert!(self.ring().is_element(a).is_ok());
-        debug_assert!(self.is_element(prime).is_ok());
+        debug_assert!(self.ring().validate_element(a).is_ok());
+        debug_assert!(self.validate_element(prime).is_ok());
         if self.ring().is_zero(a) {
             return Valuation::Infinity;
         }
@@ -110,8 +110,8 @@ pub trait DedekindDomainIdealsSignature<
     /// return the valuation of an ideal `a` with respect to an ideal `I`
     /// this is the largest power `k` such that `I^k` contains `a`
     fn padic_r_ideal_valuation(&self, prime: &Self::Set, a: &Self::Set) -> Valuation {
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(prime).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(prime).is_ok());
         if self.is_zero(a) {
             return Valuation::Infinity;
         }

@@ -53,7 +53,7 @@ mod unconstructable_universal_structure {
     impl<Set: Debug + Clone + Send + Sync> SetSignature for UnconstructableStructure<Set> {
         type Set = Set;
 
-        fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
             unreachable!()
         }
     }

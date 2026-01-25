@@ -99,7 +99,7 @@ impl<
                 assert!(!self.ring().is_zero(&cache_entry.basis_gs_sq));
 
                 // check gs-reduction
-                assert!(vs.is_element(&cache_entry.basis_gs).is_ok());
+                assert!(vs.validate_element(&cache_entry.basis_gs).is_ok());
                 assert!(vs.equal(&cache_entry.basis_gs, &true_mat_gs.get_row(k)));
             }
         };

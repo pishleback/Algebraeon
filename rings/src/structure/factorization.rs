@@ -376,11 +376,11 @@ impl<
 {
     type Set = Factored<Object::Set, Exponent::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
         match x {
             Factored::Zero => Ok(()),
             Factored::NonZero(x) => {
-                self.objects().units().is_element(&x.unit)?;
+                self.objects().units().validate_element(&x.unit)?;
                 for (prime, exponent) in &x.powers {
                     if !self.objects().is_fav_assoc(prime) {
                         return Err("Factors should be their favorite associate".to_string());
@@ -388,7 +388,7 @@ impl<
                     if self.objects().try_is_irreducible(prime) == Some(false) {
                         return Err("Failed to be irreducible".to_string());
                     }
-                    self.exponents().is_element(exponent)?;
+                    self.exponents().validate_element(exponent)?;
                     if self.exponents().is_zero(exponent) {
                         return Err("Exponent is zero".to_string());
                     }
@@ -420,8 +420,8 @@ impl<
     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
         #[cfg(debug_assertions)]
         {
-            self.is_element(a).unwrap();
-            self.is_element(b).unwrap();
+            self.validate_element(a).unwrap();
+            self.validate_element(b).unwrap();
         }
         self.try_divide(a, b).is_some() && self.try_divide(b, a).is_some()
     }
@@ -473,8 +473,8 @@ impl<
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         #[cfg(debug_assertions)]
         {
-            self.is_element(a).unwrap();
-            self.is_element(b).unwrap();
+            self.validate_element(a).unwrap();
+            self.validate_element(b).unwrap();
         }
         let mut s = a.clone();
         self.mul_mut_impl(&mut s, b);
@@ -509,7 +509,7 @@ impl<
 {
     fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
         #[cfg(debug_assertions)]
-        self.is_element(a).unwrap();
+        self.validate_element(a).unwrap();
         match a {
             Factored::Zero => None,
             Factored::NonZero(a) => Some(Factored::NonZero(NonZeroFactored {
@@ -580,7 +580,7 @@ impl<
             powers: fav_assoc_powers,
         });
         #[cfg(debug_assertions)]
-        self.is_element(&f).unwrap();
+        self.validate_element(&f).unwrap();
         f
     }
 
@@ -591,8 +591,8 @@ impl<
     ) -> Factored<Object::Set, Exponent::Set> {
         #[cfg(debug_assertions)]
         {
-            self.is_element(a).unwrap();
-            self.is_element(b).unwrap();
+            self.validate_element(a).unwrap();
+            self.validate_element(b).unwrap();
         }
         let mut s = a.clone();
         self.mul_gcd_impl(&mut s, b);
@@ -606,8 +606,8 @@ impl<
     ) -> Option<Factored<Object::Set, Exponent::Set>> {
         #[cfg(debug_assertions)]
         {
-            self.is_element(a).unwrap();
-            self.is_element(b).unwrap();
+            self.validate_element(a).unwrap();
+            self.validate_element(b).unwrap();
         }
         match (a, b) {
             (Factored::Zero, Factored::Zero)
@@ -623,13 +623,13 @@ impl<
 
     pub fn is_irreducible(&self, a: &Factored<Object::Set, Exponent::Set>) -> bool {
         #[cfg(debug_assertions)]
-        self.is_element(a).unwrap();
+        self.validate_element(a).unwrap();
         self.is_irreducible_impl(a)
     }
 
     pub fn expand(&self, a: &Factored<Object::Set, Exponent::Set>) -> Object::Set {
         #[cfg(debug_assertions)]
-        self.is_element(a).unwrap();
+        self.validate_element(a).unwrap();
         match a {
             Factored::Zero => self.objects().zero(),
             Factored::NonZero(a) => {
@@ -645,7 +645,7 @@ impl<
 
     pub fn expand_squarefree(&self, a: &Factored<Object::Set, Exponent::Set>) -> Object::Set {
         #[cfg(debug_assertions)]
-        self.is_element(a).unwrap();
+        self.validate_element(a).unwrap();
         match a {
             Factored::Zero => self.objects().zero(),
             Factored::NonZero(a) => {
@@ -727,7 +727,7 @@ impl<
     /// The number of divisors of a factorization
     pub fn count_divideisors(&self, a: &Factored<Object::Set, Natural>) -> Option<Natural> {
         #[cfg(debug_assertions)]
-        self.is_element(a).unwrap();
+        self.validate_element(a).unwrap();
         match a {
             Factored::Zero => None,
             Factored::NonZero(a) => {
@@ -780,7 +780,7 @@ impl<
         a: &Factored<Object::Set, Natural>,
     ) -> Option<Factored<Object::Set, Natural>> {
         #[cfg(debug_assertions)]
-        self.is_element(a).unwrap();
+        self.validate_element(a).unwrap();
         match a {
             Factored::Zero => Some(self.zero()),
             Factored::NonZero(a) => {
@@ -864,7 +864,7 @@ pub trait FactoringMonoidSignature: UniqueFactorizationMonoidSignature {
         let f = self.factor_unchecked(a);
         #[cfg(debug_assertions)]
         {
-            self.factorizations().is_element(&f).unwrap();
+            self.factorizations().validate_element(&f).unwrap();
             assert!(self.equal(a, &self.factorizations().expand(&f)))
         }
         f
@@ -1021,7 +1021,7 @@ mod tests {
         });
         Integer::structure()
             .factorizations()
-            .is_element(&f)
+            .validate_element(&f)
             .unwrap();
 
         let f = Factored::NonZero(NonZeroFactored {
@@ -1030,7 +1030,7 @@ mod tests {
         });
         Integer::structure()
             .factorizations()
-            .is_element(&f)
+            .validate_element(&f)
             .unwrap();
 
         let f = Factored::NonZero(NonZeroFactored {
@@ -1044,7 +1044,7 @@ mod tests {
         assert!(
             Integer::structure()
                 .factorizations()
-                .is_element(&f)
+                .validate_element(&f)
                 .is_err(),
             "can't have a power of zero"
         );
@@ -1056,7 +1056,7 @@ mod tests {
         assert!(
             Integer::structure()
                 .factorizations()
-                .is_element(&f)
+                .validate_element(&f)
                 .is_err(),
             "unit should be a unit"
         );
@@ -1071,7 +1071,7 @@ mod tests {
         assert!(
             Integer::structure()
                 .factorizations()
-                .is_element(&f)
+                .validate_element(&f)
                 .is_err(),
             "prime factors must not be zero"
         );
@@ -1086,7 +1086,7 @@ mod tests {
         assert!(
             Integer::structure()
                 .factorizations()
-                .is_element(&f)
+                .validate_element(&f)
                 .is_err(),
             "prime factors must be prime"
         );
@@ -1101,7 +1101,7 @@ mod tests {
         assert!(
             Integer::structure()
                 .factorizations()
-                .is_element(&f)
+                .validate_element(&f)
                 .is_err(),
             "prime factors must be favoriate associate"
         );

@@ -61,7 +61,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Set
 {
     type Set = FinitelyFreeSubmoduleCoset<Ring::Set>;
 
-    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
         //TODO: better checks here
         Ok(())
     }
@@ -83,8 +83,13 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         offset: &Vec<Ring::Set>,
         submodule: FinitelyFreeSubmodule<Ring::Set>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
-        debug_assert!(self.module().is_element(offset).is_ok());
-        debug_assert!(self.module().submodules().is_element(&submodule).is_ok());
+        debug_assert!(self.module().validate_element(offset).is_ok());
+        debug_assert!(
+            self.module()
+                .submodules()
+                .validate_element(&submodule)
+                .is_ok()
+        );
         let (_, offset) = self
             .module()
             .submodules()
@@ -107,8 +112,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
         y: &FinitelyFreeSubmoduleCoset<Ring::Set>,
     ) -> bool {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        debug_assert!(self.validate_element(x).is_ok());
+        debug_assert!(self.validate_element(y).is_ok());
         if !self
             .module()
             .submodules()
@@ -126,8 +131,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         x: FinitelyFreeSubmoduleCoset<Ring::Set>,
         y: FinitelyFreeSubmoduleCoset<Ring::Set>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
-        debug_assert!(self.is_element(&x).is_ok());
-        debug_assert!(self.is_element(&y).is_ok());
+        debug_assert!(self.validate_element(&x).is_ok());
+        debug_assert!(self.validate_element(&y).is_ok());
         self.from_offset_and_submodule(
             &self.module().add(&x.offset, &y.offset),
             self.module().submodules().add(x.submodule, y.submodule),
@@ -139,8 +144,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
         y: &FinitelyFreeSubmoduleCoset<Ring::Set>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
-        debug_assert!(self.is_element(x).is_ok());
-        debug_assert!(self.is_element(y).is_ok());
+        debug_assert!(self.validate_element(x).is_ok());
+        debug_assert!(self.validate_element(y).is_ok());
         let cols = self.module().rank();
         let x_offset = x.offset();
         let y_offset = y.offset();

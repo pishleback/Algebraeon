@@ -112,7 +112,7 @@ impl<Field: FieldSignature> Signature for QuaternionAlgebraStructure<Field> {}
 impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
     type Set = QuaternionAlgebraElement<Field::Set>;
 
-    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

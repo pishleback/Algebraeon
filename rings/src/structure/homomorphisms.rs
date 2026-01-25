@@ -74,8 +74,8 @@ mod range_module {
     {
         type Set = Range::Set;
 
-        fn is_element(&self, x: &Self::Set) -> Result<(), String> {
-            self.hom.range().is_element(x)
+        fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+            self.hom.range().validate_element(x)
         }
     }
 
@@ -470,13 +470,13 @@ impl<Domain: FreeRingSignature, Range: RingSignature> SetSignature
 {
     type Set = HashMap<Domain::Generator, Range::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
         if self.domain.free_generators() != x.keys().cloned().collect::<HashSet<_>>() {
             return Err("missing key".to_string());
         }
 
         for v in x.values() {
-            self.range.is_element(v)?;
+            self.range.validate_element(v)?;
         }
 
         Ok(())

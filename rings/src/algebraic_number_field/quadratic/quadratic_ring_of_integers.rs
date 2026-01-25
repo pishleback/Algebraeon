@@ -66,7 +66,7 @@ impl<D: BorrowedSet<Integer>> Signature for QuadraticRingOfIntegersStructure<D> 
 impl<D: BorrowedSet<Integer>> SetSignature for QuadraticRingOfIntegersStructure<D> {
     type Set = QuadraticNumberFieldElement;
 
-    fn is_element(&self, a: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, a: &Self::Set) -> Result<(), String> {
         if self.anf().is_algebraic_integer(a) {
             Ok(())
         } else {

@@ -41,7 +41,7 @@ impl<ANF: AlgebraicNumberFieldSignature> Signature for QuaternionOrderZBasis<ANF
 impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<ANF> {
     type Set = QuaternionAlgebraElement<ANF::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
         let algebra = &self.algebra;
         let submodules = Rational::structure()
             .into_free_module(self.basis.len())
@@ -164,7 +164,7 @@ impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
         }
 
         // 2. check that 1 belongs to the order
-        if self.is_element(&self.algebra.clone().one()).is_err() {
+        if self.validate_element(&self.algebra.clone().one()).is_err() {
             return false;
         }
 
@@ -172,7 +172,7 @@ impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
         for (i, bi) in self.basis.iter().enumerate() {
             for (j, bj) in self.basis.iter().enumerate() {
                 let product = self.algebra.mul(bi, bj);
-                if self.is_element(&product).is_err() {
+                if self.validate_element(&product).is_err() {
                     println!(
                         "Basis not closed under multiplication: b[{}] * b[{}] = {:?} not in order",
                         i, j, product
@@ -212,7 +212,7 @@ mod tests {
         };
 
         for b in order.basis.iter() {
-            assert!(order.is_element(b).is_ok(),);
+            assert!(order.validate_element(b).is_ok(),);
         }
 
         assert!(order.check_basis());

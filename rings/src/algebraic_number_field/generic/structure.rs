@@ -514,7 +514,7 @@ mod anf_inclusion {
         >
     {
         fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
-            debug_assert!(self.integer_submodule().is_element(x).is_ok());
+            debug_assert!(self.integer_submodule().validate_element(x).is_ok());
             let k = self.integer_submodule().anf();
             let n = k.n();
             debug_assert_eq!(n, x.len());
@@ -540,7 +540,7 @@ mod anf_inclusion {
         fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
             let k = self.integer_submodule().anf();
             let n = k.n();
-            debug_assert!(k.is_element(y).is_ok());
+            debug_assert!(k.validate_element(y).is_ok());
             let mat = Matrix::join_cols(
                 n,
                 (0..n)

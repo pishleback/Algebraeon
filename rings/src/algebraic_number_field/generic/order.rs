@@ -163,8 +163,8 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 {
     type Set = Vec<Integer>;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
-        self.full_rank_z_integer_submodule.is_element(x)
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+        self.full_rank_z_integer_submodule.validate_element(x)
     }
 }
 
@@ -275,8 +275,8 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
 {
     fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
         let n = self.n();
-        debug_assert!(self.is_element(a).is_ok());
-        debug_assert!(self.is_element(b).is_ok());
+        debug_assert!(self.validate_element(a).is_ok());
+        debug_assert!(self.validate_element(b).is_ok());
         let mut t = self.zero();
         #[allow(clippy::needless_range_loop)]
         for i in 0..n {
@@ -347,11 +347,11 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>, const MAXIMAL: 
         {
             self.free_integer_submodule_restructure()
                 .submodules()
-                .is_element(a)
+                .validate_element(a)
                 .unwrap();
             self.free_integer_submodule_restructure()
                 .submodules()
-                .is_element(b)
+                .validate_element(b)
                 .unwrap();
         }
 
@@ -509,7 +509,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> OrderWithBasis<
             .unwrap();
 
         #[cfg(debug_assertions)]
-        order.ideals().is_element(&ideal).unwrap();
+        order.ideals().validate_element(&ideal).unwrap();
 
         ideal
     }
@@ -547,7 +547,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> OrderWithBasis<
             .unwrap();
 
         #[cfg(debug_assertions)]
-        self.ideals().is_element(&ideal).unwrap();
+        self.ideals().validate_element(&ideal).unwrap();
 
         ideal
     }

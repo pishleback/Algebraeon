@@ -32,7 +32,7 @@ impl Signature for SubsetsStructure {}
 impl SetSignature for SubsetsStructure {
     type Set = Subset;
 
-    fn is_element(&self, _: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

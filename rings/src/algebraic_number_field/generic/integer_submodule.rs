@@ -33,7 +33,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
             return Err("Basis has wrong length".to_string());
         }
         for v in &self.basis {
-            if let Err(e) = self.anf.borrow().is_element(v) {
+            if let Err(e) = self.anf.borrow().validate_element(v) {
                 return Err(format!(
                     "Vector is not a valid element of the number field: {}",
                     e
@@ -110,7 +110,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetSignature
 {
     type Set = Vec<Integer>;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
         if x.len() != self.n() {
             return Err("wrong length".to_string());
         }

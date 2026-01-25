@@ -38,8 +38,8 @@ impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> SetSignature
 {
     type Set = M::Set;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
-        if self.monoid().is_element(x).is_ok() {
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+        if self.monoid().validate_element(x).is_ok() {
             if self.monoid().is_unit(x) {
                 Ok(())
             } else {

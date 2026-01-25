@@ -26,8 +26,14 @@ pub trait SetSignature: Signature {
     type Set: Clone + Debug + Send + Sync;
 
     /// Some instances of `Self::Set` may not be valid to represent elements of this set.
-    /// Return `true` if `x` is a valid element and `false` if not.
-    fn is_element(&self, x: &Self::Set) -> Result<(), String>;
+    /// Return `Ok(())` if `x` is a valid element and an `Err` explaining why if not.
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String>;
+
+    /// Some instances of `Self::Set` may not be valid to represent elements of this set.
+    /// Return `true` if `x` is a valid element and an `false` if not.
+    fn is_element(&self, x: &Self::Set) -> bool {
+        self.validate_element(x).is_ok()
+    }
 }
 
 pub trait MetaType: Clone + Debug {
@@ -138,7 +144,7 @@ mod tests {
         impl SetSignature for A {
             type Set = usize;
 
-            fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+            fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
                 Ok(())
             }
         }

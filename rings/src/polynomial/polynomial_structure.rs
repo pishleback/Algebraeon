@@ -131,7 +131,7 @@ impl<RS: Signature, RSB: BorrowedStructure<RS>> Signature for PolynomialStructur
 impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature for PolynomialStructure<RS, RSB> {
     type Set = Polynomial<RS::Set>;
 
-    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

@@ -199,12 +199,12 @@ impl<Domain: SetSignature, Range: SetSignature> Signature for Functions<Domain, 
 impl<Domain: FiniteSetSignature, Range: EqSignature> SetSignature for Functions<Domain, Range> {
     type Set = Vec<Range::Set>;
 
-    fn is_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
         if x.len() != self.domain.size() {
             return Err("Incorrect vector length".to_string());
         }
         for y in x {
-            self.range.is_element(y)?;
+            self.range.validate_element(y)?;
         }
         Ok(())
     }
@@ -242,12 +242,12 @@ impl<X: FiniteSetSignature + EqSignature> Signature for FiniteSetEndofunctions<X
 impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunctions<X> {
     type Set = Vec<X::Set>;
 
-    fn is_element(&self, f: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, f: &Self::Set) -> Result<(), String> {
         if f.len() != self.set.size() {
             return Err("Function must have one value per element in the domain.".to_string());
         }
         for y in f {
-            self.set.is_element(y)?;
+            self.set.validate_element(y)?;
         }
         Ok(())
     }

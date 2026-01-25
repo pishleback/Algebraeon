@@ -39,7 +39,7 @@ impl<Set: Send + Sync> Signature for EmptySetStructure<Set> {}
 impl<Set: Debug + Clone + Send + Sync> SetSignature for EmptySetStructure<Set> {
     type Set = Set;
 
-    fn is_element(&self, _: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _: &Self::Set) -> Result<(), String> {
         Err("Empty set has no elements".to_string())
     }
 }

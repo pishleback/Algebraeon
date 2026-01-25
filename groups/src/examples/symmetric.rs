@@ -211,7 +211,7 @@ impl<const N: usize> Signature for PermutationCanonicalStructure<N> {}
 impl<const N: usize> SetSignature for PermutationCanonicalStructure<N> {
     type Set = Permutation<N>;
 
-    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

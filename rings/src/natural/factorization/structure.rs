@@ -50,7 +50,7 @@ impl<
 {
     pub fn euler_totient(&self, a: &Factored<Natural, Natural>) -> Natural {
         #[cfg(debug_assertions)]
-        self.is_element(a).unwrap();
+        self.validate_element(a).unwrap();
         match a {
             Factored::Zero => {
                 // The number of units in the quotient ring Z/0Z = Z is 2 i.e. +1 and -1
@@ -91,7 +91,7 @@ impl<
         n_factored: &Factored<Natural, Natural>,
     ) -> IsPrimitiveRootResult {
         #[cfg(debug_assertions)]
-        self.is_element(n_factored).unwrap();
+        self.validate_element(n_factored).unwrap();
 
         let factorizations = Natural::structure_ref().factorizations();
         let n = factorizations.expand(n_factored);

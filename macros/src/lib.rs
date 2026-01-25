@@ -61,7 +61,7 @@ fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
 ///
 /// impl SetSignature for MyValueCanonicalStructure {
 ///     type Set = MyValue;
-///     fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+///     fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
 ///         Ok(())
 ///     }
 /// }
@@ -194,7 +194,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         impl SetSignature for #newtype_name {
             type Set = #name;
 
-            fn is_element(&self, _x : &Self::Set) -> Result<(), String> {
+            fn validate_element(&self, _x : &Self::Set) -> Result<(), String> {
                 Ok(())
             }
         }

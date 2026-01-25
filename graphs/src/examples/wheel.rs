@@ -64,10 +64,10 @@ impl GraphSignature for WheelGraph {
         source: &<Self::Vertices as SetSignature>::Set,
         target: &<Self::Vertices as SetSignature>::Set,
     ) -> Result<(), String> {
-        if let Err(e) = self.vertices.is_element(source) {
+        if let Err(e) = self.vertices.validate_element(source) {
             return Err(format!("Source is not an element of Vertices: {e}"));
         }
-        if let Err(e) = self.vertices.is_element(target) {
+        if let Err(e) = self.vertices.validate_element(target) {
             return Err(format!("Target is not an element of Vertices: {e}"));
         }
 

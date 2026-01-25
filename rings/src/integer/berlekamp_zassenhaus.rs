@@ -368,7 +368,7 @@ mod dminusone_test {
     impl SetSignature for DMinusOneTestSemigroup {
         type Set = DMinusOneTestSemigroupElem;
 
-        fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+        fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
             Ok(())
         }
     }
@@ -497,7 +497,7 @@ struct ModularFactorDegreeSumSemigrp {}
 impl Signature for ModularFactorDegreeSumSemigrp {}
 impl SetSignature for ModularFactorDegreeSumSemigrp {
     type Set = usize;
-    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }
