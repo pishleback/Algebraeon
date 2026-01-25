@@ -18,7 +18,7 @@ impl Signature for MyRationalCanonicalStructure {}
 impl SetSignature for MyRationalCanonicalStructure {
     type Set = MyRational;
 
-    fn is_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
         Ok(())
     }
 }

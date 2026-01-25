@@ -4,7 +4,7 @@ Let \\(X\\) be a set. This section outlines the traits Algebraeon provides for d
 
 ## Elements and Equality
 
- - `Set` for an object representing a set of elements \\(X\\). Set the associated type `Set` to a type `X` to use instances of `X` to represent elements of \\(X\\). It's not necessary that _all_ instances of `X` represent valid elements of \\(X\\). The method `is_element(a: X) -> Result` should return `Ok` when `a` represents a valid element of \\(X\\) and `Err` when it does not. All other operations with elements of \\(X\\) may exhibit undefined behaviour (ideally panic immediately - at least when building debug mode).
+ - `Set` for an object representing a set of elements \\(X\\). Set the associated type `Set` to a type `X` to use instances of `X` to represent elements of \\(X\\). It's not necessary that _all_ instances of `X` represent valid elements of \\(X\\). The method `validate_element(a: X) -> Result` should return `Ok` when `a` represents a valid element of \\(X\\) and `Err` when it does not. All other operations with elements of \\(X\\) may exhibit undefined behaviour (ideally panic immediately - at least when building debug mode).
  - `Eq : Set` for a set with a binary predicate \\(=\\) called equality. \\(=\\) is required to be an equivalence relation, meaning
  \\[a = a \quad \forall a \in X\\]
  \\[a = b \implies b = a \quad \forall a, b \in X\\]
