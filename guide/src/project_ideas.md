@@ -5,6 +5,7 @@ This document contains a list of project ideas for those wishing to take on a ch
 Good places to get in contact are via the community Discord server [here](https://discord.gg/DBqbPqPMKR) and the discussions page on GitHub [here](https://github.com/pishleback/Algebraeon/discussions).
 
 **General Requirements**
+
 To take on a project with us there are some general requirements:
  - You must be comfortable writing complex programs in a high level programming language.
  - You must have some experience with Rust.
