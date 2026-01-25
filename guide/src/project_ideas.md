@@ -52,13 +52,13 @@ Main outcomes:
  - Find the fundamental solution to Pell's equation \\(x^2 - dy^2 = 1\\) using the existing capability in Algebraeon for computing continued fractions.
  - Generate all other solutions to Pell's equation once the fundamental solution is found.
 
-Stretch outcomes:
+Secondary outcomes:
  - Find the finite set of solutions to a generalized Pell equation \\(x^2 - dy^2 = n\\) from which all others are generated.
  - Generate all solutions to a generalized Pell's equation.
 
 **Difficulty:** Easy
 
-**Duration:** ~90 hours
+**Duration:** ~175 hours
 
 **Requirements**
 
