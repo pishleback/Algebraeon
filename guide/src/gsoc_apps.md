@@ -29,8 +29,6 @@ You should also include the following information:
 4) Your time zone.
 5) Any commitments you have over summer, so we can plan around them.
 
-If you are applying to other organizations as part of GSoC you can also let us know who you would prefer to be accepted by.
-
 ## Next Steps
 
 For all shortlisted applicants we will arrange an informal virtual interview before deciding who to accept. 
