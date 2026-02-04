@@ -225,4 +225,4 @@ It is preferable if you are familiar with:
  - Michael Thompson (Pishleback)
 
 ## Your Own Project Proposal
-You can come to us with your own project proposal. Perhaps there is an interesting algorithm you've always wanted to implement? Or something you find useful in another CAS which Algebraeon is not yet capable of? Get in touch.
+If there's something else you want to do, get in touch and we'll let you know if we think it's a good fit or not.
