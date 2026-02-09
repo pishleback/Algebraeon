@@ -17,7 +17,7 @@ algebraeon-sets = { version = "=0.0.16", path = "../sets", default-features = fa
 algebraeon-nzq = { version = "=0.0.16", path = "../nzq", default-features = false }
 algebraeon-groups = { version = "=0.0.16", path = "../groups", default-features = false }
 algebraeon-macros = { version = "=0.0.16", path = "../macros", default-features = false }
-rand = "0.9.1"
+rand = "0.10.0"
 rayon = "1.7.0"
 itertools = "0.14.0"
 lalrpop-util = { version = "0.22.1", features = ["lexer"] }
