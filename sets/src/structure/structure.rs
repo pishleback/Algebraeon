@@ -1,5 +1,5 @@
 use paste::paste;
-use rand::{Rng, SeedableRng, rngs::StdRng};
+use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
 use std::{borrow::Borrow, fmt::Debug};
 
 macro_rules! make_maybe_trait {
@@ -64,7 +64,7 @@ pub trait FiniteSetSignature: CountableSetSignature {
     fn size(&self) -> usize {
         self.list_all_elements().len()
     }
-    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Set> {
         let rng = StdRng::seed_from_u64(seed);
         FiniteSetRandomElementGenerator::<Self, StdRng> {
             all_elements: self.list_all_elements(),

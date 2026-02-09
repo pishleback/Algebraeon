@@ -17,4 +17,4 @@ algebraeon-macros = { version = "=0.0.16", path = "../macros", default-features 
 indexmap = "2.8.0"
 itertools = "0.14.0"
 paste = "1.0.15"
-rand = "0.9.2"
+rand = "0.10.0"
