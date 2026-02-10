@@ -30,9 +30,9 @@ library_benchmark_group!(
 #[bench::two_irreducibles_1(parse_integer_polynomial("(x^6 + 2*x^5 - x^4 + x^2 - x + 3) * (x^5 - x^4 + 3*x^3 - 2*x + 1)", "x").unwrap())]
 // #[bench::zimmermann_p1(algebraeon_rings::integer::zimmermann_polys::p1())]
 // #[bench::zimmermann_p2(algebraeon_rings::integer::zimmermann_polys::p2())]
-// fn bench_factor_integer_polynomial(polynomial: Polynomial<Integer>) {
-//     black_box(polynomial.factor());
-// }
+fn bench_factor_integer_polynomial(polynomial: Polynomial<Integer>) {
+    black_box(polynomial.factor());
+}
 
 library_benchmark_group!(
     name = bench_factor_integer_polynomial_group;
