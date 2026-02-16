@@ -25,7 +25,7 @@ impls = "1.0.3"
 static_assertions = "1.1.0"
 
 [build-dependencies]
-lalrpop = "0.22.1"
+lalrpop = "0.23.0"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
