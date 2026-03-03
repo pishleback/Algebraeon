@@ -45,4 +45,4 @@
 - [Groups]()
 - [Contributing](contributing.md)
   - [Project Ideas](project_ideas.md)
-  - [GSoC Applications](gsoc_apps.md)
+  <!-- - [GSoC Applications](gsoc_apps.md) -->
