@@ -10,9 +10,9 @@ mod isolate;
 
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {
-    p: Natural,
-    c: Rational,
-    v: Valuation,
+    pub p: Natural,
+    pub c: Rational,
+    pub v: Valuation,
 }
 
 impl IsolatingBall {
