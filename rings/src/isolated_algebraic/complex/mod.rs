@@ -308,6 +308,10 @@ impl ComplexAlgebraicRoot {
         &self.tight_d - &self.tight_c
     }
 
+    pub fn isolate(&self) -> ComplexIsolatingRegion<'_> {
+        ComplexIsolatingRegion::Box(&self.tight_a, &self.tight_b, &self.tight_c, &self.tight_d)
+    }
+
     fn conj(mut self) -> Self {
         (self.tight_c, self.tight_d) = (-self.tight_d, -self.tight_c);
         self
@@ -589,9 +593,7 @@ impl ComplexAlgebraic {
                     ComplexIsolatingRegion::RealInterval(a, b)
                 }
             },
-            ComplexAlgebraic::Complex(z) => {
-                ComplexIsolatingRegion::Box(&z.tight_a, &z.tight_b, &z.tight_c, &z.tight_d)
-            }
+            ComplexAlgebraic::Complex(z) => z.isolate(),
         }
     }
 }
