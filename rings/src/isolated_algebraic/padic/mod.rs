@@ -1370,7 +1370,7 @@ mod tests {
 
     #[test]
     fn test_padic_root_arithmetic_1() {
-        // squaring a 2-adic roots of 4x^2 - 17
+        // squaring the 2-adic roots of 4x^2 - 17
 
         let x = Polynomial::<Integer>::var().into_ergonomic();
         let f = (4 * x.pow(2) - 17).into_verbose();
