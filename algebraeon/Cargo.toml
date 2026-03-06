@@ -22,7 +22,7 @@ algebraeon-drawing = { version = "=0.0.16", path = "../drawing", default-feature
 
 # Benchmarking stuff
 [dev-dependencies]
-gungraun = "0.17.0"
+gungraun = "0.17.2"
 
 [[bench]]
 name = "library_benchmark"
