@@ -595,7 +595,7 @@ impl PAdicAlgebraicRoot {
         /*
         Let x be the root approximated by a: |x - a|_p <= p^(-v_a)
         Let y be the root approximated by b: |y - b|_p <= p^(-v_b)
-        
+
         Then xy is approximated by ab:
                |xy - ab|_p
              = |xy - xb + xb - ab|_p
@@ -606,10 +606,10 @@ impl PAdicAlgebraicRoot {
 
         Converting to valuations (v_p(z) = -log_p(|z|_p)):
             v(xy - ab) >= min(v(x) + v_b, v(b) + v_a)
-        
+
         Since x is close to a and y is close to b:
             v(x) ≈ v(a) and v(y) ≈ v(b)
-            
+
         So we use:
             v(xy - ab) >= min(v(a) + v_b, v(b) + v_a)
         */
