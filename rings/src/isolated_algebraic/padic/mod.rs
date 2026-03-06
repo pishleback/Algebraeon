@@ -44,7 +44,7 @@ impl PAdicAlgebraicRoot {
         Self { p, poly, approx }
     }
 
-    pub fn refine(&mut self, ndigits: &Integer) {
+    pub fn refine_mut(&mut self, ndigits: &Integer) {
         while self.approx.ndigits() < ndigits {
             self.approx = isolate::refine(
                 &self.p,
@@ -129,10 +129,10 @@ impl PAdicAlgebraic {
         }
     }
 
-    pub fn refine(&mut self, ndigits: &Integer) {
+    pub fn refine_mut(&mut self, ndigits: &Integer) {
         match self {
             PAdicAlgebraic::Rational(_) => {}
-            PAdicAlgebraic::Algebraic(x) => x.refine(ndigits),
+            PAdicAlgebraic::Algebraic(x) => x.refine_mut(ndigits),
         }
     }
 
@@ -293,7 +293,7 @@ pub mod truncation {
 
     impl PAdicAlgebraicRoot {
         pub fn truncate(&mut self, modulus_pow: &Integer) -> Truncated {
-            self.refine(modulus_pow);
+            self.refine_mut(modulus_pow);
             let rat = self.approx.center();
             PAdicRational {
                 p: self.p.clone(),
@@ -544,8 +544,8 @@ impl PAdicAlgebraicRoot {
         let mut candidates = rsppsqfp.all_padic_roots(&p);
         let mut k = Integer::ZERO;
         while candidates.len() > 1 {
-            a.refine(&k);
-            b.refine(&k);
+            a.refine_mut(&k);
+            b.refine_mut(&k);
             let aball = a.isolating_ball();
             let bball = b.isolating_ball();
             let sball = IsolatingBall {
@@ -556,7 +556,7 @@ impl PAdicAlgebraicRoot {
             candidates = candidates
                 .into_iter()
                 .filter_map(|mut root| {
-                    root.refine(&k);
+                    root.refine_mut(&k);
                     let rball = root.isolating_ball();
                     if IsolatingBall::overlap(&rball, &sball) {
                         Some(root)
@@ -623,8 +623,8 @@ impl PAdicAlgebraicRoot {
             .all_padic_roots(&p);
         let mut k = Integer::ZERO;
         while candidates.len() > 1 {
-            a.refine(&k);
-            b.refine(&k);
+            a.refine_mut(&k);
+            b.refine_mut(&k);
             let aball = a.isolating_ball();
             let bball = b.isolating_ball();
             let v = std::cmp::min(
@@ -639,7 +639,7 @@ impl PAdicAlgebraicRoot {
             candidates = candidates
                 .into_iter()
                 .filter_map(|mut root| {
-                    root.refine(&k);
+                    root.refine_mut(&k);
                     let rball = root.isolating_ball();
                     if IsolatingBall::overlap(&rball, &sball) {
                         Some(root)
@@ -680,7 +680,7 @@ impl PAdicAlgebraicRoot {
         let mut candidates = inv_poly.all_padic_roots(&p);
         let mut k = Integer::ZERO;
         while candidates.len() > 1 {
-            self.refine(&k);
+            self.refine_mut(&k);
             let sball = self.isolating_ball();
             if !sball.c.is_zero() {
                 let vc = padic_rat_valuation(&p, sball.c.clone());
@@ -694,7 +694,7 @@ impl PAdicAlgebraicRoot {
                 candidates = candidates
                     .into_iter()
                     .filter_map(|mut root| {
-                        root.refine(&k);
+                        root.refine_mut(&k);
                         let rball = root.isolating_ball();
                         if IsolatingBall::overlap(&rball, &iball) {
                             Some(root)

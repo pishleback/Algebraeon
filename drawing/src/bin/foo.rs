@@ -33,7 +33,7 @@ fn main() {
     let mut roots = p.all_complex_roots();
     for _ in 0..4 {
         for root in &mut roots {
-            root.refine();
+            root.refine_mut();
         }
     }
 

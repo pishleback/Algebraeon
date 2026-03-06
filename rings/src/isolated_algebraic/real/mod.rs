@@ -100,7 +100,7 @@ impl Display for RealAlgebraicRoot {
             }
         } else {
             let mut root = self.clone();
-            root.refine_to_accuracy(&Rational::from_integers(
+            root.refine_to_accuracy_mut(&Rational::from_integers(
                 Integer::from(1),
                 Integer::from(100),
             ));
@@ -178,7 +178,7 @@ impl RealAlgebraicRoot {
         &self.tight_b - &self.tight_a
     }
 
-    pub fn refine(&mut self) {
+    pub fn refine_mut(&mut self) {
         let m = RationalSimpleBetweenGenerator::new_between_middle(
             &self.tight_a,
             &self.tight_b,
@@ -194,9 +194,9 @@ impl RealAlgebraicRoot {
         }
     }
 
-    pub fn refine_to_accuracy(&mut self, accuracy: &Rational) {
+    pub fn refine_to_accuracy_mut(&mut self, accuracy: &Rational) {
         while &self.accuracy() > accuracy {
-            self.refine();
+            self.refine_mut();
         }
     }
 
@@ -222,8 +222,8 @@ impl RealAlgebraicRoot {
             }
 
             //refine
-            self.refine();
-            other.refine();
+            self.refine_mut();
+            other.refine_mut();
         }
     }
 
@@ -242,7 +242,7 @@ impl RealAlgebraicRoot {
             // println!("refine");
 
             //refine
-            self.refine();
+            self.refine_mut();
         }
     }
 
@@ -288,7 +288,7 @@ impl RealAlgebraicRoot {
                 ans_poly,
                 (0..).map(|i| {
                     if i != 0 {
-                        self.refine();
+                        self.refine_mut();
                     }
 
                     // eg: c + bx + ax^2 = c + x(b + x(a))
@@ -370,12 +370,28 @@ pub enum RealIsolatingRegion<'a> {
 }
 
 impl RealAlgebraic {
-    pub fn refine(&mut self) {
+    pub fn refine_mut(&mut self) {
         match self {
             RealAlgebraic::Rational(..) => {}
             RealAlgebraic::Real(x) => {
-                x.refine();
+                x.refine_mut();
             }
+        }
+    }
+
+    pub fn refine_to_accuracy_mut(&mut self, accuracy: &Rational) {
+        match self {
+            RealAlgebraic::Rational(_) => {}
+            RealAlgebraic::Real(x) => {
+                x.refine_to_accuracy_mut(accuracy);
+            }
+        }
+    }
+
+    pub fn approximate(&self) -> Rational {
+        match self {
+            RealAlgebraic::Rational(x) => x.clone(),
+            RealAlgebraic::Real(x) => (x.tight_a() + x.tight_a()) / Rational::TWO,
         }
     }
 
@@ -507,8 +523,8 @@ impl AdditionSignature for RealAlgebraicCanonicalStructure {
                     root_sum_poly(&alg1.poly, &alg2.poly),
                     (0..).map(|i| {
                         if i != 0 {
-                            alg1.refine();
-                            alg2.refine();
+                            alg1.refine_mut();
+                            alg2.refine_mut();
                         }
 
                         add_intervals(
@@ -617,8 +633,8 @@ impl MultiplicationSignature for RealAlgebraicCanonicalStructure {
                     root_product_poly(&alg1.poly, &alg2.poly),
                     (0..).map(|i| {
                         if i != 0 {
-                            alg1.refine();
-                            alg2.refine();
+                            alg1.refine_mut();
+                            alg2.refine_mut();
                         }
                         let ans_tight_a = &alg1.tight_a * &alg2.tight_a;
                         let ans_tight_b = &alg1.tight_b * &alg2.tight_b;
@@ -667,7 +683,7 @@ impl TryReciprocalSignature for RealAlgebraicCanonicalStructure {
                 RealAlgebraic::Real(mut root) => {
                     debug_assert!(root.tight_a >= Rational::from(0));
                     while root.tight_a == Rational::from(0) {
-                        root.refine();
+                        root.refine_mut();
                     }
                     debug_assert!(Rational::from(0) < root.tight_a);
                     (root.tight_a, root.tight_b) = (
@@ -779,7 +795,7 @@ impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
             RealAlgebraic::Rational(x) => x.as_f64(),
             RealAlgebraic::Real(x) => {
                 let mut x = x.clone();
-                x.refine_to_accuracy(&Rational::from_integers(
+                x.refine_to_accuracy_mut(&Rational::from_integers(
                     Integer::from(1),
                     Integer::from(1_000_000_000_000_000i64),
                 ));
@@ -809,7 +825,7 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
                     if a_floor == b_floor {
                         return a_floor;
                     } else {
-                        x.refine();
+                        x.refine_mut();
                     }
                 }
             }
@@ -828,7 +844,7 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
                     if a_floor == b_floor {
                         return a_floor;
                     } else {
-                        x.refine();
+                        x.refine_mut();
                     }
                 }
             }
@@ -847,7 +863,7 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
                     if a_floor == b_floor {
                         return a_floor;
                     } else {
-                        x.refine();
+                        x.refine_mut();
                     }
                 }
             }
@@ -1043,7 +1059,7 @@ mod tests {
             match &mut root {
                 RealAlgebraic::Rational(_a) => {}
                 RealAlgebraic::Real(a) => {
-                    a.refine_to_accuracy(&Rational::from_integers(1, i64::MAX));
+                    a.refine_to_accuracy_mut(&Rational::from_integers(1, i64::MAX));
                 }
             }
             println!("    {} {:?}", root, root);

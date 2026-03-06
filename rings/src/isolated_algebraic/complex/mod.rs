@@ -126,10 +126,10 @@ fn identify_complex_root(
             match &mut roots[*idx] {
                 ComplexAlgebraic::Real(RealAlgebraic::Rational(_root)) => {}
                 ComplexAlgebraic::Real(RealAlgebraic::Real(root)) => {
-                    root.refine();
+                    root.refine_mut();
                 }
                 ComplexAlgebraic::Complex(root) => {
-                    root.refine();
+                    root.refine_mut();
                 }
             }
         }
@@ -217,7 +217,7 @@ impl Display for ComplexAlgebraicRoot {
             }
         } else {
             let mut root = self.clone();
-            root.refine_to_accuracy(&Rational::from_integers(
+            root.refine_to_accuracy_mut(&Rational::from_integers(
                 Integer::from(1),
                 Integer::from(100),
             ));
@@ -333,7 +333,7 @@ impl ComplexAlgebraicRoot {
         self
     }
 
-    pub fn refine(&mut self) {
+    pub fn refine_mut(&mut self) {
         let ((n1, a1, b1, c1, d1), (n2, a2, b2, c2, d2)) = bisect_box(
             &self.poly,
             1,
@@ -365,9 +365,9 @@ impl ComplexAlgebraicRoot {
         self.check_invariants().unwrap();
     }
 
-    pub fn refine_to_accuracy(&mut self, accuracy: &Rational) {
+    pub fn refine_to_accuracy_mut(&mut self, accuracy: &Rational) {
         while &self.accuracy_re() > accuracy || &self.accuracy_im() > accuracy {
-            self.refine();
+            self.refine_mut();
         }
     }
 
@@ -434,7 +434,7 @@ impl ComplexAlgebraicRoot {
                 ans_poly,
                 (0..).map(|i| {
                     if i != 0 {
-                        self.refine();
+                        self.refine_mut();
                     }
 
                     // eg: c + bx + ax^2 = c + x(b + x(a))
@@ -576,10 +576,31 @@ pub enum ComplexIsolatingRegion<'a> {
 }
 
 impl ComplexAlgebraic {
-    pub fn refine(&mut self) {
+    pub fn refine_mut(&mut self) {
         match self {
-            ComplexAlgebraic::Real(x) => x.refine(),
-            ComplexAlgebraic::Complex(z) => z.refine(),
+            ComplexAlgebraic::Real(x) => x.refine_mut(),
+            ComplexAlgebraic::Complex(z) => z.refine_mut(),
+        }
+    }
+
+    pub fn refine_to_accuracy_mut(&mut self, accuracy: &Rational) {
+        match self {
+            ComplexAlgebraic::Real(x) => {
+                x.refine_to_accuracy_mut(accuracy);
+            }
+            ComplexAlgebraic::Complex(x) => {
+                x.refine_to_accuracy_mut(accuracy);
+            }
+        }
+    }
+
+    pub fn approximate(&self) -> (Rational, Rational) {
+        match self {
+            ComplexAlgebraic::Real(x) => (x.approximate(), Rational::ZERO),
+            ComplexAlgebraic::Complex(x) => (
+                (&x.tight_a + &x.tight_a) / Rational::TWO,
+                (&x.tight_c + &x.tight_d) / Rational::TWO,
+            ),
         }
     }
 
@@ -667,8 +688,8 @@ impl AdditionSignature for ComplexAlgebraicCanonicalStructure {
                     root_sum_poly(&cpx.poly, real.poly()),
                     (0..).map(|i| {
                         if i != 0 {
-                            cpx.refine();
-                            real.refine();
+                            cpx.refine_mut();
+                            real.refine_mut();
                         }
                         let ans_tight_a = &cpx.tight_a + real.tight_a();
                         let ans_tight_b = &cpx.tight_b + real.tight_b();
@@ -698,8 +719,8 @@ impl AdditionSignature for ComplexAlgebraicCanonicalStructure {
                     root_sum_poly(&cpx1.poly, &cpx2.poly),
                     (0..).map(|i| {
                         if i != 0 {
-                            cpx1.refine();
-                            cpx2.refine();
+                            cpx1.refine_mut();
+                            cpx2.refine_mut();
                         }
                         add_boxes(
                             (&cpx1.tight_a, &cpx1.tight_b, &cpx1.tight_c, &cpx1.tight_d),
@@ -769,8 +790,8 @@ impl MultiplicationSignature for ComplexAlgebraicCanonicalStructure {
                         root_product_poly(&cpx.poly, real.poly()),
                         (0..).map(|i| {
                             if i != 0 {
-                                cpx.refine();
-                                real.refine();
+                                cpx.refine_mut();
+                                real.refine_mut();
                             }
 
                             let mut pts_re = vec![];
@@ -836,8 +857,8 @@ impl MultiplicationSignature for ComplexAlgebraicCanonicalStructure {
                     root_product_poly(&cpx1.poly, &cpx2.poly),
                     (0..).map(|i| {
                         if i != 0 {
-                            cpx1.refine();
-                            cpx2.refine();
+                            cpx1.refine_mut();
+                            cpx2.refine_mut();
                         }
 
                         let (ans_tight_a, ans_tight_b, ans_tight_c, ans_tight_d) = mul_boxes(
@@ -948,7 +969,7 @@ impl TryReciprocalSignature for ComplexAlgebraicCanonicalStructure {
 
                     //refine until eps < |a|
                     if &eps * &eps > w_mag_sq {
-                        root.refine();
+                        root.refine_mut();
                         continue;
                     }
 
@@ -1005,7 +1026,7 @@ impl TryReciprocalSignature for ComplexAlgebraicCanonicalStructure {
                         }
                     }
 
-                    root.refine();
+                    root.refine_mut();
                 }
             }
         }
@@ -1050,7 +1071,7 @@ impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
             ComplexAlgebraic::Real(z) => z.as_f32_real_and_imaginary_parts(),
             ComplexAlgebraic::Complex(z) => {
                 let mut z = z.clone();
-                z.refine_to_accuracy(&Rational::from_integers(
+                z.refine_to_accuracy_mut(&Rational::from_integers(
                     Integer::from(1),
                     Integer::from(100000000i64),
                 ));
@@ -1067,7 +1088,7 @@ impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
             ComplexAlgebraic::Real(z) => z.as_f64_real_and_imaginary_parts(),
             ComplexAlgebraic::Complex(z) => {
                 let mut z = z.clone();
-                z.refine_to_accuracy(&Rational::from_integers(
+                z.refine_to_accuracy_mut(&Rational::from_integers(
                     Integer::from(1),
                     Integer::from(1000000000000000000i64),
                 ));
