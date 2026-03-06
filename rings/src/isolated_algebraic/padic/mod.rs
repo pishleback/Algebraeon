@@ -10,18 +10,20 @@ mod isolate;
 
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {
+    // The set of p-adics x such that the v_p(x - c) <= v
     pub p: Natural,
     pub c: Rational,
     pub v: Valuation,
 }
 
 impl IsolatingBall {
+    // Check whether two p-adic balls overlap
     pub fn overlap(x: &Self, y: &Self) -> bool {
         let p = &x.p;
         debug_assert_eq!(p, &y.p);
         debug_assert!(p.is_irreducible());
         let vdiff = padic_rat_valuation(p, &x.c - &y.c);
-        vdiff >= x.v && vdiff >= y.v
+        vdiff >= x.v || vdiff >= y.v
     }
 }
 
@@ -591,19 +593,25 @@ impl PAdicAlgebraicRoot {
 
     fn mul_mut(a: &mut Self, b: &mut Self) -> PAdicAlgebraic {
         /*
-        Let x be the root approximated by a: |x - a| <= v
-        Let y be the root approximated by b: |y - b| <= w
+        Let x be the root approximated by a: |x - a|_p <= p^(-v_a)
+        Let y be the root approximated by b: |y - b|_p <= p^(-v_b)
+        
         Then xy is approximated by ab:
-            |xy - ab|
-            = |xy - xb + xb - ab|
-            = |x(y - b) + b(x - a)|
-            <= max(|x(y - b)|, |b(x - a)|)
-            = max(|x|.|y-b|, |b|.|x - a|)
-            <= max(|x|.w, |b|.v)
-            <= |b|.v
-            By a symmetric argument it is also <= |a|.w, so
-            |xy - ab| <= max(|b|.v, |a|.w)
+               |xy - ab|_p
+             = |xy - xb + xb - ab|_p
+             = |x(y - b) + b(x - a)|_p
+            <= max(|x(y - b)|_p, |b(x - a)|_p)
+             = max(|x|_p * |y-b|_p, |b|_p * |x - a|_p)
+            <= max(|x|_p * p^(-v_b), |b|_p * p^(-v_a))
 
+        Converting to valuations (v_p(z) = -log_p(|z|_p)):
+            v(xy - ab) >= min(v(x) + v_b, v(b) + v_a)
+        
+        Since x is close to a and y is close to b:
+            v(x) ≈ v(a) and v(y) ≈ v(b)
+            
+        So we use:
+            v(xy - ab) >= min(v(a) + v_b, v(b) + v_a)
         */
         let p = a.p.clone();
         debug_assert_eq!(p, b.p);
@@ -617,8 +625,8 @@ impl PAdicAlgebraicRoot {
             let aball = a.isolating_ball();
             let bball = b.isolating_ball();
             let v = std::cmp::min(
-                padic_rat_valuation(&p, bball.c.clone()) * aball.v.clone(),
-                padic_rat_valuation(&p, aball.c.clone()) * bball.v.clone(),
+                padic_rat_valuation(&p, bball.c.clone()) + aball.v.clone(),
+                padic_rat_valuation(&p, aball.c.clone()) + bball.v.clone(),
             );
             let sball = IsolatingBall {
                 p: p.clone(),
@@ -1358,5 +1366,29 @@ mod tests {
         assert_eq!(f.all_padic_roots(&Natural::from(2u32)).len(), 1);
         assert_eq!(f.all_padic_roots(&Natural::from(3u32)).len(), 1);
         assert_eq!(f.all_padic_roots(&Natural::from(5u32)).len(), 1);
+    }
+
+    #[test]
+    fn test_padic_root_arithmetic_1() {
+        // squaring a 2-adic roots of 4x^2 - 17
+
+        let x = Polynomial::<Integer>::var().into_ergonomic();
+        let f = (4 * x.pow(2) - 17).into_verbose();
+
+        let roots = f.all_padic_roots(&Natural::from(2u32));
+        assert_eq!(roots.len(), 2);
+
+        let ring = PAdicAlgebraicStructure::new(Natural::from(2u32));
+
+        for root in roots {
+            let squared = ring.mul(&root, &root);
+
+            let expected = PAdicAlgebraic::from_rational(
+                Natural::from(2u32),
+                Rational::from_integers(Integer::from(17), Integer::from(4)),
+            );
+
+            assert!(ring.equal(&squared, &expected));
+        }
     }
 }
