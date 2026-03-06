@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.17] - 2026-03-06
+
  - Added an LLL implementation over any field with the appropriate structure inherited from the real numbers.
  - Added an LLL implementation over the integers using integer-only operations.
  - Bugfix in Cantor-Zassenhaus for factoring polynomials over finite fields in characteristic 2 where the construction of a high-degree polynomial without doing a reduction caused very poor performance on large inputs.
