@@ -162,6 +162,7 @@ pub mod truncation {
     pub enum Truncated {
         Zero {
             p: Natural,
+            cutoffv: Integer,
         },
         NonZero {
             p: Natural,
@@ -172,15 +173,15 @@ pub mod truncation {
     }
 
     impl Truncated {
-        pub fn digits(&self) -> Option<(Vec<Natural>, Integer)> {
+        pub fn digits(&self) -> (Vec<Natural>, Integer) {
             match self {
-                Truncated::Zero { .. } => None,
+                Truncated::Zero { cutoffv, .. } => (vec![], cutoffv.clone()),
                 Truncated::NonZero {
                     p,
                     value,
                     shift,
                     num_digits,
-                } => Some({
+                } => {
                     let mut k = Natural::ZERO;
                     let mut digits = vec![];
                     let mut v = value.clone();
@@ -191,7 +192,7 @@ pub mod truncation {
                         k += Natural::ONE;
                     }
                     (digits, shift.clone())
-                }),
+                }
             }
         }
 
@@ -206,42 +207,38 @@ pub mod truncation {
 
         pub fn string_repr(&self) -> String {
             let p = match self {
-                Truncated::Zero { p } | Truncated::NonZero { p, .. } => p,
+                Truncated::Zero { p, .. } | Truncated::NonZero { p, .. } => p,
             };
-            match self.digits() {
-                None => "0".into(),
-                Some((digits, mut shift)) => {
-                    use std::fmt::Write;
-                    let seps = p >= &Natural::from(10u32);
-                    let mut rev_digits = digits.into_iter().rev().collect::<Vec<_>>();
-                    while shift > Integer::ZERO {
-                        rev_digits.push(Natural::ZERO);
-                        shift -= Integer::ONE;
-                    }
-                    debug_assert!(shift <= Integer::ZERO);
-                    let shift = (-shift).abs();
-                    let mut s = String::new();
-                    write!(&mut s, "...").unwrap();
-                    for (i, d) in rev_digits.into_iter().rev().enumerate().rev() {
-                        write!(&mut s, "{}", d).unwrap();
-                        #[allow(clippy::collapsible_else_if)]
-                        if i != 0 {
-                            if seps {
-                                if Integer::from(i) == shift {
-                                    write!(&mut s, ";").unwrap();
-                                } else {
-                                    write!(&mut s, ",").unwrap();
-                                }
-                            } else {
-                                if Integer::from(i) == shift {
-                                    write!(&mut s, ".").unwrap();
-                                }
-                            }
+            let (digits, mut shift) = self.digits();
+            use std::fmt::Write;
+            let seps = p >= &Natural::from(10u32);
+            let mut rev_digits = digits.into_iter().rev().collect::<Vec<_>>();
+            while shift > Integer::ZERO {
+                rev_digits.push(Natural::ZERO);
+                shift -= Integer::ONE;
+            }
+            debug_assert!(shift <= Integer::ZERO);
+            let shift = (-shift).abs();
+            let mut s = String::new();
+            write!(&mut s, "...").unwrap();
+            for (i, d) in rev_digits.into_iter().rev().enumerate().rev() {
+                write!(&mut s, "{}", d).unwrap();
+                #[allow(clippy::collapsible_else_if)]
+                if i != 0 {
+                    if seps {
+                        if Integer::from(i) == shift {
+                            write!(&mut s, ";").unwrap();
+                        } else {
+                            write!(&mut s, ",").unwrap();
+                        }
+                    } else {
+                        if Integer::from(i) == shift {
+                            write!(&mut s, ".").unwrap();
                         }
                     }
-                    s
                 }
             }
+            s
         }
     }
 
@@ -262,7 +259,10 @@ pub mod truncation {
                         Natural::ZERO
                     );
                     if cutoffv <= &shift {
-                        Truncated::Zero { p: self.p.clone() }
+                        Truncated::Zero {
+                            p: self.p.clone(),
+                            cutoffv: cutoffv.clone(),
+                        }
                     } else {
                         let num_digits = cutoffv - &shift;
                         debug_assert!(num_digits >= Integer::ONE);
@@ -281,7 +281,10 @@ pub mod truncation {
                         }
                     }
                 }
-                Valuation::Infinity => Truncated::Zero { p: self.p.clone() },
+                Valuation::Infinity => Truncated::Zero {
+                    p: self.p.clone(),
+                    cutoffv: cutoffv.clone(),
+                },
             }
         }
     }
@@ -318,30 +321,30 @@ pub mod truncation {
         #[test]
         fn test_padic_digits() {
             assert_eq!(
-                PAdicAlgebraic::from_rational(Natural::from(2u32), Rational::ZERO,)
+                PAdicAlgebraic::from_rational(Natural::from(2u32), Rational::ZERO)
                     .truncate(&6.into())
                     .digits(),
-                None
+                (vec![], Integer::from(6))
             );
 
             assert_eq!(
                 PAdicAlgebraic::from_rational(
                     Natural::from(2u32),
-                    Rational::from_integers(Integer::from(9), Integer::from(1)),
+                    Rational::from_integers(Integer::from(9), Integer::from(1))
                 )
                 .truncate(&0.into())
                 .digits(),
-                None
+                (vec![], Integer::from(0))
             );
 
             assert_eq!(
                 PAdicAlgebraic::from_rational(
                     Natural::from(2u32),
-                    Rational::from_integers(Integer::from(9), Integer::from(1)),
+                    Rational::from_integers(Integer::from(9), Integer::from(1))
                 )
                 .truncate(&6.into())
                 .digits(),
-                Some((
+                (
                     vec![
                         Natural::from(1u32),
                         Natural::from(0u32),
@@ -351,7 +354,7 @@ pub mod truncation {
                         Natural::from(0u32),
                     ],
                     Integer::from(0)
-                ))
+                )
             );
 
             assert_eq!(
@@ -361,7 +364,7 @@ pub mod truncation {
                 )
                 .truncate(&6.into())
                 .digits(),
-                Some((
+                (
                     vec![
                         Natural::from(1u32),
                         Natural::from(0u32),
@@ -370,7 +373,7 @@ pub mod truncation {
                         Natural::from(0u32),
                     ],
                     Integer::from(1)
-                ))
+                )
             );
 
             assert_eq!(
@@ -380,7 +383,7 @@ pub mod truncation {
                 )
                 .truncate(&10.into())
                 .digits(),
-                Some((
+                (
                     vec![
                         Natural::from(1u32),
                         Natural::from(1u32),
@@ -396,7 +399,7 @@ pub mod truncation {
                         Natural::from(1u32),
                     ],
                     Integer::from(-2)
-                ))
+                )
             );
         }
     }
@@ -1016,236 +1019,236 @@ mod structure_tests {
         println!("a = {}", a);
         assert_eq!(
             a.clone().truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![2, 4, 2, 1, 1, 3]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("b = {}", b);
         assert_eq!(
             b.clone().truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![2, 3, 1, 2, 0, 1]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("c = {}", c);
         assert_eq!(
             c.clone().truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![1, 1, 3, 4, 1, 0]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("d = {}", d);
         assert_eq!(
             d.clone().truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![1, 2, 1, 4, 2, 3]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("e = {}", e);
         assert_eq!(
             e.clone().truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![3, 4, 4, 4, 4, 4]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
 
         println!("-a = {}", ring.neg(&a));
         assert_eq!(
             ring.neg(&a).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![3, 0, 2, 3, 3, 1]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("-b = {}", ring.neg(&b));
         assert_eq!(
             ring.neg(&b).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![3, 1, 3, 2, 4, 3]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("-c = {}", ring.neg(&c));
         assert_eq!(
             ring.neg(&c).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![4, 3, 1, 0, 3, 4]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("-d = {}", ring.neg(&d));
         assert_eq!(
             ring.neg(&d).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![4, 2, 3, 0, 2, 1]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("-e = {}", ring.neg(&e));
         assert_eq!(
             ring.neg(&e).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![2, 0, 0, 0, 0, 0]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
 
         println!("a+b = {}", ring.add(&a, &b));
         assert_eq!(
             ring.add(&a, &b).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![4, 2, 4, 3, 1, 4]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("a+c = {}", ring.add(&a, &c));
         assert_eq!(
             ring.add(&a, &c).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![3, 0, 1, 1, 3, 3]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("d+b = {}", ring.add(&d, &b));
         assert_eq!(
             ring.add(&d, &b).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![3, 0, 3, 1, 3, 4]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("d+c = {}", ring.add(&d, &c));
         assert_eq!(
             ring.add(&d, &c).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![2, 3, 4, 3, 4, 3]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("c+c = {}", ring.add(&c, &c));
         assert_eq!(
             ring.add(&c, &c).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![2, 2, 1, 4, 3, 0]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
 
         println!("a*b = {}", ring.mul(&a, &b));
         assert_eq!(
             ring.mul(&a, &b).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![4, 4, 0, 0, 4, 4]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("a*c = {}", ring.mul(&a, &c));
         assert_eq!(
             ring.mul(&a, &c).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![2, 1, 3, 0, 1, 0]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("d*b = {}", ring.mul(&d, &b));
         assert_eq!(
             ring.mul(&d, &b).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![2, 2, 0, 2, 4, 3]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("d*c = {}", ring.mul(&d, &c));
         assert_eq!(
             ring.mul(&d, &c).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![1, 3, 1, 1, 1, 2]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("c*c = {}", ring.mul(&c, &c));
         assert_eq!(
             ring.mul(&c, &c).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![1, 2, 2, 0, 2, 0]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("a*e = {}", ring.mul(&a, &e));
         assert_eq!(
             ring.mul(&a, &e).truncate(&6.into()).digits(),
-            Some((
+            (
                 vec![1, 1, 4, 1, 2, 3]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
 
         println!("a^-1 = {}", ring.try_reciprocal(&a).unwrap());
@@ -1254,13 +1257,13 @@ mod structure_tests {
                 .unwrap()
                 .truncate(&6.into())
                 .digits(),
-            Some((
+            (
                 vec![3, 1, 1, 4, 2, 1]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("b^-1 = {}", ring.try_reciprocal(&b).unwrap());
         assert_eq!(
@@ -1268,13 +1271,13 @@ mod structure_tests {
                 .unwrap()
                 .truncate(&6.into())
                 .digits(),
-            Some((
+            (
                 vec![3, 0, 0, 4, 0, 0]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("c^-1 = {}", ring.try_reciprocal(&c).unwrap());
         assert_eq!(
@@ -1282,13 +1285,13 @@ mod structure_tests {
                 .unwrap()
                 .truncate(&6.into())
                 .digits(),
-            Some((
+            (
                 vec![1, 4, 2, 0, 3, 4]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("d^-1 = {}", ring.try_reciprocal(&d).unwrap());
         assert_eq!(
@@ -1296,13 +1299,13 @@ mod structure_tests {
                 .unwrap()
                 .truncate(&6.into())
                 .digits(),
-            Some((
+            (
                 vec![1, 3, 2, 2, 2, 2]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
         println!("e^-1 = {}", ring.try_reciprocal(&e).unwrap());
         assert_eq!(
@@ -1310,13 +1313,13 @@ mod structure_tests {
                 .unwrap()
                 .truncate(&6.into())
                 .digits(),
-            Some((
+            (
                 vec![2, 2, 2, 2, 2, 2]
                     .into_iter()
                     .map(|d| Natural::from(d as u8))
                     .collect(),
                 0.into()
-            ))
+            )
         );
     }
 }
