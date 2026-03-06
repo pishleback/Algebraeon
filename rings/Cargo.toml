@@ -20,12 +20,12 @@ algebraeon-macros = { version = "=0.0.16", path = "../macros", default-features 
 rand = "0.10.0"
 rayon = "1.7.0"
 itertools = "0.14.0"
-lalrpop-util = { version = "0.22.1", features = ["lexer"] }
+lalrpop-util = { version = "0.23.0", features = ["lexer"] }
 impls = "1.0.3"
 static_assertions = "1.1.0"
 
 [build-dependencies]
-lalrpop = "0.22.1"
+lalrpop = "0.23.0"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
