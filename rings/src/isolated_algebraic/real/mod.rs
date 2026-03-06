@@ -47,13 +47,15 @@ impl RealAlgebraicRoot {
 impl Display for RealAlgebraicRoot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.poly.num_coeffs() == 3 {
-            //quadratic
+            // quadratic
             let a = self.poly.coeff(2);
             let b = self.poly.coeff(1);
             let c = self.poly.coeff(0);
             debug_assert!(a.as_ref() > &Integer::ZERO);
 
+            // b^2 - 4ac
             let d = b.as_ref() * b.as_ref() - Integer::from(4) * a.as_ref() * c.as_ref();
+            // find the square and square-free parts of d
             let mut d_sq = Integer::ONE;
             let mut d_sqfreee = Integer::ONE;
             let (d_sign, d_factors) = d.factor().into_unit_and_powers().unwrap();
@@ -63,27 +65,25 @@ impl Display for RealAlgebraicRoot {
                     d_sqfreee *= d_factor;
                 }
             }
-            debug_assert_eq!(d_sign, Integer::ONE); //because we are a real number
+            debug_assert_eq!(d_sign, Integer::ONE); // because we are a real number
             debug_assert_eq!(d, &d_sqfreee * &d_sq * &d_sq);
 
             let two_a = Integer::TWO * a.as_ref();
-
             let x = Rational::from_integers(-b.as_ref(), two_a.clone());
             let y = Rational::from_integers(d_sq, two_a);
             debug_assert!(y > Rational::ZERO);
             let r = d_sqfreee;
 
-            let mut tight_a_abs = self.tight_a.clone();
-            if tight_a_abs < Rational::ZERO {
-                tight_a_abs = -tight_a_abs;
-            }
+            // is the irrational part + or -
+            let sign = match RealAlgebraic::Real(self.clone())
+                .sub(&RealAlgebraic::Rational(x.clone()))
+                .cmp(&RealAlgebraic::Rational(Rational::ZERO))
+            {
+                std::cmp::Ordering::Less => false,
+                std::cmp::Ordering::Equal => unreachable!(),
+                std::cmp::Ordering::Greater => true,
+            };
 
-            let mut tight_b_abs = self.tight_b.clone();
-            if tight_b_abs < Rational::ZERO {
-                tight_b_abs = -tight_b_abs;
-            }
-
-            let sign = tight_a_abs < tight_b_abs;
             match (x, y) {
                 (Rational::ZERO, Rational::ONE) => {
                     write!(f, "{}√{}", if sign { "" } else { "-" }, r)?;
