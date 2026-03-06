@@ -868,9 +868,9 @@ dependencies = [
 
 [[package]]
 name = "gungraun"
-version = "0.17.0"
+version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b247b47ec86130ed355045982783d4666f32045e397a4547bbb6793cd53e940f"
+checksum = "61c1bbe46f51c63bc08a1fac0ee0c530a77c961613a86ecf828ab1b0ffc6687a"
 dependencies = [
  "bincode",
  "derive_more",
@@ -880,9 +880,9 @@ dependencies = [
 
 [[package]]
 name = "gungraun-macros"
-version = "0.7.0"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12b605e561ccca36d68ebacd387751f2d58cf65202b781bb4a9029951dd3a66d"
+checksum = "cdccd089c36fb2ee66ef0eb7b1baa3ce7e7878a8eae682d9c8c368869ff6eca1"
 dependencies = [
  "derive_more",
  "proc-macro-error2",
@@ -896,9 +896,9 @@ dependencies = [
 
 [[package]]
 name = "gungraun-runner"
-version = "0.17.0"
+version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f0ae6c9fe670d3d77f5576be41568ebf1733e5873c6ca85ff3b85848a31ac76"
+checksum = "6da6487203fa53ae6b1c8fead642fe79a3199464b0dd1337635594d675a9ac05"
 dependencies = [
  "serde",
 ]
