@@ -1,10 +1,10 @@
 pub mod berlekamp_zassenhaus;
+pub mod functions;
 pub mod integer_ideal;
 pub mod integer_polynomial;
 pub mod integer_structure;
 pub mod modulo;
-pub mod quadratic_symbols;
-pub mod zimmermann_polys;
 pub mod natural_factorization;
 pub mod natural_structure;
-pub mod functions;
+pub mod quadratic_symbols;
+pub mod zimmermann_polys;
