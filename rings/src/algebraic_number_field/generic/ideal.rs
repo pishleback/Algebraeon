@@ -6,12 +6,12 @@ use crate::{
     algebraic_number_field::{
         AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, OrderWithBasis,
     },
-    integer::ideal::IntegerIdealsStructure,
     linear::{
         finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
         finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
     },
     matrix::Matrix,
+    num_theory::integer_ideal::IntegerIdealsStructure,
     polynomial::ToPolynomialSignature,
     structure::*,
 };

@@ -10,12 +10,6 @@ use algebraeon_sets::structure::FiniteSetSignature;
 use algebraeon_sets::structure::MetaType;
 use std::collections::HashSet;
 
-pub mod berlekamp_zassenhaus;
-pub mod ideal;
-pub mod modulo;
-pub mod polynomial;
-pub mod zimmermann_polys;
-
 impl RinglikeSpecializationSignature for IntegerCanonicalStructure {
     fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
         Some(self.clone())

@@ -1,7 +1,9 @@
-use super::functions::*;
-use super::*;
-use crate::polynomial::{Polynomial, ToPolynomialSignature};
-use algebraeon_nzq::traits::AbsDiff;
+use crate::{
+    polynomial::{Polynomial, ToPolynomialSignature},
+    structure::{Factored, OneSignature, UniqueFactorizationMonoidSignature},
+};
+use algebraeon_nzq::{Natural, gcd, traits::AbsDiff};
+use algebraeon_sets::structure::MetaType;
 use primes::is_prime_nat;
 
 pub mod ecm;

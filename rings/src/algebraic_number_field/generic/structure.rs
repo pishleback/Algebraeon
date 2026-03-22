@@ -633,7 +633,7 @@ mod anf_inclusion {
 
         use crate::{
             algebraic_number_field::OrderIdealsStructure,
-            integer::ideal::IntegerIdealsStructure,
+            num_theory::integer_ideal::IntegerIdealsStructure,
             structure::{
                 IdealsSignature, IntegralClosureExtension, PrincipalIntegerMap, RingSignature,
                 RingToIdealsSignature,

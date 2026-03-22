@@ -1,4 +1,12 @@
-use crate::{integer::*, polynomial::*};
+use crate::{
+    num_theory::berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm,
+    polynomial::*,
+    structure::{
+        Factored, FactoringMonoidSignature, GreatestCommonDivisorSignature, MetaFactoringMonoid,
+    },
+};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, Rational, choose, traits::Abs};
+use algebraeon_sets::structure::BorrowedStructure;
 use std::rc::Rc;
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> GreatestCommonDivisorSignature
@@ -13,7 +21,6 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> FactoringMonoidSignature
     for PolynomialStructure<IntegerCanonicalStructure, B>
 {
     fn factor_unchecked(&self, p: &Self::Set) -> Factored<Polynomial<Integer>, Natural> {
-        use berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm;
         // self.factorize_by_kroneckers_method(p)
         factorize_by_berlekamp_zassenhaus_algorithm(p.clone())
     }
@@ -55,57 +62,6 @@ impl Polynomial<Integer> {
     }
 }
 
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// struct IrreducibleIntegerMultiPolynomialStructure {}
-
-// impl Signature for IrreducibleIntegerMultiPolynomialStructure {}
-
-// impl SetSignature for IrreducibleIntegerMultiPolynomialStructure {
-//     type Set = MultiPolynomial<Integer>;
-
-//     fn is_element(&self, x: &Self::Set) -> bool {
-//         todo!()
-//     }
-// }
-
-// impl EqSignature for IrreducibleIntegerMultiPolynomialStructure {
-//     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
-//         Integer::structure().multivariable_polynomials().equal(a, b)
-//     }
-// }
-
-// impl OrdSignature for IrreducibleIntegerMultiPolynomialStructure {
-//     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering {
-//         todo!()
-//     }
-// }
-
-// impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> UniqueFactorizationSignature
-//     for MultiPolynomialStructure<IntegerCanonicalStructure, B>
-// {
-//     type Irreducibles = IrreducibleIntegerMultiPolynomialStructure;
-
-//     type Factorizations<SelfB: BorrowedStructure<Self>> = FactoredRingElementStructure<Self, SelfB>;
-
-//     fn factorizations<'a>(&'a self) -> Self::Factorizations<&'a Self> {
-//         FactoredRingElementStructure::new(self)
-//     }
-
-//     fn into_factorizations(self) -> Self::Factorizations<Self> {
-//         FactoredRingElementStructure::new(self)
-//     }
-
-//     fn irreducibles(&self) -> impl std::borrow::Borrow<Self::Irreducibles> {
-//         IrreducibleIntegerMultiPolynomialStructure {}
-//     }
-// }
-
-// impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> UniqueFactorizationSignature
-//     for MultiPolynomialStructure<PolynomialStructure<IntegerCanonicalStructure, B>, B>
-// {
-
-// }
-
 impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> FactoringMonoidSignature
     for MultiPolynomialStructure<IntegerCanonicalStructure, B>
 {
@@ -120,12 +76,12 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure> + 'static> FactoringMonoidS
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::EqSignature;
-    use berlekamp_zassenhaus::*;
-
-    use crate::structure::IntoErgonomic;
-
     use super::*;
+    use crate::{
+        num_theory::berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm_naive,
+        structure::{IntoErgonomic, UniqueFactorizationMonoidSignature},
+    };
+    use algebraeon_sets::structure::{EqSignature, MetaType};
 
     #[test]
     fn test_zassenhaus_against_kroneckers() {

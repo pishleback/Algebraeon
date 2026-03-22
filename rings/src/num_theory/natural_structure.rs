@@ -1,9 +1,5 @@
 use crate::structure::*;
 use algebraeon_nzq::{traits::DivMod, *};
-use algebraeon_sets::structure::*;
-
-pub mod factorization;
-pub mod functions;
 
 impl RinglikeSpecializationSignature for NaturalCanonicalStructure {}
 
@@ -97,17 +93,3 @@ impl EuclideanDivisionSignature for NaturalCanonicalStructure {
         }
     }
 }
-
-// pub trait NaturalFns {
-//     fn is_prime(&self) -> bool;
-//     fn factor(self) -> Option<Vec<(Natural, Natural)>>;
-// }
-
-// impl NaturalFns for Natural {
-//     fn is_prime(&self) -> bool {
-//         factorization::primes::is_prime(self)
-//     }
-//     fn factor(self) -> Option<Vec<(Natural, Natural)>> {
-//         factorization::factor(self)
-//     }
-// }

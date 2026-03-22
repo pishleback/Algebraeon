@@ -1,7 +1,19 @@
-use super::*;
-use algebraeon_nzq::traits::DivMod;
+use crate::{
+    num_theory::{
+        functions::{IsPowerTestResult, is_power_test},
+        natural_factorization::IsPrimitiveRootResult,
+    },
+    structure::{
+        MetaMultiplicativeMonoidSignature, MultiplicationSignature, MultiplicativeMonoidSignature,
+        RingToQuotientRingSignature, UniqueFactorizationMonoidSignature,
+    },
+};
+use algebraeon_nzq::{
+    Integer, Natural, Rational, choose, gcd, primes,
+    traits::{DivMod, ModPow},
+};
+use algebraeon_sets::structure::MetaType;
 use std::ops::Rem;
-use traits::ModPow;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PrimalityTestResult {
@@ -119,7 +131,7 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                 match factorizations
                     .is_primitive_root(n, &factorizations.new_irreducible_unchecked(r.clone()))
                 {
-                    factorization::IsPrimitiveRootResult::NonUnit => {
+                    IsPrimitiveRootResult::NonUnit => {
                         // n is divisible by r
                         return if *n == r {
                             PrimalityTestResult::Prime
@@ -127,8 +139,8 @@ pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
                             PrimalityTestResult::Composite
                         };
                     }
-                    factorization::IsPrimitiveRootResult::No => {}
-                    factorization::IsPrimitiveRootResult::Yes => {
+                    IsPrimitiveRootResult::No => {}
+                    IsPrimitiveRootResult::Yes => {
                         break;
                     }
                 }

@@ -2,7 +2,7 @@ use crate::algebraic_number_field::{
     AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature,
     RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
-use crate::integer::ideal::IntegerIdealsStructure;
+use crate::num_theory::integer_ideal::IntegerIdealsStructure;
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;

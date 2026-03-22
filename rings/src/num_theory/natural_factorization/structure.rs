@@ -1,5 +1,5 @@
-use crate::natural::factorization::factor_nat;
-use crate::natural::factorization::primes::is_prime_nat;
+use crate::num_theory::natural_factorization::factor_nat;
+use crate::num_theory::natural_factorization::primes::is_prime_nat;
 use crate::structure::{
     Factored, FactoringMonoidSignature, FactoringStructure, MetaFactoringMonoid,
     MultiplicationSignature, MultiplicativeMonoidSignature, SemiRingSignature,

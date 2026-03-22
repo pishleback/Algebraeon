@@ -1,4 +1,8 @@
-use super::*;
+use crate::structure::{
+    EuclideanRemainderQuotientStructure, FiniteFieldSignature, MultiplicativeMonoidUnitsStructure,
+};
+use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, traits::Abs};
+use algebraeon_sets::structure::{BorrowedStructure, CountableSetSignature, FiniteSetSignature};
 
 impl<
     B: BorrowedStructure<IntegerCanonicalStructure>,
@@ -63,6 +67,8 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> Fini
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::structure::RingToQuotientRingSignature;
+    use algebraeon_sets::structure::MetaType;
 
     #[test]
     fn count_elements() {

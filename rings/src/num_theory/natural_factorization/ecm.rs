@@ -31,7 +31,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 
-use crate::natural::factorization::primes::is_prime_nat;
+use crate::num_theory::natural_factorization::primes::is_prime_nat;
 use crate::structure::MetaMultiplicativeMonoidSignature;
 use algebraeon_nzq::primes;
 use algebraeon_nzq::{Natural, Rng, gcd, traits::ModInv};
