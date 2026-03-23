@@ -103,6 +103,8 @@ impl StateAtGoodPrimeHenselFactorization {
         // For hensel lifting it is more efficient (due to how the coefficients grow during Hensel lifting) to begin
         // with quadratic lifts until the modulus is just below the size limit for primitive integers, and then proceed with linear lifts
 
+        println!("{:?}", target_modulus);
+
         // quadratic lifting
         match self {
             StateAtGoodPrimeHenselFactorization::Empty => unreachable!(),
@@ -110,8 +112,10 @@ impl StateAtGoodPrimeHenselFactorization {
                 while hensel_factorization
                     .factorization_modulus_base()
                     .nat_pow(&(Natural::TWO * hensel_factorization.factorization_modulus_power()))
-                    < Natural::from(u64::MAX)
+                    < Natural::from(1u8)
+                // quadratic lifting first seems to be slower. Not sure why.
                 {
+                    println!("{:?}", hensel_factorization.modulus());
                     if hensel_factorization.modulus() >= target_modulus {
                         return;
                     }
@@ -140,6 +144,7 @@ impl StateAtGoodPrimeHenselFactorization {
                 unreachable!()
             }
             StateAtGoodPrimeHenselFactorization::Linear(hensel_factorization) => loop {
+                println!("{:?}", hensel_factorization.modulus());
                 if hensel_factorization.modulus() >= target_modulus {
                     return;
                 }
@@ -651,7 +656,26 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm<'a>(
     println!("{:?}", best_prime_state.hensel_factorization.modulus());
     let factor_coeff_bound = compute_polynomial_factor_bound(best_prime_state.sqfree_prim_poly);
     let minimum_modolus = Natural::TWO * &factor_coeff_bound;
+
+    let partially_factored =
+        best_prime_state.partial_factor_by_test_modular_subsets(4, &possible_proper_factor_degrees);
+    debug_assert!(!partially_factored.is_empty());
+    if partially_factored.len() >= 2 {
+        println!("Big partial factorization found");
+        // Recursively call using the found partial factorization
+        let mut factored = Integer::structure().polynomials().factorizations().one();
+        for f in partially_factored {
+            Integer::structure().polynomials().factorizations().mul_mut(
+                &mut factored,
+                &factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(&f),
+            );
+        }
+        return factored;
+    }
+
+    println!("Start lift");
     best_prime_state.lift_to_modulus(&minimum_modolus);
+    println!("Done lift");
     Integer::structure().polynomials().factorizations().product(
         best_prime_state
             .partial_factor_by_test_modular_subsets(usize::MAX, &possible_proper_factor_degrees)
