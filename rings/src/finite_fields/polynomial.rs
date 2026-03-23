@@ -96,6 +96,10 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS
         }
     }
 
+    pub fn num_squarefree_factors(&self) -> usize {
+        self.squarefree_factors.len()
+    }
+
     pub fn new_squarefree_poly_unchecked(
         poly_ring: PolynomialStructure<FS, FSB>,
         poly: Polynomial<FS::Set>,
