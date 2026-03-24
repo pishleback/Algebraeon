@@ -551,26 +551,26 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         Ok(s)
     }
 
-    pub fn apply_row(&self, mat: &Matrix<RS::Set>, row: &[RS::Set]) -> Vec<RS::Set> {
+    pub fn apply_row(&self, mat: &Matrix<RS::Set>, row: &[impl Borrow<RS::Set>]) -> Vec<RS::Set> {
         assert_eq!(mat.rows(), row.len());
         (0..mat.cols())
             .map(|c| {
                 self.ring().sum(
                     (0..mat.rows())
-                        .map(|r| self.ring().mul(mat.at(r, c).unwrap(), &row[r]))
+                        .map(|r| self.ring().mul(mat.at(r, c).unwrap(), row[r].borrow()))
                         .collect(),
                 )
             })
             .collect()
     }
 
-    pub fn apply_col(&self, mat: &Matrix<RS::Set>, col: &[RS::Set]) -> Vec<RS::Set> {
+    pub fn apply_col(&self, mat: &Matrix<RS::Set>, col: &[impl Borrow<RS::Set>]) -> Vec<RS::Set> {
         assert_eq!(mat.cols(), col.len());
         (0..mat.rows())
             .map(|r| {
                 self.ring().sum(
                     (0..mat.cols())
-                        .map(|c| self.ring().mul(mat.at(r, c).unwrap(), &col[c]))
+                        .map(|c| self.ring().mul(mat.at(r, c).unwrap(), col[c].borrow()))
                         .collect(),
                 )
             })

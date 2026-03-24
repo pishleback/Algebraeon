@@ -78,8 +78,8 @@ fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
 enum StateAtGoodPrimeHenselFactorization {
     #[default]
     Empty,
-    Quadratic(HenselFactorization<true, IntegerCanonicalStructure>),
-    Linear(HenselFactorization<false, IntegerCanonicalStructure>),
+    Quadratic(hensel_lifting_btree::HenselFactorization<true, IntegerCanonicalStructure>),
+    Linear(hensel_lifting_btree::HenselFactorization<false, IntegerCanonicalStructure>),
 }
 
 impl StateAtGoodPrimeHenselFactorization {
@@ -338,7 +338,8 @@ mod dminusone_test {
             Here we compute M*B and leave the multiplication by deg(g) for later
             */
             let factor_dminusone_coeff_bound_divideby_gdeg =
-                Rational::from(f.leading_coeff().unwrap().abs()) * f.cauchys_root_bound().unwrap();
+                Rational::from(algebraeon_nzq::traits::Abs::abs(f.leading_coeff().unwrap()))
+                    * f.cauchys_root_bound().unwrap();
 
             Self {
                 factor_dminusone_coeff_bound_divideby_gdeg:
@@ -783,7 +784,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                         .multi_cartesian_product()
                     {
                         let possible_factor = Polynomial::mul(
-                            &Polynomial::constant(f.leading_coeff().unwrap()),
+                            &Polynomial::constant(f.leading_coeff().unwrap().clone()),
                             &Polynomial::product(
                                 (0..modular_factors.len())
                                     .filter(|i| subset[*i])

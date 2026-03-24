@@ -27,7 +27,7 @@ pub struct RealAlgebraicRoot {
 
 impl std::hash::Hash for RealAlgebraicRoot {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        debug_assert!(self.poly.leading_coeff().unwrap() > Integer::ZERO);
+        debug_assert!(self.poly.leading_coeff().unwrap() > &Integer::ZERO);
         self.poly.hash(state);
     }
 }

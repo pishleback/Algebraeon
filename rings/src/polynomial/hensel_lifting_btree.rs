@@ -720,7 +720,7 @@ mod tests {
             hensel_fact.check().unwrap();
             println!("5^{}: {:?}", i, hensel_fact.factors());
             let lifted_product = Polynomial::mul(
-                &Polynomial::constant(Polynomial::leading_coeff(&h).unwrap()),
+                &Polynomial::constant(Polynomial::leading_coeff(&h).unwrap().clone()),
                 &Polynomial::product(hensel_fact.factors()),
             )
             .apply_map(|c| Integer::rem(c, &hensel_fact.modulus()));

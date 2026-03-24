@@ -695,14 +695,14 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
         }
     }
 
-    pub fn mul_scalar(&self, p: &Polynomial<RS::Set>, x: &RS::Set) -> Polynomial<RS::Set> {
-        self.reduce_poly(Polynomial::from_coeffs(
-            p.coeffs
-                .iter()
-                .map(|c| self.coeff_ring().mul(c, x))
-                .collect(),
-        ))
-    }
+    // pub fn mul_scalar(&self, p: &Polynomial<RS::Set>, x: &RS::Set) -> Polynomial<RS::Set> {
+    //     self.reduce_poly(Polynomial::from_coeffs(
+    //         p.coeffs
+    //             .iter()
+    //             .map(|c| self.coeff_ring().mul(c, x))
+    //             .collect(),
+    //     ))
+    // }
 
     //zero -> None
     //const -> 0
@@ -785,7 +785,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                         //a -= qc*x^i*b
                         self.add_mut(
                             &mut a,
-                            &self.neg(&self.mul_var_pow(&self.mul_scalar(b, &qc), i)),
+                            &self.neg(&self.mul_var_pow(&self.scalar_mul(b, &qc), i)),
                         );
                         q_coeffs[i] = qc;
                     }
@@ -866,7 +866,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
                     &self.coeff_ring().neg(&self.coeff_ring().one()),
                     &Natural::from(diff_deg + 1),
                 );
-                let mut r = self.mul_scalar(&self.pseudorem(a, &b).unwrap().unwrap(), &beta);
+                let mut r = self.scalar_mul(&self.pseudorem(a, &b).unwrap().unwrap(), &beta);
                 let mut lc_b = self.leading_coeff(&b).unwrap().clone();
                 let mut gamma = self.coeff_ring().nat_pow(&lc_b, &Natural::from(diff_deg));
                 let mut ssres = vec![self.coeff_ring().one(), gamma.clone()];
@@ -1489,12 +1489,8 @@ where
         Self::structure().coeff(self, i).clone()
     }
 
-    pub fn leading_coeff(&self) -> Option<R> {
-        Self::structure().leading_coeff(self).cloned()
-    }
-
-    pub fn mul_scalar(&self, x: &R) -> Self {
-        Self::structure().mul_scalar(self, x)
+    pub fn leading_coeff(&self) -> Option<&R> {
+        Self::structure().leading_coeff(self)
     }
 
     pub fn evaluate(&self, x: &R) -> R {
