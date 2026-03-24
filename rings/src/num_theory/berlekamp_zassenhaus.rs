@@ -678,7 +678,7 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm<'a>(
     best_prime_state.lift_to_modulus(&minimum_modolus);
     println!("Done lift");
     Integer::structure().polynomials().factorizations().product(
-        best_prime_state
+        &best_prime_state
             .partial_factor_by_test_modular_subsets(usize::MAX, &possible_proper_factor_degrees)
             .into_iter()
             .map(|g| {
@@ -687,7 +687,7 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm<'a>(
                     .factorizations()
                     .new_irreducible_unchecked(g)
             })
-            .collect(),
+            .collect::<Vec<_>>(),
     )
 }
 
@@ -786,10 +786,10 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                         let possible_factor = Polynomial::mul(
                             &Polynomial::constant(f.leading_coeff().unwrap().clone()),
                             &Polynomial::product(
-                                (0..modular_factors.len())
+                                &(0..modular_factors.len())
                                     .filter(|i| subset[*i])
                                     .map(|i| modular_factors[i])
-                                    .collect(),
+                                    .collect::<Vec<_>>(),
                             ),
                         )
                         .apply_map(|c| {

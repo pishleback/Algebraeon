@@ -387,12 +387,12 @@ mod order_to_ring_of_integers_inclusion {
     {
         fn image(&self, x: &Vec<Integer>) -> <R as SetSignature>::Set {
             self.roi().sum(
-                (0..self.n())
+                &(0..self.n())
                     .map(|i| {
                         self.roi()
                             .mul(&self.roi().from_int(&x[i]), &self.order_basis_in_roi[i])
                     })
-                    .collect(),
+                    .collect::<Vec<_>>(),
             )
         }
     }
@@ -519,9 +519,9 @@ mod anf_inclusion {
             let n = k.n();
             debug_assert_eq!(n, x.len());
             k.sum(
-                (0..n)
+                &(0..n)
                     .map(|i| k.mul(&k.from_int(&x[i]), self.integer_submodule().basis_vector(i)))
-                    .collect(),
+                    .collect::<Vec<_>>(),
             )
         }
     }

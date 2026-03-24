@@ -183,14 +183,14 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
                     for coeffs in (0..n).map(|_i| 0..p).multi_cartesian_product() {
                         let alpha = Polynomial::from_coeffs(
                             Polynomial::sum(
-                                (0..n)
+                                &(0..n)
                                     .map(|i| {
                                         Polynomial::mul(
                                             &Polynomial::constant(Rational::from(coeffs[i])),
                                             &guess[i],
                                         )
                                     })
-                                    .collect(),
+                                    .collect::<Vec<_>>(),
                             )
                             .coeffs()
                             .map(|c| c / Rational::from(p))

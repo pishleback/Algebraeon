@@ -101,7 +101,7 @@ impl<
                     .into_polynomials();
 
                 //af + bg = 1 mod i
-                if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(vec![
+                if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(&[
                     poly_ring_mod_i.mul(a, &f_factorization.h),
                     poly_ring_mod_i.mul(b, &g_factorization.h),
                     poly_ring_mod_i.neg(&poly_ring_mod_i.one()),
@@ -112,7 +112,7 @@ impl<
                 //af + bg = 1 mod i^n
                 #[allow(clippy::collapsible_if)]
                 if LIFTED_BEZOUT_COEFFS {
-                    if !poly_ring_mod_i_tothe_n.is_zero(&poly_ring_mod_i_tothe_n.sum(vec![
+                    if !poly_ring_mod_i_tothe_n.is_zero(&poly_ring_mod_i_tothe_n.sum(&[
                         poly_ring_mod_i_tothe_n.mul(a, &f_factorization.h),
                         poly_ring_mod_i_tothe_n.mul(b, &g_factorization.h),
                         poly_ring_mod_i_tothe_n.neg(&poly_ring_mod_i_tothe_n.one()),
@@ -132,7 +132,7 @@ impl<
                 //h = alpha*f*g mod i^n
                 if !poly_ring_mod_i_tothe_n.equal(
                     h,
-                    &poly_ring_mod_i_tothe_n.product(vec![
+                    &poly_ring_mod_i_tothe_n.product(&[
                         &Polynomial::constant(poly_ring.leading_coeff(h).unwrap().clone()),
                         &f_factorization.h,
                         &g_factorization.h,
@@ -157,10 +157,10 @@ impl<
 
         //first_h and second_h are defined modulo p^n
         let first_h = poly_ring
-            .product(first_fs.clone())
+            .product(&first_fs)
             .apply_map(|c| ring.rem(c, &ring.nat_pow(p, n)));
         let second_h = poly_ring
-            .product(second_fs.clone())
+            .product(&second_fs)
             .apply_map(|c| ring.rem(c, &ring.nat_pow(p, n)));
 
         //find a, b such that af + bg = 1 mod i
@@ -262,7 +262,7 @@ fn compute_lift_factors<
     let delta_h = poly_ring
         .add(
             h,
-            &poly_ring.neg(&poly_ring.product(vec![&Polynomial::constant(alpha.clone()), f, g])),
+            &poly_ring.neg(&poly_ring.product(&[&Polynomial::constant(alpha.clone()), f, g])),
         )
         .apply_map(|c| ring.rem(c, &ring.nat_pow(i, &(n + Natural::ONE))));
 
@@ -276,7 +276,7 @@ fn compute_lift_factors<
         &delta_h,
         &poly_ring_mod_i_tothe_nplusone.add(
             h,
-            &poly_ring_mod_i_tothe_nplusone.neg(&poly_ring_mod_i_tothe_nplusone.product(vec![
+            &poly_ring_mod_i_tothe_nplusone.neg(&poly_ring_mod_i_tothe_nplusone.product(&[
                 &Polynomial::constant(alpha.clone()),
                 f,
                 g,
@@ -365,14 +365,14 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
                     compute_lift_factors(ring, &ring.nat_pow(i, n), &Natural::ONE, a, b, f, g, h);
 
                 // beta = af + bg - 1 mod i^n
-                let beta = pring_mod_i2n.sum(vec![
+                let beta = pring_mod_i2n.sum(&[
                     pring_mod_i2n.mul(a, f),
                     pring_mod_i2n.mul(b, g),
                     pring_mod_i2n.neg(&pring_mod_i2n.one()),
                 ]);
 
                 // big_delta = beta + a * delta_f + b * delta_g mod i^n
-                let big_delta = pring_mod_i2n.sum(vec![
+                let big_delta = pring_mod_i2n.sum(&[
                     beta,
                     pring_mod_i2n.mul(a, &delta_f),
                     pring_mod_i2n.mul(b, &delta_g),
@@ -528,7 +528,7 @@ impl<
             &h,
             &poly_ring_mod_p_tothe_n.mul(
                 &Polynomial::constant(alpha.clone()),
-                &poly_ring_mod_p_tothe_n.product(fs.iter().collect())
+                &poly_ring_mod_p_tothe_n.product(&fs.iter().collect::<Vec<_>>())
             )
         ));
         // fs are coprime mod i - checked when computing bezout coefficients
@@ -698,7 +698,7 @@ mod tests {
             Integer::from(2),
             Integer::from(1),
         ]);
-        let h = Polynomial::product(vec![&Polynomial::constant(Integer::from(8)), &f1, &f2, &f3]);
+        let h = Polynomial::product(&[&Polynomial::constant(Integer::from(8)), &f1, &f2, &f3]);
         let h = h.apply_map(|c| Integer::rem(c, &Integer::from(5)));
         //h = prod fs mod 5
         //fs are coprime
@@ -721,7 +721,7 @@ mod tests {
             println!("5^{}: {:?}", i, hensel_fact.factors());
             let lifted_product = Polynomial::mul(
                 &Polynomial::constant(Polynomial::leading_coeff(&h).unwrap().clone()),
-                &Polynomial::product(hensel_fact.factors()),
+                &Polynomial::product(&hensel_fact.factors()),
             )
             .apply_map(|c| Integer::rem(c, &hensel_fact.modulus()));
             println!("{:?} {:?}", lifted_product, h);

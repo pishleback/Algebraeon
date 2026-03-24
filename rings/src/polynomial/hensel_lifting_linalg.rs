@@ -81,7 +81,12 @@ impl<
 
         let fs_prod_excluding_each_mod_p = (0..fs_count)
             .map(|i| {
-                polys_mod_p.product((0..fs_count).filter(|j| *j != i).map(|j| &fs[j]).collect())
+                polys_mod_p.product(
+                    &(0..fs_count)
+                        .filter(|j| *j != i)
+                        .map(|j| &fs[j])
+                        .collect::<Vec<_>>(),
+                )
             })
             .collect::<Vec<_>>();
 
@@ -178,7 +183,7 @@ impl<
             &self.h,
             &ring_poly_mod_pk.mul(
                 &Polynomial::constant(self.lc().clone()),
-                &ring_poly_mod_pk.product(self.fs.iter().collect::<Vec<_>>()),
+                &ring_poly_mod_pk.product(&self.fs.iter().collect::<Vec<_>>()),
             ),
         ) {
             return Err("factorization mod p^k is not correct".to_string());
@@ -305,8 +310,10 @@ impl<
             &polys_mod_pk1
                 .sub(
                     &self.h,
-                    &polys_mod_pk1
-                        .scalar_mul(&polys_mod_pk1.product(self.fs.iter().collect()), self.lc()),
+                    &polys_mod_pk1.scalar_mul(
+                        &polys_mod_pk1.product(&self.fs.iter().collect::<Vec<_>>()),
+                        self.lc(),
+                    ),
                 )
                 .apply_map_into(|c| self.ring().try_divide(&c, &pk0).unwrap()),
             &self.lc_inv_mod_p,
@@ -339,6 +346,10 @@ impl<
 
         #[cfg(debug_assertions)]
         self.check().unwrap();
+    }
+
+    pub fn factors(&self) -> &Vec<Polynomial<RS::Set>> {
+        &self.fs
     }
 
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None
@@ -382,7 +393,10 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::{MetaEuclideanDivisionSignature, MetaMultiplicativeMonoidSignature};
+    use crate::structure::{
+        MetaEuclideanDivisionSignature, MetaMultiplicationSignature,
+        MetaMultiplicativeMonoidSignature,
+    };
     use algebraeon_nzq::*;
     use algebraeon_sets::structure::MetaType;
 
@@ -403,7 +417,7 @@ mod tests {
             Integer::from(2),
             Integer::from(1),
         ]);
-        let h = Polynomial::product(vec![&Polynomial::constant(Integer::from(8)), &f1, &f2, &f3]);
+        let h = Polynomial::product(&[&Polynomial::constant(Integer::from(8)), &f1, &f2, &f3]);
         let h = h.apply_map(|c| Integer::rem(c, &Integer::from(5)));
         //h = prod fs mod 5
         //fs are coprime
@@ -418,26 +432,19 @@ mod tests {
             vec![f1, f2, f3],
         );
 
-        println!("{:?}", hensel_fact);
-
-        hensel_fact.linear_lift();
-
-        println!("{:?}", hensel_fact);
-
-        // .dont_lift_bezout_coeffs();
-        // hensel_fact.check().unwrap();
-        // println!("5^1: {:?}", hensel_fact.factors());
-        // for i in 2..20 {
-        //     hensel_fact.linear_lift();
-        //     hensel_fact.check().unwrap();
-        //     println!("5^{}: {:?}", i, hensel_fact.factors());
-        //     let lifted_product = Polynomial::mul(
-        //         &Polynomial::constant(Polynomial::leading_coeff(&h).unwrap().clone()),
-        //         &Polynomial::product(hensel_fact.factors()),
-        //     )
-        //     .apply_map(|c| Integer::rem(c, &hensel_fact.modulus()));
-        //     println!("{:?} {:?}", lifted_product, h);
-        //     assert_eq!(lifted_product, h);
-        // }
+        hensel_fact.check().unwrap();
+        println!("5^1: {:?}", hensel_fact.factors());
+        for i in 2..20 {
+            hensel_fact.linear_lift();
+            hensel_fact.check().unwrap();
+            println!("5^{}: {:?}", i, hensel_fact.factors());
+            let lifted_product = Polynomial::mul(
+                &Polynomial::constant(Polynomial::leading_coeff(&h).unwrap().clone()),
+                &Polynomial::product(hensel_fact.factors()),
+            )
+            .apply_map(|c| Integer::rem(c, &hensel_fact.modulus()));
+            println!("{:?} {:?}", lifted_product, h);
+            assert_eq!(lifted_product, h);
+        }
     }
 }

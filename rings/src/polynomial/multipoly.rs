@@ -167,12 +167,13 @@ impl Monomial {
         values: &HashMap<Variable, impl Borrow<RS::Set>>,
     ) -> RS::Set {
         ring.product(
-            self.prod
+            &self
+                .prod
                 .iter()
                 .map(|VariablePower { var, pow }| {
                     ring.nat_pow(values.get(var).unwrap().borrow(), &Natural::from(*pow))
                 })
-                .collect(),
+                .collect::<Vec<_>>(),
         )
     }
 

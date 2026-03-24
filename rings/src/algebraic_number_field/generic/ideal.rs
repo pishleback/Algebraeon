@@ -984,15 +984,16 @@ where
                         )
                         .map(|idxs| {
                             self.product(
-                                idxs.into_iter()
+                                &idxs
+                                    .into_iter()
                                     .map(|i| primes_over_p[i].prime_ideal.clone())
-                                    .collect(),
+                                    .collect::<Vec<_>>(),
                             )
                         })
                         .collect::<Vec<OrderIdeal>>()
                     })
                     .multi_cartesian_product()
-                    .map(|ideals| self.product(ideals)),
+                    .map(|ideals| self.product(&ideals)),
             )
         } else {
             Box::new(vec![self.zero()].into_iter())

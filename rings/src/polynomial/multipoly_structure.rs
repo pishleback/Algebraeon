@@ -755,13 +755,14 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
         values: HashMap<Variable, impl Borrow<RS::Set>>,
     ) -> RS::Set {
         self.coeff_ring().sum(
-            poly.terms
+            &poly
+                .terms
                 .iter()
                 .map(|Term { coeff, monomial }| {
                     self.coeff_ring()
                         .mul(coeff, &monomial.evaluate(self.coeff_ring(), &values))
                 })
-                .collect(),
+                .collect::<Vec<_>>(),
         )
     }
 }
@@ -905,14 +906,14 @@ mod tests {
     #[test]
     fn test_reduction() {
         let x = MultiPolynomial::<Integer>::var(Variable::new(String::from("x")));
-        let f = MultiPolynomial::sum(vec![&x, &MultiPolynomial::neg(&x)]);
+        let f = MultiPolynomial::sum(&[&x, &MultiPolynomial::neg(&x)]);
         assert_eq!(f.terms.len(), 0);
 
         let x = MultiPolynomial::<Integer>::var(Variable::new(String::from("x")));
         let y = MultiPolynomial::<Integer>::var(Variable::new(String::from("y")));
-        let g = MultiPolynomial::sum(vec![&x, &y]);
-        let h = MultiPolynomial::sum(vec![&x, &MultiPolynomial::neg(&y)]);
-        let f = MultiPolynomial::product(vec![&g, &h]);
+        let g = MultiPolynomial::sum(&[&x, &y]);
+        let h = MultiPolynomial::sum(&[&x, &MultiPolynomial::neg(&y)]);
+        let f = MultiPolynomial::product(&[&g, &h]);
         println!("g = {}", g);
         println!("h = {}", h);
         println!("f = {}", f);
@@ -924,11 +925,11 @@ mod tests {
         let x = MultiPolynomial::<Integer>::var(Variable::new(String::from("x")));
         let y = MultiPolynomial::<Integer>::var(Variable::new(String::from("y")));
 
-        let f = MultiPolynomial::sum(vec![
-            &MultiPolynomial::product(vec![&x, &x]),
-            &MultiPolynomial::neg(&MultiPolynomial::product(vec![&y, &y])),
+        let f = MultiPolynomial::sum(&[
+            &MultiPolynomial::product(&[&x, &x]),
+            &MultiPolynomial::neg(&MultiPolynomial::product(&[&y, &y])),
         ]);
-        let g = MultiPolynomial::sum(vec![&x, &MultiPolynomial::neg(&y)]);
+        let g = MultiPolynomial::sum(&[&x, &MultiPolynomial::neg(&y)]);
         match MultiPolynomial::try_divide(&f, &g) {
             Some(h) => {
                 assert_eq!(f, MultiPolynomial::mul(&g, &h));
@@ -936,18 +937,18 @@ mod tests {
             None => panic!(),
         }
 
-        let f = MultiPolynomial::sum(vec![
-            &MultiPolynomial::product(vec![&x, &x]),
-            &MultiPolynomial::neg(&MultiPolynomial::product(vec![&y, &y])),
+        let f = MultiPolynomial::sum(&[
+            &MultiPolynomial::product(&[&x, &x]),
+            &MultiPolynomial::neg(&MultiPolynomial::product(&[&y, &y])),
         ]);
         let g = MultiPolynomial::zero();
         assert!(MultiPolynomial::try_divide(&f, &g).is_none());
 
-        let f = MultiPolynomial::sum(vec![
-            &MultiPolynomial::product(vec![&x, &x]),
-            &MultiPolynomial::neg(&MultiPolynomial::product(vec![&y, &y])),
+        let f = MultiPolynomial::sum(&[
+            &MultiPolynomial::product(&[&x, &x]),
+            &MultiPolynomial::neg(&MultiPolynomial::product(&[&y, &y])),
         ]);
-        let g = MultiPolynomial::sum(vec![&x]);
+        let g = MultiPolynomial::sum(&[&x]);
         assert!(MultiPolynomial::try_divide(&f, &g).is_none());
     }
 

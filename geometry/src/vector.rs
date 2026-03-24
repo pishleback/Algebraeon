@@ -297,9 +297,9 @@ impl<'f, FS: FieldSignature> DotProduct<&Vector<'f, FS>> for &Vector<'f, FS> {
             Some(space) => {
                 let n = space.linear_dimension().unwrap();
                 space.field().sum(
-                    (0..n)
+                    &(0..n)
                         .map(|i| space.field().mul(self.coordinate(i), other.coordinate(i)))
-                        .collect(),
+                        .collect::<Vec<_>>(),
                 )
             }
             None => panic!("Can't add vectors belonging to different spaces"),

@@ -952,17 +952,17 @@ mod tests {
     fn test_real_add() {
         let f = Polynomial::<Integer>::from_coeffs(vec![-2, 0, 3]);
         let roots = f.all_real_roots();
-        let a = RealAlgebraic::sum(roots.iter().collect());
+        let a = RealAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         assert_eq!(a, RealAlgebraic::zero());
 
         let f = Polynomial::<Integer>::from_coeffs(vec![-7, 0, 100]);
         let roots = f.all_real_roots();
-        let a = RealAlgebraic::sum(roots.iter().collect());
+        let a = RealAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         assert_eq!(a, RealAlgebraic::zero());
 
         let f = Polynomial::<Integer>::from_coeffs(vec![-100, 0, 7]);
         let roots = f.all_real_roots();
-        let a = RealAlgebraic::sum(roots.iter().collect());
+        let a = RealAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         assert_eq!(a, RealAlgebraic::zero());
     }
 
@@ -972,7 +972,7 @@ mod tests {
         // (x-a)(x-b) = x^2 - 100/7
         // so ab=-100/7
         let roots = f.all_real_roots();
-        let a = RealAlgebraic::product(roots.iter().collect());
+        let a = RealAlgebraic::product(&roots.iter().collect::<Vec<_>>());
         assert_eq!(
             a,
             RealAlgebraic::try_from_rat(&Rational::from_integers(-100, 7)).unwrap()

@@ -106,7 +106,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             .into_polynomials();
 
         let norm_f_sym = rational_poly_multipoly_structure.product(
-            embedding_vars
+            &embedding_vars
                 .iter()
                 .map(|sigma| {
                     f.apply_map(|c| {
@@ -116,7 +116,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                         )
                     })
                 })
-                .collect(),
+                .collect::<Vec<_>>(),
         );
 
         // for (i, coeff) in norm_f_sym.coeffs().iter().enumerate() {

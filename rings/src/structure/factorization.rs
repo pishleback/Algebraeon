@@ -715,7 +715,7 @@ impl<
                         )
                         .map(move |prime_power_factors| {
                             self.objects()
-                                .product(prime_power_factors.iter().collect())
+                                .product(&prime_power_factors.iter().collect::<Vec<_>>())
                                 .clone()
                         }),
                     ))

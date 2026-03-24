@@ -141,7 +141,7 @@ where
         //q = p - r  is divisible by x1*x2*...*xn = en
         let q = self.add(p, &self.neg(&r));
         // println!("q = {}", self.elem_to_string(&q));
-        let en = self.product(vars.iter().map(|v| self.var(v.clone())).collect());
+        let en = self.product(&vars.iter().map(|v| self.var(v.clone())).collect::<Vec<_>>());
         let en_sym = self.var(e.get(vars.len() - 1).unwrap().clone());
         // println!("en = {}", self.elem_to_string(&en));
         // println!("en_sym = {}", self.elem_to_string(&en_sym));

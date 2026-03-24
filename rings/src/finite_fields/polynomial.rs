@@ -138,10 +138,11 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS
 
     pub fn into_monic_factored(self) -> MonicFactored<FS, FSB> {
         let monic = self.poly_ring.product(
-            self.squarefree_factors
+            &self
+                .squarefree_factors
                 .iter()
                 .map(|(f, k)| self.poly_ring.nat_pow(f, k))
-                .collect(),
+                .collect::<Vec<_>>(),
         );
         MonicFactored {
             poly_ring: self.poly_ring,
@@ -346,14 +347,14 @@ where
             .multi_cartesian_product()
         {
             let h = self.sum(
-                (0..ker_rank)
+                &(0..ker_rank)
                     .map(|i| {
                         self.mul(
                             &Polynomial::constant(berlekamp_subspace_coeffs[i].clone()),
                             &ker_basis[i],
                         )
                     })
-                    .collect(),
+                    .collect::<Vec<_>>(),
             );
             //g is a possible non-trivial factor
             let g = self.gcd(&h, &f);

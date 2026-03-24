@@ -633,7 +633,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
     /// evaluate p(x^k)
     pub fn evaluate_at_var_pow(&self, p: Polynomial<RS::Set>, k: usize) -> Polynomial<RS::Set> {
         if k == 0 {
-            Polynomial::constant(self.coeff_ring().sum(p.coeffs))
+            Polynomial::constant(self.coeff_ring().sum(&p.coeffs))
         } else {
             let mut coeffs = vec![];
             for (i, c) in p.coeffs.into_iter().enumerate() {
@@ -679,7 +679,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
 
     pub fn eval_var_pow(&self, p: &Polynomial<RS::Set>, n: usize) -> Polynomial<RS::Set> {
         if n == 0 {
-            Polynomial::constant(self.coeff_ring().sum(p.coeffs.iter().collect()))
+            Polynomial::constant(self.coeff_ring().sum(&p.coeffs.iter().collect::<Vec<_>>()))
         } else {
             let gap = n - 1;
             let mut coeffs = vec![];

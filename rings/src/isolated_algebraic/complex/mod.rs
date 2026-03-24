@@ -1216,7 +1216,7 @@ mod tests {
     fn test_complex_root_sum() {
         let f = Polynomial::<Integer>::from_coeffs(vec![1, 0, 0, 1]);
         let roots = f.all_complex_roots();
-        let s = ComplexAlgebraic::sum(roots.iter().collect());
+        let s = ComplexAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         println!("{:?}", s);
         assert_eq!(s, ComplexAlgebraic::zero());
 
@@ -1226,7 +1226,7 @@ mod tests {
         for root in &roots {
             println!("root = {}", root);
         }
-        let s = ComplexAlgebraic::sum(roots.iter().collect());
+        let s = ComplexAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         println!("root sum = {:?}", s);
         assert_eq!(
             s,
@@ -1241,7 +1241,7 @@ mod tests {
     fn test_complex_mul() {
         let f = Polynomial::<Integer>::from_coeffs(vec![1, 0, 0, 1]);
         let roots = f.all_complex_roots();
-        let s = ComplexAlgebraic::product(roots.iter().collect());
+        let s = ComplexAlgebraic::product(&roots.iter().collect::<Vec<_>>());
         println!("{:?}", s);
         assert_eq!(s, ComplexAlgebraic::one().neg());
 
@@ -1251,7 +1251,7 @@ mod tests {
         for root in &roots {
             println!("root = {}", root);
         }
-        let s = ComplexAlgebraic::product(roots.iter().collect());
+        let s = ComplexAlgebraic::product(&roots.iter().collect::<Vec<_>>());
         println!("root prod = {:?}", s);
         assert_eq!(
             s,

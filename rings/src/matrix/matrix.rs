@@ -556,9 +556,9 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         (0..mat.cols())
             .map(|c| {
                 self.ring().sum(
-                    (0..mat.rows())
+                    &(0..mat.rows())
                         .map(|r| self.ring().mul(mat.at(r, c).unwrap(), row[r].borrow()))
-                        .collect(),
+                        .collect::<Vec<_>>(),
                 )
             })
             .collect()
@@ -569,9 +569,9 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         (0..mat.rows())
             .map(|r| {
                 self.ring().sum(
-                    (0..mat.cols())
+                    &(0..mat.cols())
                         .map(|c| self.ring().mul(mat.at(r, c).unwrap(), col[c].borrow()))
-                        .collect(),
+                        .collect::<Vec<_>>(),
                 )
             })
             .collect()
@@ -620,7 +620,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         if n == a.cols() {
             Ok(self
                 .ring()
-                .sum((0..n).map(|i| a.at(i, i).unwrap()).collect()))
+                .sum(&(0..n).map(|i| a.at(i, i).unwrap()).collect::<Vec<_>>()))
         } else {
             Err(MatOppErr::NotSquare)
         }

@@ -221,7 +221,7 @@ pub trait TryNegateSignature: ZeroSignature + AdditionSignature {
 
 #[signature_meta_trait]
 pub trait AdditiveMonoidSignature: ZeroSignature + AdditionSignature + TryNegateSignature {
-    fn sum(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
+    fn sum(&self, vals: &[impl Borrow<Self::Set>]) -> Self::Set {
         let mut sum = self.zero();
         for val in vals {
             self.add_mut(&mut sum, val.borrow());
@@ -274,7 +274,7 @@ pub trait CommutativeMultiplicationSignature: MultiplicationSignature {}
 /// When `1 * a` = `a * 1` = `a` for all `a`.
 #[signature_meta_trait]
 pub trait MultiplicativeMonoidSignature: OneSignature + MultiplicationSignature {
-    fn product(&self, vals: Vec<impl Borrow<Self::Set>>) -> Self::Set {
+    fn product(&self, vals: &[impl Borrow<Self::Set>]) -> Self::Set {
         let mut prod = self.one();
         for val in vals {
             self.mul_mut(&mut prod, val.borrow());
