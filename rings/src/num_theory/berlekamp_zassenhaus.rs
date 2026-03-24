@@ -58,6 +58,7 @@ some improvements
 
 */
 
+use crate::polynomial::hensel_lifting_linalg::HenselFactorization;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_groups::structure::AssociativeCompositionSignature;
@@ -74,90 +75,10 @@ fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
 }
 
-#[derive(Default, Debug, Clone)]
-enum StateAtGoodPrimeHenselFactorization {
-    #[default]
-    Empty,
-    Quadratic(hensel_lifting_btree::HenselFactorization<true, IntegerCanonicalStructure>),
-    Linear(hensel_lifting_btree::HenselFactorization<false, IntegerCanonicalStructure>),
-}
-
-impl StateAtGoodPrimeHenselFactorization {
-    fn modulus(&self) -> Integer {
-        match self {
-            StateAtGoodPrimeHenselFactorization::Empty => unreachable!(),
-            StateAtGoodPrimeHenselFactorization::Quadratic(hf) => hf.modulus(),
-            StateAtGoodPrimeHenselFactorization::Linear(hf) => hf.modulus(),
-        }
-    }
-
-    fn factors(&self) -> Vec<&Polynomial<Integer>> {
-        match self {
-            StateAtGoodPrimeHenselFactorization::Empty => unreachable!(),
-            StateAtGoodPrimeHenselFactorization::Quadratic(hf) => hf.factors(),
-            StateAtGoodPrimeHenselFactorization::Linear(hf) => hf.factors(),
-        }
-    }
-
-    fn lift_to_modulus(&mut self, target_modulus: &Natural) {
-        // For hensel lifting it is more efficient (due to how the coefficients grow during Hensel lifting) to begin
-        // with quadratic lifts until the modulus is just below the size limit for primitive integers, and then proceed with linear lifts
-
-        println!("{:?}", target_modulus);
-
-        // quadratic lifting
-        match self {
-            StateAtGoodPrimeHenselFactorization::Empty => unreachable!(),
-            StateAtGoodPrimeHenselFactorization::Quadratic(hensel_factorization) => {
-                while hensel_factorization
-                    .factorization_modulus_base()
-                    .nat_pow(&(Natural::TWO * hensel_factorization.factorization_modulus_power()))
-                    < Natural::from(1u8)
-                // quadratic lifting first seems to be slower. Not sure why.
-                {
-                    println!("{:?}", hensel_factorization.modulus());
-                    if hensel_factorization.modulus() >= target_modulus {
-                        return;
-                    }
-                    hensel_factorization.quadratic_lift();
-                }
-            }
-            StateAtGoodPrimeHenselFactorization::Linear(_) => {}
-        }
-
-        *self = match std::mem::take(self) {
-            StateAtGoodPrimeHenselFactorization::Empty => unreachable!(),
-            StateAtGoodPrimeHenselFactorization::Quadratic(hensel_factorization) => {
-                StateAtGoodPrimeHenselFactorization::Linear(
-                    hensel_factorization.dont_lift_bezout_coeffs(),
-                )
-            }
-            StateAtGoodPrimeHenselFactorization::Linear(hf) => {
-                StateAtGoodPrimeHenselFactorization::Linear(hf)
-            }
-        };
-
-        // linear lifting
-        match self {
-            StateAtGoodPrimeHenselFactorization::Empty => unreachable!(),
-            StateAtGoodPrimeHenselFactorization::Quadratic(_) => {
-                unreachable!()
-            }
-            StateAtGoodPrimeHenselFactorization::Linear(hensel_factorization) => loop {
-                println!("{:?}", hensel_factorization.modulus());
-                if hensel_factorization.modulus() >= target_modulus {
-                    return;
-                }
-                hensel_factorization.linear_lift();
-            },
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 struct StateAtGoodPrime<'a> {
     sqfree_prim_poly: &'a Polynomial<Integer>,
-    hensel_factorization: StateAtGoodPrimeHenselFactorization,
+    hensel_factorization: HenselFactorization<IntegerCanonicalStructure>,
     num_modular_factors: usize,
 }
 
@@ -168,23 +89,31 @@ impl<'a> StateAtGoodPrime<'a> {
         let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p));
         let poly_mod_p = mod_p.polynomials();
         if poly_mod_p.degree(sqfree_prim_poly) == sqfree_prim_poly.degree() {
-            let fs = poly_mod_p
-                .factorize_monic(sqfree_prim_poly)
-                .unwrap()
-                .factorize_squarefree();
+            println!(
+                "sqfree_prim_poly = {}",
+                sqfree_prim_poly.apply_map(|c| c % &p)
+            );
+            println!("Start factor mod p");
+            let fs = poly_mod_p.factorize_monic(sqfree_prim_poly).unwrap();
+            println!("Factored monic");
+            let fs = fs.factorize_squarefree();
+            println!("Factored squarefree");
             if !fs.is_squarefree() {
                 return None;
             }
-            let hensel_factorization = StateAtGoodPrimeHenselFactorization::Quadratic(
-                poly_mod_p
-                    .factorizations()
-                    .into_hensel_factorization_unchecked(
-                        fs.factorize_distinct_degree()
-                            .factorize_cantor_zassenhaus()
-                            .unwrap_nonzero(),
-                        sqfree_prim_poly.clone(),
-                    ),
+            let fs = fs.factorize_distinct_degree();
+            println!("Factored distinct degree");
+            let fs = fs.factorize_cantor_zassenhaus().unwrap_nonzero();
+            println!("Factored fully");
+
+            let hensel_factorization = HenselFactorization::from_mod_p_factorization_unchecked(
+                &poly_mod_p.factorizations(),
+                fs,
+                sqfree_prim_poly.clone(),
             );
+
+            println!("Made HenselFactorization");
+
             return Some(StateAtGoodPrime {
                 sqfree_prim_poly,
                 num_modular_factors: hensel_factorization.factors().len(),
@@ -195,7 +124,11 @@ impl<'a> StateAtGoodPrime<'a> {
     }
 
     fn lift_to_modulus(&mut self, target_modulus: &Natural) {
-        self.hensel_factorization.lift_to_modulus(target_modulus);
+        while self.hensel_factorization.modulus() < target_modulus {
+            println!("{:?}", self.hensel_factorization.modulus());
+            self.hensel_factorization.linear_lift();
+        }
+        println!("Done lift");
     }
 }
 
@@ -444,18 +377,13 @@ impl<'a> StateAtGoodPrime<'a> {
         possible_proper_factor_degrees: &BTreeSet<usize>,
     ) -> Vec<Polynomial<Integer>> {
         let modulus = self.hensel_factorization.modulus();
-        let modular_factors = self
-            .hensel_factorization
-            .factors()
-            .into_iter()
-            .cloned()
-            .collect::<Vec<_>>();
+        let modular_factors = self.hensel_factorization.factors();
         let leading_coeff = self.sqfree_prim_poly.leading_coeff().unwrap();
 
         let n = modular_factors.len();
 
         let mut dminusone_test =
-            dminusone_test::DMinusOneTest::new(&modulus, self.sqfree_prim_poly, &modular_factors);
+            dminusone_test::DMinusOneTest::new(&modulus, self.sqfree_prim_poly, modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
             Integer::structure()
                 .into_quotient_ring(modulus.clone())
@@ -614,10 +542,14 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm<'a>(
                     .new_irreducible_unchecked(f.clone());
             }
 
+            // let factor_coeff_bound = compute_polynomial_factor_bound(p_state.sqfree_prim_poly);
+            // let minimum_modulus = Natural::TWO * &factor_coeff_bound;
+
             // Check for factors with small coefficients formed from a small number of modular factors
-            p_state.lift_to_modulus(&Natural::from(1000000000u64));
+            p_state.lift_to_modulus(&Natural::from(u128::MAX)); // An arbitraryish choice of big number which we expect to be greater than any factor coeffs in most cases
             let partially_factored =
                 p_state.partial_factor_by_test_modular_subsets(3, &possible_proper_factor_degrees);
+            println!("Done partial factor");
             debug_assert!(!partially_factored.is_empty());
             if partially_factored.len() >= 2 {
                 println!("Partial factorization found");
@@ -656,27 +588,14 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm<'a>(
     let mut best_prime_state = good_prime_states.into_iter().nth(best_prime_idx).unwrap();
     println!("{:?}", best_prime_state.hensel_factorization.modulus());
     let factor_coeff_bound = compute_polynomial_factor_bound(best_prime_state.sqfree_prim_poly);
-    let minimum_modolus = Natural::TWO * &factor_coeff_bound;
-
-    let partially_factored =
-        best_prime_state.partial_factor_by_test_modular_subsets(4, &possible_proper_factor_degrees);
-    debug_assert!(!partially_factored.is_empty());
-    if partially_factored.len() >= 2 {
-        println!("Big partial factorization found");
-        // Recursively call using the found partial factorization
-        let mut factored = Integer::structure().polynomials().factorizations().one();
-        for f in partially_factored {
-            Integer::structure().polynomials().factorizations().mul_mut(
-                &mut factored,
-                &factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(&f),
-            );
-        }
-        return factored;
-    }
-
+    let minimum_modulus = Natural::TWO * &factor_coeff_bound;
     println!("Start lift");
-    best_prime_state.lift_to_modulus(&minimum_modolus);
+    best_prime_state.lift_to_modulus(&minimum_modulus);
     println!("Done lift");
+    println!(
+        "{} modular factors",
+        best_prime_state.hensel_factorization.factors().len()
+    );
     Integer::structure().polynomials().factorizations().product(
         &best_prime_state
             .partial_factor_by_test_modular_subsets(usize::MAX, &possible_proper_factor_degrees)
@@ -757,7 +676,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     let f_deg = f.degree().unwrap();
     debug_assert_ne!(f_deg, 0);
     let factor_coeff_bound = f.mignotte_factor_coefficient_bound().unwrap();
-    let minimum_modolus = Natural::TWO * factor_coeff_bound;
+    let minimum_modulus = Natural::TWO * factor_coeff_bound;
 
     if f_deg == 1 {
         FindFactorResult::Irreducible
@@ -774,7 +693,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
                 {
                     let mut hensel_factorization_f_over_p =
                         hensel_factorization_f_over_p.dont_lift_bezout_coeffs();
-                    while hensel_factorization_f_over_p.modulus() < minimum_modolus {
+                    while hensel_factorization_f_over_p.modulus() < minimum_modulus {
                         hensel_factorization_f_over_p.linear_lift();
                     }
                     let modulus = hensel_factorization_f_over_p.modulus();

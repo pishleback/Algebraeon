@@ -549,8 +549,7 @@ where
             .new_unit_unchecked(Polynomial::constant(self.unit.clone()));
         for (ddf, mult) in &self.distinct_degree_factors {
             let d = ddf.irreducible_factor_degree;
-            let n = self.poly_ring.degree(&ddf.polynomial).unwrap();
-            debug_assert_eq!(n % d, 0);
+            debug_assert_eq!(self.poly_ring.degree(&ddf.polynomial).unwrap() % d, 0);
 
             let finite_field = self.poly_ring.coeff_ring();
             let (p, k) = finite_field.characteristic_and_power();
@@ -559,15 +558,15 @@ where
 
             let mut to_factor = vec![ddf.polynomial.clone()];
             loop {
-                // println!(
-                //     "{} {} {:?}",
-                //     p,
-                //     d,
-                //     to_factor
-                //         .iter()
-                //         .map(|u| self.poly_ring.degree(u).unwrap())
-                //         .collect::<Vec<_>>()
-                // );
+                println!(
+                    "{} {} {:?}",
+                    p,
+                    d,
+                    to_factor
+                        .iter()
+                        .map(|u| self.poly_ring.degree(u).unwrap())
+                        .collect::<Vec<_>>()
+                );
                 // Any polynomial in to_factor of degree d is irreducible.
                 to_factor = to_factor
                     .into_iter()
@@ -591,6 +590,12 @@ where
                 if to_factor.is_empty() {
                     break;
                 }
+
+                let n = to_factor
+                    .iter()
+                    .map(|f| poly_ring.degree(f).unwrap())
+                    .max()
+                    .unwrap();
 
                 // Try to factor what's left using Cantor-Zassenhaus
                 // let h be a random polynomial of degree < n
@@ -621,6 +626,7 @@ where
                         &poly_mod_f.neg(&poly_mod_f.one()),
                     )
                 };
+
                 to_factor = to_factor
                     .into_iter()
                     .flat_map(|u| {

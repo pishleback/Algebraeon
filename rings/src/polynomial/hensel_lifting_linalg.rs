@@ -2,11 +2,11 @@ use crate::{
     matrix::{Matrix, MatrixStructure},
     polynomial::{Polynomial, PolynomialStructure, ToPolynomialSignature},
     structure::{
-        AdditionSignature, AdditiveGroupSignature, EuclideanDomainSignature,
-        EuclideanRemainderQuotientStructure, FactoringMonoidSignature, FactoringStructure,
-        GreatestCommonDivisorSignature, MultiplicationSignature, MultiplicativeMonoidSignature,
-        NonZeroFactored, RingToQuotientFieldSignature, RingToQuotientRingSignature,
-        SemiModuleSignature, TryReciprocalSignature,
+        AdditionSignature, AdditiveGroupSignature, CancellativeMultiplicationSignature,
+        EuclideanDomainSignature, EuclideanRemainderQuotientStructure, FactoringMonoidSignature,
+        FactoringStructure, GreatestCommonDivisorSignature, MultiplicationSignature,
+        MultiplicativeMonoidSignature, NonZeroFactored, RingToQuotientFieldSignature,
+        RingToQuotientRingSignature, SemiModuleSignature, TryReciprocalSignature,
     },
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
@@ -79,16 +79,14 @@ impl<
         debug_assert_eq!(fs_count, fs_deg.len());
         debug_assert_eq!(fs_deg.iter().cloned().sum::<usize>(), h_deg);
 
+        println!("make prods");
+
+        let fs_prod = polys_mod_p.product(fs);
         let fs_prod_excluding_each_mod_p = (0..fs_count)
-            .map(|i| {
-                polys_mod_p.product(
-                    &(0..fs_count)
-                        .filter(|j| *j != i)
-                        .map(|j| &fs[j])
-                        .collect::<Vec<_>>(),
-                )
-            })
+            .map(|i| polys_mod_p.try_divide(&fs_prod, &fs[i]).unwrap())
             .collect::<Vec<_>>();
+
+        println!("make {}x{} mat", h_deg, h_deg);
 
         let mat = Matrix::<RS::Set>::from_cols({
             let mut cols = vec![];
@@ -119,6 +117,7 @@ impl<
         });
         debug_assert_eq!(mat.rows(), h_deg);
         debug_assert_eq!(mat.cols(), h_deg);
+        println!("inv mat");
         mats_mod_p.inv(mat.clone()).unwrap()
     }
 
@@ -387,6 +386,39 @@ impl<
         #[cfg(debug_assertions)]
         hensel_factorization.check().unwrap();
         Some(hensel_factorization)
+    }
+
+    pub fn from_mod_p_factorization_unchecked<
+        RSB: BorrowedStructure<RS>,
+        RSQB: BorrowedStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>>,
+        RSQPB: BorrowedStructure<
+            PolynomialStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>, RSQB>,
+        >,
+        NB: BorrowedStructure<NaturalCanonicalStructure>,
+    >(
+        fs_structure: &FactoringStructure<
+            PolynomialStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>, RSQB>,
+            RSQPB,
+            NaturalCanonicalStructure,
+            NB,
+        >,
+        fs: NonZeroFactored<Polynomial<RS::Set>, Natural>,
+        h: Polynomial<RS::Set>,
+    ) -> Self {
+        let poly_ring_mod = fs_structure.objects().clone();
+        let ring_mod = poly_ring_mod.coeff_ring();
+        let ring = ring_mod.ring().clone();
+        let mut fs_vec = vec![];
+        let (_unit, factors) = fs.into_unit_and_powers();
+        for (factor, power) in factors {
+            debug_assert_eq!(power, Natural::ONE);
+            fs_vec.push(factor);
+        }
+        let hensel_factorization =
+            Self::new_unchecked(ring, ring_mod.modulus().clone(), Natural::ONE, h, fs_vec);
+        #[cfg(debug_assertions)]
+        hensel_factorization.check().unwrap();
+        hensel_factorization
     }
 }
 
