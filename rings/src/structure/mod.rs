@@ -1,5 +1,6 @@
 mod algebra;
 mod ergonomic;
+mod euclidean_quotient;
 mod factorization;
 mod homomorphisms;
 mod ideals;
@@ -11,6 +12,7 @@ mod units;
 
 pub use algebra::*;
 pub use ergonomic::*;
+pub use euclidean_quotient::*;
 pub use factorization::*;
 pub use homomorphisms::*;
 pub use ideals::*;

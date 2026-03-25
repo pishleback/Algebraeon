@@ -118,7 +118,7 @@ where
     }
 
     pub fn degree(&self) -> usize {
-        self.ring().degree(self.modulus()).unwrap()
+        self.ring().degree(self.modulus().as_ref()).unwrap()
     }
 }
 

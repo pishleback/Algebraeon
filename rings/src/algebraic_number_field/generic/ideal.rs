@@ -969,7 +969,7 @@ where
         );
         let sq = roi_to_anf.zq_extension().into_with_ideals();
 
-        if let Some(n) = Integer::ideals().factor(n).into_powers() {
+        if let Some(n) = Integer::structure().ideals().factor(n).into_powers() {
             Box::new(
                 n.into_iter()
                     .map(|(p, k)| {
@@ -1191,7 +1191,7 @@ impl<
     ) -> DedekindExtensionIdealFactorsAbovePrime<Natural, <Self::IdealsR as SetSignature>::Set>
     {
         // https://en.wikipedia.org/wiki/Dedekind%E2%80%93Kummer_theorem
-        let p = Integer::ideals().ideal_generator(&prime_ideal);
+        let p = Integer::structure().ideals().ideal_generator(&prime_ideal);
         let anf = self.k_field();
         let roi = self.r_ring();
         let roi_ideals = self.r_ideals();
@@ -1243,7 +1243,8 @@ impl<
 
         Some(
             DedekindExtensionIdealFactorization::from_ideal_factors_above_primes(
-                Integer::ideals()
+                Integer::structure()
+                    .ideals()
                     .factor(&norm)
                     .into_distinct_irreducibles()?
                     .into_iter()

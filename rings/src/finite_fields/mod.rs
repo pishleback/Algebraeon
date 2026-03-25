@@ -4,7 +4,6 @@ use algebraeon_sets::structure::*;
 pub mod conway_finite_fields;
 pub mod conway_polynomials;
 pub mod extension;
-pub mod modulo;
 pub mod polynomial;
 pub mod quaternary_field;
 

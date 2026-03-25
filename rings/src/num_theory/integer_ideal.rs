@@ -214,41 +214,61 @@ mod tests {
 
     #[test]
     fn integer_ideals() {
-        assert!(Integer::ideals().equal(&Natural::from(3u32), &Natural::from(3u32)));
+        let ideals = Integer::structure().into_ideals();
 
-        assert!(!Integer::ideals().equal(&Natural::from(2u32), &Natural::from(3u32)));
+        assert!(ideals.equal(&Natural::from(3u32), &Natural::from(3u32)));
 
-        assert!(Integer::ideals().contains_ideal(&Natural::from(2u32), &Natural::from(6u32)));
+        assert!(!ideals.equal(&Natural::from(2u32), &Natural::from(3u32)));
 
-        assert!(!Integer::ideals().contains_ideal(&Natural::from(6u32), &Natural::from(2u32)));
+        assert!(ideals.contains_ideal(&Natural::from(2u32), &Natural::from(6u32)));
 
-        assert!(!Integer::ideals().contains_ideal(&Natural::from(5u32), &Natural::from(7u32)));
+        assert!(!ideals.contains_ideal(&Natural::from(6u32), &Natural::from(2u32)));
 
-        assert!(Integer::ideals().equal(
-            &Integer::ideals().add(&Natural::from(6u32), &Natural::from(15u32)),
+        assert!(!ideals.contains_ideal(&Natural::from(5u32), &Natural::from(7u32)));
+
+        assert!(ideals.equal(
+            &ideals.add(&Natural::from(6u32), &Natural::from(15u32)),
             &Natural::from(3u32)
         ));
 
-        assert!(Integer::ideals().equal(
-            &Integer::ideals().intersect(&Natural::from(6u32), &Natural::from(15u32)),
-            &Natural::from(30u32)
-        ));
+        assert!(
+            ideals.equal(
+                &Integer::structure()
+                    .ideals()
+                    .intersect(&Natural::from(6u32), &Natural::from(15u32)),
+                &Natural::from(30u32)
+            )
+        );
 
-        assert!(Integer::ideals().equal(
-            &Integer::ideals().mul(&Natural::from(6u32), &Natural::from(15u32)),
-            &Natural::from(90u32)
-        ));
+        assert!(
+            ideals.equal(
+                &Integer::structure()
+                    .ideals()
+                    .mul(&Natural::from(6u32), &Natural::from(15u32)),
+                &Natural::from(90u32)
+            )
+        );
 
-        assert_eq!(Integer::ideals().generated_ideal(vec![-15, 6]), 3u32.into());
+        assert_eq!(ideals.generated_ideal(vec![-15, 6]), 3u32.into());
     }
 
     #[test]
     fn factor_integer_ideal() {
-        let f = Integer::ideals().factor(&Integer::ideals().principal_ideal(&Integer::from(0)));
+        let ideals = Integer::structure().into_ideals();
+
+        let f = ideals.factor(
+            &Integer::structure()
+                .ideals()
+                .principal_ideal(&Integer::from(0)),
+        );
         println!("{:?}", f);
         assert!(f.is_zero());
 
-        let f = Integer::ideals().factor(&Integer::ideals().principal_ideal(&Integer::from(18)));
+        let f = ideals.factor(
+            &Integer::structure()
+                .ideals()
+                .principal_ideal(&Integer::from(18)),
+        );
         println!("{:?}", f);
         assert!(!f.is_zero());
     }

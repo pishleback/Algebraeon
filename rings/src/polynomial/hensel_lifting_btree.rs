@@ -641,7 +641,7 @@ where
         }
 
         let hensel_factorization =
-            HenselFactorization::new(ring, ring_mod.modulus().clone(), Natural::ONE, h, fs);
+            HenselFactorization::new(ring, ring_mod.modulus().into_owned(), Natural::ONE, h, fs);
         #[cfg(debug_assertions)]
         hensel_factorization.check().unwrap();
         Some(hensel_factorization)
@@ -668,7 +668,7 @@ where
         }
 
         let hensel_factorization =
-            HenselFactorization::new(ring, ring_mod.modulus().clone(), Natural::ONE, h, fs);
+            HenselFactorization::new(ring, ring_mod.modulus().into_owned(), Natural::ONE, h, fs);
         #[cfg(debug_assertions)]
         hensel_factorization.check().unwrap();
         hensel_factorization

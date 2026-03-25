@@ -6,8 +6,8 @@ use std::task::Poll;
 
 use algebraeon_groups::examples::symmetric::*;
 use algebraeon_groups::structure::*;
-use algebraeon_rings::finite_fields::modulo::*;
 use algebraeon_rings::matrix::*;
+use algebraeon_rings::num_theory::modulo::*;
 use algebraeon_rings::polynomial::*;
 use algebraeon_rings::structure::*;
 

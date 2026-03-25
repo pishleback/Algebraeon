@@ -124,7 +124,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         // }
 
         let e_vals = {
-            let mut min_poly_coeffs = self.coeff_ring().modulus().coeffs().collect::<Vec<_>>();
+            let modulus = self.coeff_ring().modulus();
+            let mut min_poly_coeffs = modulus.as_ref().coeffs().collect::<Vec<_>>();
 
             let lc = min_poly_coeffs.pop().unwrap();
             debug_assert_eq!(lc, &Rational::ONE);
@@ -265,7 +266,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                 p.clone()
                     .into_coeffs()
                     .into_iter()
-                    .map(|c| self.coeff_ring().reduce(c).as_constant().unwrap())
+                    .map(|c| self.coeff_ring().reduce(&c).as_constant().unwrap())
                     .collect(),
             )
             .factor()

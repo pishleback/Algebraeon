@@ -51,7 +51,7 @@ impl ConwayFiniteFieldStructure {
         })
     }
 
-    pub fn reduce(&self, f: Polynomial<Integer>) -> Polynomial<Integer> {
+    pub fn reduce(&self, f: &Polynomial<Integer>) -> Polynomial<Integer> {
         self.structure.reduce(f)
     }
 

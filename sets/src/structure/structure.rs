@@ -19,6 +19,17 @@ macro_rules! make_maybe_trait {
 
 pub trait Signature: Clone + Debug + Eq + Send + Sync {}
 
+pub trait MetaType: Clone + Debug {
+    type Signature: SetSignature<Set = Self>;
+    fn structure() -> Self::Signature;
+}
+
+pub trait BorrowedSet<S>: Borrow<S> + Clone + Debug + Send + Sync {}
+impl<S, BS: Borrow<S> + Clone + Debug + Send + Sync> BorrowedSet<S> for BS {}
+
+pub trait BorrowedStructure<S: Signature>: Borrow<S> + Clone + Debug + Eq + Send + Sync {}
+impl<S: Signature, BS: Borrow<S> + Clone + Debug + Eq + Send + Sync> BorrowedStructure<S> for BS {}
+
 /// Instances of a type implementing this trait represent
 /// a set of elements of type `Self::Set` with some
 /// structure, for example, the structure of a ring.
@@ -34,11 +45,6 @@ pub trait SetSignature: Signature {
     fn is_element(&self, x: &Self::Set) -> bool {
         self.validate_element(x).is_ok()
     }
-}
-
-pub trait MetaType: Clone + Debug {
-    type Signature: SetSignature<Set = Self>;
-    fn structure() -> Self::Signature;
 }
 
 pub trait ToStringSignature: SetSignature {
@@ -93,11 +99,22 @@ impl<S: FiniteSetSignature, R: Rng> Iterator for FiniteSetRandomElementGenerator
     }
 }
 
-pub trait BorrowedSet<S>: Borrow<S> + Clone + Debug + Send + Sync {}
-impl<S, BS: Borrow<S> + Clone + Debug + Send + Sync> BorrowedSet<S> for BS {}
+/// Instances of a type implementing this trait represent
+/// a set formed by a quotient of another set.
+pub trait QuotientSetSignature<PreQuoSet: SetSignature>: SetSignature {
+    fn pre_quotient_set(&self) -> &PreQuoSet;
 
-pub trait BorrowedStructure<S: Signature>: Borrow<S> + Clone + Debug + Eq + Send + Sync {}
-impl<S: Signature, BS: Borrow<S> + Clone + Debug + Eq + Send + Sync> BorrowedStructure<S> for BS {}
+    fn project(&self, x: PreQuoSet::Set) -> Self::Set;
+    fn project_ref(&self, x: &PreQuoSet::Set) -> Self::Set;
+}
+
+/// A quotient set where elements are represented using representative elements of the pre-quotient set
+pub trait QuotientSetRepresentativesSignature<PreQuoSet: SetSignature<Set = Self::Set>>:
+    QuotientSetSignature<PreQuoSet>
+{
+    /// Must satisfy x = y in the quotient set iff reduced_representative(x) = reduced_representative(y) in the pre quotient set.
+    fn reduced_representative(&self, x: &Self::Set) -> Self::Set;
+}
 
 #[cfg(test)]
 mod tests {

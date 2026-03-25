@@ -3,10 +3,12 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
+use syn::parse::{Parse, ParseStream};
+use syn::punctuated::Punctuated;
 use syn::visit_mut::VisitMut;
 use syn::{
-    Attribute, DeriveInput, Error, FnArg, Ident, ItemTrait, PatIdent, Receiver, TraitItem,
-    TraitItemFn, parse_macro_input,
+    Attribute, DeriveInput, Error, FnArg, GenericArgument, GenericParam, Ident, ItemTrait, LitInt,
+    PatIdent, Receiver, Token, TraitItem, TraitItemFn, parse_macro_input,
 };
 
 fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
@@ -303,7 +305,6 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
     let meta_trait_ident = Ident::new(&format!("Meta{}", sig_trait_ident), Span::call_site());
 
     let mut meta_methods = Vec::new();
-
     for item in &trait_item.items {
         if let TraitItem::Fn(TraitItemFn { attrs, sig, .. }) = item {
             if attrs.iter().any(|attr| attr.path().is_ident("skip_meta")) {
@@ -311,7 +312,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
             }
 
             let mut meta_sig = sig.clone();
-            // Check the first argument is self, &self, or &mut self
+            // Check if the first argument is self, &self, or &mut self as only these can be forwarded to the meta type
             if let Some(first_arg) = meta_sig.inputs.first() {
                 match first_arg {
                     FnArg::Receiver(_) => {
@@ -446,6 +447,31 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
         }
     }
 
+    let generic_params = trait_item.generics.params.clone();
+
+    let mut generic_arguments = Punctuated::<_, syn::token::Comma>::new();
+    for param in generic_params.clone() {
+        let arg = match param {
+            GenericParam::Type(type_param) => {
+                GenericArgument::Type(syn::Type::Path(syn::TypePath {
+                    qself: None,
+                    path: type_param.ident.into(),
+                }))
+            }
+            GenericParam::Lifetime(lifetime_def) => {
+                GenericArgument::Lifetime(lifetime_def.lifetime)
+            }
+            GenericParam::Const(const_param) => {
+                GenericArgument::Const(syn::Expr::Path(syn::ExprPath {
+                    attrs: Vec::new(),
+                    qself: None,
+                    path: const_param.ident.into(),
+                }))
+            }
+        };
+        generic_arguments.push(arg);
+    }
+
     let where_clauses = if let Some(where_clause) = &trait_item.generics.where_clause {
         let mut predicates = where_clause.predicates.clone();
         for predicate in &mut predicates {
@@ -460,19 +486,18 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
     };
 
     quote! {
-        pub trait #meta_trait_ident: MetaType
+        pub trait #meta_trait_ident<#generic_params>: MetaType
         where
-            Self::Signature: #sig_trait_ident,
+            Self::Signature: #sig_trait_ident<#generic_arguments>,
             #where_clauses
         {
-
             #(#meta_methods)*
         }
 
-        impl<T> #meta_trait_ident for T
+        impl<T, #generic_params> #meta_trait_ident<#generic_arguments> for T
         where
             T: MetaType,
-            T::Signature: #sig_trait_ident,
+            T::Signature: #sig_trait_ident<#generic_arguments>,
              #where_clauses
         {
         }
@@ -526,4 +551,79 @@ fn is_type_path_self_set(ty: &syn::TypePath) -> bool {
         && ty.path.segments[0].ident == "Self"
         && ty.path.segments[1].ident == "Set"
         && ty.path.segments[1].arguments.is_empty()
+}
+
+struct RepeatPrimesInput {
+    n: LitInt,
+    _comma: Token![,],
+    placeholder: Ident,
+    _arrow: Token![=>],
+    code: TokenStream,
+}
+
+impl Parse for RepeatPrimesInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let n = input.parse()?;
+        let _comma = input.parse()?;
+        let placeholder = input.parse()?;
+        let _arrow = input.parse()?;
+        let code: proc_macro2::TokenStream = input.parse()?;
+        Ok(RepeatPrimesInput {
+            n,
+            _comma,
+            placeholder,
+            _arrow,
+            code: code.into(),
+        })
+    }
+}
+
+/// repeat_small_primes!(n, p => stuff) will repeat stuff once for each of the first n primes p.
+#[proc_macro]
+pub fn repeat_small_primes(input: TokenStream) -> TokenStream {
+    let RepeatPrimesInput {
+        n,
+        placeholder,
+        code,
+        ..
+    } = syn::parse_macro_input!(input as RepeatPrimesInput);
+    let n: usize = n.base10_parse().unwrap();
+
+    use malachite_base::num::factorization::traits::Primes;
+    let primes = usize::primes().take(n).collect::<Vec<_>>();
+
+    // Replace placeholder identifiers with prime literals
+    fn replace_ident(
+        stream: proc_macro2::TokenStream,
+        placeholder: &Ident,
+        lit: &proc_macro2::Literal,
+    ) -> proc_macro2::TokenStream {
+        use proc_macro2::{Group, TokenTree};
+        let mut new_stream = proc_macro2::TokenStream::new();
+
+        for tt in stream {
+            match tt {
+                TokenTree::Group(g) => {
+                    let content = replace_ident(g.stream(), placeholder, lit);
+                    let mut new_group = Group::new(g.delimiter(), content);
+                    new_group.set_span(g.span());
+                    new_stream.extend(std::iter::once(TokenTree::Group(new_group)));
+                }
+                TokenTree::Ident(id) if id == *placeholder => {
+                    new_stream.extend(std::iter::once(TokenTree::Literal(lit.clone())));
+                }
+                _ => new_stream.extend(std::iter::once(tt)),
+            }
+        }
+
+        new_stream
+    }
+
+    let expanded = primes.iter().map(|p| {
+        let lit = proc_macro2::Literal::usize_unsuffixed(*p);
+        let replaced = replace_ident(code.clone().into(), &placeholder, &lit);
+        quote! { #replaced }
+    });
+
+    TokenStream::from(quote! { #(#expanded)* })
 }

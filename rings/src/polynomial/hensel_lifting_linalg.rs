@@ -5,8 +5,9 @@ use crate::{
         AdditionSignature, AdditiveGroupSignature, CancellativeMultiplicationSignature,
         EuclideanDomainSignature, EuclideanRemainderQuotientStructure, FactoringMonoidSignature,
         FactoringStructure, GreatestCommonDivisorSignature, MultiplicationSignature,
-        MultiplicativeMonoidSignature, NonZeroFactored, RingToQuotientFieldSignature,
-        RingToQuotientRingSignature, SemiModuleSignature, TryReciprocalSignature,
+        MultiplicativeMonoidSignature, NonZeroFactored, QuotientRingGetPrincipalIdealSignature,
+        RingToQuotientFieldSignature, RingToQuotientRingSignature, SemiModuleSignature,
+        TryReciprocalSignature,
     },
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
@@ -381,8 +382,13 @@ impl<
                 return None;
             }
         }
-        let hensel_factorization =
-            Self::new_unchecked(ring, ring_mod.modulus().clone(), Natural::ONE, h, fs_vec);
+        let hensel_factorization = Self::new_unchecked(
+            ring,
+            ring_mod.modulus().into_owned(),
+            Natural::ONE,
+            h,
+            fs_vec,
+        );
         #[cfg(debug_assertions)]
         hensel_factorization.check().unwrap();
         Some(hensel_factorization)
@@ -414,8 +420,13 @@ impl<
             debug_assert_eq!(power, Natural::ONE);
             fs_vec.push(factor);
         }
-        let hensel_factorization =
-            Self::new_unchecked(ring, ring_mod.modulus().clone(), Natural::ONE, h, fs_vec);
+        let hensel_factorization = Self::new_unchecked(
+            ring,
+            ring_mod.modulus().into_owned(),
+            Natural::ONE,
+            h,
+            fs_vec,
+        );
         #[cfg(debug_assertions)]
         hensel_factorization.check().unwrap();
         hensel_factorization

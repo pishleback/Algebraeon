@@ -84,7 +84,7 @@ pub fn legendre_symbol(
         Err(LegendreSymbolError::BottomNotOddPrime)
     } else {
         let mod_p = Integer::structure_ref().quotient_field_unchecked(Integer::from(p));
-        let v = mod_p.reduce(mod_p.nat_pow(a, &((p - Natural::ONE) / Natural::TWO)));
+        let v = mod_p.reduce(&mod_p.nat_pow(a, &((p - Natural::ONE) / Natural::TWO)));
         if v == Integer::ZERO {
             Ok(QuadraticSymbolValue::Zero)
         } else if v == Integer::ONE {

@@ -1,32 +1,30 @@
 use super::*;
 use crate::valuation::Valuation;
+use algebraeon_macros::{signature_meta_trait, skip_meta};
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::*;
 
 pub trait DedekindDomainSignature: IntegralDomainSignature {}
 
+#[signature_meta_trait]
 pub trait RingToIdealsSignature: RingSignature {
     type Ideals<SelfB: BorrowedStructure<Self>>: IdealsSignature<Self, SelfB>;
 
+    #[skip_meta]
     fn ideals(&self) -> Self::Ideals<&Self>;
+    #[skip_meta]
     fn into_ideals(self) -> Self::Ideals<Self>;
 }
-pub trait MetaCanonicalIdealsSignature: MetaType
-where
-    Self::Signature: RingToIdealsSignature,
-{
-    fn ideals() -> <Self::Signature as RingToIdealsSignature>::Ideals<Self::Signature> {
-        Self::structure().into_ideals()
-    }
-}
-impl<R: MetaType> MetaCanonicalIdealsSignature for R where R::Signature: RingToIdealsSignature {}
 
+#[signature_meta_trait]
 pub trait IdealsSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
     SetSignature
 {
+    #[skip_meta]
     fn ring(&self) -> &Ring;
 }
 
+#[signature_meta_trait]
 pub trait IdealsArithmeticSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
     IdealsSignature<Ring, RingB> + SemiRingEqSignature
 {
@@ -58,6 +56,7 @@ pub trait IdealsArithmeticSignature<Ring: RingSignature, RingB: BorrowedStructur
     fn quotient(&self, i: &Self::Set, j: &Self::Set) -> Self::Set;
 }
 
+#[signature_meta_trait]
 pub trait PrincipalIdealsSignature<Ring: RingSignature, RingB: BorrowedStructure<Ring>>:
     IdealsSignature<Ring, RingB>
 {
@@ -65,6 +64,7 @@ pub trait PrincipalIdealsSignature<Ring: RingSignature, RingB: BorrowedStructure
 }
 
 /// A ring in which all ideals uniquely factor as a product of powers of prime ideals
+#[signature_meta_trait]
 pub trait DedekindDomainIdealsSignature<
     Ring: DedekindDomainSignature,
     RingB: BorrowedStructure<Ring>,

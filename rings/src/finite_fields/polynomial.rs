@@ -652,7 +652,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::finite_fields::{modulo::*, quaternary_field::QuaternaryField};
+    use crate::{finite_fields::quaternary_field::QuaternaryField, num_theory::modulo::Modulo};
 
     #[test]
     fn test_distinct_degree_and_cantor_zassenhaus_factorization_f2() {
